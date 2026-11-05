@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { reviveCorpseByMagic } from '../js/corpse_revival.js';
+import { reviveCorpseByMagic } from '../js/zap.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {addCreatedObjectToContainer, placeCreatedObject} from '../js/mkobj.js';

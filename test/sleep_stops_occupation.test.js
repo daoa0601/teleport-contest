@@ -4,7 +4,7 @@ import { SLP_GAS_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/zap.js';
+import { dobuzz } from '../js/zap.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C timeout.c fall_asleep() begins with stop_occupation(), which reports
@@ -34,7 +34,7 @@ void test('a sleep ray reports the interrupted occupation through the ray publis
     const messages = [];
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
-    await castNativeRay(-23, 6, 'h', {
+    await dobuzz(-23, 6, 'h', {
         originX: game.u.ux + 4, originY: game.u.uy,
         publish: async (text) => { messages.push(text); },
         random: () => 0, rollDice: () => 10, rollOne: () => 1,

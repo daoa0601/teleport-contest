@@ -176,7 +176,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus } from './dothrow.js';
-import { fractureRock } from './rock_breakage.js';
+import { fractureRock } from './zap.js';
 
 // Water, lava, fire, and monster rust-trap effects.
 // C ref: trap.c lava_effects(), burnarmor(), trapeffect_rust_trap(),
@@ -6893,10 +6893,7 @@ export async function dotrapAt(x: number, y: number, options: HeroTrapOptions = 
     return dotrap(trap, options);
 }
 
-// ── moved from src/js/rock_breakage.ts ──
-
-// C trap.c:sokoban_guilt().  force_bolt.js previously kept this logic beside
-// its own boulder conversion; the shared fracture owner now owns it.
+// C trap.c:sokoban_guilt().
 export function sokobanGuilt(state: GameState): void {
     if (!state.level?.flags?.sokoban_rules) return;
     if (!state.u.uconduct) state.u.uconduct = {};

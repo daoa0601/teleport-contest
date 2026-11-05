@@ -87,7 +87,7 @@ import { explodeLandMine } from './landmine_explosion.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { launchRollingBoulder } from './trap.js';
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseImmediately } from './do.js';
 import { isRider } from './corpse_species.js';
 import { intemple } from './priest.js';
 import { recordAchievement } from './insight.js';

@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { monsterName } from '../js/do_name.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { pushKeys } from '../js/input.js';
-import { castNativeRay } from '../js/zap.js';
+import { dobuzz } from '../js/zap.js';
 import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -25,7 +25,7 @@ void test('each hallucinated ray hit uses the next perceived monster identity', 
     const secondIdentity = monsterName(second);
     initRng(7n);
     const messages = [];
-    await castNativeRay(0, 1, 'l', {
+    await dobuzz(0, 1, 'l', {
         random: () => 1, rollOne: () => 1, rollDice: () => 1,
         publish: message => { messages.push(message); },
     });
@@ -41,7 +41,7 @@ void test('a hallucinated Rider gets a fresh identity in each resurrection messa
     rider.mhp = rider.mhpmax = 100;
     initRng(7n);
     const messages = [];
-    await castNativeRay(24, 1, 'l', {
+    await dobuzz(24, 1, 'l', {
         random: limit => limit === 20 ? 19 : 1, rollOne: () => 1,
         publish: message => { messages.push(message); },
     });
@@ -71,7 +71,7 @@ void test('a life-saved disintegration victim is named by one blast draw', async
     pushKeys(' '.repeat(40));
     let blastDraws = 0;
     const messages = [];
-    await castNativeRay(-24, 6, 'l', {
+    await dobuzz(-24, 6, 'l', {
         state: game, sourceMonster: breather, originX: 8, originY: 7,
         publish: message => { messages.push(message); },
         random: limit => {
@@ -96,7 +96,7 @@ void test("a hero's own disintegration hit spends the blast name the mirror then
     await createMonsterAt('silver dragon', 14, 10, MONSTER_FLAGS);
     let blastDraws = 0;
     const messages = [];
-    await castNativeRay(24, 6, 'l', {
+    await dobuzz(24, 6, 'l', {
         state: game,
         publish: message => { messages.push(message); },
         random: limit => {
@@ -120,7 +120,7 @@ void test('a one-eyed hero sees a Rider reintegrate before one eye', async () =>
     const rider = await createMonsterAt('Death', 11, 10, MONSTER_FLAGS);
     rider.mhp = rider.mhpmax = 100;
     const messages = [];
-    await castNativeRay(24, 1, 'l', {
+    await dobuzz(24, 1, 'l', {
         random: limit => limit === 20 ? 19 : 1, rollOne: () => 1,
         publish: message => { messages.push(message); },
     });

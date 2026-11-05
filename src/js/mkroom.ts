@@ -27,7 +27,7 @@ import {
 import { addObjectToMonsterInventory } from './steal.js';
 import { setMonsterMalign } from './makemon.js';
 import { monsterAtPosition } from './steed.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseImmediately } from './do.js';
 import { plineWithContinuation as pline } from './pline.js';
 
 import { deleteEngravingAt } from './engrave.js';

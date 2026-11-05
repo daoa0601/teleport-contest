@@ -14,7 +14,7 @@ import { ARROW, BULLWHIP, CORPSE, DAGGER, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_NA
 import { deleteObject } from '../js/shk.js';
 import { setMonsterSpecies } from '../js/mondata.js';
 import { terrainCommand } from '../js/cmd.js';
-import { rayMissMessage } from '../js/ray_hit_message.js';
+import { rayMissMessage } from '../js/zap.js';
 import { makeBlinded } from '../js/potion.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

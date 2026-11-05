@@ -144,7 +144,7 @@ src/js/bones.ts	dropHeroInventoryForBones	rn2	"[""5""]"	constant
 src/js/bones.ts	dropHeroInventoryForBones	rn2	"[""8""]"	constant
 src/js/bones.ts	nearbyMonsterForDeathDrop	rn2	"[""candidateCount""]"	unproved
 src/js/booby_trap.ts	triggerBoobyTrap	rollOne	"[""5 + (difficulty < 5 ? difficulty : 2 + Math.trunc(difficulty / 2))""]"	invariant
-src/js/boomerang.ts	flyBoomerang	rn2	"[""20""]"	constant
+src/js/zap.ts	flyBoomerang	rn2	"[""20""]"	constant
 src/js/do.ts	dropBoulderIntoLiquid	d	"[""fireResistant ? 1 : 3"", ""6""]"	constant
 src/js/do.ts	dropBoulderIntoLiquid	random	"[""10""]"	constant
 src/js/hack.ts	pushIntoTrap	rn2	"[""10""]"	constant
@@ -236,9 +236,9 @@ src/js/eat.ts	eatcorpse	rnd	"[""15""]"	constant
 src/js/eat.ts	eatcorpse	rnd	"[""15""]"	constant
 src/js/eat.ts	eatcorpse	rnd	"[""4""]"	constant
 src/js/eat.ts	eatcorpse	rnd	"[""8""]"	constant
-src/js/corpse_revival.ts	containerBlocksRevival	rn2	"[""40""]"	constant
-src/js/corpse_revival.ts	retryRevival	d	"[""5"", ""50""]"	constant
-src/js/corpse_revival.ts	retryRevival	rn2	"[""99""]"	constant
+src/js/zap.ts	revive	rn2	"[""40""]"	constant
+src/js/do.ts	reviveMon	d	"[""5"", ""50""]"	constant
+src/js/do.ts	reviveMon	rn2	"[""99""]"	constant
 src/js/apply.ts	useCreamPie	rnd	"[""25""]"	constant
 src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""100 - 3 * intelligence""]"	unproved
 src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""30""]"	constant
@@ -408,15 +408,15 @@ src/js/trap.ts	triggerHeroFireTrap	d	"[""2"", ""4""]"	constant
 src/js/trap.ts	triggerHeroFireTrap	d	"[""2"", ""4""]"	constant
 src/js/trap.ts	triggerHeroFireTrap	rn2	"[""2""]"	constant
 src/js/trap.ts	triggerHeroFireTrap	rnd	"[""3""]"	constant
-src/js/flash.ts	flashHitsMonster	d	"[""1 + object.spe"", ""4""]"	unproved
-src/js/flash.ts	flashHitsMonster	rn2	"[""4""]"	constant
-src/js/flash.ts	flashHitsMonster	rn2	"[""4""]"	constant
-src/js/flash.ts	flashHitsMonster	rnd	"[""1 + Math.trunc(50 / distance)""]"	guarded
-src/js/flash.ts	flashHitsMonster	rnd	"[""100""]"	constant
-src/js/flash.ts	flashHitsMonster	rnd	"[""Math.min(monster.mhp, 4)""]"	unproved
+src/js/uhitm.ts	flashHitsMonster	d	"[""1 + object.spe"", ""4""]"	unproved
+src/js/uhitm.ts	flashHitsMonster	rn2	"[""4""]"	constant
+src/js/uhitm.ts	flashHitsMonster	rn2	"[""4""]"	constant
+src/js/uhitm.ts	flashHitsMonster	rnd	"[""1 + Math.trunc(50 / distance)""]"	guarded
+src/js/uhitm.ts	flashHitsMonster	rnd	"[""100""]"	constant
+src/js/uhitm.ts	flashHitsMonster	rnd	"[""Math.min(monster.mhp, 4)""]"	unproved
 src/js/do_name.ts	nameFloorType	rn2Display	"[""30""]"	constant
 src/js/do_name.ts	nameFloorType	rn2Display	"[""choices.length""]"	constant
-src/js/force_bolt.ts	hitMonsterWithForce	options.rollDice	"[""2"", ""12""]"	constant
+src/js/zap.ts	hitMonsterWithWand	d	"[""2"", ""12""]"	constant
 src/js/fountain.ts	blessedFountainDraught	rn2	"[""A_MAX""]"	constant
 src/js/fountain.ts	dipFountain	rn2	"[""2""]"	constant
 src/js/fountain.ts	dipFountain	rnd	"[""30""]"	constant
@@ -474,20 +474,20 @@ src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""4""]"	constant
 src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""9""]"	constant
 src/js/uhitm.ts	maybeUnparalyzeMeleeDefender	random	"[""10""]"	constant
 src/js/hack.ts	beastChoosesHeroDisplacement	rn2	"[""2""]"	constant
-src/js/zap.ts	hitWithAcid	random	"[""3""]"	constant
-src/js/zap.ts	hitWithAcid	random	"[""6""]"	constant
-src/js/zap.ts	hitWithAcid	random	"[""twoWeapons ? 3 : 6""]"	constant
-src/js/zap.ts	hitWithAcid	rollDice	"[""attack[2]"", ""6""]"	invariant
-src/js/zap.ts	hitWithCold	random	"[""3""]"	constant
-src/js/zap.ts	hitWithCold	rollDice	"[""attack[2]"", ""6""]"	invariant
-src/js/zap.ts	hitWithDisintegration	random	"[""100""]"	constant
-src/js/zap.ts	hitWithFire	random	"[""3""]"	constant
-src/js/zap.ts	hitWithFire	random	"[""3""]"	constant
-src/js/zap.ts	hitWithFire	rollDice	"[""attack[2]"", ""6""]"	invariant
-src/js/zap.ts	hitWithLightning	random	"[""3""]"	constant
-src/js/zap.ts	hitWithLightning	rollDice	"[""attack[2]"", ""6""]"	invariant
-src/js/zap.ts	hitWithMagic	rollDice	"[""attack[2]"", ""6""]"	invariant
-src/js/zap.ts	hitWithSleep	rollDice	"[""attack[2]"", ""25""]"	invariant
+src/js/zap.ts	hitHeroWithRay	random	"[""3""]"	constant
+src/js/zap.ts	hitHeroWithRay	random	"[""6""]"	constant
+src/js/zap.ts	hitHeroWithRay	random	"[""twoWeapons ? 3 : 6""]"	constant
+src/js/zap.ts	hitHeroWithRay	rollDice	"[""attack[2]"", ""6""]"	invariant
+src/js/zap.ts	hitHeroWithRay	random	"[""3""]"	constant
+src/js/zap.ts	hitHeroWithRay	rollDice	"[""attack[2]"", ""6""]"	invariant
+src/js/zap.ts	hitHeroWithRay	random	"[""100""]"	constant
+src/js/zap.ts	hitHeroWithRay	random	"[""3""]"	constant
+src/js/zap.ts	hitHeroWithRay	random	"[""3""]"	constant
+src/js/zap.ts	hitHeroWithRay	rollDice	"[""attack[2]"", ""6""]"	invariant
+src/js/zap.ts	hitHeroWithRay	random	"[""3""]"	constant
+src/js/zap.ts	hitHeroWithRay	rollDice	"[""attack[2]"", ""6""]"	invariant
+src/js/zap.ts	hitHeroWithRay	rollDice	"[""attack[2]"", ""6""]"	invariant
+src/js/zap.ts	hitHeroWithRay	rollDice	"[""attack[2]"", ""25""]"	invariant
 src/js/uhitm.ts	engulfDamage	random	"[""2""]"	constant
 src/js/uhitm.ts	engulfDamage	random	"[""4""]"	constant
 src/js/uhitm.ts	resolveHeroCombatEngulf	rollDice	"[""dice"", ""sides""]"	unproved
@@ -675,7 +675,7 @@ src/js/eat.ts	Hear_again	rn2	"[""2""]"	constant
 src/js/eat.ts	newuhs	rn2	"[""20 - rounded""]"	unproved
 src/js/mkobj.ts	nextIdent	rnd	"[""2""]"	constant
 src/js/mkobj.ts	nextIdent	rnd	"[""2""]"	constant
-src/js/zap.ts	healMonsterWithMagic	d	"[""6"", ""extra ? 8 : 4""]"	constant
+src/js/zap.ts	hitMonsterWithWand	d	"[""6"", ""extra ? 8 : 4""]"	constant
 src/js/zap.ts	hitMonsterWithWand	d	"[""1 + wand.spe"", ""12""]"	unproved
 src/js/zap.ts	hitMonsterWithWand	rnd	"[""2""]"	constant
 src/js/do_name.ts	nameIndividualObject	rn2Display	"[""2""]"	constant
@@ -760,8 +760,8 @@ src/js/potion.ts	applyLevitationPotion	rn1	"[""140"", ""10""]"	constant
 src/js/potion.ts	applyLevitationPotion	rn1	"[""50"", ""250""]"	constant
 src/js/potion.ts	applyLevitationPotion	rnd	"[""!helmet ? 10 : !objectIsHardHelmet(helmet) ? 6 : 3""]"	constant
 src/js/read.ts	createConfusedLightPets	rn2	"[""2""]"	constant
-src/js/light.ts	lightDamage	rnd	"[""amount""]"	unproved
-src/js/light.ts	lightDamage	rnd	"[""damage - 10""]"	unproved
+src/js/zap.ts	lightDamage	rnd	"[""amount""]"	unproved
+src/js/zap.ts	lightDamage	rnd	"[""damage - 10""]"	unproved
 src/js/light.ts	lightRoom	rnd	"[""5""]"	constant
 src/js/hack.ts	finishDestinationSpotEffects	rn2	"[""2""]"	constant
 src/js/lock.ts	bladeBreaks	rn2	"[""1000 - enchantment""]"	unproved
@@ -1829,14 +1829,14 @@ src/js/dokick.ts	kickRange	rollOne	"[""3""]"	constant
 src/js/dokick.ts	kickRange	rollOne	"[""3""]"	constant
 src/js/dokick.ts	impactDrop	random	"[""object.otyp === BOULDER ? 30 : 3""]"	constant
 src/js/dokick.ts	shipObject	random	"[""3""]"	constant
-src/js/zap.ts	createPolymorphMonsterFromPile	rn2	"[""remaining + 1""]"	guarded
+src/js/zap.ts	polyUse	rn2	"[""remaining + 1""]"	guarded
 src/js/zap.ts	do_osshock	rn2	"[""luck + 45""]"	unproved
 src/js/zap.ts	do_osshock	rnd	"[""quantity > LARGEST_INT ? 30000 : quantity - 1""]"	guarded
 src/js/zap.ts	finishReplacementType	rn2	"[""1000""]"	constant
 src/js/zap.ts	finishReplacementType	rn2	"[""7""]"	constant
 src/js/zap.ts	finishReplacementType	rn2	"[""target.spestudied""]"	unproved
 src/js/zap.ts	finishReplacementType	rnd	"[""4""]"	constant
-src/js/zap.ts	golemForMaterial	rn2	"[""2""]"	constant
+src/js/zap.ts	createPolymorphMonsterFromPile	rn2	"[""2""]"	constant
 src/js/zap.ts	makeHeroLaidEgg	rn2	"[""MONSTER_NAME.length""]"	constant
 src/js/zap.ts	obj_shudders	rn2	"[""odds""]"	unproved
 src/js/do.ts	crysknifeReversions	rn2	"[""10""]"	constant
@@ -2040,14 +2040,11 @@ src/js/quest_pager.ts	questMonsterType	rn2	"[""5""]"	constant
 src/js/quest_pager.ts	questMonsterType	rn2	"[""5""]"	constant
 src/js/zap.ts	rayBounceDirection	random	"[""2""]"	constant
 src/js/zap.ts	rayBounceDirection	random	"[""bounceback""]"	guarded
-src/js/zap.ts	rayHitsHero	random	"[""20""]"	constant
-src/js/zap.ts	rayHitsHero	rollOne	"[""-armorClass""]"	guarded
-src/js/zap.ts	rayHitsHero	rollOne	"[""10""]"	constant
-src/js/zap.ts	rayHitsMonster	random	"[""20""]"	constant
-src/js/zap.ts	rayHitsMonster	rollOne	"[""-armorClass""]"	guarded
-src/js/zap.ts	rayHitsMonster	rollOne	"[""10""]"	constant
+src/js/zap.ts	zapHit	random	"[""20""]"	constant
+src/js/zap.ts	zapHit	rollOne	"[""-armorClass""]"	guarded
+src/js/zap.ts	zapHit	rollOne	"[""10""]"	constant
 src/js/zap.ts	blindHeroWithLightning	rollDice	"[""attack[2]"", ""50""]"	invariant
-src/js/zap.ts	castNativeRay	random	"[""6""]"	constant
+src/js/zap.ts	dobuzz	random	"[""6""]"	constant
 src/js/zap.ts	damageRayMonster	random	"[""3""]"	constant
 src/js/zap.ts	damageRayMonster	random	"[""3""]"	constant
 src/js/zap.ts	damageRayMonster	random	"[""3""]"	constant
@@ -2059,10 +2056,10 @@ src/js/zap.ts	damageRayMonster	rollDice	"[""dice"", ""6""]"	unproved
 src/js/zap.ts	damageRayMonster	rollDice	"[""dice"", ""6""]"	unproved
 src/js/zap.ts	damageRayMonster	rollOne	"[""50""]"	constant
 src/js/zap.ts	rayTargetAt	random	"[""3""]"	constant
-src/js/zap.ts	traceRay	context.rollDice	"[""12"", ""6""]"	constant
-src/js/zap.ts	traceRay	random	"[""7""]"	constant
+src/js/zap.ts	dobuzz	context.rollDice	"[""12"", ""6""]"	constant
+src/js/zap.ts	dobuzz	random	"[""7""]"	constant
 src/js/zap.ts	zapRayWithObject	rn2	"[""6""]"	constant
-src/js/ray_name.ts	displayRayName	random	"[""hallucinationBlasts.length""]"	constant
+src/js/mthrowu.ts	rndHallublast	random	"[""hallucinationBlasts.length""]"	constant
 src/js/read.ts	explodeWand	d	"[""Math.max(2, wand.spe + (extraCharges || 2))"", ""sides""]"	unproved
 src/js/read.ts	rechargeRing	random	"[""7""]"	constant
 src/js/read.ts	rechargeRing	rollOne	"[""2""]"	constant
@@ -2089,7 +2086,7 @@ src/js/do.ts	polymorphSink	rn2	"[""3""]"	constant
 src/js/do.ts	polymorphSink	rn2	"[""4""]"	constant
 src/js/do.ts	teleportSink	rn2	"[""ROWNO - 2""]"	constant
 src/js/do.ts	teleportSink	rnd	"[""(COLNO - 1) - 2""]"	constant
-src/js/rock_breakage.ts	fractureRock	random	"[""60""]"	constant
+src/js/zap.ts	fractureRock	random	"[""60""]"	constant
 src/js/trap.ts	trapeffectRocktrap	random	"[""15""]"	constant
 src/js/trap.ts	trapeffectRocktrap	rollDice	"[""2"", ""6""]"	constant
 src/js/trap.ts	launchRollingBoulder	random	"[""10""]"	constant
@@ -2463,7 +2460,7 @@ src/js/zap.ts	applyRayFloorFeatures	random	"[""10""]"	constant
 src/js/zap.ts	applyRayFloorFeatures	rnd	"[""3""]"	constant
 src/js/zap.ts	burnFloorObjectsAt	random	"[""3""]"	constant
 src/js/zap.ts	chooseStacks	random	"[""eligible""]"	guarded
-src/js/zap.ts	destroyChosenItem	random	"[""100""]"	constant
+src/js/zap.ts	inventoryResistanceCheck	random	"[""100""]"	constant
 src/js/zap.ts	destroyChosenItem	random	"[""3""]"	constant
 src/js/zap.ts	destroyChosenItem	random	"[""3""]"	constant
 src/js/zap.ts	destroyMonsterInventoryByElement	random	"[""3""]"	constant

@@ -85,7 +85,6 @@ src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
 src/js/projectile_bars.ts	monmove.c
 src/js/quiver.ts	wield.c
-src/js/ray_name.ts	mthrowu.c
 src/js/read.ts	read.c
 src/js/rect.ts	rect.c
 src/js/regions.ts	region.c

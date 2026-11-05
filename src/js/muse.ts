@@ -94,7 +94,7 @@ import { isWeldedPrimary, willWeld } from './wield.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './read.js';
 import { beginObjectBurn } from './timeout.js';
-import { lightDamage } from './light.js';
+import { lightDamage } from './zap.js';
 import { throwMonsterProjectile, blockingTerrain, monsterLinedUpWithHero, consumeMonsterItem } from './mthrowu.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { makeBlinded } from './potion.js';
@@ -102,7 +102,7 @@ import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from
 import { changeDoorByMagic } from './lock.js';
 import { stopHeroOccupation } from './occupation.js';
 import { propertyIsActive } from './properties.js';
-import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { rayHitMessage, rayMissMessage } from './zap.js';
 import { heroHasHalfSpellDamage, monsterResistsEffect, learnWand } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { randomTeleportDepth } from './level_teleport.js';
@@ -127,7 +127,7 @@ import type { MonsterOffensiveChoice, MonsterOffensiveOptions, MonsterOffensiveR
 import { migrateMonsterOffLevel } from './dog.js';
 import { exerciseWisdom } from './attrib.js';
 import { recordObjectKnowledge } from './o_init.js';
-import { castNativeRay, hitMonsterWithRay } from './zap.js';
+import { buzz, dobuzz, hitMonsterWithRay } from './zap.js';
 import type { NativeRayOptions } from './zap.js';
 import { hitObjectWithWand } from './zap.js';
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './zap.js';
@@ -1177,7 +1177,7 @@ async function fhito_loc({ state, wand }: WandRayContext): Promise<boolean> {
 
 // C muse.c:buzz_force_miss().
 async function buzz_force_miss(type: number, dice: number, direction: string, options: NativeRayOptions) {
-    return castNativeRay(type, dice, direction, { ...options, forceMiss: true });
+    return dobuzz(type, dice, direction, { ...options, forceMiss: true });
 }
 
 // C muse.c:use_offensive().
@@ -1187,7 +1187,7 @@ export async function use_offensive(
     const { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation } = options;
     requireLiveGame(state);
     const object = choice.object;
-    const buzzfn = monster.mwandexp ? castNativeRay : buzz_force_miss;
+    const buzzfn = monster.mwandexp ? buzz : buzz_force_miss;
     if (object.oclass !== POTION_CLASS) {
         const result = await precheck(monster, object, options);
         if (result) return result;

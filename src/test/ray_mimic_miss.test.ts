@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { M_AP_OBJECT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { castNativeRay } from '../js/zap.js';
+import { dobuzz } from '../js/zap.js';
 
 import { ARROW } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -17,7 +17,7 @@ void test('a detected mimic disguised as an object still reports a ray miss', as
     mimic.mappearance = ARROW;
     const messages: string[] = [];
 
-    await castNativeRay(0, 2, 'l', {
+    await dobuzz(0, 2, 'l', {
         state: game,
         forceMiss: true,
         publish: message => { messages.push(message); },

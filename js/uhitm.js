@@ -7,13 +7,13 @@ import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHer
 import { OBJ_DESCR } from './o_init.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
-import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense } from './artifacts.js';
+import { applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense, } from './artifacts.js';
 import { getmattk } from './attack_selection.js';
 import { heroIsPunished } from './ball.js';
 import { applyMonsterBlindness, heroBlindingObjectHitMessage, heroCanBeBlindedByContact, monsterCanBeBlindedByObject, monsterResistsBlindingLight } from './blinding_attack.js';
 import { heroHandName, heroLegName, heroStomachName, monsterLegName } from './body_parts.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, D_CLOSED, D_LOCKED, DIED, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, FAINTED, G_NOCORPSE, IRONBARS, Is_airlevel, IS_OBSTRUCTED, IS_TREE, Is_waterlevel, KILLED_BY, KILLED_BY_AN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, MMOVE_DIED, MON_EXPLODE, MSLOW, Luck, NEW_MOON, NON_PM, P_AXE, P_BARE_HANDED_COMBAT, P_BASIC, P_ISRESTRICTED, P_KNIFE, P_LANCE, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, P_WHIP, PARANOID_HIT, POOL, RLOC_MSG, RLOC_NOMSG, SHOPBASE, STONING, STR18, STRAT_WAITFORU, STRAT_WAITMASK, TT_PIT, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER, WT_IRON_BALL_INCR } from './const.js';
+import { A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, D_CLOSED, D_LOCKED, DIED, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, FAINTED, G_NOCORPSE, IRONBARS, Is_airlevel, IS_OBSTRUCTED, IS_TREE, Is_waterlevel, KILLED_BY, KILLED_BY_AN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, MMOVE_DIED, MON_EXPLODE, MSLOW, Luck, NEW_MOON, NON_PM, P_BARE_HANDED_COMBAT, P_BASIC, P_ISRESTRICTED, P_KNIFE, P_LANCE, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, P_WHIP, PARANOID_HIT, POOL, RLOC_MSG, RLOC_NOMSG, SHOPBASE, STONING, STRAT_WAITFORU, STRAT_WAITMASK, TT_PIT, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER, } from './const.js';
 import { isok } from './cmd.js';
 import { specialContactDamage } from './contact_damage.js';
 import { isZombieMaker } from './corpse_species.js';
@@ -55,28 +55,29 @@ import { mdamageu, heroHasRemovableSpeed, u_slip_free, diseasemu, magic_negation
 import { normalDemon } from './minion.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
-import { angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, finishMonsterPetrification, grantMonsterCorpseIntrinsic, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone, wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
-import { is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous, herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks } from './mondata.js';
+import { angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone, wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages, } from './mon.js';
+import { is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous, herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks, } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
 import { recordRandom } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DRDX, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, PM_GREEN_SLIME, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, PM_GREEN_SLIME, monsterTypeName, requireMonsterData, } from './monster_data.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './monworn.js';
 import { munslime, munstone } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
 import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
-import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle, } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './pet_eating.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm } from './polyself.js';
-import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroPetrificationTimeout, setHeroSlimingTimeout, splitMonster } from './potion.js';
+import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroSlimingTimeout, splitMonster, } from './potion.js';
 import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { paranoidQuery } from './cmd.js';
-import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { capitalizedDefiniteName } from './objnam.js';
+import { rayHitMessage } from './zap.js';
 import { ureflects, heroReflectsRay } from './muse.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -84,7 +85,7 @@ import { carriedObjectOwner, deleteObject, dopay, tendedShop } from './shk.js';
 import { loseHeroSpellMemory } from './spell.js';
 import { addObjectToMonsterInventory, stealFromHero, stealHeroGold, stealHeroQuestObject } from './steal.js';
 import { dismountHero, monsterAtPosition } from './steed.js';
-import { contactIsProtected, fleshPetrifies, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, startHeroPetrification, touchPetrifies } from './stoning.js';
+import { contactIsProtected, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, startHeroPetrification, touchPetrifies, } from './stoning.js';
 import { askTeleportDestination, goodPosition, heroControlsTeleport, randomMonsterRelocation, reportMonsterTeleportRestriction, teleportHero, teleportMonsterByHero } from './teleport.js';
 import { attrcurse } from './throne.js';
 import { burnAwayHeroSlime, putHeroToSleep } from './timeout.js';
@@ -98,6 +99,12 @@ import { isTwoWeaponObject, setPrimaryWeapon, setTwoWeaponCombat, uwepgone } fro
 import { cutWorm } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { destroyColdInventory, destroyElectricInventory, destroyFireInventory, destroyMonsterInventoryByElement, drainObjectEnchantment, monsterResistsEffect, objectResistsDestruction } from './zap.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { lightHitsGremlin } from './light.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
+import { WAN_LIGHT } from './object_data.js';
+import { visibleRegionAt } from './regions.js';
+import { angerMonster } from './mon.js';
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
 function completelyBurns(monster) {
     const species = MONSTER_NAME[monster.mnum];
@@ -5857,5 +5864,87 @@ export async function confuseTouchedMonster(monster, { state = game } = {}) {
         && !((monster.mfrozen ?? 0) > 0) && canSeeMonster(monster)) {
         await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} appears confused.`);
     }
+}
+// C uhitm.c:flash_hits_mon().
+export async function flashHitsMonster(monster, object, { state = game, onHead = true } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const result = { observed: false, heroDied: false };
+    let notified = false;
+    if (!onHead)
+        return result;
+    const visible = canSeeMonster(monster);
+    const name = () => monsterName(monster, { state, capitalized: true });
+    if (M_AP_TYPE(monster)) {
+        const before = glyphAt(monster.mx, monster.my);
+        let description = M_AP_TYPE(monster) === M_AP_FURNITURE
+            ? MAP_SYMBOLS[monster.mappearance ?? -1]?.name ?? 'thing'
+            : monsterTypeName(monster.mappearance ?? -1, !!monster.female);
+        const region = visibleRegionAt(state, monster.mx, monster.my);
+        const range = Math.max(state.u.xray_range || 0, 1);
+        const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
+        if (region && distance <= range * (range + 1))
+            description += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
+        await wakeMonster(monster);
+        const after = glyphAt(monster.mx, monster.my);
+        if (before?.kind !== after?.kind || (before?.kind === 'monster' ? before.mnum : undefined) !== (after?.kind === 'monster' ? after.mnum : undefined)) {
+            await plineWithContinuation(`That ${description} is really ${monsterName(monster, {
+                state, article: monster.mtame ? 'your' : 'a',
+            })}${monster.mtame ? '.' : '!'}`);
+            result.observed = true;
+            notified = true;
+        }
+    }
+    if (monster.msleeping && monsterHasEyes(monster.mnum)) {
+        monster.msleeping = 0;
+        if (visible) {
+            await plineWithContinuation(`The flash awakens ${monsterName(monster, { state })}.`);
+            result.observed = true;
+            notified = true;
+        }
+    }
+    else if (MONSTER_SYMBOL[monster.mnum] !== S_LIGHT) {
+        if (!monsterResistsBlindingLight(monster, state)) {
+            const distance = (object.ox - monster.mx) ** 2 + (object.oy - monster.my) ** 2;
+            if (visible) {
+                await plineWithContinuation(`${name()} is blinded by the flash!`);
+                result.observed = true;
+                notified = true;
+            }
+            if (monster.mnum === PM_GREMLIN) {
+                const damage = object.otyp === WAN_LIGHT ? d(1 + object.spe, 4)
+                    : rnd(Math.min(monster.mhp, 4));
+                const outcome = await lightHitsGremlin(monster, damage);
+                result.heroDied = !!outcome?.heroDied;
+            }
+            if (monster.mhp > 0 && !result.heroDied) {
+                if (!state.context.mon_moving)
+                    await angerMonster(monster, { attacked: true });
+                if (distance < 9 && !monster.isshk && rn2(4)) {
+                    const fleeing = await makeMonsterFlee(monster, {
+                        state, turns: rn2(4) ? rnd(100) : 0,
+                    });
+                    result.heroDied = fleeing.heroDied;
+                }
+                monster.mcansee = 0;
+                monster.mblinded = distance < 3 ? 0 : rnd(1 + Math.trunc(50 / distance));
+            }
+        }
+        else if (visible) {
+            if (monsterHasArtifactDefense(monster, 'blindness', state))
+                await shieldeff(monster.mx, monster.my, state);
+            if (state.flags.verbose) {
+                await plineWithContinuation(state.level.requireAt(monster.mx, monster.my).lit
+                    ? `The flash of light shines on ${monsterName(monster, { state })}.`
+                    : `${name()} is illuminated.`);
+                notified = true;
+            }
+        }
+    }
+    // flash_hits_mon() ends by displaying the message window when the flash
+    // was noticed on an unlit spot; the dismissal clears the topline.
+    if (notified && !state.level.requireAt(monster.mx, monster.my).lit)
+        await displayMessageWindow();
+    return result;
 }
 //# sourceMappingURL=uhitm.js.map

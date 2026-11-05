@@ -8,9 +8,9 @@
 // timeout_luck.js, and timeout_body.js.
 
 import { castMonsterSpellRay } from './breath_ray.js';
-import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
+import { runClaimedCorpseRevivalTimer } from './do.js';
 
-import type { CorpseRevivalTimerEvent } from './corpse_revival.js';
+import type { CorpseRevivalTimerEvent } from './do.js';
 
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import {

@@ -1588,7 +1588,7 @@ function sicknessCannotHarmMonster(monster) {
     return monsterHasPoisonResistance(monster)
         || MONSTER_ATTACKS[monster?.mnum]?.some(attack => attack[1] === AD_DISE || attack[1] === AD_PEST);
 }
-// zap.c:resist() uses potion attack level 6 and the target's runtime level.
+// Potion impacts use zap.c:resist() with attack level 6 and the target's runtime level.
 // NOTELL suppresses shield presentation but the resistance draw still occurs.
 function monsterResistsPotion(monster, state = game) {
     const mnum = monster?.mnum;

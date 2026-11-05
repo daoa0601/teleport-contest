@@ -1,9 +1,8 @@
-import { stack_object } from './invent.js';
-import { RING_CLASS, POTION_CLASS, VENOM_CLASS } from './objclass.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
+import { RING_CLASS, POTION_CLASS, VENOM_CLASS } from './objclass.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { currency, delobj } from './invent.js';
+import { currency, delobj, stack_object } from './invent.js';
 import { deleteTrap, petrifyMonsterFromContact } from './trap.js';
 import { DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS } from './const.js';
 import { isok } from './cmd.js';
@@ -37,8 +36,9 @@ import { shouldMulchMissile, breakFloorObject, rangedTargetHitBonus } from './do
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import { d, rn2, rnd } from './rng.js';
-import { breakStatue, fractureRock } from './rock_breakage.js';
-import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { breakStatue, fractureRock } from './zap.js';
+import { capitalizedDefiniteName } from './objnam.js';
+import { rayHitMessage, rayMissMessage } from './zap.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 const GLASS = 19;
 const DIRECTIONS = [

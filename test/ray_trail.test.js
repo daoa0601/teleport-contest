@@ -5,7 +5,7 @@ import { flush_screen, glyphAt } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/zap.js';
+import { dobuzz } from '../js/zap.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -40,7 +40,7 @@ for (const [name, type] of [
             sawBarsDuringFlight = true;
         };
         await plineWithContinuation('You attack.');
-        await castNativeRay(type, 1, 'l', {
+        await dobuzz(type, 1, 'l', {
             originX: 8, originY: 10,
             random: bound => bound === 10 ? 0 : bound - 1,
             rollDice: () => 1, rollOne: () => 1,
@@ -84,7 +84,7 @@ void test('a bouncing breath redraws its trail across the hero, dissolved bars, 
         assert.equal(requireScreenCell(10, 11).ch, '─', 'Dissolved bars now retain a beam');
         sawReturn = true;
     };
-    await castNativeRay(-27, 1, 'l', {
+    await dobuzz(-27, 1, 'l', {
         originX: 9, originY: 10, forceMiss: true,
         random: bound => bound - 1,
     });
@@ -99,7 +99,7 @@ void test('a lightning ray missing a blind elemental hero tingles in its body pa
     game.u.umonnum = MONSTER_NAME.indexOf('fire elemental');
     game.u.blindTurns = 20;
     const messages = [];
-    await castNativeRay(-5, 6, 'l', {
+    await dobuzz(-5, 6, 'l', {
         originX: game.u.ux - 3, originY: game.u.uy, forceMiss: true,
         publish: async (message) => { messages.push(message); },
     });

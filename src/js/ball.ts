@@ -30,7 +30,7 @@ import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp
 import { hitMonsterWithHeroObject } from './uhitm.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { objectName, ownedObjectName } from './objnam.js';
-import { rayMissMessage } from './ray_hit_message.js';
+import { rayMissMessage } from './zap.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';

@@ -7,8 +7,8 @@
 import { WEAPON_CLASS, RING_CLASS, POTION_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import {
-    objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW,
-    OBJECT_NAMES, WAN_STRIKING,
+    objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES,
+    WAN_STRIKING,
 } from './object_data.js';
 import { currentAttribute, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifacts.js';
@@ -28,7 +28,10 @@ import { heroHasFreeHand } from './engrave.js';
 import { mswings_verb } from './mhitu.js';
 import { rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
-import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject, objectIsFlammable, splitObjectStack, objectWeight, placeObject } from './mkobj.js';
+import {
+    clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject,
+    objectIsFlammable, splitObjectStack, objectWeight, placeObject,
+} from './mkobj.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -36,8 +39,8 @@ import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOO
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import {
-    canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor,
-    transientObjectGlyph, TemporaryMapEffect,
+    canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph,
+    TemporaryMapEffect,
 } from './display.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -60,10 +63,9 @@ import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import {
     monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance,
-    monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc,
-    is_prince, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal,
-    monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter,
-    monsterThrowsRocks, passes_rocks,
+    monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc, is_prince,
+    monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving,
+    monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks,
 } from './mondata.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { delobj } from './invent.js';
@@ -78,9 +80,10 @@ import { shipObject } from './dokick.js';
 import { stopHeroOccupation } from './occupation.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
-import { rayDamageType, castNativeRay } from './zap.js';
-import { displayRayName } from './ray_name.js';
-import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { rayDamageType, buzz } from './zap.js';
+import { displayRayName } from './zap.js';
+import { capitalizedDefiniteName } from './objnam.js';
+import { rayHitMessage, rayMissMessage } from './zap.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
@@ -96,7 +99,6 @@ import type {
 } from './monster_projectile_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { requirePerceivedHero } from './monmove.js';
-
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);
 }
@@ -1025,7 +1027,7 @@ export interface MonsterBreathResult {
 // C mthrowu.c:breamu() -> breamm() with &gy.youmonst as the target
 // (mthrowu.c:1275-1278, 1093-1155). The mattacku() AT_BREA case awaits
 // this one transaction: m_lined_up(), the mcan cough, the seen-resistance
-// and recharge gates, the breath line, dobuzz(), nomul(0) and the
+// and recharge gates, the breath line, buzz(), nomul(0) and the
 // recharge, sleep and pet-hunger tail all run in C order here.
 // Also C mondata.c:get_atkdam_type(): inlined here.
 // Also C mthrowu.c:breathwep_name(): hallucinated and ordinary names are selected here.
@@ -1073,7 +1075,7 @@ export async function resolveMonsterBreathAtHero(
             `${monsterName(monster, { state, capitalized: true })} breathes ${weapon}!`,
         );
     }
-    // dobuzz() follows the line m_lined_up() retained towards the hero's
+    // buzz() follows the line m_lined_up() retained towards the hero's
     // remembered square; gt.tbx/tby are that delta's signs.
     const targetX = isFiniteNumber(monster.mux) ? monster.mux : (state?.u?.ux ?? monster.mx);
     const targetY = isFiniteNumber(monster.muy) ? monster.muy : (state?.u?.uy ?? monster.my);
@@ -1085,7 +1087,7 @@ export async function resolveMonsterBreathAtHero(
         ['b', 'j', 'n'],
     ][dy + 1]?.[dx + 1];
     if (!direction) throw new Error('A launched breath needs a nonzero unit direction');
-    const result = await castNativeRay(-(20 + damageType - 1), dice, direction, {
+    const result = await buzz(-(20 + damageType - 1), dice, direction, {
         state,
         sourceMonster: monster,
         originX: monster.mx,
@@ -1299,3 +1301,111 @@ export async function consumeMonsterItem(monster: Monster, object: GameObject, s
         throw new Error('A used monster item must belong to its monster.');
     }
 }
+
+
+const hallucinationBlasts = [
+    "asteroids",
+    "beads",
+    "bubbles",
+    "butterflies",
+    "champagne",
+    "chaos",
+    "coins",
+    "cotton candy",
+    "crumbs",
+    "dark matter",
+    "darkness",
+    "data",
+    "dust specks",
+    "emoticons",
+    "emotions",
+    "entropy",
+    "flowers",
+    "foam",
+    "fog",
+    "gamma rays",
+    "gelatin",
+    "gemstones",
+    "ghosts",
+    "glass shards",
+    "glitter",
+    "good vibes",
+    "gravel",
+    "gravity",
+    "gravy",
+    "grawlixes",
+    "holy light",
+    "hornets",
+    "hot air",
+    "hyphens",
+    "hypnosis",
+    "infrared",
+    "insects",
+    "jargon",
+    "laser beams",
+    "leaves",
+    "lightening",
+    "logic gates",
+    "magma",
+    "marbles",
+    "mathematics",
+    "megabytes",
+    "metal shavings",
+    "metapatterns",
+    "meteors",
+    "mist",
+    "mud",
+    "music",
+    "nanites",
+    "needles",
+    "noise",
+    "nostalgia",
+    "oil",
+    "paint",
+    "photons",
+    "pixels",
+    "plasma",
+    "polarity",
+    "powder",
+    "powerups",
+    "prismatic light",
+    "pure logic",
+    "purple",
+    "radio waves",
+    "rainbows",
+    "rock music",
+    "rocket fuel",
+    "rope",
+    "sadness",
+    "salt",
+    "sand",
+    "scrolls",
+    "sludge",
+    "smileys",
+    "snowflakes",
+    "sparkles",
+    "specularity",
+    "spores",
+    "stars",
+    "steam",
+    "tetrahedrons",
+    "text",
+    "the past",
+    "tornadoes",
+    "toxic waste",
+    "ultraviolet light",
+    "viruses",
+    "water",
+    "waveforms",
+    "wind",
+    "X-rays",
+    "zorkmids"
+];
+
+// C mthrowu.c:rnd_hallublast().
+export function rndHallublast(random: typeof rn2 = rn2): string {
+    const blast = hallucinationBlasts[random(hallucinationBlasts.length)];
+    if (blast === undefined) throw new RangeError('Hallucinated blast selection was outside its range.');
+    return blast;
+}
+

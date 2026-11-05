@@ -7,7 +7,7 @@ import type { NativeRayOptions } from './zap.js';
 import { game } from './gstate.js';
 import { effectiveBreathDamage } from './zap.js';
 
-import { castNativeRay } from './zap.js';
+import { buzz, ubuzz } from './zap.js';
 
 
 const DIRECTIONS = Object.freeze({
@@ -24,7 +24,7 @@ export async function breatheInDirection(direction: string, {
 }: BreathRayOptions = {}) {
     if (!attack) return { used: false, heroDied: false, hits: 0 };
     const type = 20 + effectiveBreathDamage(attack[1]) - 1;
-    return castNativeRay(sourceMonster ? -type : type, attack[2], direction, {
+    return (sourceMonster ? buzz : ubuzz)(sourceMonster ? -type : type, attack[2], direction, {
         ...options, state, sourceMonster,
     });
 }
@@ -34,7 +34,7 @@ export async function castMonsterSpellRay(
     direction: string, originX: number, originY: number,
     attack: MonsterAttack, options: NativeRayOptions = {},
 ) {
-    return castNativeRay(-(10 + attack[1] - 1), attack[2], direction, {
+    return buzz(-(10 + attack[1] - 1), attack[2], direction, {
         ...options, originX, originY,
     });
 }

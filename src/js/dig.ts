@@ -71,7 +71,7 @@ import { cansee, monsterHasLineOfSightToHero, unblock_point, vision_note_blocker
 import { heroAttackBonus, heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { willWeld } from './wield.js';
 import { objectResistsDestruction } from './zap.js';
-import { breakStatue, fractureRock } from './rock_breakage.js';
+import { breakStatue, fractureRock } from './zap.js';
 import { captureRayTraversalFrame } from './zap.js';
 
 import { endObjectBurn } from './timeout.js';

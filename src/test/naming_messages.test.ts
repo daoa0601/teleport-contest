@@ -13,7 +13,7 @@ import {
     VIBRATING_SQUARE, WEB,
 } from '../js/const.js';
 import { use_container } from '../js/pickup.js';
-import { reviveCorpseImmediately } from '../js/corpse_revival.js';
+import { reviveCorpseImmediately } from '../js/do.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { fireDamageObject } from '../js/trap.js';
 import { landFloorObject } from '../js/floor_effects.js';

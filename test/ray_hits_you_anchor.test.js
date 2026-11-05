@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/zap.js';
+import { dobuzz } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 // C zap.c:dobuzz() anchors its "hits you!" line with
@@ -14,7 +14,7 @@ void test('a ray that reaches the hero carries the accessiblemsg anchor of its s
     game.flags.accessiblemsg = true;
     const input = resetInputState();
     installPagerInput(input, { expected: /hits you|whizzes|tingles/, limit: 8 });
-    await castNativeRay(0, 2, 'h', {
+    await dobuzz(0, 2, 'h', {
         state: game,
         originX: 12,
         originY: 10,

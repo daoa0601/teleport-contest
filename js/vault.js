@@ -26,7 +26,7 @@ import { monsterPossessive, monsterSubjectPronoun, monsterIsSilent } from './mon
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './weapon.js';
 import { BOULDER, GOLD_PIECE, ROCK, TIN_WHISTLE } from './object_data.js';
 import { simpleObjectTypeName } from './objnam.js';
-import { fractureRock } from './rock_breakage.js';
+import { fractureRock } from './zap.js';
 import { rn2 } from './rng.js';
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { angerMonster, removeMonsterFromGame, sendMonsterToLimbo, moveMonsterNextToHero } from './mon.js';

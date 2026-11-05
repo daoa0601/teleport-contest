@@ -20,7 +20,7 @@ import { monsterAtPosition } from './steed.js';
 import { mintrap, resetUtrap, deleteTrap, maketrap } from './trap.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './shk.js';
-import { fractureRock } from './rock_breakage.js';
+import { fractureRock } from './zap.js';
 import { isPoolAt } from './dbridge.js';
 import { vision_note_blocker_change } from './vision.js';
 

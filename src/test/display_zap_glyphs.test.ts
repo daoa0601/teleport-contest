@@ -3,7 +3,7 @@ import test from 'node:test';
 import { glyphAt } from '../js/display.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';
 import { game } from '../js/gstate.js';
-import { castNativeRay } from '../js/zap.js';
+import { dobuzz } from '../js/zap.js';
 
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
@@ -18,7 +18,7 @@ void test('an ASCII cold ray keeps its direction and beam type in the displayed 
         assert.equal(glyphAt(11, 10)?.glyph, GlyphOffset.zap + 2 * 4 + 1);
     };
 
-    await castNativeRay(2, 0, 'l');
+    await dobuzz(2, 0, 'l');
 
     assert.ok(frames > 0);
 });

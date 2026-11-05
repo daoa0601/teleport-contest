@@ -45,7 +45,7 @@ import { rn2, rnd, d } from './rng.js';
 import { heroHandName } from './body_parts.js';
 import { tipWornHelmet } from './tip_hat.js';
 import { isRider } from './corpse_species.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseImmediately } from './do.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsUnaware } from './senses.js';
 import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage } from './trap.js';
