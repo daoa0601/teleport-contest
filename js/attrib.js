@@ -1,5 +1,7 @@
-// attrib.js — Hero attributes, exercise, luck, poison, and HP maxima.
-// One TS module per C file: every attrib.c function lives here.
+// attrib.js — the attrib.c home: hero attributes, exercise, luck, poison,
+// HP maxima, and alignment changes.
+// C restore_attrib() is dead code upstream (never called; ATIME is never
+// set non-zero) and is deliberately not ported.
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
@@ -44,37 +46,8 @@ const ATTRIBUTE_NAME = [
 export const ATTRIBUTE_DISPLAY_ORDER = Object.freeze([
     A_STR, A_DEX, A_CON, A_INT, A_WIS, A_CHA,
 ]);
-// C attrib.c:change_luck(). The carried Luck bonus is separate from uluck.
-export function changeHeroLuck(amount, state = game) {
-    state.u.uluck = Math.max(LUCKMIN, Math.min(LUCKMAX, (state.u.uluck ?? 0) + amount));
-}
 function wornObject(state, slot) {
     return state?.[slot] || state?.u?.[slot] || null;
-}
-// C attrib.c:stone_luck(). Sign of the luckstone balance: blessed and
-// (optionally) uncursed luck-conferring stones count against cursed ones.
-export function stoneLuck(includeUncursed, state = game) {
-    let bonchance = 0;
-    for (const item of state.inventory) {
-        if (!confersLuck(item, state))
-            continue;
-        if (item.cursed)
-            bonchance -= item.quan;
-        else if (item.blessed || includeUncursed)
-            bonchance += item.quan;
-    }
-    return Math.sign(bonchance);
-}
-// C attrib.c:set_moreluck(). An inventory change affecting a luck-granting
-// item; callers guard it with confers_luck().
-export function setMoreLuck(state = game) {
-    const luckbon = stoneLuck(true, state);
-    if (!luckbon && !state.inventory.some(item => item.otyp === LUCKSTONE))
-        state.u.moreluck = 0;
-    else if (luckbon >= 0)
-        state.u.moreluck = LUCKADD;
-    else
-        state.u.moreluck = -LUCKADD;
 }
 // Equipment changes the effective value without overwriting the base value.
 export function currentAttribute(attribute, state = game) {
@@ -114,6 +87,8 @@ export function attributeIsAtLimit(attribute, state = game) {
     const value = currentAttribute(attribute, state);
     return attributeLimits(attribute, state).includes(value);
 }
+// C attrib.c:adjattrib(). Adjust one attribute; the message half is split
+// into attributeChangeMessage() below so callers can publish it async.
 export function adjustAttribute(attribute, amount, state = game) {
     requireAttributeIndex(attribute);
     const hero = state.u;
@@ -371,6 +346,36 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
         pagerOwned,
     };
 }
+// C attrib.c:change_luck(). The carried Luck bonus is separate from uluck.
+export function changeHeroLuck(amount, state = game) {
+    state.u.uluck = Math.max(LUCKMIN, Math.min(LUCKMAX, (state.u.uluck ?? 0) + amount));
+}
+// C attrib.c:stone_luck(). Sign of the luckstone balance: blessed and
+// (optionally) uncursed luck-conferring stones count against cursed ones.
+export function stoneLuck(includeUncursed, state = game) {
+    let bonchance = 0;
+    for (const item of state.inventory) {
+        if (!confersLuck(item, state))
+            continue;
+        if (item.cursed)
+            bonchance -= item.quan;
+        else if (item.blessed || includeUncursed)
+            bonchance += item.quan;
+    }
+    return Math.sign(bonchance);
+}
+// C attrib.c:set_moreluck(). An inventory change affecting a luck-granting
+// item; callers guard it with confers_luck().
+export function setMoreLuck(state = game) {
+    const luckbon = stoneLuck(true, state);
+    if (!luckbon && !state.inventory.some(item => item.otyp === LUCKSTONE))
+        state.u.moreluck = 0;
+    else if (luckbon >= 0)
+        state.u.moreluck = LUCKADD;
+    else
+        state.u.moreluck = -LUCKADD;
+}
+// adjattrib()'s message half (msgflg handling), split out for async callers.
 export function attributeChangeMessage(attribute, result, state = game) {
     requireAttributeIndex(attribute);
     if (!result || result.fixed)
@@ -401,9 +406,9 @@ export async function exerciseAttribute(attribute, improving, state = game) {
     if (state.moves > 0 && (attribute === A_STR || attribute === A_CON))
         await encumber_msg(state);
 }
-// C attrib.c:exercise() for Wisdom: exercise never calls encumber_msg().
-// Knowledge and identification can therefore use the same accumulation
-// rule without an input boundary.
+// Sync wrapper over exercise() for Wisdom: exercise(A_WIS, ...) never
+// reaches the encumber_msg() tail, so knowledge and identification can use
+// the same accumulation rule without an input boundary.
 export function exerciseWisdom(improving = true, state = game) {
     accumulateAttributeExercise(A_WIS, improving, state);
 }
@@ -423,7 +428,6 @@ function accumulateAttributeExercise(attribute, improving, state) {
     }
     return true;
 }
-// C attrib.c:exerchk(). Periodic accumulation (exerper) runs at the caller's earlier
 // C attrib.c:exerper().  Hunger is read after gethungry() has applied
 // this turn's decrement, so a completed meal can change the periodic RNG
 // branch even when no other status or monster state changed.
@@ -493,6 +497,17 @@ export async function periodicTurnExercise(sourceTurn) {
             await exerciseAttribute(A_DEX, false);
     }
 }
+// Exercise/abuse text (C attrib.c exertext[]): "You must have been [0]."
+// or "You haven't been [1]."
+const EXERCISE_EXPLANATIONS = {
+    [A_STR]: ['exercising diligently', 'exercising properly'],
+    [A_WIS]: ['very observant', 'paying attention'],
+    [A_DEX]: ['working on your reflexes', 'working on reflexes lately'],
+    [A_CON]: ['leading a healthy life-style', 'watching your health'],
+};
+// C attrib.c:exerchk(). Periodic accumulation (exerper above) runs at the
+// caller's earlier boundary; this owner settles it once the hero's
+// multi-action has ended.
 export async function checkAttributeExercise(sourceTurn, state = game) {
     requirePlayingGame(state);
     if (!Number.isInteger(state._nextAttribCheck))
@@ -1013,12 +1028,6 @@ export async function changeHeroAlignment(newAlignment, reason, state = game) {
         await retouchEquipment(0, { state });
     }
 }
-const EXERCISE_EXPLANATIONS = {
-    [A_STR]: ['exercising diligently', 'exercising properly'],
-    [A_WIS]: ['very observant', 'paying attention'],
-    [A_DEX]: ['working on your reflexes', 'working on reflexes lately'],
-    [A_CON]: ['leading a healthy life-style', 'watching your health'],
-};
 export function requireAttributeIndex(attribute) {
     if (!Number.isInteger(attribute) || attribute < A_STR || attribute > A_CHA)
         throw new RangeError(`Unknown hero attribute ${attribute}`);
