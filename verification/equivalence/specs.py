@@ -241,7 +241,6 @@ ATTRIB = 'js/attrib.js'
 EXPER = 'js/exper.js'
 CONST = 'js/const.js'
 WEAPON_DAMAGE = 'js/weapon.js'
-HIT_BONUS = 'js/uhitm.js'
 POLYSELF = 'js/polyself.js'
 HACK = 'js/hack.js'
 
@@ -307,13 +306,13 @@ SPECS += [
          state=ATTRIBUTES + HUMAN_FORM, nulls=NO_GAUNTLETS, pre=human,
          probes=[('base Strength does not correspond', UnrelatedState(human, ('u.acurr.a[0]',)))],
          mutants=[(WEAPON_DAMAGE, 'if (strength <= 93)', 'if (strength < 93)')]),
-    Spec('abon:human', 'abon', 'heroAttributeHitBonus', [],
-         js_file=HIT_BONUS, js_args=[('obj', 'game')],
+    Spec('abon:human', 'abon', 'heroAttackBonus', [],
+         js_file=WEAPON_DAMAGE, js_args=[('obj', 'game')],
          state=ATTRIBUTES + HUMAN_FORM + ULEVEL, nulls=NO_GAUNTLETS,
          pre=lambda s: human(s) + [s['u.ulevel'] >= 1, s['u.ulevel'] <= 30],
          probes=[('base Dexterity does not correspond', UnrelatedState(
              lambda s: human(s) + [s['u.ulevel'] >= 1, s['u.ulevel'] <= 30], ('u.acurr.a[3]',)))],
-         mutants=[(HIT_BONUS, 'dexterity - 14);', 'dexterity - 13);')]),
+         mutants=[(WEAPON_DAMAGE, 'dexterity - 14);', 'dexterity - 13);')]),
 ]
 
 # Keep the stateful extension separate so the integer/RNG specs stay readable.

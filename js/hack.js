@@ -108,8 +108,7 @@ import { delobj } from './invent.js';
 import { objectBreaksOnImpact } from './dothrow.js';
 import { setPrimaryWeapon } from './wield.js';
 import { hitIronBars, dissolveBars } from './projectile_bars.js';
-import { ensureHeroSkills, useHeroSkill, weaponSkillType } from './skills.js';
-import { weaponDescription } from './weapon.js';
+import { ensureHeroSkills, useHeroSkill, weaponDescription, weaponSkillType } from './weapon.js';
 import { recordGameLogEvent } from './gamelog.js';
 // C hack.c:revive_nasty().
 export async function reviveNastyAt(x, y, message = null, state = game) {

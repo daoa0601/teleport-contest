@@ -1,7 +1,7 @@
 import { RANDOM_CLASS } from './objclass.js';
 import {
     objectBaseWeight, objectDelay, objectBaseDirection, objectSkill, BELL_OF_OPENING,
-    CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, QUARTERSTAFF, OBJ_NAME, oc_level,
+    CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, QUARTERSTAFF, OBJ_NAME, oc_level, OBJECT_SPELL_CATEGORY,
     SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, ROBE,
     SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER,
     SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD,
@@ -28,7 +28,8 @@ import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
 import { mksobj, objectWeight } from './mkobj.js';
 import { deleteObject, chargeUnpaidUsage } from './shk.js';
-import { useHeroSkill, ensureHeroSkills } from './skills.js';
+import { useHeroSkill, ensureHeroSkills, initializedSkills, requiredSkill } from './weapon.js';
+import { recordObjectKnowledge } from './o_init.js';
 import { findArmorClass } from './do_wear.js';
 import {
     canSeeMonster, canSpotMonster, flush_screen, shieldeff,
@@ -717,6 +718,25 @@ function spellLevel(type: number): number {
     if (level === undefined) throw new RangeError(`Object type ${type} has no spell level.`);
     return level;
 }
+
+// C spell.c:skill_based_spellbook_id() grants knowledge without an
+// encounter or Wisdom exercise, and reevaluates every school after a gain.
+export function identifySpellbooks(state: GameState): void {
+    if (state.urole?.key !== 'wizard') return;
+    const skills = initializedSkills(state);
+    for (let type = 0; type < OBJECT_SPELL_CATEGORY.length; type++) {
+        if (!OBJECT_SPELL_CATEGORY[type]) continue;
+        const category = spellSkillType(type, state);
+        const spellLevel = oc_level(type);
+        if (spellLevel === undefined)
+            throw new Error(`Spellbook ${type} has incomplete skill data`);
+        const skill = requiredSkill(skills, category).skill;
+        const level = skill >= P_EXPERT ? 7 : skill === P_SKILLED ? 5
+            : skill === P_BASIC ? 3 : state.u.uroleplay?.pauper ? 0 : 1;
+        if (spellLevel <= level) recordObjectKnowledge(type, state);
+    }
+}
+
 
 // ── spell.c admission: rejectcasting(), spelleffects_check(), spell_backfire(),
 //    percent_success() ──

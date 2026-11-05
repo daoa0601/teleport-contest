@@ -14,7 +14,7 @@ import { AMULET_OF_LIFE_SAVING, BOULDER, HELMET, ROCK, SCR_AMNESIA, SCR_EARTH, S
 import { recordObjectKnowledge } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { applyAreaScrollEffect } from '../js/read.js';
-import { advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance } from '../js/skills.js';
+import { advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance } from '../js/weapon.js';
 import { forceLearnSpell, knownSpell } from '../js/spell.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

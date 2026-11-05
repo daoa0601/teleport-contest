@@ -7,8 +7,8 @@ import { spellSkillType } from '../../js/spell.js';
 import { flushPendingTopline } from '../../js/tty_topline.js';
 import { resetInputState } from '../../js/input.js';
 import {
-    adjustWeaponSkillSlots, advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance, useHeroSkill,
-} from '../../js/skills.js';
+    addHeroWeaponSkillSlots, advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance, useHeroSkill,
+} from '../../js/weapon.js';
 
 export interface SpellTrainingOptions { state?: GameState; input?: InputGate }
 
@@ -42,7 +42,7 @@ export async function trainSpellSkill(type: number, skill: number, { state = gam
     try {
         while (current.skill < skill) {
             const slots = Math.trunc((current.skill + 1) / 2);
-            await adjustWeaponSkillSlots(Math.max(0, slots - (state.u.weapon_slots || 0)), state);
+            await addHeroWeaponSkillSlots(Math.max(0, slots - (state.u.weapon_slots || 0)), state);
             const practice = Math.max(0, practiceNeededToAdvance(current.skill) - current.advance);
             await useHeroSkill(proficiency, practice, { state });
             if (!await advanceHeroSkill(state, proficiency))

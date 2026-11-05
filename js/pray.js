@@ -53,7 +53,7 @@ import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay } from './muse.js';
 import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
-import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './skills.js';
+import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './weapon.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
 import { clearHeroPetrification, feelPetrifyingCorpse, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { animateStatue } from './statue_trap.js';
@@ -1332,7 +1332,7 @@ async function crownHero() {
     }
     else if (!classGift)
         await pline(formatFeltMessage('unworthy.'));
-    await adjustWeaponSkillSlots(1);
+    await addHeroWeaponSkillSlots(1);
 }
 function isWeapon(object) {
     return !!object && (object.oclass === WEAPON_CLASS

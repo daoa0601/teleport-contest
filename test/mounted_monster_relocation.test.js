@@ -10,7 +10,7 @@ import { AMULET_OF_LIFE_SAVING, CORPSE, DIAMOND, RIN_TELEPORT_CONTROL } from '..
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { randomMonsterRelocation } from '../js/teleport.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

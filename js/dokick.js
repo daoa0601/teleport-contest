@@ -23,7 +23,7 @@ import { deleteEngravingAt, wipeHeroEngraving, disturbGrave } from './engrave.js
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { heroHasMartialKick } from './kick_rules.js';
-import { useHeroSkill } from './skills.js';
+import { useHeroSkill } from './weapon.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';

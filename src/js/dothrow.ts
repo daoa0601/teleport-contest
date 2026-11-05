@@ -39,7 +39,7 @@ import {
     TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE,
 } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
-import { weaponHitBonus, dryTowel , rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { weaponHitValue, dryTowel , rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle } from './objnam.js';
@@ -1091,7 +1091,7 @@ export function rangedTargetHitBonus(object: GameObject, defender: Monster, {
         bonus += 6;
     } else if (object.oclass === WEAPON_CLASS || object.oclass === GEM_CLASS
         || isWeaponTool(object)) {
-        bonus += weaponHitBonus(object, defender, { state, random, rollOne });
+        bonus += weaponHitValue(object, defender, { state, random, rollOne });
     }
     return bonus;
 }

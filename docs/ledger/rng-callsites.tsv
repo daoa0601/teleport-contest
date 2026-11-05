@@ -2171,8 +2171,6 @@ src/js/sit.ts	sitWhileTrapped	rn2	"[""10""]"	constant
 src/js/sit.ts	sitWhileTrapped	rn2	"[""2""]"	constant
 src/js/sit.ts	sitWhileTrapped	rn2	"[""5""]"	constant
 src/js/sit.ts	sitWhileTrapped	rnd	"[""4""]"	constant
-src/js/skills.ts	drainHeroWeaponSkills	rn2	"[""current - previous""]"	unproved
-src/js/skills.ts	drainHeroWeaponSkills	rn2	"[""record.length""]"	unproved
 src/js/trap.ts	trapeffectSlpGasTrap	rollOne	"[""25""]"	constant
 src/js/special_location.ts	get_location	rn2	"[""sx""]"	unproved
 src/js/special_location.ts	get_location	rn2	"[""sy""]"	unproved
@@ -2414,6 +2412,8 @@ src/js/zap.ts	zapEngraving	d	"[""2"", ""4""]"	constant
 src/js/zap.ts	zapEngraving	d	"[""2"", ""4""]"	constant
 src/js/dothrow.ts	rangedTargetHitBonus	random	"[""10""]"	constant
 src/js/uhitm.ts	mhitm_ad_phys	random	"[""4""]"	constant
+src/js/weapon.ts	drainHeroWeaponSkills	rn2	"[""current - previous""]"	unproved
+src/js/weapon.ts	drainHeroWeaponSkills	rn2	"[""record.length""]"	unproved
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""4""]"	constant
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""6""]"	constant
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollOne	"[""4""]"	constant

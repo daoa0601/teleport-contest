@@ -11,7 +11,7 @@ import { makeStunned } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_DIG, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HEALING, SPE_SLEEP, SPE_TURN_UNDEAD, } from '../js/object_data.js';
 import { applyNethackrc, doOptions } from '../js/options.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { selectSpellToCast, viewKnownSpells } from '../js/spell.js';
 import { freshObjectRoom } from './support/object-room.js';

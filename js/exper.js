@@ -13,7 +13,7 @@ import { see_monsters } from './display.js';
 import { rankAchievement, recordAchievement } from './insight.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, } from './monster_data.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, revokeIntrinsicProperty, } from './properties.js';
-import { adjustWeaponSkillSlots } from './skills.js';
+import { addHeroWeaponSkillSlots, loseHeroWeaponSkillSlots } from './weapon.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
 import { heroResistsLifeDrain } from './mondata.js';
 import { monsterHitPointsPerLevel } from './makemon.js';
@@ -217,7 +217,10 @@ export async function adjustLevelAbilities(oldLevel, newLevel, publish = plineWi
     await adjustAbilities(ROLE_LEVEL_ABILITIES[state.urole.key] || [], 'experience', oldLevel, newLevel, publish);
     await adjustAbilities(state.urace.name === 'elf' || state.urace.name === 'orc'
         ? RACE_LEVEL_ABILITIES[state.urace.name] || [] : [], 'race', oldLevel, newLevel, publish);
-    await adjustWeaponSkillSlots(newLevel - oldLevel, game);
+    if (newLevel > oldLevel)
+        await addHeroWeaponSkillSlots(newLevel - oldLevel, game);
+    else if (newLevel < oldLevel)
+        await loseHeroWeaponSkillSlots(oldLevel - newLevel, game);
 }
 // C exper.c:losexp(). A null drainer loses experience without killing a
 // level-one hero; named drain can end the game before HP/power loss.

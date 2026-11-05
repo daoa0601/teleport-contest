@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { artifactObject } from './support/game-objects.js';
 import { invokeInventoryObject } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';

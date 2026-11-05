@@ -4,7 +4,7 @@ import { forceLearnSpell } from '../../js/spell.js';
 import { spellSkillType } from '../../js/spell.js';
 import { flushPendingTopline } from '../../js/tty_topline.js';
 import { resetInputState } from '../../js/input.js';
-import { adjustWeaponSkillSlots, advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance, useHeroSkill, } from '../../js/skills.js';
+import { addHeroWeaponSkillSlots, advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance, useHeroSkill, } from '../../js/weapon.js';
 // Divine teaching creates the same memorized entry as play. Practice and
 // advancement establish live proficiency without replacing spell metadata.
 export async function learnSpell(type, { skill = P_BASIC, state = game } = {}) {
@@ -39,7 +39,7 @@ export async function trainSpellSkill(type, skill, { state = game, input } = {})
     try {
         while (current.skill < skill) {
             const slots = Math.trunc((current.skill + 1) / 2);
-            await adjustWeaponSkillSlots(Math.max(0, slots - (state.u.weapon_slots || 0)), state);
+            await addHeroWeaponSkillSlots(Math.max(0, slots - (state.u.weapon_slots || 0)), state);
             const practice = Math.max(0, practiceNeededToAdvance(current.skill) - current.advance);
             await useHeroSkill(proficiency, practice, { state });
             if (!await advanceHeroSkill(state, proficiency))

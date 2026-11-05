@@ -100,7 +100,7 @@ import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout } from './senses.js';
 import { addShopDamage, billDummyObject, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
 import { flashBurn } from './zap.js';
-import { ensureHeroSkills } from './skills.js';
+import { ensureHeroSkills, uwepSkillType } from './weapon.js';
 import { castSpell, knownSpell } from './spell.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -2369,23 +2369,12 @@ function heroIsImpaired(state) {
     const stunned = !!state.u?.stunned || (state.u?.stunnedTurns ?? 0) > 0;
     return confused || stunned || heroIsHallucinating(state);
 }
-// C apply.c calc_pole_range() reads the hero's skill through
-// wield.c uwep_skill_type(): dual wielding uses the two-weapon skill and
-// otherwise the wielded item's own class, so Snickersnee (a katana)
-// measures reach with sword skill, not polearm skill.
-function weaponSkillType(weapon, state) {
-    if (state.u?.twoweap)
-        return P_TWO_WEAPON_COMBAT;
-    if (!weapon)
-        return 0;
-    if (weapon.oclass !== WEAPON_CLASS &&
-        weapon.oclass !== TOOL_CLASS &&
-        weapon.oclass !== GEM_CLASS)
-        return 0;
-    return Math.abs(objectSkill(weapon.otyp));
-}
+// C apply.c:calc_pole_range() reads the hero's skill through weapon.c
+// uwep_skill_type() (weapon.js uwepSkillType): dual wielding uses the
+// two-weapon skill and otherwise the wielded item's own class, so
+// Snickersnee (a katana) measures reach with sword skill, not polearm skill.
 function calcPoleRange(weapon, { state = game } = {}) {
-    const skillType = weaponSkillType(weapon, state);
+    const skillType = uwepSkillType(weapon, state);
     const level = skillType === 0 ? 0 : (ensureHeroSkills(state)?.[skillType]?.skill ?? 0);
     let max = 4;
     if (!(skillType === 0 || level <= P_BASIC))

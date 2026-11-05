@@ -23,8 +23,7 @@ import { gameLogEvents, isSpoilerGameLogEvent, recordGameLogEvent } from './game
 import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, } from './const.js';
 import { simpleArmorName, fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL, } from './object_data.js';
-import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType, } from './skills.js';
-import { weaponDescription } from './weapon.js';
+import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponDescription, weaponSkillType, } from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';

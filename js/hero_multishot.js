@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
 import { rnd } from './rng.js';
 import { isQuestArtifact } from './quest.js';
-import { ensureHeroSkills } from './skills.js';
+import { ensureHeroSkills } from './weapon.js';
 function weakMultishot(role, skill, state) {
     return role === 'wizard' || role === 'priest'
         || (role === 'healer' && skill !== P_KNIFE)

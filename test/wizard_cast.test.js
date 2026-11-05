@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { P_ESCAPE_SPELL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshCasterRoom } from './support/hero-state.js';
 void test('wizard casting reaches an unknown spell on the second page without energy or practice', async () => {

@@ -4,7 +4,7 @@ import { A_WIS, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_EXPERT } from '../js/const
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { SPE_LIGHT, SPE_PROTECTION } from '../js/object_data.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { castSpell, forceLearnSpell } from '../js/spell.js';
 import { viewKnownSpells } from '../js/spell.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -3,7 +3,7 @@ import z3
 
 from csym import CArray, CElement, CPtr, CState, CVal, convert
 from jssym import V
-from specs import (ATTRIBUTES, ATTRIB, HIT_BONUS, HUMAN_FORM, INT,
+from specs import (ATTRIBUTES, ATTRIB, HUMAN_FORM, INT,
                    INT_MAX, LONG, SCHAR, Spec, ULEVEL, UnrelatedState,
                    WEAPON_DAMAGE, int_argument)
 from state_world import (native_objects, AT_ENGL, AT_WEAP,
@@ -39,7 +39,7 @@ STATE_JS_FILES = (
     'js/artifact_data.js', 'js/makemon.js', 'js/polyself.js', 'js/dungeon.js',
     'js/mon.js', 'js/monmove.js', 'js/hack.js', 'js/mkobj.js',
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
-    'js/cmd.js', 'js/skills.js', 'js/mondata.js', 'js/objnam.js', 'js/o_init.js',
+    'js/cmd.js', 'js/mondata.js', 'js/objnam.js', 'js/o_init.js',
     'js/object_properties.js', 'js/glyph_numbers.js', 'js/getpos.js',
     'js/display.js', 'js/senses.js', 'js/objclass.js',
 )
@@ -88,19 +88,19 @@ STATE_SPECS = [
 ]
 
 STATE_SPECS += [
-    Spec('abon:forms', 'abon', 'heroAttributeHitBonus', [],
+    Spec('abon:forms', 'abon', 'heroAttackBonus', [],
          assumptions=HERO_ASSUMPTIONS + (
              'dungeon.c:level_difficulty: assumed equal pure xint16 result in 1..32767',
              'monst.h:mvitals.died: corresponding Wizard death count; other JS counters are independent uchar values',
          ),
-         require_counterexamples=True, slow=True, js_file=HIT_BONUS, js_args=[('obj', 'game')],
+         require_counterexamples=True, slow=True, js_file=WEAPON_DAMAGE, js_args=[('obj', 'game')],
          state=HERO + ULEVEL + [('svm.mvitals[PM_WIZARD_OF_YENDOR].died', (8, False), None)],
          references=WORN, configure=hit_bonus_state,
          pre=lambda s: [s['u.ulevel'] >= 1, s['u.ulevel'] <= 30],
          probes=[('base Dexterity correspondence omitted', UnrelatedState(
              lambda s: [s['u.ulevel'] >= 1, s['u.ulevel'] <= 30,
                         s['u.umonnum'] == s['u.umonster']], ('u.acurr.a[3]',)))],
-         mutants=[(HIT_BONUS, 'adjustedMonsterLevel(heroSpecies(state)) - 3',
+         mutants=[(WEAPON_DAMAGE, 'adjustedMonsterLevel(heroSpecies(state)) - 3',
                    'adjustedMonsterLevel(heroSpecies(state)) - 2'),
                   ('js/makemon.js', 'monsterDeathCount(mnum);', 'monsterDeathCount(mnum + 1);')]),
 ]
@@ -403,28 +403,28 @@ WEAPON_BONUS_ASSUMPTIONS = (
 
 STATE_SPECS += [
     Spec('weapon_hit_bonus:state', 'weapon_hit_bonus', 'weaponSkillHitBonus',
-         WEAPON_BONUS_PARAMS, js_file='js/skills.js', require_counterexamples=True,
+         WEAPON_BONUS_PARAMS, js_file='js/weapon.js', require_counterexamples=True,
          state=WEAPON_BONUS_STATE, enum_state=ROLE_ENUM, configure=skill_bonus_state,
          arguments=skill_bonus_arguments, pre=skill_bonus_domain,
          assumptions=WEAPON_BONUS_ASSUMPTIONS,
          probes=[('riding skill correspondence omitted', UnrelatedState(
              lambda s: skill_bonus_domain(s) + [s['usteed_present'] == 1],
              ('u.weapon_skills[37].skill',)))],
-         mutants=[('js/skills.js', 'bonus = level <= P_UNSKILLED ? -4 : level === P_BASIC ? 0',
+         mutants=[('js/weapon.js', 'bonus = level <= P_UNSKILLED ? -4 : level === P_BASIC ? 0',
                    'bonus = level <= P_UNSKILLED ? -5 : level === P_BASIC ? 0'),
-                  ('js/skills.js', 'if (riding <= P_UNSKILLED)\n            bonus -= 2;',
+                  ('js/weapon.js', 'if (riding <= P_UNSKILLED)\n            bonus -= 2;',
                    'if (riding <= P_UNSKILLED)\n            bonus -= 3;')]),
     Spec('weapon_dam_bonus:state', 'weapon_dam_bonus', 'weaponSkillDamageBonus',
-         WEAPON_BONUS_PARAMS, slow=True, js_file='js/skills.js', require_counterexamples=True,
+         WEAPON_BONUS_PARAMS, slow=True, js_file='js/weapon.js', require_counterexamples=True,
          state=WEAPON_BONUS_STATE, enum_state=ROLE_ENUM, configure=skill_bonus_state,
          arguments=skill_bonus_arguments, pre=skill_bonus_domain,
          assumptions=WEAPON_BONUS_ASSUMPTIONS,
          probes=[('riding skill correspondence omitted', UnrelatedState(
              lambda s: skill_bonus_domain(s) + [s['usteed_present'] == 1],
              ('u.weapon_skills[37].skill',)))],
-         mutants=[('js/skills.js', ': level === P_SKILLED ? 1 : level === P_EXPERT ? 2 : -2;',
+         mutants=[('js/weapon.js', ': level === P_SKILLED ? 1 : level === P_EXPERT ? 2 : -2;',
                    ': level === P_SKILLED ? 1 : level === P_EXPERT ? 3 : -2;'),
-                  ('js/skills.js', 'if (riding === P_SKILLED)\n            bonus++;',
+                  ('js/weapon.js', 'if (riding === P_SKILLED)\n            bonus++;',
                    'if (riding === P_BASIC)\n            bonus++;')]),
 ]
 
@@ -742,7 +742,7 @@ STATE_SPECS += [
                    'return objectIsCorrodeable(object);')]),
     Spec('weapon_type:tables', 'weapon_type', 'weaponSkillType',
          [('weapon_present', INT)],
-         js_file='js/skills.js', state=[('weapon.oclass', (8, True), 'weapon.oclass'),
+         js_file='js/weapon.js', state=[('weapon.oclass', (8, True), 'weapon.oclass'),
                                         ('weapon.otyp', (16, True), 'weapon.otyp')],
          assumptions=OBJECT_PREDICATE_ASSUMPTIONS[:1] + (
              'weapon.c:weapon_type reads objects[otyp].oc_skill; object_data.js OBJECT_SUBTYPE keeps that column, including the negative launcher/ammo entries the port passes through Math.abs',
@@ -754,9 +754,9 @@ STATE_SPECS += [
          probes=[('otyp correspondence omitted', UnrelatedState(
              lambda s: [s['weapon_present'] >= 0, s['weapon_present'] <= 1,
                         s['weapon_present'] == 1], ('weapon.otyp',)))],
-         mutants=[('js/skills.js', 'if (![WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(weapon.oclass))',
+         mutants=[('js/weapon.js', 'if (![WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(weapon.oclass))',
                    'if (![WEAPON_CLASS, TOOL_CLASS].includes(weapon.oclass))'),
-                  ('js/skills.js', 'return Math.abs(skill);', 'return skill;')]),
+                  ('js/weapon.js', 'return Math.abs(skill);', 'return skill;')]),
 ]
 
 # ---- fv-equivalence-batch-6: the obj.h/objclass.h object-class predicates ----

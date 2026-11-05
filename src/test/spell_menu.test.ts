@@ -16,7 +16,7 @@ import {
     SPE_HEALING, SPE_SLEEP, SPE_TURN_UNDEAD,
 } from '../js/object_data.js';
 import { applyNethackrc, doOptions } from '../js/options.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { selectSpellToCast, viewKnownSpells } from '../js/spell.js';
 import { freshObjectRoom } from './support/object-room.js';

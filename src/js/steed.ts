@@ -44,7 +44,7 @@ import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './do_wear.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
-import { useHeroSkill } from './skills.js';
+import { useHeroSkill } from './weapon.js';
 import { teleds, randomMonsterRelocation, relocateMonsterTo, enexto } from './teleport.js';
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './do.js';

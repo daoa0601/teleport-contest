@@ -9,7 +9,7 @@ import { startHeroPetrification } from '../js/stoning.js';
 import { advanceHeroSickness } from '../js/timeout.js';
 import { startHeroSickness } from '../js/potion.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { DAGGER, GOLD_PIECE, LONG_SWORD, LUCKSTONE } from '../js/object_data.js';
 import { ENL_GAMEOVERDEAD, M_AP_OBJECT, P_BASIC, POOL, P_DAGGER, P_LONG_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, } from '../js/const.js';
 import { addInventoryObject } from './support/game-objects.js';

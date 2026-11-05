@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';

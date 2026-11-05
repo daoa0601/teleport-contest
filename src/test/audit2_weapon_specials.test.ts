@@ -14,11 +14,9 @@ import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { artifactByName } from '../js/artifacts.js';
 import { nameToMonster } from '../js/mondata.js';
-import { ensureHeroSkills, weaponSkillDamageBonus, weaponSkillHitBonus } from '../js/skills.js';
-import { rollPhysicalWeaponDamage, weaponHitBonus } from '../js/weapon.js';
+import { ensureHeroSkills, rollPhysicalWeaponDamage, selectHandToHandWeapon, selectMonsterRangedWeapon, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus } from '../js/weapon.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { selectHandToHandWeapon, selectMonsterRangedWeapon } from '../js/weapon.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -44,8 +42,8 @@ void test('a mattock shares the pick accuracy bonus against an earth elemental',
     const elemental = await createMonsterAt('earth elemental', 10, 8, NO_MINVENT);
     const gnome = await createMonsterAt('gnome lord', 10, 7, NO_MINVENT);
 
-    assert.equal(weaponHitBonus(mattock, elemental)
-        - weaponHitBonus(mattock, gnome), 2);
+    assert.equal(weaponHitValue(mattock, elemental)
+        - weaponHitValue(mattock, gnome), 2);
 });
 
 // C weapon.c:dmgval(): "negative enchantment mustn't produce negative damage"

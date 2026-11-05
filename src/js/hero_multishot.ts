@@ -22,7 +22,7 @@ import {
 } from './object_properties.js';
 import { rnd } from './rng.js';
 import { isQuestArtifact } from './quest.js';
-import { ensureHeroSkills } from './skills.js';
+import { ensureHeroSkills } from './weapon.js';
 
 export interface HeroVolleyOptions {
     state?: GameState;

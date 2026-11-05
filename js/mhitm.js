@@ -33,7 +33,7 @@ import { monsterObjectPronoun, monsterPossessive, monsterPolymorphsWhenStoned, m
 import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
 import { swingMonsterWeapon } from './mhitu.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from './weapon.js';
-import { weaponHitBonus } from './weapon.js';
+import { weaponHitValue } from './weapon.js';
 import { getmattk } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { trapAt, mintrap, damageObjectWithAcid, erodeArmor } from './trap.js';
@@ -337,7 +337,7 @@ export async function attackMonsterWithMonster(aggressor, defender, { state, ran
             if (weapon) {
                 if (visible)
                     await swingMonsterWeapon(aggressor, weapon, state, { defender, random });
-                threshold += weaponHitBonus(weapon, defender, { state, random, rollOne });
+                threshold += weaponHitValue(weapon, defender, { state, random, rollOne });
             }
             const attackThreshold = threshold;
             let roll = 0;
@@ -353,7 +353,7 @@ export async function attackMonsterWithMonster(aggressor, defender, { state, ran
             }
             // Native hitval is evaluated again, including its artifact rolls.
             if (weapon)
-                threshold -= weaponHitBonus(weapon, defender, { state, random, rollOne });
+                threshold -= weaponHitValue(weapon, defender, { state, random, rollOne });
             const unsolid = monsterIsUnsolid(defender);
             const failedGrab = hit && (isHug ? unsolid || target.notOnHead
                 : unsolid && [AD_WRAP, AD_STCK, AD_DGST].includes(attack.damageType));

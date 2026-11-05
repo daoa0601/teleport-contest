@@ -11,8 +11,7 @@ import { resolveMonsterLiquid } from './mon.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
-import { wieldMonsterWeapon } from './weapon.js';
-import { ensureHeroSkills } from './skills.js';
+import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';
 import { rn2 } from './rng.js';
 import { speciesHasWeaponAttack } from './mondata.js';
 function familiarSpecies(object, state) {

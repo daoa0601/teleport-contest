@@ -7,7 +7,7 @@ import { pushKeys } from '../js/input.js';
 import { SPE_TELEPORT_AWAY } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { forceLearnSpell } from '../js/spell.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { teleportHeroAtWill } from '../js/teleport.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
