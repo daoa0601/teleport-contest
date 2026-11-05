@@ -51,7 +51,7 @@ import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './cmd.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { chargeUnpaidUsage, addShopDamage, payForShopDamage, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
-import { hasIntrinsicProperty, hasWornProperty } from './properties.js';
+import { hasIntrinsicProperty, hasTimedProperty, hasWornProperty } from './properties.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
 import { showInventoryWindow } from './windows.js';
@@ -515,10 +515,11 @@ export async function hitMonsterWithWand(monster, wand, { state = game, x = mons
 // && (See_invisible || Detect_monsters)) || (!Blind
 // && (HTelepat & ~INTRINSIC) && mdistu(mon) <= BOLT_LIM * BOLT_LIM)).
 // prop.h INTRINSIC = FROMOUTSIDE|FROMRACE|FROMEXPER, so HTelepat & ~INTRINSIC
-// is telepathy held through the polymorphed form only (polyself.c
-// PROPSET(TELEPAT, telepathic(mdat))); worn extrinsic telepathy (ETelepat:
-// ring, helm of telepathy, amulet of ESP) and plain gained intrinsics do
-// not qualify.
+// keeps the polymorphed form's telepathy (polyself.c PROPSET(TELEPAT,
+// telepathic(mdat))) and a #wizintrinsic timeout (TIMEOUT bits; timeout.c
+// notes TELEPAT only times out that way); worn extrinsic telepathy (ETelepat:
+// helm of telepathy, amulet of ESP) and plain gained intrinsics do not
+// qualify.
 function knownInvisible(monster, state = game) {
     if (!monster.minvis)
         return false;
@@ -527,7 +528,9 @@ function knownInvisible(monster, state = game) {
         && (hero.seeInvisible || (hero.seeInvisibleTurns ?? 0) > 0
             || heroDetectsMonsters(state)))
         return true;
-    if (heroIsBlind(state) || !hasIntrinsicProperty('telepathy', 'form', state))
+    const inRangeTelepathy = hasTimedProperty('telepathy', state)
+        || hasIntrinsicProperty('telepathy', 'form', state);
+    if (heroIsBlind(state) || !inRangeTelepathy)
         return false;
     const distance = (monster.mx - hero.ux) ** 2 + (monster.my - hero.uy) ** 2;
     return distance <= BOLT_LIM ** 2;

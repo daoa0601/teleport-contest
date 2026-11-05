@@ -12,8 +12,10 @@ import {
     OBJECT_NAMES, POT_INVISIBILITY, POT_MONSTER_DETECTION, SPE_INVISIBILITY, WAN_MAKE_INVISIBLE,
 } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { vision_recalc } from '../js/vision.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { castSpell } from '../js/spell.js';
+import { runExtendedCommand } from './support/commands.js';
 import { learnSpell } from './support/spells.js';
 import { dozap } from '../js/zap.js';
 import {
@@ -173,19 +175,65 @@ void test('a worn amulet of ESP still says the zapped monster vanishes', async (
     assert.equal(await topline(), 'The jackal vanishes!');
 });
 
-// HTelepat & ~INTRINSIC is the polymorphed form's telepathy (polyself.c
-// PROPSET(TELEPAT, telepathic(mdat))); a mind-flayer hero within BOLT_LIM
-// learns the wand from "turns transparent!".
-void test('a polymorphed mind-flayer hero sees the zapped monster turn transparent', async () => {
+// HTelepat & ~INTRINSIC includes the polymorphed form's telepathy
+// (polyself.c PROPSET(TELEPAT, telepathic(mdat))). Mind flayers also
+// perceive (M1_SEE_INVIS), so a lit square would take the See_invisible
+// branch first; a dark target square keeps cansee() false and forces the
+// telepathy branch. The form's M3_INFRAVISION still names the jackal.
+void test('a polymorphed mind-flayer hero senses a dark monster turn transparent', async () => {
     freshGameplayRoom();
     requireFixtureGame(game);
     setHeroSpecies(MONSTER_NAME.indexOf('mind flayer'), game);
+    const level = game.level;
+    if (!level) throw new Error('The gameplay room needs a level');
+    for (let x = 8; x <= 18; x++)
+        for (let y = 8; y <= 12; y++) level.requireAt(x, y).lit = false;
     await createMonsterAt('jackal', 12, 10);
-    const wand = await chargedWand(WAN_MAKE_INVISIBLE, { charges: 2 });
+    await vision_recalc(0);
+    const wand = await chargedWand(WAN_MAKE_INVISIBLE, { charges: 2, typeKnown: false });
     game.inventory = [wand];
     pushKeys('al');
 
     await dozap();
 
     assert.equal(await topline(), 'The jackal turns transparent!');
+    assert.equal(objectTypeKnown(wand), true);
+});
+
+// A #wizintrinsic telepathy timeout also lives in the intrinsic mask's
+// TIMEOUT bits, which HTelepat & ~INTRINSIC keeps (timeout.c lists TELEPAT
+// among the wizard-mode-only timed properties).
+void test('a wizard-mode telepathy timeout says the zapped monster turns transparent', async () => {
+    freshGameplayRoom({ flags: { debug: true } });
+    requireFixtureGame(game);
+    const input = resetInputState();
+    const action = runExtendedCommand('wizintrinsic', '');
+    let settled = false;
+    void action.finally(() => { settled = true; });
+    let selected = false;
+    for (let step = 0; step < 40 && !settled; step++) {
+        await Promise.race([input.waitUntilBlocked(), action]);
+        if (settled) break;
+        const text = requireGameDisplay().grid
+            .map(row => row.map(cell => cell.ch).join('')).join('\n');
+        const entry = selected ? null : text.match(/^\s*([a-zA-Z]) - telepathic/m);
+        if (entry) {
+            selected = true;
+            input.feed(entry[1] ?? '');
+        } else {
+            input.feed(text.includes('--More--') ? ' ' : selected ? '\n' : ' ');
+        }
+    }
+    await action;
+    assert.ok((game.u.telepathyTurns ?? 0) > 0, 'the wizard menu grants timed telepathy');
+    resetInputState();
+    await createMonsterAt('jackal', 12, 10);
+    const wand = await chargedWand(WAN_MAKE_INVISIBLE, { charges: 2, typeKnown: false });
+    game.inventory = [wand];
+    pushKeys('al');
+
+    await dozap();
+
+    assert.equal(await topline(), 'The jackal turns transparent!');
+    assert.equal(objectTypeKnown(wand), true);
 });
