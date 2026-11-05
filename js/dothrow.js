@@ -2,7 +2,7 @@
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, } from './object_data.js';
+import { objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { isWeaponTool, isMissileObject } from './object_properties.js';
 import { RUBBER_HOSE, OBJ_NAME } from './object_data.js';
@@ -14,15 +14,15 @@ import { currentAttribute, changeHeroLuck } from './attrib.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { artifactById } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm } from './polyself.js';
-import { isLauncherAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
+import { isLauncherAmmunition, isPolearm, isThrowingWeapon, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
 import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
 import { weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills } from './weapon.js';
-import { autoquiverCandidate } from './quiver.js';
+import { quiverObjectClass } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject } from './invent.js';
-import { objectMaterial } from './o_init.js';
+import { objectMaterial, objectTypeKnown } from './o_init.js';
 import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
@@ -372,6 +372,61 @@ async function finishOrdinaryMapPotionKill(monster, death = {}) {
 }
 export async function dothrow(selectedItem = null) {
     await throwCommand(selectedItem);
+}
+// C dothrow.c:autoquiver().  The four buckets deliberately have different
+// overwrite policies and final precedence.  This is not a first-match or
+// generic-throwability search.
+export function autoquiverCandidate(state) {
+    if (state.uquiver)
+        return state.uquiver;
+    let currentAmmo = null;
+    let missile = null;
+    let alternateAmmo = null;
+    let miscellaneous = null;
+    const currentSling = !!state.uwep && objectSkill(state.uwep.otyp) === P_SLING;
+    for (const item of state.inventory || []) {
+        if (item.owornmask || item.worn || item.wielded
+            || item.alternate || item.ready
+            || item === state.uwep || item === state.uswapwep
+            || item.oartifact || item.artifact || !item.dknown) {
+            continue;
+        }
+        const objectClass = quiverObjectClass(item);
+        const knownType = objectTypeKnown(item, state);
+        const ordinarySlingStone = item.otyp === ROCK
+            || (item.otyp === FLINT && knownType)
+            || (objectClass === GEM_CLASS
+                && objectMaterial(item.otyp) === 19 && knownType);
+        if (ordinarySlingStone) {
+            if (currentSling)
+                currentAmmo = item;
+            else if (launcherMatchesAmmo(item, state.uswapwep))
+                alternateAmmo = item;
+            else if (!miscellaneous)
+                miscellaneous = item;
+        }
+        else if (objectClass === GEM_CLASS) {
+            continue;
+        }
+        else if (isLauncherAmmunition(item)) {
+            if (launcherMatchesAmmo(item, state.uwep))
+                currentAmmo = item;
+            else if (launcherMatchesAmmo(item, state.uswapwep))
+                alternateAmmo = item;
+            else
+                miscellaneous = item;
+        }
+        else if (isMissileObject(item)) {
+            missile = item;
+        }
+        else if (objectClass === WEAPON_CLASS && isThrowingWeapon(item)) {
+            if (objectSkill(item.otyp) === P_DAGGER && !missile)
+                missile = item;
+            else if (item.otyp !== AKLYS)
+                miscellaneous = item;
+        }
+    }
+    return currentAmmo || missile || alternateAmmo || miscellaneous;
 }
 // C dothrow.c:throw_obj().  Also C artifact.c:is_art(): inlined here; the
 // Mjollnir checks (wielded before throwing, strength minimum, getobj
