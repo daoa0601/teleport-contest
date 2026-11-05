@@ -30,14 +30,14 @@ import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hurtleHero, hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
-import { gotoLevel, deliverSpecialLevelMessages, placeHeroAtRandomArrival } from './level_change.js';
+import { gotoLevel, deliverSpecialLevelMessages } from './level_change.js';
 import { resolveHeroArrivalCollision } from './do.js';
 import { levelTeleport } from './level_teleport.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip, checkSpecialRoom } from './hack.js';
-import { depth, dungeonDepth, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt } from './dungeon.js';
+import { depth, dungeonDepth, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
 import { mksobj, unlinkObject, deallocateObject } from './mkobj.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { recordObjectEncounter, objectTypeKnown } from './o_init.js';
@@ -547,7 +547,7 @@ async function makemapPrepost(pre, wasInsideTower, pets = []) {
     const region = stayInsideTower
         ? game._activeSpecialLevel?.downTeleportExclude
         : up ? level.upTeleportRegion : level.downTeleportRegion;
-    await placeHeroAtRandomArrival(region, !stayInsideTower && up);
+    await u_on_rndspot(region, !stayInsideTower && up);
     await deliverMigratingMonsters(game, pets);
     if (game.program_state.gameover)
         return [];

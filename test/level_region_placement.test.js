@@ -5,7 +5,7 @@ import { place_lregion } from '../js/mkmaze.js';
 import { game } from '../js/gstate.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { placeHeroAtRandomArrival } from '../js/level_change.js';
+import { u_on_rndspot } from '../js/dungeon.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createSpecialLevel } from './support/topology.js';
@@ -15,7 +15,7 @@ void test('random arrival resets the old position on entry to a different level'
             uz: { dnum: 0, dlevel: 2 }, uz0: { dnum: 0, dlevel: 1 },
             ux0: 30, uy0: 15,
         } });
-    const arrival = await placeHeroAtRandomArrival({ lx: 12, ly: 10, hx: 12, hy: 10 });
+    const arrival = await u_on_rndspot({ lx: 12, ly: 10, hx: 12, hy: 10 });
     assert.equal(game.u.ux0, arrival.x);
     assert.equal(game.u.uy0, arrival.y);
 });

@@ -1,5 +1,5 @@
 import { publishHeardMessage } from './hero_speech.js';
-import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord } from './dungeon.js';
+import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom } from './hack.js';
 import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, getLine, promptYesNo, rhack, dolookaround } from './cmd.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
@@ -32,7 +32,7 @@ import { heroCanTeleport, randomMonsterRelocation, teleportHero, askTeleportDest
 import { moveMonsterNextToHero } from './mon.js';
 import { runDueTimers } from './timeout.js';
 import { askKeepRestoredSave, restoreMonsterCover } from './save.js';
-import { placeHeroAtRandomArrival, finishScheduledLevelChange } from './level_change.js';
+import { finishScheduledLevelChange } from './level_change.js';
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion, monsterIsAnimal, monsterIsNonliving } from './mondata.js';
@@ -168,9 +168,8 @@ async function showLegacy() {
     await nhgetch();
 }
 // C allmain.c:welcome(). Greeting, chronicle entry, and restore reminders
-// share the hero's innate identity even while another body is active.
-// Also C dungeon.c:print_level_annotation(): inlined here (the restore
-// reminder, like in goto_level()).
+// share the hero's innate identity even while another body is active; the
+// restore reminder is dungeon.c:print_level_annotation().
 export async function welcome(newGame) {
     const g = requireInitializedGame();
     await currentLuaLifecycle().callCore(g, newGame ? 'start_new_game' : 'restore_old_game');
@@ -210,9 +209,7 @@ export async function welcome(newGame) {
         await plineWithContinuation(`It is ${temperature > 0 ? 'hot' : 'cold'} here.`);
     if (In_hell(g.u.uz) && temperature > 0)
         await plineWithContinuation(`You ${heroHasOlfaction(g) ? 'smell' : 'sense'} smoke...`);
-    const annotation = g._levelAnnotations?.get(`${g.u.uz.dnum}:${g.u.uz.dlevel}`);
-    if (annotation)
-        await plineWithContinuation(`You remember this level as ${annotation}.`);
+    await printLevelAnnotation(g);
 }
 async function showInlineMore(message) {
     await plineWithContinuation(message);
@@ -394,7 +391,7 @@ async function enterTutorial() {
     game.vision_full_recalc = 0;
     // goto_level() arrives through u_on_rndspot(), even when Lua restricts
     // the region to a single square.
-    await placeHeroAtRandomArrival(game.level.downTeleportRegion);
+    await u_on_rndspot(game.level.downTeleportRegion);
     const tutorialLevel = game.level;
     const tutorialStairs = game.stairs;
     const tutorialPosition = {

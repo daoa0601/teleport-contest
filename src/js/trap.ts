@@ -130,7 +130,7 @@ import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, finishLiquidDeath, pickEmergencyDrop, reviveHeroFromLiquid, teleportHeroOutOfLiquid, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER } from './hack.js';
 import type { EmergencyDisrobe, HeroLiquidOptions, LavaSinkingResult } from './hack.js';
-import { depth, dungeonDepth, surfaceName, ceilingName } from './dungeon.js';
+import { depth, dungeonDepth, find_hell, surfaceName, ceilingName } from './dungeon.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
@@ -6699,8 +6699,7 @@ export async function prepareHoleFall(trap: Trap | null | undefined, { tookPlung
     if (game.u.ushops?.length) await shopDig(1);
     const current = game.u.uz;
     if (Is_stronghold(current)) {
-        if (!game.valley_level) throw new Error('A Castle trapdoor requires the Valley destination');
-        return { destination: { ...game.valley_level }, arrival: flying ? 'random' : 'falling' };
+        return { destination: find_hell(), arrival: flying ? 'random' : 'falling' };
     }
     const destination = clampHoleDestination(trap.dst
         ?? { dnum: current.dnum, dlevel: current.dlevel + 1 });

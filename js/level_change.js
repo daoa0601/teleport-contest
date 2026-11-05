@@ -28,7 +28,7 @@ import { restoreLevelRegions, updateHeroRegions } from './regions.js';
 import { mklev, u_on_downstairs, u_on_sstairs, u_on_upstairs } from './mklev.js';
 import { place_lregion, fumaroles } from './mkmaze.js';
 import { oinit } from './o_init.js';
-import { depth, dungeonBuildsUp, dungeonDepth, endgameLevelName, initOverviewRecord, level_difficulty, markOverviewUnreachable, placeHeroOnLevel, recordMappedOverviewState, recordOverviewBranch, specialPrototypeAt, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt } from './dungeon.js';
+import { depth, dungeonBuildsUp, dungeonDepth, endgameLevelName, initOverviewRecord, level_difficulty, markOverviewUnreachable, placeHeroOnLevel, recordMappedOverviewState, recordOverviewBranch, specialPrototypeAt, u_on_rndspot, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt } from './dungeon.js';
 import { safe_teleds } from './teleport.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape } from './mon.js';
@@ -608,13 +608,13 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow, was
                 await placeHeroOnLevel(portal.tx, portal.ty);
             }
             else
-                await placeHeroAtRandomArrival(game.level.downTeleportRegion);
+                await u_on_rndspot(game.level.downTeleportRegion);
         }
         else {
             if (wasInsideWizardTower && levelIsWizardTower())
-                await placeHeroAtRandomArrival(game._activeSpecialLevel?.downTeleportExclude);
+                await u_on_rndspot(game._activeSpecialLevel?.downTeleportExclude);
             else
-                await placeHeroAtRandomArrival(rndspotUp
+                await u_on_rndspot(rndspotUp
                     ? game.level.upTeleportRegion : game.level.downTeleportRegion, rndspotUp);
             if (arrival === 'falling') {
                 if (heroIsPunished() && await fallWithIronBall())
@@ -763,13 +763,5 @@ function restoreCachedLevelMetadata(cached) {
     // remaining stasis duration while its level is stored off-map.
     if (cached.level.flags.stasis_until !== undefined)
         cached.level.flags.stasis_until += game.moves - cached.savedAt;
-}
-// C dungeon.c:u_on_rndspot() delegates arrival to the shared lregion owner.
-export async function placeHeroAtRandomArrival(region = null, up = false) {
-    const area = region ?? { lx: 0, ly: 0, hx: 0, hy: 0 };
-    const excluded = region?.exclude ?? { lx: -1, ly: -1, hx: -1, hy: -1 };
-    await place_lregion(area.lx, area.ly, area.hx, area.hy, excluded.lx, excluded.ly, excluded.hx, excluded.hy, up ? LR_UPTELE : LR_DOWNTELE, null);
-    await switchHeroTerrain();
-    return { x: game.u.ux, y: game.u.uy };
 }
 //# sourceMappingURL=level_change.js.map

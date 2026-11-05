@@ -5,7 +5,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER } from './const.js';
-import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './alignment.js';
@@ -23,8 +23,9 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroFootName } from './body_parts.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { plineWithContinuation } from './pline.js';
+import { roomForIndex, roomsAt, switchHeroTerrain } from './hack.js';
+import { place_lregion } from './mkmaze.js';
 import { formatKiller } from './topten.js';
-import { roomForIndex, roomsAt } from './hack.js';
 import { isok } from './cmd.js';
 import { impossible, panic } from './diagnostics.js';
 import { displayLiquidName } from './do_name.js';
@@ -183,6 +184,17 @@ export async function prev_level(stairs, gotoLevel) {
         arrival: 'downstairs', ladder: !!stairs.isladder,
     });
 }
+// C dungeon.c:u_on_rndspot(): place the hero at a random location within
+// the relevant arrival region — the up or down teleport bounds the caller
+// passes, with an unset region defaulting to the whole level — and let the
+// terrain switch complete the arrival.
+export async function u_on_rndspot(region = null, up = false) {
+    const area = region ?? { lx: 0, ly: 0, hx: 0, hy: 0 };
+    const excluded = region?.exclude ?? { lx: -1, ly: -1, hx: -1, hy: -1 };
+    await place_lregion(area.lx, area.ly, area.hx, area.hy, excluded.lx, excluded.ly, excluded.hx, excluded.hy, up ? LR_UPTELE : LR_DOWNTELE, null);
+    await switchHeroTerrain();
+    return { x: game.u.ux, y: game.u.uy };
+}
 // C dungeon.c:Can_rise_up(). Branch-top ascent requires its real up stair.
 export function canHeroRiseUp(x, y, { state = game } = {}) {
     const level = currentDungeonLocation(state);
@@ -221,6 +233,14 @@ export function levelAtDepth(requestedDepth, { state = game } = {}) {
         dlevel = requestedDepth - dungeon.depth_start + 1;
     }
     return { dnum, dlevel };
+}
+// C dungeon.c:find_hell(): the gateway to Gehennom is the Valley of the
+// Dead's first level.
+export function find_hell() {
+    const valley = game.valley_level;
+    if (!valley)
+        throw new Error('find_hell: the dungeon graph has no Valley of the Dead');
+    return { dnum: valley.dnum, dlevel: 1 };
 }
 export function level_difficulty() {
     const uz = game.u?.uz;
@@ -378,7 +398,7 @@ function dungeonLayoutEvents(dnum) {
         || Number(a.kind === 'special') - Number(b.kind === 'special'));
     return events;
 }
-// C dungeon.c:print_dungeon() dungeon/branch heading.
+// print_dungeon()'s per-dungeon heading line.
 function dungeonHeading(dnum) {
     const dungeon = game.dungeons[dnum];
     if (!dungeon)
@@ -697,13 +717,27 @@ function updateSanctumOverview(flags, altars, state) {
         flags.vibrating_square = trap ? !!trap.tseen : !sanctumRecord?.flags.msanctum;
     }
 }
+// C dungeon.c:find_mapseen(): the overview record of one dungeon level.
+function findMapseen(location, state = game) {
+    return state._overviewRecords?.get(`${location.dnum}:${location.dlevel}`);
+}
+// C dungeon.c:get_annotation(): the level's custom name, if any.
+function getAnnotation(location, state = game) {
+    return state._levelAnnotations?.get(`${location.dnum}:${location.dlevel}`);
+}
+// C dungeon.c:print_level_annotation(): the restore reminder.
+export async function printLevelAnnotation(state = game) {
+    const annotation = getAnnotation(currentDungeonLocation(state), state);
+    if (annotation)
+        await plineWithContinuation(`You remember this level as ${annotation}.`);
+}
 // C mapseen_temple(): entering an attended temple identifies these levels,
 // even if blindness prevents the hero from discovering the altar.
 export function recordTempleOverview(state = game) {
     const here = currentDungeonLocation(state);
     if (!state._overviewRecords?.has(`${here.dnum}:${here.dlevel}`))
         recordMappedOverviewState({ state });
-    const record = state._overviewRecords?.get(`${here.dnum}:${here.dlevel}`);
+    const record = findMapseen(here, state);
     if (!record)
         return;
     if (sameDungeonLevel(here, state.valley_level))
@@ -718,7 +752,7 @@ export function recordOverviewBranch(source, destination, state = game) {
         return;
     const branch = state.branches.find(branch => sameDungeonLevel(source, branch.end1)
         && sameDungeonLevel(destination, branch.end2));
-    const record = state._overviewRecords?.get(`${source.dnum}:${source.dlevel}`);
+    const record = findMapseen(source, state);
     if (branch && record)
         record.branch = { ...branch.end2, up: branch.end1_up, type: branch.type };
 }
@@ -1165,7 +1199,7 @@ export function specialPrototypeAt(dnum, dlevel) {
     }
     return null;
 }
-// C dungeon.c:query_annotation(): empty input and Escape preserve the
+// query_annotation()'s storage: empty input and Escape preserve the
 // existing value; space-only input removes it after mungspaces().
 function setLevelAnnotation(level, value) {
     if (value === null || value === '')
@@ -1198,12 +1232,12 @@ function annotationLevelDescription(level) {
             : `level ${dungeonDepth(level.dnum, level.dlevel)}`;
     return otherBranch ? `${description}, ${dungeon.dname.replace('The ', 'the ')}` : description;
 }
-// The query_annotation() prompt; setLevelAnnotation() stores the answer.
-// Also C dungeon.c:get_annotation(): inlined here (the current value read).
+// C dungeon.c:query_annotation(): the prompt; setLevelAnnotation() stores
+// the answer, get_annotation() supplies the current value.
 export async function queryLevelAnnotation(level = null, inMenu = false) {
     requirePlayingGame(game);
     const location = level ?? game.u.uz;
-    const prior = game._levelAnnotations?.get(`${location.dnum}:${location.dlevel}`);
+    const prior = getAnnotation(location);
     const prompt = prior ? `Replace annotation "${prior.slice(0, 30)}${prior.length > 30 ? '...' : ''}" with?`
         : `What do you want to call ${annotationLevelDescription(location)}?`;
     const value = await getLine(prompt, () => true, { inMenu });
@@ -1470,8 +1504,8 @@ function overviewDisclosureLevel(dnum, dlevel, ending, hereVerb, cause) {
 // C ref: dungeon.c dooverview()/show_overview().  This is dungeon-history
 // projection over mapseen/cache state; it is distinct from Delete's
 // known-terrain browser, which enters a getpos-style cursor transaction.
-// C dungeon.c:traverse_mapseenchn(): the live overview shows every
-// interesting level of the hero's side of the endgame split.
+// traverse_mapseenchn(): the live overview shows every interesting level
+// of the hero's side of the endgame split.
 export async function doDungeonOverview() {
     // The C command lazily calls recalc_mapseen() before rendering.  Refresh
     // the current level from remembered/underfoot terrain at that same

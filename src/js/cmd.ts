@@ -864,15 +864,14 @@ async function readCommand(): Promise<void> {
 }
 
 // Stair traversal shared by up and down: the do.c admission checks, then
-// dungeon.c's next_level()/prev_level() for the destination itself.
+// dungeon.ts's next_level()/prev_level() for the destination itself,
+// including prev_level()'s escape ending from dungeon 0 level 1.
 // C do.c:dodown() and C do.c:doup(): the '<' and '>' commands whose shared
 // body this is; each still starts with set_move_cmd(). C hack.c:u_rooted():
 // the "You are rooted" refusal. C trap.c:uteetering_at_seen_pit() and
 // C trap.c:uescaped_shaft(): the seen pit and shaft underfoot take the
 // plunge before the stairway is required; C dbridge.c:is_pool_or_lava():
 // the hider's drop-to-liquid message.
-// C dungeon.c:next_level() and prev_level(): the branch-stair wrappers,
-// including prev_level()'s escape ending from dungeon 0 level 1.
 export async function travelStairs(up: boolean) {
     const level = requireGameLevel();
     requireInitializedHero(game.u);
@@ -997,8 +996,8 @@ export async function travelStairs(up: boolean) {
         game.context.move = 0;
         return false;
     }
-    // C dungeon.c:next_level() and prev_level(): the branch-stair wrappers,
-    // including prev_level()'s escape ending from dungeon 0 level 1.
+    // dungeon.c next_level()/prev_level() own the destination; the escape
+    // ending comes from prev_level() at dungeon 0 level 1.
     const changed = up ? await prev_level(stairs, gotoLevel)
         : await next_level(stairs, gotoLevel);
     if (changed === 'escaped') {
