@@ -54,7 +54,8 @@ import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import { d, rn2, rnd } from './rng.js';
 import { breakStatue, fractureRock } from './zap.js';
-import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { capitalizedDefiniteName } from './objnam.js';
+import { rayHitMessage, rayMissMessage } from './zap.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 
 export interface ScatterOptions {

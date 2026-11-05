@@ -76,7 +76,8 @@ import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPot
 import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { paranoidQuery } from './cmd.js';
-import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { capitalizedDefiniteName } from './objnam.js';
+import { rayHitMessage, rayMissMessage } from './zap.js';
 import { ureflects, heroReflectsRay } from './muse.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

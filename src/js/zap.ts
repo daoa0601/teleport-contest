@@ -152,7 +152,7 @@ import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterFor
 import { clearHeroSliming, healHero, makeBlinded, makeStunned, speedUpHero } from './potion.js';
 import { propertyIsActive } from './properties.js';
 import { getLine } from './query.js';
-import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { capitalizedDefiniteName } from './objnam.js';
 import { displayRayName, realRayName } from './ray_name.js';
 import { liveSpellSkill } from './spell.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -188,6 +188,7 @@ import { breakObjectAtLocation } from './dothrow.js';
 import { visionCellBlocksLight } from './vision.js';
 import { placeObjectSynchronously } from './mkobj.js';
 import { breakFloorObject } from './dothrow.js';
+import { verbForSubject } from './objnam.js';
 export interface FloorBurnOptions {
     state?: GameState;
     giveFeedback?: boolean;
@@ -5413,5 +5414,31 @@ export async function breakStatue(
     statue.spe = 0;
     await fractureRock(statue, x, y, { state, random, publish });
     return true;
+}
+
+interface RayMessageOptions { x: number; y: number; damage?: number; ending?: string; state?: GameState; }
+
+
+// C zap.c:hit().
+export function rayHitMessage(effect: string, monster: Monster, { x, y, damage = 0, ending, state = game }: RayMessageOptions) {
+    const inside = state.u.uswallow && state.u.ustuck === monster;
+    const named = state.flags.verbose
+        && (cansee(x, y) || canSpotMonster(monster) || inside);
+    const target = named ? monsterName(monster, { state }) : 'it';
+    const punctuation = ending ?? exclam(damage);
+    return `${capitalizedDefiniteName(effect, state)} ${verbForSubject(effect, 'hit')} ${target}${punctuation}`;
+}
+
+
+// C zap.c:miss().
+export function rayMissMessage(effect: string, monster: Monster, { x, y, state = game }: RayMessageOptions) {
+    const named = state.flags.verbose && (cansee(x, y) || canSpotMonster(monster));
+    const target = named ? monsterName(monster, { state }) : 'it';
+    return `${capitalizedDefiniteName(effect, state)} ${verbForSubject(effect, 'miss')} ${target}.`;
+}
+
+// C zap.c:exclam().
+export function exclam(force: number): string {
+    return force < 0 ? '?' : force <= 4 ? '.' : '!';
 }
 

@@ -126,7 +126,7 @@ import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterFor
 import { clearHeroSliming, healHero, makeBlinded, makeStunned, speedUpHero } from './potion.js';
 import { propertyIsActive } from './properties.js';
 import { getLine } from './query.js';
-import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { capitalizedDefiniteName } from './objnam.js';
 import { displayRayName, realRayName } from './ray_name.js';
 import { liveSpellSkill } from './spell.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -162,6 +162,7 @@ import { breakObjectAtLocation } from './dothrow.js';
 import { visionCellBlocksLight } from './vision.js';
 import { placeObjectSynchronously } from './mkobj.js';
 import { breakFloorObject } from './dothrow.js';
+import { verbForSubject } from './objnam.js';
 const NODIR = 1, IMMEDIATE = 2;
 const MAX_ITEMS_DESTROYED = 20;
 const RAY_FIRE = 'fire';
@@ -5108,5 +5109,24 @@ export async function breakStatue(statue, x, y, { state = game, random = rn2, pu
     statue.spe = 0;
     await fractureRock(statue, x, y, { state, random, publish });
     return true;
+}
+// C zap.c:hit().
+export function rayHitMessage(effect, monster, { x, y, damage = 0, ending, state = game }) {
+    const inside = state.u.uswallow && state.u.ustuck === monster;
+    const named = state.flags.verbose
+        && (cansee(x, y) || canSpotMonster(monster) || inside);
+    const target = named ? monsterName(monster, { state }) : 'it';
+    const punctuation = ending ?? exclam(damage);
+    return `${capitalizedDefiniteName(effect, state)} ${verbForSubject(effect, 'hit')} ${target}${punctuation}`;
+}
+// C zap.c:miss().
+export function rayMissMessage(effect, monster, { x, y, state = game }) {
+    const named = state.flags.verbose && (cansee(x, y) || canSpotMonster(monster));
+    const target = named ? monsterName(monster, { state }) : 'it';
+    return `${capitalizedDefiniteName(effect, state)} ${verbForSubject(effect, 'miss')} ${target}.`;
+}
+// C zap.c:exclam().
+export function exclam(force) {
+    return force < 0 ? '?' : force <= 4 ? '.' : '!';
 }
 //# sourceMappingURL=zap.js.map

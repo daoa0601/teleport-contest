@@ -8,7 +8,7 @@ import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { makePetWary, tameMonster } from './dog.js';
 import { game, requireGameLevel } from './gstate.js';
-import { capitalizedDefiniteName } from './ray_hit_message.js';
+import { capitalizedDefiniteName } from './objnam.js';
 import { newuhs } from './eat.js';
 import { stopHeroOccupation } from './occupation.js';
 import { delobjCore, useUpInventoryStack } from './invent.js';

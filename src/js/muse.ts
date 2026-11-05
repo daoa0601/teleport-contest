@@ -102,7 +102,7 @@ import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from
 import { changeDoorByMagic } from './lock.js';
 import { stopHeroOccupation } from './occupation.js';
 import { propertyIsActive } from './properties.js';
-import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { rayHitMessage, rayMissMessage } from './zap.js';
 import { heroHasHalfSpellDamage, monsterResistsEffect, learnWand } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { randomTeleportDepth } from './level_teleport.js';

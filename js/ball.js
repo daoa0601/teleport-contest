@@ -29,7 +29,7 @@ import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp
 import { hitMonsterWithHeroObject } from './uhitm.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { objectName, ownedObjectName } from './objnam.js';
-import { rayMissMessage } from './ray_hit_message.js';
+import { rayMissMessage } from './zap.js';
 export const BCPOS_DIFFER = 0;
 export const BCPOS_CHAIN = 1;
 export const BCPOS_BALL = 2;
