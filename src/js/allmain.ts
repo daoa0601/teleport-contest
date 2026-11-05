@@ -43,7 +43,7 @@ import { consumeMonsterItem } from './mthrowu.js';
 import { heroCanTeleport, randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import { runDueTimers } from './timeout.js';
-import { askKeepRestoredSave, restoreMonsterCover } from './save.js';
+import { askKeepRestoredSave } from './save.js';
 import { finishScheduledLevelChange } from './do.js';
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
@@ -51,7 +51,8 @@ import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHer
 import { mhitm_knockback, resolveMonsterContactEffect } from './uhitm.js';
 import { MONSTER_GENO, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
-import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath, finishInUseInventory } from './end.js';
+import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath } from './end.js';
+import { restoreMonsterCover, finishInUseInventory } from './restore.js';
 import type { MonsterAttackDeathOptions, FinishHeroDeathOptions } from './end.js';
 import { releaseObjectLeash, checkHeroLeashes, heroNextToLeashedFollowers } from './apply.js';
 import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, } from './object_data.js';

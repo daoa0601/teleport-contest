@@ -84,6 +84,7 @@ src/js/region.ts	region.c
 src/js/rng.ts	rnd.c
 src/js/role.ts	role.c
 src/js/rumors.ts	rumors.c
+src/js/save.ts	save.c
 src/js/scatter.ts	explode.c
 src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c

@@ -2,11 +2,11 @@
 // no_bones_level()/can_make_bones() admission, the savebones() death flow
 // (drop_upon_death(), give_to_nearby_mon()), its monster fixups
 // (fixuporacle(), remove_mon_from_bones(), the restmonchn() adaptation),
-// then the bones payload save/load with its object, timer and connection
-// resets.
-// C refs: bones.c savebones()/getbones()/resetobjs(); the restore.c getlev()
-// adaptations used only by bones (restobjchn timers, region identity repair,
-// branch connection repair) and files.c set_bonesfile_name(). Payload
+// then the bones payload save/load with its object and timer resets.
+// C refs: bones.c savebones()/getbones()/resetobjs(); the restore.c
+// restobjchn()/getlev() clock shift (restoreBonesClock) used only by bones;
+// files.c set_bonesfile_name(). The other restore.c getlev() ports, including
+// branch connection repair, live in restore.ts. Payload
 // validation lives in bones_validation.ts and name sanitization in
 // bones_name.ts.
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
@@ -26,13 +26,12 @@ import { sanitizeBonesName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape, restoreMonsterInventoryOwnership } from './mon.js';
-import { restoreLevelChains } from './level_restore.js';
-import { hideMonsterOnRestore, restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
+import { repairBonesConnections, restoreLevelChains, hideMonsterOnRestore, restoreMonsterWormHeads, validMonsterWormBodies, } from './restore.js';
+import { restoreLevelPetHistory } from './save.js';
 import { endObjectBurn, restoreLevelTimers } from './timeout.js';
 import { restoreLevelRegions } from './region.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
-import { deleteTrap } from './trap.js';
 import { addFruit } from './options.js';
 import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
@@ -840,33 +839,6 @@ function restoreBonesClock(level, savedAt) {
         damage.when += adjustment;
     if (level.flags.stasis_until !== undefined)
         level.flags.stasis_until += adjustment;
-}
-// C restore.c:getlev(): branch entrances can move between games.
-function repairBonesConnections(level, location) {
-    const here = (end) => end.dnum === location.dnum && end.dlevel === location.dlevel;
-    const branch = game.branches.find(candidate => here(candidate.end1) || here(candidate.end2));
-    if (!branch) {
-        for (const trap of [...level.traps])
-            if (trap.ttyp === MAGIC_PORTAL)
-                deleteTrap(trap);
-        return;
-    }
-    if (location.dlevel !== 1)
-        return;
-    const destination = here(branch.end1) ? branch.end2 : branch.end1;
-    if (branch.type === 'portal') {
-        const portal = level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
-        if (!portal)
-            throw new PanicTermination('getlev: need portal but none found');
-        portal.dst = { ...destination };
-        return;
-    }
-    for (let stair = game.stairs; stair; stair = stair.next) {
-        if (stair.tolev.dnum === location.dnum)
-            continue;
-        stair.tolev = { ...destination };
-        break;
-    }
 }
 // C refs: bones.c:getbones() and restore.c:getlev(ghostly).
 export async function getbones() {
