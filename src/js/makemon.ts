@@ -65,7 +65,7 @@ import {
     monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, placeMonsterOnMap, maybeGiveDomesticSaddle,
 } from './steed.js';
 import { initializeMonsterWormBody } from './worm.js';
-import { initializeMonsterArmor } from './monworn.js';
+import { initializeMonsterArmor } from './worn.js';
 import { rnd_defensive_item, rnd_misc_item, rnd_offensive_item } from './muse.js';
 import { deleteObject } from './shk.js';
 import { deliverOrcRaidLoot } from './mkmaze.js';

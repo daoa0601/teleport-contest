@@ -1,6 +1,6 @@
 import { monsterAtPosition } from '../js/steed.js';
 import { armorBaseBonus } from '../js/do_wear.js';
-import { findMonsterArmorClass } from '../js/monworn.js';
+import { findMonsterArmorClass } from '../js/worn.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';

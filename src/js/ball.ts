@@ -28,7 +28,7 @@ import { woundHeroLegs } from './do.js';
 import { fillPitWithBoulderAt, resetUtrap } from './trap.js';
 import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp, nearCapacity, SLT_ENCUMBER, weightCapacity } from './hack.js';
 import { hitMonsterWithHeroObject } from './uhitm.js';
-import { findMonsterArmorClass } from './monworn.js';
+import { findMonsterArmorClass } from './worn.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './zap.js';
 import type { GameState } from './game_state.js';

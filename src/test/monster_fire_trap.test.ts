@@ -10,7 +10,7 @@ import {
 import { game, requirePlayingGame } from '../js/gstate.js';
 
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { initializeMonsterArmor } from '../js/monworn.js';
+import { initializeMonsterArmor } from '../js/worn.js';
 import { monsterName } from '../js/do_name.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import {

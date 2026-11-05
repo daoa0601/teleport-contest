@@ -2,7 +2,7 @@ import { objectTypeKnown } from '../js/o_init.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { armorBaseBonus } from '../js/do_wear.js';
 
-import { findMonsterArmorClass } from '../js/monworn.js';
+import { findMonsterArmorClass } from '../js/worn.js';
 import { W_ARM, LEVEL_TIMER_KIND } from '../js/const.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
 import { roles } from '../js/role.js';

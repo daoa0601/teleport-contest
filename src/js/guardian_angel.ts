@@ -19,7 +19,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { Hear_again } from './eat.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { selectHandToHandWeapon } from './weapon.js';
-import { initializeMonsterArmor } from './monworn.js';
+import { initializeMonsterArmor } from './worn.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION, OBJECT_NAMES } from './object_data.js';
 
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');

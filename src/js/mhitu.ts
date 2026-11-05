@@ -116,7 +116,7 @@ import { could_seduce } from './seduction_compatibility.js';
 import { randomMonsterRelocation, reportMonsterTeleportRestriction, teleds, enexto } from './teleport.js';
 import { advanceMonsterWormBody } from './worm.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
-import { findMonsterArmorClass } from './monworn.js';
+import { findMonsterArmorClass } from './worn.js';
 import { ceilingName } from './dungeon.js';
 import { carriedObjectOwner } from './shk.js';
 import { endObjectBurn } from './timeout.js';

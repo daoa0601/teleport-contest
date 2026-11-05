@@ -10,7 +10,7 @@ import { initializePet } from '../../js/dog.js';
 import { SADDLE } from '../../js/object_data.js';
 import { putSaddleOnMonster } from '../../js/steed.js';
 import { knownObject } from './game-objects.js';
-import { applyMonsterEquipmentProperties } from '../../js/monworn.js';
+import { applyMonsterEquipmentProperties } from '../../js/worn.js';
 
 export interface SaddledSteedOptions {
     x?: number;

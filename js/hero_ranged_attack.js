@@ -12,7 +12,7 @@ import { applyCaitiffPenalty, applyMonsterPassiveToObject, hitMonsterWithHeroObj
 import { reportHeroThrownMiss, destroyMulchedProjectile, rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
 import { MONSTER_LEVEL } from './monster_data.js';
 import { cutWorm } from './worm.js';
-import { findMonsterArmorClass } from './monworn.js';
+import { findMonsterArmorClass } from './worn.js';
 import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo, isAxe } from './object_properties.js';
 import { rnd, rn2 } from './rng.js';
 import { chargeUnpaidObjectAsDebt } from './shk.js';

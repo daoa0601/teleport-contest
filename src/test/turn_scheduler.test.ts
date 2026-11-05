@@ -29,7 +29,7 @@ import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './suppo
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
-import { checkMonsterGearNextTurn } from '../js/monworn.js';
+import { checkMonsterGearNextTurn } from '../js/mon.js';
 import { canSeeMonster } from '../js/display.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

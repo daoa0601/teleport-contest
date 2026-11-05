@@ -54,7 +54,7 @@ import { forgetObjectKnowledge, linkCreatedObjectToMonsterInventory, linkObjectT
 import type { MonsterPickupOptions } from './mkobj.js';
 import {
     removeObjectFromMonsterInventory, updateMonsterEquipment,
-} from './monworn.js';
+} from './worn.js';
 import { landFloorObject } from './floor_effects.js';
 import { cansee } from './vision.js';
 import { petDroppableObject } from './dog.js';

@@ -1696,7 +1696,7 @@ src/js/worm.ts	shrinkStationaryMonsterWorm	rollDice	"[""2"", ""2""]"	constant
 src/js/mhitu.ts	u_slip_free	random	"[""2""]"	constant
 src/js/mhitu.ts	u_slip_free	random	"[""3""]"	constant
 src/js/uhitm.ts	resolveMonsterWrapping	random	"[""10""]"	constant
-src/js/monworn.ts	adjustMonsterClothingAfterPolymorph	rnl	"[""3""]"	constant
+src/js/worn.ts	adjustMonsterClothingAfterPolymorph	rnl	"[""3""]"	constant
 src/js/mplayer.ts	createPlayerMonster	d	"[""monster.m_lev"", ""10""]"	invariant
 src/js/mplayer.ts	createPlayerMonster	rn1	"[""16"", ""15""]"	constant
 src/js/mplayer.ts	createPlayerMonster	rnd	"[""16""]"	constant

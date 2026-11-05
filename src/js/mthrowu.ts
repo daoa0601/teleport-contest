@@ -34,7 +34,7 @@ import {
     clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject,
     objectIsFlammable, splitObjectStack, objectWeight, placeObject,
 } from './mkobj.js';
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
+import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_KNIFE, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_NONDIGGABLE, W_WEP, WT_IRON_BALL_INCR, ARM, HAND, FOOT } from './const.js';
