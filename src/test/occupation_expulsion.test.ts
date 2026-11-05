@@ -4,7 +4,6 @@ import { MM_NOGRP, NO_MINVENT, NOT_HUNGRY } from '../js/const.js';
 import { doeat } from '../js/eat.js';
 import { flush_screen, glyphAt } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { expelHero } from '../js/hero_expulsion.js';
 import { resetInputState } from '../js/input.js';
 import { FOOD_RATION } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
@@ -13,6 +12,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { expelHero } from '../js/mhitu.js';
 
 for (const peaceful of [false, true]) {
     void test(`expulsion ${peaceful ? 'allows eating beside a peaceful' : 'stops eating beside a hostile'} engulfer`, async () => {

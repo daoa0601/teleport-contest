@@ -36,7 +36,9 @@ import {
 } from './const.js';
 import { paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
-import { gulp_blnd_check } from './mhitu.js';
+import { gulp_blnd_check,
+    holdingMonsterName,
+} from './mhitu.js';
 import { heroFaceName, heroHandName, heroLegName, monsterStomachName } from './body_parts.js';
 import type { GameObject } from './object_types.js';
 import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, TIN, WORM_TOOTH } from './object_data.js';
@@ -89,7 +91,6 @@ import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon 
 import { showMultiSelectWindow } from './windows.js';
 import type { MultiSelectSection } from './windows.js';
 import { isBimanualObject, isPick } from './object_properties.js';
-import { holdingMonsterName } from './hero_expulsion.js';
 import { possessiveName } from './hacklib.js';
 import { heroCanReachFloor, engravingAt, make_grave, rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop } from './artifacts.js';

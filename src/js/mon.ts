@@ -93,7 +93,6 @@ import type { MapLocation } from './map_types.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
-import { expelHero } from './hero_expulsion.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import type { MonsterMigrationOptions, MonsterMigrationResult } from './dog.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -128,7 +127,9 @@ import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
 import { createPhysicalMonsterExplosion } from './explosion.js';
 import { stopHeroOccupation } from './occupation.js';
-import { resolveMonsterGaze } from './mhitu.js';
+import { resolveMonsterGaze,
+    expelHero,
+} from './mhitu.js';
 import type { MonsterGazeOptions } from './mhitu.js';
 import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
 import { wormKnown } from './display.js';

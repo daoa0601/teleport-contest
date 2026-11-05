@@ -31,7 +31,6 @@ import { definiteObjectAction, observeDistantObjectForNaming, objectDescription 
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { monsterAtPosition } from './steed.js';
 import { questMonsterFlags3 } from './role_monsters.js';
-import { expelHero } from './hero_expulsion.js';
 import { healMonster, monsterIndexByName, speciesWasGenocided, mnearto, wakeMonstersNearWithMessages } from './mon.js';
 import { randomMonsterRelocation, relocateMonsterTo, monsterTeleportRestricted } from './teleport.js';
 import { deliverCommonQuestInsult } from './quest_pager.js';
@@ -39,6 +38,7 @@ import { shopkeeperInOwnShop } from './shk.js';
 import { cansee } from './vision.js';
 import type { GameObject } from './object_types.js';
 import type { Position, Stairway } from './map_types.js';
+import { expelHero } from './mhitu.js';
 
 const WIZARD = 285;
 

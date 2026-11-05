@@ -74,7 +74,6 @@ import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { autopickupAtHero, encumber_msg } from './pickup.js';
-import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -84,13 +83,14 @@ import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { stopHeroOccupation } from './occupation.js';
-import { projectileHitsIronBars } from './projectile_bars.js';
+import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
 import { bot } from './botl.js';
 import { createPoisonGasCloud } from './regions.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { reset_faint } from './eat.js';
+import { holdingMonsterName, holdingMonsterSubject } from './mhitu.js';
 export async function burnArmorByFire(victim, state, emitMessage, calls = [], random = rn2, { visible = victim === state.u, } = {}) {
     const monster = 'mnum' in victim ? victim : null;
     if (victim !== state.u && !monster)

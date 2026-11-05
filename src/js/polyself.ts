@@ -105,8 +105,8 @@ import { dropInventoryObjectAtHero } from './do.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './read.js';
 import { handleRidingAfterFormChange } from './steed.js';
-import { expelHero } from './hero_expulsion.js';
 import { golemHitPoints, isHomeElemental } from './makemon.js';
+import { expelHero } from './mhitu.js';
 
 const G_FREQ = 0x0007;
 const G_NOGEN = 0x0200;

@@ -25,7 +25,6 @@ import {
     vanquishedLines, vanquishedTypeCount,
 } from './insight.js';
 import { game, requireInitializedGame } from './gstate.js';
-import { expelHero } from './hero_expulsion.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { heroFormSticks } from './polyself.js';
 import { monsterName } from './do_name.js';
@@ -74,6 +73,7 @@ import { isAccessibleAt } from './monmove.js';
 import { resetUtrap } from './trap.js';
 import { DTHSZ, KILLED_BY_PREFIXES, formatKiller } from './topten.js';
 import { monsterHasProperName } from './mondata.js';
+import { expelHero } from './mhitu.js';
 
 export interface DeathDamage {
     hpKey: 'mh' | 'uhp';

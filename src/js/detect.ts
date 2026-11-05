@@ -55,12 +55,12 @@ import type { Hero } from './hero_types.js';
 import { propertyIsActive } from './properties.js';
 import { selectMapPosition, showGetposInstructions } from './getpos.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { expelHero } from './hero_expulsion.js';
 import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { currency } from './invent.js';
 import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { monsterDigests, monsterHidesUnder, monsterIsHider } from './mondata.js';
+import { expelHero } from './mhitu.js';
 
 type DetectionTrap = Pick<Trap, 'ttyp' | 'tx' | 'ty'>;
 export type AutomaticSearchResult = boolean | { statueTrap: Position };

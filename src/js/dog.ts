@@ -46,7 +46,6 @@ import {
 } from './mondata.js';
 import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
-import { expelHero } from './hero_expulsion.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
 
 import { wieldMonsterWeapon } from './weapon.js';
@@ -66,6 +65,7 @@ import { setShopResidency, makeShopkeeperHappy, makeShoppersHappy } from './shk.
 import {placeObject} from './mkobj.js';
 import { insideWizardTower } from './dungeon.js';
 import { roomForRoomno, roomsAt } from './hack.js';
+import { expelHero } from './mhitu.js';
 
 // C dogmove.c:droppables(). Pets keep equipment and usable tools.
 export function petDroppableObject(monster: Monster): GameObject | null {

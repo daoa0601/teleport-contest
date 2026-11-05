@@ -17,7 +17,6 @@ import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
 import { achievementEntries, recordAchievement, finalConductLines, listGenocided, setVanqOrder, showFinalAttributes, vanquishedLines, vanquishedTypeCount, } from './insight.js';
 import { game, requireInitializedGame } from './gstate.js';
-import { expelHero } from './hero_expulsion.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { heroFormSticks } from './polyself.js';
 import { monsterName } from './do_name.js';
@@ -59,6 +58,7 @@ import { isAccessibleAt } from './monmove.js';
 import { resetUtrap } from './trap.js';
 import { DTHSZ, KILLED_BY_PREFIXES, formatKiller } from './topten.js';
 import { monsterHasProperName } from './mondata.js';
+import { expelHero } from './mhitu.js';
 export { SCORE_RECORD_STORAGE_KEY } from './score_records.js';
 // C end.c:done() records the fatal event before "But wait...". The caller
 // identifies the amulet after that message returns, then consumes it and

@@ -25,7 +25,6 @@ import { setMonsterMalign } from './makemon.js';
 import { levelFollower, carnivorous, herbivorous, is_domestic, monsterHasEyes, monsterIsAnimal, monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, monsterIsMindless, needspick, regenerates, tunnels, cantwield, speciesHasWeaponAttack, } from './mondata.js';
 import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
-import { expelHero } from './hero_expulsion.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
@@ -44,6 +43,7 @@ import { setShopResidency, makeShopkeeperHappy, makeShoppersHappy } from './shk.
 import { placeObject } from './mkobj.js';
 import { insideWizardTower } from './dungeon.js';
 import { roomForRoomno, roomsAt } from './hack.js';
+import { expelHero } from './mhitu.js';
 // C dogmove.c:droppables(). Pets keep equipment and usable tools.
 export function petDroppableObject(monster) {
     const animalOrMindless = (monsterIsAnimal({ mnum: monster.mnum }) || monsterIsMindless(monster.mnum));

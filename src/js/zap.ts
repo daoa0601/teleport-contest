@@ -87,7 +87,6 @@ import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands, heroFormHidesUnderObjects } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { dryFountainAt } from './fountain.js';
-import { dissolveBars } from './projectile_bars.js';
 import { stopHeroOccupation } from './occupation.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './cmd.js';
@@ -109,7 +108,6 @@ import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, may
 import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, MonsterSelfTouchResult } from './mon.js';
 import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
-import { expelHero, holdingMonsterName } from './hero_expulsion.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
 import type { HeroMonsterKillOptions, HeroLiquidMonsterDeathOutcome, HeroMonsterDeathContext } from './mon.js';
@@ -164,12 +162,14 @@ import { mergeObjectStacks } from './invent.js';
 import type { MapLocation, Position } from './map_types.js';
 import { monsterSpellDeathReason } from './mcastu.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { heroHasRemovableSpeed, u_slow_down } from './mhitu.js';
+import { heroHasRemovableSpeed, u_slow_down,
+    expelHero, holdingMonsterName,
+} from './mhitu.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid } from './mon.js';
 import type { MonsterLiquidDeathResult } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
-import { closedDoor, makeMonsterFlee } from './monmove.js';
+import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterTypeName } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';

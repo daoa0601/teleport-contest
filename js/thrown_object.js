@@ -33,7 +33,7 @@ import { breakObjectAtLocation, objectBreaksOnImpact, settleThrownShopObject } f
 import { splitObjectStack, objectWeight, placeObject } from './mkobj.js';
 import { objectIsVulnerableToErosion } from './trap.js';
 import { closedDoor } from './monmove.js';
-import { projectileHitsIronBars } from './projectile_bars.js';
+import { projectileHitsIronBars } from './mthrowu.js';
 import { rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';

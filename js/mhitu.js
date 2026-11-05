@@ -7,7 +7,7 @@ import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISN, AD_DISE, AD_DGST, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SPC1, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPEL, AD_SPC2, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, TT_WEB, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT, is_pit } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, RLOC_NOMSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, TT_WEB, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT, is_pit } from './const.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
@@ -28,7 +28,7 @@ import { heroResistsBlindingLight } from './blinding_attack.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
-import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, paralyzeMonster, finishHeroMonsterKillOutcome, finishHeroMonsterKill } from './mon.js';
+import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, paralyzeMonster, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -47,7 +47,7 @@ import { bot } from './botl.js';
 import { burnArmorByFire, trapAt, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately, resetUtrap, } from './trap.js';
 import { getmattk } from './attack_selection.js';
 import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
-import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount } from './hack.js';
+import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker, contactIsProtected, } from './mhitm.js';
 import { msummon } from './minion.js';
 import { isWereMonster, isHumanWereMonster, transformWereMonster, summonWerePack, counterWereSpecies } from './were.js';
@@ -78,7 +78,6 @@ import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ceilingName } from './dungeon.js';
 import { carriedObjectOwner } from './shk.js';
-import { expelHero } from './hero_expulsion.js';
 import { endObjectBurn } from './timeout.js';
 import { releaseAllMonsterLeashes } from './apply.js';
 import { heroHasEyes } from './body_parts.js';
@@ -3391,6 +3390,66 @@ function engulfMissMessage(monster, state) {
     }
     // You_hear() has no monster anchor; the heard line stays unpositioned.
     return formatHeardMessage(`a ${monsterIsWhirly(monster) ? 'rushing noise' : 'splat'} nearby.`, state);
+}
+// C names the hero's holder with mon_nam() in every message that uses it
+// (do.c drop(), trap.c float_up()/float_down(), zap.c's slow-monster
+// disrupt), so engulfing priests and minions keep their "of <god>" title,
+// shopkeepers their names, and invisible holders their "invisible".
+export function holdingMonsterName(monster, state = game) {
+    return monsterName(monster, { state });
+}
+export function holdingMonsterSubject(monster, state = game) {
+    const name = holdingMonsterName(monster, state);
+    return name.charAt(0).toUpperCase() + name.slice(1);
+}
+// C mhitu.c:expels(). An engulfer spits the hero out: the exit line names
+// the monster and its engulf damage flavor, then unstuck(), mnexto() and
+// the hero's landing settle the hold and the spot effects.
+export async function expelHero(monster, { state = game, message = true, engulfingSpecies = monster.mnum, publish = plineWithContinuation, redraw = redrawAfterRelease, refresh = newsym, random = rn2, rollOne = rnd, } = {}) {
+    if (!state.u.uswallow || state.u.ustuck !== monster)
+        return { expelled: false };
+    // C mhitu.c expels() flags the status line before its message: vpline()
+    // flushes the screen (redrawing botl) before update_topl() pages the
+    // still-unseen line that forced this expulsion's --More--.
+    state.context.botl = true;
+    if (message) {
+        const line = expulsionMessage(monster, engulfingSpecies, state);
+        if (line)
+            await publish(line);
+        else
+            await impossible('Swallower has no engulfing attack?', { state });
+    }
+    await releaseHeroFromMonster(monster, { state, publish, redraw, rollOne });
+    await moveMonsterNextToHero(monster, state, { flags: RLOC_NOMSG, random });
+    if (state.program_state.gameover)
+        return { expelled: true, died: true };
+    // mnexto() redraws the monster; expels() then redraws only the hero.
+    await refresh(state.u.ux, state.u.uy);
+    const distance = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy));
+    if (distance > 1)
+        await publish('Brrooaa...  You land hard at some distance.');
+    const landing = await applyHeroLocationEffects(publish);
+    return {
+        expelled: true,
+        died: !!landing?.died || !!state.program_state?.gameover,
+    };
+}
+function expulsionMessage(monster, mnum, state) {
+    const body = { mnum };
+    if (monsterDigests(body))
+        return 'You get regurgitated!';
+    const attack = (MONSTER_ATTACKS[mnum] ?? []).find(([type]) => type === AT_ENGL);
+    if (!attack && !monsterEnfolds(body))
+        return null;
+    if (monsterEnfolds(body))
+        return `${monsterName(monster, { state, capitalized: true })} unfolds and you are released!`;
+    const name = monsterName(monster, { state });
+    let effect = ' with a squelch';
+    if (monsterIsWhirly(body)) {
+        effect = attack?.[1] === AD_COLD ? ' in a blast of frost'
+            : attack?.[1] === AD_ELEC ? ' in a shower of sparks' : '';
+    }
+    return `You get expelled from ${name}${effect}!`;
 }
 // ---------------------------------------------------------------------------
 // C mhitu.c:diseasemu(). Disease bypasses cancellation and magic negation.

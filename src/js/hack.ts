@@ -144,7 +144,8 @@ import { adjustHeroAlignment, currentAttribute, currentStrength, exerciseAttribu
 
 import { objectBreaksOnImpact } from './dothrow.js';
 import { setPrimaryWeapon } from './wield.js';
-import { hitIronBars, dissolveBars } from './projectile_bars.js';
+import { hitIronBars } from './mthrowu.js';
+import { dissolveBars } from './monmove.js';
 import { ensureHeroSkills, useHeroSkill, weaponDescription, weaponSkillType } from './weapon.js';
 import { recordGameLogEvent } from './gamelog.js';
 import type { TerminalCell } from './terminal.js';

@@ -60,7 +60,6 @@ import { badRockForMonster, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocom
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
-import { expelHero } from './hero_expulsion.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import { finishScheduledLevelChange } from './do.js';
 import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
@@ -88,7 +87,7 @@ import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
 import { createPhysicalMonsterExplosion } from './explosion.js';
 import { stopHeroOccupation } from './occupation.js';
-import { resolveMonsterGaze } from './mhitu.js';
+import { resolveMonsterGaze, expelHero, } from './mhitu.js';
 import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
 import { wormKnown } from './display.js';
 import { controlMonsterTeleport, requireLevel } from './teleport.js';
