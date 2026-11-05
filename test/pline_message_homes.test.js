@@ -69,10 +69,12 @@ void test('gamelog_add records turn, text, and flags', async () => {
     game.gamelog = [];
     assert.equal(recordGameLogEvent(''), null);
     assert.deepEqual(gameLogEvents(), []);
-    game.moves = 0;
+    // C pline.c:501 stores gltime verbatim (tmp->turn = gltime); the turn
+    // comes from the caller's svm.moves, so pin the supplied turn as passed.
+    game.moves = 5;
     const entry = recordGameLogEvent('became vegetarian', { flags: LL_CONDUCT });
     assert.ok(entry);
-    assert.equal(entry.turn, 1);
+    assert.equal(entry.turn, 5);
     assert.equal(entry.text, 'became vegetarian');
     assert.equal(entry.flags, LL_CONDUCT);
     assert.deepEqual(gameLogEvents(), [entry]);
