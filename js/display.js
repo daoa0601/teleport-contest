@@ -1778,6 +1778,98 @@ export async function shieldeff(x, y, g = game) {
         await newsym(x, y);
     }
 }
+// C display.c:tether_glyph(): the tether segment from a saved position back
+// toward the hero, drawn before the tethered object's next position.
+function tether_glyph(x, y) {
+    return zapdir_to_glyph(Math.sign(game.u.ux - x), Math.sign(game.u.uy - y), 2);
+}
+export class TemporaryMapEffect {
+    style;
+    glyph;
+    positions = [];
+    constructor(style, glyph) {
+        this.style = style;
+        this.glyph = glyph;
+    }
+    // The DISP_BEAM/DISP_ALL/DISP_TETHER/DISP_FLASH/DISP_ALWAYS open:
+    // initialize the glyph, then flush the buffered glyphs.
+    async start() {
+        await flush_screen(0);
+    }
+    // DISP_CHANGE: replace the glyph later positions draw.
+    changeGlyph(glyph) {
+        this.glyph = glyph;
+    }
+    // C display.c:tmp_at(): the default "do it" case — save or restore the
+    // previous position per style, show the glyph, then flush_screen(0).
+    async tmp_at(x, y) {
+        if (await this.draw(x, y))
+            await flush_screen(0);
+    }
+    // The do-it checks and show_glyph() without tmp_at()'s closing
+    // flush_screen(0); callers that publish several cells in one frame
+    // draw each cell and flush the frame themselves.
+    async draw(x, y) {
+        if (!isok(x, y))
+            return false;
+        if (this.style === 'beam' || this.style === 'all' || this.style === 'tether') {
+            if (this.style === 'beam' && !cansee(x, y))
+                return false;
+            if (this.positions.length >= COLNO * 2)
+                return false;
+            if (this.style === 'tether') {
+                const previous = this.positions.at(-1);
+                if (previous)
+                    await this.paint(previous.x, previous.y, tether_glyph(previous.x, previous.y));
+            }
+        }
+        else {
+            await this.clear();
+            if (this.style === 'flash' && !cansee(x, y))
+                return false;
+        }
+        this.positions.push({ x, y });
+        await this.paint(x, y, this.glyph);
+        return true;
+    }
+    // A returning tether restores its far end before advancing the weapon.
+    async retract() {
+        if (this.style !== 'tether' || this.positions.length < 2)
+            return false;
+        const end = this.positions.pop();
+        const previous = this.positions.at(-1);
+        if (!end || !previous)
+            throw new Error('A returning tether needs two saved positions');
+        await newsym(end.x, end.y);
+        await this.paint(previous.x, previous.y, this.glyph);
+        return true;
+    }
+    // DISP_END, with C's BACKTRACK option for a returning tether.
+    async end(backtrack = false) {
+        try {
+            if (backtrack) {
+                while (await this.retract()) {
+                    await flush_screen(0);
+                    await game.animationFrame?.();
+                }
+            }
+        }
+        finally {
+            await this.clear();
+        }
+    }
+    // Erase (reset) from source to end: each saved position is restored,
+    // including repeated coordinates with their independent hallucinated
+    // map projection.
+    async clear() {
+        for (const position of this.positions)
+            await newsym(position.x, position.y);
+        this.positions.length = 0;
+    }
+    async paint(x, y, glyph) {
+        await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr ?? 0, glyph);
+    }
+}
 // C display.c:map_invisible().  Unlike a transient actor overlay, an unseen
 // attacker's `I` is hero memory and must survive later blind redraws until a
 // caller explicitly discovers that the square no longer contains that

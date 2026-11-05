@@ -140,7 +140,7 @@ import { reviveCorpseByMagic } from './corpse_revival.js';
 import type { CorpseRevived } from './corpse_revival.js';
 import type { MonsterAttack } from './data_types.js';
 import { unearthFloorObjectsAt } from './dig.js';
-import { canSenseMonster, canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, zapdir_to_glyph } from './display.js';
+import { canSenseMonster, canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, zapdir_to_glyph, TemporaryMapEffect } from './display.js';
 import { namelessMonsterName } from './do_name.js';
 import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance, simpleArmorName } from './do_wear.js';
 import { finishMonsterEating } from './dogmove.js';
@@ -184,7 +184,7 @@ import { liveSpellSkill } from './spell.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { relocateObjectRandomly } from './teleport.js';
-import { TemporaryMapEffect } from './temporary_map_effect.js';
+
 import { putHeroToSleep } from './timeout.js';
 import { burnArmorByFire, burnHeroArmorByFire, damageObjectWithAcid, erodeArmor, fillPitWithBoulderAt } from './trap.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';

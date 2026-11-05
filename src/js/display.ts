@@ -43,7 +43,7 @@ import { grantIntrinsicProperty, hasCarriedProperty, hasWornProperty, propertyIs
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { MapLocation, Trap, Engraving } from './map_types.js';
+import type { MapLocation, Position, Trap, Engraving } from './map_types.js';
 import { infravisible, monsterIsMindless } from './mondata.js';
 
 export interface GlyphAppearance {
@@ -1869,6 +1869,99 @@ export async function shieldeff(x: number, y: number, g: GameState = game) {
         }
     } finally {
         await newsym(x, y);
+    }
+}
+
+// C display.c:tether_glyph(): the tether segment from a saved position back
+// toward the hero, drawn before the tethered object's next position.
+function tether_glyph(x: number, y: number): DisplayGlyph {
+    return zapdir_to_glyph(Math.sign(game.u.ux - x), Math.sign(game.u.uy - y), 2);
+}
+
+// Native display.c:tmp_at(). Each active effect owns its saved positions,
+// so nested effects keep independent trails without global display state.
+export type TemporaryGlyphStyle = 'beam' | 'all' | 'tether' | 'flash' | 'always';
+
+export class TemporaryMapEffect {
+    private readonly positions: Position[] = [];
+
+    constructor(private readonly style: TemporaryGlyphStyle, private glyph: DisplayGlyph) {}
+
+    // The DISP_BEAM/DISP_ALL/DISP_TETHER/DISP_FLASH/DISP_ALWAYS open:
+    // initialize the glyph, then flush the buffered glyphs.
+    async start(): Promise<void> {
+        await flush_screen(0);
+    }
+
+    // DISP_CHANGE: replace the glyph later positions draw.
+    changeGlyph(glyph: DisplayGlyph): void {
+        this.glyph = glyph;
+    }
+
+    // C display.c:tmp_at(): the default "do it" case — save or restore the
+    // previous position per style, show the glyph, then flush_screen(0).
+    async tmp_at(x: number, y: number): Promise<void> {
+        if (await this.draw(x, y)) await flush_screen(0);
+    }
+
+    // The do-it checks and show_glyph() without tmp_at()'s closing
+    // flush_screen(0); callers that publish several cells in one frame
+    // draw each cell and flush the frame themselves.
+    async draw(x: number, y: number): Promise<boolean> {
+        if (!isok(x, y)) return false;
+        if (this.style === 'beam' || this.style === 'all' || this.style === 'tether') {
+            if (this.style === 'beam' && !cansee(x, y)) return false;
+            if (this.positions.length >= COLNO * 2) return false;
+            if (this.style === 'tether') {
+                const previous = this.positions.at(-1);
+                if (previous) await this.paint(previous.x, previous.y,
+                    tether_glyph(previous.x, previous.y));
+            }
+        } else {
+            await this.clear();
+            if (this.style === 'flash' && !cansee(x, y)) return false;
+        }
+        this.positions.push({ x, y });
+        await this.paint(x, y, this.glyph);
+        return true;
+    }
+
+    // A returning tether restores its far end before advancing the weapon.
+    async retract(): Promise<boolean> {
+        if (this.style !== 'tether' || this.positions.length < 2) return false;
+        const end = this.positions.pop();
+        const previous = this.positions.at(-1);
+        if (!end || !previous) throw new Error('A returning tether needs two saved positions');
+        await newsym(end.x, end.y);
+        await this.paint(previous.x, previous.y, this.glyph);
+        return true;
+    }
+
+    // DISP_END, with C's BACKTRACK option for a returning tether.
+    async end(backtrack = false): Promise<void> {
+        try {
+            if (backtrack) {
+                while (await this.retract()) {
+                    await flush_screen(0);
+                    await game.animationFrame?.();
+                }
+            }
+        } finally {
+            await this.clear();
+        }
+    }
+
+    // Erase (reset) from source to end: each saved position is restored,
+    // including repeated coordinates with their independent hallucinated
+    // map projection.
+    async clear(): Promise<void> {
+        for (const position of this.positions) await newsym(position.x, position.y);
+        this.positions.length = 0;
+    }
+
+    private async paint(x: number, y: number, glyph: DisplayGlyph): Promise<void> {
+        await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx,
+            glyph.attr ?? 0, glyph);
     }
 }
 

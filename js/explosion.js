@@ -5,7 +5,7 @@ import { monsterHasMagicResistance, burnArmorByFire, burnHeroArmorByFire, ignite
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX } from './const.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, TemporaryMapEffect } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { finishHeroDeath } from './end.js';
@@ -26,7 +26,6 @@ import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { payForShopDamage } from './shk.js';
 import { cansee } from './vision.js';
 import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, monsterResistsEffect, rayDamageType } from './zap.js';
-import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterIsDemon, monsterIsNonliving, monsterIsVampireShifter, } from './mondata.js';
 const RAY = 3;
 const resistanceLevels = new Map([
@@ -354,7 +353,7 @@ async function paintExplosion(cells, state) {
     try {
         for (const cell of cells) {
             effect.changeGlyph(cell.glyph);
-            await effect.show(cell.x, cell.y);
+            await effect.tmp_at(cell.x, cell.y);
         }
         await flush();
         if (state.flags.sparkle !== false && cells.some(cell => cell.shield)) {

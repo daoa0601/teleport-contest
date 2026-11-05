@@ -2,14 +2,13 @@
 // display.c:tmp_at() for the valid-location marking overlay.
 import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
 import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './tty_topline.js';
-import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph } from './display.js';
+import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph, TemporaryMapEffect } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { cmdq_add_key, cmdq_clear, cmdq_pop, readcharPoskey, takeQueuedAdjacentPosition } from './cmd.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cansee } from './vision.js';
 import { coordinateDescription, farlookLocationDescription, screenDescription } from './pager.js';
@@ -256,7 +255,7 @@ export async function paintGetposCursor(cursor, message, markedSpots = null, { f
     if (markers && markedSpots) {
         await markers.start();
         for (const { x, y } of markedSpots)
-            await markers.show(x, y);
+            await markers.tmp_at(x, y);
     }
     // C getpos() only flushes, so a status change nothing marked for
     // redisplay stays unpainted.

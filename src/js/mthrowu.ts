@@ -40,9 +40,8 @@ import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import {
     canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor,
-    transientObjectGlyph,
+    transientObjectGlyph, TemporaryMapEffect,
 } from './display.js';
-import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
