@@ -4,7 +4,7 @@ import { A_DEX, A_STR, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hitMonsterWithKickedObject } from '../js/hero_ranged_attack.js';
+import { hitMonsterWithKickedObject } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

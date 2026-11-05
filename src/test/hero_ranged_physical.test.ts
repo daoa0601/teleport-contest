@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_DEX, MM_NOTAIL, NO_MINVENT, P_BOW, P_EXPERT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hitMonsterWithAppliedWeapon, hitMonsterWithThrownObject } from '../js/hero_ranged_attack.js';
+import { hitMonsterWithAppliedWeapon, hitMonsterWithThrownObject } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { initializeMonsterWormBody } from '../js/worm.js';

@@ -84,10 +84,9 @@ import {
     makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands,
     makeBlinded, cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting,
 } from './potion.js';
-import { hurtleHero, hurtleJumpTo } from './dothrow.js';
+import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
-import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import {
     heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating,
     setHeroBlindnessTimeout,
@@ -139,7 +138,6 @@ import {
     objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName,
     simpleObjectTypeName, singularObjectName, withIndefiniteArticle,
 } from './objnam.js';
-import { walkPathCells } from './path_walk.js';
 import {
     formatFeltMessage, formatHeardMessage, formatSeenMessage, pline as syncPline, plineWithContinuation,
     plineWithContinuation as pline, publishHeardMessage,

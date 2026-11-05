@@ -37,7 +37,9 @@ import { canSpotMonster } from './display.js';
 import { heroIsHallucinating } from './senses.js';
 import type { GameObject } from './object_types.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
-import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES } from './object_data.js';
+import { BANANA, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, CORPSE } from './object_data.js';
+import { FOOD_CLASS } from './objclass.js';
+import { objectMaterial } from './o_init.js';
 import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import type { Trap } from './map_types.js';
@@ -1594,6 +1596,24 @@ const M2_DOMESTIC = 0x00400000;
 export function is_domestic(mnum: number): boolean {
     return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_DOMESTIC) !== 0;
 }
+
+// C mondata.h:befriend_with_obj(): a monster reaches for a thrown object
+// instead of being struck by it. Monkeys and apes take bananas; unicorns
+// among the domestic species take only vegetarian food or a lichen corpse.
+export function befriendWithObj(mnum: number, object: GameObject): boolean {
+    if (mnum === PM_MONKEY || mnum === PM_APE)
+        return object.otyp === BANANA;
+    if (!is_domestic(mnum) || object.oclass !== FOOD_CLASS) return false;
+    return MONSTER_SYMBOL[mnum] !== S_UNICORN
+        || objectMaterial(object.otyp) === VEGGY
+        || object.otyp === CORPSE && object.corpsenm === PM_LICHEN;
+}
+
+const PM_MONKEY = MONSTER_NAME.indexOf('monkey');
+const PM_APE = MONSTER_NAME.indexOf('ape');
+const PM_LICHEN = MONSTER_NAME.indexOf('lichen');
+
+const VEGGY = 3;
 
 const M2_MERC = 0x00000200;
 

@@ -99,7 +99,10 @@ export function matching_launcher(ammunition: ObjectKind, launcher: ObjectCandid
         === -objectSkill(launcher.otyp);
 }
 
-// C dothrow.c:throwing_weapon().
+// C dothrow.c:throwing_weapon(). It stays beside the object-table predicates:
+// the throwing_weapon equivalence proof (state_specs.py throwing_weapon:tables)
+// runs this module in the prover's curated JS set, which dothrow.js's import
+// closure cannot join.
 export function isThrowingWeapon(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
@@ -113,6 +116,7 @@ export function isThrowingWeapon(object: ObjectCandidate): boolean {
         || object.otyp === WAR_HAMMER
         || object.otyp === AKLYS;
 }
+
 
 // C obj.h:is_multigen().
 export function isMultiGeneratedWeapon(object: ObjectCandidate): boolean {

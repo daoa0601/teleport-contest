@@ -67,8 +67,7 @@ import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeig
 import { breakChestLock, maybeResetPick } from './lock.js';
 import type { GameObject, ObjectMigration } from './object_types.js';
 import type { MapLocation, Position, Stairway } from './map_types.js';
-import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
-import { breakFloorObject, hurtleHero } from './dothrow.js';
+import { breakFloorObject, hurtleHero, hitMonsterWithKickedObject } from './dothrow.js';
 import type { GoldContactOptions } from './dothrow.js';
 import { inventoryItemDescription, delobj, currency, stack_object } from './invent.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';

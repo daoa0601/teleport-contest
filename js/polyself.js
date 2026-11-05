@@ -42,8 +42,7 @@ import { rankOf, roleSwitch } from './botl.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { heroCanSeeInvisible } from './mcastu.js';
 import { breatheInDirection } from './breath_ray.js';
-import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
-import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp } from './dothrow.js';
+import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp, hitMonsterWithThrownObject, } from './dothrow.js';
 import { mksobj, placeCreatedObject } from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
@@ -1628,7 +1627,7 @@ async function dropVenomAtHero(venom, state, publish, random, verbose) {
     return result;
 }
 async function hitMonsterWithVenom({ monster, target, venom, state, publish, random, rollOne, swallowed, finishMonsterKill, }) {
-    const impact = await hitMonsterWithThrownEggPieOrVenom(monster, venom, {
+    const impact = await hitMonsterWithThrownObject(monster, venom, {
         state,
         target,
         guaranteedHit: swallowed,
@@ -1639,8 +1638,6 @@ async function hitMonsterWithVenom({ monster, target, venom, state, publish, ran
             ? { ...options, deathContext: { kind: 'swallowed-venom' } }
             : options),
     });
-    if (!impact)
-        throw new Error(`Spitting requires a venom object, received object type ${venom.otyp}`);
     return impact;
 }
 async function spitHorizontally({ venom, direction, state, publish, random, rollOne, captureFlight, recoilHero, finishMonsterKill, }) {
