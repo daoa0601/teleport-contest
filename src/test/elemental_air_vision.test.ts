@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { AIR, CLOUD } from '../js/const.js';
-import { moveElementalBubbles } from '../js/elemental.js';
+import { movebubbles } from '../js/mkmaze.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { generateWaterLevel } from '../js/mkmaze.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
@@ -45,7 +45,7 @@ void test('Plane of Air sight through drifting clouds follows the maintained blo
         game.in_mklev = false;
         vision_reset_new_level();
 
-        await moveElementalBubbles();
+        await movebubbles();
         await vision_recalc(0);
 
         // The turn reset the plane to air and redrew the clouds; the hero

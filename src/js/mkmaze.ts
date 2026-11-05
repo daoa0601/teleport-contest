@@ -1,44 +1,58 @@
-// mkmaze.js — maze levels, special-level fixups and wall topology.
-// C ref: mkmaze.c — set_levltyp/set_levltyp_lit, wallification and spine
-// repair, place_lregion and mkportal, fixup_special and the named special
-// level fixups, makemaz and the random maze fillers, get_level_extends and
-// bound_digging. sp_lev.c construction lives in sp_lev.ts / sp_lev_lua.ts;
-// regular room-and-corridor generation stays in mklev.ts.
+// mkmaze.js — the mkmaze.c module: wall topology and spine repair,
+// set_levltyp, lregion/portal placement, fixup_special and the named
+// special-level fixups, makemaz and the random maze fillers, the orc-raid
+// stolen booty, and the Plane of Water/Air bubbles. sp_lev.c construction
+// lives in sp_lev.ts / sp_lev_lua.ts; regular room-and-corridor generation
+// stays in mklev.ts.
 
-import { RANDOM_CLASS, GEM_CLASS } from './objclass.js';
-import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { RANDOM_CLASS, GEM_CLASS, RING_CLASS, FOOD_CLASS } from './objclass.js';
+import { game, requireGameLevel, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { rn2, rnd, rn1 } from './rng.js';
-import { AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_earthlevel, Is_firelevel, Is_stronghold, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, LEVEL_TIMER_KIND } from './const.js';
+import { ACCESSIBLE, AIR, ALTAR, BLCORNER, BRCORNER, CLOUD, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_airlevel, Is_earthlevel, Is_firelevel, Is_stronghold, Is_waterlevel, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, MON_BUBBLEMOVE, NON_PM, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, LEVEL_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { isPoolAt, isIceAt } from './dbridge.js';
-import { BOULDER, STATUE } from './object_data.js';
+import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, BOULDER, STATUE, OBJECT_NAMES } from './object_data.js';
 import { createPoisonGasCloud } from './regions.js';
 import { heroIsDeaf } from './senses.js';
 import { plineWithContinuation } from './pline.js';
-import type { PlayingGameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { deleteTrap, maketrap } from './trap.js';
-import { canOverwriteTerrain } from './display.js';
+import { canOverwriteTerrain, cmapSymbolAppearance, newsym } from './display.js';
+import { CLR_BRIGHT_BLUE, CLR_CYAN, CLR_GRAY } from './terminal.js';
+import { CmapSymbol } from './glyph_numbers.js';
+import { placeObject, remove_object, stack_object } from './mkobj.js';
+import { clearMonsterWormFromMap } from './worm.js';
+import { block_point, recalc_block_point, unblock_point, vision_recalc } from './vision.js';
+import { heroIsPunished, reserveBallAndChainPlacement, restoreBallAndChainPlacement } from './ball.js';
 import { stopLevelTimer } from './timeout.js';
 import { fill_special_room, medusaPetrifiable } from './sp_lev.js';
 import { load_special } from './sp_lev_lua.js';
 import { goodPosition } from './teleport.js';
-import {mkcorpstat, createToptenObject, mkgold, mkobj_at, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt} from './mkobj.js';
-import { makemon } from './makemon.js';
+import { mkcorpstat, createToptenObject, mkgold, mkobj, mkobj_at, mksobj, deallocateObject, objectWeight, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt } from './mkobj.js';
+import { makemon, makemonAt, setMonsterMalign } from './makemon.js';
 import { occupied } from './mkroom.js';
-import { createMaze } from './maze_terrain.js';
-import { setupElementalBubbles } from './elemental.js';
+import { objectProb } from './o_init.js';
+import { upstart } from './hacklib.js';
+import { addFruit } from './fruit.js';
+import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { randomOrcName, setMonsterGivenName } from './do_name.js';
+import { addObjectToMonsterInventory } from './steal.js';
+import { randomTypeByDescription } from './objnam.js';
+import { migrateMonsterOffLevel } from './dog.js';
+import { is_orc } from './mondata.js';
+import type { Monster } from './monster_types.js';
 import { premap_detect } from './detect.js';
 import { placeHeroOnLevel, specialLevelAt } from './dungeon.js';
 import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir } from './mklev.js';
-import { createOrcRaid } from './orc_raid.js';
 import { isRoom } from './map_types.js';
-import type { ActiveSpecialLevel, ArrivalRegion, Position, Rectangle, Room, StairRegion } from './map_types.js';
+import type { ActiveSpecialLevel, ArrivalRegion, ElementalBubble, MapLocation, Position, Rectangle, Room, StairRegion } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { sendMonsterToLimbo } from './mon.js';
+import { sendMonsterToLimbo, mnearto, dealWithMonsterOvercrowding, moveMonsterNextToHero } from './mon.js';
+import type { GameMap } from './game.js';
 
 // C ref: mkmaze.c set_levltyp().  Terrain mutation owns persistent tile
 // side-effects; in particular, every lava form becomes lit even when the Lua
@@ -81,16 +95,21 @@ export function setLevelTerrainLit(x: number, y: number, typ: number, lit: numbe
     }
     return true;
 }
+// C mkmaze.c mz_move() direction order: north, east, south, west.
+const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]] as const;
+
 // C mkmaze.c:is_solid().
 function isSolidTile(x: number, y: number): boolean {
     if (!isok(x, y)) return true;
     return IS_STWALL(game.level?.at(x, y)?.typ ?? STONE);
 }
+// C mkmaze.c:iswall_or_stone().
 function isWallOrStone(x: number, y: number): 0 | 1 {
     if (!isok(x, y)) return 1;
     const typ = game.level?.at(x, y)?.typ ?? STONE;
     return (typ === STONE || isWallTile(x, y)) ? 1 : 0;
 }
+// C mkmaze.c:iswall().
 function isWallTile(x: number, y: number): 0 | 1 {
     if (!isok(x, y)) return 0;
     const typ = game.level?.at(x, y)?.typ ?? STONE;
@@ -167,6 +186,27 @@ export function fix_wall_spines(x1: number, y1: number, x2: number, y2: number, 
 export function wallification(x1: number, y1: number, x2: number, y2: number, protectedArea: WallArea | null = null): void {
     wall_cleanup(x1, y1, x2, y2, protectedArea);
     fix_wall_spines(x1, y1, x2, y2, protectedArea);
+}
+
+// C mkmaze.c:okay(): after mz_move() twice in the given direction, the cell
+// must still lie inside the active maze bounds and be untouched stone.
+function okay(
+    x: number, y: number, dir: number,
+    mazeXMax: number, mazeYMax: number, level: GameMap,
+): boolean {
+    const step = directions[dir];
+    if (!step) throw new RangeError(`mz_move: bad direction ${dir}`);
+    const nx = x + 2 * step[0], ny = y + 2 * step[1];
+    if (nx < 3 || ny < 3 || nx > mazeXMax || ny > mazeYMax) return false;
+    return level.requireAt(nx, ny).typ === STONE;
+}
+
+// C mkmaze.c:maze0xy(): find random starting point for maze generation.
+function maze0xy(mazeXMax: number, mazeYMax: number): Position {
+    return {
+        x: 3 + 2 * rn2((mazeXMax >> 1) - 1),
+        y: 3 + 2 * rn2((mazeYMax >> 1) - 1),
+    };
 }
 
 // C refs: mklev.c occupied(), mkmaze.c bad_location().  Exclusion zones and
@@ -516,7 +556,8 @@ async function fixupBaalz(active: ActiveSpecialLevel): Promise<void> {
     );
 }
 
-// C mkmaze.c:fixup_special() processes regions in Lua declaration order.
+// fixup_special()'s region pass: regions are processed in Lua declaration
+// order; this helper owns that loop for the port below.
 async function fixupSpecialRegions(active: ActiveSpecialLevel): Promise<void> {
     let branchDeclared = false;
     for (const region of active.levelRegions ?? []) {
@@ -579,7 +620,7 @@ export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
     );
     // mkmaze.c:fixup_special() must allocate and initially paint Air/Water
     // bubbles before named portals and arrival regions are materialized.
-    if (active?.elementalBubbles) await setupElementalBubbles();
+    if (active?.elementalBubbles) await setup_waterlevel();
     await fixupSpecialRegions(active);
     // fixup_special() reduces undead remains throughout the Castle and the
     // Priest quest, even after the hero has entered any morgue rooms.
@@ -587,7 +628,7 @@ export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
         level.flags.graveyard = true;
     if (active?.baalzFixup) await fixupBaalz(active);
     if (active.file === 'minetn-1.lua' && In_mines(game.u.uz))
-        await createOrcRaid();
+        await stolen_booty();
     // Minetown becomes a town only now, so the level's own monsters (and any
     // raiders) were created while in_town() still reported false.
     if (specialLevelAt()?.flags.town) level.flags.has_town = true;
@@ -631,14 +672,295 @@ export async function generateKnoxLevel(active: ActiveSpecialLevel): Promise<voi
         if (isRoom(room)) await fill_special_room(room);
 }
 
+// check_ransacked()'s ORC_LEADER marker and orcfruit[] table, plus the
+// monster/object indices the raid needs.  C mkmaze.c:706-714.
+const C_RATION = OBJECT_NAMES.indexOf('C-ration');
+const K_RATION = OBJECT_NAMES.indexOf('K-ration');
+const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');
+const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+
+const M2_ORC = 0x80;
+const DELIVER_SPECIES = 0x21fe; // undead, were, human, elf, dwarf, gnome, orc, demon, giant
+const PM_ORC = MONSTER_NAME.indexOf('orc');
+const PM_ORC_SHAMAN = MONSTER_NAME.indexOf('orc shaman');
+const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
+
+// do_name.c:christen_orc(): the gang name is composed into the orc's given
+// name.  Shared by stolen_booty() and the booty delivery below.
+function nameOrc(monster: Monster, gang: string | null, suffix = ''): void {
+    const name = upstart(randomOrcName());
+    setMonsterGivenName(monster, gang === null ? name + suffix : `${name} of ${upstart(gang)}`);
+}
+
+// C mkmaze.c:migrate_orc().
+async function migrate_orc(monster: Monster, leader: boolean, state: PlayingGameState): Promise<void> {
+    const current = state.u.uz;
+    const bottom = state.dungeons[current.dnum]?.num_dunlevs;
+    if (bottom === undefined) throw new Error('Orc raid requires the current Mines branch.');
+    let destination;
+    if (leader) {
+        destination = bottom - Number(rn2(40) === 0);
+        monster.migflags = (monster.migflags ?? 0) | MIGR_LEFTOVERS;
+    } else {
+        destination = Math.min(bottom, Math.max(current.dlevel + 1, current.dlevel + rn2(bottom - current.dlevel + 1)));
+        monster.migflags = (monster.migflags ?? 0) & ~MIGR_LEFTOVERS;
+    }
+    await migrateMonsterOffLevel(monster, state, { dst: { dnum: current.dnum, dlevel: destination } },
+        { kind: 'level-migration', mode: MIGR_RANDOM });
+}
+
+// C mkmaze.c:shiny_orc_stuff().
+// C objnam.c:shiny_obj(): the captain's ring is a random "shiny"
+// description match within the ring class.
+async function shiny_orc_stuff(monster: Monster, state: PlayingGameState): Promise<void> {
+    const captain = monster.mnum === PM_ORC_CAPTAIN;
+    const goldChance = captain ? 600 : 300;
+    if (rn2(1000) < goldChance) {
+        const gold = await mksobj(GOLD_PIECE, true, false);
+        gold.quan = 1 + rnd(goldChance);
+        gold.owt = objectWeight(gold);
+        await addObjectToMonsterInventory(monster, gold, state);
+    }
+    if (rn2(1000) < goldChance / 4) {
+        const gem = await mkobj(GEM_CLASS, false);
+        if (gem.otyp !== ROCK) await addObjectToMonsterInventory(monster, gem, state);
+        else deallocateObject(gem, state);
+    }
+    if (captain || rn2(8) === 0) {
+        const type = randomTypeByDescription('shiny', RING_CLASS, 0, state);
+        if (type !== null)
+            await addObjectToMonsterInventory(monster, await mksobj(type, true, false), state);
+    }
+}
+
+// C mkmaze.c:migr_booty_item().
+// C mkobj.c:mksobj_migr_to_species(): the object enters migration flagged
+// for orc-infested target species.
+async function migr_booty_item(type: number, gang: string, state: PlayingGameState): Promise<void> {
+    const object = await mksobj(type, true, false);
+    object.where = 'migrating';
+    object.owornmask = MIGR_TO_SPECIES;
+    object.migration = { source: { dnum: 0, dlevel: 0 }, destination: { dnum: 0, dlevel: 0 },
+        arrival: MIGR_TO_SPECIES, speciesFlags: M2_ORC };
+    object.oextra ??= {};
+    object.oextra.oname = gang;
+    state.migratingObjects ??= [];
+    state.migratingObjects.unshift(object);
+    if (object.oclass === FOOD_CLASS) {
+        if (type === SLIME_MOLD)
+            object.spe = addFruit(rn2(2) ? 'dwarven root' : 'paddle cactus', { state });
+        object.quan += rn2(3);
+        object.owt = objectWeight(object);
+    }
+}
+
+// C mkmaze.c:stolen_booty().
+export async function stolen_booty(): Promise<void> {
+    requirePlayingGame(game);
+    const state = game;
+    const gang = randomOrcName();
+    // create the stuff that the gang took
+    let count = rnd(4);
+    for (; count > 0; count--)
+        await migr_booty_item(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, gang, state);
+    count = rnd(3);
+    for (; count > 0; count--)
+        await migr_booty_item(SKELETON_KEY, gang, state);
+    await migr_booty_item(LEATHER_GLOVES + rn2(GAUNTLETS_OF_DEXTERITY - LEATHER_GLOVES + 1), gang, state);
+    count = rnd(10);
+    for (; count > 0; count--) {
+        // Food items - but no lembas! (or some other weird things)
+        const type = TRIPE_RATION + rn2(TIN - TRIPE_RATION + 1);
+        if (type !== LEMBAS_WAFER && ((objectProb[type] ?? 0) > 0 || type === C_RATION || type === K_RATION)
+            && type !== CORPSE && type !== EGG && type !== TIN)
+            await migr_booty_item(type, gang, state);
+    }
+    await migr_booty_item(rn2(2) ? LONG_SWORD : SILVER_SABER, gang, state);
+    // create the leader of the orc gang
+    const captain = await makemonAt(PM_ORC_CAPTAIN, 0, 0, MM_NONAME);
+    if (captain) {
+        setMonsterGivenName(captain, upstart(gang));
+        captain.mpeaceful = 0;
+        setMonsterMalign(captain, state);
+        await shiny_orc_stuff(captain, state);
+        await migrate_orc(captain, true, state);
+    }
+    // Make most of the orcs on the level be part of the invading gang.
+    // C fmon is newest-first; the runtime monster array stores births in order.
+    for (const monster of [...state.level.monsters].reverse()) {
+        if (monster.dead || monster.mhp <= 0) continue;
+        if (is_orc(monster.mnum) && !monster.name && rn2(10)) {
+            // Don't christen the orc captain from the level description as a
+            // subordinate member of the main orc horde.
+            if (monster.mnum !== PM_ORC_CAPTAIN) nameOrc(monster, gang);
+        }
+    }
+    // Lastly, ensure there's several more orcs from the gang along the way.
+    // The mechanics are such that they aren't actually identified as members
+    // of the invading gang until they get their spoils assigned to the
+    // inventory; handled during that assignment.
+    for (count = rn2(10) + 5; count > 0; count--) {
+        const monster = await makemonAt(PM_ORC + rn2(PM_ORC_SHAMAN - PM_ORC + 1), 0, 0, MM_NONAME);
+        if (!monster) continue;
+        await shiny_orc_stuff(monster, state);
+        await migrate_orc(monster, false, state);
+    }
+}
+
+// dokick.c:deliver_obj_to_mon()/dog.c: migrated MIGR_TO_SPECIES booty is
+// handed to the first matching monster that is created or arrives.  The
+// species flags ride the object's overloaded owornmask/corpsenm fields,
+// which is why the food filters above exclude them.
+export async function deliverOrcRaidLoot(monster: Monster, state: GameState, all = false): Promise<void> {
+    for (const object of [...(state.migratingObjects ?? [])]) {
+        const migration = object.migration;
+        if (!migration || !(migration.arrival & MIGR_TO_SPECIES)
+            || migration.speciesFlags === undefined || migration.speciesFlags === NON_PM
+            || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & DELIVER_SPECIES) !== migration.speciesFlags) continue;
+        const index = state.migratingObjects?.indexOf(object) ?? -1;
+        if (index >= 0) state.migratingObjects?.splice(index, 1);
+        object.where = 'free';
+        object.owornmask = 0;
+        object.ox = object.oy = 0;
+        if ((migration.speciesFlags & M2_ORC) && object.oextra?.oname) {
+            if (!monster.name) {
+                const inMines = state.u.uz?.dnum === state.mines_dnum;
+                if (inMines || rn2(2) === 0) nameOrc(monster, inMines ? object.oextra.oname : null, ' the Fence');
+            }
+            delete object.oextra.oname;
+        }
+        object.corpsenm = NON_PM;
+        delete object.migration;
+        await addObjectToMonsterInventory(monster, object, state);
+        if (!all) break;
+    }
+}
+
+// C mkmaze.c:maze_inbounds().
+function maze_inbounds(x: number, y: number, mazeXMax: number, mazeYMax: number): boolean {
+    // isok() test is superfluous here (unless something has clobbered the
+    // maze bounds), exactly as in C.
+    return x >= 2 && y >= 2 && x < mazeXMax && y < mazeYMax && isok(x, y);
+}
+
+// C mkmaze.c:maze_remove_deadends(). mz_move() steps one cell per call; the
+// two-step probe decides whether opening the near cell joins another passage.
+function maze_remove_deadends(
+    level: GameMap, typ: number, mazeXMax: number, mazeYMax: number,
+): void {
+    for (let x = 2; x < mazeXMax; x++)
+        for (let y = 2; y < mazeYMax; y++)
+            if (ACCESSIBLE(level.requireAt(x, y).typ) && x % 2 && y % 2) {
+                const dirok: number[] = [];
+                let idx2 = 0;
+                for (let dir = 0; dir < 4; dir++) {
+                    const step = directions[dir];
+                    if (!step) throw new RangeError(`mz_move: bad direction ${dir}`);
+                    let dx = x, dy = y;
+                    dx += step[0]; dy += step[1];
+                    if (!maze_inbounds(dx, dy, mazeXMax, mazeYMax)) {
+                        idx2++;
+                        continue;
+                    }
+                    let dx2 = x, dy2 = y;
+                    dx2 += 2 * step[0]; dy2 += 2 * step[1];
+                    if (!maze_inbounds(dx2, dy2, mazeXMax, mazeYMax)) {
+                        idx2++;
+                        continue;
+                    }
+                    if (!ACCESSIBLE(level.requireAt(dx, dy).typ)
+                        && ACCESSIBLE(level.requireAt(dx2, dy2).typ)) {
+                        dirok.push(dir);
+                        idx2++;
+                    }
+                }
+                if (idx2 >= 3 && dirok.length) {
+                    const dir = dirok[rn2(dirok.length)];
+                    const step = dir === undefined ? undefined : directions[dir];
+                    if (!step) throw new RangeError('Maze dead-end opening is out of range.');
+                    level.requireAt(x + step[0], y + step[1]).typ = typ;
+                }
+            }
+}
+
+// C mkmaze.c:create_maze() with the maze grid scaled to corridor and wall.
+// The grid lives directly on the map; bounds and the scaled-up copy follow
+// create_maze()'s own order.
+export function create_maze(corridorWidth = -1, wallThickness = -1,
+    removeDeadEnds = false, state: GameState = game): void {
+    const level = requireGameLevel(state);
+    const nativeXMax = (COLNO - 1) & ~1;
+    const nativeYMax = (ROWNO - 1) & ~1;
+
+    if (corridorWidth === -1) corridorWidth = rnd(4);
+    if (wallThickness === -1) wallThickness = rnd(4) - corridorWidth;
+
+    if (wallThickness < 1) wallThickness = 1;
+    else if (wallThickness > 5) wallThickness = 5;
+    if (corridorWidth < 1) corridorWidth = 1;
+    else if (corridorWidth > 5) corridorWidth = 5;
+
+    const scale = corridorWidth + wallThickness;
+    const rdx = Math.trunc(nativeXMax / scale);
+    const rdy = Math.trunc(nativeYMax / scale);
+    const mazeXMax = rdx * 2;
+    const mazeYMax = rdy * 2;
+    const passageType = level.flags.corrmaze ? CORR : ROOM;
+
+    /* fill the maze grid */
+    if (level.flags.corrmaze)
+        for (let x = 2; x < mazeXMax; x++)
+            for (let y = 2; y < mazeYMax; y++)
+                level.requireAt(x, y).typ = STONE;
+    else
+        for (let x = 2; x <= mazeXMax; x++)
+            for (let y = 2; y <= mazeYMax; y++)
+                level.requireAt(x, y).typ = ((x % 2) && (y % 2))
+                    ? STONE : HWALL;
+
+    /* create maze */
+    const mm = maze0xy(mazeXMax, mazeYMax);
+    walkfrom(mm.x, mm.y, 0, mazeXMax, mazeYMax, state);
+
+    if (removeDeadEnds)
+        maze_remove_deadends(level, passageType, mazeXMax, mazeYMax);
+
+    /* scale maze up if needed */
+    if (scale > 2) {
+        // Scaling copies terrain only; lighting and other cell fields stay local.
+        const saved = Array.from({ length: nativeXMax }, (_, x) =>
+            Array.from({ length: nativeYMax }, (_, y) => level.requireAt(x, y).typ));
+        let rx = 2, x = 2;
+        while (rx < nativeXMax) {
+            const mx = x % 2 ? corridorWidth : (x === 2 || x === mazeXMax) ? 1 : wallThickness;
+            let ry = 2, y = 2;
+            while (ry < nativeYMax) {
+                const my = y % 2 ? corridorWidth : (y === 2 || y === mazeYMax) ? 1 : wallThickness;
+                for (let dx = 0; dx < mx; dx++) {
+                    for (let dy = 0; dy < my; dy++) {
+                        if (rx + dx >= nativeXMax || ry + dy >= nativeYMax) break;
+                        const terrain = saved[x]?.[y];
+                        if (terrain === undefined) throw new RangeError(`Missing maze terrain at ${x},${y}`);
+                        level.requireAt(rx + dx, ry + dy).typ = terrain;
+                    }
+                }
+                ry += my;
+                y++;
+            }
+            rx += mx;
+            x++;
+        }
+    }
+}
+
 // C mkmaze.c:makemaz("") with no dungeon prototype or fill script.
 export async function generateRandomMaze(): Promise<void> {
     const level = requireGameLevel();
     level.flags.is_maze_lev = true;
     level.flags.corrmaze = rn2(3) === 0;
     const invocation = Invocation_lev(game.u.uz);
-    if (!invocation && rn2(2)) createMaze(-1, -1, rn2(5) === 0);
-    else createMaze(1, 1, false);
+    if (!invocation && rn2(2)) create_maze(-1, -1, rn2(5) === 0);
+    else create_maze(1, 1, false);
     if (!level.flags.corrmaze)
         wallification(2, 2, (COLNO - 1) & ~1, (ROWNO - 1) & ~1);
 
@@ -653,6 +975,39 @@ export async function generateRandomMaze(): Promise<void> {
     }
     await place_branch(is_branchlev());
     await populateRandomMaze();
+}
+
+// C mkmaze.c:walkfrom() (recursive form).  C resumes at the recursive child's
+// coordinates, which mz_move() already changed; restoring the parent's
+// coordinates changes the maze.
+export function walkfrom(
+    x: number, y: number, passageType: number, mazeXMax: number, mazeYMax: number,
+    state: GameState = game,
+): void {
+    const level = requireGameLevel(state);
+    const typ = passageType || (level.flags.corrmaze ? CORR : ROOM);
+    const start = level.requireAt(x, y);
+    if (!IS_DOOR(start.typ)) {
+        // might still be on edge of MAP, so don't overwrite
+        start.typ = typ;
+        start.flags = 0;
+    }
+
+    for (;;) {
+        const dirs: number[] = [];
+        for (let dir = 0; dir < 4; dir++)
+            if (okay(x, y, dir, mazeXMax, mazeYMax, level)) dirs.push(dir);
+        if (!dirs.length) return;
+        const dir = dirs[rn2(dirs.length)];
+        const step = dir === undefined ? undefined : directions[dir];
+        if (!step) throw new RangeError('Maze direction selection is out of range.');
+        x += step[0];
+        y += step[1];
+        level.requireAt(x, y).typ = typ;
+        x += step[0];
+        y += step[1];
+        walkfrom(x, y, typ, mazeXMax, mazeYMax, state);
+    }
 }
 
 // C mazexy(): generated maze cargo uses ROOM or CORR of the selected
@@ -835,6 +1190,114 @@ export async function fumaroles(state: PlayingGameState = requireInitializedGame
     return { heard, loud };
 }
 
+// C mkmaze.c's bubble movement boundaries: gbxmin/gbymin/gbxmax/gbymax
+// (mkmaze.c:1523-1530), mirrored here with the bubble walk bounds.
+const BOUNDS = {
+    xmin: 3, ymin: 1, xmax: 78, ymax: 20,
+    bubbleXMin: 4, bubbleYMin: 2, bubbleXMax: 77, bubbleYMax: 19,
+};
+
+// C mkmaze.c:movebubbles().  On the Plane of Water every bubble first
+// collects its contents (objects, monsters, hero, traps) and is filled with
+// water; on the Plane of Air the whole sky is repainted and the border
+// gains fresh clouds; then each bubble moves once, alternating the traversal
+// direction so overlapped junk does not pool in the last bubble.
+export async function movebubbles(): Promise<void> {
+    const bubbles = game.level?.elementalBubbles;
+    if (!Array.isArray(bubbles) || !bubbles.length) return;
+    const level = requireGameLevel();
+
+    await vision_recalc(2);
+    game._heroBubble = null;
+
+    const traversalUp = !!game._bubbleTraversalUp;
+    let ballChainPin = 0;
+    if (Is_waterlevel(game.u?.uz)) {
+        // keep attached ball&chain separate from bubble objects
+        if (heroIsPunished()) ballChainPin = await reserveBallAndChainPlacement();
+        const collectionOrder = traversalUp
+            ? bubbles : [...bubbles].reverse();
+        for (const bubble of collectionOrder) {
+            // pick up everything inside of a bubble, then fill its cells
+            // with water (the CONS_OBJ/CONS_MON/CONS_HERO/CONS_TRAP loop).
+            bubble.contents = [];
+            for (const { x, y } of bubbleCells(bubble)) {
+                const pile = level.objects[x]?.[y];
+                if (pile?.length) {
+                    const items = [];
+                    for (const object of [...pile]) {
+                        remove_object(object);
+                        object.ox = 0;
+                        object.oy = 0;
+                        items.unshift(object);
+                    }
+                    bubble.contents.unshift({ kind: 'objects', x, y, items });
+                }
+                const monster = monsterAtPosition(level, x, y);
+                if (monster) {
+                    bubble.contents.unshift({ kind: 'monster', x, y, monster });
+                    if (monster.wormno) await clearMonsterWormFromMap(monster);
+                    monster.mx = 0;
+                    monster.my = 0;
+                    monster.mstate = (monster.mstate ?? 0) | MON_BUBBLEMOVE;
+                    await newsym(x, y);
+                }
+                if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y) {
+                    bubble.contents.unshift({ kind: 'hero', x, y });
+                    game._heroBubble = bubble;
+                }
+                const trap = level.traps.find(candidate =>
+                    candidate.tx === x && candidate.ty === y);
+                if (trap)
+                    bubble.contents.unshift({ kind: 'trap', x, y, trap });
+                setElementalCell(level.at(x, y), WATER, false);
+                // C movebubbles() blocks the filled square outright; plain
+                // WATER is not an obstruction for does_block(), so the
+                // direct call matters.
+                block_point(x, y);
+            }
+        }
+    } else if (Is_airlevel(game.u?.uz)) {
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++) {
+                const loc = level.requireAt(x, y);
+                setElementalCell(loc, AIR, true);
+                // C assigns air_pos then recalc_block_point(): the cell
+                // joins or leaves the blocker table incrementally rather
+                // than through a full vision_reset() rebuild.
+                recalc_block_point(x, y);
+                const xedge = x < BOUNDS.bubbleXMin
+                    || x > BOUNDS.bubbleXMax;
+                const yedge = y < BOUNDS.bubbleYMin
+                    || y > BOUNDS.bubbleYMax;
+                if ((xedge || yedge) && rn2(xedge ? 3 : 5) === 0) {
+                    loc.typ = CLOUD;
+                    block_point(x, y);
+                }
+            }
+        }
+    }
+
+    // Every second time traverse down.  This is because otherwise all the
+    // junk that changes owners when bubbles overlap would eventually end up
+    // in the last bubble in the chain.
+    game._bubbleTraversalUp = !traversalUp;
+    const ordered = game._bubbleTraversalUp
+        ? bubbles : [...bubbles].reverse();
+    for (const bubble of ordered) {
+        const rx = rn2(3);
+        const ry = rn2(3);
+        const dx = bubble.dx + 1
+            - (!bubble.dx ? rx : (rx ? 1 : 0));
+        const dy = bubble.dy + 1
+            - (!bubble.dy ? ry : (ry ? 1 : 0));
+        await mv_bubble(bubble, dx, dy, false);
+    }
+    if (Is_waterlevel(game.u.uz) && heroIsPunished())
+        await restoreBallAndChainPlacement(ballChainPin);
+    game.vision_full_recalc = 1;
+}
+
 // C mkmaze.c:water_friction().  Water can deflect a swimming hero's
 // intended move onto the orthogonal axis.
 export async function applyWaterFriction(): Promise<void> {
@@ -857,4 +1320,271 @@ export async function applyWaterFriction(): Promise<void> {
         return;
     }
     await plineWithContinuation('Water turbulence affects your movements.');
+}
+
+// C mkmaze.c:restore_waterlevel() redraws each saved bubble through
+// mv_bubble(..., TRUE), including its Air-plane movement roll and
+// border-direction bounce.  It runs while the level is still reloading, so
+// it drives mv_bubble()'s synchronous cores directly.
+export function restore_waterlevel(): void {
+    if (!Is_airlevel(game.u.uz) && !Is_waterlevel(game.u.uz)) return;
+    game._heroBubble = null;
+    for (const bubble of game.level?.elementalBubbles ?? []) {
+        const motion = moveBubblePosition(bubble, 0, 0);
+        drawBubble(bubble);
+        changeBubbleDirection(bubble, motion.collision, true);
+    }
+}
+
+// C mkmaze.c:setup_waterlevel().  The entire level is remembered as one
+// glyph and unspecified terrain defaults to the level's base element; the
+// bubbles themselves are spaced by the plane's own skips.
+export async function setup_waterlevel(): Promise<void> {
+    if (!Is_airlevel(game.u?.uz) && !Is_waterlevel(game.u?.uz)) return;
+
+    const level = requireGameLevel();
+    level.flags.hero_memory = false;
+    level.elementalBounds = { ...BOUNDS };
+    level.elementalBubbles = [];
+
+    const baseTerrain = Is_waterlevel(game.u?.uz) ? WATER : AIR;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const loc = level.at(x, y);
+            if (!loc) continue;
+            if (loc.typ === STONE) loc.typ = baseTerrain;
+            const water = baseTerrain === WATER;
+            const appearance = cmapSymbolAppearance(
+                water ? CmapSymbol.water : CmapSymbol.air);
+            loc.remembered_glyph = {
+                ch: appearance.ch,
+                color: water ? CLR_BRIGHT_BLUE : CLR_CYAN,
+                decgfx: appearance.dec, kind: 'terrain', terrainName: water ? 'water' : 'air',
+            };
+        }
+    }
+
+    const xskip = Is_waterlevel(game.u?.uz)
+        ? 10 + rn2(10) : 6 + rn2(4);
+    const yskip = Is_waterlevel(game.u?.uz)
+        ? 4 + rn2(4) : 3 + rn2(3);
+    for (let x = BOUNDS.bubbleXMin; x <= BOUNDS.bubbleXMax; x += xskip)
+        for (let y = BOUNDS.bubbleYMin; y <= BOUNDS.bubbleYMax; y += yskip)
+            await mk_bubble(x, y, rn2(7));
+}
+
+// mk_bubble()'s static bmask[] table.  These bit masks make visually
+// pleasing bubbles on a normal aspect 25x80 terminal, which naturally
+// results in them being mathematically anything but symmetric; the first
+// two elements tell the dimensions of the bubble's bounding box.
+const BUBBLE_MASKS = [
+    { width: 2, height: 1, rows: [0x3] },
+    { width: 3, height: 2, rows: [0x7, 0x7] },
+    { width: 4, height: 3, rows: [0x6, 0xf, 0x6] },
+    { width: 5, height: 3, rows: [0xe, 0x1f, 0xe] },
+    { width: 6, height: 4, rows: [0x1e, 0x3f, 0x3f, 0x1e] },
+    { width: 7, height: 4, rows: [0x3e, 0x7f, 0x7f, 0x3e] },
+    { width: 8, height: 4, rows: [0x7e, 0xff, 0xff, 0x7e] },
+];
+
+// C mkmaze.c:mk_bubble().
+async function mk_bubble(x: number, y: number, maskIndex: number): Promise<void> {
+    if (x >= BOUNDS.bubbleXMax || y >= BOUNDS.bubbleYMax) return;
+    const mask = BUBBLE_MASKS[Math.min(maskIndex, BUBBLE_MASKS.length - 1)];
+    if (!mask) throw new Error(`Elemental bubble has invalid shape ${maskIndex}`);
+    const bubble: ElementalBubble = {
+        x: Math.min(x, BOUNDS.bubbleXMax - mask.width + 1),
+        y: Math.min(y, BOUNDS.bubbleYMax - mask.height + 1),
+        dx: 1 - rn2(3),
+        dy: 1 - rn2(3),
+        width: mask.width,
+        height: mask.height,
+        rows: [...mask.rows],
+    };
+    const bubbles = requireGameLevel().elementalBubbles;
+    if (!bubbles) throw new Error('Elemental bubble construction has no initialized bubble list');
+    bubbles.push(bubble);
+    await mv_bubble(bubble, 0, 0, true);
+}
+
+// C mkmaze.c:maybe_adjust_hero_bubble().  The bubble last carrying the hero
+// remains sticky for subsequent steps until movebubbles() collects again.
+export function maybe_adjust_hero_bubble(): void {
+    const hero = game.u;
+    if (!Is_waterlevel(hero.uz) || (!hero.dx && !hero.dy)) return;
+    const bubble = game._heroBubble;
+    if (bubble && game.level?.elementalBubbles?.includes(bubble) && !rn2(2)) {
+        bubble.dx = hero.dx ?? 0;
+        bubble.dy = hero.dy ?? 0;
+    }
+}
+
+// The levl[x][y] = water_pos / air_pos assignments of C movebubbles() and
+// mv_bubble(): the whole rm record is replaced, so every JS terrain alias is
+// reset, and the remembered glyph resolves the cmap symbol through the
+// active symbol set the way showsyms[] does in C.
+function setElementalCell(loc: MapLocation | null, typ: number, lit: boolean): void {
+    if (!loc) return;
+    loc.typ = typ;
+    loc.roomno = 0;
+    loc.lit = lit;
+    loc.waslit = false;
+    loc.flags = 0;
+    loc.doormask = 0;
+    loc.seenv = 0;
+    loc.horizontal = false;
+    loc.edge = false;
+    loc.wall_info = 0;
+    loc.icedpool = 0;
+    loc.altarmask = 0;
+    loc.ladder = 0;
+    loc.drawbridgemask = 0;
+    loc.looted = 0;
+    loc.emptygrave = false;
+    loc.blessedftn = false;
+    loc.disturbed = false;
+    loc.candig = false;
+    loc.arboreal_sdoor = false;
+    // movebubbles() resets old air clouds to an Air cell remembered as
+    // Cloud, and old water bubbles to a Water cell remembered as Water.
+    const water = typ === WATER;
+    const appearance = cmapSymbolAppearance(
+        water ? CmapSymbol.water : CmapSymbol.cloud);
+    loc.remembered_glyph = {
+        ch: appearance.ch,
+        color: water ? CLR_BRIGHT_BLUE : CLR_GRAY,
+        decgfx: appearance.dec, kind: 'terrain', terrainName: water ? 'water' : 'cloud',
+    };
+}
+
+// The b->bm bit-mask walk of C movebubbles()/mv_bubble(), which both inline;
+// shared here by the collection loop and the bubble painter.
+function bubbleCells(bubble: ElementalBubble): Position[] {
+    const cells: Position[] = [];
+    for (let dx = 0; dx < bubble.width; dx++) {
+        for (let dy = 0; dy < bubble.height; dy++) {
+            if ((bubble.rows[dy] ?? 0) & (1 << dx))
+                cells.push({ x: bubble.x + dx, y: bubble.y + dy });
+        }
+    }
+    return cells;
+}
+
+// The movement core of C mv_bubble(): clouds move only one time in six —
+// the roll belongs even to the initial zero-distance draw that paints a
+// newly allocated cloud — and the border clamps and bounces precede it.
+function moveBubblePosition(bubble: ElementalBubble, requestedDx: number, requestedDy: number) {
+    let dx = requestedDx;
+    let dy = requestedDy;
+    let collision = 0;
+
+    if (!Is_airlevel(game.u?.uz) || rn2(6) === 0) {
+        if (dx < -1 || dx > 1) dx = Math.sign(dx);
+        if (dy < -1 || dy > 1) dy = Math.sign(dy);
+
+        if (bubble.x <= BOUNDS.bubbleXMin) collision |= 2;
+        if (bubble.y <= BOUNDS.bubbleYMin) collision |= 1;
+        if (bubble.x + bubble.width - 1 >= BOUNDS.bubbleXMax)
+            collision |= 2;
+        if (bubble.y + bubble.height - 1 >= BOUNDS.bubbleYMax)
+            collision |= 1;
+
+        bubble.x = Math.max(
+            BOUNDS.bubbleXMin,
+            Math.min(BOUNDS.bubbleXMax - bubble.width + 1, bubble.x),
+        );
+        bubble.y = Math.max(
+            BOUNDS.bubbleYMin,
+            Math.min(BOUNDS.bubbleYMax - bubble.height + 1, bubble.y),
+        );
+
+        if (bubble.x === BOUNDS.bubbleXMin && dx < 0) dx = -dx;
+        if (bubble.x + bubble.width - 1 === BOUNDS.bubbleXMax && dx > 0)
+            dx = -dx;
+        if (bubble.y === BOUNDS.bubbleYMin && dy < 0) dy = -dy;
+        if (bubble.y + bubble.height - 1 === BOUNDS.bubbleYMax && dy > 0)
+            dy = -dy;
+
+        bubble.x += dx;
+        bubble.y += dy;
+    }
+
+    return { dx, dy, collision };
+}
+
+// The "boing?" tail of C mv_bubble(): border collisions flip the heading,
+// and a stationary bubble sometimes alters direction for fun anyway.
+function changeBubbleDirection(bubble: ElementalBubble, collision: number, initial: boolean): void {
+    if (collision & 1) bubble.dy = -bubble.dy;
+    if (collision & 2) bubble.dx = -bubble.dx;
+    if (!collision && !initial
+        && rn2(bubble.dx || bubble.dy ? 20 : 5) === 0) {
+        bubble.dx = 1 - rn2(3);
+        bubble.dy = 1 - rn2(3);
+    }
+}
+
+// The drawing half of C mv_bubble(): a water bubble paints AIR cells and
+// unblocks them, an air bubble paints CLOUD cells and blocks them.
+function drawBubble(bubble: ElementalBubble): void {
+    const isAir = Is_airlevel(game.u?.uz);
+    for (let dx = 0; dx < bubble.width; dx++) {
+        for (let dy = 0; dy < bubble.height; dy++) {
+            if (!((bubble.rows[dy] ?? 0) & (1 << dx))) continue;
+            const x = bubble.x + dx, y = bubble.y + dy;
+            const loc = game.level?.at?.(x, y);
+            if (isAir) {
+                if (loc) {
+                    loc.typ = CLOUD;
+                    loc.lit = true;
+                }
+                // C mv_bubble() blocks each drawn cloud cell incrementally.
+                block_point(x, y);
+            } else if (Is_waterlevel(game.u?.uz)) {
+                if (loc) {
+                    loc.typ = AIR;
+                    loc.lit = true;
+                }
+                unblock_point(x, y);
+            }
+        }
+    }
+}
+
+// C mkmaze.c:mv_bubble().  The player, the portal and all other objects and
+// monsters float along with their associated bubble; after the draw, a
+// water bubble puts its collected contents back at the moved position.
+async function mv_bubble(bubble: ElementalBubble, requestedDx: number, requestedDy: number, initial: boolean): Promise<void> {
+    const motion = moveBubblePosition(bubble, requestedDx, requestedDy);
+    drawBubble(bubble);
+    if (Is_waterlevel(game.u?.uz) && !initial) {
+        // replace contents of bubble
+        requirePlayingGame(game);
+        const level = requireGameLevel();
+        for (const content of bubble.contents || []) {
+            const x = content.x + motion.dx, y = content.y + motion.dy;
+            if (content.kind === 'objects') {
+                for (const object of content.items) {
+                    await placeObject(object, x, y);
+                    await stack_object(object);
+                }
+            } else if (content.kind === 'monster') {
+                // mnearto() might fail; the monster is moved next to the
+                // hero instead (C jumps to elemental_clog()).
+                if (!await mnearto(content.monster, x, y, game, { moveOther: true, flags: RLOC_NOMSG }))
+                    await dealWithMonsterOvercrowding(content.monster);
+            } else if (content.kind === 'hero') {
+                const occupant = monsterAtPosition(level, x, y);
+                const oldx = game.u.ux, oldy = game.u.uy;
+                await placeHeroOnLevel(x, y);
+                await newsym(oldx, oldy);
+                if (occupant) await moveMonsterNextToHero(occupant, game, { flags: RLOC_NOMSG });
+            } else if (content.kind === 'trap') {
+                content.trap.tx = x;
+                content.trap.ty = y;
+            }
+        }
+        bubble.contents = [];
+    }
+    changeBubbleDirection(bubble, motion.collision, initial);
 }

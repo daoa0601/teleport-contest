@@ -10,7 +10,6 @@ makemon	dist2	inlined	distu computed in finishMonsterBirth (makemon.ts)
 makemon	quest_info	inlined	urole.ldrnum/neminum compared directly (makemon.ts)
 makemon	sgn	inlined	Math.sign
 place_level	pick_level	inlined	impossible picks are removed from the candidate list (dungeon.ts)
-walkfrom	okay	inlined	carveMazeFrom tests the same up/right/down/left moves (maze_terrain.ts)
 mkgold	g_at	inlined	existing gold stack lookup (mkobj.ts)
 mkgold	mksobj_at	inlined	mksobj then placeCreatedObject (mkobj.ts)
 mktrap	sobj_at	inlined	boulder check (mklev.ts)
@@ -247,7 +246,6 @@ acid_damage	inventory_resistance_check	inlined	inventoryResists, rn2(100) < 99 f
 arti_invoke	invoke_taming	n/a	TAMING belongs only to the Palantir, which artilist.h compiles out
 consume_tin	fingers_or_gloves	inlined	glove or finger name (eat.ts)
 consume_tin	make_vomiting	inlined	startHeroVomiting rn1(15, 10) (eat.ts)
-create_maze	maze0xy	inlined	the two 3 + 2 * rn2() draws (maze_terrain.ts)
 create_monster	mk_roamer	inlined	roamer flags and finishSpecialRoamer (sp_lev.ts)
 create_monster	sp_amask_to_amask	inlined	sp_amask_to_amask (sp_lev.ts)
 create_monster	def_char_to_monclass	inlined	des.monster option parsing (lua/des.ts)
@@ -1492,10 +1490,7 @@ render_status	condattr	inlined	status style spans carry attributes (status_layou
 render_status	condcolor	inlined	status style spans carry colors (status_layout.ts)
 render_status	tty_curs	inlined	status rows written through the display cell grid (status_layout.ts/display.ts)
 render_status	tty_putstatusfield	inlined	field text written per span (status_layout.ts)
-stolen_booty	migr_booty_item	inlined	createStolenItem (orc_raid.ts)
-stolen_booty	migrate_orc	inlined	sendRaiderToLowerMines (orc_raid.ts)
-stolen_booty	rndorcname	inlined	randomOrcName (orc_raid.ts)
-stolen_booty	shiny_orc_stuff	inlined	giveShinyLoot (orc_raid.ts)
+stolen_booty	rndorcname	inlined	randomOrcName from do_name.ts (mkmaze.ts)
 tty_putmsghistory	dumplogmsg	n/a	no dumplog output in the port
 tty_putmsghistory	free_msghistory_snapshot	n/a	snapshot buffers are JS garbage (display.ts putMessageHistory)
 tty_putmsghistory	msghistory_snapshot	n/a	_messageHistory ring holds the lines without C snapshot buffers (display.ts)
@@ -1521,9 +1516,9 @@ more	xwaitforspace	inlined	nhgetch loop until space/enter/escape (display.ts pag
 moveloop_preamble	enter_explore_mode	n/a	needs the command-line -X restore flag; the browser runtime picks explore mode at game creation or via the exploremode command
 moveloop_preamble	fix_shop_damage	inlined	fixShopDamage in the restore path (allmain.ts)
 moveloop_preamble	initrack	inlined	initTrack (allmain.ts)
-mv_bubble	block_point	inlined	drawBubble repaints cells and vision_reset() recomputes blockers (elemental.ts)
-mv_bubble	sgn	inlined	Math.sign on out-of-range deltas (elemental.ts moveBubblePosition)
-mv_bubble	unblock_point	inlined	drawBubble repaints cells and vision_reset() recomputes blockers (elemental.ts)
+mv_bubble	block_point	inlined	drawBubble repaints cells and vision_reset() recomputes blockers (mkmaze.ts)
+mv_bubble	sgn	inlined	Math.sign on out-of-range deltas (mkmaze.ts moveBubblePosition)
+mv_bubble	unblock_point	inlined	drawBubble repaints cells and vision_reset() recomputes blockers (mkmaze.ts)
 process_text_window	end_glyphout	inlined	overlay painting restores the map underlay (prevmsg.ts)
 process_text_window	g_putch	inlined	overlay writes through the display cell grid (prevmsg.ts)
 process_text_window	tty_curs	inlined	setCursor while paging (prevmsg.ts)
@@ -1585,8 +1580,8 @@ minimal_monnam	fmt_ptr	n/a	diagnostic-only pointer formatting
 minimal_monnam	nextmbuf	n/a	monnam buffer pool has no port counterpart
 mkswamp	nexttodoor	inlined	swampSquareBordersDoor checks doors incl. SDOOR (mkroom.ts)
 mkswamp	t_at	inlined	traps.find on the swamp square (mkroom.ts)
-movebubbles	alloc	n/a	bubble contents are JS object literals (elemental.ts)
-movebubbles	t_at	inlined	traps.find in collectWaterBubbleContents (elemental.ts)
+movebubbles	alloc	n/a	bubble contents are JS object literals (mkmaze.ts)
+movebubbles	t_at	inlined	traps.find in the inlined collection loop (mkmaze.ts movebubbles)
 obj_meld	maybe_unhide_at	inlined	maybeUnhideAt on the absorbed glob square (mkobj.ts)
 obj_meld	newsym	inlined	newsym under cansee at the old square (mkobj.ts)
 outoracle	couldnt_open_file	n/a	oracle records are bundled in oracle_data.ts; no data-file open
@@ -1628,7 +1623,6 @@ gulpmm	mdamagem	inlined	resolveDamage callback resolves shared damage (mhitm.ts)
 hitum_cleave	xytodir	inlined	DIRECTIONS.findIndex of the target delta (uhitm.ts)
 litter_scatter	onbill	inlined	bill bo_id membership checks before unbilling (shk.ts)
 make_happy_shoppers	angry_shk_exists	inlined	monsters.some isshk and not peaceful (shk.ts)
-maze_remove_deadends	maze_inbounds	inlined	inMaze closure bounds the scan (maze_terrain.ts openDeadEnds)
 menu_pick_pay_items	add_menu	inlined	paymentMenu sections and showMultiSelectWindow (shk.ts)
 mkclass_poly	mk_gen_ok	inlined	genocide/placeholder/mail-daemon mask checks inline (polyself.ts pickFormFromClass)
 pacify_guards	iter_mons	inlined	monster array loop (shop_damage.ts makeShoppersHappy)
@@ -1641,7 +1635,6 @@ print_queue	kind_name	inlined	TIMER_FUNC_NAMES maps kinds (timeout.ts)
 randomkey	cmd_from_dir	inlined	keyForDirection(direction, mode) (input.ts randomKey)
 remember_topl	alloc	n/a	history ring is a JS array (display.ts)
 set_item_state	tty_curs	inlined	setCursor(left, row) before repainting (tty_menu.ts)
-setup_waterlevel	mk_bubble	inlined	makeBubble builds and places each bubble (elemental.ts)
 shopdig	sgn	inlined	Math.sign on the alignment shift (shk.ts)
 show_topl	tty_clear_nhwindow	inlined	clearRow over the covered rows (display.ts)
 status_eval_next_unhilite	hilite_reset_needed	inlined	statusHighlights.evaluateNextUnhilite (display.ts)
@@ -1825,14 +1818,14 @@ leppie_stash	t_at	inlined	stashLeprechaunGold rejects coordinate-matching traps 
 m_dowear_type	discover_object	inlined	wearSlot calls learnObjectType when new armor hides a previously visible monster (monworn.ts)
 m_search_items	t_at	inlined	searchMonsterItems finds the coordinate-matching trap in level.traps before considering that pile
 mayberem	dist2	inlined	stillTogether checks that both coordinate differences are at most one, equivalent to squared distance below three
-migr_booty_item	mksobj_migr_to_species	inlined	createStolenItem constructs the object, marks MIGR_TO_SPECIES and links it to the migration list (orc_raid.ts)
+migr_booty_item	mksobj_migr_to_species	inlined	migr_booty_item constructs the object, marks MIGR_TO_SPECIES and links it to the migration list (mkmaze.ts)
 monmulti	rounddiv	inlined	monsterVolleyCount uses trunc((spe+1)/3), the native rounding for a positive launcher enchantment
 namefloorobj	call_ok	inlined	nameFloorType needs only GETOBJ_EXCLUDE from call_ok and uses objectTypeIsCallable, then checks dknown (do_name.ts)
 one_characteristic	enlght_line	inlined	characteristicLine builds the native current/final sentence; insight.ts applies contractions before display
 rloc_pos_ok	tele_jump_ok	inlined	monsterTeleportDestinationOk uses crossesTeleportBoundary after goodPosition has validated the destination (teleport.ts)
 setopt_cmd	cmd_from_func	inlined	setOptionsCommand uses CommandBindings.keyForCommand, whose handler lookup preserves the native preferred-key rules
 setopt_cmd	cmdname_from_func	inlined	setOptionsCommand supplies the full fixed command names optionsfull, reqmenu and options when keys are absent
-shiny_orc_stuff	shiny_obj	inlined	giveShinyLoot calls randomTypeByDescription with shiny and RING_CLASS (orc_raid.ts)
+shiny_orc_stuff	shiny_obj	inlined	shiny_orc_stuff calls randomTypeByDescription with shiny and RING_CLASS (mkmaze.ts)
 stop_occupation	maybe_finished_meal	inlined	stopHeroOccupation checks the food occupation progress and completes its last bite before clearing work (occupation.ts)
 tiphat	dist2	inlined	acknowledgeHelmetTip uses adjacent coordinate differences, equivalent to next2u squared distance below three
 untwoweapon	update_inventory	n/a	The pinned 80x24 tty has no permanent inventory window

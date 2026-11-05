@@ -59,7 +59,7 @@ import { depth } from './dungeon.js';
 import { dropSpecialMonsterObjects } from './steal.js';
 import { randomMonsterRelocation, relocateMonsterTo, enexto, goodPosition } from './teleport.js';
 import { somexy } from './mkroom.js';
-import { deliverOrcRaidLoot } from './orc_raid.js';
+import { deliverOrcRaidLoot } from './mkmaze.js';
 import { mintrap } from './trap.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { setShopResidency, makeShopkeeperHappy, makeShoppersHappy } from './shk.js';

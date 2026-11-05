@@ -5,7 +5,7 @@ import {
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { freshGame } from './support/game-state.js';
-import { carveMazeFrom, createMaze } from '../js/maze_terrain.js';
+import { create_maze, walkfrom } from '../js/mkmaze.js';
 import { initRng } from '../js/rng.js';
 
 const mazeXMax = (COLNO - 1) & ~1;
@@ -51,7 +51,7 @@ for (const corrmaze of [false, true]) {
     void test(`${corrmaze ? 'corridor' : 'room'} maze connects every maze cell`, () => {
         const state = freshMaze(corrmaze);
 
-        createMaze(1, 1, false, state);
+        create_maze(1, 1, false, state);
 
         const passageType = corrmaze ? CORR : ROOM;
         let cells = 0;
@@ -79,7 +79,7 @@ void test('corridor maze leaves its upper boundaries intact; room maze initializ
         state.level.requireAt(2, 2).flags = 7;
         state.level.requireAt(2, 2).lit = true;
 
-        createMaze(1, 1, false, state);
+        create_maze(1, 1, false, state);
 
         assert.equal(state.level.requireAt(mazeXMax, 4).typ, corrmaze ? DOOR : HWALL);
         assert.equal(state.level.requireAt(4, mazeYMax).typ, corrmaze ? DOOR : HWALL);
@@ -98,7 +98,7 @@ void test('maze walk preserves its starting door and respects the supplied bound
     state.level.requireAt(5, 3).flags = 7;
     state.level.requireAt(4, 3).flags = 7;
 
-    carveMazeFrom(3, 3, CORR, 7, 3, state);
+    walkfrom(3, 3, CORR, 7, 3, state);
 
     assert.equal(door.typ, DOOR);
     assert.equal(door.flags, D_CLOSED);
@@ -115,7 +115,7 @@ void test('wide corridors expand maze cells while retaining the outer wall and l
     const state = freshMaze();
     state.level.requireAt(4, 4).lit = true;
 
-    createMaze(3, 2, false, state);
+        create_maze(3, 2, false, state);
 
     for (let x = 3; x <= 5; x++) {
         for (let y = 3; y <= 5; y++)
@@ -132,7 +132,7 @@ void test('wide corridors expand maze cells while retaining the outer wall and l
 void test('dead-end removal connects each narrow maze cell to at least two neighbors', () => {
     const state = freshMaze(true);
 
-    createMaze(1, 1, true, state);
+        create_maze(1, 1, true, state);
 
     for (let x = 3; x < mazeXMax; x += 2) {
         for (let y = 3; y < mazeYMax; y += 2) {
@@ -148,7 +148,7 @@ void test('default and clamped maze widths produce usable connected passages', (
     for (const [corridor, wall] of [[-1, -1], [0, 0], [9, 9]]) {
         const state = freshMaze();
 
-        createMaze(corridor, wall, true, state);
+        create_maze(corridor, wall, true, state);
 
         assertConnectedPassages(state.level);
         assert.equal(state.level.requireAt(1, 3).typ, STONE);

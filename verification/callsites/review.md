@@ -155,6 +155,7 @@ All generated diagnostics are under `.cache/fv-callsites-*`.
 | `src/js/mklev.ts:7911` mazeFloorPoint | constant | `mkmaze.c:1315 mazexy` |
 | `src/js/mklev.ts:7931` vibratingSquarePoint | constant | `mkmaze.c:1041 pick_vibrasquare_location` |
 | `src/js/mklev.ts:7932` vibratingSquarePoint | constant | `mkmaze.c:1041 pick_vibrasquare_location` |
+| `src/js/mkmaze.ts:802` stolen_booty | constant | `mkmaze.c:798 stolen_booty` |
 | `src/js/monmove.ts:6748` resumeDeferredHeroLegs | invariant | `uhitm.c:4424 mhitm_ad_legs` |
 | `src/js/mon.ts:3548` selectDoppelgangerFormOnce | constant | `mon.c:5156 select_newcham_form` |
 | `src/js/monster_ranged_alignment.ts:64` linedUp | guarded | `mthrowu.c:1329 linedup` |
@@ -162,8 +163,6 @@ All generated diagnostics are under `.cache/fv-callsites-*`.
 | `src/js/mplayer.ts:50` createPlayerMonsters | constant | `mplayer.c:326 create_mplayers` |
 | `src/js/music.ts:129` improvisedNotes | constant | `music.c:732 improvised_notes` |
 | `src/js/options.ts:1164` chooseRandomPart | guarded | `cfgfiles.c:463 choose_random_part` |
-| `src/js/orc_raid.ts:69` createOrcRaid | constant | `mkmaze.c:798 stolen_booty` |
-| `src/js/polyself.ts:1417` pickFormFromClass | guarded | `makemon.c:1982 mkclass_poly` |
 | `src/js/potion.ts:2276` mixPotions | guarded | `potion.c:2441 potion_dip` |
 | `src/js/read.ts:313` enchantArmor | guarded | `read.c:1114 seffect_enchant_armor` |
 | `src/js/selvar.ts:266` selection_rndcoord | guarded | `selvar.c:283 selection_rndcoord` |

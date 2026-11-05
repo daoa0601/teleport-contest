@@ -39,7 +39,7 @@ import { recordAchievement, recordDungeonEntryAchievements } from './insight.js'
 import { heroHasOlfaction } from './polyself.js';
 import { setShopResidency, fixShopDamage } from './shk.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest } from './quest.js';
-import { moveElementalBubbles, restoreElementalBubbles } from './elemental.js';
+import { movebubbles, restore_waterlevel } from './mkmaze.js';
 import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL } from './const.js';
 import { buriedBallToPunishment } from './dig.js';
 import { resurrectWizard } from './wizard.js';
@@ -287,7 +287,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             await restoreCachedMonsterState(cached);
             await restoreLevelRegions(game, game.moves - cached.savedAt);
             // getlev() redraws saved bubbles before goto_level() moves them.
-            restoreElementalBubbles();
+            restore_waterlevel();
             // C getlev() reloads the level's saved light sources onto the
             // front of light_base (restore.c:1145), reversed from the
             // newest-first save order and ahead of the hero's carried
@@ -642,7 +642,7 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow, was
             return true;
         await resolveHeroArrivalCollision();
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz))
-            await moveElementalBubbles();
+            await movebubbles();
         else if (game.level.flags.fumaroles)
             await fumaroles(game);
         vision_reset_new_level();

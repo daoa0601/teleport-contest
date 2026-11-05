@@ -94,7 +94,7 @@ import { automaticSearch, mapVicinity, revealWarnedMonsters } from './detect.js'
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { monsterAlignmentType } from './priest.js';
-import { moveElementalBubbles } from './elemental.js';
+import { movebubbles } from './mkmaze.js';
 import { removeObjectAndContentsFromBill, currentShopResident, fixShopDamage } from './shk.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout } from './properties.js';
@@ -517,7 +517,7 @@ async function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
     // Water share the moving bubble list created by fixup_special(); Fire
     // reuses the same fumarole sampler as initial arrival.
     if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
-        await moveElementalBubbles();
+        await movebubbles();
     else if (game.level?.flags?.fumaroles)
         await fumaroles(game);
     // C allmain.c:379-388, still inside the once-per-turn block: an immobile
