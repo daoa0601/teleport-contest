@@ -20,7 +20,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, objectIsHardHelmet, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitValue } from './weapon.js';
 import { isPolearm, isMissileObject, isWeaponTool } from './object_properties.js';
-import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdSlim, mhitmAdStck, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster, passiveDamage, erodeArmor, } from './uhitm.js';
+import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdCorr, mhitmAdDcay, mhitmAdRust, mhitmAdSlim, mhitmAdStck, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster, passiveDamage, erodeArmor, } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifact.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
@@ -83,9 +83,6 @@ import { finishHeroHelplessness } from './allmain.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
-const PM_LEATHER_GOLEM = 253;
-const PM_WOOD_GOLEM = 254;
-const PM_IRON_GOLEM = 259;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const M1_NOEYES = 0x00001000;
 const S_EEL = 57;
@@ -156,22 +153,6 @@ async function hitmsg(monster, attack, previousAttack = null, random = rn2) {
         && attack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[attack.attackIndex]
         ? ' again' : '';
     return `${attack.attackType === 16 ? possessiveName(subject) : subject} ${verb}${again}!`;
-}
-async function resolveErosionFormRehumanization(heroAttack, effectMessage) {
-    const game = requireInitializedGame();
-    let pagerOwned = false;
-    const effectDismissal = await plineWithContinuation(effectMessage);
-    if (effectDismissal !== null && effectDismissal !== undefined)
-        pagerOwned = true;
-    const restored = await returnHeroToHumanForm(game, {
-        publish: async (message) => {
-            const dismissal = await plineWithContinuation(message);
-            if (dismissal !== null && dismissal !== undefined)
-                pagerOwned = true;
-        },
-    });
-    heroAttack.heroDied = restored.died;
-    return pagerOwned;
 }
 export async function presentMonsterAttackEffects(action, game, { random = rn2, rollDice = d, rollOne = rnd } = {}) {
     const monster = action.monster;
@@ -462,6 +443,12 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     || heroAttack.effect === 'leg-natural'
                     || heroAttack.effect === 'sticking-natural'
                     || heroAttack.effect === 'slime-natural'
+                    || heroAttack.effect === 'rust-natural'
+                    || heroAttack.effect === 'cancelled-rust-natural'
+                    || heroAttack.effect === 'corrosion-natural'
+                    || heroAttack.effect === 'cancelled-corrosion-natural'
+                    || heroAttack.effect === 'decay-natural'
+                    || heroAttack.effect === 'cancelled-decay-natural'
                     || heroAttack.effect === 'item-theft'
                     ? null
                     : await hitmsg(monster, heroAttack, previousHeroAttack, random);
@@ -732,34 +719,64 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     heroAttack.damage = legs.damage;
                 }
                 // C uhitm.c:mhitm_ad_rust()/mhitm_ad_corr()/mhitm_ad_dcay()
-                // mhitu branches: a cancelled attacker stops after hitmsg();
-                // a completely rustable/rottable hero form rehumanizes, and
-                // every other hero loses armor erosion before hitmu()'s
-                // shared knockback and damage tail.
-                if (heroAttack.effect === 'rust-natural') {
-                    if (Upolyd(game.u) && game.u.umonnum === PM_IRON_GOLEM) {
-                        const rehumanizePager = await resolveErosionFormRehumanization(heroAttack, 'You rust!');
-                        paging.pagerOwned ||= rehumanizePager;
-                        if (heroAttack.heroDied)
-                            contactTailPending = false;
-                    }
-                    else {
-                        await erodeArmor(game.u, 'rust', { publish: publishEquipmentMessage });
+                // mhitu branches: uhitm.ts runs the cancelled-attacker stop,
+                // the rusting/rotting hero's rehumanize() and armor erosion
+                // after the precomposed hitmsg() line; hitmu()'s shared
+                // knockback and damage tail follows.
+                if (heroAttack.effect === 'rust-natural'
+                    || heroAttack.effect === 'cancelled-rust-natural') {
+                    const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
+                    const rust = await mhitmAdRust({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            cancelled: heroAttack.effect === 'cancelled-rust-natural',
+                            publish: publishEquipmentMessage,
+                        },
+                    });
+                    heroAttack.damage = rust.damage;
+                    if (rust.heroDied) {
+                        heroAttack.heroDied = true;
+                        contactTailPending = false;
                     }
                 }
-                if (heroAttack.effect === 'corrosion-natural') {
-                    await erodeArmor(game.u, 'corrosion', { publish: publishEquipmentMessage });
+                if (heroAttack.effect === 'corrosion-natural'
+                    || heroAttack.effect === 'cancelled-corrosion-natural') {
+                    const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
+                    const corr = await mhitmAdCorr({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            cancelled: heroAttack.effect === 'cancelled-corrosion-natural',
+                            publish: publishEquipmentMessage,
+                        },
+                    });
+                    heroAttack.damage = corr.damage;
                 }
-                if (heroAttack.effect === 'decay-natural') {
-                    if (Upolyd(game.u)
-                        && (game.u.umonnum === PM_LEATHER_GOLEM || game.u.umonnum === PM_WOOD_GOLEM)) {
-                        const rehumanizePager = await resolveErosionFormRehumanization(heroAttack, 'You rot!');
-                        paging.pagerOwned ||= rehumanizePager;
-                        if (heroAttack.heroDied)
-                            contactTailPending = false;
-                    }
-                    else {
-                        await erodeArmor(game.u, 'rot', { publish: publishEquipmentMessage });
+                if (heroAttack.effect === 'decay-natural'
+                    || heroAttack.effect === 'cancelled-decay-natural') {
+                    const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
+                    const decay = await mhitmAdDcay({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            cancelled: heroAttack.effect === 'cancelled-decay-natural',
+                            publish: publishEquipmentMessage,
+                        },
+                    });
+                    heroAttack.damage = decay.damage;
+                    if (decay.heroDied) {
+                        heroAttack.heroDied = true;
+                        contactTailPending = false;
                     }
                 }
                 if (contactTailPending) {

@@ -3181,9 +3181,9 @@ export async function mhitm_mgc_atk_negated(attacker: Hero | Monster, defender: 
     return negated;
 }
 
-// Native uhitm.c monster-vs-monster acid and erosion; mhitm_ad_fire(),
-// mhitm_ad_cold() and mhitm_ad_elec() live above with their other
-// actor branches.
+// Native uhitm.c monster-vs-monster acid; mhitm_ad_fire(), mhitm_ad_cold(),
+// mhitm_ad_elec(), mhitm_ad_rust(), mhitm_ad_corr() and mhitm_ad_dcay() live
+// with their other actor branches.
 export async function applyMonsterElementEffect(
     attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
 ): Promise<MonsterCombatEffectResult> {
@@ -3191,33 +3191,13 @@ export async function applyMonsterElementEffect(
     if (type === AD_FIRE) return await mhitmAdFire({ attacker, defender, context });
     if (type === AD_COLD) return await mhitmAdCold({ attacker, defender, context });
     if (type === AD_ELEC) return await mhitmAdElec({ attacker, defender, context });
-    if (type === AD_RUST || type === AD_CORR || type === AD_DCAY)
-        return await erosionContact(attacker, defender, type, context);
+    if (type === AD_RUST) return await mhitmAdRust({ attacker, defender, context });
+    if (type === AD_CORR) return await mhitmAdCorr({ attacker, defender, context });
+    if (type === AD_DCAY) return await mhitmAdDcay({ attacker, defender, context });
     if (type === AD_ACID) return await acidContact(attacker, defender, context);
     throw new RangeError(`Unsupported monster elemental damage type: ${type}`);
 }
 
-async function erosionContact(
-    attacker: Monster, defender: Monster, type: typeof AD_RUST | typeof AD_CORR | typeof AD_DCAY,
-    context: MonsterCombatEffectContext,
-): Promise<MonsterCombatEffectResult> {
-    // Unlike elemental cancellation, cancelled erosion retains rolled damage.
-    if (attacker.mcan) return damageResult(context.damage);
-    const { state, visible, publish, random } = context;
-    const species = MONSTER_NAME[defender.mnum];
-    if (type === AD_RUST && species === 'iron golem'
-        || type === AD_DCAY && (species === 'wood golem' || species === 'leather golem')) {
-        if (visible && canSeeMonster(defender))
-            await publish(`${monsterName(defender, { state, capitalized: true })} ${wornMonsterLifeSaver(defender)
-                ? 'starts to fall' : 'falls'} to pieces!`);
-        return await killGolem(type, context);
-    }
-    await erodeArmor(defender, type === AD_RUST ? 'rust' : type === AD_CORR ? 'corrosion' : 'rot', {
-        state, publish, random,
-    });
-    defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
-    return damageResult(0);
-}
 
 async function acidContact(
     attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
@@ -3288,6 +3268,165 @@ async function escapeAfterTheft(
     if (visible && spotted && !canSpotMonster(attacker))
         await publish(`${before} suddenly disappears!`);
     return { ...effectResult(0), nativeResult: M_ATTK_AGR_DONE };
+}
+
+const PM_IRON_GOLEM = MONSTER_NAME.indexOf('iron golem');
+const PM_LEATHER_GOLEM = MONSTER_NAME.indexOf('leather golem');
+const PM_WOOD_GOLEM = MONSTER_NAME.indexOf('wood golem');
+
+export interface HeroDefenderErosionContext {
+    state: PlayingGameState;
+    attacker: Monster;
+    /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
+    hitMessage: string | null;
+    /** mhm->damage on entry: hitmu()'s declared damage roll. */
+    damage: number;
+    /** magr->mcan: a cancelled attacker stops after hitmsg(). */
+    cancelled: boolean;
+    publish: MessagePublisher;
+}
+
+// C mhitm_ad_rust()/mhitm_ad_dcay() mhitu branches: the "You rust!"/"You
+// rot!" line and rehumanize() (mhitu.c).  KMH -- this is okay with unchanging.
+async function rehumanizeErosionForm(
+    effectMessage: string, state: PlayingGameState, publish: MessagePublisher,
+): Promise<boolean> {
+    await publish(effectMessage);
+    const restored = await returnHeroToHumanForm(state, { publish });
+    return restored.died;
+}
+
+// One call of mhitm_adtyping(… AD_RUST …); the union member names the actor
+// that C compares against &gy.youmonst.
+export type MhitmAdRustCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderErosionContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+// C uhitm.c:mhitm_ad_rust().
+export async function mhitmAdRust(call: MhitmAdRustCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero rusts a monster's armor */
+        const monster = call.defender;
+        const { state, publish, random } = call.context;
+        // completelyrusts(pd): iron golem; xkilled() then erode_armor() still
+        // runs on its remains.  The DEF_DIED flag comes from damageum's tail.
+        if (speciesIs(monster, 'iron golem')) {
+            await publish(`${subject(monster, call.context)} ${wornMonsterLifeSaver(monster) ? 'starts to fall' : 'falls'} to pieces!`);
+            await killNaturalTarget(monster, call.context);
+        }
+        if (!state.program_state.gameover)
+            await erodeArmor(monster, 'rust', { state, publish, random });
+        return statusContinueResult(0);
+    } else if ('mdef' in call) {
+        /* mhitu: a monster rusts the hero */
+        const { state, hitMessage, cancelled, publish } = call.context;
+        // hitmsg(magr, mattk); a cancelled attacker stops after it.
+        if (hitMessage) await publish(hitMessage);
+        if (cancelled) return statusContinueResult(call.context.damage);
+        if (Upolyd(state.u) && state.u.umonnum === PM_IRON_GOLEM) {
+            const died = await rehumanizeErosionForm('You rust!', state, publish);
+            return { ...statusContinueResult(call.context.damage), heroDied: died };
+        }
+        await erodeArmor(state.u, 'rust', { publish });
+        return statusContinueResult(call.context.damage);
+    } else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        // Unlike elemental cancellation, cancelled erosion retains rolled damage.
+        if (attacker.mcan) return damageResult(context.damage);
+        const { state, visible, publish, random } = context;
+        if (speciesIs(defender, 'iron golem')) {
+            if (visible && canSeeMonster(defender))
+                await publish(`${monsterName(defender, { state, capitalized: true })} ${wornMonsterLifeSaver(defender) ? 'starts to fall' : 'falls'} to pieces!`);
+            return await killGolem(AD_RUST, context);
+        }
+        await erodeArmor(defender, 'rust', { state, publish, random });
+        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+        return damageResult(0);
+    }
+}
+
+// One call of mhitm_adtyping(… AD_CORR …).
+export type MhitmAdCorrCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderErosionContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+// C uhitm.c:mhitm_ad_corr().
+export async function mhitmAdCorr(call: MhitmAdCorrCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero corrodes a monster's armor */
+        const monster = call.defender;
+        const { state, publish, random } = call.context;
+        await erodeArmor(monster, 'corrosion', { state, publish, random });
+        return statusContinueResult(0);
+    } else if ('mdef' in call) {
+        /* mhitu: a monster corrodes the hero's armor */
+        const { hitMessage, cancelled, publish } = call.context;
+        // hitmsg(magr, mattk); a cancelled attacker stops after it.
+        if (hitMessage) await publish(hitMessage);
+        if (cancelled) return statusContinueResult(call.context.damage);
+        await erodeArmor(call.context.state.u, 'corrosion', { publish });
+        return statusContinueResult(call.context.damage);
+    } else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        if (attacker.mcan) return damageResult(context.damage);
+        const { state, publish, random } = context;
+        await erodeArmor(defender, 'corrosion', { state, publish, random });
+        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+        return damageResult(0);
+    }
+}
+
+// One call of mhitm_adtyping(… AD_DCAY …).
+export type MhitmAdDcayCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderErosionContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+// C uhitm.c:mhitm_ad_dcay().
+export async function mhitmAdDcay(call: MhitmAdDcayCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero rots a monster's armor */
+        const monster = call.defender;
+        const { state, publish, random } = call.context;
+        // completelyrots(pd): wood golem or leather golem.
+        if (speciesIs(monster, 'wood golem') || speciesIs(monster, 'leather golem')) {
+            await publish(`${subject(monster, call.context)} ${wornMonsterLifeSaver(monster) ? 'starts to fall' : 'falls'} to pieces!`);
+            await killNaturalTarget(monster, call.context);
+        }
+        if (!state.program_state.gameover)
+            await erodeArmor(monster, 'rot', { state, publish, random });
+        return statusContinueResult(0);
+    } else if ('mdef' in call) {
+        /* mhitu: a monster rots the hero */
+        const { state, hitMessage, cancelled, publish } = call.context;
+        // hitmsg(magr, mattk); a cancelled attacker stops after it.
+        if (hitMessage) await publish(hitMessage);
+        if (cancelled) return statusContinueResult(call.context.damage);
+        if (Upolyd(state.u)
+            && (state.u.umonnum === PM_LEATHER_GOLEM || state.u.umonnum === PM_WOOD_GOLEM)) {
+            const died = await rehumanizeErosionForm('You rot!', state, publish);
+            return { ...statusContinueResult(call.context.damage), heroDied: died };
+        }
+        await erodeArmor(state.u, 'rot', { publish });
+        return statusContinueResult(call.context.damage);
+    } else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        if (attacker.mcan) return damageResult(context.damage);
+        const { state, visible, publish, random } = context;
+        if (speciesIs(defender, 'wood golem') || speciesIs(defender, 'leather golem')) {
+            if (visible && canSeeMonster(defender))
+                await publish(`${monsterName(defender, { state, capitalized: true })} ${wornMonsterLifeSaver(defender) ? 'starts to fall' : 'falls'} to pieces!`);
+            return await killGolem(AD_DCAY, context);
+        }
+        await erodeArmor(defender, 'rot', { state, publish, random });
+        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+        return damageResult(0);
+    }
 }
 
 // C uhitm.c:mhitm_ad_dren/deth/pest/famn/dise/curs(), monster defenders;
@@ -4770,10 +4909,16 @@ async function applyNaturalEffect(monster: Monster, context: HeroNaturalEffectCo
         if (monsterHasAcidResistance(monster) || monsterHasArtifactDefense(monster, 'acid', state)) damage = 0;
         break;
     case AD_RUST:
+        // C uhitm.c:mhitm_ad_rust() uhitm branch now owns the rust attack.
+        damage = (await mhitmAdRust({ magr: 'youmonst', defender: monster, context })).damage;
+        break;
     case AD_CORR:
+        // C uhitm.c:mhitm_ad_corr() uhitm branch now owns the corrosion attack.
+        damage = (await mhitmAdCorr({ magr: 'youmonst', defender: monster, context })).damage;
+        break;
     case AD_DCAY:
-        await erodeNaturalTarget(monster, context);
-        damage = 0;
+        // C uhitm.c:mhitm_ad_dcay() uhitm branch now owns the rot attack.
+        damage = (await mhitmAdDcay({ magr: 'youmonst', defender: monster, context })).damage;
         break;
     case AD_CURS:
         await curseNaturalTarget(monster, context);
@@ -4896,16 +5041,6 @@ async function summonDemonPet(context: HeroNaturalEffectContext): Promise<boolea
     return true;
 }
 
-async function erodeNaturalTarget(monster: Monster, context: HeroNaturalEffectContext): Promise<void> {
-    const { attack, state, publish, random } = context;
-    if (attack[1] === AD_RUST && speciesIs(monster, 'iron golem')
-        || attack[1] === AD_DCAY && (speciesIs(monster, 'wood golem') || speciesIs(monster, 'leather golem'))) {
-        await publish(`${subject(monster, context)} ${wornMonsterLifeSaver(monster) ? 'starts to fall' : 'falls'} to pieces!`);
-        await killNaturalTarget(monster, context);
-    }
-    if (!state.program_state.gameover)
-        await erodeArmor(monster, attack[1] === AD_RUST ? 'rust' : attack[1] === AD_CORR ? 'corrosion' : 'rot', { state, publish, random });
-}
 
 async function curseNaturalTarget(monster: Monster, context: HeroNaturalEffectContext): Promise<void> {
     const { state, publish, random } = context;
