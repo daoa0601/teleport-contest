@@ -23,7 +23,7 @@ import { flushPendingTopline, putMessageHistory } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { showTextWindow, showTextMenuOverlay } from './windows.js';
 import { deityName, godTitleOf } from './pray.js';
-import { rankOf } from './botl.js';
+import { rankOf, roleSwitch } from './botl.js';
 import { monsterHasProperName } from './mondata.js';
 
 export interface QuestText {
@@ -205,8 +205,8 @@ function questTextArgument(code: string, g: GameState): string {
     case 'p': return g.plname;
     case 'c': return g.flags?.female && g.urole?.name.f
         ? g.urole.name.f : (g.urole?.name.m ?? '');
-    case 'r': return rankOf(g.u?.ulevel ?? 1, g);
-    case 'R': return rankOf(MIN_QUEST_LEVEL, g);
+    case 'r': return rankOf(g.u?.ulevel ?? 1, roleSwitch(g), !!g.flags?.female, g);
+    case 'R': return rankOf(MIN_QUEST_LEVEL, roleSwitch(g), !!g.flags?.female, g);
     case 's': return g.flags?.female ? 'sister' : 'brother';
     case 'S': return g.flags?.female ? 'daughter' : 'son';
     case 'l': return questLeaderName(g);

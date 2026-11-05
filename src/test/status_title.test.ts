@@ -44,9 +44,12 @@ void test('a monster body still supplies its title and hit dice at timeout zero'
 void test('an absent rank uses the nearest lower rank before the role name', async () => {
     await freshObjectRoom({ hero: { ulevel: 10 } });
     requirePlayingGame(game);
+    // C rank_of() resolves the hero's role through the roles table; the
+    // port's urole is that same entry (u_init.ts does not copy it), so the
+    // emptied rank is replaced on the shared entry, not on a urole clone.
     const titles = game.urole.title.slice();
     titles[3] = { m: '', f: '' };
-    game.urole = { ...game.urole, title: titles };
+    game.urole.title = titles;
 
     await bot();
 

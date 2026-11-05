@@ -30,7 +30,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { priestName } from './priest.js';
 import { shopkeeperName } from './shknam.js';
-import { monsterRank, rankOf } from './botl.js';
+import { rankOf, roleSwitch } from './botl.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun, monsterHasProperName, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, } from './mondata.js';
 import { getLine } from './query.js';
@@ -583,7 +583,7 @@ export function formatMonsterName(monster, state, { adjective = '', article = 't
         }
     }
     else if (monsterIsPlayerMonster(monster.mnum) && !In_endgame(state.u.uz)) {
-        name = monsterRank(monster, state).toLowerCase();
+        name = rankOf(monster.m_lev, monster.mnum, !!monster.female, state).toLowerCase();
         personal = false;
     }
     else {
@@ -894,7 +894,7 @@ async function nameFloorType(object) {
     if (heroIsHallucinating(game)) {
         const female = Upolyd(game.u) ? game.u.mfemale : game.flags.female;
         const role = female && game.urole?.name.f || game.urole?.name.m || 'Player';
-        const rank = rankOf(rn2Display(30) + 1, game);
+        const rank = rankOf(rn2Display(30) + 1, roleSwitch(game), !!game.flags.female, game);
         const bogus = randomBogusMonsterName();
         const choices = [role, rank, bogus, bogus, roguePlayerName(), 'Wibbly Wobbly'];
         const chosen = choices[rn2Display(choices.length)];

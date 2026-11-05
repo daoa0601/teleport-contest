@@ -60,7 +60,8 @@ import { levelHasCeiling, surfaceName } from './dungeon.js';
 import { heroHidingStatus } from './insight.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
-import { experienceRankIndex, randomExperience } from './exper.js';
+import { randomExperience } from './exper.js';
+import { rankOf, roleSwitch } from './botl.js';
 import { LL_CONDUCT, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { heroCanSeeInvisible } from './mcastu.js';
@@ -1348,16 +1349,15 @@ function recordRenewedHumanGender(oldGender: number): void {
     const newGender = heroPolyGender(game);
     if (Upolyd(game.u) || oldGender === newGender) return;
     const role = game.urole;
-    const rank = role.title[experienceRankIndex(game.u.ulevel)];
-    if (!rank) throw new Error('Renewed hero has no experience rank.');
-    // C livelog_newform() tests the gender for truth, so a neuter form's
-    // poly_gender() of 2 selects the female role and rank names.
+    // C polyself.c:livelog_newform() tests the gender for truth, so a
+    // neuter form's poly_gender() of 2 selects the female role and rank
+    // names; the two ranks read rank_of(u.ulevel, Role_switch, gend).
     const oldSex = oldGender !== 0 ? 'f' : 'm';
     const newSex = newGender !== 0 ? 'f' : 'm';
     const oldRole = role.name[oldSex] || role.name.m;
     const newRole = role.name[newSex] || role.name.m;
-    const oldRank = rank[oldSex] || rank.m;
-    const newRank = rank[newSex] || rank.m;
+    const oldRank = rankOf(game.u.ulevel, roleSwitch(game), oldGender !== 0, game);
+    const newRank = rankOf(game.u.ulevel, roleSwitch(game), newGender !== 0, game);
     const description = oldRole !== newRole ? newRole
         : oldRank !== newRank ? newRank
             : `${game.flags.female ? 'female' : 'male'} ${newRank}`;

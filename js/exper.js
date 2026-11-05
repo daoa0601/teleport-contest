@@ -12,6 +12,7 @@ import { plineWithContinuation } from './pline.js';
 import { rankAchievement, recordAchievement } from './insight.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, } from './monster_data.js';
 import { heroResistsLifeDrain } from './mondata.js';
+import { experienceRankIndex } from './botl.js';
 import { monsterHitPointsPerLevel } from './makemon.js';
 const NORMAL_SPEED = 12;
 const LARGEST_INT = 32767;
@@ -57,10 +58,6 @@ export async function checkExperienceLevel({ publish = plineWithContinuation } =
     const hero = requireInitializedGame().u;
     if (hero.ulevel < MAXULEV && hero.uexp >= newExperienceThreshold(hero.ulevel))
         await gainExperienceLevel({ incremental: true, publish });
-}
-// C botl.c:xlev_to_rank().
-export function experienceRankIndex(level) {
-    return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
 }
 // C exper.c:enermod().
 function energyModifier(energy, role) {

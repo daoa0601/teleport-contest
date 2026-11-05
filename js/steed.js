@@ -1,7 +1,7 @@
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
 import { OBJ_DESCR } from './o_init.js';
 import { encumber_msg } from './pickup.js';
-import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE } from './const.js';
+import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -37,9 +37,10 @@ import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './do.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';
-import { depth, endgameLevelName, levelHasCeiling, surfaceName } from './dungeon.js';
+import { levelHasCeiling, surfaceName } from './dungeon.js';
 import { isAccessibleAt, heroCanOoze } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
+import { describeLevel } from './botl.js';
 const MZ_SMALL = 1;
 const MZ_LARGE = 3;
 const S_EYE = 5;
@@ -900,7 +901,7 @@ export async function strikeSteed({ state = game, random = rn2, roll = rnd, anno
 // ---------------------------------------------------------------------------
 // C place_monster() diagnoses invalid placements before changing the map.
 export async function placeMonsterOnMap(monster, x, y, state = game) {
-    const levelName = placementLevelName(state);
+    const levelName = describeLevel(0, state);
     const monsterState = (monster.mstate ?? MON_FLOOR).toString(16);
     if (!isok(x, y) && (x !== 0 || y !== 0 || !monster.isgd)) {
         const name = placementMonsterName(monster, true, state);
@@ -934,17 +935,6 @@ function placementMonsterName(monster, checkLocation, state) {
     const shape = monster.cham !== undefined && monster.cham !== NON_PM
         ? `{${monsterTypeName(monster.cham, !!monster.female)}}` : '';
     return `${attitude}${monsterTypeName(monster.mnum, !!monster.female)} <${monster.mx},${monster.my}>${shape}`;
-}
-// C botl.c:describe_level(buf, 0), including its padded dungeon depth.
-function placementLevelName(state) {
-    const location = state.u.uz;
-    if (Is_knox_level(location))
-        return state.dungeons[location?.dnum ?? 0]?.dname ?? '';
-    if (In_quest(location))
-        return `Home ${location?.dlevel ?? 1}`;
-    if (In_endgame(location))
-        return endgameLevelName(location).replace('Plane of ', '');
-    return `${state._tutorialActive ? 'Tutorial' : 'Dlvl'}:${String(depth(location, state.dungeons)).padEnd(2)}`;
 }
 // Commit a map-slot assignment. The monster chain retains an overwritten
 // occupant, but moving the new occupant away must leave an empty square.

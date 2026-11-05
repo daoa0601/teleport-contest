@@ -26,7 +26,7 @@ import {
     propertyIsActive, propertyTimeout, revokeIntrinsicProperty,
 } from './properties.js';
 import { addHeroWeaponSkillSlots, loseHeroWeaponSkillSlots } from './weapon.js';
-import { experienceRankIndex } from './exper.js';
+import { experienceRankIndex } from './botl.js';
 import { formMaximumStrength } from './polyself.js';
 import {
     CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, LUCKSTONE,

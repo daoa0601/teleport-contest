@@ -87,7 +87,7 @@ import {
 } from './mondata.js';
 import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
-import { experienceRankIndex } from './exper.js';
+import { experienceRankIndex } from './botl.js';
 import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { heroIsInDangerousRegion } from './regions.js';
 import { heroCanBeStrangled } from './polyself.js';

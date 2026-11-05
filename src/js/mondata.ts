@@ -4,7 +4,7 @@
 import { levelHasCeiling } from './dungeon.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL,
-    MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName,
+    MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName,
     requireMonsterData, MONSTER_RESISTS, MONSTER_COLOR, monsterClassSymbol, FLAMING_SPECIES, MONSTER_FLAGS3,
     PM_GREEN_SLIME, S_GHOST,
 } from './monster_data.js';
@@ -29,8 +29,8 @@ import type { ArtifactDefense } from './data_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName } from './property_types.js';
-import { roles } from './roles.js';
 import { makeSingular } from './objnam.js';
+import { titleToMon } from './botl.js';
 import { monsterHasLineOfSightToHero, clearPath } from './vision.js';
 import { canSpotMonster } from './display.js';
 import { heroIsHallucinating } from './senses.js';
@@ -188,23 +188,6 @@ function monsterNames(mnum: number) {
     return names.filter(candidate => candidate.name.length > 0);
 }
 
-// The rank-title pass of name resolution: the first matching rank prefix in
-// role order wins. The whole-word and longest-name rules above apply to
-// species names, while rank prefixes deliberately accept an attached suffix.
-// C botl.c:title_to_mon().
-function roleTitleMonster(name: string) {
-    for (const role of roles) {
-        for (const title of role.title || []) {
-            for (const value of [title.m, title.f]) {
-                const candidate = value?.toLowerCase();
-                if (candidate && name.startsWith(candidate))
-                    return { length: candidate.length, mnum: SPECIAL_PM + 1 + role.mnum };
-            }
-        }
-    }
-    return null;
-}
-
 export function nameToMonster(value: string) {
     return resolveMonsterName(value)?.mnum ?? -1;
 }
@@ -242,7 +225,7 @@ export function resolveMonsterNamePrefix(value: string): MonsterNamePrefix | nul
         mnum: best.mnum, gender: best.gender,
         remainder: source.slice(best.length), overridesGender: false,
     };
-    const title = roleTitleMonster(requested);
+    const title = titleToMon(requested);
     return title ? {
         mnum: title.mnum, gender: 2,
         remainder: source.slice(title.length), overridesGender: false,

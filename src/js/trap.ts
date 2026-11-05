@@ -147,7 +147,7 @@ import {
 } from './end.js';
 import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
-import { experienceRankIndex, loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
+import { loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
 import {
     mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable,
     placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack,
@@ -213,7 +213,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
-import { bot } from './botl.js';
+import { bot, rankOf, roleSwitch } from './botl.js';
 import { createPoisonGasCloud } from './regions.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { reset_faint } from './eat.js';
@@ -8926,10 +8926,10 @@ export function trapName(type: number, { ignoreHallucination = false, state = ga
         if (index === total) {
             requirePlayingGame(state);
             const female = Upolyd(state.u) ? state.u.mfemale : state.flags.female;
-            const names = rn2(3) ? state.urole.name
-                : state.urole.title[experienceRankIndex(state.u.ulevel)];
-            if (!names) throw new Error('The hero role has no title for the current rank.');
-            return `${(female && names.f ? names.f : names.m).slice(0, 27)} trap`.toLowerCase();
+            const names = rn2(3)
+                ? (female && state.urole.name.f ? state.urole.name.f : state.urole.name.m)
+                : rankOf(state.u.ulevel, roleSwitch(state), !!female, state);
+            return `${names.slice(0, 27)} trap`.toLowerCase();
         }
         if (index >= TRAPNUM) {
             const name = HALLUCINATED_TRAPS[index - TRAPNUM];

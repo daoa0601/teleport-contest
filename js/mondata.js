@@ -1,7 +1,7 @@
 // Species and actor predicates, and monster data queries.
 // C mondata.h and mondata.c, including petrifying species and poly_when_stoned().
 import { levelHasCeiling } from './dungeon.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, requireMonsterData, MONSTER_RESISTS, MONSTER_COLOR, monsterClassSymbol, FLAMING_SPECIES, MONSTER_FLAGS3, PM_GREEN_SLIME, S_GHOST, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, MONSTER_RESISTS, MONSTER_COLOR, monsterClassSymbol, FLAMING_SPECIES, MONSTER_FLAGS3, PM_GREEN_SLIME, S_GHOST, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP, } from './monster_attack_types.js';
 import { dragonFormForArmor, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
 import { artifactById } from './artifacts.js';
@@ -10,8 +10,8 @@ import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
 import { rn2 } from './rng.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import { roles } from './roles.js';
 import { makeSingular } from './objnam.js';
+import { titleToMon } from './botl.js';
 import { monsterHasLineOfSightToHero, clearPath } from './vision.js';
 import { canSpotMonster } from './display.js';
 import { heroIsHallucinating } from './senses.js';
@@ -136,22 +136,6 @@ function monsterNames(mnum) {
     }
     return names.filter(candidate => candidate.name.length > 0);
 }
-// The rank-title pass of name resolution: the first matching rank prefix in
-// role order wins. The whole-word and longest-name rules above apply to
-// species names, while rank prefixes deliberately accept an attached suffix.
-// C botl.c:title_to_mon().
-function roleTitleMonster(name) {
-    for (const role of roles) {
-        for (const title of role.title || []) {
-            for (const value of [title.m, title.f]) {
-                const candidate = value?.toLowerCase();
-                if (candidate && name.startsWith(candidate))
-                    return { length: candidate.length, mnum: SPECIAL_PM + 1 + role.mnum };
-            }
-        }
-    }
-    return null;
-}
 export function nameToMonster(value) {
     return resolveMonsterName(value)?.mnum ?? -1;
 }
@@ -188,7 +172,7 @@ export function resolveMonsterNamePrefix(value) {
             mnum: best.mnum, gender: best.gender,
             remainder: source.slice(best.length), overridesGender: false,
         };
-    const title = roleTitleMonster(requested);
+    const title = titleToMon(requested);
     return title ? {
         mnum: title.mnum, gender: 2,
         remainder: source.slice(title.length), overridesGender: false,

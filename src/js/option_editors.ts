@@ -5,10 +5,10 @@ import { visibleCommandKey } from './cmd.js';
 import { autoUnlockFlags } from './lock.js';
 
 import { statusVersion } from './version.js';
-import { statusConditionOptions } from './botl.js';
+import { statusConditionOptions, condMenu } from './botl.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import {
-    MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_ONE,
+    MENU_ITEMFLAGS_SELECTED, PICK_ONE,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE,
@@ -97,42 +97,10 @@ export async function editCompoundMenu(name: string, giveMessage: boolean): Prom
     case 'whatis_coord': await editCoordinates(); break;
     case 'whatis_filter': await editLocationFilter(); break;
     case 'versinfo': await editVersionInfo(); break;
-    case 'status_conditions': await editStatusConditions(); break;
+    case 'status_conditions': await condMenu(); break;
     default: return false;
     }
     return true;
-}
-
-// C botl.c:cond_menu(): the toggle-all menu with the sort-order switch.
-// C botl.c:menualpha_cmp().
-async function editStatusConditions(): Promise<void> {
-    for (;;) {
-        const byRank = game.iflags.conditionMenuByRank ?? false;
-        const current = byRank ? 'by ranking' : 'alphabetically';
-        const next = byRank ? 'alphabetically' : 'by ranking';
-        const choices = statusConditionOptions(game).sort((left, right) =>
-            (byRank ? left.rank - right.rank : 0)
-            || (left.name.toLowerCase() < right.name.toLowerCase() ? -1 : 1));
-        const selected = await showMultiSelectWindow<number | 'sort'>({
-            title: 'Choose status conditions to toggle', omitHeadings: true,
-            pageLocalKeys: true, signalEscape: true,
-            sections: [{ items: [
-                { key: 'S', value: 'sort', text: `change sort order from "${current}" to "${next}"`,
-                    itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
-                { selectable: false, text: `sorted ${current}`, attr: 1,
-                    itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
-                ...choices.map(option => ({ value: option.bit, text: `cond_${option.name.padEnd(14)}`,
-                    itemFlags: option.enabled ? MENU_ITEMFLAGS_SELECTED : 0 })),
-            ] }],
-        });
-        if (selected === null) return;
-        if (selected.includes('sort')) {
-            game.iflags.conditionMenuByRank = !byRank;
-            continue;
-        }
-        game.flags.statusConditionMask = selected.reduce<number>((mask, bit) => typeof bit === 'number' ? mask | bit : mask, 0);
-        return;
-    }
 }
 
 const COORDINATE_CHOICES = [

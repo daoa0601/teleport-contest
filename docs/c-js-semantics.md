@@ -68,7 +68,7 @@ gameplay changes.
 | C call site | Comparator and final ordering | Can distinct elements tie? | TypeScript counterpart and sort |
 | --- | --- | --- | --- |
 | `botl.c:condopt` (1320) | `cond_cmp`: condition rank, then case-insensitive option name | No; option names are unique. | `status_conditions.ts:statusConditions`: `Array.sort` by rank and option name. |
-| `botl.c:cond_menu` (1395) | `cond_cmp` or `menualpha_cmp`: rank/name or name alone | No; option names are unique. Option-menu path excluded. | `option_editors.ts:editStatusConditions`: `Array.sort` by optional rank and name. |
+| `botl.c:cond_menu` (1395) | `cond_cmp` or `menualpha_cmp`: rank/name or name alone | No; option names are unique. Option-menu path excluded. | `botl.ts:condMenu`: `Array.sort` by optional rank and name. |
 | `files.c:get_saved_games` (1529) | `strcmp_wrap`: saved character name | Only equal name strings; file-selection path excluded. | No filesystem save-list sort; the port restores through its storage backend. |
 | `getpos.c:gather_locs` (550) | `cmp_coord_distu`: Chebyshev distance, then y, then x | No; each map coordinate is collected once. | `getpos.ts:gatherValidLocations`: `Array.sort` by the same three keys, shared by target cycling and target menus. |
 | `hack.c:notice_all_mons` (1774) | `notice_mons_cmp`: squared distance from hero | Yes; monsters on different squares can have equal distance. The wrapper retains `fmon` order. | The accessibility monster-notice feature has no counterpart yet. No current port sort to replace. |
