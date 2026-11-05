@@ -194,7 +194,7 @@ async function putOnAccessoryObject(object) {
 // allmain only after negative multi has reached zero; zero-delay armor can use
 // the same state owner immediately.
 export async function finishArmorRemoval(object, { silent = false } = {}) {
-    await removeHeroArmor(object, game, { deferArmorClass: true });
+    await removeHeroArmor(object, game);
     if (silent || game.flags?.verbose === false)
         return '';
     return await armorOffMessage(object, game);
@@ -647,7 +647,7 @@ async function removeSelectedSlot(slot, state) {
     else {
         // Native armor-off functions leave AC for allmain.c:find_ac(),
         // after the removal messages and the elapsed monster turns.
-        await removeHeroArmor(object, state, { deferArmorClass: true });
+        await removeHeroArmor(object, state);
         if (!state.program_state.gameover) {
             await offMessage(object, state);
         }
@@ -1380,7 +1380,7 @@ async function losePetrificationProtection(armor, state, voluntary) {
 // C do_wear.c:Shield_off().
 // C do_wear.c:Shirt_off().
 export async function clearHeroArmor(object, state = game, { cancelledDon = pendingArmorAction(state)?.kind === 'wear'
-    && pendingArmorAction(state)?.object === object, deferArmorClass = false, embeddedSkin = false, } = {}) {
+    && pendingArmorAction(state)?.object === object, embeddedSkin = false, } = {}) {
     const slot = armorSlotFor(object?.otyp);
     if (!slot)
         return false;
@@ -1430,10 +1430,14 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = pend
     if ((object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING)
         && !fumblingHasPermanentOrEquipmentSource(state))
         setPropertyTimeout('fumbling', 0, state);
-    if (deferArmorClass)
-        state._armorClassDirty = true;
-    else
-        findArmorClass(state);
+    // C body-armor transitions never recompute u.uac: setworn()/
+    // setnotworn() (worn.c) and Armor_off()/Armor_gone()/Shirt_off()
+    // (do_wear.c) call no find_ac(); the explicit find_ac() callers are
+    // the once-per-input allmain.c:453, polymon() (polyself.c:890,967),
+    // guarding/protection accessories, and spell protection.  u.uac keeps
+    // its previous value through the removal messages and only the dirty
+    // flush (or an explicit caller) updates it.
+    state._armorClassDirty = true;
     return true;
 }
 // C do_wear.c:hard_helmet().
@@ -2144,7 +2148,7 @@ export async function stopDonning(stolenObject = null, state = game) {
         : `You stop ${puttingOn ? 'putting on' : 'taking off'} the ${simpleObjectName(delayed.object, state)}.`;
     await finishHeroHelplessness(message, state);
     if (puttingOn)
-        await removeHeroArmor(delayed.object, state, { cancelledDon: true, deferArmorClass: true });
+        await removeHeroArmor(delayed.object, state, { cancelledDon: true });
     return true;
 }
 // The amulet of strangulation's timed grip on the hero: the predicate

@@ -54,7 +54,7 @@ void test('a nymph stealing an accuracy ring preserves pending shield AC through
     nymph.mux = game.u.ux;
     nymph.muy = game.u.uy;
     await bot();
-    await removeHeroArmor(shield, game, { deferArmorClass: true });
+    await removeHeroArmor(shield, game);
     await useUpInventoryStack(shield);
     const input = resetInputState();
     let removalPages = 0;
