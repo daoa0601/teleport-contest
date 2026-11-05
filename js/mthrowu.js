@@ -472,10 +472,6 @@ async function catchThrownObject(object, { state, random, publish }) {
     });
     return true;
 }
-// ---------------------------------------------------------------------------
-// Native m_throw() and bhit() tmp_at flight. Impacts run between frames, so a
-// suspended hit message retains the last flight cell until the input resumes.
-// ---------------------------------------------------------------------------
 export function monsterProjectileDisplay(object, state, { tethered = false, } = {}) {
     const glyph = transientObjectGlyph(object);
     const topRow = state.nhDisplay?.grid[0]?.map(cell => ({ ...cell }));

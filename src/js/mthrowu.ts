@@ -507,6 +507,9 @@ async function catchThrownObject(object: GameObject, { state, random, publish }:
 // Native m_throw() and bhit() tmp_at flight. Impacts run between frames, so a
 // suspended hit message retains the last flight cell until the input resumes.
 // ---------------------------------------------------------------------------
+// The flight display monsterProjectileDisplay() returns: clear()/backtrack()
+// drive the tmp_at frames of a thrown missile.
+export type MonsterProjectileDisplay = ReturnType<typeof monsterProjectileDisplay>;
 
 export function monsterProjectileDisplay(object: GameObject, state: PlayingGameState, {
     tethered = false,
@@ -620,7 +623,7 @@ export async function throwMonsterProjectile(source: Monster, object: GameObject
         heroDied: false, caught: false, projectileBroken: false, flightPath: [],
         impactX: source.mx, impactY: source.my,
     };
-    let display: ReturnType<typeof monsterProjectileDisplay> | null = null;
+    let display: MonsterProjectileDisplay | null = null;
     let blindness: ReturnType<typeof prepareHeroThrownBlindness> = null;
     let returning = false;
     try {

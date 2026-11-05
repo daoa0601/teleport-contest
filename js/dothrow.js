@@ -1,7 +1,7 @@
 // dothrow.js — Throw and fire command front ends.
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
-import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
+import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, FOOD_CLASS, BALL_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { isWeaponTool, isMissileObject } from './object_properties.js';
@@ -11,30 +11,28 @@ import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, 
 import { requireInitializedHero } from './hero_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { currentAttribute, changeHeroLuck } from './attrib.js';
-import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName, MONSTER_ALIGNMENT } from './monster_data.js';
 import { artifactById } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm } from './polyself.js';
 import { isLauncherAmmunition, isPolearm, isThrowingWeapon, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
-import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, } from './const.js';
-import { isAutoReturningThrow } from './returning_throw.js';
+import { isWeldedPrimary, setQuiverObject, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat, doquiverCore } from './wield.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG, } from './const.js';
 import { weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills } from './weapon.js';
 import { quiverObjectClass } from './quiver.js';
-import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle } from './objnam.js';
-import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject } from './invent.js';
+import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName } from './objnam.js';
+import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore } from './invent.js';
 import { objectMaterial, objectTypeKnown } from './o_init.js';
 import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
-import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, heroDirectGoldThrowRange } from './thrown_object.js';
+import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, heroDirectGoldThrowRange, snuffThrownCandle } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster } from './mon.js';
 import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem } from './stoning.js';
-import { heroHandName, heroEyeCount, heroEyeName, heroFaceName, heroHeadName } from './body_parts.js';
+import { heroHandName, heroEyeCount, heroEyeName, heroFaceName, heroHeadName, heroArmName, heroFootName } from './body_parts.js';
 import { isQuestArtifact } from './quest.js';
 import { encumber_msg } from './pickup.js';
-import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow } from './swallowed_throw.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile, makeBlinded } from './potion.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { resolveGoldMonsterContact, shipObject } from './dokick.js';
@@ -43,10 +41,14 @@ import { captureHeroProjectileName } from './uhitm.js';
 import { capitalizedDefiniteName, rayMissMessage } from './ray_hit_message.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { offerThrownFood } from './thrown_food.js';
-import { throwOrdinaryObject } from './ordinary_throw.js';
-import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
-import { canSeeMonster, canSpotMonster, flush_screen, newsym, glyphAt, map_invisible } from './display.js';
-import { goodPosition } from './teleport.js';
+import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
+import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
+import { flyBoomerang } from './boomerang.js';
+import { skillName, weaponDescription } from './weapon.js';
+import { exerciseAttribute } from './attrib.js';
+import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
+import { canSeeMonster, canSpotMonster, flush_screen, newsym, glyphAt, map_invisible, transientObjectGlyph } from './display.js';
+import { goodPosition, randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
 import { mintrap, petrifyMonsterImmediately, erodeObject, resolveImmediatePetrification, petrifyMonsterFromContact, trapName, dotrap } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { cansee, vision_recalc } from './vision.js';
@@ -66,13 +68,15 @@ import { costlySpot, stolenValue, makeAngryShopkeeper, insideShopRoomAt, contain
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt, } from './hack.js';
 import { heroCanBeBlindedByObject } from './blinding_attack.js';
+import { propertyIsActive } from './properties.js';
+import { monsterProjectileDisplay } from './mthrowu.js';
 import { finishHeroDeath } from './end.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { walkPathCells } from './path_walk.js';
-import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, } from './mondata.js';
+import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
@@ -1038,6 +1042,65 @@ export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state 
     });
     return { staggered: true, ...hurtle };
 }
+// C dothrow.c:gem_accept(), reached from thitmonst()'s unicorn catch
+// (dothrow.c:2087-2099).  Null means ordinary combat; false means caught
+// or missed but still free.
+export async function offerUnicornGem(monster, object, state) {
+    if (object.oclass !== GEM_CLASS || !monsterIsUnicorn(monster.mnum)
+        || objectMaterial(object, state) === MINERAL
+        || state.uwep && objectSkill(state.uwep.otyp) === P_SLING)
+        return null;
+    if (!monster.mcanmove || monster.msleeping) {
+        await reportHeroThrownMiss(monster, object, { state });
+        return false;
+    }
+    const subject = monsterName(monster, { state, capitalized: true });
+    const gem = definiteName(objectName(object, state), state);
+    await plineWithContinuation(`${subject} catches${monster.mtame ? ' and drops' : ''} ${gem}.`);
+    if (monster.mtame)
+        return false;
+    const reactionSubject = monsterName(monster, { state, capitalized: true });
+    monster.mpeaceful = 1;
+    monster.mavenge = 0;
+    const aligned = Math.sign(MONSTER_ALIGNMENT[monster.mnum] ?? 0)
+        === Math.sign(state.u.ualign?.type ?? 0);
+    const realGem = objectMaterial(object, state) === GEMSTONE;
+    const identified = object.dknown && objectTypeKnown(object, state);
+    const guessed = !!(object.oextra?.oname || object.oname
+        || state._objectCallNames?.[object.otyp]);
+    const accepted = realGem || !(identified || guessed);
+    let reaction = ' is not interested in your junk.';
+    if (accepted) {
+        let appreciation = 'graciously';
+        if (realGem) {
+            let luck;
+            if (aligned) {
+                luck = 1;
+                if (guessed)
+                    luck = 2;
+                if (identified)
+                    luck = 5;
+            }
+            else {
+                luck = identified ? rn2(7) - 3 : rn2(3) - 1;
+            }
+            state.u.uluck = Math.max(-13, Math.min(13, (state.u.uluck ?? 0) + luck));
+            appreciation = aligned ? 'gratefully' : 'hesitatingly';
+        }
+        reaction = ` ${appreciation} accepts your gift.`;
+        if (state.u.ushops.length || object.unpaid)
+            await settleThrownShopObject(object, monster.mx, monster.my, state, plineWithContinuation, { broken: true });
+        await addObjectToMonsterInventory(monster, object, state);
+    }
+    if (!heroIsBlind(state))
+        await plineWithContinuation(reactionSubject + reaction);
+    if (!await reportMonsterTeleportRestriction(monster, { state }))
+        await randomMonsterRelocation(monster, { state, flags: RLOC_MSG });
+    return accepted;
+}
+// C dothrow.c:omon_adj(), shared by thitmonst()'s to-hit roll and the
+// monster ranged attack.  Weapon.c WEAPON_CLASS/GEM_CLASS/TOOL_CLASS feed
+// the hitval() branch below.
 export function rangedTargetHitBonus(object, defender, { state = game, defenderNotices = false, random = rn2, rollOne = rnd, } = {}) {
     const size = MONSTER_SIZE[defender.mnum];
     if (size === undefined)
@@ -1884,6 +1947,612 @@ async function petrifyFromFallingObject(object, helmet, state, publish) {
         deathVerb: 'turned to stone', deathLineShown: true, deathType: STONING,
     });
     return true;
+}
+// ---------------------------------------------------------------------------
+// Throw-and-return: the AutoReturn() macro (dothrow.c:30-34) and the
+// returning-weapon outcome of throwit() (dothrow.c:1710-1777).
+// ---------------------------------------------------------------------------
+// C dothrow.c:AutoReturn() macro: uwep might already be removed from
+// inventory, so the caller passes the owornmask; a wielded aklys or a
+// Valkyrie's wielded Mjollnir returns, and every boomerang does.
+export function isAutoReturningThrow(object, weaponMask, state) {
+    return object.otyp === BOOMERANG || !!(weaponMask & W_WEP)
+        && (object.otyp === AKLYS || artifactById(object.oartifact, state)?.name === 'Mjollnir'
+            && state.urole?.key === 'valkyrie');
+}
+// throwit()'s impaired local (dothrow.c:1520-1523): Confusion, Stunned,
+// Blind, Hallucination, or Fumbling spoil the catch of a returning weapon.
+export function throwerIsImpaired(state) {
+    return heroIsBlind(state) || heroIsHallucinating(state)
+        || state.u.confused || propertyIsActive('confusion', state)
+        || state.u.stunned || propertyIsActive('stunned', state)
+        || state.u.fumbling || propertyIsActive('fumbling', state);
+}
+// throwit()'s throw-and-return outcome (dothrow.c:1710-1777), shared by
+// the map and the engulfed weapon arm.  A failed return still needs
+// throwit()'s landing at the target square.
+export async function finishReturningThrow({ state, object, impact, impaired, twoWeapons, oldSlot, tetherDisplay, }) {
+    requirePlayingGame(state);
+    if (rn2(100) === 0) {
+        await tetherDisplay?.clear();
+        await plineWithContinuation(`${definiteObjectAction(object, 'fail', state)} to return!`);
+        return false;
+    }
+    if (tetherDisplay)
+        await tetherDisplay.backtrack();
+    else
+        await showReturnFlight(object, impact, state);
+    if (!impaired && rn2(100) !== 0) {
+        await plineWithContinuation(`${definiteObjectAction(object, 'return', state)} to your hand!`);
+        const returned = await addInventoryItemBefore(object, oldSlot);
+        await encumber_msg(state);
+        if ((returned.owornmask ?? 0) & W_QUIVER)
+            await setQuiverObject(null, state);
+        await setPrimaryWeapon(returned, state);
+        setTwoWeaponCombat(twoWeapons, state);
+        if (cansee(impact.x, impact.y))
+            await newsym(impact.x, impact.y);
+        return true;
+    }
+    let damage = rn2(2);
+    if (damage === 0) {
+        const position = propertyIsActive('levitation', state) ? 'beneath' : 'at';
+        const feet = makePlural(heroFootName(state));
+        await plineWithContinuation(heroIsBlind(state)
+            ? `Something lands ${position} your ${feet}.`
+            : `${definiteObjectAction(object, 'return', state)} back to you, landing ${position} your ${feet}.`);
+    }
+    else {
+        damage += rnd(3);
+        const arm = heroArmName(state);
+        await plineWithContinuation(heroIsBlind(state)
+            ? `${definiteObjectAction(object, 'hit', state)} your ${arm}!`
+            : `${definiteObjectAction(object, 'fly', state)} back toward you, hitting your ${arm}!`);
+        if (object.oartifact) {
+            const hit = await hitHeroWithFallingArtifact(object, damage, {
+                state, publish: plineWithContinuation, random: rn2, rollOne: rnd, dieRoll: 0,
+            });
+            if (hit.heroDied)
+                return true;
+            damage = hit.damage;
+        }
+        if (await loseHeroHp(state.u.halfPhysicalDamage ? Math.ceil(damage / 2) : damage, killerObjectName(object, state), { state, killerFormat: KILLED_BY }))
+            return true;
+    }
+    if (state.u.uswallow) {
+        const engulfer = state.u.ustuck;
+        if (!engulfer)
+            throw new Error('A swallowed returning weapon needs an engulfer.');
+        await addObjectToMonsterInventory(engulfer, object, state, { atFront: true });
+    }
+    else if (!await shipObject(object, state.u.ux, state.u.uy, { state })) {
+        await dropObjectAtHero(object, { state });
+    }
+    return true;
+}
+// C dothrow.c:sho_obj_return_to_u(). The currently thrown object returns to
+// the hero (not for boomerangs); the glyph roll uses the display rng.
+async function showReturnFlight(object, impact, state) {
+    const dx = state.u.dx ?? 0, dy = state.u.dy ?? 0;
+    if (!(dx || dy) || impact.x === state.u.ux && impact.y === state.u.uy)
+        return;
+    const path = [];
+    let x = impact.x - dx, y = impact.y - dy;
+    while (isok(x, y) && (x !== state.u.ux || y !== state.u.uy)) {
+        path.push({ x, y });
+        x -= dx;
+        y -= dy;
+    }
+    const glyph = transientObjectGlyph(object);
+    await flush_screen(0);
+    await captureThrownObjectFlight(object, path, state, glyph);
+}
+const PM_AIR_ELEMENTAL = 154;
+function possessive(name) {
+    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
+}
+// C dothrow.c:swallowit(). The engulfer picks the object up (steal.c
+// mpickobj() clears gt.thrownobj); a thrown chained ball only ends the
+// throw without being handed over.
+async function swallowit(engulfer, object, state, attachedBall) {
+    if (attachedBall)
+        return;
+    await addObjectToMonsterInventory(engulfer, object, state, { atFront: true });
+}
+function swallowedWeaponTarget(state, item, objectClass) {
+    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
+    if (!engulfer)
+        return null;
+    const subtype = objectSkill(item.otyp);
+    // thitmonst() groups weapons, weptools, and gems into its weapon
+    // branch, and gives heavy iron balls and boulders the same hmon()
+    // contact with Strength exercised around the guaranteed hit.
+    const weaponLike = objectClass === WEAPON_CLASS || objectClass === GEM_CLASS
+        || (objectClass === TOOL_CLASS && subtype !== 0)
+        || item.otyp === HEAVY_IRON_BALL || item.otyp === BOULDER;
+    if (!weaponLike || engulfer.wormno) {
+        return null;
+    }
+    return engulfer;
+}
+function genericSwallowedEligibility(state, item, objectClass) {
+    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
+    if (!engulfer)
+        return null;
+    // canletgo() (do.c) already refused worn armor and accessories, and
+    // throw_obj() (dothrow.c:262-263) releases any remaining weapon, quiver,
+    // or ball slot via remove_worn_item() before throwit() runs, so a
+    // non-special missile carries no detachable worn state to screen here.
+    // Weapon/gem damage, effectful potions, coins, balls, boulders, and eggs
+    // or venom own materially different continuations above.  Thrown candles
+    // are snuffed by throwit_mon_hit()'s snuff_candle() and other surviving
+    // light sources by mpickobj()'s engulfer pickup, so a lit object still
+    // follows this vanish-and-transfer arm.
+    if ([WEAPON_CLASS, POTION_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, VENOM_CLASS].includes(objectClass)
+        || item.otyp === BOULDER
+        || item === state.uball || item === state.u?.uball)
+        return null;
+    if (objectClass === TOOL_CLASS && objectSkill(item.otyp) !== 0)
+        return null; // is_weptool()
+    return engulfer;
+}
+function swallowedPotionEligibility(state, item, objectClass, selectedQuantity) {
+    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
+    if (!engulfer || objectClass !== POTION_CLASS
+        || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
+        || !Number.isInteger(selectedQuantity) || selectedQuantity < 1) {
+        return null;
+    }
+    return engulfer;
+}
+// throwit()'s u.uswallow arm for a weapon-like missile (dothrow.c:1569-1578):
+// the guaranteed thitmonst() hit, then the returning-weapon roll or
+// swallowit()'s transfer to the engulfer.
+export async function resolveSwallowedWeaponThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, finishKill, volley, }) {
+    const engulfer = swallowedWeaponTarget(state, item, objectClass);
+    if (!engulfer)
+        return false;
+    requirePlayingGame(state);
+    const weaponMask = item.owornmask ?? 0;
+    const returns = isAutoReturningThrow(item, weaponMask, state);
+    const impaired = throwerIsImpaired(state);
+    const twoWeapons = !!state.u.twoweap;
+    const oldSlot = state.inventory[state.inventory.indexOf(item) + 1] ?? null;
+    const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
+    const attachedBall = thrown === state.uball || thrown === state.u?.uball;
+    if (attachedBall) {
+        // throwit() parks the chained ball and chain on the hero before the
+        // engulfed contact (dothrow.c:1569-1573).
+        const chain = state.uchain || state.u?.uchain;
+        thrown.ox = state.u.ux;
+        thrown.oy = state.u.uy;
+        if (chain) {
+            chain.ox = state.u.ux;
+            chain.oy = state.u.uy;
+        }
+    }
+    let tetherDisplay = null;
+    try {
+        if (state.program_state?.gameover)
+            return true;
+        const launched = launcherMatchesAmmo(thrown, state.uwep);
+        const slipped = await applyThrowSlip({
+            state,
+            object: thrown,
+            launcher: launched,
+            throwingWeapon: isThrowingWeapon(thrown),
+        });
+        await applyLowStaminaThrow({ state, object: thrown });
+        if (item.otyp === AKLYS && !!(weaponMask & W_WEP)) {
+            tetherDisplay = monsterProjectileDisplay(thrown, state, { tethered: true });
+            await flush_screen(0);
+        }
+        const impactX = engulfer.mx, impactY = engulfer.my;
+        const contact = await hitMonsterWithThrownObject(engulfer, thrown, {
+            state,
+            guaranteedHit: true,
+            ...(volley ? { volley } : {}),
+            // xkilled() leaves a killing engulfer's inventory alone for the
+            // chained ball (mon.c:3526-3538): expulsion's placebc() keeps it.
+            // Other returning or attached missiles manage their own disposal.
+            ...(returns || attachedBall ? {} : { finishKillWithObject: finishKill }),
+        });
+        if (contact.heroDied)
+            return true;
+        if (!contact.consumed) {
+            if (returns && await finishReturningThrow({
+                state, object: thrown, impact: { x: impactX, y: impactY },
+                impaired: impaired || slipped, twoWeapons, oldSlot, tetherDisplay,
+            })) {
+                if (!state.program_state.gameover)
+                    state.context.move = 1;
+                return true;
+            }
+            if (state.u.uswallow) {
+                const currentEngulfer = state.u.ustuck;
+                if (!currentEngulfer)
+                    throw new Error('A swallowed hero must have an engulfing monster.');
+                await swallowit(currentEngulfer, thrown, state, attachedBall);
+            }
+            else {
+                await finishHeroThrownObjectLanding({
+                    state, object: thrown, x: impactX, y: impactY,
+                    contactedMonster: engulfer,
+                });
+                if (state.program_state.gameover)
+                    return true;
+            }
+        }
+        state.context.move = 1;
+        return true;
+    }
+    finally {
+        await tetherDisplay?.clear();
+        if (state._thrownObject === thrown)
+            state._thrownObject = null;
+    }
+}
+// thitmonst()'s guaranteed-hit egg/pie/venom arm (dothrow.c:2256-2260):
+// hmon() uses the projectile up.
+export async function resolveSwallowedEggPieOrVenomThrow({ state = game, item, selectedQuantity, splitObjectId = null, finishKill, }) {
+    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
+    if (!engulfer || !isHeroThrownEggPieOrVenom(item))
+        return false;
+    const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
+    try {
+        if (state.program_state?.gameover)
+            return true;
+        await applyThrowSlip({ state, object: thrown });
+        await applyLowStaminaThrow({ state, object: thrown });
+        const contact = await hitMonsterWithThrownEggPieOrVenom(engulfer, thrown, {
+            state,
+            guaranteedHit: true,
+            finishMonsterKill: finishKill,
+        });
+        if (!contact)
+            throw new Error('An eligible swallowed projectile had no contact result.');
+        if (contact.heroDied)
+            return true;
+        state.context.move = 1;
+        return true;
+    }
+    finally {
+        if (state._thrownObject === thrown)
+            state._thrownObject = null;
+    }
+}
+// thitmonst()'s guaranteed-hit potion arm (dothrow.c:2262-2265): potionhit()
+// resolves the vapor inside the engulfer.
+export async function resolveSwallowedPotionThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, wakeMonster, wakeNearby, finishKill, }) {
+    const engulfer = swallowedPotionEligibility(state, item, objectClass, selectedQuantity);
+    if (!engulfer)
+        return false;
+    const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
+    try {
+        if (state.program_state?.gameover)
+            return true;
+        // throwit() evaluates its cursed/greased slip draw before thitmonst().
+        // Potions only enter the displacement branch when greased, but a cursed
+        // ungreased identity still consumes the rn2(7) gate.
+        await applyThrowSlip({ state, object: thrown });
+        await applyLowStaminaThrow({ state, object: thrown });
+        rnd(20);
+        const impact = await hitMonsterWithSupportedPotion({
+            state,
+            monster: engulfer,
+            potion: thrown,
+            wakeMonster,
+            wakeNearby,
+            finishKill,
+            heroCaused: true,
+            resolveVapor: true,
+            distance: 0,
+        });
+        if (impact?.heroDied)
+            return true;
+        state.context.move = 1;
+        return true;
+    }
+    finally {
+        if (state._thrownObject === thrown)
+            state._thrownObject = null;
+    }
+}
+// thitmonst()'s taming/food arm while swallowed (dothrow.c:2267-2275 and the
+// guaranteed-hit vanish of 2276-2298).
+export async function resolveSwallowedFoodThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, wakeMonster, }) {
+    const engulfer = state.u.uswallow ? state.u.ustuck : null;
+    if (!engulfer || objectClass !== FOOD_CLASS || isHeroThrownEggPieOrVenom(item))
+        return false;
+    requireLiveGame(state);
+    const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
+    try {
+        if (state.program_state.gameover)
+            return true;
+        await applyThrowSlip({ state, object: thrown });
+        await applyLowStaminaThrow({ state, object: thrown });
+        const impactX = engulfer.mx, impactY = engulfer.my;
+        prepareHeroThrownTarget(engulfer);
+        rnd(20);
+        const offer = await offerThrownFood(engulfer, thrown, state);
+        if (offer?.heroDied)
+            return true;
+        if (offer?.handled) {
+            state.context.move = 1;
+            return true;
+        }
+        if (!offer) {
+            const wake = await wakeMonster(engulfer);
+            if (wake.heroDied)
+                return true;
+            if (thrown.otyp === CORPSE && thrown.corpsenm !== undefined
+                && touchPetrifies(thrown.corpsenm) && monsterIsAnimal(engulfer)) {
+                const stone = await petrifyMonsterImmediately(engulfer, {
+                    creditHero: true,
+                    finishDeath: (target, death = {}) => finishHeroMonsterKillOutcome(target, target.mx, target.my, {
+                        ...death, showKillMessage: false, recordConduct: false,
+                    }),
+                });
+                if (stone.heroDied)
+                    return true;
+                // The thrown corpse is still free while the statue is made.
+                // Native deletes it after expulsion, so it cannot be recovered
+                // from the statue or from the square beneath it.
+                if (!state.u.uswallow) {
+                    await delobj(thrown, state);
+                    state.context.move = 1;
+                    return true;
+                }
+            }
+            const trail = monsterDigests(engulfer) ? ' entrails'
+                : monsterIsWhirly(engulfer) ? ' currents' : '';
+            const name = monsterName(engulfer, { state });
+            // C dothrow.c:2298 prints Tobjnam(obj, "vanish"); xname() of a
+            // corpse is just "corpse", without the species.
+            await plineWithContinuation(`${definiteObjectAction(thrown, 'vanish', state)} into ${trail ? possessive(name) : name}${trail}.`);
+        }
+        if (state.u.uswallow) {
+            const currentEngulfer = state.u.ustuck;
+            if (!currentEngulfer)
+                throw new Error('A swallowed hero must have an engulfing monster.');
+            await swallowit(currentEngulfer, thrown, state, false);
+        }
+        else {
+            // Taming can expel the hero and move the monster away from the
+            // original impact cell. A rejected meal lands at that old cell.
+            await finishHeroThrownObjectLanding({
+                state, object: thrown, x: impactX, y: impactY,
+                contactedMonster: monsterAtPosition(requireGameLevel(state), impactX, impactY),
+            });
+            if (state.program_state.gameover)
+                return true;
+        }
+        state.context.move = 1;
+        return true;
+    }
+    finally {
+        if (state._thrownObject === thrown)
+            state._thrownObject = null;
+    }
+}
+// thitmonst()'s remaining guaranteed-hit arm (dothrow.c:2276-2298): the
+// projectile vanishes into the engulfer's entrails or currents.
+export async function resolveGenericSwallowedThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, wakeMonster, }) {
+    const engulfer = genericSwallowedEligibility(state, item, objectClass);
+    if (!engulfer)
+        return false;
+    // freeinv() occurs before throwit() begins slip/contact handling.
+    const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
+    try {
+        if (state.program_state?.gameover)
+            return true;
+        await applyThrowSlip({ state, object: thrown });
+        await applyLowStaminaThrow({ state, object: thrown });
+        // throwit_mon_hit() runs snuff_candle() before thitmonst() consumes
+        // its d20 targeting roll (dothrow.c:1490-1492, 2152).
+        await snuffThrownCandle(thrown, state);
+        rnd(20);
+        const wake = await wakeMonster(engulfer);
+        if (wake.heroDied)
+            return true;
+        const targetName = monsterName(engulfer, { state });
+        const whirly = MONSTER_SYMBOL[engulfer.mnum] === 22
+            || engulfer.mnum === PM_AIR_ELEMENTAL;
+        const trail = monsterDigests(engulfer)
+            ? ' entrails' : whirly ? ' currents' : '';
+        const destination = trail
+            ? `${possessive(targetName)}${trail}` : targetName;
+        await plineWithContinuation(`${definiteObjectAction(thrown, 'vanish', state)} into ${destination}.`);
+        await swallowit(engulfer, thrown, state, false);
+        state.context.move = 1;
+        return true;
+    }
+    finally {
+        if (state._thrownObject === thrown)
+            state._thrownObject = null;
+    }
+}
+// C dothrow.c:throwit().  Also C dothrow.c:throwit_return(): the finally
+// block clears the tracked thrown object at the end of the throw; zap.c
+// bhit() owns the map flight itself.
+export async function throwOrdinaryObject({ state = game, item, quantity, splitObjectId = null, dx, dy, volley, }) {
+    requirePlayingGame(state);
+    const weaponMask = item.owornmask ?? 0;
+    const twoWeapons = !!state.u.twoweap;
+    const oldSlot = state.inventory[state.inventory.indexOf(item) + 1] ?? null;
+    const thrown = await detachThrownUnit(state, item, quantity, splitObjectId);
+    let tetherDisplay = null;
+    try {
+        if (state.program_state?.gameover)
+            return { heroDied: true };
+        const impaired = throwerIsImpaired(state);
+        const returns = isAutoReturningThrow(thrown, weaponMask, state);
+        const tethered = thrown.otyp === AKLYS && !!(weaponMask & W_WEP);
+        const slipped = await applyThrowSlip({
+            state,
+            object: thrown,
+            launcher: launcherMatchesAmmo(thrown, state.uwep),
+            throwingWeapon: isThrowingWeapon(thrown),
+        });
+        await applyLowStaminaThrow({ state, object: thrown });
+        const actualDx = state.u.dx ?? dx;
+        const actualDy = state.u.dy ?? dy;
+        if (state.u.dz) {
+            if (state.u.dz < 0 && returns && !impaired && !slipped) {
+                observeObjectForNaming(thrown, { state });
+                const subject = definiteName(objectName(thrown, state), state);
+                await plineWithContinuation(`${subject.charAt(0).toUpperCase() + subject.slice(1)} hits the ${ceilingName(state.u.ux, state.u.uy, state)} and returns to your hand!`);
+                const returned = await returnThrowToInventory(thrown, weaponMask, twoWeapons, oldSlot, state);
+                return { object: thrown, landed: returned, stoppedBy: 'vertical' };
+            }
+            const landed = state.u.dz < 0
+                ? await tossObjectUp(thrown, { state })
+                : await hitFloorWithObject(thrown, { state });
+            if (state.program_state.gameover)
+                return { heroDied: true };
+            return { object: thrown, landed, stoppedBy: 'vertical' };
+        }
+        const boomerang = thrown.otyp === BOOMERANG
+            && !state.underwater && !state.u.uinwater;
+        if (boomerang && (Is_airlevel(state.u.uz) || propertyIsActive('levitation', state)))
+            await hurtleHero(-actualDx, -actualDy, 1, {
+                verbose: true, ...(volley ? { volley } : {}),
+            });
+        if (state.program_state.gameover)
+            return { heroDied: true };
+        const trajectory = heroThrowTrajectory(thrown, state, state.uwep);
+        if (isLauncherAmmunition(thrown) && thrown.oclass !== GEM_CLASS
+            && !launcherMatchesAmmo(thrown, state.uwep)) {
+            const skill = Math.abs(objectSkill(thrown.otyp));
+            await plineWithContinuation(`You aren't wielding ${withIndefiniteArticle(skillName(skill, state))}, so you throw your ${weaponDescription(thrown)} by ${heroHandName(state)}.`);
+        }
+        const range = state.underwater || state.u.uinwater ? 1
+            : tethered ? Math.min(trajectory.range, AKLYS_LIM) : trajectory.range;
+        if (tethered) {
+            // The tether stays visible through contact and is erased by the
+            // return roll, rather than by bhit()'s ordinary flight cleanup.
+            // bhit()'s tmp_at(DISP_TETHER) init flush now lives in
+            // flyPhysicalObject(), shared with DISP_FLASH flights.
+            tetherDisplay = monsterProjectileDisplay(thrown, state, { tethered: true });
+        }
+        const flight = boomerang
+            ? await flyBoomerang(thrown, actualDx, actualDy, state, volley)
+            : await flyHeroThrownObject({
+                state,
+                object: thrown,
+                dx: actualDx,
+                dy: actualDy,
+                range,
+                ...(tetherDisplay ? { display: tetherDisplay }
+                    : { captureFlight: captureThrownObjectFlight }),
+            });
+        if ('heroDied' in flight && flight.heroDied)
+            return { heroDied: true };
+        if ('caught' in flight && flight.caught) {
+            await exerciseAttribute(A_DEX, true, state);
+            const returned = await returnThrowToInventory(thrown, weaponMask, twoWeapons, oldSlot, state);
+            return { ...flight, object: thrown, landed: returned };
+        }
+        if ('consumed' in flight && flight.consumed)
+            return { ...flight, consumed: true };
+        // bhit() erases a web-stopped returning missile before throwit() recoils.
+        if (flight.stoppedBy === 'web')
+            await tetherDisplay?.clear();
+        if (!boomerang && trajectory.recoil) {
+            await hurtleHero(-actualDx, -actualDy, trajectory.recoil, {
+                verbose: true, ...(volley ? { volley } : {}),
+            });
+            if (state.program_state.gameover)
+                return { heroDied: true };
+        }
+        if (flight.destroyed || flight.migrated)
+            return flight;
+        if (flight.contact) {
+            // throwit_mon_hit(): a keeper who caught the missile in flight
+            // owns it already; no thitmonst, no landing.
+            if (flight.contact.isshk && thrown.where === 'minvent'
+                && thrown.ocarry === flight.contact)
+                return { ...flight, consumed: true };
+            await snuffThrownCandle(thrown, state);
+            const eggPieOrVenom = await hitMonsterWithThrownEggPieOrVenom(flight.contact, thrown, { state, target: { x: flight.x, y: flight.y } });
+            if (eggPieOrVenom?.heroDied)
+                return eggPieOrVenom;
+            if (eggPieOrVenom?.consumed)
+                return { ...flight, consumed: true };
+            if (!eggPieOrVenom) {
+                const contact = await hitMonsterWithThrownObject(flight.contact, thrown, {
+                    state, target: { x: flight.x, y: flight.y },
+                    ...(volley ? { volley } : {}),
+                });
+                if (contact.heroDied)
+                    return contact;
+                if (contact.consumed)
+                    return { ...flight, consumed: true };
+            }
+        }
+        if (!boomerang && returns && flight.stoppedBy !== 'web'
+            && await finishReturningThrow({
+                state, object: thrown, impact: flight, impaired: impaired || slipped,
+                twoWeapons, oldSlot, tetherDisplay,
+            })) {
+            if (state.program_state.gameover)
+                return { heroDied: true };
+            return { ...flight, object: thrown, landed: thrown.where === 'inventory' ? thrown : null };
+        }
+        await tetherDisplay?.clear();
+        const landed = await finishHeroThrownObjectLanding({
+            state,
+            object: thrown,
+            x: flight.x,
+            y: flight.y,
+            contactedMonster: flight.contact,
+        });
+        return { ...flight, object: thrown, landed };
+    }
+    finally {
+        await tetherDisplay?.clear();
+        if (state._thrownObject === thrown)
+            state._thrownObject = null;
+    }
+}
+// C dothrow.c:return_throw_to_inv(): first rejoin the original stack,
+// otherwise add without merging and restore the equipment slots removed
+// for this throw.
+async function returnThrowToInventory(object, weaponMask, twoWeapons, oldSlot, state) {
+    const split = state.context.objsplit;
+    const siblingId = object.o_id === split?.child_oid ? split.parent_oid
+        : object.o_id === split?.parent_oid ? split.child_oid : null;
+    const sibling = state.inventory.find(item => item.o_id === siblingId);
+    if (sibling) {
+        state.inventory.unshift(object);
+        object.where = 'inventory';
+        const parent = object.o_id === split?.parent_oid ? object : sibling;
+        const child = parent === object ? sibling : object;
+        const joined = await rejoinObjectStack(parent, child, state);
+        if (joined) {
+            await encumber_msg(state);
+            return joined;
+        }
+        state.inventory.splice(state.inventory.indexOf(object), 1);
+        object.where = 'free';
+    }
+    object.nomerge = true;
+    const returned = await addInventoryItemBefore(object, oldSlot);
+    returned.nomerge = false;
+    const quivered = !!((returned.owornmask ?? 0) & W_QUIVER);
+    const held = !!(((returned.owornmask ?? 0) | weaponMask) & (W_WEP | W_SWAPWEP));
+    if (quivered && held)
+        await setQuiverObject(null, state);
+    if (weaponMask & W_WEP && !state.uwep)
+        await setPrimaryWeapon(returned, state);
+    else if (weaponMask & W_SWAPWEP && !state.uswapwep)
+        await setSecondaryWeapon(returned, state);
+    else if (weaponMask & W_QUIVER && !state.uquiver)
+        await setQuiverObject(returned, state);
+    if (twoWeapons && !state.u.twoweap)
+        setTwoWeaponCombat(true, state);
+    await encumber_msg(state);
+    return returned;
 }
 async function settleGoldOnFloor(state, gold, x, y, dz = 0) {
     const floor = await applyFloorEffects(gold, x, y, { state, verb: 'fall' });

@@ -23,7 +23,7 @@ import { weaponSkillHitBonus } from './weapon.js';
 import { offerThrownFood } from './thrown_food.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { catchQuestObject } from './quest_leader_catch.js';
-import { offerUnicornGem } from './unicorn_gift.js';
+import { offerUnicornGem } from './dothrow.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
