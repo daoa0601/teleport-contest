@@ -139,10 +139,10 @@ import {
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { HeroPoisonOptions } from './attrib.js';
-import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
+import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
 import {
     cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused,
-    makeStunned, setHeroSlimingTimeout, splitMonster,
+    makeStunned, setHeroSlimingTimeout, splitMonster, startHeroSliming,
 } from './potion.js';
 import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
@@ -3413,7 +3413,7 @@ export async function applyMonsterTransformEffect(
     const damageType = context.attack[1];
     if (damageType === AD_TLPT) return teleportDefender(attacker, defender, context);
     if (damageType === AD_POLY) return polymorphDefender(attacker, defender, context);
-    if (damageType === AD_SLIM) return slimeDefender(attacker, defender, context);
+    if (damageType === AD_SLIM) return mhitmAdSlim({ attacker, defender, context });
     throw new RangeError(`Unsupported transformation attack ${damageType}`);
 }
 
@@ -3516,31 +3516,6 @@ async function announcePolymorph(defender: Monster, before: string, { state, pub
     }
 }
 
-async function slimeDefender(
-    attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
-): Promise<MonsterCombatEffectResult> {
-    const { state, visible, publish, random, rollDice, rollOne, finishDeath } = context;
-    const result = transformationResult(context.damage);
-    if (await mhitm_mgc_atk_negated(attacker, defender, {
-        state, visible, publish, random, verbose: false,
-    }) || random(4) !== 0 || monsterIsSlimeproof(defender)) return result;
-    const cure = await munslime(defender, { state, byHero: false, publish, random, rollDice, rollOne });
-    if (cure.heroDied) return { ...result, done: true, heroDied: true };
-    if (!cure.cured && defender.mhp > 0) {
-        const change = await changeMonsterForm(defender, PM_GREEN_SLIME, state, {
-            showMessage: visible && canSeeMonster(defender), publish, finishDeath, creditHero: false,
-        });
-        if (change?.heroDied) return { ...result, done: true, heroDied: true };
-        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
-        result.nativeResult = M_ATTK_HIT;
-    }
-    if (attacker.mhp <= 0) result.nativeResult |= M_ATTK_AGR_DIED;
-    if (defender.mhp <= 0) result.nativeResult |= M_ATTK_DEF_DIED;
-    result.damage = 0;
-    // Unlike polymorph, sliming retains the common knockback/zero-damage path,
-    // even when the defender's cure killed one or both participants.
-    return result;
-}
 
 function transformationResult(damage: number): MonsterCombatEffectResult {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
@@ -3933,6 +3908,109 @@ function heroSurvivesWrappingUnderwater(state: PlayingGameState): boolean {
     return !!(state.u.swimming || state.u.amphibious || state.u.breathless || state.u.magicalBreathing
         || (monsterIsAmphibious(heroSpecies(state)) || monsterIsBreathless(heroSpecies(state)))
         || propertyIsActive('swimming', state) || propertyIsActive('magicalBreathing', state));
+}
+
+// One call of mhitm_adtyping(… AD_SLIM …); the union member names the actor
+// that C compares against &gy.youmonst.
+export type MhitmAdSlimCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderSlimContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+export interface HeroDefenderSlimContext {
+    state: PlayingGameState;
+    attacker: Monster;
+    /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
+    hitMessage: string | null;
+    /** mhm->damage on entry: hitmu()'s declared damage roll. */
+    damage: number;
+    /** mhitm_mgc_atk_negated(magr, mdef, FALSE), rolled by the begin-phase slot. */
+    negated: boolean;
+    /** magr->mcan: a cancelled attacker still prints the negation line. */
+    cancelled: boolean;
+    publish: MessagePublisher;
+}
+
+// C uhitm.c:mhitm_ad_slim().
+export async function mhitmAdSlim(call: MhitmAdSlimCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero turns a monster into slime */
+        const monster = call.defender;
+        const { state, publish, random, rollDice, rollOne } = call.context;
+        const normal: MhitmAdStatusResult = {
+            damage: call.context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false,
+        };
+        if (await mhitm_mgc_atk_negated(state.u, monster, { state, random })
+            || random(4) !== 0 || monsterIsSlimeproof(monster)) return normal;
+
+        const cure = await munslime(monster, {
+            state, byHero: true, publish, random, rollDice, rollOne,
+        });
+        if (cure.heroDied) return { ...normal, damage: 0, done: true, heroDied: true };
+        if (!cure.cured && monster.mhp > 0) {
+            await publish(`You turn ${monsterName(monster, { state })} into slime.`);
+            const change = await changeMonsterForm(monster, PM_GREEN_SLIME, state, {
+                showMessage: false, publish,
+            });
+            if (change?.heroDied) return { ...normal, damage: 0, done: true, heroDied: true };
+        }
+        if (monster.mhp <= 0)
+            return { damage: call.context.damage, nativeResult: M_ATTK_DEF_DIED, done: true, heroDied: false };
+        return { ...normal, damage: 0 };
+    } else if ('mdef' in call) {
+        /* mhitu: a monster covers the hero in slime */
+        const { state, attacker, hitMessage, negated, cancelled, publish } = call.context;
+        // hitmsg(magr, mattk)
+        if (hitMessage) await publish(hitMessage);
+        let damage = call.context.damage;
+        if (negated) {
+            if (!cancelled) await publish('You escape harm.');
+            return statusContinueResult(damage);
+        }
+        if (heroIsFlaming(state)) {
+            await publish('The slime burns away!');
+            damage = 0;
+        } else if (state.u.unchanging || state.unchanging
+            || heroIsNoncorporeal(state)
+            || heroIsGreenSlime(state)) {
+            await publish('You are unaffected.');
+            damage = 0;
+        } else if (!heroIsSliming(state)) {
+            await publish("You don't feel very well.");
+            // make_slimed(10L, NULL) with delayed_killer(SLIMED, KILLED_BY_AN,
+            // pmname(magr->data, Mgender(magr))).
+            await startHeroSliming({
+                state, killer: requireMonsterData(MONSTER_NAME, attacker.mnum),
+            });
+        } else {
+            await publish('Yuck!');
+        }
+        return statusContinueResult(damage);
+    } else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        const { state, visible, publish, random, rollDice, rollOne, finishDeath } = context;
+        const result = transformationResult(context.damage);
+        if (await mhitm_mgc_atk_negated(attacker, defender, {
+            state, visible, publish, random, verbose: false,
+        }) || random(4) !== 0 || monsterIsSlimeproof(defender)) return result;
+        const cure = await munslime(defender, { state, byHero: false, publish, random, rollDice, rollOne });
+        if (cure.heroDied) return { ...result, done: true, heroDied: true };
+        if (!cure.cured && defender.mhp > 0) {
+            const change = await changeMonsterForm(defender, PM_GREEN_SLIME, state, {
+                showMessage: visible && canSeeMonster(defender), publish, finishDeath, creditHero: false,
+            });
+            if (change?.heroDied) return { ...result, done: true, heroDied: true };
+            defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+            result.nativeResult = M_ATTK_HIT;
+        }
+        if (attacker.mhp <= 0) result.nativeResult |= M_ATTK_AGR_DIED;
+        if (defender.mhp <= 0) result.nativeResult |= M_ATTK_DEF_DIED;
+        result.damage = 0;
+        // Unlike polymorph, sliming retains the common knockback/zero-damage path,
+        // even when the defender's cure killed one or both participants.
+        return result;
+    }
 }
 
 // Monster-versus-monster status attacks from uhitm.c:mhitm_adtyping();
@@ -4770,7 +4848,8 @@ async function applyNaturalEffect(monster: Monster, context: HeroNaturalEffectCo
     case AD_POLY:
         return applyHeroNaturalPolymorph(monster, context);
     case AD_SLIM:
-        return applyHeroNaturalSliming(monster, context);
+        // C uhitm.c:mhitm_ad_slim() uhitm branch now owns the sliming attack.
+        return mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     case AD_DISE:
     case AD_PEST:
         if (MONSTER_SYMBOL[monster.mnum] === S_FUNGUS || speciesIs(monster, 'ghoul')
@@ -6567,35 +6646,6 @@ async function showHeroPolymorphResistance(monster: Monster, context: HeroNatura
         await context.publish(`${monsterName(monster, { state: context.state, capitalized: true })} resists!`);
 }
 
-// ─── C uhitm.c:mhitm_ad_slim(), hero attacker (from hero_natural_sliming.ts) ───
-
-// C uhitm.c:mhitm_ad_slim(), hero attacking a monster.
-
-export async function applyHeroNaturalSliming(
-    monster: Monster, context: HeroNaturalEffectContext,
-): Promise<HeroNaturalEffectResult> {
-    const { state, publish, random, rollDice, rollOne } = context;
-    const normal: HeroNaturalEffectResult = {
-        damage: context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false,
-    };
-    if (await mhitm_mgc_atk_negated(state.u, monster, { state, random })
-        || random(4) !== 0 || monsterIsSlimeproof(monster)) return normal;
-
-    const cure = await munslime(monster, {
-        state, byHero: true, publish, random, rollDice, rollOne,
-    });
-    if (cure.heroDied) return { ...normal, damage: 0, done: true, heroDied: true };
-    if (!cure.cured && monster.mhp > 0) {
-        await publish(`You turn ${monsterName(monster, { state })} into slime.`);
-        const change = await changeMonsterForm(monster, PM_GREEN_SLIME, state, {
-            showMessage: false, publish,
-        });
-        if (change?.heroDied) return { ...normal, damage: 0, done: true, heroDied: true };
-    }
-    if (monster.mhp <= 0)
-        return { damage: context.damage, nativeResult: M_ATTK_DEF_DIED, done: true, heroDied: false };
-    return { ...normal, damage: 0 };
-}
 // C uhitm.c:do_stone_mon(). A cure or life saving ends this hit.
 export async function petrifyMonsterDefender(monster: Monster, {
     publish = plineWithContinuation,

@@ -6,7 +6,7 @@ import { MFAST, M_ATTK_DEF_DIED, M_ATTK_MISS, MM_NOGRP, NO_MINVENT, NORMAL_SPEED
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { wearEyewear } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroNaturalSliming } from '../js/uhitm.js';
+import { mhitmAdSlim } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SLIM } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
@@ -58,7 +58,7 @@ async function slimeAttack(species = 'orc', { visible = true } = {}) {
 void test('natural sliming changes an uncured target into green slime and removes contact damage', async () => {
     const { monster, context, messages } = await slimeAttack();
     monster.mstrategy = STRAT_WAITFORU;
-    const result = await applyHeroNaturalSliming(monster, context);
+    const result = await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(monster.mnum, PM_GREEN_SLIME);
     assert.equal(monster.mstrategy & STRAT_WAITFORU, 0);
     assert.equal(result.damage, 0);
@@ -75,7 +75,7 @@ for (const reason of ['magic negation', 'failed chance']) {
         }
         else
             context.random = range => range - 1;
-        const result = await applyHeroNaturalSliming(monster, context);
+        const result = await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
         assert.equal(monster.mnum, MONSTER_NAME.indexOf('orc'));
         assert.equal(result.damage, 6);
         assert.equal(monster.mhp, 100);
@@ -84,7 +84,7 @@ for (const reason of ['magic negation', 'failed chance']) {
 for (const species of ['green slime', 'fire elemental', 'ghost']) {
     void test(`${species} cannot be slimed`, async () => {
         const { monster, context } = await slimeAttack(species);
-        const result = await applyHeroNaturalSliming(monster, context);
+        const result = await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
         assert.equal(monster.mnum, MONSTER_NAME.indexOf(species));
         assert.equal(result.damage, 6);
         assert.equal(monster.movement, 24);
@@ -96,7 +96,7 @@ void test('fire breath takes priority over a wand and spends the defender next m
     await addObjectToMonsterInventory(monster, wand);
     monster.permspeed = monster.mspeed = MFAST;
     context.random = range => range === 3 ? 0 : forceSliming(range);
-    const result = await applyHeroNaturalSliming(monster, context);
+    const result = await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('red dragon'));
     assert.equal(monster.mhp, 100);
     assert.equal(wand.spe, 3);
@@ -113,7 +113,7 @@ for (const itemType of [WAN_FIRE, FIRE_HORN]) {
         const { monster, context, messages } = await slimeAttack();
         const item = await knownObject(itemType, { spe: 3 });
         await addObjectToMonsterInventory(monster, item);
-        const result = await applyHeroNaturalSliming(monster, context);
+        const result = await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
         assert.equal(monster.mnum, MONSTER_NAME.indexOf('orc'));
         assert.equal(monster.mhp, 88);
         assert.equal(item.spe, 2);
@@ -128,7 +128,7 @@ void test('a cancelled dragon whose breath is unavailable uses its wand instead'
     monster.mcan = 1;
     const wand = await knownObject(WAN_FIRE, { spe: 2 });
     await addObjectToMonsterInventory(monster, wand);
-    await applyHeroNaturalSliming(monster, context);
+    await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(wand.spe, 1);
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('red dragon'));
     assert.equal(monster.mhp, 100);
@@ -140,7 +140,7 @@ void test('a sleeping defender cannot use its carried cure and becomes slime', a
     const lastMove = monster.mlstmv;
     const wand = await knownObject(WAN_FIRE, { spe: 2 });
     await addObjectToMonsterInventory(monster, wand);
-    await applyHeroNaturalSliming(monster, context);
+    await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(monster.mnum, PM_GREEN_SLIME);
     assert.equal(wand.spe, 2);
     assert.equal(monster.movement, 16, 'the slower slime body rescales the saved movement from 24 to 16');
@@ -153,7 +153,7 @@ void test('a fatal self-zap credits the hero without breaking pacifist conduct',
     await addObjectToMonsterInventory(monster, wand);
     const experience = context.state.u.uexp;
     const kills = context.state.u.uconduct.killer ?? 0;
-    const result = await applyHeroNaturalSliming(monster, context);
+    const result = await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(result.done, true);
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
     assert.notEqual(monsterAtPosition(context.state.level, monster.mx, monster.my), monster);
@@ -167,7 +167,7 @@ void test('a confused fire scroll is consumed after its naming prompt and fails 
     const scroll = await knownObject(SCR_FIRE, { known: false, dknown: false, typeKnown: false, bknown: false });
     await addObjectToMonsterInventory(monster, scroll);
     const input = resetInputState();
-    const result = await answerPrompts(applyHeroNaturalSliming(monster, context), input, [
+    const result = await answerPrompts(mhitmAdSlim({ magr: 'youmonst', defender: monster, context }), input, [
         { prompt: /Call a scroll labeled .*:/, keys: ['s', 'p', 'a', 'r', 'k', 's', 10] },
     ]);
     assert.equal(scroll.where, 'gone');
@@ -184,7 +184,7 @@ void test('a successful fire scroll burns the user and nearby monsters before cu
     bystander.mhp = 100;
     const scroll = await knownObject(SCR_FIRE);
     await addObjectToMonsterInventory(monster, scroll);
-    await applyHeroNaturalSliming(monster, context);
+    await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(scroll.where, 'gone');
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('orc'));
     assert.ok(monster.mhp < 100);
@@ -195,7 +195,7 @@ void test('oil uses one potion from its stack and removes the consumed burn time
     const { monster, context, messages } = await slimeAttack();
     const oil = await knownObject(POT_OIL, { quan: 2, age: 400 });
     await addObjectToMonsterInventory(monster, oil);
-    await applyHeroNaturalSliming(monster, context);
+    await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('orc'));
     assert.equal(monster.mhp, 100, 'pinned muse_unslime does not subtract its oil damage draw');
     assert.equal(oil.quan, 1);
@@ -210,7 +210,7 @@ void test('an unseen self-zap forgets the wand knowledge while its sound remains
     const wand = await knownObject(WAN_FIRE, { spe: 2 });
     await addObjectToMonsterInventory(monster, wand);
     wand.known = wand.dknown = wand.bknown = true;
-    await applyHeroNaturalSliming(monster, context);
+    await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(wand.known, false);
     assert.equal(wand.dknown, false);
     assert.equal(wand.bknown, false);
@@ -221,7 +221,7 @@ void test('an uncured intelligent monster moves onto a nearby fire trap and spen
     const { monster, context, messages } = await slimeAttack();
     const trap = addTrap(context.state.level, FIRE_TRAP, 12, 10);
     initRng(5n);
-    const result = await applyHeroNaturalSliming(monster, context);
+    const result = await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('orc'));
     assert.equal(monster.mx, 12);
     assert.equal(monster.my, 10);
@@ -237,7 +237,7 @@ void test('a fire-trap cure fatality is not credited to the hero who applied sli
     addTrap(context.state.level, FIRE_TRAP, 11, 10);
     const experience = context.state.u.uexp;
     const kills = context.state.u.uconduct.killer ?? 0;
-    const result = await applyHeroNaturalSliming(monster, context);
+    const result = await mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
     assert.equal(result.done, true);
     assert.equal(context.state.u.uexp, experience);

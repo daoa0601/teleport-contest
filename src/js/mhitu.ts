@@ -48,7 +48,7 @@ import { isPolearm, isMissileObject, isWeaponTool } from './object_properties.js
 import type { WeaponView } from './object_properties.js';
 import {
     mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu,
-    mhitmAdStck, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster,
+    mhitmAdSlim, mhitmAdStck, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster,
     resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack,
     startHeroPetrificationFromMonster, passiveDamage, erodeArmor,
 } from './uhitm.js';
@@ -75,8 +75,6 @@ import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMons
 import { attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero } from './mthrowu.js';
 import { castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay } from './mcastu.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal } from './polyself.js';
-import { heroIsSliming, startHeroSliming } from './potion.js';
 import { bot } from './botl.js';
 import {
     burnArmorByFire, trapAt, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately,
@@ -521,6 +519,7 @@ export async function presentMonsterAttackEffects(
                     || heroAttack.effect === 'stun-natural'
                     || heroAttack.effect === 'leg-natural'
                     || heroAttack.effect === 'sticking-natural'
+                    || heroAttack.effect === 'slime-natural'
                     || heroAttack.effect === 'item-theft'
                     ? null
                     : await hitmsg(
@@ -608,40 +607,27 @@ export async function presentMonsterAttackEffects(
                     if (engulf?.died || game.program_state.gameover) return { heroDied: true };
                 }
                 if (heroAttack.effect === 'slime-natural') {
-                    // C uhitm.c:mhitm_ad_slim() mhitu branch: the negation
-                    // gate, the slime line and make_slimed() follow hitmsg();
-                    // the contact's ordinary damage remains unless the hero's
-                    // current form cannot be slimed.
-                    let slimeMessage: string | null = null;
-                    let slimeKiller: string | null = null;
-                    if (heroAttack.slimeNegated) {
-                        if (!heroAttack.slimeCancelled)
-                            slimeMessage = 'You escape harm.';
-                    } else if (heroIsFlaming(game)) {
-                        heroAttack.damage = 0;
-                        slimeMessage = 'The slime burns away!';
-                    } else if (game.u?.unchanging || game.unchanging
-                        || heroIsNoncorporeal(game)
-                        || heroIsGreenSlime(game)) {
-                        heroAttack.damage = 0;
-                        slimeMessage = 'You are unaffected.';
-                    } else if (!heroIsSliming(game)) {
-                        slimeMessage = "You don't feel very well.";
-                        slimeKiller = requireMonsterData(MONSTER_NAME, monster.mnum);
-                    } else {
-                        slimeMessage = 'Yuck!';
-                    }
-                    if (slimeMessage) {
-                        const slimeDismissal = await plineWithContinuation(
-                            slimeMessage,
-                        );
-                        if (slimeDismissal !== null
-                            && slimeDismissal !== undefined) {
-                            paging.pagerOwned = true;
-                        }
-                    }
-                    if (slimeKiller !== null)
-                        startHeroSliming({ state: game, killer: slimeKiller });
+                    // C uhitm.c:mhitm_ad_slim() mhitu branch: uhitm.ts runs
+                    // the negation gate, the slime line and make_slimed()
+                    // after the precomposed hitmsg() line; the contact's
+                    // ordinary damage remains unless the hero's current form
+                    // cannot be slimed.
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const slim = await mhitmAdSlim({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            negated: !!heroAttack.slimeNegated,
+                            cancelled: !!heroAttack.slimeCancelled,
+                            publish: publishSlotMessage,
+                        },
+                    });
+                    heroAttack.damage = slim.damage;
                 }
                 if (heroAttack.effect === 'cold-natural') {
                     // C uhitm.c:mhitm_ad_cold() mhitu branch: hitmsg(),
