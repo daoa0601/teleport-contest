@@ -22,7 +22,6 @@ import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { animateStatue } from '../js/statue_trap.js';
 import { teleportMonsterFromTrap } from '../js/teleport.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
@@ -30,6 +29,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
+import { animateStatue, } from '../js/trap.js';
 function occupiedSquares(worm, level = requireGameLevel()) {
     const squares = [];
     for (let x = 1; x < COLNO; x++) {

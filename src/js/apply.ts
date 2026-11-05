@@ -37,7 +37,6 @@ import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, 
 import { isok } from './cmd.js';
 import { use_container } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
-
 import { isRider } from './corpse_species.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { convertSecretDoor, findit, openit } from './detect.js';
@@ -62,10 +61,8 @@ import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposT
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty } from './uhitm.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
-
 import { removeWornHeroItem } from './hero_equipment.js';
 import { releaseHold } from './zap.js';
-
 import { setHeroGrip } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded } from './potion.js';
 import { holdAnotherObject } from './invent.js';
@@ -73,25 +70,21 @@ import { hurtleHero, hurtleJumpTo } from './dothrow.js';
 import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting } from './potion.js';
 import { freeInventoryObject, useUpInventoryStack } from './invent.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-
 import { do_attack } from './uhitm.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { retouchHeroObject } from './artifacts.js';
 import { zapHeroWithObject } from './zap.js';
-
 import { heroIsUnaware } from './senses.js';
 import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroStatusLine } from './insight.js';
-import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification, resetUtrap, maketrap } from './trap.js';
+import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification, resetUtrap, maketrap, activateStatueTrapAt } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand } from './zap.js';
 import { hitMonsterWithWand } from './zap.js';
-
 import { monsterStatusLine } from './insight.js';
-
 import { consumeInventoryItem, consumeObjectCharge, delobj, inventoryCommandLetter, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject, getobj } from './invent.js';
 import type { InventoryClassification } from './invent.js';
@@ -129,15 +122,12 @@ import { promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery } from './cmd.js';
 import { mon_reflects } from './muse.js';
 import { rayPositionIsOpen } from './zap.js';
-
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout } from './senses.js';
 import { addShopDamage, billDummyObject, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
 import { flashBurn } from './zap.js';
-
 import { ensureHeroSkills, uwepSkillType } from './weapon.js';
 import { castSpell, knownSpell } from './spell.js';
-import { activateStatueTrapAt } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle } from './steed.js';
 import { formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies } from './stoning.js';
@@ -164,7 +154,6 @@ import { monsterCarriesAmulet } from './wizard.js';
 import { adjustMonsterSpeed } from './worn.js';
 import { useMagicMarker } from './write.js';
 import { objectResistsDestruction, zappable } from './zap.js';
-
 
 export async function useCamera(
     object: GameObject,
@@ -612,9 +601,6 @@ export function umDist(state: GameState, x: number, y: number, n: number): boole
     return Math.abs(state.u.ux - x) > n || Math.abs(state.u.uy - y) > n;
 }
 
-
-
-
 const LEASH_PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 
 // C apply.c:leashable().  A head is enough to leash a limbless monster.
@@ -847,9 +833,6 @@ const UMBER_HULK = MONSTER_NAME.indexOf('umber hulk');
 const MEDUSA = MONSTER_NAME.indexOf('Medusa');
 
 const AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
-
-
-
 
 const S_NYMPH = 14;
 
@@ -2849,7 +2832,6 @@ export interface GrapplingHookResult {
     spentTime: boolean;
     resume?: true;
 }
-
 
 function hookSkill(hook: GameObject, state: GameState) {
     const skillType = state.u.twoweap

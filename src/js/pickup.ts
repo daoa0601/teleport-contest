@@ -33,7 +33,6 @@ import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, sel
 } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
 import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout} from './mkobj.js';
-
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, newsym_force } from './display.js';
@@ -55,7 +54,6 @@ import { finishGhostlyPickup } from './bones_object.js';
 import { touchArtifactByHero } from './artifacts.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
-import { triggerChestTrap } from './chest_trap.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { waterbodyName } from './pager.js';
@@ -77,7 +75,7 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
-import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage } from './trap.js';
+import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage, triggerChestTrap } from './trap.js';
 import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
 import { containerContents } from './end.js';
 import { bot } from './botl.js';

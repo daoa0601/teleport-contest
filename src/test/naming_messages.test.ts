@@ -1,13 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
-import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap } from '../js/trap.js';
+import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, triggerChestTrap } from '../js/trap.js';
 import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
-
 import { beginMonsterBearTrap, finishMonsterBearTrap } from '../js/trap.js';
 import { heroBlindingObjectHitMessage } from '../js/blinding_attack.js';
 import { finishGhostlyPickup } from '../js/bones_object.js';
-import { triggerChestTrap } from '../js/chest_trap.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DBWALL, DB_MOAT, DB_NORTH, DRAWBRIDGE_UP, MSLOW, PIT, ROCKTRAP, SLP_GAS_TRAP,
     VIBRATING_SQUARE, WEB,
@@ -37,7 +34,6 @@ import {
     GOLD_DRAGON_SCALE_MAIL, OBJECT_NAMES, POT_HEALING, SPE_FORCE_BOLT, STATUE,
 } from '../js/object_data.js';
 import { dropObjectAtHero } from '../js/do.js';
-
 import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { beginMonsterProjectileTrap, finishMonsterProjectileTrap } from '../js/trap.js';
 import { initRng } from '../js/rng.js';
@@ -46,7 +42,6 @@ import { bookCursed, studyBook } from '../js/spell.js';
 import { applyThrowSlip } from '../js/throw_state.js';
 import { flyHeroThrownObject } from '../js/thrown_object.js';
 import { turnObjectWithUndeadMagic } from '../js/zap.js';
-
 import { untrap } from '../js/trap.js';
 import { beginMonsterVibratingSquare, finishMonsterVibratingSquare } from '../js/trap.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';

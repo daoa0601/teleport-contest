@@ -1,3 +1,6 @@
+// Trap construction, triggers, damage, petrification, and terrain effects.
+// C trap.c; function citations identify each native owner.
+
 import { stack_object } from './invent.js';
 import {
     WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS,
@@ -21,17 +24,18 @@ import {
     Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir,
     M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN,
     D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL,
-    M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel,
-    W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR,
-    IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR,
-    SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING,
+    M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, DISMOUNT_GENERIC, IS_ROOM,
+    Is_airlevel, W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR,
+    IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR,
+    SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING,
     IS_WATERWALL, PLNMSG_BACK_ON_GROUND, A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL,
-    IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF,
+    IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF, CORPSTAT_HISTORIC, MM_ADJACENTOK,
+    MM_NOTAIL, MM_NOWAIT, NO_MINVENT, M_SEEN_ELEC,
 } from './const.js';
 import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
-import { armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet } from './do_wear.js';
-import { delobj, consumeObjectCharge, useUpInventoryStack, chooseInventoryObject, inventoryItemDescription } from './invent.js';
-import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName } from './objnam.js';
+import { armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet, heroHasFreeAction } from './do_wear.js';
+import { delobj, consumeObjectCharge, useUpInventoryStack, chooseInventoryObject, inventoryItemDescription, currency } from './invent.js';
+import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName, definiteObjectAction } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
 import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep } from './timeout.js';
@@ -42,13 +46,13 @@ import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, req
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE,
-    MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, MONSTER_SOUND,
 } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import {
     heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls,
-    heroIsPolymorphed, returnHeroToHumanForm, polymonHero,
-    heroIsUnchanging, polymorphHero,
+    heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero,
+    heroFormHidesUnderObjects,
 } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import { levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel, levelAtDepth } from './dungeon.js';
@@ -56,24 +60,26 @@ import {
     monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt,
     finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone,
     wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid,
-    revealMonsterAppearance, setHeroGrip, wornMonsterLifeSaver,
+    revealMonsterAppearance, setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape,
 } from './mon.js';
 import type {
     MonsterDeathOptions, MonsterContactPetrificationResult, MonsterDeathResult, MonsterKilledOptions,
     MonsterPetrificationResult, MonsterSelfTouchOptions, MonsterSelfTouchResult, PetrificationContactOptions,
     PetrificationOptions, MonsterDeathHandler,
 } from './mon.js';
-import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig, billDummyObject, chargeUnpaidUsage, costlySpot } from './shk.js';
+import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig, billDummyObject, chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt, makeAngryShopkeeper, deleteObjectContents } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import {
     canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor,
-    show_glyph_cell, canOverwriteTerrain, updateLastSeenTerrain, transientObjectGlyph,
+    show_glyph_cell, canOverwriteTerrain, updateLastSeenTerrain, transientObjectGlyph, feel_newsym,
+    map_invisible,
 } from './display.js';
 import type { DisplayGlyph } from './display.js';
 import {
     objectResistsDestruction, getObjectLocation, blankNovel, burnFloorObjectsAt, destroyFireInventory,
     destroyFireMonsterInventory, heroHasHalfSpellDamage, meltIce, monsterResistsEffect, poly_obj,
+    restoreMonsterTraits, destroyElectricInventory, fractureRock,
 } from './zap.js';
 import { impossible } from './diagnostics.js';
 import { d, rnl, rn2, rnd, rn2Display, rn1 } from './rng.js';
@@ -88,16 +94,15 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position, Trap, MapLocation } from './map_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
-import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties } from './monworn.js';
+import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor } from './monworn.js';
 import {
-    monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep,
-    monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance,
-    monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty,
-    is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous,
-    monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater,
-    monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving,
-    monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst,
-    monsterObjectPronoun, grounded, passes_rocks,
+    monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance,
+    monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless,
+    monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests,
+    monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless,
+    monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless,
+    monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks,
+    strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem,
 } from './mondata.js';
 import {
     teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination,
@@ -105,8 +110,8 @@ import {
     activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap,
     relocateObjectRandomly,
 } from './teleport.js';
-import { canFallThrough, countLevelFeatures } from './mklev.js';
-import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName } from './do_name.js';
+import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
+import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName } from './do_name.js';
 import { touchPetrifies, selfTouchPetrifyingWeapons, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM } from './stoning.js';
 import { munstone } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
@@ -127,18 +132,16 @@ import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifacts.js';
-import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, finishLiquidDeath, pickEmergencyDrop, reviveHeroFromLiquid, teleportHeroOutOfLiquid, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER } from './hack.js';
+import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, finishLiquidDeath, pickEmergencyDrop, reviveHeroFromLiquid, teleportHeroOutOfLiquid, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER, nomul } from './hack.js';
 import type { EmergencyDisrobe, HeroLiquidOptions, LavaSinkingResult } from './hack.js';
 import { depth, dungeonDepth, find_hell, surfaceName, ceilingName } from './dungeon.js';
-import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
-import { triggerChestTrap } from './chest_trap.js';
 import {
     heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName,
     heroSpineName, monsterArmName, monsterHeadName,
 } from './body_parts.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { abusePet, tameMonster } from './dog.js';
+import { abusePet, tameMonster, makePetWary } from './dog.js';
 import { heroCanReachFloor, deleteEngravingAt } from './engrave.js';
 import type { DirectionSelection } from './cmd.js';
 import { beginBallAndChainMove, finishBallAndChainMove, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
@@ -150,13 +153,12 @@ import { promptYesNoQuit } from './query.js';
 import { isWeldedPrimary } from './wield.js';
 import type { HeroHurtleOptions } from './dothrow.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster } from './potion.js';
+import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster, makeHallucinated, makeStunned } from './potion.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';
-import { activateStatueTrapAt } from './statue_trap.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { woundHeroLegs } from './do.js';
 import type { LevitationState, PropertyState } from './property_types.js';
@@ -169,14 +171,15 @@ import { setLevelTerrainType } from './mkmaze.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
-import { onQuestStart } from './quest.js';
-import { applyRemoveCurseSpell } from './read.js';
+import { onQuestStart, markQuestLeaderAlive } from './quest.js';
+import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { scatterFloorObjects } from './scatter.js';
-import { rangedTargetHitBonus } from './dothrow.js';
-import { fractureRock } from './zap.js';
+import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
+import { bot } from './botl.js';
+import { createPoisonGasCloud } from './regions.js';
 
 // Water, lava, fire, and monster rust-trap effects.
 // C ref: trap.c lava_effects(), burnarmor(), trapeffect_rust_trap(),
@@ -185,6 +188,168 @@ import { fractureRock } from './zap.js';
 type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
     | typeof W_ARMS | typeof W_ARMG | typeof W_ARMF | typeof W_ARMU;
+
+interface StatueAnimationOptions {
+    state?: GameState;
+    shatter?: boolean;
+    magic?: boolean;
+}
+
+export type StatueAnimationResult =
+    | { monster: null; unique: boolean }
+    | { monster: Monster; unique: false };
+
+const MS_GUARDIAN = 38;
+
+const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
+
+// C trap.c:animate_statue(): release the statue's monster, named from the
+// statue, awake and hostile unless the animation is magical.
+export async function animateStatue(statue: GameObject, x: number, y: number, {
+    state = game, shatter = false, magic = false,
+}: StatueAnimationOptions = {}): Promise<StatueAnimationResult> {
+    if (statue.corpsenm === undefined)
+        throw new Error(`Statue ${statue.o_id} has no monster species.`);
+    const savedTraits = statue.oextra?.omonst;
+    let revival = revivalReplacement(statue.corpsenm, statue, true);
+    if (revival == null && (MONSTER_SOUND[statue.corpsenm] ?? 0) === MS_GUARDIAN
+        && state.urole?.guardnum !== statue.corpsenm)
+        revival = PM_DOPPELGANGER;
+    const replacement = revival
+        ?? (magic && monsterIsGolem(statue.corpsenm)
+            && statue.corpsenm !== PM_FLESH_GOLEM ? PM_FLESH_GOLEM : null);
+    const useSavedTraits = replacement == null && !!savedTraits;
+    const mnum = replacement ?? savedTraits?.mnum ?? statue.corpsenm;
+    let flags = NO_MINVENT | MM_NOMSG;
+    if (useSavedTraits) {
+        flags |= MM_NOWAIT | MM_NOCOUNTBIRTH | MM_NOTAIL;
+    } else {
+        flags |= bodyGenderFlags(statue);
+    }
+    const mayMoveAside = magic || replacement === PM_DOPPELGANGER;
+    if (mayMoveAside) flags |= MM_ADJACENTOK;
+    if (replacement === PM_DOPPELGANGER) flags |= MM_NOCOUNTBIRTH;
+
+    const creatingAtHero = state.u?.ux === x && state.u?.uy === y;
+    const occupied = !!monsterAtPosition(requireGameLevel(state), x, y);
+    const monster = creatingAtHero || (occupied && mayMoveAside)
+        ? await makemonNear(mnum, x, y, flags, creatingAtHero)
+        : await makemonAt(mnum, x, y, flags);
+    if (!monster) {
+        const unique = !!((MONSTER_GENO[statue.corpsenm] ?? 0) & G_UNIQ);
+        return { monster: null, unique };
+    }
+
+    if (useSavedTraits) {
+        restoreMonsterTraits(monster, savedTraits);
+        restoreShopkeeperResidency(monster, state);
+        markQuestLeaderAlive(monster, state);
+        await newsym(monster.mx, monster.my);
+        await restoreMonsterShape(monster, state);
+        if (monster.mtame && !monster.isminion)
+            await makePetWary(monster, { wasDead: true, state });
+    } else if (replacement === PM_DOPPELGANGER
+        && monster.cham === PM_DOPPELGANGER) {
+        await changeMonsterForm(monster, statue.corpsenm);
+    }
+
+    const name = statue.oextra?.oname || statue.oname;
+    if (name && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ))
+        setMonsterGivenName(monster, name);
+    // C animate_statue(): a mimic shows itself; other hiders stop hiding.
+    if (!(await revealMonsterAppearance(monster)).revealed) monster.mundetected = 0;
+    monster.msleeping = 0;
+    if (!magic) {
+        monster.mtame = 0;
+        monster.pet = false;
+        monster.mpeaceful = 0;
+        setMonsterMalign(monster, state);
+    }
+
+    const verb = magic && monsterIsGolem(statue.corpsenm)
+        && statue.corpsenm !== PM_FLESH_GOLEM && canSpotMonster(monster)
+        ? 'turns into flesh'
+        : !canSpotMonster(monster) ? 'disappears'
+        : monsterIsNonliving(monster.mnum) || monsterIsVampireShifter(monster) ? 'moves' : 'comes to life';
+    const heroAtStatue = state.u?.ux === x && state.u?.uy === y;
+    if (heroAtStatue || magic) {
+        const keeper = costlySpot(monster.mx, monster.my, state)?.resident;
+        const description = magic && (monster !== keeper || statue.where === 'inventory')
+            ? ownedObjectName(statue, state)
+            : `${objectOwnershipPrefix(statue, state)}statue`;
+        await plineWithContinuation(`${description} ${verb}!`);
+    } else if (heroIsHallucinating(state)) {
+        await plineWithContinuation(
+            `The ${randomDisplayMonsterName()} suddenly seems more animated.`,
+        );
+    } else if (shatter) {
+        const description = cansee(x, y)
+            ? ownedObjectName(statue, state, { capitalized: false }) : 'a statue';
+        await plineWithContinuation(
+            `Instead of shattering, ${description} suddenly ${verb}!`,
+        );
+    } else {
+        const description = canSpotMonster(monster)
+            ? monsterName(monster, { article: 'a', state })
+            : 'something';
+        await plineWithContinuation(`You find ${description} posing as a statue.`);
+        if (!canSpotMonster(monster) && heroIsBlind(state)) await map_invisible(x, y);
+        await stopHeroOccupation(state);
+    }
+    const keeper = costlySpot(x, y, state)?.resident;
+    if (!state.context?.mon_moving && (magic || shatter) && keeper !== monster
+        && keeper && (statue.where === 'inventory' ? statue.unpaid : !statue.no_charge))
+        await stolenValue(statue, x, y, !!keeper.mpeaceful, { silent: false, state });
+    if (state.urole?.key === 'archeologist'
+        && ((statue.spe ?? 0) & CORPSTAT_HISTORIC)) {
+        if (!state.context.mon_moving) {
+            await plineWithContinuation(formatFeltMessage('guilty that the historic statue is now gone.', state));
+            adjustHeroAlignment(-1, state);
+        } else if (cansee(x, y)) {
+            await plineWithContinuation(formatFeltMessage('regret that the historic statue is now gone.', state));
+        }
+    }
+    while (statue.contents?.length) {
+        const object = statue.contents.shift();
+        if (!object) throw new Error('Statue contents changed during transfer.');
+        object.where = 'free';
+        object.container = null;
+        await addObjectToMonsterInventory(monster, object, state);
+    }
+    await initializeMonsterArmor(monster, state);
+    if (statue.owornmask) await removeWornHeroItem(statue, state);
+    await delobj(statue, state);
+    if (state.u?.ux === x && state.u?.uy === y) {
+        const pile = state.level?.objects?.[x]?.[y] || [];
+        if (state.u.uundetected && heroFormHidesUnderObjects(state) && pile.length === 0)
+            state.u.uundetected = 0;
+    }
+    return { monster, unique: false };
+}
+
+// C trap.c:activate_statue_trap(): consume the trap and animate a statue
+// on the square, skipping genocided-uniques until a real candidate.
+export async function activateStatueTrapAt(
+    x: number, y: number, { state = game, shatter = false }: Omit<StatueAnimationOptions, 'magic'> = {},
+): Promise<Monster | null> {
+    const trap = state.level?.traps?.find(candidate =>
+        candidate.tx === x && candidate.ty === y
+        && candidate.ttyp === STATUE_TRAP,
+    );
+    if (!trap) return null;
+
+    deleteTrap(trap, state);
+    const statues = (state.level?.objects?.[x]?.[y] || [])
+        .filter(object => object.otyp === STATUE);
+    let monster: Monster | null = null;
+    for (const statue of statues) {
+        const result = await animateStatue(statue, x, y, { state, shatter });
+        monster = result.monster;
+        if (monster || !result.unique) break;
+    }
+    await feel_newsym(x, y);
+    return monster;
+}
 
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export async function seeTrap(trap: Trap, state: GameState = game): Promise<void> {
@@ -883,6 +1048,258 @@ async function trapeffectRustTrap(
 // ---------------------------------------------------------------------------
 // trap.c mintrap() and the monster trap-effect completions it defers.
 // ---------------------------------------------------------------------------
+
+export interface ChestTrapOptions {
+    state?: GameState;
+    disarm?: boolean;
+    bodyPart?: string;
+    random?: RandomBelow;
+    rollDice?: RollDice;
+    publish?: MessagePublisher;
+}
+
+export type ChestTrapResult = {
+    destroyed?: boolean;
+    died?: boolean;
+} & (
+    | { outcome: 'luck-save'; damage: 0 }
+    | { outcome: 'explosion'; damage: number }
+    | { outcome: 'noxious-gas' | 'stunning-gas' | 'fire' }
+    | { outcome: 'poisoned-needle'; damage: number | undefined }
+    | { outcome: 'electric-shock'; damage?: number }
+    | { outcome: 'paralysis'; duration: number }
+);
+
+const BLIND_GAS = [
+    'humid', 'odorless', 'pungent', 'chilling', 'acrid', 'biting',
+];
+
+// C trap.c:chest_trap(). One-shot container traps, including their luck save.
+export async function triggerChestTrap(container: GameObject | null | undefined, {
+    state = game,
+    disarm = false,
+    bodyPart = heroHandName(state),
+    random = rn2,
+    rollDice = d,
+    publish = plineWithContinuation,
+}: ChestTrapOptions = {}): Promise<ChestTrapResult | null> {
+    if (!container?.otrapped) return null;
+    const foundLocation = getObjectLocation(container, state);
+    if (foundLocation) {
+        container.ox = foundLocation.x;
+        container.oy = foundLocation.y;
+    }
+    const location = { x: container.ox, y: container.oy };
+    container.tknown = false;
+    container.otrapped = false;
+    await publish(`You ${disarm ? 'set it off' : 'trigger a trap'}!`);
+    await displayMessageWindow();
+
+    const luck = Luck(state.u);
+    if (luck > -13 && random(13 + luck) > 7) {
+        const savedOutcome = random(13);
+        const message = savedOutcome >= 11 ? 'explosive charge is a dud'
+            : savedOutcome >= 9 ? 'electric charge is grounded'
+            : savedOutcome >= 7 ? 'flame fizzles out'
+            : savedOutcome >= 4 ? 'poisoned needle misses' : 'gas cloud blows away';
+        await publish(`But luckily the ${message}!`);
+        container.tknown = true;
+        return { outcome: 'luck-save', damage: 0, destroyed: false };
+    }
+
+    const outcome = random(20) === 0 ? random(26) : luck >= 13 ? 0 : random(13 - luck);
+    let result: ChestTrapResult;
+    switch (outcome) {
+        case 25:
+        case 24:
+        case 23:
+        case 22:
+        case 21: {
+            const spot = costlySpot(location.x, location.y, state);
+            const insider = !!spot && !!insideShopRoomAt(state, state.u.ux, state.u.uy)
+                && state.u.ushops?.[0] === spot.roomno;
+            await publish(`${definiteObjectAction(container, 'explode', state)}!`);
+            const killer = `exploding ${objectCombatName(container, { state, includeCorpseSpecies: false })}`;
+            // Charge while the objects and their bills still exist, before damage
+            // can end the game and settle the hero's debt through inheritance.
+            let loss = spot ? await stolenValue(container, location.x, location.y,
+                spot.resident.mpeaceful, { state, publish, silent: true }) : 0;
+            await deleteObjectContents(container, state);
+            const ball = state.uball || state.u?.uball;
+            const chain = state.uchain || state.u?.uchain;
+            if ((chain && chain.ox === location.x && chain.oy === location.y)
+                || (ball?.where === 'floor' && ball.ox === location.x && ball.oy === location.y))
+                await unpunishHero(state);
+
+            let containerDestroyed = false;
+            const pile = [...(state.level?.objects?.[location.x]?.[location.y] || [])];
+            for (const object of pile) {
+                if (spot) loss += await stolenValue(object, object.ox, object.oy,
+                    spot.resident.mpeaceful, { state, publish, silent: true });
+                if (object === container) containerDestroyed = true;
+                await delobj(object, state);
+            }
+
+            await wakeMonstersNearWithMessages(
+                state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state, publish,
+            );
+            const rolledDamage = rollDice(6, 6);
+            const damage = state.u?.halfPhysicalDamage ? Math.trunc((rolledDamage + 1) / 2) : rolledDamage;
+            if (await loseHeroHp(damage, killer, { state, publish })) {
+                result = { outcome: 'explosion', damage, destroyed: containerDestroyed, died: true };
+                break;
+            }
+            await exerciseAttribute(A_STR, false, state);
+            if (spot && loss) {
+                const money = `${loss} ${currency(loss, { state })}`;
+                if (insider) await publish(`You owe ${money} for objects destroyed.`);
+                else {
+                    await publish(`You caused ${money} worth of damage!`);
+                    await makeAngryShopkeeper(spot.resident, state);
+                }
+            }
+            result = { outcome: 'explosion', damage, destroyed: containerDestroyed };
+            break;
+        }
+        case 20:
+        case 19:
+        case 18:
+        case 17: {
+            await publish(
+                `A cloud of noxious gas billows from ${definiteName(objectCombatName(container, { state, includeCorpseSpecies: false }), state)}.`,
+            );
+            if (random(3) !== 0) {
+                const poison = await poisonHero({
+                    reason: 'gas cloud',
+                    killer: 'cloud of poison gas',
+                    attribute: A_STR,
+                    fatal: 15,
+                    state,
+                    random,
+                    rollDice,
+                    publish,
+                });
+                if (poison.died) { result = { outcome: 'noxious-gas', destroyed: false, died: true }; break; }
+            } else {
+                await createPoisonGasCloud(
+                    state, location.x, location.y, 1, 8, random, publish,
+                );
+            }
+            await exerciseAttribute(A_CON, false, state);
+            result = { outcome: 'noxious-gas', destroyed: false };
+            break;
+        }
+        case 16:
+        case 15:
+        case 14:
+        case 13: {
+            await publish(formatFeltMessage(`a needle prick your ${bodyPart}.`, state));
+            const poison = await poisonHero({
+                reason: 'needle',
+                killer: 'poisoned needle',
+                attribute: A_CON,
+                fatal: 10,
+                state,
+                random,
+                rollDice,
+                publish,
+            });
+            if (!poison.died) await exerciseAttribute(A_CON, false, state);
+            { result = {
+                outcome: 'poisoned-needle',
+                damage: poison.damage,
+                destroyed: false,
+                died: poison.died,
+            }; break; }
+        }
+        case 12:
+        case 11:
+        case 10:
+        case 9: {
+            const fire = await triggerHeroFireTrap(container, { publish });
+            result = { outcome: 'fire', destroyed: false, died: fire.died };
+            break;
+        }
+        case 8:
+        case 7:
+        case 6: {
+            const originalDamage = rollDice(4, 4);
+            let damage = originalDamage;
+            await publish('You are jolted by a surge of electricity!');
+            if (state.u?.shockResistance) {
+                if (state === game) await shieldeff(state.u.ux, state.u.uy);
+                await publish("You don't seem to be affected.");
+                monstersObserveHeroResistance(M_SEEN_ELEC, state);
+                damage = 0;
+            } else {
+                monstersForgetHeroResistance(M_SEEN_ELEC, state);
+            }
+            const items = await destroyElectricInventory(originalDamage, {
+                state, publish, random,
+            });
+            if (items.heroDied) { result = { outcome: 'electric-shock', died: true }; break; }
+            const died = damage > 0 && await loseHeroHp(damage, 'electric shock', { state, publish });
+            result = { outcome: 'electric-shock', damage, destroyed: false, died };
+            break;
+        }
+        case 5:
+        case 4:
+        case 3: {
+            if (heroHasFreeAction(state)) {
+                await publish('You momentarily stiffen.');
+                result = { outcome: 'paralysis', duration: 0, destroyed: false };
+                break;
+            }
+            await publish('Suddenly you are frozen in place!');
+            const duration = rollDice(5, 6);
+            nomul(-duration, state);
+            state._helplessReason = 'frozen by a trap';
+            state._helplessDoneMessage = 'You can move again.';
+            await exerciseAttribute(A_DEX, false, state);
+            result = { outcome: 'paralysis', duration, destroyed: false };
+            break;
+        }
+        case 2:
+        case 1:
+        case 0: {
+            const blind = heroIsBlind(state);
+            const description = blind
+                ? BLIND_GAS[random(BLIND_GAS.length)]
+                : randomColorName(state, random);
+            await publish(
+                `A cloud of ${description} gas billows from ${definiteName(objectCombatName(container, { state, includeCorpseSpecies: false }), state)}.`,
+            );
+            const alreadyStunned = state.u?.stunned
+                || (state.u?.stunnedTurns ?? 0) > 0;
+            const hallucinating = heroIsHallucinating(state);
+            if (!alreadyStunned) {
+                if (hallucinating) await publish('What a groovy feeling!');
+                else {
+                    const movement = staggerVerb(heroSpecies(state)).replace(/s$/, '');
+                    const feeling = state.u.hallucinationResistance ? ''
+                        : blind ? ' and get dizzy' : ' and your vision blurs';
+                    await publish(`You ${movement}${feeling}...`);
+                }
+            }
+            await makeStunned((state.u.stunnedTurns ?? 0) + 16 + random(7), { state, talk: false });
+            await makeHallucinated((state.u.hallucinationTurns ?? 0) + 16 + random(5), {
+                state, talk: false, publish,
+            });
+            result = { outcome: 'stunning-gas', destroyed: false };
+            break;
+        }
+        default: throw new Error(`Invalid chest trap outcome: ${outcome}`);
+    }
+
+    // C trap.c:6494-6497: bot() and tknown=1 run after surviving outcomes
+    // (including a life-saved or declined death); done() never returns for a
+    // real death, so a fatal outcome leaves tknown clear for the bones file.
+    if (!result.destroyed && !result.died) {
+        await bot();
+        container.tknown = true;
+    }
+    return result;
+}
 
 // C trap.c:t_at(). The level keeps at most one trap per square.
 export function trapAt(state: GameState, x: number, y: number) {
@@ -1698,6 +2115,32 @@ export async function petrifyMonsterImmediately(monster: Monster, {
     if (creditHero && result.survived && !cansee(x, y))
         await publish('Maybe not...');
     return result;
+}
+
+interface BoobyTrapOptions {
+    bodypart?: boolean;
+    state?: GameState;
+    publish?: MessagePublisher;
+    rollOne?: (sides: number) => number;
+}
+
+// C trap.c:b_trapped(). Door and tin explosions share damage and stun rules.
+export async function triggerBoobyTrap(item: string, {
+    bodypart = false, state = game, publish = plineWithContinuation, rollOne = rnd,
+}: BoobyTrapOptions = {}): Promise<boolean> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const difficulty = level_difficulty();
+    const damage = rollOne(5 + (difficulty < 5 ? difficulty : 2 + Math.trunc(difficulty / 2)));
+    await publish(`KABOOM!!  The ${item} was booby-trapped!`);
+    await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, state.u.ulevel * 20, state, publish);
+    const half = state.u.halfPhysicalDamage;
+    if (await loseHeroHp(half ? Math.trunc((damage + 1) / 2) : damage,
+        'explosion', { state, publish })) return true;
+    await exerciseAttribute(A_STR, false, state);
+    if (bodypart) await exerciseAttribute(A_CON, false, state);
+    await makeStunned((state.u.stunnedTurns || 0) + damage, { state, talk: true, publish });
+    return !!state.program_state.gameover;
 }
 
 // C trap.c:thitm() redraws the original square after a lethal hit, even
@@ -2610,7 +3053,6 @@ export function pitsAreConjoined(first: Trap | null | undefined, second: Trap | 
     return direction >= 0 && !!((first.conjoined ?? 0) & (1 << direction))
         && !!((second.conjoined ?? 0) & (1 << ((direction + 4) % 8)));
 }
-
 
 // C trap.c:adj_nonconjoined_pit(): the hero stepped out of one pit into a
 // neighboring pit in a diagonal or cardinal move (xytodir(u.dx, u.dy) !=
@@ -3916,7 +4358,6 @@ export interface MonsterRustTrapEvent {
     killed: boolean;
     death?: MonsterDeathResult;
 }
-
 
 // ── moved from src/js/anti_magic_trap.ts ──
 interface AntiMagicTrapPresentation {
@@ -5770,7 +6211,6 @@ function heroWearsIronShoes() {
     return !!heroIronShoes();
 }
 
-
 function webTrapDuration(strength: number) {
     if (strength <= 3) return rn2(6) + 6;
     if (strength < 6) return rn2(6) + 4;
@@ -5966,7 +6406,6 @@ export function setHeroTrap(turns: number, type: number, state: GameState = game
     state.u.utraptype = turns ? type : 0;
     refreshMovementProperties(state);
 }
-
 
 export function reduceHeroTrapDuration(): number {
     const hero = game.u;
@@ -6207,7 +6646,6 @@ async function triggerProjectileTrap(trap: Trap) {
     await stack_object(missile, game);
     await newsym(trap.tx, trap.ty);
 }
-
 
 // ── moved from src/js/hero_polymorph_trap.ts ──
 
@@ -6651,7 +7089,6 @@ async function rustIronGolemHero() {
     }
     await finishHeroDeath({ killer: 'rusting away' });
 }
-
 
 // C trap.c:trapeffect_hole(): the hero branch — the fall refusal on levels
 // without a bottom, the trap-door or hole message, and the destination
@@ -7640,7 +8077,6 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
     if (oldTrap) finishSokobanIfSolved();
     return trap;
 }
-
 
 // C trap.c:delfloortrap().  Destroys a trap which emanates from the floor,
 // freeing a hero or monster caught in it.  Portal-like and special traps are

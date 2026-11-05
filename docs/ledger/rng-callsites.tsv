@@ -143,7 +143,7 @@ src/js/bones.ts	canMakeBones	random	"[""1 + (dungeonDepth >> 2)""]"	unproved
 src/js/bones.ts	dropHeroInventoryForBones	rn2	"[""5""]"	constant
 src/js/bones.ts	dropHeroInventoryForBones	rn2	"[""8""]"	constant
 src/js/bones.ts	nearbyMonsterForDeathDrop	rn2	"[""candidateCount""]"	unproved
-src/js/booby_trap.ts	triggerBoobyTrap	rollOne	"[""5 + (difficulty < 5 ? difficulty : 2 + Math.trunc(difficulty / 2))""]"	invariant
+src/js/trap.ts	triggerBoobyTrap	rollOne	"[""5 + (difficulty < 5 ? difficulty : 2 + Math.trunc(difficulty / 2))""]"	invariant
 src/js/zap.ts	flyBoomerang	rn2	"[""20""]"	constant
 src/js/do.ts	dropBoulderIntoLiquid	d	"[""fireResistant ? 1 : 3"", ""6""]"	constant
 src/js/do.ts	dropBoulderIntoLiquid	random	"[""10""]"	constant
@@ -182,7 +182,7 @@ src/js/roles.ts	pickRandom	rn2	"[""candidates.length""]"	unproved
 src/js/roles.ts	rigid_role_checks	rn2	"[""1""]"	constant
 src/js/roles.ts	rigid_role_checks	rn2	"[""candidates.length""]"	unproved
 src/js/roles.ts	randrole_filtered	rn2	"[""candidates.length""]"	unproved
-src/js/chest_trap.ts	triggerChestTrap	random	"[""13 + luck""]"	guarded
+src/js/trap.ts	triggerChestTrap	random	"[""13 + luck""]"	guarded
 src/js/ambient_sounds.ts	dochat	rn2	"[""10""]"	constant
 src/js/lock.ts	doclose	rn2	"[""25""]"	constant
 src/js/hack.ts	domoveCore	rn2	"[""5""]"	constant

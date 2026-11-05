@@ -17,7 +17,6 @@ import { isok } from './cmd.js';
 import { observeObject, objectMaterial } from './o_init.js';
 import { withIndefiniteArticle, makePlural } from './objnam.js';
 import { strangeFeelingMessage } from './potion.js';
-import { activateStatueTrapAt } from './statue_trap.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { commandSafetyPrevention } from './do.js';
 import { cansee, clearAreaCells, vision_note_blocker_change } from './vision.js';
@@ -27,7 +26,7 @@ import { MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './regions.js';
-import { openFallingTrap, openHoldingTrap, trapName } from './trap.js';
+import { openFallingTrap, openHoldingTrap, trapName, triggerBoobyTrap, activateStatueTrapAt } from './trap.js';
 import { heroFootName, heroNoseName, heroToeName } from './body_parts.js';
 import { propertyIsActive } from './properties.js';
 import { selectMapPosition, showGetposInstructions } from './getpos.js';
@@ -37,7 +36,6 @@ import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { currency } from './invent.js';
 import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
-import { triggerBoobyTrap } from './booby_trap.js';
 import { monsterDigests, monsterHidesUnder, monsterIsHider } from './mondata.js';
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.

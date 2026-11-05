@@ -40,7 +40,7 @@ import { splitHeroMonsterForm } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
+import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt, triggerBoobyTrap } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
@@ -98,7 +98,6 @@ import { floorObjectDescription, stack_object } from './invent.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { heroFootName } from './body_parts.js';
 import { insideRoom, searchSpecial } from './mkroom.js';
-import { triggerBoobyTrap } from './booby_trap.js';
 import { useUpFloorObject } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { explodeLandMine } from './landmine_explosion.js';
@@ -106,7 +105,6 @@ import { randomTeleportDepth } from './level_teleport.js';
 import { launchRollingBoulder } from './trap.js';
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
-
 import { isRider } from './corpse_species.js';
 import { intemple } from './priest.js';
 import { recordAchievement } from './insight.js';
@@ -118,7 +116,6 @@ import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { abusePet } from './dog.js';
 import { applyWaterFriction } from './mkmaze.js';
-
 import { mdamageu } from './mhitu.js';
 import { adjustHeroAlignment, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { freeInventoryObject } from './invent.js';
@@ -129,7 +126,6 @@ import { hitIronBars, dissolveBars } from './projectile_bars.js';
 import { ensureHeroSkills, useHeroSkill, weaponDescription, weaponSkillType } from './weapon.js';
 import { recordGameLogEvent } from './gamelog.js';
 import type { TerminalCell } from './terminal.js';
-
 
 // Door opening and teleport input live with their C owners.
 
@@ -1637,7 +1633,6 @@ function heroOozesUnderDoor(destination: MapLocation | null, g: GameState = game
         && !!(destination.doormask & (D_CLOSED | D_LOCKED))
         && !heroPassesWalls(g) && heroCanOoze(g);
 }
-
 
 // C test_move(TEST_MOVE): tests obstacles without performing auto-open,
 // boulder pushing, or the hero's eventual movement.
@@ -4411,7 +4406,6 @@ export function nomul(value: number, state: GameState = game): void {
 export function endVoluntaryMultiTurn(state: GameState = game): void {
     nomul(0, state);
 }
-
 
 function monsterHasActiveAttack(monster: Monster): boolean {
     return (MONSTER_ATTACKS[monster?.mnum] || [])

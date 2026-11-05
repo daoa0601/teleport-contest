@@ -4,10 +4,10 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';
-import { animateStatue } from '../js/statue_trap.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { animateStatue, } from '../js/trap.js';
 void test('a mimic statue that comes to life beside the hero is shown as the mimic', async () => {
     await freshObjectRoom();
     const { ux, uy } = game.u;

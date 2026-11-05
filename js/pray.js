@@ -32,7 +32,7 @@ import { angerTemplePriest } from './priest.js';
 import { makeConfused, makeHallucinated, makeStunned, makeBlinded, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming } from './potion.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { healHeroLegs } from './do.js';
-import { resetUtrap, announceTerrainRescue } from './trap.js';
+import { resetUtrap, announceTerrainRescue, animateStatue } from './trap.js';
 import { currentHungerState, init_uhunger } from './eat.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { demonLord, summonMinion } from './minion.js';
@@ -57,7 +57,6 @@ import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinatin
 import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './weapon.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
 import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
-import { animateStatue } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { attrcurse, rndcurse } from './throne.js';
 import { safe_teleds } from './teleport.js';

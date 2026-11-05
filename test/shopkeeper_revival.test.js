@@ -8,7 +8,6 @@ import { mkcorpstat, unlinkObject } from '../js/mkobj.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { CORPSE, DAGGER, STATUE } from '../js/object_data.js';
 import { addShopObjectToBill, objectOwnershipPrefix, shopResident } from '../js/shk.js';
-import { animateStatue } from '../js/statue_trap.js';
 import { addInventoryItem } from '../js/invent.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
@@ -18,6 +17,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createRoomLevel } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { checkSpecialRoom } from '../js/hack.js';
+import { animateStatue, } from '../js/trap.js';
 for (const petrified of [false, true]) {
     void test(`a shopkeeper restored from ${petrified ? 'a statue' : 'a corpse'} owns stock and bills purchases again`, async () => {
         await freshObjectRoom();

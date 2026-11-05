@@ -27,7 +27,6 @@ import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
-import { triggerBoobyTrap } from './booby_trap.js';
 import { heroPassesWalls, heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { rnl, rn2 } from './rng.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -48,12 +47,11 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage, deleteObject } from './shk.js';
 import { artifactById, touchArtifactByHero } from './artifacts.js';
 import { heroFingerName } from './body_parts.js';
-import { triggerChestTrap } from './chest_trap.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { maybeAbsorbItem } from './steal.js';
-import { untrap, untrapAbilityProblem } from './trap.js';
+import { untrap, untrapAbilityProblem, triggerChestTrap, triggerBoobyTrap } from './trap.js';
 import { possessiveName } from './hacklib.js';
 import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -64,7 +62,6 @@ import { roomsAt } from './hack.js';
 
 // Lock forcing.
 // C ref: lock.c doforce(), forcelock(), and breakchestlock().
-
 
 export async function doforce(state: GameState = game): Promise<void> {
     if (state.u?.uswallow) {
@@ -990,7 +987,6 @@ function lockPickChance(tool: GameObject | null, box: GameObject | undefined, st
 
 // C lock.c:doorlock()/obstructed(). Traversal owns wand discovery, billable
 // shop damage, drawbridge effects, and the decision to target a door.
-
 
 export async function changeDoorByMagic(source: GameObject, x: number, y: number, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);

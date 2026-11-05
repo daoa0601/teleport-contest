@@ -13,7 +13,6 @@ import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, 
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
-
 import { makeBlinded, makeStunned } from './potion.js';
 import { eatmdone, Finish_digestion, gethungry, unfaint, Hear_again } from './eat.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
@@ -56,7 +55,7 @@ import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, } from './object_data.j
 import { heroIsUnaware } from './senses.js';
 import { heroSpecies, setHeroSpecies, feelingAfterSelfGenocide, heroHasBeenGenocided, heroHasOlfaction, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { openHoldingTrap, erodeArmor, erodeAttackingWeapon, igniteItems, petrifyMonsterImmediately, burnHeroArmorByFire, sinkHeroIntoLava } from './trap.js';
+import { openHoldingTrap, erodeArmor, erodeAttackingWeapon, igniteItems, petrifyMonsterImmediately, burnHeroArmorByFire, sinkHeroIntoLava, activateStatueTrapAt } from './trap.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
 import { loseHeroExperience } from './exper.js';
 import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction } from './monmove.js';
@@ -74,7 +73,6 @@ import { performQuestExpulsion, ensureQuestStatus, talkQuestCharacter } from './
 import { amuletTurn, intervene, publishMonsterCuss } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_monster_death.js';
 import { grantAmuletWish } from './wish.js';
-
 import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength, periodicTurnExercise } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { rndcurse } from './throne.js';
@@ -87,7 +85,6 @@ import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-
 import { addObjectToMonsterInventory, finishDelayedArmorTheft } from './steal.js';
 import { aligns, nativeRoleAt } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
@@ -104,7 +101,6 @@ import { clearJustPicked } from './pickup.js';
 import { runLevelRegions } from './regions.js';
 import { invault, moveVaultGuard } from './vault.js';
 import { automaticSearch, mapVicinity, revealWarnedMonsters } from './detect.js';
-import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { monsterAlignmentType } from './priest.js';
 import { movebubbles } from './mkmaze.js';
@@ -112,6 +108,7 @@ import { removeObjectAndContentsFromBill, currentShopResident, fixShopDamage } f
 import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout } from './properties.js';
 import { nhTimeout } from './timeout.js';
+
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 
@@ -604,7 +601,6 @@ async function finishInitialTurnMaintenanceRng(sourceTurn: number): Promise<void
     }
     await finishInitialTurnMaintenanceAfterIntervention(sourceTurn);
 }
-
 
 async function finishInitialTurnMaintenanceAfterAmbient({
     sourceTurn,

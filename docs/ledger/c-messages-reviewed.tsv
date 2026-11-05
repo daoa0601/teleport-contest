@@ -522,7 +522,7 @@ topten.c	writexlentry	gender0=	out-of-scope	Record/log/extended-log file I/O (re
 topten.c	writexlentry	starttime=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
 topten.c	writexlentry	version=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
 topten.c	writexlentry	wish_cnt=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
-trap.c	chest_trap	trigger a trap!	composed	src/js/chest_trap.ts:triggerChestTrap; Selects trigger a trap for an ordinary trigger and set it off for a disarm failure.
+trap.c	chest_trap	trigger a trap!	composed	src/js/trap.ts:triggerChestTrap; Selects trigger a trap for an ordinary trigger and set it off for a disarm failure.
 trap.c	lava_effects	and are about to be immolated	dead	This else-if follows if (!Fire_resistance), so Fire_resistance is true and boil_away = !Fire_resistance is false.
 trap.c	trapeffect_arrow_trap	An arrow shoots out at you!	composed	src/js/trap.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
 trap.c	trapeffect_dart_trap	A little dart shoots out at you!	composed	src/js/trap.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
