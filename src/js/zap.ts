@@ -88,7 +88,7 @@ import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID,
 import type { DamageType } from './monster_attack_types.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventorySection } from './windows.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster, SavedMonsterTraits } from './monster_types.js';

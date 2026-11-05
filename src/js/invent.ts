@@ -7,7 +7,7 @@ import {
 import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD } from './object_data.js';
 import { pair_of } from './object_properties.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
-import { game, requireGameDisplay, requireGameLevel, requireLiveGame } from './gstate.js';
+import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
@@ -21,6 +21,7 @@ import { formatStrength } from './botl.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
 import { showMessageMenu } from './wintty.js';
 import { pline, plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';
 import type { InventoryMenuItem, InventorySection, InventorySelection, MenuLabel, MultiSelectSection, PageLocalMultiSelectSection } from './windows.js';
@@ -51,7 +52,7 @@ import { recorderSort } from './recorder_sort.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo, isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition } from './object_properties.js';
 import { isTwoWeaponObject, mergeHeroWeaponSlots, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
-import { heroHasNoHands, heroIsVerySmall, heroSpecies } from './polyself.js';
+import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects } from './polyself.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { discoverArtifact, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifacts.js';
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
@@ -74,7 +75,7 @@ import { impossible, panic } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
 import {
     currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject,
-    billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer,
+    addShopObjectToBill, stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer,
 } from './shk.js';
 import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { objectShedsLight } from './light.js';
@@ -84,7 +85,7 @@ import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
-import { nomul, heroGoldAmount } from './hack.js';
+import { nomul, heroGoldAmount, roomsAt } from './hack.js';
 import { displayLiquidName } from './do_name.js';
 import { usedUpBill, showBill } from './inventory_reports.js';
 import { NO_COLOR } from './terminal.js';
@@ -92,7 +93,7 @@ import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { HeroPossessions } from './hero_types.js';
 import type { GameDisplay } from './game_display.js';
-import { maybeUnhideAt } from './mon.js';
+import { maybeUnhideAt, hideHeroUnder } from './mon.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';
 import { monsterIsHumanoid } from './mondata.js';
@@ -2997,6 +2998,26 @@ const INSTRUMENTS = new Set([WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
 
 export function inventoryClassOrder(state: InventoryOrderState = game): number[] {
     return [...(state.flags.inv_order || DEFAULT_PACK_ORDER)];
+}
+
+// C invent.c:useupf(). Consume floor stock, retaining any used-up shop bill.
+export async function useUpFloorObject(object: GameObject, count: number, {
+    state = game, publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const { ox: x, oy: y } = object;
+    const consumed = object.quan > count ? splitObjectStack(object, count, state) : object;
+    if (!consumed) throw new Error('Floor consumption requires a valid stack quantity');
+    if (!state.context.mon_moving && costlySpot(x, y, state)) {
+        const room = roomsAt(state.level, x, y)[0];
+        if (room !== undefined && state.u.urooms.includes(room))
+            await addShopObjectToBill(consumed, state, { ininv: false, silent: false, publish });
+        else await stolenValue(consumed, x, y, false, { silent: false, state, publish });
+    }
+    await delobj(consumed, state);
+    if (state.u.ux === x && state.u.uy === y
+        && state.u.uundetected && heroFormHidesUnderObjects(state)) await hideHeroUnder(state);
 }
 
 // C invent.c:let_to_name() names[]. Conversion from a class to a string

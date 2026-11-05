@@ -44,7 +44,7 @@ import type { ChoiceMenuEntry, CountedSelection, MultiSelectItem, MultiSelectSec
 import type { MenuUnderlay } from './wintty.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { promptYesNoQuit, getLine, promptChoice, tty_yn_function } from './query.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand, floorReachProblem } from './engrave.js';
 import { hideHeroUnder, finishEnvironmentalMonsterDeath } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, SELL_DELIBERATE, SELL_DONTSELL, currentShopResident, stolenValue, sellHeroDroppedObject, warnAboutRemovedPick, deleteObject } from './shk.js';

@@ -81,7 +81,7 @@ import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { heroFootName } from './body_parts.js';
 import { insideRoom, searchSpecial } from './mkroom.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { randomTeleportDepth } from './level_teleport.js';

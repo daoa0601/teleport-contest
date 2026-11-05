@@ -53,7 +53,7 @@ import { explode } from './explosion.js';
 import { makeFamiliar } from './familiar.js';
 import { figurinePlacementFailure } from './figurine.js';
 import { doBlindingRay } from './flash.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor } from './engrave.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';

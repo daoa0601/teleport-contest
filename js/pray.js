@@ -21,7 +21,7 @@ import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { landFloorObject } from './floor_effects.js';
 import { floorObjectDescription, chooseInventoryObject, confersLuck, consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import { LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { nomul, loseHeroHp, nearCapacity } from './hack.js';

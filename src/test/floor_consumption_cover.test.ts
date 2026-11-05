@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { useUpFloorObject } from '../js/floor_consumption.js';
+import { useUpFloorObject } from '../js/invent.js';
 import { CORPSE, ROCK } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { floorObject } from './support/game-objects.js';

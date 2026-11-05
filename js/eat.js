@@ -23,7 +23,7 @@ import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel } from './exper.js';
 import { explode } from './explosion.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor } from './engrave.js';
 import { isEdibleFood, selectFoodToEat } from './food_selection.js';
 import { nonrottingCorpse, veganCorpse, vegetarianCorpse } from './food_traits.js';
