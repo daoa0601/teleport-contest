@@ -2,8 +2,9 @@
 // C ref: sp_lev.c — map placement and terrain selections, room / object /
 // monster / trap construction from des operations, live level flipping,
 // fill_special_room, check_room, create_room, create_subroom,
-// dig_corridor, wallify_map, and themed-room map placement.  The des.*
-// binding table and the Lua level/themeroom sessions live in sp_lev_lua.ts.
+// dig_corridor, wallify_map, location picking, map cleanup and boundary
+// symbols, the Lua level coder and special-level loader, and themed-room
+// map placement.  The des.* binding table lives in lua/des.ts.
 import { stack_object } from './invent.js';
 import { RANDOM_CLASS, GEM_CLASS } from './objclass.js';
 import { objectMerge, EGG, TIN, FIGURINE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE, } from './object_data.js';
@@ -16,39 +17,39 @@ import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
 import { ensureMinionData } from './minion.js';
 import { monsterAtPosition, putSaddleOnMonster } from './steed.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
-import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GONE, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, IS_POOL, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GENOD, G_GONE, LEVEL_TIMER_KIND, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { isok } from './cmd.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
 import { impossible } from './diagnostics.js';
-import { get_table_xy_or_coord, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, find_montype, MONSTER_CLASS_SYMBOLS, TRAP_TYPES } from './lua/des.js';
-import { LuaTable, objectToLuaTable } from './lua/runtime.js';
+import { l_register_des, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, MONSTER_CLASS_SYMBOLS, TRAP_TYPES } from './lua/des.js';
+import { LuaTable, objectToLuaTable, luaTableToArray, luaCheckString, luaCheckInteger, luaType } from './lua/runtime.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { discardMonsterInventory } from './mkobj.js';
 import { dropSpecialMonsterObjects } from './steal.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { make_grave } from './engrave.js';
 import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
 import { mineralize } from './mklev.js';
-import { map_cleanup, remove_boundary_syms } from './special_level_cleanup.js';
 import { countLevelFeatures } from './mklev.js';
 import { wallification } from './mkmaze.js';
-import { unwrapSelection } from './lua/selection.js';
-import { luaInteger, luaString } from './lua/arguments.js';
+import { createSelectionApi, unwrapSelection } from './lua/selection.js';
+import { luaInteger, luaString, luaToInteger, luaNumberValue } from './lua/arguments.js';
 import { buryObject } from './dig.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { rnd_rect, get_rect, split_rects } from './rect.js';
 import { depth as depth_of_level, inducedAlignment, level_difficulty } from './dungeon.js';
 import { flood_fill_rm, litstate_rnd, mkmap } from './mkmap.js';
 import { create_maze, walkfrom } from './mkmaze.js';
-import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, get_location, get_location_coord, getPackedLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { back_to_glyph, set_wall_state } from './display.js';
-import { deleteEngravingAt } from './engrave.js';
+import { deleteEngravingAt, engravingAt, deleteEngraving } from './engrave.js';
 import { createPlayerMonster } from './mplayer.js';
+import { deleteObject } from './shk.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom, fillZooRoom, insideRoom } from './mkroom.js';
-import { beginObjectBurn } from './timeout.js';
+import { beginObjectBurn, scheduleLevelTimer, stopLevelTimer } from './timeout.js';
 import { monsterEmitsLight, vision_reset } from './vision.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionMatch } from './selvar.js';
 import { CANDELABRUM_OF_INVOCATION, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD, S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom, canDigDown, canFallThrough, is_hole, is_pit, makecorridors, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, stairway_add, topologize } from './mklev.js';
@@ -58,9 +59,12 @@ import { fix_wall_spines, setLevelTerrainLit, setLevelTerrainType, vibratingSqua
 import { makeroguerooms } from './extralev.js';
 import { stockShopRoom } from './shknam.js';
 import { specialShrinePriest } from './priest.js';
-import { makeSpecialDrawbridge } from './dbridge.js';
-import { is_dwarf, is_gnome, is_male, is_shapeshifter, monsterHasStoneResistance, monsterIsFemale, monsterPolymorphsWhenStoned, setMonsterSpecies, monsterIsAmphibious, monsterIsFlyer, monsterIsSwimmer, monsterPassesWalls, monsterIsGolem, monsterIsPlayerMonster, monsterIsVampireShifter } from './mondata.js';
+import { isLavaAt, isPoolAt, makeSpecialDrawbridge } from './dbridge.js';
+import { is_dwarf, is_gnome, is_male, is_shapeshifter, monsterHasStoneResistance, monsterIsFemale, monsterPolymorphsWhenStoned, setMonsterSpecies, monsterIsAmphibious, monsterIsFlyer, monsterIsSwimmer, monsterPassesWalls, monsterIsGolem, monsterIsPlayerMonster, monsterIsVampireShifter, nameToMonster } from './mondata.js';
 import { roomForIndex, roomsAt } from './hack.js';
+import { PanicTermination } from './panic_termination.js';
+import { LUA_SOURCES } from './generated/lua_sources.js';
+import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 export async function fillVault(room) {
     if (!room)
         return;
@@ -783,6 +787,101 @@ export async function finishLevelTrapConstruction(trap, { spiderOnWeb = true, se
     }
     return trap;
 }
+export const DRY = 0x01;
+export const WET = 0x02;
+export const HOT = 0x04;
+export const SOLID = 0x08;
+export const ANY_LOC = 0x10;
+export const NO_LOC_WARN = 0x20;
+export const SPACELOC = 0x40;
+// C sp_lev.c:get_location(). Resolve room/map coordinates and apply humidity constraints.
+export async function get_location(context, coordinate, humidity, filter) {
+    const room = context._room;
+    const mx = room ? room.lx : context.xstart;
+    const my = room ? room.ly : context.ystart;
+    const sx = room ? room.hx - mx + 1 : context.width;
+    const sy = room ? room.hy - my + 1 : context.height;
+    let point = { ...coordinate };
+    if (point.x >= 0) {
+        point.x += mx;
+        point.y += my;
+    }
+    else {
+        let found = false;
+        for (let attempt = 0; attempt < 100; attempt++) {
+            if (room)
+                somexy(room, point);
+            else
+                point = { x: mx + rn2(sx), y: my + rn2(sy) };
+            if (is_ok_location(point.x, point.y, humidity, filter)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            for (let x = 0; x < sx && !found; x++)
+                for (let y = 0; y < sy; y++) {
+                    point = { x: mx + x, y: my + y };
+                    if (is_ok_location(point.x, point.y, humidity, filter)) {
+                        found = true;
+                        break;
+                    }
+                }
+            if (!found) {
+                if (humidity & NO_LOC_WARN)
+                    point = { x: -1, y: -1 };
+                else
+                    await impossible("get_location:  can't find a place!");
+            }
+        }
+    }
+    if (!(humidity & ANY_LOC) && !isok(point.x, point.y))
+        point = humidity & NO_LOC_WARN ? { x: -1, y: -1 }
+            : { x: (COLNO - 1) & ~1, y: (ROWNO - 1) & ~1 };
+    return point;
+}
+// C sp_lev.c:is_ok_location(). The filter argument represents set_ok_location_func().
+export function is_ok_location(x, y, humidity, filter) {
+    if (Is_waterlevel(game.u.uz))
+        return true;
+    const level = requireGameLevel();
+    const location = level.at(x, y);
+    if (filter)
+        return !!location && filter(location, x, y);
+    if (humidity & ANY_LOC)
+        return true;
+    if (!location)
+        return false;
+    if ((humidity & SOLID) && IS_OBSTRUCTED(location.typ))
+        return true;
+    if ((humidity & (DRY | SPACELOC)) && SPACE_POS(location.typ)) {
+        const boulder = level.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
+        if (!boulder || (humidity & SOLID))
+            return true;
+    }
+    if ((humidity & WET) && isPoolAt(x, y))
+        return true;
+    return !!((humidity & HOT) && isLavaAt(x, y));
+}
+// C sp_lev.c:get_location_coord(). Resolve a packed coordinate, retrying random placement if needed.
+// Also C sp_lev.c:get_unpacked_coord(): inlined here (the -1 random
+// sentinel and the explicit humidity flags).
+export async function get_location_coord(context, coordinate, humidity, filter) {
+    // sp_lev.h packs explicit axes as unsigned bytes; only (-1, -1)
+    // denotes a random coordinate at the Lua boundary.
+    if (coordinate && (coordinate.x !== -1 || coordinate.y !== -1))
+        return await getPackedLocationCoord(context, coordinate, humidity, filter);
+    const input = { x: -1, y: -1 };
+    const point = await get_location(context, input, humidity | NO_LOC_WARN, filter);
+    if (point.x === -1 && point.y === -1)
+        return await get_location(context, point, humidity, filter);
+    return point;
+}
+// Shared packed-coordinate form: sp_lev.h SP_COORD_PACK/SP_COORD_X/SP_COORD_Y.
+// Unlike get_location_coord(), it never recognizes the random sentinel.
+export async function getPackedLocationCoord(context, coordinate, humidity, filter) {
+    return await get_location(context, { x: coordinate.x & 0xff, y: coordinate.y & 0xff }, humidity, filter);
+}
 // C sp_lev.c:get_free_room_loc(). Retry on ordinary floor so room features do not replace each other.
 async function get_free_room_loc(context, coordinate, room) {
     const level = requireGameLevel();
@@ -893,6 +992,20 @@ function shared_with_room(x, y, room, roomNumber) {
         || (isok(x + 1, y) && x + 1 >= room.lx && level.at(x + 1, y)?.roomno === roomNumber)
         || (isok(x, y - 1) && y - 1 <= room.hy && level.at(x, y - 1)?.roomno === roomNumber)
         || (isok(x, y + 1) && y + 1 >= room.ly && level.at(x, y + 1)?.roomno === roomNumber);
+}
+// C sp_lev.c:remove_boundary_syms(). Mapped crosswalls delimit rooms during
+// construction, then become floor before ordinary wall shaping can alter them.
+export function remove_boundary_syms(mappedCells, state = game) {
+    const level = requireGameLevel(state);
+    const mazeXMax = (COLNO - 1) & ~1;
+    const mazeYMax = (ROWNO - 1) & ~1;
+    for (let x = 0; x < mazeXMax; x++) {
+        for (let y = 0; y < mazeYMax; y++) {
+            const location = level.requireAt(x, y);
+            if (location.typ === CROSSWALL && mappedCells.has(x, y))
+                location.typ = ROOM;
+        }
+    }
 }
 // C sp_lev.c:set_door_orientation(). Horizontal unless the side walls say
 // otherwise.
@@ -1951,6 +2064,30 @@ async function create_object(context, options, corpseSpecies, parentContainer, p
     }
     return object;
 }
+// C sp_lev.c:find_montype(): resolve a monster name, including its male and
+// female spellings, with the gender it implies.
+export function find_montype(name) {
+    const target = String(name).toLowerCase();
+    for (let type = 0; type < MONSTER_NAME.length; type++) {
+        const neutral = MONSTER_NAME[type]?.toLowerCase();
+        if (neutral === target)
+            return { type, female: null };
+        const male = monsterTypeName(type, false)?.toLowerCase();
+        const female = monsterTypeName(type, true)?.toLowerCase();
+        if (male !== neutral && male === target)
+            return { type, female: false };
+        if (female !== neutral && female === target)
+            return { type, female: true };
+    }
+    throw new Error(`unknown Lua monster ${name}`);
+}
+// C sp_lev.c:get_table_xy_or_coord(): the x/y fields, or the coord table
+// when both axes are absent.
+export function get_table_xy_or_coord(options) {
+    const x = options.x ?? -1;
+    const y = options.y ?? -1;
+    return x === -1 && y === -1 ? get_coord(options.coord) : { x, y };
+}
 // C sp_lev.c:lspo_monster(). Parse the request, create the monster, then run its custom inventory.
 // Also C sp_lev.c:get_table_monclass(): inlined here (the single-character
 // class string).
@@ -2300,6 +2437,30 @@ export function solidify_map(mappedCells) {
             const location = level.at(x, y);
             if (location && IS_STWALL(location.typ) && !mappedCells.has(x, y))
                 location.wall_info |= W_NONDIGGABLE | W_NONPASSWALL;
+        }
+    }
+}
+// C sp_lev.c:map_cleanup(): boulders, most traps and engravings on liquid
+// are removed without settling, messages or destruction rolls.
+export async function map_cleanup(state = game) {
+    const level = requireGameLevel(state);
+    for (let x = 0; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const terrain = level.requireAt(x, y).typ;
+            if (!IS_LAVA(terrain) && !IS_POOL(terrain))
+                continue;
+            // This is construction cleanup, so boulders are freed without
+            // settling, changing terrain, messages, or destruction rolls.
+            for (const object of [...(level.objects[x]?.[y] ?? [])]) {
+                if (object.otyp === BOULDER)
+                    await deleteObject(object, state);
+            }
+            const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+            if (trap && trap.ttyp !== MAGIC_PORTAL && trap.ttyp !== VIBRATING_SQUARE)
+                deleteTrap(trap, state);
+            const engraving = engravingAt(x, y, level);
+            if (engraving)
+                deleteEngraving(engraving, level);
         }
     }
 }
@@ -3401,5 +3562,322 @@ function get_room_loc(coordinate, room) {
 // C sp_lev.c:lspo_non_passwall(). An absent selection covers the whole map.
 export function lspo_non_passwall(selection) {
     set_wallprop_in_selection(selection ?? new SpecialSelection().negate(), W_NONPASSWALL);
+}
+// nhlua.c:nhl_get_timertype() takes luaL_checkoption over timeout_funcs'
+// timer names, in timeout.h order; timer_is_pos() admits only melt-ice.
+const LEVEL_TIMER_TYPE_NAMES = [
+    'rot-organic', 'rot-corpse', 'revive-mon', 'zombify-mon',
+    'burn-obj', 'hatch-egg', 'fig-transform', 'shrink-glob', 'melt-ice',
+];
+// nhlua.c:nhl_get_xy_params() over sp_lev.c:get_coord(), as reached by
+// nhl_timer_start_at() after the timer type and delay were popped: two
+// integers, or one table with x/y fields or a two-entry array.
+function luaTimerCoordinates(args) {
+    if (args.length === 4)
+        return { x: luaToInteger(args[0]), y: luaToInteger(args[1]) };
+    if (args.length === 3 && args[0] instanceof LuaTable) {
+        const table = args[0];
+        const x = table.get('x');
+        if (x != null) {
+            // get_coord() converts x with luaL_checkinteger before it
+            // looks for y at all.
+            const xValue = luaCheckInteger(-1, x);
+            const y = table.get('y');
+            if (y == null)
+                throw new NethackLuaError('Not a coordinate');
+            return { x: xValue, y: luaCheckInteger(-1, y) };
+        }
+        if (table.length() !== 2)
+            throw new NethackLuaError('Not a coordinate');
+        return { x: luaTimerArrayEntry(table, 1), y: luaTimerArrayEntry(table, 2) };
+    }
+    throw new NethackLuaError('nhl_timer_start_at: Wrong args');
+}
+// sp_lev.c:get_table_intarray_entry(): numbers and numeric strings
+// convert with lua_tointeger laxness, everything else raises nhl_error.
+// The C message hardcodes entry number 1 for both positions.
+function luaTimerArrayEntry(table, entry) {
+    const value = table.get(entry);
+    const converted = luaNumberValue(value);
+    if (converted === null)
+        throw new NethackLuaError(`Array entry #1 is ${luaType(value)}, expected number`);
+    return luaToInteger(converted);
+}
+// C sp_lev.c:sp_level_coder_init(). Create the per-level room, inventory, and map state.
+// Also C sp_lev.c:create_des_coder(): the lazy coder allocation; every Lua
+// session builds its coder state directly here.
+function sp_level_coder_init() {
+    const wholeLevel = {
+        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
+    };
+    let active = null;
+    const roomScope = { context: wholeLevel, roomFailed: false };
+    let luaState = null;
+    const containers = [];
+    const monsterInventories = [];
+    let mappedCells = new SpecialSelection();
+    const currentLevel = () => {
+        if (!active)
+            throw new Error('Lua level generation has not started');
+        return active;
+    };
+    const currentState = () => {
+        if (!luaState)
+            throw new Error('Lua level generation has no bound state');
+        return luaState;
+    };
+    // Also C sp_lev.c:spo_pop_container(): inlined here in the finally block.
+    const invokeObjectContents = async (callback, object) => {
+        containers.push(object);
+        try {
+            await currentState().callValueAsync(callback, [currentState().objects.wrap(object)]);
+        }
+        finally {
+            containers.pop();
+        }
+    };
+    const operations = {
+        levelInit: value => lspo_level_init(value, currentLevel()),
+        levelFlags: flags => lspo_level_flags(currentLevel(), flags),
+        message: value => lspo_message(currentLevel(), value),
+        map: value => lspo_map(roomScope, currentLevel(), currentState(), wholeLevel, mappedCells, value),
+        terrain: (...args) => lspo_terrain(roomScope.context, args),
+        replaceTerrain: options => lspo_replace_terrain(roomScope.context, options),
+        region: (selection, lighting) => lspo_region(roomScope, currentLevel().context ?? wholeLevel, currentState(), selection, lighting),
+        roomRegion: options => lspo_region(roomScope, currentLevel().context ?? wholeLevel, currentState(), options),
+        room: options => lspo_room(roomScope, currentLevel(), currentState(), options),
+        stair: (direction, x, y) => lspo_stair(roomScope.context, mappedCells, direction, x, y),
+        ladder: (direction, x, y) => lspo_ladder(roomScope.context, mappedCells, direction, x, y),
+        door: async (state, x, y) => {
+            const point = await lspo_door(roomScope.context, state, x, y);
+            if (point)
+                mappedCells.add(point.x, point.y);
+        },
+        drawbridge: async (options) => {
+            const point = await lspo_drawbridge(roomScope.context, options);
+            mappedCells.add(point.x, point.y);
+        },
+        engraving: (value, type, text) => lspo_engraving(roomScope.context, value, type, text),
+        gold: (value, x, y) => lspo_gold(roomScope.context, value, x, y),
+        grave: (value, y, text) => lspo_grave(roomScope.context, value, y, text),
+        feature: (value, x, y) => lspo_feature(roomScope.context, value, x, y),
+        altar: options => lspo_altar(roomScope.context, options),
+        nonDiggable: lspo_non_diggable,
+        nonPasswall: lspo_non_passwall,
+        wallProperty: options => lspo_wall_property(currentLevel().context ?? wholeLevel, options),
+        wallify: options => lspo_wallify(currentLevel().context ?? wholeLevel, options),
+        teleportRegion: value => lspo_teleport_region(currentLevel().context ?? wholeLevel, currentLevel(), value),
+        levelRegion: value => lspo_levregion(currentLevel().context ?? wholeLevel, currentLevel(), value),
+        exclusion: options => lspo_exclusion(roomScope.context, options),
+        gasCloud: lspo_gas_cloud,
+        randomCorridors: lspo_random_corridors,
+        corridor: lspo_corridor,
+        mineralize: lspo_mineralize,
+        mazeWalk: (value, y, direction) => lspo_mazewalk(roomScope.context, mappedCells, value, y, direction),
+        object: async (id, x, y) => currentState().objects.wrap(await lspo_object(roomScope.context, containers.at(-1) ?? null, monsterInventories.at(-1) ?? null, invokeObjectContents, id, x, y)),
+        trap: (type, x, y) => lspo_trap(roomScope.context, type, x, y),
+        monster: (id, x, y) => lspo_monster(roomScope.context, currentState(), monsterInventories, id, x, y),
+    };
+    const selectionApi = createSelectionApi(() => roomScope.context, async (callable, args) => {
+        const state = currentState();
+        try {
+            await state.callValueAsync(callable, args);
+            return true;
+        }
+        catch (error) {
+            if (error instanceof PanicTermination)
+                throw error;
+            const detail = state.traceback.format(error);
+            await impossible(`Lua error: ${state.sid}:l_selection_iterate ${detail}`);
+            return false;
+        }
+    });
+    const bindings = {
+        nh: {
+            debug_themerm: (...args) => {
+                if (args.length !== 1)
+                    throw new NethackLuaError('debug_themerm should have 1 boolean arg');
+                return null;
+            },
+            is_genocided: (...args) => {
+                if (args.length !== 1)
+                    throw new NethackLuaError('Wrong args');
+                // C nhl_is_genocided() resolves names with name_to_mon(),
+                // which accepts articles, plurals, and alternate spellings.
+                const mndx = nameToMonster(luaCheckString(1, args[0]));
+                return mndx >= 0
+                    && !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD);
+            },
+            level_difficulty: (...args) => {
+                if (args.length)
+                    throw new NethackLuaError('level_difficulty should not have any args');
+                return level_difficulty();
+            },
+            start_timer_at: (...args) => {
+                // nhl_get_timertype() takes luaL_checkoption over every
+                // timeout_funcs entry at stack index -2, so a bad name is
+                // lauxlib's argument error carrying that index; only
+                // melt-ice is a position timer (timer_is_pos()).
+                const timerIndex = -2;
+                if (args.length === 1) {
+                    // With one argument, stack index -2 holds the called
+                    // function itself. With none, C reads its caller's
+                    // frame; this interpreter cannot reproduce that
+                    // invalid access without Lua's VM stack.
+                    throw new LuaArgumentError(timerIndex, 'string expected, got function');
+                }
+                const timerName = luaCheckString(timerIndex, args[args.length - 2]);
+                const timerType = LEVEL_TIMER_TYPE_NAMES.indexOf(timerName);
+                if (timerType < 0)
+                    throw new LuaArgumentError(timerIndex, `invalid option '${timerName}'`);
+                const when = luaToInteger(args[args.length - 1]);
+                const point = luaTimerCoordinates(args);
+                if (timerType !== LEVEL_TIMER_TYPE_NAMES.indexOf('melt-ice'))
+                    return;
+                // nhl_timer_start_at() and cvt_to_abscoord() store signed
+                // 16-bit coordxy values. Narrow before addition so large
+                // Lua integers retain their low bits, then narrow the sum.
+                const relativeX = (point.x << 16) >> 16;
+                const relativeY = (point.y << 16) >> 16;
+                const timerX = ((roomScope.context.xstart + relativeX) << 16) >> 16;
+                const timerY = ((roomScope.context.ystart + relativeY) << 16) >> 16;
+                if (!isok(timerX, timerY))
+                    return;
+                const deadline = (game.moves ?? 0) + when;
+                stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
+                scheduleLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, deadline, game);
+            },
+        },
+        des: l_register_des(operations, selectionApi.wrap),
+        selection: selectionApi.bindings,
+    };
+    return {
+        bindings,
+        // Reset the flip flags, mapped cells, room scope, and level flags.
+        // An empty
+        // SpLev_Map, and the level's base flags; reset_xystart_size() is
+        // the wholeLevel rectangle.
+        beginLevel(nextActive, { special = true } = {}) {
+            active = nextActive;
+            roomScope.context = wholeLevel;
+            active.context = roomScope.context;
+            containers.length = 0;
+            monsterInventories.length = 0;
+            mappedCells = new SpecialSelection();
+            roomScope.roomFailed = false;
+            currentLevel().allowFlips = 3;
+            if (!special)
+                return;
+            requireGameLevel().flags.is_special = true;
+            const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
+            requireGameLevel().flags.temperature = currentDungeon?.flags?.hellish
+                ? 1 : 0;
+        },
+        bindState(state) {
+            luaState = state;
+            state.objects.toAbsolute = (x, y) => ({
+                x: x + roomScope.context.xstart, y: y + roomScope.context.ystart,
+            });
+            currentLevel().align = luaTableToArray(state.getGlobal('align')).map(value => {
+                if (value !== 'law' && value !== 'neutral' && value !== 'chaos')
+                    throw new TypeError('Lua alignment must be law, neutral, or chaos');
+                return value;
+            });
+        },
+        beginRoom() {
+            roomScope.roomFailed = false;
+            roomScope.context = wholeLevel;
+        },
+        roomFailed() {
+            return roomScope.roomFailed;
+        },
+        finishSpecialLevel: () => lspo_finalize_level(currentLevel(), mappedCells),
+    };
+}
+// C sp_lev.c:load_special(): run the level's Lua script, then finalize.
+export async function load_special(active) {
+    const session = sp_level_coder_init();
+    session.beginLevel(active);
+    await currentLuaLifecycle().executeSpecial(game, active.file, session.bindings, state => session.bindState(state));
+    await session.finishSpecialLevel();
+}
+const themedLuaSessions = new WeakMap();
+const activeThemes = new WeakMap();
+export async function beginLuaThemerooms() {
+    const lifecycle = currentLuaLifecycle();
+    const dungeonNumber = game.u?.uz?.dnum ?? 0;
+    let state = lifecycle.getThemedState(game, dungeonNumber);
+    const filename = game.dungeons[dungeonNumber]?.themeRooms;
+    if (!state && !filename) {
+        activeThemes.delete(game);
+        return false;
+    }
+    let session = state ? themedLuaSessions.get(state) : null;
+    const active = { prototype: 'themerms', file: filename ?? '' };
+    if (!session) {
+        if (!filename)
+            throw new Error('Themed room initialization requires a source file.');
+        const createdSession = sp_level_coder_init();
+        session = createdSession;
+        createdSession.beginLevel(active, { special: false });
+        let loadingStateId;
+        try {
+            state = await lifecycle.createThemedState(game, dungeonNumber, filename, createdSession.bindings, created => {
+                loadingStateId = created.sid;
+                createdSession.bindState(created);
+            });
+        }
+        catch (error) {
+            if (error instanceof PanicTermination)
+                throw error;
+            let reason;
+            if (!LUA_SOURCES[filename]) {
+                reason = `nhl_loadlua: Error opening (${filename})`;
+            }
+            else if (error instanceof SyntaxError) {
+                reason = `luaL_loadbuffer: Error loading (${filename}): ${error.message}`;
+            }
+            else {
+                if (loadingStateId === undefined)
+                    throw error;
+                reason = `Lua error: ${loadingStateId}:${filename} ${error instanceof Error ? error.message : String(error)}`;
+            }
+            await impossible(reason);
+            // C makerooms() closes a failed theme and clears its filename so
+            // this level and later levels use ordinary rooms instead.
+            const dungeon = game.dungeons[dungeonNumber];
+            if (dungeon)
+                dungeon.themeRooms = undefined;
+            activeThemes.delete(game);
+            return false;
+        }
+        themedLuaSessions.set(state, session);
+    }
+    else {
+        session.beginLevel(active, { special: false });
+    }
+    if (!state)
+        throw new Error('Themed room initialization did not create a Lua state.');
+    activeThemes.set(game, { state, session });
+    await state.callValueAsync(state.getGlobal('pre_themerooms_generate'), []);
+    return true;
+}
+export async function callLuaThemerooms(name, args = []) {
+    const state = activeThemes.get(game)?.state;
+    if (!state)
+        throw new Error('themed rooms are not active');
+    return state.callValueAsync(state.getGlobal(name), args);
+}
+export async function themerooms_generate() {
+    const level = requireGameLevel();
+    const session = activeThemes.get(game)?.session;
+    session?.beginRoom();
+    const roomsBefore = level.nroom;
+    const subroomsBefore = level.nsubroom;
+    await callLuaThemerooms('themerooms_generate');
+    if (session?.roomFailed())
+        return false;
+    return level.nroom !== roomsBefore
+        || level.nsubroom !== subroomsBefore;
 }
 //# sourceMappingURL=sp_lev.js.map

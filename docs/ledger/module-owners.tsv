@@ -96,9 +96,6 @@ src/js/score_records.ts	topten.c
 src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c
-src/js/sp_lev_lua.ts	sp_lev.c
-src/js/special_level_cleanup.ts	sp_lev.c
-src/js/special_location.ts	sp_lev.c
 src/js/spell.ts	spell.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c

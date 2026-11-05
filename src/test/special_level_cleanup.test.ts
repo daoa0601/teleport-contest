@@ -4,7 +4,7 @@ import { ARROW_TRAP, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, HEADSTONE, LAVAPOOL, LAVAWA
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { BOULDER, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { map_cleanup } from '../js/special_level_cleanup.js';
+import { map_cleanup } from '../js/sp_lev.js';
 import { freshGame } from './support/game-state.js';
 import { floorObject } from './support/game-objects.js';
 import { maketrap } from '../js/trap.js';

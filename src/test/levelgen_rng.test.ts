@@ -14,7 +14,7 @@ import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { ROCK, STATUE } from '../js/object_data.js';
-import { DRY, get_location_coord } from '../js/special_location.js';
+import { DRY, get_location_coord } from '../js/sp_lev.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { createDungeon } from './support/topology.js';

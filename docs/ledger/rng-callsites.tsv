@@ -2173,8 +2173,8 @@ src/js/sit.ts	sitWhileTrapped	rn2	"[""2""]"	constant
 src/js/sit.ts	sitWhileTrapped	rn2	"[""5""]"	constant
 src/js/sit.ts	sitWhileTrapped	rnd	"[""4""]"	constant
 src/js/trap.ts	trapeffectSlpGasTrap	rollOne	"[""25""]"	constant
-src/js/special_location.ts	get_location	rn2	"[""sx""]"	unproved
-src/js/special_location.ts	get_location	rn2	"[""sy""]"	unproved
+src/js/sp_lev.ts	get_location	rn2	"[""sx""]"	unproved
+src/js/sp_lev.ts	get_location	rn2	"[""sy""]"	unproved
 src/js/sp_lev.ts	get_room_loc	rn2	"[""room.hx - room.lx + 1""]"	invariant
 src/js/sp_lev.ts	get_room_loc	rn2	"[""room.hy - room.ly + 1""]"	invariant
 src/js/sp_lev.ts	lspo_mazewalk	rn2	"[""directions.length""]"	constant
