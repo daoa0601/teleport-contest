@@ -19,7 +19,7 @@ import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { InterfaceFlags, StatusHiliteRule } from './flags.js';
-import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
+import { depth as dungeonDepth, endgameLevelName } from './dungeon.js';
 import { activeObjectSymbols, objectClassSymbol } from './display.js';
 import { rankOf } from './quest_pager.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';

@@ -64,7 +64,6 @@ import type { PotionWakeMonster, PotionWakeNearby } from './potion.js';
 import { dist2 , possessiveName } from './hacklib.js';
 import { resolveGoldMonsterContact, shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { surfaceName , ceilingName } from './terrain_name.js';
 import { captureHeroProjectileName } from './uhitm.js';
 import { capitalizedDefiniteName, rayMissMessage } from './ray_hit_message.js';
 import type { Position , MapLocation, Trap } from './map_types.js';
@@ -103,9 +102,8 @@ import { heroCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroDeath } from './end.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
-import { levelHasCeiling } from './dungeon.js';
+import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
-import { placeHeroOnLevel } from './hero_location.js';
 import { walkPathCells } from './path_walk.js';
 import {
     monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings,

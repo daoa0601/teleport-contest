@@ -34,14 +34,13 @@ import { nameToMonster, resolveMonsterNamePrefix, is_male, is_neuter, is_were, m
 import { japaneseItemName, japaneseWishType } from './japanese_item_name.js';
 import { counterWereSpecies } from './were.js';
 import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
-import { iceDescriptionAt } from './pager.js';
+import { iceDescriptionAt, waterbodyName } from './pager.js';
 import { deleteEngravingAt, make_grave } from './engrave.js';
 import { fireDamageChain, deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion, resetUtrap, maketrap } from './trap.js';
 import { canFallThrough, countLevelFeatures } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { propertyIsActive } from './properties.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
-import { waterbodyName } from './terrain_name.js';
 import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import * as objects from './object_data.js';
 export { japaneseItemName } from './japanese_item_name.js';

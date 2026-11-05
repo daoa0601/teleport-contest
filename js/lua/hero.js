@@ -1,6 +1,6 @@
 // C nhlua.c:init_u_data() and nhl_meta_u_index().
 import { Invocation_lev } from '../const.js';
-import { depth } from '../hacklib.js';
+import { depth } from '../dungeon.js';
 import { LuaTable } from './runtime.js';
 import { luaString as luaStringArgument } from './arguments.js';
 const HERO_FIELDS = [

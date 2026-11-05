@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CLOUD, FOUNTAIN, IS_WALL, ROLLING_BOULDER_TRAP, ROOM, STONE } from '../js/const.js';
-import { placeHeroAtRandomArrival } from '../js/level_change.js';
+import { u_on_rndspot } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { generateBigRoom } from '../js/mkmaze.js';
@@ -93,7 +93,7 @@ void test('the fog maze keeps arrivals and its up stair outside the fog', async 
     game.u.ux0 = 1;
     game.u.uy0 = 1;
     initRng(4n);
-    const placed = await placeHeroAtRandomArrival({
+    const placed = await u_on_rndspot({
         lx: 10,
         ly: 5,
         hx: 12,

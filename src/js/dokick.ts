@@ -49,7 +49,6 @@ import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_chan
 import { convertSecretDoor, findTrap } from './detect.js';
 import { heroPolyGender, heroSpecies } from './polyself.js';
 import { makemonAt } from './makemon.js';
-import { dungeonDepth } from './hacklib.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
 import { bringLeashedFollowers } from './apply.js';
@@ -90,9 +89,9 @@ import { finishMonsterEating } from './dogmove.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import { ceilingName, surfaceName } from './terrain_name.js';
-import { shopkeeperName } from './shknam.js';
+import { ceilingName, dungeonDepth, surfaceName } from './dungeon.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
+import { shopkeeperName } from './shknam.js';
 import { objectResistsDestruction } from './zap.js';
 import {
     is_mercenary, likes_gold, monsterCanTeleport, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs,

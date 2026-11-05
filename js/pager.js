@@ -1,7 +1,7 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
 import { ROCK_CLASS } from './objclass.js';
-import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED, def_warnsyms, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, PIT, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WEB, } from './const.js';
+import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED, def_warnsyms, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LAVAPOOL, LAVAWALL, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, MOAT, PIT, POOL, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WATER, WEB, } from './const.js';
 import { canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol, swallowSymbolAppearance, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange, OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS, } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -11,10 +11,10 @@ import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS2, MONSTER_N
 import { makePlural, withIndefiniteArticle, singularObjectName } from './objnam.js';
 import { visibleRegionAt } from './regions.js';
 import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.js';
-import { surfaceName, waterbodyName } from './terrain_name.js';
+import { surfaceName } from './dungeon.js';
 import { trapName } from './trap.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, keyText, showKeyBindings, visibleCommandKey, promptDirection, readDirectionKey, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
+import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, visibleCommandKey, promptDirection, readDirectionKey, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { getLine, promptYesNo } from './query.js';
 import { selectMapPosition } from './getpos.js';
@@ -43,6 +43,43 @@ import { doextversion } from './extversion.js';
 import { shouldShowGetposTip, showGetposTip } from './hack.js';
 import { levelTimers } from './timeout.js';
 import { is_orc, monsterDigests, monsterHidesUnder, monsterIsClinger, monsterIsFlyer, monsterIsHider } from './mondata.js';
+// C pager.c:waterbody_name(). The liquid name is chosen before a caller
+// changes terrain, even when that caller will not print it.
+// Moved from terrain_name.js (pure move).
+export function waterbodyName(x, y, state = game) {
+    if (!isok(x, y))
+        return 'drink';
+    const location = requireGameLevel(state).requireAt(x, y);
+    const type = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    const hallucinating = heroIsHallucinating(state) && !state.program_state.gameover;
+    if (type === LAVAPOOL)
+        return `molten ${displayLiquidName('lava', state)}`;
+    if (type === ICE)
+        return hallucinating
+            ? `frozen ${displayLiquidName('water', state)}` : 'ice';
+    if (type === POOL)
+        return `pool of ${displayLiquidName('water', state)}`;
+    if (type === MOAT) {
+        if (hallucinating)
+            return `deep ${displayLiquidName('water', state)}`;
+        const here = (level) => !!level && level.dnum === state.u.uz?.dnum
+            && level.dlevel === state.u.uz?.dlevel;
+        if (here(state.medusa_level))
+            return 'shallow sea';
+        if (here(state.juiblex_level))
+            return 'swamp';
+        if (state.urole?.key === 'samurai' && onQuestStart(state))
+            return 'pond';
+        return 'moat';
+    }
+    if (type === WATER)
+        return Is_waterlevel(state.u.uz)
+            ? 'limitless water' : `wall of ${displayLiquidName('water', state)}`;
+    if (type === LAVAWALL)
+        return `wall of ${displayLiquidName('lava', state)}`;
+    return 'water';
+}
 // C pager.c:ice_descr().
 export function iceDescriptionAt(x, y, { state = game, probing = false } = {}) {
     const location = requireGameLevel(state).requireAt(x, y);

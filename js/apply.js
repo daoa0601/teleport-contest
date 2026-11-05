@@ -108,7 +108,7 @@ import { monsterAtPosition, stuckSteed, useSaddle } from './steed.js';
 import { feelPetrifyingCorpse, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, willFeelPetrifyingCorpse } from './stoning.js';
 import { askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
-import { ceilingName, surfaceName } from './terrain_name.js';
+import { ceilingName, surfaceName } from './dungeon.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { objectTimers, stopLevelTimer, stopObjectTimer } from './timeout.js';
 import { confusePromptDirection, promptDirection, readDirectionKey } from './cmd.js';

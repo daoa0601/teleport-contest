@@ -33,9 +33,9 @@ src/js/game_state.ts	decl.c
 src/js/gamelog.ts	pline.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
+src/js/hacklib.ts	hacklib.c
 src/js/hero_expulsion.ts	monmove.c
 src/js/hero_gold.ts	sit.c
-src/js/hero_location.ts	dungeon.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/input.ts	wintty.c
@@ -46,6 +46,7 @@ src/js/japanese_item_name.ts	objnam.c
 src/js/jsmain.ts	wintty.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/level_change.ts	questpgr.c
+src/js/level_teleport.ts	teleport.c
 src/js/light.ts	light.c
 src/js/lock.ts	lock.c
 src/js/lua/des.ts	sp_lev.c
@@ -107,7 +108,6 @@ src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/stoning.ts	mhitm.c
 src/js/teleport.ts	teleport.c
-src/js/terrain_name.ts	dungeon.c
 src/js/terrain_view.ts	detect.c
 src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c

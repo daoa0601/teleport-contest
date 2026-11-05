@@ -21,7 +21,7 @@ import { flushPendingTopline } from './tty_topline.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { cmapToGlyph, CmapSymbol } from './glyph_numbers.js';
-import { depth } from './hacklib.js';
+import { depth } from './dungeon.js';
 
 import { useUpInventoryStack } from './invent.js';
 import { makeConfused, makeHallucinated } from './potion.js';

@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { placeHeroOnLevel } from '../js/hero_location.js';
+import { placeHeroOnLevel } from '../js/dungeon.js';
 import { resetInputState } from '../js/input.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';

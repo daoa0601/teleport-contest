@@ -5,19 +5,17 @@ import { chooseWizardLevelDestination } from './wizcmds.js';
 import { In_endgame, In_mines, In_quest, In_sokoban, TT_BURIEDBALL } from './const.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
-import { levelAtDepth, specialDisplayName } from './dungeon.js';
+import { depth, levelAtDepth, levelDepthByName, specialDisplayName, surfaceName } from './dungeon.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { depth } from './hacklib.js';
+import { heroControlsTeleport } from './teleport.js';
 import { heroSpecies } from './polyself.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { propertyIsActive } from './properties.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { rn2, rnd, rnl } from './rng.js';
 import { leaveHeroShop } from './shk.js';
-import { heroControlsTeleport } from './teleport.js';
 import { bringLeashedFollowers } from './apply.js';
-import { surfaceName } from './terrain_name.js';
 import { monsterIsSilent } from './mondata.js';
 const shudder = 'You shudder for a moment.';
 export async function levelTeleport({ state = game, gotoLevel = (...args) => { scheduleLevelChange(args); }, menuRequested = false } = {}) {
@@ -200,53 +198,6 @@ async function destinationAtDepth(requested, state) {
         return null;
     }
     return destination;
-}
-// C dungeon.c:lev_by_name(): names require an actually visited level and
-// can address only this branch or the main-dungeon/Gehennom connection.
-// Also C dungeon.c:find_mapseen_by_str(): inlined here (the annotation
-// lookup that runs before the branch and prototype names).
-export function levelDepthByName(input, state = game) {
-    requirePlayingGame(state);
-    let name = input.toLowerCase();
-    let target;
-    const annotations = [...state._levelAnnotations || []].map(([key, annotation]) => {
-        const [dnum, dlevel] = key.split(':').map(Number);
-        if (dnum === undefined || dlevel === undefined
-            || !Number.isInteger(dnum) || !Number.isInteger(dlevel))
-            throw new Error(`Invalid level annotation identity ${key}`);
-        return { annotation, location: { dnum, dlevel } };
-    }).sort((left, right) => left.location.dnum - right.location.dnum
-        || left.location.dlevel - right.location.dlevel);
-    target = annotations.find(entry => entry.annotation.toLowerCase() === name)?.location;
-    if (!target) {
-        name = name.replace(/^the /, '').replace(/ level$/, '');
-        if (name === 'hell' || name === 'gehennom')
-            name = state.u.uz.dnum === state.tower_dnum ? " to vlad's tower" : 'valley';
-        if (name === 'delphi')
-            name = 'oracle';
-        for (const [key, special] of state.specialLevels || []) {
-            if (specialDisplayName(key, state).toLowerCase() === name) {
-                target = special;
-                break;
-            }
-        }
-    }
-    const visited = (level) => state.flags.debug || sameLevel(level, state.u.uz)
-        || state._levelCache?.has(`${level.dnum}:${level.dlevel}`);
-    const inBranch = (level) => level.dnum === state.u.uz.dnum
-        || (state.u.uz.dnum === state.valley_level?.dnum && level.dnum === state.medusa_level?.dnum)
-        || (state.u.uz.dnum === state.medusa_level?.dnum && level.dnum === state.valley_level?.dnum);
-    if (target)
-        return inBranch(target) && visited(target) ? depth(target, state.dungeons) : 0;
-    const findBranch = (name) => state.branches.find(candidate => {
-        const dungeonName = state.dungeons[candidate.end2.dnum]?.dname.toLowerCase();
-        return dungeonName === name || dungeonName?.replace(/^the /, '') === name;
-    });
-    const branch = findBranch(name) || (name.includes(' to ') ? findBranch(name.slice(name.indexOf(' to ') + 4)) : null);
-    if (!branch || !visited(branch.end1) || !visited(branch.end2))
-        return 0;
-    target = branch.end1.dnum === state.u.uz.dnum ? branch.end1 : branch.end2;
-    return inBranch(target) ? depth(target, state.dungeons) : 0;
 }
 async function teleportToNowhere(state) {
     if (await promptYesNoQuit('Go to Nowhere.  Are you sure?') !== 'y')

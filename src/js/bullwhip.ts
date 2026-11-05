@@ -25,7 +25,7 @@ import { possessiveName } from './hacklib.js';
 import { monsterPossessive, monsterIsBig } from './mondata.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
-import { ceilingName, surfaceName } from './terrain_name.js';
+import { ceilingName, surfaceName } from './dungeon.js';
 import { heroIsBlind } from './senses.js';
 import { teleds, enexto } from './teleport.js';
 import { isLavaAt, isPoolOrLavaAt } from './dbridge.js';

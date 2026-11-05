@@ -26,7 +26,7 @@ import type { DiggingContext, GameState, PlayingGameState } from './game_state.j
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { heroLiquidEffects, mayDig, spotChecks, loseHeroHp, finishDestinationSpotEffects, inTown, roomsAt, switchHeroTerrain } from './hack.js';
-import { depth, dist2, possessiveName, upstart } from './hacklib.js';
+import { dist2, possessiveName, upstart } from './hacklib.js';
 import { dropInventoryObjectAtHero, woundHeroLegs } from './do.js';
 import { expelHero } from './hero_expulsion.js';
 
@@ -63,8 +63,7 @@ import { shopkeeperName } from './shknam.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { monsterHasMapPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { ceilingName, surfaceName } from './terrain_name.js';
-import { levelHasCeiling, levelAtDepth } from './dungeon.js';
+import { ceilingName, depth, levelHasCeiling, levelAtDepth, surfaceName } from './dungeon.js';
 import { CLR_WHITE } from './terminal.js';
 import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { cansee, monsterHasLineOfSightToHero, unblock_point, vision_note_blocker_change } from './vision.js';

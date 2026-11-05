@@ -2,34 +2,47 @@
 // C ref: dungeon.c — init_dungeons(), init_level(), place_level().
 // Data ref: dat/dungeon.lua.
 
-import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
-import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } from './hacklib.js';
+import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './alignment.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { questLeaderName } from './quest_pager.js';
-import { addMenuHeading } from './windows.js';
-import type { TextMenuLine } from './windows.js';
+import { ATR_INVERSE, addMenuHeading } from './windows.js';
+import type { TextMenuLine, TextMenuEntry } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
-import { updateLastSeenTerrain } from './display.js';
+import { map_location, see_nearby_objects, updateLastSeenTerrain } from './display.js';
 import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 
 import { shopResident, shopkeeperInOwnShop } from './shk.js';
 import { monsterAtPosition } from './steed.js';
 import { CmapSymbol } from './glyph_numbers.js';
-import { findDrawbridgeAt } from './dbridge.js';
-import { heroIsBlind } from './senses.js';
+import { drawbridgeUnderlyingType, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import type { GameState } from './game_state.js';
 import { heroFootName } from './body_parts.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { plineWithContinuation } from './pline.js';
+import { roomForIndex, roomsAt, switchHeroTerrain } from './hack.js';
+import { place_lregion } from './mkmaze.js';
 import { formatKiller } from './topten.js';
 import type { BranchDefinition, BranchDefinitionType, Dungeon, DungeonAlignment, DungeonBranch, DungeonBranchType, DungeonDefinition, DungeonFlag, DungeonLocation, LevelRangeDefinition, SpecialLevelDefinition, SpecialLevelDescriptor, OverviewFlags, OverviewRecord } from './dungeon_types.js';
-import { roomForIndex } from './hack.js';
+import { isok } from './cmd.js';
+import { impossible, panic } from './diagnostics.js';
+import { displayLiquidName } from './do_name.js';
+import { onQuestStart } from './quest.js';
+import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
+import type { ArrivalRegion, Position, Stairway } from './map_types.js';
+import type { gotoLevel as gotoLevelImplementation } from './level_change.js';
+import { finishHeroDeath } from './end.js';
+
+// C do.c:goto_level()'s port signature (level_change.ts).
+type StairGotoLevel = typeof gotoLevelImplementation;
+
 interface PlacedLevel {
     name: string;
     spec: SpecialLevelDefinition;
@@ -74,6 +87,65 @@ function currentDungeonLocation(state: GameState = game): DungeonLocation {
     if (!location) throw new Error('Dungeon traversal requires the hero dungeon location.');
     return location;
 }
+
+// C dungeon.c:deepest_lev_reached(). Endgame planes have negative depths
+// and do not reduce the deepest dungeon level the hero has visited.
+// Moved from hacklib.js (pure move).
+export function deepestLevelReached(noQuest = false, state = game) {
+    let deepest = 0;
+    for (const [dnum, dungeon] of (state.dungeons || []).entries()) {
+        if (!dungeon.dunlev_ureached) continue;
+        if (noQuest && dnum === state.quest_dnum) continue;
+        deepest = Math.max(deepest,
+            dungeonDepth(dnum, dungeon.dunlev_ureached, state.dungeons));
+    }
+    return deepest;
+}
+
+// C dungeon.c:ledger_no().  Ledger numbers are save-file bookkeeping
+// coordinates: every preceding dungeon contributes all of its local levels.
+// They deliberately differ from both a branch-local dlevel and display depth.
+export function ledgerNo(
+    uz: DungeonLocation | null | undefined, state: Pick<GameState, 'dungeons'> = game,
+) {
+    const dungeonIndex = uz?.dnum ?? 0;
+    const ledgerStart = state.dungeons.slice(0, dungeonIndex)
+        .reduce((total, dungeon) =>
+            total + (dungeon.num_dunlevs || 0), 0);
+    return ledgerStart + (uz?.dlevel ?? 1);
+}
+
+// C dungeon.c:maxledgerno(): the last ledger number of the last dungeon.
+export function maxLedgerNo(state: Pick<GameState, 'dungeons'> = game) {
+    return state.dungeons.reduce((total, dungeon) =>
+        total + (dungeon.num_dunlevs || 0), 0);
+}
+
+// C dungeon.c:depth().  Internal branch levels are local coordinates;
+// tty/status and dungeon listings use their absolute dungeon depth.
+export function dungeonDepth(dnum: number, dlevel: number, dungeons = game?.dungeons) {
+    const dungeon = dungeons?.[dnum];
+    if (!dungeon) return dlevel;
+    return dungeon.depth_start + dlevel - 1;
+}
+
+export function depth(uz: DungeonLocation | null | undefined, dungeons = game?.dungeons) {
+    return dungeonDepth(uz?.dnum ?? 0, uz?.dlevel ?? 1, dungeons);
+}
+
+// C dungeon.c:endgamelevelname().  Keep this name projection shared by
+// the bottom status line and insight/background disclosure.
+export function endgameLevelName(uz: DungeonLocation | null | undefined) {
+    const endgameDepth = depth(uz);
+    return new Map([
+        [-5, 'Astral Plane'],
+        [-4, 'Plane of Water'],
+        [-3, 'Plane of Fire'],
+        [-2, 'Plane of Air'],
+        [-1, 'Plane of Earth'],
+    ]).get(endgameDepth) || `unknown plane #${endgameDepth}`;
+}
+
 
 // C Is_special(): the dungeon graph, rather than a generation script,
 // determines whether the current depth has a special-level descriptor.
@@ -132,6 +204,56 @@ export function dungeonBuildsUp(
     return !!branch?.end1_up;
 }
 
+// C dungeon.c:next_level(): mark the down stairway traversed and hand its
+// destination to goto_level().  The '<'/'>'
+// commands always enter through a stairway (at_stairs), so the C fall
+// branch — goto_level() one level deeper without a stairway — belongs to
+// the hole-trap owner that C's dodown() also routes there.
+export async function next_level(
+    stairs: Stairway, gotoLevel: StairGotoLevel,
+): Promise<boolean> {
+    stairs.u_traversed = true;
+    return gotoLevel(stairs.tolev, {
+        arrival: 'stairs', ladder: !!stairs.isladder,
+    });
+}
+
+// C dungeon.c:prev_level(): an up branch stair from dungeon 0 level 1 ends
+// the game as an escape unless the hero carries the Amulet, and only then
+// lets goto_level() enter the branch.
+export async function prev_level(
+    stairs: Stairway, gotoLevel: StairGotoLevel,
+): Promise<boolean | 'escaped'> {
+    stairs.u_traversed = true;
+    const here = currentDungeonLocation();
+    if (stairs.tolev.dnum !== here.dnum
+        && here.dnum === 0 && here.dlevel === 1
+        && !game.u.uhave?.amulet) {
+        await finishHeroDeath({ killer: '', deathType: ESCAPED });
+        return 'escaped';
+    }
+    return gotoLevel(stairs.tolev, {
+        arrival: 'downstairs', ladder: !!stairs.isladder,
+    });
+}
+
+// C dungeon.c:u_on_rndspot(): place the hero at a random location within
+// the relevant arrival region — the up or down teleport bounds the caller
+// passes, with an unset region defaulting to the whole level — and let the
+// terrain switch complete the arrival.
+export async function u_on_rndspot(
+    region: ArrivalRegion | null | undefined = null, up = false,
+): Promise<Position> {
+    const area = region ?? { lx: 0, ly: 0, hx: 0, hy: 0 };
+    const excluded = region?.exclude ?? { lx: -1, ly: -1, hx: -1, hy: -1 };
+    await place_lregion(area.lx, area.ly, area.hx, area.hy,
+        excluded.lx, excluded.ly, excluded.hx, excluded.hy,
+        up ? LR_UPTELE : LR_DOWNTELE, null);
+    await switchHeroTerrain();
+    return { x: game.u.ux, y: game.u.uy };
+}
+
+
 // C dungeon.c:Can_rise_up(). Branch-top ascent requires its real up stair.
 export function canHeroRiseUp(
     x: number, y: number, { state = game }: { state?: GameState } = {},
@@ -172,6 +294,14 @@ export function levelAtDepth(
     return { dnum, dlevel };
 }
 
+// C dungeon.c:find_hell(): the gateway to Gehennom is the Valley of the
+// Dead's first level.
+export function find_hell(): DungeonLocation {
+    const valley = game.valley_level;
+    if (!valley) throw new Error('find_hell: the dungeon graph has no Valley of the Dead');
+    return { dnum: valley.dnum, dlevel: 1 };
+}
+
 export function level_difficulty(): number {
     const uz = game.u?.uz;
     let difficulty: number;
@@ -192,6 +322,269 @@ export function level_difficulty(): number {
         || hasInvokedProperty('aggravateMonster'))
         difficulty = difficulty > 25 ? 50 : difficulty * 2;
     return difficulty;
+}
+
+// C dungeon.c:find_mapseen_by_str(): the overview record whose custom
+// annotation matches the given text, in ledger (dungeon, level) order.
+function findMapseenByStr(name: string, state: GameState): DungeonLocation | undefined {
+    const annotations = [...state._levelAnnotations || []].map(([key, annotation]) => {
+        const [dnum, dlevel] = key.split(':').map(Number);
+        if (dnum === undefined || dlevel === undefined
+            || !Number.isInteger(dnum) || !Number.isInteger(dlevel))
+            throw new Error(`Invalid level annotation identity ${key}`);
+        return { annotation, location: { dnum, dlevel } };
+    }).sort((left, right) => left.location.dnum - right.location.dnum
+        || left.location.dlevel - right.location.dlevel);
+    return annotations.find(entry => entry.annotation.toLowerCase() === name)?.location;
+}
+
+// C dungeon.c:find_branch() with a null proto_dungeon: the live branch to
+// the named dungeon, for level teleport by name.
+function findBranch(name: string, state: GameState): DungeonBranch | undefined {
+    return state.branches.find(candidate => {
+        const dungeonName = state.dungeons[candidate.end2.dnum]?.dname.toLowerCase();
+        return dungeonName === name || dungeonName?.replace(/^the /, '') === name;
+    });
+}
+
+// C dungeon.c:lev_by_name(): names require an actually visited level and
+// can address only this branch or the main-dungeon/Gehennom connection.
+export function levelDepthByName(input: string, state: GameState = game): number {
+    requirePlayingGame(state);
+    let name = input.toLowerCase();
+    let target: DungeonLocation | undefined;
+    target = findMapseenByStr(name, state);
+    if (!target) {
+        name = name.replace(/^the /, '').replace(/ level$/, '');
+        if (name === 'hell' || name === 'gehennom')
+            name = state.u.uz.dnum === state.tower_dnum ? " to vlad's tower" : 'valley';
+        if (name === 'delphi') name = 'oracle';
+        for (const [key, special] of state.specialLevels || []) {
+            if (specialDisplayName(key, state).toLowerCase() === name) { target = special; break; }
+        }
+    }
+    const visited = (level: DungeonLocation) => state.flags.debug || sameDungeonLevel(level, state.u.uz)
+        || state._levelCache?.has(`${level.dnum}:${level.dlevel}`);
+    const inBranch = (level: DungeonLocation) => level.dnum === state.u.uz.dnum
+        || (state.u.uz.dnum === state.valley_level?.dnum && level.dnum === state.medusa_level?.dnum)
+        || (state.u.uz.dnum === state.medusa_level?.dnum && level.dnum === state.valley_level?.dnum);
+    if (target) return inBranch(target) && visited(target) ? depth(target, state.dungeons) : 0;
+    const branch = findBranch(name, state)
+        || (name.includes(' to ')
+            ? findBranch(name.slice(name.indexOf(' to ') + 4), state) : null);
+    if (!branch || !visited(branch.end1) || !visited(branch.end2)) return 0;
+    target = branch.end1.dnum === state.u.uz.dnum ? branch.end1 : branch.end2;
+    return inBranch(target) ? depth(target, state.dungeons) : 0;
+}
+
+type SpecialLayoutEvent = SpecialLevelDescriptor & {
+    kind: 'special'; name: string;
+};
+type DungeonLayoutEvent = SpecialLayoutEvent | {
+    kind: 'branch'; dnum: number; dlevel: number; branch: DungeonBranch;
+};
+export interface WizardLevelDestination extends DungeonLocation {
+    prototype?: string;
+}
+
+// C dungeon.c:unplaced_floater().  Fort Ludios is unavailable only while
+// its incoming branch still uses the synthetic n_dgns source end.  Once
+// mk_knox_portal() resolves that end to a real main-dungeon level, the
+// named `knox` special level is selectable like every other wizard target.
+function unplacedFloater(dnum: number): boolean {
+    const incoming = game.branches?.find(branch => branch.end2.dnum === dnum);
+    const sourceDnum = incoming?.end1?.dnum;
+    return sourceDnum !== undefined && Number.isInteger(sourceDnum)
+        && (sourceDnum < 0 || sourceDnum >= (game.dungeons?.length || 0));
+}
+
+// C dungeon.c:unreachable_level(): a dummy or unplaced level, or any level
+// outside the endgame once the hero is in it, cannot be chosen.
+function unreachableLevel(location: DungeonLocation, unplaced: boolean): boolean {
+    if (unplaced) return true;
+    if (In_endgame(game.u.uz) && !In_endgame(location)) return true;
+    const dummy = game.specialLevels?.get('dummy');
+    return !!dummy && sameDungeonLevel(location, dummy);
+}
+
+// C dungeon.c:chr_u_on_lvl(): '*' for the hero's own level, else ' '.
+function chrUOnLvl(location: DungeonLocation): string {
+    return game.u?.uz?.dnum === location.dnum && game.u?.uz?.dlevel === location.dlevel
+        ? '*' : ' ';
+}
+
+// C dungeon.c:br_string(): the branch kind's label for the level menu.
+function branchKind(branch: DungeonBranch) {
+    if (branch.type) return branch.type;
+    if (branch.portal) return 'portal';
+    const child = game.dungeons?.[branch.end2.dnum];
+    if (child?.dname === 'Gehennom') return 'no_end1';
+    if (child?.dname === 'The Elemental Planes') return 'no_end2';
+    return 'stair';
+}
+
+function branchTypeDescription(branch: DungeonBranch) {
+    return {
+        portal: 'Portal',
+        no_end1: 'Connection',
+        no_end2: 'One way stair',
+        stair: 'Stair',
+    }[branchKind(branch)];
+}
+
+// C dungeon.c:print_branch(): the child branch's row — br_string()'s kind,
+// the destination dungeon's name, and the parent-side depth.
+function branchMenuLabel(branch: DungeonBranch) {
+    const child = game.dungeons?.[branch.end2.dnum];
+    if (!child) return null;
+    return `${branchTypeDescription(branch)} to ${child.dname}: ${dungeonDepth(
+        branch.end1.dnum, branch.end1.dlevel,
+    )}`;
+}
+
+// C dungeon.c print_dungeon(): circle through the special levels of this
+// dungeon and the branches that leave it, in level order; a branch on the
+// same level as a special level prints first, as print_branch()'s
+// half-open dlevel range requires.
+function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
+    const events: DungeonLayoutEvent[] = [];
+    for (const [name, level] of game.specialLevels || []) {
+        if (level.dnum !== dnum) continue;
+        events.push({ kind: 'special', name, ...level });
+    }
+    for (const branch of game.branches || []) {
+        if (branch.end1.dnum !== dnum) continue;
+        events.push({
+            kind: 'branch', dlevel: branch.end1.dlevel,
+            dnum, branch,
+        });
+    }
+    events.sort((a, b) => a.dlevel - b.dlevel
+        || Number(a.kind === 'special') - Number(b.kind === 'special'));
+    return events;
+}
+
+// print_dungeon()'s per-dungeon heading line.
+function dungeonHeading(dnum: number) {
+    const dungeon = game.dungeons[dnum];
+    if (!dungeon) throw new RangeError(`Unknown dungeon ${dnum}`);
+    const first = dungeonDepth(dnum, 1);
+    const last = dungeonDepth(dnum, dungeon.num_dunlevs);
+    const unplaced = unplacedFloater(dnum);
+    const descriptor = unplaced ? 'depth' : 'level';
+    if (dungeon.num_dunlevs === 1)
+        return `${dungeon.dname}: ${descriptor} ${first}`;
+    let text = `${dungeon.dname}: ${descriptor}s ${first} to ${last}`;
+    if (dungeon.entry_lev !== 1) {
+        text += dungeon.entry_lev === dungeon.num_dunlevs
+            ? ', entrance from below'
+            : `, entrance on ${dungeonDepth(dnum, dungeon.entry_lev)}`;
+    }
+    return text;
+}
+
+// C dungeon.c:tport_menu(): the next selector letter; the tty layer alone
+// owns pagination and nested input capture.
+function menuLetter(index: number) {
+    return index < 26
+        ? String.fromCharCode('a'.charCodeAt(0) + index)
+        : String.fromCharCode('A'.charCodeAt(0) + index - 26);
+}
+
+// C dungeon.c:print_dungeon(): the whole live dungeon graph — the #wizwhere
+// text page (bymenu FALSE, via wizcmds.c:wiz_where()) or the wizard
+// level-teleport menu (TRUE, via wizcmds.c:wiz_level_tele()).  In the menu
+// form the hero's endgame keeps only the astral column, tport_menu()
+// assigns each selectable level its letter, and an unreachable entry keeps
+// its place with padding in place of the missing selector.
+export function printDungeon(bymenu: boolean): {
+    rows: TextMenuEntry[];
+    choices: Map<string, WizardLevelDestination>;
+    lines: string[];
+} {
+    const rows: TextMenuEntry[] = [];
+    const choices = new Map<string, WizardLevelDestination>();
+    const lines: string[] = [];
+    let choiceIndex = 0;
+    for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
+        if (bymenu && In_endgame(game.u.uz) && dnum !== game.astral_level?.dnum) continue;
+        // C print_dungeon() emits the dungeon name via add_menu_heading(),
+        // which skips menu coloring.
+        if (bymenu) rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE,
+            itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
+        else lines.push(dungeonHeading(dnum));
+
+        const unplaced = unplacedFloater(dnum);
+        for (const event of dungeonLayoutEvents(dnum)) {
+            const key = menuLetter(choiceIndex++);
+            let label;
+            let destination: WizardLevelDestination;
+            let reachable = true;
+            if (event.kind === 'branch') {
+                label = branchMenuLabel(event.branch);
+                destination = { dnum: event.dnum, dlevel: event.dlevel };
+            } else {
+                label = `${specialDisplayName(event.name)}: ${dungeonDepth(
+                    event.dnum, event.dlevel,
+                )}`;
+                if (event.name === 'castle')
+                    label += ` (tune ${game.castleTune || ''})`;
+                destination = {
+                    dnum: event.dnum, dlevel: event.dlevel,
+                    // dungeon.c:fixup_level_locations() retains the canonical
+                    // x-* placement identity but resolves the Lua prototype
+                    // through the selected role's file code.
+                    prototype: specialDisplayName(event.name),
+                };
+                reachable = !unreachableLevel(event, unplaced);
+            }
+            if (bymenu) {
+                // C add_menu(): the row joins the tty menu the caller builds.
+                if (reachable) {
+                    rows.push(`${key} - ${chrUOnLvl(event)} ${label}`);
+                    choices.set(key, destination);
+                } else {
+                    rows.push(`      ${label}`);
+                }
+            } else if (label) {
+                const marker = event.kind === 'special' ? chrUOnLvl(event) : ' ';
+                lines.push(`${marker} ${label}`);
+            }
+        }
+    }
+    if (bymenu) return { rows, choices, lines };
+
+    // C print_dungeon(FALSE): floating branches and the invocation or
+    // portal position tail.
+    const floating = game.branches.filter(branch => branch.end1.dnum === game.dungeons.length);
+    if (floating.length) {
+        lines.push('', 'Floating branches');
+        for (const branch of floating) {
+            const child = game.dungeons[branch.end2.dnum];
+            if (!child) throw new Error(`Floating branch has no dungeon ${branch.end2.dnum}`);
+            lines.push(`   ${branchTypeDescription(branch)} to ${child.dname}`);
+        }
+    }
+    const hero = game.u;
+    if (Invocation_lev(hero.uz)) {
+        const position = game.level?.invocationPosition ?? { x: 0, y: 0 };
+        lines.push('', `Invocation position @ (${position.x},${position.y}), hero @ (${hero.ux},${hero.uy})`);
+    } else {
+        const portal = game.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (portal) lines.push('', `Portal @ (${portal.tx},${portal.ty}), hero @ (${hero.ux},${hero.uy})`);
+        else if (wizardLevelExpectsPortal()) lines.push('', 'No portal found.');
+    }
+    return { rows, choices, lines };
+}
+
+// C dungeon.c print_dungeon(FALSE): the levels that owe the hero a portal.
+function wizardLevelExpectsPortal(): boolean {
+    const here = game.u.uz;
+    return Is_earthlevel(here) || Is_airlevel(here) || Is_firelevel(here)
+        || Is_waterlevel(here) || Is_knox_level(here)
+        || !!here && (here.dnum === game.quest_dnum && here.dlevel === 1
+            || game.branches.some(branch => branch.end2.dnum === game.quest_dnum
+                && branch.end1.dnum === here.dnum && branch.end1.dlevel === here.dlevel));
 }
 
 // C dungeon.c:init_mapseen(): generating a level for the first time
@@ -375,12 +768,28 @@ function updateSanctumOverview(flags: OverviewFlags, altars: number, state: Game
     }
 }
 
+// C dungeon.c:find_mapseen(): the overview record of one dungeon level.
+function findMapseen(location: DungeonLocation, state: GameState = game): OverviewRecord | undefined {
+    return state._overviewRecords?.get(`${location.dnum}:${location.dlevel}`);
+}
+
+// C dungeon.c:get_annotation(): the level's custom name, if any.
+function getAnnotation(location: DungeonLocation, state: GameState = game): string | undefined {
+    return state._levelAnnotations?.get(`${location.dnum}:${location.dlevel}`);
+}
+
+// C dungeon.c:print_level_annotation(): the restore reminder.
+export async function printLevelAnnotation(state: GameState = game): Promise<void> {
+    const annotation = getAnnotation(currentDungeonLocation(state), state);
+    if (annotation) await plineWithContinuation(`You remember this level as ${annotation}.`);
+}
+
 // C mapseen_temple(): entering an attended temple identifies these levels,
 // even if blindness prevents the hero from discovering the altar.
 export function recordTempleOverview(state: GameState = game): void {
     const here = currentDungeonLocation(state);
     if (!state._overviewRecords?.has(`${here.dnum}:${here.dlevel}`)) recordMappedOverviewState({ state });
-    const record = state._overviewRecords?.get(`${here.dnum}:${here.dlevel}`);
+    const record = findMapseen(here, state);
     if (!record) return;
     if (sameDungeonLevel(here, state.valley_level)) record.flags.valley = true;
     else if (sameDungeonLevel(here, state.sanctum_level)) record.flags.msanctum = true;
@@ -392,7 +801,7 @@ export function recordOverviewBranch(source: DungeonLocation, destination: Dunge
     if (source.dnum === destination.dnum) return;
     const branch = state.branches.find(branch => sameDungeonLevel(source, branch.end1)
         && sameDungeonLevel(destination, branch.end2));
-    const record = state._overviewRecords?.get(`${source.dnum}:${source.dlevel}`);
+    const record = findMapseen(source, state);
     if (branch && record) record.branch = { ...branch.end2, up: branch.end1_up, type: branch.type };
 }
 
@@ -851,7 +1260,7 @@ export function specialPrototypeAt(dnum: number, dlevel: number): string | null 
     return null;
 }
 
-// C dungeon.c:query_annotation(): empty input and Escape preserve the
+// query_annotation()'s storage: empty input and Escape preserve the
 // existing value; space-only input removes it after mungspaces().
 function setLevelAnnotation(level: DungeonLocation, value: string | null) {
     if (value === null || value === '') return;
@@ -879,12 +1288,12 @@ function annotationLevelDescription(level: DungeonLocation): string {
     return otherBranch ? `${description}, ${dungeon.dname.replace('The ', 'the ')}` : description;
 }
 
-// The query_annotation() prompt; setLevelAnnotation() stores the answer.
-// Also C dungeon.c:get_annotation(): inlined here (the current value read).
+// C dungeon.c:query_annotation(): the prompt; setLevelAnnotation() stores
+// the answer, get_annotation() supplies the current value.
 export async function queryLevelAnnotation(level: DungeonLocation | null = null, inMenu = false) {
     requirePlayingGame(game);
     const location = level ?? game.u.uz;
-    const prior = game._levelAnnotations?.get(`${location.dnum}:${location.dlevel}`);
+    const prior = getAnnotation(location);
     const prompt = prior ? `Replace annotation "${prior.slice(0, 30)}${prior.length > 30 ? '...' : ''}" with?`
         : `What do you want to call ${annotationLevelDescription(location)}?`;
     const value = await getLine(
@@ -1153,8 +1562,8 @@ function overviewDisclosureLevel(
 // C ref: dungeon.c dooverview()/show_overview().  This is dungeon-history
 // projection over mapseen/cache state; it is distinct from Delete's
 // known-terrain browser, which enters a getpos-style cursor transaction.
-// C dungeon.c:traverse_mapseenchn(): the live overview shows every
-// interesting level of the hero's side of the endgame split.
+// traverse_mapseenchn(): the live overview shows every interesting level
+// of the hero's side of the endgame split.
 export async function doDungeonOverview() {
     // The C command lazily calls recalc_mapseen() before rendering.  Refresh
     // the current level from remembered/underfoot terrain at that same
@@ -1230,6 +1639,34 @@ export async function senseBuriedObjects(state: GameState = game): Promise<void>
     }
 }
 
+// C dungeon.c:u_on_newpos(), shared by hero and swallower relocation.
+// Moved from hero_location.js (pure move).
+export async function placeHeroOnLevel(x: number, y: number, state: GameState = game): Promise<void> {
+    requireLiveGame(state);
+    if (!isok(x, y)) {
+        const reason = `u_on_newpos: trying to place hero off map <${x},${y}>`;
+        if (x < 0 || y < 0 || x >= COLNO || y >= ROWNO)
+            await panic(reason, { state });
+        await impossible(reason, { state });
+    }
+    const hero = state.u;
+    hero.ux = x;
+    hero.uy = y;
+    hero.uundetected = 0;
+    if (hero.usteed) {
+        hero.usteed.mx = x;
+        hero.usteed.my = y;
+    }
+    if (hero.uz?.dnum !== hero.uz0?.dnum || hero.uz?.dlevel !== hero.uz0?.dlevel) {
+        hero.ux0 = x;
+        hero.uy0 = y;
+        await map_location(x, y, false);
+        state.iflags.terrain_typ = MAX_TYPE;
+    } else if (!heroIsBlind(state) && !heroIsHallucinating(state) && !hero.uswallow)
+        await see_nearby_objects();
+    await senseBuriedObjects(state);
+}
+
 // C dungeon.c:has_ceiling() and dungeon.h:Is_waterlevel(): level
 // classification by branch bookkeeping, not map terrain.
 export function levelHasCeiling(state = game) {
@@ -1246,4 +1683,49 @@ export function levelIsWaterLevel(state = game) {
     const level = state.u?.uz;
     const water = state.water_level;
     return !!level && !!water && level.dnum === water.dnum && level.dlevel === water.dlevel;
+}
+
+// C dungeon.c:ceiling(). Moved from terrain_name.js (pure move).
+export function ceilingName(x: number, y: number, state: GameState = game): string {
+    const type = state.level?.at?.(x, y)?.typ;
+    if (roomsAt(state.level, x, y, VAULT).length) return "vault's ceiling";
+    if (roomsAt(state.level, x, y, TEMPLE).length) return "temple's ceiling";
+    if (roomsAt(state.level, x, y, SHOPBASE).length) return "shop's ceiling";
+    if (Is_waterlevel(state.u?.uz)) return 'water above';
+    if (type !== undefined && IS_AIR(type)) return 'sky';
+    if (Is_firelevel(state.u?.uz)) return 'flames above';
+    if (In_quest(state.u?.uz)) return 'expanse above';
+    if (state.underwater || state.u?.uinwater) return "water's surface";
+    return type !== undefined && ((IS_ROOM(type) && !Is_earthlevel(state.u?.uz))
+        || IS_WALL(type) || type === DOOR || type === SDOOR)
+        ? 'ceiling' : 'rock cavern';
+}
+
+// C dungeon.c:surface(). Moved from terrain_name.js (pure move).
+export function surfaceName(x: number, y: number, state: GameState = game): string {
+    const location = state.level?.at(x, y);
+    if (!location) return 'ground';
+    const type = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    const engulfer = state.u.ustuck;
+    if (x === state.u.ux && y === state.u.uy && state.u.uswallow
+        && engulfer && monsterIsAnimal(engulfer))
+        return monsterDigests(engulfer) ? 'maw' : monsterEnfolds(engulfer) ? 'husk' : 'nonesuch';
+    if (IS_AIR(type))
+        return Is_waterlevel(state.u.uz) ? 'air bubble' : type === CLOUD ? 'cloud' : 'air';
+    if (isPoolAt(x, y, state))
+        return (state.underwater || state.u.uinwater) && !Is_waterlevel(state.u.uz)
+            ? 'bottom' : displayLiquidName('water', state);
+    if (isIceAt(x, y, state)) return 'ice';
+    if (isLavaAt(x, y, state)) return displayLiquidName('lava', state);
+    if (type === DRAWBRIDGE_DOWN) return 'bridge';
+    if (type === ALTAR) return 'altar';
+    if (type === GRAVE) return 'headstone';
+    if (type === FOUNTAIN) return 'fountain';
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (stair.sx === x && stair.sy === y) return 'stairs';
+    }
+    if (IS_WALL(type) || type === SDOOR) return 'wall';
+    if (type === DOOR) return 'doorway';
+    return IS_ROOM(type) && !Is_earthlevel(state.u.uz) ? 'floor' : 'ground';
 }

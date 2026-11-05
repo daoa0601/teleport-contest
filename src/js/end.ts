@@ -49,7 +49,7 @@ import { mksobj, isContainer, placeObjectSynchronously, stack_object} from './mk
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
-import { deepestLevelReached, depth } from './hacklib.js';
+import { deepestLevelReached, depth } from './dungeon.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold, payVaultGuardOnExit } from './vault.js';
 import { init_uhunger } from './eat.js';
@@ -315,8 +315,8 @@ export function recordHeroKillConduct(state: GameState = game) {
         recordGameLogEvent('killed for the first time', { state, flags: LL_CONDUCT });
 }
 
-// C dungeon.c show_overview() with why > 0.  The final disclosure prints
-// every visited level in every dungeon with the full mapseen projection;
+// The final disclosure's overview lines, through dungeon.ts's
+// dungeonOverviewDisclosure() (dungeon.c show_overview() with why > 0);
 // only real deaths (final == 2) list the hero's own resting place.
 function overviewLines(
     killer: string, deathVerb = 'killed', deathCause: string | null = null,

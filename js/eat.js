@@ -62,7 +62,7 @@ import { d, rn1, rn2, rnd } from './rng.js';
 import { readCookieFortune } from './rumor.js';
 import { SELL_DONTSELL, SELL_NORMAL, chargeAlteredUnpaidObject, costlySpot, setSellDisposition } from './shk.js';
 import { dismountHero } from './steed.js';
-import { surfaceName } from './terrain_name.js';
+import { surfaceName } from './dungeon.js';
 import { isIceAt } from './dbridge.js';
 import { attrcurse } from './throne.js';
 import { flushPendingTopline } from './tty_topline.js';

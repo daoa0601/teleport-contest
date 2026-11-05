@@ -41,7 +41,7 @@ import {
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { possessiveName, depth, endgameLevelName, ordinalSuffix, upstart } from './hacklib.js';
+import { possessiveName, ordinalSuffix, upstart } from './hacklib.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import {
     feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings,
@@ -51,7 +51,7 @@ import {
 import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';
 import { heroLegName, monsterLegName, heroFingerName, heroHandedName, heroHasEyes } from './body_parts.js';
-import { surfaceName, ceilingName, waterbodyName } from './terrain_name.js';
+import { waterbodyName } from './pager.js';
 import { trapName } from './trap.js';
 import { monsterAlignmentType } from './priest.js';
 import { wormSegmentIndexAt } from './worm.js';
@@ -81,7 +81,7 @@ import { experienceRankIndex, newExperienceThreshold } from './exper.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsPetrifying } from './stoning.js';
-import { levelHasCeiling } from './dungeon.js';
+import { depth, endgameLevelName, levelHasCeiling, surfaceName, ceilingName } from './dungeon.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import {
     is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal,

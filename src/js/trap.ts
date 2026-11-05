@@ -124,13 +124,13 @@ import {
     propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill,
     grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty,
 } from './properties.js';
-import { ordinalSuffix, possessiveName, dist2, dungeonDepth, depth, distmin } from './hacklib.js';
+import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, finishLiquidDeath, pickEmergencyDrop, reviveHeroFromLiquid, teleportHeroOutOfLiquid, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER } from './hack.js';
 import type { EmergencyDisrobe, HeroLiquidOptions, LavaSinkingResult } from './hack.js';
-import { surfaceName, ceilingName } from './terrain_name.js';
+import { depth, dungeonDepth, find_hell, surfaceName, ceilingName } from './dungeon.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
@@ -143,7 +143,7 @@ import { abusePet, tameMonster } from './dog.js';
 import { heroCanReachFloor, deleteEngravingAt } from './engrave.js';
 import type { DirectionSelection } from './cmd.js';
 import { beginBallAndChainMove, finishBallAndChainMove, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { placeHeroOnLevel } from './hero_location.js';
+import { placeHeroOnLevel } from './dungeon.js';
 import { checkHeroLeashes, bringLeashedFollowers } from './apply.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic, applyMonsterPassiveToObject } from './uhitm.js';
 import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
@@ -6699,8 +6699,7 @@ export async function prepareHoleFall(trap: Trap | null | undefined, { tookPlung
     if (game.u.ushops?.length) await shopDig(1);
     const current = game.u.uz;
     if (Is_stronghold(current)) {
-        if (!game.valley_level) throw new Error('A Castle trapdoor requires the Valley destination');
-        return { destination: { ...game.valley_level }, arrival: flying ? 'random' : 'falling' };
+        return { destination: find_hell(), arrival: flying ? 'random' : 'falling' };
     }
     const destination = clampHoleDestination(trap.dst
         ?? { dnum: current.dnum, dlevel: current.dlevel + 1 });

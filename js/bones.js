@@ -50,7 +50,7 @@ import { setMonsterGivenName } from './do_name.js';
 import { MONSTER_ALIGNMENT, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM } from './monster_data.js';
 import { objectNoLongerHeldSynchronously } from './do.js';
 import { unpunishHero } from './read.js';
-import { depth, ledgerNo, maxLedgerNo } from './hacklib.js';
+import { depth, ledgerNo, maxLedgerNo } from './dungeon.js';
 import { isRoom } from './map_types.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';

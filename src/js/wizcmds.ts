@@ -37,20 +37,18 @@ import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hurtleHero, hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
-import { gotoLevel, deliverSpecialLevelMessages, placeHeroAtRandomArrival } from './level_change.js';
+import { gotoLevel, deliverSpecialLevelMessages } from './level_change.js';
 import { resolveHeroArrivalCollision } from './do.js';
 import { levelTeleport } from './level_teleport.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip, checkSpecialRoom } from './hack.js';
-import { dungeonDepth, depth } from './hacklib.js';
-import { specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt } from './dungeon.js';
-import { addInventoryItem } from './invent.js';
+import { depth, dungeonDepth, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
 import { mksobj, unlinkObject, deallocateObject } from './mkobj.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { recordObjectEncounter, objectTypeKnown } from './o_init.js';
-import { reassignInventoryLetters } from './invent.js';
+import { addInventoryItem, reassignInventoryLetters } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { setPaidShopkeeper } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
@@ -80,15 +78,6 @@ import { resetUtrap } from './trap.js';
 import type { PropertyName } from './property_types.js';
 import { monsterIsNonliving } from './mondata.js';
 
-type SpecialLayoutEvent = SpecialLevelDescriptor & {
-    kind: 'special'; name: string;
-};
-type DungeonLayoutEvent = SpecialLayoutEvent | {
-    kind: 'branch'; dnum: number; dlevel: number; branch: DungeonBranch;
-};
-interface WizardLevelDestination extends DungeonLocation {
-    prototype?: string;
-}
 
 // C wizcmds.c:wiz_wish().
 export async function wizWish() {
@@ -269,96 +258,7 @@ export async function wizTelekinesis(): Promise<void> {
     game.context.move = 0;
 }
 
-function menuLetter(index: number) {
-    return index < 26
-        ? String.fromCharCode('a'.charCodeAt(0) + index)
-        : String.fromCharCode('A'.charCodeAt(0) + index - 26);
-}
 
-// C dungeon.c:print_dungeon() dungeon/branch heading.
-function dungeonHeading(dnum: number) {
-    const dungeon = game.dungeons[dnum];
-    if (!dungeon) throw new RangeError(`Unknown dungeon ${dnum}`);
-    const first = dungeonDepth(dnum, 1);
-    const last = dungeonDepth(dnum, dungeon.num_dunlevs);
-    const incoming = game.branches?.find(branch => branch.end2.dnum === dnum);
-    const unplaced = !!incoming
-        && (incoming.end1.dnum < 0
-            || incoming.end1.dnum >= (game.dungeons?.length || 0));
-    const descriptor = unplaced ? 'depth' : 'level';
-    if (dungeon.num_dunlevs === 1)
-        return `${dungeon.dname}: ${descriptor} ${first}`;
-    let text = `${dungeon.dname}: ${descriptor}s ${first} to ${last}`;
-    if (dungeon.entry_lev !== 1) {
-        text += dungeon.entry_lev === dungeon.num_dunlevs
-            ? ', entrance from below'
-            : `, entrance on ${dungeonDepth(dnum, dungeon.entry_lev)}`;
-    }
-    return text;
-}
-
-function branchKind(branch: DungeonBranch) {
-    if (branch.type) return branch.type;
-    if (branch.portal) return 'portal';
-    const child = game.dungeons?.[branch.end2.dnum];
-    if (child?.dname === 'Gehennom') return 'no_end1';
-    if (child?.dname === 'The Elemental Planes') return 'no_end2';
-    return 'stair';
-}
-
-function branchMenuLabel(branch: DungeonBranch) {
-    const child = game.dungeons?.[branch.end2.dnum];
-    if (!child) return null;
-    return `${branchTypeDescription(branch)} to ${child.dname}: ${dungeonDepth(
-        branch.end1.dnum, branch.end1.dlevel,
-    )}`;
-}
-
-// C dungeon.c:br_string(): the branch kind's label for the level menu.
-function branchTypeDescription(branch: DungeonBranch) {
-    return {
-        portal: 'Portal',
-        no_end1: 'Connection',
-        no_end2: 'One way stair',
-        stair: 'Stair',
-    }[branchKind(branch)];
-}
-
-function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
-    const events: DungeonLayoutEvent[] = [];
-    for (const [name, level] of game.specialLevels || []) {
-        if (level.dnum !== dnum) continue;
-        events.push({ kind: 'special', name, ...level });
-    }
-    for (const branch of game.branches || []) {
-        if (branch.end1.dnum !== dnum) continue;
-        events.push({
-            kind: 'branch', dlevel: branch.end1.dlevel,
-            dnum, branch,
-        });
-    }
-    events.sort((a, b) => a.dlevel - b.dlevel
-        || Number(a.kind === 'special') - Number(b.kind === 'special'));
-    return events;
-}
-
-// C ref: dungeon.c unplaced_floater().  Fort Ludios is unavailable only
-// while its incoming branch still uses the synthetic n_dgns source end.
-// Once mk_knox_portal() resolves that end to a real main-dungeon level, the
-// named `knox` special level is selectable like every other wizard target.
-// C dungeon.c:unreachable_level(): a dummy or unplaced level, or any level
-// outside the endgame once the hero is in it, cannot be chosen.
-function specialLevelReachable(event: SpecialLayoutEvent) {
-    if (event.name === 'dummy') return false;
-    if (event.name !== 'knox') return true;
-    const incoming = (game.branches || []).find(branch =>
-        branch.end2?.dnum === event.dnum
-        && branch.end2?.dlevel === event.dlevel);
-    const sourceDnum = incoming?.end1?.dnum;
-    return sourceDnum !== undefined && Number.isInteger(sourceDnum)
-        && sourceDnum >= 0
-        && sourceDnum < (game.dungeons?.length || 0);
-}
 
 // C ref: teleport.c level_tele().  Wizard-menu entry into the Elemental
 // Planes grants the real Amulet before deferred_goto() starts.  Object
@@ -382,118 +282,15 @@ async function endgamePrerequisite(destination: DungeonLocation) {
     await pline(message);
 }
 
-// C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
-// the tty layer alone owns pagination and nested input capture.
-// print_branch() lists each child branch in level order, tport_menu()
-// assigns its menu letter (or padding when unreachable), and chr_u_on_lvl()
-// marks the hero's own square with '*'.
-function wizardLevelMenu() {
-    const rows: TextMenuEntry[] = [];
-    const choices = new Map<string, WizardLevelDestination>();
-    let choiceIndex = 0;
 
-    for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
-        if (In_endgame(game.u.uz) && dnum !== game.astral_level?.dnum) continue;
-        // C print_dungeon(TRUE) emits the dungeon name via add_menu_heading(),
-        // which skips menu coloring.
-        rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE,
-            itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
 
-        for (const event of dungeonLayoutEvents(dnum)) {
-            const key = menuLetter(choiceIndex++);
-            const current = game.u?.uz?.dnum === event.dnum
-                && game.u?.uz?.dlevel === event.dlevel;
-            let label;
-            let destination: WizardLevelDestination;
-            let reachable = true;
-            if (event.kind === 'branch') {
-                label = branchMenuLabel(event.branch);
-                destination = { dnum: event.dnum, dlevel: event.dlevel };
-            } else {
-                label = `${specialDisplayName(event.name)}: ${dungeonDepth(
-                    event.dnum, event.dlevel,
-                )}`;
-                if (event.name === 'castle')
-                    label += ` (tune ${game.castleTune || ''})`;
-                destination = {
-                    dnum: event.dnum, dlevel: event.dlevel,
-                    // dungeon.c:fixup_level_locations() retains the canonical
-                    // x-* placement identity but resolves the Lua prototype
-                    // through the selected role's file code.
-                    prototype: specialDisplayName(event.name),
-                };
-                reachable = specialLevelReachable(event);
-            }
-            if (reachable) {
-            // C add_menu(): the row joins the tty menu built below.
-                rows.push(`${key} - ${current ? '*' : ' '} ${label}`);
-                choices.set(key, destination);
-            } else {
-                rows.push(`      ${label}`);
-            }
-        }
-    }
-    return { rows, choices };
-}
-
-// C dungeon.c:print_dungeon(FALSE), via wizcmds.c:wiz_where().
-function wizardWhereLines(): string[] {
-    const lines: string[] = [];
-    for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
-        lines.push(dungeonHeading(dnum));
-        for (const event of dungeonLayoutEvents(dnum)) {
-            let label;
-            if (event.kind === 'branch') {
-                label = branchMenuLabel(event.branch);
-            } else {
-                label = `${specialDisplayName(event.name)}: ${dungeonDepth(
-                    event.dnum, event.dlevel,
-                )}`;
-                if (event.name === 'castle')
-                    label += ` (tune ${game.castleTune || ''})`;
-            }
-            const current = event.kind === 'special'
-                && game.u.uz?.dnum === event.dnum && game.u.uz.dlevel === event.dlevel;
-            if (label) lines.push(`${current ? '*' : ' '} ${label}`);
-        }
-    }
-    const floating = game.branches.filter(branch => branch.end1.dnum === game.dungeons.length);
-    if (floating.length) {
-        lines.push('', 'Floating branches');
-        for (const branch of floating) {
-            const child = game.dungeons[branch.end2.dnum];
-            if (!child) throw new Error(`Floating branch has no dungeon ${branch.end2.dnum}`);
-            lines.push(`   ${branchTypeDescription(branch)} to ${child.dname}`);
-        }
-    }
-    const hero = game.u;
-    if (Invocation_lev(hero.uz)) {
-        const position = game.level?.invocationPosition ?? { x: 0, y: 0 };
-        lines.push('', `Invocation position @ (${position.x},${position.y}), hero @ (${hero.ux},${hero.uy})`);
-    } else {
-        const portal = game.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
-        if (portal) lines.push('', `Portal @ (${portal.tx},${portal.ty}), hero @ (${hero.ux},${hero.uy})`);
-        else if (wizardLevelExpectsPortal()) lines.push('', 'No portal found.');
-    }
-    return lines;
-}
-
-function wizardLevelExpectsPortal(): boolean {
-    const here = game.u.uz;
-    return Is_earthlevel(here) || Is_airlevel(here) || Is_firelevel(here)
-        || Is_waterlevel(here) || Is_knox_level(here)
-        || !!here && (here.dnum === game.quest_dnum && here.dlevel === 1
-            || game.branches.some(branch => branch.end2.dnum === game.quest_dnum
-                && branch.end1.dnum === here.dnum && branch.end1.dlevel === here.dlevel));
-}
-
-// C refs: wizcmds.c:wiz_where() and dungeon.c:print_dungeon(FALSE).
-// This is the complete live graph, unlike #overview's visited-level history
-// and unlike #levelteleport's selectable menu projection.
+// C wizcmds.c:wiz_where(): the #wizwhere text page over the complete live
+// graph from dungeon.c:print_dungeon(FALSE), unlike #overview's
+// visited-level history and #levelteleport's menu projection.
 export async function wizWhere() {
     game._pending_message = '';
     game._retained_message = '';
-    await showDisclosureOverlay(wizardWhereLines(), { restoreUnderlay: true });
+    await showDisclosureOverlay(printDungeon(false).lines, { restoreUnderlay: true });
     await docrt();
     game.context.move = 0;
 }
@@ -506,7 +303,7 @@ export async function wizShowNhuuid() {
 
 // C dungeon.c:print_dungeon(TRUE), with the endgame entry prerequisite.
 export async function chooseWizardLevelDestination() {
-    const { rows, choices } = wizardLevelMenu();
+    const { rows, choices } = printDungeon(true);
     const destination = await showPagedPickOneMenu({
         rows, choices, prompt: 'Level teleport to where:',
     });
@@ -673,7 +470,7 @@ function freeLevelObject(object: GameObject): void {
 // and the svd.dndest/svu.updest memsets need no counterpart because the
 // arrival regions belong to the replacement level, which rebuilds them.
 // In the post half, vision_reset() is vision_reset_new_level(),
-// u_on_rndspot() is placeHeroAtRandomArrival(), losedogs() is
+// u_on_rndspot() keeps its C name in dungeon.ts, losedogs() is
 // deliverMigratingMonsters(), u_collide_m() is resolveHeroArrivalCollision(),
 // initrack() is the track reset, and deliver_splev_message() is
 // deliverSpecialLevelMessages(). The INSURANCE save_currentstate()
@@ -745,7 +542,7 @@ async function makemapPrepost(
     const region = stayInsideTower
         ? game._activeSpecialLevel?.downTeleportExclude
         : up ? level.upTeleportRegion : level.downTeleportRegion;
-    await placeHeroAtRandomArrival(region, !stayInsideTower && up);
+    await u_on_rndspot(region, !stayInsideTower && up);
     await deliverMigratingMonsters(game, pets);
     if (game.program_state.gameover) return [];
     if ((await killGenocidedMonsters()).heroDied) return [];
