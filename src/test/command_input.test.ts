@@ -3,10 +3,9 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { applyNethackrc } from '../js/options.js';
 import { bindInputGate, InputGate, nhgetch, pushKeys } from '../js/input.js';
-import { promptKey } from '../js/tty_prompts.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { continueCountedCommand, rhack } from '../js/cmd.js';
+import { continueCountedCommand, promptKey, rhack } from '../js/cmd.js';
 import { readCommandInput } from '../js/cmd.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 

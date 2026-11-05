@@ -116,6 +116,7 @@ src/js/were.ts	were.c
 src/js/wield.ts	wield.c
 src/js/wintty.ts	wintty.c
 src/js/wizard.ts	wizard.c
+src/js/wizcmds.ts	wizcmds.c
 src/js/worm.ts	worm.c
 src/js/worn.ts	worn.c
 src/js/write.ts	write.c

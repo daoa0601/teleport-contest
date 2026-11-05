@@ -1,5 +1,12 @@
-// Ordered command bindings and movement layouts.
-// C refs: cmd.c cmdbind_add(), reset_commands(), cmd_from_func().
+// Ordered command bindings and movement layouts: the key-binding state of
+// C cmd.c's cmdbind_*()/bind_*()/commands_init()/reset_commands() family
+// (one method per C function; see each citation below) plus the
+// ext_func_tab_from_func() lookup. This is cmd.c code, but it cannot live
+// in cmd.ts: gstate.ts runs createGameState() — which instantiates
+// CommandBindings — at module initialization, and cmd.ts imports
+// gstate.ts, so folding the class in creates a game_state -> cmd ->
+// gstate -> game_state cycle that dies at import time with
+// "Cannot access 'CommandBindings' before initialization" (verified).
 import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS, } from './command_data.js';
 const MOVEMENT_DELTAS = [
     [-1, 0, 0], [-1, -1, 0], [0, -1, 0], [1, -1, 0],

@@ -8,7 +8,7 @@ import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { promptChoice, tty_yn_function } from '../js/query.js';
 import { Terminal } from '../js/terminal.js';
-import { promptKey } from '../js/tty_prompts.js';
+import { promptKey } from '../js/cmd.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 void test('choices after Escape remain accepted but are omitted from the prompt', async () => {
     freshPlayableRoom();

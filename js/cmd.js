@@ -2,20 +2,20 @@ import { FOOD_CLASS, POTION_CLASS } from './objclass.js';
 import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting } from './apply.js';
 import { doname, monsterName } from './do_name.js';
-import { doannotate, doDungeonOverview, recordMappedOverviewState } from './dungeon.js';
+import { doannotate, doDungeonOverview, levelIsWizardTower, recordMappedOverviewState, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
 import { dochat } from './ambient_sounds.js';
 import { doloot, pickupAtHero, dotip, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifacts.js';
 import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from './insight.js';
 import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';
-import { doclose, doopen, continuePicking, continueForceLock, doforce, resetPick } from './lock.js';
-import { moveIntoFailedUntrap, doUntrap } from './trap.js';
+import { doclose, doopen, continuePicking, continueForceLock, doforce, maybeResetPick, resetPick } from './lock.js';
+import { moveIntoFailedUntrap, doUntrap, resetUtrap } from './trap.js';
 import { askTeleportDestination, teleportAtWillCommand, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
-import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
+import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
 import { nhgetch, nh_poskey, MAP_CLICK_KEY, inputGate } from './input.js';
-import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
+import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish, makemapRemoveMons } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
 import { continueSpellbookStudy } from './spell.js';
@@ -24,11 +24,11 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
 import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
 import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
-import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip } from './hack.js';
+import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip, checkSpecialRoom } from './hack.js';
 import { propertyIsActive } from './properties.js';
-import { gotoLevel, dodown, doup } from './do.js';
+import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { inventoryReport } from './invent.js';
-import { isContainer } from './mkobj.js';
+import { isContainer, unlinkObject, deallocateObject } from './mkobj.js';
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import { extFuncTabFromFunc } from './command_bindings.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -36,11 +36,10 @@ import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff,
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
 import { completeExtendedCommand, getLine, promptChoice, tty_yn_function } from './query.js';
-import { paintKeyPrompt, promptKey } from './tty_prompts.js';
 import { showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import { promptYesNo } from './query.js';
-import { flush_screen, docrt, canSpotMonster, glyphAt } from './display.js';
+import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js';
 import { pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy } from './pline.js';
 import { messageWindowMode, CTRL_P, redotoplin, showMessageHistoryWindow, stepHistoryBack } from './prevmsg.js';
 import { dozap } from './zap.js';
@@ -48,6 +47,10 @@ import { docast, dovspell, dowizcast } from './spell.js';
 import { heroBreathAttack } from './zap.js';
 import { useHeroBreath, heroSpitAttack, useHeroSpit, heroGazeAttack, useHeroGaze, useHeroWereSummon, chooseSpiderAbility, heroCanSpinWeb, useHeroWeb, heroCanMindBlast, useHeroMindBlast, heroCanRemovePunishment, useHeroNymphAbility, useHeroVampireShift, heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
 import { monsterBreathAttack, performPetRangedAttack } from './dogmove.js';
+import { deliverMigratingMonsters } from './dog.js';
+import { killGenocidedMonsters } from './mon.js';
+import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain } from './ball.js';
+import { deliverSpecialLevelMessages } from './level_change.js';
 import { heroCanSplitLikeGremlin, useHeroGremlinSplit } from './hero_gremlin.js';
 import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
 import { heroCanSummonWerePack } from './were.js';
@@ -81,13 +84,15 @@ import { CmapSymbol, GlyphOffset, monnumToGlyph, objnumToGlyph } from './glyph_n
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { selection_floodfill, selection_getbounds, selection_getpoint, selection_new, selection_size_description } from './selvar.js';
 import { floorObjectDescription } from './invent.js';
-import { cansee, couldsee } from './vision.js';
+import { cansee, couldsee, vision_reset_new_level } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
 import { revealTerrain } from './terrain_view.js';
 import { truncateRawMessage } from './pline_text.js';
 import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 // cmd.js — Command parsing and dispatch.
-// C ref: cmd.c:rhack(); movement execution belongs to hack.ts.
+// C ref: cmd.c:rhack(); movement execution belongs to hack.ts. Also hosts
+// the top-line key prompts (win/tty/wintty.c tty_yn_function()'s prompt
+// path) that commands which pause for input render through.
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
@@ -1589,6 +1594,134 @@ async function enterExploreMode() {
     }
     game.context.move = 0;
 }
+function freeLevelObject(object) {
+    for (const content of [...(object.contents ?? [])])
+        freeLevelObject(content);
+    const { victual, tin, spbook } = game.context;
+    if (victual?.piece === object) {
+        victual.o_id = object.o_id;
+        victual.piece = null;
+    }
+    if (tin?.tin === object) {
+        tin.o_id = object.o_id;
+        tin.tin = null;
+    }
+    if (spbook?.book === object) {
+        spbook.o_id = object.o_id;
+        spbook.book = null;
+    }
+    unlinkObject(object);
+    deallocateObject(object);
+}
+// C cmd.c:makemap_prepost(). The pre half discards the current level —
+// after wizcmds.c:makemap_remove_mons() has taken its monsters off — and
+// the post half re-enters the rebuilt replacement. C parks the kept pets
+// in mydogs for the post half's losedogs(); the port returns them to the
+// caller instead, so the pre half returns the kept followers, and null
+// when monster removal ends the game (an abort C's synchronous halves
+// cannot take). In the pre half, dobjsfree() plus savelev(FREEING)
+// release the level's objects below — get_freeing_nhfile() and
+// close_nhfile() are only the file plumbing around that release, which
+// the port performs in memory — set_uinwater(0) is the u.uinwater write,
+// and the svd.dndest/svu.updest memsets need no counterpart because the
+// arrival regions belong to the replacement level, which rebuilds them.
+// In the post half, vision_reset() is vision_reset_new_level(),
+// u_on_rndspot() keeps its C name in dungeon.ts, losedogs() is
+// deliverMigratingMonsters(), u_collide_m() is resolveHeroArrivalCollision(),
+// initrack() is the track reset, and deliver_splev_message() is
+// deliverSpecialLevelMessages(). The INSURANCE save_currentstate()
+// checkpoint is saveCurrentState() (do.ts).
+// Also C dungeon.c:rm_mapseen(): inlined here (the overview record and
+// annotation of the replaced level are discarded).
+export async function makemapPrepost(pre, wasInsideTower, pets = []) {
+    requirePlayingGame(game);
+    if (pre) {
+        const kept = await makemapRemoveMons();
+        if (game.program_state.gameover)
+            return null;
+        // rm_mapseen(): discard the overview record of the level being
+        // replaced; mklev() re-creates an empty one via init_mapseen().
+        const key = `${game.u.uz.dnum}:${game.u.uz.dlevel}`;
+        game._overviewRecords?.delete(key);
+        game._levelAnnotations?.delete(key);
+        // Achievement tracking; if replacing a level that has a special
+        // prize, lose credit for previously finding it and reset for the
+        // new instance of that prize (remove_achievement()).
+        const prototype = specialPrototypeAt(game.u.uz.dnum, game.u.uz.dlevel);
+        const achievement = prototype === 'minend' ? ACH_MINE_PRIZE
+            : prototype === 'soko1' ? ACH_SOKO_PRIZE : null;
+        if (achievement !== null) {
+            const earned = game.u.uachieved ?? [];
+            if (earned.some(entry => Math.abs(entry) === achievement)) {
+                game.u.uachieved = earned.filter(entry => Math.abs(entry) !== achievement);
+                await plineWithContinuation(`${achievement === ACH_MINE_PRIZE ? "Mine's-end" : 'Soko-prize'} achievement revoked.`);
+            }
+            const prizes = game.context.achieveo;
+            if (prizes) {
+                if (achievement === ACH_MINE_PRIZE)
+                    prizes.mines_prize_oid = 0;
+                else
+                    prizes.soko_prize_oid = 0;
+            }
+        }
+        if (heroIsPunished()) {
+            await releaseCarriedBall(game);
+            await unplaceBallAndChain();
+        }
+        maybeResetPick(null);
+        if (sameDungeonLevel(game.context.digging?.level, game.u.uz))
+            delete game.context.digging;
+        game._travelTarget = null;
+        if (game.context.polearm)
+            game.context.polearm.hitmonId = null;
+        await resetUtrap(false);
+        await checkSpecialRoom({ newLevel: true });
+        game.u.ustuck = null;
+        game.u.uswallow = game.uswallow = 0;
+        game.u.uswldtim = 0;
+        game.u.uinwater = 0;
+        game.u.uundetected = false;
+        // savelev(FREEING) releases level-owned objects without destruction
+        // rolls or uncreating their artifacts. Carried objects have
+        // already left.
+        const oldLevel = game.level;
+        for (const column of oldLevel.objects)
+            for (const pile of column ?? [])
+                for (const object of [...(pile ?? [])])
+                    freeLevelObject(object);
+        for (const object of [...(oldLevel.buriedObjects ?? [])])
+            freeLevelObject(object);
+        game._levelCache?.delete(key);
+        return kept;
+    }
+    vision_reset_new_level();
+    await cls();
+    const level = requireGameLevel();
+    const up = !!game.u.uhave.amulet;
+    const stayInsideTower = wasInsideTower && levelIsWizardTower();
+    const region = stayInsideTower
+        ? game._activeSpecialLevel?.downTeleportExclude
+        : up ? level.upTeleportRegion : level.downTeleportRegion;
+    await u_on_rndspot(region, !stayInsideTower && up);
+    await deliverMigratingMonsters(game, pets);
+    if (game.program_state.gameover)
+        return [];
+    if ((await killGenocidedMonsters()).heroDied)
+        return [];
+    await resolveHeroArrivalCollision();
+    game._heroTrack = [];
+    if (heroIsPunished()) {
+        await unplaceBallAndChain();
+        await placeBallAndChain();
+    }
+    await docrt();
+    await flush_screen(1);
+    await deliverSpecialLevelMessages();
+    await checkSpecialRoom();
+    // C cmd.c:makemap_prepost(FALSE) checkpoints the replacement level.
+    await saveCurrentState();
+    return [];
+}
 const EXTENDED_COMMAND_HANDLERS = new Map([
     ['?', showExtendedCommandList],
     ['whatdoes', whatDoesCommand],
@@ -2782,12 +2915,55 @@ const impairedDirections = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
     [-1, -1], [1, -1], [1, 1], [-1, 1],
 ];
-// C ref: cmd.c:yn_function(query, (char *) 0, def, TRUE) — the response-free
-// single-key call form used by getobj() prompts and invent.c:adjust_split().
-// Its queue handling is yn_function()'s (below); the live question renders
-// through promptKey() rather than the response-list menu path. cmdq_pop()
-// answers from CQ_REPEAT during do-again without drawing anything, and a
-// live answer is recorded back into CQ_REPEAT for the next do-again.
+// Top-line key prompts used by commands which can pause for input.
+// C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
+async function paintKeyPrompt(message, cursorOffset = 0) {
+    await setTopline(message);
+    await flush_screen(1);
+    return renderKeyPrompt(message, cursorOffset);
+}
+export async function promptKey(message, cursorOffset = 0, { canned = true } = {}) {
+    // C cmd.c:yn_function() answers from the command queue without ever
+    // reaching tty_yn_function(); gt.toplines is untouched then. A queued
+    // direction or extended command is the "not CMDQ_USER_INPUT" branch
+    // (cmd.c:5496-5509): cmdq_clear(CQ_CANNED) and the ESC initializer,
+    // while the user-input placeholder keeps the live question.
+    if (canned) {
+        const cmdq = cmdq_pop();
+        if (cmdq && cmdq.typ === CMDQ_KEY)
+            return cmdq.key;
+        if (cmdq && cmdq.typ !== CMDQ_USER_INPUT) {
+            cmdq_clear(CQ_CANNED);
+            return 27;
+        }
+    }
+    // tty_yn_function() with a null response list goes straight from its
+    // custompline(SUPPRESS_HISTORY) prompt to readchar() and clean_up:
+    // ^P has no special meaning and comes back as the answer.
+    game._suppressMessagesUntilInput = false;
+    const coveredRows = await paintKeyPrompt(message, cursorOffset);
+    // tty_yn_function() uses readchar(), including its EOF and fuzzer rules.
+    const key = await readchar();
+    // Fuzzer input bypasses nhgetch(); tty_yn_function's cleanup still marks
+    // its question as read.
+    if (game._pending_message) {
+        game._retained_message = game._pending_message;
+        game._pending_message = '';
+    }
+    // clean_up rewrites gt.toplines with the prompt and its recorded answer.
+    game._toplines = `${message}${keyText(key)}`;
+    // C tty_yn_function() retains a one-line query, but clears wrapped ones.
+    if (coveredRows > 1)
+        clearMessageWindow(coveredRows);
+    return key;
+}
+// The response-free single-key call form of cmd.c:yn_function() —
+// yn_function(query, (char *) 0, def, TRUE) — used by getobj() prompts
+// and invent.c:adjust_split(). Its queue handling is yn_function()'s
+// (below); the live question renders through promptKey() rather than the
+// response-list menu path. cmdq_pop() answers from CQ_REPEAT during
+// do-again without drawing anything, and a live answer is recorded back
+// into CQ_REPEAT for the next do-again.
 export async function ynSingleKey(message, cursorOffset = 0) {
     // C cmd.c:yn_function(): one cmdq_pop() (cmd.c:5496) — CQ_REPEAT
     // during do-again, CQ_CANNED otherwise — sets addcmdq FALSE when it
