@@ -470,7 +470,7 @@ function freeLevelObject(object: GameObject): void {
 // and the svd.dndest/svu.updest memsets need no counterpart because the
 // arrival regions belong to the replacement level, which rebuilds them.
 // In the post half, vision_reset() is vision_reset_new_level(),
-// u_on_rndspot() is placeHeroAtRandomArrival(), losedogs() is
+// u_on_rndspot() keeps its C name in dungeon.ts, losedogs() is
 // deliverMigratingMonsters(), u_collide_m() is resolveHeroArrivalCollision(),
 // initrack() is the track reset, and deliver_splev_message() is
 // deliverSpecialLevelMessages(). The INSURANCE save_currentstate()
