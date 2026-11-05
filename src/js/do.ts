@@ -94,7 +94,7 @@ import { propertyIsActive } from './properties.js';
 import { dropBall, dragBallDownStairs, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { requireHeroAttributes, requireInitializedHero } from './hero_types.js';
 import { objectResistsDestruction } from './zap.js';
-import { countLevelFeatures, mklev, u_on_downstairs, u_on_sstairs, u_on_upstairs } from './mklev.js';
+import { countLevelFeatures, mklev, u_on_downstairs, u_on_sstairs, u_on_upstairs, stairwayAt } from './mklev.js';
 import { monsterAlignmentType, forgetTempleEntry } from './priest.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './guardian_angel.js';
@@ -1286,9 +1286,7 @@ export async function dodown(): Promise<boolean> {
         return true;
     }
     if (await monsterPreventsStairTravel(false)) return false;
-    let stairs = game.stairs;
-    while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy))
-        stairs = stairs.next;
+    const stairs = stairwayAt(game, game.u.ux, game.u.uy);
     if (!stairs || stairs.up !== false) {
         const pit = level.traps.find(trap =>
             trap.tx === game.u.ux && trap.ty === game.u.uy
@@ -1357,6 +1355,7 @@ export async function doup(): Promise<boolean> {
     game.u.dz = -1;
     if (game.iflags.menu_requested) game.context.nopick = true;
     game.context.travel = game.context.travel1 = false;
+    // C hack.c:u_rooted(): the "You are rooted" refusal, inlined as in dodown().
     if (MONSTER_MOVE[game.u.umonnum] === 0) {
         const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
             || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
@@ -1371,9 +1370,7 @@ export async function doup(): Promise<boolean> {
         game.context.move = 1;
         return true;
     }
-    let stairs = game.stairs;
-    while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy))
-        stairs = stairs.next;
+    const stairs = stairwayAt(game, game.u.ux, game.u.uy);
     if (!stairs || stairs.up !== true) {
         await plineWithContinuation("You can't go up here.");
         game.context.move = 0;

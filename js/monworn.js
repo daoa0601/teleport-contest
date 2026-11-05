@@ -363,8 +363,8 @@ export async function adjustMonsterClothingAfterPolymorph(monster, state = game,
     const possessive = () => possessiveName(name());
     // C cloak_simple_name(): robe, wrapping, smock/apron, or cloak.
     const cloakName = (object) => armorSimpleName(object, state);
-    // Not do.c:drop(): this drops a monster's worn armor (worn.c
-    // m_lose_armor() callers).
+    // Not a port of the do.c drop command: this removes a monster's worn
+    // armor for the worn.c m_lose_armor() callers.
     const dropWornArmor = async (object) => {
         if (!object)
             return;
