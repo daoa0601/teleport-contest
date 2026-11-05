@@ -27,6 +27,7 @@ import {
 import { heroFaceName } from './body_parts.js';
 import { blindnessBlocked, blindfolded, heroIsHallucinating, isEyesOfTheOverworld } from './senses.js';
 import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.js';
+import type { AttributeValues, Race } from './roles.js';
 import type { LevelAbility } from './innate_abilities.js';
 import type { ArtifactDefense, ArtifactFlag } from './data_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
@@ -618,6 +619,76 @@ export async function checkAttributeExercise(sourceTurn: number, state: GameStat
         exercise[attribute] = Math.trunc(Math.abs(accumulated) / 2) * direction;
     }
     state._nextAttribCheck = checkTurn + 800 + rn2(200);
+}
+
+// C attrib.c:rnd_attr(). Random hero attribute by the role's distribution;
+// returns A_MAX (6) when the distribution misses.
+function rndAttr(weights: AttributeValues): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
+    let x = rn2(100);
+    for (const i of ATTRIBUTE_INDICES) {
+        x -= weights[i];
+        if (x < 0) return i;
+    }
+    return 6;
+}
+
+// C attrib.c:init_attr_role_redist(). Distribute leftover points to random
+// attributes, raising base and maximum together. C follows with a removal
+// pass for negative leftovers; no role's attrbase sums past 75 points, so
+// that pass never runs and is not implemented.
+function initAttrRoleRedist(
+    points: number, values: AttributeValues, weights: AttributeValues, race: Race,
+): number {
+    let np = points;
+    let tries = 0;
+    while (np > 0 && tries < 100) {
+        const i = rndAttr(weights);
+        if (i === 6 || values[i] >= race.attrmax[i]) {
+            tries++;
+            continue;
+        }
+        tries = 0;
+        values[i]++;
+        np--;
+    }
+    return np;
+}
+
+// C attrib.c:init_attr(). Allocate the hero's initial characteristics;
+// u_init.ts applies varyInitAttr() directly after this.
+export function initAttributes(): void {
+    const role = game.urole;
+    const race = game.urace;
+    if (!role || !race) throw new Error('Hero role and race must be selected before attributes');
+    const values: AttributeValues = [...role.attrbase];
+    initAttrRoleRedist(
+        75 - values.reduce((sum, value) => sum + value, 0), values, role.attrdist, race,
+    );
+
+    game.u.acurr = { a: [...values] };
+    game.u.amax = { a: [...values] };
+    game.u.atemp = { a: [0, 0, 0, 0, 0, 0] };
+}
+
+// C attrib.c:vary_init_attr(). Apply minor variation to the starting
+// attributes; base and maximum stay together (C's adjattrib-based body
+// clamps through the same racial limits).
+export function varyInitAttr(): void {
+    const race = game.urace;
+    const current = game.u.acurr;
+    const maximum = game.u.amax;
+    if (!race || !current || !maximum)
+        throw new Error('Attribute variation requires selected race and initialized attributes');
+    for (const i of ATTRIBUTE_INDICES) {
+        if (!rn2(20)) {
+            const delta = rn2(7) - 2;
+            const value = Math.max(
+                race.attrmin[i], Math.min(race.attrmax[i], current.a[i] + delta),
+            );
+            current.a[i] = value;
+            maximum.a[i] = value;
+        }
+    }
 }
 
 function exerciseCheckIsDeferred(state: GameState): boolean {

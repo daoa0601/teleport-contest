@@ -79,6 +79,7 @@ import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.j
 import { newMonsterHitPoints } from './makemon.js';
 import { invWeight } from './hack.js';
 import { objectWeight, nextIdent} from './mkobj.js';
+import { initAttributes, varyInitAttr } from './attrib.js';
 
 interface InitialInventoryEntry {
     typ: number;
@@ -882,47 +883,6 @@ function initialInventoryEntry(table: readonly InitialInventoryEntry[], index: n
     return entry;
 }
 
-// C attrib.c:rnd_attr()
-function rndAttr(weights: AttributeValues): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
-    let x = rn2(100);
-    for (const i of ATTRIBUTE_INDICES) {
-        x -= weights[i];
-        if (x < 0) return i;
-    }
-    return 6;
-}
-
-// C attrib.c:init_attr()
-// Also C attrib.c:init_attr_role_redist(): positive-point distribution is inlined here
-// C refs: init_attr(75), vary_init_attr().
-function initAttributes(): void {
-    const role = game.urole;
-    const race = game.urace;
-    if (!role || !race) throw new Error('Hero role and race must be selected before attributes');
-    const values: AttributeValues = [...role.attrbase];
-    let points = 75 - values.reduce((sum, value) => sum + value, 0);
-    let tries = 0;
-    while (points > 0 && tries < 100) {
-        const i = rndAttr(role.attrdist);
-        if (i === 6 || values[i] >= race.attrmax[i]) {
-            tries++;
-            continue;
-        }
-        tries = 0;
-        values[i]++;
-        points--;
-    }
-    for (const i of ATTRIBUTE_INDICES) {
-        if (!rn2(20)) {
-            const delta = rn2(7) - 2;
-            values[i] = Math.max(race.attrmin[i], Math.min(race.attrmax[i], values[i] + delta));
-        }
-    }
-
-    game.u.acurr = { a: [...values] };
-    game.u.amax = { a: [...values] };
-    game.u.atemp = { a: [0, 0, 0, 0, 0, 0] };
-}
 
 // C ref: u_init_carry_attr_boost(). Starting inventory must not leave the
 // hero over normal capacity. Strength is exhausted first, then Constitution.
@@ -1137,6 +1097,7 @@ export async function uInitInventoryAttrs(): Promise<boolean> {
     if (startingGold) await iniInv(MONEY_INVENTORY);
     game._initialGoldCount += hiddenGold(game, true);
     initAttributes();
+    varyInitAttr();
     uInitCarryAttrBoost(game);
     heroRole.rank = heroRole.title[0] || heroRole.name;
     return true;
