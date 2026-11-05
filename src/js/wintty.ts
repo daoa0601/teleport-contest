@@ -18,7 +18,7 @@
 //                            paintMenuPage's putstr-rows branch below
 import { game } from './gstate.js';
 import { clipToplineToColumn, clearMessageWindow, decodeMixedTopline, flushPendingTopline, pageTopline, updateTopline } from './tty_topline.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, rawPrint } from './pline.js';
 import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY,
     MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS, HI_ZAP, BL_LEVELDESC, BL_GOLD, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC,
     BL_XP, BL_HD, BL_EXP, BL_TIME, BL_HUNGER, BL_CAP, BL_CONDITION, BL_VERS,
@@ -127,6 +127,38 @@ export interface TtyMenuResult<T> {
     cancelled: boolean;
     key: number;
     selections: TtyMenuSelection<T>[];
+}
+
+// C wintty.c:getret()
+// One more newline, then the prompt (cbreak is off before
+// init_nhwindows(), so it asks for "return"), then xwaitforspace().
+// The caller has already checked that a display exists.
+export async function getret(): Promise<void> {
+    rawPrint('');
+    const display = game.nhDisplay;
+    if (!display) return;
+    const prompt = 'Hit return to continue: ';
+    display.putstr(0, display.cursorRow, prompt, NO_COLOR, 0);
+    display.setCursor(prompt.length, display.cursorRow);
+    display.flush();
+    let key;
+    do key = await nhgetch();
+    while (key !== 10 && key !== 13);
+}
+
+// C wintty.c:tty_suspend_nhwindows()
+// settty() clears the screen and raw-prints the farewell line.
+function tty_suspend_nhwindows(farewell: string): void {
+    game.nhDisplay?.clearScreen();
+    rawPrint(farewell);
+}
+
+// C wintty.c:tty_exit_nhwindows()
+// The port marks the windows exited before the farewell (raw output
+// checks the flag), then suspends; nh_terminate() never returns here.
+export function tty_exit_nhwindows(farewell: string): void {
+    game.program_state.windows_exited = true;
+    tty_suspend_nhwindows(farewell);
 }
 
 export function tty_create_nhwindow<T>(_type: typeof NHW_MENU): TtyMenuWindow<T> {

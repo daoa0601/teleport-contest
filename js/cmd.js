@@ -14,7 +14,7 @@ import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, dotrapAt } from './trap.
 import { askTeleportDestination, teleportAtWillCommand, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
-import { nhgetch, MAP_CLICK_KEY, inputGate } from './input.js';
+import { nhgetch, nh_poskey, MAP_CLICK_KEY, inputGate } from './input.js';
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
@@ -3323,7 +3323,7 @@ async function readcharCore(inputState) {
     // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
     if (game.iflags.debug_fuzzer)
         return { key: await inputGate().readKey(inputState), click: null };
-    let key = await nhgetch(inputState);
+    let key = await nh_poskey(inputState);
     if (key === MAP_CLICK_KEY) {
         // C readchar_core(): clicks record their location even when getpos
         // has temporarily cleared the mouse-button command bindings.
