@@ -36,7 +36,7 @@ import {
     cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings,
     visibleCommandKey, promptDirection, readDirectionKey, restoreCommandMap, showExtendedCommandList,
 } from './cmd.js';
-import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
+import { takeQueuedInventoryChoice } from './invent.js';
 import { getLine, promptYesNo } from './query.js';
 import { selectMapPosition } from './getpos.js';
 import {

@@ -83,7 +83,6 @@ import { hitFloorWithObject } from './dothrow.js';
 import { assertCreatedObject, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { isReviver } from './corpse_species.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
-import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
 import { nomul, heroGoldAmount, roomsAt, nearCapacity } from './hack.js';
@@ -1988,6 +1987,25 @@ export async function ddoinv(): Promise<InventoryAction | null> {
     await flush_screen(1);
     game.context.move = 0;
     return action;
+}
+
+// C invent.c:display_inventory(). The queued branch of native display_inventory checks class symbols in
+// the filter, even when its caller supplied inventory letters instead.
+// Undefined means no queued answer; zero means the queue rejected a choice.
+export function takeQueuedInventoryChoice(classes: string | null = null): number | undefined {
+    // One cmdq_pop() (invent.c:3430-3447)
+    // must yield a CMDQ_KEY naming a visible object of a filtered class;
+    // any other entry — or an unmatched letter — clears CQ_CANNED and
+    // returns 0.
+    const entry = cmdq_pop();
+    if (!entry) return undefined;
+    if (entry.typ === CMDQ_KEY) {
+        const object = game.inventory.find(item => item.invlet === String.fromCharCode(entry.key));
+        const symbol = object ? OBJECT_CLASS_SYMBOLS[object.oclass] : undefined;
+        if (object && (!classes || symbol !== undefined && classes.includes(symbol))) return entry.key;
+    }
+    cmdq_clear(CQ_CANNED);
+    return 0;
 }
 
 // C invent.c:display_used_invlets(). A split's original letter is omitted;

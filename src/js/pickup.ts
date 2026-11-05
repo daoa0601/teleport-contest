@@ -42,7 +42,7 @@ import { showMultiSelectWindow, showDisclosureOverlay, showChoiceWindow, showTex
 import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';
 import type { ChoiceMenuEntry, CountedSelection, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
 import type { MenuUnderlay } from './wintty.js';
-import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
+import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNoQuit, getLine, promptChoice, tty_yn_function } from './query.js';
 import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand, floorReachProblem } from './engrave.js';
