@@ -7,7 +7,7 @@ import { engravingAt, heroCanReachFloor } from './engrave.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { updateStatusLines } from './botl.js';
 import { _buildScreenOutput, writeMapCell } from './wintty.js';
-import { game, requireGameLevel } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { monsterAtPosition } from './steed.js';
 import { redrawMonsterWormSegments } from './worm.js';
@@ -20,16 +20,16 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.
 import { drawbridgeUnderlyingType, isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { heroWarnsOfMonster } from './polyself.js';
 import { artifactWarningFeedback } from './artifacts.js';
-import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
+import { cansee, couldsee, mimicBlocksLight, set_seenv, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { describeMapLocation } from './pager.js';
 import { glyphToCmapSymbol } from './getpos.js';
-import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, IS_STWALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_MASK, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum } from './const.js';
+import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, IS_STWALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_MASK, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, TIMEOUT, Upolyd, ismnum } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
 import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE } from './random_text_data.js';
 import { recordObjectEncounter, objectTypeColor } from './o_init.js';
-import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
+import { grantIntrinsicProperty, hasCarriedProperty, hasWornProperty, propertyIsActive, refreshProperty } from './properties.js';
 import { infravisible, monsterIsMindless } from './mondata.js';
 // C drawing.c:def_r_oc_syms.  Rogue deliberately resembles the older game:
 // armor uses ']', amulets ',', food ':', and coins share gems' '*'.
@@ -2090,6 +2090,48 @@ export async function see_monsters({ beforeGlow = null } = {}) {
     }
     if (!game.u?.usteed && game.u?.ux > 0)
         await newsym(game.u.ux, game.u.uy);
+}
+// C display.c:mimic_light_blocking(): the iter_mons callback.  An invisible
+// mimic of a light-blocking appearance updates the vision block map; C
+// branches on See_invisible to block or unblock the point here, while the
+// port records the change for the next vision recalc.
+function mimic_light_blocking(monster) {
+    if (monster.minvis && mimicBlocksLight(monster))
+        vision_note_blocker_change(monster.mx, monster.my);
+}
+// C display.c:set_mimic_blocking(). Block/unblock light depending on what a
+// mimic is mimicking and if it's invisible or not; only called when the
+// state of See_invisible changes.  iter_mons() skips dead monsters.
+export function set_mimic_blocking({ state = game } = {}) {
+    requireLiveGame(state);
+    for (const monster of requireGameLevel(state).monsters)
+        if (!monster.dead)
+            mimic_light_blocking(monster);
+}
+// The set_mimic_blocking() + see_monsters() pair each caller performs after
+// a See_invisible change; see_monsters() includes the hero, so callers that
+// also repaint the hero's own square use refreshHeroSeeing() below.
+export async function refreshInvisibleMonsters({ state = game } = {}) {
+    set_mimic_blocking({ state });
+    await see_monsters();
+}
+// Also C potion.c:peffect_see_invisible(): its tail runs
+// set_mimic_blocking(), see_monsters() and newsym(u.ux, u.uy) in order.
+export async function refreshHeroSeeing({ state = game } = {}) {
+    await refreshInvisibleMonsters({ state });
+    await newsym(state.u.ux, state.u.uy);
+}
+// Also C potion.c:peffect_see_invisible(): the blessed/permanent see-invisible
+// grant, followed by the same redraw tail.
+export async function grantHeroSeeInvisible({ permanent = false, duration = 0, state = game, } = {}) {
+    requireLiveGame(state);
+    if (permanent)
+        grantIntrinsicProperty('seeInvisible', 'outside', state);
+    else {
+        state.u.seeInvisibleTurns = Math.min(TIMEOUT, (state.u.seeInvisibleTurns || 0) + duration);
+        refreshProperty('seeInvisible', state);
+    }
+    await refreshHeroSeeing({ state });
 }
 // C display.c:see_objects()/see_traps().  fobj is newest-first globally,
 // while only each square's pile-top is eligible for a redraw.

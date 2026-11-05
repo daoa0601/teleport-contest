@@ -45,7 +45,7 @@ import { impossible } from './diagnostics.js';
 import type { PropertyObject, WornPropertySlot } from './property_types.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
 import type { DipTarget } from './fountain.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible, grantHeroSeeInvisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import type { ObjectCallResult } from './do_name.js';
 import { tameMonster } from './dog.js';
@@ -77,7 +77,7 @@ import {
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import type { Hero } from './hero_types.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
-import { grantHeroSeeInvisible } from './hero_seeing.js';
+
 import {
     heroIsUnaware, blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf,
     heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness,

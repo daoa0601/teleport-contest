@@ -2,9 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // C display.h:canseeself() uses youprop.h Invisible, which is Invis without
 // See_invisible: an invisible hero who can see invisible sees their glyph.
-import { flush_screen } from '../js/display.js';
+import { flush_screen, grantHeroSeeInvisible } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { grantHeroSeeInvisible } from '../js/hero_seeing.js';
 import { applyPotionLikeInvisibility } from '../js/potion.js';
 import { pushKeys } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';

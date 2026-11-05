@@ -29,7 +29,6 @@ import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js'
 import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName, isBeingTakenOff, removeEyewear } from './do_wear.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
-import { setMimicBlocking } from './hero_seeing.js';
 import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
@@ -53,7 +52,7 @@ import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, S_GHOST, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
-import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, see_monsters, set_mimic_blocking } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';
 import { is_elven_armor, isFlimsyObject } from './object_properties.js';
 import { grantIntrinsicProperty, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty } from './properties.js';
@@ -561,7 +560,7 @@ async function finishHumanFormChange(restored, state, publish) {
     const hero = state.u;
     // C polyman() only toggles mimic light blocking; its closing see_monsters() redraws.
     if (restored.changedSeeInvisible)
-        setMimicBlocking({ state });
+        set_mimic_blocking({ state });
     if (!heroCanUseTwoWeapons(state))
         await stopTwoWeaponCombat(state);
     if (hero.utrap && hero.utraptype === TT_PIT)

@@ -25,7 +25,7 @@ import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hac
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible, grantHeroSeeInvisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { tameMonster } from './dog.js';
 import { canHeroRiseUp, levelAtDepth, levelHasCeiling } from './dungeon.js';
@@ -47,7 +47,6 @@ import { staggerVerb } from './dothrow.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
 import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack, chooseInventoryObject, consumeInventoryItem, getobj, inventoryItemDescription, } from './invent.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
-import { grantHeroSeeInvisible } from './hero_seeing.js';
 import { heroIsUnaware, blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness, } from './senses.js';
 import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero, heroIsFlaming } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';

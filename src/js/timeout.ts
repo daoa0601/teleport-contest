@@ -68,13 +68,13 @@ import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel } from './level_change.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { refreshHeroSeeing } from './hero_seeing.js';
+
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
-import { canSpotMonster, newsym, see_monsters } from './display.js';
+import { canSpotMonster, newsym, see_monsters, refreshHeroSeeing } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind, LevelTimer } from './object_types.js';

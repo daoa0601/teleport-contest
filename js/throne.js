@@ -11,7 +11,7 @@ import { adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttrib
 import { encumber_msg } from './pickup.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
-import { map_background, newsym, newsym_force, see_monsters, shieldeff, } from './display.js';
+import { map_background, newsym, newsym_force, see_monsters, shieldeff, refreshHeroSeeing, } from './display.js';
 import { displayColorName } from './do_name.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
@@ -33,7 +33,6 @@ import { MONSTER_SYMBOL } from './monster_data.js';
 import { curseObject, unblessObjectState } from './mkobj.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, removePermanentIntrinsicProperty, } from './properties.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
-import { refreshHeroSeeing } from './hero_seeing.js';
 import { heroIsPolymorphed, polymorphHero, } from './polyself.js';
 import { getLine, promptYesNo } from './query.js';
 import { applyRemoveCurseSpell, doGenocide, GENOCIDE_ON_THRONE } from './read.js';

@@ -57,7 +57,7 @@ import { objectOwnershipPrefix } from './shk.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, isEyesOfTheOverworld, syncBlindness } from './senses.js';
 import { makeHallucinated, setSlipperyHands, showInvisibilityMessage, toggleBlindness } from './potion.js';
-import { newsym, see_monsters, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS } from './display.js';
+import { newsym, see_monsters, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, refreshInvisibleMonsters } from './display.js';
 import { objectResistsDestruction } from './zap.js';
 import { erodeObject, erosionMatters, objectIsVulnerableToErosion, resolveImmediatePetrification, captureLevitationState, floatHeroUp, floatHeroDown } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -78,7 +78,7 @@ import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.j
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
 import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious, monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed } from './mondata.js';
-import { refreshInvisibleMonsters } from './hero_seeing.js';
+
 import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex } from './exper.js';
