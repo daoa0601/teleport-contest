@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/zap.js';
+import { dobuzz } from '../js/zap.js';
 
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -21,7 +21,7 @@ void test('a gas spore killed by a cold ray explodes over its neighbors', async 
     input.beforeRead = () => input.feed(' ');
     initRng(1n);
 
-    await castNativeRay(2, 6, 'l', { originX: game.u.ux, originY: game.u.uy });
+    await dobuzz(2, 6, 'l', { originX: game.u.ux, originY: game.u.uy });
 
     assert.equal(spore.dead, true);
     assert.ok(goblin.mhp < 100, 'the explosion must reach the adjacent goblin');

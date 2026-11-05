@@ -50,7 +50,7 @@ import { shipObject } from './dokick.js';
 import { stopHeroOccupation } from './occupation.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
-import { rayDamageType, castNativeRay } from './zap.js';
+import { rayDamageType, buzz } from './zap.js';
 import { displayRayName } from './zap.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { rayHitMessage, rayMissMessage } from './zap.js';
@@ -941,7 +941,7 @@ export async function resolveMonsterCombatBreath(source, target, attack, { state
 // C mthrowu.c:breamu() -> breamm() with &gy.youmonst as the target
 // (mthrowu.c:1275-1278, 1093-1155). The mattacku() AT_BREA case awaits
 // this one transaction: m_lined_up(), the mcan cough, the seen-resistance
-// and recharge gates, the breath line, dobuzz(), nomul(0) and the
+// and recharge gates, the breath line, buzz(), nomul(0) and the
 // recharge, sleep and pet-hunger tail all run in C order here.
 // Also C mondata.c:get_atkdam_type(): inlined here.
 // Also C mthrowu.c:breathwep_name(): hallucinated and ordinary names are selected here.
@@ -980,7 +980,7 @@ export async function resolveMonsterBreathAtHero(monster, attack, { state, rando
             : breathWeaponName(damageType);
         await publish(`${monsterName(monster, { state, capitalized: true })} breathes ${weapon}!`);
     }
-    // dobuzz() follows the line m_lined_up() retained towards the hero's
+    // buzz() follows the line m_lined_up() retained towards the hero's
     // remembered square; gt.tbx/tby are that delta's signs.
     const targetX = isFiniteNumber(monster.mux) ? monster.mux : (state?.u?.ux ?? monster.mx);
     const targetY = isFiniteNumber(monster.muy) ? monster.muy : (state?.u?.uy ?? monster.my);
@@ -993,7 +993,7 @@ export async function resolveMonsterBreathAtHero(monster, attack, { state, rando
     ][dy + 1]?.[dx + 1];
     if (!direction)
         throw new Error('A launched breath needs a nonzero unit direction');
-    const result = await castNativeRay(-(20 + damageType - 1), dice, direction, {
+    const result = await buzz(-(20 + damageType - 1), dice, direction, {
         state,
         sourceMonster: monster,
         originX: monster.mx,

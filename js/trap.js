@@ -5824,9 +5824,7 @@ export async function dotrapAt(x, y, options = {}) {
     const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
     return dotrap(trap, options);
 }
-// ── moved from src/js/rock_breakage.ts ──
-// C trap.c:sokoban_guilt().  force_bolt.js previously kept this logic beside
-// its own boulder conversion; the shared fracture owner now owns it.
+// C trap.c:sokoban_guilt().
 export function sokobanGuilt(state) {
     if (!state.level?.flags?.sokoban_rules)
         return;

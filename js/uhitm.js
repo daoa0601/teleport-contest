@@ -5874,7 +5874,14 @@ export async function flashHitsMonster(monster, object, { state = game, onHead =
     const name = () => monsterName(monster, { state, capitalized: true });
     if (M_AP_TYPE(monster)) {
         const before = glyphAt(monster.mx, monster.my);
-        const description = flashDisguiseDescription(monster, state);
+        let description = M_AP_TYPE(monster) === M_AP_FURNITURE
+            ? MAP_SYMBOLS[monster.mappearance ?? -1]?.name ?? 'thing'
+            : monsterTypeName(monster.mappearance ?? -1, !!monster.female);
+        const region = visibleRegionAt(state, monster.mx, monster.my);
+        const range = Math.max(state.u.xray_range || 0, 1);
+        const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
+        if (region && distance <= range * (range + 1))
+            description += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
         await wakeMonster(monster);
         const after = glyphAt(monster.mx, monster.my);
         if (before?.kind !== after?.kind || (before?.kind === 'monster' ? before.mnum : undefined) !== (after?.kind === 'monster' ? after.mnum : undefined)) {
@@ -5936,18 +5943,5 @@ export async function flashHitsMonster(monster, object, { state = game, onHead =
     if (notified && !state.level.requireAt(monster.mx, monster.my).lit)
         await displayMessageWindow();
     return result;
-}
-// Object disguises are skipped by the beam; the remaining descriptions use
-// the actual disguise, even when the hero is hallucinating.
-function flashDisguiseDescription(monster, state) {
-    let description = M_AP_TYPE(monster) === M_AP_FURNITURE
-        ? MAP_SYMBOLS[monster.mappearance ?? -1]?.name ?? 'thing'
-        : monsterTypeName(monster.mappearance ?? -1, !!monster.female);
-    const region = visibleRegionAt(state, monster.mx, monster.my);
-    const range = Math.max(state.u.xray_range || 0, 1);
-    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
-    if (region && distance <= range * (range + 1))
-        description += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
-    return description;
 }
 //# sourceMappingURL=uhitm.js.map

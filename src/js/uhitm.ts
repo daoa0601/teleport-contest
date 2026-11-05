@@ -6591,19 +6591,29 @@ export async function confuseTouchedMonster(monster: Monster, { state = game }: 
     }
 }
 
-
 // C uhitm.c:flash_hits_mon().
-export async function flashHitsMonster(monster: Monster, object: GameObject, { state = game, onHead = true }: { state?: GameState; onHead?: boolean } = {}) {
+export async function flashHitsMonster(monster: Monster, object: GameObject, { state = game, onHead = true }: {
+    state?: GameState;
+    onHead?: boolean;
+} = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
     const result = { observed: false, heroDied: false };
     let notified = false;
-    if (!onHead) return result;
+    if (!onHead)
+        return result;
     const visible = canSeeMonster(monster);
     const name = () => monsterName(monster, { state, capitalized: true });
     if (M_AP_TYPE(monster)) {
         const before = glyphAt(monster.mx, monster.my);
-        const description = flashDisguiseDescription(monster, state);
+        let description = M_AP_TYPE(monster) === M_AP_FURNITURE
+            ? MAP_SYMBOLS[monster.mappearance ?? -1]?.name ?? 'thing'
+            : monsterTypeName(monster.mappearance ?? -1, !!monster.female);
+        const region = visibleRegionAt(state, monster.mx, monster.my);
+        const range = Math.max(state.u.xray_range || 0, 1);
+        const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
+        if (region && distance <= range * (range + 1))
+            description += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
         await wakeMonster(monster);
         const after = glyphAt(monster.mx, monster.my);
         if (before?.kind !== after?.kind || (before?.kind === 'monster' ? before.mnum : undefined) !== (after?.kind === 'monster' ? after.mnum : undefined)) {
@@ -6621,7 +6631,8 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
             result.observed = true;
             notified = true;
         }
-    } else if (MONSTER_SYMBOL[monster.mnum] !== S_LIGHT) {
+    }
+    else if (MONSTER_SYMBOL[monster.mnum] !== S_LIGHT) {
         if (!monsterResistsBlindingLight(monster, state)) {
             const distance = (object.ox - monster.mx) ** 2 + (object.oy - monster.my) ** 2;
             if (visible) {
@@ -6636,7 +6647,8 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
                 result.heroDied = !!outcome?.heroDied;
             }
             if (monster.mhp > 0 && !result.heroDied) {
-                if (!state.context.mon_moving) await angerMonster(monster, { attacked: true });
+                if (!state.context.mon_moving)
+                    await angerMonster(monster, { attacked: true });
                 if (distance < 9 && !monster.isshk && rn2(4)) {
                     const fleeing = await makeMonsterFlee(monster, {
                         state, turns: rn2(4) ? rnd(100) : 0,
@@ -6646,7 +6658,8 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
                 monster.mcansee = 0;
                 monster.mblinded = distance < 3 ? 0 : rnd(1 + Math.trunc(50 / distance));
             }
-        } else if (visible) {
+        }
+        else if (visible) {
             if (monsterHasArtifactDefense(monster, 'blindness', state))
                 await shieldeff(monster.mx, monster.my, state);
             if (state.flags.verbose) {
@@ -6662,20 +6675,5 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
     if (notified && !state.level.requireAt(monster.mx, monster.my).lit)
         await displayMessageWindow();
     return result;
-}
-
-
-// Object disguises are skipped by the beam; the remaining descriptions use
-// the actual disguise, even when the hero is hallucinating.
-function flashDisguiseDescription(monster: Monster, state: GameState) {
-    let description = M_AP_TYPE(monster) === M_AP_FURNITURE
-        ? MAP_SYMBOLS[monster.mappearance ?? -1]?.name ?? 'thing'
-        : monsterTypeName(monster.mappearance ?? -1, !!monster.female);
-    const region = visibleRegionAt(state, monster.mx, monster.my);
-    const range = Math.max(state.u.xray_range || 0, 1);
-    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
-    if (region && distance <= range * (range + 1))
-        description += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
-    return description;
 }
 

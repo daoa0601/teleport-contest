@@ -1037,7 +1037,8 @@ function linkFloorObject(object: GameObject, x: number, y: number, state: GameSt
     return object;
 }
 
-// C zap.c:bhitpile() and muse.c:fhito_loc() save each successor before
+// Shared floor-chain traversal used by zap.c:bhitpile() and muse.c:fhito_loc().
+// Both save each successor before
 // applying the effect. Fracturing can reinsert rocks below another boulder,
 // so the same ray may reach those rocks again. Returning false stops the sweep.
 export async function sweepFloorPile(

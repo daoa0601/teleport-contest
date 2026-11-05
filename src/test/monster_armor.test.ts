@@ -10,7 +10,7 @@ import { initializeMonsterArmor } from '../js/monworn.js';
 import { adjustMonsterSpeed } from '../js/worn.js';
 import { setMonsterPermanentInvisibility } from '../js/worn.js';
 import { ALCHEMY_SMOCK, ELVEN_SHIELD, MUMMY_WRAPPING, OBJECT_NAMES, SPEED_BOOTS } from '../js/object_data.js';
-import { castNativeRay } from '../js/zap.js';
+import { dobuzz } from '../js/zap.js';
 
 import { hitMonsterWithRay } from '../js/zap.js';
 import { knownObject } from './support/game-objects.js';
@@ -139,7 +139,7 @@ for (const [x, expected] of [[14, 'shield'], [11, 'elven shield']] as const) {
         await initializeMonsterArmor(soldier);
         const messages: string[] = [];
 
-        await castNativeRay(24, 4, 'l', {
+        await dobuzz(24, 4, 'l', {
             publish: async message => { messages.push(message); },
             random: () => 1, rollDice: () => 4, rollOne: () => 1,
         });

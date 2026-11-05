@@ -6893,10 +6893,7 @@ export async function dotrapAt(x: number, y: number, options: HeroTrapOptions = 
     return dotrap(trap, options);
 }
 
-// ── moved from src/js/rock_breakage.ts ──
-
-// C trap.c:sokoban_guilt().  force_bolt.js previously kept this logic beside
-// its own boulder conversion; the shared fracture owner now owns it.
+// C trap.c:sokoban_guilt().
 export function sokobanGuilt(state: GameState): void {
     if (!state.level?.flags?.sokoban_rules) return;
     if (!state.u.uconduct) state.u.uconduct = {};

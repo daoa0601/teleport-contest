@@ -1,6 +1,6 @@
 import { game } from './gstate.js';
 import { effectiveBreathDamage } from './zap.js';
-import { castNativeRay } from './zap.js';
+import { buzz, ubuzz } from './zap.js';
 const DIRECTIONS = Object.freeze({
     h: [-1, 0], l: [1, 0], j: [0, 1], k: [0, -1],
     y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1],
@@ -9,13 +9,13 @@ export async function breatheInDirection(direction, { attack, state = game, sour
     if (!attack)
         return { used: false, heroDied: false, hits: 0 };
     const type = 20 + effectiveBreathDamage(attack[1]) - 1;
-    return castNativeRay(sourceMonster ? -type : type, attack[2], direction, {
+    return (sourceMonster ? buzz : ubuzz)(sourceMonster ? -type : type, attack[2], direction, {
         ...options, state, sourceMonster,
     });
 }
 // A null sourceMonster is divine retribution, not a hero-caused ray.
 export async function castMonsterSpellRay(direction, originX, originY, attack, options = {}) {
-    return castNativeRay(-(10 + attack[1] - 1), attack[2], direction, {
+    return buzz(-(10 + attack[1] - 1), attack[2], direction, {
         ...options, originX, originY,
     });
 }
