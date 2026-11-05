@@ -29,7 +29,10 @@ import {
 import { artifactById, speakArtifact, retouchHeroObject } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
-import { heroFaceName, heroFingerName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName, heroNoseName, monsterHandName, monsterStomachName } from './body_parts.js';
+import {
+    heroFaceName, heroFingerName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName,
+    heroNoseName, monsterHandName, monsterStomachName,
+} from './body_parts.js';
 import { bot } from './botl.js';
 import {
     dropBoulderIntoLiquid, dropInventoryObjectAtHero, woundHeroLegs, reviveCorpseImmediately, gotoLevel,
@@ -146,7 +149,11 @@ import {
     isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject,
 } from './object_properties.js';
 import type { GameObject } from './object_types.js';
-import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, singularObjectName, withIndefiniteArticle } from './objnam.js';
+import {
+    corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName,
+    objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName,
+    simpleObjectTypeName, singularObjectName, withIndefiniteArticle,
+} from './objnam.js';
 import { walkPathCells } from './path_walk.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import type { MessagePublisher } from './pline.js';

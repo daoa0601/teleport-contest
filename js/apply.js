@@ -11,7 +11,7 @@ import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeE
 import { artifactById, speakArtifact, retouchHeroObject } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
-import { heroFaceName, heroFingerName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName, heroNoseName, monsterHandName, monsterStomachName } from './body_parts.js';
+import { heroFaceName, heroFingerName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName, heroNoseName, monsterHandName, monsterStomachName, } from './body_parts.js';
 import { bot } from './botl.js';
 import { dropBoulderIntoLiquid, dropInventoryObjectAtHero, woundHeroLegs, reviveCorpseImmediately, gotoLevel, objectNoLongerHeld, } from './do.js';
 import { commandResultCancelled, commandResultFailed, commandResultSpentTime, cmdq_add_ec, cmdq_add_key, setMulti, isok, paranoidQuery, confusePromptDirection, promptDirection, readDirectionKey, } from './cmd.js';
@@ -67,7 +67,7 @@ import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject, } from './object_properties.js';
-import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, singularObjectName, withIndefiniteArticle } from './objnam.js';
+import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, singularObjectName, withIndefiniteArticle, } from './objnam.js';
 import { walkPathCells } from './path_walk.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { propertyIsActive } from './properties.js';
