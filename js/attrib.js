@@ -582,6 +582,22 @@ export function initAttributes() {
     game.u.amax = { a: [...values] };
     game.u.atemp = { a: [0, 0, 0, 0, 0, 0] };
 }
+// C attrib.c:redist_attr(). Polymorphing redistributes the physical
+// attributes; it does not change your mind (Int/Wis are skipped). While
+// Upolyd, this changes the active monster copy; polyman() subsequently
+// restores macurr/mamax and discards those temporary changes.
+export function redistributeActiveAttributes(state = game) {
+    requirePlayingGame(state);
+    const base = state.u.acurr.a;
+    const max = state.u.amax.a;
+    for (const index of [A_STR, A_DEX, A_CON, A_CHA]) {
+        const oldMax = max[index] || 1;
+        const raceMin = state.urace?.attrmin?.[index] ?? 3;
+        const raceMax = maximumAttribute(index);
+        max[index] = Math.max(raceMin, Math.min(raceMax, oldMax + rn2(5) - 2));
+        base[index] = Math.max(raceMin, Math.trunc((base[index] || raceMin) * max[index] / oldMax));
+    }
+}
 // C attrib.c:vary_init_attr(). Apply minor variation to the starting
 // attributes; base and maximum stay together (C's adjattrib-based body
 // clamps through the same racial limits).

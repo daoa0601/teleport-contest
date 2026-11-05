@@ -50,7 +50,7 @@ import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpa
 import { mksobj, placeCreatedObject, stack_object } from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
-import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints } from './attrib.js';
+import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, S_GHOST, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
@@ -1116,26 +1116,6 @@ function canDropPolymorphWeapon(object) {
         return false;
     }
     return !(object.otyp === LEASH && object.leashmon);
-}
-function humanAttributeArrays() {
-    requirePlayingGame(game);
-    const u = game.u;
-    // This follows the source ordering deliberately.  While Upolyd,
-    // redist_attr() changes the active monster copy; polyman() subsequently
-    // restores macurr/mamax and discards those temporary changes.
-    return { base: u.acurr.a, max: u.amax.a };
-}
-// C attrib.c:redist_attr().
-function redistributeActiveAttributes() {
-    requirePlayingGame(game);
-    const { base, max } = humanAttributeArrays();
-    for (const index of [A_STR, A_DEX, A_CON, A_CHA]) {
-        const oldMax = max[index] || 1;
-        const raceMin = game.urace?.attrmin?.[index] ?? 3;
-        const raceMax = maximumAttribute(index);
-        max[index] = Math.max(raceMin, Math.min(raceMax, oldMax + rn2(5) - 2));
-        base[index] = Math.max(raceMin, Math.trunc((base[index] || raceMin) * max[index] / oldMax));
-    }
 }
 // roles.js currently stores the pre-consumed initial energy die separately
 // during startup.  These are the corresponding role.c enadv.inrnd values
