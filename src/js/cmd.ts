@@ -47,7 +47,6 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
 import { completeExtendedCommand, getLine, promptChoice, tty_yn_function } from './query.js';
-import { paintKeyPrompt, promptKey } from './tty_prompts.js';
 import { showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
@@ -106,7 +105,9 @@ import type { Hero } from './hero_types.js';
 import type { TextPage } from './windows.js';
 import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 // cmd.js — Command parsing and dispatch.
-// C ref: cmd.c:rhack(); movement execution belongs to hack.ts.
+// C ref: cmd.c:rhack(); movement execution belongs to hack.ts. Also hosts
+// the top-line key prompts (win/tty/wintty.c tty_yn_function()'s prompt
+// path) that commands which pause for input render through.
 
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 
@@ -2710,6 +2711,52 @@ const impairedDirections = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
     [-1, -1], [1, -1], [1, 1], [-1, 1],
 ] as const;
+
+// Top-line key prompts used by commands which can pause for input.
+// C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
+
+async function paintKeyPrompt(message: string, cursorOffset = 0): Promise<number> {
+    await setTopline(message);
+    await flush_screen(1);
+    return renderKeyPrompt(message, cursorOffset);
+}
+
+export async function promptKey(
+    message: string, cursorOffset = 0,
+    { canned = true }: { canned?: boolean } = {},
+): Promise<number> {
+    // C cmd.c:yn_function() answers from the command queue without ever
+    // reaching tty_yn_function(); gt.toplines is untouched then. A queued
+    // direction or extended command is the "not CMDQ_USER_INPUT" branch
+    // (cmd.c:5496-5509): cmdq_clear(CQ_CANNED) and the ESC initializer,
+    // while the user-input placeholder keeps the live question.
+    if (canned) {
+        const cmdq = cmdq_pop();
+        if (cmdq && cmdq.typ === CMDQ_KEY) return cmdq.key;
+        if (cmdq && cmdq.typ !== CMDQ_USER_INPUT) {
+            cmdq_clear(CQ_CANNED);
+            return 27;
+        }
+    }
+    // tty_yn_function() with a null response list goes straight from its
+    // custompline(SUPPRESS_HISTORY) prompt to readchar() and clean_up:
+    // ^P has no special meaning and comes back as the answer.
+    game._suppressMessagesUntilInput = false;
+    const coveredRows = await paintKeyPrompt(message, cursorOffset);
+    // tty_yn_function() uses readchar(), including its EOF and fuzzer rules.
+    const key = await readchar();
+    // Fuzzer input bypasses nhgetch(); tty_yn_function's cleanup still marks
+    // its question as read.
+    if (game._pending_message) {
+        game._retained_message = game._pending_message;
+        game._pending_message = '';
+    }
+    // clean_up rewrites gt.toplines with the prompt and its recorded answer.
+    game._toplines = `${message}${keyText(key)}`;
+    // C tty_yn_function() retains a one-line query, but clears wrapped ones.
+    if (coveredRows > 1) clearMessageWindow(coveredRows);
+    return key;
+}
 
 // C ref: cmd.c:yn_function(query, (char *) 0, def, TRUE) — the response-free
 // single-key call form used by getobj() prompts and invent.c:adjust_split().

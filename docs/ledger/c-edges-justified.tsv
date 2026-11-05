@@ -66,7 +66,7 @@ u_init_misc	max_rank_sz	n/a	only do_statusline1 (dumplog) reads mrank_sz
 u_init_misc	rn2	inlined	handedness roll passed in from startup.ts in C order
 dosearch0	set_msg_xy	n/a	accessiblemsg location for a message the search path never prints
 dosearch0	spec_ability	inlined	artifact SPFX_SEARCH flag test (detect.ts)
-confdir	u_maybe_impaired	inlined	tty_prompts.ts
+confdir	u_maybe_impaired	inlined	stunned/confused !rn2(5) test in confusePromptDirection (cmd.ts)
 angrygods	gods_angry	inlined	godVoice(..., 'Thou hast angered me.') (divine_wrath.ts)
 doopen_indir	cmdq_add_dir	inlined	canned kick command with dx/dy (cmd.ts)
 doopen_indir	cmdq_add_ec	inlined	same canned command (cmd.ts)

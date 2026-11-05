@@ -8,7 +8,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { ATR_INVERSE, NO_COLOR, Terminal } from '../js/terminal.js';
 import { showChoiceWindow, showDisclosureOverlay } from '../js/windows.js';
-import { promptKey } from '../js/tty_prompts.js';
+import { promptKey } from '../js/cmd.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 
