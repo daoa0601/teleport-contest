@@ -126,8 +126,11 @@ export interface InventoryDescriptionOptions {
 
 export type InventoryActionKey = '-' | 'a' | 'c' | 'C' | 'd' | 'e' | 'E' | 'f' | 'i' | 'I' | 'O' | 'p' | 'P' | 'q' | 'Q' | 'r' | 'R' | 't' | 'T' | 'V' | 'w' | 'W' | 'x' | 'X' | 'z' | '/'
     | '\x1b' | ' ' | '\n' | '\r';
+
 export interface InventoryAction { key: InventoryActionKey; item: GameObject }
+
 type IdentificationBeatitude = 'B' | 'U' | 'C' | 'X';
+
 interface IdentificationCategories {
     classes: number[];
     beatitudes: Set<IdentificationBeatitude>;
@@ -136,34 +139,10 @@ interface IdentificationCategories {
     all: boolean;
     menu: boolean;
 }
+
 interface IdentificationResult { identified: GameObject[]; remaining: number }
 
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
-// invent.c:loot_xname() ignores counts and individual user names. Its
-// temporary adjustments group water, towels, and globs without altering them.
-export function lootObjectName(object: GameObject, state: GameState = game): string {
-    const view: GameObject = { ...object, quan: 1, quantity: 1,
-        blessed: object.otyp === POT_WATER ? false : object.blessed,
-        cursed: object.otyp === POT_WATER ? false : object.cursed,
-        spe: object.otyp === TOWEL ? 0 : object.spe,
-        owt: object.globby ? 20 : object.owt,
-    };
-    if (object.oclass === POTION_CLASS) view.odiluted = false;
-    if (!object.oartifact) {
-        delete view.oname;
-        if (view.oextra) {
-            view.oextra = { ...view.oextra };
-            delete view.oextra.oname;
-        }
-    }
-    const nameState = { ...state, flags: { ...state.flags, debug: false } };
-    let name = object.otyp === CORPSE ? corpseName(view, { singular: true })
-        : objectName(view, nameState);
-    if (object.otyp === TOWEL) name += object.spe >= 3 ? 'x' : object.spe > 0 ? 'y' : 'z';
-    if (object.globby) name += object.owt <= 100 ? 'a' : object.owt <= 300 ? 'b'
-        : object.owt <= 500 ? 'c' : 'd';
-    return name;
-}
 
 interface ItemPresentation {
     class: string;
@@ -182,10 +161,12 @@ interface ItemPresentation {
 const PM_LICHEN = 158;
 
 const DAGGER_TYPES = new Set([DAGGER, ELVEN_DAGGER, ORCISH_DAGGER]);
+
 const SHORT_SWORD_TYPES = new Set([
     SHORT_SWORD, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD,
     DWARVISH_SHORT_SWORD,
 ]);
+
 const ITEM_PRESENTATION = new Map<number, ItemPresentation>([
     [DAGGER, { class: 'Weapons', name: 'dagger', plural: 'daggers', enchanted: true }],
     [AXE, { class: 'Weapons', name: 'axe', plural: 'axes', enchanted: true }],
@@ -377,6 +358,7 @@ const ITEM_PRESENTATION = new Map<number, ItemPresentation>([
         showBuc: false,
     }],
 ]);
+
 const CLASS_PRESENTATION: Readonly<Partial<Record<number, string>>> = {
     [WEAPON_CLASS]: 'Weapons', [ARMOR_CLASS]: 'Armor',
     [RING_CLASS]: 'Rings', [AMULET_CLASS]: 'Amulets',
@@ -387,132 +369,253 @@ const CLASS_PRESENTATION: Readonly<Partial<Record<number, string>>> = {
     [ROCK_CLASS]: 'Boulders',
 };
 
-function qualifiedObjectName(raw: Pick<GameObject, 'otyp' | 'oclass' | 'corpsenm'>): string {
-    if (raw.otyp === CORPSE && raw.corpsenm !== undefined && MONSTER_NAME[raw.corpsenm])
-        return `${MONSTER_NAME[raw.corpsenm]} corpse`;
-    const name = OBJ_NAME(raw.otyp) || `object ${raw.otyp}`;
-    switch (raw.oclass) {
-    case RING_CLASS: return `ring of ${name}`;
-    case POTION_CLASS: return `potion of ${name}`;
-    case SCROLL_CLASS: return `scroll of ${name}`;
-    case SPBOOK_CLASS: return `spellbook of ${name}`;
-    case WAND_CLASS: return `wand of ${name}`;
-    default: return name;
-    }
-}
-
-function sourceKnownPresentation(raw: GameObject): ItemPresentation {
-    const name = qualifiedObjectName(raw);
-    const plural = raw.oclass === RING_CLASS ? `rings of ${OBJ_NAME(raw.otyp)}`
-        : raw.oclass === POTION_CLASS ? `potions of ${OBJ_NAME(raw.otyp)}`
-        : raw.oclass === SCROLL_CLASS ? `scrolls of ${OBJ_NAME(raw.otyp)}`
-        : raw.oclass === SPBOOK_CLASS ? `spellbooks of ${OBJ_NAME(raw.otyp)}`
-        : raw.oclass === WAND_CLASS ? `wands of ${OBJ_NAME(raw.otyp)}`
-        : makePlural(name);
-    return {
-        class: CLASS_PRESENTATION[raw.oclass] || 'Other',
-        name, plural,
-        enchanted: raw.oclass === WEAPON_CLASS || raw.oclass === ARMOR_CLASS
-            || (raw.oclass === RING_CLASS && raw.spe !== 0),
-        showBuc: raw.oclass === WAND_CLASS ? false : undefined,
-        spellName: raw.oclass === SPBOOK_CLASS ? OBJ_NAME(raw.otyp) : undefined,
-        spellLevel: raw.oclass === SPBOOK_CLASS
-            ? oc_level(raw.otyp) : undefined,
-        spellCategory: raw.oclass === SPBOOK_CLASS
-            ? OBJECT_SPELL_CATEGORY[raw.otyp] : undefined,
-    };
-}
-
 type InventoryPresentation = ItemPresentation & {
     quantity: number;
     enchantment: number | undefined;
     buc: GameObject['buc'];
 };
 
-// Display-only callers receive a projection without changing the carried object.
-export function inventoryItem(raw: GameObject, presentation: ItemPresentation | null = null): GameObject {
-    return { ...raw, ...inventoryPresentation(raw, presentation) };
+// C invent.c:freeinv_core()/addinv_core1()/addinv_core2()/learn_unseen_invent()
+// and attrib.c:set_moreluck().
+const CARRIED_FLAGS = new Map<number, keyof HeroPossessions>([
+    [AMULET_OF_YENDOR, 'amulet'], [BELL_OF_OPENING, 'bell'],
+    [CANDELABRUM_OF_INVOCATION, 'menorah'], [SPE_BOOK_OF_THE_DEAD, 'book'],
+]);
+
+const DUPLICATE_POSSESSION_MESSAGES: Record<keyof HeroPossessions, string> = {
+    amulet: 'already have amulet?',
+    bell: 'already have silver bell?',
+    book: 'already have the book?',
+    menorah: 'already have candelabrum?',
+    questart: 'already have quest artifact?',
+};
+
+// Currency names from invent.c; hallucinated choices use the core RNG.
+const CURRENCIES: readonly string[] = [
+    'Altarian Dollar', 'Ankh-Morpork Dollar', 'auric', 'buckazoid', 'cirbozoid',
+    'credit chit', 'cubit', 'Flanian Pobble Bead', 'fretzer', 'imperial credit',
+    'Hong Kong Luna Dollar', 'kongbuck', 'nanite', 'quatloo', 'simoleon',
+    'solari', 'spacebuck', 'sporebuck', 'Triganic Pu', 'woolong', 'zorkmid',
+];
+
+// Inventory selection shared by commands which use NetHack's getobj flow.
+// C ref: invent.c getobj().
+
+export type InventoryClassification = typeof GETOBJ_EXCLUDE | typeof GETOBJ_EXCLUDE_NONINVENT
+    | typeof GETOBJ_EXCLUDE_INACCESS | typeof GETOBJ_EXCLUDE_SELECTABLE | typeof GETOBJ_DOWNPLAY | typeof GETOBJ_SUGGEST;
+
+export interface GetobjOptions {
+    // GETOBJ_PROMPT: ask even when nothing is a likely candidate.
+    forcePrompt?: boolean;
+    // GETOBJ_ALLOWCNT: accept a typed or menu count.
+    allowCount?: boolean;
+    // The callback's answer for HANDS_SYM, obj_ok((struct obj *) 0).
+    hands?: InventoryClassification;
+    // getobj_hands_txt(): the '-' menu entry, when hands are allowed.
+    handsText?: string;
 }
 
-// Acquisition and polymorph retain the same object already held by timers and
-// ownership links. Only presentation fields are updated here.
-export function updateInventoryPresentation(raw: GameObject, presentation: ItemPresentation | null = null): GameObject {
-    const view = inventoryPresentation(raw, presentation);
-    raw.class = view.class;
-    raw.name = view.name;
-    raw.plural = view.plural;
-    if ('enchanted' in view) raw.enchanted = view.enchanted;
-    if ('omitUncursed' in view) raw.omitUncursed = view.omitUncursed;
-    if ('showBuc' in view) raw.showBuc = view.showBuc;
-    if ('empty' in view) raw.empty = view.empty;
-    if ('spellName' in view) raw.spellName = view.spellName;
-    if ('spellLevel' in view) raw.spellLevel = view.spellLevel;
-    if ('spellCategory' in view) raw.spellCategory = view.spellCategory;
-    if ('appearance' in view) raw.appearance = view.appearance;
-    raw.quantity = view.quantity;
-    raw.enchantment = view.enchantment;
-    raw.buc = view.buc;
-    return raw;
+export type InventoryObjectSelection = {
+    cancelled: true;
+    object: null;
+    none: false;
+    count: 0 | null;
+} | {
+    cancelled: false;
+    object: GameObject;
+    none: false;
+    count: number | null;
+} | {
+    cancelled: false;
+    object: null;
+    none: true;
+    count: number | null;
+};
+
+const CANCELLED: InventoryObjectSelection = { cancelled: true, object: null, none: false, count: null };
+
+const HANDS: InventoryObjectSelection = { cancelled: false, object: null, none: true, count: null };
+
+const HANDS_SYM = 45, QUESTION = 63, ASTERISK = 42, ESCAPE = 27;
+
+// strchr(quitchars, '\0') also succeeds, for a literal NUL from the fuzzer.
+const QUITCHARS = [0, 32, 13, 10, ESCAPE];
+
+type InventoryReport = 'gold' | 'weapon' | 'armor' | 'rings' | 'amulet' | 'tools' | 'inuse' | 'type';
+
+type Buc = 'B' | 'U' | 'C' | 'X';
+
+const BUC_CHOICES: readonly Buc[] = ['B', 'C', 'U', 'X'];
+
+// Looking at floor objects and displaying their prices and pile windows.
+// C invent.c:look_here(), pickup.c:check_here(), and objnam.c.
+export interface FeatureOptions { state?: GameState; probing?: boolean }
+
+// ---------------------------------------------------------------------------
+// Inventory and loot ordering. C refs: invent.c:sortloot()/loot_classify().
+// ---------------------------------------------------------------------------
+
+export type InventoryOrderState = { flags: Pick<GameFlags, 'inv_order'> };
+
+interface LootClassification {
+    order: number;
+    subclass: number;
+    discovery: number;
 }
 
-function inventoryPresentation(raw: GameObject, presentation: ItemPresentation | null): InventoryPresentation {
-    let view: ItemPresentation = presentation || ITEM_PRESENTATION.get(raw.otyp)
-        || (raw._startingInventory || objectTypeKnown(raw)
-            ? sourceKnownPresentation(raw) : null) || wishedObjectPresentation(raw);
-    if (game.urole?.key === 'knight'
-        && (raw.otyp === LONG_SWORD || raw.otyp === LANCE)) {
-        view = { ...view, omitUncursed: true };
-    }
-    if (raw.otyp === SHORT_SWORD && game.urole?.key !== 'samurai') {
-        view = {
-            ...view, name: 'short sword', plural: 'short swords',
-            omitUncursed: true,
-        };
-    }
-    if (SHORT_SWORD_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
-        const orcish = game.urace?.raceIndex === 4;
-        view = raw.otyp === SHORT_SWORD ? {
-            ...view,
-            name: orcish ? 'orcish short sword' : 'short sword',
-            plural: orcish ? 'orcish short swords' : 'short swords',
-            omitUncursed: true,
-        } : { ...view, omitUncursed: true };
-    }
-    if (DAGGER_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
-        view = raw.otyp === DAGGER && game.urace?.raceIndex === 4
-            ? {
-                ...view, name: 'orcish dagger', plural: 'orcish daggers',
-                omitUncursed: true,
-            }
-            : { ...view, omitUncursed: true };
-    }
-    if (raw.otyp === DAGGER && game.urole?.key === 'valkyrie') {
-        view = { ...view, omitUncursed: true };
-    }
-    if (raw.otyp === TIN) {
-        // objnam.c:xname() appends tin_details() only after the individual
-        // tin's contents have become known.  Generation may already retain
-        // corpsenm without making that state legal presentation data.
-        view = !raw.known
-            ? { class: 'Comestibles', name: 'tin', plural: 'tins' }
-            : raw.corpsenm === PM_LICHEN
-                ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
-                : raw.corpsenm === 322
-                    ? { class: 'Comestibles', name: 'tin of newt meat', plural: 'tins of newt meat' }
-                    : raw.corpsenm == null
-                        ? { class: 'Comestibles', name: 'tin of spinach', plural: 'tins of spinach' }
-                        : { class: 'Comestibles', name: 'tin', plural: 'tins' };
-    }
-    const buc = raw.bknown
-        ? raw.blessed ? 'blessed' : raw.cursed ? 'cursed' : 'uncursed'
-        : undefined;
+type LootView = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'dknown' | 'globby'>>;
+
+interface LootEntry {
+    object: GameObject;
+    index: number;
+    classification?: LootClassification;
+    name?: string;
+}
+
+interface ObjectSortOptions {
+    mode?: number;
+    state?: GameState;
+    filter?: ((object: GameObject) => boolean) | null;
+}
+
+const DEFAULT_PACK_ORDER = [
+    COIN_CLASS, AMULET_CLASS, WEAPON_CLASS, ARMOR_CLASS, FOOD_CLASS,
+    SCROLL_CLASS, SPBOOK_CLASS, POTION_CLASS, RING_CLASS, WAND_CLASS,
+    TOOL_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
+];
+
+const DEFAULT_LOOT_ORDER = [
+    COIN_CLASS, AMULET_CLASS, RING_CLASS, WAND_CLASS, POTION_CLASS,
+    SCROLL_CLASS, SPBOOK_CLASS, GEM_CLASS, FOOD_CLASS, TOOL_CLASS,
+    WEAPON_CLASS, ARMOR_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
+];
+
+const INSTRUMENTS = new Set([WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
+    FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM,
+    DRUM_OF_EARTHQUAKE, HORN_OF_PLENTY]);
+
+export const OBJECT_CLASS_LABELS: Readonly<Partial<Record<number, string>>> = {
+    [WEAPON_CLASS]: 'Weapons',
+    [ARMOR_CLASS]: 'Armor',
+    [RING_CLASS]: 'Rings',
+    [AMULET_CLASS]: 'Amulets',
+    [TOOL_CLASS]: 'Tools',
+    [FOOD_CLASS]: 'Comestibles',
+    [POTION_CLASS]: 'Potions',
+    [SCROLL_CLASS]: 'Scrolls',
+    [SPBOOK_CLASS]: 'Spellbooks',
+    [WAND_CLASS]: 'Wands',
+    [COIN_CLASS]: 'Coins',
+    [GEM_CLASS]: 'Gems/Stones',
+    [ROCK_CLASS]: 'Boulders/Statues',
+    [BALL_CLASS]: 'Iron balls',
+    [CHAIN_CLASS]: 'Chains',
+    [VENOM_CLASS]: 'Venoms',
+};
+
+// C invent.c:inuse_classify(). Rank the worn slot for an in-use inventory view.
+function inUseRating(object: GameObject, state: GameState): number {
+    const mask = (object.owornmask ?? 0) & (W_ACCESSORY | W_WEAPONS | W_ARMOR);
+    if (!mask && object.otyp === LEASH && object.leashmon) return 1;
+    if (!mask && object.oclass === TOOL_CLASS && object.lamplit) return 2;
+    const mainHandRing = state.u.rightHanded === false ? W_RINGL : W_RINGR;
+    const ratings = [W_ARMU, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMC, W_ARM,
+        W_QUIVER, W_SWAPWEP, W_WEP, W_TOOL,
+        mainHandRing === W_RINGR ? W_RINGL : W_RINGR, mainHandRing, W_AMUL];
+    const index = ratings.findIndex(slot => mask & slot);
+    return index >= 0 ? index + 3 : 0;
+}
+
+// C invent.c:loot_classify().
+export function classifyLoot(object: LootView, state: GameState = game): LootClassification {
+    const oclass = object.oclass || objectClassForType(object.otyp);
+    const classOrder = state.flags.sortpack !== false ? inventoryClassOrder(state) : DEFAULT_LOOT_ORDER;
+    const position = classOrder.indexOf(oclass);
+    const seen = !!object.dknown;
+    const discovered = objectTypeKnown(object, state);
+    const description = OBJ_DESCR(object.otyp, state);
     return {
-        ...view,
-        quantity: raw.quan,
-        enchantment: view.enchanted ? raw.spe : undefined,
-        buc: view.showBuc === false || (view.omitUncursed && buc === 'uncursed')
-            ? undefined : buc,
+        order: position >= 0 ? position + 1 : classOrder.length + 1 + Number(oclass !== VENOM_CLASS),
+        subclass: lootSubclass(object, oclass, seen, discovered),
+        discovery: !seen ? 1 : discovered || !description ? 4
+            : state._objectCallNames?.[object.otyp] ? 3 : 2,
     };
+}
+
+// C invent.c:loot_xname() ignores counts and individual user names. Its
+// temporary adjustments group water, towels, and globs without altering them.
+export function lootObjectName(object: GameObject, state: GameState = game): string {
+    const view: GameObject = { ...object, quan: 1, quantity: 1,
+        blessed: object.otyp === POT_WATER ? false : object.blessed,
+        cursed: object.otyp === POT_WATER ? false : object.cursed,
+        spe: object.otyp === TOWEL ? 0 : object.spe,
+        owt: object.globby ? 20 : object.owt,
+    };
+    if (object.oclass === POTION_CLASS) view.odiluted = false;
+    if (!object.oartifact) {
+        delete view.oname;
+        if (view.oextra) {
+            view.oextra = { ...view.oextra };
+            delete view.oextra.oname;
+        }
+    }
+    const nameState = { ...state, flags: { ...state.flags, debug: false } };
+    let name = object.otyp === CORPSE ? corpseName(view, { singular: true })
+        : objectName(view, nameState);
+    if (object.otyp === TOWEL) name += object.spe >= 3 ? 'x' : object.spe > 0 ? 'y' : 'z';
+    if (object.globby) name += object.owt <= 100 ? 'a' : object.owt <= 300 ? 'b'
+        : object.owt <= 500 ? 'c' : 'd';
+    return name;
+}
+
+// C invent.c:invletter_value().
+function inventoryLetterValue(letter: string | null | undefined): number {
+    if (!letter) return 55;
+    if (letter >= 'a' && letter <= 'z') return letter.charCodeAt(0) - 95;
+    if (letter >= 'A' && letter <= 'Z') return letter.charCodeAt(0) - 37;
+    return letter === '$' ? 1 : letter === '#' ? 54 : 55;
+}
+
+// C invent.c:sortloot_cmp(). The sort keys are computed by the renamed
+// helpers below: inuse_classify() -> inUseRating, invletter_value() ->
+// inventoryLetterValue, loot_xname() -> normalizedLootName.
+function compareLoot(left: LootEntry, right: LootEntry, mode: number, state: GameState): number {
+    const a = left.object, b = right.object;
+    if (mode & SORTLOOT_INUSE)
+        return inUseRating(b, state) - inUseRating(a, state) || left.index - right.index;
+    if ((mode & (SORTLOOT_PACK | SORTLOOT_INVLET)) !== SORTLOOT_INVLET) {
+        const aClass = classifyEntry(left, state), bClass = classifyEntry(right, state);
+        const difference = aClass.order - bClass.order;
+        if (difference) return difference;
+        if (!(mode & SORTLOOT_INVLET)) {
+            const detail = aClass.subclass - bClass.subclass || aClass.discovery - bClass.discovery;
+            if (detail) return detail;
+        }
+    }
+    if (mode & SORTLOOT_INVLET) {
+        const difference = inventoryLetterValue(a.invlet) - inventoryLetterValue(b.invlet);
+        if (difference) return difference;
+    }
+    if (!(mode & SORTLOOT_LOOT)) return left.index - right.index;
+    if (left.name === undefined) {
+        observeObjectForNaming(a, { state });
+        left.name = normalizedLootName(a, state);
+    }
+    if (right.name === undefined) {
+        observeObjectForNaming(b, { state });
+        right.name = normalizedLootName(b, state);
+    }
+    if (left.name !== right.name) return left.name < right.name ? -1 : 1;
+    const condition = beatitudeRating(b) - beatitudeRating(a)
+        || Number(!!b.greased) - Number(!!a.greased)
+        || lootErosion(a) - lootErosion(b)
+        || Number(!!(b.rknown && b.oerodeproof)) - Number(!!(a.rknown && a.oerodeproof));
+    if (condition) return condition;
+    if (objectUsesKnown(a.otyp) && a.oclass !== FOOD_CLASS) {
+        const difference = (b.known ? b.spe ?? 0 : -1000) - (a.known ? a.spe ?? 0 : -1000);
+        if (difference) return difference;
+    }
+    return left.index - right.index;
 }
 
 // C invent.c:assigninvlet(). Assign a free inventory letter using the rotating cursor.
@@ -557,54 +660,60 @@ export function assignInventoryLetter(item: GameObject): GameObject {
     return item;
 }
 
-function prepareInventoryItem(raw: GameObject, presentation: ItemPresentation | null, observe: boolean): GameObject {
-    raw.how_lost = LOST_NONE;
-    raw.no_charge = false;
-    if (raw.contents?.length) pickedContainer(raw);
-    raw.ox = raw.oy = 0;
-    const item = updateInventoryPresentation(raw, presentation);
-    if (observe) item.dknown = true;
-    recordHeroPrizeAcquisition(item, game);
-    return item;
+// C invent.c:reorder_invent(). Keep fixed inventory letters in native order.
+function reorderInventory(): void {
+    game.inventory.sort((left, right) => inventoryLetterRank(left) - inventoryLetterRank(right));
 }
 
-function linkInventoryItem(item: GameObject): GameObject {
-    assignInventoryLetter(item);
-    item.where = 'inventory';
-    game.inventory.push(item);
-    // C invent.c:addinv_core0()/reorder_invent(): fixed letters order the
-    // carried chain, including gold before letters and lowercase before uppercase.
-    if (game.flags.fixinv !== false) {
-        game.inventory.sort((left, right) =>
-            inventoryLetterRank(left) - inventoryLetterRank(right));
+// C invent.c:merged(). Merge quantities, knowledge, timers, and weapon slots.
+export async function mergeObjectStacks(
+    survivor: GameObject | null | undefined, incoming: GameObject | null | undefined,
+    state: GameState = game,
+): Promise<GameObject | null> {
+    requireLiveGame(state);
+    if (!survivor || !incoming || !mergable(survivor, incoming, state)) return null;
+    const discovered = await prepareStackMerge(survivor, incoming, state);
+    if (incoming.globby) {
+        await announceGlobMerge(survivor, incoming, state);
+        return await absorbGlob(survivor, incoming, state);
     }
-    return item;
+    if (discovered && survivor.where === 'inventory'
+        && incoming.how_lost !== LOST_THROWN && survivor.how_lost !== LOST_THROWN) {
+        await plineWithContinuation('You learn more about your items by comparing them.');
+    }
+    await deleteObject(incoming, state, { mergeInto: survivor });
+    return survivor;
 }
 
-// C invent.c:reorder_invent() toggles the ASCII case bit to put a-z before A-Z.
-export function inventoryLetterRank(item: GameObject): number {
-    return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
+// C invent.c:addinv_core1(): these effects precede merging and inventory insertion.
+export async function prepareInventoryAddition(object: GameObject, state: GameState = game) {
+    if (object.oclass === COIN_CLASS) state.context.botl = true;
+    const flag = carriedPossessionFlag(object, state);
+    if (flag && state.u.uhave?.[flag])
+        await impossible(DUPLICATE_POSSESSION_MESSAGES[flag], { state });
+    updateCarriedFlags(object, true, state);
+    const achievement = object.otyp === AMULET_OF_YENDOR ? ACH_AMUL
+        : object.otyp === BELL_OF_OPENING ? ACH_BELL
+            : object.otyp === CANDELABRUM_OF_INVOCATION ? ACH_CNDL
+                : object.otyp === SPE_BOOK_OF_THE_DEAD ? ACH_BOOK : null;
+    if (achievement !== null) recordAchievement(state, achievement);
+    if (isQuestArtifact(object, state)) await touchQuestArtifact(object, state);
+    await setCarriedArtifactProperties(object, true, state);
 }
 
-async function finishAddedInventoryItem(item: GameObject, recoveredThrownStack = false): Promise<GameObject> {
-    if (recoveredThrownStack && game.flags.pickup_thrown !== false && !game.uquiver
-        && item.otyp !== AKLYS && artifactById(item.oartifact)?.name !== 'Mjollnir'
-        && (isThrowingWeapon(item) || isLauncherAmmunition(item)))
-        await setQuiverObject(item, game);
-    item.pickup_prev = true;
-    await finishInventoryAddition(item, game);
-    attachCursedFigurineTimer(item, game);
-    return item;
-}
+// C invent.c:addinv_core2(). The object is linked, including after a merge.
+// Regaining sight reuses these effects without adding the object again.
+export async function finishInventoryAddition(object: GameObject, state: GameState = game) {
+    if (confersLuck(object, state)) setMoreLuck(state);
+    if (state.urole?.key !== 'archeologist' || object.oclass !== SCROLL_CLASS
+        || object.otyp === SCR_BLANK_PAPER || heroIsBlind(state)
+        || objectTypeKnown(object, state)) return;
 
-// C invent.c:addinv().
-export async function addInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
-    return await addInventoryItemCore(raw, presentation, observe, null);
-}
-
-// C invent.c:addinv_before().
-export async function addInventoryItemBefore(raw: GameObject, next: GameObject | null): Promise<GameObject> {
-    return await addInventoryItemCore(raw, null, true, next);
+    observeObjectForNaming(object, { state });
+    await plineWithContinuation(`You decipher the label on ${
+        ownedObjectName(object, state, { capitalized: false })}.`);
+    learnObjectType(object.otyp, state);
+    recordLiteracy('became literate by deciphering a scroll label', { state });
 }
 
 // C invent.c:addinv_core0(): merge with a carried stack, or take a letter
@@ -633,43 +742,14 @@ async function addInventoryItemCore(
     return await finishAddedInventoryItem(item, wasThrown && !existing);
 }
 
-export async function addCreatedInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
-    assertCreatedObject(raw, game);
-    const wasThrown = raw.how_lost === LOST_THROWN;
-    let item = prepareInventoryItem(raw, presentation, observe);
-    await prepareInventoryAddition(item, game);
-    const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
-        : game.inventory.find(other => mergable(other, item, game));
-    const added = existing ? await mergeCreatedObjectStacks(existing, item, game)
-        : linkInventoryItem(item);
-    if (!added) throw new Error(`Initial inventory merge rejected object ${item.o_id} after admission`);
-    item = added;
-    return await finishAddedInventoryItem(item, wasThrown && !existing);
+// C invent.c:addinv().
+export async function addInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
+    return await addInventoryItemCore(raw, presentation, observe, null);
 }
 
-// C invent.c:freeinv_core()/addinv_core1()/addinv_core2()/learn_unseen_invent()
-// and attrib.c:set_moreluck().
-const CARRIED_FLAGS = new Map<number, keyof HeroPossessions>([
-    [AMULET_OF_YENDOR, 'amulet'], [BELL_OF_OPENING, 'bell'],
-    [CANDELABRUM_OF_INVOCATION, 'menorah'], [SPE_BOOK_OF_THE_DEAD, 'book'],
-]);
-
-const DUPLICATE_POSSESSION_MESSAGES: Record<keyof HeroPossessions, string> = {
-    amulet: 'already have amulet?',
-    bell: 'already have silver bell?',
-    book: 'already have the book?',
-    menorah: 'already have candelabrum?',
-    questart: 'already have quest artifact?',
-};
-
-// C invent.c:freeinv(): extraction precedes carried effects; equipment stays installed.
-export async function freeInventoryObject(object: GameObject, state: GameState = game) {
-    requireLiveGame(state);
-    const index = state.inventory.indexOf(object);
-    if (index < 0) await panic('extract_nobj: object lost', { state });
-    state.inventory.splice(index, 1);
-    object.where = 'free';
-    await finishInventoryRemoval(object, state);
+// C invent.c:addinv_before().
+export async function addInventoryItemBefore(raw: GameObject, next: GameObject | null): Promise<GameObject> {
+    return await addInventoryItemCore(raw, null, true, next);
 }
 
 // C invent.c:hold_another_object(). The argument must be free. Messages are already formatted by the caller,
@@ -751,33 +831,6 @@ export async function holdAnotherObject(object: GameObject, {
     return { object, heroDied: !!state.program_state?.gameover };
 }
 
-// C invent.c:prinv(): name only the acquired quantity, while retaining
-// the actual inventory identity for wielded, worn, and quivered descriptions.
-async function heldInventoryMessage(
-    object: GameObject, count: number, prefix: string | null, state: GameState,
-): Promise<string> {
-    const letter = object.invlet;
-    if (!letter) throw new Error(`Held object ${object.o_id} has no inventory letter`);
-    const total = objectQuantity(object);
-    const merged = count > 0 && count < total;
-    const savedQuantity = object.quantity;
-    // C prinv() formats with doname(), whose xname() records what the hero
-    // sees (a cleric learns beatitude) before the knowledge fields are read.
-    observeObjectForNaming(object, { state });
-    let description;
-    object.quan = count || total;
-    object.quantity = object.quan;
-    try {
-        description = await inventoryItemDescription(object);
-    } finally {
-        object.quan = total;
-        if (savedQuantity === undefined) delete object.quantity;
-        else object.quantity = savedQuantity;
-    }
-    const suffix = merged ? state.flags.verbose ? ` (${total} in total).` : '' : '.';
-    return `${prefix ? `${prefix} ` : ''}${letter} - ${description}${suffix}`;
-}
-
 // C invent.c:useupall(): setnotworn, freeinv, then obfree.
 export async function useUpInventoryStack(object: GameObject, state: GameState = game) {
     requireLiveGame(state);
@@ -789,62 +842,28 @@ export async function useUpInventoryStack(object: GameObject, state: GameState =
     await deleteObject(object, state);
 }
 
-// C addinv_core1(): clear prize protection before addinv tests stack merging.
-export function recordHeroPrizeAcquisition(object: GameObject, state: GameState = game): void {
-    const prizes = state.context.achieveo;
-    const kind = levelPrizeKind(object, state);
-    if (!prizes || !kind) return;
-    const achievement = kind === 'mines' ? ACH_MINE_PRIZE : ACH_SOKO_PRIZE;
-    // the prize chronicle line is logged by recordAchievement()
-    recordAchievement(state, achievement);
-    if (kind === 'mines') prizes.mines_prize_oid = 0;
-    else prizes.soko_prize_oid = 0;
-    object.nomerge = false;
-}
-
-// C invent.c:addinv_core1(): these effects precede merging and inventory insertion.
-export async function prepareInventoryAddition(object: GameObject, state: GameState = game) {
-    if (object.oclass === COIN_CLASS) state.context.botl = true;
-    const flag = carriedPossessionFlag(object, state);
-    if (flag && state.u.uhave?.[flag])
-        await impossible(DUPLICATE_POSSESSION_MESSAGES[flag], { state });
-    updateCarriedFlags(object, true, state);
-    const achievement = object.otyp === AMULET_OF_YENDOR ? ACH_AMUL
-        : object.otyp === BELL_OF_OPENING ? ACH_BELL
-            : object.otyp === CANDELABRUM_OF_INVOCATION ? ACH_CNDL
-                : object.otyp === SPE_BOOK_OF_THE_DEAD ? ACH_BOOK : null;
-    if (achievement !== null) recordAchievement(state, achievement);
-    if (isQuestArtifact(object, state)) await touchQuestArtifact(object, state);
-    await setCarriedArtifactProperties(object, true, state);
-}
-
-// C invent.c:addinv_core2(). The object is linked, including after a merge.
-// Regaining sight reuses these effects without adding the object again.
-export async function finishInventoryAddition(object: GameObject, state: GameState = game) {
-    if (confersLuck(object, state)) setMoreLuck(state);
-    if (state.urole?.key !== 'archeologist' || object.oclass !== SCROLL_CLASS
-        || object.otyp === SCR_BLANK_PAPER || heroIsBlind(state)
-        || objectTypeKnown(object, state)) return;
-
-    observeObjectForNaming(object, { state });
-    await plineWithContinuation(`You decipher the label on ${
-        ownedObjectName(object, state, { capitalized: false })}.`);
-    learnObjectType(object.otyp, state);
-    recordLiteracy('became literate by deciphering a scroll label', { state });
-}
-
-// C invent.c:learn_unseen_invent(). Regaining sight marks unseen inventory.
-export async function learnUnseenInventory(state: GameState = game) {
-    if (heroIsBlind(state)) return;
-    const priest = state.urole?.key === 'priest';
-    const archeologist = state.urole?.key === 'archeologist';
-    for (const object of state.inventory) {
-        if (object.dknown && (object.bknown || !priest)
-            && (object.oclass !== SCROLL_CLASS || !archeologist)) continue;
-        observeObjectForNaming(object, { state });
-        await finishInventoryAddition(object, state);
+// C invent.c:useup().
+export async function consumeInventoryItem(item: GameObject, state: GameState = game) {
+    requireLiveGame(state);
+    const quantity = item?.quantity ?? item?.quan ?? 1;
+    if (quantity > 1) {
+        item.in_use = false;
+        item.quantity = quantity - 1;
+        item.quan = quantity - 1;
+        item.owt = objectWeight(item);
+        return;
     }
-    // The pinned TTY build's update_inventory() has no persistent window.
+    await useUpInventoryStack(item, state);
+}
+
+// C invent.c:consume_obj_charge(). Billing can suspend before charge removal.
+
+export async function consumeObjectCharge(object: GameObject, {
+    maybeUnpaid = true, state = game,
+}: { maybeUnpaid?: boolean; state?: GameState } = {}): Promise<void> {
+    requireLiveGame(state);
+    if (maybeUnpaid) await chargeUnpaidUsage(object, { state });
+    object.spe--;
 }
 
 // C invent.c:freeinv_core(). Remove carried properties after extraction.
@@ -873,22 +892,46 @@ export async function finishInventoryRemoval(object: GameObject, state: GameStat
     }
 }
 
-function updateCarriedFlags(object: GameObject, carried: boolean, state: GameState): void {
-    const flag = carriedPossessionFlag(object, state);
-    if (flag) {
-        if (!state.u.uhave) throw new Error('Carried quest objects require initialized hero possessions');
-        state.u.uhave[flag] = carried;
+// C invent.c:freeinv(): extraction precedes carried effects; equipment stays installed.
+export async function freeInventoryObject(object: GameObject, state: GameState = game) {
+    requireLiveGame(state);
+    const index = state.inventory.indexOf(object);
+    if (index < 0) await panic('extract_nobj: object lost', { state });
+    state.inventory.splice(index, 1);
+    object.where = 'free';
+    await finishInventoryRemoval(object, state);
+}
+
+// C invent.c:delobj(): normal object deletion (if unpaid, it
+// remains on the bill).
+export async function delobj(object: GameObject, state: GameState = game, random = rn2): Promise<void> {
+    await delobjCore(object, false, state, random);
+}
+
+// C invent.c:delobj_core().  `force` is the Rider-revival path.
+export async function delobjCore(
+    object: GameObject, force: boolean, state: GameState = game, random = rn2,
+): Promise<void> {
+    requireLiveGame(state);
+
+    /* obj_resists(obj,0,0) protects the Amulet, the invocation tools,
+     * and Rider corpses; the ordinary path still consumes its rn2(100)
+     * roll at zero probability (objectResistsDestruction does not skip
+     * the call), so deletion RNG parity is preserved. */
+    if (!force && objectResistsDestruction(object, 0, 0, random)) {
+        object.in_use = false; /* in case caller has set this */
+        return;
     }
-}
 
-function carriedPossessionFlag(object: GameObject, state: GameState): keyof HeroPossessions | undefined {
-    return CARRIED_FLAGS.get(object.otyp) ?? (isQuestArtifact(object, state) ? 'questart' : undefined);
-}
-
-
-export function confersLuck(object: GameObject, state: GameState = game) {
-    return object.otyp === LUCKSTONE
-        || !!artifactById(object.oartifact, state)?.flags.includes('SPFX_LUCK');
+    const updateMap = object.where === 'floor';
+    if (object.where === 'inventory') await freeInventoryObject(object, state);
+    else unlinkObject(object, state);
+    if (updateMap) {
+        /* floor object's coordinates are always up to date */
+        await maybeUnhideAt(object.ox, object.oy, state);
+        await newsym(object.ox, object.oy);
+    }
+    await deleteObject(object, state);
 }
 
 // C invent.c:sobj_at(): the first object of a type in a floor pile.
@@ -902,19 +945,6 @@ export function carryingStoningCorpse(state: GameState = game): GameObject | und
     return state.inventory.find(object => object.otyp === CORPSE && touchPetrifies(object.corpsenm));
 }
 
-// C invent.c:taking_off(). Match the two removal command prompts.
-export function takingOff(action: string): boolean {
-    return action === 'take off' || action === 'remove';
-}
-
-// Currency names from invent.c; hallucinated choices use the core RNG.
-const CURRENCIES: readonly string[] = [
-    'Altarian Dollar', 'Ankh-Morpork Dollar', 'auric', 'buckazoid', 'cirbozoid',
-    'credit chit', 'cubit', 'Flanian Pobble Bead', 'fretzer', 'imperial credit',
-    'Hong Kong Luna Dollar', 'kongbuck', 'nanite', 'quatloo', 'simoleon',
-    'solari', 'spacebuck', 'sporebuck', 'Triganic Pu', 'woolong', 'zorkmid',
-];
-
 // C invent.c:currency().
 export function currency(amount: number, {
     state = game, random = rn2,
@@ -924,48 +954,52 @@ export function currency(amount: number, {
     return amount === 1 ? name : makePlural(name);
 }
 
-// Inventory selection shared by commands which use NetHack's getobj flow.
-// C ref: invent.c getobj().
-
-export type InventoryClassification = typeof GETOBJ_EXCLUDE | typeof GETOBJ_EXCLUDE_NONINVENT
-    | typeof GETOBJ_EXCLUDE_INACCESS | typeof GETOBJ_EXCLUDE_SELECTABLE | typeof GETOBJ_DOWNPLAY | typeof GETOBJ_SUGGEST;
-
-export interface GetobjOptions {
-    // GETOBJ_PROMPT: ask even when nothing is a likely candidate.
-    forcePrompt?: boolean;
-    // GETOBJ_ALLOWCNT: accept a typed or menu count.
-    allowCount?: boolean;
-    // The callback's answer for HANDS_SYM, obj_ok((struct obj *) 0).
-    hands?: InventoryClassification;
-    // getobj_hands_txt(): the '-' menu entry, when hands are allowed.
-    handsText?: string;
+// C invent.c:compactify().
+export function compactInventoryLetters(letters: string): string {
+    if (letters.length <= 5) return letters;
+    let compact = '';
+    for (let start = 0; start < letters.length;) {
+        let end = start;
+        const overflow = letters[start] === '#';
+        while (end + 1 < letters.length
+            && (overflow ? letters[end + 1] === '#'
+                : letters.charCodeAt(end + 1) === letters.charCodeAt(end) + 1)) {
+            end++;
+        }
+        const length = end - start + 1;
+        compact += length >= 3
+            ? `${letters[start]}-${letters[end]}`
+            : letters.slice(start, end + 1);
+        start = end + 1;
+    }
+    return compact;
 }
 
-export type InventoryObjectSelection = {
-    cancelled: true;
-    object: null;
-    none: false;
-    count: 0 | null;
-} | {
-    cancelled: false;
-    object: GameObject;
-    none: false;
-    count: number | null;
-} | {
-    cancelled: false;
-    object: null;
-    none: true;
-    count: number | null;
-};
+// C invent.c:taking_off(). Match the two removal command prompts.
+export function takingOff(action: string): boolean {
+    return action === 'take off' || action === 'remove';
+}
 
-const CANCELLED: InventoryObjectSelection = { cancelled: true, object: null, none: false, count: null };
-const HANDS: InventoryObjectSelection = { cancelled: false, object: null, none: true, count: null };
-const HANDS_SYM = 45, QUESTION = 63, ASTERISK = 42, ESCAPE = 27;
-// strchr(quitchars, '\0') also succeeds, for a literal NUL from the fuzzer.
-const QUITCHARS = [0, 32, 13, 10, ESCAPE];
-
-function admitsChoice(classification: InventoryClassification): boolean {
-    return classification === GETOBJ_SUGGEST || classification === GETOBJ_DOWNPLAY;
+// C invent.c:mime_action(): '-' without a hands option is an action mime.
+async function mimeInventoryAction(verb: string): Promise<void> {
+    let action = verb, prefix = '', suffix = '';
+    const onStone = action.indexOf(' on the ');
+    if (onStone >= 0) {
+        suffix = action.slice(onStone + 1);
+        action = action.slice(0, onStone);
+    }
+    if (action.startsWith('rub the ') && action.includes(' on')
+        || action.startsWith('dip ') && action.includes(' into')) {
+        prefix = action.slice(4);
+        action = action.slice(0, 3);
+    }
+    const alternatives = action.split(' or ');
+    if (alternatives.length > 1) {
+        const chosen = alternatives[rn2(2) ? 0 : 1];
+        if (chosen === undefined) throw new Error('The action alternative is missing');
+        action = chosen;
+    }
+    await pline(`You mime ${ingSuffix(action)}${prefix ? ' ' + prefix : ''} something${suffix ? ' ' + suffix : ''}.`);
 }
 
 // C invent.c:getobj().  The callback classifies HANDS_SYM and each carried
@@ -982,8 +1016,42 @@ export async function getobj(
     classify: (object: GameObject) => InventoryClassification,
     { forcePrompt = false, allowCount = false, hands = GETOBJ_EXCLUDE, handsText = 'your hands' }: GetobjOptions = {},
 ): Promise<InventoryObjectSelection> {
-    const queued = takeQueuedInventorySelection(classify, allowCount, hands);
-    if (queued) return queued;
+    // Read queued counts and choices before rotating inventory letters.
+    {
+        let count: number | null = null;
+        let cntgiven = false;
+        for (;;) {
+            const entry = cmdq_pop();
+            if (!entry) break;
+            if (entry.typ === CMDQ_USER_INPUT) break;
+            if (entry.typ === CMDQ_INT) {
+                if (!cntgiven && allowCount) {
+                    count = entry.intval;
+                    cntgiven = true;
+                    continue;
+                }
+                cmdq_clear(CQ_CANNED);
+                return CANCELLED;
+            }
+            if (entry.typ === CMDQ_KEY) {
+                if (entry.key === HANDS_SYM) {
+                    if (admitsChoice(hands)) return HANDS;
+                } else {
+                    const letter = String.fromCharCode(entry.key);
+                    const object = game.inventory.find(candidate => candidate.invlet === letter
+                        && admitsChoice(classify(candidate)));
+                    if (object) return {
+                        cancelled: false, object, none: false,
+                        count: count !== null && count > 0 && count < object.quan ? count : null,
+                    };
+                }
+            }
+            // C invent.c:1817-1818: the popped entry selected nothing, so
+            // discard any other queued commands too.
+            cmdq_clear(CQ_CANNED);
+            return CANCELLED;
+        }
+    }
 
     let allowNone = false, handsSuggested = false, handsDownplayed = false, inaccessible = 0;
     switch (hands) {
@@ -1021,105 +1089,6 @@ export async function getobj(
     const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
     const buf = handsSuggested ? letters ? `- ${letters}` : '-' : letters;
     const prompt = `What do you want to ${word}? [${buf ? `${buf} or ?*` : '*'}]`;
-    const selection = await chooseGetobjLetter(word, prompt, classify, {
-        allowCount, allowNone, handsSuggested, handsDownplayed, handsText, suggested, downplayed,
-    });
-    if (selection.object && classify(selection.object) === GETOBJ_EXCLUDE) {
-        await sillyThing(word, selection.object);
-        return CANCELLED;
-    }
-    // split_otmp: an explicit zero count selects nothing.
-    if (selection.object && selection.count === 0) return { ...CANCELLED, count: 0 };
-    return selection;
-}
-
-// getobj() followed by its split_otmp tail, for callers which take the
-// object getobj() returns; hands are not a choice for these callbacks.
-export async function chooseInventoryObject(
-    word: string,
-    classify: (object: GameObject) => InventoryClassification,
-    options: Omit<GetobjOptions, 'handsText'> = {},
-): Promise<GameObject | null> {
-    return selectedInventoryObject(await getobj(word, classify, options));
-}
-
-function selectedInventoryObject(selection: InventoryObjectSelection): GameObject | null {
-    const object = selection.object;
-    if (object && selection.count !== null && selection.count < object.quan) {
-        if (object.otyp === LOADSTONE && object.cursed) object.corpsenm = selection.count;
-        // C splittable() calls welded(), revealing the curse before refusing
-        // the split. A cursed loadstone returns before that weapon check.
-        else if (isWeldedPrimary(object)) object.bknown = true;
-        else return splitObjectStack(object, selection.count, game);
-    }
-    return object;
-}
-
-// Queued getobj() branch: the need_more_cq loop pops queue entries before
-// reassign() (invent.c:1778-1830) — CQ_REPEAT during a do-again replay,
-// CQ_CANNED otherwise. A queued letter must not become a different
-// possession merely because fixinv is disabled. Every entry which selects
-// nothing — a non-key entry, an unmatched letter, refused hands — clears
-// CQ_CANNED and returns NULL without any prompt; a CMDQ_INT supplies the
-// count and pops again. CMDQ_USER_INPUT or an exhausted queue falls through
-// to the interactive loop, which starts with a fresh count.
-function takeQueuedInventorySelection(
-    classify: (object: GameObject) => InventoryClassification,
-    allowCount: boolean,
-    hands: InventoryClassification,
-): InventoryObjectSelection | undefined {
-    let count: number | null = null;
-    let cntgiven = false;
-    for (;;) {
-        const entry = cmdq_pop();
-        if (!entry) return undefined;
-        if (entry.typ === CMDQ_USER_INPUT) return undefined;
-        if (entry.typ === CMDQ_INT) {
-            if (!cntgiven && allowCount) {
-                count = entry.intval;
-                cntgiven = true;
-                continue;
-            }
-            cmdq_clear(CQ_CANNED);
-            return CANCELLED;
-        }
-        if (entry.typ === CMDQ_KEY) {
-            if (entry.key === HANDS_SYM) {
-                if (admitsChoice(hands)) return HANDS;
-            } else {
-                const letter = String.fromCharCode(entry.key);
-                const object = game.inventory.find(candidate => candidate.invlet === letter
-                    && admitsChoice(classify(candidate)));
-                if (object) return {
-                    cancelled: false, object, none: false,
-                    count: count !== null && count > 0 && count < object.quan ? count : null,
-                };
-            }
-        }
-        // C invent.c:1817-1818: the popped entry selected nothing, so
-        // discard any other queued commands too.
-        cmdq_clear(CQ_CANNED);
-        return CANCELLED;
-    }
-}
-
-interface GetobjChoices {
-    allowCount: boolean;
-    allowNone: boolean;
-    handsSuggested: boolean;
-    handsDownplayed: boolean;
-    handsText: string;
-    suggested: readonly GameObject[];
-    downplayed: readonly GameObject[];
-}
-
-// The interactive loop of C getobj(), up to its final silly_thing() check.
-async function chooseGetobjLetter(
-    word: string,
-    prompt: string,
-    classify: (object: GameObject) => InventoryClassification,
-    { allowCount, allowNone, handsSuggested, handsDownplayed, handsText, suggested, downplayed }: GetobjChoices,
-): Promise<InventoryObjectSelection> {
     const forcedMenu = !!game.flags.force_invmenu;
     let oneloop = false;
     let key = 0;
@@ -1250,12 +1219,14 @@ async function chooseGetobjLetter(
             if (game._inDoAgain) return CANCELLED;
             continue;
         }
+        if (classify(object) === GETOBJ_EXCLUDE) {
+            await sillyThing(word, object);
+            return CANCELLED;
+        }
+        // split_otmp: an explicit zero count selects nothing.
+        if (count === 0) return { ...CANCELLED, count: 0 };
         return { cancelled: false, object, none: false, count };
     }
-}
-
-async function neverMind(): Promise<void> {
-    await pline('Never mind.');
 }
 
 // C invent.c:silly_thing().
@@ -1266,114 +1237,125 @@ async function sillyThing(word: string, object: GameObject): Promise<void> {
         : `That is a silly thing to ${word}.`);
 }
 
-// C invent.c:mime_action(): '-' without a hands option is an action mime.
-async function mimeInventoryAction(verb: string): Promise<void> {
-    let action = verb, prefix = '', suffix = '';
-    const onStone = action.indexOf(' on the ');
-    if (onStone >= 0) {
-        suffix = action.slice(onStone + 1);
-        action = action.slice(0, onStone);
-    }
-    if (action.startsWith('rub the ') && action.includes(' on')
-        || action.startsWith('dip ') && action.includes(' into')) {
-        prefix = action.slice(4);
-        action = action.slice(0, 3);
-    }
-    const alternatives = action.split(' or ');
-    if (alternatives.length > 1) {
-        const chosen = alternatives[rn2(2) ? 0 : 1];
-        if (chosen === undefined) throw new Error('The action alternative is missing');
-        action = chosen;
-    }
-    await pline(`You mime ${ingSuffix(action)}${prefix ? ' ' + prefix : ''} something${suffix ? ' ' + suffix : ''}.`);
+// C invent.c:is_inuse().
+function isInUse(object: GameObject): boolean {
+    return !!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE | W_WEAPONS))
+        || toolBeingUsed(object);
 }
 
-// C invent.c:reassign(): give consecutive letters to every carried item
-// for !fixinv mode; gold is always forced to '$' at the head of the list.
-export function reassignInventoryLetters() {
-    const goldIndex = game.inventory.findIndex(object => object.oclass === COIN_CLASS);
-    if (goldIndex >= 0) {
-        const gold = game.inventory[goldIndex];
-        if (!gold) throw new Error('The gold inventory entry is missing');
-        game.inventory.splice(goldIndex, 1);
-        gold.invlet = '$';
-        game.inventory.unshift(gold);
-    }
-    let index = 0;
-    for (const object of game.inventory) {
-        if (object.oclass === COIN_CLASS) continue;
-        object.invlet = index < 26 ? String.fromCharCode(97 + index)
-            : index < 52 ? String.fromCharCode(65 + index - 26) : '#';
-        index++;
-    }
-    game._lastInvNr = Math.min(index, 51);
-}
-
-// Inventory prompt order: '$' first, then a-z, then A-Z, then other.
-export function inventoryLetterOrder(letter: string | null | undefined): number {
-    if (letter == null) return 53;
-    if (letter === '$') return 0;
-    if (letter >= 'a' && letter <= 'z') return letter.charCodeAt(0) - 96;
-    if (letter >= 'A' && letter <= 'Z') return letter.charCodeAt(0) - 38;
-    return 53;
-}
-
-// C invent.c:compactify().
-export function compactInventoryLetters(letters: string): string {
-    if (letters.length <= 5) return letters;
-    let compact = '';
-    for (let start = 0; start < letters.length;) {
-        let end = start;
-        const overflow = letters[start] === '#';
-        while (end + 1 < letters.length
-            && (overflow ? letters[end + 1] === '#'
-                : letters.charCodeAt(end + 1) === letters.charCodeAt(end) + 1)) {
-            end++;
+// C invent.c:ggetobj(). The traditional identify dialog asks for categories first.
+async function identifyTraditionally(limit: number): Promise<IdentificationResult> {
+    const identified: GameObject[] = [];
+    while (limit > 0) {
+        const candidates = game.inventory.filter(objectNeedsFullIdentification);
+        if (!candidates.length) return { identified, remaining: 0 };
+        const choices = traditionalIdentifyChoices(candidates);
+        await flushPendingTopline();
+        clearMessageWindow();
+        const answer = await getLine(
+            `What kinds of thing do you want to identify? [${choices}]`,
+            (_character, key) => key >= 32 && key < 127,
+        );
+        // Native ggetobj returns zero here; identify_pack asks again while
+        // identification allowance remains. The per-item q choice quits.
+        if (answer === null) continue;
+        if (answer.includes('i')) {
+            await showInventoryWindow(await inventorySections(candidates, false), { pickMode: PICK_ONE });
+            continue;
         }
-        const length = end - start + 1;
-        compact += length >= 3
-            ? `${letters[start]}-${letters[end]}`
-            : letters.slice(start, end + 1);
-        start = end + 1;
+        const categories = await parseIdentificationCategories(answer);
+        if (categories.menu) return { identified, remaining: limit };
+        const result = await askIdentificationChain(categories, limit, identified);
+        limit = result.remaining;
+        if (!limit) return { identified, remaining: 0 };
+        await plineWithContinuation(result.questioned ? 'That was all.' : 'No applicable objects.');
     }
-    return compact;
+    return { identified, remaining: 0 };
 }
 
-// C getobj() has already consumed its queued selection or user-input marker.
-// Its interactive query must leave later canned answers for the caller.
-async function askInventoryPrompt(prompt: string): Promise<number> {
-    await flushPendingTopline();
-    const { answer } = await yn_function(prompt, null, '', false);
-    return answer.charCodeAt(0);
+// C invent.c:askchain(). Ask about eligible objects in the selected class order.
+// The identify callback never splits a stack; safeq_xprname() supplies each question.
+async function askIdentificationChain(
+    categories: IdentificationCategories, limit: number, identified: GameObject[],
+): Promise<{ remaining: number; questioned: number }> {
+    let all = categories.all;
+    let questioned = 0;
+    const letterOrder = '$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#';
+    const inventory = [...game.inventory].sort((a, b) =>
+        (a.invlet == null ? -1 : letterOrder.indexOf(a.invlet))
+            - (b.invlet == null ? -1 : letterOrder.indexOf(b.invlet)));
+    const classes = categories.classes.length ? categories.classes : [null];
+    try {
+        for (const objectClass of classes) {
+            bypassObjectList(game.inventory, false);
+            let object;
+            let index = -1;
+            while ((object = nextUnbypassedObject(game.inventory, game, inventory))) {
+                index++;
+                if ((objectClass !== null && object.oclass !== objectClass)
+                    || !objectNeedsFullIdentification(object)
+                    || !matchesIdentificationCategories(object, categories)) continue;
+                let response = 'y';
+                if (!all) {
+                    observeObjectForNaming(object);
+                    const letter = game.flags.fixinv === false
+                        ? letterOrder.charAt(Math.min(index + (inventory[0]?.oclass === COIN_CLASS ? 0 : 1), 53))
+                        : object.invlet;
+                    const description = await inventoryItemDescription(object, {
+                        primaryHandDetail: inventoryPrimaryHandDetail(object),
+                    });
+                    await flushPendingTopline();
+                    response = await promptYesNoAllQuit(`${letter} - ${description}?`, 'n');
+                }
+                if (response === 'q') return { remaining: 0, questioned };
+                questioned++;
+                if (response === 'n') continue;
+                if (response === 'a') all = true;
+                await identifyAndDescribe(object);
+                identified.push(object);
+                if (!--limit) return { remaining: 0, questioned };
+            }
+        }
+    } finally {
+        clearBypasses();
+    }    return { remaining: limit, questioned };
 }
 
-// C check_invent_gold(): only malformed purses may be reorganized.
-export async function checkInventoryGold(why: string, state: GameState = game): Promise<boolean> {
-    const gold = state.inventory.filter(object => object.oclass === COIN_CLASS);
-    const wrongSlots = gold.filter(object => object.invlet !== '$').length;
-    if (gold.length <= 1 && wrongSlots === 0) return false;
-    const wrongSlotMessage = wrongSlots > 1 ? 'gold in wrong slots'
-        : wrongSlots === 1 ? 'gold in wrong slot' : '';
-    await impossible(`${why}: ${wrongSlotMessage}${wrongSlots && gold.length > 1 ? ' and ' : ''}${
-        gold.length > 1 ? 'multiple gold stacks' : ''}`, { state });
-    return true;
-}
-// C objnam.c:not_fully_identified().
-// Also C artifact.c:undiscovered_artifact(): inlined here as the
-// _artifactDiscoveries membership test.
-export function objectNeedsFullIdentification(object: GameObject | null | undefined) {
-    if (!object || object.oclass === COIN_CLASS) return false;
-    const typeKnown = objectTypeKnown(object);
-    if (!object.known || (!object.bknown && object.otyp !== SCR_MAIL)
-        || !object.dknown || !typeKnown) return true;
-    if ((!object.cknown && (isContainer(object) || object.otyp === STATUE))
-        || (!object.lknown && [CHEST, LARGE_BOX].includes(object.otyp))) return true;
-    if (object.oartifact && !game._artifactDiscoveries?.includes(object.oartifact)) return true;
-    if (object.rknown || !([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS].includes(object.oclass) || isWeaponTool(object))) return false;
-    return (['rust', 'burn', 'rot', 'corrosion', 'crack'] as const).some(kind =>
-        objectIsVulnerableToErosion(object, kind));
+// C invent.c:reroll_menu().  This menu is a startup transaction, not a
+// command: accepting another roll changes no turn state and keeps consuming
+// the live RNG stream from its current position.
+export async function rerollMenu() {
+    const acceptKey = game.flags?.lootabc ? 'a' : 'p';
+    const rerollKey = game.flags?.lootabc ? 'b' : 'r';
+    const descriptions = [];
+    for (const item of game.inventory || []) {
+        observeObjectForNaming(item, { distant: true });
+        descriptions.push(await rerollItemDescription(item));
+    }
+    const entries = [
+        { key: acceptKey, text: 'start the game with this character' },
+        { key: rerollKey, text: 'reroll another character' },
+        '',
+        ...descriptions,
+        '',
+        rerollAttributeLine(),
+    ];
+    const key = await showChoiceWindow({
+        title: 'Reroll this character?',
+        entries,
+    });
+    const choice = String.fromCharCode(key);
+    const reroll = choice === rerollKey ? true
+        : choice === acceptKey ? false : await rerollFallbackPrompt();
+    if (reroll) {
+        const roleplay = game.u.uroleplay;
+        if (!roleplay) throw new Error('Reroll requires initialized roleplay options');
+        roleplay.numrerolls = (roleplay.numrerolls || 0) + 1;
+    }
+    return reroll;
 }
 
+// C invent.c:fully_identify_obj().
 export function fullyIdentifyObject(object: GameObject, state: GameState = game) {
     const realObjectType = object.otyp >= FIRST_OBJECT;
     if (realObjectType) learnObjectType(object.otyp, state);
@@ -1403,6 +1385,1465 @@ export function fullyIdentifyObject(object: GameObject, state: GameState = game)
     }
     if (object.otyp === EGG && object.corpsenm !== undefined && eggHasMonsterSpecies(object))
         learnEggType(object.corpsenm, state);
+}
+
+// C invent.c:identify(). Identify one object and announce it.
+async function identifyAndDescribe(object: GameObject) {
+    fullyIdentifyObject(object);
+    observeObjectForNaming(object);
+    await plineWithContinuation(`${object.invlet} - ${await inventoryItemDescription(object, {
+        primaryHandDetail: inventoryPrimaryHandDetail(object),
+    })}.`);
+}
+
+// C invent.c:menu_identify(). Describe each selection before asking again.
+async function menuIdentify(idLimit: number, identified: GameObject[]): Promise<GameObject[]> {
+    let remaining = idLimit;
+    let candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
+    let first = true;
+    let tries = 5;
+    while (remaining > 0 && candidates.length) {
+        const selected = await identificationMenu(candidates, first);
+        if (selected === null) break;
+        if (!selected.length) {
+            if (!--tries) {
+                await plineWithContinuation("That's enough tries!");
+                break;
+            }
+            await plineWithContinuation('Choose an item; use ESC to decline.');
+            continue;
+        }
+        const accepted = selected.slice(0, remaining);
+        for (const object of accepted) await identifyAndDescribe(object);
+        identified.push(...accepted);
+        remaining -= accepted.length;
+        candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
+        if (remaining > 0 && !candidates.length)
+            await plineWithContinuation('That was all.');
+        first = false;
+    }
+    return identified;
+}
+
+// C invent.c:count_unidentified().
+function countUnidentified(objects: readonly GameObject[]): number {
+    return objects.filter(objectNeedsFullIdentification).length;
+}
+
+// C invent.c:identify_pack(). Identify all possessions or ask for a limited selection.
+export async function identifyPack(idLimit: number, learningIdentify = false): Promise<GameObject[]> {
+    const count = countUnidentified(game.inventory || []);
+    if (!count) {
+        await plineWithContinuation(`You have already identified ${
+            learningIdentify ? 'the rest' : 'all'
+        } of your possessions.`);
+        return [];
+    }
+    if (!idLimit || idLimit >= count) {
+        const identified: GameObject[] = [];
+        for (const object of (game.inventory || []).filter(objectNeedsFullIdentification)) {
+            if (!objectNeedsFullIdentification(object)) continue;
+            await identifyAndDescribe(object);
+            identified.push(object);
+        }
+        return identified;
+    }
+
+    const traditional = game.flags.menu_style === MENU_TRADITIONAL
+        ? await identifyTraditionally(idLimit) : { identified: [], remaining: idLimit };
+    return menuIdentify(traditional.remaining, traditional.identified);
+}
+
+// C invent.c:learn_unseen_invent(). Regaining sight marks unseen inventory.
+export async function learnUnseenInventory(state: GameState = game) {
+    if (heroIsBlind(state)) return;
+    const priest = state.urole?.key === 'priest';
+    const archeologist = state.urole?.key === 'archeologist';
+    for (const object of state.inventory) {
+        if (object.dknown && (object.bknown || !priest)
+            && (object.oclass !== SCROLL_CLASS || !archeologist)) continue;
+        observeObjectForNaming(object, { state });
+        await finishInventoryAddition(object, state);
+    }
+    // The pinned TTY build's update_inventory() has no persistent window.
+}
+
+// C invent.c:doperminv(). The recorder's tty port is built without
+// TTY_PERM_INVENT (config.h leaves it commented out and windconf.h is
+// WIN32-only), so it does not advertise WC_PERM_INVENT and the command
+// always reports the unsupported window port.
+export async function doPermanentInventory(): Promise<void> {
+    game.context.move = 0;
+    await pline("Persistent inventory display is not supported by 'tty'.");
+}
+
+// C invent.c:prinv(): name only the acquired quantity, while retaining
+// the actual inventory identity for wielded, worn, and quivered descriptions.
+async function heldInventoryMessage(
+    object: GameObject, count: number, prefix: string | null, state: GameState,
+): Promise<string> {
+    const letter = object.invlet;
+    if (!letter) throw new Error(`Held object ${object.o_id} has no inventory letter`);
+    const total = objectQuantity(object);
+    const merged = count > 0 && count < total;
+    const savedQuantity = object.quantity;
+    // C prinv() formats with doname(), whose xname() records what the hero
+    // sees (a cleric learns beatitude) before the knowledge fields are read.
+    observeObjectForNaming(object, { state });
+    let description;
+    object.quan = count || total;
+    object.quantity = object.quan;
+    try {
+        description = await inventoryItemDescription(object);
+    } finally {
+        object.quan = total;
+        if (savedQuantity === undefined) delete object.quantity;
+        else object.quantity = savedQuantity;
+    }
+    const suffix = merged ? state.flags.verbose ? ` (${total} in total).` : '' : '.';
+    return `${prefix ? `${prefix} ` : ''}${letter} - ${description}${suffix}`;
+}
+
+// C invent.c:xprname(). Format the inventory letter, name, and price.
+export async function pricedInventoryLine(object: GameObject | null, letter: string, price: number,
+    text: string | null = null, { quantity = 0, useInvlet = true, distant = true }:
+    { quantity?: number; useInvlet?: boolean; distant?: boolean } = {}): Promise<string> {
+    const suppress = game.iflags.suppress_price;
+    game.iflags.suppress_price = true;
+    const saved = object?.quan;
+    try {
+        if (object) {
+            if (quantity) object.quan = quantity;
+            if (distant) text ??= await distantObjectName(object, inventoryItemDescription);
+            else {
+                observeObjectForNaming(object);
+                text ??= await inventoryItemDescription(object);
+            }
+            if (useInvlet && game.flags.fixinv !== false && letter !== '>') letter = object.invlet ?? letter;
+        }
+        const tab = game.iflags.menu_tab_sep;
+        if (!price && letter !== '*') return `${letter} - ${text}${useInvlet ? '.' : ''}`;
+        return `${letter} - ${tab ? text : (text ?? '').padEnd(45)}${tab ? '\t' : ' '}${String(price).padStart(6)} ${currency(price)}`;
+    } finally {
+        if (object && saved !== undefined) object.quan = saved;
+        if (suppress === undefined) delete game.iflags.suppress_price;
+        else game.iflags.suppress_price = suppress;
+    }
+}
+
+// C invent.c:dispinv_with_action().
+async function reportSubset(items: readonly GameObject[] | null, inuse = true, accessoryLabel = 'Accessories')
+: Promise<InventoryAction | null> {
+    if (game.flags.fixinv === false) reassignInventoryLetters();
+    const candidates = items ?? game.inventory.filter(isInUse);
+    const queued = takeQueuedInventoryChoice(items ? items.map(object => object.invlet).join('') : null);
+    if (queued !== undefined) {
+        if (queued === 0 || queued === 27) return null;
+        const selected = game.inventory.find(object => object.invlet === String.fromCharCode(queued));
+        return selected ? inventoryActionForObject(selected) : null;
+    }
+    let key: number;
+    if (items?.length === 1 && !game.iflags.menu_requested) {
+        const first = items[0];
+        if (first) await describeCarriedObject(first);
+        return null;
+    }
+    if (!inuse) {
+        const forceMenu = game.flags.force_invmenu;
+        game.flags.force_invmenu = false;
+        try {
+            key = (await selectInventoryObject({ letters: candidates.map(object => object.invlet).join('') })).key;
+        } finally {
+            if (forceMenu === undefined) delete game.flags.force_invmenu;
+            else game.flags.force_invmenu = forceMenu;
+        }
+    } else {
+        const ordered = sortObjects(candidates, { mode: SORTLOOT_INUSE });
+        // invent.c:display_pickinv() classifies entries only when sortloot()
+        // actually runs its comparison, so a lone in-use entry keeps
+        // orderclass 0 and is listed without any class heading.  The bare
+        // hands entry makes the sorted list big enough to classify.
+        const headed = ordered.length >= 2 || (!items && !game.uwep);
+        const sections: InventorySection[] = [{ heading: null, items: [{ text: 'Inventory in use', attr: 1 }] }];
+        const rows: { object: GameObject | null; heading: string | null }[] = ordered.map(object => ({
+            object, heading: headed ? inUseHeading(object, accessoryLabel) : null,
+        }));
+        if (!items && !game.uwep) {
+            const position = rows.findIndex(row => row.heading === 'Wielded/Readied Weapons'
+                || row.heading === 'Worn Armor' || row.heading === 'Miscellaneous');
+            rows.splice(position < 0 ? rows.length : position, 0, { object: null, heading: 'Wielded/Readied Weapons' });
+        }
+        for (const row of rows) {
+            const object = row.object;
+            if (object) {
+                observeObjectForNaming(object);
+                consumeHallucinatedMenuObjectGlyph(object);
+            }
+            const text = object ? await inventoryItemDescription(object, {
+                primaryHandDetail: inventoryPrimaryHandDetail(object),
+            }) : `${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))} (no weapon)`;
+            const item = { key: object?.invlet ?? '-', text };
+            const last = sections.at(-1);
+            if (last?.heading === row.heading) sections[sections.length - 1] = { ...last, items: [...last.items, item] };
+            else sections.push({ heading: row.heading, items: [item] });
+        }
+        key = (await showInventoryWindow(sections, { pickMode: PICK_ONE })).key;
+    }
+    const selected = candidates.find(object => object.invlet === String.fromCharCode(key));
+    return selected ? inventoryActionForObject(selected) : null;
+}
+
+// C invent.c:ddoinv().
+export async function ddoinv(): Promise<InventoryAction | null> {
+    const inventory = game.inventory || [];
+    const { key } = await selectInventoryObject();
+    const selected = inventory.find(item =>
+        item.invlet === String.fromCharCode(key));
+    let action: InventoryAction | null = null;
+    if (selected) {
+        action = await inventoryActionForObject(selected);
+    }
+    await flush_screen(1);
+    game.context.move = 0;
+    return action;
+}
+
+// C invent.c:find_unpaid() and count_unpaid(): the recursive unpaid walk
+// over carried objects and container contents.
+function unpaidObjects(objects: readonly GameObject[]): GameObject[] {
+    return objects.flatMap(object => [...(object.unpaid ? [object] : []), ...unpaidObjects(object.contents ?? [])]);
+}
+
+// C invent.c:display_pickinv(): the getobj inventory menu, including the
+// "Not carrying anything" shortcut and the hands entry when allowed.
+export async function selectInventoryObject({
+    letters, includeGold = true, title = null, extraChoice = null,
+    pickMode = PICK_ONE, headingAttr, menuOptions = [],
+}: InventoryObjectMenuOptions = {}): Promise<InventorySelection> {
+    const filtered = !!letters;
+    const candidates = letters ? game.inventory.filter(item => item.invlet && letters.includes(item.invlet))
+        : game.inventory;
+    const visible = includeGold ? candidates : candidates.filter(item => item.oclass !== COIN_CLASS);
+    if (!visible.length && !extraChoice) {
+        await pline('Not carrying anything.');
+        return { key: 0, count: null };
+    }
+    // C invent.c:reassign() refreshes rotating letters; the wizard-mode
+    // override_ID display runs identify_pack()/count_unidentified() first.
+    if (game.flags.fixinv === false) reassignInventoryLetters();
+    const wizardIdentification = game.flags.debug && game.iflags.override_ID;
+    // Native counts '-' as a filter letter as well as an extra hands entry,
+    // so a hands-only filter stays in a menu window.
+    const singleton = !menuOptions.length && !game.flags.force_invmenu
+        && !game.iflags.menu_requested && !wizardIdentification
+        && (letters?.length === 1 && !extraChoice
+            || !filtered && visible.length === 0 && !!extraChoice);
+    if (singleton) {
+        const item = visible[0];
+        if (item) observeObjectForNaming(item);
+        const letter = item ? item.invlet : '-';
+        if (!letter) throw new Error('A carried inventory choice has no letter');
+        const description = item ? await inventoryItemDescription(item, {
+            primaryHandDetail: inventoryPrimaryHandDetail(item),
+        }) : extraChoice;
+        const key = await showMessageMenu(letter, item ? pickMode : PICK_ONE,
+            `${letter} - ${description}.`);
+        return { key, count: null };
+    }
+    // invent.c:display_pickinv() runs sortloot() over the whole inventory
+    // (observing every object via loot_classify()) and only afterwards
+    // drops entries whose letters are absent from the requested set,
+    // treating an empty set as no filter at all.
+    const sections = await inventorySections(game.inventory, includeGold, letters || null);
+    if (extraChoice && !wizardIdentification) sections.unshift({
+        heading: game.flags.sortpack === false ? null : 'Miscellaneous',
+        items: [{ text: extraChoice, key: '-' }],
+    });
+    if (menuOptions.length) sections.push({
+        heading: 'Special', items: menuOptions.map(option => ({
+            text: option.text, key: option.key,
+        })),
+    });
+    return showInventoryWindow(sections, {
+        pickMode, title, ...(headingAttr === undefined ? {} : { headingAttr }),
+    });
+}
+
+// C invent.c:display_inventory(). The queued branch of native display_inventory checks class symbols in
+// the filter, even when its caller supplied inventory letters instead.
+// Undefined means no queued answer; zero means the queue rejected a choice.
+export function takeQueuedInventoryChoice(classes: string | null = null): number | undefined {
+    // One cmdq_pop() (invent.c:3430-3447)
+    // must yield a CMDQ_KEY naming a visible object of a filtered class;
+    // any other entry — or an unmatched letter — clears CQ_CANNED and
+    // returns 0.
+    const entry = cmdq_pop();
+    if (!entry) return undefined;
+    if (entry.typ === CMDQ_KEY) {
+        const object = game.inventory.find(item => item.invlet === String.fromCharCode(entry.key));
+        const symbol = object ? OBJECT_CLASS_SYMBOLS[object.oclass] : undefined;
+        if (object && (!classes || symbol !== undefined && classes.includes(symbol))) return entry.key;
+    }
+    cmdq_clear(CQ_CANNED);
+    return 0;
+}
+
+// C invent.c:display_used_invlets(). A split's original letter is omitted;
+// all remaining carried slots, including gold, stay visible.
+export async function selectUsedInventoryLetter(avoidLetter: string | null): Promise<number> {
+    const items = game.inventory.filter(item => item.invlet !== avoidLetter);
+    // This menu walks the carried chain once per pack class; sortloot does
+    // not reorder items within a class, even when it sorts other menus.
+    const ordered = game.flags.sortpack === false ? items
+        : inventoryClassOrder().flatMap(oclass => items.filter(item => item.oclass === oclass));
+    const result = await showInventoryWindow(await inventorySectionsInOrder(ordered), {
+        title: 'Inventory letters used:', pickMode: PICK_ONE,
+    });
+    return result.key;
+}
+
+// C invent.c:count_contents(). A new drop counts unpaid contents before ownership marks change.
+// shk.c:stolen_value() sizes a broken container's shop-owned contents.
+export function countContents(container: GameObject, { quantity = false, everything = false, newdrop = false } = {},
+    state: GameState = game): number {
+    let shoppy = false;
+    if (!everything && !newdrop) {
+        let top = container;
+        while (top.container) top = top.container;
+        if (top.where === 'floor')
+            shoppy = !!costlySpot(top.ox, top.oy, state);
+    }
+    let count = 0;
+    for (const content of container.contents || []) {
+        if (content.contents?.length)
+            count += countContents(content, { quantity, everything, newdrop }, state);
+        if (everything || content.unpaid || (shoppy && !content.no_charge))
+            count += quantity ? (content.quan ?? content.quantity ?? 1) : 1;
+    }
+    return count;
+}
+
+// C invent.c:dounpaid(): list unpaid inventory (and floor/buried) items
+// with prices, from 'I u' or the unpaid inventory menu.
+async function showUnpaid(carried: readonly GameObject[], floor: number, buried: number): Promise<void> {
+    const extra = floor + buried;
+    const first = carried[0];
+    if (first && carried.length === 1 && !extra && !unknownContainer(first)) {
+        await pline(await pricedInventoryLine(first, first.where === 'inventory' ? first.invlet ?? '#' : '>', await unpaidObjectCost(first)));
+        return;
+    }
+    if (game.flags.fixinv === false) reassignInventoryLetters();
+    const lines: string[] = [];
+    let total = 0;
+    const top = game.inventory.filter(object => object.unpaid);
+    for (const oclass of game.flags.sortpack === false ? [null] : inventoryClassOrder()) {
+        const objects = top.filter(object => oclass === null || object.oclass === oclass);
+        if (objects.length && oclass !== null) lines.push(`Unpaid ${objectClassHeading(oclass)}`);
+        for (const object of objects) {
+            const price = await unpaidObjectCost(object);
+            total += price;
+            lines.push(await pricedInventoryLine(object, object.invlet ?? '#', price));
+        }
+    }
+    if (carried.length > top.length) {
+        if (game.flags.sortpack !== false) lines.push('Unpaid Bagged/Boxed items');
+        for (const container of game.inventory) {
+            const contents = unpaidObjects(container.contents ?? []);
+            if (!container.contents?.length) continue;
+            let price = 0;
+            for (const object of contents) {
+                const cost = await unpaidObjectCost(object);
+                price += cost;
+                total += cost;
+                if (container.cknown) lines.push(await pricedInventoryLine(object, '>', cost));
+            }
+            if (!container.cknown)
+                lines.push(await pricedInventoryLine(null, '>', price, `${possessiveName(objectName(container))} contents`));
+        }
+    }
+    if (carried.length) lines.push('', await pricedInventoryLine(null, '*', total, 'Total:'));
+    if (extra) {
+        const verb = extra > 1 ? 'are' : 'is';
+        const where = !buried ? 'on the floor' : !floor ? 'under the floor' : 'on or under the floor';
+        if (!carried.length) await pline(`You aren't carrying any unpaid items but there ${verb} ${extra} ${where}.`);
+        else lines.push('', `(There ${verb} ${extra} more unpaid object${extra === 1 ? '' : 's'} ${where}.)`);
+    }
+    // C invent.c:3703 fills the unpaid-items window with putstr().
+    if (carried.length) await showTextMenuOverlay(lines, { viaPutstr: true });
+}
+
+// C invent.c:dotypeinv(): the 'I' type filter. ckvalidcat() and ckunpaid()
+// are the category filters, tally_BUCX() the beatitude statuses,
+// wearing_armor() the armor-class admission, and this_type_only() the
+// single-class selection — all inlined below.
+// C pickup.c:count_justpicked()/find_justpicked(): the marked stacks
+// of the previous pickup feed the 'P' selection.
+async function typeInventory(): Promise<InventoryAction | null> {
+    const bill = usedUpBill();
+    if (!game.inventory.length && !bill.length) {
+        await pline("You aren't carrying anything.");
+        return null;
+    }
+    if (game.urole?.key === 'priest')
+        for (const object of game.inventory) object.bknown = object.oclass !== COIN_CLASS;
+    const level = requireGameLevel();
+    const carried = unpaidObjects(game.inventory);
+    const floor = unpaidObjects(level.objects.flatMap(column =>
+        (column ?? []).flatMap(pile => pile ?? [])));
+    const buried = unpaidObjects(level.buriedObjects ?? []);
+    const statuses = new Set(game.inventory.map(beatitude));
+    const picked = game.inventory.filter(object => object.pickup_prev);
+    const classes = [...new Set(game.inventory.map(object => object.oclass))];
+    const extra = `${carried.length + floor.length + buried.length ? 'u' : ''}${bill.length ? 'x' : ''}${
+        [...'BUCX'].filter(status => statuses.has(bucChoice(status))).join('')}${picked.length ? 'P' : ''}`;
+    const prompt = 'What type of object do you want an inventory of?';
+    let choice: string | number | null;
+    const style = game.flags.menu_style ?? MENU_FULL;
+    if (style === MENU_FULL || style === MENU_PARTIAL) {
+        const menuClasses = [...inventoryClassOrder(), VENOM_CLASS].filter(oclass => classes.includes(oclass));
+        choice = await inventoryCategoryMenu(menuClasses, carried.length > 0, bill.length > 0, statuses, picked, prompt);
+    } else {
+        const types = classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('') + (extra ? ` ${extra}` : '');
+        choice = types;
+        if (types.length > 1) {
+            // invent.c:dotypeinv() accepts absent classes and categories too,
+            // but hides them after ESC in the response list.
+            const hiddenTypes = [...'uxBUCXP', ...OBJECT_CLASS_SYMBOLS]
+                .filter(symbol => !types.includes(symbol)).join('');
+            choice = (await yn_function(prompt, `${types}\x1b${hiddenTypes}`, '', true)).answer;
+            if (!choice || choice === '\0') {
+                clearMessageWindow();
+                return null;
+            }
+        }
+    }
+    if (choice === null) return null;
+    if (choice === 'x' || choice === 'X' && bill.length && !statuses.has('X')) {
+        if (bill.length) await showBill(bill);
+        else await pline(`No used-up objects${carried.length + floor.length + buried.length ? ' on your shopping bill' : ''}.`);
+        return null;
+    }
+    if (choice === 'u' || choice === 'U' && carried.length + floor.length + buried.length > 0 && !statuses.has('U')) {
+        if (carried.length + floor.length + buried.length) await showUnpaid(carried, floor.length, buried.length);
+        else await pline('You are not carrying any unpaid objects.');
+        return null;
+    }
+    const status = typeof choice === 'string' && 'BUCXP'.includes(choice) ? choice : null;
+    const oclass = typeof choice === 'number' ? choice : OBJECT_CLASS_SYMBOLS.indexOf(choice);
+    const candidates = game.inventory.filter(object => status === 'P' ? object.pickup_prev
+        : status ? beatitude(object) === status : object.oclass === oclass);
+    const before = status === 'B' ? 'known to be blessed ' : status === 'U' ? 'known to be uncursed '
+        : status === 'C' ? 'known to be cursed ' : status ? '' : 'such ';
+    const after = status === 'X' ? ' whose blessed/uncursed/cursed status is unknown'
+        : status === 'P' ? ' that were just picked up' : '';
+    if (!candidates.length) {
+        await pline(`You have no ${before}objects${after}.`);
+        return null;
+    }
+    const sorted = sortObjects(candidates, { mode: lootSortMode({ inventoryLetters: game.flags.fixinv !== false }) });
+    const order = [...inventoryClassOrder(), VENOM_CLASS];
+    const sections: PageLocalMultiSelectSection<GameObject>[] = [];
+    for (const oclass of order) {
+        const objects = sorted.filter(object => object.oclass === oclass);
+        if (!objects.length) continue;
+        const items = [];
+        for (const object of objects) {
+            observeObjectForNaming(object);
+            consumeHallucinatedMenuObjectGlyph(object);
+            items.push({ ...(game.flags.fixinv !== false ? { key: object.invlet ?? '#' }
+                : object === sorted[0] && object.oclass === COIN_CLASS ? { key: '$' } : {}),
+                groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '', value: object,
+                text: await inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }) });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
+    }
+    const selected = await showMultiSelectWindow({ title: '',
+        introLines: status ? [`Items ${(before || after).trim()}:`] : [],
+        sections, pageLocalKeys: true, pickOne: true });
+    const object = selected[0];
+    return object ? inventoryActionForObject(object) : null;
+}
+
+// C invent.c:dfeature_at(): name the dungeon feature on a square, if any.
+export function dungeonFeatureAt(x: number, y: number, { state = game, probing = false }: FeatureOptions = {}): string | null {
+    const location = requireGameLevel(state).requireAt(x, y);
+    const type = location.typ;
+    if (type === DOOR) {
+        if (findDrawbridgeAt(x, y, state)) return 'open drawbridge portcullis';
+        return location.doormask === D_NODOOR ? 'doorway'
+            : location.doormask === D_ISOPEN ? 'open door'
+                : location.doormask === D_BROKEN ? 'broken door' : 'closed door';
+    }
+    if (type === FOUNTAIN) return 'fountain';
+    if (type === THRONE) return 'opulent throne';
+    if (isLavaAt(x, y, state)) return 'molten lava';
+    const surface = type === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : type;
+    if (surface === ICE) return iceDescriptionAt(x, y, { state, probing });
+    if (isPoolAt(x, y, state)) return 'pool of water';
+    if (type === SINK) return 'sink';
+    if (type === ALTAR) {
+        const alignment = Amask2align(location.flags);
+        const name = alignment === A_NONE ? 'unaligned'
+            : alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
+        const deity = deityName(alignment, state).replace(/^_/, '');
+        return `${location.flags & AM_SANCTUM ? 'high ' : ''}altar to ${deity} (${name})`;
+    }
+    for (let stairway = state.stairs; stairway; stairway = stairway.next)
+        if (stairway.sx === x && stairway.sy === y)
+            return stairwayDescription(stairway, state);
+    if (type === DRAWBRIDGE_DOWN) return 'lowered drawbridge';
+    if (type === DBWALL) return 'raised drawbridge';
+    if (type === GRAVE) return 'grave';
+    if (type === TREE) return 'tree';
+    if (type === IRONBARS) return 'set of iron bars';
+    return null;
+}
+
+// C invent.c:look_here(). A positive objectCount is
+// autopickup's count, which summarizes a pile at pile_limit; skipFeature
+// means describe_decor() already showed the terrain.
+export async function lookHere(
+    objectCount = 0, { pickedSome = false, skipFeature = false } = {},
+): Promise<{ died: boolean; tookTime: boolean }> {
+    const blind = heroIsBlind();
+    if (game.u.uswallow && game.u.ustuck) {
+        const monster = game.u.ustuck;
+        const location = `${possessiveName(monsterName(monster))} ${monsterStomachName(monster.mnum)}`;
+        await plineWithContinuation(`You ${blind ? 'try' : 'look around'} to ${blind ? 'feel' : 'see'} what is lying in ${location}.`);
+        const objects = monster.minvent ?? monster.inventory ?? [];
+        if (!objects.length) {
+            await plineWithContinuation(`You ${blind ? 'feel' : 'see'} no objects here.`);
+            return { died: false, tookTime: blind };
+        }
+        for (const object of objects) {
+            const contact = await feelPetrifyingCorpse(object);
+            if (contact.died) return { died: true, tookTime: blind };
+        }
+        await displayMonsterInventory(monster, objects, location, blind);
+        return { died: false, tookTime: blind };
+    }
+    const { ux: x, uy: y } = game.u;
+    const level = requireGameLevel();
+    const limit = configuredPileLimit();
+    const skipObjects = limit > 0 && objectCount >= limit;
+    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (!skipObjects) {
+        const region = visibleRegionAt(game, x, y);
+        const features: string[] = [];
+        if (region) features.push(`a ${region.damage ? 'poison gas' : 'vapor'} cloud`);
+        if (trap?.tseen) features.push(withIndefiniteArticle(trapName(trap.ttyp)));
+        if (features.length) await plineWithContinuation(`There is ${features.join(' and ')} here.`);
+    }
+    const underwater = !!(game.underwater || game.u.uinwater);
+    let featureName = dungeonFeatureAt(x, y);
+    if (featureName === 'pool of water' && underwater) featureName = null;
+    let hideFeature = skipFeature;
+    if (blind) {
+        const drift = Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
+        const surface = surfaceName(x, y);
+        if (featureName?.startsWith('altar ')) {
+            await plineWithContinuation('You try to feel what is here.');
+        } else if (isIceAt(x, y)) {
+            if (!game.flags.mention_decor || game._prevDecorType === ICE) await forceDescribeDecor();
+            await plineWithContinuation('You try to feel what is on it.');
+            hideFeature = true;
+        } else {
+            const where = drift ? 'floating here' : heroCanReachFloor(game, { checkPit: true })
+                ? `lying here on the ${surface}` : 'lying beneath you';
+            await plineWithContinuation(`You try to feel what is ${where}.`);
+            if (!drift && featureName === surface) hideFeature = true;
+        }
+        if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
+            await plineWithContinuation("But you can't reach it!");
+            return { died: false, tookTime: false };
+        }
+    }
+    const feature = hideFeature ? '' : dungeonFeatureSentence(featureName);
+    const objects = isLavaAt(x, y) || (isPoolAt(x, y) && !underwater) ? [] : level.objects[x]?.[y] ?? [];
+    if (!objects.length) {
+        if (feature) await plineWithContinuation(feature);
+        await readFloorEngraving(x, y);
+        if (!skipObjects && (blind || !featureName))
+            await plineWithContinuation(`You ${blind ? 'feel' : 'see'} no objects here.`);
+        return { died: false, tookTime: blind };
+    }
+    const { died } = await showFloorPile(objects, pickedSome, feature, { objectCount });
+    return { died, tookTime: blind };
+}
+
+// C invent.c:dolook().
+export async function dolook() {
+    hideUnhideMessageTypes(true, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
+    try {
+        const { tookTime } = await lookHere(0);
+        game.context.move = tookTime ? 1 : 0;
+    } finally {
+        hideUnhideMessageTypes(false, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
+    }
+}
+
+// C invent.c:will_feel_cockatrice(). Unlike picking up a
+// corpse, a floor inspection only touches it when blind or explicitly forced.
+export function willFeelPetrifyingCorpse(
+    object: GameObject,
+    { forceTouch = false, state = game }: { forceTouch?: boolean; state?: GameState } = {},
+): boolean {
+    return (heroIsBlind(state) || forceTouch)
+        && !(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state)
+        && object.otyp === CORPSE && touchPetrifies(object.corpsenm);
+}
+
+// C invent.c:feel_cockatrice().
+export async function feelPetrifyingCorpse(object: GameObject, {
+    forceTouch = false, state = game, publish = plineWithContinuation,
+}: { forceTouch?: boolean; state?: GameState; publish?: MessagePublisher } = {}): Promise<PetrificationContactResult> {
+    if (!willFeelPetrifyingCorpse(object, { forceTouch, state }))
+        return { touched: false, died: false };
+    const corpse = corpseName(object, { definite: true });
+    if (formCanBecomeStoneGolem(state.u.umonnum, state))
+        await publish(`You touched ${corpse} with your bare ${makePlural(heroHandName(state))}.`);
+    else
+        await publish(`Touching ${corpse} is a fatal mistake...`);
+    const result = await resolveImmediatePetrification({
+        state, publish,
+        killer: `touching ${killerObjectName(object, state)} bare-handed`,
+    });
+    return { touched: true, died: result.died };
+}
+
+export function stack_object(object: GameObject, state?: GameState): Promise<GameObject>;
+export function stack_object(
+    object: GameObject | null | undefined, state?: GameState,
+): Promise<GameObject | null | undefined>;
+// C invent.c:stackobj(). Stack an object with the first compatible floor object.
+export async function stack_object(
+    object: GameObject | null | undefined, state: GameState = game,
+): Promise<GameObject | null | undefined> {
+    if (!object) return object;
+    const pile = state.level?.objects?.[object.ox]?.[object.oy];
+    if (!pile) return object;
+    const existing = pile.find(candidate =>
+        candidate !== object && mergable(object, candidate, state));
+    if (!existing) return object;
+
+    return await mergeObjectStacks(object, existing, state) || object;
+}
+
+// C invent.c:mergable().
+export function mergable(
+    otmp: GameObject | null | undefined, obj: GameObject | null | undefined,
+    state: GameState = game,
+): boolean {
+    if (!otmp || !obj || otmp === obj || otmp.otyp !== obj.otyp
+        || otmp.nomerge || obj.nomerge || !objectMerge(obj.otyp)) {
+        return false;
+    }
+    if (obj.oclass === COIN_CLASS) return true;
+    if (!!otmp.cursed !== !!obj.cursed
+        || !!otmp.blessed !== !!obj.blessed) return false;
+
+    const otmpLost = otmp.how_lost ?? 0;
+    const objLost = obj.how_lost ?? 0;
+    if (otmpLost === 4 || objLost === 4
+        || (otmpLost !== 0 && otmpLost !== objLost)) return false;
+    if (obj.globby || otmp.globby) return !!obj.globby && !!otmp.globby;
+
+    // C obj.h stores opoisoned in otrapped, odiluted in oeroded and norevive
+    // in oeroded2, so native mergable()'s tests of those fields also keep
+    // poisoned weapons, diluted potions and frozen corpses in their own stacks.
+    for (const field of [
+        'unpaid', 'no_charge', 'obroken', 'otrapped', 'opoisoned', 'lamplit',
+        'odiluted', 'norevive',
+    ] as const) {
+        if (!!otmp[field] !== !!obj[field]) return false;
+    }
+    if ((otmp.spe ?? 0) !== (obj.spe ?? 0)) return false;
+    if (obj.oclass === FOOD_CLASS
+        && ((otmp.oeaten ?? 0) !== (obj.oeaten ?? 0)
+            || !!otmp.orotten !== !!obj.orotten)) return false;
+
+    const impairedSight = heroIsBlind(state) || heroIsHallucinating(state);
+    const cleric = state?.urole?.key === 'priest';
+    if (!!otmp.dknown !== !!obj.dknown
+        || ((!!otmp.bknown !== !!obj.bknown)
+            && !cleric && impairedSight)
+        || (otmp.oeroded ?? 0) !== (obj.oeroded ?? 0)
+        || (otmp.oeroded2 ?? 0) !== (obj.oeroded2 ?? 0)
+        || !!otmp.greased !== !!obj.greased) {
+        return false;
+    }
+    if (erosionMatters(obj) && (!!otmp.oerodeproof !== !!obj.oerodeproof
+        || !!otmp.rknown !== !!obj.rknown && impairedSight)) return false;
+
+    if ([CORPSE, EGG, TIN].includes(obj.otyp)
+        && (otmp.corpsenm ?? -1) !== (obj.corpsenm ?? -1)) return false;
+    if (obj.otyp === EGG && (otmp.timed || obj.timed)) return false;
+    if (obj.otyp === CORPSE && isReviver(otmp.corpsenm)) return false;
+    if ((obj.otyp === TALLOW_CANDLE || obj.otyp === WAX_CANDLE)
+        && Math.trunc((otmp.age ?? 0) / 25)
+            !== Math.trunc((obj.age ?? 0) / 25)) return false;
+    if (obj.otyp === POT_OIL && obj.lamplit) return false;
+    // C: don't merge surcharged/differently priced unpaid stacks.
+    if (obj.unpaid && !sameBillPrice(obj, otmp, state)) return false;
+    if (hasAttachment(otmp) || hasAttachment(obj)) return false;
+
+    const otmpName = objectMergeName(otmp);
+    const OBJ_NAME = objectMergeName(obj);
+    if ((otmpName && OBJ_NAME && otmpName !== OBJ_NAME)
+        || (obj.otyp === CORPSE && !!otmpName !== !!OBJ_NAME)) return false;
+    // C keeps the two stamped-mail flavors (bones/wished vs hand-written)
+    // apart unless the stack ids share a parity.
+    if (obj.otyp === SCR_MAIL && (obj.spe ?? 0) > 0
+        && (obj.o_id % 2) !== (otmp.o_id % 2)) return false;
+    if ((otmp.oartifact ?? 0) !== (obj.oartifact ?? 0)) return false;
+    if (!!otmp.known !== !!obj.known && impairedSight) return false;
+    return true;
+}
+
+// C invent.c:doprgold(). Report visible and known hidden gold, then shop debt.
+async function doprgold(): Promise<InventoryAction | null> {
+    const purse = heroGoldAmount(game), stashed = hiddenGold(game, false);
+    if (game.flags.verbose !== false) {
+        let message = purse ? `Your wallet contains ${purse} ${currency(purse)}` : 'Your wallet is empty';
+        if (stashed) message += `, ${purse ? 'and' : 'but'} you have ${stashed} ${
+            purse ? 'more' : currency(stashed)} stashed away in your pack`;
+        await pline(`${message}.`);
+    } else {
+        const total = purse + stashed;
+        await pline(total ? `You are carrying a total of ${total} ${currency(total)}.` : 'You have no money.');
+    }
+    await reportShopFinances();
+    const gold = heroGoldObject(game);
+    return gold && game.iflags.menu_requested ? reportSubset([gold], false) : null;
+}
+
+// C invent.c:doprwep().
+async function doprwep(): Promise<InventoryAction | null> {
+    if (!game.uwep) {
+        await pline(`You are ${game.uarmg ? 'empty handed' : monsterIsHumanoid(heroSpecies(game))
+            ? 'bare handed' : 'not wielding anything'}.`);
+    } else if (!game.iflags.menu_requested) {
+        await describeCarriedObject(game.uwep);
+        if (game.u.twoweap && game.uswapwep) await describeCarriedObject(game.uswapwep);
+    } else {
+        return reportSubset([game.uwep, game.uswapwep, game.uquiver]
+            .filter((object): object is GameObject => !!object));
+    }
+    return null;
+}
+
+// C invent.c:noarmor(). Mention skin armor only when the caller requests it.
+async function noarmor(reportSkin: boolean): Promise<void> {
+    await pline(reportSkin && game.uskin ? `You are not wearing armor but have ${simpleObjectName(game.uskin)
+        .replace(/^set of /i, '').replace(/ dragon /i, ' ')} embedded in your skin.`
+        : 'You are not wearing any armor.');
+}
+
+// C invent.c:doprarm().
+async function doprarm(): Promise<InventoryAction | null> {
+    const armor = [game.uarm, game.uarmc, game.uarms, game.uarmh, game.uarmg, game.uarmf, game.uarmu]
+        .filter((object): object is GameObject => !!object);
+    if (armor.length) return reportSubset(armor);
+    await noarmor(true);
+    return null;
+}
+
+// C invent.c:doprring().
+async function doprring(): Promise<InventoryAction | null> {
+    const rings = [game.uright, game.uleft].filter((object): object is GameObject => !!object);
+    if (rings.length) return reportSubset(rings, rings.length > 1 || !!game.iflags.menu_requested
+        || rings.some(object => object.oclass !== RING_CLASS), rings.length === 1 ? 'Ring' : 'Rings');
+    await pline('You are not wearing any rings.');
+    return null;
+}
+
+// C invent.c:dopramulet().
+async function dopramulet(): Promise<InventoryAction | null> {
+    if (game.uamul) return reportSubset([game.uamul], true, 'Amulet');
+    await pline('You are not wearing an amulet.');
+    return null;
+}
+
+// C invent.c:tool_being_used().
+function toolBeingUsed(object: GameObject): boolean {
+    return !!((object.owornmask ?? 0) & (W_TOOL | W_SADDLE))
+        || object.oclass === TOOL_CLASS && (object === game.uwep || !!object.lamplit
+            || object.otyp === LEASH && !!object.leashmon);
+}
+
+// C invent.c:doprtool().
+async function doprtool(): Promise<InventoryAction | null> {
+    const items = game.inventory.filter(toolBeingUsed);
+    if (items.length) return reportSubset(items.slice(0, 52));
+    await pline('You are not using any tools.');
+    return null;
+}
+
+// C invent.c:doprinuse().
+async function doprinuse(): Promise<InventoryAction | null> {
+    const items = game.inventory.filter(isInUse);
+    if (items.length) return reportSubset(null);
+    await pline('You are not wearing or wielding anything.');
+    return null;
+}
+
+// C invent.c:useupf(). Consume floor stock, retaining any used-up shop bill.
+export async function useUpFloorObject(object: GameObject, count: number, {
+    state = game, publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const { ox: x, oy: y } = object;
+    const consumed = object.quan > count ? splitObjectStack(object, count, state) : object;
+    if (!consumed) throw new Error('Floor consumption requires a valid stack quantity');
+    if (!state.context.mon_moving && costlySpot(x, y, state)) {
+        const room = roomsAt(state.level, x, y)[0];
+        if (room !== undefined && state.u.urooms.includes(room))
+            await addShopObjectToBill(consumed, state, { ininv: false, silent: false, publish });
+        else await stolenValue(consumed, x, y, false, { silent: false, state, publish });
+    }
+    await delobj(consumed, state);
+    if (state.u.ux === x && state.u.uy === y
+        && state.u.uundetected && heroFormHidesUnderObjects(state)) await hideHeroUnder(state);
+}
+
+// C invent.c:let_to_name() names[]. Conversion from a class to a string
+// for printing; this must match the object class order.
+export function objectClassHeading(oclass: number): string {
+    return [null, 'Illegal objects', 'Weapons', 'Armor', 'Rings', 'Amulets',
+        'Tools', 'Comestibles', 'Potions', 'Scrolls', 'Spellbooks', 'Wands',
+        'Coins', 'Gems/Stones', 'Boulders/Statues', 'Iron balls', 'Chains', 'Venoms'][oclass] || 'Other';
+}
+
+// C invent.c:reassign(): give consecutive letters to every carried item
+// for !fixinv mode; gold is always forced to '$' at the head of the list.
+export function reassignInventoryLetters() {
+    const goldIndex = game.inventory.findIndex(object => object.oclass === COIN_CLASS);
+    if (goldIndex >= 0) {
+        const gold = game.inventory[goldIndex];
+        if (!gold) throw new Error('The gold inventory entry is missing');
+        game.inventory.splice(goldIndex, 1);
+        gold.invlet = '$';
+        game.inventory.unshift(gold);
+    }
+    let index = 0;
+    for (const object of game.inventory) {
+        if (object.oclass === COIN_CLASS) continue;
+        object.invlet = index < 26 ? String.fromCharCode(97 + index)
+            : index < 52 ? String.fromCharCode(65 + index - 26) : '#';
+        index++;
+    }
+    game._lastInvNr = Math.min(index, 51);
+}
+
+// C invent.c:check_invent_gold(): only malformed purses may be reorganized.
+export async function checkInventoryGold(why: string, state: GameState = game): Promise<boolean> {
+    const gold = state.inventory.filter(object => object.oclass === COIN_CLASS);
+    const wrongSlots = gold.filter(object => object.invlet !== '$').length;
+    if (gold.length <= 1 && wrongSlots === 0) return false;
+    const wrongSlotMessage = wrongSlots > 1 ? 'gold in wrong slots'
+        : wrongSlots === 1 ? 'gold in wrong slot' : '';
+    await impossible(`${why}: ${wrongSlotMessage}${wrongSlots && gold.length > 1 ? ' and ' : ''}${
+        gold.length > 1 ? 'multiple gold stacks' : ''}`, { state });
+    return true;
+}
+
+// C invent.c:adjust_ok(). Gold is excluded from ordinary adjustment.
+function adjustOk(object: GameObject): InventoryClassification {
+    return object.oclass === COIN_CLASS ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST;
+}
+
+// C invent.c:adjust_gold_ok(). The sanity repair allows gold too.
+function adjustGoldOk(_object: GameObject): InventoryClassification {
+    return GETOBJ_SUGGEST;
+}
+
+// C invent.c:doorganize(). Select the source object before adjusting its letter.
+export async function doadjust(selected: GameObject | null = null, splitting: GameObject | null = null) {
+    const inventory = (game.inventory || [])
+        .filter((object: GameObject): object is GameObject & { invlet: string } =>
+                typeof object.invlet === 'string' && object.invlet.length > 0)
+        .sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
+    if (!inventory.length) {
+        await pline("You aren't carrying anything to adjust.");
+        game.context.move = 0;
+        return;
+    }
+    if (inventory.length === 1 && inventory[0]?.oclass === COIN_CLASS && inventory[0].invlet === '$') {
+        await pline("You aren't carrying anything adjustable.");
+        game.context.move = 0;
+        return;
+    }
+    if (!selected && game.flags.fixinv === false) reassignInventoryLetters();
+    const repairGold = !selected && await checkInventoryGold('adjust');
+    const object = selected || await chooseInventoryObject('adjust', repairGold ? adjustGoldOk : adjustOk,
+        { forcePrompt: true, allowCount: true });
+    await doorganizeCore(object, splitting, inventory);
+}
+
+// C invent.c:adjust_split(). The split remains linked beside its
+// original until the destination is chosen; cancelling merges it back.
+export async function adjustSplit(): Promise<void> {
+    game.context.move = 0;
+    const object = await chooseInventoryObject('split', adjustOk);
+    if (!object || object.quan < 2 || object.oclass === COIN_CLASS) {
+        commandResultFailed(); // invent.c:adjust_split() ECMD_FAIL.
+        return;
+    }
+    let amount: number | null;
+    if (object.quan === 2) {
+        amount = 1;
+    } else {
+        // C adjust_split(): "get first digit; doesn't wait for <return>".
+        await flushPendingTopline();
+        const dig = await ynSingleKey('Split off how many? ');
+        if (dig < 48 || dig > 57) {
+            amount = null;
+        } else {
+            const { key, count } = await getCount(dig, 0n, GC_ECHOFIRST | GC_CONDHIST);
+            clearMessageWindow();
+            // C adjust_split(): quitchars[] accepts only space, \n and \r;
+            // Escape (checked separately in C) and every other key cancel
+            // with the count discarded.
+            amount = key === 32 || key === 10 || key === 13 ? Number(count) : null;
+        }
+    }
+    if (amount === null) {
+        await pline('Never mind.');
+        commandResultCancelled(); // adjust_split() quit answer ECMD_CANCEL.
+        return;
+    }
+    if (amount < 1 || amount >= object.quan) {
+        await pline(`Amount to split from current stack must be ${amount < 1
+            ? 'at least 1' : `less than ${object.quan}`}.`);
+        commandResultCancelled(); // adjust_split() bad amount ECMD_CANCEL.
+        return;
+    }
+    const split = splitObjectStack(object, amount, game);
+    if (!split) throw new Error('An admitted inventory stack could not be split');
+    await doadjust(split, object);
+}
+
+// C invent.c:doorganize_core(). Move, split, merge, or exchange the selected stack.
+async function doorganizeCore(
+    object: GameObject | null, splitting: GameObject | null,
+    inventory: readonly (GameObject & { invlet: string })[],
+): Promise<void> {
+    if (!object) {
+        // invent.c:doorganize_core() returns ECMD_CANCEL when getobj() is
+        // dismissed; the rhack seam clears both command queues.
+        game.context.move = 0;
+        commandResultCancelled();
+        return;
+    }
+    if (!splitting) {
+        const previous = game.inventory[game.inventory.indexOf(object) - 1];
+        if (previous && previous.invlet === object.invlet) splitting = previous;
+    }
+    const source = object.invlet;
+    if (!source) throw new Error('Adjusting inventory requires a lettered object.');
+    // C doorganize_core() chooses '$' itself when repairing gold. A purse
+    // already in '$' collects other stacks; one elsewhere merges into '$'.
+    if (object.oclass === COIN_CLASS) {
+        const collect = object.invlet === '$';
+        let purse = object;
+        let action = collect ? 'Collecting' : 'Moving';
+        for (const candidate of inventory) {
+            if (candidate === purse || candidate === object) continue;
+            if (!collect && candidate.invlet !== '$') continue;
+            const candidateName = candidate.oextra?.oname ?? candidate.oname;
+            const purseName = purse.oextra?.oname ?? purse.oname;
+            const merged = (!candidateName || candidateName === purseName)
+                ? await mergeObjectStacks(candidate, purse) : null;
+            if (merged) {
+                purse = merged;
+                if (collect) continue;
+                action = 'Merging';
+            } else if (!collect) {
+                candidate.invlet = source;
+                action = 'Swapping';
+            }
+            if (!collect) break;
+        }
+        purse.invlet = '$';
+        reorderInventory();
+        if (game.flags.fixinv === false) reassignInventoryLetters();
+        observeObjectForNaming(purse);
+        await pline(`${action}: $ - ${await inventoryItemDescription(purse)}.`);
+        game.context.move = 0;
+        return;
+    }
+    const adjusting = object;
+    const occupied = new Set(
+        inventory.filter(candidate => candidate !== adjusting && !mergable(candidate, adjusting))
+            .map(candidate => candidate.invlet),
+    );
+    const slots = game.flags.fixinv === false
+        ? game.inventory.filter(item => item.oclass !== COIN_CLASS).length + (splitting ? 0 : 1) : 52;
+    const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.slice(0, slots)
+        .split('')
+        .filter(letter => letter === adjusting.invlet || !occupied.has(letter))
+        .join('') + (occupied.has('#') ? '#' : '');
+    const destinationPrompt = `${splitting ? `Split ${object.quan}` : 'Adjust letter'} to what [${
+        compactInventoryLetters(recommended)}] (? see used letters)?`;
+    // The source item's queued letter bypasses getobj's prompt, but the
+    // destination uses tty_yn_function(), which acknowledges unread prose.
+    await flushPendingTopline();
+    let destination = '';
+    for (let attempt = 1; ; attempt++) {
+        let key = (await yn_function(destinationPrompt, null, '', true)).answer.charCodeAt(0);
+        if (key === 63 || key === 42) {
+            key = await selectUsedInventoryLetter(splitting ? source : null);
+            if (!key) continue;
+        }
+        destination = String.fromCharCode(key);
+        // C strchr(quitchars, let) also matches a literal fuzzer NUL.
+        if ([0, 27, 32, 10, 13].includes(key) || splitting && destination === source) {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        if (destination === '$') {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline("Only gold coins may be moved into the '$' slot.");
+            game.context.move = 0;
+            return;
+        }
+        if (/^[a-zA-Z]$/.test(destination) || destination === '#' && occupied.has('#')) break;
+        if (attempt === 5) {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        await plineWithContinuation('Select an inventory slot letter.');
+        await flushPendingTopline();
+    }
+
+    let action = splitting ? 'Splitting:' : destination === source ? 'Collecting:' : 'Moving:';
+    let bumped: GameObject | null = null;
+    // C extracts the selected stack before collecting. A merge can free
+    // that object, so it must never reappear among the remaining candidates.
+    unlinkObject(object, game);
+    for (const candidate of game.inventory.slice()) {
+        const name = object.oextra?.oname ?? object.oname;
+        const candidateName = candidate.oextra?.oname ?? candidate.oname;
+        const permitsName = !candidateName || !!name && name === candidateName;
+        if (destination === source) {
+            if (permitsName) {
+                const merged = await mergeObjectStacks(candidate, object);
+                if (merged) {
+                    object = merged;
+                    unlinkObject(object, game);
+                }
+            }
+            continue;
+        }
+        if (candidate.invlet !== destination) continue;
+        const merged = permitsName ? await mergeObjectStacks(candidate, object) : null;
+        if (merged) {
+            object = merged;
+            unlinkObject(object, game);
+            action = 'Merging:';
+        } else if (!splitting) {
+            candidate.invlet = source;
+            action = 'Swapping:';
+        } else {
+            // A split takes the destination's name when otherwise compatible.
+            if (name && !object.oartifact) {
+                if (object.oextra) delete object.oextra.oname;
+                delete object.oname;
+            }
+            const splitMerge = await mergeObjectStacks(candidate, object);
+            if (splitMerge) {
+                object = splitMerge;
+                unlinkObject(object, game);
+                action = 'Splitting and merging:';
+            } else {
+                if (name) {
+                    if (object.oextra) object.oextra.oname = name;
+                    object.oname = name;
+                }
+                if (game.inventory.filter(item => item !== object && item.oclass !== COIN_CLASS).length >= 52) {
+                    object.where = 'inventory';
+                    game.inventory.unshift(object);
+                    await rejoinObjectStack(splitting, object, game);
+                    clearMessageWindow();
+                    await pline('Your pack is too full.');
+                    game.context.move = 0;
+                    return;
+                }
+                unlinkObject(candidate, game);
+                bumped = candidate;
+            }
+        }
+        break;
+    }
+    object.invlet = destination;
+    object.where = 'inventory';
+    game.inventory.unshift(object);
+    if (bumped) {
+        assignInventoryLetter(bumped);
+        bumped.where = 'inventory';
+        game.inventory.unshift(bumped);
+    }
+    reorderInventory();
+    if (game.flags.fixinv === false) reassignInventoryLetters();
+    game._pending_message = '';
+    observeObjectForNaming(object);
+    await pline(
+        `${action} ${object.invlet} - ${
+            await inventoryItemDescription(object, {
+                primaryHandDetail: inventoryPrimaryHandDetail(object),
+            })}.`,
+    );
+    if (bumped) await plineWithContinuation(`Moving: ${bumped.invlet} - ${await inventoryItemDescription(bumped)}.`);
+    game.context.move = 0;
+}
+
+// C invent.c:display_minventory(). The swallowed inventory view includes the hero.
+async function displayMonsterInventory(
+    monster: Monster, objects: readonly GameObject[], location: string, blind: boolean,
+): Promise<void> {
+    // display_minventory() builds its default title even when look_here()
+    // supplies another title, so the perceived owner still changes.
+    monsterName(monster, { article: 'your', suppressIt: true, capitalized: true,
+        suppressSaddle: !!MGIVENNAME(monster) });
+    const ordered = sortObjects(objects, { mode: lootSortMode() });
+    const sections: InventorySection<GameObject>[] = [];
+    let first = true;
+    for (const oclass of [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS]) {
+        const objects = ordered.filter(object => object.oclass === oclass);
+        if (!objects.length) continue;
+        const items = [];
+        for (const object of objects) {
+            observeObjectForNaming(object);
+            consumeHallucinatedMenuObjectGlyph(object);
+            const firstGold = first && object.otyp === GOLD_PIECE;
+            first = false;
+            items.push({ ...(firstGold ? { key: '$' } : {}),
+                text: await inventoryItemDescription(object), value: object });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
+    }
+    // query_objlist() attaches a monster glyph even though tty only shows text.
+    transientMonsterGlyph({ mnum: heroSpecies(game),
+        female: !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female) });
+    sections.push({ heading: `${monsterDigests(monster) ? 'Swallowed' : 'Engulfed'} Creatures`,
+        items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()) }] });
+    await showInventoryWindow(sections, { title: blind ? 'You feel:'
+        : `Contents of ${location}:` });
+}
+
+// C invent.c:cinv_doname(): the probing contents menu names the box with
+// "trapped" inserted before its lock state even though doname() already
+// shows a just-learned trap, so a trapped box is named twice.
+export async function probedContentsTitle(object: GameObject, state: GameState): Promise<string> {
+    let name = await objectDescription(object, { state });
+    if (!object.otrapped) return name;
+    const locked = name.indexOf(' locked ');
+    const unlocked = name.indexOf(' unlocked ');
+    if (locked >= 0 && (unlocked < 0 || locked < unlocked))
+        name = name.replace(' locked ', ' trapped locked ');
+    else if (unlocked >= 0)
+        name = name.replace(' unlocked ', ' trapped unlocked ');
+    return name.replace('an trapped ', 'a trapped ');
+}
+
+// C invent.c:display_binventory(): objects beneath the probed surface.
+// Also C invent.c:only_here(): inlined as the buried-objects filter by
+// (x, y) below.
+export async function displayBuriedInventory(x: number, y: number, state: PlayingGameState) {
+    const pile = state.level.objects[x]?.[y] || [];
+    let underwhat = 'here', count = 0;
+    if ((isPoolAt(x, y, state) || isLavaAt(x, y, state)) && !(state.underwater || state.u.uinwater) && pile.length) {
+        const liquid = displayLiquidName(isPoolAt(x, y, state) ? 'water' : 'lava', state);
+        count = pile.length;
+        if (pile.length === 1) {
+            const object = pile[0];
+            if (!object) throw new Error('A visible one-object pile must contain its object.');
+            const plural = objectNameIsPlural(object, state);
+            await plineWithContinuation(`There ${plural ? 'are' : 'is'} ${await inventoryItemDescription(object)} under the ${liquid} here.`);
+            underwhat = plural || pair_of(object) ? 'under them' : 'beneath it';
+        } else {
+            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, { state, groupByClass: false });
+            underwhat = 'beneath them';
+        }
+    }
+    const buried = (state.level.buriedObjects || []).filter(object => object.ox === x && object.oy === y);
+    for (const object of buried) observeObject(object, state);
+    if (buried.length) await showProbedObjectInventory(buried, `Things that are buried ${underwhat}:`, { state });
+    return count + buried.length;
+}
+
+function qualifiedObjectName(raw: Pick<GameObject, 'otyp' | 'oclass' | 'corpsenm'>): string {
+    if (raw.otyp === CORPSE && raw.corpsenm !== undefined && MONSTER_NAME[raw.corpsenm])
+        return `${MONSTER_NAME[raw.corpsenm]} corpse`;
+    const name = OBJ_NAME(raw.otyp) || `object ${raw.otyp}`;
+    switch (raw.oclass) {
+    case RING_CLASS: return `ring of ${name}`;
+    case POTION_CLASS: return `potion of ${name}`;
+    case SCROLL_CLASS: return `scroll of ${name}`;
+    case SPBOOK_CLASS: return `spellbook of ${name}`;
+    case WAND_CLASS: return `wand of ${name}`;
+    default: return name;
+    }
+}
+
+function sourceKnownPresentation(raw: GameObject): ItemPresentation {
+    const name = qualifiedObjectName(raw);
+    const plural = raw.oclass === RING_CLASS ? `rings of ${OBJ_NAME(raw.otyp)}`
+        : raw.oclass === POTION_CLASS ? `potions of ${OBJ_NAME(raw.otyp)}`
+        : raw.oclass === SCROLL_CLASS ? `scrolls of ${OBJ_NAME(raw.otyp)}`
+        : raw.oclass === SPBOOK_CLASS ? `spellbooks of ${OBJ_NAME(raw.otyp)}`
+        : raw.oclass === WAND_CLASS ? `wands of ${OBJ_NAME(raw.otyp)}`
+        : makePlural(name);
+    return {
+        class: CLASS_PRESENTATION[raw.oclass] || 'Other',
+        name, plural,
+        enchanted: raw.oclass === WEAPON_CLASS || raw.oclass === ARMOR_CLASS
+            || (raw.oclass === RING_CLASS && raw.spe !== 0),
+        showBuc: raw.oclass === WAND_CLASS ? false : undefined,
+        spellName: raw.oclass === SPBOOK_CLASS ? OBJ_NAME(raw.otyp) : undefined,
+        spellLevel: raw.oclass === SPBOOK_CLASS
+            ? oc_level(raw.otyp) : undefined,
+        spellCategory: raw.oclass === SPBOOK_CLASS
+            ? OBJECT_SPELL_CATEGORY[raw.otyp] : undefined,
+    };
+}
+
+// Display-only callers receive a projection without changing the carried object.
+export function inventoryItem(raw: GameObject, presentation: ItemPresentation | null = null): GameObject {
+    return { ...raw, ...inventoryPresentation(raw, presentation) };
+}
+
+// Acquisition and polymorph retain the same object already held by timers and
+// ownership links. Only presentation fields are updated here.
+export function updateInventoryPresentation(raw: GameObject, presentation: ItemPresentation | null = null): GameObject {
+    const view = inventoryPresentation(raw, presentation);
+    raw.class = view.class;
+    raw.name = view.name;
+    raw.plural = view.plural;
+    if ('enchanted' in view) raw.enchanted = view.enchanted;
+    if ('omitUncursed' in view) raw.omitUncursed = view.omitUncursed;
+    if ('showBuc' in view) raw.showBuc = view.showBuc;
+    if ('empty' in view) raw.empty = view.empty;
+    if ('spellName' in view) raw.spellName = view.spellName;
+    if ('spellLevel' in view) raw.spellLevel = view.spellLevel;
+    if ('spellCategory' in view) raw.spellCategory = view.spellCategory;
+    if ('appearance' in view) raw.appearance = view.appearance;
+    raw.quantity = view.quantity;
+    raw.enchantment = view.enchantment;
+    raw.buc = view.buc;
+    return raw;
+}
+
+function inventoryPresentation(raw: GameObject, presentation: ItemPresentation | null): InventoryPresentation {
+    let view: ItemPresentation = presentation || ITEM_PRESENTATION.get(raw.otyp)
+        || (raw._startingInventory || objectTypeKnown(raw)
+            ? sourceKnownPresentation(raw) : null) || wishedObjectPresentation(raw);
+    if (game.urole?.key === 'knight'
+        && (raw.otyp === LONG_SWORD || raw.otyp === LANCE)) {
+        view = { ...view, omitUncursed: true };
+    }
+    if (raw.otyp === SHORT_SWORD && game.urole?.key !== 'samurai') {
+        view = {
+            ...view, name: 'short sword', plural: 'short swords',
+            omitUncursed: true,
+        };
+    }
+    if (SHORT_SWORD_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
+        const orcish = game.urace?.raceIndex === 4;
+        view = raw.otyp === SHORT_SWORD ? {
+            ...view,
+            name: orcish ? 'orcish short sword' : 'short sword',
+            plural: orcish ? 'orcish short swords' : 'short swords',
+            omitUncursed: true,
+        } : { ...view, omitUncursed: true };
+    }
+    if (DAGGER_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
+        view = raw.otyp === DAGGER && game.urace?.raceIndex === 4
+            ? {
+                ...view, name: 'orcish dagger', plural: 'orcish daggers',
+                omitUncursed: true,
+            }
+            : { ...view, omitUncursed: true };
+    }
+    if (raw.otyp === DAGGER && game.urole?.key === 'valkyrie') {
+        view = { ...view, omitUncursed: true };
+    }
+    if (raw.otyp === TIN) {
+        // objnam.c:xname() appends tin_details() only after the individual
+        // tin's contents have become known.  Generation may already retain
+        // corpsenm without making that state legal presentation data.
+        view = !raw.known
+            ? { class: 'Comestibles', name: 'tin', plural: 'tins' }
+            : raw.corpsenm === PM_LICHEN
+                ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
+                : raw.corpsenm === 322
+                    ? { class: 'Comestibles', name: 'tin of newt meat', plural: 'tins of newt meat' }
+                    : raw.corpsenm == null
+                        ? { class: 'Comestibles', name: 'tin of spinach', plural: 'tins of spinach' }
+                        : { class: 'Comestibles', name: 'tin', plural: 'tins' };
+    }
+    const buc = raw.bknown
+        ? raw.blessed ? 'blessed' : raw.cursed ? 'cursed' : 'uncursed'
+        : undefined;
+    return {
+        ...view,
+        quantity: raw.quan,
+        enchantment: view.enchanted ? raw.spe : undefined,
+        buc: view.showBuc === false || (view.omitUncursed && buc === 'uncursed')
+            ? undefined : buc,
+    };
+}
+
+function prepareInventoryItem(raw: GameObject, presentation: ItemPresentation | null, observe: boolean): GameObject {
+    raw.how_lost = LOST_NONE;
+    raw.no_charge = false;
+    if (raw.contents?.length) pickedContainer(raw);
+    raw.ox = raw.oy = 0;
+    const item = updateInventoryPresentation(raw, presentation);
+    if (observe) item.dknown = true;
+    recordHeroPrizeAcquisition(item, game);
+    return item;
+}
+
+function linkInventoryItem(item: GameObject): GameObject {
+    assignInventoryLetter(item);
+    item.where = 'inventory';
+    game.inventory.push(item);
+    // C invent.c:addinv_core0()/reorder_invent(): fixed letters order the
+    // carried chain, including gold before letters and lowercase before uppercase.
+    if (game.flags.fixinv !== false) {
+        reorderInventory();
+    }
+    return item;
+}
+
+// The reorder_invent() key toggles ASCII case to put a-z before A-Z.
+export function inventoryLetterRank(item: GameObject): number {
+    return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
+}
+
+async function finishAddedInventoryItem(item: GameObject, recoveredThrownStack = false): Promise<GameObject> {
+    if (recoveredThrownStack && game.flags.pickup_thrown !== false && !game.uquiver
+        && item.otyp !== AKLYS && artifactById(item.oartifact)?.name !== 'Mjollnir'
+        && (isThrowingWeapon(item) || isLauncherAmmunition(item)))
+        await setQuiverObject(item, game);
+    item.pickup_prev = true;
+    await finishInventoryAddition(item, game);
+    attachCursedFigurineTimer(item, game);
+    return item;
+}
+
+export async function addCreatedInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
+    assertCreatedObject(raw, game);
+    const wasThrown = raw.how_lost === LOST_THROWN;
+    let item = prepareInventoryItem(raw, presentation, observe);
+    await prepareInventoryAddition(item, game);
+    const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
+        : game.inventory.find(other => mergable(other, item, game));
+    const added = existing ? await mergeCreatedObjectStacks(existing, item, game)
+        : linkInventoryItem(item);
+    if (!added) throw new Error(`Initial inventory merge rejected object ${item.o_id} after admission`);
+    item = added;
+    return await finishAddedInventoryItem(item, wasThrown && !existing);
+}
+
+// C addinv_core1(): clear prize protection before addinv tests stack merging.
+export function recordHeroPrizeAcquisition(object: GameObject, state: GameState = game): void {
+    const prizes = state.context.achieveo;
+    const kind = levelPrizeKind(object, state);
+    if (!prizes || !kind) return;
+    const achievement = kind === 'mines' ? ACH_MINE_PRIZE : ACH_SOKO_PRIZE;
+    // the prize chronicle line is logged by recordAchievement()
+    recordAchievement(state, achievement);
+    if (kind === 'mines') prizes.mines_prize_oid = 0;
+    else prizes.soko_prize_oid = 0;
+    object.nomerge = false;
+}
+
+function updateCarriedFlags(object: GameObject, carried: boolean, state: GameState): void {
+    const flag = carriedPossessionFlag(object, state);
+    if (flag) {
+        if (!state.u.uhave) throw new Error('Carried quest objects require initialized hero possessions');
+        state.u.uhave[flag] = carried;
+    }
+}
+
+function carriedPossessionFlag(object: GameObject, state: GameState): keyof HeroPossessions | undefined {
+    return CARRIED_FLAGS.get(object.otyp) ?? (isQuestArtifact(object, state) ? 'questart' : undefined);
+}
+
+export function confersLuck(object: GameObject, state: GameState = game) {
+    return object.otyp === LUCKSTONE
+        || !!artifactById(object.oartifact, state)?.flags.includes('SPFX_LUCK');
+}
+
+function admitsChoice(classification: InventoryClassification): boolean {
+    return classification === GETOBJ_SUGGEST || classification === GETOBJ_DOWNPLAY;
+}
+
+// getobj() followed by its split_otmp tail, for callers which take the
+// object getobj() returns; hands are not a choice for these callbacks.
+export async function chooseInventoryObject(
+    word: string,
+    classify: (object: GameObject) => InventoryClassification,
+    options: Omit<GetobjOptions, 'handsText'> = {},
+): Promise<GameObject | null> {
+    const selection = await getobj(word, classify, options);
+    const object = selection.object;
+    if (object && selection.count !== null && selection.count < object.quan) {
+        if (object.otyp === LOADSTONE && object.cursed) object.corpsenm = selection.count;
+        // C splittable() calls welded(), revealing the curse before refusing
+        // the split. A cursed loadstone returns before that weapon check.
+        else if (isWeldedPrimary(object)) object.bknown = true;
+        else return splitObjectStack(object, selection.count, game);
+    }
+    return object;
+}
+
+async function neverMind(): Promise<void> {
+    await pline('Never mind.');
+}
+
+// Inventory prompt order: '$' first, then a-z, then A-Z, then other.
+export function inventoryLetterOrder(letter: string | null | undefined): number {
+    if (letter == null) return 53;
+    if (letter === '$') return 0;
+    if (letter >= 'a' && letter <= 'z') return letter.charCodeAt(0) - 96;
+    if (letter >= 'A' && letter <= 'Z') return letter.charCodeAt(0) - 38;
+    return 53;
+}
+
+// C getobj() has already consumed its queued selection or user-input marker.
+// Its interactive query must leave later canned answers for the caller.
+async function askInventoryPrompt(prompt: string): Promise<number> {
+    await flushPendingTopline();
+    const { answer } = await yn_function(prompt, null, '', false);
+    return answer.charCodeAt(0);
+}
+
+// C objnam.c:not_fully_identified().
+// Also C artifact.c:undiscovered_artifact(): inlined here as the
+// _artifactDiscoveries membership test.
+export function objectNeedsFullIdentification(object: GameObject | null | undefined) {
+    if (!object || object.oclass === COIN_CLASS) return false;
+    const typeKnown = objectTypeKnown(object);
+    if (!object.known || (!object.bknown && object.otyp !== SCR_MAIL)
+        || !object.dknown || !typeKnown) return true;
+    if ((!object.cknown && (isContainer(object) || object.otyp === STATUE))
+        || (!object.lknown && [CHEST, LARGE_BOX].includes(object.otyp))) return true;
+    if (object.oartifact && !game._artifactDiscoveries?.includes(object.oartifact)) return true;
+    if (object.rknown || !([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS].includes(object.oclass) || isWeaponTool(object))) return false;
+    return (['rust', 'burn', 'rot', 'corrosion', 'crack'] as const).some(kind =>
+        objectIsVulnerableToErosion(object, kind));
 }
 
 function identificationBuc(object: GameObject) {
@@ -1460,77 +2901,6 @@ function matchesIdentificationCategories(object: GameObject, categories: Identif
     return !categories.picked || !!object.pickup_prev;
 }
 
-// C ggetobj()/askchain(), restricted to identify. Category order controls
-// which class is questioned first; identifying never splits a stack.
-// Also C invent.c:safeq_xprname(): inlined here as the inventory-letter
-// and full object description in each question.
-async function identifyTraditionally(limit: number): Promise<IdentificationResult> {
-    const identified: GameObject[] = [];
-    while (limit > 0) {
-        const candidates = game.inventory.filter(objectNeedsFullIdentification);
-        if (!candidates.length) return { identified, remaining: 0 };
-        const choices = traditionalIdentifyChoices(candidates);
-        await flushPendingTopline();
-        clearMessageWindow();
-        const answer = await getLine(
-            `What kinds of thing do you want to identify? [${choices}]`,
-            (_character, key) => key >= 32 && key < 127,
-        );
-        // Native ggetobj returns zero here; identify_pack asks again while
-        // identification allowance remains. The per-item q choice quits.
-        if (answer === null) continue;
-        if (answer.includes('i')) {
-            await showInventoryWindow(await inventorySections(candidates, false), { pickMode: PICK_ONE });
-            continue;
-        }
-        const categories = await parseIdentificationCategories(answer);
-        if (categories.menu) return { identified, remaining: limit };
-        let all = categories.all;
-        let questioned = 0;
-        const letterOrder = '$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#';
-        const inventory = [...game.inventory].sort((a, b) =>
-            (a.invlet == null ? -1 : letterOrder.indexOf(a.invlet))
-                - (b.invlet == null ? -1 : letterOrder.indexOf(b.invlet)));
-        const classes = categories.classes.length ? categories.classes : [null];
-        try {
-            for (const objectClass of classes) {
-                bypassObjectList(game.inventory, false);
-                let object;
-                let index = -1;
-                while ((object = nextUnbypassedObject(game.inventory, game, inventory))) {
-                    index++;
-                    if ((objectClass !== null && object.oclass !== objectClass)
-                        || !objectNeedsFullIdentification(object)
-                        || !matchesIdentificationCategories(object, categories)) continue;
-                    let response = 'y';
-                    if (!all) {
-                        observeObjectForNaming(object);
-                        const letter = game.flags.fixinv === false
-                            ? letterOrder.charAt(Math.min(index + (inventory[0]?.oclass === COIN_CLASS ? 0 : 1), 53))
-                            : object.invlet;
-                        const description = await inventoryItemDescription(object, {
-                            primaryHandDetail: inventoryPrimaryHandDetail(object),
-                        });
-                        await flushPendingTopline();
-                        response = await promptYesNoAllQuit(`${letter} - ${description}?`, 'n');
-                    }
-                    if (response === 'q') return { identified, remaining: 0 };
-                    questioned++;
-                    if (response === 'n') continue;
-                    if (response === 'a') all = true;
-                    await identifyAndDescribe(object);
-                    identified.push(object);
-                    if (!--limit) return { identified, remaining: 0 };
-                }
-            }
-        } finally {
-            clearBypasses();
-        }
-        await plineWithContinuation(questioned ? 'That was all.' : 'No applicable objects.');
-    }
-    return { identified, remaining: 0 };
-}
-
 async function identificationMenu(candidates: readonly GameObject[], first: boolean): Promise<GameObject[] | null> {
     await flushPendingTopline();
     clearMessageWindow();
@@ -1549,72 +2919,6 @@ async function identificationMenu(candidates: readonly GameObject[], first: bool
     });
 }
 
-async function identifyAndDescribe(object: GameObject) {
-    fullyIdentifyObject(object);
-    observeObjectForNaming(object);
-    await plineWithContinuation(`${object.invlet} - ${await inventoryItemDescription(object, {
-        primaryHandDetail: inventoryPrimaryHandDetail(object),
-    })}.`);
-}
-
-// C invent.c:count_unidentified().
-function countUnidentified(objects: readonly GameObject[]): number {
-    return objects.filter(objectNeedsFullIdentification).length;
-}
-
-// C invent.c:identify_pack(). Identify all possessions or ask for a limited selection.
-export async function identifyPack(idLimit: number, learningIdentify = false): Promise<GameObject[]> {
-    const count = countUnidentified(game.inventory || []);
-    if (!count) {
-        await plineWithContinuation(`You have already identified ${
-            learningIdentify ? 'the rest' : 'all'
-        } of your possessions.`);
-        return [];
-    }
-    if (!idLimit || idLimit >= count) {
-        const identified: GameObject[] = [];
-        for (const object of (game.inventory || []).filter(objectNeedsFullIdentification)) {
-            if (!objectNeedsFullIdentification(object)) continue;
-            await identifyAndDescribe(object);
-            identified.push(object);
-        }
-        return identified;
-    }
-
-    const traditional = game.flags.menu_style === MENU_TRADITIONAL
-        ? await identifyTraditionally(idLimit) : { identified: [], remaining: idLimit };
-    return menuIdentify(traditional.remaining, traditional.identified);
-}
-
-// C invent.c:menu_identify(). Describe each selection before asking again.
-async function menuIdentify(idLimit: number, identified: GameObject[]): Promise<GameObject[]> {
-    let remaining = idLimit;
-    let candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
-    let first = true;
-    let tries = 5;
-    while (remaining > 0 && candidates.length) {
-        const selected = await identificationMenu(candidates, first);
-        if (selected === null) break;
-        if (!selected.length) {
-            if (!--tries) {
-                await plineWithContinuation("That's enough tries!");
-                break;
-            }
-            await plineWithContinuation('Choose an item; use ESC to decline.');
-            continue;
-        }
-        const accepted = selected.slice(0, remaining);
-        for (const object of accepted) await identifyAndDescribe(object);
-        identified.push(...accepted);
-        remaining -= accepted.length;
-        candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
-        if (remaining > 0 && !candidates.length)
-            await plineWithContinuation('That was all.');
-        first = false;
-    }
-    return identified;
-}
-
 export function bucAdjectiveForName(item: GameObject) {
     return objectBlessingDescription(item);
 }
@@ -1626,20 +2930,6 @@ export function inventoryPrimaryHandDetail(item: GameObject) {
 
 export async function inventoryItemDescription(item: GameObject, options: InventoryDescriptionOptions = {}): Promise<string> {
     return await objectDescription(item, options);
-}
-
-// C invent.c:useup().
-export async function consumeInventoryItem(item: GameObject, state: GameState = game) {
-    requireLiveGame(state);
-    const quantity = item?.quantity ?? item?.quan ?? 1;
-    if (quantity > 1) {
-        item.in_use = false;
-        item.quantity = quantity - 1;
-        item.quan = quantity - 1;
-        item.owt = objectWeight(item);
-        return;
-    }
-    await useUpInventoryStack(item, state);
 }
 
 async function rerollItemDescription(item: GameObject) {
@@ -1675,40 +2965,6 @@ async function rerollFallbackPrompt() {
         if (answer === 'y' || answer === 'n') return answer === 'y';
         if ([27, 32, 10, 13].includes(key)) return false;
     }
-}
-
-// C invent.c:reroll_menu().  This menu is a startup transaction, not a
-// command: accepting another roll changes no turn state and keeps consuming
-// the live RNG stream from its current position.
-export async function rerollMenu() {
-    const acceptKey = game.flags?.lootabc ? 'a' : 'p';
-    const rerollKey = game.flags?.lootabc ? 'b' : 'r';
-    const descriptions = [];
-    for (const item of game.inventory || []) {
-        observeObjectForNaming(item, { distant: true });
-        descriptions.push(await rerollItemDescription(item));
-    }
-    const entries = [
-        { key: acceptKey, text: 'start the game with this character' },
-        { key: rerollKey, text: 'reroll another character' },
-        '',
-        ...descriptions,
-        '',
-        rerollAttributeLine(),
-    ];
-    const key = await showChoiceWindow({
-        title: 'Reroll this character?',
-        entries,
-    });
-    const choice = String.fromCharCode(key);
-    const reroll = choice === rerollKey ? true
-        : choice === acceptKey ? false : await rerollFallbackPrompt();
-    if (reroll) {
-        const roleplay = game.u.uroleplay;
-        if (!roleplay) throw new Error('Reroll requires initialized roleplay options');
-        roleplay.numrerolls = (roleplay.numrerolls || 0) + 1;
-    }
-    return reroll;
 }
 
 async function inventorySections(
@@ -1993,53 +3249,6 @@ function inventoryActionKey(code: number): InventoryActionKey {
     }
 }
 
-export async function ddoinv(): Promise<InventoryAction | null> {
-    const inventory = game.inventory || [];
-    const { key } = await selectInventoryObject();
-    const selected = inventory.find(item =>
-        item.invlet === String.fromCharCode(key));
-    let action: InventoryAction | null = null;
-    if (selected) {
-        action = await inventoryActionForObject(selected);
-    }
-    await flush_screen(1);
-    game.context.move = 0;
-    return action;
-}
-
-// C invent.c:display_inventory(). The queued branch of native display_inventory checks class symbols in
-// the filter, even when its caller supplied inventory letters instead.
-// Undefined means no queued answer; zero means the queue rejected a choice.
-export function takeQueuedInventoryChoice(classes: string | null = null): number | undefined {
-    // One cmdq_pop() (invent.c:3430-3447)
-    // must yield a CMDQ_KEY naming a visible object of a filtered class;
-    // any other entry — or an unmatched letter — clears CQ_CANNED and
-    // returns 0.
-    const entry = cmdq_pop();
-    if (!entry) return undefined;
-    if (entry.typ === CMDQ_KEY) {
-        const object = game.inventory.find(item => item.invlet === String.fromCharCode(entry.key));
-        const symbol = object ? OBJECT_CLASS_SYMBOLS[object.oclass] : undefined;
-        if (object && (!classes || symbol !== undefined && classes.includes(symbol))) return entry.key;
-    }
-    cmdq_clear(CQ_CANNED);
-    return 0;
-}
-
-// C invent.c:display_used_invlets(). A split's original letter is omitted;
-// all remaining carried slots, including gold, stay visible.
-export async function selectUsedInventoryLetter(avoidLetter: string | null): Promise<number> {
-    const items = game.inventory.filter(item => item.invlet !== avoidLetter);
-    // This menu walks the carried chain once per pack class; sortloot does
-    // not reorder items within a class, even when it sorts other menus.
-    const ordered = game.flags.sortpack === false ? items
-        : inventoryClassOrder().flatMap(oclass => items.filter(item => item.oclass === oclass));
-    const result = await showInventoryWindow(await inventorySectionsInOrder(ordered), {
-        title: 'Inventory letters used:', pickMode: PICK_ONE,
-    });
-    return result.key;
-}
-
 // C end.c:really_done() discovers every carried type and marks all of the
 // object's knowledge bits before disclose() calls display_inventory().
 // Keep that state transition separate from the ordinary `i` command, whose
@@ -2071,105 +3280,6 @@ export function identifyObjectForDisclosure(item: GameObject, identifyTinContent
     if (item.oclass === GEM_CLASS && canonicalName) item.name = canonicalName;
 }
 
-// C invent.c:display_pickinv(): the getobj inventory menu, including the
-// "Not carrying anything" shortcut and the hands entry when allowed.
-export async function selectInventoryObject({
-    letters, includeGold = true, title = null, extraChoice = null,
-    pickMode = PICK_ONE, headingAttr, menuOptions = [],
-}: InventoryObjectMenuOptions = {}): Promise<InventorySelection> {
-    const filtered = !!letters;
-    const candidates = letters ? game.inventory.filter(item => item.invlet && letters.includes(item.invlet))
-        : game.inventory;
-    const visible = includeGold ? candidates : candidates.filter(item => item.oclass !== COIN_CLASS);
-    if (!visible.length && !extraChoice) {
-        await pline('Not carrying anything.');
-        return { key: 0, count: null };
-    }
-    // C invent.c:reassign() refreshes rotating letters; the wizard-mode
-    // override_ID display runs identify_pack()/count_unidentified() first.
-    if (game.flags.fixinv === false) reassignInventoryLetters();
-    const wizardIdentification = game.flags.debug && game.iflags.override_ID;
-    // Native counts '-' as a filter letter as well as an extra hands entry,
-    // so a hands-only filter stays in a menu window.
-    const singleton = !menuOptions.length && !game.flags.force_invmenu
-        && !game.iflags.menu_requested && !wizardIdentification
-        && (letters?.length === 1 && !extraChoice
-            || !filtered && visible.length === 0 && !!extraChoice);
-    if (singleton) {
-        const item = visible[0];
-        if (item) observeObjectForNaming(item);
-        const letter = item ? item.invlet : '-';
-        if (!letter) throw new Error('A carried inventory choice has no letter');
-        const description = item ? await inventoryItemDescription(item, {
-            primaryHandDetail: inventoryPrimaryHandDetail(item),
-        }) : extraChoice;
-        const key = await showMessageMenu(letter, item ? pickMode : PICK_ONE,
-            `${letter} - ${description}.`);
-        return { key, count: null };
-    }
-    // invent.c:display_pickinv() runs sortloot() over the whole inventory
-    // (observing every object via loot_classify()) and only afterwards
-    // drops entries whose letters are absent from the requested set,
-    // treating an empty set as no filter at all.
-    const sections = await inventorySections(game.inventory, includeGold, letters || null);
-    if (extraChoice && !wizardIdentification) sections.unshift({
-        heading: game.flags.sortpack === false ? null : 'Miscellaneous',
-        items: [{ text: extraChoice, key: '-' }],
-    });
-    if (menuOptions.length) sections.push({
-        heading: 'Special', items: menuOptions.map(option => ({
-            text: option.text, key: option.key,
-        })),
-    });
-    return showInventoryWindow(sections, {
-        pickMode, title, ...(headingAttr === undefined ? {} : { headingAttr }),
-    });
-}
-
-export async function dolook() {
-    hideUnhideMessageTypes(true, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
-    try {
-        const { tookTime } = await lookHere(0);
-        game.context.move = tookTime ? 1 : 0;
-    } finally {
-        hideUnhideMessageTypes(false, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
-    }
-}
-
-// C invent.c:count_contents(). A new drop counts unpaid contents before ownership marks change.
-// shk.c:stolen_value() sizes a broken container's shop-owned contents.
-export function countContents(container: GameObject, { quantity = false, everything = false, newdrop = false } = {},
-    state: GameState = game): number {
-    let shoppy = false;
-    if (!everything && !newdrop) {
-        let top = container;
-        while (top.container) top = top.container;
-        if (top.where === 'floor')
-            shoppy = !!costlySpot(top.ox, top.oy, state);
-    }
-    let count = 0;
-    for (const content of container.contents || []) {
-        if (content.contents?.length)
-            count += countContents(content, { quantity, everything, newdrop }, state);
-        if (everything || content.unpaid || (shoppy && !content.no_charge))
-            count += quantity ? (content.quan ?? content.quantity ?? 1) : 1;
-    }
-    return count;
-}
-
-// C invent.c:doperminv(). The recorder's tty port is built without
-// TTY_PERM_INVENT (config.h leaves it commented out and windconf.h is
-// WIN32-only), so it does not advertise WC_PERM_INVENT and the command
-// always reports the unsupported window port.
-export async function doPermanentInventory(): Promise<void> {
-    game.context.move = 0;
-    await pline("Persistent inventory display is not supported by 'tty'.");
-}
-
-type InventoryReport = 'gold' | 'weapon' | 'armor' | 'rings' | 'amulet' | 'tools' | 'inuse' | 'type';
-type Buc = 'B' | 'U' | 'C' | 'X';
-const BUC_CHOICES: readonly Buc[] = ['B', 'C', 'U', 'X'];
-
 // Command dispatch shared by the inventory report keys.
 export async function inventoryReport(report: InventoryReport): Promise<InventoryAction | null> {
     game.context.move = 0;
@@ -2185,167 +3295,12 @@ export async function inventoryReport(report: InventoryReport): Promise<Inventor
     }
 }
 
-// C invent.c:doprgold(). Report visible and known hidden gold, then shop debt.
-async function doprgold(): Promise<InventoryAction | null> {
-    const purse = heroGoldAmount(game), stashed = hiddenGold(game, false);
-    if (game.flags.verbose !== false) {
-        let message = purse ? `Your wallet contains ${purse} ${currency(purse)}` : 'Your wallet is empty';
-        if (stashed) message += `, ${purse ? 'and' : 'but'} you have ${stashed} ${
-            purse ? 'more' : currency(stashed)} stashed away in your pack`;
-        await pline(`${message}.`);
-    } else {
-        const total = purse + stashed;
-        await pline(total ? `You are carrying a total of ${total} ${currency(total)}.` : 'You have no money.');
-    }
-    await reportShopFinances();
-    const gold = heroGoldObject(game);
-    return gold && game.iflags.menu_requested ? reportSubset([gold], false) : null;
-}
-
-// C invent.c:doprwep().
-async function doprwep(): Promise<InventoryAction | null> {
-    if (!game.uwep) {
-        await pline(`You are ${game.uarmg ? 'empty handed' : monsterIsHumanoid(heroSpecies(game))
-            ? 'bare handed' : 'not wielding anything'}.`);
-    } else if (!game.iflags.menu_requested) {
-        await describeCarriedObject(game.uwep);
-        if (game.u.twoweap && game.uswapwep) await describeCarriedObject(game.uswapwep);
-    } else {
-        return reportSubset([game.uwep, game.uswapwep, game.uquiver]
-            .filter((object): object is GameObject => !!object));
-    }
-    return null;
-}
-
-// C invent.c:noarmor(). Mention skin armor only when the caller requests it.
-async function noarmor(reportSkin: boolean): Promise<void> {
-    await pline(reportSkin && game.uskin ? `You are not wearing armor but have ${simpleObjectName(game.uskin)
-        .replace(/^set of /i, '').replace(/ dragon /i, ' ')} embedded in your skin.`
-        : 'You are not wearing any armor.');
-}
-
-// C invent.c:doprarm().
-async function doprarm(): Promise<InventoryAction | null> {
-    const armor = [game.uarm, game.uarmc, game.uarms, game.uarmh, game.uarmg, game.uarmf, game.uarmu]
-        .filter((object): object is GameObject => !!object);
-    if (armor.length) return reportSubset(armor);
-    await noarmor(true);
-    return null;
-}
-
-// C invent.c:doprring().
-async function doprring(): Promise<InventoryAction | null> {
-    const rings = [game.uright, game.uleft].filter((object): object is GameObject => !!object);
-    if (rings.length) return reportSubset(rings, rings.length > 1 || !!game.iflags.menu_requested
-        || rings.some(object => object.oclass !== RING_CLASS), rings.length === 1 ? 'Ring' : 'Rings');
-    await pline('You are not wearing any rings.');
-    return null;
-}
-
-// C invent.c:dopramulet().
-async function dopramulet(): Promise<InventoryAction | null> {
-    if (game.uamul) return reportSubset([game.uamul], true, 'Amulet');
-    await pline('You are not wearing an amulet.');
-    return null;
-}
-
-// C invent.c:doprtool().
-async function doprtool(): Promise<InventoryAction | null> {
-    const items = game.inventory.filter(toolBeingUsed);
-    if (items.length) return reportSubset(items.slice(0, 52));
-    await pline('You are not using any tools.');
-    return null;
-}
-
-// C invent.c:doprinuse().
-async function doprinuse(): Promise<InventoryAction | null> {
-    const items = game.inventory.filter(isInUse);
-    if (items.length) return reportSubset(null);
-    await pline('You are not wearing or wielding anything.');
-    return null;
-}
-
 async function describeCarriedObject(object: GameObject): Promise<void> {
     if (game.flags.fixinv === false) reassignInventoryLetters();
     observeObjectForNaming(object);
     await pline(`${object.invlet} - ${await inventoryItemDescription(object, {
         primaryHandDetail: inventoryPrimaryHandDetail(object),
     })}.`);
-}
-
-// C invent.c:tool_being_used().
-function toolBeingUsed(object: GameObject): boolean {
-    return !!((object.owornmask ?? 0) & (W_TOOL | W_SADDLE))
-        || object.oclass === TOOL_CLASS && (object === game.uwep || !!object.lamplit
-            || object.otyp === LEASH && !!object.leashmon);
-}
-
-// C invent.c:is_inuse().
-function isInUse(object: GameObject): boolean {
-    return !!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE | W_WEAPONS))
-        || toolBeingUsed(object);
-}
-
-// C invent.c:dispinv_with_action().
-async function reportSubset(items: readonly GameObject[] | null, inuse = true, accessoryLabel = 'Accessories')
-: Promise<InventoryAction | null> {
-    if (game.flags.fixinv === false) reassignInventoryLetters();
-    const candidates = items ?? game.inventory.filter(isInUse);
-    const queued = takeQueuedInventoryChoice(items ? items.map(object => object.invlet).join('') : null);
-    if (queued !== undefined) {
-        if (queued === 0 || queued === 27) return null;
-        const selected = game.inventory.find(object => object.invlet === String.fromCharCode(queued));
-        return selected ? inventoryActionForObject(selected) : null;
-    }
-    let key: number;
-    if (items?.length === 1 && !game.iflags.menu_requested) {
-        const first = items[0];
-        if (first) await describeCarriedObject(first);
-        return null;
-    }
-    if (!inuse) {
-        const forceMenu = game.flags.force_invmenu;
-        game.flags.force_invmenu = false;
-        try {
-            key = (await selectInventoryObject({ letters: candidates.map(object => object.invlet).join('') })).key;
-        } finally {
-            if (forceMenu === undefined) delete game.flags.force_invmenu;
-            else game.flags.force_invmenu = forceMenu;
-        }
-    } else {
-        const ordered = sortObjects(candidates, { mode: SORTLOOT_INUSE });
-        // invent.c:display_pickinv() classifies entries only when sortloot()
-        // actually runs its comparison, so a lone in-use entry keeps
-        // orderclass 0 and is listed without any class heading.  The bare
-        // hands entry makes the sorted list big enough to classify.
-        const headed = ordered.length >= 2 || (!items && !game.uwep);
-        const sections: InventorySection[] = [{ heading: null, items: [{ text: 'Inventory in use', attr: 1 }] }];
-        const rows: { object: GameObject | null; heading: string | null }[] = ordered.map(object => ({
-            object, heading: headed ? inUseHeading(object, accessoryLabel) : null,
-        }));
-        if (!items && !game.uwep) {
-            const position = rows.findIndex(row => row.heading === 'Wielded/Readied Weapons'
-                || row.heading === 'Worn Armor' || row.heading === 'Miscellaneous');
-            rows.splice(position < 0 ? rows.length : position, 0, { object: null, heading: 'Wielded/Readied Weapons' });
-        }
-        for (const row of rows) {
-            const object = row.object;
-            if (object) {
-                observeObjectForNaming(object);
-                consumeHallucinatedMenuObjectGlyph(object);
-            }
-            const text = object ? await inventoryItemDescription(object, {
-                primaryHandDetail: inventoryPrimaryHandDetail(object),
-            }) : `${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))} (no weapon)`;
-            const item = { key: object?.invlet ?? '-', text };
-            const last = sections.at(-1);
-            if (last?.heading === row.heading) sections[sections.length - 1] = { ...last, items: [...last.items, item] };
-            else sections.push({ heading: row.heading, items: [item] });
-        }
-        key = (await showInventoryWindow(sections, { pickMode: PICK_ONE })).key;
-    }
-    const selected = candidates.find(object => object.invlet === String.fromCharCode(key));
-    return selected ? inventoryActionForObject(selected) : null;
 }
 
 function inUseHeading(object: GameObject, accessoryLabel: string): string {
@@ -2359,104 +3314,6 @@ function inUseHeading(object: GameObject, accessoryLabel: string): string {
 function beatitude(object: GameObject): Buc {
     if (object.oclass === COIN_CLASS) return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
-}
-
-// C invent.c:find_unpaid() and count_unpaid(): the recursive unpaid walk
-// over carried objects and container contents.
-function unpaidObjects(objects: readonly GameObject[]): GameObject[] {
-    return objects.flatMap(object => [...(object.unpaid ? [object] : []), ...unpaidObjects(object.contents ?? [])]);
-}
-
-// C invent.c:dotypeinv(): the 'I' type filter. ckvalidcat() and ckunpaid()
-// are the category filters, tally_BUCX() the beatitude statuses,
-// wearing_armor() the armor-class admission, and this_type_only() the
-// single-class selection — all inlined below.
-// C pickup.c:count_justpicked()/find_justpicked(): the marked stacks
-// of the previous pickup feed the 'P' selection.
-async function typeInventory(): Promise<InventoryAction | null> {
-    const bill = usedUpBill();
-    if (!game.inventory.length && !bill.length) {
-        await pline("You aren't carrying anything.");
-        return null;
-    }
-    if (game.urole?.key === 'priest')
-        for (const object of game.inventory) object.bknown = object.oclass !== COIN_CLASS;
-    const level = requireGameLevel();
-    const carried = unpaidObjects(game.inventory);
-    const floor = unpaidObjects(level.objects.flatMap(column =>
-        (column ?? []).flatMap(pile => pile ?? [])));
-    const buried = unpaidObjects(level.buriedObjects ?? []);
-    const statuses = new Set(game.inventory.map(beatitude));
-    const picked = game.inventory.filter(object => object.pickup_prev);
-    const classes = [...new Set(game.inventory.map(object => object.oclass))];
-    const extra = `${carried.length + floor.length + buried.length ? 'u' : ''}${bill.length ? 'x' : ''}${
-        [...'BUCX'].filter(status => statuses.has(bucChoice(status))).join('')}${picked.length ? 'P' : ''}`;
-    const prompt = 'What type of object do you want an inventory of?';
-    let choice: string | number | null;
-    const style = game.flags.menu_style ?? MENU_FULL;
-    if (style === MENU_FULL || style === MENU_PARTIAL) {
-        const menuClasses = [...inventoryClassOrder(), VENOM_CLASS].filter(oclass => classes.includes(oclass));
-        choice = await inventoryCategoryMenu(menuClasses, carried.length > 0, bill.length > 0, statuses, picked, prompt);
-    } else {
-        const types = classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('') + (extra ? ` ${extra}` : '');
-        choice = types;
-        if (types.length > 1) {
-            // invent.c:dotypeinv() accepts absent classes and categories too,
-            // but hides them after ESC in the response list.
-            const hiddenTypes = [...'uxBUCXP', ...OBJECT_CLASS_SYMBOLS]
-                .filter(symbol => !types.includes(symbol)).join('');
-            choice = (await yn_function(prompt, `${types}\x1b${hiddenTypes}`, '', true)).answer;
-            if (!choice || choice === '\0') {
-                clearMessageWindow();
-                return null;
-            }
-        }
-    }
-    if (choice === null) return null;
-    if (choice === 'x' || choice === 'X' && bill.length && !statuses.has('X')) {
-        if (bill.length) await showBill(bill);
-        else await pline(`No used-up objects${carried.length + floor.length + buried.length ? ' on your shopping bill' : ''}.`);
-        return null;
-    }
-    if (choice === 'u' || choice === 'U' && carried.length + floor.length + buried.length > 0 && !statuses.has('U')) {
-        if (carried.length + floor.length + buried.length) await showUnpaid(carried, floor.length, buried.length);
-        else await pline('You are not carrying any unpaid objects.');
-        return null;
-    }
-    const status = typeof choice === 'string' && 'BUCXP'.includes(choice) ? choice : null;
-    const oclass = typeof choice === 'number' ? choice : OBJECT_CLASS_SYMBOLS.indexOf(choice);
-    const candidates = game.inventory.filter(object => status === 'P' ? object.pickup_prev
-        : status ? beatitude(object) === status : object.oclass === oclass);
-    const before = status === 'B' ? 'known to be blessed ' : status === 'U' ? 'known to be uncursed '
-        : status === 'C' ? 'known to be cursed ' : status ? '' : 'such ';
-    const after = status === 'X' ? ' whose blessed/uncursed/cursed status is unknown'
-        : status === 'P' ? ' that were just picked up' : '';
-    if (!candidates.length) {
-        await pline(`You have no ${before}objects${after}.`);
-        return null;
-    }
-    const sorted = sortObjects(candidates, { mode: lootSortMode({ inventoryLetters: game.flags.fixinv !== false }) });
-    const order = [...inventoryClassOrder(), VENOM_CLASS];
-    const sections: PageLocalMultiSelectSection<GameObject>[] = [];
-    for (const oclass of order) {
-        const objects = sorted.filter(object => object.oclass === oclass);
-        if (!objects.length) continue;
-        const items = [];
-        for (const object of objects) {
-            observeObjectForNaming(object);
-            consumeHallucinatedMenuObjectGlyph(object);
-            items.push({ ...(game.flags.fixinv !== false ? { key: object.invlet ?? '#' }
-                : object === sorted[0] && object.oclass === COIN_CLASS ? { key: '$' } : {}),
-                groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '', value: object,
-                text: await inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }) });
-        }
-        sections.push({ heading: objectClassHeading(oclass), items });
-    }
-    const selected = await showMultiSelectWindow({ title: '',
-        introLines: status ? [`Items ${(before || after).trim()}:`] : [],
-        sections, pageLocalKeys: true, pickOne: true });
-    const object = selected[0];
-    return object ? inventoryActionForObject(object) : null;
 }
 
 function bucChoice(choice: string): Buc {
@@ -2495,55 +3352,6 @@ async function inventoryCategoryMenu(classes: readonly number[], unpaid: boolean
     return selected[0] ?? null;
 }
 
-// C invent.c:dounpaid(): list unpaid inventory (and floor/buried) items
-// with prices, from 'I u' or the unpaid inventory menu.
-async function showUnpaid(carried: readonly GameObject[], floor: number, buried: number): Promise<void> {
-    const extra = floor + buried;
-    const first = carried[0];
-    if (first && carried.length === 1 && !extra && !unknownContainer(first)) {
-        await pline(await pricedInventoryLine(first, first.where === 'inventory' ? first.invlet ?? '#' : '>', await unpaidObjectCost(first)));
-        return;
-    }
-    if (game.flags.fixinv === false) reassignInventoryLetters();
-    const lines: string[] = [];
-    let total = 0;
-    const top = game.inventory.filter(object => object.unpaid);
-    for (const oclass of game.flags.sortpack === false ? [null] : inventoryClassOrder()) {
-        const objects = top.filter(object => oclass === null || object.oclass === oclass);
-        if (objects.length && oclass !== null) lines.push(`Unpaid ${objectClassHeading(oclass)}`);
-        for (const object of objects) {
-            const price = await unpaidObjectCost(object);
-            total += price;
-            lines.push(await pricedInventoryLine(object, object.invlet ?? '#', price));
-        }
-    }
-    if (carried.length > top.length) {
-        if (game.flags.sortpack !== false) lines.push('Unpaid Bagged/Boxed items');
-        for (const container of game.inventory) {
-            const contents = unpaidObjects(container.contents ?? []);
-            if (!container.contents?.length) continue;
-            let price = 0;
-            for (const object of contents) {
-                const cost = await unpaidObjectCost(object);
-                price += cost;
-                total += cost;
-                if (container.cknown) lines.push(await pricedInventoryLine(object, '>', cost));
-            }
-            if (!container.cknown)
-                lines.push(await pricedInventoryLine(null, '>', price, `${possessiveName(objectName(container))} contents`));
-        }
-    }
-    if (carried.length) lines.push('', await pricedInventoryLine(null, '*', total, 'Total:'));
-    if (extra) {
-        const verb = extra > 1 ? 'are' : 'is';
-        const where = !buried ? 'on the floor' : !floor ? 'under the floor' : 'on or under the floor';
-        if (!carried.length) await pline(`You aren't carrying any unpaid items but there ${verb} ${extra} ${where}.`);
-        else lines.push('', `(There ${verb} ${extra} more unpaid object${extra === 1 ? '' : 's'} ${where}.)`);
-    }
-    // C invent.c:3703 fills the unpaid-items window with putstr().
-    if (carried.length) await showTextMenuOverlay(lines, { viaPutstr: true });
-}
-
 function unknownContainer(object: GameObject): boolean {
     let container = object.container;
     while (container) {
@@ -2551,72 +3359,6 @@ function unknownContainer(object: GameObject): boolean {
         container = container.container;
     }
     return false;
-}
-
-export async function pricedInventoryLine(object: GameObject | null, letter: string, price: number,
-    text: string | null = null, { quantity = 0, useInvlet = true, distant = true }:
-    { quantity?: number; useInvlet?: boolean; distant?: boolean } = {}): Promise<string> {
-    const suppress = game.iflags.suppress_price;
-    game.iflags.suppress_price = true;
-    const saved = object?.quan;
-    try {
-        if (object) {
-            if (quantity) object.quan = quantity;
-            if (distant) text ??= await distantObjectName(object, inventoryItemDescription);
-            else {
-                observeObjectForNaming(object);
-                text ??= await inventoryItemDescription(object);
-            }
-            if (useInvlet && game.flags.fixinv !== false && letter !== '>') letter = object.invlet ?? letter;
-        }
-        const tab = game.iflags.menu_tab_sep;
-        if (!price && letter !== '*') return `${letter} - ${text}${useInvlet ? '.' : ''}`;
-        return `${letter} - ${tab ? text : (text ?? '').padEnd(45)}${tab ? '\t' : ' '}${String(price).padStart(6)} ${currency(price)}`;
-    } finally {
-        if (object && saved !== undefined) object.quan = saved;
-        if (suppress === undefined) delete game.iflags.suppress_price;
-        else game.iflags.suppress_price = suppress;
-    }
-}
-
-// Looking at floor objects and displaying their prices and pile windows.
-// C invent.c:look_here(), pickup.c:check_here(), and objnam.c.
-export interface FeatureOptions { state?: GameState; probing?: boolean }
-
-// C invent.c:dfeature_at(): name the dungeon feature on a square, if any.
-export function dungeonFeatureAt(x: number, y: number, { state = game, probing = false }: FeatureOptions = {}): string | null {
-    const location = requireGameLevel(state).requireAt(x, y);
-    const type = location.typ;
-    if (type === DOOR) {
-        if (findDrawbridgeAt(x, y, state)) return 'open drawbridge portcullis';
-        return location.doormask === D_NODOOR ? 'doorway'
-            : location.doormask === D_ISOPEN ? 'open door'
-                : location.doormask === D_BROKEN ? 'broken door' : 'closed door';
-    }
-    if (type === FOUNTAIN) return 'fountain';
-    if (type === THRONE) return 'opulent throne';
-    if (isLavaAt(x, y, state)) return 'molten lava';
-    const surface = type === DRAWBRIDGE_UP
-        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : type;
-    if (surface === ICE) return iceDescriptionAt(x, y, { state, probing });
-    if (isPoolAt(x, y, state)) return 'pool of water';
-    if (type === SINK) return 'sink';
-    if (type === ALTAR) {
-        const alignment = Amask2align(location.flags);
-        const name = alignment === A_NONE ? 'unaligned'
-            : alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
-        const deity = deityName(alignment, state).replace(/^_/, '');
-        return `${location.flags & AM_SANCTUM ? 'high ' : ''}altar to ${deity} (${name})`;
-    }
-    for (let stairway = state.stairs; stairway; stairway = stairway.next)
-        if (stairway.sx === x && stairway.sy === y)
-            return stairwayDescription(stairway, state);
-    if (type === DRAWBRIDGE_DOWN) return 'lowered drawbridge';
-    if (type === DBWALL) return 'raised drawbridge';
-    if (type === GRAVE) return 'grave';
-    if (type === TREE) return 'tree';
-    if (type === IRONBARS) return 'set of iron bars';
-    return null;
 }
 
 export function dungeonFeatureSentenceAt(x: number, y: number): string {
@@ -2636,78 +3378,6 @@ export async function readFloorEngraving(x: number, y: number): Promise<void> {
     // engrave.c:read_engr_at() only calls nomul(0) for a real run
     // (context.run > 0); a counted walk keeps moving past the engraving.
     if (read && (game.context.run ?? 0) > 0) nomul(0);
-}
-
-// C invent.c:look_here(). A positive objectCount is
-// autopickup's count, which summarizes a pile at pile_limit; skipFeature
-// means describe_decor() already showed the terrain.
-export async function lookHere(
-    objectCount = 0, { pickedSome = false, skipFeature = false } = {},
-): Promise<{ died: boolean; tookTime: boolean }> {
-    const blind = heroIsBlind();
-    if (game.u.uswallow && game.u.ustuck) {
-        const monster = game.u.ustuck;
-        const location = `${possessiveName(monsterName(monster))} ${monsterStomachName(monster.mnum)}`;
-        await plineWithContinuation(`You ${blind ? 'try' : 'look around'} to ${blind ? 'feel' : 'see'} what is lying in ${location}.`);
-        const objects = monster.minvent ?? monster.inventory ?? [];
-        if (!objects.length) {
-            await plineWithContinuation(`You ${blind ? 'feel' : 'see'} no objects here.`);
-            return { died: false, tookTime: blind };
-        }
-        for (const object of objects) {
-            const contact = await feelPetrifyingCorpse(object);
-            if (contact.died) return { died: true, tookTime: blind };
-        }
-        await displayMonsterInventory(monster, objects, location, blind);
-        return { died: false, tookTime: blind };
-    }
-    const { ux: x, uy: y } = game.u;
-    const level = requireGameLevel();
-    const limit = configuredPileLimit();
-    const skipObjects = limit > 0 && objectCount >= limit;
-    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
-    if (!skipObjects) {
-        const region = visibleRegionAt(game, x, y);
-        const features: string[] = [];
-        if (region) features.push(`a ${region.damage ? 'poison gas' : 'vapor'} cloud`);
-        if (trap?.tseen) features.push(withIndefiniteArticle(trapName(trap.ttyp)));
-        if (features.length) await plineWithContinuation(`There is ${features.join(' and ')} here.`);
-    }
-    const underwater = !!(game.underwater || game.u.uinwater);
-    let featureName = dungeonFeatureAt(x, y);
-    if (featureName === 'pool of water' && underwater) featureName = null;
-    let hideFeature = skipFeature;
-    if (blind) {
-        const drift = Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
-        const surface = surfaceName(x, y);
-        if (featureName?.startsWith('altar ')) {
-            await plineWithContinuation('You try to feel what is here.');
-        } else if (isIceAt(x, y)) {
-            if (!game.flags.mention_decor || game._prevDecorType === ICE) await forceDescribeDecor();
-            await plineWithContinuation('You try to feel what is on it.');
-            hideFeature = true;
-        } else {
-            const where = drift ? 'floating here' : heroCanReachFloor(game, { checkPit: true })
-                ? `lying here on the ${surface}` : 'lying beneath you';
-            await plineWithContinuation(`You try to feel what is ${where}.`);
-            if (!drift && featureName === surface) hideFeature = true;
-        }
-        if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
-            await plineWithContinuation("But you can't reach it!");
-            return { died: false, tookTime: false };
-        }
-    }
-    const feature = hideFeature ? '' : dungeonFeatureSentence(featureName);
-    const objects = isLavaAt(x, y) || (isPoolAt(x, y) && !underwater) ? [] : level.objects[x]?.[y] ?? [];
-    if (!objects.length) {
-        if (feature) await plineWithContinuation(feature);
-        await readFloorEngraving(x, y);
-        if (!skipObjects && (blind || !featureName))
-            await plineWithContinuation(`You ${blind ? 'feel' : 'see'} no objects here.`);
-        return { died: false, tookTime: blind };
-    }
-    const { died } = await showFloorPile(objects, pickedSome, feature, { objectCount });
-    return { died, tookTime: blind };
 }
 
 function configuredPileLimit(): number {
@@ -2849,396 +3519,9 @@ export function inventoryCommandLetter(item: GameObject): string {
     return item.invlet;
 }
 
-// C invent.c:adjust_split(). The split remains linked beside its
-// original until the destination is chosen; cancelling merges it back.
-export async function adjustSplit(): Promise<void> {
-    game.context.move = 0;
-    const object = await chooseInventoryObject('split', adjustOk);
-    if (!object || object.quan < 2 || object.oclass === COIN_CLASS) {
-        commandResultFailed(); // invent.c:adjust_split() ECMD_FAIL.
-        return;
-    }
-    let amount: number | null;
-    if (object.quan === 2) {
-        amount = 1;
-    } else {
-        // C adjust_split(): "get first digit; doesn't wait for <return>".
-        await flushPendingTopline();
-        const dig = await ynSingleKey('Split off how many? ');
-        if (dig < 48 || dig > 57) {
-            amount = null;
-        } else {
-            const { key, count } = await getCount(dig, 0n, GC_ECHOFIRST | GC_CONDHIST);
-            clearMessageWindow();
-            // C adjust_split(): quitchars[] accepts only space, \n and \r;
-            // Escape (checked separately in C) and every other key cancel
-            // with the count discarded.
-            amount = key === 32 || key === 10 || key === 13 ? Number(count) : null;
-        }
-    }
-    if (amount === null) {
-        await pline('Never mind.');
-        commandResultCancelled(); // adjust_split() quit answer ECMD_CANCEL.
-        return;
-    }
-    if (amount < 1 || amount >= object.quan) {
-        await pline(`Amount to split from current stack must be ${amount < 1
-            ? 'at least 1' : `less than ${object.quan}`}.`);
-        commandResultCancelled(); // adjust_split() bad amount ECMD_CANCEL.
-        return;
-    }
-    const split = splitObjectStack(object, amount, game);
-    if (!split) throw new Error('An admitted inventory stack could not be split');
-    await doadjust(split, object);
-}
-
-// C invent.c:adjust_ok(). Gold is excluded from ordinary adjustment.
-function adjustOk(object: GameObject): InventoryClassification {
-    return object.oclass === COIN_CLASS ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST;
-}
-
-// C invent.c:adjust_gold_ok(). The sanity repair allows gold too.
-function adjustGoldOk(_object: GameObject): InventoryClassification {
-    return GETOBJ_SUGGEST;
-}
-
-// C invent.c:doorganize(). Select the source object before adjusting its letter.
-export async function doadjust(selected: GameObject | null = null, splitting: GameObject | null = null) {
-    const inventory = (game.inventory || [])
-        .filter((object: GameObject): object is GameObject & { invlet: string } =>
-                typeof object.invlet === 'string' && object.invlet.length > 0)
-        .sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
-    if (!inventory.length) {
-        await pline("You aren't carrying anything to adjust.");
-        game.context.move = 0;
-        return;
-    }
-    if (inventory.length === 1 && inventory[0]?.oclass === COIN_CLASS && inventory[0].invlet === '$') {
-        await pline("You aren't carrying anything adjustable.");
-        game.context.move = 0;
-        return;
-    }
-    if (!selected && game.flags.fixinv === false) reassignInventoryLetters();
-    const repairGold = !selected && await checkInventoryGold('adjust');
-    const object = selected || await chooseInventoryObject('adjust', repairGold ? adjustGoldOk : adjustOk,
-        { forcePrompt: true, allowCount: true });
-    await doorganizeCore(object, splitting, inventory);
-}
-
-// C invent.c:doorganize_core(). Move, split, merge, or exchange the selected stack.
-async function doorganizeCore(
-    object: GameObject | null, splitting: GameObject | null,
-    inventory: readonly (GameObject & { invlet: string })[],
-): Promise<void> {
-    if (!object) {
-        // invent.c:doorganize_core() returns ECMD_CANCEL when getobj() is
-        // dismissed; the rhack seam clears both command queues.
-        game.context.move = 0;
-        commandResultCancelled();
-        return;
-    }
-    if (!splitting) {
-        const previous = game.inventory[game.inventory.indexOf(object) - 1];
-        if (previous && previous.invlet === object.invlet) splitting = previous;
-    }
-    const source = object.invlet;
-    if (!source) throw new Error('Adjusting inventory requires a lettered object.');
-    // C doorganize_core() chooses '$' itself when repairing gold. A purse
-    // already in '$' collects other stacks; one elsewhere merges into '$'.
-    if (object.oclass === COIN_CLASS) {
-        const collect = object.invlet === '$';
-        let purse = object;
-        let action = collect ? 'Collecting' : 'Moving';
-        for (const candidate of inventory) {
-            if (candidate === purse || candidate === object) continue;
-            if (!collect && candidate.invlet !== '$') continue;
-            const candidateName = candidate.oextra?.oname ?? candidate.oname;
-            const purseName = purse.oextra?.oname ?? purse.oname;
-            const merged = (!candidateName || candidateName === purseName)
-                ? await mergeObjectStacks(candidate, purse) : null;
-            if (merged) {
-                purse = merged;
-                if (collect) continue;
-                action = 'Merging';
-            } else if (!collect) {
-                candidate.invlet = source;
-                action = 'Swapping';
-            }
-            if (!collect) break;
-        }
-        purse.invlet = '$';
-        game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
-        if (game.flags.fixinv === false) reassignInventoryLetters();
-        observeObjectForNaming(purse);
-        await pline(`${action}: $ - ${await inventoryItemDescription(purse)}.`);
-        game.context.move = 0;
-        return;
-    }
-    const adjusting = object;
-    const occupied = new Set(
-        inventory.filter(candidate => candidate !== adjusting && !mergable(candidate, adjusting))
-            .map(candidate => candidate.invlet),
-    );
-    const slots = game.flags.fixinv === false
-        ? game.inventory.filter(item => item.oclass !== COIN_CLASS).length + (splitting ? 0 : 1) : 52;
-    const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.slice(0, slots)
-        .split('')
-        .filter(letter => letter === adjusting.invlet || !occupied.has(letter))
-        .join('') + (occupied.has('#') ? '#' : '');
-    const destinationPrompt = `${splitting ? `Split ${object.quan}` : 'Adjust letter'} to what [${
-        compactInventoryLetters(recommended)}] (? see used letters)?`;
-    // The source item's queued letter bypasses getobj's prompt, but the
-    // destination uses tty_yn_function(), which acknowledges unread prose.
-    await flushPendingTopline();
-    let destination = '';
-    for (let attempt = 1; ; attempt++) {
-        let key = (await yn_function(destinationPrompt, null, '', true)).answer.charCodeAt(0);
-        if (key === 63 || key === 42) {
-            key = await selectUsedInventoryLetter(splitting ? source : null);
-            if (!key) continue;
-        }
-        destination = String.fromCharCode(key);
-        // C strchr(quitchars, let) also matches a literal fuzzer NUL.
-        if ([0, 27, 32, 10, 13].includes(key) || splitting && destination === source) {
-            if (splitting) await rejoinObjectStack(splitting, object, game);
-            clearMessageWindow();
-            await pline('Never mind.');
-            game.context.move = 0;
-            return;
-        }
-        if (destination === '$') {
-            if (splitting) await rejoinObjectStack(splitting, object, game);
-            clearMessageWindow();
-            await pline("Only gold coins may be moved into the '$' slot.");
-            game.context.move = 0;
-            return;
-        }
-        if (/^[a-zA-Z]$/.test(destination) || destination === '#' && occupied.has('#')) break;
-        if (attempt === 5) {
-            if (splitting) await rejoinObjectStack(splitting, object, game);
-            clearMessageWindow();
-            await pline('Never mind.');
-            game.context.move = 0;
-            return;
-        }
-        await plineWithContinuation('Select an inventory slot letter.');
-        await flushPendingTopline();
-    }
-
-    let action = splitting ? 'Splitting:' : destination === source ? 'Collecting:' : 'Moving:';
-    let bumped: GameObject | null = null;
-    // C extracts the selected stack before collecting. A merge can free
-    // that object, so it must never reappear among the remaining candidates.
-    unlinkObject(object, game);
-    for (const candidate of game.inventory.slice()) {
-        const name = object.oextra?.oname ?? object.oname;
-        const candidateName = candidate.oextra?.oname ?? candidate.oname;
-        const permitsName = !candidateName || !!name && name === candidateName;
-        if (destination === source) {
-            if (permitsName) {
-                const merged = await mergeObjectStacks(candidate, object);
-                if (merged) {
-                    object = merged;
-                    unlinkObject(object, game);
-                }
-            }
-            continue;
-        }
-        if (candidate.invlet !== destination) continue;
-        const merged = permitsName ? await mergeObjectStacks(candidate, object) : null;
-        if (merged) {
-            object = merged;
-            unlinkObject(object, game);
-            action = 'Merging:';
-        } else if (!splitting) {
-            candidate.invlet = source;
-            action = 'Swapping:';
-        } else {
-            // A split takes the destination's name when otherwise compatible.
-            if (name && !object.oartifact) {
-                if (object.oextra) delete object.oextra.oname;
-                delete object.oname;
-            }
-            const splitMerge = await mergeObjectStacks(candidate, object);
-            if (splitMerge) {
-                object = splitMerge;
-                unlinkObject(object, game);
-                action = 'Splitting and merging:';
-            } else {
-                if (name) {
-                    if (object.oextra) object.oextra.oname = name;
-                    object.oname = name;
-                }
-                if (game.inventory.filter(item => item !== object && item.oclass !== COIN_CLASS).length >= 52) {
-                    object.where = 'inventory';
-                    game.inventory.unshift(object);
-                    await rejoinObjectStack(splitting, object, game);
-                    clearMessageWindow();
-                    await pline('Your pack is too full.');
-                    game.context.move = 0;
-                    return;
-                }
-                unlinkObject(candidate, game);
-                bumped = candidate;
-            }
-        }
-        break;
-    }
-    object.invlet = destination;
-    object.where = 'inventory';
-    game.inventory.unshift(object);
-    if (bumped) {
-        assignInventoryLetter(bumped);
-        bumped.where = 'inventory';
-        game.inventory.unshift(bumped);
-    }
-    game.inventory.sort((a, b) =>
-        inventoryLetterRank(a) - inventoryLetterRank(b));
-    if (game.flags.fixinv === false) reassignInventoryLetters();
-    game._pending_message = '';
-    observeObjectForNaming(object);
-    await pline(
-        `${action} ${object.invlet} - ${
-            await inventoryItemDescription(object, {
-                primaryHandDetail: inventoryPrimaryHandDetail(object),
-            })}.`,
-    );
-    if (bumped) await plineWithContinuation(`Moving: ${bumped.invlet} - ${await inventoryItemDescription(bumped)}.`);
-    game.context.move = 0;
-}
-
-// C invent.c:consume_obj_charge(). Billing can suspend before charge removal.
-
-export async function consumeObjectCharge(object: GameObject, {
-    maybeUnpaid = true, state = game,
-}: { maybeUnpaid?: boolean; state?: GameState } = {}): Promise<void> {
-    requireLiveGame(state);
-    if (maybeUnpaid) await chargeUnpaidUsage(object, { state });
-    object.spe--;
-}
-// C invent.c:1428-1433 delobj(): normal object deletion (if unpaid, it
-// remains on the bill).
-export async function delobj(object: GameObject, state: GameState = game, random = rn2): Promise<void> {
-    await delobjCore(object, false, state, random);
-}
-
-// C invent.c:1435-1462 delobj_core().  `force` is the Rider-revival path.
-export async function delobjCore(
-    object: GameObject, force: boolean, state: GameState = game, random = rn2,
-): Promise<void> {
-    requireLiveGame(state);
-
-    /* obj_resists(obj,0,0) protects the Amulet, the invocation tools,
-     * and Rider corpses; the ordinary path still consumes its rn2(100)
-     * roll at zero probability (objectResistsDestruction does not skip
-     * the call), so deletion RNG parity is preserved. */
-    if (!force && objectResistsDestruction(object, 0, 0, random)) {
-        object.in_use = false; /* in case caller has set this */
-        return;
-    }
-
-    const updateMap = object.where === 'floor';
-    if (object.where === 'inventory') await freeInventoryObject(object, state);
-    else unlinkObject(object, state);
-    if (updateMap) {
-        /* floor object's coordinates are always up to date */
-        await maybeUnhideAt(object.ox, object.oy, state);
-        await newsym(object.ox, object.oy);
-    }
-    await deleteObject(object, state);
-}
-
-// ---------------------------------------------------------------------------
-// Inventory and loot ordering. C refs: invent.c:sortloot()/loot_classify().
-// ---------------------------------------------------------------------------
-
-export type InventoryOrderState = { flags: Pick<GameFlags, 'inv_order'> };
-
-interface LootClassification {
-    order: number;
-    subclass: number;
-    discovery: number;
-}
-
-type LootView = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'dknown' | 'globby'>>;
-
-interface LootEntry {
-    object: GameObject;
-    index: number;
-    classification?: LootClassification;
-    name?: string;
-}
-
-interface ObjectSortOptions {
-    mode?: number;
-    state?: GameState;
-    filter?: ((object: GameObject) => boolean) | null;
-}
-
-const DEFAULT_PACK_ORDER = [
-    COIN_CLASS, AMULET_CLASS, WEAPON_CLASS, ARMOR_CLASS, FOOD_CLASS,
-    SCROLL_CLASS, SPBOOK_CLASS, POTION_CLASS, RING_CLASS, WAND_CLASS,
-    TOOL_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
-];
-const DEFAULT_LOOT_ORDER = [
-    COIN_CLASS, AMULET_CLASS, RING_CLASS, WAND_CLASS, POTION_CLASS,
-    SCROLL_CLASS, SPBOOK_CLASS, GEM_CLASS, FOOD_CLASS, TOOL_CLASS,
-    WEAPON_CLASS, ARMOR_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
-];
-const INSTRUMENTS = new Set([WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
-    FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM,
-    DRUM_OF_EARTHQUAKE, HORN_OF_PLENTY]);
-
 export function inventoryClassOrder(state: InventoryOrderState = game): number[] {
     return [...(state.flags.inv_order || DEFAULT_PACK_ORDER)];
 }
-
-// C invent.c:useupf(). Consume floor stock, retaining any used-up shop bill.
-export async function useUpFloorObject(object: GameObject, count: number, {
-    state = game, publish = plineWithContinuation,
-}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    const { ox: x, oy: y } = object;
-    const consumed = object.quan > count ? splitObjectStack(object, count, state) : object;
-    if (!consumed) throw new Error('Floor consumption requires a valid stack quantity');
-    if (!state.context.mon_moving && costlySpot(x, y, state)) {
-        const room = roomsAt(state.level, x, y)[0];
-        if (room !== undefined && state.u.urooms.includes(room))
-            await addShopObjectToBill(consumed, state, { ininv: false, silent: false, publish });
-        else await stolenValue(consumed, x, y, false, { silent: false, state, publish });
-    }
-    await delobj(consumed, state);
-    if (state.u.ux === x && state.u.uy === y
-        && state.u.uundetected && heroFormHidesUnderObjects(state)) await hideHeroUnder(state);
-}
-
-// C invent.c:let_to_name() names[]. Conversion from a class to a string
-// for printing; this must match the object class order.
-export function objectClassHeading(oclass: number): string {
-    return [null, 'Illegal objects', 'Weapons', 'Armor', 'Rings', 'Amulets',
-        'Tools', 'Comestibles', 'Potions', 'Scrolls', 'Spellbooks', 'Wands',
-        'Coins', 'Gems/Stones', 'Boulders/Statues', 'Iron balls', 'Chains', 'Venoms'][oclass] || 'Other';
-}
-
-export const OBJECT_CLASS_LABELS: Readonly<Partial<Record<number, string>>> = {
-    [WEAPON_CLASS]: 'Weapons',
-    [ARMOR_CLASS]: 'Armor',
-    [RING_CLASS]: 'Rings',
-    [AMULET_CLASS]: 'Amulets',
-    [TOOL_CLASS]: 'Tools',
-    [FOOD_CLASS]: 'Comestibles',
-    [POTION_CLASS]: 'Potions',
-    [SCROLL_CLASS]: 'Scrolls',
-    [SPBOOK_CLASS]: 'Spellbooks',
-    [WAND_CLASS]: 'Wands',
-    [COIN_CLASS]: 'Coins',
-    [GEM_CLASS]: 'Gems/Stones',
-    [ROCK_CLASS]: 'Boulders/Statues',
-    [BALL_CLASS]: 'Iron balls',
-    [CHAIN_CLASS]: 'Chains',
-    [VENOM_CLASS]: 'Venoms',
-};
 
 export function inventoryOrderSymbols(state: InventoryOrderState = game): string {
     return inventoryClassOrder(state).map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('');
@@ -3274,22 +3557,6 @@ export function sortObjects(objects: readonly GameObject[], {
         .map(entry => entry.object);
 }
 
-// C invent.c:loot_classify().
-export function classifyLoot(object: LootView, state: GameState = game): LootClassification {
-    const oclass = object.oclass || objectClassForType(object.otyp);
-    const classOrder = state.flags.sortpack !== false ? inventoryClassOrder(state) : DEFAULT_LOOT_ORDER;
-    const position = classOrder.indexOf(oclass);
-    const seen = !!object.dknown;
-    const discovered = objectTypeKnown(object, state);
-    const description = OBJ_DESCR(object.otyp, state);
-    return {
-        order: position >= 0 ? position + 1 : classOrder.length + 1 + Number(oclass !== VENOM_CLASS),
-        subclass: lootSubclass(object, oclass, seen, discovered),
-        discovery: !seen ? 1 : discovered || !description ? 4
-            : state._objectCallNames?.[object.otyp] ? 3 : 2,
-    };
-}
-
 function lootSubclass(object: LootView, oclass: number, seen: boolean, discovered: boolean): number {
     const skill = objectSkill(object.otyp);
     if (oclass === ARMOR_CLASS) return [7, 4, 1, 2, 3, 5, 6][skill] ?? 8;
@@ -3318,48 +3585,6 @@ function lootSubclass(object: LootView, oclass: number, seen: boolean, discovere
     return 1;
 }
 
-// C invent.c:sortloot_cmp(). The sort keys are computed by the renamed
-// helpers below: inuse_classify() -> inUseRating, invletter_value() ->
-// inventoryLetterValue, loot_xname() -> normalizedLootName.
-function compareLoot(left: LootEntry, right: LootEntry, mode: number, state: GameState): number {
-    const a = left.object, b = right.object;
-    if (mode & SORTLOOT_INUSE)
-        return inUseRating(b, state) - inUseRating(a, state) || left.index - right.index;
-    if ((mode & (SORTLOOT_PACK | SORTLOOT_INVLET)) !== SORTLOOT_INVLET) {
-        const aClass = classifyEntry(left, state), bClass = classifyEntry(right, state);
-        const difference = aClass.order - bClass.order;
-        if (difference) return difference;
-        if (!(mode & SORTLOOT_INVLET)) {
-            const detail = aClass.subclass - bClass.subclass || aClass.discovery - bClass.discovery;
-            if (detail) return detail;
-        }
-    }
-    if (mode & SORTLOOT_INVLET) {
-        const difference = inventoryLetterValue(a.invlet) - inventoryLetterValue(b.invlet);
-        if (difference) return difference;
-    }
-    if (!(mode & SORTLOOT_LOOT)) return left.index - right.index;
-    if (left.name === undefined) {
-        observeObjectForNaming(a, { state });
-        left.name = normalizedLootName(a, state);
-    }
-    if (right.name === undefined) {
-        observeObjectForNaming(b, { state });
-        right.name = normalizedLootName(b, state);
-    }
-    if (left.name !== right.name) return left.name < right.name ? -1 : 1;
-    const condition = beatitudeRating(b) - beatitudeRating(a)
-        || Number(!!b.greased) - Number(!!a.greased)
-        || lootErosion(a) - lootErosion(b)
-        || Number(!!(b.rknown && b.oerodeproof)) - Number(!!(a.rknown && a.oerodeproof));
-    if (condition) return condition;
-    if (objectUsesKnown(a.otyp) && a.oclass !== FOOD_CLASS) {
-        const difference = (b.known ? b.spe ?? 0 : -1000) - (a.known ? a.spe ?? 0 : -1000);
-        if (difference) return difference;
-    }
-    return left.index - right.index;
-}
-
 function classifyEntry(entry: LootEntry, state: GameState): LootClassification {
     if (!entry.classification) {
         if (!heroIsBlind(state)) observeObject(entry.object, state);
@@ -3383,27 +3608,6 @@ function beatitudeRating(object: GameObject): number {
 function lootErosion(object: GameObject): number {
     return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0,
         Number(!!object.orotten), Number(!!object.odiluted), Number(!!object.norevive));
-}
-
-// C invent.c:invletter_value().
-function inventoryLetterValue(letter: string | null | undefined): number {
-    if (!letter) return 55;
-    if (letter >= 'a' && letter <= 'z') return letter.charCodeAt(0) - 95;
-    if (letter >= 'A' && letter <= 'Z') return letter.charCodeAt(0) - 37;
-    return letter === '$' ? 1 : letter === '#' ? 54 : 55;
-}
-
-// C invent.c:inuse_classify(). Rank the worn slot for an in-use inventory view.
-function inUseRating(object: GameObject, state: GameState): number {
-    const mask = (object.owornmask ?? 0) & (W_ACCESSORY | W_WEAPONS | W_ARMOR);
-    if (!mask && object.otyp === LEASH && object.leashmon) return 1;
-    if (!mask && object.oclass === TOOL_CLASS && object.lamplit) return 2;
-    const mainHandRing = state.u.rightHanded === false ? W_RINGL : W_RINGR;
-    const ratings = [W_ARMU, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMC, W_ARM,
-        W_QUIVER, W_SWAPWEP, W_WEP, W_TOOL,
-        mainHandRing === W_RINGR ? W_RINGL : W_RINGR, mainHandRing, W_AMUL];
-    const index = ratings.findIndex(slot => mask & slot);
-    return index >= 0 ? index + 3 : 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -3441,95 +3645,6 @@ function sameBillPrice(first: GameObject, second: GameObject, state: GameState):
     return !!firstBill && !!secondBill
         && firstBill.resident === secondBill.resident
         && firstBill.entry.price === secondBill.entry.price;
-}
-
-export function stack_object(object: GameObject, state?: GameState): Promise<GameObject>;
-export function stack_object(
-    object: GameObject | null | undefined, state?: GameState,
-): Promise<GameObject | null | undefined>;
-// C invent.c:stackobj(). Stack an object with the first compatible floor object.
-export async function stack_object(
-    object: GameObject | null | undefined, state: GameState = game,
-): Promise<GameObject | null | undefined> {
-    if (!object) return object;
-    const pile = state.level?.objects?.[object.ox]?.[object.oy];
-    if (!pile) return object;
-    const existing = pile.find(candidate =>
-        candidate !== object && mergable(object, candidate, state));
-    if (!existing) return object;
-
-    return await mergeObjectStacks(object, existing, state) || object;
-}
-
-// C invent.c:mergable().
-export function mergable(
-    otmp: GameObject | null | undefined, obj: GameObject | null | undefined,
-    state: GameState = game,
-): boolean {
-    if (!otmp || !obj || otmp === obj || otmp.otyp !== obj.otyp
-        || otmp.nomerge || obj.nomerge || !objectMerge(obj.otyp)) {
-        return false;
-    }
-    if (obj.oclass === COIN_CLASS) return true;
-    if (!!otmp.cursed !== !!obj.cursed
-        || !!otmp.blessed !== !!obj.blessed) return false;
-
-    const otmpLost = otmp.how_lost ?? 0;
-    const objLost = obj.how_lost ?? 0;
-    if (otmpLost === 4 || objLost === 4
-        || (otmpLost !== 0 && otmpLost !== objLost)) return false;
-    if (obj.globby || otmp.globby) return !!obj.globby && !!otmp.globby;
-
-    // C obj.h stores opoisoned in otrapped, odiluted in oeroded and norevive
-    // in oeroded2, so native mergable()'s tests of those fields also keep
-    // poisoned weapons, diluted potions and frozen corpses in their own stacks.
-    for (const field of [
-        'unpaid', 'no_charge', 'obroken', 'otrapped', 'opoisoned', 'lamplit',
-        'odiluted', 'norevive',
-    ] as const) {
-        if (!!otmp[field] !== !!obj[field]) return false;
-    }
-    if ((otmp.spe ?? 0) !== (obj.spe ?? 0)) return false;
-    if (obj.oclass === FOOD_CLASS
-        && ((otmp.oeaten ?? 0) !== (obj.oeaten ?? 0)
-            || !!otmp.orotten !== !!obj.orotten)) return false;
-
-    const impairedSight = heroIsBlind(state) || heroIsHallucinating(state);
-    const cleric = state?.urole?.key === 'priest';
-    if (!!otmp.dknown !== !!obj.dknown
-        || ((!!otmp.bknown !== !!obj.bknown)
-            && !cleric && impairedSight)
-        || (otmp.oeroded ?? 0) !== (obj.oeroded ?? 0)
-        || (otmp.oeroded2 ?? 0) !== (obj.oeroded2 ?? 0)
-        || !!otmp.greased !== !!obj.greased) {
-        return false;
-    }
-    if (erosionMatters(obj) && (!!otmp.oerodeproof !== !!obj.oerodeproof
-        || !!otmp.rknown !== !!obj.rknown && impairedSight)) return false;
-
-    if ([CORPSE, EGG, TIN].includes(obj.otyp)
-        && (otmp.corpsenm ?? -1) !== (obj.corpsenm ?? -1)) return false;
-    if (obj.otyp === EGG && (otmp.timed || obj.timed)) return false;
-    if (obj.otyp === CORPSE && isReviver(otmp.corpsenm)) return false;
-    if ((obj.otyp === TALLOW_CANDLE || obj.otyp === WAX_CANDLE)
-        && Math.trunc((otmp.age ?? 0) / 25)
-            !== Math.trunc((obj.age ?? 0) / 25)) return false;
-    if (obj.otyp === POT_OIL && obj.lamplit) return false;
-    // C: don't merge surcharged/differently priced unpaid stacks.
-    if (obj.unpaid && !sameBillPrice(obj, otmp, state)) return false;
-    if (hasAttachment(otmp) || hasAttachment(obj)) return false;
-
-    const otmpName = objectMergeName(otmp);
-    const OBJ_NAME = objectMergeName(obj);
-    if ((otmpName && OBJ_NAME && otmpName !== OBJ_NAME)
-        || (obj.otyp === CORPSE && !!otmpName !== !!OBJ_NAME)) return false;
-    // C keeps the two stamped-mail flavors (bones/wished vs hand-written)
-    // apart unless the stack ids share a parity.
-    if (obj.otyp === SCR_MAIL && (obj.spe ?? 0) > 0
-        && (obj.o_id % 2) !== (otmp.o_id % 2)) return false;
-    if ((otmp.oartifact ?? 0) !== (obj.oartifact ?? 0)) return false;
-    if (!!otmp.known !== !!obj.known && impairedSight) return false;
-    return true;
 }
 
 function comparisonDiscovers(
@@ -3613,129 +3728,5 @@ export async function mergeCreatedObjectStacks(
     await prepareStackMerge(survivor, incoming, state);
     await deleteObject(incoming, state, { mergeInto: survivor });
     return survivor;
-}
-
-// C invent.c:merged(). Merge quantities, knowledge, timers, and weapon slots.
-export async function mergeObjectStacks(
-    survivor: GameObject | null | undefined, incoming: GameObject | null | undefined,
-    state: GameState = game,
-): Promise<GameObject | null> {
-    requireLiveGame(state);
-    if (!survivor || !incoming || !mergable(survivor, incoming, state)) return null;
-    const discovered = await prepareStackMerge(survivor, incoming, state);
-    if (incoming.globby) {
-        await announceGlobMerge(survivor, incoming, state);
-        return await absorbGlob(survivor, incoming, state);
-    }
-    if (discovered && survivor.where === 'inventory'
-        && incoming.how_lost !== LOST_THROWN && survivor.how_lost !== LOST_THROWN) {
-        await plineWithContinuation('You learn more about your items by comparing them.');
-    }
-    await deleteObject(incoming, state, { mergeInto: survivor });
-    return survivor;
-}
-
-// C invent.c:will_feel_cockatrice(). Unlike picking up a
-// corpse, a floor inspection only touches it when blind or explicitly forced.
-export function willFeelPetrifyingCorpse(
-    object: GameObject,
-    { forceTouch = false, state = game }: { forceTouch?: boolean; state?: GameState } = {},
-): boolean {
-    return (heroIsBlind(state) || forceTouch)
-        && !(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state)
-        && object.otyp === CORPSE && touchPetrifies(object.corpsenm);
-}
-
-// C invent.c:feel_cockatrice().
-export async function feelPetrifyingCorpse(object: GameObject, {
-    forceTouch = false, state = game, publish = plineWithContinuation,
-}: { forceTouch?: boolean; state?: GameState; publish?: MessagePublisher } = {}): Promise<PetrificationContactResult> {
-    if (!willFeelPetrifyingCorpse(object, { forceTouch, state }))
-        return { touched: false, died: false };
-    const corpse = corpseName(object, { definite: true });
-    if (formCanBecomeStoneGolem(state.u.umonnum, state))
-        await publish(`You touched ${corpse} with your bare ${makePlural(heroHandName(state))}.`);
-    else
-        await publish(`Touching ${corpse} is a fatal mistake...`);
-    const result = await resolveImmediatePetrification({
-        state, publish,
-        killer: `touching ${killerObjectName(object, state)} bare-handed`,
-    });
-    return { touched: true, died: result.died };
-}
-
-// C invent.c:display_minventory(). The swallowed inventory view includes the hero.
-async function displayMonsterInventory(
-    monster: Monster, objects: readonly GameObject[], location: string, blind: boolean,
-): Promise<void> {
-    // display_minventory() builds its default title even when look_here()
-    // supplies another title, so the perceived owner still changes.
-    monsterName(monster, { article: 'your', suppressIt: true, capitalized: true,
-        suppressSaddle: !!MGIVENNAME(monster) });
-    const ordered = sortObjects(objects, { mode: lootSortMode() });
-    const sections: InventorySection<GameObject>[] = [];
-    let first = true;
-    for (const oclass of [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS]) {
-        const objects = ordered.filter(object => object.oclass === oclass);
-        if (!objects.length) continue;
-        const items = [];
-        for (const object of objects) {
-            observeObjectForNaming(object);
-            consumeHallucinatedMenuObjectGlyph(object);
-            const firstGold = first && object.otyp === GOLD_PIECE;
-            first = false;
-            items.push({ ...(firstGold ? { key: '$' } : {}),
-                text: await inventoryItemDescription(object), value: object });
-        }
-        sections.push({ heading: objectClassHeading(oclass), items });
-    }
-    // query_objlist() attaches a monster glyph even though tty only shows text.
-    transientMonsterGlyph({ mnum: heroSpecies(game),
-        female: !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female) });
-    sections.push({ heading: `${monsterDigests(monster) ? 'Swallowed' : 'Engulfed'} Creatures`,
-        items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()) }] });
-    await showInventoryWindow(sections, { title: blind ? 'You feel:'
-        : `Contents of ${location}:` });
-}
-
-// C invent.c:cinv_doname(): the probing contents menu names the box with
-// "trapped" inserted before its lock state even though doname() already
-// shows a just-learned trap, so a trapped box is named twice.
-export async function probedContentsTitle(object: GameObject, state: GameState): Promise<string> {
-    let name = await objectDescription(object, { state });
-    if (!object.otrapped) return name;
-    const locked = name.indexOf(' locked ');
-    const unlocked = name.indexOf(' unlocked ');
-    if (locked >= 0 && (unlocked < 0 || locked < unlocked))
-        name = name.replace(' locked ', ' trapped locked ');
-    else if (unlocked >= 0)
-        name = name.replace(' unlocked ', ' trapped unlocked ');
-    return name.replace('an trapped ', 'a trapped ');
-}
-
-// C invent.c:display_binventory(): objects beneath the probed surface.
-// Also C invent.c:only_here(): inlined as the buried-objects filter by
-// (x, y) below.
-export async function displayBuriedInventory(x: number, y: number, state: PlayingGameState) {
-    const pile = state.level.objects[x]?.[y] || [];
-    let underwhat = 'here', count = 0;
-    if ((isPoolAt(x, y, state) || isLavaAt(x, y, state)) && !(state.underwater || state.u.uinwater) && pile.length) {
-        const liquid = displayLiquidName(isPoolAt(x, y, state) ? 'water' : 'lava', state);
-        count = pile.length;
-        if (pile.length === 1) {
-            const object = pile[0];
-            if (!object) throw new Error('A visible one-object pile must contain its object.');
-            const plural = objectNameIsPlural(object, state);
-            await plineWithContinuation(`There ${plural ? 'are' : 'is'} ${await inventoryItemDescription(object)} under the ${liquid} here.`);
-            underwhat = plural || pair_of(object) ? 'under them' : 'beneath it';
-        } else {
-            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, { state, groupByClass: false });
-            underwhat = 'beneath them';
-        }
-    }
-    const buried = (state.level.buriedObjects || []).filter(object => object.ox === x && object.oy === y);
-    for (const object of buried) observeObject(object, state);
-    if (buried.length) await showProbedObjectInventory(buried, `Things that are buried ${underwhat}:`, { state });
-    return count + buried.length;
 }
 
