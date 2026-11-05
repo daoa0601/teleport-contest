@@ -51,7 +51,7 @@ import { showEnlightenment } from './insight.js';
 import { chooseInventoryObject, freeInventoryObject } from './invent.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
-import { doBlindingRay } from './flash.js';
+import { doBlindingRay } from './zap.js';
 import { castSpell, spellSkillType } from './spell.js';
 import { upstart } from './hacklib.js';
 import { AT_MAGC } from './monster_attack_types.js';

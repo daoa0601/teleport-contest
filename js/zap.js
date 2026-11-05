@@ -141,7 +141,7 @@ import { showTextWindow } from './windows.js';
 import { M_AP_FURNITURE, M_AP_OBJECT, W_SADDLE } from './const.js';
 import { abusePet } from './dog.js';
 import { checkExperienceLevel } from './exper.js';
-import { flashHitsMonster } from './flash.js';
+import { flashHitsMonster } from './uhitm.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { m_is_steadfast } from './uhitm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -163,6 +163,11 @@ import { placeObjectSynchronously } from './mkobj.js';
 import { breakFloorObject } from './dothrow.js';
 import { verbForSubject } from './objnam.js';
 import { rndHallublast } from './mthrowu.js';
+import { CLR_WHITE } from './terminal.js';
+import { show_glyph_cell } from './display.js';
+import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
+import { cleanupTransientLight, showTransientLight } from './transient_light.js';
+import { seeMonsterCloseup } from './mon.js';
 const NODIR = 1, IMMEDIATE = 2;
 const MAX_ITEMS_DESTROYED = 20;
 const RAY_FIRE = 'fire';
@@ -5149,5 +5154,57 @@ export function displayRayName(damageType, kind, { state = game, random = rn2 } 
     if (!heroIsHallucinating(state))
         return realRayName(damageType, kind);
     return `blast of ${rndHallublast(random)}`;
+}
+export async function doBlindingRay(object, { dx, dy }, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    object.ox = state.u.ux;
+    object.oy = state.u.uy;
+    const cells = [];
+    let heroDied = false;
+    let x = state.u.ux, y = state.u.uy;
+    try {
+        for (let range = 0; range < COLNO; range++) {
+            x += dx;
+            y += dy;
+            if (!isok(x, y))
+                break;
+            if (!heroIsBlind(state))
+                await showTransientLight(null, x, y, state);
+            const monster = monsterAtPosition(state.level, x, y);
+            if (monster && M_AP_TYPE(monster) !== M_AP_OBJECT) {
+                object.ox = state.u.ux;
+                object.oy = state.u.uy;
+                const onHead = x === monster.mx && y === monster.my;
+                if (!monster.minvis) {
+                    for (const cell of cells)
+                        await newsym(cell.x, cell.y);
+                    heroDied = (await flashHitsMonster(monster, object, { state, onHead })).heroDied;
+                    if (!heroDied && object.otyp === EXPENSIVE_CAMERA)
+                        await seeMonsterCloseup(monster, { state, photo: true, onHead });
+                    break;
+                }
+                heroDied = (await flashHitsMonster(monster, object, { state, onHead })).heroDied;
+                if (heroDied)
+                    break;
+            }
+            if (!rayPositionIsOpen(x, y, state))
+                break;
+            if (cansee(x, y)) {
+                if (!monster)
+                    await unmap_invisible(x, y);
+                cells.push({ x, y });
+                await show_glyph_cell(x, y, '!', CLR_WHITE, false, 0, { kind: 'effect', glyph: cmapToGlyph(CmapSymbol.flashbeam) });
+                await flush_screen(0);
+                await state.animationFrame?.();
+            }
+        }
+    }
+    finally {
+        for (const cell of cells)
+            await newsym(cell.x, cell.y);
+        await cleanupTransientLight(state);
+    }
+    return heroDied;
 }
 //# sourceMappingURL=zap.js.map
