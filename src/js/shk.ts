@@ -39,7 +39,8 @@ import { hello } from './roles.js';
 import { MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { heroSpecies, heroPolyGender, heroPassesWalls } from './polyself.js';
 import { monsterName } from './do_name.js';
-import { possessiveName, depth, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
+import { possessiveName, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
+import { depth } from './dungeon.js';
 import {
     monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes,
     monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire,

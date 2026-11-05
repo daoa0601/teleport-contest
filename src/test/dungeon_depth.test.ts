@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { init_dungeons } from '../js/dungeon.js';
 import { game } from '../js/gstate.js';
-import { dungeonDepth } from '../js/hacklib.js';
+import { dungeonDepth } from '../js/dungeon.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { createDungeon } from './support/topology.js';

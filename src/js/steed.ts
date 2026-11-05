@@ -5,7 +5,6 @@ import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOC
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import type { DirectionVector } from './const.js';
 import { impossible } from './diagnostics.js';
-import { depth, endgameLevelName } from './hacklib.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster, MonsterPosition } from './monster_types.js';
@@ -51,7 +50,7 @@ import { healHeroLegs, woundHeroLegs } from './do.js';
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';
-import { levelHasCeiling, surfaceName } from './dungeon.js';
+import { depth, endgameLevelName, levelHasCeiling, surfaceName } from './dungeon.js';
 import { isAccessibleAt, heroCanOoze } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
 

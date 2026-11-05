@@ -124,13 +124,13 @@ import {
     propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill,
     grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty,
 } from './properties.js';
-import { ordinalSuffix, possessiveName, dist2, dungeonDepth, depth, distmin } from './hacklib.js';
+import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, finishLiquidDeath, pickEmergencyDrop, reviveHeroFromLiquid, teleportHeroOutOfLiquid, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER } from './hack.js';
 import type { EmergencyDisrobe, HeroLiquidOptions, LavaSinkingResult } from './hack.js';
-import { surfaceName, ceilingName } from './dungeon.js';
+import { depth, dungeonDepth, surfaceName, ceilingName } from './dungeon.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';

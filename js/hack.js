@@ -44,12 +44,12 @@ import { heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHer
 import { moveMonsterNextToHero } from './mon.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
-import { levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel, surfaceName, ceilingName } from './dungeon.js';
+import { depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel, surfaceName, ceilingName } from './dungeon.js';
 import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
 import { iceDescriptionAt } from './pager.js';
-import { ingSuffix, upstart, depth } from './hacklib.js';
+import { ingSuffix, upstart } from './hacklib.js';
 import { objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers } from './timeout.js';
 import { resetOccupations } from './cmd.js';
 import { maybeAdjustHeroBubble } from './elemental.js';

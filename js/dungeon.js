@@ -27,7 +27,6 @@ import { formatKiller } from './topten.js';
 import { roomForIndex, roomsAt } from './hack.js';
 import { isok } from './cmd.js';
 import { impossible, panic } from './diagnostics.js';
-import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } from './hacklib.js';
 import { displayLiquidName } from './do_name.js';
 import { onQuestStart } from './quest.js';
 import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
@@ -56,6 +55,56 @@ function currentDungeonLocation(state = game) {
     if (!location)
         throw new Error('Dungeon traversal requires the hero dungeon location.');
     return location;
+}
+// C dungeon.c:deepest_lev_reached(). Endgame planes have negative depths
+// and do not reduce the deepest dungeon level the hero has visited.
+// Moved from hacklib.js (pure move).
+export function deepestLevelReached(noQuest = false, state = game) {
+    let deepest = 0;
+    for (const [dnum, dungeon] of (state.dungeons || []).entries()) {
+        if (!dungeon.dunlev_ureached)
+            continue;
+        if (noQuest && dnum === state.quest_dnum)
+            continue;
+        deepest = Math.max(deepest, dungeonDepth(dnum, dungeon.dunlev_ureached, state.dungeons));
+    }
+    return deepest;
+}
+// C dungeon.c:ledger_no().  Ledger numbers are save-file bookkeeping
+// coordinates: every preceding dungeon contributes all of its local levels.
+// They deliberately differ from both a branch-local dlevel and display depth.
+export function ledgerNo(uz, state = game) {
+    const dungeonIndex = uz?.dnum ?? 0;
+    const ledgerStart = state.dungeons.slice(0, dungeonIndex)
+        .reduce((total, dungeon) => total + (dungeon.num_dunlevs || 0), 0);
+    return ledgerStart + (uz?.dlevel ?? 1);
+}
+// C dungeon.c:maxledgerno(): the last ledger number of the last dungeon.
+export function maxLedgerNo(state = game) {
+    return state.dungeons.reduce((total, dungeon) => total + (dungeon.num_dunlevs || 0), 0);
+}
+// C dungeon.c:depth().  Internal branch levels are local coordinates;
+// tty/status and dungeon listings use their absolute dungeon depth.
+export function dungeonDepth(dnum, dlevel, dungeons = game?.dungeons) {
+    const dungeon = dungeons?.[dnum];
+    if (!dungeon)
+        return dlevel;
+    return dungeon.depth_start + dlevel - 1;
+}
+export function depth(uz, dungeons = game?.dungeons) {
+    return dungeonDepth(uz?.dnum ?? 0, uz?.dlevel ?? 1, dungeons);
+}
+// C dungeon.c:endgamelevelname().  Keep this name projection shared by
+// the bottom status line and insight/background disclosure.
+export function endgameLevelName(uz) {
+    const endgameDepth = depth(uz);
+    return new Map([
+        [-5, 'Astral Plane'],
+        [-4, 'Plane of Water'],
+        [-3, 'Plane of Fire'],
+        [-2, 'Plane of Air'],
+        [-1, 'Plane of Earth'],
+    ]).get(endgameDepth) || `unknown plane #${endgameDepth}`;
 }
 // C Is_special(): the dungeon graph, rather than a generation script,
 // determines whether the current depth has a special-level descriptor.

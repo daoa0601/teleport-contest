@@ -1,5 +1,5 @@
 import { publishHeardMessage } from './hero_speech.js';
-import { ceilingName, dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
+import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom } from './hack.js';
 import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, getLine, promptYesNo, rhack, dolookaround } from './cmd.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
@@ -34,7 +34,7 @@ import { runDueTimers } from './timeout.js';
 import { askKeepRestoredSave, restoreMonsterCover } from './save.js';
 import { placeHeroAtRandomArrival, finishScheduledLevelChange } from './level_change.js';
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
-import { possessiveName, dist2, dungeonDepth } from './hacklib.js';
+import { possessiveName, dist2 } from './hacklib.js';
 import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion, monsterIsAnimal, monsterIsNonliving } from './mondata.js';
 import { mhitm_knockback, resolveMonsterContactEffect } from './uhitm.js';
 import { MONSTER_GENO, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';

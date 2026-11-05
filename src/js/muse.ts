@@ -52,7 +52,8 @@ import { objectIsHardHelmet } from './do_wear.js';
 import { dragonFormForArmor, heroSpecies } from './polyself.js';
 import { enexto, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport.js';
 import { displayColorName, monsterName, monsterReflexiveAction, randomDisplayMonsterName, visibleMonsterSubject } from './do_name.js';
-import { possessiveName, dist2, distmin, depth, ledgerNo, upstart } from './hacklib.js';
+import { possessiveName, dist2, distmin, upstart } from './hacklib.js';
+import { depth, ledgerNo } from './dungeon.js';
 import {
     monsterObjectPronoun, monsterSubjectPronoun, monsterKnowsTrap, monsterLearnsTrap, monsterIsHelpless,
     monsterHasAcidResistance, monsterHasStoneResistance, monsterLocomotion, monsterPolymorphsWhenStoned,

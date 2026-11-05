@@ -49,7 +49,7 @@ import { mksobj, isContainer, placeObjectSynchronously, stack_object} from './mk
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
-import { deepestLevelReached, depth } from './hacklib.js';
+import { deepestLevelReached, depth } from './dungeon.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold, payVaultGuardOnExit } from './vault.js';
 import { init_uhunger } from './eat.js';

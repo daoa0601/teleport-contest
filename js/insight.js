@@ -26,7 +26,7 @@ import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, we
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { possessiveName, depth, endgameLevelName, ordinalSuffix, upstart } from './hacklib.js';
+import { possessiveName, ordinalSuffix, upstart } from './hacklib.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings, heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying, heroMonsterForm, heroPassesWalls, } from './polyself.js';
 import { heroIsSick, heroIsVomiting } from './potion.js';
@@ -56,7 +56,7 @@ import { experienceRankIndex, newExperienceThreshold } from './exper.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsPetrifying } from './stoning.js';
-import { levelHasCeiling, surfaceName, ceilingName } from './dungeon.js';
+import { depth, endgameLevelName, levelHasCeiling, surfaceName, ceilingName } from './dungeon.js';
 import { is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal, monsterIsClinger, monsterIsEel, monsterIsFemale, monsterIsFlyer, } from './mondata.js';
 function plural(n, singular, pluralForm = `${singular}s`) {
     return n === 1 ? singular : pluralForm;

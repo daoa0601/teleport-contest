@@ -61,7 +61,8 @@ import { fruitName } from './fruit.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { depth, ledgerNo, possessiveName } from './hacklib.js';
+import { possessiveName } from './hacklib.js';
+import { depth, ledgerNo } from './dungeon.js';
 import {
     releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster,
     revealMonsterAppearance, wakeMonstersNearWithMessages,

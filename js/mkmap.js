@@ -4,7 +4,7 @@ import { COLNO, ICE, ICED_MOAT, ICED_POOL, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_W
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { game, requireGameLevel } from './gstate.js';
-import { depth } from './hacklib.js';
+import { depth } from './dungeon.js';
 import { dig_corridor, wallify_map } from './sp_lev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
