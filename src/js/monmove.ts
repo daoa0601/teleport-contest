@@ -109,7 +109,7 @@ import type { ExpelHeroOptions } from './mhitu.js';
 import { isPick, isPolearm, is_cloak, is_gloves, is_shirt, is_launcher, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
 import {
-    poisonAttackAttribute, poisonHeroFromMonster, applyMonsterStoningAttack, startHeroPetrificationFromMonster,
+    poisonAttackAttribute, poisonHeroFromMonster, startHeroPetrificationFromMonster,
 } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced } from './do_wear.js';

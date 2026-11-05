@@ -50,8 +50,8 @@ import {
     mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu,
     mhitmAdCorr, mhitmAdDcay, mhitmAdRust, mhitmAdSlim, mhitmAdStck, mhitmAdStun, mhitm_mgc_atk_negated,
     nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster,
-    resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack,
-    startHeroPetrificationFromMonster, passiveDamage, erodeArmor,
+    resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, mhitmAdSton,
+    passiveDamage, erodeArmor,
 } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifact.js';
@@ -485,9 +485,9 @@ export async function presentMonsterAttackEffects(
                     heroAttack.damage = physical.damage;
                     if (physical.heroDied) return { heroDied: true };
                 }
-                // mhitm_ad_fire/cold/elec/drli/blnd/ench/stun/legs/sedu
-                // project hitmsg() themselves from uhitm.ts, so one of
-                // those slots composes its hit line there instead of here.
+                // The mhitm_ad_*() ports in uhitm.ts project hitmsg()
+                // themselves, so one of those slots composes its hit line
+                // there instead of here.
                 const message = physicalContact && !contactCompletedInline
                     || heroAttack.effect === 'fire-natural'
                     || heroAttack.effect === 'cold-natural'
@@ -505,6 +505,7 @@ export async function presentMonsterAttackEffects(
                     || heroAttack.effect === 'cancelled-corrosion-natural'
                     || heroAttack.effect === 'decay-natural'
                     || heroAttack.effect === 'cancelled-decay-natural'
+                    || heroAttack.effect === 'stoning-natural'
                     || heroAttack.effect === 'item-theft'
                     ? null
                     : await hitmsg(
@@ -854,6 +855,36 @@ export async function presentMonsterAttackEffects(
                     if (decay.heroDied) {
                         heroAttack.heroDied = true;
                         contactTailPending = false;
+                    }
+                }
+                if (heroAttack.effect === 'stoning-natural') {
+                    // C uhitm.c:mhitm_ad_ston() mhitu branch: uhitm.ts runs
+                    // the hiss or cough and do_stone_u() after the
+                    // precomposed hitmsg() line.  A successful do_stone_u()
+                    // sets mhm.done, but mhitu.c:hitmu() still runs
+                    // mhitm_knockback() before it returns on mhm.done.
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const ston = await mhitmAdSton({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            publish: publishSlotMessage,
+                            random,
+                        },
+                    });
+                    if (ston.done) {
+                        heroAttack.contactDone = true;
+                        const knockback = await knockHeroFromMonster(
+                            monster, heroAttack, game, random, publishSlotMessage,
+                        );
+                        if (knockback.defenderLeftLevel) heroAttack.attackerDone = true;
+                        if (knockback.defenderDied) heroAttack.heroDied = true;
+                        contactTailPending = false;
+                        if (game.program_state?.gameover) return { heroDied: true };
                     }
                 }
                 if (contactTailPending) {
@@ -2907,10 +2938,10 @@ async function knockHeroFromMonster(
 }
 
 // C mhitu.c:hitmu(): the contact tail after mhitm_adtyping() — the deferred
-// stoning and poison fragments, mhitm_knockback(), the negative-AC and
-// permanent-damage reductions, mdamageu() and passiveum().  The begin-phase
-// inline physical, grid-bug and poison slots run this same tail; deferred
-// slots reach it from the presenter.
+// poison fragment, mhitm_knockback(), the negative-AC and permanent-damage
+// reductions, mdamageu() and passiveum().  The begin-phase inline physical,
+// grid-bug and poison slots run this same tail; deferred slots reach it from
+// the presenter.
 async function hitmu(
     monster: Monster,
     attack: HeroContactAttack,
@@ -2924,19 +2955,6 @@ async function hitmu(
         calls = [],
     }: MonsterDamageOptions & { calls?: MonsterCallLog } = {},
 ) {
-    if (
-        attack.damageType === AD_STON &&
-        await applyMonsterStoningAttack(monster, { state, random, publish })
-    ) {
-        // C uhitm.c:mhitm_ad_ston() mhitu branch: a successful do_stone_u()
-        // sets mhm.done, but mhitu.c:hitmu() still runs mhitm_knockback()
-        // before it returns on mhm.done.
-        attack.contactDone = true;
-        const knockback = await knockHeroFromMonster(monster, attack, state, random, publish);
-        if (knockback.defenderLeftLevel) attack.attackerDone = true;
-        if (knockback.defenderDied) attack.heroDied = true;
-        return;
-    }
     if (attack.poison) {
         const poison = await poisonHeroFromMonster(monster, attack.attackType, {
             ...attack.poison,

@@ -4571,6 +4571,96 @@ export async function mhitm_ad_phys(call: MhitmAdPhysCall): Promise<HeroNaturalE
     }
 }
 
+// One call of mhitm_adtyping(… AD_STON …); the union member names the actor
+// that C compares against &gy.youmonst.
+export type MhitmAdStonCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderStonContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+export interface HeroDefenderStonContext {
+    state: PlayingGameState;
+    attacker: Monster;
+    /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
+    hitMessage: string | null;
+    publish: MessagePublisher;
+    random: typeof rn2;
+}
+
+// C uhitm.c:mhitm_ad_ston().
+export async function mhitmAdSton(call: MhitmAdStonCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero's stoning touch; mhm->damage = 0. */
+        const monster = call.defender;
+        const { state, publish, rollOne } = call.context;
+        await petrifyMonsterFromContact(monster, {
+            state, publish, rollOne, creditHero: true,
+            finishDeath: (target, death) => finishHeroMonsterKillOutcome(target, target.mx, target.my, {
+                ...death, publish, showKillMessage: false,
+                recordConduct: !death?.noCorpse,
+            }),
+        });
+        return statusContinueResult(0);
+    } else if ('mdef' in call) {
+        /* mhitu: a monster's hissing touch threatens to petrify the hero */
+        const { state, attacker, hitMessage, publish, random } = call.context;
+        // hitmsg(magr, mattk)
+        if (hitMessage) await publish(hitMessage);
+        if (random(3) !== 0) return statusContinueResult(0);
+        const spotted = canSpotMonster(attacker);
+        const hallucinating = heroIsHallucinating(state);
+        const subject = () => !spotted ? 'It'
+            : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(attacker);
+        // C mon_nam(magr): the mid-sentence name; a given name stays as typed
+        // instead of being decapitalized from the sentence subject.
+        const target = () => monsterName(attacker, { state });
+        const deaf = heroIsDeaf(state);
+        const hear = async (text: string): Promise<void> => {
+            const message = formatHeardMessage(text, state);
+            if (message) await publish(message);
+        };
+        if (attacker.mcan) {
+            if (!deaf) await hear(`a cough from ${target()}!`);
+            return statusContinueResult(0);
+        }
+        const blind = heroIsBlind(state);
+        if (hallucinating && !blind) {
+            await hear('hissing.');
+            await publish(`${subject()} appears to be blowing you a kiss...`);
+        } else if (!deaf) {
+            await hear(`${possessiveName(target())} hissing!`);
+        } else if (!blind) {
+            await publish(`${subject()} seems to grimace.`);
+        }
+        if (random(10) !== 0 && state.flags.moonphase !== NEW_MOON)
+            return statusContinueResult(0);
+        const stoned = await startHeroPetrificationFromMonster(attacker, state);
+        // A successful do_stone_u() sets mhm.done (and M_ATTK_HIT), but
+        // mhitu.c:hitmu() still runs mhitm_knockback() before it returns on
+        // mhm.done.
+        return { damage: 0, nativeResult: stoned ? M_ATTK_HIT : M_ATTK_MISS,
+            done: stoned, heroDied: false };
+    } else {
+        /* mhitm: monster versus monster; do_stone_mon(). */
+        const { attacker, defender, context } = call;
+        if (attacker.mcan) return statusContinueResult(context.damage);
+        const stone = await petrifyMonsterDefender(defender, {
+            ...context, visible: context.visible && canSeeMonster(defender),
+        });
+        if (stone.heroDied) return { damage: 0, nativeResult: M_ATTK_MISS, done: false, heroDied: true };
+        let nativeResult = M_ATTK_MISS;
+        let heroDied = false;
+        if (!stone.survived) {
+            if (defender.mtame && !context.visible)
+                await context.publish('You have a peculiarly sad feeling for a moment, then it passes.');
+            const growth = await context.growAttacker(defender);
+            nativeResult = M_ATTK_DEF_DIED | (growth.survived ? 0 : M_ATTK_AGR_DIED);
+            heroDied = growth.heroDied;
+        }
+        return { damage: 0, nativeResult, done: stone.stopped, heroDied };
+    }
+}
+
 // C uhitm.c:mhitm_ad_heal(), against the hero.
 export function nurseContactMode(monster: Monster, state: PlayingGameState): 'hit' | 'heal' | 'cooperate' {
     if (monster.mcan || (Upolyd(state.u) && touchPetrifies(heroSpecies(state)))) return 'hit';
@@ -4762,7 +4852,7 @@ export async function applyMonsterCombatEffect(
         return applyMonsterTransformEffect(attacker, defender, context);
     case AD_DGST: return applyMonsterDigestionEffect(attacker, defender, context);
     case AD_DRIN: return mhitm_ad_drin({ attacker, defender, damage: context.damage, context });
-    case AD_STON: return petrifyingEffect(attacker, defender, context);
+    case AD_STON: return mhitmAdSton({ attacker, defender, context });
     case AD_DRST: case AD_DRDX: case AD_DRCO: {
         let damage = context.damage;
         if (!await mhitm_mgc_atk_negated(attacker, defender, { ...context, verbose: false })
@@ -4776,25 +4866,6 @@ export async function applyMonsterCombatEffect(
     }
 }
 
-async function petrifyingEffect(
-    attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
-): Promise<MonsterCombatEffectResult> {
-    if (attacker.mcan) return effectResult(context.damage);
-    const stone = await petrifyMonsterDefender(defender, {
-        ...context, visible: context.visible && canSeeMonster(defender),
-    });
-    if (stone.heroDied) return effectResult(0, M_ATTK_MISS, true);
-    let nativeResult = M_ATTK_MISS;
-    let heroDied = false;
-    if (!stone.survived) {
-        if (defender.mtame && !context.visible)
-            await context.publish('You have a peculiarly sad feeling for a moment, then it passes.');
-        const growth = await context.growAttacker(defender);
-        nativeResult = M_ATTK_DEF_DIED | (growth.survived ? 0 : M_ATTK_AGR_DIED);
-        heroDied = growth.heroDied;
-    }
-    return { damage: 0, nativeResult, done: stone.stopped, heroDied };
-}
 
 export function effectResult(damage: number, nativeResult = M_ATTK_MISS, heroDied = false): MonsterCombatEffectResult {
     return { damage, nativeResult, heroDied, done: false };
@@ -4975,8 +5046,8 @@ async function applyNaturalEffect(monster: Monster, context: HeroNaturalEffectCo
         damage = await teleportNaturalTarget(monster, context);
         break;
     case AD_STON:
-        await petrifyNaturalTarget(monster, context);
-        damage = 0;
+        // C uhitm.c:mhitm_ad_ston() uhitm branch now owns the stoning attack.
+        damage = (await mhitmAdSton({ magr: 'youmonst', defender: monster, context })).damage;
         break;
     case AD_SGLD:
     case AD_SITM:
@@ -5121,15 +5192,6 @@ async function teleportNaturalTarget(monster: Monster, context: HeroNaturalEffec
     return damage;
 }
 
-async function petrifyNaturalTarget(monster: Monster, context: HeroNaturalEffectContext): Promise<void> {
-    await petrifyMonsterFromContact(monster, {
-        state: context.state, publish: context.publish, rollOne: context.rollOne, creditHero: true,
-        finishDeath: (target, death) => finishHeroMonsterKillOutcome(target, target.mx, target.my, {
-            ...death, publish: context.publish, showKillMessage: false,
-            recordConduct: !death?.noCorpse,
-        }),
-    });
-}
 
 function wearsDragonDefense(monster: Monster, species: string, scales: number, mail: number): boolean {
     return speciesIs(monster, species) || (monster.minvent ?? []).some(object =>
@@ -6659,42 +6721,6 @@ export async function startHeroPetrificationFromMonster(monster: Monster, state:
         state, killer: unique && !properName ? `the ${name}` : name,
         killerFormat: unique ? KILLED_BY : KILLED_BY_AN,
     });
-}
-
-// ─── C uhitm.c:mhitm_ad_ston() (from stoning.ts) ───
-
-// C uhitm.c:mhitm_ad_ston(), after the ordinary hit message.
-export async function applyMonsterStoningAttack(monster: Monster, {
-    state = game, random = rn2, publish = plineWithContinuation,
-}: { state?: GameState; random?: RandomBelow; publish?: MessagePublisher } = {}): Promise<boolean> {
-    if (random(3) !== 0) return false;
-    const spotted = canSpotMonster(monster);
-    const hallucinating = heroIsHallucinating(state);
-    const subject = () => !spotted ? 'It'
-        : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
-    // C mon_nam(magr): the mid-sentence name; a given name stays as typed
-    // instead of being decapitalized from the sentence subject.
-    const target = () => monsterName(monster, { state });
-    const deaf = heroIsDeaf(state);
-    const hear = async (text: string): Promise<void> => {
-        const message = formatHeardMessage(text, state);
-        if (message) await publish(message);
-    };
-    if (monster.mcan) {
-        if (!deaf) await hear(`a cough from ${target()}!`);
-        return false;
-    }
-    const blind = heroIsBlind(state);
-    if (hallucinating && !blind) {
-        await hear('hissing.');
-        await publish(`${subject()} appears to be blowing you a kiss...`);
-    } else if (!deaf) {
-        await hear(`${possessiveName(target())} hissing!`);
-    } else if (!blind) {
-        await publish(`${subject()} seems to grimace.`);
-    }
-    if (random(10) !== 0 && state.flags.moonphase !== NEW_MOON) return false;
-    return startHeroPetrificationFromMonster(monster, state);
 }
 
 // ─── C uhitm.c:mhitm_ad_poly(), hero attacker (from hero_natural_polymorph.ts) ───
