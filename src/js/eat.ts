@@ -61,7 +61,7 @@ import { gainCorpseDisplacement } from './hero_displacement.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { freeInventoryObject, useUpInventoryStack, addInventoryItem, chooseInventoryObject, consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
-import { retouchEquipment, retouchHeroObject } from './hero_retouch.js';
+import { retouchEquipment, retouchHeroObject } from './artifacts.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { heroIsUnaware, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { putHeroToSleep } from './timeout.js';

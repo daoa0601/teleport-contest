@@ -33,7 +33,7 @@ import { objectOwnershipPrefix, insideShopRoomAt, shopResident, chargeAlteredUnp
 import { promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
 import type { GameState } from './game_state.js';
-import { retouchHeroObject } from './hero_retouch.js';
+import { retouchHeroObject } from './artifacts.js';
 import { lightWieldedArtifact, equipmentLightMessage } from './light.js';
 import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';

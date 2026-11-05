@@ -44,7 +44,7 @@ import { holdAnotherObject } from './hero_hold_object.js';
 import { freeInventoryObject } from './invent.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { retouchEquipment } from './hero_retouch.js';
+import { retouchEquipment } from './artifacts.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { requireInitializedHero } from './hero_types.js';
 import { consumeInventoryItem, inventoryItemDescription, mergable } from './invent.js';

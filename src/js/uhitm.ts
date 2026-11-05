@@ -63,7 +63,7 @@ import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './he
 import type { FinishHeroMonsterDeath, HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { HeroNaturalDamageResult, HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import type { HeroPhysicalAttackMode, HeroPhysicalHitOptions, HeroPhysicalHitResult, HeroProjectileVolley } from './hero_physical_types.js';
-import { retouchEquipment } from './hero_retouch.js';
+import { retouchEquipment } from './artifacts.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { Hero, HeroSkill } from './hero_types.js';
