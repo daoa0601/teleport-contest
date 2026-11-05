@@ -68,7 +68,7 @@ import { initializeMonsterWormBody } from './worm.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { rnd_defensive_item, rnd_misc_item, rnd_offensive_item } from './muse.js';
 import { deleteObject } from './shk.js';
-import { deliverOrcRaidLoot } from './orc_raid.js';
+import { deliverOrcRaidLoot } from './mkmaze.js';
 import { registerQuestLeader } from './quest.js';
 import { createParticularMonster } from './read.js';
 import { d, rn1, rn2, rnd } from './rng.js';

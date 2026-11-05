@@ -1,21 +1,21 @@
-// mkmaze.js — maze levels, special-level fixups and wall topology.
-// C ref: mkmaze.c — set_levltyp/set_levltyp_lit, wallification and spine
-// repair, place_lregion and mkportal, fixup_special and the named special
-// level fixups, makemaz and the random maze fillers, get_level_extends and
-// bound_digging. sp_lev.c construction lives in sp_lev.ts / sp_lev_lua.ts;
-// regular room-and-corridor generation stays in mklev.ts.
+// mkmaze.js — the mkmaze.c module: wall topology and spine repair,
+// set_levltyp, lregion/portal placement, fixup_special and the named
+// special-level fixups, makemaz and the random maze fillers, the orc-raid
+// stolen booty, and the Plane of Water/Air bubbles. sp_lev.c construction
+// lives in sp_lev.ts / sp_lev_lua.ts; regular room-and-corridor generation
+// stays in mklev.ts.
 
-import { RANDOM_CLASS, GEM_CLASS } from './objclass.js';
-import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { RANDOM_CLASS, GEM_CLASS, RING_CLASS, FOOD_CLASS } from './objclass.js';
+import { game, requireGameLevel, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { rn2, rnd, rn1 } from './rng.js';
-import { AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_earthlevel, Is_firelevel, Is_stronghold, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, LEVEL_TIMER_KIND } from './const.js';
+import { ACCESSIBLE, AIR, ALTAR, BLCORNER, BRCORNER, CLOUD, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_airlevel, Is_earthlevel, Is_firelevel, Is_stronghold, Is_waterlevel, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, MON_BUBBLEMOVE, NON_PM, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, LEVEL_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { isPoolAt, isIceAt } from './dbridge.js';
-import { BOULDER, STATUE } from './object_data.js';
+import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, BOULDER, STATUE, OBJECT_NAMES } from './object_data.js';
 import { createPoisonGasCloud } from './regions.js';
 import { heroIsDeaf } from './senses.js';
 import { plineWithContinuation } from './pline.js';
-import type { PlayingGameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { deleteTrap, maketrap } from './trap.js';
@@ -24,21 +24,30 @@ import { stopLevelTimer } from './timeout.js';
 import { fill_special_room, medusaPetrifiable } from './sp_lev.js';
 import { load_special } from './sp_lev_lua.js';
 import { goodPosition } from './teleport.js';
-import {mkcorpstat, createToptenObject, mkgold, mkobj_at, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt} from './mkobj.js';
-import { makemon } from './makemon.js';
+import { mkcorpstat, createToptenObject, mkgold, mkobj, mkobj_at, mksobj, deallocateObject, objectWeight, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt } from './mkobj.js';
+import { makemon, makemonAt, setMonsterMalign } from './makemon.js';
 import { occupied } from './mkroom.js';
-import { createMaze } from './maze_terrain.js';
-import { setupElementalBubbles } from './elemental.js';
+import { objectProb } from './o_init.js';
+import { upstart } from './hacklib.js';
+import { addFruit } from './fruit.js';
+import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { randomOrcName, setMonsterGivenName } from './do_name.js';
+import { addObjectToMonsterInventory } from './steal.js';
+import { randomTypeByDescription } from './objnam.js';
+import { migrateMonsterOffLevel } from './dog.js';
+import { is_orc } from './mondata.js';
+import type { Monster } from './monster_types.js';
 import { premap_detect } from './detect.js';
 import { placeHeroOnLevel, specialLevelAt } from './dungeon.js';
 import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir } from './mklev.js';
-import { createOrcRaid } from './orc_raid.js';
 import { isRoom } from './map_types.js';
 import type { ActiveSpecialLevel, ArrivalRegion, Position, Rectangle, Room, StairRegion } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { sendMonsterToLimbo } from './mon.js';
+import { setupElementalBubbles } from './elemental.js';
+import type { GameMap } from './game.js';
 
 // C ref: mkmaze.c set_levltyp().  Terrain mutation owns persistent tile
 // side-effects; in particular, every lava form becomes lit even when the Lua
@@ -81,16 +90,21 @@ export function setLevelTerrainLit(x: number, y: number, typ: number, lit: numbe
     }
     return true;
 }
+// C mkmaze.c mz_move() direction order: north, east, south, west.
+const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]] as const;
+
 // C mkmaze.c:is_solid().
 function isSolidTile(x: number, y: number): boolean {
     if (!isok(x, y)) return true;
     return IS_STWALL(game.level?.at(x, y)?.typ ?? STONE);
 }
+// C mkmaze.c:iswall_or_stone().
 function isWallOrStone(x: number, y: number): 0 | 1 {
     if (!isok(x, y)) return 1;
     const typ = game.level?.at(x, y)?.typ ?? STONE;
     return (typ === STONE || isWallTile(x, y)) ? 1 : 0;
 }
+// C mkmaze.c:iswall().
 function isWallTile(x: number, y: number): 0 | 1 {
     if (!isok(x, y)) return 0;
     const typ = game.level?.at(x, y)?.typ ?? STONE;
@@ -167,6 +181,27 @@ export function fix_wall_spines(x1: number, y1: number, x2: number, y2: number, 
 export function wallification(x1: number, y1: number, x2: number, y2: number, protectedArea: WallArea | null = null): void {
     wall_cleanup(x1, y1, x2, y2, protectedArea);
     fix_wall_spines(x1, y1, x2, y2, protectedArea);
+}
+
+// C mkmaze.c:okay(): after mz_move() twice in the given direction, the cell
+// must still lie inside the active maze bounds and be untouched stone.
+function okay(
+    x: number, y: number, dir: number,
+    mazeXMax: number, mazeYMax: number, level: GameMap,
+): boolean {
+    const step = directions[dir];
+    if (!step) throw new RangeError(`mz_move: bad direction ${dir}`);
+    const nx = x + 2 * step[0], ny = y + 2 * step[1];
+    if (nx < 3 || ny < 3 || nx > mazeXMax || ny > mazeYMax) return false;
+    return level.requireAt(nx, ny).typ === STONE;
+}
+
+// C mkmaze.c:maze0xy(): find random starting point for maze generation.
+function maze0xy(mazeXMax: number, mazeYMax: number): Position {
+    return {
+        x: 3 + 2 * rn2((mazeXMax >> 1) - 1),
+        y: 3 + 2 * rn2((mazeYMax >> 1) - 1),
+    };
 }
 
 // C refs: mklev.c occupied(), mkmaze.c bad_location().  Exclusion zones and
@@ -587,7 +622,7 @@ export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
         level.flags.graveyard = true;
     if (active?.baalzFixup) await fixupBaalz(active);
     if (active.file === 'minetn-1.lua' && In_mines(game.u.uz))
-        await createOrcRaid();
+        await stolen_booty();
     // Minetown becomes a town only now, so the level's own monsters (and any
     // raiders) were created while in_town() still reported false.
     if (specialLevelAt()?.flags.town) level.flags.has_town = true;
@@ -631,14 +666,295 @@ export async function generateKnoxLevel(active: ActiveSpecialLevel): Promise<voi
         if (isRoom(room)) await fill_special_room(room);
 }
 
+// check_ransacked()'s ORC_LEADER marker and orcfruit[] table, plus the
+// monster/object indices the raid needs.  C mkmaze.c:706-714.
+const C_RATION = OBJECT_NAMES.indexOf('C-ration');
+const K_RATION = OBJECT_NAMES.indexOf('K-ration');
+const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');
+const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+
+const M2_ORC = 0x80;
+const DELIVER_SPECIES = 0x21fe; // undead, were, human, elf, dwarf, gnome, orc, demon, giant
+const PM_ORC = MONSTER_NAME.indexOf('orc');
+const PM_ORC_SHAMAN = MONSTER_NAME.indexOf('orc shaman');
+const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
+
+// do_name.c:christen_orc(): the gang name is composed into the orc's given
+// name.  Shared by stolen_booty() and the booty delivery below.
+function nameOrc(monster: Monster, gang: string | null, suffix = ''): void {
+    const name = upstart(randomOrcName());
+    setMonsterGivenName(monster, gang === null ? name + suffix : `${name} of ${upstart(gang)}`);
+}
+
+// C mkmaze.c:migrate_orc().
+async function migrate_orc(monster: Monster, leader: boolean, state: PlayingGameState): Promise<void> {
+    const current = state.u.uz;
+    const bottom = state.dungeons[current.dnum]?.num_dunlevs;
+    if (bottom === undefined) throw new Error('Orc raid requires the current Mines branch.');
+    let destination;
+    if (leader) {
+        destination = bottom - Number(rn2(40) === 0);
+        monster.migflags = (monster.migflags ?? 0) | MIGR_LEFTOVERS;
+    } else {
+        destination = Math.min(bottom, Math.max(current.dlevel + 1, current.dlevel + rn2(bottom - current.dlevel + 1)));
+        monster.migflags = (monster.migflags ?? 0) & ~MIGR_LEFTOVERS;
+    }
+    await migrateMonsterOffLevel(monster, state, { dst: { dnum: current.dnum, dlevel: destination } },
+        { kind: 'level-migration', mode: MIGR_RANDOM });
+}
+
+// C mkmaze.c:shiny_orc_stuff().
+// C objnam.c:shiny_obj(): the captain's ring is a random "shiny"
+// description match within the ring class.
+async function shiny_orc_stuff(monster: Monster, state: PlayingGameState): Promise<void> {
+    const captain = monster.mnum === PM_ORC_CAPTAIN;
+    const goldChance = captain ? 600 : 300;
+    if (rn2(1000) < goldChance) {
+        const gold = await mksobj(GOLD_PIECE, true, false);
+        gold.quan = 1 + rnd(goldChance);
+        gold.owt = objectWeight(gold);
+        await addObjectToMonsterInventory(monster, gold, state);
+    }
+    if (rn2(1000) < goldChance / 4) {
+        const gem = await mkobj(GEM_CLASS, false);
+        if (gem.otyp !== ROCK) await addObjectToMonsterInventory(monster, gem, state);
+        else deallocateObject(gem, state);
+    }
+    if (captain || rn2(8) === 0) {
+        const type = randomTypeByDescription('shiny', RING_CLASS, 0, state);
+        if (type !== null)
+            await addObjectToMonsterInventory(monster, await mksobj(type, true, false), state);
+    }
+}
+
+// C mkmaze.c:migr_booty_item().
+// C mkobj.c:mksobj_migr_to_species(): the object enters migration flagged
+// for orc-infested target species.
+async function migr_booty_item(type: number, gang: string, state: PlayingGameState): Promise<void> {
+    const object = await mksobj(type, true, false);
+    object.where = 'migrating';
+    object.owornmask = MIGR_TO_SPECIES;
+    object.migration = { source: { dnum: 0, dlevel: 0 }, destination: { dnum: 0, dlevel: 0 },
+        arrival: MIGR_TO_SPECIES, speciesFlags: M2_ORC };
+    object.oextra ??= {};
+    object.oextra.oname = gang;
+    state.migratingObjects ??= [];
+    state.migratingObjects.unshift(object);
+    if (object.oclass === FOOD_CLASS) {
+        if (type === SLIME_MOLD)
+            object.spe = addFruit(rn2(2) ? 'dwarven root' : 'paddle cactus', { state });
+        object.quan += rn2(3);
+        object.owt = objectWeight(object);
+    }
+}
+
+// C mkmaze.c:stolen_booty().
+export async function stolen_booty(): Promise<void> {
+    requirePlayingGame(game);
+    const state = game;
+    const gang = randomOrcName();
+    // create the stuff that the gang took
+    let count = rnd(4);
+    for (; count > 0; count--)
+        await migr_booty_item(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, gang, state);
+    count = rnd(3);
+    for (; count > 0; count--)
+        await migr_booty_item(SKELETON_KEY, gang, state);
+    await migr_booty_item(LEATHER_GLOVES + rn2(GAUNTLETS_OF_DEXTERITY - LEATHER_GLOVES + 1), gang, state);
+    count = rnd(10);
+    for (; count > 0; count--) {
+        // Food items - but no lembas! (or some other weird things)
+        const type = TRIPE_RATION + rn2(TIN - TRIPE_RATION + 1);
+        if (type !== LEMBAS_WAFER && ((objectProb[type] ?? 0) > 0 || type === C_RATION || type === K_RATION)
+            && type !== CORPSE && type !== EGG && type !== TIN)
+            await migr_booty_item(type, gang, state);
+    }
+    await migr_booty_item(rn2(2) ? LONG_SWORD : SILVER_SABER, gang, state);
+    // create the leader of the orc gang
+    const captain = await makemonAt(PM_ORC_CAPTAIN, 0, 0, MM_NONAME);
+    if (captain) {
+        setMonsterGivenName(captain, upstart(gang));
+        captain.mpeaceful = 0;
+        setMonsterMalign(captain, state);
+        await shiny_orc_stuff(captain, state);
+        await migrate_orc(captain, true, state);
+    }
+    // Make most of the orcs on the level be part of the invading gang.
+    // C fmon is newest-first; the runtime monster array stores births in order.
+    for (const monster of [...state.level.monsters].reverse()) {
+        if (monster.dead || monster.mhp <= 0) continue;
+        if (is_orc(monster.mnum) && !monster.name && rn2(10)) {
+            // Don't christen the orc captain from the level description as a
+            // subordinate member of the main orc horde.
+            if (monster.mnum !== PM_ORC_CAPTAIN) nameOrc(monster, gang);
+        }
+    }
+    // Lastly, ensure there's several more orcs from the gang along the way.
+    // The mechanics are such that they aren't actually identified as members
+    // of the invading gang until they get their spoils assigned to the
+    // inventory; handled during that assignment.
+    for (count = rn2(10) + 5; count > 0; count--) {
+        const monster = await makemonAt(PM_ORC + rn2(PM_ORC_SHAMAN - PM_ORC + 1), 0, 0, MM_NONAME);
+        if (!monster) continue;
+        await shiny_orc_stuff(monster, state);
+        await migrate_orc(monster, false, state);
+    }
+}
+
+// dokick.c:deliver_obj_to_mon()/dog.c: migrated MIGR_TO_SPECIES booty is
+// handed to the first matching monster that is created or arrives.  The
+// species flags ride the object's overloaded owornmask/corpsenm fields,
+// which is why the food filters above exclude them.
+export async function deliverOrcRaidLoot(monster: Monster, state: GameState, all = false): Promise<void> {
+    for (const object of [...(state.migratingObjects ?? [])]) {
+        const migration = object.migration;
+        if (!migration || !(migration.arrival & MIGR_TO_SPECIES)
+            || migration.speciesFlags === undefined || migration.speciesFlags === NON_PM
+            || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & DELIVER_SPECIES) !== migration.speciesFlags) continue;
+        const index = state.migratingObjects?.indexOf(object) ?? -1;
+        if (index >= 0) state.migratingObjects?.splice(index, 1);
+        object.where = 'free';
+        object.owornmask = 0;
+        object.ox = object.oy = 0;
+        if ((migration.speciesFlags & M2_ORC) && object.oextra?.oname) {
+            if (!monster.name) {
+                const inMines = state.u.uz?.dnum === state.mines_dnum;
+                if (inMines || rn2(2) === 0) nameOrc(monster, inMines ? object.oextra.oname : null, ' the Fence');
+            }
+            delete object.oextra.oname;
+        }
+        object.corpsenm = NON_PM;
+        delete object.migration;
+        await addObjectToMonsterInventory(monster, object, state);
+        if (!all) break;
+    }
+}
+
+// C mkmaze.c:maze_inbounds().
+function maze_inbounds(x: number, y: number, mazeXMax: number, mazeYMax: number): boolean {
+    // isok() test is superfluous here (unless something has clobbered the
+    // maze bounds), exactly as in C.
+    return x >= 2 && y >= 2 && x < mazeXMax && y < mazeYMax && isok(x, y);
+}
+
+// C mkmaze.c:maze_remove_deadends(). mz_move() steps one cell per call; the
+// two-step probe decides whether opening the near cell joins another passage.
+function maze_remove_deadends(
+    level: GameMap, typ: number, mazeXMax: number, mazeYMax: number,
+): void {
+    for (let x = 2; x < mazeXMax; x++)
+        for (let y = 2; y < mazeYMax; y++)
+            if (ACCESSIBLE(level.requireAt(x, y).typ) && x % 2 && y % 2) {
+                const dirok: number[] = [];
+                let idx2 = 0;
+                for (let dir = 0; dir < 4; dir++) {
+                    const step = directions[dir];
+                    if (!step) throw new RangeError(`mz_move: bad direction ${dir}`);
+                    let dx = x, dy = y;
+                    dx += step[0]; dy += step[1];
+                    if (!maze_inbounds(dx, dy, mazeXMax, mazeYMax)) {
+                        idx2++;
+                        continue;
+                    }
+                    let dx2 = x, dy2 = y;
+                    dx2 += 2 * step[0]; dy2 += 2 * step[1];
+                    if (!maze_inbounds(dx2, dy2, mazeXMax, mazeYMax)) {
+                        idx2++;
+                        continue;
+                    }
+                    if (!ACCESSIBLE(level.requireAt(dx, dy).typ)
+                        && ACCESSIBLE(level.requireAt(dx2, dy2).typ)) {
+                        dirok.push(dir);
+                        idx2++;
+                    }
+                }
+                if (idx2 >= 3 && dirok.length) {
+                    const dir = dirok[rn2(dirok.length)];
+                    const step = dir === undefined ? undefined : directions[dir];
+                    if (!step) throw new RangeError('Maze dead-end opening is out of range.');
+                    level.requireAt(x + step[0], y + step[1]).typ = typ;
+                }
+            }
+}
+
+// C mkmaze.c:create_maze() with the maze grid scaled to corridor and wall.
+// The grid lives directly on the map; bounds and the scaled-up copy follow
+// create_maze()'s own order.
+export function create_maze(corridorWidth = -1, wallThickness = -1,
+    removeDeadEnds = false, state: GameState = game): void {
+    const level = requireGameLevel(state);
+    const nativeXMax = (COLNO - 1) & ~1;
+    const nativeYMax = (ROWNO - 1) & ~1;
+
+    if (corridorWidth === -1) corridorWidth = rnd(4);
+    if (wallThickness === -1) wallThickness = rnd(4) - corridorWidth;
+
+    if (wallThickness < 1) wallThickness = 1;
+    else if (wallThickness > 5) wallThickness = 5;
+    if (corridorWidth < 1) corridorWidth = 1;
+    else if (corridorWidth > 5) corridorWidth = 5;
+
+    const scale = corridorWidth + wallThickness;
+    const rdx = Math.trunc(nativeXMax / scale);
+    const rdy = Math.trunc(nativeYMax / scale);
+    const mazeXMax = rdx * 2;
+    const mazeYMax = rdy * 2;
+    const passageType = level.flags.corrmaze ? CORR : ROOM;
+
+    /* fill the maze grid */
+    if (level.flags.corrmaze)
+        for (let x = 2; x < mazeXMax; x++)
+            for (let y = 2; y < mazeYMax; y++)
+                level.requireAt(x, y).typ = STONE;
+    else
+        for (let x = 2; x <= mazeXMax; x++)
+            for (let y = 2; y <= mazeYMax; y++)
+                level.requireAt(x, y).typ = ((x % 2) && (y % 2))
+                    ? STONE : HWALL;
+
+    /* create maze */
+    const mm = maze0xy(mazeXMax, mazeYMax);
+    walkfrom(mm.x, mm.y, 0, mazeXMax, mazeYMax, state);
+
+    if (removeDeadEnds)
+        maze_remove_deadends(level, passageType, mazeXMax, mazeYMax);
+
+    /* scale maze up if needed */
+    if (scale > 2) {
+        // Scaling copies terrain only; lighting and other cell fields stay local.
+        const saved = Array.from({ length: nativeXMax }, (_, x) =>
+            Array.from({ length: nativeYMax }, (_, y) => level.requireAt(x, y).typ));
+        let rx = 2, x = 2;
+        while (rx < nativeXMax) {
+            const mx = x % 2 ? corridorWidth : (x === 2 || x === mazeXMax) ? 1 : wallThickness;
+            let ry = 2, y = 2;
+            while (ry < nativeYMax) {
+                const my = y % 2 ? corridorWidth : (y === 2 || y === mazeYMax) ? 1 : wallThickness;
+                for (let dx = 0; dx < mx; dx++) {
+                    for (let dy = 0; dy < my; dy++) {
+                        if (rx + dx >= nativeXMax || ry + dy >= nativeYMax) break;
+                        const terrain = saved[x]?.[y];
+                        if (terrain === undefined) throw new RangeError(`Missing maze terrain at ${x},${y}`);
+                        level.requireAt(rx + dx, ry + dy).typ = terrain;
+                    }
+                }
+                ry += my;
+                y++;
+            }
+            rx += mx;
+            x++;
+        }
+    }
+}
+
 // C mkmaze.c:makemaz("") with no dungeon prototype or fill script.
 export async function generateRandomMaze(): Promise<void> {
     const level = requireGameLevel();
     level.flags.is_maze_lev = true;
     level.flags.corrmaze = rn2(3) === 0;
     const invocation = Invocation_lev(game.u.uz);
-    if (!invocation && rn2(2)) createMaze(-1, -1, rn2(5) === 0);
-    else createMaze(1, 1, false);
+    if (!invocation && rn2(2)) create_maze(-1, -1, rn2(5) === 0);
+    else create_maze(1, 1, false);
     if (!level.flags.corrmaze)
         wallification(2, 2, (COLNO - 1) & ~1, (ROWNO - 1) & ~1);
 
@@ -653,6 +969,39 @@ export async function generateRandomMaze(): Promise<void> {
     }
     await place_branch(is_branchlev());
     await populateRandomMaze();
+}
+
+// C mkmaze.c:walkfrom() (recursive form).  C resumes at the recursive child's
+// coordinates, which mz_move() already changed; restoring the parent's
+// coordinates changes the maze.
+export function walkfrom(
+    x: number, y: number, passageType: number, mazeXMax: number, mazeYMax: number,
+    state: GameState = game,
+): void {
+    const level = requireGameLevel(state);
+    const typ = passageType || (level.flags.corrmaze ? CORR : ROOM);
+    const start = level.requireAt(x, y);
+    if (!IS_DOOR(start.typ)) {
+        // might still be on edge of MAP, so don't overwrite
+        start.typ = typ;
+        start.flags = 0;
+    }
+
+    for (;;) {
+        const dirs: number[] = [];
+        for (let dir = 0; dir < 4; dir++)
+            if (okay(x, y, dir, mazeXMax, mazeYMax, level)) dirs.push(dir);
+        if (!dirs.length) return;
+        const dir = dirs[rn2(dirs.length)];
+        const step = dir === undefined ? undefined : directions[dir];
+        if (!step) throw new RangeError('Maze direction selection is out of range.');
+        x += step[0];
+        y += step[1];
+        level.requireAt(x, y).typ = typ;
+        x += step[0];
+        y += step[1];
+        walkfrom(x, y, typ, mazeXMax, mazeYMax, state);
+    }
 }
 
 // C mazexy(): generated maze cargo uses ROOM or CORR of the selected
