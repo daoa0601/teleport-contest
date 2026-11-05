@@ -2957,12 +2957,13 @@ export async function promptKey(message, cursorOffset = 0, { canned = true } = {
         clearMessageWindow(coveredRows);
     return key;
 }
-// C ref: cmd.c:yn_function(query, (char *) 0, def, TRUE) — the response-free
-// single-key call form used by getobj() prompts and invent.c:adjust_split().
-// Its queue handling is yn_function()'s (below); the live question renders
-// through promptKey() rather than the response-list menu path. cmdq_pop()
-// answers from CQ_REPEAT during do-again without drawing anything, and a
-// live answer is recorded back into CQ_REPEAT for the next do-again.
+// The response-free single-key call form of cmd.c:yn_function() —
+// yn_function(query, (char *) 0, def, TRUE) — used by getobj() prompts
+// and invent.c:adjust_split(). Its queue handling is yn_function()'s
+// (below); the live question renders through promptKey() rather than the
+// response-list menu path. cmdq_pop() answers from CQ_REPEAT during
+// do-again without drawing anything, and a live answer is recorded back
+// into CQ_REPEAT for the next do-again.
 export async function ynSingleKey(message, cursorOffset = 0) {
     // C cmd.c:yn_function(): one cmdq_pop() (cmd.c:5496) — CQ_REPEAT
     // during do-again, CQ_CANNED otherwise — sets addcmdq FALSE when it
