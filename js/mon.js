@@ -7,7 +7,7 @@ import { OBJ_DESCR, objectTypeColor } from './o_init.js';
 import { objectBaseWeight, objectBimanual, AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FIGURINE, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
 import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, requireLiveGame } from './gstate.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
-import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility, bypassObject, clearBypasses } from './worn.js';
+import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility, bypassObject, clearBypasses, removeObjectFromMonsterInventory, adjustMonsterClothingAfterPolymorph, findMonsterArmorClass, applyMonsterEquipmentProperties, initializeMonsterArmor, } from './worn.js';
 import { DISCARDED_CALL_LOG } from './monster_action_types.js';
 import { isAccessibleAt, canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject, setMonsterApparentHeroPosition } from './monmove.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -31,7 +31,6 @@ import { monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorp
 import { thawObject } from './pickup.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE, AD_DCAY, AD_DGST, AD_RUST, AT_BOOM, AT_ENGL, AT_GAZE } from './monster_attack_types.js';
-import { removeObjectFromMonsterInventory, reassessMonsterArmor, adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn, findMonsterArmorClass, applyMonsterEquipmentProperties, clearMonsterCarriedObjectState } from './monworn.js';
 import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterInventory, armorThiefGone } from './steal.js';
 import { removeIntrinsicProperty } from './properties.js';
 import { isLevelPrize } from './level_prize.js';
@@ -75,7 +74,7 @@ import { hasShopkeeperData } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './timeout.js';
 import { corpse_intrinsic, should_givit } from './eat.js';
-import { monsterCanTouchArtifact, uncreateArtifact } from './artifact.js';
+import { monsterCanTouchArtifact, uncreateArtifact, artifactEmitsLight } from './artifact.js';
 import { reviveCorpseImmediately } from './do.js';
 import { inventoryItemDescription, delobj, stack_object } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
@@ -91,7 +90,7 @@ import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedba
 import { wormKnown } from './display.js';
 import { controlMonsterTeleport, requireLevel } from './teleport.js';
 import { heroIsUnaware } from './senses.js';
-import { A_WIS, A_CHAOTIC, A_NONE, D_NODOOR, D_TRAPPED, W_AMUL } from './const.js';
+import { A_WIS, A_CHAOTIC, A_NONE, D_NODOOR, D_TRAPPED, W_AMUL, I_SPECIAL } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { pline as lifeSavingLine } from './pline.js';
 import { releaseHeroGrip } from './polyself.js';
@@ -1293,6 +1292,35 @@ export async function presentMonsterGrowth(monster, growth) {
     await newsym(monster.mx, monster.my);
     if (growth.genocided)
         await finishEnvironmentalMonsterDeath(monster, game);
+}
+export async function reassessMonsterArmor(monster, state = game, { publish = plineWithContinuation, } = {}) {
+    if (!monster || !((monster.misc_worn_check ?? 0) & I_SPECIAL))
+        return null;
+    const apparentX = typeof monster.mux === 'number' && Number.isFinite(monster.mux) ? monster.mux : 0;
+    const apparentY = typeof monster.muy === 'number' && Number.isFinite(monster.muy) ? monster.muy : 0;
+    const dx = (monster.mx ?? 0) - apparentX;
+    const dy = (monster.my ?? 0) - apparentY;
+    if (!monster.mpeaceful && !monster.mtame && !monster.pet
+        && dx * dx + dy * dy <= 9)
+        return null;
+    const oldMask = (monster.misc_worn_check ?? 0) & ~I_SPECIAL;
+    monster.misc_worn_check = oldMask;
+    const changes = await initializeMonsterArmor(monster, state, { creation: false, publish });
+    return {
+        change: changes[0] ?? null,
+        oldMask,
+        newMask: monster.misc_worn_check ?? 0,
+        consumed: (monster.misc_worn_check ?? 0) !== oldMask
+            || monster.mcanmove === 0,
+    };
+}
+// Setting misc_worn_check's I_SPECIAL bit flags a monster to reassess and
+// potentially re-equip gear at the start of its next move.
+// C mon.c:check_gear_next_turn().
+export function checkMonsterGearNextTurn(monster) {
+    if (!monster)
+        return;
+    monster.misc_worn_check = (monster.misc_worn_check ?? 0) | I_SPECIAL;
 }
 // Also C mon.c:iter_mons_safe(): the actor loop uses an identity snapshot.
 async function executeMonsterTurns() {
@@ -3594,6 +3622,22 @@ async function reviveStonedVampire(monster, baseForm, publish) {
     }
     await newsym(monster.mx, monster.my);
     return { changed: true, heroDied: false };
+}
+// Clears the worn, wielded and carried links of an object taken from a
+// monster's inventory, e.g. when stoning moves it into a statue.
+function clearMonsterCarriedObjectState(object, state = game) {
+    if (!object)
+        return;
+    if (object.lamplit && artifactEmitsLight(object))
+        endObjectBurn(object, state);
+    object.owornmask = 0;
+    object.worn = false;
+    object.wornSlot = null;
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
+    object.ocarry = null;
+    delete object.carrierMid;
 }
 async function putInStatue(statue, object) {
     clearMonsterCarriedObjectState(object);

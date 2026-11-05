@@ -110,7 +110,7 @@ import {
     MONSTER_SIZE, MONSTER_SYMBOL, PM_GREEN_SLIME, monsterTypeName, requireMonsterData,
 } from './monster_data.js';
 import type { Monster } from './monster_types.js';
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './monworn.js';
+import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
 import { munslime, munstone } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';

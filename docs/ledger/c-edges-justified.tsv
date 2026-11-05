@@ -1815,7 +1815,7 @@ keepdogs	dismount_steed	n/a	Native stay_behind is never set for a steed; its ear
 leppie_stash	findgold	inlined	stashLeprechaunGold finds GOLD_PIECE in monster inventory (leprechaun_stash.ts)
 leppie_stash	g_at	inlined	stashLeprechaunGold finds the dropped coin stack on the floor before burial (leprechaun_stash.ts)
 leppie_stash	t_at	inlined	stashLeprechaunGold rejects coordinate-matching traps in level.traps (leprechaun_stash.ts)
-m_dowear_type	discover_object	inlined	wearSlot calls learnObjectType when new armor hides a previously visible monster (monworn.ts)
+m_dowear_type	discover_object	inlined	wearSlot calls learnObjectType when new armor hides a previously visible monster (worn.ts)
 m_search_items	t_at	inlined	searchMonsterItems finds the coordinate-matching trap in level.traps before considering that pile
 mayberem	dist2	inlined	stillTogether checks that both coordinate differences are at most one, equivalent to squared distance below three
 migr_booty_item	mksobj_migr_to_species	inlined	migr_booty_item constructs the object, marks MIGR_TO_SPECIES and links it to the migration list (mkmaze.ts)

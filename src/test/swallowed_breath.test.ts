@@ -3,7 +3,7 @@ import { createDungeon } from './support/topology.js';
 import { installPagerInput } from './support/pager-input.js';
 import { armorBaseBonus } from '../js/do_wear.js';
 
-import { findMonsterArmorClass } from '../js/monworn.js';
+import { findMonsterArmorClass } from '../js/worn.js';
 import { W_ARM } from '../js/const.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

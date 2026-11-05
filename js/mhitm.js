@@ -17,7 +17,7 @@ import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, mons
 import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
-import { findMonsterArmorClass } from './monworn.js';
+import { findMonsterArmorClass } from './worn.js';
 import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
 import { splitMonster } from './potion.js';

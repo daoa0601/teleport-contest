@@ -18,7 +18,7 @@ import { mksobj } from '../js/mkobj.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { commitPetPickup } from '../js/dogmove.js';
 import {linkObjectToMonsterInventory, runClaimedGlobTimer, placeCreatedObject} from '../js/mkobj.js';
-import { removeObjectFromMonsterInventory } from '../js/monworn.js';
+import { removeObjectFromMonsterInventory } from '../js/worn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE,

@@ -2,7 +2,7 @@ import type { finishEnvironmentalMonsterDeath, MonsterDeathHandler, MonsterFormC
 import type { PetMeal } from './pet_eating.js';
 import type { WereChange } from './were.js';
 import type { MessagePublisher } from './pline.js';
-import type { reassessMonsterArmor } from './monworn.js';
+import type { reassessMonsterArmor } from './mon.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';

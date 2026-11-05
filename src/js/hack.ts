@@ -136,7 +136,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { recorderLocalHour } from './calendar.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
-import { findMonsterArmorClass } from './monworn.js';
+import { findMonsterArmorClass } from './worn.js';
 import { abusePet } from './dog.js';
 
 import { mdamageu } from './mhitu.js';

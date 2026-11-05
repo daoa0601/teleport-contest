@@ -37,7 +37,7 @@ import { waterbodyName } from './pager.js';
 import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { removeObjectFromMonsterInventory } from './monworn.js';
+import { removeObjectFromMonsterInventory } from './worn.js';
 import { holdAnotherObject } from './invent.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
 import { rn2, rnd, d } from './rng.js';

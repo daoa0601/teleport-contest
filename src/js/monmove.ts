@@ -82,7 +82,7 @@ import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNa
 import { displayMessageWindow } from './tty_topline.js';
 import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
 import { dropMonsterObject } from './steal.js';
-import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
+import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';

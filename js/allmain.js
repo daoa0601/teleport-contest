@@ -52,7 +52,6 @@ import { stopHeroOccupation } from './occupation.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './wield.js';
 import { finishInventoryRemoval } from './invent.js';
-import { reassessMonsterArmor } from './monworn.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { d, rn2, rnd } from './rng.js';
 import { mklev, l_nhcore_init, u_on_upstairs } from './mklev.js';

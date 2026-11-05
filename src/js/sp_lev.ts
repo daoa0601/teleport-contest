@@ -37,7 +37,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import type { LuaBindings, LuaGameState } from './lua/lifecycle.js';
 import { discardMonsterInventory } from './mkobj.js';
 import { dropSpecialMonsterObjects } from './steal.js';
-import { initializeMonsterArmor } from './monworn.js';
+import { initializeMonsterArmor } from './worn.js';
 import type { LuaState, LuaValue, LuaValues } from './lua/runtime.js';
 import { make_grave } from './engrave.js';
 import { createGasCloudSelection, createPoisonGasCloud } from './region.js';

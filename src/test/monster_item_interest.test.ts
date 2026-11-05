@@ -14,7 +14,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { monsterCanCarryObject, monsterCanTouchObject, monsterCarryAmount } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { removeObjectFromMonsterInventory } from '../js/monworn.js';
+import { removeObjectFromMonsterInventory } from '../js/worn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { searches_for_item } from '../js/muse.js';
 import { monsterWantsFloorObject } from '../js/monmove.js';

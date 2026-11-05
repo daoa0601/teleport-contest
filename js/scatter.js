@@ -24,7 +24,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { unpunishHero } from './read.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { findMonsterArmorClass } from './monworn.js';
+import { findMonsterArmorClass } from './worn.js';
 import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
 import { observeObject, objectMaterial } from './o_init.js';
 import { verbForSubject, withIndefiniteArticle, objectCombatName, objectNameIsPlural } from './objnam.js';

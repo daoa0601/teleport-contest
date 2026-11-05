@@ -14,7 +14,7 @@ import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { rankOf } from './botl.js';
 import { monsterAtPosition } from './steed.js';
 import { monsterMightThrowWeapon } from './weapon.js';
-import { initializeMonsterArmor } from './monworn.js';
+import { initializeMonsterArmor } from './worn.js';
 import { rnd_offensive_item, rnd_defensive_item, rnd_misc_item } from './muse.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { randomMonsterRelocation, goodPosition } from './teleport.js';

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { A_WIS, FIRE_TRAP, MAGIC_TRAP, NO_MINVENT, W_AMUL, W_ARM, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { initializeMonsterArmor } from '../js/monworn.js';
+import { initializeMonsterArmor } from '../js/worn.js';
 import { monsterName } from '../js/do_name.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_ARMOR, OBJECT_NAMES, POT_HEALING, POT_OIL, RED_DRAGON_SCALE_MAIL, SCR_IDENTIFY, TOWEL, } from '../js/object_data.js';

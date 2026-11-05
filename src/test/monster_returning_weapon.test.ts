@@ -9,7 +9,7 @@ import { monsterWieldedWeapon } from '../js/weapon.js';
 import { readyRangedMonsterWeapon, returnMonsterWeapon, throwMonsterWeaponAtHero } from '../js/mthrowu.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/timeout.js';
-import { findMonsterArmorClass } from '../js/monworn.js';
+import { findMonsterArmorClass } from '../js/worn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AKLYS, AMULET_OF_LIFE_SAVING, CLUB, DAGGER, OIL_LAMP, TALLOW_CANDLE, WAR_HAMMER } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';

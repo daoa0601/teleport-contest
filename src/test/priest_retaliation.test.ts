@@ -2,7 +2,7 @@ import { monsterAtPosition } from '../js/steed.js';
 import type { Monster } from '../js/monster_types.js';
 import { armorBaseBonus } from '../js/do_wear.js';
 
-import { findMonsterArmorClass } from '../js/monworn.js';
+import { findMonsterArmorClass } from '../js/worn.js';
 import type { Room } from '../js/map_types.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import test from 'node:test';

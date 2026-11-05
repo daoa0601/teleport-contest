@@ -12,7 +12,7 @@ import {
 } from './polyself.js';
 import { splitHeroMonsterForm } from './potion.js';
 import { makemonAt } from './makemon.js';
-import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
+import { adjustMonsterClothingAfterPolymorph } from './worn.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_NAME } from './monster_data.js';

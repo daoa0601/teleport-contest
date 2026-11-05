@@ -592,8 +592,8 @@ worm.c	save_worm	worm-wgrowtime	diagnostic	Native save-stream field label passed
 worn.c	check_wornmask_slots	) not found in invent	diagnostic	owornmask consistency complaint of check_wornmask_slots(); wizard-mode sanity output, developer diagnostic.
 worn.c	check_wornmask_slots	bit not set in owornmask [0x	diagnostic	owornmask consistency complaint of check_wornmask_slots(); wizard-mode sanity output, developer diagnostic.
 worn.c	check_wornmask_slots	wrong bit set in owornmask [0x	diagnostic	owornmask consistency complaint of check_wornmask_slots(); wizard-mode sanity output, developer diagnostic.
-worn.c	mon_break_armor	a cracking sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
-worn.c	mon_break_armor	a ripping sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
+worn.c	mon_break_armor	a cracking sound.	composed	src/js/worn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
+worn.c	mon_break_armor	a ripping sound.	composed	src/js/worn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
 zap.c	bhito	a defibrillator.	composed	src/js/zap.ts:reviveFloorCorpse; An unseen revival heard by a nondeaf hallucinating Healer selects a defibrillator and appends the period.
 zap.c	blank_novel	obj->otyp == SPE_BLANK_PAPER	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 zap.c	poly_obj	is furious!	composed	src/js/zap.ts:angerObjectOwner; An already angry owner selects is furious with no-repeat; src/js/shk.ts:makeAngryShopkeeper prints the same phrase on the other shop-owner path.

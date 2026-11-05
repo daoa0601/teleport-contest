@@ -74,7 +74,7 @@ import { encumber_msg } from './pickup.js';
 import { holdAnotherObject } from './invent.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { removeObjectFromMonsterInventory } from './monworn.js';
+import { removeObjectFromMonsterInventory } from './worn.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';

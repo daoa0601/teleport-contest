@@ -52,7 +52,6 @@ import {
 } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, mungWishSpaces } from './hacklib.js';
-import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor, isEyewear, wearEyewear } from './do_wear.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
@@ -98,9 +97,16 @@ import type { GameObject } from './object_types.js';
 import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { Trap } from './map_types.js';
 import type { PropertyName } from './property_types.js';
-import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance } from './mon.js';
+import {
+    changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance,
+    checkMonsterGearNextTurn,
+} from './mon.js';
 import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, MonsterSelfTouchResult } from './mon.js';
-import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
+import {
+    setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed,
+    monsterSpeedMessage, destroyObjectFromMonsterInventory, findMonsterArmorClass,
+    removeObjectFromMonsterInventory,
+} from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
@@ -166,7 +172,6 @@ import { wornMonsterLifeSaver } from './mon.js';
 import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterTypeName } from './monster_data.js';
-import { findMonsterArmorClass } from './monworn.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects, monsterReflectsRay } from './muse.js';
 import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
 import type { ToplineOptions } from './pline.js';
@@ -197,7 +202,6 @@ import { respondToImmediateMagic, wakeAttackedMonster } from './mon.js';
 import { MONSTER_SIZE } from './monster_data.js';
 import { hurtleMonster } from './dothrow.js';
 import { teleportMonsterByHero } from './teleport.js';
-import { removeObjectFromMonsterInventory } from './monworn.js';
 import { setMimicAppearance } from './makemon.js';
 import { landFloorObject } from './floor_effects.js';
 import { monsterHasDrainResistance } from './mondata.js';

@@ -44,7 +44,7 @@ import { dismountHero, monsterHasMapPosition } from './steed.js';
 import { artifactEmitsLight } from './artifact.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { makemonAt, peaceMinded, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
-import { initializeMonsterArmor } from './monworn.js';
+import { initializeMonsterArmor } from './worn.js';
 import { releaseAllMonsterLeashes } from './apply.js';
 import { setMonsterGivenName } from './do_name.js';
 import { MONSTER_ALIGNMENT, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM } from './monster_data.js';

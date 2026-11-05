@@ -7,7 +7,7 @@ import { clearMessageWindow } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { changeMonsterForm, grantMonsterCorpseIntrinsic } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { removeObjectFromMonsterInventory } from '../js/monworn.js';
+import { removeObjectFromMonsterInventory } from '../js/worn.js';
 import { monsterResistsSleep } from '../js/mondata.js';
 import { MUMMY_WRAPPING, RED_DRAGON_SCALE_MAIL } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

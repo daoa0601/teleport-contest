@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT, W_ARMC } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { adjustMonsterClothingAfterPolymorph } from '../js/monworn.js';
+import { adjustMonsterClothingAfterPolymorph } from '../js/worn.js';
 import { MUMMY_WRAPPING, ROBE } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

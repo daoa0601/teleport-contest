@@ -89,7 +89,7 @@ import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToConta
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel, ceilingName, surfaceName } from './dungeon.js';
 
 import { removeWornHeroItem } from './hero_equipment.js';
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './monworn.js';
+import { destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './worn.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';

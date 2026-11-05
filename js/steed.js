@@ -16,7 +16,7 @@ import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js
 import { BOULDER, SADDLE, } from './object_data.js';
 import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject, freeInventoryObject } from './invent.js';
-import { applyMonsterEquipmentProperties } from './monworn.js';
+import { applyMonsterEquipmentProperties } from './worn.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { displayLiquidName, monsterName, monsterReflexiveAction } from './do_name.js';
 import { monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks, needspick, tunnels, cant_drown, monsterIsAmorphous, monsterIsUnsolid, touchPetrifies, } from './mondata.js';

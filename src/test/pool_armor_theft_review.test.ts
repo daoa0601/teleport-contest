@@ -16,7 +16,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState, pushKey, pushKeys } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
-import { removeObjectFromMonsterInventory } from '../js/monworn.js';
+import { removeObjectFromMonsterInventory } from '../js/worn.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { dopray } from '../js/pray.js';

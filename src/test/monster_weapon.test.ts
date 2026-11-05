@@ -9,7 +9,7 @@ import { monsterCanCarryObject, monsterCanTouchObject } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/do_name.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { findMonsterArmorClass } from '../js/monworn.js';
+import { findMonsterArmorClass } from '../js/worn.js';
 import { swingMonsterWeapon } from '../js/mhitu.js';
 import { selectHandToHandWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/weapon.js';
 import {
