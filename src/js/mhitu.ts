@@ -48,7 +48,7 @@ import { isPolearm, isMissileObject, isWeaponTool } from './object_properties.js
 import type { WeaponView } from './object_properties.js';
 import {
     mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu,
-    mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster,
+    mhitmAdStck, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster,
     resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack,
     startHeroPetrificationFromMonster, passiveDamage, erodeArmor,
 } from './uhitm.js';
@@ -520,6 +520,7 @@ export async function presentMonsterAttackEffects(
                     || heroAttack.effect === 'enchantment-natural'
                     || heroAttack.effect === 'stun-natural'
                     || heroAttack.effect === 'leg-natural'
+                    || heroAttack.effect === 'sticking-natural'
                     || heroAttack.effect === 'item-theft'
                     ? null
                     : await hitmsg(
@@ -538,20 +539,24 @@ export async function presentMonsterAttackEffects(
                 if (game.program_state.gameover)
                     return { heroDied: true };
                 if (heroAttack.effect === 'sticking-natural') {
-                    // C uhitm.c:mhitm_ad_stck() mhitu branch: set_ustuck()
-                    // and the barbs line follow hitmsg() directly.
-                    if (!heroAttack.negated && !game.u?.ustuck && !heroFormSticks(game)) {
-                        setHeroGrip(monster, game);
-                        if (monster.mnum === 293) {
-                            const stickingDismissal = await plineWithContinuation(
-                                'The barbs stick to you!',
-                            );
-                            if (stickingDismissal !== null
-                                && stickingDismissal !== undefined) {
-                                paging.pagerOwned = true;
-                            }
-                        }
-                    }
+                    // C uhitm.c:mhitm_ad_stck() mhitu branch: uhitm.ts
+                    // composes set_ustuck() and the barbs line after the
+                    // precomposed hitmsg() line.
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const stck = await mhitmAdStck({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            negated: !!heroAttack.negated,
+                            publish: publishSlotMessage,
+                        },
+                    });
+                    heroAttack.damage = stck.damage;
                 }
                 if (heroAttack.effect === 'item-theft') {
                     // C uhitm.c:mhitm_ad_sedu() mhitu branch (uhitm.c:

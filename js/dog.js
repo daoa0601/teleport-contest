@@ -18,7 +18,6 @@ import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, } from './
 import { CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
-import { makeMonsterFlee } from './monmove.js';
 import { setMonsterMalign } from './makemon.js';
 import { levelFollower, carnivorous, herbivorous, is_domestic, monsterHasEyes, monsterIsAnimal, monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, monsterIsMindless, needspick, regenerates, tunnels, cantwield, speciesHasWeaponAttack, } from './mondata.js';
 import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
@@ -141,16 +140,6 @@ export async function abusePet(monster, state = game) {
         }
     }
     return true;
-}
-// C uhitm.c:hmon_hitmon_pet()
-export async function abusePetAfterHeroHit(monster, damage, state = game) {
-    if (damage <= 0 || !await abusePet(monster, state))
-        return { heroDied: false };
-    if ((monster.mtame ?? 0) > 0 && monster.mhp > 0) {
-        const turns = 10 * rnd(damage);
-        return makeMonsterFlee(monster, { state, turns, announce: false });
-    }
-    return { heroDied: false };
 }
 // C dog.c:initedog(). Existing pet history survives renewed taming.
 export function initializePet(monster, { state = game, everything = true } = {}) {

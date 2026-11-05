@@ -4,8 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_DEF_DIED, NO_MINVENT, POOL, W_AMUL, W_ARM, W_ARMC, W_ARMH, W_ARMU } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroNaturalGrip, monsterSlipsFromHeroGrip } from '../js/uhitm.js';
-import { resolveHeroNaturalDamage } from '../js/uhitm.js';
+import { applyHeroNaturalGrip, mhitmAdStck, monsterSlipsFromHeroGrip, resolveHeroNaturalDamage } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { AD_STCK, AD_WRAP, AT_TUCH } from '../js/monster_attack_types.js';
 import { AMULET_OF_LIFE_SAVING, OBJECT_NAMES } from '../js/object_data.js';
@@ -40,7 +39,7 @@ async function gripScene(form = 'lichen', defender = 'goblin') {
 void test('a sticky hero holds an adjacent target and retains physical damage', async () => {
     const { monster, context } = await gripScene();
 
-    const result = await applyHeroNaturalGrip(monster, context);
+    const result = await mhitmAdStck({ magr: 'youmonst', defender: monster, context });
 
     assert.equal(game.u.ustuck, monster);
     assert.equal(result.damage, 3);
@@ -52,7 +51,7 @@ void test('magic cancellation prevents adhesion without preventing physical dama
     await equipMonsterObject(monster,
         await knownObject(OBJECT_NAMES.indexOf('cloak of protection')), W_ARMC);
 
-    const result = await applyHeroNaturalGrip(monster, { ...context, random: () => 0 });
+    const result = await mhitmAdStck({ magr: 'youmonst', defender: monster, context: { ...context, random: () => 0 } });
 
     assert.ok(!game.u.ustuck);
     assert.equal(result.damage, 3);
@@ -60,18 +59,18 @@ void test('magic cancellation prevents adhesion without preventing physical dama
 
 void test('adhesion cannot hold another sticky species or a distant target', async () => {
     const { monster, context } = await gripScene('lichen', 'violet fungus');
-    await applyHeroNaturalGrip(monster, context);
+    await mhitmAdStck({ magr: 'youmonst', defender: monster, context });
     assert.ok(!game.u.ustuck);
 
     const distant = await createMonsterAt('goblin', 15, 10, NO_MINVENT);
-    await applyHeroNaturalGrip(distant, { ...context, target: { x: 15, y: 10 } });
+    await mhitmAdStck({ magr: 'youmonst', defender: distant, context: { ...context, target: { x: 15, y: 10 } } });
     assert.ok(!game.u.ustuck);
 });
 
 void test('barbed devil adhesion names the held creature', async () => {
     const { monster, context, messages } = await gripScene('barbed devil');
 
-    await applyHeroNaturalGrip(monster, context);
+    await mhitmAdStck({ magr: 'youmonst', defender: monster, context });
 
     assert.equal(game.u.ustuck, monster);
     assert.deepEqual(messages, ['Your barbs stick to the goblin!']);

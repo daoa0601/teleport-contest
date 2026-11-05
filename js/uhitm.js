@@ -20,8 +20,8 @@ import { isPoolAt } from './dbridge.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, glyphAt, map_invisible, map_location, newsym, senseWithTelepathy, shieldeff, show_glyph_cell, transientMonsterGlyph, unmap_invisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName, randomDisplayMonsterSubject } from './do_name.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeAction, objectIsHardHelmet, some_armor } from './do_wear.js';
-import { abusePetAfterHeroHit, tameMonster } from './dog.js';
-import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, tryUnarmedStagger, willMonsterHurtle } from './dothrow.js';
+import { abusePet, tameMonster } from './dog.js';
+import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, willMonsterHurtle } from './dothrow.js';
 import { levelIsWaterLevel } from './dungeon.js';
 import { eat_brains, eating_conducts, morehungry, newuhs } from './eat.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
@@ -52,7 +52,7 @@ import { normalDemon } from './minion.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
 import { angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone, wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages, } from './mon.js';
-import { is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous, herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, isHeroDefender, } from './mondata.js';
+import { is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous, herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsBig, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, isHeroDefender, } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
 import { recordRandom } from './monster_action_types.js';
@@ -1149,6 +1149,41 @@ export async function resolveHeroJoust(monster, weapon, { damage, joust, state =
         heroDied = !!movement.heroDied || !!state.program_state.gameover;
     }
     return { damage, alreadyKilled, heroDied, specialMessage: true, weapon: survivingWeapon };
+}
+// C uhitm.c:hmon_hitmon_stagger()
+export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), wakeMonster = async () => {
+    monster.msleeping = 0;
+}, finishLiquidDeath, finishMonsterDeath, }) {
+    if (rnd(100) >= skill)
+        return { staggered: false };
+    if (monsterIsBig(monster.mnum)
+        || monsterIsThickSkinned({ mnum: monster.mnum })) {
+        return { staggered: false };
+    }
+    if (canSpotMonster(monster)) {
+        await announce(`${nameMonster(monster)} ${staggerVerb(monster.mnum)} from your powerful strike!`);
+    }
+    if (damage >= (monster.mhp ?? 1))
+        return { staggered: true };
+    const hurtle = await hurtleMonster(monster, dx, dy, 1, {
+        state,
+        announce,
+        nameMonster,
+        wakeMonster,
+        finishLiquidDeath,
+        finishMonsterDeath,
+    });
+    return { staggered: true, ...hurtle };
+}
+// C uhitm.c:hmon_hitmon_pet()
+export async function abusePetAfterHeroHit(monster, damage, state = game) {
+    if (damage <= 0 || !await abusePet(monster, state))
+        return { heroDied: false };
+    if ((monster.mtame ?? 0) > 0 && monster.mhp > 0) {
+        const turns = 10 * rnd(damage);
+        return makeMonsterFlee(monster, { state, turns, announce: false });
+    }
+    return { heroDied: false };
 }
 // C uhitm.c:hmon_hitmon_splitmon().
 export async function tryHeroPuddingSplit(monster, weapon, { handToHand, material, offMap, state = game, publish = plineWithContinuation }) {
@@ -3079,36 +3114,57 @@ export async function mhitm_ad_drin(call) {
             heroDied: result.heroDied, skipBrainDrain: lifeSaving && !(defender.minvent ?? defender.inventory ?? []).some(object => (object.owornmask ?? 0) & W_AMUL) };
     }
 }
-// ─── C uhitm.c:m_slips_free()/mhitm_ad_stck()/mhitm_ad_wrap(), hero attacker (from hero_natural_grip.ts) ───
-// Hero stick and wrap attacks. C uhitm.c:mhitm_ad_stck(), mhitm_ad_wrap().
 const PM_BARBED_DEVIL = MONSTER_NAME.indexOf('barbed devil');
-const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
-export async function applyHeroNaturalGrip(monster, context) {
-    let damage = context.damage;
-    if (context.attack[1] === AD_STCK) {
-        await stickToMonster(monster, context);
+// C uhitm.c:mhitm_ad_stck().
+export async function mhitmAdStck(call) {
+    if ('magr' in call) {
+        /* uhitm: the hero's sticky contact holds a monster */
+        const monster = call.defender;
+        const { state, publish, random } = call.context;
+        // mhitm_mgc_atk_negated(magr, mdef, FALSE); m_next2u(mdef).
+        const negated = await mhitm_mgc_atk_negated(state.u, monster, { state, random });
+        const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
+        if (!negated && !monsterSpeciesSticks(monster.mnum) && distance <= 2) {
+            setHeroGrip(monster, state); /* it's now stuck to you */
+            if (heroSpecies(state) === PM_BARBED_DEVIL) {
+                const target = monsterName(monster, {
+                    state, article: monster.mtame ? 'your' : 'the',
+                    suppressSaddle: !!MGIVENNAME(monster) || state.u.usteed === monster,
+                });
+                await publish(`Your barbs stick to ${target}!`);
+            }
+        }
+        return statusContinueResult(call.context.damage);
     }
-    else if (context.attack[1] === AD_WRAP) {
-        damage = await wrapMonster(monster, context);
+    else if ('mdef' in call) {
+        /* mhitu: a monster's sticky contact holds the hero */
+        const { state, attacker, hitMessage, negated, publish } = call.context;
+        // hitmsg(magr, mattk)
+        if (hitMessage)
+            await publish(hitMessage);
+        if (!negated && !state.u.ustuck && !heroFormSticks(state)) {
+            setHeroGrip(attacker, state);
+            if (attacker.mnum === PM_BARBED_DEVIL)
+                await publish('The barbs stick to you!');
+        }
+        return statusContinueResult(call.context.damage);
     }
     else {
-        throw new RangeError(`Unsupported hero grip damage type ${context.attack[1]}`);
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        if (await mhitm_mgc_atk_negated(attacker, defender, { ...context, verbose: false }))
+            return statusContinueResult(0);
+        return statusContinueResult(context.damage);
     }
-    return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
-async function stickToMonster(monster, { state, publish, random, }) {
-    const negated = await mhitm_mgc_atk_negated(state.u, monster, { state, random });
-    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
-    if (negated || monsterSpeciesSticks(monster.mnum) || distance > 2)
-        return;
-    setHeroGrip(monster, state);
-    if (heroSpecies(state) === PM_BARBED_DEVIL) {
-        const target = monsterName(monster, {
-            state, article: monster.mtame ? 'your' : 'the',
-            suppressSaddle: !!MGIVENNAME(monster) || state.u.usteed === monster,
-        });
-        await publish(`Your barbs stick to ${target}!`);
-    }
+// ─── C uhitm.c:m_slips_free()/mhitm_ad_wrap(), hero attacker (from hero_natural_grip.ts) ───
+// Hero wrap attacks. C uhitm.c:mhitm_ad_wrap(), hero attacker.
+const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
+export async function applyHeroNaturalGrip(monster, context) {
+    if (context.attack[1] !== AD_WRAP)
+        throw new RangeError(`Unsupported hero grip damage type ${context.attack[1]}`);
+    const damage = await wrapMonster(monster, context);
+    return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
 async function wrapMonster(monster, context) {
     const { state, publish, random, damage, attack, target } = context;
@@ -3220,7 +3276,7 @@ function heroSurvivesWrappingUnderwater(state) {
 const PM_ARCHON = MONSTER_NAME.indexOf('Archon');
 const STATUS_DAMAGE = [
     AD_HALU, AD_PLYS, AD_SLEE, AD_SLOW, AD_CONF,
-    AD_WERE, AD_HEAL, AD_STCK, AD_WRAP,
+    AD_WERE, AD_HEAL, AD_WRAP,
 ];
 function isStatusDamage(type) {
     return STATUS_DAMAGE.some(candidate => candidate === type);
@@ -3297,10 +3353,6 @@ export async function applyMonsterStatusEffect(attacker, defender, context) {
         case AD_WERE:
         case AD_HEAL:
             return context.applyPhysical();
-        case AD_STCK:
-            if (await mhitm_mgc_atk_negated(attacker, defender, { state, visible, publish, random, verbose: false }))
-                damage = 0;
-            break;
         case AD_WRAP:
             if (attacker.mcan)
                 damage = 0;
@@ -3774,9 +3826,10 @@ export async function applyMonsterCombatEffect(attacker, defender, context) {
         case AD_CONF:
         case AD_WERE:
         case AD_HEAL:
-        case AD_STCK:
         case AD_WRAP:
             return applyMonsterStatusEffect(attacker, defender, context);
+        // C uhitm.c:mhitm_ad_stck() owns its mhitm branch in uhitm.ts.
+        case AD_STCK: return mhitmAdStck({ attacker, defender, context });
         // C uhitm.c:mhitm_ad_drli/blnd/ench/stun/legs() own their mhitm
         // branches in uhitm.ts.
         case AD_DRLI: return mhitmAdDrli({ attacker, defender, context });
@@ -4011,6 +4064,8 @@ async function applyNaturalEffect(monster, context) {
         case AD_DRIN:
             return mhitm_ad_drin({ magr: 'youmonst', defender: monster, context });
         case AD_STCK:
+            // C uhitm.c:mhitm_ad_stck() uhitm branch now owns the stick attack.
+            return mhitmAdStck({ magr: 'youmonst', defender: monster, context });
         case AD_WRAP:
             return applyHeroNaturalGrip(monster, context);
         case AD_POLY:

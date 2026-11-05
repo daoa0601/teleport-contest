@@ -72,7 +72,7 @@ import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
-import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, } from './mondata.js';
+import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
@@ -1017,31 +1017,6 @@ export function willMonsterHurtle(monster, state, x, y, random = rn2) {
     return goodPosition(x, y, { kind: 'monster', monster }, {
         state, gpflags: MM_IGNOREWATER | MM_IGNORELAVA, random,
     });
-}
-// C uhitm.c:hmon_hitmon_stagger()
-export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), wakeMonster = async () => {
-    monster.msleeping = 0;
-}, finishLiquidDeath, finishMonsterDeath, }) {
-    if (rnd(100) >= skill)
-        return { staggered: false };
-    if (monsterIsBig(monster.mnum)
-        || monsterIsThickSkinned({ mnum: monster.mnum })) {
-        return { staggered: false };
-    }
-    if (canSpotMonster(monster)) {
-        await announce(`${nameMonster(monster)} ${staggerVerb(monster.mnum)} from your powerful strike!`);
-    }
-    if (damage >= (monster.mhp ?? 1))
-        return { staggered: true };
-    const hurtle = await hurtleMonster(monster, dx, dy, 1, {
-        state,
-        announce,
-        nameMonster,
-        wakeMonster,
-        finishLiquidDeath,
-        finishMonsterDeath,
-    });
-    return { staggered: true, ...hurtle };
 }
 // C dothrow.c:gem_accept(), reached from thitmonst()'s unicorn catch
 // (dothrow.c:2087-2099).  Null means ordinary combat; false means caught
