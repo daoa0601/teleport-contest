@@ -945,7 +945,7 @@ STATE_SPECS += [
                    '|| false;')]),
     Spec('permapoisoned:tables', 'permapoisoned', 'isPermanentlyPoisonedObject',
          [('native_object_present', INT)],
-         js_file=OBJ_FILE, state=[('otmp.oartifact', SCHAR, 'otmp.oartifact')],
+         js_file='js/artifacts.js', state=[('otmp.oartifact', SCHAR, 'otmp.oartifact')],
          assumptions=OBJECT_PREDICATE_ASSUMPTIONS[:1] + ARTIFACT_OBJECT_ASSUMPTIONS + (
             'artifact.c:permapoisoned accepts a null object and so does the port guard; otyp/oclass are unread on both sides',
          ),
@@ -955,7 +955,7 @@ STATE_SPECS += [
          probes=[('oartifact correspondence omitted (pinned Grimtooth)',
                   unrelated(lambda s: [s['native_object_present'] == 1,
                                        s['otmp.oartifact'] == 5], 'otmp.oartifact'))],
-         mutants=[(OBJ_FILE, "return artifactById(object.oartifact)?.invokePower === 'fling-poison';",
+         mutants=[('js/artifacts.js', "return artifactById(object.oartifact)?.invokePower === 'fling-poison';",
                    "return artifactById(object.oartifact)?.invokePower === 'snowstorm';")]),
     Spec('is_blunt_weapon:tables', 'verification_is_blunt_weapon', 'isBluntWeapon', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,

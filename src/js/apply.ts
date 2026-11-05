@@ -77,7 +77,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { do_attack } from './uhitm.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
-import { retouchHeroObject } from './hero_retouch.js';
+import { retouchHeroObject } from './artifacts.js';
 import { zapHeroWithObject } from './zap.js';
 
 import { heroIsUnaware } from './senses.js';

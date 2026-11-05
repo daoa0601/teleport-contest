@@ -22,7 +22,7 @@ import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restri
 import { objectOwnershipPrefix, insideShopRoomAt, shopResident, chargeAlteredUnpaidObject, updateUnpaidObjectPrice } from './shk.js';
 import { promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
-import { retouchHeroObject } from './hero_retouch.js';
+import { retouchHeroObject } from './artifacts.js';
 import { lightWieldedArtifact, equipmentLightMessage } from './light.js';
 import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';

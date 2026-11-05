@@ -10,7 +10,7 @@ import { heroIsHallucinating } from './senses.js';
 import { A_NONE, G_GONE, Is_astralevel, MM_ADJACENTOK, MM_NOWAIT } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { LL_ALIGNMENT, recordGameLogEvent } from './gamelog.js';
-import { retouchEquipment } from './hero_retouch.js';
+import { retouchEquipment } from './artifacts.js';
 import { makeConfused } from './potion.js';
 import { makemonAt } from './makemon.js';
 import { adjustErinys, MONSTER_NAME } from './monster_data.js';

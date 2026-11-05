@@ -40,7 +40,6 @@ src/js/hero_gold.ts	sit.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
-src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
 src/js/input.ts	wintty.c
 src/js/inventory_reports.ts	shk.c
@@ -50,13 +49,11 @@ src/js/japanese_item_name.ts	objnam.c
 src/js/jsmain.ts	wintty.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/level_change.ts	questpgr.c
-src/js/levitation_drop.ts	artifact.c
 src/js/light.ts	light.c
 src/js/lock.ts	lock.c
 src/js/lua/des.ts	sp_lev.c
 src/js/lua/lifecycle.ts	nhlua.c
 src/js/lua/objects.ts	nhlobj.c
-src/js/magicbane.ts	artifact.c
 src/js/makemon.ts	makemon.c
 src/js/map_object_description.ts	pager.c
 src/js/maze_terrain.ts	mkmaze.c
@@ -76,7 +73,6 @@ src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
 src/js/music.ts	music.c
 src/js/o_init.ts	o_init.c
-src/js/object_properties.ts	artifact.c
 src/js/occupation.ts	allmain.c
 src/js/option_editors.ts	botl.c
 src/js/option_escapes.ts	options.c

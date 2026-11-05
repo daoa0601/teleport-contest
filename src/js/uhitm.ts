@@ -16,7 +16,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { OBJ_DESCR } from './o_init.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
-import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, monsterHasArtifactDefense } from './artifacts.js';
+import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense } from './artifacts.js';
 import type { ArtifactDefender } from './artifacts.js';
 import { getmattk } from './attack_selection.js';
 import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
@@ -63,7 +63,7 @@ import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './he
 import type { FinishHeroMonsterDeath, HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { HeroNaturalDamageResult, HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import type { HeroPhysicalAttackMode, HeroPhysicalHitOptions, HeroPhysicalHitResult, HeroProjectileVolley } from './hero_physical_types.js';
-import { retouchEquipment } from './hero_retouch.js';
+import { retouchEquipment } from './artifacts.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { Hero, HeroSkill } from './hero_types.js';
@@ -93,7 +93,7 @@ import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectF
 import { munslime, munstone } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
-import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
+import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';

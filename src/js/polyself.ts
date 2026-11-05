@@ -100,7 +100,7 @@ import {
 } from './mondata.js';
 import { getLine, promptYesNo } from './query.js';
 import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons, touchPetrifies } from './stoning.js';
-import { retouchEquipment } from './hero_retouch.js';
+import { retouchEquipment } from './artifacts.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero } from './do.js';
 import { heroIsPunished } from './ball.js';

@@ -74,7 +74,7 @@ import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { holdingMonsterName } from './hero_expulsion.js';
 import { possessiveName } from './hacklib.js';
 import { heroCanReachFloor, engravingAt, make_grave } from './engrave.js';
-import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop } from './levitation_drop.js';
+import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop } from './artifacts.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { shipObject, containerImpactDamage } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
