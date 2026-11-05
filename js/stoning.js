@@ -3,9 +3,7 @@
 // pickup.c fatal_corpse_mistake(), trap.c instapetrify(),
 // timeout.c stoned_dialogue(); potion.c make_stoned() lives in potion.ts
 // (setHeroPetrificationTimeout).
-import { heroIsBlind } from './senses.js';
-import { heroHandName } from './body_parts.js';
-import { makePlural, withIndefiniteArticle, corpseName, killerObjectName, objectMonsterName } from './objnam.js';
+import { withIndefiniteArticle, corpseName, objectMonsterName } from './objnam.js';
 import { objectQuantity } from './mkobj.js';
 import { G_GENOD, KILLED_BY, KILLED_BY_AN, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -120,27 +118,6 @@ export async function selfTouchPetrifyingWeapons({ messageStart = 'No longer pet
         }
     }
     return { touched, died: false };
-}
-// C invent.c:will_feel_cockatrice()/feel_cockatrice(). Unlike picking up a
-// corpse, a floor inspection only touches it when blind or explicitly forced.
-export function willFeelPetrifyingCorpse(object, { forceTouch = false, state = game } = {}) {
-    return (heroIsBlind(state) || forceTouch)
-        && !(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state)
-        && object.otyp === CORPSE && touchPetrifies(object.corpsenm);
-}
-export async function feelPetrifyingCorpse(object, { forceTouch = false, state = game, publish = plineWithContinuation, } = {}) {
-    if (!willFeelPetrifyingCorpse(object, { forceTouch, state }))
-        return { touched: false, died: false };
-    const corpse = corpseName(object, { definite: true });
-    if (formCanBecomeStoneGolem(state.u.umonnum, state))
-        await publish(`You touched ${corpse} with your bare ${makePlural(heroHandName(state))}.`);
-    else
-        await publish(`Touching ${corpse} is a fatal mistake...`);
-    const result = await resolveImmediatePetrification({
-        state, publish,
-        killer: `touching ${killerObjectName(object, state)} bare-handed`,
-    });
-    return { touched: true, died: result.died };
 }
 // C apply.c:use_whip(): a snatched corpse is named by cxname() before it
 // moves, and that name is also the death reason.

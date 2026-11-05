@@ -1,3 +1,4 @@
+import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 // C pickup.c: command pickup, automatic pickup, floor inspection,
 import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
 import { objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
@@ -35,7 +36,7 @@ import { triggerChestTrap } from './chest_trap.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { waterbodyName } from './pager.js';
-import { feelPetrifyingCorpse, willFeelPetrifyingCorpse, handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
+import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';

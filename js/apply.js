@@ -1,3 +1,4 @@
+import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 // apply.js — Apply/use-tool command and the apply.c tool ports.
 // C ref: apply.c doapply(), dorub(), dojump(), do_break_wand(), use_trap(),
 // and the use_*() tool functions this file owns. use_whip() stays in
@@ -105,7 +106,7 @@ import { castSpell, knownSpell } from './spell.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle } from './steed.js';
-import { feelPetrifyingCorpse, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, willFeelPetrifyingCorpse } from './stoning.js';
+import { formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import { ceilingName, surfaceName } from './dungeon.js';

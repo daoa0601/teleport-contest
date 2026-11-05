@@ -1,3 +1,4 @@
+import { feelPetrifyingCorpse } from '../js/invent.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -11,7 +12,7 @@ import { BULLWHIP, CORPSE, SACK } from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
-import { feelPetrifyingCorpse, selfTouchPetrifyingWeapons } from '../js/stoning.js';
+import { selfTouchPetrifyingWeapons } from '../js/stoning.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

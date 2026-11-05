@@ -10,7 +10,7 @@ import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
-import { objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
+import { killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import {
     rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob,
     placeObject, objectWeight, isContainer, announceGlobMerge,
@@ -67,8 +67,9 @@ import { deityName } from './alignment.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';
 import { visibleRegionAt } from './regions.js';
-import { trapName, objectIsVulnerableToErosion, erosionMatters } from './trap.js';
-import { heroResistsStoning, touchPetrifies, feelPetrifyingCorpse, willFeelPetrifyingCorpse, formCanBecomeStoneGolem } from './stoning.js';
+import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion, erosionMatters } from './trap.js';
+import type { PetrificationContactResult } from './stoning.js';
+import { heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem } from './stoning.js';
 import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
 import { impossible, panic } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
@@ -3541,6 +3542,35 @@ export async function mergeObjectStacks(
     }
     await deleteObject(incoming, state, { mergeInto: survivor });
     return survivor;
+}
+
+// C invent.c:will_feel_cockatrice(). Unlike picking up a
+// corpse, a floor inspection only touches it when blind or explicitly forced.
+export function willFeelPetrifyingCorpse(
+    object: GameObject,
+    { forceTouch = false, state = game }: { forceTouch?: boolean; state?: GameState } = {},
+): boolean {
+    return (heroIsBlind(state) || forceTouch)
+        && !(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state)
+        && object.otyp === CORPSE && touchPetrifies(object.corpsenm);
+}
+
+// C invent.c:feel_cockatrice().
+export async function feelPetrifyingCorpse(object: GameObject, {
+    forceTouch = false, state = game, publish = plineWithContinuation,
+}: { forceTouch?: boolean; state?: GameState; publish?: MessagePublisher } = {}): Promise<PetrificationContactResult> {
+    if (!willFeelPetrifyingCorpse(object, { forceTouch, state }))
+        return { touched: false, died: false };
+    const corpse = corpseName(object, { definite: true });
+    if (formCanBecomeStoneGolem(state.u.umonnum, state))
+        await publish(`You touched ${corpse} with your bare ${makePlural(heroHandName(state))}.`);
+    else
+        await publish(`Touching ${corpse} is a fatal mistake...`);
+    const result = await resolveImmediatePetrification({
+        state, publish,
+        killer: `touching ${killerObjectName(object, state)} bare-handed`,
+    });
+    return { touched: true, died: result.died };
 }
 
 // C invent.c:display_minventory(). The swallowed inventory view includes the hero.

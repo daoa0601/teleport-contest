@@ -1,3 +1,4 @@
+import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 // C pickup.c: command pickup, automatic pickup, floor inspection,
 
 import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
@@ -58,7 +59,7 @@ import { useBagOfTricks } from './bag_of_tricks.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { waterbodyName } from './pager.js';
 import type {TransferStack} from './mkobj.js';
-import { feelPetrifyingCorpse, willFeelPetrifyingCorpse, handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
+import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';

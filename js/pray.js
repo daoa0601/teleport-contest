@@ -1,3 +1,4 @@
+import { feelPetrifyingCorpse } from './invent.js';
 // pray.c owner: prayer trouble detection and repair, divine wrath and gifts,
 // and altar sacrifice.  Folded from prayer_trouble/divine_wrath/divine_gifts/
 // sacrifice (pure move, no behavior change).
@@ -55,7 +56,7 @@ import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './weapon.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
-import { clearHeroPetrification, feelPetrifyingCorpse, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
+import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { animateStatue } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { attrcurse, rndcurse } from './throne.js';

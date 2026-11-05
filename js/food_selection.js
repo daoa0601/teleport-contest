@@ -1,3 +1,4 @@
+import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 // C eat.c:is_edible(), eat_ok(), and floorfood() for the eat command.
 import { FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import { objectUnique, BEARTRAP, CORPSE, EGG, GOLD_PIECE, } from './object_data.js';
@@ -18,7 +19,6 @@ import { dropObjectAtHero } from './do.js';
 import { observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { promptYesNoQuit } from './query.js';
-import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { exceedsActionCapacity } from './hack.js';
 import { metallivorous } from './mondata.js';
