@@ -125,7 +125,8 @@ offer_negative_valued	rejectOffering
 eval_offering	offeringValue
 sacrifice_your_race	offerOwnRace
 reward_untrap	rewardMonsterRescue
-newhp	levelHpIncrease
+newhp	newHeroHitPoints
+change_luck	changeHeroLuck
 newpw	levelEnergyIncrease
 mkclass_poly	pickFormFromClass
 readobjnam	readObjectName
