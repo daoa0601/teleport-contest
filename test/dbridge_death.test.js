@@ -4,7 +4,7 @@ import { DBWALL, DB_EAST, DB_FLOOR, DB_LAVA, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE
 import { closeDrawbridge, destroyDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';

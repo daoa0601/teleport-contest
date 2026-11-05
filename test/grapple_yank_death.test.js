@@ -7,7 +7,7 @@ import { PIT, STONE, W_WEP } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { GRAPPLING_HOOK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';

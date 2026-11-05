@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { finishOrdinaryQuit } from '../js/end.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { loadScoreRecords, saveScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords, saveScoreRecords } from '../js/topten.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
 function record(overrides) {

@@ -5,7 +5,7 @@ import { createMonsterAt } from './support/monsters.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import { aligns } from '../js/role.js';
 import { createSpecialLevel, createDungeon } from './support/topology.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/topten.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +15,6 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { ALTAR, AM_SANCTUM, Align2amask, Amask2align } from '../js/const.js';
 import { back_to_glyph } from '../js/display.js';
-import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
 import { game } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { rhack } from '../js/cmd.js';

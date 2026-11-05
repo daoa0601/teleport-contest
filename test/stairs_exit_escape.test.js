@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/topten.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

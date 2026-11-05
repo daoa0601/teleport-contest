@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { AMULET_OF_LIFE_SAVING, POT_HEALING } from '../js/object_data.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';

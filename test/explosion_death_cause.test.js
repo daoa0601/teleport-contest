@@ -5,7 +5,7 @@ import { EXPL_FIERY, EXPL_FROSTY } from '../js/const.js';
 import { explode } from '../js/explode.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';

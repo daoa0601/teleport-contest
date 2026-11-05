@@ -8,7 +8,7 @@ import { startHeroSickness } from '../js/potion.js';
 import { poisonHero } from '../js/attrib.js';
 import { LUMP_OF_ROYAL_JELLY } from '../js/object_data.js';
 import { fpostfx } from '../js/eat.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

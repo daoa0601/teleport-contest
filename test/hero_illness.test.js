@@ -9,7 +9,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { initRng } from '../js/rng.js';
 import { useUnicornHorn } from '../js/apply.js';
 import { memoryStorage } from './support/memory-storage.js';

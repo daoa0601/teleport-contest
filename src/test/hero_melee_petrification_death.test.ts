@@ -9,7 +9,7 @@ import { pushKey, resetInputState } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

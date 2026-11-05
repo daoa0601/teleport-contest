@@ -24,7 +24,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { memoryStorage } from './support/memory-storage.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { createStaffedShop } from './support/shop.js';
 import { initRng } from '../js/rng.js';
 import { polymonHero } from '../js/polyself.js';

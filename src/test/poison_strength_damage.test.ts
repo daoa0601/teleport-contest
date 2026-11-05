@@ -4,7 +4,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { rhack } from '../js/cmd.js';
 import { A_CON, A_STR, FOUNTAIN } from '../js/const.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

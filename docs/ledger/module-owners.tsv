@@ -85,7 +85,6 @@ src/js/rng.ts	rnd.c
 src/js/role.ts	role.c
 src/js/rumors.ts	rumors.c
 src/js/scatter.ts	explode.c
-src/js/score_records.ts	topten.c
 src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c

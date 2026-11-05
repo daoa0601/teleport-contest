@@ -10,7 +10,7 @@ import { monsterName } from '../js/do_name.js';
 import { GAUNTLETS_OF_POWER, LEATHER_ARMOR, LEATHER_GLOVES, OBJECT_NAMES } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { memoryStorage } from './support/memory-storage.js';

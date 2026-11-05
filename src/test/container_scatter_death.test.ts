@@ -5,7 +5,7 @@ import { W_AMUL } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BAG_OF_HOLDING, EGG, SACK, WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

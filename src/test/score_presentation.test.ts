@@ -9,7 +9,7 @@ import { finishOrdinaryDeath, finishOrdinaryQuit } from '../js/end.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runSegment } from '../js/jsmain.js';
-import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/score_records.js';
+import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/topten.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
 

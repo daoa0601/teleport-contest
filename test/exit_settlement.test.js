@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { bonesLevelExists } from '../js/bones.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, DAGGER, GOLD_PIECE, POT_HEALING, SACK } from '../js/object_data.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';

@@ -1,6 +1,6 @@
 import { GameMap } from '../js/game.js';
 import { createSpecialLevel, createDungeon } from './support/topology.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/topten.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -9,7 +9,6 @@ import { rhack } from '../js/cmd.js';
 import { chooseWizardLevelDestination } from '../js/wizcmds.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { levelTeleport, randomTeleportDepth } from '../js/level_teleport.js';
 import { levelDepthByName } from '../js/dungeon.js';

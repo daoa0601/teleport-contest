@@ -8,7 +8,7 @@ import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOMOFFSET, TEMPLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { createRoom } from './support/topology.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { initRng } from '../js/rng.js';

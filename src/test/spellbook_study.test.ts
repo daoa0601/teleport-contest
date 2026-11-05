@@ -1,4 +1,4 @@
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/topten.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +8,6 @@ import { wearHeroArmor } from '../js/do_wear.js';
 
 import { rhack } from '../js/cmd.js';
 import { A_STR } from '../js/const.js';
-import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';

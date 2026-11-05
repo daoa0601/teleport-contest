@@ -19,7 +19,7 @@ import { AMULET_OF_LIFE_SAVING, APPLE, FOOD_RATION, HEAVY_IRON_BALL, LEATHER_GLO
 import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { invault } from '../js/vault.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

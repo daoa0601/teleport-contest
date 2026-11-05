@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { runExtendedCommand } from './support/commands.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createSaddledSteed } from './support/monsters.js';

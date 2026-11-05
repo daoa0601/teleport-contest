@@ -8,7 +8,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, WAN_DIGGING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { saveScoreRecords } from '../js/score_records.js';
+import { saveScoreRecords } from '../js/topten.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

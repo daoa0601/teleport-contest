@@ -13,7 +13,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { DAGGER, SCR_GENOCIDE } from '../js/object_data.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';
 import { doread } from '../js/read.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';

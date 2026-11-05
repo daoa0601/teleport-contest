@@ -12,7 +12,7 @@ import { G_GENOD } from '../js/const.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { installPagerInput } from './support/pager-input.js';
 import { installPolymorphedHero } from './support/hero-state.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { memoryStorage } from './support/memory-storage.js';
 // Monster class symbols for S_ANT and S_SNAKE (mkclass() input classes).
 const S_ANT = 1;

@@ -5,7 +5,7 @@ import { TT_BEARTRAP, W_WEP } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { BULLWHIP, WAN_STRIKING } from '../js/object_data.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { breakWand, useWhip, jumpHero } from '../js/apply.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

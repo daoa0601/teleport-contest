@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { FIRE_HORN } from '../js/object_data.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshTurnRoom } from './support/playable-room.js';

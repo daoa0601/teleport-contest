@@ -12,7 +12,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { POT_EXTRA_HEALING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { throwInventoryObject } from './support/commands.js';
 import { memoryStorage } from './support/memory-storage.js';
