@@ -76,7 +76,7 @@ import { amuletTurn, intervene, publishMonsterCuss } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_monster_death.js';
 import { grantAmuletWish } from './wish.js';
 
-import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
+import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength, periodicTurnExercise } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { rndcurse } from './throne.js';
 import { resolveMonsterGaze, completeHeroAttackSlot, mattacku, missmu, resolveMonsterSelfExplosion } from './mhitu.js';
@@ -608,73 +608,6 @@ async function finishInitialTurnMaintenanceRng(sourceTurn: number): Promise<void
     await finishInitialTurnMaintenanceAfterIntervention(sourceTurn);
 }
 
-// C ref: attrib.c:exerper().  Hunger is read after gethungry() has applied
-// this turn's decrement, so a completed meal can change the periodic RNG
-// branch even when no other status or monster state changed.
-async function periodicTurnExercise(sourceTurn: number): Promise<void> {
-    const game = requireInitializedGame();
-    if (!(sourceTurn % 10)) {
-        const hunger = game.u?.uhunger ?? 900;
-        if (hunger > 1000) {
-            await exerciseAttribute(A_DEX, false); // Satiated: abuse Dexterity
-            if (game.urole?.key === 'monk')
-                await exerciseAttribute(A_WIS, false);
-        } else if (hunger > 150) {
-            await exerciseAttribute(A_CON, true); // Not Hungry: exercise Constitution
-        } else if (hunger > 50) {
-            // Hungry has no hunger-driven exercise.
-        } else if (hunger > 0) {
-            await exerciseAttribute(A_STR, false); // Weak: abuse Strength
-            if (game.urole?.key === 'monk')
-                await exerciseAttribute(A_WIS, true);
-        } else {
-            await exerciseAttribute(A_CON, false); // Fainting/Fainted
-        }
-
-        switch (nearCapacity(game)) {
-        case MOD_ENCUMBER:
-            await exerciseAttribute(A_STR, true);
-            break;
-        case HVY_ENCUMBER:
-            await exerciseAttribute(A_STR, true);
-            await exerciseAttribute(A_DEX, false);
-            break;
-        case EXT_ENCUMBER:
-            await exerciseAttribute(A_DEX, false);
-            await exerciseAttribute(A_CON, false);
-            break;
-        default:
-            break;
-        }
-    }
-
-    if (!(sourceTurn % 5)) {
-        const u = game.u || {};
-        // C attrib.c:exerper() checks status in this order.  These are
-        // independent conditions: a confused hero with wounded legs abuses
-        // both Wisdom and Dexterity, consuming one exercise draw for each.
-        if (((u.clairvoyanceTurns ?? 0) > 0
-            || hasPermanentIntrinsicProperty('clairvoyant', game))
-            && !u.clairvoyanceBlocked)
-            await exerciseAttribute(A_WIS, true);
-        // attrib.c checks HRegeneration here, not the combined Regeneration
-        // property.  A worn ring supplies ERegeneration: it heals and raises
-        // metabolism, but it does not exercise Strength every fifth turn.
-        if (u.regenerationIntrinsic || (u.regenerationTurns ?? 0) > 0
-            || hasIntrinsicProperty('regeneration', null, game))
-            await exerciseAttribute(A_STR, true);
-        if (u.sick || (u.sickTurns ?? 0) > 0
-            || u.vomiting || (u.vomitingTurns ?? 0) > 0)
-            await exerciseAttribute(A_CON, false);
-        if ((u.confusionTurns ?? 0) > 0
-            || heroIsHallucinating(game))
-            await exerciseAttribute(A_WIS, false);
-        if (((u._woundedLegTurns ?? 0) > 0 && !u.usteed)
-            || u.fumbling || propertyIsActive('fumbling', game)
-            || u.stunned || (u.stunnedTurns ?? 0) > 0)
-            await exerciseAttribute(A_DEX, false);
-    }
-}
 
 async function finishInitialTurnMaintenanceAfterAmbient({
     sourceTurn,

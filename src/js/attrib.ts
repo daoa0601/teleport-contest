@@ -2,7 +2,7 @@
 // One TS module per C file: every attrib.c function lives here.
 
 import { formatFeltMessage } from './hero_speech.js';
-import { game, requirePlayingGame } from './gstate.js';
+import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
@@ -17,24 +17,27 @@ import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterHasEyes, monsterHasProperName, nameToMonster } from './mondata.js';
 import { definiteName, ownedSimpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { d, rn2, rnd } from './rng.js';
-import { propertyIsActive, propertyTimeout } from './properties.js';
+import {
+    hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout,
+} from './properties.js';
 import { formMaximumStrength } from './polyself.js';
 import {
     CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, MUMMY_WRAPPING,
 } from './object_data.js';
 import { heroFaceName } from './body_parts.js';
-import { blindnessBlocked, blindfolded, isEyesOfTheOverworld } from './senses.js';
+import { blindnessBlocked, blindfolded, heroIsHallucinating, isEyesOfTheOverworld } from './senses.js';
 import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.js';
 import type { LevelAbility } from './innate_abilities.js';
 import type { ArtifactDefense, ArtifactFlag } from './data_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import {
-    A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, FROMEXPER, FROMFORM,
-    FROMOUTSIDE, FROMRACE, I_SPECIAL, INTRINSIC, LUCKMAX, LUCKMIN, POISONING,
-    Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU,
-    W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP,
+    A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER,
+    FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, LUCKMAX,
+    LUCKMIN, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG,
+    W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP,
+    W_TOOL, W_WEP,
 } from './const.js';
-import { loseHeroHp } from './hack.js';
+import { loseHeroHp, nearCapacity } from './hack.js';
 
 export type AttributeIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -504,8 +507,75 @@ function accumulateAttributeExercise(attribute: number, improving: boolean, stat
     return true;
 }
 
-// C attrib.c:exerchk(). Periodic accumulation runs at the caller's earlier
-// boundary; this owner settles it once the hero's multi-action has ended.
+// C attrib.c:exerchk(). Periodic accumulation (exerper) runs at the caller's earlier
+// C attrib.c:exerper().  Hunger is read after gethungry() has applied
+// this turn's decrement, so a completed meal can change the periodic RNG
+// branch even when no other status or monster state changed.
+export async function periodicTurnExercise(sourceTurn: number): Promise<void> {
+    const game = requireInitializedGame();
+    if (!(sourceTurn % 10)) {
+        const hunger = game.u?.uhunger ?? 900;
+        if (hunger > 1000) {
+            await exerciseAttribute(A_DEX, false); // Satiated: abuse Dexterity
+            if (game.urole?.key === 'monk')
+                await exerciseAttribute(A_WIS, false);
+        } else if (hunger > 150) {
+            await exerciseAttribute(A_CON, true); // Not Hungry: exercise Constitution
+        } else if (hunger > 50) {
+            // Hungry has no hunger-driven exercise.
+        } else if (hunger > 0) {
+            await exerciseAttribute(A_STR, false); // Weak: abuse Strength
+            if (game.urole?.key === 'monk')
+                await exerciseAttribute(A_WIS, true);
+        } else {
+            await exerciseAttribute(A_CON, false); // Fainting/Fainted
+        }
+
+        switch (nearCapacity(game)) {
+        case MOD_ENCUMBER:
+            await exerciseAttribute(A_STR, true);
+            break;
+        case HVY_ENCUMBER:
+            await exerciseAttribute(A_STR, true);
+            await exerciseAttribute(A_DEX, false);
+            break;
+        case EXT_ENCUMBER:
+            await exerciseAttribute(A_DEX, false);
+            await exerciseAttribute(A_CON, false);
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (!(sourceTurn % 5)) {
+        const u = game.u || {};
+        // C attrib.c:exerper() checks status in this order.  These are
+        // independent conditions: a confused hero with wounded legs abuses
+        // both Wisdom and Dexterity, consuming one exercise draw for each.
+        if (((u.clairvoyanceTurns ?? 0) > 0
+            || hasPermanentIntrinsicProperty('clairvoyant', game))
+            && !u.clairvoyanceBlocked)
+            await exerciseAttribute(A_WIS, true);
+        // attrib.c checks HRegeneration here, not the combined Regeneration
+        // property.  A worn ring supplies ERegeneration: it heals and raises
+        // metabolism, but it does not exercise Strength every fifth turn.
+        if (u.regenerationIntrinsic || (u.regenerationTurns ?? 0) > 0
+            || hasIntrinsicProperty('regeneration', null, game))
+            await exerciseAttribute(A_STR, true);
+        if (u.sick || (u.sickTurns ?? 0) > 0
+            || u.vomiting || (u.vomitingTurns ?? 0) > 0)
+            await exerciseAttribute(A_CON, false);
+        if ((u.confusionTurns ?? 0) > 0
+            || heroIsHallucinating(game))
+            await exerciseAttribute(A_WIS, false);
+        if (((u._woundedLegTurns ?? 0) > 0 && !u.usteed)
+            || u.fumbling || propertyIsActive('fumbling', game)
+            || u.stunned || (u.stunnedTurns ?? 0) > 0)
+            await exerciseAttribute(A_DEX, false);
+    }
+}
+
 export async function checkAttributeExercise(sourceTurn: number, state: GameState = game): Promise<void> {
     requirePlayingGame(state);
     if (!Number.isInteger(state._nextAttribCheck)) state._nextAttribCheck = 600;
