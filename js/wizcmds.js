@@ -31,7 +31,7 @@ import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonste
 import { hurtleHero, hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
 import { deliverSpecialLevelMessages } from './level_change.js';
-import { gotoLevel, resolveHeroArrivalCollision } from './do.js';
+import { gotoLevel, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { levelTeleport } from './level_teleport.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
@@ -51,7 +51,6 @@ import { startHeroVomiting } from './potion.js';
 import { propertyIsActive, propertyTimeout, refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain } from './ball.js';
-import { rewindEngravingsForSave } from './engrave.js';
 import { maybeResetPick } from './lock.js';
 import { mklev } from './mklev.js';
 import { hasShopkeeperData } from './shop_types.js';
@@ -474,8 +473,7 @@ function freeLevelObject(object) {
 // deliverMigratingMonsters(), u_collide_m() is resolveHeroArrivalCollision(),
 // initrack() is the track reset, and deliver_splev_message() is
 // deliverSpecialLevelMessages(). The INSURANCE save_currentstate()
-// checkpoint is modeled by the save_engravings() rewind on the
-// flags.checkpoint path.
+// checkpoint is saveCurrentState() (do.ts).
 // Also C dungeon.c:rm_mapseen(): inlined here (the overview record and
 // annotation of the replaced level are discarded).
 async function makemapPrepost(pre, wasInsideTower, pets = []) {
@@ -564,8 +562,7 @@ async function makemapPrepost(pre, wasInsideTower, pets = []) {
     await deliverSpecialLevelMessages();
     await checkSpecialRoom();
     // C cmd.c:makemap_prepost(FALSE) checkpoints the replacement level.
-    if (game.flags.checkpoint ?? true)
-        rewindEngravingsForSave(game.level);
+    await saveCurrentState();
     return [];
 }
 // C refs: wizcmds.c:wiz_map() and detect.c:do_mapping().  This is a

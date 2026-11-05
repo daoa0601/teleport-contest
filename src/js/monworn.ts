@@ -392,7 +392,9 @@ export async function adjustMonsterClothingAfterPolymorph(
     const possessive = () => possessiveName(name());
     // C cloak_simple_name(): robe, wrapping, smock/apron, or cloak.
     const cloakName = (object: GameObject): string => armorSimpleName(object, state);
-    const drop = async (object: GameObject | null): Promise<void> => {
+    // Not do.c:drop(): this drops a monster's worn armor (worn.c
+    // m_lose_armor() callers).
+    const dropWornArmor = async (object: GameObject | null): Promise<void> => {
         if (!object) return;
         const placed = await dropMonsterArmor(monster, object, state, { publish });
         if (!placed) return;
@@ -424,7 +426,7 @@ export async function adjustMonsterClothingAfterPolymorph(
         if (cloak && (cloak.otyp !== MUMMY_WRAPPING || !wrappingFits)) {
             if (cloak.oartifact) {
                 if (visible) await publish(`${possessive()} ${cloakName(cloak)} falls off!`);
-                await drop(cloak);
+                await dropWornArmor(cloak);
             } else {
                 if (visible) await publish(`${possessive()} ${cloakName(cloak)} tears apart!`);
                 else await hear('a ripping sound');
@@ -440,7 +442,7 @@ export async function adjustMonsterClothingAfterPolymorph(
         if ((object = wornInSlot(monster, W_ARM))) {
             if (visible) await publish(`${possessive()} armor falls around ${pronoun}!`);
             else await hear('a thud');
-            await drop(object);
+            await dropWornArmor(object);
         }
 
         const cloak = wornInSlot(monster, W_ARMC);
@@ -448,13 +450,13 @@ export async function adjustMonsterClothingAfterPolymorph(
             if (visible) await publish(monsterIsWhirly(monster)
                 ? `${possessive()} ${cloakName(cloak)} falls, unsupported!`
                 : `${name()} shrinks out of ${owner} ${cloakName(cloak)}!`);
-            await drop(cloak);
+            await dropWornArmor(cloak);
         }
         if ((object = wornInSlot(monster, W_ARMU))) {
             if (visible) await publish((MONSTER_SIZE[mnum] ?? 0) > MZ_SMALL
                 ? `${name()} seeps right through ${owner} shirt!`
                 : `${name()} becomes much too small for ${owner} shirt!`);
-            await drop(object);
+            await dropWornArmor(object);
         }
     }
 
@@ -463,12 +465,12 @@ export async function adjustMonsterClothingAfterPolymorph(
     if (handlessOrTiny) {
         if ((object = wornInSlot(monster, W_ARMG))) {
             if (visible) await publish(`${name()} drops ${owner} gloves${monster.mw ? ' and weapon' : ''}!`);
-            await drop(object);
+            await dropWornArmor(object);
         }
         if ((object = wornInSlot(monster, W_ARMS))) {
             if (visible) await publish(`${name()} can no longer hold ${owner} shield!`);
             else await hear('a clank');
-            await drop(object);
+            await dropWornArmor(object);
         }
     }
 
@@ -481,7 +483,7 @@ export async function adjustMonsterClothingAfterPolymorph(
             surfaceName(monster.mx, monster.my, state)
         }!`);
         else await hear('a clank');
-        await drop(helmet);
+        await dropWornArmor(helmet);
     }
 
     if ((handlessOrTiny || monsterIsSlithy(mnum) || monsterIsCentaur(mnum))
@@ -489,12 +491,12 @@ export async function adjustMonsterClothingAfterPolymorph(
         if (visible) await publish(monsterIsWhirly(monster)
             ? `${possessive()} boots fall away!`
             : `${possessive()} boots ${monsterIsVerySmall(mnum) ? 'slide' : 'are pushed'} off ${owner} feet!`);
-        await drop(object);
+            await dropWornArmor(object);
     }
 
     if (!monsterCanBeSaddled(monster)) {
         if ((object = wornInSlot(monster, W_SADDLE))) {
-            await drop(object);
+            await dropWornArmor(object);
             if (visible) await publish(`${possessive()} saddle falls off.`);
         }
     }
