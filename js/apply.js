@@ -2534,7 +2534,7 @@ export async function useWhip(whip, { state = game } = {}) {
             const spottedNow = canSpotMonster(monster);
             const alreadyMarked = state.level?.at?.(targetX, targetY)
                 ?.remembered_glyph?.kind === 'invisible';
-            if (spottedNow || alreadyMarked) {
+            if (spottedNow || !alreadyMarked) {
                 // C apply.c:3139 names a now-spotted target with Amonnam():
                 // the capitalized form of a_monnam(), so "An acid blob".
                 const name = spottedNow
