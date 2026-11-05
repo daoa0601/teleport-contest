@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // weapon.js — weapon.c: hero weapon skills and the #enhance command,
 // weapon to-hit/damage bonuses, monster weapon selection and wielding,
 // and towel wetness. One TS owner per weapon.c function, in C order.
@@ -23,7 +24,7 @@ import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterCanTouchObject } from './mon.js';
-import { unlinkMonsterObject, placeObject, stack_object } from './mkobj.js';
+import { unlinkMonsterObject, placeObject } from './mkobj.js';
 import { adjustedMonsterLevel } from './makemon.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive as perceivedPossessivePronoun, likes_gems, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsAnimal, monsterIsBig, monsterIsGiant, monsterIsMindless, monsterIsShade, monsterIsSwimmer, monsterIsThickSkinned, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver, monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance, } from './mondata.js';

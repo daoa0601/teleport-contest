@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // do.js — the do.c owner: drop commands and floor landings, sink rings,
 // level-arrival strays, stair travel, goto_level and its deferred
 // scheduling, wait/wipe, and wounded legs.
@@ -48,7 +49,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero } from './pickup.js';
 import { selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription, consumeInventoryItem, delobj, sortObjects, chooseInventoryObject, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
-import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject, stack_object } from './mkobj.js';
+import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject } from './mkobj.js';
 import { getLine, tty_yn_function, promptYesNo } from './query.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { showMultiSelectWindow } from './windows.js';

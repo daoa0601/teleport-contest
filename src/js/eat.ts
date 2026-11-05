@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // Hero eating and nutrition. Ports from eat.c.
 
 import {
@@ -70,7 +71,7 @@ import {
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
-import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable, stack_object} from './mkobj.js';
+import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable } from './mkobj.js';
 import { objectIsMetallic } from './object_properties.js';
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import type { MonsterDeathHandler } from './mon.js';

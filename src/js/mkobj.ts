@@ -1060,23 +1060,6 @@ export async function sweepFloorPile(
     }
 }
 
-export function stack_object(object: GameObject, state?: GameState): Promise<GameObject>;
-export function stack_object(
-    object: GameObject | null | undefined, state?: GameState,
-): Promise<GameObject | null | undefined>;
-export async function stack_object(
-    object: GameObject | null | undefined, state: GameState = game,
-): Promise<GameObject | null | undefined> {
-    if (!object) return object;
-    const pile = state.level?.objects?.[object.ox]?.[object.oy];
-    if (!pile) return object;
-    const existing = pile.find(candidate =>
-        candidate !== object && mergable(object, candidate, state));
-    if (!existing) return object;
-
-    return await mergeObjectStacks(object, existing, state) || object;
-}
-
 export function remove_object<T extends GameObject | null | undefined>(
     object: T, state: GameState = game,
 ): T {

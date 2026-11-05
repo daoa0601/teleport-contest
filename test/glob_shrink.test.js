@@ -1,3 +1,4 @@
+import { stack_object } from '../js/invent.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -19,7 +20,7 @@ import { addInventoryItem } from '../js/invent.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { nearCapacity } from '../js/hack.js';
-import { objectWeight, finishGlobTimer, runClaimedGlobTimer, placeCreatedObject, stack_object } from '../js/mkobj.js';
+import { objectWeight, finishGlobTimer, runClaimedGlobTimer, placeCreatedObject } from '../js/mkobj.js';
 async function freshGlobState(seed = 1) {
     await freshObjectRoom({
         left: 8, right: 16, top: 7, bottom: 13,

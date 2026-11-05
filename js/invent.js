@@ -3343,6 +3343,19 @@ function sameBillPrice(first, second, state) {
         && firstBill.resident === secondBill.resident
         && firstBill.entry.price === secondBill.entry.price;
 }
+// C invent.c:stackobj(). Stack an object with the first compatible floor object.
+export async function stack_object(object, state = game) {
+    if (!object)
+        return object;
+    const pile = state.level?.objects?.[object.ox]?.[object.oy];
+    if (!pile)
+        return object;
+    const existing = pile.find(candidate => candidate !== object && mergable(object, candidate, state));
+    if (!existing)
+        return object;
+    return await mergeObjectStacks(object, existing, state) || object;
+}
+// C invent.c:mergable().
 export function mergable(otmp, obj, state = game) {
     if (!otmp || !obj || otmp === obj || otmp.otyp !== obj.otyp
         || otmp.nomerge || obj.nomerge || !objectMerge(obj.otyp)) {

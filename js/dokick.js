@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // The kick command and its damage helpers.
 // C refs: dokick.c dokick()/kick_monster()/kickdmg()/kick_ouch()/kick_dumb()
 //     /kick_door()/kick_nondoor().
@@ -29,7 +30,7 @@ import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { captureThrownObjectFlight, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
-import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, stack_object, isContainer } from './mkobj.js';
+import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { convertSecretDoor, findTrap } from './detect.js';
 import { heroPolyGender, heroSpecies } from './polyself.js';

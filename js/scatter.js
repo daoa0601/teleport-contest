@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 import { RING_CLASS, POTION_CLASS, VENOM_CLASS } from './objclass.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
@@ -9,7 +10,7 @@ import { isok } from './cmd.js';
 import { canSpotMonster, newsym } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { unlinkObject, placeObject, splitObjectStack, stack_object } from './mkobj.js';
+import { unlinkObject, placeObject, splitObjectStack } from './mkobj.js';
 import { revealMonsterAppearance, angerAttackedMonster, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster, wakeMonstersNearWithMessages, } from './mon.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';

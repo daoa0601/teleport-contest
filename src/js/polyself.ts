@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), set_uasmon(), polysense(),
 // newman(), break_armor(), drop_weapon(), the #monster abilities
@@ -66,7 +67,7 @@ import { breatheInDirection } from './breath_ray.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp } from './dothrow.js';
-import { mksobj, placeCreatedObject, stack_object} from './mkobj.js';
+import { mksobj, placeCreatedObject } from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';

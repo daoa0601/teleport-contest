@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // lock.js — Doors, containers, and their locks.
 // C refs: lock.c — picking_lock()/picking_at()/lock_action(), picklock(),
 // pick_lock(), autokey(), breakchestlock(), forcelock(), doforce(),
@@ -31,7 +32,7 @@ import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming
 import { heroCanReachFloor } from './engrave.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade } from './object_properties.js';
-import { startCorpseTimeout, unlinkObject, isContainer, placeObject, stack_object } from './mkobj.js';
+import { startCorpseTimeout, unlinkObject, isContainer, placeObject } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';

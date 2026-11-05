@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // sp_lev.js — Special-level construction from level descriptions.
 // C ref: sp_lev.c — map placement and terrain selections, room / object /
 // monster / trap construction from des operations, live level flipping,
@@ -10,7 +11,7 @@ import {
     objectMerge, EGG, TIN, FIGURINE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE,
 } from './object_data.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import {mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight, remove_object, stack_object} from './mkobj.js';
+import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight, remove_object } from './mkobj.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';

@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // Hero eating and nutrition. Ports from eat.c.
 import { RANDOM_CLASS, WEAPON_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectPropertyName, oc_nutrition, objectDelay, objectCharged, AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION, } from './object_data.js';
@@ -44,7 +45,7 @@ import { changeHeroSex, heroIsBreathless, heroSpecies, heroHasNoHands, heroIsPol
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
-import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable, stack_object } from './mkobj.js';
+import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable } from './mkobj.js';
 import { objectIsMetallic } from './object_properties.js';
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';

@@ -1015,17 +1015,6 @@ export async function sweepFloorPile(x, y, state, visit) {
         current = next;
     }
 }
-export async function stack_object(object, state = game) {
-    if (!object)
-        return object;
-    const pile = state.level?.objects?.[object.ox]?.[object.oy];
-    if (!pile)
-        return object;
-    const existing = pile.find(candidate => candidate !== object && mergable(object, candidate, state));
-    if (!existing)
-        return object;
-    return await mergeObjectStacks(object, existing, state) || object;
-}
 export function remove_object(object, state = game) {
     if (!object || !state.level)
         return object;

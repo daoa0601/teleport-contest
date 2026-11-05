@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // What happens when a free object lands on a dungeon square.
 // C ref: do.c flooreffects() object landing branches.
 import { POTION_CLASS } from './objclass.js';
@@ -18,7 +19,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { cansee } from './vision.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { objectWeight, placeObject, stack_object, meldLandingGlob } from './mkobj.js';
+import { objectWeight, placeObject, meldLandingGlob } from './mkobj.js';
 import { applyBoulderPitEffects, dropBoulderIntoLiquid } from './do.js';
 function squareIsVisible(state, x, y) {
     if (state === game)

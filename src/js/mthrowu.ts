@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // mthrowu.js — the mthrowu.c owner: missiles and rays a monster launches at
 // the hero or at another monster. thitu(), drop_throw(), monmulti(),
 // monshoot(), ohitmon(), ucatchgem(), u_catch_thrown_obj(), m_throw(),
@@ -28,10 +29,7 @@ import { heroHasFreeHand } from './engrave.js';
 import { mswings_verb } from './mhitu.js';
 import { rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
-import {
-    clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject,
-    objectIsFlammable, splitObjectStack, objectWeight, placeObject, stack_object,
-} from './mkobj.js';
+import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject, objectIsFlammable, splitObjectStack, objectWeight, placeObject } from './mkobj.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';

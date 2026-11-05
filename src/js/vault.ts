@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // vault.js — Vault residence, guard lifecycle, escort, and exit accounting.
 // C refs: vault.c — clear_fcorr(), blackout(), parkguard(), grddead(),
 // in_fcorridor(), findgd(), uleftvault(), find_guard_dest(), gd_move(),
@@ -45,7 +46,7 @@ import type { GameObject } from './object_types.js';
 import type { MonsterCallLog, MonsterMovement } from './monster_action_types.js';
 import { impossible } from './diagnostics.js';
 import { heroFormSticks } from './polyself.js';
-import {linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object, stack_object} from './mkobj.js';
+import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object } from './mkobj.js';
 import { currency, freeInventoryObject } from './invent.js';
 import { enexto } from './teleport.js';
 import type { MessagePublisher } from './pline.js';

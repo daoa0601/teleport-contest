@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 // Hero movement, travel, and terrain effects.
 // C refs: hack.c:test_move(), findtravelpath(), lookaround(), domove(), pooleffects().
 import { WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js';
@@ -75,7 +76,7 @@ import { hello } from './roles.js';
 import { doopen } from './lock.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
-import { objectWeight, quantity, splitObjectStack, placeObject, stack_object, updateIceObjectTimersAt, remove_object } from './mkobj.js';
+import { objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object } from './mkobj.js';
 import { floorObjectDescription } from './invent.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { heroFootName } from './body_parts.js';
