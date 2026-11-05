@@ -1166,10 +1166,9 @@ class CharacterSelection {
         const { role, race, gender, alignment } = this.choices;
         switch (facet) {
             case 'role': return !!role;
-            case 'race': return !!race && (!role || ROLE_SELECTION_RULES[role.key].races.includes(race.name));
-            case 'gender': return !!gender && (!role || validgend(role, gender));
-            case 'alignment': return !!alignment && (!role || ROLE_SELECTION_RULES[role.key].aligns.includes(alignment.name))
-                && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
+            case 'race': return !!race && validrace(role, race, null);
+            case 'gender': return !!gender && validgend(role, gender);
+            case 'alignment': return !!alignment && validalign(role, race, alignment);
         }
     }
     // C ref: role.c genl_player_setup()'s "ROLE = k" assignments.
