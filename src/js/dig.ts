@@ -1,3 +1,6 @@
+// dig.c owner: hero and monster digging, terrain changes, burial, and
+// wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
+// digging_watch/buried_object/hole (pure move, no behavior change).
 import { stack_object } from './invent.js';
 import { POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
@@ -94,9 +97,6 @@ import { confusePromptDirection } from './cmd.js';
 import type { Hero } from './hero_types.js';
 import { monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './mondata.js';
 import { expelHero } from './mhitu.js';
-// dig.c owner: hero and monster digging, terrain changes, burial, and
-// wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
-// digging_watch/buried_object/hole (pure move, no behavior change).
 
 // ---------------------------------------------------------------------------
 // Hero pick-axe/axe digging occupation (hero_digging)

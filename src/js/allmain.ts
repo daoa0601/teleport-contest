@@ -1,3 +1,5 @@
+// allmain.js — Main game loop.
+// C ref: allmain.c — newgame, moveloop, moveloop_core.
 import type { ArmorCompletion } from './cmd.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot } from './dungeon.js';
@@ -111,8 +113,6 @@ import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout } from './properties.js';
 import { nhTimeout } from './timeout.js';
 
-// allmain.js — Main game loop.
-// C ref: allmain.c — newgame, moveloop, moveloop_core.
 
 interface TurnMaintenance {
     sourceTurn: number;

@@ -1,3 +1,11 @@
+// mklev.js — regular level generation.
+// C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
+// generate_stairs, fill_ordinary_room, mineralize, level_finalize_topology.
+// sp_lev.c special-level construction lives in sp_lev.ts;
+// mkmaze.c mazes and special-level fixups in mkmaze.ts; mkroom.c special
+// room selection and filling in mkroom.ts; bones.c in bones.ts; the Rogue
+// level (extralev.c) in extralev.ts. Level construction uses the game's
+// main random-number stream.
 import { stack_object } from './invent.js';
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, GEM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
@@ -61,14 +69,6 @@ import { addToContainer, beginLuaThemerooms, callLuaThemerooms, check_room, crea
 import { purgeDeadMonsters, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { switchHeroTerrain, roomsAt } from './hack.js';
 import { is_domestic } from './mondata.js';
-// mklev.js — regular level generation.
-// C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
-// generate_stairs, fill_ordinary_room, mineralize, level_finalize_topology.
-// sp_lev.c special-level construction lives in sp_lev.ts;
-// mkmaze.c mazes and special-level fixups in mkmaze.ts; mkroom.c special
-// room selection and filling in mkroom.ts; bones.c in bones.ts; the Rogue
-// level (extralev.c) in extralev.ts. Level construction uses the game's
-// main random-number stream.
 export const G_NOGEN = 0x0200;
 export const G_IGNORE = 0x8000;
 export const SCR_TELEPORTATION = 333;

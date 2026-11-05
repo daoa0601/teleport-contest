@@ -1,3 +1,8 @@
+// invent.js — the invent.c owner: inventory admission (addinv/freeinv/
+// assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
+// views, look_here()/dolook(), doorganize/#adjust, and stack merging.
+// C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
+// look_here(), doorganize(), dolook().
 import {
     RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS,
     SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
@@ -113,11 +118,6 @@ import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';
 
-// invent.js — the invent.c owner: inventory admission (addinv/freeinv/
-// assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
-// views, look_here()/dolook(), doorganize/#adjust, and stack merging.
-// C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
-// look_here(), doorganize(), dolook().
 
 export interface InventoryObjectMenuOptions {
     // display_pickinv's lets: '-' is a filter letter even without an object.

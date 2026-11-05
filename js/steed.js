@@ -1,3 +1,5 @@
+// steed.js — Saddling, mounting, riding, and dismounting.
+// C ref: steed.c.
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
 import { OBJ_DESCR } from './o_init.js';
 import { encumber_msg } from './pickup.js';

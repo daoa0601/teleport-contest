@@ -1,3 +1,5 @@
+// ball.js — Punishment ball-and-chain movement.
+// C ref: ball.c bc_order(), move_bc(), and drag_ball().
 import { encumber_msg } from './pickup.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
@@ -37,8 +39,6 @@ import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
 import type { KillerFormat } from './end.js';
 import { body_part } from './polyself.js';
-// ball.js — Punishment ball-and-chain movement.
-// C ref: ball.c bc_order(), move_bc(), and drag_ball().
 
 interface BallMoveGeometry {
     ball: GameObject;

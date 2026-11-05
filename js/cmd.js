@@ -1,3 +1,7 @@
+// cmd.js — Command parsing and dispatch.
+// C ref: cmd.c:rhack(); movement execution belongs to hack.ts. Also hosts
+// the top-line key prompts (win/tty/wintty.c tty_yn_function()'s prompt
+// path) that commands which pause for input render through.
 import { FOOD_CLASS, POTION_CLASS } from './objclass.js';
 import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting } from './apply.js';
@@ -89,10 +93,6 @@ import { revealTerrain } from './terrain_view.js';
 import { truncateRawMessage } from './pline_text.js';
 import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 import { finishHeroMonsterKill } from './mon.js';
-// cmd.js — Command parsing and dispatch.
-// C ref: cmd.c:rhack(); movement execution belongs to hack.ts. Also hosts
-// the top-line key prompts (win/tty/wintty.c tty_yn_function()'s prompt
-// path) that commands which pause for input render through.
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
