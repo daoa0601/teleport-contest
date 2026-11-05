@@ -24,7 +24,7 @@ import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, 
 import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { initializeFruitRegistry } from './fruit.js';
-import { selectCharacter } from './character_selection.js';
+import { genl_player_selection } from './roles.js';
 import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C,
     COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 
@@ -350,7 +350,7 @@ export class Engine {
             await restoregamePreamble();
             return true;
         }
-        const selected = await selectCharacter(opts, () => this._readPlayerName(10, false));
+        const selected = await genl_player_selection(opts, () => this._readPlayerName(10, false));
         if (!selected) return false;
         const { role, race, gender, alignment } = selected;
         playerName = selected.name;

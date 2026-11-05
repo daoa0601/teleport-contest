@@ -6,7 +6,12 @@
 // real role records rather than a display-only name.  Attribute arrays keep
 // NetHack's C order: Str, Int, Wis, Dex, Con, Cha.
 import { MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ANY, PICK_ONE } from './const.js';
+import { game } from './gstate.js';
+import { nhgetch } from './input.js';
+import { rn2 } from './rng.js';
+import { NO_COLOR } from './terminal.js';
 import { withIndefiniteArticle } from './objnam.js';
+import { rawPrint } from './pline.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 const roleRecords = [
     { key: 'archeologist', filecode: 'Arc', name: { m: 'Archeologist', f: 'Archeologist' }, mnum: 0,
@@ -731,6 +736,82 @@ export function randomCharacterOption(option) {
     const text = option.toLowerCase();
     return text === '*' || text === '@' || 'random'.startsWith(text);
 }
+// C role.c:ok_role(): is the role compatible with the chosen (or absent)
+// race, gender, and alignment?  C's IndexOkT branch and its any-candidate
+// fallback are the one ternary below; gr.rfilter.roles[] is the role
+// filter mask.
+export function ok_role(choices, filters) {
+    const { role, race, gender, alignment } = choices;
+    return (role ? [role] : nativeRoleChoices()).some(candidate => !filters.roles.has(candidate.key)
+        && (!race || validrace(candidate, race, null))
+        && (!gender || validgend(candidate, gender))
+        && (!alignment || validalign(candidate, null, alignment)));
+}
+// C role.c:ok_race(): is the race compatible with the chosen (or absent)
+// role and alignment?  gr.rfilter.mask & races[].selfmask is the race
+// filter mask.
+export function ok_race(choices, filters) {
+    const { role, race, alignment } = choices;
+    return (race ? [race] : races).some(candidate => !filters.races.has(candidate.name) && validrace(role, candidate, alignment));
+}
+// C role.c:ok_gend(): is the gender compatible with the chosen (or
+// absent) role and race?  Gender never consults the alignment.
+export function ok_gend(choices, filters) {
+    const { role, gender } = choices;
+    return (gender ? [gender] : genders).some(candidate => !filters.genders.has(candidate.name) && validgend(role, candidate));
+}
+// C role.c:ok_align(): is the alignment compatible with the chosen (or
+// absent) role and race?  Alignment never consults the gender.
+export function ok_align(choices, filters) {
+    const { role, race, alignment } = choices;
+    return (alignment ? [alignment] : aligns).some(candidate => !filters.alignments.has(candidate.name) && validalign(role, race, candidate));
+}
+// C role.c:setrolefilter(): mark one facet value unacceptable; any
+// character facet is accepted, trying roles first.
+export function setrolefilter(filters, value) {
+    const role = str2role(value);
+    if (role) {
+        filters.roles.add(role.key);
+        return true;
+    }
+    const race = str2race(value);
+    if (race) {
+        filters.races.add(race.name);
+        return true;
+    }
+    const gender = str2gend(value);
+    if (gender) {
+        filters.genders.add(gender.name);
+        return true;
+    }
+    const alignment = str2align(value);
+    if (alignment) {
+        filters.alignments.add(alignment.name);
+        return true;
+    }
+    return false;
+}
+// C role.c:gotrolefilter(): does any filter mask hold an exclusion?
+export function gotrolefilter(filters) {
+    return !!(filters.roles.size || filters.races.size || filters.genders.size || filters.alignments.size);
+}
+// C role.c:clearrolefilter(): clear one facet's filter mask.
+export function clearrolefilter(filters, facet) {
+    switch (facet) {
+        case 'role':
+            filters.roles.clear();
+            break;
+        case 'race':
+            filters.races.clear();
+            break;
+        case 'gender':
+            filters.genders.clear();
+            break;
+        case 'alignment':
+            filters.alignments.clear();
+            break;
+    }
+}
 // C role.c:promptsep(): the separator between the post attributes still
 // to pick — a comma before all but the first and last, "and " before the
 // last one when there are several.
@@ -830,81 +911,545 @@ export function build_plselection_prompt(choices, random, filters) {
     }
     return `${prompt} for you? [ynaq]`;
 }
-// C role.c:ok_role(): is the role compatible with the chosen (or absent)
-// race, gender, and alignment?  C's IndexOkT branch and its any-candidate
-// fallback are the one ternary below; gr.rfilter.roles[] is the role
-// filter mask.
-export function ok_role(choices, filters) {
-    const { role, race, gender, alignment } = choices;
-    return (role ? [role] : nativeRoleChoices()).some(candidate => !filters.roles.has(candidate.key)
-        && (!race || validrace(candidate, race, null))
-        && (!gender || validgend(candidate, gender))
-        && (!alignment || validalign(candidate, null, alignment)));
+// C role.c:genl_player_selection(): run the selection once and quit the
+// game when the player cancels it; genl_player_setup() is the
+// CharacterSelection class below.
+export async function genl_player_selection(options, readName) {
+    return new CharacterSelection(options, readName).choose();
 }
-// C role.c:ok_race(): is the race compatible with the chosen (or absent)
-// role and alignment?  gr.rfilter.mask & races[].selfmask is the race
-// filter mask.
-export function ok_race(choices, filters) {
-    const { role, race, alignment } = choices;
-    return (race ? [race] : races).some(candidate => !filters.races.has(candidate.name) && validrace(role, candidate, alignment));
-}
-// C role.c:ok_gend(): is the gender compatible with the chosen (or
-// absent) role and race?  Gender never consults the alignment.
-export function ok_gend(choices, filters) {
-    const { role, gender } = choices;
-    return (gender ? [gender] : genders).some(candidate => !filters.genders.has(candidate.name) && validgend(role, candidate));
-}
-// C role.c:ok_align(): is the alignment compatible with the chosen (or
-// absent) role and race?  Alignment never consults the gender.
-export function ok_align(choices, filters) {
-    const { role, race, alignment } = choices;
-    return (alignment ? [alignment] : aligns).some(candidate => !filters.alignments.has(candidate.name) && validalign(role, race, candidate));
-}
-// C role.c:setrolefilter(): mark one facet value unacceptable; any
-// character facet is accepted, trying roles first.
-export function setrolefilter(filters, value) {
-    const role = str2role(value);
-    if (role) {
-        filters.roles.add(role.key);
-        return true;
+const FACETS = ['role', 'race', 'gender', 'alignment'];
+// C ref: role.c role_menu_extra()'s RS_menu_let[] — the menu letters of
+// the "pick <facet> first" routes.
+const ROUTE_KEYS = { role: '?', race: '/', gender: '"', alignment: '[' };
+// C ref: role.c genl_player_setup()'s end_menu() titles.
+const TITLES = {
+    role: 'Pick a role or profession', race: 'Pick a race or species',
+    gender: 'Pick a gender or sex', alignment: 'Pick an alignment or creed',
+};
+const EMPTY_CHOICES = { role: null, race: null, gender: null, alignment: null };
+// C role.c:genl_player_setup(): the selection loop's guts — the
+// pick-for-you question, the facet menus, and the confirmation. C keeps
+// the state in flags.initrole/initrace/initgend/initalign and gr.rfilter;
+// this class holds it for one selection run.
+class CharacterSelection {
+    readName;
+    choices;
+    random = new Set();
+    filters;
+    name = game.plname;
+    constructor(options, readName) {
+        this.readName = readName;
+        this.filters = options.characterFilters ?? createCharacterFilters();
+        this.choices = {
+            role: str2role(options.role) ?? null,
+            race: str2race(options.race) ?? null,
+            gender: str2gend(options.gender) ?? null,
+            alignment: str2align(options.align) ?? null,
+        };
+        for (const facet of FACETS) {
+            const value = facet === 'alignment' ? options.align : options[facet];
+            if (!this.choices[facet] && value
+                && randomCharacterOption(value))
+                this.random.add(facet);
+        }
     }
-    const race = str2race(value);
-    if (race) {
-        filters.races.add(race.name);
-        return true;
+    async choose() {
+        const pickSomething = FACETS.some(facet => !this.choices[facet] && !this.random.has(facet));
+        if (FACETS.some(facet => !this.choices[facet]))
+            game._characterPickerUsed = true;
+        this.rigid_role_checks();
+        let pickForYou = 'n';
+        if (FACETS.some(facet => !this.choices[facet] && !this.random.has(facet))) {
+            const question = build_plselection_prompt(this.choices, this.random, this.filters);
+            for (;;) {
+                pickForYou = (await readSetupAnswer(question)).toLowerCase();
+                if (pickForYou === 'q' || pickForYou === '\x1b')
+                    return null;
+                if (' \n\r'.includes(pickForYou))
+                    pickForYou = 'y';
+                if (pickForYou === '*' || pickForYou === '@')
+                    pickForYou = 'a';
+                if ('yna'.includes(pickForYou))
+                    break;
+            }
+        }
+        for (;;) {
+            let next = 'role';
+            let completed = false;
+            do {
+                const facet = next;
+                const { role, race } = this.choices;
+                // C's nextpick: after each facet the loop continues with
+                // the first unresolved one.
+                next = facet === 'role' ? 'race'
+                    : facet === 'race' ? (role ? 'gender' : 'role')
+                        : facet === 'gender' ? (!role ? 'role' : !race ? 'race' : 'alignment')
+                            : (!role ? 'role' : !race ? 'race' : 'gender');
+                completed = facet === 'alignment';
+                if (this.validCurrentFacet(facet))
+                    continue;
+                if (pickForYou === 'y' || pickForYou === 'a' || this.random.has(facet)) {
+                    // genl_player_setup() runs before the game windows
+                    // exist, so pline() uses nonblocking raw_print().
+                    if (this.candidates(facet).length === 0)
+                        rawPrint(`Incompatible ${facet}!`);
+                    this.pickRandom(facet);
+                    continue;
+                }
+                let count = this.candidates(facet).length;
+                if (count === 0)
+                    count = this.fallbackCandidates(facet).length;
+                if (facet !== 'role' && count <= 1) {
+                    this.pickSoleOrFallback(facet);
+                    continue;
+                }
+                // maybe_skip_seps() measures before plsel_startmenu()'s
+                // rigid checks resolve the forced facets, including the
+                // rn2(1) for a rigid pick.
+                const excess = this.maybe_skip_seps(facet);
+                const key = await this.facetMenu(facet, excess);
+                if (key === 'quit')
+                    return null;
+                if (key === 'filter') {
+                    this.clearFacet(facet);
+                    const selectedFilters = await this.editFilters();
+                    next = facet === 'role' || selectedFilters ? 'role' : facet;
+                    continue;
+                }
+                const route = FACETS.find(candidate => key === `pick-${candidate}`);
+                if (route) {
+                    this.clearFacet(facet);
+                    this.clearFacet(route);
+                    next = route;
+                }
+                else if (key === 'random')
+                    this.pickRandom(facet);
+                else
+                    this.setFacet(facet, key);
+            } while (!completed || FACETS.some(facet => !this.choices[facet]));
+            if (!pickSomething || pickForYou === 'a')
+                return this.result();
+            for (;;) {
+                const window = this.plsel_startmenu('filter');
+                addChoice(window, 'yes', 'y', 'Yes; start game', true);
+                addChoice(window, 'again', 'n', 'No; choose role again');
+                if (game.iflags.renameallowed)
+                    addChoice(window, 'rename', 'a', 'Not yet; choose another name');
+                addChoice(window, 'quit', 'q', 'Quit');
+                const answer = await finishMenu(window, `Is this ok? [yn${game.iflags.renameallowed ? 'a' : ''}q]`, 'yes');
+                if (answer === 'quit')
+                    return null;
+                if (answer === 'yes')
+                    return this.result();
+                if (answer === 'rename') {
+                    for (;;) {
+                        const renamed = await this.readName();
+                        // tty_askname() gave up; the game ends with the player.
+                        if (renamed === null)
+                            return null;
+                        this.name = renamed.name;
+                        if (this.name)
+                            break;
+                    }
+                    game.plname = this.name;
+                    continue;
+                }
+                pickForYou = 'n';
+                this.choices = { ...EMPTY_CHOICES };
+                this.random.clear();
+                break;
+            }
+        }
     }
-    const gender = str2gend(value);
-    if (gender) {
-        filters.genders.add(gender.name);
-        return true;
+    result() {
+        const { role, race, gender, alignment } = this.choices;
+        if (!role || !race || !gender || !alignment)
+            throw new Error('Character selection has unresolved facets');
+        return { role, race, gender, alignment, name: this.name };
     }
-    const alignment = str2align(value);
-    if (alignment) {
-        filters.alignments.add(alignment.name);
-        return true;
+    // C ref: role.c genl_player_setup()'s per-facet entry guards
+    // ("if (RACE < 0 || !validrace(ROLE, RACE))" and its siblings).
+    validCurrentFacet(facet) {
+        const { role, race, gender, alignment } = this.choices;
+        switch (facet) {
+            case 'role': return !!role;
+            case 'race': return !!race && (!role || ROLE_SELECTION_RULES[role.key].races.includes(race.name));
+            case 'gender': return !!gender && (!role || validgend(role, gender));
+            case 'alignment': return !!alignment && (!role || ROLE_SELECTION_RULES[role.key].aligns.includes(alignment.name))
+                && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
+        }
     }
-    return false;
+    // C ref: role.c genl_player_setup()'s "ROLE = k" assignments.
+    clearFacet(facet) {
+        this.random.delete(facet);
+        switch (facet) {
+            case 'role':
+                this.choices.role = null;
+                break;
+            case 'race':
+                this.choices.race = null;
+                break;
+            case 'gender':
+                this.choices.gender = null;
+                break;
+            case 'alignment':
+                this.choices.alignment = null;
+                break;
+        }
+    }
+    setFacet(facet, key) {
+        switch (facet) {
+            case 'role':
+                this.choices.role = roles.find(role => role.key === key) ?? null;
+                break;
+            case 'race':
+                this.choices.race = races.find(race => race.name === key) ?? null;
+                break;
+            case 'gender':
+                this.choices.gender = genders.find(gender => gender.name === key) ?? null;
+                break;
+            case 'alignment':
+                this.choices.alignment = aligns.find(alignment => alignment.name === key) ?? null;
+                break;
+        }
+        if (this.choices[facet])
+            this.random.delete(facet);
+    }
+    // C role.c:rigid_role_checks(): resolve ROLE_RANDOM facets before the
+    // rigid picks, so a forced facet never prompts. pick_role(),
+    // pick_race(), pick_gend(), and pick_align() are the per-facet
+    // PICK_RANDOM draws through pickRandom() and the sole-candidate
+    // rn2(1) below; randrole_filtered() is the honor-the-filters role
+    // fallback.
+    rigid_role_checks() {
+        // role.c resolves explicitly random facets before its rigid picks.
+        for (const facet of ['role', 'race', 'alignment', 'gender']) {
+            if (!this.random.has(facet))
+                continue;
+            // A conflicting configured facet can leave pick_*() with no
+            // candidates. Keep ROLE_RANDOM until makepicks corrects it.
+            if (facet !== 'role' && this.candidates(facet).length === 0)
+                continue;
+            if (facet === 'role' && this.candidates(facet).length === 0) {
+                const key = this.randrole_filtered();
+                if (key)
+                    this.setFacet('role', key);
+                continue;
+            }
+            this.pickRandom(facet);
+        }
+        if (!this.choices.role)
+            return;
+        for (const facet of ['race', 'alignment', 'gender']) {
+            if (this.choices[facet] || this.random.has(facet))
+                continue;
+            const candidates = this.candidates(facet);
+            if (candidates.length === 1) {
+                const key = candidates[rn2(1)];
+                if (key)
+                    this.setFacet(facet, key);
+            }
+        }
+    }
+    // C role.c:randrole_filtered(): a random role that honors every
+    // filter mask; the tail is randrole()'s unfiltered draw.
+    randrole_filtered() {
+        // randrole_filtered() drops incompatible choices but keeps
+        // each exclusion when an explicitly random role cannot fit.
+        const permitted = this.roleCandidates(EMPTY_CHOICES);
+        const candidates = permitted.length ? permitted : this.fallbackCandidates('role');
+        return candidates[rn2(candidates.length)];
+    }
+    // C role.c:pick_role(): the PICK_RANDOM draw over candidates(), whose
+    // filter loop is the ok_role()/ok_race()/ok_gend()/ok_align()
+    // conjunction; pick_race(), pick_gend(), and pick_align() share it.
+    // randrole(), randrace(), randgend(), and randalign() are the same
+    // draw over the fallback tables (randrace() scales by 100 only for
+    // the incompatible fallback), and the PICK_RIGID single-possibility
+    // draws are rigid_role_checks()'s rn2(1).
+    pickRandom(facet) {
+        let candidates = this.candidates(facet);
+        const fallback = candidates.length === 0;
+        if (fallback)
+            candidates = this.fallbackCandidates(facet);
+        // Native randrace() scales by 100 only for the incompatible fallback.
+        const index = fallback && facet === 'race'
+            ? Math.floor(rn2(candidates.length * 100) / 100) : rn2(candidates.length);
+        const key = candidates[index];
+        if (!key)
+            throw new Error(`No permitted ${facet} for character selection`);
+        this.setFacet(facet, key);
+    }
+    // C ref: role.c genl_player_setup()'s manual-pick branch: the last
+    // valid candidate when only one remains ("n == 1"), falling back to
+    // the validrace()/validgend()/validalign() survivors when the ok_*()
+    // set is empty ("n == 0").
+    pickSoleOrFallback(facet) {
+        const candidates = this.candidates(facet);
+        const key = (candidates.length ? candidates : this.fallbackCandidates(facet)).at(-1);
+        if (key) {
+            this.setFacet(facet, key);
+            return;
+        }
+        throw new Error(`No permitted ${facet} for character selection`);
+    }
+    // C ref: role.c randrole()/randrace()/randgend()/randalign() fallback
+    // tables: every role, or the role's permitted races, genders, and
+    // alignments.
+    fallbackCandidates(facet) {
+        const { role, race } = this.choices;
+        switch (facet) {
+            case 'role': return nativeRoleChoices().map(role => role.key);
+            case 'race': return races.filter(candidate => !role
+                || ROLE_SELECTION_RULES[role.key].races.includes(candidate.name)).map(candidate => candidate.name);
+            case 'gender': return genders.filter(candidate => !role
+                || validgend(role, candidate)).map(candidate => candidate.name);
+            case 'alignment': return aligns.filter(candidate => (!role
+                || ROLE_SELECTION_RULES[role.key].aligns.includes(candidate.name))
+                && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(candidate.name))).map(candidate => candidate.name);
+        }
+    }
+    // C ref: role.c pick_role()'s candidate set — the ok_*() conjunction
+    // per facet; the menu variant adds the cross-checks setup_*menu()
+    // makes (setup_racemenu() also asks ok_role() and ok_align(), &c).
+    candidates(facet, menu = false) {
+        const c = this.choices;
+        switch (facet) {
+            case 'role': return this.roleCandidates(c);
+            case 'race': return races.filter(race => {
+                const choice = { ...c, race };
+                return ok_race(choice, this.filters) && (!menu
+                    || ok_role(choice, this.filters) && ok_align(choice, this.filters));
+            }).map(race => race.name);
+            case 'gender': return genders.filter(gender => {
+                const choice = { ...c, gender };
+                return ok_gend(choice, this.filters) && (!menu
+                    || ok_role(choice, this.filters) && ok_race(choice, this.filters));
+            }).map(gender => gender.name);
+            case 'alignment': return aligns.filter(alignment => {
+                const choice = { ...c, alignment };
+                return ok_align(choice, this.filters) && (!menu
+                    || ok_role(choice, this.filters) && ok_race(choice, this.filters));
+            }).map(alignment => alignment.name);
+        }
+    }
+    roleCandidates(choices) {
+        return nativeRoleChoices().filter(role => {
+            const choice = { ...choices, role };
+            return ok_role(choice, this.filters) && ok_race(choice, this.filters)
+                && ok_gend(choice, this.filters) && ok_align(choice, this.filters);
+        }).map(role => role.key);
+    }
+    // C ref: role.c setup_rolemenu()'s rolenamebuf — the male, female, or
+    // combined male/female role name.
+    roleName(role, gender, combined = false) {
+        if (gender?.value === 1)
+            return role.name.f;
+        if (!gender && combined && role.name.f !== role.name.m)
+            return `${role.name.m}/${role.name.f}`;
+        return role.name.m;
+    }
+    // C role.c:plsel_startmenu(): open the facet menu with the header
+    // line of aspects chosen so far, after rigid_role_checks() has
+    // narrowed the forced facets; the second maybe_skip_seps() call
+    // drops the header separator when the menu overflows by two rows.
+    plsel_startmenu(aspect) {
+        this.rigid_role_checks();
+        const { role, race, gender, alignment } = this.choices;
+        const roleName = role ? this.roleName(role, gender) : '<role>';
+        const short = (value) => value.slice(0, 20);
+        let header;
+        if (this.name && role && race && gender && alignment) {
+            // "<name> the <alignment> <gender> <race.adjective> <role>"
+            header = [this.name, 'the', alignment.name, gender.name, race.adj, roleName].map(short).join(' ');
+        }
+        else {
+            // "<role> <race.noun> <gender> <alignment>"
+            header = [roleName, race?.noun ?? '<race>', gender?.name ?? '<gender>',
+                alignment?.name ?? '<alignment>'].map(short).join(' ');
+        }
+        const window = tty_create_nhwindow(NHW_MENU);
+        addText(window, header);
+        if (this.maybe_skip_seps(aspect) !== 2)
+            addText(window, '');
+        return window;
+    }
+    // C role.c:maybe_skip_seps(): the excess-line count (four header
+    // lines, one per permitted role, random plus separator, five
+    // footers) whose one-or-two surplus drops the menu separators; only
+    // the role aspect is measured.
+    maybe_skip_seps(aspect) {
+        if (aspect !== 'role')
+            return 0;
+        const count = this.candidates('role').length + 12;
+        const rows = game.nhDisplay?.rows ?? 24;
+        return Math.max(0, count - rows);
+    }
+    // C ref: role.c genl_player_setup()'s per-facet menu: one
+    // plsel_startmenu() header, the setup_rolemenu()/setup_racemenu()/
+    // setup_gendmenu()/setup_algnmenu() entries, and role_menu_extra()'s
+    // misc rows.
+    async facetMenu(facet, excess) {
+        const window = this.plsel_startmenu(facet);
+        this.setup_facet_menu(window, facet);
+        this.role_menu_extra('random', window, true);
+        if (facet !== 'role' || excess < 1 || excess > 2)
+            addText(window, '');
+        for (const other of FACETS) {
+            if (other === facet)
+                continue;
+            this.role_menu_extra(other, window);
+        }
+        this.role_menu_extra('filter', window);
+        this.role_menu_extra('quit', window);
+        return finishMenu(window, TITLES[facet], 'random');
+    }
+    // C role.c:setup_rolemenu(), setup_racemenu(), setup_gendmenu(), and
+    // setup_algnmenu(): the selection-menu variant (C's filtering TRUE)
+    // — one row per still-permitted value, roles as "an Archeologist"
+    // names with the combined male/female form. The filter-reset
+    // variant is inside reset_role_filtering().
+    setup_facet_menu(window, facet) {
+        let previous = '';
+        for (const key of this.candidates(facet, true)) {
+            let selector = key.charAt(0);
+            let text = key;
+            if (facet === 'role') {
+                const role = roles.find(candidate => candidate.key === key);
+                if (!role)
+                    continue;
+                if (selector === previous)
+                    selector = selector.toUpperCase();
+                previous = selector;
+                text = withIndefiniteArticle(this.roleName(role, this.choices.gender, true));
+            }
+            tty_add_menu(window, {
+                identifier: key, selector,
+                group: facet !== 'role' ? selector.toUpperCase() : '', text,
+            });
+        }
+    }
+    // C role.c:role_menu_extra(): one miscellaneous menu entry — the
+    // grayed-out "    role forces female"-style line when the facet's
+    // value is already forced (four spaces of padding fake the graying),
+    // or the "Pick <facet> first" route with its RS_menu_let selector;
+    // ROLE_RANDOM, RS_filter, and ROLE_NONE are the Random, filter, and
+    // Quit rows.
+    role_menu_extra(which, window, preselect = false) {
+        if (which === 'random') {
+            addChoice(window, 'random', '*', 'Random', preselect);
+            return;
+        }
+        if (which === 'filter') {
+            addChoice(window, 'filter', '~', `${gotrolefilter(this.filters) ? 'Reset' : 'Set'} role/race/&c filtering`);
+            return;
+        }
+        if (which === 'quit') {
+            addChoice(window, 'quit', 'q', 'Quit', preselect);
+            return;
+        }
+        const forced = this.forcedValue(which);
+        if (forced)
+            addText(window, `    ${forced}`);
+        else
+            addChoice(window, `pick-${which}`, ROUTE_KEYS[which], `Pick${this.choices[which] ? ' another' : ''} ${which} first`);
+    }
+    // C ref: role.c role_menu_extra()'s constrainer detection — the role
+    // or race table forcing one value, or the filters excluding every
+    // other one.
+    forcedValue(facet) {
+        const { role, race, gender, alignment } = this.choices;
+        const rules = role && ROLE_SELECTION_RULES[role.key];
+        switch (facet) {
+            case 'role':
+                return nativeRoleChoices().every(candidate => candidate === role || this.filters.roles.has(candidate.key))
+                    ? 'filter forces role' : null;
+            case 'race':
+                if (rules?.races.length === 1)
+                    return `role forces ${rules.races[0]}`;
+                if (rules && race && this.filterForces(rules.races, race.name, this.filters.races))
+                    return 'filter forces race';
+                return null;
+            case 'gender':
+                if (rules?.genders?.length === 1)
+                    return `role forces ${rules.genders[0]}`;
+                if (role && gender && this.filterForces(genders.map(candidate => candidate.name), gender.name, this.filters.genders))
+                    return 'filter forces gender';
+                return null;
+            case 'alignment':
+                if (rules?.aligns.length === 1)
+                    return `role forces ${rules.aligns[0]}`;
+                if (race && RACE_SELECTION_RULES[race.name].aligns.length === 1)
+                    return `race forces ${RACE_SELECTION_RULES[race.name].aligns[0]}`;
+                if (alignment && this.filterForces(aligns.map(candidate => candidate.name), alignment.name, this.filters.alignments))
+                    return 'filter forces alignment';
+                return null;
+        }
+    }
+    // C ref: role.c role_menu_extra()'s "(allowmask & ~gr.rfilter.mask)
+    // == selfmask" checks: the filters leave exactly this one value.
+    filterForces(keys, selected, excluded) {
+        const remaining = keys.filter(key => !excluded.has(key));
+        return remaining.length === 1 && remaining[0] === selected;
+    }
+    // C ref: role.c genl_player_setup()'s RS_filter choice: redo the
+    // filters and restart the picks from the role (reset_role_filtering()
+    // also clears every selection, C's "ROLE = RACE = GEND = ALGN =
+    // ROLE_NONE").
+    async editFilters() {
+        const result = await reset_role_filtering(this.filters);
+        if (result !== 'cancelled') {
+            this.choices = { ...EMPTY_CHOICES };
+            this.random.clear();
+        }
+        return result === 'filtered';
+    }
 }
-// C role.c:gotrolefilter(): does any filter mask hold an exclusion?
-export function gotrolefilter(filters) {
-    return !!(filters.roles.size || filters.races.size || filters.genders.size || filters.alignments.size);
-}
-// C role.c:clearrolefilter(): clear one facet's filter mask.
-export function clearrolefilter(filters, facet) {
-    switch (facet) {
-        case 'role':
-            filters.roles.clear();
-            break;
-        case 'race':
-            filters.races.clear();
-            break;
-        case 'gender':
-            filters.genders.clear();
-            break;
-        case 'alignment':
-            filters.alignments.clear();
-            break;
+// C ref: role.c genl_player_setup()'s yn_function() call for the
+// pick-for-you question, drawn over the base window before the game
+// windows exist.
+async function readSetupAnswer(question) {
+    const display = game.nhDisplay;
+    if (!display)
+        throw new Error('Character selection needs a display');
+    // WIN_MAP does not exist yet. Paint the prompt over the base window
+    // without flushing map cells over the name-entry copyright notice.
+    const text = question + ' ';
+    const width = display.cols - 1;
+    for (let row = 0; row * width < text.length; row++) {
+        display.clearRow(row);
+        display.putstr(0, row, text.slice(row * width, (row + 1) * width), NO_COLOR);
     }
+    display.setCursor((text.length - 1) % width + 1, Math.floor((text.length - 1) / width));
+    const answer = await nhgetch();
+    // tty_yn_function() clears WIN_MESSAGE when its prompt spans rows.
+    if (text.length > width) {
+        for (let row = 0; row * width < text.length; row++)
+            display.clearRow(row);
+    }
+    return String.fromCharCode(answer);
+}
+// C ref: role.c role_menu_extra()'s add_menu_str() — a text-only row.
+function addText(window, text) {
+    tty_add_menu(window, { identifier: null, text });
+}
+// C ref: role.c role_menu_extra()'s add_menu() calls.
+function addChoice(window, identifier, selector, text, selected = false) {
+    tty_add_menu(window, { identifier, selector, text, itemflags: selected ? MENU_ITEMFLAGS_SELECTED : 0 });
+}
+// C ref: role.c genl_player_setup()'s end_menu()/select_menu()/
+// destroy_nhwindow() tail, with the PICK_ONE preselection quirk: a
+// second answer comes back alongside the preselected row.
+async function finishMenu(window, title, defaultChoice) {
+    tty_end_menu(window, title);
+    const result = await tty_select_menu(window, PICK_ONE, true);
+    await tty_destroy_nhwindow(window);
+    if (result.cancelled)
+        return 'quit';
+    // Explicitly toggling the preselected row off still chooses its default.
+    // A different choice is returned alongside the preselected row by tty.
+    return result.selections.find(item => item.identifier !== defaultChoice)?.identifier
+        ?? result.selections[0]?.identifier ?? defaultChoice;
 }
 // C ref: role.c gr.rfilter — the zeroed filter masks before any
 // ROLEDISCARD option is parsed.
