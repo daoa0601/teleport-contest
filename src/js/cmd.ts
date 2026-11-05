@@ -79,7 +79,7 @@ import { doread } from './read.js';
 import { eatfood, doeat, opentin } from './eat.js';
 import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
-import { dosearch } from './detect.js';
+import { dosearch, revealTerrain } from './detect.js';
 import { continueWipingFace, donull, dowipe, dodrop, dropMultipleObjects } from './do.js';
 
 import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
@@ -105,7 +105,6 @@ import { selection_floodfill, selection_getbounds, selection_getpoint, selection
 import { floorObjectDescription } from './invent.js';
 import { cansee, couldsee, vision_reset_new_level } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
-import { revealTerrain } from './terrain_view.js';
 import type { Selection } from './selvar.js';
 import type { TtyPromptAnswer } from './query.js';
 import type { CharacterInput, CommandDirection, InputState } from './input.js';
