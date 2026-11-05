@@ -967,6 +967,9 @@ async function advanceWorldTurn(): Promise<void> {
 
 // C allmain.c:moveloop_core() calls unmul() at the end of the world turn
 // which finishes negative multi, even if burden still prevents hero movement.
+// Also C do_wear.c:Shield_on(): inlined here as the wear completion
+// marking the shield's enchantment known.
+// Also C do_wear.c:Shirt_on(): the same completion marks shirts known.
 async function finishDelayedArmorAction(delayed: ArmorCompletion, g: GameState): Promise<void> {
     if (delayed.kind === 'wear') {
         // unmul() has printed nomovemsg before Armor_on() and find_ac().
@@ -1024,6 +1027,7 @@ async function settleHeroLiquidAfterAction() {
 
 // Native hack.c:unmul(). The after-handler is cleared before invocation so
 // recovery can start another delay without inheriting the old completion.
+// Also C steal.c:unstolenarm(): the 'unstolen-armor' case below.
 export async function finishHeroHelplessness(
     messageOverride?: string, state: GameState = game,
     publish: MessagePublisher = plineWithContinuation,

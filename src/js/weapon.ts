@@ -380,6 +380,7 @@ export async function unwieldMonsterWeapon(monster: Monster, state: GameState = 
     return weapon;
 }
 
+// Also C wield.c:mwelded(): inlined here as the W_WEP and willWeld test.
 export async function updateMonsterWeaponAfterPolymorph(monster: Monster, state: GameState = game, {
     polyspot = false,
     publish = plineWithContinuation,

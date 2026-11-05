@@ -125,6 +125,8 @@ function swallowedPotionEligibility(
     return engulfer;
 }
 
+// Also C dothrow.c:swallowit(): inlined here — the engulfer takes the
+// object; the chained ball only ends the throw.
 export async function resolveSwallowedWeaponThrow({
     state = game,
     item,

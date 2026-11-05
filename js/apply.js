@@ -615,6 +615,8 @@ export function leashAttachedToMonster(monster, state = game) {
     return (state.inventory || []).find(object => object.otyp === LEASH && object.leashmon === monster?.m_id) || null;
 }
 // C apply.c:o_unleash(). The leash need not be in inventory.
+// Also C light.c:find_mid(): inlined here for a leashed monster in the
+// current level, found by m_id.
 export function releaseObjectLeash(leash, state = game) {
     const monster = requireGameLevel(state).monsters.find(candidate => candidate.m_id === leash.leashmon);
     if (monster)
@@ -1790,6 +1792,8 @@ export async function useTinningKit(kit) {
 function tinnable(corpse) {
     return corpse.otyp === CORPSE && !corpse.oeaten && !!MONSTER_NUTRITION[corpse.corpsenm ?? -1];
 }
+// Also C eat.c:tin_ok(): inlined as the tinning-kit chooser callback at the
+// end (food-class corpses that can still be tinned).
 async function chooseTinningCorpse() {
     requirePlayingGame(game);
     const hero = game.u;
@@ -2103,6 +2107,8 @@ const OBJECT_COLOR_NAMES = [
     'bright magenta', 'bright cyan', 'white',
 ];
 // C apply.c:use_stone().
+// Also C invent.c:any_obj_ok(): inlined as the unknown-stone GETOBJ_SUGGEST
+// chooser callback (dodrop in do.ts inlines the same callback).
 export async function useGrayStone(stone, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

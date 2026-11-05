@@ -199,6 +199,8 @@ export async function automaticSearch(): Promise<AutomaticSearchResult> {
 // secret square owns its Luck-adjusted roll before later neighbours are
 // examined.  Finding one cancels an active count-prefixed occupation via
 // nomul(0), but the successful search still consumes the current action.
+// Also C artifact.c:spec_ability(): inlined here; the SPFX_SEARCH check on
+// the wielded artifact's flags stands in for uwep->spe as search bonus.
 async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearchResult> {
     const u = game.u;
     const weapon = game.uwep;
@@ -759,6 +761,8 @@ const LONG_WORM = MONSTER_NAME.indexOf('long worm');
 const LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 const WORM_TAIL_CLASS = MONSTER_SYMBOL[LONG_WORM_TAIL];
 
+// Also C steal.c:findgold(): inlined as the GOLD_PIECE membership tests
+// (monsters' gold and the golem special case) below.
 export async function detectGold(source: GameObject | null, { state = game }: DetectionOptions = {}): Promise<DetectionResult> {
     requireLiveGame(state);
     requirePlayingGame(state);

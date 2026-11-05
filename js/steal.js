@@ -131,6 +131,8 @@ function theftEquipmentTarget(object, state) {
         return state.uarmc || state.uarm || object;
     return object;
 }
+// Also C steal.c:unresponsive(): inlined as the unaware-or-frozen/
+// paralyzed helper that skips the steal struggle rolls inside.
 export async function stealFromHero(monster, random, calls) {
     const game = requireInitializedGame();
     const animal = monsterIsAnimal(monster);

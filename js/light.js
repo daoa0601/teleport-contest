@@ -265,6 +265,8 @@ export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
         await map_invisible(monster.mx, monster.my);
     }
 }
+// Also C read.c:set_lit(): inlined as the per-cell lit flag write and the
+// gremlin collection below.
 export async function lightRoom(lit, { radius = 5, source, finishMonsterKill } = {}) {
     const blind = heroIsBlind();
     const swallowed = !!game.u?.uswallow;
@@ -352,6 +354,8 @@ export async function lightDamage(source, ordinary, amount, { state = game } = {
 }
 // C light.c:new_light_source() prepends to light_base, so each lighting
 // gives the object the newest slot in the list order that snuff searches.
+// Also C light.c:new_light_core(): new_light_source() is only a thin
+// wrapper around this core.
 export function registerObjectLightSource(object, state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;

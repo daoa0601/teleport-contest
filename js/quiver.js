@@ -10,6 +10,7 @@ import { isLauncherAmmunition, isMissileObject, isThrowingWeapon, launcherMatche
 function quiverObjectClass(item) {
     return item.oclass || objectClassForType(item.otyp);
 }
+// C dothrow.c:autoquiver().
 // The four buckets deliberately have different overwrite policies and final
 // precedence.  This is not a first-match or generic-throwability search.
 export function autoquiverCandidate(state) {
@@ -64,6 +65,7 @@ export function autoquiverCandidate(state) {
     }
     return currentAmmo || missile || alternateAmmo || miscellaneous;
 }
+// C wield.c:ready_ok(). The empty-quiver choice stays in the caller.
 export function readySuggestion(item, state) {
     const quantity = item.quantity ?? item.quan ?? 1;
     if (item === state.uwep

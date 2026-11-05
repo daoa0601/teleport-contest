@@ -734,6 +734,8 @@ function admitsChoice(classification) {
 // split_otmp behavior use chooseInventoryObject().
 // C invent.c:getobj_hands_txt(): callers pass the hands entry's wording
 // (fingers, fingertip, gloved/bare hands, empty quiver) as handsText.
+// Also C invent.c:obj_to_let(): inlined as the fixinv-off letter
+// reassignment before the inventory letters are read.
 export async function getobj(word, classify, { forcePrompt = false, allowCount = false, hands = GETOBJ_EXCLUDE, handsText = 'your hands' } = {}) {
     const queued = takeQueuedInventorySelection(classify, allowCount, hands);
     if (queued)
@@ -1112,6 +1114,9 @@ export async function checkInventoryGold(why, state = game) {
     await impossible(`${why}: ${wrongSlotMessage}${wrongSlots && gold.length > 1 ? ' and ' : ''}${gold.length > 1 ? 'multiple gold stacks' : ''}`, { state });
     return true;
 }
+// C objnam.c:not_fully_identified().
+// Also C artifact.c:undiscovered_artifact(): inlined here as the
+// _artifactDiscoveries membership test.
 export function objectNeedsFullIdentification(object) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
@@ -1227,6 +1232,8 @@ function matchesIdentificationCategories(object, categories) {
 }
 // C ggetobj()/askchain(), restricted to identify. Category order controls
 // which class is questioned first; identifying never splits a stack.
+// Also C invent.c:safeq_xprname(): inlined here as the inventory-letter
+// and full object description in each question.
 async function identifyTraditionally(limit) {
     const identified = [];
     while (limit > 0) {
@@ -1508,6 +1515,10 @@ export async function inventoryActionForObject(item) {
 }
 // Also C iactions.c:item_naming_classification(): inlined here
 // Also C iactions.c:ia_addmenu(): keyed action rows are built inline here
+// Also C worn.c:armcat_to_wornmask(): inlined here as armorSlotFor(),
+// using a typed slot name instead of an intermediate numeric mask.
+// Also C worn.c:wearmask_to_obj(): inlined here as the occupied-slot read
+// that supplies the wear action's already-wearing label.
 function itemActionEntries(item, state, repairGold) {
     const itemName = simpleObjectName(item, state);
     const entries = [];
@@ -3331,6 +3342,8 @@ export async function probedContentsTitle(object, state) {
     return name.replace('an trapped ', 'a trapped ');
 }
 // C invent.c:display_binventory(): objects beneath the probed surface.
+// Also C invent.c:only_here(): inlined as the buried-objects filter by
+// (x, y) below.
 export async function displayBuriedInventory(x, y, state) {
     const pile = state.level.objects[x]?.[y] || [];
     let underwhat = 'here', count = 0;

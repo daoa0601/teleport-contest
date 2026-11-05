@@ -1001,6 +1001,8 @@ export function monsterAvoidsSokobanPushLocation(
 }
 
 // C monmove.c:watch_on_duty(). A warning does not consume the watchman's move.
+// Also C lock.c:picking_lock(): inlined as the pick-lock occupation test
+// that targets the hero's facing square.
 async function watchOnDuty(
     monster: Monster,
     state: PlayingGameState,

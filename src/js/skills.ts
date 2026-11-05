@@ -488,6 +488,7 @@ export async function doenhance() {
     }
 }
 
+// C weapon.c:add_skills_to_menu().
 function enhancementMenu(speedy: boolean, state: GameState): { items: InventoryMenuItem<number>[]; available: number } {
     const skills = initializedSkills(state);
     const available = skills.filter((_proficiency, skill) =>

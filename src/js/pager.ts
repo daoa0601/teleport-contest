@@ -451,6 +451,8 @@ const COYOTE_NAMES = [
     'Caninus Nervous Rex', 'Grotesques Appetitus', 'Nemesis Ridiculii',
 ];
 
+// Also C do_name.c:coyotename(): inlined here for an accurate look at a
+// coyote (the "Canis latrans" pun by mcan and m_id).
 export async function lookAtMonster(monster: Monster, x: number, y: number): Promise<string> {
     const accurate = !heroIsHallucinating();
     const coyote = accurate && MONSTER_NAME[monster.mnum] === 'coyote';

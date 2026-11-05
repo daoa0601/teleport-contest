@@ -16,6 +16,7 @@ import { randomMonsterRelocation, reportMonsterTeleportRestriction } from './tel
 import { monsterIsUnicorn } from './mondata.js';
 const GEMSTONE = 20;
 const MINERAL = 21;
+// C dothrow.c:gem_accept().
 // Null means ordinary combat; false means caught or missed but still free.
 export async function offerUnicornGem(monster, object, state) {
     if (object.oclass !== GEM_CLASS || !monsterIsUnicorn(monster.mnum)

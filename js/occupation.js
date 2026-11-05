@@ -7,6 +7,8 @@ import { cmdq_clear } from './cmd.js';
 import { CQ_CANNED } from './const.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 // C allmain.c:stop_occupation().
+// Also C eat.c:maybe_finished_meal(): inlined as the eat-food branch that
+// finishes a completed meal before printing any stop message.
 export async function stopHeroOccupation(state = game, publish = plineWithContinuation, { finishMeal = true } = {}) {
     const occupation = state._occupation;
     if (occupation) {

@@ -2454,6 +2454,8 @@ export async function doeat() {
 }
 
 // C eat.c:use_tin_opener().
+// Also C eat.c:tinopen_ok(): inlined as the "open" chooser callback (tins
+// suggested, everything else excluded).
 export async function use_tin_opener(tool: GameObject, { state = game, swapWeapons }: TinOpenerOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -2610,6 +2612,9 @@ export async function morehungry(amount: number, { state = game }: HungerOptions
 
 // C eat.c:lesshungry(). Fullness belongs to this common boundary, including
 // nutrition received outside a meal.
+// Also C eat.c:reset_eat(): inlined at the choke and paranoid-refusal
+// points below as `victual.doreset = true`; the monster-nearby interruption
+// path stops the occupation directly instead of setting the flag.
 export async function lesshungry(amount: number, { state = game }: HungerOptions = {}) {
     requirePlayingGame(state);
     const hero = state.u;

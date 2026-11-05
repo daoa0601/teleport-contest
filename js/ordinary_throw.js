@@ -28,6 +28,8 @@ import { addInventoryItemBefore } from './invent.js';
 import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, snuffThrownCandle } from './thrown_object.js';
+// Also C dothrow.c:throwit_return(): the finally block that clears the
+// tracked thrown object at the end of the throw.
 export async function throwOrdinaryObject({ state = game, item, quantity, splitObjectId = null, dx, dy, volley, }) {
     requirePlayingGame(state);
     const weaponMask = item.owornmask ?? 0;

@@ -2348,6 +2348,8 @@ export async function see_traps() {
 // C rumors.c:get_rnd_line(..., MD_PAD_BOGONS).  The random offset lands in a
 // padded data-file line; the following line is the selected name.  Long lines
 // retry unless the offset falls within their final 20 characters.
+// Also C do_name.c:bogon_is_pname(): inlined here as the personal-name
+// test on the selected bogus-name prefix.
 export function randomBogusMonsterIdentity() {
     let landed = 0;
     for (let tries = 0; tries < 10; tries++) {

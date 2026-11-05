@@ -396,6 +396,8 @@ export const Trouble = {
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 const RIN_SUSTAIN_ABILITY = OBJECT_NAMES.indexOf('sustain ability');
 // C pray.c:in_trouble().
+// Also C do_wear.c:unchanger(): inlined here as the cursed amulet-of-
+// unchanging test (the fix-trouble HANDS case below repeats it).
 export function worstPrayerTrouble(state = game) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -1382,6 +1384,8 @@ export async function dosacrifice() {
     // dosacrifice() returns ECMD_TIME even after savelife() clears move.
     game.context.move = 1;
 }
+// Also C eat.c:offer_ok(): inlined as the sacrifice chooser callback at the
+// end (corpses, and amulets of Yendor only; astral downplays the mismatch).
 async function chooseOffering() {
     const game = requireInitializedGame();
     const hero = game.u;

@@ -2355,6 +2355,8 @@ export async function strikeIronBarsWithWeapon(
 // flaming artifact cuts or burns through, unsuitable weapons refuse with
 // their description, and a successful swing against the adjusted roll
 // dissolves the trap.
+// Also C artifact.c:attacks(): inlined here; the artifact's attack
+// damageType === 'fire' is the fiery-blade test.
 export async function fightSeenWebWithForce(
     x: number, y: number, state: GameState = game,
 ): Promise<boolean> {

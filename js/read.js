@@ -1101,6 +1101,7 @@ async function chargingEffect(source, state) {
     const charged = object ? await rechargeObject(object, blessing, state) : null;
     return { consumed: true, heroDied: !!charged?.heroDied };
 }
+// C read.c:seffect_mail().
 async function mailEffect(source, state) {
     const odd = (source.o_id ?? 0) % 2 === 1;
     if (source.spe === 2)
@@ -1295,6 +1296,8 @@ function canCenterCloud(x, y, state) {
         || isPoolAt(x, y, state) || isLavaAt(x, y, state))
         && cansee(x, y) && (x - state.u.ux) ** 2 + (y - state.u.uy) ** 2 < 32;
 }
+// Also C read.c:display_stinking_cloud_positions(): inlined as the valid-
+// position highlights below (the hero's own square is not highlighted).
 async function chooseCenter(question, state) {
     await pline(question);
     const valid = (x, y) => canCenterCloud(x, y, state);
@@ -2236,6 +2239,8 @@ async function flashCreatedMonster(monster) {
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
 // C read.c:tshirt_text() and read.c:apron_text(). Erosion wears the
 // lettering away deterministically from the hero's birth date.
+// Also C read.c:erode_obj_text(): inlined as the erosion-proportional
+// wipeoutText below.
 export function garmentInscription(object, state = game) {
     if (object.otyp !== T_SHIRT && object.otyp !== ALCHEMY_SMOCK)
         throw new Error('Only T-shirts and alchemy smocks have garment inscriptions.');

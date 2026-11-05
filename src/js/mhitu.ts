@@ -3869,7 +3869,7 @@ export function mswings_verb(object: WeaponView, bash = false, random = rn2): 'b
 // Protection against special attacks. C mhitu.c:magic_negation().
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const PM_ALIGNED_CLERIC = MONSTER_NAME.indexOf('aligned cleric');
-
+// Also C artifact.c:protects(): inlined here (see the loop below).
 export function magic_negation(defender: Hero | Monster, state: GameState = game) {
     const hero = defender === state.u;
     const species = 'mnum' in defender ? defender.mnum : defender.umonnum ?? -1;

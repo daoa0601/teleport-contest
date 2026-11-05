@@ -257,6 +257,7 @@ function forceShatterMessage(object, state) {
     const subject = withIndefiniteArticle(thing);
     return `${subject.charAt(0).toUpperCase() + subject.slice(1)} ${disposition}!`;
 }
+// C lock.c:chest_shatter_msg().
 async function shatterChestContent(object, state) {
     if (object.oclass === POTION_CLASS) {
         const bottle = randomBottleName(state);

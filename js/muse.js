@@ -1927,6 +1927,7 @@ async function mcureblindness(monster, seen, options) {
         await (options.publish ?? plineWithContinuation)(`${monsterName(monster, { state: options.state, capitalized: true })} can see again.`);
 }
 // C muse.c:mcould_eat_tin().
+// Also C wield.c:mwelded(): inlined here as the W_WEP and willWeld test.
 export function mcould_eat_tin(monster) {
     if (monsterIsAnimal(monster))
         return false;

@@ -94,7 +94,9 @@ export async function doswapweapon() {
     else game.context.move = result === 'time' ? 1 : 0;
 }
 
-// C refs: wield.c:dowield(), ready_weapon(), invent.c:getobj().  The prompt
+// C wield.c:dowield().
+// Also C wield.c:wield_ok(): inlined here as the getobj callback.
+// C refs: wield.c:ready_weapon(), invent.c:getobj().  The prompt
 // advertises weapons and weapon-tools but still permits the full inventory
 // through ?/*; '-' represents the synthetic empty-hands object.
 export async function dowield(): Promise<void> {

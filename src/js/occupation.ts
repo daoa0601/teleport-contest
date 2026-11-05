@@ -11,6 +11,8 @@ import { endVoluntaryMultiTurn } from './hack.js';
 import type { GameState } from './game_state.js';
 
 // C allmain.c:stop_occupation().
+// Also C eat.c:maybe_finished_meal(): inlined as the eat-food branch that
+// finishes a completed meal before printing any stop message.
 export async function stopHeroOccupation(
     state: GameState = game, publish: MessagePublisher = plineWithContinuation, { finishMeal = true } = {},
 ) {

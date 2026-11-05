@@ -69,6 +69,8 @@ export type OrdinaryThrowResult =
     | (ProjectileFlight & { consumed: true })
     | (ProjectileFlight & LandedThrow);
 
+// Also C dothrow.c:throwit_return(): the finally block that clears the
+// tracked thrown object at the end of the throw.
 export async function throwOrdinaryObject({
     state = game,
     item,

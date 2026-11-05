@@ -460,6 +460,7 @@ async function playEarthquakeDrum(instrument: GameObject): Promise<InstrumentEff
     learnObjectType(instrument.otyp);
 }
 
+// C music.c:do_improvisation().
 async function improvise(instrument: GameObject) {
     const canUseSpecial = !heroIsImpaired();
     let effectiveType = instrument.otyp;

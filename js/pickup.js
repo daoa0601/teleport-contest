@@ -962,6 +962,8 @@ export async function ableToLoot(x, y, looting) {
     return true;
 }
 // C pickup.c:doloot_core().
+// Also C pickup.c:container_at(): inlined as the isContainer filter over
+// the pile at the looted square.
 export async function doloot_core() {
     game.context.move = 0;
     if (exceedsActionCapacity(game)) {
@@ -2411,6 +2413,8 @@ function stash_ok(object, container) {
     return object === container ? GETOBJ_EXCLUDE_SELECTABLE : GETOBJ_SUGGEST;
 }
 // C pickup.c:use_container().
+// Also C pickup.c:explain_container_prompt(): inlined as the '?' help
+// lines in the loot action loop.
 export async function use_container(container, { held = false, moreContainers = false, underlay = null, resetJustPicked = false, } = {}) {
     setSellDisposition(container.no_charge ? SELL_DONTSELL : SELL_DELIBERATE);
     try {

@@ -182,6 +182,8 @@ export type HeroTheftResult =
     | { outcome: 'petrified' }
     | { outcome: 'stole'; stolenName: string | null };
 
+// Also C steal.c:unresponsive(): inlined as the unaware-or-frozen/
+// paralyzed helper that skips the steal struggle rolls inside.
 export async function stealFromHero(
     monster: Monster,
     random: RandomBelow,

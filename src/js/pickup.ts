@@ -1066,6 +1066,8 @@ export async function ableToLoot(x: number, y: number, looting: boolean): Promis
 }
 
 // C pickup.c:doloot_core().
+// Also C pickup.c:container_at(): inlined as the isContainer filter over
+// the pile at the looted square.
 export async function doloot_core(): Promise<void> {
     game.context.move = 0;
     if (exceedsActionCapacity(game)) {
@@ -2453,6 +2455,8 @@ function stash_ok(object: GameObject, container: GameObject): InventoryClassific
 }
 
 // C pickup.c:use_container().
+// Also C pickup.c:explain_container_prompt(): inlined as the '?' help
+// lines in the loot action loop.
 export async function use_container(container: GameObject, {
     held = false,
     moreContainers = false,
