@@ -6,9 +6,9 @@ import {
     glyphIsMonster, glyphIsObject, glyphIsPet, glyphIsStatue, glyphIsSwallow,
     glyphIsTrap, glyphIsWarning, glyphIsBody, glyphToExplosion, glyphToMon,
     glyphToObj, glyphToSwallow, glyphToTrap, glyphToWarning, monnumToGlyph,
-    petnumToGlyph, riddenMonnumToGlyph, warningToGlyph, zapdirToGlyph,
+    petnumToGlyph, riddenMonnumToGlyph, warningToGlyph,
 } from '../js/glyph_numbers.js';
-import { swallowToGlyph } from '../js/display.js';
+import { swallowToGlyph, zapdirToGlyph } from '../js/display.js';
 import { glyphToCmapSymbol } from '../js/getpos.js';
 import { AM_CHAOTIC, AM_LAWFUL, AM_MASK, AM_NEUTRAL, AM_SANCTUM, FEMALE, MALE, WARNCOUNT } from '../js/const.js';
 import { MONSTER_COLOR } from '../js/monster_data.js';

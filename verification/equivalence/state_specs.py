@@ -1826,7 +1826,7 @@ STATE_SPECS += [
                   lambda s: [s['amsk'] == 2 ** 53 + 1])],
          mutants=[(GLYPH_FILE, 'return GlyphOffset.altar + 3;', 'return GlyphOffset.altar + 1;')]),
     Spec('zapdir_to_glyph', 'zapdir_to_glyph', 'zapdirToGlyph',
-         [('dx', LONG), ('dy', LONG), ('beam_type', INT)], js_file=GLYPH_FILE,
+         [('dx', LONG), ('dy', LONG), ('beam_type', INT)], js_file=DISPLAY_FILE,
          assumptions=GLYPH_ASSUMPTIONS + (
              'display.c:zapdir_to_glyph callers pass sgn() deltas and a zap-colors enum value below NUM_ZAP, so the impossible() arm stays unreachable; display.c:1132 passes (sgn(tdx), sgn(tdy), 2)',
          ), require_counterexamples=True,
@@ -1836,7 +1836,7 @@ STATE_SPECS += [
               world.params[2][1] < front.enum_value('verification_num_zap')]),
          probes=[('dx narrows to C int', lambda s: [s['dx'] == 2 ** 32 + 1, s['dy'] == 1,
                                                     s['beam_type'] == 0])],
-         mutants=[(GLYPH_FILE, 'const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;',
+         mutants=[(DISPLAY_FILE, 'const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;',
                    'const direction = dx === dy ? 3 : dx && dy ? 3 : dx ? 1 : 0;')]),
     Spec('glyph_is_monster', 'verification_glyph_is_monster', 'glyphIsMonster',
          [('glyph', LONG)], slow=True, js_file=GLYPH_FILE,
