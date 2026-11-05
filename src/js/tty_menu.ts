@@ -1,8 +1,8 @@
 // Native tty menu window ownership (win/tty/wintty.c).
 import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY,
-    MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
+    MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
 import { game } from './gstate.js';
-import { getMenuColoring } from './menu_coloring.js';
+import { getMenuColoring, menuitem_invert_test } from './menu_coloring.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';
 import { docrt, flush_screen, row_refresh } from './display.js';
@@ -99,7 +99,15 @@ export function selectableMenuText(key: string, text: string, marker = '-'): str
     return `${key} ${marker} ${text.slice(0, BUFSZ - 1)}`;
 }
 
-// Also C wintty.c:toggle_menu_attr(): inlined here as each menu cell's color and attribute.
+// C wintty.c:toggle_menu_attr(): each menu cell's color and attribute.
+// Highlighting starts at attr_n: the whole line for headings, the
+// description past "a - " for menu entries.
+function toggle_menu_attr(line: PaintedMenuRow, col: number): { color: TerminalColor; attr: number } {
+    return col < line.attributeStart
+        ? { color: NO_COLOR, attr: ATR_NONE }
+        : { color: line.color ?? NO_COLOR, attr: line.attr ?? ATR_NONE };
+}
+
 export function paintMenuPage<T extends TextMenuLine>(
     d: GameDisplay, menu: DisplayedMenuLayout<T>, page: number,
     rows: readonly PaintedMenuRow[], underlay: MenuUnderlay | null,
@@ -130,14 +138,12 @@ export function paintMenuPage<T extends TextMenuLine>(
         // tty_end_menu retains the row; process_menu_window also clips it to
         // the current terminal width when a retained menu is redisplayed.
         for (let col = 0; col < line.text.length && left + col < d.cols - 1; col++) {
-            const attr = col < line.attributeStart ? ATR_NONE : line.attr ?? ATR_NONE;
-            const color = col < line.attributeStart ? NO_COLOR : line.color ?? NO_COLOR;
-            d.setCell(left + col, row, line.text.charAt(col), color, attr);
+            const style = toggle_menu_attr(line, col);
+            d.setCell(left + col, row, line.text.charAt(col), style.color, style.attr);
         }
     }
-    const marker = pageCount > 1 ? `(${page + 1} of ${pageCount})` : menu.endMarker;
-    putLine(boundary + 1, rows.length, marker);
-    d.setCursor(boundary + 1 + marker.length, rows.length);
+    // dmore() paints the pager prompt at (boundary + 1, rows.length) and
+    // leaves the cursor after it once the page is drawn.
 }
 
 export function snapshotMenuUnderlay(): MenuUnderlay | null {
@@ -197,17 +203,22 @@ export function tty_create_nhwindow<T>(_type: typeof NHW_MENU): TtyMenuWindow<T>
 }
 
 // C wintty.c:tty_clear_nhwindow()
-// Also C wintty.c:free_window_info(): inlined here to release the menu's rows and layout.
+// C wintty.c:free_window_info()
+function free_window_info<T>(window: TtyMenuWindow<T>): void {
+    window.entries = [];
+    window.layout = null;
+}
+
+// C wintty.c:tty_clear_nhwindow()
 export async function tty_clear_nhwindow<T>(window: TtyMenuWindow<T>): Promise<void> {
     requireWindow(window);
     // Native clear erases an active window without dismissing it. A full
     // screen redraw belongs to dismissal, where hallucinations may change.
     if (window.active) {
         if (window.offx === 0) display()?.clearScreen();
-        else await eraseMenuCorner(window);
+        else await erase_menu_or_text(window);
     }
-    window.entries = [];
-    window.layout = null;
+    free_window_info(window);
 }
 
 export async function tty_start_menu<T>(window: TtyMenuWindow<T>): Promise<void> {
@@ -329,37 +340,35 @@ export async function tty_display_and_dismiss<T>(
     return result;
 }
 
-// C wintty.c:tty_dismiss_nhwindow()
-// Also C wintty.c:erase_menu_or_text(): inlined here to erase a full-screen or corner menu.
-export async function tty_dismiss_nhwindow<T>(window: TtyMenuWindow<T>, roleSelection = false): Promise<void> {
-    window.cancelled = false;
-    if (!window.active) return;
-    window.active = false;
+// C wintty.c:erase_menu_or_text()
+async function erase_menu_or_text<T>(window: TtyMenuWindow<T>, clear = false): Promise<void> {
     if (window.offx === 0) {
-        if (roleSelection) display()?.clearScreen();
+        if (clear) display()?.clearScreen();
         else {
             const d = display();
             if (d) d.statusVisible = false;
             await docrt();
             await flush_screen(1);
         }
-    } else await eraseMenuCorner(window, roleSelection);
-    window.underlay = null;
-}
-
-async function eraseMenuCorner<T>(window: TtyMenuWindow<T>, roleSelection = false): Promise<void> {
+        return;
+    }
     const d = display();
     if (!d) return;
-    // erase_menu_or_text() calls docorner(offx, maxrow + 1, 0).
-    // A prior full-screen clear must stay blank outside that rectangle.
+    // docorner(offx, maxrow + 1, 0). A prior full-screen clear must stay
+    // blank outside that rectangle.
     const left = Math.max(0, window.offx - 1);
     const bottom = Math.min(d.rows, (window.layout?.maxRows ?? 0) + 1);
-    // During character selection, docorner() clears the base window;
-    // there are no map cells to redraw over the erased name-entry text.
-    if (roleSelection) {
+    if (clear) {
+        // During character selection, docorner() clears the base window;
+        // there are no map cells to redraw over the erased name-entry text.
         clearRect(left, 0, d.cols, bottom);
         return;
     }
+    await docorner(d, left, bottom);
+}
+
+// C wintty.c:docorner()
+async function docorner(d: GameDisplay, left: number, bottom: number): Promise<void> {
     // docorner() cl_end()s every covered row from the menu's left edge and
     // then repaints only the map rows from the glyph buffer. The message
     // and status rows stay blank past that edge; nothing else redraws them.
@@ -380,6 +389,17 @@ async function eraseMenuCorner<T>(window: TtyMenuWindow<T>, roleSelection = fals
     }
 }
 
+// C wintty.c:tty_dismiss_nhwindow()
+// A menu shown during role/race selection clears the screen: C's
+// program_state.in_role_selection forces clearscreen in erase_menu_or_text().
+export async function tty_dismiss_nhwindow<T>(window: TtyMenuWindow<T>, roleSelection = false): Promise<void> {
+    window.cancelled = false;
+    if (!window.active) return;
+    window.active = false;
+    await erase_menu_or_text(window, roleSelection);
+    window.underlay = null;
+}
+
 export async function tty_destroy_nhwindow<T>(window: TtyMenuWindow<T>): Promise<void> {
     requireWindow(window);
     await tty_dismiss_nhwindow(window);
@@ -391,12 +411,109 @@ function requireWindow<T>(window: TtyMenuWindow<T>): void {
     if (window.destroyed) throw new Error('The tty menu window has been destroyed');
 }
 
+// C wintty.c:toggle_menu_curr()
+function toggle_menu_curr<T>(row: TtyMenuRow<T>, count: number): void {
+    if (row.selected && count === -1) {
+        row.selected = false;
+        row.count = -1;
+    } else {
+        row.selected = true;
+        if (count > 0) row.count = count;
+    }
+}
+
+// C wintty.c:dmore()
+// Paint the pager prompt past the window's edge, leave the cursor after it,
+// and wait for a response in `valid` (xwaitforspace's accepted set).
+async function dmore(
+    d: GameDisplay, col: number, row: number, prompt: string, valid: (key: number) => boolean,
+): Promise<number> {
+    putLine(col, row, prompt);
+    d.setCursor(col + prompt.length, row);
+    let key: number;
+    do key = await nhgetch();
+    while (!valid(key));
+    return key;
+}
+
+// C wintty.c:set_item_state()
+function set_item_state<T>(d: GameDisplay, boundary: number, row: number, item: TtyMenuRow<T>): void {
+    d.setCell(boundary + 3, row, item.selected ? item.count === -1 ? '+' : '#' : '-',
+        item.color ?? NO_COLOR, item.attr ?? ATR_NONE);
+}
+
+// C wintty.c:set_all_on_page(): select all [ignores pending count, if any]
+function set_all_on_page<T>(d: GameDisplay, boundary: number, pageRows: readonly TtyMenuRow<T>[]): void {
+    for (const [n, curr] of pageRows.entries()) {
+        if (curr.identifier === null /* not selectable */
+            || curr.selected /* already selected */
+            || !menuitem_invert_test(curr.itemflags, curr.selected))
+            continue;
+        curr.selected = true;
+        set_item_state(d, boundary, n, curr);
+    }
+}
+
+// C wintty.c:unset_all_on_page(): unselect all
+function unset_all_on_page<T>(d: GameDisplay, boundary: number, pageRows: readonly TtyMenuRow<T>[]): void {
+    for (const [n, curr] of pageRows.entries()) {
+        if (curr.identifier === null /* skip if not selectable */
+            || !curr.selected /* skip if already de-selected */
+            || !menuitem_invert_test(curr.itemflags, curr.selected))
+            continue;
+        curr.selected = false;
+        curr.count = -1;
+        set_item_state(d, boundary, n, curr);
+    }
+}
+
+// C wintty.c:invert_all_on_page(): invert current page. `acc` is the group
+// accelerator ('' => all), `count` the pending count (-1 for non-group).
+function invert_all_on_page<T>(
+    d: GameDisplay, boundary: number, pageRows: readonly TtyMenuRow<T>[], acc: string, count: number,
+): void {
+    for (const [n, curr] of pageRows.entries()) {
+        if (curr.identifier === null /* not selectable */
+            || (acc ? curr.group !== acc /* skip if not group 'acc' */
+                /* inverting all rather than a group; skip if flagged */
+                : !menuitem_invert_test(curr.itemflags, curr.selected)))
+            continue;
+        if (curr.selected) {
+            curr.selected = false;
+            curr.count = -1;
+        } else {
+            curr.selected = true;
+            if (count > 0) curr.count = count;
+        }
+        set_item_state(d, boundary, n, curr);
+    }
+}
+
+// C wintty.c:invert_all(): invert all entries that match the group
+// accelerator (or all if empty). The current page is handled first because
+// only its entries need screen updating.
+function invert_all<T>(
+    d: GameDisplay, boundary: number, pageRows: readonly TtyMenuRow<T>[],
+    rows: readonly TtyMenuRow<T>[], acc: string, count: number,
+): void {
+    invert_all_on_page(d, boundary, pageRows, acc, count);
+    const onCurrPage = new Set(pageRows);
+    for (const curr of rows) {
+        if (onCurrPage.has(curr) || curr.identifier === null
+            || (acc ? curr.group !== acc
+                : !menuitem_invert_test(curr.itemflags, curr.selected)))
+            continue;
+        if (curr.selected) {
+            curr.selected = false;
+            curr.count = -1;
+        } else {
+            curr.selected = true;
+            if (count > 0) curr.count = count;
+        }
+    }
+}
+
 // C wintty.c:process_menu_window()
-// Also C wintty.c:invert_all(): inlined here.
-// Also C wintty.c:invert_all_on_page(): inlined here.
-// Also C wintty.c:set_all_on_page(): inlined here.
-// Also C wintty.c:unset_all_on_page(): inlined here.
-// Also C wintty.c:toggle_menu_curr(): toggleItem changes selection; this loop repaints it.
 async function process_menu_window<T>(
     d: GameDisplay, rows: TtyMenuRow<T>[], layout: DisplayedMenuLayout<TtyMenuRow<T>>,
     how: MenuPickMode, underlay: MenuUnderlay | null,
@@ -411,9 +528,21 @@ async function process_menu_window<T>(
         selections: rows.flatMap(row => row.selected && row.identifier !== null
             ? [{ identifier: row.identifier, selector: row.key, count: row.count }] : []),
     });
+    const pageFooter = (): string =>
+        layout.pageCount > 1 ? `(${page + 1} of ${layout.pageCount})` : layout.endMarker;
     for (;;) {
         const first = page * layout.pageSize;
         const pageRows = rows.slice(first, first + layout.pageSize);
+        // resp: the page's selectors, the group accelerators, digits, the
+        // page commands and any key mapped to a menu command. Anything
+        // else xwaitforspace() discards without resetting a count.
+        const inResp = (raw: number): boolean => {
+            const rawLetter = String.fromCharCode(raw);
+            if (pageRows.some(row => row.key === rawLetter) || groups.has(rawLetter)) return true;
+            const mapped = String.fromCharCode(game.commandBindings.menuCommand(raw));
+            return groups.has(mapped) || '0123456789 \x1b\n\r><^|.,@\\-~:'.includes(mapped);
+        };
+        let key: number;
         if (repaint) {
             paintMenuPage(d, layout, page, layout.rows.slice(first, first + layout.pageSize).map((row, index) => {
                 const item = pageRows[index];
@@ -422,11 +551,14 @@ async function process_menu_window<T>(
                     ? row.text.slice(0, 2) + marker + row.text.slice(3) : row.text };
             }), underlay, previousPageLines);
             repaint = false;
+            key = await dmore(d, layout.boundary + 1, pageRows.length, pageFooter(), inResp);
         } else {
-            const footer = layout.pageCount > 1 ? `(${page + 1} of ${layout.pageCount})` : layout.endMarker;
+            // just put the cursor back... then xwaitforspace(resp)
+            const footer = pageFooter();
             d.setCursor(layout.boundary + 1 + footer.length, pageRows.length);
+            do key = await nhgetch();
+            while (!inResp(key));
         }
-        let key = await nhgetch();
         let letter = String.fromCharCode(key);
         // PICK_ONE includes unique group shortcuts among explicit choices,
         // so a digit shortcut selects its group even after a count prefix.
@@ -436,8 +568,6 @@ async function process_menu_window<T>(
             key = game.commandBindings.menuCommand(key);
             letter = String.fromCharCode(key);
         }
-        // xwaitforspace ignores invalid input without resetting a count.
-        if (!explicit && !groups.has(letter) && !'0123456789 \x1b\n\r><^|.,@\\-~:'.includes(letter)) continue;
         if (!explicit && /[0-9]/.test(letter) && (count !== null || !groups.has(letter))) {
             const next: bigint = (count ?? 0n) * 10n + BigInt(letter);
             count = next > 9223372036854775807n ? null : next || null;
@@ -470,29 +600,46 @@ async function process_menu_window<T>(
         // an explicit choice (including unique groups in PICK_ONE).
         if (!explicit && '.@,\\-~'.includes(letter)) {
             if (how !== PICK_ANY && !'-\\'.includes(letter)) continue;
-            const targets = ',\\~'.includes(letter) ? pageRows : rows;
-            for (const row of targets) {
-                if (row.identifier === null || !allowsBulkChange(row)) continue;
-                if ('.,'.includes(letter)) {
-                    if (row.selected) continue;
+            if (letter === ',') {
+                set_all_on_page(d, layout.boundary, pageRows);
+            } else if (letter === '.') {
+                // entries on the current page need screen updating
+                set_all_on_page(d, layout.boundary, pageRows);
+                // set the rest; entries on the current page will be skipped
+                // because all of those will be 'already selected' now
+                const onCurrPage = new Set(pageRows);
+                for (const row of rows) {
+                    if (onCurrPage.has(row) || row.identifier === null || row.selected
+                        || !menuitem_invert_test(row.itemflags, row.selected))
+                        continue;
                     row.selected = true;
-                } else if ('-\\'.includes(letter)) {
-                    if (!row.selected) continue;
-                    row.selected = false;
                 }
-                else row.selected = !row.selected;
-                if (!row.selected) row.count = -1;
-                update(row);
+            } else if (letter === '\\') {
+                unset_all_on_page(d, layout.boundary, pageRows);
+            } else if (letter === '-') {
+                // entries on the current page need screen updating
+                unset_all_on_page(d, layout.boundary, pageRows);
+                // unset the rest; entries on the current page will be skipped
+                // because none of those will still be in 'selected' state
+                const onCurrPage = new Set(pageRows);
+                for (const row of rows) {
+                    if (onCurrPage.has(row) || row.identifier === null || !row.selected
+                        || !menuitem_invert_test(row.itemflags, row.selected))
+                        continue;
+                    row.selected = false;
+                    row.count = -1;
+                }
+            } else if (letter === '~') {
+                invert_all_on_page(d, layout.boundary, pageRows, '', -1);
+            } else {
+                invert_all(d, layout.boundary, pageRows, rows, '', -1);
             }
             continue;
         }
         if (how !== PICK_NONE && groups.has(letter)) {
-            for (const row of rows) {
-                if (row.identifier === null || row.group !== letter) continue;
-                row.selected = !row.selected;
-                row.count = row.selected ? selectedCount : -1;
-                update(row);
-            }
+            // group accelerator; for the PICK_ONE case, we know that it
+            // matches exactly one item in order to be in gacc[]
+            invert_all(d, layout.boundary, pageRows, rows, letter, selectedCount);
             if (how === PICK_ONE) return result(key);
             continue;
         }
@@ -500,7 +647,7 @@ async function process_menu_window<T>(
             if (how === PICK_NONE) continue;
             const row = pageRows.find(row => row.key === letter);
             if (!row || row.identifier === null) continue;
-            toggleItem(row, selectedCount);
+            toggle_menu_curr(row, selectedCount);
             update(row);
             if (how === PICK_ONE) return result(key);
             continue;
@@ -510,35 +657,12 @@ async function process_menu_window<T>(
             if (!query) continue;
             for (const row of rows) {
                 if (row.identifier === null || !menuSearchMatches(query, row.text)) continue;
-                toggleItem(row, selectedCount);
+                toggle_menu_curr(row, selectedCount);
                 update(row);
                 if (how === PICK_ONE) return result(key);
             }
         }
     }
-}
-
-// C wintty.c:toggle_menu_curr()
-function toggleItem<T>(row: TtyMenuRow<T>, count: number): void {
-    if (row.selected && count === -1) {
-        row.selected = false;
-        row.count = -1;
-    } else {
-        row.selected = true;
-        if (count > 0) row.count = count;
-    }
-}
-
-function set_item_state<T>(d: GameDisplay, boundary: number, row: number, item: TtyMenuRow<T>): void {
-    d.setCell(boundary + 3, row, item.selected ? item.count === -1 ? '+' : '#' : '-',
-        item.color ?? NO_COLOR, item.attr ?? ATR_NONE);
-}
-
-// C windows.c:menuitem_invert_test().
-function allowsBulkChange<T>(row: TtyMenuRow<T>): boolean {
-    if (!(row.itemflags & MENU_ITEMFLAGS_SKIPINVERT)) return true;
-    const mode = game.iflags.menuinvertmode ?? 1;
-    return mode === 0 || mode === 1 && row.selected;
 }
 
 function groupAccelerators<T>(rows: readonly TtyMenuRow<T>[], how: MenuPickMode): Set<string> {
