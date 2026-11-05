@@ -33,7 +33,7 @@ import { createGasCloudSelection, createPoisonGasCloud } from './region.js';
 import { mineralize } from './mklev.js';
 import { countLevelFeatures } from './mklev.js';
 import { wallification } from './mkmaze.js';
-import { createSelectionApi, unwrapSelection } from './lua/selection.js';
+import { createSelectionApi, unwrapSelection } from './lua/nhlsel.js';
 import { luaInteger, luaString, luaToInteger, luaNumberValue } from './lua/arguments.js';
 import { buryObject } from './dig.js';
 import { rn2, rnd, rn1 } from './rng.js';

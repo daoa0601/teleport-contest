@@ -375,4 +375,4 @@ function classTable(type, state) {
         nutrition: OBJECT_NUTRITION[type],
     });
 }
-//# sourceMappingURL=objects.js.map
+//# sourceMappingURL=nhlobj.js.map

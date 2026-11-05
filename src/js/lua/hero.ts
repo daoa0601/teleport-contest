@@ -6,7 +6,7 @@ import { LuaTable } from './runtime.js';
 import { luaString as luaStringArgument } from './arguments.js';
 import type { LuaValue } from './runtime.js';
 import type { GameState } from '../game_state.js';
-import type { ObjectApi } from './objects.js';
+import type { ObjectApi } from './nhlobj.js';
 
 const HERO_FIELDS = [
     'ux', 'uy', 'dx', 'dy', 'dz', 'tx', 'ty', 'ulevel', 'ulevelmax',

@@ -9,7 +9,7 @@ import { luaPline, luaText } from './messages.js';
 import { NethackLuaError } from './errors.js';
 import { luaInteger } from './arguments.js';
 import { LuaHeroTable } from './hero.js';
-import { createObjectApi } from './objects.js';
+import { createObjectApi } from './nhlobj.js';
 import { LuaState, LuaTable, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
 export class LuaGameState extends LuaState {
     objects;

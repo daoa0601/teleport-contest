@@ -9,8 +9,8 @@ import { luaPline, luaText } from './messages.js';
 import { NethackLuaError } from './errors.js';
 import { luaInteger } from './arguments.js';
 import { LuaHeroTable } from './hero.js';
-import { createObjectApi } from './objects.js';
-import type { ObjectApi } from './objects.js';
+import { createObjectApi } from './nhlobj.js';
+import type { ObjectApi } from './nhlobj.js';
 import type { GameState } from '../game_state.js';
 import type { LuaHostObject, LuaValue } from './runtime.js';
 import {
