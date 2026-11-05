@@ -38,7 +38,6 @@ src/js/hero_expulsion.ts	monmove.c
 src/js/hero_gold.ts	sit.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
-src/js/hero_retouch.ts	artifact.c
 src/js/input.ts	wintty.c
 src/js/inventory_reports.ts	shk.c
 src/js/invocation_area.ts	mklev.c
