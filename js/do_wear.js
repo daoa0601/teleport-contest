@@ -1,3 +1,4 @@
+import { carryingStoningCorpse, takingOff } from './invent.js';
 // do_wear.js — Wearing and removing armor and accessories.
 // C refs: do_wear.c — dowear()/doputon()/accessory_or_armor_on(),
 // armor_or_accessory_off(), dotakeoff()/doremring()/ia_dotakeoff(),
@@ -727,9 +728,7 @@ export async function canSelectOff(object, slot) {
 // between the hero and a carried stoning corpse, so taking them off asks
 // for confirmation; refusing leaves the gloves on.
 async function betterNotTakeThatOff(object, state = game) {
-    // C invent.c:carrying_stoning_corpse(): the first inventory corpse that
-    // petrifies on touch.
-    const corpse = state.inventory.find(candidate => candidate.otyp === CORPSE && touchPetrifies(candidate.corpsenm));
+    const corpse = carryingStoningCorpse(state);
     if (!corpse)
         return false;
     // C pickup.c:u_safe_from_fatal_corpse(corpse, st_corpse | st_petrifies):
@@ -837,7 +836,7 @@ function bucCategory(object) {
         return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
-// C invent.c:count_buc(): the priest bless/curse knowledge pass and the
+// Removal-category subset of invent.c:count_buc(): the priest knowledge pass and
 // per-status tallies for the removal-category menu (query_classes in
 // pickup.ts builds the same set for pickup menus).
 function wornBucCategories(worn) {
@@ -1027,9 +1026,9 @@ function restoreMap(underlay) {
 // C do_wear.c:remove_ok().
 // C do_wear.c:wear_ok().
 // C do_wear.c:takeoff_ok().
-// C invent.c:taking_off(): the 'T' and 'R' phrasings both mean removing.
+// Uses invent.c:taking_off() for the two removal prompts.
 export function equipmentClassification(object, action, itemAction = false, state = game) {
-    const removing = action === 'take off' || action === 'remove';
+    const removing = takingOff(action);
     const accessory = action === 'put on' || action === 'remove';
     const worn = !!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
     if (removing !== worn)

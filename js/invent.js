@@ -808,6 +808,14 @@ export function objectAt(x, y, otyp, state) {
     return (state.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === otyp) || null;
 }
+// C invent.c:carrying_stoning_corpse(). Return the first carried corpse that petrifies on touch.
+export function carryingStoningCorpse(state = game) {
+    return state.inventory.find(object => object.otyp === CORPSE && touchPetrifies(object.corpsenm));
+}
+// C invent.c:taking_off(). Match the two removal command prompts.
+export function takingOff(action) {
+    return action === 'take off' || action === 'remove';
+}
 // C invent.c:currency(). Hallucinated currency names use the core RNG.
 const CURRENCIES = [
     'Altarian Dollar', 'Ankh-Morpork Dollar', 'auric', 'buckazoid', 'cirbozoid',
@@ -1433,19 +1441,20 @@ async function identifyAndDescribe(object) {
         primaryHandDetail: inventoryPrimaryHandDetail(object),
     })}.`);
 }
-// C invent.c:identify_pack()/menu_identify(). Each selection is identified
-// and described before another menu opens, so resumed input sees the result.
-// C invent.c:count_unidentified() is the candidate count and the
-// already-identified shortcut.
+// C invent.c:count_unidentified().
+function countUnidentified(objects) {
+    return objects.filter(objectNeedsFullIdentification).length;
+}
+// C invent.c:identify_pack(). Identify all possessions or ask for a limited selection.
 export async function identifyPack(idLimit, learningIdentify = false) {
-    let candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
-    if (!candidates.length) {
+    const count = countUnidentified(game.inventory || []);
+    if (!count) {
         await plineWithContinuation(`You have already identified ${learningIdentify ? 'the rest' : 'all'} of your possessions.`);
         return [];
     }
-    if (!idLimit || idLimit >= candidates.length) {
+    if (!idLimit || idLimit >= count) {
         const identified = [];
-        for (const object of candidates) {
+        for (const object of (game.inventory || []).filter(objectNeedsFullIdentification)) {
             if (!objectNeedsFullIdentification(object))
                 continue;
             await identifyAndDescribe(object);
@@ -1455,9 +1464,12 @@ export async function identifyPack(idLimit, learningIdentify = false) {
     }
     const traditional = game.flags.menu_style === MENU_TRADITIONAL
         ? await identifyTraditionally(idLimit) : { identified: [], remaining: idLimit };
-    const identified = traditional.identified;
-    let remaining = traditional.remaining;
-    candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
+    return menuIdentify(traditional.remaining, traditional.identified);
+}
+// C invent.c:menu_identify(). Describe each selection before asking again.
+async function menuIdentify(idLimit, identified) {
+    let remaining = idLimit;
+    let candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
     let first = true;
     let tries = 5;
     while (remaining > 0 && candidates.length) {
@@ -2047,11 +2059,11 @@ export async function dolook() {
         hideUnhideMessageTypes(false, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
     }
 }
-// C invent.c:count_contents(container, nested, quantity, everything, FALSE):
+// C invent.c:count_contents(). A new drop counts unpaid contents before ownership marks change.
 // shk.c:stolen_value() sizes a broken container's shop-owned contents.
-export function countContents(container, { quantity = false, everything = false } = {}, state = game) {
+export function countContents(container, { quantity = false, everything = false, newdrop = false } = {}, state = game) {
     let shoppy = false;
-    if (!everything) {
+    if (!everything && !newdrop) {
         let top = container;
         while (top.container)
             top = top.container;
@@ -2061,7 +2073,7 @@ export function countContents(container, { quantity = false, everything = false 
     let count = 0;
     for (const content of container.contents || []) {
         if (content.contents?.length)
-            count += countContents(content, { quantity, everything }, state);
+            count += countContents(content, { quantity, everything, newdrop }, state);
         if (everything || content.unpaid || (shoppy && !content.no_charge))
             count += quantity ? (content.quan ?? content.quantity ?? 1) : 1;
     }
@@ -2076,70 +2088,22 @@ export async function doPermanentInventory() {
     await pline("Persistent inventory display is not supported by 'tty'.");
 }
 const BUC_CHOICES = ['B', 'C', 'U', 'X'];
-// C invent.c:doprwep().
-// C invent.c:doprgold().
-// C invent.c:doprarm().
-// C invent.c:doprring().
-// C invent.c:dopramulet().
-// C invent.c:doprtool().
-// C invent.c:doprinuse().
-// C invent.c:noarmor().
+// Command dispatch shared by the inventory report keys.
 export async function inventoryReport(report) {
     game.context.move = 0;
-    if (report === 'type')
-        return typeInventory();
-    if (report === 'gold') {
-        await reportWallet();
-        const purse = heroGoldObject(game);
-        return purse && game.iflags.menu_requested ? reportSubset([purse], false) : null;
+    switch (report) {
+        case 'type': return typeInventory();
+        case 'gold': return doprgold();
+        case 'weapon': return doprwep();
+        case 'armor': return doprarm();
+        case 'rings': return doprring();
+        case 'amulet': return dopramulet();
+        case 'tools': return doprtool();
+        case 'inuse': return doprinuse();
     }
-    if (report === 'weapon') {
-        if (!game.uwep) {
-            await pline(`You are ${game.uarmg ? 'empty handed' : monsterIsHumanoid(heroSpecies(game))
-                ? 'bare handed' : 'not wielding anything'}.`);
-        }
-        else if (!game.iflags.menu_requested) {
-            await describeCarriedObject(game.uwep);
-            if (game.u.twoweap && game.uswapwep)
-                await describeCarriedObject(game.uswapwep);
-        }
-        else {
-            return reportSubset([game.uwep, game.uswapwep, game.uquiver]
-                .filter((object) => !!object));
-        }
-        return null;
-    }
-    if (report === 'armor') {
-        const armor = [game.uarm, game.uarmc, game.uarms, game.uarmh, game.uarmg, game.uarmf, game.uarmu]
-            .filter((object) => !!object);
-        if (armor.length)
-            return reportSubset(armor);
-        await pline(game.uskin ? `You are not wearing armor but have ${simpleObjectName(game.uskin)
-            .replace(/^set of /i, '').replace(/ dragon /i, ' ')} embedded in your skin.`
-            : 'You are not wearing any armor.');
-        return null;
-    }
-    if (report === 'rings') {
-        const rings = [game.uright, game.uleft].filter((object) => !!object);
-        if (rings.length)
-            return reportSubset(rings, rings.length > 1 || !!game.iflags.menu_requested
-                || rings.some(object => object.oclass !== RING_CLASS), rings.length === 1 ? 'Ring' : 'Rings');
-        await pline('You are not wearing any rings.');
-        return null;
-    }
-    if (report === 'amulet') {
-        if (game.uamul)
-            return reportSubset([game.uamul], true, 'Amulet');
-        await pline('You are not wearing an amulet.');
-        return null;
-    }
-    const items = game.inventory.filter(report === 'tools' ? toolBeingUsed : isInUse);
-    if (items.length)
-        return reportSubset(report === 'tools' ? items.slice(0, 52) : null);
-    await pline(report === 'tools' ? 'You are not using any tools.' : 'You are not wearing or wielding anything.');
-    return null;
 }
-async function reportWallet() {
+// C invent.c:doprgold(). Report visible and known hidden gold, then shop debt.
+async function doprgold() {
     const purse = heroGoldAmount(game), stashed = hiddenGold(game, false);
     if (game.flags.verbose !== false) {
         let message = purse ? `Your wallet contains ${purse} ${currency(purse)}` : 'Your wallet is empty';
@@ -2152,6 +2116,72 @@ async function reportWallet() {
         await pline(total ? `You are carrying a total of ${total} ${currency(total)}.` : 'You have no money.');
     }
     await reportShopFinances();
+    const gold = heroGoldObject(game);
+    return gold && game.iflags.menu_requested ? reportSubset([gold], false) : null;
+}
+// C invent.c:doprwep().
+async function doprwep() {
+    if (!game.uwep) {
+        await pline(`You are ${game.uarmg ? 'empty handed' : monsterIsHumanoid(heroSpecies(game))
+            ? 'bare handed' : 'not wielding anything'}.`);
+    }
+    else if (!game.iflags.menu_requested) {
+        await describeCarriedObject(game.uwep);
+        if (game.u.twoweap && game.uswapwep)
+            await describeCarriedObject(game.uswapwep);
+    }
+    else {
+        return reportSubset([game.uwep, game.uswapwep, game.uquiver]
+            .filter((object) => !!object));
+    }
+    return null;
+}
+// C invent.c:noarmor(). Mention skin armor only when the caller requests it.
+async function noarmor(reportSkin) {
+    await pline(reportSkin && game.uskin ? `You are not wearing armor but have ${simpleObjectName(game.uskin)
+        .replace(/^set of /i, '').replace(/ dragon /i, ' ')} embedded in your skin.`
+        : 'You are not wearing any armor.');
+}
+// C invent.c:doprarm().
+async function doprarm() {
+    const armor = [game.uarm, game.uarmc, game.uarms, game.uarmh, game.uarmg, game.uarmf, game.uarmu]
+        .filter((object) => !!object);
+    if (armor.length)
+        return reportSubset(armor);
+    await noarmor(true);
+    return null;
+}
+// C invent.c:doprring().
+async function doprring() {
+    const rings = [game.uright, game.uleft].filter((object) => !!object);
+    if (rings.length)
+        return reportSubset(rings, rings.length > 1 || !!game.iflags.menu_requested
+            || rings.some(object => object.oclass !== RING_CLASS), rings.length === 1 ? 'Ring' : 'Rings');
+    await pline('You are not wearing any rings.');
+    return null;
+}
+// C invent.c:dopramulet().
+async function dopramulet() {
+    if (game.uamul)
+        return reportSubset([game.uamul], true, 'Amulet');
+    await pline('You are not wearing an amulet.');
+    return null;
+}
+// C invent.c:doprtool().
+async function doprtool() {
+    const items = game.inventory.filter(toolBeingUsed);
+    if (items.length)
+        return reportSubset(items.slice(0, 52));
+    await pline('You are not using any tools.');
+    return null;
+}
+// C invent.c:doprinuse().
+async function doprinuse() {
+    const items = game.inventory.filter(isInUse);
+    if (items.length)
+        return reportSubset(null);
+    await pline('You are not wearing or wielding anything.');
+    return null;
 }
 async function describeCarriedObject(object) {
     if (game.flags.fixinv === false)
@@ -2161,11 +2191,13 @@ async function describeCarriedObject(object) {
         primaryHandDetail: inventoryPrimaryHandDetail(object),
     })}.`);
 }
+// C invent.c:tool_being_used().
 function toolBeingUsed(object) {
     return !!((object.owornmask ?? 0) & (W_TOOL | W_SADDLE))
         || object.oclass === TOOL_CLASS && (object === game.uwep || !!object.lamplit
             || object.otyp === LEASH && !!object.leashmon);
 }
+// C invent.c:is_inuse().
 function isInUse(object) {
     return !!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE | W_WEAPONS))
         || toolBeingUsed(object);
