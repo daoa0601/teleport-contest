@@ -13,7 +13,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
-import { deityName, hallucinatedDeityName } from './alignment.js';
+import { deityName, hallucinatedDeityName } from './pray.js';
 import { heroSpineName } from './body_parts.js';
 import { nomul, checkSpecialRoom, roomForRoomno, roomsAt } from './hack.js';
 import { recordAchievement } from './insight.js';

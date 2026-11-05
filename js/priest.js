@@ -8,7 +8,7 @@ import { SPBOOK_no_NOVEL } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { recordTempleOverview } from './dungeon.js';
-import { deityName, hallucinatedDeityName } from './alignment.js';
+import { deityName, hallucinatedDeityName } from './pray.js';
 import { heroSpineName } from './body_parts.js';
 import { nomul, checkSpecialRoom, roomForRoomno, roomsAt } from './hack.js';
 import { recordAchievement } from './insight.js';

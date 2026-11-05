@@ -1,5 +1,4 @@
 # module	C file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)
-src/js/alignment.ts	pray.c
 src/js/apply.ts	apply.c
 src/js/artifacts.ts	artifact.c
 src/js/attrib.ts	attrib.c
@@ -84,6 +83,7 @@ src/js/pray.ts	pray.c
 src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
 src/js/projectile_bars.ts	monmove.c
+src/js/quest_pager.ts	questpgr.c
 src/js/quiver.ts	wield.c
 src/js/read.ts	read.c
 src/js/rect.ts	rect.c

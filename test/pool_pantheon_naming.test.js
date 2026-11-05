@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { deityName } from '../js/alignment.js';
+import { deityName } from '../js/pray.js';
 import { runSegment } from '../js/jsmain.js';
 import { memoryStorage } from './support/memory-storage.js';
 void test('a Priest borrowing the Rogue pantheon prays to Kos when chaotic', async () => {

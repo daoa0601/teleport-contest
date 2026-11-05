@@ -3,7 +3,7 @@
 // growl(), yelp(), whimper(), beg(), growl_sound().
 
 import { WEAPON_CLASS } from './objclass.js';
-import { hallucinatedDeityName } from './alignment.js';
+import { hallucinatedDeityName } from './pray.js';
 import { heroBloodName, heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
 import {
     ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, ZOO,

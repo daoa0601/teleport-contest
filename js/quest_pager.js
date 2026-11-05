@@ -2,11 +2,12 @@
 // they draw from (ldrname(), neminame(), guardname(), intermed(),
 // homebase()). Quest text from dat/quest.lua carries % codes; convert_line()
 // expands each code and the optional letter that follows it (article,
-// capitalization, pronoun, plural, or possessive form).
-import { G_GENOD, MIN_QUEST_LEVEL } from './const.js';
+// capitalization, pronoun, plural, or possessive form). %r/%R read botl.c
+// rank_of from botl.ts; %d/%D/%G read pray.c align_gname/align_gtitle from
+// pray.ts.
+import { A_LAWFUL, G_GENOD, MIN_QUEST_LEVEL } from './const.js';
 import { mkclass } from './makemon.js';
 import { game } from './gstate.js';
-import { experienceRankIndex } from './exper.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
@@ -18,6 +19,8 @@ import { LuaTable } from './lua/runtime.js';
 import { flushPendingTopline, putMessageHistory } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { showTextWindow, showTextMenuOverlay } from './windows.js';
+import { deityName, godTitleOf } from './pray.js';
+import { rankOf } from './botl.js';
 import { monsterHasProperName } from './mondata.js';
 // C questpgr.c:com_pager_core()
 // Also C questpgr.c:skip_pager(): wizard-kit suppression is inlined here
@@ -151,38 +154,13 @@ export function questHomebase(g = game) {
 export function questIntermed(g = game) {
     return g.urole?.intermediate ?? '';
 }
-// C botl.c:rank_of(). The level picks the rank slot; a female hero reads
-// the female title when the table has one.
-export function rankOf(level, g) {
-    const titles = g.urole?.title ?? [];
-    for (let index = experienceRankIndex(level); index >= 0; index--) {
-        const title = titles[index];
-        if (!title)
-            continue;
-        if (g.flags?.female && title.f)
-            return title.f;
-        if (title.m)
-            return title.m;
-    }
-    if (g.flags?.female && g.urole?.name.f)
-        return g.urole.name.f;
-    return g.urole?.name.m ?? 'Player';
-}
 function alignmentName(alignment) {
     if (alignment === undefined)
         return 'neutral';
     return alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
 }
-// C pray.c:align_gname(). Role data stores names without the goddess marker.
-function godNameOf(alignment, g) {
-    return g.urole?.gods?.[alignment] ?? '';
-}
-// C pray.c:align_gtitle(). goddessAlignments preserves role.c's '_' marker.
-function godTitleOf(alignment, g) {
-    return g.urole?.goddessAlignments?.includes(alignment) ? 'goddess' : 'god';
-}
-// C hacklib.c:s_suffix(); %S/%s name formatting uses the shared port in
-// monster_name.ts.
+// C hacklib.c:s_suffix(); %S/%s name formatting uses the shared
+// possessiveName port in hacklib.ts.
 // The original alignment recorded at game start drives %a, %d, and %G.
 function originalAlignment(g) {
     return g.u?.ualignbase?.[1] ?? g.u?.ualign?.type ?? 0;
@@ -234,8 +212,8 @@ function questTextArgument(code, g) {
         case 'H': return questHomebase(g);
         case 'a': return alignmentName(originalAlignment(g));
         case 'A': return alignmentName(g.u?.ualign?.type);
-        case 'd': return godNameOf(alignmentName(originalAlignment(g)), g);
-        case 'D': return godNameOf('lawful', g);
+        case 'd': return deityName(originalAlignment(g), g);
+        case 'D': return deityName(A_LAWFUL, g);
         case 'C': return 'chaotic';
         case 'N': return 'neutral';
         case 'L': return 'lawful';
