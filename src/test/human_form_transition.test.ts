@@ -15,7 +15,7 @@ import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ROCK, WAN_LIGHT } from '
 
 import { minimalObjectName } from '../js/objnam.js';
 import { polymonHero, polymorphHero, returnHeroToHumanForm } from '../js/polyself.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { heroIsBlind } from '../js/senses.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { requireFixtureGame } from './support/game-state.js';

@@ -1,10 +1,10 @@
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/topten.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    doquit, finishLivingGame, finishOrdinaryQuit, SCORE_RECORD_STORAGE_KEY,
+    doquit, finishLivingGame, finishOrdinaryQuit,
 } from '../js/end.js';
 import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';

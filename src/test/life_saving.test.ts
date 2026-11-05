@@ -1,5 +1,5 @@
 import type { InputGate } from '../js/input.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 

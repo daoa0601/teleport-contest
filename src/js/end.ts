@@ -43,7 +43,7 @@ import type { TextPage } from './windows.js';
 import type { TextMenuLine } from './wintty.js';
 import { artifactById } from './artifact.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { ATR_BOLD, NO_COLOR } from './terminal.js';
+import { NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj, isContainer, placeObjectSynchronously } from './mkobj.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
@@ -60,8 +60,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { clearHeroRemains, setHeroRemainsFromDeath, setHeroRemainsFromMonster } from './death_remains.js';
-import { loadScoreRecords, saveScoreRecords } from './score_records.js';
-import type { ScoreOutcome, ScoreRecord } from './score_records.js';
+import type { ScoreOutcome, ScoreRecord, ScoreUpdate } from './topten.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -71,7 +70,7 @@ import { adjustedMonsterLevel } from './makemon.js';
 import { restoreBallAndChainPlacement } from './ball.js';
 import { isAccessibleAt } from './monmove.js';
 import { resetUtrap } from './trap.js';
-import { DTHSZ, KILLED_BY_PREFIXES, formatKiller } from './topten.js';
+import { DTHSZ, KILLED_BY_PREFIXES, formatKiller, loadScoreRecords, saveScoreRecords, scoreListLines } from './topten.js';
 import { monsterHasProperName } from './mondata.js';
 import { expelHero } from './mhitu.js';
 
@@ -119,12 +118,6 @@ interface ScoreOptions extends DeathDescription {
     killer?: string;
     deathType?: number | null;
 }
-interface ScoreUpdate {
-    records: ScoreRecord[];
-    rank: number;
-    inserted: boolean;
-    previous?: ScoreRecord | null | undefined;
-}
 interface FinalArtifact { object: GameObject; value: number; points: number; name: string }
 interface FinalPossessions {
     points: number;
@@ -132,8 +125,6 @@ interface FinalPossessions {
     valuables: Array<[number, number]>;
     quantumCat: boolean;
 }
-
-export { SCORE_RECORD_STORAGE_KEY } from './score_records.js';
 
 // C end.c:done() records the fatal event before "But wait...". The caller
 // identifies the amulet after that message returns, then consumes it and
@@ -536,6 +527,11 @@ export function killerDeathCause(
     return `${prefix ?? 'killed by '}${name}`;
 }
 
+// The topten.c:topten() record phase — this game's entry (C lines 668-700),
+// composed from the killer plumbing end.c's done() callers own. Stays in
+// end.ts: moving it to topten.ts would need killerDeathCause(),
+// scoreIdentity() and currentDungeonName() from here, an end.ts <->
+// topten.ts import cycle.
 function currentScoreRecord(summary: GameSummary, {
     outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, deathType = null,
 }: ScoreOptions = {}): ScoreRecord {
@@ -564,6 +560,10 @@ function currentScoreRecord(summary: GameSummary, {
     };
 }
 
+// The topten.c:topten() record update — pointsmin, the insertion rank,
+// PERSMAX per role and ENTRYMAX (C lines 756-816). Stays beside
+// currentScoreRecord() for the same end.ts <-> topten.ts import cycle;
+// the display half of topten() is topten.ts scoreListLines().
 function updateScoreRecord(current: ScoreRecord): ScoreUpdate {
     const prior = loadScoreRecords();
     if (game.flags.debug || game.flags.explore || game.discover) {
@@ -604,136 +604,6 @@ function updateScoreRecord(current: ScoreRecord): ScoreUpdate {
         inserted: currentIndex >= 0,
         previous,
     };
-}
-
-function capitalizeScoreCause(value: string) {
-    const text = String(value || '');
-    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
-}
-
-// C topten.c:outentry(): compose one score line — rank, points, the
-// name-role-race-gender-align column, and the death sentence with its
-// ascension, escape, and plane variants.
-function scoreEntryText(record: ScoreRecord, rank: number) {
-    const rankText = rank ? String(rank).padStart(3) : '   ';
-    const points = String(record.points || 0).padStart(10);
-    let line = `${rankText} ${points}  ${record.name.slice(0, 10)}-${
-        record.role}${record.race.startsWith('?') ? '' : `-${record.race}`}-${
-        record.gender}${record.align.startsWith('?') ? '' : `-${record.align}`} `;
-    const death = record.death;
-    const astralDungeon = !!game.astral_level
-        && record.deathdnum === game.astral_level.dnum;
-    if (death.startsWith('ascended'))
-        return `${line}ascended to demigod${record.gender.startsWith('F') ? 'dess' : ''}-hood.`;
-    if (death.startsWith('escaped')) {
-        const circumstance = death.slice(7).startsWith(' (') ? death.slice(9) : '';
-        line += `escaped the dungeon ${circumstance}[max level ${record.maxlvl}]`;
-        const closing = line.indexOf(')');
-        if (closing >= 0) line = astralDungeon ? line.slice(0, closing)
-            : line.slice(0, closing) + ' ' + line.slice(closing + 1);
-        return `${line}.`;
-    }
-    const quit = death.startsWith('quit');
-    const starved = death.startsWith('died of st');
-    line += quit ? 'quit' : starved ? 'starved to death'
-        : death.startsWith('choked') ? `choked on h${record.gender.startsWith('F') ? 'er' : 'is'} food`
-            : death.startsWith('poisoned') ? 'was poisoned'
-                : death.startsWith('crushed') ? 'was crushed to death'
-                    : death.startsWith('petrified by ') ? 'turned to stone' : 'died';
-    if (astralDungeon) {
-        const plane = new Map([[-5, 'Astral'], [-4, 'Water'], [-3, 'Fire'], [-2, 'Air'], [-1, 'Earth']]).get(record.deathlev) || 'Void';
-        line += record.deathlev === -5 ? ` on the ${plane} Plane`
-            : ` on the Plane of ${plane}`;
-    } else {
-        line += ` in ${record.dungeon}`;
-        if (!game.knox_level || record.deathdnum !== game.knox_level.dnum)
-            line += ` on level ${record.deathlev}`;
-        if (record.deathlev !== record.maxlvl)
-            line += ` [max ${record.maxlvl}]`;
-    }
-    if (death.startsWith('quit ')) line += death.slice(4);
-    line += '.';
-    if (!quit && !starved) line += `  ${capitalizeScoreCause(death)
-        .replace('; the ', ', the ')}.`;
-    return line;
-}
-
-// C topten.c:outentry(): wrap a long score line at column 70, avoiding a
-// break inside " [max", and pad the hero's own rows so the bold attribute
-// covers the full width — topten_print_bold()'s ATR_BOLD row.
-function wrappedScoreEntryLines(record: ScoreRecord, rank: number, bold: boolean) {
-    const wrapColumn = 70;
-    const hp = record.hp <= 0 ? '-' : String(record.hp);
-    let line = scoreEntryText(record, rank);
-    const lines = [];
-    while (line.length >= wrapColumn) {
-        let split = Math.min(line.length, wrapColumn);
-        while (split > 0 && !(line[split] === ' ' && split < wrapColumn))
-            split--;
-        if (split <= 15) split = wrapColumn - 1;
-        if (split > 5 && line.slice(split - 5, split) === ' [max')
-            split -= 5;
-        const remainder = line[split] === ' '
-            ? line.slice(split + 1) : line.slice(split);
-        let emitted = line.slice(0, split);
-        if (bold) emitted = emitted.padEnd(79);
-        lines.push(emitted);
-        line = `${' '.repeat(16)}${remainder}`;
-    }
-
-    const hpColumn = 80 - 7 - hp.length;
-    if (line.length <= hpColumn) {
-        line = line.padEnd(hpColumn) + hp
-            + ` ${record.maxhp < 10 ? '  '
-                : record.maxhp < 100 ? ' ' : ''}[${record.maxhp}]`;
-    }
-    if (bold) line = line.padEnd(79);
-    lines.push(line);
-    return lines;
-}
-
-// C topten.c:outheader(): the column header line; C topten.c:prscore()'s
-// top/around/own windowing is the loop over the records below.
-// C topten.c:topten_print(): each row is one text line of the menu.
-function scoreListLines(current: ScoreRecord, update: ScoreUpdate, stopPrinting: boolean) {
-    const lines: TextMenuLine[] = [{ text: '' }];
-    if (update.previous) {
-        lines.push({ text: `You didn't beat your previous score of ${update.previous.points} points.` }, { text: '' });
-    }
-    if (stopPrinting) return lines;
-    if (update.inserted) {
-        const rank = update.rank;
-        const suffix = rank % 100 >= 11 && rank % 100 <= 13 ? 'th'
-            : (['th', 'st', 'nd', 'rd'][rank % 10] || 'th');
-        lines.push({ text:
-            update.rank <= 10
-                ? 'You made the top ten list!'
-                : `You reached the ${rank}${suffix} place on the top 100 list.`,
-        }, { text: '' });
-    }
-    const top = game.flags.end_top ?? 3;
-    const around = game.flags.end_around ?? 2;
-    const own = game.flags.end_own ?? false;
-    if (!top && !around && !own) return lines;
-    lines.push({ text: ' No  Points     Name                                                   Hp [max]' });
-    const addEntry = (record: ScoreRecord, rank: number, bold: boolean) => {
-        for (const text of wrappedScoreEntryLines(record, rank, bold))
-            lines.push({ text, attr: bold ? ATR_BOLD : 0 });
-    };
-    const aroundStart = update.rank - around;
-    for (const [index, record] of update.records.entries()) {
-        const rank = index + 1;
-        if (!(rank <= top
-            || (rank >= aroundStart && rank <= update.rank + around) || own))
-            continue;
-        if (rank === aroundStart
-            && update.rank > top + around + 1 && !own)
-            lines.push({ text: '' });
-        addEntry(record, rank, rank === update.rank);
-        if (record === update.previous) addEntry(current, 0, true);
-    }
-    if (update.rank > update.records.length) addEntry(current, 0, true);
-    return lines;
 }
 
 // C end.c:really_done()/topten(): raw scores have no input wait. NHW_TEXT

@@ -19,7 +19,7 @@ import { initRng } from '../js/rng.js';
 import { hurtleHero } from '../js/dothrow.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { engravingAt } from '../js/engrave.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { throwInventoryObject } from './support/commands.js';
 import { memoryStorage } from './support/memory-storage.js';

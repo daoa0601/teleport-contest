@@ -8,7 +8,7 @@ import { finishScheduledLevelChange } from '../js/do.js';
 import { unlinkObject } from '../js/mkobj.js';
 import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryItem } from '../js/invent.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';

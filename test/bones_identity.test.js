@@ -8,7 +8,7 @@ import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { startLuaCore } from './support/lua-game.js';
 import { memoryStorage } from './support/memory-storage.js';

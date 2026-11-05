@@ -14,7 +14,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { respondMedusa } from '../js/mon.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { corpseObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';

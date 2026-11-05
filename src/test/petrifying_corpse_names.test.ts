@@ -7,7 +7,7 @@ import { BULLWHIP } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import type { GameObject } from '../js/object_types.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { touchPetrifyingCorpse } from '../js/pickup.js';
 import { useWhip } from '../js/apply.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';

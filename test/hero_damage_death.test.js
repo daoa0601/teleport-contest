@@ -18,7 +18,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { mbhit } from '../js/muse.js';
 import { initRng } from '../js/rng.js';
 import { scatterFloorObjects } from '../js/scatter.js';
-import { loadScoreRecords } from '../js/score_records.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { applyAreaScrollEffect } from '../js/read.js';
 import { dosit } from '../js/sit.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
