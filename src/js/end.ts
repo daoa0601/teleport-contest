@@ -1,6 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
+import { goodbye } from './roles.js';
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import {
@@ -475,11 +476,6 @@ function plur(count: number): string {
     return count === 1 ? '' : 's';
 }
 
-// C role.c:Goodbye().
-function roleGoodbye() {
-    return game.urole?.goodbye || 'Goodbye';
-}
-
 function roleName() {
     return game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
@@ -491,7 +487,7 @@ function renderQuitSummaryPage({ gold, score, moves }: GameSummary) {
     game._preserveLeadingStyledBlanks = false;
     terminalLine(
         0, 0,
-        `${roleGoodbye()} ${game.plname || 'player'} the ${roleName()}...`,
+        `${goodbye()} ${game.plname || 'player'} the ${roleName()}...`,
     );
     terminalLine(
         2, 0,
@@ -1212,7 +1208,7 @@ export async function finishLivingGame(outcome: LivingOutcome) {
     if (showSummary) {
         const title = outcome === 'ascended'
             ? (game.flags.female ? 'Demigoddess' : 'Demigod') : roleName();
-        const lines = [`${roleGoodbye()} ${game.plname || 'player'} the ${title}...`, ''];
+        const lines = [`${goodbye()} ${game.plname || 'player'} the ${title}...`, ''];
         const company = ['You', ...names].join(' and ');
         if (names.length) lines.push(company);
         const action = outcome === 'ascended' ? 'went to your reward' : 'escaped from the dungeon';

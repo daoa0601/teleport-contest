@@ -16,7 +16,7 @@ import { decodeSavedGame } from './persistent_state_validation.js';
 import { cmdq_clear, isok } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
-import { rollQuestFigureGenders } from './startup.js';
+import { rollQuestFigureGenders } from './roles.js';
 import { resolveDungeonIdentities } from './dungeon.js';
 import { purgeDeadMonsters, attemptMonsterRestrap, hideMonsterUnder, restoreMonsterInventoryOwnership } from './mon.js';
 import { CQ_CANNED, CQ_REPEAT, FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd, AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, COULD_SEE, IN_SIGHT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM, ismnum } from './const.js';

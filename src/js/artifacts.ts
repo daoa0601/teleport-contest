@@ -159,20 +159,34 @@ function fuzzyArtifactName(value: unknown): string {
         .toLowerCase();
 }
 
-const QUEST_ARTIFACT_NAMES = new Set(
-    roles.map((role) => fuzzyArtifactName(role.artifactName)).filter(Boolean),
-);
+// C ref: role.c roles[].artifact — each role's quest artifact name.
+// Computed on first use, not at module load: the role tables live in
+// roles.js, whose selection-UI imports reach this module before roles.js
+// finishes initializing.
+let questArtifactNames: ReadonlySet<string> | undefined;
+
+function isQuestArtifactName(name: string): boolean {
+    questArtifactNames ??= new Set(
+        roles.map((role) => fuzzyArtifactName(role.artifactName)).filter(Boolean),
+    );
+    return questArtifactNames.has(name);
+}
 
 export const ARTIFACTS: readonly Artifact[] = ARTIFACT_DATA.map((artifact) => {
     const baseName = OBJ_NAME(artifact.baseType);
     if (baseName === null) throw new Error(`Artifact ${artifact.id} requires a named base type`);
+    const fuzzyName = fuzzyArtifactName(artifact.name);
     return {
         ...artifact,
         baseName,
         selfWilled: artifact.flags.includes('SPFX_INTEL'),
         restricted: artifact.flags.includes('SPFX_RESTR'),
         noGeneration: artifact.flags.includes('SPFX_NOGEN'),
-        questArtifact: QUEST_ARTIFACT_NAMES.has(fuzzyArtifactName(artifact.name)),
+        // Deferred: reading roles[] at load time would run before the
+        // role-table module finishes initializing (see above).
+        get questArtifact() {
+            return isQuestArtifactName(fuzzyName);
+        },
         wieldedProperties: wieldedProperties(artifact),
     };
 });

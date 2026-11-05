@@ -9,10 +9,6 @@ src/js/body_parts.ts	polyself.c
 src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
-src/js/character_choices.ts	role.c
-src/js/character_filters.ts	role.c
-src/js/character_name.ts	role.c
-src/js/character_selection.ts	role.c
 src/js/color_query.ts	coloratt.c
 src/js/config_errors.ts	wintty.c
 src/js/crystal_ball.ts	detect.c
@@ -107,13 +103,13 @@ src/js/roles.ts	role.c
 src/js/rumor.ts	rumors.c
 src/js/scatter.ts	explode.c
 src/js/score_records.ts	topten.c
+src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c
 src/js/sp_lev_lua.ts	sp_lev.c
 src/js/special_level_cleanup.ts	sp_lev.c
 src/js/special_location.ts	sp_lev.c
 src/js/spell.ts	spell.c
-src/js/startup.ts	role.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/stoning.ts	mhitm.c

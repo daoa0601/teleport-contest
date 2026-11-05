@@ -10,14 +10,13 @@ import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './a
 import { parseNethackOptions, parseNethackrc } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
 import { rawPrint } from './pline.js';
-import { parseCharacterName } from './character_name.js';
+import { genl_player_selection, plnamesuffix } from './roles.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
 import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { initializeFruitRegistry } from './fruit.js';
-import { selectCharacter } from './character_selection.js';
 import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C, COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 const UNICODE_TO_DEC = new Map(Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]));
 // Serialize semantic terminal cells back into the tty wire form recorded by
@@ -273,7 +272,7 @@ export class Engine {
         this.showStartupNotice();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.
-        let configuredName = parseCharacterName(opts.flags.debug ? 'wizard' : opts.name);
+        let configuredName = plnamesuffix(opts.flags.debug ? 'wizard' : opts.name);
         for (;;) {
             if (configuredName === null)
                 return false;
@@ -308,7 +307,7 @@ export class Engine {
             await restoregamePreamble();
             return true;
         }
-        const selected = await selectCharacter(opts, () => this._readPlayerName(10, false));
+        const selected = await genl_player_selection(opts, () => this._readPlayerName(10, false));
         if (!selected)
             return false;
         const { role, race, gender, alignment } = selected;
@@ -437,7 +436,7 @@ export class Engine {
                 // tty_curs() steps past the line to echo the accepted return.
                 display.setCursor(0, row + 1);
                 game.iflags.renameallowed = true;
-                return parseCharacterName(name);
+                return plnamesuffix(name);
             }
         }
     }

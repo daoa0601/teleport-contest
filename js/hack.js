@@ -71,7 +71,8 @@ import { isWeaponTool, isPick, isFlimsyObject, isBlade, objectIsOrganic, objectI
 import { applyPickAxeDirection } from './dig.js';
 import { diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment } from './dig.js';
 import { objectTypeKnown } from './o_init.js';
-import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, shopGreeting, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
+import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
+import { hello } from './roles.js';
 import { doopen } from './lock.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
@@ -2790,7 +2791,7 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
             if (oracle) {
                 const name = game.plname;
                 await plineWithContinuation(oracle.mpeaceful
-                    ? `"${shopGreeting(oracle)}, ${name}, welcome to Delphi!"`
+                    ? `"${hello(oracle)}, ${name}, welcome to Delphi!"`
                     : `"You're in Delphi, ${name}."`);
                 recordDiscoveredRoom(roomno - ROOMOFFSET);
             }

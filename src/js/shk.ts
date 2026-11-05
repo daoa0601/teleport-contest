@@ -35,6 +35,7 @@ import type { MessagePublisher } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import type { ShopGameState, ShopBillItem, BilledShopkeeper, CostlyShopSpot, Shopkeeper, ShopRoom, ShopTransaction } from './shop_types.js';
 import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam.js';
+import { hello } from './roles.js';
 import { MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { heroSpecies, heroPolyGender, heroPassesWalls } from './polyself.js';
 import { monsterName } from './do_name.js';
@@ -1226,27 +1227,6 @@ function possessive(name: string): string {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
 
-// C role.c:Hello().
-export function shopGreeting(monster: Monster, state: GameState = game): string {
-    switch (state.urole?.key) {
-    case 'knight': return 'Salutations';
-    case 'samurai': return MONSTER_NAME[monster?.mnum] === 'shopkeeper'
-        ? 'Irasshaimase' : 'Konnichi wa';
-    case 'tourist': return 'Aloha';
-    case 'valkyrie': return 'Velkommen';
-    case 'archeologist':
-    case 'barbarian':
-    case 'caveman':
-    case 'healer':
-    case 'monk':
-    case 'priest':
-    case 'ranger':
-    case 'rogue':
-    case 'wizard':
-    case undefined: return 'Hello';
-    }
-}
-
 // C shk.c:deserted_shop(). Disguised or unseen occupants leave uncertainty.
 async function describeUntendedShop(room: Room): Promise<void> {
     requireShopGame(game);
@@ -1334,7 +1314,7 @@ export async function enterShop({ room, roomno }: ShopRoom): Promise<string | nu
         const again = eshk.visitct ? ' again' : '';
         eshk.visitct = (eshk.visitct ?? 0) + 1;
         message = deaf ? `You enter ${possessive(shopkeeperName(shopkeeper))} ${typeName}${again}!`
-            : `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
+            : `"${hello(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
     }
     await plineWithContinuation(message);
     await blockShopEntry(shopkeeper);
@@ -2943,11 +2923,11 @@ export async function chatWithShopkeeper(monster: Monster, state: GameState = ga
     } else if (shop.following) {
         if (shop.customer !== state.plname) {
             if (speaking)
-                await plineWithContinuation(`"${shopGreeting(monster, state)} ${state.plname}!  I was looking for ${shop.customer}."`);
+                await plineWithContinuation(`"${hello(monster, state)} ${state.plname}!  I was looking for ${shop.customer}."`);
             shop.following = 0;
             return;
         }
-        message = speaking ? `"${shopGreeting(monster, state)} ${state.plname}!  Didn't you forget to pay?"`
+        message = speaking ? `"${hello(monster, state)} ${state.plname}!  Didn't you forget to pay?"`
             : `${name()} taps you on the ${heroArmName(state)}.`;
     } else if (shop.billct) {
         const total = addUpBill(monster) + (shop.debit ?? 0);
@@ -4611,7 +4591,7 @@ export async function moveShopkeeper(
             if ((eshk.customer ?? '').slice(0, PL_NSIZ) !== state.plname.slice(0, PL_NSIZ)) {
                 if (!heroIsDeaf(state) && !shopkeeperIsMuted(monster)) {
                     await plineWithContinuation(
-                        `"${shopGreeting(monster, state)}, ${state.plname}!  I was looking for ${eshk.customer}."`,
+                        `"${hello(monster, state)}, ${state.plname}!  I was looking for ${eshk.customer}."`,
                     );
                 }
                 eshk.following = false;
@@ -4620,7 +4600,7 @@ export async function moveShopkeeper(
             if (state.moves > (state._shopFollowMessageTurn ?? 0) + 4) {
                 if (!heroIsDeaf(state) && !shopkeeperIsMuted(monster)) {
                     await plineWithContinuation(
-                        `"${shopGreeting(monster, state)}, ${state.plname}!  Didn't you forget to pay?"`,
+                        `"${hello(monster, state)}, ${state.plname}!  Didn't you forget to pay?"`,
                     );
                 } else {
                     await plineWithContinuation(

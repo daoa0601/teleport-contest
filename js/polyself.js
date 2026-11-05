@@ -22,7 +22,7 @@ import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } f
 import { heroBreathAttack, hitHeroWithRay, destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePack, wereBeastForSpecies } from './were.js';
 import { AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
-import { races } from './roles.js';
+import { character_race, races } from './roles.js';
 import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware, heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js';
@@ -709,8 +709,7 @@ async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm =
 }
 // C polyself.c:uasmon_maxStr(). Racial limits also apply to undead relatives,
 // but living giants are stronger than giant zombies and mummies.
-// C role.c:character_race(): the races.find() species match that maps a
-// polymorph form to its hero race.
+// character_race() (role.c) resolves the player-race species.
 export function formMaximumStrength(mnum) {
     let race;
     if (is_orc(mnum)) {
@@ -726,7 +725,7 @@ export function formMaximumStrength(mnum) {
     else if (is_gnome(mnum)) {
         race = races.find(candidate => candidate.name === 'gnome');
     }
-    race ||= races.find(candidate => candidate.mnum === mnum);
+    race ||= character_race(mnum);
     if (race)
         return race.attrmax[A_STR];
     if (!strongmonst(mnum))

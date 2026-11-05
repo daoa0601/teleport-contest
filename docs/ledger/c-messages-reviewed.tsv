@@ -408,12 +408,12 @@ region.c	save_regions	region-tmstamp	diagnostic	Native save-stream field label p
 region.c	save_regions	region-visible	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
 rip.c	rip_txt	_________)/\\\\_//(\\/(/\\)/\\//\\/|_)_______	composed	src/js/end.ts:deathSummaryLines; The bottom art row is spelled with a replace() that restores the native character sequence exactly.
 rip.c	rip_txt	|       1001       |	composed	src/js/end.ts:deathSummaryLines; The 1001 placeholder row is built as `|       ${year}       |` with the same column padding.
-role.c	build_plselection_prompt	Shall I pick a character for you? [ynaq]	composed	src/js/character_choices.ts:characterSelectionQuestion; Composes `Shall I pick ${owner} ${description} for you? [ynaq]` including the a/your and pick character rewrites.
-role.c	build_plselection_prompt	priest/priestess'	composed	src/js/character_choices.ts:characterSelectionQuestion; The combined male/female role name and the bare-apostrophe exception are built by the same prompt builder (strstri call and literal share this key).
-role.c	genl_player_setup	Incompatible alignment!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
-role.c	genl_player_setup	Incompatible gender!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
-role.c	genl_player_setup	Incompatible race!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrace().
-role.c	genl_player_setup	Incompatible role!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrole().
+role.c	build_plselection_prompt	Shall I pick a character for you? [ynaq]	composed	src/js/roles.ts:build_plselection_prompt; Composes `Shall I pick ${owner} ${description} for you? [ynaq]` including the a/your and pick character rewrites.
+role.c	build_plselection_prompt	priest/priestess'	composed	src/js/roles.ts:build_plselection_prompt; The combined male/female role name and the bare-apostrophe exception are built by the same prompt builder (strstri call and literal share this key).
+role.c	genl_player_setup	Incompatible alignment!	composed	src/js/roles.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
+role.c	genl_player_setup	Incompatible gender!	composed	src/js/roles.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
+role.c	genl_player_setup	Incompatible race!	composed	src/js/roles.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrace().
+role.c	genl_player_setup	Incompatible role!	composed	src/js/roles.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrole().
 role.c	role_selection_prolog	IndexOkT(c, races)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	IndexOkT(r, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	not yet specified	dead	role_selection_prolog() has no callers in the pinned tree (only the extern.h declaration); tty player selection builds its own menus.

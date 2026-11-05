@@ -3,10 +3,9 @@
 
 import { ILLOBJ_CLASS, COIN_CLASS } from './objclass.js';
 import { game } from './gstate.js';
-import type { CharacterFacet } from './character_choices.js';
-import { clearCharacterFilter, createCharacterFilters, setCharacterFilter } from './character_filters.js';
-import type { CharacterFilters } from './character_filters.js';
-import { findAlignment, findGender, findRace, findRole, randomCharacterOption } from './roles.js';
+import type { CharacterFacet, CharacterFilters } from './roles.js';
+import { clearrolefilter, createCharacterFilters, setrolefilter } from './roles.js';
+import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './roles.js';
 import { NATIVE_COMMANDS } from './command_data.js';
 import { changeCommandAutocompletions, countCommandAutocompletions, resetCommandAutocomplete, setCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';
@@ -1051,9 +1050,9 @@ function handleConfigStatement(
     case 'CHARACTER':
         // cnf_line_ROLE() assigns only when str2role() >= 0; ROLE_RANDOM
         // (-2) for 'random'/'*'/'@' and ROLE_NONE (-1) for anything
-        // unrecognized both leave the previous role in place. findRole()
+        // unrecognized both leave the previous role in place. str2role()
         // returns null for an empty value, which likewise leaves it unset.
-        if (findRole(parsed.valueText))
+        if (str2role(parsed.valueText))
             result.role = parsed.valueText;
         break;
     case 'dogname':
@@ -1899,8 +1898,8 @@ function configureCharacterOption(result: ConfigurationSettings, {
         }
         priorNegation = tokenNegated;
         if (negated || tokenNegated) {
-            if (previous.get(facet) !== 'negative') clearCharacterFilter(filters, facet);
-            if (!setCharacterFilter(filters, token)) {
+            if (previous.get(facet) !== 'negative') clearrolefilter(filters, facet);
+            if (!setrolefilter(filters, token)) {
                 addError(`Invalid ${facet} '${token}'`);
                 return;
             }
@@ -1918,9 +1917,9 @@ function configureCharacterOption(result: ConfigurationSettings, {
     }
     if (filterOnly) return;
     positiveValue ??= '';
-    const selected = facet === 'role' ? findRole(positiveValue)
-        : facet === 'race' ? findRace(positiveValue)
-        : facet === 'gender' ? findGender(positiveValue) : findAlignment(positiveValue);
+    const selected = facet === 'role' ? str2role(positiveValue)
+        : facet === 'race' ? str2race(positiveValue)
+        : facet === 'gender' ? str2gend(positiveValue) : str2align(positiveValue);
     const random = randomCharacterOption(positiveValue);
     if (!selected && !random) addError(`Unknown ${facet} '${positiveValue}'`);
     const choice = selected || random ? positiveValue : null;
@@ -1929,8 +1928,8 @@ function configureCharacterOption(result: ConfigurationSettings, {
     case 'race': result.race = choice; break;
     case 'gender':
         result.gender = choice;
-        result.flags.initgend = findGender(choice)?.value ?? (random ? -2 : -1);
-        if (choice) result.flags.female = random || findGender(choice)?.value === 1;
+        result.flags.initgend = str2gend(choice)?.value ?? (random ? -2 : -1);
+        if (choice) result.flags.female = random || str2gend(choice)?.value === 1;
         break;
     case 'alignment': result.align = choice; break;
     }

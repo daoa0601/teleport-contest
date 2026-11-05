@@ -1,51 +1,15 @@
 // Source-owned new-game initialization before mklev().
-// C refs: allmain.c:newgame(), o_init.c:init_objects(), role.c:role_init(),
-// dungeon.c:init_dungeons(), u_init.c:u_init_misc().
+// C refs: allmain.c:newgame(), o_init.c:init_objects(),
+// dungeon.c:init_dungeons(), u_init.c:u_init_misc(). The role_init()
+// pieces live in roles.ts.
 
-import { SPE_LIGHT } from './object_data.js';
 import { game } from './gstate.js';
 import { init_objects } from './o_init.js';
 import { init_dungeons } from './dungeon.js';
 import { initializeArtifacts } from './artifacts.js';
 import { rn2, rnd } from './rng.js';
-import { ensureQuestStatus } from './quest.js';
-import type { GameState, QuestStatus } from './game_state.js';
-import type { Role } from './roles.js';
+import { initializeRoleQuestGenders, roleInitPriestPantheon } from './roles.js';
 import { initializeMonsterVitals } from './allmain.js';
-import { is_male, is_neuter, monsterIsFemale } from './mondata.js';
-
-// C role.c:role_init() recomputes these genders on both newgame and restore.
-export function initializeRoleQuestGenders(): void {
-    const role = game.urole;
-    if (!role) throw new Error('Quest gender initialization requires a selected role');
-    rollQuestFigureGenders(role, ensureQuestStatus());
-}
-
-// The rolls role_init() makes whenever the quest figure's own species has
-// no fixed gender. On restore they run inside restgamestate() before the
-// hero is even read, and the saved quest_status then overwrites the values.
-export function rollQuestFigureGenders(
-    role: Pick<Role, 'ldrnum' | 'neminum'>, quest: Pick<QuestStatus, 'ldrgend' | 'nemgend'>,
-): void {
-    quest.ldrgend = questMonsterGender(role.ldrnum);
-    if (role.neminum !== undefined)
-        quest.nemgend = questMonsterGender(role.neminum);
-}
-
-function questMonsterGender(species: number): number {
-    if (is_neuter(species)) return 2;
-    if (monsterIsFemale(species)) return 1;
-    if (is_male(species)) return 0;
-    return rn2(100) < 50 ? 1 : 0;
-}
-
-// C role.c:role_init() (line 2088) gives a Cleric's light spell the clerical
-// school: objects[SPE_LIGHT].oc_skill = P_CLERIC_SPELL for Role_if(PM_CLERIC).
-// The generated object table stays immutable so a later non-Priest keeps
-// divination, so the override is applied where the school is read.
-export function roleInitClericLightSchool(otyp: number, state: GameState): boolean {
-    return otyp === SPE_LIGHT && state.urole?.key === 'priest';
-}
 
 // This is the part of newgame() that runs before level creation. Role
 // inventory and starting attributes run from u_init.js after mklev().
@@ -53,15 +17,7 @@ export async function initializeSourceStartup() {
     initializeMonsterVitals(game);
     init_objects();
     initializeRoleQuestGenders();
-
-    // role_init(): Priests borrow a pantheon from a random non-Priest role.
-    if (game.urole?.key === 'priest') {
-        let pantheon = 6;
-        let attempts = 0;
-        while (pantheon === 6 && ++attempts < 100) pantheon = rn2(13);
-        // C falls back to the first role with gods after 99 failed draws.
-        game._priestPantheonIndex = pantheon === 6 ? 0 : pantheon;
-    }
+    roleInitPriestPantheon(game);
 
     await init_dungeons();
     initializeArtifacts(game);
