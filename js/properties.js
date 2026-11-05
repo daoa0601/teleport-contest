@@ -199,7 +199,7 @@ export function refreshMovementProperties(state = game) {
 // levitation bits: TIMEOUT zeroes the timeout counter, I_SPECIAL drops the
 // blessed-potion at-will origin.  emask removes extrinsic bits: W_ARTI
 // clears the invoked artifact, W_ART clears carried-artifact sources pinned
-// by the drop finesse (js/levitation_drop.js).  W_SADDLE is never stored, so
+// by the drop finesse (js/artifacts.js).  W_SADDLE is never stored, so
 // it remains a documented no-op here.
 export function clearLevitationMasks(hmask = 0, emask = 0, state = game) {
     const hero = state.u;

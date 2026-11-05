@@ -7,9 +7,9 @@ import { WEAPON_CLASS } from './objclass.js';
 import { OBJ_DESCR } from './o_init.js';
 import { OBJ_NAME, objectClassForType, objectSkill, objectUnique, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL, } from './object_data.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
-import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ARTI } from './const.js';
+import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
-import { dragonFormForArmor, heroHatesSilver, heroSpecies } from './polyself.js';
+import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { heroHasDrainResistance } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
@@ -20,12 +20,12 @@ import { recordObjectEncounter, objectMaterial, objectTypeKnown } from './o_init
 import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
 import { questMonsterAlignment } from './role_monsters.js';
-import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { ensureHeroSkills, monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './priest.js';
-import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance, is_dlord, is_dprince, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsDemon, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, } from './mondata.js';
-import { see_monsters, glyphAt, canSeeMonster, newsym } from './display.js';
-import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty } from './properties.js';
+import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance, is_dlord, is_dprince, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsDemon, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterSpeciesSticks, } from './mondata.js';
+import { see_monsters, glyphAt, canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff } from './display.js';
+import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive, refreshProperty, setInvokedProperty, clearLevitationMasks, restoreLevitationSources, stashLevitationSources } from './properties.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsBlinded, permanentBlind } from './senses.js';
 import { getRumor } from './mklev.js';
@@ -33,20 +33,20 @@ import { exerciseAttribute } from './attrib.js';
 import { finishHeroDeath } from './end.js';
 import { monsterNeckName } from './body_parts.js';
 import { loseHeroExperience } from './exper.js';
-import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp } from './hack.js';
+import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, nomul } from './hack.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { lightDamage, lightRoom } from './light.js';
-import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel } from './mon.js';
-import { applyMagicbaneHit } from './magicbane.js';
+import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel, setHeroGrip } from './mon.js';
+import { makeMonsterFlee } from './monmove.js';
 import { displayColorName, monsterName } from './do_name.js';
-import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, flashBurn } from './zap.js';
+import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, flashBurn, cancelMonster, monsterResistsEffect, probeMonster } from './zap.js';
 import { cansee, couldsee } from './vision.js';
 import { monsterHitPointsPerLevel } from './makemon.js';
 import { moveIntoFailedUntrap, untrap, igniteItems, captureLevitationState, floatHeroUp, floatHeroDown } from './trap.js';
 import { recalculateTelepathyRange } from './worn.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
-import { cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, makeBlinded, makeHallucinated } from './potion.js';
+import { cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, makeBlinded, makeHallucinated, makeConfused, makeStunned } from './potion.js';
 import { showEnlightenment } from './insight.js';
 import { chooseInventoryObject } from './invent.js';
 import { retouchHeroObject } from './hero_retouch.js';
@@ -54,7 +54,8 @@ import { useCrystalBall } from './crystal_ball.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
 import { doBlindingRay } from './flash.js';
 import { castSpell, spellSkillType } from './spell.js';
-import { depth } from './hacklib.js';
+import { depth, upstart } from './hacklib.js';
+import { AT_MAGC } from './monster_attack_types.js';
 import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { teleportMonsterByHero } from './teleport.js';
@@ -877,6 +878,172 @@ export async function touchArtifactByHero(object, artifact = artifactById(object
     }
     return { ...result, damage, died };
 }
+const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
+export async function applyMagicbaneHit(object, defender, damage, bonusApplied, { state, attacker, visible, dieRoll, hitOnHead, targetName, describeTarget, publish, random, rollOne, }) {
+    const enchantment = object.spe ?? object.enchantment ?? 0;
+    let scareDieRoll = 4;
+    if (enchantment >= 3) {
+        scareDieRoll = Math.trunc(scareDieRoll / 2 ** Math.trunc(enchantment / 3));
+    }
+    if (!bonusApplied)
+        dieRoll++;
+    let stun = Math.max(enchantment, 0) < random(bonusApplied ? 11 : 7);
+    let effect = 'probe';
+    damage += rollOne(4);
+    if (stun) {
+        effect = 'stun';
+        damage += rollOne(4);
+    }
+    if (dieRoll <= scareDieRoll) {
+        effect = 'scare';
+        damage += rollOne(4);
+    }
+    if (dieRoll <= Math.trunc(scareDieRoll / 2)) {
+        effect = 'cancel';
+        damage += rollOne(4);
+    }
+    const hallucinating = heroIsHallucinating(state);
+    const verb = {
+        probe: hallucinating ? 'prod' : 'probe',
+        stun: hallucinating ? 'amaze' : 'stun',
+        scare: hallucinating ? 'tickle' : 'scare',
+        cancel: hallucinating ? 'purge' : 'cancel',
+    }[effect];
+    const showEffects = defender === 'hero' || !attacker || visible;
+    if (showEffects) {
+        await publish(`The magic-absorbing blade ${verb}s ${targetName}!`);
+        if (effect === 'probe' && defender !== 'hero' && !canSpotMonster(defender)) {
+            await map_invisible(defender.mx, defender.my);
+        }
+    }
+    let resisted = false;
+    if (effect === 'cancel' && defender === 'hero') {
+        requirePlayingGame(state);
+        resisted = !!state.u.antimagic;
+        if (!resisted) {
+            const oldSpecies = heroSpecies(state);
+            if (Upolyd(state.u)) {
+                if (oldSpecies === PM_CLAY_GOLEM) {
+                    await publish(heroIsBlind(state)
+                        ? formatFeltMessage(`${heroIsHallucinating(state) ? 'dark' : 'light'} headed.`, state)
+                        : 'Some writing vanishes from your head!');
+                    state.u.mh = 0;
+                }
+                if (heroIsUnchanging(state) && state.u.mh > 0)
+                    await publish('Your amulet grows hot for a moment, then cools.');
+                else if ((await returnHeroToHumanForm(state, { publish })).died)
+                    return { heroDied: true };
+            }
+            stun = false;
+            if (heroSpecies(state) !== oldSpecies)
+                damage = 0;
+            if ((state.u.uenmax ?? 0) > 0) {
+                state.u.uenmax = (state.u.uenmax ?? 0) - 1;
+                if ((state.u.uen ?? 0) > 0)
+                    state.u.uen = (state.u.uen ?? 0) - 1;
+                state.context.botl = true;
+                await publish('You lose magical energy!');
+            }
+        }
+    }
+    else if (effect === 'cancel' && defender !== 'hero') {
+        const monster = defender;
+        const oldSpecies = monster.mnum;
+        const cancellation = await cancelMonster(monster, {
+            state,
+            attackLevel: 10,
+            random,
+            allowKill: false,
+            publish,
+        });
+        if (cancellation.heroDied)
+            return { heroDied: true };
+        if (cancellation.resisted) {
+            resisted = true;
+        }
+        else {
+            stun = false;
+            if (monster.mnum !== oldSpecies)
+                targetName = describeTarget();
+            if (monster.mnum === PM_CLAY_GOLEM)
+                monster.mhp = 1;
+            if (!attacker && (MONSTER_ATTACKS[monster.mnum] || []).some(([attackType]) => attackType === AT_MAGC)) {
+                state.u.uenmax = (state.u.uenmax ?? 0) + 1;
+                state.u.uenpeak = Math.max(state.u.uenpeak ?? 0, state.u.uenmax);
+                state.u.uen = (state.u.uen ?? 0) + 1;
+                state.context.botl = true;
+                await publish('You absorb magical energy!');
+            }
+        }
+    }
+    else if (effect === 'scare' && defender === 'hero') {
+        resisted = !!state.u.antimagic;
+        if (!resisted) {
+            nomul(-3, state);
+            state._helplessReason = 'being scared stiff';
+            state._helplessDoneMessage = '';
+            if (attacker && state.u.ustuck === attacker && monsterSpeciesSticks(heroSpecies(state))) {
+                setHeroGrip(null, state);
+                await publish(`You release ${monsterName(attacker, { state })}!`);
+            }
+            stun = false;
+        }
+    }
+    else if (effect === 'scare' && defender !== 'hero') {
+        const monster = defender;
+        if (random(2) && monsterResistsEffect(monster, 10, random)) {
+            resisted = true;
+        }
+        else {
+            const flight = await makeMonsterFlee(monster, {
+                state,
+                turns: 3,
+                announce: (monster.mhp ?? 1) > damage,
+                publish,
+                random,
+                rollOne,
+            });
+            if (flight.heroDied)
+                return { heroDied: true };
+            stun = false;
+        }
+    }
+    else if (effect === 'stun') {
+        stun = true;
+    }
+    else if (defender !== 'hero' && !attacker
+        && (enchantment === 0 || random(3 * Math.abs(enchantment)) === 0)) {
+        await publish(`The ${verb} is insightful.`);
+        await probeMonster(defender, { state, onHead: hitOnHead, publish });
+    }
+    if (stun) {
+        if (defender === 'hero')
+            await makeStunned((state.u.stunnedTurns ?? 0) + 3, { state, talk: false });
+        else
+            defender.mstun = 1;
+        if (effect === 'stun')
+            stun = false;
+    }
+    const confused = random(12) === 0;
+    if (confused) {
+        if (defender === 'hero')
+            await makeConfused((state.u.confusionTurns ?? 0) + 4, { state, talk: false });
+        else
+            defender.mconf = 1;
+    }
+    if (showEffects) {
+        const target = upstart(targetName);
+        if (resisted) {
+            await publish(`${target} ${defender === 'hero' ? 'resist' : 'resists'}!`);
+            await shieldeff(defender === 'hero' ? state.u.ux : defender.mx, defender === 'hero' ? state.u.uy : defender.my, state);
+        }
+        if ((stun || confused) && state.flags?.verbose !== false) {
+            const conditions = [...(stun ? ['stunned'] : []), ...(confused ? ['confused'] : [])];
+            await publish(`${target} ${defender === 'hero' ? 'are' : 'is'} ${conditions.join(' and ')}${conditions.length > 1 ? '!' : '.'}`);
+        }
+    }
+    return { damage, specialMessage: showEffects };
+}
 const PM_WATER_ELEMENTAL = 157;
 const PM_JABBERWOCK = MONSTER_NAME.indexOf('jabberwock');
 // Native fatal blows leave enough damage for the caller's AC reduction.
@@ -1667,6 +1834,54 @@ export async function deactivateArtifactProperty(object, artifact, { state = gam
         return false;
     await invokeProperty(object, artifact, state, publish, rollDice, scaledRandom);
     return true;
+}
+// C do.c:drop() finesse for dropping an invoked levitation artifact while
+// unable to reach the floor: finesse_ahriman() (artifact.c) decides whether
+// freeinv() would end levitation, pins a carried W_ART source so the hero
+// stays aloft through freeinv()/hitfloor(), and the caller lands the hero
+// afterwards with the explicit float-down below.
+// C finesse_ahriman(): true when dropping `object` would toggle levitation
+// off inside freeinv().  On true, the invoked source is replaced by an
+// explicit carried source (C `ELevitation = W_ART`), so set_artifact_
+// intrinsic()'s `(ELevitation & W_ARTI)` test fails, arti_invoke() never
+// runs, no invoke downtime is rolled, and levitation survives until
+// finishLevitatingArtifactDrop().  Timeouts and intrinsics are retained.
+export function beginLevitatingArtifactDrop(object, state = game) {
+    requireLiveGame(state);
+    if (!object)
+        return false;
+    // if we aren't levitating or this isn't an artifact which confers
+    // levitation via #invoke then freeinv() won't toggle levitation
+    if (!propertyIsActive('levitation', state))
+        return false;
+    const artifact = object?.oartifact != null
+        ? artifactById(object.oartifact, state) : null;
+    if (artifact?.invokePower !== 'levitation'
+        || !hasInvokedProperty('levitation', state))
+        return false;
+    // Probe ahead, exactly as C does: save the whole property, clear
+    // I_SPECIAL|TIMEOUT and W_ARTI, and see whether levitation would end.
+    // Any other source - worn, innate, carried - keeps the hero aloft, so
+    // the drop needs no finesse; the potion timeout does not count because
+    // the probe clears it with the masks the finish call will apply.
+    const stash = stashLevitationSources(state);
+    clearLevitationMasks(I_SPECIAL | TIMEOUT, W_ARTI, state);
+    const wouldEnd = !propertyIsActive('levitation', state);
+    restoreLevitationSources(stash, state);
+    if (!wouldEnd)
+        return false;
+    // C `ELevitation = W_ART`: the invoked source is replaced by the
+    // carried one, so the artifact's deactivation no longer sees it.
+    setInvokedProperty('levitation', null, false, state);
+    setCarriedProperty('levitation', object, true, state);
+    return true;
+}
+// C do.c:771 `float_down(I_SPECIAL | TIMEOUT, W_ARTI | W_ART)` after
+// hitfloor(): the pinned carried source and the retained timed bits end
+// here, and the shared landing owner reports the touchdown.
+export async function finishLevitatingArtifactDrop(state = game) {
+    requireLiveGame(state);
+    return floatHeroDown(I_SPECIAL | TIMEOUT, W_ARTI | W_ART, state);
 }
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
 // suggests artifacts and other unique objects; an artifact with inv_prop 0

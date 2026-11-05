@@ -302,7 +302,7 @@ doturn	iter_mons	inlined	monster loop (turn_undead.ts)
 dowaternymph	makemon	inlined	summonFountainNymph through makemonNear (cmd.ts)
 dowatersnakes	makemon	inlined	summonFountainSnakes through makemonNear (cmd.ts)
 dowatersnakes	rndmonnam	inlined	hallucinatedPlural (cmd.ts)
-drop	float_down	inlined	finishLevitatingArtifactDrop (levitation_drop.ts)
+drop	float_down	inlined	finishLevitatingArtifactDrop (artifacts.ts)
 drop	welded	n/a	canletgo() already rejects a welded weapon
 add_damage	alloc	n/a	damage records are state objects
 add_damage	in_rooms	inlined	shopRoomnosAt (shk.ts)

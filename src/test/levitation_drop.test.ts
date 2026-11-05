@@ -5,7 +5,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { artifactObject, addInventoryObject } from './support/game-objects.js';
 import {
     beginLevitatingArtifactDrop, finishLevitatingArtifactDrop,
-} from '../js/levitation_drop.js';
+} from '../js/artifacts.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import {
