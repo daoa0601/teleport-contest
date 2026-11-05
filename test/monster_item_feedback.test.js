@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { mloot_container } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterName } from '../js/do_name.js';
-import { beginMonsterHeroAttack } from '../js/mhitu.js';
+import { mattacku } from '../js/mhitu.js';
 import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, POT_FULL_HEALING, SACK, SPEED_BOOTS } from '../js/object_data.js';
@@ -56,7 +56,7 @@ for (const feedback of ['unseen', 'already fast', 'asleep', 'frozen', 'immobile'
         if (feedback === 'already fast')
             await equipMonsterObject(caster, await knownObject(SPEED_BOOTS), W_ARMF);
         const calls = [];
-        const initiation = await beginMonsterHeroAttack(caster, game, limit => limit === 4 ? 2 : limit - 1, () => 1, () => 1, calls);
+        const initiation = await mattacku(caster, game, limit => limit === 4 ? 2 : limit - 1, () => 1, () => 1, calls);
         const action = { monster: caster, calls, movement: {
                 oldx: caster.mx, oldy: caster.my, x: caster.mx, y: caster.my,
                 moved: false, ...initiation,

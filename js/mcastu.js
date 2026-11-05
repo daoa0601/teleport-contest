@@ -148,9 +148,9 @@ async function castmuElementalSpell(attack, monster, type, dmg, ctx) {
         return await finishSpellDamage(attack, dmg, effectLineDismissal, ctx);
     return !!state.program_state.gameover;
 }
-// C mhitu.c:mdamageu() as castmu() reaches it after mcast_spell(): raw HP
-// is kept for tty's -1 sentinel, so rehumanization and the fatal input stay
-// with the presenter hooks.  An escaped pager (dismissal 27) has the
+// castmu() reaches mdamageu() here after mcast_spell(): raw HP is kept for
+// tty's -1 sentinel, so rehumanization and the fatal input stay with the
+// presenter hooks.  An escaped pager (dismissal 27) has the
 // retained effect line replaced by the urgent rehumanize line.
 async function finishSpellDamage(attack, dmg, effectLineDismissal, ctx) {
     applyHeroSpellDamage(attack, dmg, ctx.state);

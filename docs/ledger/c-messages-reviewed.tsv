@@ -198,14 +198,14 @@ mhitm.c	passivemm	is suddenly very hot!	composed	src/js/mhitm.ts:applyMonsterCon
 mhitu.c	doseduce	on your left	composed	src/js/mhitu.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
 mhitu.c	doseduce	on your right	composed	src/js/mhitu.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
 mhitu.c	gazemu	doesn't look all that ugly	dead	The AD_STON cancellation branch tests !react while react is still initialized to -1; assignments later in the switch cannot reach that test.
-mhitu.c	passiveum	is jolted with your electricity!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
-mhitu.c	passiveum	is mildly chilly.	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
-mhitu.c	passiveum	is mildly warm.	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
-mhitu.c	passiveum	is slightly tingled.	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
-mhitu.c	passiveum	is suddenly very cold!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
-mhitu.c	passiveum	is suddenly very hot!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
-mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/mhitu.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
-mhitu.c	wildmiss	displaced image...	composed	src/js/mhitu.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mhitu.c	passiveum	is jolted with your electricity!	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is mildly chilly.	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is mildly warm.	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is slightly tingled.	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is suddenly very cold!	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is suddenly very hot!	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/mhitu.ts:wildmiss; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mhitu.c	wildmiss	displaced image...	composed	src/js/mhitu.ts:wildmiss; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
 mklev.c	generate_stairs	generate_stairs: failed to find a room! (	diagnostic	panic() when stair placement finds no room; developer diagnostic.
 mklev.c	mkinvk_check_wall	x > 0 && x < COLNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mklev.c	mkinvk_check_wall	y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.

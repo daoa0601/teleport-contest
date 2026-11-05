@@ -68,7 +68,7 @@ import { stopDisclosure, ynQuestion } from './end.js';
 import type { DisclosureDefault } from './end.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
-import { magicNegation } from './mhitu.js';
+import { magic_negation } from './mhitu.js';
 import { confersLuck, currency } from './invent.js';
 import { temp_resist } from './eat.js';
 import { itemResistanceCause } from './zap.js';
@@ -753,7 +753,7 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
         if (hasPermanentIntrinsicProperty('protection')) protection += u.ublessed ?? 0;
         if (protection) have(combatIncrement('defense', protection, final));
     }
-    const cancellation = magicNegation(u);
+    const cancellation = magic_negation(u);
     const protection = ['', 'warded', 'guarded', 'protected'][Math.min(3, cancellation)];
     if (protection) are(protection);
     for (const [property, kind] of [['halfPhysicalDamage', 'physical'], ['halfSpellDamage', 'spell']] as const)

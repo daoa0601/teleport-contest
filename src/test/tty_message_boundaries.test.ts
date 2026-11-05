@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { performMonsterHeroAttack } from '../js/mhitu.js';
+import { performMonsterHeroAttack, gulpmu } from '../js/mhitu.js';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { placeMonsterAt } from '../js/steed.js';
+import { installPagerInput } from './support/pager-input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -57,9 +58,9 @@ void test('engulf entry clears the acknowledged announcement before drawing the 
     game.u.ustuck = monster;
     await plineWithContinuation('You hit the purple worm.');
     const input = resetInputState();
-    const capture = beginHeroEngulf(monster, {
-        kind: 'hero-attack', attackType: AT_ENGL, hit: true,
-        damageType: attack[1], engulfOldX: oldX, engulfOldY: oldY,
+    const capture = gulpmu(monster, {
+        kind: 'hero-attack', attackType: AT_ENGL, hit: true, effect: 'engulf',
+        damageType: attack[1], engulfOldX: oldX, engulfOldY: oldY, engulfDamage: 0,
     });
     try {
         await input.waitUntilBlocked();
@@ -67,11 +68,15 @@ void test('engulf entry clears the acknowledged announcement before drawing the 
         assert.equal(!!game.u.uswallow, false, 'Capture waits for the announcement acknowledgment');
     } finally {
         input.feed(' ');
-        assert.equal((await capture).captured, true);
+        // The shared gulpmu() body continues with the digestion line; the
+        // pager support acknowledges any page it produces.
+        installPagerInput(input, { expected: /digests you/i, limit: 4 });
+        assert.equal((await capture).hit, true);
     }
 
+    await flushPendingTopline();
     await flush_screen(1);
-    assert.equal(messageRow(), '');
+    assert.doesNotMatch(messageRow(), /swallows you whole/);
     assert.equal(game.u.uswallow, 1);
     assert.equal(requireGameDisplay().getChar(game.u.ux - 1, game.u.uy + 1), '/');
 });

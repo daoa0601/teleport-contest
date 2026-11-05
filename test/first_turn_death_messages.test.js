@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
-import { damageHeroFromMonster } from '../js/mhitu.js';
+import { mdamageu } from '../js/mhitu.js';
 for (const moves of [1, 2]) {
     void test(`death on turn ${moves} ${moves === 1 ? 'includes' : 'omits'} the early-death farewell`, async () => {
         await freshObjectRoom({ moves, flags: { bones: false, tombstone: false, disclose: '-i -a -v -c -o' } });
@@ -57,7 +57,7 @@ void test('a first-turn fatal hit ending at minus one displays zero HP during th
     installPagerInput(input, { expected: /newt|die|Do not pass Go|Goodbye|points/, limit: 8 });
     await flush_screen(1);
     await plineWithContinuation('The newt bites!');
-    const died = await damageHeroFromMonster(monster, 5);
+    const died = await mdamageu(monster, 5);
     assert.equal(died, true);
     assert.equal(sawHit, true, 'The lethal hit must reach its message pager.');
     assert.equal(sawFarewell, true, 'The first-turn farewell must reach its message pager.');

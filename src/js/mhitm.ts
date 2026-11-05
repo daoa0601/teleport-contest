@@ -66,7 +66,7 @@ import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
 import { swingMonsterWeapon } from './mhitu.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from './weapon.js';
 import { weaponHitBonus } from './weapon.js';
-import { selectAttack } from './attack_selection.js';
+import { getmattk } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { trapAt, mintrap, damageObjectWithAcid, erodeArmor } from './trap.js';
 import {
@@ -92,7 +92,7 @@ import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
 
 import { drainObjectEnchantment } from './zap.js';
 import { snuffMonsterInventoryLights } from './light.js';
-import { seductionCompatibility } from './seduction_compatibility.js';
+import { could_seduce } from './seduction_compatibility.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN,
     AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL,
@@ -185,7 +185,7 @@ export async function showMonsterCombatMiss(
         return;
     }
     const subject = monsterName(aggressor, { state, capitalized: true });
-    const friendly = !aggressor.mcan && seductionCompatibility(aggressor, defender, attack, state);
+    const friendly = !aggressor.mcan && could_seduce(aggressor, defender, attack, state);
     await publish(`${subject} ${friendly ? 'pretends to be friendly to' : 'misses'} ${combatTargetName(defender, aggressor, state)}.`);
 }
 
@@ -304,7 +304,7 @@ export async function attackMonsterWithMonster(
         const damageOptions = { state, visible, random, rollDice, rollOne, calls, target, notOnHead: target.notOnHead };
         const resolveDamage = (attacker: Monster, targetMonster: Monster, attack: AttackTuple) =>
             resolveMonsterCombatDamage(attacker, targetMonster, attack, damageOptions);
-        const selected = selectAttack(aggressor, defender, attackIndex, nativeResults, state);
+        const selected = getmattk(aggressor, defender, attackIndex, nativeResults, state);
         if (skipBrainDrain && selected[0] === AT_TENT && selected[1] === AD_DRIN) continue;
         let slotResult = M_ATTK_MISS;
         let hit = false;
@@ -546,7 +546,7 @@ export async function prepareMonsterCombatContact(
     { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d }: MonsterContactOptions,
 ): Promise<'contact' | 'shade-miss'> {
     await revealAttackingMonsters(aggressor, defender, visible);
-    const compatibility = aggressor.mcan ? 0 : seductionCompatibility(aggressor, defender, attack, state);
+    const compatibility = aggressor.mcan ? 0 : could_seduce(aggressor, defender, attack, state);
     if (!compatibility && await rejectMonsterShadeContact(aggressor, defender, weapon, {
         state, visible, publish, rollOne, rollDice,
     })) return 'shade-miss';

@@ -28,9 +28,10 @@ getbones	sfi_char	n/a	binary save reader; decodeBonesPayload replaces it
 dog_goal	cursed_object_at	inlined	cursedAtLocation (dogmove.ts)
 hitmu	midnight	inlined	recorderLocalHour(...) === 0 (mhitu.ts)
 hitmu	minuhpmax	inlined	Math.max(ulevel, 1) clamp (mhitu.ts)
+hitmu	map_invisible	inlined	the unseen-attacker map_invisible runs in the begin-phase slot dispatcher (mhitu.ts beginHeroAttackSlot) and in the presenter before hitmu()'s deferred tail; the split is the presenter protocol
 mattackm	is_fainted	inlined	heroIsUnaware tests uhs === FAINTED (senses.ts)
-gulpmu	sobj_at	inlined	boulder-in-pit test in monsterCanEngulfHero (hero_engulf.ts)
-gulpmu	number_leashed	inlined	inventory leash count (hero_engulf.ts)
+gulpmu	sobj_at	inlined	boulder-in-pit test in engulf_target (mhitu.ts)
+gulpmu	number_leashed	inlined	inventory leash count (mhitu.ts:gulpmu)
 gulpmu	monstseesu	n/a	returns early while u.uswallow; C's own comment calls these no-ops
 gulpmu	monstunseesu	n/a	returns early while u.uswallow
 create_gas_cloud	is_hero_inside_gas_cloud	inlined	regions.some(region => region.heroInside) (regions.ts)
@@ -1329,7 +1330,7 @@ use_mirror	setnotworn	inlined	removeWornHeroItem (apply.ts)
 use_royal_jelly	getobj	n/a	applied directly from doapply's getobj; no second prompt
 use_royal_jelly	update_inventory	n/a	no persistent inventory window; perm_invent parsed only
 use_towel	Blindf_off	inlined	removeEyewear(null) removes the worn towel (weapon.ts)
-use_towel	gulp_blnd_check	inlined	gulpBlindnessCheck (weapon.ts)
+use_towel	gulp_blnd_check	inlined	gulp_blnd_check (mhitu.ts)
 weight_cap	acurr	inlined	currentAttribute(A_STR) in the capacity formula (weight.ts via properties.ts)
 weight_cap	acurrstr	inlined	currentStrength for exceptional strength (weight.ts)
 youhiding	enlght_line	inlined	hiding rows push contracted lines (insight.ts)

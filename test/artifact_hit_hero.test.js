@@ -6,7 +6,7 @@ import { currentMulti } from '../js/cmd.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, Upolyd, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginMonsterHeroAttack } from '../js/mhitu.js';
+import { mattacku } from '../js/mhitu.js';
 import { OIL_LAMP, POT_HEALING } from '../js/object_data.js';
 import { artifactObject, addInventoryObject, untimedCorpse } from './support/game-objects.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -31,7 +31,7 @@ for (const deferred of [false, true]) {
                 random: range => range - 1, rollOne: () => 1, rollDice: count => count,
             });
         else
-            await beginMonsterHeroAttack(goblin, game, range => range - 1, () => 1, count => count, []);
+            await mattacku(goblin, game, range => range - 1, () => 1, count => count, []);
         assert.equal(game.u.uhp, 96, 'The attack and sword each do 1 damage; Frost Brand doubles their total.');
         const prose = [...messages, game._pending_message].join('\n');
         assert.match(prose, /The ice-cold blade freezes you!/);

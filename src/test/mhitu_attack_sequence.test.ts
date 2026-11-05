@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_HIT, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { beginMonsterHeroAttack, completeHeroAttackSlot } from '../js/mhitu.js';
+import { mattacku, completeHeroAttackSlot } from '../js/mhitu.js';
 import { d, rn2 } from '../js/rng.js';
 import type { MonsterCallLog } from '../js/monster_action_types.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -21,7 +21,7 @@ void test('a sewer rat bite resolves its whole mattacku sequence from mhitu.js',
     rat.muy = game.u.uy;
     const calls: MonsterCallLog = [];
 
-    const initiation = await beginMonsterHeroAttack(rat, game, rn2, () => 1, () => 3, calls);
+    const initiation = await mattacku(rat, game, rn2, () => 1, () => 3, calls);
     const sequence = initiation.heroAttackSequence;
     const attack = sequence?.current;
     assert.equal(attack?.kind, 'hero-attack');
@@ -51,7 +51,7 @@ void test('a refused engulf completes its slot without hero damage', async () =>
     const hp = game.u.mh;
     const calls: MonsterCallLog = [];
 
-    const initiation = await beginMonsterHeroAttack(jelly, game,
+    const initiation = await mattacku(jelly, game,
         (limit: number) => Math.min(1, limit - 1), () => 1, () => 6, calls);
     const sequence = initiation.heroAttackSequence;
     const attack = sequence?.current;

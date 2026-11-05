@@ -23,7 +23,7 @@ import { sessionIsNight, monsterGrowlSound } from './ambient_sounds.js';
 import { updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
 import { monsterName } from './do_name.js';
-import { withIndefiniteArticle, makePlural } from './objnam.js';
+import { withIndefiniteArticle } from './objnam.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -254,49 +254,6 @@ export function isHumanWereMonster(monster: WereSpecies | null | undefined): boo
     return is_were(mnum) && monsterIsHuman(mnum);
 }
 
-// C mhitu.c:summonmu(): the attack has a separate transformation chance
-// from were_change(), then calls helpers using the resulting species.
-export async function summonWereAttackHelp(
-    monster: Monster, state: GameState = game, random = rn2,
-): Promise<void> {
-    const seen = canSeeMonster(monster);
-    const protectedHero = heroHasProtectionFromShapeChangers(state);
-    if (isHumanWereMonster(monster)) {
-        if (!protectedHero && random(sessionIsNight(state.datetime) ? 3 : 5) === 0)
-            await transformWereMonster(monster, state);
-    } else if (protectedHero || random(30) === 0) {
-        await transformWereMonster(monster, state);
-    }
-    if (random(10) !== 0) return;
-    if (seen)
-        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} summons help!`);
-    const helpers = await summonWerePack(monster.mnum, false, state, random);
-    const visible = helpers.filter(helper => canSeeMonster(helper)).length;
-    const hemmedIn = formatFeltMessage('hemmed in.', state);
-    if (seen) {
-        if (!helpers.length) await plineWithContinuation('But none comes.');
-        else if (!visible) await plineWithContinuation(hemmedIn);
-        return;
-    }
-    const deaf = heroIsDeaf(state);
-    if (!deaf)
-        await plineWithContinuation(`Something ${makePlural(monsterGrowlSound(monster))}!`);
-    if (!helpers.length) return;
-    if (!visible) {
-        await plineWithContinuation(hemmedIn);
-        return;
-    }
-    const generic = werePackName(monster.mnum);
-    const appearance = visible === 1 ? `${withIndefiniteArticle(generic)} appears` : `${makePlural(generic)} appear`;
-    await plineWithContinuation(`${appearance.charAt(0).toUpperCase()}${appearance.slice(1)}${deaf ? ' from nowhere' : ''}!`);
-}
-
-function werePackName(mnum: number): string {
-    const beast = counterWereSpecies(mnum);
-    const name = MONSTER_NAME[mnum] ?? '';
-    const form = monsterIsHuman(mnum) ? MONSTER_NAME[beast ?? -1] ?? name : name;
-    return form.replace(/^were/u, '') || 'creature';
-}
 
 // C were.c:were_summon(), shared by monster attacks and #monster.
 export async function summonWerePack(

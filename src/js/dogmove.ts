@@ -1,6 +1,6 @@
 import { ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import { questMonsterSound } from './role_monsters.js';
-import { performMonsterHeroAttack, beginMonsterHeroAttack, presentMonsterAttackEffects } from './mhitu.js';
+import { performMonsterHeroAttack, mattacku, presentMonsterAttackEffects } from './mhitu.js';
 import { inventoryItemDescription } from './invent.js';
 import { monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, monsterCarryAmount, resistConflict } from './mon.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -772,14 +772,12 @@ async function finishPetMovePlan(
         // C dog_move() runs mattacku() to completion here.  The hero-contact
         // messages are presented with the turn driver's contact deferral
         // already closed, exactly as the presenter did for the deferred flag.
-        const attack = await beginMonsterHeroAttack(
-            monster,
-            state,
-            random,
-            rollOne,
-            rollDice,
-            calls,
-        );
+        const attack = await mattacku(monster,
+        state,
+        random,
+        rollOne,
+        rollDice,
+        calls,);
         const heroAction: MonsterMovementAction = {
             monster,
             calls,

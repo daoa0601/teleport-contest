@@ -35,7 +35,7 @@ import { vision_recalc } from '../js/vision.js';
 import { makedog } from '../js/u_init.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
-import { beginHeroEngulf } from '../js/hero_engulf.js';
+import { gulpmu } from '../js/mhitu.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { applyInventoryObject } from './support/commands.js';
@@ -490,7 +490,7 @@ void test('a photograph from inside a monster records the stomach instead of fla
     await freshObjectRoom();
     requirePlayingGame(game);
     const holder = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
-    resetInputState().feed(' '); // Native engulf announcement precedes the swallowed screen.
+    installPagerInput(resetInputState(), { expected: /.*/, limit: 12 }); // The full gulpmu transaction pages each line.
     game.u.ustuck = holder; // Native attack admission establishes the holder before gulpmu.
     const engulf = MONSTER_ATTACKS[holder.mnum]?.find((attack) => attack[0] === AT_ENGL);
     assert.ok(engulf);
@@ -498,12 +498,15 @@ void test('a photograph from inside a monster records the stomach instead of fla
         kind: 'hero-attack',
         attackType: AT_ENGL,
         hit: true,
+        effect: 'engulf',
         damageType: engulf[1],
         engulfOldX: holder.mx,
         engulfOldY: holder.my,
+        engulfDamage: 0,
     };
     placeMonsterAt(holder, game.u.ux, game.u.uy);
-    assert.equal((await beginHeroEngulf(holder, attack)).captured, true);
+    assert.equal((await gulpmu(holder, attack)).hit, true);
+    await flushPendingTopline();
     const object = await camera();
     await aim(object, '>');
     assert.match(game._pending_message, /picture of the purple worm's stomach/);
@@ -687,7 +690,7 @@ void test('cleaning grime inside a dust vortex immediately exposes the eyes agai
     await freshObjectRoom();
     requirePlayingGame(game);
     const holder = await createMonsterAt('dust vortex', 11, 10, NO_MINVENT);
-    resetInputState().feed(' ');
+    installPagerInput(resetInputState(), { expected: /.*/, limit: 12 });
     game.u.ustuck = holder; // Native attack admission establishes the holder before gulpmu.
     const engulf = MONSTER_ATTACKS[holder.mnum]?.find((attack) => attack[0] === AT_ENGL);
     assert.ok(engulf);
@@ -695,16 +698,19 @@ void test('cleaning grime inside a dust vortex immediately exposes the eyes agai
         kind: 'hero-attack',
         attackType: AT_ENGL,
         hit: true,
+        effect: 'engulf',
         damageType: engulf[1],
         engulfOldX: holder.mx,
         engulfOldY: holder.my,
+        engulfDamage: 0,
     };
     placeMonsterAt(holder, game.u.ux, game.u.uy);
-    assert.equal((await beginHeroEngulf(holder, attack)).captured, true);
+    assert.equal((await gulpmu(holder, attack)).hit, true);
+    await flushPendingTopline();
     game.u.ucreamed = 6;
     setHeroBlindnessTurns(6);
     const timer = game.u.uswldtim;
-    resetInputState().feed(' '); // Glop removal precedes fresh engulf blindness.
+    installPagerInput(resetInputState(), { expected: /.*/, limit: 12 }); // Glop removal and the fresh engulf blindness line follow.
     await useTowel(await towel());
     assert.equal(game.u.ucreamed, 0);
     assert.equal(heroIsBlind(), true);

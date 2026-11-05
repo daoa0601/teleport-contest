@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { beginMonsterHeroAttack } from '../js/mhitu.js';
+import { mattacku } from '../js/mhitu.js';
 import { resolveMonsterContactEffect } from '../js/uhitm.js';
 import { AD_CURS, AT_CLAW } from '../js/monster_attack_types.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from '../js/properties.js';
@@ -24,7 +24,7 @@ void test('ring mail can cancel a grid bug bite after its single base damage rol
     bug.muy = game.u.uy;
     const hp = game.u.uhp;
     initRng(2n);
-    const attack = await beginMonsterHeroAttack(bug, game, rn2, () => 1, d, []);
+    const attack = await mattacku(bug, game, rn2, () => 1, d, []);
     assert.equal(attack.heroAttackSequence?.current?.hit, true);
     assert.equal(attack.heroAttackSequence?.current?.damage, 0);
     assert.equal(game.u.uhp, hp, 'magic cancellation prevents the electric bite damage');
@@ -37,7 +37,7 @@ void test('a fresh room keeps ordinary wraith damage when the host clock is midn
     wraith.m_lev = 30;
     wraith.mux = game.u.ux;
     wraith.muy = game.u.uy;
-    const attack = await beginMonsterHeroAttack(wraith, game, range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
+    const attack = await mattacku(wraith, game, range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
     assert.equal(attack.heroAttackSequence?.current?.damage, 6, 'the test room is daytime even when New York is at midnight');
 });
 for (const [hour, damage] of [['00', 12], ['01', 6], ['12', 6]]) {
@@ -50,7 +50,7 @@ for (const [hour, damage] of [['00', 12], ['01', 6], ['12', 6]]) {
         wraith.m_lev = 30;
         wraith.mux = game.u.ux;
         wraith.muy = game.u.uy;
-        const attack = await beginMonsterHeroAttack(wraith, game, range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
+        const attack = await mattacku(wraith, game, range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
         assert.equal(attack.heroAttackSequence?.current?.damage, damage);
     });
 }
@@ -70,7 +70,7 @@ for (const [datetime, damage] of [
             wraith.m_lev = 30;
             wraith.mux = game.u.ux;
             wraith.muy = game.u.uy;
-            const attack = await beginMonsterHeroAttack(wraith, game, range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
+            const attack = await mattacku(wraith, game, range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
             assert.equal(attack.heroAttackSequence?.current?.damage, damage, 'the second damage roll applies only at midnight after local-time conversion');
         });
     }

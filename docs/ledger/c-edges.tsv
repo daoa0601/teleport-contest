@@ -1683,7 +1683,6 @@ hero_behind_chokepoint	accessible
 hero_behind_chokepoint	isok
 hidden_gold	contained_gold
 hitmu	d
-hitmu	map_invisible
 hitmu	newsym
 hitmu	rn2
 hitmu	rnd

@@ -24,7 +24,7 @@ import {
 } from './weapon.js';
 import { willWeld } from './wield.js';
 import { heroHasFreeHand } from './engrave.js';
-import { monsterWeaponSwingVerb } from './mhitu.js';
+import { mswings_verb } from './mhitu.js';
 import { rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
 import {
@@ -1191,7 +1191,7 @@ export async function attackHeroWithPolearm(monster: Monster, weapon: GameObject
         const name = objectCombatName(weapon, { state });
         const description = objectHasPersonalName(weapon, state)
             ? definiteName(name, state) : withIndefiniteArticle(name);
-        const verb = monsterWeaponSwingVerb(weapon, distance <= 2, random);
+        const verb = mswings_verb(weapon, distance <= 2, random);
         await publish(`${monsterSentenceSubject(monster)} ${verb} ${description}.`);
     }
 

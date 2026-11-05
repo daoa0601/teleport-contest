@@ -52,7 +52,7 @@ import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fig
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { swingMonsterWeapon, advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
+import { swingMonsterWeapon, advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
 import { isPick, isPolearm, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
 import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
@@ -65,7 +65,6 @@ import { depth, dist2, distmin } from './hacklib.js';
 import { shopkeeperName } from './shknam.js';
 import { heroHasEyes, monsterHandName } from './body_parts.js';
 import { heroGoldObject } from './hero_gold.js';
-import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { canLetGo } from './do.js';
 import { canFallThrough } from './mklev.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
@@ -1735,7 +1734,7 @@ export async function finishDochugAfterMovement(monster, movement, state, random
             // An engulfing monster may digest the hero after moving even
             // though an ordinary adjacent monster must wait another turn.
             if (state.u.uswallow && state.u.ustuck === monster) {
-                const attack = await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls);
+                const attack = await mattacku(monster, state, random, rollOne, rollDice, calls);
                 attachMonsterAttack(movement, attack);
             }
             return;
@@ -1766,7 +1765,7 @@ async function beginStandardMonsterAttack(monster, movement, state, random, roll
         return;
     // mattacku() interrupts the hero before refusing a monster other than
     // the engulfer.
-    const attack = await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls);
+    const attack = await mattacku(monster, state, random, rollOne, rollDice, calls);
     attachMonsterAttack(movement, attack);
     if (attack.heroAttackSequence?.offensive)
         movement.actionCompleted = true;

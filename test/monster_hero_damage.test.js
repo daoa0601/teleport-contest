@@ -7,7 +7,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
-import { damageHeroFromMonster } from '../js/mhitu.js';
+import { mdamageu } from '../js/mhitu.js';
 async function damageRoom() {
     const input = freshTurnRoom();
     requirePlayingGame(game);
@@ -23,7 +23,7 @@ void test('monster damage reports the subtraction before clamping to a reduced H
     game.flags.showdamage = true;
     game.u.uhp = 20;
     game.u.uhpmax = 10;
-    assert.equal(await damageHeroFromMonster(monster, 3), false);
+    assert.equal(await mdamageu(monster, 3), false);
     await flushPendingTopline();
     assert.equal(game.u.uhp, 10);
     assert.equal(game.u.uhpmax, 10);
@@ -35,7 +35,7 @@ void test('a zero-damage monster effect still clamps current HP without a damage
     game.flags.showdamage = true;
     game.u.uhp = 20;
     game.u.uhpmax = 10;
-    await damageHeroFromMonster(monster, 0);
+    await mdamageu(monster, 0);
     await flushPendingTopline();
     assert.equal(game.u.uhp, 10);
     assert.doesNotMatch(messages.join('\n'), /\[HP/);
@@ -47,7 +47,7 @@ void test('monster damage exhausts the borrowed body before hurting the original
     await runExtendedCommand('polyself', 'kobold\n');
     assert.equal(MONSTER_NAME[game.u.umonnum], 'kobold');
     const humanHP = game.u.uhp;
-    assert.equal(await damageHeroFromMonster(monster, game.u.mh + 1), false);
+    assert.equal(await mdamageu(monster, game.u.mh + 1), false);
     await flushPendingTopline();
     assert.equal(game.u.umonnum, game.u.umonster);
     assert.equal(game.u.uhp, humanHP);

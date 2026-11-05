@@ -30,7 +30,7 @@ import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { setBallAndChainFelt } from './ball.js';
-import { gulpBlindnessCheck } from './engulf_blindness.js';
+import { gulp_blnd_check } from './mhitu.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { yn_function } from './cmd.js';
@@ -1461,12 +1461,12 @@ export function wornArmorInDestroyOrder(state = game) {
 }
 // C do_wear.c:some_armor(). Only the outer torso layer is exposed; each
 // other occupied slot has its own chance to replace the current choice.
-export function someHeroArmor(state = game) {
+export function some_armor(state = game, random = rn2) {
     let armor = equippedObject(state, 'uarmc')
         || equippedObject(state, 'uarm') || equippedObject(state, 'uarmu');
     for (const slot of ['uarmh', 'uarmg', 'uarmf', 'uarms']) {
         const candidate = equippedObject(state, slot);
-        if (candidate && (!armor || rn2(4) === 0))
+        if (candidate && (!armor || random(4) === 0))
             armor = candidate;
     }
     return armor;
@@ -2656,7 +2656,7 @@ export async function removeEyewear(object = null, { state = game, publish = pli
         }
     }
     else if (wasBlind) {
-        const gulp = await gulpBlindnessCheck({ state, publish });
+        const gulp = await gulp_blnd_check({ state, publish });
         if (gulp.died)
             return true;
         if (!gulp.triggered) {

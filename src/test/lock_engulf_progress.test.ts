@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DOOR, D_LOCKED, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { beginHeroEngulf } from '../js/hero_engulf.js';
+import { gulpmu } from '../js/mhitu.js';
 import { expelHero } from '../js/hero_expulsion.js';
 import { resetInputState } from '../js/input.js';
 import { continuePicking, pickLock } from '../js/lock.js';
@@ -26,7 +26,7 @@ void test('engulfing discards lock progress even after the hero is expelled', as
     const tool = await addInventoryObject(CREDIT_CARD);
     const monster = await createMonsterAt('purple worm', 9, 10, NO_MINVENT);
     const input = resetInputState();
-    installPagerInput(input, { expected: /unlock|pick|swallow|stop/i, limit: 10 });
+    installPagerInput(input, { expected: /unlock|pick|swallow|stop|digests/i, limit: 10 });
     input.feed('y');
     await pickLock(tool, { target: { x: 11, y: 10 } });
     const attempt = game._occupation;
@@ -36,11 +36,11 @@ void test('engulfing discards lock progress even after the hero is expelled', as
 
     placeMonsterAt(monster, 10, 10);
     game.u.ustuck = monster;
-    const capture = await beginHeroEngulf(monster, {
-        kind: 'hero-attack', attackType: AT_ENGL, hit: true,
-        damageType: AD_DGST, engulfOldX: 9, engulfOldY: 10,
+    const capture = await gulpmu(monster, {
+        kind: 'hero-attack', attackType: AT_ENGL, hit: true, effect: 'engulf',
+        damageType: AD_DGST, engulfOldX: 9, engulfOldY: 10, engulfDamage: 0,
     });
-    assert.equal(capture.captured, true);
+    assert.equal(capture.hit, true);
     assert.equal((await expelHero(monster, { message: false })).expelled, true);
     input.feed('n');
 

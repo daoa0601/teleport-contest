@@ -44,7 +44,7 @@ import { invWeight, nearCapacity, heroGoldAmount } from './hack.js';
 import { stopDisclosure, ynQuestion } from './end.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
-import { magicNegation } from './mhitu.js';
+import { magic_negation } from './mhitu.js';
 import { confersLuck, currency } from './invent.js';
 import { temp_resist } from './eat.js';
 import { itemResistanceCause } from './zap.js';
@@ -783,7 +783,7 @@ export function attributeEnlightenmentLines(final = 0) {
         if (protection)
             have(combatIncrement('defense', protection, final));
     }
-    const cancellation = magicNegation(u);
+    const cancellation = magic_negation(u);
     const protection = ['', 'warded', 'guarded', 'protected'][Math.min(3, cancellation)];
     if (protection)
         are(protection);

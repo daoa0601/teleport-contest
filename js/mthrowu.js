@@ -15,7 +15,7 @@ import { isPolearm, isLauncherAmmunition, launcherMatchesAmmo, isPoisonableObjec
 import { returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon, } from './weapon.js';
 import { willWeld } from './wield.js';
 import { heroHasFreeHand } from './engrave.js';
-import { monsterWeaponSwingVerb } from './mhitu.js';
+import { mswings_verb } from './mhitu.js';
 import { rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
 import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject, objectIsFlammable, splitObjectStack, objectWeight, placeObject, stack_object, } from './mkobj.js';
@@ -1078,7 +1078,7 @@ export async function attackHeroWithPolearm(monster, weapon, state = game, { pub
         const name = objectCombatName(weapon, { state });
         const description = objectHasPersonalName(weapon, state)
             ? definiteName(name, state) : withIndefiniteArticle(name);
-        const verb = monsterWeaponSwingVerb(weapon, distance <= 2, random);
+        const verb = mswings_verb(weapon, distance <= 2, random);
         await publish(`${monsterSentenceSubject(monster)} ${verb} ${description}.`);
     }
     let damage = Math.max(1, rollPhysicalWeaponDamageAgainstHero(weapon, state, { rollOne }));

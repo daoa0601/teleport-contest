@@ -21,7 +21,7 @@ import { monsterHasColdResistance, monsterIsShade } from './mondata.js';
 
 type CombatActor = Hero | Monster;
 
-export function selectAttack(
+export function getmattk(
     attacker: CombatActor, defender: CombatActor, attackIndex: number,
     previousResults: readonly number[], state: PlayingGameState,
 ): AttackTuple {
