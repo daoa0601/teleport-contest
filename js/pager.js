@@ -8,14 +8,14 @@ import { game, requireGameLevel } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
-import { makePlural, withIndefiniteArticle, singularObjectName } from './objnam.js';
+import { makePlural, simpleObjectName, withIndefiniteArticle, singularObjectName } from './objnam.js';
 import { visibleRegionAt } from './regions.js';
 import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.js';
 import { surfaceName } from './dungeon.js';
 import { trapName } from './trap.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, visibleCommandKey, promptDirection, readDirectionKey, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
-import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
+import { takeQueuedInventoryChoice } from './invent.js';
 import { getLine, promptYesNo } from './query.js';
 import { selectMapPosition } from './getpos.js';
 import { decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
@@ -1222,5 +1222,21 @@ export async function menuControlsHelp() {
         '                    when on last page, treat like Return',
         '           Escape   Cancel menu without making any choice(s)',
     ]);
+}
+// Swallowed subset of pager.c:self_lookat(); swallowing has already dismounted
+// the hero, revealed them, and released any trap.
+export function swallowedHeroDescription() {
+    const race = heroIsPolymorphed(game) ? '' : `${game.urace?.adj ?? 'human'} `;
+    const invisible = propertyIsActive('invisible', game)
+        && (!heroIsBlind() || unblindTelepathyRange() >= 0 || heroDetectsMonsters());
+    let description = `${invisible ? 'invisible ' : ''}${race}${monsterTypeName(heroSpecies(game), !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female))} called ${game.plname}`;
+    const region = visibleRegionAt(game, game.u.ux, game.u.uy);
+    if (region)
+        description += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
+    if (heroIsPunished()) {
+        const ball = game.uball || game.u.uball;
+        description += `, chained to ${ball ? withIndefiniteArticle(simpleObjectName(ball)) : 'nothing?'}`;
+    }
+    return description;
 }
 //# sourceMappingURL=pager.js.map

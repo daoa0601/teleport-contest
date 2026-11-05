@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 import {
     WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS,
     POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS,
@@ -55,7 +56,7 @@ import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.j
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
 import { heroIsUnaware } from './senses.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, stack_object, isContainer} from './mkobj.js';
+import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
 import { dissolveBars } from './projectile_bars.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';

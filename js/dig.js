@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 import { POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { wakeNearby } from './mon.js';
@@ -36,7 +37,7 @@ import { delobj } from './invent.js';
 import { gotoLevel } from './do.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { canDigDown, stairwayAt } from './mklev.js';
-import { createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
+import { createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';

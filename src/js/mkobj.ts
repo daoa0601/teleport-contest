@@ -70,7 +70,7 @@ import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nearCapacity } from './hack.js';
 import { encumber_msg } from './pickup.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
@@ -1058,23 +1058,6 @@ export async function sweepFloorPile(
         }
         current = next;
     }
-}
-
-export function stack_object(object: GameObject, state?: GameState): Promise<GameObject>;
-export function stack_object(
-    object: GameObject | null | undefined, state?: GameState,
-): Promise<GameObject | null | undefined>;
-export async function stack_object(
-    object: GameObject | null | undefined, state: GameState = game,
-): Promise<GameObject | null | undefined> {
-    if (!object) return object;
-    const pile = state.level?.objects?.[object.ox]?.[object.oy];
-    if (!pile) return object;
-    const existing = pile.find(candidate =>
-        candidate !== object && mergable(object, candidate, state));
-    if (!existing) return object;
-
-    return await mergeObjectStacks(object, existing, state) || object;
 }
 
 export function remove_object<T extends GameObject | null | undefined>(

@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 import {
     WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS,
     SPBOOK_CLASS, COIN_CLASS, BALL_CLASS, CHAIN_CLASS,
@@ -113,9 +114,7 @@ import { recordHeroKillConduct, finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex, loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
-import { mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable,
-    placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack, stack_object,
-    updateIceObjectTimersAt } from './mkobj.js';
+import { mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable, placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack, updateIceObjectTimersAt } from './mkobj.js';
 import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt } from './dig.js';
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
 import { gotoLevel, scheduleLevelChange } from './do.js';

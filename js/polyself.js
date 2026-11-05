@@ -4,6 +4,7 @@
 // (dobreathe, dospit, doremove, dospinweb, dosummon, dogaze, dopoly,
 // domindblast), uunstick(), ugolemeffects(), armor_to_dragon(),
 // ugenocided(), udeadinside().
+import { stack_object } from './invent.js';
 import { WEAPON_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
@@ -45,7 +46,7 @@ import { breatheInDirection } from './breath_ray.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp } from './dothrow.js';
-import { mksobj, placeCreatedObject, stack_object } from './mkobj.js';
+import { mksobj, placeCreatedObject } from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';

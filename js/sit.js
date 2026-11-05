@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 import { COIN_CLASS } from './objclass.js';
 import { eggTypeFromParent } from './mon.js';
 // #sit and the immediate consequences of sitting down.
@@ -14,9 +15,9 @@ import { morehungry } from './eat.js';
 import { heroCanReachFloor } from './engrave.js';
 import { burnAwayHeroSlime, heroGoldAmount, loseHeroHp } from './hack.js';
 import { dropObjectAtHero } from './do.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { mksobj, set_corpsenm, objectWeight, stack_object } from './mkobj.js';
+import { mksobj, set_corpsenm, objectWeight } from './mkobj.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, TOWEL, WATER_WALKING_BOOTS, oc_nutrition } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';

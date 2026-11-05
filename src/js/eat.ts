@@ -43,7 +43,7 @@ import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel } from './exper.js';
 import { explode } from './explosion.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject, stack_object } from './invent.js';
 import { heroCanReachFloor } from './engrave.js';
 import { isEdibleFood, selectFoodToEat } from './food_selection.js';
 import type { FoodSelection } from './food_selection.js';
@@ -70,7 +70,7 @@ import {
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
-import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable, stack_object} from './mkobj.js';
+import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable } from './mkobj.js';
 import { objectIsMetallic } from './object_properties.js';
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import type { MonsterDeathHandler } from './mon.js';

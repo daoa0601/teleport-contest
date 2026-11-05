@@ -20,9 +20,9 @@ import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_
 import { weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills } from './weapon.js';
 import { quiverObjectClass } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName } from './objnam.js';
-import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore } from './invent.js';
+import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore, stack_object } from './invent.js';
 import { objectMaterial, objectTypeKnown } from './o_init.js';
-import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object } from './mkobj.js';
+import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './wintty.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, heroDirectGoldThrowRange, snuffThrownCandle } from './thrown_object.js';

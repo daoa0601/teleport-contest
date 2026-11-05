@@ -1139,7 +1139,7 @@ export async function addShopObjectToBill(object: GameObject, state: GameState =
             if (!ltmp) return null;
         }
         if (object.no_charge) object.no_charge = false;
-        contentscount = countUnpaidContents(object);
+        contentscount = countContents(object, { quantity: true, newdrop: true }, state);
     } else {
         entry = await addOneToBill(object, keeper, publish, state);
         if (!entry) return null;
@@ -1165,19 +1165,6 @@ export async function addShopObjectToBill(object: GameObject, state: GameState =
         if (quote) await publish(quote);
     }
     return transaction;
-}
-
-// C invent.c:count_contents(container, TRUE, TRUE, FALSE, TRUE).
-// Count unpaid stack quantities, including contents of nested containers.
-function countUnpaidContents(container: GameObject): number {
-    let count = 0;
-    for (const content of container.contents || []) {
-        if (content.contents?.length)
-            count += countUnpaidContents(content);
-        if (content.unpaid)
-            count += content.quan ?? content.quantity ?? 1;
-    }
-    return count;
 }
 
 // C shk.c:append_honorific().
@@ -4472,7 +4459,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
         let yourc = 0;
         let onlyPartially = false;
         if (container) {
-            const shksc = countUnpaidContents(object);
+            const shksc = countContents(object, { quantity: true, newdrop: true }, state);
             yourc = countAllContents(object) - shksc;
             onlyPartially = shksc > 0 && yourc > 0;
         }

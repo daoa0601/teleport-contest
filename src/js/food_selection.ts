@@ -12,7 +12,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroFormClings, heroIsFlying, heroIsBreathless, heroSpecies } from './polyself.js';
 import { heroIsStrangled } from './do_wear.js';
 import { deleteTrap, resetUtrap } from './trap.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { mksobj, objectQuantity, objectIsFlammable } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -21,7 +21,7 @@ import { dropObjectAtHero } from './do.js';
 import { observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { promptYesNoQuit } from './query.js';
-import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
+
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

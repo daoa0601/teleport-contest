@@ -86,7 +86,7 @@ import { bringLeashedFollowers } from './apply.js';
 import { showPagedPickOneMenu } from './windows.js';
 import { throwOrdinaryObject, resolveSwallowedEggPieOrVenomThrow } from './dothrow.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 
 const M2_GIANT = 0x00002000;
 const M2_DEMON = 0x00000100;

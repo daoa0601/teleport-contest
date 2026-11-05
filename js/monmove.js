@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectSkill, SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, BAG_OF_HOLDING, BLINDFOLD, BOOMERANG, CANDY_BAR, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEMBAS_WAFER, LEATHER_JACKET, LEASH, MAGIC_MARKER, MAGIC_WHISTLE, OILSKIN_SACK, PANCAKE, SACK, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, AXE, BATTLE_AXE, DART, IRON_SHOES, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, } from './object_data.js';
 import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
@@ -34,7 +35,7 @@ import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.j
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
 import { heroIsUnaware } from './senses.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, stack_object, isContainer } from './mkobj.js';
+import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
 import { dissolveBars } from './projectile_bars.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';

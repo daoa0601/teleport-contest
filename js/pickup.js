@@ -11,7 +11,7 @@ import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription, makePlural, withIndefiniteArticle, wishedObjectPresentation, ownedObjectAction, definiteObjectAction, ownedObjectQuestion, corpseName, killerObjectName, } from './objnam.js';
 import { autokey, autoUnlockFlags, pickLock, isForceableWeapon } from './lock.js';
 import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL } from './const.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack } from './invent.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
 import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout } from './mkobj.js';
 import { hitFloorWithObject } from './dothrow.js';
@@ -20,9 +20,9 @@ import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen,
 import { pline, plineWithContinuation } from './pline.js';
 import { showMultiSelectWindow, showDisclosureOverlay, showChoiceWindow, showTextWindow } from './windows.js';
 import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';
-import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
+import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNoQuit, getLine, promptChoice, tty_yn_function } from './query.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand, floorReachProblem } from './engrave.js';
 import { hideHeroUnder, finishEnvironmentalMonsterDeath } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, SELL_DELIBERATE, SELL_DONTSELL, currentShopResident, stolenValue, sellHeroDroppedObject, warnAboutRemovedPick, deleteObject } from './shk.js';
@@ -35,11 +35,11 @@ import { triggerChestTrap } from './chest_trap.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { waterbodyName } from './pager.js';
-import { feelPetrifyingCorpse, willFeelPetrifyingCorpse, handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
+import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
 import { rn2, rnd, d } from './rng.js';
 import { heroHandName } from './body_parts.js';
@@ -48,7 +48,6 @@ import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsUnaware } from './senses.js';
-import { lookInsideSwallower } from './swallowed_inventory.js';
 import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage } from './trap.js';
 import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
 import { containerContents } from './end.js';
@@ -298,7 +297,7 @@ async function choosePickupObjects(source, objects, count, { autoSelect = true, 
             // query_objlist() names preceding entries before reverting to look_here().
             if (feelCockatrice && willFeelPetrifyingCorpse(object)) {
                 if (source.monster)
-                    await lookInsideSwallower(source.monster);
+                    await lookHere(0);
                 else
                     await dolook();
                 return [];

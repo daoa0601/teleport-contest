@@ -28,10 +28,7 @@ import { heroHasFreeHand } from './engrave.js';
 import { mswings_verb } from './mhitu.js';
 import { rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
-import {
-    clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject,
-    objectIsFlammable, splitObjectStack, objectWeight, placeObject, stack_object,
-} from './mkobj.js';
+import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject, objectIsFlammable, splitObjectStack, objectWeight, placeObject } from './mkobj.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -45,7 +42,7 @@ import {
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject, stack_object } from './invent.js';
 import { rejectMonsterShadeContact, applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitHeroWithObject } from './hero_object_hit.js';

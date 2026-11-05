@@ -59,7 +59,7 @@ import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed } from './polyself.js';
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject, stack_object } from './invent.js';
 import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt } from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { impossible } from './diagnostics.js';
@@ -72,7 +72,7 @@ import {
     floorObjectDescription, freeInventoryObject,
 } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
-import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject, stack_object} from './mkobj.js';
+import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject } from './mkobj.js';
 import { getLine, tty_yn_function, promptYesNo } from './query.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { showMultiSelectWindow } from './windows.js';

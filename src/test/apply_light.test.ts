@@ -29,7 +29,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { NO_MINVENT } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { holdAnotherObject } from '../js/hero_hold_object.js';
+import { holdAnotherObject } from '../js/invent.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { VIBRATING_SQUARE } from '../js/const.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';

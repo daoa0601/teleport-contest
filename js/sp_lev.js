@@ -4,10 +4,11 @@
 // fill_special_room, check_room, create_room, create_subroom,
 // dig_corridor, wallify_map, and themed-room map placement.  The des.*
 // binding table and the Lua level/themeroom sessions live in sp_lev_lua.ts.
+import { stack_object } from './invent.js';
 import { RANDOM_CLASS, GEM_CLASS } from './objclass.js';
 import { objectMerge, EGG, TIN, FIGURINE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE, } from './object_data.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight, remove_object, stack_object } from './mkobj.js';
+import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight, remove_object } from './mkobj.js';
 import { isRoom } from './map_types.js';
 import { deleteTrap, maketrap } from './trap.js';
 import { lookupNovelTitle, setMonsterGivenName } from './do_name.js';

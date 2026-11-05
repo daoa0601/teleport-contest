@@ -44,7 +44,7 @@ import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, req
 import { captureThrownObjectFlight, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
 import type { ProjectileFlightCapture } from './thrown_object.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
-import {mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, stack_object, isContainer} from './mkobj.js';
+import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { convertSecretDoor, findTrap } from './detect.js';
 import { heroPolyGender, heroSpecies } from './polyself.js';
@@ -75,7 +75,7 @@ import type { MapLocation, Position, Stairway } from './map_types.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject, hurtleHero } from './dothrow.js';
 import type { GoldContactOptions } from './dothrow.js';
-import { inventoryItemDescription, delobj, currency } from './invent.js';
+import { inventoryItemDescription, delobj, currency, stack_object } from './invent.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';

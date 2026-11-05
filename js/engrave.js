@@ -38,7 +38,7 @@ import { explodeWand } from './read.js';
 import { chargeUnpaidUsage } from './shk.js';
 import { objectTypeKnown } from './o_init.js';
 import { dryTowel } from './weapon.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, } from './objnam.js';
 import { addExperience } from './exper.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';

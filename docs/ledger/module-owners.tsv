@@ -15,6 +15,7 @@ src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
 src/js/do.ts	do.c
 src/js/do_name.ts	do_name.c
+src/js/do_wear.ts	do_wear.c
 src/js/dogmove.ts	dogmove.c
 src/js/dokick.ts	dokick.c
 src/js/draft_message.ts	dig.c

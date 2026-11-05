@@ -19,7 +19,7 @@ import { heroHasFreeHand } from './engrave.js';
 import { mswings_verb } from './mhitu.js';
 import { rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
-import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject, objectIsFlammable, splitObjectStack, objectWeight, placeObject, stack_object, } from './mkobj.js';
+import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject, objectIsFlammable, splitObjectStack, objectWeight, placeObject } from './mkobj.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_WEP } from './const.js';
 import { isok } from './cmd.js';
@@ -28,7 +28,7 @@ import { canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject, stack_object } from './invent.js';
 import { rejectMonsterShadeContact, applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitHeroWithObject } from './hero_object_hit.js';

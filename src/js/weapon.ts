@@ -36,12 +36,12 @@ import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { game, requireLiveGame } from './gstate.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, stack_object } from './invent.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterCanTouchObject } from './mon.js';
-import { unlinkMonsterObject, placeObject, stack_object} from './mkobj.js';
+import { unlinkMonsterObject, placeObject } from './mkobj.js';
 import { adjustedMonsterLevel } from './makemon.js';
 import { monsterName } from './do_name.js';
 import {

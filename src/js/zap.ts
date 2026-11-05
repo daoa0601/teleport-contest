@@ -33,7 +33,7 @@ import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './dete
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
 import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
-import { chooseInventoryObject } from './invent.js';
+import { chooseInventoryObject, stack_object } from './invent.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel, Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR, G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 
@@ -68,7 +68,7 @@ import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
-import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject, isContainer, remove_object, sweepFloorPile} from './mkobj.js';
+import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, placeObject, isContainer, remove_object, sweepFloorPile } from './mkobj.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { applySupportedPotionVapor } from './potion.js';
@@ -88,7 +88,7 @@ import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID,
 import type { DamageType } from './monster_attack_types.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventorySection } from './windows.js';
-import { useUpFloorObject } from './floor_consumption.js';
+import { useUpFloorObject } from './invent.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster, SavedMonsterTraits } from './monster_types.js';
@@ -153,7 +153,7 @@ import { requireGameLevel } from './gstate.js';
 import { applyHeroLocationEffects, burnAwayHeroSlime, endVoluntaryMultiTurn } from './hack.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { setHeroGrip } from './mon.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { zapHeroInvisible } from './hero_invisibility.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import type { HeroLiquidMonsterDeathOutcome, HeroMonsterDeathContext } from './hero_monster_death.js';

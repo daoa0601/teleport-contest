@@ -625,24 +625,6 @@ export async function uqwepgone(state = game) {
         return;
     await setworn(null, W_QUIVER, state);
 }
-// C invent.c:merged() `#adjust' fixup for merging wielded darts, daggers,
-// &c: both stacks might be worn in competing slots; merger preference
-// (regardless of which is which) is primary weapon, then alternate, then
-// quiver, all through raw setworn()/setnotworn().
-export async function mergeHeroWeaponSlots(survivor, incoming, state = game) {
-    if (!incoming.owornmask || survivor.where !== 'inventory')
-        return;
-    const combined = (survivor.owornmask ?? 0) | incoming.owornmask;
-    const wmask = combined & W_WEP ? W_WEP
-        : combined & W_SWAPWEP ? W_SWAPWEP
-            : combined & W_QUIVER ? W_QUIVER : 0;
-    if (!wmask)
-        throw new Error('merging objects in non-weapon slots');
-    if (((survivor.owornmask ?? 0) & ~wmask) !== 0)
-        await setnotworn(survivor, state);
-    await setworn(survivor, wmask, state);
-    await setnotworn(incoming, state);
-}
 // ── Two-weapon combat (folded from two_weapon.js) ──
 // C refs: wield.c can_twoweapon(), dotwoweapon(), drop_uswapwep(),
 // untwoweapon().

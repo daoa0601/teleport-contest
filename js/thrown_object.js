@@ -1,3 +1,4 @@
+import { stack_object } from './invent.js';
 import { cant_drown } from './mondata.js';
 // Objects thrown by the hero.
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
@@ -29,7 +30,7 @@ import { distantObjectName, objectName, ownedObjectName, withIndefiniteArticle }
 import { isPick, isLauncherAmmunition, launcherMatchesAmmo } from './object_properties.js';
 import { MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact, settleThrownShopObject } from './dothrow.js';
-import { splitObjectStack, objectWeight, placeObject, stack_object } from './mkobj.js';
+import { splitObjectStack, objectWeight, placeObject } from './mkobj.js';
 import { objectIsVulnerableToErosion } from './trap.js';
 import { closedDoor } from './monmove.js';
 import { projectileHitsIronBars } from './projectile_bars.js';

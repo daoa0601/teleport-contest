@@ -1768,7 +1768,7 @@ gcrownu	u_gname	inlined	crownHero obtains the hero's deity with deityName(hero.u
 gcrownu	unrestrict_weapon_skill	inlined	crownHero calls unrestrictHeroSkill for the alignment weapon skill and the enhanced weapon's own skill (divine_gifts.ts, weapon.ts)
 gcrownu	update_inventory	n/a	The pinned TTY build has no permanent inventory window; tty_update_inventory has no active body
 getspell	cmdq_pop	inlined	selectSpellToCast consumes the repeat or canned entry before opening a menu; non-key commands cancel while preserving bundled answer tails (spell_menu.ts)
-dispinv_with_action	display_inventory	inlined	reportSubset consumes queued inventory choices before its singleton or in-use menu, then opens the selected object's actions (invent.ts, inventory_queued_choice.ts)
+dispinv_with_action	display_inventory	inlined	reportSubset consumes queued inventory choices before its singleton or in-use menu, then opens the selected object's actions (invent.ts)
 query_classes	display_inventory	inlined	The inventory lookup consumes a queued choice through takeQueuedInventoryChoice or displays selectInventoryObject when no answer is queued (pickup.ts)
 can_grapple_location	dist2	inlined	chooseTarget compares squaredDistanceFromHero with the active grappling range (apply.ts)
 grease_ok	inaccessible_equipment	inlined	greaseSuggestion checks coveringEquipment for cloak, suit, and glove obstructions; the hands choice is suggested separately (apply.ts)
