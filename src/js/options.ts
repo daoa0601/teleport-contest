@@ -1,7 +1,9 @@
 // options.js — Parse .nethackrc options.
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
+// C options.c:optfn_fruit()/initoptions()/fruitadd(): the named-fruit
+// option and registry live here, beside the rest of the option handlers.
 
-import { ILLOBJ_CLASS, COIN_CLASS } from './objclass.js';
+import { ILLOBJ_CLASS, COIN_CLASS, FOOD_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import type { CharacterFacet, CharacterFilters } from './roles.js';
 import { clearrolefilter, createCharacterFilters, setrolefilter } from './roles.js';
@@ -17,7 +19,7 @@ import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
 import { PosixRegex } from './posix_regex.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion, parseBoulderSymbolValue } from './option_values.js';
 import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
@@ -27,7 +29,10 @@ import type { StatusHiliteOperation } from './botl.js';
 import { countBindKeys, handlerRebindKeys } from './cmd.js';
 import { CommandBindings } from './command_bindings.js';
 import { reassignInventoryLetters } from './invent.js';
-import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
+import { fruitRegistry, fruitFromName, makeSingular, preferredFruitName } from './objnam.js';
+import { nameToMonster } from './mondata.js';
+import { OBJECT_NAMES, getObjectClassBounds } from './object_data.js';
+import type { Fruit, GameState } from './game_state.js';
 import { bot, checkGoldSymbol, reassessStatusFields } from './botl.js';
 import {
     currentBoulderSymbol, docrt, flush_screen,
@@ -3325,6 +3330,122 @@ async function editSortLoot(): Promise<void> {
     const mode = String.fromCharCode(selection.key);
     if (isLootSortMode(mode)) game.flags.sortloot = mode;
 }
+
+// C options.c:optfn_fruit(): the goodfruit normalization — mungspaces, the
+// PL_FSIZ copy, sanitize_name, and the "slime mold" fallback.
+export function normalizePreferredFruitName(name: string, state: FruitNameSettings = game): string {
+    const firstLine = String(name).split('\n', 1)[0] ?? '';
+    const spaced = firstLine.replace(/\t/g, ' ')
+        .replace(/ +/g, ' ').replace(/^ | $/g, '');
+    return sanitizedFruitName(spaced.split(',', 1)[0] ?? '', state) || 'slime mold';
+}
+
+// C options.c:optfn_fruit(). Runtime option changes can rename an unused
+// current entry. Once an object or mimic represents it, its existing identity
+// remains part of the history.
+export function changePreferredFruit(name: string, state: GameState = game) {
+    const value = (String(name).split('\n', 1)[0] ?? '').replace(/\t/g, ' ')
+        .replace(/ +/g, ' ').replace(/^ | $/g, '');
+    const existing = fruitFromName(value, { state });
+    const replacement = !existing && !state.flags.made_fruit
+        ? fruitFromName(preferredFruitName(state), { state }) : null;
+    if (!existing && !replacement && highestFruitId(state) >= 100)
+        return { changed: false, message: "Doing that so many times isn't very fruitful." };
+    state.fruitName = normalizePreferredFruitName(value, state);
+    addFruit(state.fruitName, { preferred: true, replacement, state });
+    return { changed: true, message: `Fruit is now "${state.fruitName}".` };
+}
+
+// C options.c:initoptions(): the default fruit before any fruit option.
+export function initializeFruitRegistry(name = 'slime mold', state: GameState = game) {
+    state.fruits = [];
+    state.fruitName = normalizePreferredFruitName(name, state);
+    addFruit(state.fruitName, { preferred: true, initial: true, state });
+}
+
+interface AddFruitOptions {
+    preferred?: boolean;
+    initial?: boolean;
+    replacement?: Fruit | null;
+    state?: GameState;
+}
+
+// C options.c:fruitadd(). Returns the fid of the fruit type; if that type
+// already exists, it returns the fid of that one; if it does not exist, it
+// adds a new fruit type to the chain and returns the new one. External names
+// (bones and orc loot) already have their singular identity; adding one never
+// changes the player's preferred fruit.
+export function addFruit(name: string, { preferred = false, initial = false, replacement = null, state = game }: AddFruitOptions = {}) {
+    let value: string;
+    if (preferred) {
+        // C fruitadd()'s user_specified branch: force singular, then reject
+        // other foods (globs skip a size prefix), empty or numeric names, food
+        // attributes, and monster tins/corpses/eggs by prefixing "candied ".
+        value = (makeSingular(name).split(',', 1)[0] ?? '').slice(0, FRUIT_NAME_BYTES);
+        const size = value.startsWith('small ') || value.startsWith('large ') ? 6
+            : value.startsWith('medium ') ? 7 : value.startsWith('very large ') ? 11 : 0;
+        const { first, last } = getObjectClassBounds(FOOD_CLASS);
+        const foodNames = OBJECT_NAMES.slice(first, last + 1);
+        // initoptions_finish precedes init_objects: C's food-class bases are
+        // still zero, so the food-name conflict check starts at runtime.
+        const food = !initial && foodNames.some(foodName => {
+            const actual = foodName === 'slime mold' ? 'fruit' : foodName;
+            return actual === value || size && actual === value.slice(size);
+        });
+        const numeric = /^\d*(?:$|\s)/.test(value);
+        const monsterTin = value.startsWith('tin of ')
+            && (value.slice(7) === 'spinach' || nameToMonster(value.slice(7)) >= 0);
+        const monsterProduct = /(?: corpse| egg)$/.test(value) && nameToMonster(value) >= 0;
+        if (food || numeric || /^(?:cursed |uncursed |blessed |partly eaten )/.test(value)
+            || monsterTin || value === 'empty tin' || value === 'glob'
+            || size && value.slice(size) === 'glob' || monsterProduct)
+            value = `candied ${value}`.slice(0, FRUIT_NAME_BYTES);
+        state.fruitName = value;
+        state.flags.made_fruit = false;
+        if (replacement) {
+            replacement.fname = value;
+            state.context.current_fruit = replacement.fid;
+            return replacement.fid;
+        }
+    } else {
+        // Not user-specified, so assumed to be from bones (or orc gang).
+        value = sanitizedFruitName(name, state);
+        state.flags.made_fruit = true;
+    }
+    const existing = fruitFromName(value, { state });
+    if (existing) {
+        if (preferred) state.context.current_fruit = existing.fid;
+        return existing.fid;
+    }
+    const highest = highestFruitId(state);
+    if (highest >= 127) return rnd(127);
+    const fruit = { fid: highest + 1, fname: value };
+    fruitRegistry(state).unshift(fruit);
+    if (preferred) state.context.current_fruit = fruit.fid;
+    return fruit.fid;
+}
+
+interface FruitNameSettings {
+    iflags?: Pick<InterfaceFlags, 'wc_eight_bit_input'>;
+}
+
+// C bones.c:sanitize_name(): strip text that could disrupt display.
+function sanitizedFruitName(name: string, state: FruitNameSettings): string {
+    const bytes = new TextEncoder().encode(String(name)).slice(0, FRUIT_NAME_BYTES);
+    return [...bytes].map(byte => {
+        const low = byte & 127;
+        if (low < 32 || low === 127) return '.';
+        return byte > 127 && !state.iflags?.wc_eight_bit_input ? '_' : String.fromCharCode(byte);
+    }).join('');
+}
+
+// fruitadd()'s highest_fruit_id and fruit_from_name()'s out-parameter share
+// this highest-fid scan over the registry.
+function highestFruitId(state: GameState) {
+    return fruitRegistry(state).reduce((highest, fruit) => Math.max(highest, fruit.fid), 0);
+}
+
+const FRUIT_NAME_BYTES = 31; // PL_FSIZ includes the trailing NUL.
 
 async function editFruitOption(giveMessage: boolean): Promise<void> {
     const name = await getLine('Set fruit to what?',

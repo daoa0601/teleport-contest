@@ -57,7 +57,6 @@ import { fireDamageObject, waterDamageObject, erodeObject, objectIsVulnerableToE
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { heroCanReachFloor } from './engrave.js';
 import { useUpFloorObject } from './invent.js';
-import { fruitName } from './fruit.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -111,8 +110,8 @@ import type { Monster } from './monster_types.js';
 import { tryCallObjectType, healHeroLegs } from './do.js';
 import {
     objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction,
-    objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming,
-    ownedObjectAction, ownedObjectName, simpleObjectName,
+    objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction,
+    ownedObjectName, simpleObjectName, fruitName,
 } from './objnam.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';

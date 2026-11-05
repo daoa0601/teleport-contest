@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { encyclopediaEntries } from '../js/encyclopedia.js';
-import { initializeFruitRegistry } from '../js/fruit.js';
+import { initializeFruitRegistry } from '../js/options.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an unfamiliar custom fruit uses the edible fruit encyclopedia entry', async () => {
     await freshObjectRoom();

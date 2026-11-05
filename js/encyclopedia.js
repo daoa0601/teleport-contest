@@ -2,8 +2,7 @@
 import { ENCYCLOPEDIA_ENTRIES } from './encyclopedia_data.js';
 import { BUFSZ } from './const.js';
 import { game } from './gstate.js';
-import { fruitFromName } from './fruit.js';
-import { makeSingular } from './objnam.js';
+import { fruitFromName, makeSingular } from './objnam.js';
 export function encyclopediaEntries(name, state = game) {
     return encyclopediaMatches(name, state).map(match => match.entry);
 }

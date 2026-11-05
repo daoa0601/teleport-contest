@@ -2,7 +2,7 @@ import { TOOL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { addFruit } from '../js/fruit.js';
+import { addFruit } from '../js/options.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import {
     AMULET_OF_YENDOR, BAG_OF_TRICKS, LAND_MINE, LEATHER_ARMOR, ORANGE,

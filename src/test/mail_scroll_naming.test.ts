@@ -6,7 +6,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { inventoryItemDescription, objectNeedsFullIdentification } from '../js/invent.js';
+import { inventoryItemDescription } from '../js/invent.js';
+import { objectNeedsFullIdentification } from '../js/objnam.js';
 import { game } from '../js/gstate.js';
 import { OBJECT_NAMES, SCR_IDENTIFY } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

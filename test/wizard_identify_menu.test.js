@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { objectNeedsFullIdentification } from '../js/invent.js';
+import { objectNeedsFullIdentification } from '../js/objnam.js';
 import { POT_EXTRA_HEALING, POT_HEALING, SCR_IDENTIFY } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
 import { ATR_BOLD, CLR_RED } from '../js/terminal.js';

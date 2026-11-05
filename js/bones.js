@@ -33,7 +33,7 @@ import { restoreLevelRegions } from './regions.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { deleteTrap } from './trap.js';
-import { addFruit } from './fruit.js';
+import { addFruit } from './options.js';
 import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt } from './dungeon.js';

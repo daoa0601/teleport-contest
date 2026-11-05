@@ -20,7 +20,7 @@ import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, resetUtrap, ma
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';
-import { addFruit } from './fruit.js';
+import { addFruit } from './options.js';
 import { set_tin_variety } from './eat.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './steed.js';
 import { nameObjectFromTopten } from './topten.js';

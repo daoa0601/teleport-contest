@@ -36,7 +36,6 @@ import { fireDamageObject, waterDamageObject, erodeObject, objectIsVulnerableToE
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { heroCanReachFloor } from './engrave.js';
 import { useUpFloorObject } from './invent.js';
-import { fruitName } from './fruit.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { possessiveName } from './hacklib.js';
@@ -66,7 +65,7 @@ import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHer
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { tryCallObjectType, healHeroLegs } from './do.js';
-import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction, objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, } from './objnam.js';
+import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction, objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, fruitName, } from './objnam.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';

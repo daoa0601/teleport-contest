@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DOOR, D_NODOOR, HWALL, PIT, SHOP_WALL_COST, STAIRS } from '../js/const.js';
-import { addFruit } from '../js/fruit.js';
+import { addFruit } from '../js/options.js';
 import { readObjectName } from '../js/objnam.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

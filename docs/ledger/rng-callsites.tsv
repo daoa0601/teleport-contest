@@ -433,7 +433,6 @@ src/js/fountain.ts	applyFountainSnakeActors	random	"[""5""]"	constant
 src/js/fountain.ts	resolveDippedCoinFate	random	"[""amountRange""]"	unproved
 src/js/fountain.ts	dipFountainSword	rn2	"[""3""]"	constant
 src/js/fountain.ts	dipFountainSword	rn2	"[""game.urole.key === 'knight' ? 6 : 30""]"	constant
-src/js/fruit.ts	addFruit	rnd	"[""127""]"	constant
 src/js/hack.ts	checkSlipperyIce	rn2	"[""propertyIsActive('coldResistance', game) ? 3 : 2""]"	constant
 src/js/timeout.ts	slipOrTrip	rn2	"[""10 + currentAttribute(A_DEX, game)""]"	invariant
 src/js/timeout.ts	slipOrTrip	rn2	"[""2""]"	constant
@@ -1848,6 +1847,7 @@ src/js/objnam.ts	readObjectName	rn2	"[""wishClasses.length""]"	constant
 src/js/objnam.ts	rndClass	rn2	"[""last - first + 1""]"	guarded
 src/js/objnam.ts	rndClass	rnd	"[""total""]"	unproved
 src/js/options.ts	chooseRandomPart	rn2	"[""parts""]"	guarded
+src/js/options.ts	addFruit	rnd	"[""127""]"	constant
 src/js/mkmaze.ts	stolen_booty	rn2	"[""10""]"	constant
 src/js/mkmaze.ts	stolen_booty	rn2	"[""10""]"	constant
 src/js/mkmaze.ts	stolen_booty	rn2	"[""2""]"	constant

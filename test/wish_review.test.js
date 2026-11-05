@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CORPSTAT_FEMALE, CORPSTAT_MALE, TREE, TREE_LOOTED, TREE_SWARM, W_NONDIGGABLE, W_NONPASSWALL, } from '../js/const.js';
-import { addFruit } from '../js/fruit.js';
+import { addFruit } from '../js/options.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hack.js';
 import { mksobj, placeCreatedObject } from '../js/mkobj.js';

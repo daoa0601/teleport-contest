@@ -12,7 +12,7 @@ import { races, roles } from '../../js/roles.js';
 import { initializeHeroSpecies } from '../../js/u_init.js';
 
 import { initializeMonsterVitals } from '../../js/allmain.js';
-import { initializeFruitRegistry } from '../../js/fruit.js';
+import { initializeFruitRegistry } from '../../js/options.js';
 import { DEFAULT_TEST_DATETIME } from './calendar.js';
 import { initializeHeroRoomMembership } from '../../js/u_init.js';
 
