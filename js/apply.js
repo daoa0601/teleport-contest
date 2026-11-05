@@ -38,10 +38,9 @@ import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uh
 import { removeWornHeroItem } from './hero_equipment.js';
 import { setHeroGrip, paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, isRider, } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting, } from './potion.js';
-import { hurtleHero, hurtleJumpTo } from './dothrow.js';
+import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
-import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout, } from './senses.js';
 import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
 import { heroStatusLine, monsterStatusLine } from './insight.js';
@@ -64,7 +63,6 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject, } from './object_properties.js';
 import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, singularObjectName, withIndefiniteArticle, } from './objnam.js';
-import { walkPathCells } from './path_walk.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline as syncPline, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage, } from './pline.js';
 import { propertyIsActive } from './properties.js';
 import { unpunishHero } from './read.js';

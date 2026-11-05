@@ -37,7 +37,6 @@ import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJE
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, finishHeroMonsterKill, isRider, zombieForm, } from './mon.js';
 import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
-import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt, selfTouchPetrifyingWeapons, } from './trap.js';
@@ -91,7 +90,7 @@ import { resurrectWizard } from './wizard.js';
 import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, collectLevelFollowers, } from './dog.js';
 import { deliverSpecialLevelMessages } from './level_change.js';
 import { descendFromLevitation } from './levitation_commands.js';
-import { do_attack } from './uhitm.js';
+import { do_attack, hitMonsterWithHeroObject } from './uhitm.js';
 import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer } from './mondata.js';
 import { LL_ACHIEVE, LL_DEBUG, G_GENOD, OBJECT_TIMER_KIND } from './const.js';
 import { rotCorpse } from './corpse_rot.js';
@@ -2312,6 +2311,15 @@ export async function applyBoulderPitEffects(boulder, trap, x, y, { state = game
     const buriedFloorObjects = await buryFloorObjectsAt(x, y, state, { publish });
     await newsym(x, y);
     return { finished: true, object: null, buriedFloorObjects };
+}
+// C do.c:flooreffects() calls hmon(HMON_THROWN, 1) on a boulder settling
+// into a pit, without thitmonst()'s accuracy, Dexterity exercise, missile
+// mulch, or thrown-object passive work.
+export async function hitMonsterWithSettlingBoulder(monster, boulder, { state = game, publish = plineWithContinuation, } = {}) {
+    const hit = await hitMonsterWithHeroObject(monster, boulder, {
+        state, publish, mode: 'thrown', dieRoll: 1,
+    });
+    return { heroDied: hit.heroDied };
 }
 function ignoresFallingBoulder(mnum) {
     return monsterPassesWalls(mnum) || monsterThrowsRocks(mnum);

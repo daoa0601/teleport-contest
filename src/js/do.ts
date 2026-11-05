@@ -60,7 +60,6 @@ import {
     isRider, zombieForm,
 } from './mon.js';
 import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
-import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import {
@@ -137,7 +136,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { descendFromLevitation } from './levitation_commands.js';
-import { do_attack } from './uhitm.js';
+import { do_attack, hitMonsterWithHeroObject } from './uhitm.js';
 import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer } from './mondata.js';
 import { LL_ACHIEVE, LL_DEBUG, G_GENOD, OBJECT_TIMER_KIND } from './const.js';
 import { rotCorpse } from './corpse_rot.js';
@@ -2390,6 +2389,18 @@ export async function applyBoulderPitEffects(boulder: GameObject, trap: Trap, x:
     const buriedFloorObjects = await buryFloorObjectsAt(x, y, state, { publish });
     await newsym(x, y);
     return { finished: true, object: null, buriedFloorObjects };
+}
+
+// C do.c:flooreffects() calls hmon(HMON_THROWN, 1) on a boulder settling
+// into a pit, without thitmonst()'s accuracy, Dexterity exercise, missile
+// mulch, or thrown-object passive work.
+export async function hitMonsterWithSettlingBoulder(monster: Monster, boulder: GameObject, {
+    state = game, publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<{ heroDied: boolean }> {
+    const hit = await hitMonsterWithHeroObject(monster, boulder, {
+        state, publish, mode: 'thrown', dieRoll: 1,
+    });
+    return { heroDied: hit.heroDied };
 }
 
 function ignoresFallingBoulder(mnum: number): boolean {

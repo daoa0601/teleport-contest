@@ -16,7 +16,7 @@ import { rhack } from '../js/cmd.js';
 import { backfireWand } from '../js/zap.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { hitMonsterWithAppliedWeapon, hitMonsterWithThrownObject } from '../js/hero_ranged_attack.js';
+import { hitMonsterWithAppliedWeapon, hitMonsterWithThrownObject } from '../js/dothrow.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

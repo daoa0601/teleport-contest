@@ -26,7 +26,7 @@ import { monsterHasShockResistance, monsterEnfolds, monsterIsAnimal, monsterIsUn
 import { MONSTER_ALIGNMENT, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { definiteObjectAction, makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectIsMetallic } from './object_properties.js';
-import { walkPathCells } from './path_walk.js';
+import { walkPathCells } from './dothrow.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn1, rn2, rnd, rnl, rn2Display } from './rng.js';
 import { addExperience, checkExperienceLevel } from './exper.js';

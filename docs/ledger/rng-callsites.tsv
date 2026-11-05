@@ -584,8 +584,8 @@ src/js/hero_object_hit.ts	hitHeroWithObject	rollOne	"[""20""]"	constant
 src/js/hack.ts	settlePetHeroDisplacement	rn2	"[""4""]"	constant
 src/js/hero_potion_hit.ts	applyDirectHeroPotion	rollDice	"[""potion.cursed ? 2 : 1"", ""potion.blessed ? 4 : 8""]"	constant
 src/js/hero_potion_hit.ts	hitHeroWithThrownPotion	rollOne	"[""2""]"	constant
-src/js/hero_ranged_attack.ts	hitMonsterWithRangedObject	rnd	"[""20""]"	constant
-src/js/hero_ranged_attack.ts	missRangedObject	rn2	"[""3""]"	constant
+src/js/dothrow.ts	hitMonsterWithRangedObject	rollOne	"[""20""]"	constant
+src/js/dothrow.ts	missRangedObject	rn2	"[""3""]"	constant
 src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""100""]"	constant
 src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""8""]"	constant
 src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""hero.mh""]"	guarded
@@ -604,9 +604,7 @@ src/js/zap.ts	zapHeroWithObject	rnd	"[""25""]"	constant
 src/js/zap.ts	zapHeroWithObject	rnd	"[""50""]"	constant
 src/js/hack.ts	confirmHeroStep	rnd	"[""TRAPNUM - 1""]"	constant
 src/js/timeout.ts	strangulationDialogue	rn2	"[""50""]"	constant
-src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	random	"[""3""]"	constant
-src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	rollOne	"[""20""]"	constant
-src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	rollOne	"[""25""]"	constant
+src/js/dothrow.ts	hitMonsterWithRangedObject	rollOne	"[""25""]"	constant
 src/js/trap.ts	climbOutOfPit	rn2	"[""2""]"	constant
 src/js/trap.ts	climbOutOfPit	rn2	"[""5""]"	constant
 src/js/hack.ts	heroCanMoveFromTrap	rn2	"[""5""]"	constant

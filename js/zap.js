@@ -140,7 +140,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMimicIdentity } from './uhitm.js';
 import { respondToImmediateMagic, wakeAttackedMonster } from './mon.js';
 import { MONSTER_SIZE } from './monster_data.js';
-import { hurtleMonster } from './dothrow.js';
+import { hurtleMonster, hitMonsterWithThrownObject } from './dothrow.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { setMimicAppearance } from './makemon.js';
 import { landFloorObject } from './floor_effects.js';
@@ -161,7 +161,6 @@ import { cleanupTransientLight, showTransientLight } from './transient_light.js'
 import { seeMonsterCloseup } from './mon.js';
 import { SINK, xdir, ydir } from './const.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { snuffThrownCandle } from './thrown_object.js';
 import { CLR_BROWN } from './terminal.js';
