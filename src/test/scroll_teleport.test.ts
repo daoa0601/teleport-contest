@@ -14,7 +14,7 @@ import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { levelTeleport, randomTeleportDepth } from '../js/level_teleport.js';
 import { levelDepthByName } from '../js/dungeon.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { AMULET_OF_LIFE_SAVING, DIAMOND, SCR_TELEPORTATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';

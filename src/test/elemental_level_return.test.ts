@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { COLNO, ROWNO, WATER, AIR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { createSpecialLevel } from './support/topology.js';

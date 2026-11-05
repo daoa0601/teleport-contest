@@ -57,7 +57,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { ceilingName, levelHasCeiling } from './dungeon.js';
 import { MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsDemon, monsterIsFemale, monsterIsHider, monsterIsHuman, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterPassesWalls, } from './mondata.js';
 import { addExperience } from './exper.js';
-import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
+import { gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import { recordLiteracy } from './literacy.js';
 import { getLine, promptYesNo } from './query.js';
 import { readOrdinaryObject } from './readable_objects.js';

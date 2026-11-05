@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { planInput } from './support/planned-input.js';

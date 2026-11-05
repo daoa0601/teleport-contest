@@ -14,7 +14,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { initializeMonsterWormBody } from '../js/worm.js';
 import { resurrectWizard } from '../js/wizard.js';
 import { restoreGame, saveGame } from '../js/save.js';

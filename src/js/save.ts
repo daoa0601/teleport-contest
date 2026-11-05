@@ -36,7 +36,7 @@ import { forgetTempleEntry } from './priest.js';
 import { restore_waterlevel } from './mkmaze.js';
 import { restoreLevelRegions } from './regions.js';
 import { oinit } from './o_init.js';
-import { restoreScheduledLevelChange } from './level_change.js';
+import { restoreScheduledLevelChange } from './do.js';
 import { recorderRestoredTime } from './calendar.js';
 import { restoreSavedTimers } from './timeout.js';
 import { restoreLevelChains } from './level_restore.js';

@@ -38,10 +38,10 @@ import { displayLiquidName } from './do_name.js';
 import { onQuestStart } from './quest.js';
 import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
 import type { ArrivalRegion, Position, Stairway } from './map_types.js';
-import type { gotoLevel as gotoLevelImplementation } from './level_change.js';
+import type { gotoLevel as gotoLevelImplementation } from './do.js';
 import { finishHeroDeath } from './end.js';
 
-// C do.c:goto_level()'s port signature (level_change.ts).
+// C do.c:goto_level()'s port signature (do.ts).
 type StairGotoLevel = typeof gotoLevelImplementation;
 
 interface PlacedLevel {

@@ -8,7 +8,7 @@ import { map_location } from '../js/display.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { game, requireGameDisplay, requireGameLevel, resetGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { mklev } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';

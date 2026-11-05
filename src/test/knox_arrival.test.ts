@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';

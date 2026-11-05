@@ -36,7 +36,7 @@ import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroIsUnaware } from './senses.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { delobj } from './invent.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { canDigDown, stairwayAt } from './mklev.js';
 import { createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously} from './mkobj.js';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import { DUST, LEVEL_TELEP, NO_MINVENT } from '../js/const.js';

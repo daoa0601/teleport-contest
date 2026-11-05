@@ -7,7 +7,7 @@ import { initializePet, migrateMonsterOffLevel } from '../js/dog.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { init_objects } from '../js/o_init.js';

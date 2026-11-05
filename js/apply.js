@@ -68,7 +68,7 @@ import { hitMonsterWithWand } from './zap.js';
 import { monsterStatusLine } from './insight.js';
 import { consumeInventoryItem, consumeObjectCharge, delobj, inventoryCommandLetter, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject, getobj } from './invent.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { lightDamage, lightRoom, transformMagicLampToOilLamp } from './light.js';
 import { finishTeleportArrival } from './teleport.js';

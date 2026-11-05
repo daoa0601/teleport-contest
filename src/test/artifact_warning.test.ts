@@ -14,7 +14,7 @@ import { removeMonsterFromGame } from '../js/mon.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { setHeroBlindnessTurns, syncDeafness } from '../js/senses.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { installPolymorphedHero } from './support/hero-state.js';

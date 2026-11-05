@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MAGIC_PORTAL, UTOTYPE_RMPORTAL } from '../js/const.js';
 import { game, resetGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { finishScheduledLevelChange, scheduleLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange, scheduleLevelChange } from '../js/do.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

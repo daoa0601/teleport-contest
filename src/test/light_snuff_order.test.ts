@@ -23,7 +23,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function freshDarkRoom() {

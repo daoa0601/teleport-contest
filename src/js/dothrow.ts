@@ -129,7 +129,7 @@ import { requireShopGame } from './shop_types.js';
 import { applyFloorEffects } from './floor_effects.js';
 import type { HeroTrapOptions } from './trap.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import type { LevelChangeOptions } from './level_change.js';
+import type { LevelChangeOptions } from './do.js';
 
 // C dothrow.c:multishot_class_bonus(): the role-specific volley bonuses.
 // PM_NINJA shares PM_SAMURAI's YUMI+YA case through C's fallthrough; the

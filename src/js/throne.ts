@@ -34,7 +34,7 @@ import { makePlural, verbForSubject, definiteName, objectCombatName, objectNameI
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './do.js';
 import { takeHeroGold } from './hero_gold.js';
-import { scheduleLevelChange } from './level_change.js';
+import { scheduleLevelChange } from './do.js';
 import { identifyPack } from './invent.js';
 import { msummon } from './minion.js';
 import { makemonNear } from './mklev.js';

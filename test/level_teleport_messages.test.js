@@ -5,7 +5,7 @@ import { makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { levelTeleport } from '../js/level_teleport.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createStaffedShop } from './support/shop.js';

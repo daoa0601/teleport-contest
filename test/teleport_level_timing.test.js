@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { SCR_TELEPORTATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

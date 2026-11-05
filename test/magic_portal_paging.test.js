@@ -4,7 +4,7 @@ import { MAGIC_PORTAL } from '../js/const.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
+import { finishScheduledLevelChange, gotoLevel } from '../js/do.js';
 import { hurtleHero } from '../js/dothrow.js';
 import { activateMagicPortal } from '../js/teleport.js';
 import { addTrap } from './support/level-state.js';

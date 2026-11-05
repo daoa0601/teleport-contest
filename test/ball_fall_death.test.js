@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { HOLE, PANICLOG, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { unlinkObject } from '../js/mkobj.js';
 import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';

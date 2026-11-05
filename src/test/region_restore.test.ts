@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { createGasCloudSelection } from '../js/regions.js';

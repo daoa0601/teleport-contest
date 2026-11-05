@@ -118,7 +118,7 @@ import { mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsF
     updateIceObjectTimersAt } from './mkobj.js';
 import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt } from './dig.js';
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
-import { gotoLevel, scheduleLevelChange } from './level_change.js';
+import { gotoLevel, scheduleLevelChange } from './do.js';
 import {
     hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord,
     propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill,

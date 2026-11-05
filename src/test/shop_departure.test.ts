@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { DOOR, SHARED, SHOPBASE, STAIRS } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { finishEnvironmentalMonsterDeath, killGenocidedMonster, removeMonsterFromGame } from '../js/mon.js';
 import { buryObject } from '../js/dig.js';

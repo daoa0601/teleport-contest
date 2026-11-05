@@ -7,7 +7,7 @@ import { map_location, map_object } from '../js/display.js';
 import { mapLevel } from '../js/detect.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { mklev } from '../js/mklev.js';

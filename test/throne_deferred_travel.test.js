@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { THRONE, UTOTYPE_DEFERRED } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

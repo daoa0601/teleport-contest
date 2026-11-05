@@ -11,7 +11,7 @@ import { CORPSE } from '../js/object_data.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import {placeObjectSynchronously} from '../js/mkobj.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { untimedCorpse } from './support/game-objects.js';

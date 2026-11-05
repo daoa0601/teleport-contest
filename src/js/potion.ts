@@ -89,7 +89,7 @@ import { heroCanBeSlimed, newuhs, eatmupdate, fix_petrification } from './eat.js
 import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestruction, poly_obj, polymorphMonsterFromMagic } from './zap.js';
 import { showEnlightenment } from './insight.js';
 import type { InventoryClassification } from './invent.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { floatingAbove } from './levitation_commands.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';

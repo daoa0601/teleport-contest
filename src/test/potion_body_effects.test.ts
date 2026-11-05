@@ -11,7 +11,7 @@ import { newExperienceThreshold } from '../js/exper.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { startHeroSickness } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, POT_ACID, POT_GAIN_LEVEL,
     POT_OIL, POT_POLYMORPH, POT_SICKNESS, POT_WATER } from '../js/object_data.js';

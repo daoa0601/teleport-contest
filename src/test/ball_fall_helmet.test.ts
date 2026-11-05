@@ -6,7 +6,7 @@ import { rhack } from '../js/cmd.js';
 import { HOLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { ELVEN_LEATHER_HELM, HELMET } from '../js/object_data.js';
 import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';

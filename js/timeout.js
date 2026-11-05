@@ -36,7 +36,7 @@ import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.j
 import { extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenSlime, heroIsPolymorphed, heroIsUnchanging, heroSpecies, polymonHero, returnHeroToHumanForm, } from './polyself.js';
 import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';

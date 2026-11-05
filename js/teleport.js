@@ -52,7 +52,7 @@ import { reviveCorpseImmediately } from './corpse_revival.js';
 import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { unlinkObject, placeObject } from './mkobj.js';
-import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
+import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import { monsterIsAmphibious, monsterIsSwimmer, monsterPassesWalls, monsterIsAmorphous, monsterThrowsRocks, is_lord, is_prince, monsterHasEyes, monsterIsCovetous, monsterIsEel, monsterCanTeleport, monsterControlsTeleport, monsterIsRider, } from './mondata.js';
 export function requireLevel(state) {
     if (!state.level)

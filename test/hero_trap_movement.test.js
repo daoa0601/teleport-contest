@@ -9,7 +9,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM, SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD, TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, Upolyd, VIBRATING_SQUARE, LAVAPOOL, TT_BEARTRAP, TT_LAVA, } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { GameMap } from '../js/game.js';

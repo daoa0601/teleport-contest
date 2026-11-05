@@ -7,7 +7,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
-import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
+import { finishScheduledLevelChange, gotoLevel } from '../js/do.js';
 import { activateMagicPortal } from '../js/teleport.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { answerPrompts } from './support/input-boundaries.js';

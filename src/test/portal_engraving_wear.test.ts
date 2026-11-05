@@ -5,7 +5,7 @@ import { DUST, MAGIC_PORTAL } from '../js/const.js';
 import { makeEngravingAt, engravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { finishScheduledLevelChange } from '../js/level_change.js';
+import { finishScheduledLevelChange } from '../js/do.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
 

@@ -6,7 +6,7 @@ import type { GameState, QuestStatus } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { nhgetch } from './input.js';
 import { canSeeMonster, flush_screen } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requireInitializedGame, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from '../js/object_data.js';
 import { selectHandToHandWeapon } from '../js/weapon.js';

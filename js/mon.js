@@ -61,7 +61,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound } from './role_monsters.js';
 import { expelHero } from './hero_expulsion.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
-import { finishScheduledLevelChange } from './level_change.js';
+import { finishScheduledLevelChange } from './do.js';
 import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
 import { LL_ACHIEVE, LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { recordAchievement } from './insight.js';

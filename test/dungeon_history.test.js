@@ -3,7 +3,7 @@ import test from 'node:test';
 import { FOUNTAIN } from '../js/const.js';
 import { map_location } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { readDungeonOverview } from './support/dungeon-overview.js';

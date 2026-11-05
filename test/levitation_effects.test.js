@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { TT_BEARTRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty } from '../js/properties.js';
 import { artifactByName } from '../js/artifacts.js';

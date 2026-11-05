@@ -37,7 +37,7 @@ import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
 import { descendFromLevitation } from './levitation_commands.js';
 import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, nearCapacity, SLT_ENCUMBER, showGetposTip, shouldShowGetposTip } from './hack.js';
 import { propertyIsActive } from './properties.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { inventoryReport } from './invent.js';
 import { isContainer} from './mkobj.js';
 

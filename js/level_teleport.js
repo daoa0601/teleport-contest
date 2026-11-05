@@ -10,7 +10,7 @@ import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroControlsTeleport } from './teleport.js';
 import { heroSpecies } from './polyself.js';
-import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
+import { gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import { propertyIsActive } from './properties.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { rn2, rnd, rnl } from './rng.js';
