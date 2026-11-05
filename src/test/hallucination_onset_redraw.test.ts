@@ -59,10 +59,32 @@ void test('hallucination onset redraws each visible monster as the next random s
         'the second redrawn monster takes the next random species');
 });
 
-// C display.h random_monster(rng) is rng(NUMMONS), so a hallucinated
-// monster can be any species including the special ones past SPECIAL_PM;
-// the glyph and color tables cover the whole draw.
-void test('the hallucination species draw covers the whole monster table', async () => {
-    assert.ok(MONSTER_COLOR.length > SPECIAL_PM,
-        'the draw range includes the special species');
+// C display.h random_monster(rng) is rng(NUMMONS), which spans the whole
+// monster table: the special species from SPECIAL_PM (permonst.h: the worm
+// tail, player monsters, and the quest castes that are never generated
+// randomly) are drawn like any other hallucinated form, with their own
+// glyph and color.
+void test('a hallucinated redraw can show a special species with its own glyph and color', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.level.flags.rndmongen = false;
+    const watcher = await createMonsterAt('orc', 11, 9);
+
+    let seed = 1n;
+    let special = -1;
+    for (; seed < 4000n && special < SPECIAL_PM; seed++) {
+        initRng(seed);
+        special = rn2Display(MONSTER_COLOR.length);
+    }
+    assert.ok(special >= SPECIAL_PM && special < MONSTER_COLOR.length,
+        'a seed must exist whose first species draw is a special species');
+    const expected = expectedSpeciesGlyph(special);
+
+    initRng(seed - 1n);
+    await makeHallucinated(20, { talk: false });
+    await flush_screen(1);
+
+    const cell = requireScreenCell(watcher.mx - 1, watcher.my + 1);
+    assert.deepEqual({ ch: cell.ch, color: cell.color }, expected,
+        'the onset redraw displays the drawn special species');
 });
