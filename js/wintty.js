@@ -3,8 +3,6 @@
 // Every mapped wintty.c function has one TS counterpart here, in wintty.c's
 // source order. Status content decisions live in botl.ts; glyph choice and
 // vision live in display.ts. Functions whose browser port lives elsewhere:
-//   getret()/tty_suspend_nhwindows()/tty_exit_nhwindows() -> config_errors.ts
-//                     and save.ts (browser lifecycle seams)
 //   tty_clear_nhwindow(WIN_MESSAGE)/tty_create_nhwindow(NHW_MESSAGE)/
 //   tty_display_nhwindow(WIN_MESSAGE)   -> tty_topline.ts (topl.c module)
 //   tty_putstr()   -> updateTopline (tty_topline.ts, NHW_MESSAGE) and
@@ -13,6 +11,7 @@
 //   g_putch()      -> the captured glyph cells in game_display.ts/display.ts
 //   tty_raw_print()/tty_raw_print_bold() -> pline.ts rawPrint, end.ts scores
 //   tty_nhgetch()/tty_nh_poskey() -> input.ts (the browser input seam)
+//   tty_init_nhwindows()/tty_askname() -> jsmain.ts (the browser entry)
 //   tty_display_file() -> pager.ts displayHelpFile (imports the cmd map)
 //   process_text_window() -> the paging drivers in windows.ts plus
 //                            paintMenuPage's putstr-rows branch below
