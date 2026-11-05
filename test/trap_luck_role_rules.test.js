@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { triggerChestTrap, } from '../js/trap.js';
+import { triggerChestTrap } from '../js/trap.js';
 void test('a carried luckstone protects against a chest trap through its bonus luck', async () => {
     for (const carryLuckstone of [false, true]) {
         await freshObjectRoom({ hero: { uluck: 10, moreluck: 0 } });

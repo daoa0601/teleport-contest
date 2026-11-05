@@ -17,7 +17,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createRoomLevel } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { checkSpecialRoom } from '../js/hack.js';
-import { animateStatue, } from '../js/trap.js';
+import { animateStatue } from '../js/trap.js';
 for (const petrified of [false, true]) {
     void test(`a shopkeeper restored from ${petrified ? 'a statue' : 'a corpse'} owns stock and bills purchases again`, async () => {
         await freshObjectRoom();
