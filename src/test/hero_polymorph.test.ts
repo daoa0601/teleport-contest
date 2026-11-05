@@ -16,7 +16,7 @@ import { heroIsSick } from '../js/potion.js';
 import { startHeroSickness } from '../js/potion.js';
 import { morehungry } from '../js/eat.js';
 import { dotrap } from '../js/trap.js';
-import { retouchEquipment } from '../js/hero_retouch.js';
+import { retouchEquipment } from '../js/artifacts.js';
 import { polymorphHero } from '../js/polyself.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { pushKeys, resetInputState } from '../js/input.js';

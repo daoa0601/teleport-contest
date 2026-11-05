@@ -1323,7 +1323,7 @@ export async function touchArtifactByHero(
     return { ...result, damage, died };
 }
 
-// C artifact.c:Mb_hit(): effect index, damage dice, and every defender case.
+// Options for the Magicbane hit below.
 
 export interface MagicbaneHitOptions {
     state: GameState;
@@ -1342,6 +1342,7 @@ type MagicbaneEffect = 'probe' | 'stun' | 'scare' | 'cancel';
 
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 
+// C artifact.c:Mb_hit(): effect index, damage dice, and every defender case.
 export async function applyMagicbaneHit(
     object: GameObject,
     defender: ArtifactHitDefender,

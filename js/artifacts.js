@@ -879,6 +879,7 @@ export async function touchArtifactByHero(object, artifact = artifactById(object
     return { ...result, damage, died };
 }
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
+// C artifact.c:Mb_hit(): effect index, damage dice, and every defender case.
 export async function applyMagicbaneHit(object, defender, damage, bonusApplied, { state, attacker, visible, dieRoll, hitOnHead, targetName, describeTarget, publish, random, rollOne, }) {
     const enchantment = object.spe ?? object.enchantment ?? 0;
     let scareDieRoll = 4;
