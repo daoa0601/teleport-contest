@@ -38,7 +38,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroCanReachFloor, readEngravingAt } from './engrave.js';
 import { surfaceName } from './dungeon.js';
 import { stairwayDescription } from './mklev.js';
-import { deityName } from './alignment.js';
+import { deityName } from './pray.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';
 import { visibleRegionAt } from './regions.js';

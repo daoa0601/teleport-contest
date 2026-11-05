@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { deityName } from '../js/alignment.js';
+import { deityName } from '../js/pray.js';
 import { ALTAR, AM_NEUTRAL, ARMORSHOP, ROOMOFFSET, TEMPLE } from '../js/const.js';
 import { mapLevel } from '../js/detect.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

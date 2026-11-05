@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { hallucinatedDeityName } from '../js/alignment.js';
+import { hallucinatedDeityName } from '../js/pray.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { roles } from '../js/roles.js';
 import { freshObjectRoom } from './support/object-room.js';

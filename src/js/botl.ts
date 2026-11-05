@@ -21,7 +21,6 @@ import type { GameObject } from './object_types.js';
 import type { InterfaceFlags, StatusHiliteRule } from './flags.js';
 import { depth as dungeonDepth, endgameLevelName } from './dungeon.js';
 import { activeObjectSymbols, objectClassSymbol } from './display.js';
-import { rankOf } from './quest_pager.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { heroIsSick, heroIsSliming } from './potion.js';
 import { heroFormSticks } from './polyself.js';
@@ -32,7 +31,7 @@ import { heroIsPetrifying } from './stoning.js';
 import { artifactById } from './artifacts.js';
 import { isBimanualObject } from './object_properties.js';
 import { weaponDescription } from './weapon.js';
-import { newExperienceThreshold } from './exper.js';
+import { experienceRankIndex, newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
@@ -250,6 +249,20 @@ export function timebot(): void {
     display.statusLines = [first, layout.text];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
+}
+
+// C botl.c:rank_of(). The level picks the rank slot; a female hero reads
+// the female title when the table has one.
+export function rankOf(level: number, g: GameState): string {
+    const titles = g.urole?.title ?? [];
+    for (let index = experienceRankIndex(level); index >= 0; index--) {
+        const title = titles[index];
+        if (!title) continue;
+        if (g.flags?.female && title.f) return title.f;
+        if (title.m) return title.m;
+    }
+    if (g.flags?.female && g.urole?.name.f) return g.urole.name.f;
+    return g.urole?.name.m ?? 'Player';
 }
 
 // C botl.c:rank_of(). A player monster's title from its level; mon_nam()

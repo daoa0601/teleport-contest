@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { turnUndeadByCallingOnDeity } from '../js/turn_undead.js';
+import { doturn } from '../js/pray.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -42,7 +42,7 @@ void test('a lawful priest destroys a zombie and frightens a tougher mummy', asy
     mummy.m_lev = 4;
     mummy.msleeping = 1;
     installPagerInput(resetInputState(), { expected: /Athena|zombie|mummy|turn|destroy/i, limit: 4 });
-    await turnUndeadByCallingOnDeity(game, {
+    await doturn(game, {
         random: range => range - 1,
     });
     assert.ok(zombie.mhp <= 0);
@@ -57,7 +57,7 @@ void test('a chaotic priest makes a weak undead monster peaceful', async () => {
     const zombie = await createMonsterAt(PM_HUMAN_ZOMBIE, 11, 10);
     zombie.m_lev = 4;
     zombie.msleeping = 1;
-    await turnUndeadByCallingOnDeity(game, {
+    await doturn(game, {
         random: range => range - 1,
     });
     assert.ok(zombie.mhp > 0);
@@ -132,5 +132,30 @@ void test('a confused #turn wakes its target before the faltering voice is annou
     assert.equal(zombie.mfrozen, 0);
     assert.equal(zombie.mcanmove, 1);
     assert.equal(zombie.mflee, 0);
+});
+void test('a #turn target that resists is woken but neither destroyed nor frightened', async () => {
+    await freshPriest(1);
+    requirePlayingGame(game);
+    const mummies = [
+        await createMonsterAt(PM_HUMAN_MUMMY, 11, 10),
+        await createMonsterAt(PM_HUMAN_MUMMY, 12, 10),
+        await createMonsterAt(PM_HUMAN_MUMMY, 13, 10),
+    ];
+    for (const mummy of mummies) {
+        mummy.m_lev = 4;
+        mummy.msleeping = 1;
+        mummy.mflee = 0;
+    }
+    installPagerInput(resetInputState(), { expected: /Athena|mummy|resist|chant/i, limit: 6 });
+    initRng(1n);
+    await doturn(game, { random: () => 0 });
+    assert.match(game._pending_message, /resists!/);
+    for (const mummy of mummies) {
+        assert.equal(mummy.mhp, mummy.mhpmax);
+        assert.equal(mummy.msleeping, 0);
+        assert.equal(mummy.mflee, 0);
+    }
+    assert.equal(game._helplessTurns ?? 0, 5);
+    assert.equal(game.context.move, 1);
 });
 //# sourceMappingURL=turn_undead.test.js.map

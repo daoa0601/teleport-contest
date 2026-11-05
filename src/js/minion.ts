@@ -5,7 +5,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import type { Monster, MinionData } from './monster_types.js';
 import type { PlayingGameState } from './game_state.js';
 import { artifactById } from './artifacts.js';
-import { deityName } from './alignment.js';
+import { deityName } from './pray.js';
 import { A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG } from './const.js';
 import { canSeeMonster, canSpotMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';

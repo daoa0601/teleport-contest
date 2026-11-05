@@ -2,7 +2,7 @@
 // noises and speech. C ref: sounds.c:dosounds(), dochat(), domonnoise(),
 // growl(), yelp(), whimper(), beg(), growl_sound().
 import { WEAPON_CLASS } from './objclass.js';
-import { hallucinatedDeityName } from './alignment.js';
+import { hallucinatedDeityName } from './pray.js';
 import { heroBloodName, heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
 import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd, } from './const.js';
 import { isok, commandResultCancelled, promptDirection, readDirectionKey } from './cmd.js';

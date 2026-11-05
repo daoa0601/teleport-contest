@@ -1,8 +1,5 @@
 file	function	callee	arguments	class
 src/js/do_wear.ts	applyAmuletOnEffects	rnd	"[""98""]"	constant
-src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""9""]"	constant
-src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.length""]"	constant
-src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
 src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""100""]"	constant
 src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""80 - (sessionIsNight(game.datetime) ? 20 : 0)""]"	constant
 src/js/timeout.ts	nhTimeout	rnd	"[""100""]"	constant
@@ -290,6 +287,9 @@ src/js/pray.ts	angryGods	rn2	"[""maximum""]"	guarded
 src/js/pray.ts	angryGods	rnz	"[""300""]"	constant
 src/js/pray.ts	curseHero	rn2	"[""2""]"	constant
 src/js/pray.ts	godVoice	rn2	"[""GOD_VOICES.length""]"	constant
+src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""9""]"	constant
+src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.length""]"	constant
+src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
 src/js/dog.ts	abusePet	rn2	"[""monster.mtame""]"	guarded
 src/js/dog.ts	abusePetAfterHeroHit	rnd	"[""damage""]"	guarded
 src/js/dog.ts	makePetWary	random	"[""(dog.abuse ?? 0) + 1""]"	unproved

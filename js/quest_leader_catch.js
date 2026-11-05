@@ -1,6 +1,6 @@
 // C dothrow.c:thitmonst()'s special-object handoff, before the attack roll.
 import { objectUnique, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, } from './object_data.js';
-import { deityName } from './alignment.js';
+import { deityName } from './pray.js';
 import { encumber_msg } from './pickup.js';
 import { STRAT_WAITMASK } from './const.js';
 import { isok } from './cmd.js';

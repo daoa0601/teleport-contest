@@ -51,7 +51,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { priestName } from './priest.js';
 import { shopkeeperName } from './shknam.js';
-import { monsterRank } from './botl.js';
+import { monsterRank, rankOf } from './botl.js';
 import { possessiveName } from './hacklib.js';
 import {
     monsterPossessive, monsterPronounGender, monsterSubjectPronoun, monsterHasProperName, monsterIsAnimal,
@@ -67,7 +67,6 @@ import { artifactByName, nameArtifact, setWieldedArtifactProperties } from './ar
 import type { Artifact } from './artifacts.js';
 import { withMapObject } from './map_object_description.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
-import { rankOf } from './quest_pager.js';
 import { rn2, rn2Display } from './rng.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';

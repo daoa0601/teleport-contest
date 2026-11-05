@@ -2,7 +2,7 @@
 // C ref: minion.c msummon(), dprince(), dlord(), and ndemon().
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
-import { deityName } from './alignment.js';
+import { deityName } from './pray.js';
 import { A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG } from './const.js';
 import { canSeeMonster, canSpotMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';

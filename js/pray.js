@@ -1,20 +1,21 @@
 // pray.c owner: prayer trouble detection and repair, divine wrath and gifts,
-// and altar sacrifice.  Folded from prayer_trouble/divine_wrath/divine_gifts/
-// sacrifice (pure move, no behavior change).
+// altar sacrifice, the #turn command, and the god-name helpers
+// (align_gname, halu_gname, align_gtitle).  Folded from prayer_trouble/
+// divine_wrath/divine_gifts/sacrifice/alignment/turn_undead (pure move, no
+// behavior change).
 import { RANDOM_CLASS, WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
-import { deityName } from './alignment.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
 import { heroIsPunished } from './ball.js';
 import { isRider } from './corpse_species.js';
-import { reviveCorpseForHero } from './zap.js';
+import { monsterResistsEffect, reviveCorpseForHero } from './zap.js';
 import { reviveCorpseImmediately } from './do.js';
-import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK } from './const.js';
+import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK } from './const.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
@@ -24,7 +25,7 @@ import { floorObjectDescription, chooseInventoryObject, confersLuck, consumeInve
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { useUpFloorObject } from './invent.js';
 import { LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './gamelog.js';
-import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
+import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { nomul, loseHeroHp, nearCapacity } from './hack.js';
 import { AT_ENGL, AD_BLND } from './monster_attack_types.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
@@ -34,14 +35,16 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { healHeroLegs } from './do.js';
 import { resetUtrap, announceTerrainRescue, animateStatue } from './trap.js';
 import { currentHungerState, init_uhunger } from './eat.js';
-import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
+import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
 import { demonLord, summonMinion } from './minion.js';
+import { setMonsterMalign } from './makemon.js';
 import { makemonNear } from './mklev.js';
 import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject } from './mkobj.js';
 import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { displayColorName, monsterName } from './do_name.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterThrowsRocks, heroResistsStoning, touchPetrifies, } from './mondata.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, heroResistsStoning, touchPetrifies, } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
+import { makeMonsterFlee } from './monmove.js';
 import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { isWeaponTool, isBimanualObject } from './object_properties.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './o_init.js';
@@ -52,7 +55,8 @@ import { punishHero, unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay } from './muse.js';
-import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
+import { nativeRoleAt, roles } from './roles.js';
+import { d, rn1, rn2, rn2Display, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './weapon.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
@@ -60,11 +64,12 @@ import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { attrcurse, rndcurse } from './throne.js';
 import { safe_teleds } from './teleport.js';
-import { turnUndeadByCallingOnDeity } from './turn_undead.js';
+import { cansee, couldsee } from './vision.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { newsym, see_monsters, shieldeff } from './display.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { purifyHeroLycanthropy } from './were.js';
+import { aggravateMonsters } from './wizard.js';
 import { isPoolOrLavaAt } from './dbridge.js';
 import { pline as printLine, plineWithContinuation as pline } from './pline.js';
 import { freeHeroFromBuriedBall } from './dig.js';
@@ -357,29 +362,197 @@ function currentAltar() {
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     return location.typ === ALTAR ? location : null;
 }
-function inHell() {
-    const game = requireInitializedGame();
-    return !!game.dungeons?.[game.u.uz.dnum]?.flags?.hellish;
+function inHell(state = game) {
+    const dnum = state.u?.uz?.dnum ?? -1;
+    return !!state.dungeons?.[dnum]?.flags?.hellish;
 }
 // C you.h:Luck; the local alias keeps the recorded rng-callsites argument
 // text (pleaseGod rn1/rn2) stable while reading the shared accessor.
 function luck() {
     return Luck(game.u);
 }
-// C ref: pray.c:doturn().
-export async function doturn() {
-    const role = game.urole?.key;
+// C pray.c's maybe_turn_mon_iter() class ladder: the xlev bonus each monster
+// class adds over the base of 6 (lichs are intentionally tougher than
+// zombies).
+const TURN_LEVEL_BY_CLASS = new Map([
+    [52, 6], // zombie
+    [39, 8], // mummy
+    [49, 10], // wraith
+    [48, 12], // vampire
+    [54, 14], // ghost
+    [38, 16], // lich
+]);
+// C pray.c:maybe_turn_mon_iter(). One #turn target: couldsee() and the
+// squared mdistu() range gate it, then the class ladder decides destruction,
+// peacefulness, or flight. Returns false when the hero dies mid-scan, which
+// C never needs because killed() ends the game instead.
+async function maybeTurnMonsterIter(monster, state, options, scan) {
+    const { finishMonsterKill, random } = options;
+    const heroLevel = state.u?.ulevel ?? 1;
+    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
+        return true;
+    const dx = (monster.mx ?? 0) - (state.u?.ux ?? 0);
+    const dy = (monster.my ?? 0) - (state.u?.uy ?? 0);
+    if (!couldsee(monster.mx, monster.my)
+        || dx * dx + dy * dy > scan.rangeSquared
+        || monster.mpeaceful
+        || !(monsterIsUndead(monster.mnum)
+            || monsterIsVampireShifter(monster)
+            || (heroLevel > MAXULEV / 2 && monsterIsDemon(monster.mnum))))
+        return true;
+    monster.msleeping = 0;
+    if (state.u.confused || (state.u.confusionTurns ?? 0) > 0) {
+        if (!scan.falterMessagesShown) {
+            await pline('Unfortunately, your voice falters.');
+            scan.falterMessagesShown = 1;
+        }
+        monster.mflee = 0;
+        monster.mfrozen = 0;
+        monster.mcanmove = 1;
+        return true;
+    }
+    if (monsterResistsEffect(monster, heroLevel, random)) {
+        await shieldeff(monster.mx, monster.my, state);
+        if (cansee(monster.mx, monster.my))
+            await pline(`${monsterName(monster, { state, capitalized: true })} resists!`);
+        return true;
+    }
+    const requiredLevel = TURN_LEVEL_BY_CLASS.get(MONSTER_SYMBOL[monster.mnum] ?? -1);
+    if (requiredLevel != null && heroLevel >= requiredLevel
+        && !monsterResistsEffect(monster, heroLevel, random)) {
+        if ((state.u?.ualign?.type ?? 0) < 0) {
+            monster.mpeaceful = 1;
+            setMonsterMalign(monster, state);
+        }
+        else { /* damn them */
+            await finishMonsterKill(monster, monster.mx, monster.my);
+        }
+        return true;
+    }
+    const flight = await makeMonsterFlee(monster, { state, random });
+    return !flight.heroDied;
+}
+// C pray.c:doturn().
+export async function doturn(state = game, { finishMonsterKill = finishHeroMonsterKill, random = rn2, } = {}) {
+    requirePlayingGame(state);
+    /* Knights & Priest(esse)s only please */
+    const role = state.urole?.key;
     if (role !== 'priest' && role !== 'knight') {
-        const spell = (game.spells || []).find(known => known.name === 'turn undead');
+        /* Try to use the "turn undead" spell. */
+        const spell = (state.spells || []).find(known => known.name === 'turn undead');
         if (!spell) {
             await printLine("You don't know how to turn undead!");
-            game.context.move = 0;
+            state.context.move = 0;
             return;
         }
         await castSpell(spell.otyp);
         return;
     }
-    await turnUndeadByCallingOnDeity(game);
+    if (!state.u.uconduct)
+        state.u.uconduct = {};
+    const priorCalls = state.u.uconduct.gnostic ?? 0;
+    state.u.uconduct.gnostic = priorCalls + 1;
+    if (!priorCalls)
+        recordGameLogEvent('rejected atheism by turning undead', { state, flags: LL_CONDUCT });
+    const deity = hallucinatedDeityName(state.u.ualign.type, state);
+    /* [What about needing free hands (does #turn involve any gesturing)?] */
+    if (!heroCanChant(state)) {
+        /* "evilness": "demons and undead" is too verbose and too precise */
+        const strangled = state.u?.strangled
+            || (state.u?.strangledTurns ?? 0) > 0;
+        const ability = strangled ? 'not able to call' : 'incapable of calling';
+        await pline(`You are ${ability} upon ${deity} to turn aside evilness.`);
+        /* conduct tracking is not supposed to affect play but we make an
+           exception here: use a move if this is the first time agnostic
+           conduct has been broken */
+        state.context.move = priorCalls === 0 ? 1 : 0;
+        return;
+    }
+    const alignment = state.u?.ualign?.type ?? 0;
+    if ((alignment >= 0
+        && (monsterIsDemon(state.u.umonnum)
+            || monsterIsUndead(state.u.umonnum)
+            || monsterIsVampireShifter({ mnum: state.u.umonnum, cham: state.u.mcham ?? -1 })))
+        || (state.u?.ugangr ?? 0) > 6) { /* "Die, mortal!" */
+        await pline(`For some reason, ${deity} seems to ignore you.`);
+        await aggravateMonsters(state, random);
+        await exerciseAttribute(A_WIS, false, state);
+        state.context.move = 1;
+        return;
+    }
+    if (inHell(state)) {
+        /* not actually calling upon Moloch but use alternate phrasing
+           anyway if hallucinatory feedback says it's him */
+        await pline(`Since you are in Gehennom, ${deity} ${deity === 'Moloch' ? "won't" : "can't"} help you.`);
+        await aggravateMonsters(state, random);
+        state.context.move = 1;
+        return;
+    }
+    await pline(`Calling upon ${deity}, you chant an arcane formula.`);
+    await exerciseAttribute(A_WIS, true, state);
+    /* C pray.c: turn_undead_range = BOLT_LIM + ulevel/5, then squared
+       (8 to 14). iter_mons() walks fmon newest first, so the stored
+       oldest-first monster list is reversed. */
+    const range = BOLT_LIM + Math.trunc((state.u?.ulevel ?? 1) / 5);
+    const scan = { rangeSquared: range * range, falterMessagesShown: 0 };
+    for (const monster of Array.from(state.level?.monsters || []).reverse()) {
+        if (!await maybeTurnMonsterIter(monster, state, { finishMonsterKill, random }, scan))
+            return;
+    }
+    /* Paralysis duration probably ought to be based on the strength of
+       turned creatures rather than on turner's level. -5 .. -1 */
+    nomul(-Math.max(1, 5 - Math.trunc(((state.u?.ulevel ?? 1) - 1) / 6)), state);
+    state._helplessReason = 'trying to turn the monsters';
+    state._helplessDoneMessage = 'You can move again.';
+    state.context.move = 1;
+}
+// ---------------------------------------------------------------------------
+// God names (align_gname, halu_gname, align_gtitle)
+// ---------------------------------------------------------------------------
+// C pray.c:align_gname(). Role data stores god names without role.c's '_'
+// goddess marker; goddessAlignments records which alignments had one.
+export function deityName(alignment, state = game) {
+    if (alignment === A_NONE)
+        return 'Moloch';
+    const key = alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
+    return state.urole?.gods?.[key] || 'your god';
+}
+// pray.c hallu_gods[]: the hallucination pantheon.
+const HALLUCINATED_GODS = [
+    'the Flying Spaghetti Monster', 'Eris', 'the Martians', 'Xom',
+    'AnDoR dRaKoN', 'the Central Bank of Yendor', 'Tooth Fairy', 'Om',
+    'Yawgmoth', 'Morgoth', 'Cthulhu', 'the Ori', 'destiny',
+    'your Friend the Computer',
+];
+// C pray.c:halu_gname(). Both selection steps use the display RNG.
+export function hallucinatedDeityName(alignment, state = game, hallucinating = heroIsHallucinating(state)) {
+    requireLiveGame(state);
+    if (!hallucinating)
+        return deityName(alignment, state);
+    if (!state.urole)
+        throw new Error('Hallucinated deity names require a selected hero role');
+    let gods;
+    do {
+        const role = nativeRoleAt(rn2Display(roles.length));
+        if (!role)
+            throw new Error('No hallucinated deity role was selected');
+        // role_init() copies borrowed gods into urole. halu_gname() reads
+        // the unchanged roles[] table, so Priest remains a rejected choice.
+        gods = role.gods;
+    } while (!gods?.lawful);
+    const choice = rn2Display(9);
+    const name = choice < 2 ? gods.lawful
+        : choice < 4 ? gods.neutral
+            : choice < 6 ? gods.chaotic
+                : choice < 8 ? HALLUCINATED_GODS[rn2Display(HALLUCINATED_GODS.length)]
+                    : 'Moloch';
+    if (name === undefined)
+        throw new Error('No hallucinated deity name was selected');
+    return name.replace(/^_/, '');
+}
+// C pray.c:align_gtitle(). goddessAlignments preserves role.c's '_' marker.
+export function godTitleOf(alignment, g) {
+    return g.urole?.goddessAlignments?.includes(alignment) ? 'goddess' : 'god';
 }
 // ---------------------------------------------------------------------------
 // Trouble detection and repair (prayer_trouble)
