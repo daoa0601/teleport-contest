@@ -1,13 +1,13 @@
 // Shared petrifying contact and delayed hero petrification.
 // State helpers serve potion.c make_stoned(); corpse pickup and whip snatching
 // share the contact transaction, while egg effects serve eat.c and mthrowu.c.
-import { KILLED_BY, KILLED_BY_AN, } from './const.js';
-import { plineWithContinuation, } from './pline.js';
-import { game, } from './gstate.js';
-import { MONSTER_NAME, requireMonsterData, } from './monster_data.js';
-import { CORPSE, EGG, } from './object_data.js';
-import { polymonHero, } from './polyself.js';
-import { resolveImmediatePetrification, } from './trap.js';
+import { KILLED_BY, KILLED_BY_AN } from './const.js';
+import { plineWithContinuation } from './pline.js';
+import { game } from './gstate.js';
+import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { CORPSE, EGG } from './object_data.js';
+import { polymonHero } from './polyself.js';
+import { resolveImmediatePetrification } from './trap.js';
 import { PM_STONE_GOLEM, touchPetrifies, fleshPetrifies, heroResistsStoning, formCanBecomeStoneGolem, } from './mondata.js';
 export function heroIsPetrifying(state = game) {
     return !!state.u?.stoned || (state.u?.stonedTurns ?? 0) > 0;

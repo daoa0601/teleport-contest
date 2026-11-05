@@ -113,7 +113,10 @@ import {
     specialPrototypeAt, u_on_rndspot, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt,
     ledgerNo, surfaceName, next_level, prev_level,
 } from './dungeon.js';
-import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks, touchPetrifies, heroResistsStoning } from './mondata.js';
+import {
+    is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls,
+    monsterThrowsRocks, touchPetrifies, heroResistsStoning,
+} from './mondata.js';
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { addExperience, checkExperienceLevel } from './exper.js';

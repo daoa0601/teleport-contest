@@ -22,9 +22,7 @@ import { createRoomLevel } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 import { cancelMonster } from '../js/zap.js';
 import { beginMonsterMealMimicry } from '../js/dogmove.js';
-import {
-    animateStatue,
-} from '../js/trap.js';
+import { animateStatue } from '../js/trap.js';
 
 void test('restoring a chameleon re-enables shape changes after protection was removed elsewhere', async () => {
     const savedLevel = await freshObjectRoom();

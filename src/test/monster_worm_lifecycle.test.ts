@@ -33,9 +33,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
-import {
-    animateStatue,
-} from '../js/trap.js';
+import { animateStatue } from '../js/trap.js';
 
 function occupiedSquares(worm: Monster, level = requireGameLevel()) {
     const squares = [];

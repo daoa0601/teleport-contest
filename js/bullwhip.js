@@ -34,7 +34,7 @@ import { heroHasSlipperyHands } from './do_wear.js';
 import { fireDamageObject, resetUtrap } from './trap.js';
 import { wakeAttackedMonster } from './mon.js';
 import { loseHeroHp, finishDestinationSpotEffects } from './hack.js';
-import { snatchPetrifyingCorpse as snatchCorpseBareHanded, } from './apply.js';
+import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './apply.js';
 const PM_GRID_BUG = 116;
 const CARDINAL_DIRECTIONS = [
     { dx: -1, dy: 0 }, { dx: 0, dy: -1 },

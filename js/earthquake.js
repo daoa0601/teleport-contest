@@ -17,7 +17,7 @@ import { applyFloorEffects } from './floor_effects.js';
 import { BOULDER } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { rnl, rnd, rn2 } from './rng.js';
-import { monsterSelfTouch, trapAt, waterDamageChain, fireDamageChain, setHeroTrap, resetUtrap, maketrap, deleteFloorTrap, selfTouchPetrifyingWeapons } from './trap.js';
+import { monsterSelfTouch, trapAt, waterDamageChain, fireDamageChain, setHeroTrap, resetUtrap, maketrap, deleteFloorTrap, selfTouchPetrifyingWeapons, } from './trap.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { monsterName } from './do_name.js';
 import { convertSecretDoor } from './detect.js';

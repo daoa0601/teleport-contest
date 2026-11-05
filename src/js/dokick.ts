@@ -27,7 +27,10 @@ import { adjustHeroAlignment, changeHeroLuck, currentAttribute, currentStrength,
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto } from './mon.js';
 import { woundHeroLegs, gotoLevel, scheduleLevelChange } from './do.js';
-import { finishTeleportArrival, askTeleportDestination, relocateObjectRandomly, enexto, goodPosition, monsterTeleportRestricted } from './teleport.js';
+import {
+    finishTeleportArrival, askTeleportDestination, relocateObjectRandomly, enexto, goodPosition,
+    monsterTeleportRestricted,
+} from './teleport.js';
 
 import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { applyHeroContactPassive, applyCaitiffPenalty, prepareAppliedWeaponAttack } from './uhitm.js';
@@ -61,7 +64,10 @@ import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './m
 import { updateMonsterRegions } from './regions.js';
 
 import { specialContactDamage } from './contact_damage.js';
-import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject, activateStatueTrapAt, triggerChestTrap, triggerBoobyTrap, fall_through } from './trap.js';
+import {
+    trapAt, mintrap, resolveImmediatePetrification, waterDamageObject, activateStatueTrapAt, triggerChestTrap,
+    triggerBoobyTrap, fall_through,
+} from './trap.js';
 import { artifactById } from './artifacts.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { applyFloorEffects } from './floor_effects.js';

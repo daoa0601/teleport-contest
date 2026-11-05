@@ -67,9 +67,7 @@ import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_mons
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp } from './dothrow.js';
 import { mksobj, placeCreatedObject } from './mkobj.js';
-import {
-    deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons,
-} from './trap.js';
+import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
@@ -88,16 +86,15 @@ import { endObjectBurn, learnEggType } from './timeout.js';
 import {
     nameToMonster, resolveMonsterClass, speciesCanBlow, your_race, monsterIsMindless, infravision, is_dwarf,
     is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, monsterBreaksArmor, monsterCanTeleport,
-    monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead, monsterHasNoHands,
-    monsterHasNoLimbs, monsterHasProperName, monsterHidesUnder, monsterHornCount, monsterIsAmorphous,
-    monsterIsAmphibious, monsterIsAnimal, monsterIsBat, monsterIsBreathless, monsterIsCentaur,
-    monsterIsClinger, monsterIsDemon, monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterIsGiant,
-    monsterIsHider, monsterIsHumanoid, monsterIsMindFlayer, monsterIsNonliving, monsterIsSlithy,
-    monsterIsSwimmer, monsterIsTelepathic, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid,
-    monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterPassesWalls,
-    monsterPerceives, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks,
-    monsterWrappingAllowed, notake, polyok, regenerates, strongmonst, cantwield, formCanBecomeStoneGolem,
-    touchPetrifies,
+    monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasNoLimbs,
+    monsterHasProperName, monsterHidesUnder, monsterHornCount, monsterIsAmorphous, monsterIsAmphibious,
+    monsterIsAnimal, monsterIsBat, monsterIsBreathless, monsterIsCentaur, monsterIsClinger, monsterIsDemon,
+    monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsHumanoid,
+    monsterIsMindFlayer, monsterIsNonliving, monsterIsSlithy, monsterIsSwimmer, monsterIsTelepathic,
+    monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall,
+    monsterIsWeirdNonliving, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterSlipsArmor,
+    monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterWrappingAllowed, notake, polyok, regenerates,
+    strongmonst, cantwield, formCanBecomeStoneGolem, touchPetrifies,
 } from './mondata.js';
 import { getLine, promptYesNo } from './query.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';

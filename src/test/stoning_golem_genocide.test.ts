@@ -5,9 +5,7 @@ import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { freshObjectRoom } from './support/object-room.js';
-import {
-    heroWouldPetrifyFromFlesh,
-} from '../js/mondata.js';
+import { heroWouldPetrifyFromFlesh } from '../js/mondata.js';
 
 // C mondata.c:poly_when_stoned() refuses to turn a stoned golem into a stone
 // golem once stone golems are genocided, so eating cockatrice flesh counts as

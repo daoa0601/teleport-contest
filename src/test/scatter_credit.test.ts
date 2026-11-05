@@ -12,9 +12,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-import {
-    explodeLandMine,
-} from '../js/trap.js';
+import { explodeLandMine } from '../js/trap.js';
 
 for (const monsterTurn of [false, true]) {
     void test(`scattered weapons assign kill credit by the active ${monsterTurn ? 'monster' : 'hero'} turn`, async () => {

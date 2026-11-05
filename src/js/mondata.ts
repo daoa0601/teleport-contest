@@ -18,8 +18,8 @@ import type { AttackMethod, DamageType } from './monster_attack_types.js';
 import { dragonFormForArmor, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
 import { artifactById } from './artifacts.js';
 import {
-    M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING,
-    M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP, G_GENOD,
+    M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON,
+    M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP, G_GENOD,
 } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
@@ -41,9 +41,7 @@ import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './rol
 import { monsterCarriesAmulet } from './wizard.js';
 import type { Trap } from './map_types.js';
 import { dist2 } from './hacklib.js';
-import type {
-    Hero,
-} from './hero_types.js';
+import type { Hero } from './hero_types.js';
 
 type SpeciesReference = Pick<Monster, 'mnum'>;
 type ShifterReference = SpeciesReference & Partial<Pick<Monster, 'cham'>>;

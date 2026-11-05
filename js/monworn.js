@@ -17,7 +17,7 @@ import { equipmentLightDescription } from './light.js';
 import { cansee, vision_recalc } from './vision.js';
 import { surfaceName } from './dungeon.js';
 import { displayColorName, monsterName } from './do_name.js';
-import { monsterObjectPronoun, monsterPossessive, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal, monsterIsCentaur, monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterWrappingAllowed, touchPetrifies } from './mondata.js';
+import { monsterObjectPronoun, monsterPossessive, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal, monsterIsCentaur, monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterWrappingAllowed, touchPetrifies, } from './mondata.js';
 import { monsterCanBeSaddled } from './steed.js';
 import { possessiveName } from './hacklib.js';
 import { dismountHero, heroCanRideSteed } from './steed.js';

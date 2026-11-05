@@ -15,7 +15,10 @@ import {
     ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, RUBBER_HOSE, OBJ_NAME,
 } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
-import { isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isThrowingWeapon, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
+import {
+    isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isThrowingWeapon, isWetTowel,
+    launcherMatchesAmmo, objectIsCrackable,
+} from './object_properties.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok, promptDirection } from './cmd.js';
@@ -39,7 +42,9 @@ import {
     P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR,
     W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG,
 } from './const.js';
-import { weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills, skillName, weaponDescription } from './weapon.js';
+import {
+    weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills, skillName, weaponDescription,
+} from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
 import { quiverObjectClass } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName } from './objnam.js';
@@ -98,7 +103,10 @@ import {
     removeObjectAndContentsFromBill, sellHeroDroppedObject, shopResident,
 } from './shk.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt } from './hack.js';
+import {
+    exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects,
+    heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt,
+} from './hack.js';
 import { heroCanBeBlindedByObject } from './blinding_attack.js';
 import { propertyIsActive } from './properties.js';
 import { monsterProjectileDisplay } from './mthrowu.js';

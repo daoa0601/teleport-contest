@@ -12,9 +12,7 @@ import { addInventoryObject, floorObject, knownObject } from './support/game-obj
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { setMonsterGivenName } from '../js/do_name.js';
-import {
-    erodeAttackingWeapon,
-} from '../js/mhitm.js';
+import { erodeAttackingWeapon } from '../js/mhitm.js';
 
 const quiet = { publish: async () => {} };
 

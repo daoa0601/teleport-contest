@@ -19,10 +19,10 @@ import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import {
-    sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance,
-    carnivorous, herbivorous, monsterHasEyes, metallivorous, acidic, poisonous, is_elf, is_shapeshifter,
-    monsterHatesSilver, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead,
-    monsterIsVampireShifter, fleshPetrifies,
+    sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, carnivorous,
+    herbivorous, monsterHasEyes, metallivorous, acidic, poisonous, is_elf, is_shapeshifter, monsterHatesSilver,
+    monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsVampireShifter,
+    fleshPetrifies,
 } from './mondata.js';
 
 export const DOGFOOD = 0;

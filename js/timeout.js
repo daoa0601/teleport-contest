@@ -63,7 +63,7 @@ import { heroIsSurroundedByRock } from './pray.js';
 import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './dungeon.js';
-import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm, heroResistsStoning, touchPetrifies } from './mondata.js';
+import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm, heroResistsStoning, touchPetrifies, } from './mondata.js';
 import { encumber_msg } from './pickup.js';
 // C timeout.c:stoned_dialogue().
 export async function petrificationDialogue({ state = game, publish = plineWithContinuation, } = {}) {

@@ -84,7 +84,10 @@ import { heroHasFreeHand } from './engrave.js';
 import type { SpellCategory } from './data_types.js';
 import type { Position } from './map_types.js';
 import { applyScrollEffects } from './read.js';
-import { loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip, exceedsActionCapacity } from './hack.js';
+import {
+    loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip,
+    exceedsActionCapacity,
+} from './hack.js';
 
 export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: GameState; }
 export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }

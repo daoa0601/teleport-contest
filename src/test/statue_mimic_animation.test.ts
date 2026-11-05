@@ -7,9 +7,7 @@ import { STATUE } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
-import {
-    animateStatue,
-} from '../js/trap.js';
+import { animateStatue } from '../js/trap.js';
 
 void test('a mimic statue that comes to life beside the hero is shown as the mimic', async () => {
     await freshObjectRoom();

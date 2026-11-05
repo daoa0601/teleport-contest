@@ -40,9 +40,7 @@ import type { Position } from './map_types.js';
 import type { DirectionSelection } from './cmd.js';
 import { wakeAttackedMonster } from './mon.js';
 import { loseHeroHp, finishDestinationSpotEffects } from './hack.js';
-import {
-    snatchPetrifyingCorpse as snatchCorpseBareHanded,
-} from './apply.js';
+import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './apply.js';
 
 type WhipDirection = Pick<DirectionSelection, 'dx' | 'dy' | 'dz'>;
 type WhipAttack = (monster: Monster, x: number, y: number) => boolean | Promise<boolean>;

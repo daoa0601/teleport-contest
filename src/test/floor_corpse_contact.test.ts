@@ -21,9 +21,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import {
-    heroResistsStoning,
-} from '../js/mondata.js';
+import { heroResistsStoning } from '../js/mondata.js';
 
 const finds = () => gameLogEvents().filter(event => event.text.startsWith('found '));
 

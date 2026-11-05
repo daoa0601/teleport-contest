@@ -2,36 +2,16 @@
 // State helpers serve potion.c make_stoned(); corpse pickup and whip snatching
 // share the contact transaction, while egg effects serve eat.c and mthrowu.c.
 
-import type {
-    PetrificationKillerFormat,
-} from './potion.js';
-import {
-    KILLED_BY, KILLED_BY_AN,
-} from './const.js';
-import {
-    plineWithContinuation,
-} from './pline.js';
-import type {
-    GameState,
-} from './game_state.js';
-import type {
-    GameObject,
-} from './object_types.js';
-import {
-    game,
-} from './gstate.js';
-import {
-    MONSTER_NAME, requireMonsterData,
-} from './monster_data.js';
-import {
-    CORPSE, EGG,
-} from './object_data.js';
-import {
-    polymonHero,
-} from './polyself.js';
-import {
-    resolveImmediatePetrification,
-} from './trap.js';
+import type { PetrificationKillerFormat } from './potion.js';
+import { KILLED_BY, KILLED_BY_AN } from './const.js';
+import { plineWithContinuation } from './pline.js';
+import type { GameState } from './game_state.js';
+import type { GameObject } from './object_types.js';
+import { game } from './gstate.js';
+import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { CORPSE, EGG } from './object_data.js';
+import { polymonHero } from './polyself.js';
+import { resolveImmediatePetrification } from './trap.js';
 import {
     PM_STONE_GOLEM, touchPetrifies, fleshPetrifies, heroResistsStoning, formCanBecomeStoneGolem,
 } from './mondata.js';export function heroIsPetrifying(state: GameState = game): boolean {
