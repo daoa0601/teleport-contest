@@ -468,8 +468,8 @@ src/js/guardian_angel.ts	gainGuardianAngel	rnd	"[""30""]"	constant
 src/js/guardian_angel.ts	gainGuardianAngel	rnd	"[""4""]"	constant
 src/js/guardian_angel.ts	loseGuardianAngel	rn1	"[""3"", ""2""]"	constant
 src/js/hack.ts	escapeFromStickyMonster	rn2	"[""frozen ? 8 : 40""]"	constant
-src/js/hack.ts	heroLiquidEffects	random	"[""3""]"	constant
-src/js/hack.ts	heroLiquidEffects	random	"[""5""]"	constant
+src/js/trap.ts	drown	random	"[""3""]"	constant
+src/js/trap.ts	drown	random	"[""5""]"	constant
 src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""4""]"	constant
 src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""9""]"	constant
 src/js/uhitm.ts	maybeUnparalyzeMeleeDefender	random	"[""10""]"	constant
@@ -1158,11 +1158,11 @@ src/js/extralev.ts	makeroguerooms	rn2	"[""7""]"	constant
 src/js/extralev.ts	makeroguerooms	rnd	"[""(y === 2 ? 5 : 4) - dy + 1""]"	constant
 src/js/extralev.ts	makeroguerooms	rnd	"[""23 - dx + 1""]"	constant
 src/js/mklev.ts	makerooms	rn2	"[""2""]"	constant
-src/js/trap.ts	maketrap	rn1	"[""5"", ""4""]"	constant
-src/js/trap.ts	maketrap	rn2	"[""12""]"	constant
-src/js/trap.ts	maketrap	rn2	"[""4""]"	constant
-src/js/trap.ts	maketrap	rn2	"[""8""]"	constant
-src/js/trap.ts	maketrap	rn2	"[""available.length""]"	guarded
+src/js/trap.ts	find_random_launch_coord	rn1	"[""5"", ""4""]"	constant
+src/js/trap.ts	choose_trapnote	rn2	"[""12""]"	constant
+src/js/trap.ts	hole_destination	rn2	"[""4""]"	constant
+src/js/trap.ts	find_random_launch_coord	rn2	"[""8""]"	constant
+src/js/trap.ts	choose_trapnote	rn2	"[""available.length""]"	guarded
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""4""]"	constant
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""5""]"	constant
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""5""]"	constant

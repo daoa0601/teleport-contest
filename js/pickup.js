@@ -2,7 +2,7 @@
 import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
 import { objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
-import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, } from './hack.js';
+import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity } from './hack.js';
 import { monsterStagger, monsterIsBig, monsterThrowsRocks } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';

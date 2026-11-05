@@ -2,22 +2,20 @@
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, FOOD_CLASS, BALL_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, } from './object_data.js';
+import { objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, RUBBER_HOSE, OBJ_NAME, } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
-import { isWeaponTool, isMissileObject } from './object_properties.js';
-import { RUBBER_HOSE, OBJ_NAME } from './object_data.js';
+import { isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isThrowingWeapon, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok, promptDirection } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { currentAttribute, changeHeroLuck } from './attrib.js';
+import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName, MONSTER_ALIGNMENT } from './monster_data.js';
 import { artifactById } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm } from './polyself.js';
-import { isLauncherAmmunition, isPolearm, isThrowingWeapon, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
 import { isWeldedPrimary, setQuiverObject, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat, doquiverCore } from './wield.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG, } from './const.js';
-import { weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills } from './weapon.js';
+import { weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills, skillName, weaponDescription } from './weapon.js';
 import { quiverObjectClass } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName } from './objnam.js';
 import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore, stack_object } from './invent.js';
@@ -44,8 +42,6 @@ import { offerThrownFood } from './thrown_food.js';
 import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { flyBoomerang } from './zap.js';
-import { skillName, weaponDescription } from './weapon.js';
-import { exerciseAttribute } from './attrib.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, glyphAt, map_invisible, transientObjectGlyph } from './display.js';
 import { goodPosition, randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
@@ -66,7 +62,7 @@ import { explodeLitOilPotion } from './fire_explosion.js';
 import { objectResistsDestruction } from './zap.js';
 import { costlySpot, stolenValue, makeAngryShopkeeper, insideShopRoomAt, containedGold, donateGold, objectIsUnpaid, removeObjectAndContentsFromBill, sellHeroDroppedObject, shopResident, } from './shk.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt, } from './hack.js';
+import { exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt } from './hack.js';
 import { heroCanBeBlindedByObject } from './blinding_attack.js';
 import { propertyIsActive } from './properties.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
@@ -852,8 +848,8 @@ export function staggerVerb(mnum) {
         return 'falters';
     return 'staggers';
 }
-// C trap.c:minstapetrify(mon, TRUE) kills through xkilled(XKILL_NOMSG);
-// petrifyMonsterImmediately() has already recorded the kill conduct.
+// Both hurtle collision paths supply a silent death handler after the trap
+// owner has credited the kill, matching minstapetrify(mon, TRUE).
 function silentHeroStoning(finishMonsterDeath) {
     return (monster, death = {}) => finishMonsterDeath(monster, {
         ...death, showKillMessage: false, recordConduct: false,

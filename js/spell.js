@@ -14,7 +14,7 @@ import { mapVicinity } from './detect.js';
 import { mksobj, objectWeight } from './mkobj.js';
 import { deleteObject, chargeUnpaidUsage } from './shk.js';
 import { useHeroSkill, ensureHeroSkills, initializedSkills, requiredSkill } from './weapon.js';
-import { recordObjectKnowledge } from './o_init.js';
+import { recordObjectKnowledge, learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { findArmorClass } from './do_wear.js';
 import { canSeeMonster, canSpotMonster, flush_screen, shieldeff, map_invisible, zapdir_to_glyph, TemporaryMapEffect, } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, novelTitle } from './do_name.js';
@@ -39,7 +39,6 @@ import { recordAchievement } from './insight.js';
 import { makeInvocationArea } from './invocation_area.js';
 import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType } from './do.js';
-import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { erodeObject } from './trap.js';
 import { putHeroToSleep } from './timeout.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -61,7 +60,7 @@ import { cansee } from './vision.js';
 import { showInventoryWindow } from './windows.js';
 import { heroHasFreeHand } from './engrave.js';
 import { applyScrollEffects } from './read.js';
-import { loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip, exceedsActionCapacity, } from './hack.js';
+import { loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip, exceedsActionCapacity } from './hack.js';
 export function knownSpell(otyp, state = game) {
     const spell = (state.spells || []).find(spell => spell.otyp === otyp);
     if (!spell)
