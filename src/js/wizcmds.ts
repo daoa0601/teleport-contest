@@ -21,7 +21,10 @@ import { getLine, promptYesNoQuit, promptChoice, promptYesNo } from './query.js'
 import { paranoidQuery, yn_function } from './cmd.js';
 import { promptDirection, readDirectionKey } from './cmd.js';
 import { visibleCommandKey, setMulti, makemapPrepost } from './cmd.js';
-import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
+import {
+    inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription,
+    inventoryPrimaryHandDetail, inventorySortMode, objectClassHeading, sortObjects,
+} from './invent.js';
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
 import { makeWish } from './zap.js';

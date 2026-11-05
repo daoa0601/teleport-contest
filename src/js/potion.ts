@@ -110,8 +110,8 @@ import type { Monster } from './monster_types.js';
 import { tryCallObjectType, healHeroLegs } from './do.js';
 import {
     objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction,
-    objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming,
-    ownedObjectAction, ownedObjectName, simpleObjectName, fruitName,
+    objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction,
+    ownedObjectName, simpleObjectName, fruitName,
 } from './objnam.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';
