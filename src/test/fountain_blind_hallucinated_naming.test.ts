@@ -12,8 +12,11 @@ import { randomDisplayMonsterName } from '../js/do_name.js';
 import { newsym } from '../js/display.js';
 import { summonFountainNymph, summonFountainSnakes } from '../js/fountain.js';
 import { game } from '../js/gstate.js';
+import { makeBlinded, makeHallucinated } from '../js/potion.js';
 import { makemonNear } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { heroIsBlind, heroIsHallucinating } from '../js/senses.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { MM_NOMSG } from '../js/const.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -25,8 +28,17 @@ async function blindHallucinatingHero() {
     await freshObjectRoom({
         left: 8, right: 14, top: 9, bottom: 12, gameplaySeed: SEED,
     });
-    game.u.blindTurns = 100;
-    game.u.hallucinationTurns = 100;
+    // The real transitions, so blindness and hallucination are synchronized
+    // (game.blind, vision recalculation, the monster redraw) rather than
+    // half-set raw fields.
+    await makeBlinded(100, { talk: false });
+    await makeHallucinated(100, { talk: false });
+    // A blind hero still names a monster through telepathy (C canspotmon()
+    // accepts sense_mon()), which is the state where fountain.c:101's
+    // a_monnam() would draw a hallucinated identity.
+    grantIntrinsicProperty('telepathy', 'outside');
+    assert.ok(heroIsBlind(game) && heroIsHallucinating(game),
+        'the hero must be blind and hallucinating');
 }
 
 async function nextNameAfterCreating(count: number, mnum: number) {
