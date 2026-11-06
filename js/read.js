@@ -1418,7 +1418,7 @@ async function cloudEffect(source, state) {
     }
     return { known: true, consumed: false, heroDied: false };
 }
-// C obj.h:bcsign().
+// C mkobj.c:bcsign().
 function blessing(source) {
     return source.blessed ? 1 : source.cursed ? -1 : 0;
 }

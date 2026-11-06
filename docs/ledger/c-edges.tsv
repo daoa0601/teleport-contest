@@ -211,7 +211,9 @@ blackout	isok
 blackout	unset_seenv
 blengr	rn2
 block_door	in_rooms
+block_door	shop_keeper
 block_entry	in_rooms
+block_entry	shop_keeper
 block_point	fill_point
 blocked_boulder	isok
 blocking_terrain	is_waterwall
@@ -432,6 +434,7 @@ create_door	okdoor
 create_door	rn2
 create_gas_cloud	make_gas_cloud
 create_gas_cloud	rn2
+create_gas_cloud	valid_cloud_pos
 create_gas_cloud_selection	make_gas_cloud
 create_maze	maze0xy
 create_maze	maze_remove_deadends
@@ -1151,6 +1154,7 @@ dosacrifice	offer_fake_amulet
 dosave	docrt
 dosave	nomul
 dosave	yn_function
+dosave0	done_object_cleanup
 dosave0	vision_recalc
 dosave0	yn_function
 dosdoor	in_rooms
@@ -1486,6 +1490,7 @@ explode	rndmonnam
 explode	tmp_at
 explode	unmap_invisible
 explode	wake_nearto
+expulsion	nomul
 extremeattr	acurr
 eye_of_newt_buzz	rn2
 eye_of_newt_buzz	rnd
@@ -1717,6 +1722,7 @@ genl_player_setup	validrace
 get_adjacent_loc	getdir
 get_adjacent_loc	isok
 get_atkdam_type	rn2
+get_cost	acurr
 get_count	readchar
 get_free_room_loc	get_room_loc
 get_hilite	critically_low_hp
@@ -3511,6 +3517,7 @@ potion_dip	hold_potion
 potion_dip	permapoisoned
 potion_dip	poof
 potion_dip	rnd
+potion_dip	update_inventory
 prayer_done	adjalign
 prayer_done	align_gname
 prayer_done	angrygods
@@ -3860,6 +3867,7 @@ seffect_destroy_armor	getobj
 seffect_destroy_armor	make_stunned
 seffect_destroy_armor	rn2
 seffect_destroy_armor	strange_feeling
+seffect_earth	closed_door
 seffect_earth	drop_boulder_on_monster
 seffect_earth	drop_boulder_on_player
 seffect_earth	isok
@@ -4477,6 +4485,9 @@ u_catch_thrown_obj	rn2
 u_collide_m	dist2
 u_collide_m	rn2
 u_collide_m	u_on_newpos
+u_entered_shop	Hello
+u_entered_shop	in_rooms
+u_entered_shop	record_achievement
 u_entered_shop	rn2
 u_entered_shop	shop_keeper
 u_gname	align_gname

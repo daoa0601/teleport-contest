@@ -147,7 +147,7 @@ export function selection_filter_percent(selection, percent) {
                 selection_setpoint(x, y, result, 1);
     return result;
 }
-// C selvar.c:selection_numpoints().
+// Part of C nhlsel.c:l_selection_numpoints(): counts selected points within the bounds.
 export function selection_numpoints(selection) {
     let count = 0;
     const bounds = selection_getbounds(selection);

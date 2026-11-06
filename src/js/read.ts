@@ -1487,7 +1487,7 @@ async function cloudEffect(source: GameObject, state: PlayingGameState): Promise
     return { known: true, consumed: false, heroDied: false };
 }
 
-// C obj.h:bcsign().
+// C mkobj.c:bcsign().
 function blessing(source: Pick<GameObject, 'blessed' | 'cursed'>): -1 | 0 | 1 {
     return source.blessed ? 1 : source.cursed ? -1 : 0;
 }

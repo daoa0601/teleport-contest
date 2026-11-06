@@ -180,7 +180,7 @@ export function selection_filter_percent(selection: Selection | null, percent: n
     return result;
 }
 
-// C selvar.c:selection_numpoints().
+// Part of C nhlsel.c:l_selection_numpoints(): counts selected points within the bounds.
 export function selection_numpoints(selection: Selection): number {
     let count = 0;
     const bounds = selection_getbounds(selection);

@@ -216,7 +216,7 @@ export async function tty_getlin(
     }
 }
 
-// Part of C getline.c:tty_yn_function(): paints the question line and
+// Part of C topl.c:tty_yn_function(): paints the question line and
 // cursor on the tty.
 function renderChoicePrompt(message: string): void {
     const display = game.nhDisplay;
@@ -263,7 +263,7 @@ export function completeExtendedCommand(prefix: string): string | null {
 }
 
 
-// C getline.c:tty_yn_function().
+// C topl.c:tty_yn_function().
 // Native tty_yn_function returns the answer and sets yn_number. Keep the
 // number in the result so each suspended question owns its own answer.
 export async function tty_yn_function(

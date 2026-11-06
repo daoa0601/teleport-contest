@@ -213,7 +213,7 @@ export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMe
         renderEditor();
     }
 }
-// Part of C getline.c:tty_yn_function(): paints the question line and
+// Part of C topl.c:tty_yn_function(): paints the question line and
 // cursor on the tty.
 function renderChoicePrompt(message) {
     const display = game.nhDisplay;
@@ -247,7 +247,7 @@ export function completeExtendedCommand(prefix) {
         && command.name?.toLowerCase().startsWith(prefix.toLowerCase()));
     return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
-// C getline.c:tty_yn_function().
+// C topl.c:tty_yn_function().
 // Native tty_yn_function returns the answer and sets yn_number. Keep the
 // number in the result so each suspended question owns its own answer.
 export async function tty_yn_function(query, responses, defaultAnswer = '', visibleChoices = responses?.split('\x1b')[0] ?? '') {

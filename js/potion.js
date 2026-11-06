@@ -678,7 +678,7 @@ async function drinkWater(source, state) {
     }
     return !!state.program_state.gameover;
 }
-// C obj.h:bcsign().
+// C mkobj.c:bcsign().
 function blessing(source) {
     return source.blessed ? 1 : source.cursed ? -1 : 0;
 }

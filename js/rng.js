@@ -67,7 +67,7 @@ export function rnd(x) {
         _rngLog.push(`rnd(${x})=${val}`);
     return val;
 }
-// C rnd.c:rn1().
+// C hack.h:rn1().
 // C ref: rn1(x, y) — random number y..y+x-1
 export function rn1(x, y) { return rn2(x) + y; }
 // C rnd.c:rnl().

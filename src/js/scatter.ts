@@ -150,7 +150,7 @@ async function finishScatteredMonsterDeath(
     return { killed: !result.survived, heroDied: !!result.heroDied };
 }
 
-// C dothrow.c:drop_throw(): an impact can mulch ammunition, ship it
+// Part of C mthrowu.c:drop_throw(): after a hit, an impact can mulch ammunition, ship it
 // through a gate, or expose it to the defender's passive effect before
 // floor stacking.
 async function landAfterMonsterHit(object: GameObject, node: Position, state: GameState, options: ScatterSettings): Promise<void> {
