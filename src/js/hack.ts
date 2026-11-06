@@ -964,14 +964,14 @@ async function leaveWater({
     let message = null;
     let stillInWater = false;
     if (!isPoolAt(u.ux, u.uy, state)) {
-        if (Is_waterlevel(u.uz)) {
+        if (Is_waterlevel(u.uz, state)) {
             message = 'You pop into an air bubble.';
         } else if (isLavaAt(u.ux, u.uy, state)) {
             message = `You leave the ${displayLiquidName('water', state)}...`;
         } else {
             message = backOnGroundMessage(false, state);
         }
-    } else if (Is_waterlevel(u.uz)) {
+    } else if (Is_waterlevel(u.uz, state)) {
         stillInWater = true;
     } else if (u.levitating || u.levitation) {
         message = `You pop out of the ${displayLiquidName('water', state)} like a cork!`;
@@ -986,7 +986,7 @@ async function leaveWater({
     if (stillInWater) return false;
     if (message) await publish(message);
     // C Underwater is u.uinwater, still set until set_uinwater(0) below.
-    const wasUnderwater = !!(u.uinwater || state.underwater) && !Is_waterlevel(u.uz);
+    const wasUnderwater = !!(u.uinwater || state.underwater) && !Is_waterlevel(u.uz, state);
     await setHeroInWater(false, state);
     state.underwater = false;
     // C restores the surface view by redrawing the screen and deferring the

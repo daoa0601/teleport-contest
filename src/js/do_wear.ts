@@ -2590,7 +2590,7 @@ async function removeAmulet(object: GameObject, state: GameState): Promise<Prope
     } else if (object.otyp === AMULET_OF_FLYING && flying && !propertyIsActive('flying', state)) {
         state.context.botl = true;
         const overLiquid = isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state)
-            || Is_waterlevel(state.u.uz) || Is_airlevel(state.u.uz);
+            || Is_waterlevel(state.u.uz, state) || Is_airlevel(state.u.uz);
         await plineWithContinuation(overLiquid ? 'You stop flying.' : 'You land.');
         await applyHeroLocationEffects();
         if (state.program_state.gameover) return property;

@@ -5656,12 +5656,12 @@ export async function announceTerrainRescue(how, state, publish = plineWithConti
     const { ux, uy } = state.u;
     const location = state.level.requireAt(ux, uy);
     if (how === DROWNING && isPoolAt(ux, uy, state)) {
-        const position = Is_waterlevel(state.u.uz) || IS_WATERWALL(location.typ)
+        const position = Is_waterlevel(state.u.uz, state) || IS_WATERWALL(location.typ)
             ? 'in the midst' : 'on top';
         await publish(`You find yourself ${position} of ${displayLiquidName('water', state)}.`);
     }
     else if (how === DROWNING && IS_AIR(location.typ)) {
-        await publish(`You find yourself in ${Is_waterlevel(state.u.uz) ? 'an air bubble' : 'mid air'}.`);
+        await publish(`You find yourself in ${Is_waterlevel(state.u.uz, state) ? 'an air bubble' : 'mid air'}.`);
     }
     else if (how !== DROWNING && isPoolAt(ux, uy, state)) {
         await publish(`You find yourself ${state.u.uinwater ? 'in' : 'on'} ${displayLiquidName('water', state)}.`);
@@ -5741,7 +5741,7 @@ export async function drown({ state, location, x, y, publish, random, rollDice, 
         if (heroDoesNotNeedAir(state)) {
             if (state.flags.verbose)
                 await publish("But you aren't drowning.");
-            if (!Is_waterlevel(state.u.uz))
+            if (!Is_waterlevel(state.u.uz, state))
                 await publish(heroIsHallucinating(state) ? 'Your keel hits the bottom.' : 'You touch bottom.');
         }
         // C trap.c:5117-5120: the settling ball and chain are re-placed
@@ -5813,7 +5813,7 @@ export async function drown({ state, location, x, y, publish, random, rollDice, 
     const destination = canMove
         ? await rnd_nextto_goodpos(state, x, y, random, publish) : null;
     if (destination) {
-        const escape = Is_waterlevel(state.u.uz)
+        const escape = Is_waterlevel(state.u.uz, state)
             ? { escaped: true, dropped: false }
             : await emergencyDisrobe(state, random);
         if (escape.died)

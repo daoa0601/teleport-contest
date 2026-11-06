@@ -334,7 +334,7 @@ export function rollMonsterPoolReaction(
 ): MonsterPoolReaction {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     const waterWall = location?.typ === WATER;
-    const waterLevel = Is_waterlevel(state.u.uz);
+    const waterLevel = Is_waterlevel(state.u.uz, state);
     const safelyAirborne = !waterWall && !waterLevel
         && monsterFliesOrFloats(monster);
     if (heroKeepsSteedAboveLiquid(monster, state, waterWall)
@@ -405,7 +405,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
         return finishDeath(monster, { state, random, rollOne, leaveCorpse, cause, sadFeeling, publish: announce });
     };
 
-    const waterLevel = Is_waterlevel(state.u.uz);
+    const waterLevel = Is_waterlevel(state.u.uz, state);
     const waterWall = location.typ === WATER;
     if (heroKeepsSteedAboveLiquid(monster, state, waterWall))
         return { survived: true };
@@ -1510,7 +1510,7 @@ function hidingPlace(actor: HidingActor, state: GameState): HidingPlace {
     if (monsterIsEel(actor.species)) {
         const heroUnderwater = !!(state.underwater || state.u.uinwater);
         const inLineOfSight = !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
-        const hidden = isPoolAt(x, y, state) && !Is_waterlevel(state.u.uz)
+        const hidden = isPoolAt(x, y, state) && !Is_waterlevel(state.u.uz, state)
             && (!heroUnderwater || !inLineOfSight);
         return { undetected: hidden, cover: null, water: true };
     }

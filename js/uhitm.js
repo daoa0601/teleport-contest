@@ -3792,7 +3792,7 @@ export async function mhitmAdWrap(call) {
             const terrain = state.level.requireAt(monster.mx, monster.my).typ;
             const medusa = state.medusa_level;
             const onMedusa = medusa && medusa.dnum === hero.uz.dnum && medusa.dlevel === hero.uz.dlevel;
-            const moat = terrain !== POOL && terrain !== WATER && !onMedusa && !Is_waterlevel(hero.uz);
+            const moat = terrain !== POOL && terrain !== WATER && !onMedusa && !Is_waterlevel(hero.uz, state);
             const species = withIndefiniteArticle(monsterTypeName(monster.mnum, !!monster.female));
             const killer = `${moat ? 'moat' : 'pool of water'} by ${species}`;
             attack.heroDied = await finishHeroDeath({

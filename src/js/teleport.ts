@@ -297,7 +297,7 @@ export function goodPosition(x: number, y: number, subject: PlacementSubject, {
         const mnum = monster.mnum;
         if (occupant && (occupant !== monster || ('wormno' in monster && monster.wormno))) return false;
         if (pool && !ignoreWater) {
-            const surface = !Is_waterlevel(state.u.uz) && location.typ !== WATER;
+            const surface = !Is_waterlevel(state.u.uz, state) && location.typ !== WATER;
             if (isHero) {
                 return propertyIsActive('swimming', state)
                     || propertyIsActive('magicalBreathing', state)
@@ -313,7 +313,7 @@ export function goodPosition(x: number, y: number, subject: PlacementSubject, {
             if (isHero) {
                 const boots = state.uarmf || state.u.uarmf;
                 return propertyIsActive('levitation', state) || propertyIsActive('flying', state)
-                    || (!Is_waterlevel(state.u.uz) && propertyIsActive('fireResistance', state)
+                    || (!Is_waterlevel(state.u.uz, state) && propertyIsActive('fireResistance', state)
                         && heroHasWaterWalking(state) && !!boots?.oerodeproof)
                     || heroLikesLava(state);
             }
