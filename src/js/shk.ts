@@ -1316,12 +1316,6 @@ function mNext2u(monster: Monster, state: GameState): boolean {
     return distu(monster.mx, monster.my, state) <= 2;
 }
 
-// C monst.h:helpless().
-function monsterHelpless(monster: Monster): boolean {
-    return !!(monster?.msleeping || monster?.mcanmove === 0
-        || (monster?.mfrozen ?? 0) > 0);
-}
-
 // Part of C shk.c:muteshk(): the msound read.
 function monsterSound(monster: Monster): number {
     return MONSTER_SOUND[monster?.mnum] ?? 0;
@@ -1330,7 +1324,7 @@ function monsterSound(monster: Monster): number {
 // C shk.c:muteshk()
 // A keeper who cannot speak up.
 function muteShopkeeper(monster: Monster): boolean {
-    return monsterHelpless(monster) || monsterSound(monster) <= MS_ANIMAL;
+    return monsterIsHelpless(monster) || monsterSound(monster) <= MS_ANIMAL;
 }
 
 // Port only: the level damage-list accessor.
@@ -1678,7 +1672,7 @@ export async function shopkeeperCatch(
     const roomno = insideShop(state, x, y);
     const keeper = roomno !== null ? shopResident(roomno, state) : null;
     if (!keeper || !shopkeeperInOwnShop(keeper, state)) return null;
-    if (monsterHelpless(keeper)
+    if (monsterIsHelpless(keeper)
         || (state.u.ushops?.[0] === keeper.eshk.shoproom
             && insideShop(state, state.u.ux, state.u.uy) !== null)
         || dist2(x, y, keeper.mx, keeper.my) >= 3
@@ -1764,7 +1758,7 @@ function restoreOverlaidTerrainFlags(location: MapLocation, flags: number): void
 function shopkeeperImpaired(keeper: Shopkeeper, state: GameState): boolean {
     if (!keeper?.isshk || !keeper.eshk
         || !shopkeeperInOwnShop(keeper, state)) return true;
-    return monsterHelpless(keeper) || !!keeper.eshk.following;
+    return monsterIsHelpless(keeper) || !!keeper.eshk.following;
 }
 
 // C shk.c:repairable_damage()
@@ -1888,7 +1882,7 @@ async function getcad(
 ) {
     const dugwall = dmgstr === 'dig into' || dmgstr === 'damage';
     if (muteShopkeeper(keeper)) {
-        if (animal && !monsterHelpless(keeper))
+        if (animal && !monsterIsHelpless(keeper))
             await publishMonsterYelp(keeper);
     } else if (pursue || uinshp || !umDist(state, x, y, 1)) {
         if (!heroIsDeaf(state)) {
@@ -2347,7 +2341,7 @@ export async function shopDig(fall: number | boolean, state: GameState = game): 
 
     // 0 == can't speak, 1 == makes animal noises, 2 == speaks.
     let lang = 0;
-    if (!monsterHelpless(keeper) && monsterSound(keeper) > 0)
+    if (!monsterIsHelpless(keeper) && monsterSound(keeper) > 0)
         lang = monsterSound(keeper) <= MS_ANIMAL ? 1
             : monsterSound(keeper) >= MS_HUMANOID ? 2 : 0;
 
@@ -2373,7 +2367,7 @@ export async function shopDig(fall: number | boolean, state: GameState = game): 
         return;
     }
 
-    if (umDist(state, keeper.mx, keeper.my, 5) || monsterHelpless(keeper))
+    if (umDist(state, keeper.mx, keeper.my, 5) || monsterIsHelpless(keeper))
         return;
     if (!(keeper.eshk.billct || heroCarriesBillFor(keeper)
         || keeper.eshk.debit)) return;
