@@ -3,6 +3,10 @@ import test from 'node:test';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterStagger } from '../js/mondata.js';
 import { makePlural } from '../js/objnam.js';
+import { makeStunned } from '../js/potion.js';
+import { game } from '../js/gstate.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+import { freshTurnRoom } from './support/playable-room.js';
 function speciesOf(name) {
     const index = MONSTER_NAME.indexOf(name);
     assert.ok(index >= 0, `missing monster ${name}`);
@@ -29,5 +33,22 @@ void test('stagger verbs follow the body class and conjugate like makeplural', (
     assert.equal(plural('hill giant'), 'staggers');
     assert.equal(monsterStagger(speciesOf('hill giant'), 'Stagger'), 'Stagger');
     assert.equal(monsterStagger(speciesOf('human'), 'stagger'), 'stagger');
+});
+// C potion.c:124 prints the hero's verb through
+// stagger(gy.youmonst.data, "stagger") when stunning begins; the port's
+// makeStunned (potion.ts) composes monsterStagger(heroSpecies(state))
+// on the same line.  A polymorphed body changes the verb, proving the
+// migrated path follows the hero's current species.
+void test('a stunned hero staggers per current body through make_stunned', async () => {
+    freshTurnRoom();
+    const lines = [];
+    const publish = async (line) => { lines.push(line); };
+    await makeStunned(5, { publish });
+    assert.equal(lines.at(-1), 'You stagger...');
+    await makeStunned(0, { publish });
+    assert.match(lines.at(-1) ?? '', /a bit steadier now\./);
+    installPolymorphedHero('long worm');
+    await makeStunned(7, { publish });
+    assert.equal(lines.at(-1), 'You falter...');
 });
 //# sourceMappingURL=mondata_stagger.test.js.map
