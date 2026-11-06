@@ -41,8 +41,9 @@ export async function dotwoweapon() {
     if (!game.program_state.gameover)
         game.context.move = spentTime ? 1 : 0;
 }
-// C ref: wield.c:doswapweapon()/ready_weapon().  Clearing the old secondary
-// slot through setworn() also ends two-weapon mode before either new
+// C wield.c:doswapweapon()
+// The swap itself is ready_weapon(): clearing the old secondary slot
+// through setworn() also ends two-weapon mode before either new
 // inventory description is projected.
 export async function doswapweapon() {
     setMulti(0);
@@ -405,7 +406,8 @@ export async function doquiverCore(verb) {
     game.context.move = spentTime ? 1 : 0;
     return { item, spentTime, cancelled: false };
 }
-// C wield.c TWOWEAPOK; the two-handed check is separate.
+// Part of C wield.c's TWOWEAPOK macro (wield.c:75): the weapon-class
+// test; the two-handed check is separate.
 export function isTwoWeaponObject(object) {
     if (object?.oclass !== WEAPON_CLASS)
         return isWeaponTool(object);
@@ -915,7 +917,8 @@ export function setWeaponEnchantment(object, value) {
     object.spe = value;
     object.enchantment = value;
 }
-// C wield.c u_wield_art(ART_MAGICBANE).
+// Part of C's u_wield_art(ART_MAGICBANE) test (include/obj.h:441) as
+// wield.c reads it.
 function heroWieldsMagicbane(state) {
     return artifactById((state.uwep || state.u?.uwep)?.oartifact)?.name === 'Magicbane';
 }

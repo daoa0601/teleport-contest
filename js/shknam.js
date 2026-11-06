@@ -890,9 +890,10 @@ export function getShopItem(shopIndex) {
         throw new Error(`Shop ${shopIndex} has no stock entries.`);
     return lastType;
 }
-// C ref: shknam.c shkveg()/mkveggy_at().  Corpses and tins use a vegetarian
-// lichen stand-in while selecting an object type; actual tin contents are
-// repaired after normal mksobj initialization.
+// C shknam.c:mkveggy_at()
+// Also C shknam.c:shkveg(): inlined here — corpses and tins use a
+// vegetarian lichen stand-in while selecting an object type; actual tin
+// contents are repaired after normal mksobj initialization.
 async function mkveggy_at(x, y) {
     const eligible = [];
     let totalProbability = 0;

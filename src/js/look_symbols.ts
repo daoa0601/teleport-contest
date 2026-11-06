@@ -24,8 +24,9 @@ interface SymbolDescription {
     firstMatch: string;
 }
 
-// pager.c:do_screen_description() with looked=FALSE. Typed symbols use the
-// default class and dungeon symbols, even when the map uses another set.
+// Part of C pager.c:do_screen_description() with looked=FALSE.  Typed
+// symbols use the default class and dungeon symbols, even when the map
+// uses another set.
 export function typedSymbolDescription(symbol: string, context: TypedLookContext): SymbolDescription {
     const meanings: string[] = [];
     let firstMatch = '';

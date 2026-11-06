@@ -354,6 +354,7 @@ function petCanReachObject(monster: Monster, object: GameObject, state: PlayingG
     );
 }
 
+// C dogmove.c:dog_goal()
 // Also C dogmove.c:cursed_object_at(): inlined here.
 // Also C dogmove.c:wantdoor(): inlined here.
 function dogGoal(
@@ -548,10 +549,10 @@ async function starvePet(monster: Monster, state: GameState): Promise<void> {
     await finishEnvironmentalMonsterDeath(monster, state);
 }
 
+// C dogmove.c:dog_hunger()
 // A starvation attempt ends this pet action even when an amulet saves it.
-// Check only at dog_move entry; sleeping, frozen and eating pets wait until
-// their next movement opportunity, as in dochug()/m_move().
-// C dogmove.c:dog_hunger().
+// Check only at dog_move entry; sleeping, frozen and eating pets wait
+// until their next movement opportunity, as in dochug()/m_move().
 export async function applyPetHunger(monster: Monster, state: GameState): Promise<boolean> {
     const dog = monster.mtame ? monster.edog ?? monster.mextra?.edog : null;
     if (!dog || state.moves <= dog.hungrytime + DOG_WEAK) return false;
@@ -687,8 +688,9 @@ async function dogInvent(
     return { result: 0 };
 }
 
-// dogmove.c:dog_invent(): after the visible "picks up" line, obj_extract_self()
-// and mpickobj() move the chosen object into the pet's inventory.
+// Part of C dogmove.c:dog_invent(): after the visible "picks up" line,
+// obj_extract_self() and mpickobj() move the chosen object into the
+// pet's inventory (the citation owner is dogInvent() above).
 export async function commitPetPickup(
     monster: Monster,
     object: GameObject,
@@ -968,6 +970,7 @@ async function pullLeashedPetCloser(
     setMonsterApparentHeroPosition(monster, state, random, calls);
 }
 
+// C dogmove.c:dog_move()
 // Also C dogmove.c:cursed_object_at(): inlined here.
 export async function movePet(
     monster: Monster,
@@ -1325,7 +1328,9 @@ const DISGUISES: readonly MealDisguise[] = [
     FOOD_DISGUISE,
 ];
 
-// Also C dogmove.c:mnum_leashable(): all monster disguises in this table are leashable.
+// C dogmove.c:quickmimic()
+// Also C dogmove.c:mnum_leashable(): all monster disguises in this table
+// are leashable.
 export async function beginMonsterMealMimicry(
     monster: Monster, state: GameState = game,
 ): Promise<void> {

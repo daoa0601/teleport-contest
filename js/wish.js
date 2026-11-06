@@ -5,8 +5,9 @@ import { flushPendingTopline } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { makeWish } from './zap.js';
-// C allmain.c grants this once, after elapsed monster work and before the
-// next player input.
+// Part of C allmain.c's moveloop turn boundary (allmain.c:446): the
+// amulet wish is granted once, after elapsed monster work and before
+// the next player input.
 export async function grantAmuletWish() {
     if (!game.u?.uhave?.amulet || game.u?.uevent?.amulet_wish)
         return false;

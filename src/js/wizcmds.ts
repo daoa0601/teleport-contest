@@ -101,8 +101,9 @@ export async function wizPolyself() {
     game.context.move = 0;
 }
 
-// wizcmds.c:wiz_genesis() allows deliberate creation while ordinary births
-// are disabled, then restores that setting even when the prompt is cancelled.
+// C wizcmds.c:wiz_genesis()
+// Allows deliberate creation while ordinary births are disabled, then
+// restores that setting even when the prompt is cancelled.
 export async function wizGenesis() {
     const mongenSaved = game.iflags.debug_mongen;
     game.iflags.debug_mongen = false;
@@ -263,10 +264,11 @@ export async function wizTelekinesis(): Promise<void> {
 
 
 
-// C ref: teleport.c level_tele().  Wizard-menu entry into the Elemental
-// Planes grants the real Amulet before deferred_goto() starts.  Object
-// construction, inventory identity, and prinv() precede getbones()/mklev().
-// Destination placement finishes before tty asks for acknowledgement.
+// Part of C teleport.c:level_tele(): its wizard-menu entry into the
+// Elemental Planes grants the real Amulet before deferred_goto() starts.
+// Object construction, inventory identity, and prinv() precede
+// getbones()/mklev().  Destination placement finishes before tty asks
+// for acknowledgement.
 async function endgamePrerequisite(destination: DungeonLocation) {
     if (!In_endgame(destination) || In_endgame(game.u?.uz)
         || game.u?.uhave?.amulet) return;
@@ -439,10 +441,11 @@ function belongsToCurrentLevel(monster: Monster): boolean {
 
 
 
-// C refs: wizcmds.c:wiz_map() and detect.c:do_mapping().  This is a
-// zero-time debug reveal: it maps traps and engravings first, then maps every
-// background square from all directions while preserving secret doors and
-// revealing secret corridors.
+// C wizcmds.c:wiz_map()
+// Also C detect.c:do_mapping(): the reveal it calls.  This is a
+// zero-time debug reveal: it maps traps and engravings first, then maps
+// every background square from all directions while preserving secret
+// doors and revealing secret corridors.
 export async function wizMap() {
     if (!game.flags?.debug) {
         await pline('Unavailable command.');

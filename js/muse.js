@@ -521,7 +521,7 @@ export function find_defensive(monster, state, { tryEscape = false, random = rn2
     }
     return selected;
 }
-// muse.c's m_flee(m) macro in use_defensive().
+// Part of C muse.c:use_defensive(): its m_flee(m) macro (muse.c:814).
 async function m_flee(monster, options) {
     if (monster.mflee || monster.iswiz)
         return;

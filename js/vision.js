@@ -184,8 +184,9 @@ function mark_visible_range(output, row, left, right) {
     if (visionValue(output.right, row) < right)
         output.right[row] = right;
 }
-// C ref: vision.c does_block().  In addition to terrain, boulders and
-// monsters disguised as boulders participate in the shadow-casting dig pass.
+// C vision.c:does_block()
+// In addition to terrain, boulders and monsters disguised as boulders
+// participate in the shadow-casting dig pass.
 export function visionCellBlocksLight(level, x, y) {
     const loc = level.at(x, y);
     if (!loc)
@@ -430,11 +431,10 @@ export function vision_reset() {
     game._viz_rmin = null;
     game._viz_rmax = null;
 }
-// C ref: vision.c recalc_block_point() -> block_point()/unblock_point() ->
-// fill_point()/dig_point().  The single cell joins or leaves the blocker
-// table incrementally; every other row bit keeps its current value.  C
-// only requests the deferred vision_recalc() when the hero could see the
-// changed cell.
+// Part of C vision.c:recalc_block_point(): the single cell joins or leaves
+// the blocker table incrementally (block_point()/unblock_point() bodies
+// inlined); every other row bit keeps its current value.  C only requests
+// the deferred vision_recalc() when the hero could see the changed cell.
 export function vision_note_blocker_change(x, y) {
     const level = game.level;
     if (!level || y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
@@ -447,11 +447,12 @@ export function vision_note_blocker_change(x, y) {
     if (wasInVisibilityMap)
         game.vision_full_recalc = 1;
 }
-// C vision.c block_point()/unblock_point(): drive the incremental blocker
-// table directly, without consulting the terrain classifier.  mkmaze.c's
-// bubble paths call these after assigning levl[x][y] themselves, and the
-// resulting left/right pointers need not equal a full vision_reset()
-// rebuild of the same terrain — Plane of Air clouds rely on that.
+// C vision.c:block_point()
+// Drive the incremental blocker table directly, without consulting the
+// terrain classifier.  mkmaze.c's bubble paths call these after assigning
+// levl[x][y] themselves, and the resulting left/right pointers need not
+// equal a full vision_reset() rebuild of the same terrain — Plane of Air
+// clouds rely on that.  unblock_point() below is C vision.c:unblock_point().
 export function block_point(x, y) {
     if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
         return;
@@ -466,8 +467,8 @@ export function unblock_point(x, y) {
     if (game.viz_array?.[y]?.[x])
         game.vision_full_recalc = 1;
 }
-// C vision.c recalc_block_point(): pick the blocker-table direction from the
-// cell's current terrain.
+// C vision.c:recalc_block_point()
+// Pick the blocker-table direction from the cell's current terrain.
 export function recalc_block_point(x, y) {
     const level = game.level;
     if (!level || y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
@@ -484,7 +485,9 @@ export function vision_reset_new_level() {
     vision_reset();
     game.vision_full_recalc = 1;
 }
-// Bresenham quadrant path functions (C ref: vision.c q1-q4_path)
+// C vision.c:q1_path()
+// Bresenham quadrant path; q2_path()–q4_path() below are C
+// vision.c:q2_path()–q4_path().
 function q1_path(srow, scol, y2, x2) {
     let x = scol, y = srow;
     const dx = x2 - x, dy = y - y2;
@@ -613,7 +616,7 @@ function q4_path(srow, scol, y2, x2) {
     }
     return 1;
 }
-// C ref: vision.c right_side()
+// C vision.c:right_side()
 function right_side(scan, row, left, right_mark, limitsIdx) {
     const nrow = row + scan.step;
     const deeper = nrow >= 0 && nrow < ROWNO
@@ -684,7 +687,7 @@ function right_side(scan, row, left, right_mark, limitsIdx) {
         }
     }
 }
-// C ref: vision.c left_side()
+// C vision.c:left_side()
 function left_side(scan, row, left_mark, right, limitsIdx) {
     const nrow = row + scan.step;
     const deeper = nrow >= 0 && nrow < ROWNO
@@ -755,7 +758,7 @@ function left_side(scan, row, left_mark, right, limitsIdx) {
         }
     }
 }
-// C ref: vision.c view_from()
+// C vision.c:view_from()
 function view_from(srow, scol, output, range = 0) {
     const clearRow = visionRow(viz_clear, srow);
     const leftPointers = visionRow(left_ptrs, srow);
@@ -798,9 +801,10 @@ function view_from(srow, scol, output, range = 0) {
             left_side(scan, nrow_up, left, scol, limitsIdx);
     }
 }
-// C ref: vision.c do_clear_area() when the origin is not the hero. Return
-// cells exposed by the same shadow-casting engine so non-rendering consumers
-// can reason about visibility from another actor's position.
+// Part of C vision.c:do_clear_area(): the not-centered-on-hero branch —
+// view_from() with a collecting callback, so non-rendering consumers can
+// reason about visibility from another actor's position (the citation
+// owner is clearAreaCells() below).
 export function visibleCellsFrom(scol, srow, range) {
     if (!game.level || scol < 1 || scol >= COLNO
         || srow < 0 || srow >= ROWNO)
@@ -812,11 +816,12 @@ export function visibleCellsFrom(scol, srow, range) {
     }, range);
     return cells;
 }
-// C ref: vision.c do_clear_area().  When the effect is centered on the hero,
-// C deliberately avoids view_from()'s recursive callback order: it refreshes
-// the shared vision matrix and scans the radius-clipped circle row-major,
-// retaining only couldsee() cells.  RNG-using callbacks such as fountain.c's
-// gush() make that otherwise-internal ordering observable.
+// C vision.c:do_clear_area()
+// When the effect is centered on the hero, C deliberately avoids
+// view_from()'s recursive callback order: it refreshes the shared vision
+// matrix and scans the radius-clipped circle row-major, retaining only
+// couldsee() cells.  RNG-using callbacks such as fountain.c's gush() make
+// that otherwise-internal ordering observable.
 export async function clearAreaCells(scol, srow, range, { ignoreBlockers = false } = {}) {
     if (!game.level || range < 1 || range >= circle_start.length
         || scol < 1 || scol >= COLNO || srow < 0 || srow >= ROWNO) {
@@ -841,9 +846,10 @@ export async function clearAreaCells(scol, srow, range, { ignoreBlockers = false
     }
     return cells;
 }
-// C ref: vision.c clear_path() (Algorithm A).  Monster sight and light-source
-// projection use an integer Bresenham line, checking only intermediate cells;
-// this is intentionally distinct from Algorithm C hero shadow casting.
+// C vision.c:clear_path()
+// (Algorithm A).  Monster sight and light-source projection use an integer
+// Bresenham line, checking only intermediate cells; this is intentionally
+// distinct from Algorithm C hero shadow casting.
 export function clearPath(col1, row1, col2, row2) {
     if (col1 === col2 && row1 === row2)
         return true;

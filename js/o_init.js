@@ -81,9 +81,10 @@ function objectId(name) {
         throw new Error(`object metadata missing ${name}`);
     return index;
 }
-// C refs: o_init.c randomize_gem_colors(), shuffle(), and shuffle_all().
-// Store the shuffled description index because both readobjnam() and doname()
-// use it after startup.
+// Part of C o_init.c:init_objects(): its description-shuffling tail —
+// randomize_gem_colors(), shuffle(), and shuffle_all().  Store the
+// shuffled description index because both readobjnam() and doname() use
+// it after startup.
 export function initializeObjectDescriptions() {
     const descriptionIndex = OBJECT_DESCRIPTIONS.map((_, index) => index);
     const colors = OBJECT_COLOR.slice();
@@ -275,7 +276,8 @@ export async function renameDiscoveredType() {
         await tty_destroy_nhwindow(window);
     }
 }
-// C ref: o_init.c dodiscovered() — show discoveries grouped by object class.
+// C o_init.c:dodiscovered()
+// Show discoveries grouped by object class.
 export async function dodiscovered() {
     // C dodiscovered() returns plain ECMD_OK on every path, so rhack()'s
     // reset_cmd_vars() keeps context.move FALSE: browsing discoveries never
@@ -321,8 +323,9 @@ function* discoveryRows(order, relics, artifacts) {
         yield* alphabetical.sort(compareDiscoveryNames);
     }
 }
-// o_init.c:doclassdisco(). Even traditional prompts accept empty classes;
-// those choices stay hidden so the prompt advertises only useful answers.
+// C o_init.c:doclassdisco()
+// Even traditional prompts accept empty classes; those choices stay
+// hidden so the prompt advertises only useful answers.
 export async function doclassdisco() {
     // C doclassdisco() returns plain ECMD_OK on every path, so rhack()'s
     // reset_cmd_vars() keeps context.move FALSE: no path, not even a
@@ -424,10 +427,9 @@ function discoveryClassOrder() {
     const classes = inventoryClassOrder();
     return classes.includes(VENOM_CLASS) ? classes : [...classes, VENOM_CLASS];
 }
-// The per-class discoveries rows, in the discosort order.
-// Also C o_init.c:disco_output_sorted(): inlined here (the sorted pass).
-// Also C o_init.c:sortloot_descr(): inlined here (classifyLoot replaces the
-// numeric sortloot key).
+// Part of C o_init.c:disco_output_sorted(): the per-class discoveries
+// rows, in the discosort order; sortloot_descr() is inlined here too
+// (classifyLoot replaces the numeric sortloot key).
 function classDiscoveries(oclass, order) {
     const entries = [];
     for (const type of game._objectDiscoveryOrder ?? []) {
@@ -556,8 +558,9 @@ export function recordObjectEncounter(otyp, state = game) {
         state._encounteredObjectTypes = new Set();
     state._encounteredObjectTypes.add(otyp);
 }
-// Mark a type known without an encounter.
-// Also C u_init.c:knows_object(): its pauper guard lives at the callers.
+// C u_init.c:knows_object()
+// Mark a type known without an encounter; the pauper guard lives at the
+// callers.
 export function recordObjectKnowledge(otyp, state = game) {
     discoverKnownType(otyp, false, state);
 }

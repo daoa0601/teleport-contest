@@ -307,11 +307,11 @@ async function monsterBlocksBoulder(boulder, monster, sx, sy, rx, ry) {
         await plineWithContinuation(`${subject} cannot move ${heardOrSeen ? 'it' : `the ${objectCombatName(boulder)}`}.`);
     }
 }
-// The trap branches of C hack.c:moverock_core(): a pushed boulder can
-// trigger a land mine, plug or fill a pit, fall through a hole, teleport
-// away, or launch a rolling-boulder trap.
-// C hack.c:rock_disappear_msg(): the "suddenly it disappears!" farewell
-// when a boulder leaves by teleport trap.
+// Part of C hack.c:moverock_core(): the trap branches — a pushed boulder
+// can trigger a land mine, plug or fill a pit, fall through a hole,
+// teleport away, or launch a rolling-boulder trap.
+// Also C hack.c:rock_disappear_msg(): the "suddenly it disappears!"
+// farewell when a boulder leaves by teleport trap is inlined here.
 async function pushIntoTrap(boulder, trap, sx, sy, rx, ry, dx, dy, costly) {
     requirePlayingGame(game);
     if (trap.ttyp === LANDMINE && rn2(10)) {
@@ -931,6 +931,8 @@ async function leaveWater({ state, location, publish, }) {
     }
     return true;
 }
+// TS-only adapter dispatching into the C hack.c liquid-effect ports; it
+// has no single C original.  Which C path each entry follows:
 // entry 'spot-effects' (C hack.c:spoteffects() -> pooleffects()) is the
 // default.  entry 'float-down' (float_down() -> drown()/
 // lava_effects()) skips the spoteffects-only stages: leaving water, the
@@ -1001,7 +1003,9 @@ export async function heroLiquidEffects(options = {}) {
         recalculateVision, applyLandingEffects, chooseTeleportDestination, die,
     });
 }
-// Terrain that blocks ordinary movement. C hack.c.
+// Part of C hack.c:test_move(): the destination-terrain obstruction test
+// (rock or a closed/locked door), shared by domoveCore()'s DO_MOVE branch
+// and trap.ts's failed-untrap entry.
 export function blocksMove(x, y) {
     const loc = game.level?.at(x, y);
     if (!loc)
@@ -1014,8 +1018,8 @@ export function blocksMove(x, y) {
         return true;
     return false;
 }
-// test_move()'s ooze test (C hack.c:1075-1082): a closed door that this
-// body, unable to pass walls, can ooze under.
+// Part of C hack.c:test_move(): the ooze test (C hack.c:1075-1082) — a
+// closed door that this body, unable to pass walls, can ooze under.
 function heroOozesUnderDoor(destination, g = game) {
     return destination?.typ === DOOR
         && !!(destination.doormask & (D_CLOSED | D_LOCKED))
@@ -1026,8 +1030,9 @@ function heroOozesUnderDoor(destination, g = game) {
 export function heroTestMove(x, y, g = game) {
     return testHeroMove(g.u.ux, g.u.uy, x, y, 'test', g).passes;
 }
-// C test_move(TEST_MOVE) from an arbitrary origin square. zap.c bhit()
-// checks the chain's next step from a thrown iron ball's previous square.
+// Part of C hack.c:test_move(): the TEST_MOVE probe from an arbitrary
+// origin square.  zap.c bhit() checks the chain's next step from a thrown
+// iron ball's previous square.
 export function heroMoveBlockedBetween(fromX, fromY, x, y, g = game) {
     return !testHeroMove(fromX, fromY, x, y, 'test', g).passes;
 }
@@ -1168,9 +1173,10 @@ function travelCellKnown(x, y, g) {
     const location = g.level?.at(x, y);
     return !!location && (!!location.seenv || !heroIsBlind(g) && couldsee(x, y));
 }
-// hack.c:findtravelpath() uses DISP_ALL so search markers include unseen
-// squares. Crawl mode holds frontiers for three delays and guessed goals
-// for five; ending the effect restores the map before movement continues.
+// Part of C hack.c:findtravelpath(): its DISP_ALL display, so search
+// markers include unseen squares.  Crawl mode holds frontiers for three
+// delays and guessed goals for five; ending the effect restores the map
+// before movement continues.
 async function showTravelSearch(positions, warningLevel, g) {
     if (!g.iflags.trav_debug)
         return;
@@ -1246,9 +1252,10 @@ export async function isValidTravelTarget(targetX, targetY, g = game) {
         return false;
     return await findtravelpath('valid', targetX, targetY, g);
 }
-// findtravelpath()'s selection_setpoint(u.ux, u.uy, gt.travelmap, 1) (C
-// hack.c:1416, 1486).  selvar.c:186-187: a freed (NULL) selection ignores
-// the write, and the map only comes back at the next findtravelpath() entry.
+// Part of C hack.c:findtravelpath(): its
+// selection_setpoint(u.ux, u.uy, gt.travelmap, 1) (C hack.c:1416, 1486).
+// selvar.c:186-187: a freed (NULL) selection ignores the write, and the
+// map only comes back at the next findtravelpath() entry.
 function markTravelStep(x, y, g) {
     if (!g._travelMap)
         return;
@@ -1363,10 +1370,10 @@ async function findtravelpath(mode, targetX, targetY, g) {
     }
     return false;
 }
-// domove_core()'s travel block (C hack.c:2724-2728): one TRAVP_TRAVEL
-// attempt, then TRAVP_GUESS, then travel1 = 0.  A failed guess leaves the
-// zero direction of C's `found:' tail (hack.c:1518-1522) before the rest
-// of domove_core() runs.
+// Part of C hack.c:domove_core(): the travel block (C hack.c:2724-2728) —
+// one TRAVP_TRAVEL attempt, then TRAVP_GUESS, then travel1 = 0.  A failed
+// guess leaves the zero direction of C's `found:' tail (hack.c:1518-1522)
+// before the rest of domove_core() runs.
 async function selectTravelStep(state) {
     requirePlayingGame(game);
     if (!await findtravelpath('travel', state.targetX, state.targetY, game)
@@ -1378,8 +1385,9 @@ async function selectTravelStep(state) {
     game.context.travel1 = false;
     return { dx: game.u.dx ?? 0, dy: game.u.dy ?? 0 };
 }
-// lookaround()'s travel window (C hack.c:3905-3940, 4005-4008, read with
-// context.run == 8): moveloop runs it before every automatic travel step.
+// Part of C hack.c:lookaround(): the travel window (C hack.c:3905-3940,
+// 4005-4008, read with context.run == 8); moveloop runs it before every
+// automatic travel step.
 // Travel stops for a grid-bug diagonal, a visible monster that is not
 // peaceful-safe, a known trap directly ahead of the previous step's
 // direction, or liquid ahead that the hero cannot safely cross.  Doors,
@@ -1952,8 +1960,9 @@ function terrainType(state) {
         default: return typ;
     }
 }
-// hack.c:set_uinwater(). Entering or leaving water also changes terrain
-// properties and the optional terrain status, even on the same square.
+// C hack.c:set_uinwater()
+// Entering or leaving water also changes terrain properties and the
+// optional terrain status, even on the same square.
 export async function setHeroInWater(inWater, state = game) {
     if (!!state.u.uinwater === inWater)
         return;
@@ -2090,7 +2099,8 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, tra
             activeSpot = null;
     }
 }
-// The Warning intrinsic alerts the hero to melting ice underfoot.
+// Part of C hack.c:spoteffects(): the "Warning alerts you to ice danger"
+// block; the Warning intrinsic alerts the hero to melting ice underfoot.
 // C timeout.c:spot_time_left(): the remaining melt time read off the
 // level timer's deadline; C timeout.c:spot_time_expires(): its expiry
 // lookup is the levelTimers find.
@@ -2339,7 +2349,8 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
     }
     return result;
 }
-// Also C hack.c:monstinroom(): inlined here for the barracks message.
+// Part of C hack.c:check_special_room(): the per-room entry message;
+// also inlines C hack.c:monstinroom() for the barracks message.
 function specialRoomEntryMessage(room, roomno) {
     switch (room.rtype) {
         case ZOO: return "Welcome to David's treasure zoo!";
@@ -2394,9 +2405,10 @@ export async function applyHeroLocationEffects(publish = plineWithContinuation, 
         publish, pick,
     });
 }
-// domove_core()'s common tail (C hack.c:2934-2990), including a refused pet
-// swap.  Repositioning and concealment finish before vision and arrival
-// effects; domoveCore() owns the function itself, above.
+// Part of C hack.c:domove_core(): the common tail (C hack.c:2934-2990),
+// including a refused pet swap.  Repositioning and concealment finish
+// before vision and arrival effects; domoveCore() owns the function
+// itself, above.
 async function finishHeroMovement({ oldx, oldy, loc, ballChainMove = null, }) {
     const u = game.u;
     // This tail is domove_core()'s epilogue; reaching it (rather than one
@@ -2595,10 +2607,11 @@ async function heroTrapmove(targetX, targetY) {
             return false;
     }
 }
-// domove_core()'s trapped-move block (C hack.c:2830-2841): trapmove(), then
-// the reset_utrap(TRUE) release the moment the bare u.utrap zeroing appears,
-// so the was-levitating/was-flying snapshots see float_vs_flight()'s blocked
-// masks and the recompute restores flight blocked by the trap.
+// Part of C hack.c:domove_core(): the trapped-move block (C hack.c:2830-2841)
+// — trapmove(), then the reset_utrap(TRUE) release the moment the bare
+// u.utrap zeroing appears, so the was-levitating/was-flying snapshots see
+// float_vs_flight()'s blocked masks and the recompute restores flight
+// blocked by the trap.
 export async function heroCanMoveFromTrap(targetX, targetY) {
     const hero = game.u;
     if (!hero?.utrap)
@@ -3812,13 +3825,13 @@ export function stopRun(g = game, andTravel = true) {
     if (g.multi > 0)
         g.multi = 0;
 }
-// The travel-arrival cleanup of C end_running() (hack.c:4149-4157): clear
-// the travel flags, free gt.travelmap (findtravelpath()'s selection) and
-// cancel a pending repeat.  findtravelpath() restores run to 8 after its
-// nomul(0) on arrival; keep that value: allmain.c suppresses new time
-// updates until a command resets run. Only a screen flush consumes an
-// already pending update; suppressed movement messages do not flush the
-// screen (pline.c:vpline()).
+// Part of C hack.c:end_running(): the travel-arrival cleanup
+// (hack.c:4149-4157) — clear the travel flags, free gt.travelmap
+// (findtravelpath()'s selection) and cancel a pending repeat.
+// findtravelpath() restores run to 8 after its nomul(0) on arrival; keep
+// that value: allmain.c suppresses new time updates until a command
+// resets run. Only a screen flush consumes an already pending update;
+// suppressed movement messages do not flush the screen (pline.c:vpline()).
 export function arriveTravel(g = game) {
     g._travelMap = undefined;
     g._runState = null;
@@ -3875,6 +3888,7 @@ export async function captureRunmodeDelay(g = game, enabled = false, sourceTurn 
         restoreTopline(logicalTopline);
     }
 }
+// C hack.c:maybe_smudge_engr()
 // C's function-call argument is evaluated before wipeEngravingAt() discovers
 // nowipeout.  Lua tutorial engravings therefore still own rnd(5) when an
 // explicit movement leaves or enters one, despite degrade=false.
@@ -4342,8 +4356,9 @@ export function heroGoldAmount(state) {
     const object = heroGoldObject(state);
     return object ? heroGoldQuantity(object) : 0;
 }
-// money_cnt() over a monster's minvent (the same C function as
-// heroGoldAmount() above); C callers shk.c:4046, shk.c:5586, priest.c:614.
+// Part of C hack.c:money_cnt(): over a monster's minvent — the same C
+// function as heroGoldAmount() above (the citation owner); C callers
+// shk.c:4046, shk.c:5586, priest.c:614.
 export function monsterGoldAmount(monster) {
     return monster.minvent?.find(object => object.oclass === COIN_CLASS)?.quan ?? 0;
 }

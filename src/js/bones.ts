@@ -212,8 +212,10 @@ async function addMummyWrapping(monster: Monster): Promise<void> {
     );
 }
 
-// The dead hero leaves C mkobj.c:mk_named_object()'s named corpse or
-// statue; mkobj.c:obj_attach_mid() ties the ghost's id to it.
+// Part of C bones.c:savebones(): the dead hero leaves
+// mkobj.c:mk_named_object()'s named corpse or statue; mkobj.c:
+// obj_attach_mid() ties the ghost's id to it.  The save itself is
+// saveBonesLevel() below (the citation owner).
 export async function createBonesFromDeath(
     deathCause: string, promptDeathQuestion: (question: string) => Promise<string>, when?: number,
 ): Promise<boolean> {
@@ -332,7 +334,8 @@ const PM_ORACLE = MONSTER_NAME.indexOf('Oracle');
 const MS_LEADER = 36;
 const MS_NEMESIS = 37;
 
-// Also C bones.c:remove_mon_from_bones(): inlined here in the monster purge loop.
+// Part of C bones.c:savebones(): its monster purge loop.
+// Also C bones.c:remove_mon_from_bones(): inlined here in that loop.
 export async function prepareBonesMonstersForSave(): Promise<void> {
     const level = requireGameLevel();
     for (const monster of [...level.monsters].reverse()) {
@@ -554,8 +557,8 @@ function eachObjectInBonesGraph(level: GameMap, visit: (object: GameObject) => v
     eachTopLevelBonesObject(level, walk);
 }
 
-// The resetobjs() pass over one object chain (monster invent, floor,
-// buried) for bones save and restore.
+// Part of C bones.c:resetobjs(): the pass over one object chain (monster
+// invent, floor, buried) for bones save and restore.
 // Also C bones.c:set_ghostly_objlist(): inlined here (the ghostly flag);
 // the hero invent marking in createBonesFromDeath() is the same helper.
 function resetBonesObjectList(
@@ -591,8 +594,9 @@ function resetBonesObjects(level: GameMap, mode: 'save' | 'restore'): void {
     level.buriedObjects = resetBonesObjectList(level?.buriedObjects, mode);
 }
 
-// C refs: bones.c savebones()/resetobjs(FALSE). The persistent payload owns
-// the level graph only. The saved-graph codec retains entity aliases and
+// C bones.c:savebones()
+// savebones()/resetobjs(FALSE): the persistent payload owns the level
+// graph only.  The saved-graph codec retains entity aliases and
 // container back-pointers; getbones() restores the GameMap prototype.
 // Also C bones.c:goodfruit(): inlined here — only fruits referenced by a
 // slime mold in the graph stay existing in the payload.
@@ -857,7 +861,8 @@ function restoreBonesClock(level: GameMap, savedAt: number): void {
     if (level.flags.stasis_until !== undefined) level.flags.stasis_until += adjustment;
 }
 
-// C refs: bones.c:getbones() and restore.c:getlev(ghostly).
+// C bones.c:getbones()
+// With restore.c:getlev(ghostly) for loading the level.
 export async function getbones(): Promise<boolean> {
     const flags = game.flags || {};
     if (game.discover || flags.explore) return false;

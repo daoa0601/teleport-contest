@@ -799,8 +799,9 @@ export async function rejectCasting(state = game) {
         return false;
     return true;
 }
-// The port stores knowledge as the turn on which it expires. Casting does
-// not refresh it; every elapsed global turn ages all memorized spells.
+// Part of C spell.c's spl_book know-counter: the port stores knowledge as
+// the turn on which it expires.  Casting does not refresh it; every
+// elapsed global turn ages all memorized spells.
 // Also C spell.c:age_spells(): the per-turn decrnknow() loop is replaced
 // by this expiry-deadline subtraction.
 export function currentSpellKnowledge(spell, state = game) {
@@ -1370,7 +1371,8 @@ async function propagateLightning(queue, painted, zap, displayedBeam, state) {
         await flush_screen(0);
     }
 }
-// ── spell.c:cast_protection() and the direct healing spell effects ──
+// C spell.c:cast_protection()
+// Also the direct healing spell effects of this section.
 export async function castProtection({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1450,14 +1452,16 @@ export async function castCureSickness({ state = game } = {}) {
         await setHeroSlimingTimeout(0, { state, message: 'The slime disappears!' });
     }
 }
-// ── spell.c potion group: casting owns the pseudo-object and its disposal ──
+// Part of C spell.c:spelleffects(): casting a potion spell owns the
+// pseudo-object (mksobj(spell)) and its disposal; the effect itself is
+// applyPotionEffect() in potion.ts.
 export async function applyPotionSpell(source, { state = game } = {}) {
     const effect = await applyPotionEffect(source, { state });
     return { result: effect.result > 0 ? 1 : 0, heroDied: effect.heroDied };
 }
-// ── spell.c:spell_skilltype() and spelltypemnemonic() ──
-// C spell.c:spell_skilltype(). The Priest light-school override is
-// role_init's, at role.c:2088, carried by role.ts.
+// C spell.c:spell_skilltype()
+// The Priest light-school override is role_init's, at role.c:2088,
+// carried by role.ts.
 export function spellSkillType(otyp, state = game) {
     if (roleInitClericLightSchool(otyp, state))
         return P_CLERIC_SPELL;
@@ -1477,8 +1481,7 @@ const SPELL_CATEGORIES = {
 export function spellCategory(otyp, state = game) {
     return SPELL_CATEGORIES[spellSkillType(otyp, state)];
 }
-// ── spell.c:losespells() ──
-// C spell.c:losespells().
+// C spell.c:losespells()
 export function loseHeroSpellMemory({ state = game } = {}) {
     if (state.context.spbook) {
         state.context.spbook.book = null;

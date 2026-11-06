@@ -137,8 +137,9 @@ export async function splitSittingGremlin() {
     return clone;
 }
 
+// C fountain.c:dogushforth()
 // Gushing water along line of sight from an overflowing fountain.
-// C refs: fountain.c dogushforth() and gush().
+// Also C fountain.c:gush(): inlined here as the per-step callback.
 export async function gushForthFromFountain({ drinking = false, state = game }: { drinking?: boolean; state?: GameState } = {}): Promise<void> {
     const level = requireGameLevel(state);
     const ux = state.u.ux;
@@ -731,8 +732,9 @@ async function triggerFountainActorTrap(
     return triggerTrap(monster);
 }
 
-// fountain.c:dowaternymph().  Placement, trap effects, and presentation stay
-// injected subsystem owners; this reducer owns only their source ordering.
+// C fountain.c:dowaternymph()
+// Placement, trap effects, and presentation stay injected subsystem
+// owners; this reducer owns only their source ordering.
 export async function applyFountainNymphActor({
     gone = false,
     blind = false,
@@ -766,9 +768,10 @@ export async function applyFountainNymphActor({
     return { created: true, monster, message, trap, fallback: false };
 }
 
-// fountain.c:dowaterdemon().  The wish roll is eligible only after a
-// successful construction and its release message; a winning grant replaces
-// immediate trap entry because mongrantswish() removes the actor first.
+// C fountain.c:dowaterdemon()
+// The wish roll is eligible only after a successful construction and its
+// release message; a winning grant replaces immediate trap entry because
+// mongrantswish() removes the actor first.
 export async function applyFountainDemonActor({
     gone = false,
     blind = false,
@@ -831,9 +834,10 @@ export async function applyFountainDemonActor({
     };
 }
 
-// fountain.c:dowatersnakes().  Unlike the other helpers, rn1(5,2) is paid
-// before G_GONE.  Each requested actor independently constructs and enters a
-// trap before the next request begins.
+// C fountain.c:dowatersnakes()
+// Unlike the other helpers, rn1(5,2) is paid before G_GONE.  Each
+// requested actor independently constructs and enters a trap before the
+// next request begins.
 export async function applyFountainSnakeActors({
     gone = false,
     blind = false,

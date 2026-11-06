@@ -215,10 +215,11 @@ export function preferredFruitName(state: GameState): string {
     return state.fruitName;
 }
 
-// objnam.c:xname() visible name without inventory annotations.
+// C objnam.c:xname()
+// The visible name without inventory annotations.  Unlike doname(),
+// this omits quantity, beatitude, enchantment, and article.
 // Also C objnam.c:xcalled(): inlined as the "<class> called <name>"
 // compositions below; JS string concatenation needs no truncation.
-// Unlike doname(), this omits quantity, beatitude, enchantment, and article.
 export function objectName(
     object: ObjectNameView, state: GameState = game, { minimal = false } = {},
 ): string {
@@ -1283,8 +1284,9 @@ function requiredArtifact(name: string, state: GameState): Artifact {
     return artifact;
 }
 
-// C ref: objnam.c rnd_class().  Object probabilities are absolute weights
-// within the requested inclusive type range rather than a uniform index.
+// C objnam.c:rnd_class()
+// Object probabilities are absolute weights within the requested
+// inclusive type range rather than a uniform index.
 export function rndClass(first: number, last: number): number {
     if (first >= last) return first === last ? first : 0;
     let total = 0;
@@ -1826,9 +1828,10 @@ function parseWishClass(search: WishSearch, state: GameState): WishLookup | null
     return null;
 }
 
-// C postparse2 is also the armor retry target, even with a class selected.
-// C objnam.c:readobjnam_postparse2(): the class ranges, " stone"/" gem",
-// and the "glass" family before a general name search.
+// Part of C objnam.c:readobjnam_postparse2(): the class ranges,
+// " stone"/" gem", and the "glass" family before a general name search;
+// C's postparse2 is also the armor retry target, even with a class
+// selected.
 function parseWishRange(parsed: ParsedWish, search: WishSearch): WishLookup | null {
     const range = ranges.find(([range]) => range === search.name.toLowerCase());
     if (range) return foundWishType(rndClass(range[2], range[3]));

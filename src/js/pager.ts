@@ -124,10 +124,11 @@ export function iceDescriptionAt(x: number, y: number, { state = game, probing =
 
 // C refs: pager.c:do_look() (mode 0 for whatis, 1 for quick glance),
 // getpos.c:getpos(), pager.c:do_screen_description().
-// Farlook spends no game time. Ordinary look retains its cursor between
-// selections; quick look returns after describing one selection.
-// C do_screen_description(looked=TRUE) supplies the same firstmatch to
-// #lookaround and show_glyph()'s accessibility notice.
+// Part of C pager.c:do_look(): farlook spends no game time.  Ordinary
+// look retains its cursor between selections; quick look returns after
+// describing one selection.  C do_screen_description(looked=TRUE)
+// supplies the same firstmatch to #lookaround and show_glyph()'s
+// accessibility notice.
 export async function describeMapLocation(x: number, y: number): Promise<string> {
     const screen = screenDescription(x, y, '');
     return screen.needsDetail
@@ -135,8 +136,9 @@ export async function describeMapLocation(x: number, y: number): Promise<string>
         : screen.firstMatch;
 }
 
-// The do_look() from_screen tail shared by every mode: the cursor picks a
-// location and its description pages (pager.c:1859-1936).
+// Part of C pager.c:do_look(): the from_screen tail shared by every
+// mode (pager.c:1859-1936) — the cursor picks a location and its
+// description pages.
 async function lookFromScreen(quick = true): Promise<void> {
     const savedVerbose = game.flags.verbose;
     game.flags.verbose = !!savedVerbose && !quick;
@@ -481,6 +483,7 @@ const COYOTE_NAMES = [
     'Caninus Nervous Rex', 'Grotesques Appetitus', 'Nemesis Ridiculii',
 ];
 
+// C pager.c:look_at_monster()
 // Also C do_name.c:coyotename(): inlined here for an accurate look at a
 // coyote (the "Canis latrans" pun by mcan and m_id).
 export async function lookAtMonster(monster: Monster, x: number, y: number): Promise<string> {
@@ -607,10 +610,11 @@ export async function offerMonsterSupplement(monster: Monster, name: string, wit
 // the current square is consulted only where the native glyph needs context.
 // ---------------------------------------------------------------------------
 
-// Looking never reads an engraving: report its saved text, even when the
-// live inscription has since been scuffed or replaced.
-// C pager.c:add_quoted_engraving(): the remembered inscription quoted after
-// a grave or engraving description; unread inscriptions stay unread.
+// C pager.c:add_quoted_engraving()
+// The remembered inscription quoted after a grave or engraving
+// description; unread inscriptions stay unread.  Looking never reads an
+// engraving: report its saved text, even when the live inscription has
+// since been scuffed or replaced.
 export function quotedEngraving(x: number, y: number, name: string, force = false): string {
     const engraving = game.level?.engravings?.find(e => e.x === x && e.y === y);
     const headstone = name === 'grave';
@@ -638,7 +642,9 @@ export function unseenCreatureDescription(): string {
         ? 'unseen creature' : 'remembered, unseen, creature';
 }
 
-// Also C pray.c:altarmask_at(): mimic-aware altar mask lookup is inlined here
+// Part of C pager.c:do_screen_description(): the glyph-feature
+// description; also inlines C pray.c:altarmask_at() — the mimic-aware
+// altar mask lookup.
 export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata): string {
     if (glyph.kind === 'trap') return displayedTrapDescription(glyph.trapType, x, y);
     if (glyph.kind === 'invisible') return unseenCreatureDescription();
@@ -1069,10 +1075,11 @@ function mapSymbolAt(x: number, y: number): string {
     return location.disp_decgfx ? DEC_TO_UNICODE[location.disp_ch] ?? location.disp_ch : location.disp_ch;
 }
 
-// The "obscured by" clause decodes the covering glyph into its raw native
-// symbol byte (windows.c decode_mixed()) and prints it mid-line, outside
-// the DECgraphics shift. A DEC symbol byte never survives the captured
-// screen, so only plain ASCII symbols appear there.
+// Part of C pager.c:do_screen_description(): its "obscured by" clause
+// decodes the covering glyph into its raw native symbol byte (windows.c
+// decode_mixed()) and prints it mid-line, outside the DECgraphics shift.
+// A DEC symbol byte never survives the captured screen, so only plain
+// ASCII symbols appear there.
 function coveringSymbolAt(x: number, y: number): string {
     const location = game.level?.at(x, y);
     if (!location) return ' ';
@@ -1191,8 +1198,8 @@ export async function menuControlsHelp(): Promise<void> {
     ]);
 }
 
-// Swallowed subset of pager.c:self_lookat(); swallowing has already dismounted
-// the hero, revealed them, and released any trap.
+// Part of C pager.c:self_lookat(): the swallowed subset — swallowing has
+// already dismounted the hero, revealed them, and released any trap.
 export function swallowedHeroDescription(): string {
     const race = heroIsPolymorphed(game) ? '' : `${game.urace?.adj ?? 'human'} `;
     const invisible = propertyIsActive('invisible', game)

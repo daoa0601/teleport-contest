@@ -175,8 +175,8 @@ interface MonsterContactOptions extends MonsterCombatMessageOptions {
     rollDice?: RollDice;
 }
 
+// C mhitm.c:missmm()
 // Feedback for when a monster-versus-monster attack misses.
-// C mhitm.c:missmm().
 export async function showMonsterCombatMiss(
     aggressor: Monster, defender: Monster, attack: AttackTuple,
     { state = game, visible, publish = plineWithContinuation }: MonsterCombatMessageOptions,
@@ -199,9 +199,10 @@ export function canSeeMonsterCombat(attacker: Monster, defender: Monster): boole
             && canSpotMonster(defender));
 }
 
-// Admission exposes a concealed defender before visibility and hit chances
-// are finalized. A disguise is instead revealed by the individual hit/miss.
-// C mhitm.c:mattackm(), the attacked-mundetected-monster block.
+// Part of C mhitm.c:mattackm(): its attacked-mundetected-monster block.
+// Admission exposes a concealed defender before visibility and hit
+// chances are finalized; a disguise is instead revealed by the
+// individual hit/miss.
 export async function revealMonsterCombatDefender(defender: Monster, state: GameState = game): Promise<void> {
     if (!defender.mundetected) return;
     defender.mundetected = 0;

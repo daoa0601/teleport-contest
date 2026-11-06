@@ -152,8 +152,9 @@ function multishotClassBonus(role: RoleKey, item: GameObject, launcher: GameObje
     return 0;
 }
 
-// throw_obj()'s weakmultishot local (dothrow.c:170-174): these roles, poor
-// dexterity, or fumbling hold the volley back to its smaller bonuses.
+// Part of C dothrow.c:throw_obj(): the weakmultishot local (dothrow.c:170-174)
+// — these roles, poor dexterity, or fumbling hold the volley back to its
+// smaller bonuses.
 function weakMultishot(role: RoleKey, skill: number, state: PlayingGameState) {
     return role === 'wizard' || role === 'priest'
         || (role === 'healer' && skill !== P_KNIFE)
@@ -162,9 +163,9 @@ function weakMultishot(role: RoleKey, skill: number, state: PlayingGameState) {
         || currentAttribute(A_DEX, state) <= 6;
 }
 
-// throw_obj()'s race bonus switch (dothrow.c:193-214): the racial bows and
-// the gnome crossbow.  The quest-artifact launcher's extra shot follows in
-// the caller.
+// Part of C dothrow.c:throw_obj(): the race bonus switch (dothrow.c:193-214)
+// — the racial bows and the gnome crossbow.  The quest-artifact launcher's
+// extra shot follows in the caller.
 function raceBonus(race: RaceName, item: GameObject, launcher: GameObject | null, skill: number) {
     if (race === 'elf') {
         return item.otyp === ELVEN_ARROW && launcher?.otyp === ELVEN_BOW
@@ -183,9 +184,10 @@ interface HeroVolleyOptions {
     random?: (range: number) => number;
 }
 
-// throw_obj()'s multishot calculation (dothrow.c:158-238): the skill,
-// role, race and quest-artifact bonuses, the crossbow strength cap, then
-// the rnd() roll and the quantity and shotlimit clamps.
+// Part of C dothrow.c:throw_obj(): the multishot calculation
+// (dothrow.c:158-238) — the skill, role, race and quest-artifact bonuses,
+// the crossbow strength cap, then the rnd() roll and the quantity and
+// shotlimit clamps.
 export function chooseHeroVolleyCount(item: GameObject, {
     state = game,
     shotLimit = 0,
@@ -1318,9 +1320,10 @@ export type RangedObjectHitResult = { heroDied: true } | {
     consumed: boolean;
 };
 
-// thitmonst()'s base target number (dothrow.c:2027-2076): Dexterity replaces
-// Strength, distance and target size apply through omon_adj(), and a
-// guaranteed hit while swallowed adds the +1000 that no roll can beat.
+// Part of C dothrow.c:thitmonst(): the base target number
+// (dothrow.c:2027-2076) keys off C's Upolyd; Dexterity replaces Strength,
+// distance and target size apply through omon_adj(), and a guaranteed hit
+// while swallowed adds the +1000 that no roll can beat.
 function heroIsPolymorphed(state: PlayingGameState) {
     return Upolyd(state.u);
 }
@@ -1414,9 +1417,10 @@ function rangedObjectUsesWeaponHit(object: GameObject) {
         || (objectClass === TOOL_CLASS && skill !== 0);
 }
 
-// thitmonst()'s shared miss tail: reportHeroThrownMiss() [tmiss()] with its
-// maybe_wakeup roll, plus the weapon arm's extra wakeup() for applied
-// polearms (dothrow.c:2196-2198, 2235-2238).
+// Part of C dothrow.c:thitmonst(): the shared miss tail —
+// reportHeroThrownMiss() [tmiss()] with its maybe_wakeup roll, plus the
+// weapon arm's extra wakeup() for applied polearms (dothrow.c:2196-2198,
+// 2235-2238).
 async function missRangedObject(
     monster: Monster, object: GameObject, state: PlayingGameState,
     target: Position, applied: boolean, volley: HeroProjectileVolley | undefined,
@@ -1994,9 +1998,9 @@ export async function releaseCameraDemon(
     return monster;
 }
 
-// ---------------------------------------------------------------------------
-// C dothrow.c:check_shop_obj(). Broken objects settle through the hero's
-// current shop. Intact returns remove bills or offer a sale before stacking.
+// C dothrow.c:check_shop_obj()
+// Broken objects settle through the hero's current shop. Intact returns
+// remove bills or offer a sale before stacking.
 // ---------------------------------------------------------------------------
 export async function settleThrownShopObject(
     object: GameObject, x: number, y: number, state: GameState = game,
@@ -2096,8 +2100,8 @@ function obstacleReason(location: MapLocation, openDoorFrame: boolean): string {
     return 'bumping into a wall';
 }
 
-// hurtle_step()'s losehp(..., why, KILLED_BY) (dothrow.c:836): "killed by
-// bumping into a wall".
+// Part of C dothrow.c:hurtle_step(): its losehp(..., why, KILLED_BY)
+// (dothrow.c:836) — "killed by bumping into a wall".
 async function loseImpactHitPoints(amount: number, killer: string) {
     if (game.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
@@ -2657,8 +2661,9 @@ export function isAutoReturningThrow(object: GameObject, weaponMask: number, sta
             && state.urole?.key === 'valkyrie');
 }
 
-// throwit()'s impaired local (dothrow.c:1520-1523): Confusion, Stunned,
-// Blind, Hallucination, or Fumbling spoil the catch of a returning weapon.
+// Part of C dothrow.c:throwit(): the impaired local (dothrow.c:1520-1523)
+// — Confusion, Stunned, Blind, Hallucination, or Fumbling spoil the catch
+// of a returning weapon.
 export function throwerIsImpaired(state: GameState): boolean {
     return heroIsBlind(state) || heroIsHallucinating(state)
         || state.u.confused || propertyIsActive('confusion', state)
@@ -2676,9 +2681,9 @@ interface ReturningThrowOptions {
     tetherDisplay?: MonsterProjectileDisplay | null;
 }
 
-// throwit()'s throw-and-return outcome (dothrow.c:1710-1777), shared by
-// the map and the engulfed weapon arm.  A failed return still needs
-// throwit()'s landing at the target square.
+// Part of C dothrow.c:throwit(): the throw-and-return outcome
+// (dothrow.c:1710-1777), shared by the map and the engulfed weapon arm.
+// A failed return still needs throwit()'s landing at the target square.
 export async function finishReturningThrow({
     state, object, impact, impaired, twoWeapons, oldSlot, tetherDisplay,
 }: ReturningThrowOptions): Promise<boolean> {
@@ -2853,9 +2858,9 @@ function swallowedPotionEligibility(
     return engulfer;
 }
 
-// throwit()'s u.uswallow arm for a weapon-like missile (dothrow.c:1569-1578):
-// the guaranteed thitmonst() hit, then the returning-weapon roll or
-// swallowit()'s transfer to the engulfer.
+// Part of C dothrow.c:throwit(): the u.uswallow arm for a weapon-like
+// missile (dothrow.c:1569-1578) — the guaranteed thitmonst() hit, then
+// the returning-weapon roll or swallowit()'s transfer to the engulfer.
 export async function resolveSwallowedWeaponThrow({
     state = game,
     item,
@@ -2946,8 +2951,8 @@ export async function resolveSwallowedWeaponThrow({
     }
 }
 
-// thitmonst()'s guaranteed-hit egg/pie/venom arm (dothrow.c:2256-2260):
-// hmon() uses the projectile up.
+// Part of C dothrow.c:thitmonst(): the guaranteed-hit egg/pie/venom arm
+// (dothrow.c:2256-2260) — hmon() uses the projectile up.
 export async function resolveSwallowedEggPieOrVenomThrow({
     state = game,
     item,
@@ -2978,8 +2983,9 @@ export async function resolveSwallowedEggPieOrVenomThrow({
     }
 }
 
-// thitmonst()'s guaranteed-hit potion arm (dothrow.c:2262-2265): potionhit()
-// resolves the vapor inside the engulfer.
+// Part of C dothrow.c:thitmonst(): the guaranteed-hit potion arm
+// (dothrow.c:2262-2265) — potionhit() resolves the vapor inside the
+// engulfer.
 export async function resolveSwallowedPotionThrow({
     state = game,
     item,
@@ -3026,8 +3032,8 @@ export async function resolveSwallowedPotionThrow({
     }
 }
 
-// thitmonst()'s taming/food arm while swallowed (dothrow.c:2267-2275 and the
-// guaranteed-hit vanish of 2276-2298).
+// Part of C dothrow.c:thitmonst(): the taming/food arm while swallowed
+// (dothrow.c:2267-2275 and the guaranteed-hit vanish of 2276-2298).
 export async function resolveSwallowedFoodThrow({
     state = game, item, objectClass, selectedQuantity, splitObjectId = null,
     wakeMonster,
@@ -3100,8 +3106,9 @@ export async function resolveSwallowedFoodThrow({
     }
 }
 
-// thitmonst()'s remaining guaranteed-hit arm (dothrow.c:2276-2298): the
-// projectile vanishes into the engulfer's entrails or currents.
+// Part of C dothrow.c:thitmonst(): the remaining guaranteed-hit arm
+// (dothrow.c:2276-2298) — the projectile vanishes into the engulfer's
+// entrails or currents.
 export async function resolveGenericSwallowedThrow({
     state = game,
     item,

@@ -177,6 +177,9 @@ export type HeroTheftResult =
     | { outcome: 'petrified' }
     | { outcome: 'stole'; stolenName: string | null };
 
+// C steal.c:steal()
+// steal.c:343-613, the hero as the victim; the prose above the
+// HeroTheftResult type describes the full transaction.
 // Also C steal.c:unresponsive(): inlined as the unaware-or-frozen/
 // paralyzed helper that skips the steal struggle rolls inside.
 export async function stealFromHero(

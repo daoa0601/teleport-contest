@@ -3039,9 +3039,8 @@ async function trapeffectSelector(
     };
 }
 
+// C trap.c:drain_en()
 // Hero energy loss.
-// C ref: trap.c drain_en().
-// C trap.c:drain_en().
 export function drainHeroEnergy(
     state: GameState,
     amount: number,
@@ -3139,11 +3138,12 @@ const MAGIC_RESISTANCE_ARMOR = new Set([
     GRAY_DRAGON_SCALES,
 ]);
 
-// trap.c trapeffect_anti_magic(): the hero branch — positively-enchanted
-// iron shoes shed the drain onto their enchantment; otherwise the
-// anti-magic field hits the protected hero (a carried artifact's
-// C zap.c:defends_when_carried() bonus included) and drains power; the
-// wearing_iron_shoes() test is heroIronShoes().
+// Part of C trap.c:trapeffect_anti_magic(): the hero branch (the monster
+// branch applyMonsterAntiMagicTrap() holds the citation) —
+// positively-enchanted iron shoes shed the drain onto their enchantment;
+// otherwise the anti-magic field hits the protected hero (a carried
+// artifact's C zap.c:defends_when_carried() bonus included) and drains
+// power; the wearing_iron_shoes() test is heroIronShoes().
 export async function triggerHeroAntiMagicTrap(trap: Trap) {
     const hero = game.u;
     const shoes = heroIronShoes();
@@ -3241,10 +3241,12 @@ function possessive(subject: string) {
     return /s$/iu.test(subject) ? `${subject}'` : `${subject}'s`;
 }
 
-// trap.c trapeffect_arrow_trap(): the hero branch — the 1-in-15
+// C trap.c:trapeffect_dart_trap()
+// The dart twin of the arrow trap: the hero branch — the 1-in-15
 // exhausted-trap click, the shot at the hero, and the steed's chance to
-// take it. trap.c trapeffect_dart_trap(): the dart twin, with a 1-in-6
-// poisoned missile; the monster branches are beginMonsterProjectileTrap.
+// take it.  The hero branch of C trap.c:trapeffect_arrow_trap() is merged
+// into this port as well; its citation owner is beginMonsterProjectileTrap()
+// (the monster branch), which also carries the dart monster branch.
 async function triggerProjectileTrap(trap: Trap) {
     const hero = game.u;
     const blind = !!game.blind || heroIsBlind(game);
@@ -3305,9 +3307,10 @@ async function triggerProjectileTrap(trap: Trap) {
     await newsym(trap.tx, trap.ty);
 }
 
-// trap.c trapeffect_poly_trap(): the hero branch — the trigger message
-// with the steed's lead-in, the form change or its reversal, the worn-gear
-// consequences, and the steed's own steedintrap() polymorph.
+// Part of C trap.c:trapeffect_poly_trap(): the hero branch (the monster
+// branch applyMonsterPolymorphTrap() holds the citation) — the trigger
+// message with the steed's lead-in, the form change or its reversal, the
+// worn-gear consequences, and the steed's own steedintrap() polymorph.
 export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean): Promise<void> {
     requirePlayingGame(game);
     await seeTrap(trap);
@@ -3356,8 +3359,9 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
     await polymorphHero();
 }
 
-// trap.c trapeffect_bear_trap(): the hero branch — harmless close over
-// amorphous or tiny forms, the leg damage, and the TT_BEARTRAP snag.
+// Part of C trap.c:trapeffect_bear_trap(): the hero branch (the monster
+// branch below holds the citation) — harmless close over amorphous or
+// tiny forms, the leg damage, and the TT_BEARTRAP snag.
 async function triggerBearTrap(trap: Trap, {
     failedUntrap = false, forceTrap = false,
     viaSitting = false,
@@ -4237,10 +4241,11 @@ export async function mintrap(
     return action;
 }
 
-// trap.c trapeffect_selector(): the monster side of the dispatch; each
-// case runs the monster branch of the named trapeffect_ function, in its
-// owner module or inline below. trap.c trapeffect_hole(): the grounded,
-// size, and worm checks and the Sokoban yank sit inline before the fall.
+// Part of C trap.c:trapeffect_selector(): the monster side of the dispatch
+// (the hero dispatch holds the citation above); each case runs the monster
+// branch of the named trapeffect_ function, in its owner module or inline
+// below. trap.c trapeffect_hole(): the grounded, size, and worm checks and
+// the Sokoban yank sit inline before the fall.
 // C trap.c:trapeffect_level_telep(): the fall itself is the level-teleport
 // owner's monster move. trap.c trapeffect_magic_trap(): the monster
 // branch replicates a fire trap 1 time in 21 through beginMonsterFireTrap
@@ -4569,10 +4574,10 @@ async function monsterTrapEffect(
     return event;
 }
 
-// Finish the trap-effect completion which mintrap() staged for its caller,
-// then trap.c:3831-3837's "appears" reveal of a newly caught hider.
-// Updates the movement's death fields and reports whether the actor died,
-// left the level, or the hero died.
+// Part of C trap.c:mintrap(): finish the trap-effect completion mintrap()
+// staged for its caller, then trap.c:3831-3837's "appears" reveal of a
+// newly caught hider.  Updates the movement's death fields and reports
+// whether the actor died, left the level, or the hero died.
 export async function finishDeferredMonsterTrap(
     monster: Monster,
     movement: MonsterMovement,
@@ -4991,10 +4996,11 @@ async function resolveMineLiquid(
     });
 }
 
-// trap.c trapeffect_landmine(): the monster branch — a monster lighter
-// than the trigger weight never sets it off, airborne ones rarely do, and
-// the blast stages the pit and the kill; an unconscious hero is awakened
-// by the explosion (C trap.c:unconscious()).
+// Part of C trap.c:trapeffect_landmine(): the monster branch — a monster
+// lighter than the trigger weight never sets it off, airborne ones rarely
+// do, and the blast stages the pit and the kill; an unconscious hero is
+// awakened by the explosion (C trap.c:unconscious()).  The hero branch
+// (the citation owner) is triggerLandmine() above.
 export function beginMonsterLandMine(
     monster: Monster,
     trap: Trap,
@@ -5347,9 +5353,9 @@ export async function monsterSelfTouch(monster: Monster, {
     return { touched: true, corpse, ...petrification };
 }
 
-// ── trap.c mselftouch() and minstapetrify(). Falling can force
-// contact even through gloves; newcham() only calls mselftouch()
-// after the new body has lost its gloves.
+// Part of C trap.c:mselftouch() and minstapetrify(): the W_ARMG gloves
+// test.  Falling can force contact even through gloves; newcham() only
+// calls mselftouch() after the new body has lost its gloves.
 export function monsterWearsGloves(monster: Monster): boolean {
     return !!((monster?.misc_worn_check ?? 0) & W_ARMG)
         || (monster?.minvent || monster?.inventory || []).some(object =>
@@ -5662,13 +5668,14 @@ export async function floatHeroDown(
     return 1;
 }
 
-// trap.c float_down()/float_up() read the stored HLevitation/ELevitation/
-// BLevitation/BFlying masks before any caller removes a levitation source.
-// Equipment and effect setters refresh the derived state while removing that
-// source, so they snapshot first and pass the result through the landing
-// owner's `previous` argument.  Both blocked bits are captured separately:
-// terrain and a floor trap can block levitation at the same time, and only a
-// sole floor-trap block (C BLevitation == I_SPECIAL) gets feedback.
+// Part of C trap.c:float_down() and float_up(): both read the stored
+// HLevitation/ELevitation/BLevitation/BFlying masks before any caller
+// removes a levitation source.  Equipment and effect setters refresh the
+// derived state while removing that source, so they snapshot first and
+// pass the result through the landing owner's `previous` argument.  Both
+// blocked bits are captured separately: terrain and a floor trap can
+// block levitation at the same time, and only a sole floor-trap block
+// (C BLevitation == I_SPECIAL) gets feedback.
 export function captureLevitationState(state: PropertyState = game): LevitationState {
     const hero = state.u;
     const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
@@ -7060,8 +7067,9 @@ function weldedTwoHandedWeapon(state: GameState): boolean {
     return isWeldedPrimary(weapon, state) && isBimanualObject(weapon);
 }
 
-// Also C artifact.c:attacks(): inlined here; attack?.damageType === 'fire'
-// is the fiery-blade test that guarantees the web-cut roll.
+// Part of C trap.c:untrap_prob(): the disarm failure roll; also inlines
+// C artifact.c:attacks() — attack?.damageType === 'fire' is the
+// fiery-blade test that guarantees the web-cut roll.
 function untrapFailureRoll(trap: Trap, state: GameState, random: (limit: number) => number): number {
     let chance = 3;
     if (trap.ttyp === WEB) {
@@ -7383,8 +7391,9 @@ function monsterIsHelplessForUntrap(monster: Monster): boolean {
         || monster.mcanmove === 0);
 }
 
-// Also C artifact.c:attacks(): inlined here for the "burns through" branch;
-// attack?.damageType === 'fire' is the fiery-blade test.
+// Part of C trap.c:untrap(): the holding-trap disarm branch (web and bear
+// trap); also inlines C artifact.c:attacks() — attack?.damageType === 'fire'
+// is the fiery-blade test for the burn-through case.
 async function disarmHoldingTrap(trap: Trap, options: FloorTrapOptions): Promise<boolean> {
     const result = await tryDisarm(trap, options);
     if (result < 2) return result !== 0;
@@ -8354,9 +8363,9 @@ export function pitsAreConjoined(first: Trap | null | undefined, second: Trap | 
         && !!((second.conjoined ?? 0) & (1 << ((direction + 4) % 8)));
 }
 
-// The offset between two pits: trap.c conjoined_pits() derives it with
-// sgn() and xytodir(); Math.sign() and the xdir/ydir table lookup are those
-// two callees inlined here.
+// Part of C trap.c:conjoined_pits(): the pit offset it derives with sgn()
+// and xytodir(); Math.sign() and the xdir/ydir table lookup are those two
+// callees inlined here.
 function pitDirection(from: Trap, to: Trap) {
     const dx = Math.sign(to.tx - from.tx);
     const dy = Math.sign(to.ty - from.ty);

@@ -227,8 +227,9 @@ export async function snuffThrownCandle(object: GameObject, state: GameState = g
 
 }
 
-// dothrow.c throwit(): the landing sound, before flooreffects() can
-// consume the object. Shared by thrown and fired objects.
+// Part of C dothrow.c:throwit(): the landing sound, before
+// flooreffects() can consume the object.  Shared by thrown and fired
+// objects.
 export async function announceThrownObjectLiquidImpact(
     object: GameObject, x: number, y: number, {
         state = game, publish = plineWithContinuation,

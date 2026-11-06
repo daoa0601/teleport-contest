@@ -122,7 +122,8 @@ function sameLevel(a: DungeonLocation | null | undefined, b: DungeonLocation | n
         && (a?.dlevel ?? 1) === (b?.dlevel ?? 1);
 }
 
-// C inside_shop(): a room boundary is not merchandise floor space.
+// Part of C shk.c:inside_shop(): a room boundary is not merchandise floor
+// space.
 export function insideShopRoomAt(state: GameState, x: number, y: number): ShopRoom | null {
     const location = state.level?.at?.(x, y);
     const roomno = location?.roomno ?? 0;
@@ -174,8 +175,9 @@ function shopkeeperForRoom(roomno: number | undefined, state: GameState = game):
     return resident && shopkeeperInOwnShop(resident, state) ? resident : null;
 }
 
-// C shop_keeper(): the assigned resident may be outside the shop.
-// Looking up an angry keeper also applies the bill surcharge.
+// Part of C shk.c:shop_keeper() (the citation owner is shopKeeper() below):
+// the assigned resident may be outside the shop, and looking up an angry
+// keeper also applies the bill surcharge.
 export function shopResident(roomno: number | undefined, state: GameState = game): Shopkeeper | null {
     if (roomno === undefined) return null;
     const keeper = roomForRoomno(state.level, roomno)?.resident;
@@ -243,12 +245,12 @@ const glassGemImitations = [
     ['black opal', 'jet'], ['emerald', 'jade'], ['amethyst', 'fluorite'],
 ].map(pair => pair.map(name => OBJECT_NAMES.indexOf(name)));
 
-// C ref: shk.c:get_cost().  Keep every adjustment as an integer rational and
-// apply C's decimal roundoff tweak once after all multipliers are combined.
-// C shk.c:2864 oid_price_adjustment(): +1 when an unknown, non-glass-gem
-// object carries the shopkeeper's arbitrary surcharge under this oid,
-// else 0.  Pure; obfree's merge o_id handover consumes it alongside buy
-// pricing.
+// C shk.c:oid_price_adjustment()
+// +1 when an unknown, non-glass-gem object carries the shopkeeper's
+// arbitrary surcharge under this oid, else 0.  Pure; obfree's merge o_id
+// handover consumes it alongside buy pricing.  For the caller
+// shk.c:get_cost(): keep every adjustment as an integer rational and apply
+// C's decimal roundoff tweak once after all multipliers are combined.
 export function objectPriceAdjustment(object: GameObject, oid: number, state: GameState = game): number {
     const known = !!object?.dknown && objectTypeKnown(object, state);
     const glassGem = object?.oclass === GEM_CLASS
@@ -395,8 +397,9 @@ function shopUsageCost(object: GameObject, resident: Shopkeeper, alternate: bool
     return cost;
 }
 
+// C shk.c:check_unpaid_usage()
 // Partial use adds debt without consuming or settling the billed object.
-// C shk.c:check_unpaid_usage(). Prefix rolls precede the hearing check.
+// Prefix rolls precede the hearing check.
 export async function chargeUnpaidUsage(object: GameObject, {
     state = game, alternate = false,
 }: { state?: GameState; alternate?: boolean } = {}) {
@@ -624,7 +627,8 @@ export async function payShopDebt(resident: Monster | null | undefined, state: G
     return { paid: true, debt, creditUsed, goldPaid };
 }
 
-// C shk.c splitbill(): otmp has been split off from obj.  The keeper is
+// C shk.c:splitbill()
+// otmp has been split off from obj.  The keeper is
 // the CURRENT first hero-shop resident (inhishop-validated), not any
 // owner; the original entry's quantity shrinks and the split either
 // clones the recorded price into a fresh entry or, on a full bill, simply
@@ -719,8 +723,9 @@ const ALTERATION_VERBS = [
     'tarnish', 'crack',
 ];
 
-// C mkobj.c bill_dummy_object(): move the altered object onto the bill as
-// a used-up dummy entry, retaining the charge for the remaining quantity.
+// C mkobj.c:bill_dummy_object()
+// Move the altered object onto the bill as a used-up dummy entry,
+// retaining the charge for the remaining quantity.
 export async function billDummyObject(object: GameObject, state: GameState = game): Promise<ShopTransaction | null> {
     requireLiveGame(state);
     requireShopGame(state);
@@ -1364,7 +1369,8 @@ function monsterSound(monster: Monster): number {
     return MONSTER_SOUND[monster?.mnum] ?? 0;
 }
 
-// C shk.c muteshk(): a keeper who cannot speak up.
+// C shk.c:muteshk()
+// A keeper who cannot speak up.
 function muteShopkeeper(monster: Monster): boolean {
     return monsterHelpless(monster) || monsterSound(monster) <= MS_ANIMAL;
 }
@@ -1375,8 +1381,9 @@ function damageRecords(state: ShopGameState): ShopDamage[] {
     return state.level.damagelist;
 }
 
-// C shk.c shop_keeper(): the registered resident of a shop room, regardless
-// of where that resident currently stands.
+// C shk.c:shop_keeper()
+// The registered resident of a shop room, regardless of where that
+// resident currently stands.
 function shopKeeper(state: ShopGameState, roomno: number): Shopkeeper | null {
     const resident = roomForRoomno(state.level, roomno)?.resident;
     return hasShopkeeperData(resident) && resident.isshk && !resident.dead
@@ -1387,7 +1394,8 @@ function shopRoomnosAt(state: ShopGameState, x: number, y: number): number[] {
     return roomsAt(state.level, x, y, SHOPBASE);
 }
 
-// C shk.c inside_shop(): strictly inside shop walls, boundary excluded.
+// C shk.c:inside_shop()
+// Strictly inside shop walls, boundary excluded.
 function insideShop(state: ShopGameState, x: number, y: number): number | null {
     const location = state.level?.at?.(x, y);
     const roomno = location?.roomno ?? 0;
@@ -1402,7 +1410,8 @@ function heroCarriesBillFor(keeper: Shopkeeper): boolean {
 
 // ---------------------------------------------------------------- relocation
 
-// C shk.c money2mon(): transfer gold from the hero to the monster.
+// C shk.c:money2mon()
+// Transfer gold from the hero to the monster.
 export async function moneyToMonster(monster: Monster, amount: number, state: GameState = game): Promise<number> {
     const gold = heroGoldObject(state);
     if (amount <= 0) {
@@ -1423,7 +1432,7 @@ export async function moneyToMonster(monster: Monster, amount: number, state: Ga
 
 // ------------------------------------------------------------- add_damage()
 
-// C shk.c clear_unpaid_obj().
+// C shk.c:clear_unpaid_obj()
 function clearUnpaidObject(keeper: Shopkeeper | null, object: GameObject): void {
     for (const content of object.contents || [])
         clearUnpaidObject(keeper, content);
@@ -1456,10 +1465,11 @@ function clearNoChargeObject(
         object.no_charge = false;
 }
 
-// C shk.c setpaid(): either you paid or left the shop or the shopkeeper
-// died.  All pending transactions are settled.
-// C shk.c:clear_unpaid() walks each object list and clears the unpaid bit
-// per object; the loops below inline it with clearUnpaidObject().
+// C shk.c:setpaid()
+// Either you paid or left the shop or the shopkeeper died.  All pending
+// transactions are settled.
+// Also C shk.c:clear_unpaid(): walks each object list and clears the
+// unpaid bit per object; the loops below inline it with clearUnpaidObject().
 export function setPaidShopkeeper(keeper: Shopkeeper | null, state: GameState = game): void {
     requireLiveGame(state);
     for (const object of state.inventory || [])
@@ -1513,7 +1523,8 @@ export function setPaidShopkeeper(keeper: Shopkeeper | null, state: GameState = 
     }
 }
 
-// C shk.c addupbill(): the total of every open bill entry.
+// C shk.c:addupbill()
+// The total of every open bill entry.
 export function addUpBill(keeper: Shopkeeper): number {
     let total = 0;
     for (const entry of keeper.eshk.bill || [])
@@ -1521,7 +1532,8 @@ export function addUpBill(keeper: Shopkeeper): number {
     return total;
 }
 
-// C shk.c check_credit(): consume shop credit before the hero's purse.
+// C shk.c:check_credit()
+// Consume shop credit before the hero's purse.
 async function checkCredit(amount: number, monster: Shopkeeper): Promise<number> {
     const credit = monster.eshk.credit ?? 0;
     if (credit === 0) return amount;
@@ -1535,7 +1547,8 @@ async function checkCredit(amount: number, monster: Shopkeeper): Promise<number>
     return amount - credit;
 }
 
-// C shk.c home_shk(): return the keeper to the home spot.
+// C shk.c:home_shk()
+// Return the keeper to the home spot.
 export async function homeShopkeeper(monster: Shopkeeper, state: ShopGameState): Promise<void> {
     const { x, y } = monster.eshk.shk;
     await mnearto(monster, x, y, state, { moveOther: true });
@@ -1543,8 +1556,8 @@ export async function homeShopkeeper(monster: Shopkeeper, state: ShopGameState):
     await afterShopkeeperMove(monster, state);
 }
 
-// C shk.c pacify_shk(): make peaceful again, optionally undoing the bill
-// surcharge.
+// C shk.c:pacify_shk()
+// Make peaceful again, optionally undoing the bill surcharge.
 export function pacifyShopkeeper(monster: Shopkeeper, clearSurcharge = false): void {
     monster.mpeaceful = 1;
     const eshk = monster.eshk;
@@ -1554,7 +1567,8 @@ export function pacifyShopkeeper(monster: Shopkeeper, clearSurcharge = false): v
         entry.price -= Math.trunc((entry.price + 3) / 4);
 }
 
-// C shk.c rile_shk(): make angry and raise every open bill entry by a third.
+// C shk.c:rile_shk()
+// Make angry and raise every open bill entry by a third.
 export function rileShopkeeper(monster: Shopkeeper): void {
     monster.mpeaceful = 0;
     const eshk = monster.eshk;
@@ -1633,8 +1647,9 @@ export async function makeShoppersHappy(
     }
 }
 
-// C shk.c hot_pursuit(): the shared anger transaction for unpaid debts.
-// C shk.c:clear_no_charge_pets(): the pet-inventory pass of the same
+// C shk.c:hot_pursuit()
+// The shared anger transaction for unpaid debts.
+// Also C shk.c:clear_no_charge_pets(): the pet-inventory pass of the same
 // networking sweep is inlined below.
 export function hotPursuitShopkeeper(
     monster: Monster | null | undefined, state: GameState = game,
@@ -1662,9 +1677,10 @@ export function hotPursuitShopkeeper(
     }
 }
 
-// C shk.c make_angry_shk().  Used when the keeper is teleported or falls
-// out of the shop, or when damage happens without the hero on a costly
-// spot.  ox/oy are only for a caller's message, not needed here.
+// C shk.c:make_angry_shk()
+// Used when the keeper is teleported or falls out of the shop, or when
+// damage happens without the hero on a costly spot.  ox/oy are only for a
+// caller's message, not needed here.
 export async function makeAngryShopkeeper(keeper: Shopkeeper, state: GameState = game): Promise<void> {
     requireShopGame(state);
     const eshk = keeper.eshk;
@@ -1684,8 +1700,8 @@ export async function makeAngryShopkeeper(keeper: Shopkeeper, state: GameState =
     hotPursuitShopkeeper(keeper, state);
 }
 
-// C shk.c cad(): a demon form wins outright; otherwise poly_gender() picks
-// cad/minx/beast.
+// C shk.c:cad()
+// A demon form wins outright; otherwise poly_gender() picks cad/minx/beast.
 export function shopkeeperCustomerInsult(state: GameState, altUsage = false): string {
     const species = heroSpecies(state);
     const gender = monsterIsDemon(species)
@@ -1694,9 +1710,10 @@ export function shopkeeperCustomerInsult(state: GameState, altUsage = false): st
     return altUsage ? `"${word.charAt(0).toUpperCase()}${word.slice(1)}!  ` : word;
 }
 
-// C shk.c shkcatch(): an alert keeper intercepts a flying pick-axe that
-// crosses the shop floor, shoving aside whoever blocks the catch square.
-// zap.c bhit() offers every in-shop square of the flight to the keeper.
+// C shk.c:shkcatch()
+// An alert keeper intercepts a flying pick-axe that crosses the shop
+// floor, shoving aside whoever blocks the catch square.  zap.c bhit()
+// offers every in-shop square of the flight to the keeper.
 export async function shopkeeperCatch(
     object: GameObject, x: number, y: number, state: GameState,
 ): Promise<Shopkeeper | null> {
@@ -1725,6 +1742,9 @@ export async function shopkeeperCatch(
     return keeper;
 }
 
+// C shk.c:add_damage()
+// Cost is charged later by payForShopDamage(); the record itself schedules
+// the keeper's repair.
 export function addShopDamage(
     x: number, y: number, cost: number, state: GameState = game,
 ): void {
@@ -1767,10 +1787,9 @@ export function addShopDamage(
 
 // -------------------------------------------------------- pay_for_damage()
 
-// C shk.c add_damage().  Cost is charged later by payForShopDamage(); the
-// record itself schedules the keeper's repair.
-// C rm.flags overlays doormask and wall_info; the port keeps them apart.
-// A damage record saves and restores whichever one the terrain type uses.
+// Part of C shk.c:add_damage(): rm.flags overlays doormask and wall_info;
+// the port keeps them apart.  A damage record saves and restores whichever
+// one the terrain type uses.
 function overlaidTerrainFlags(location: MapLocation): number {
     if (IS_DOOR(location.typ) || location.typ === SDOOR) return location.doormask;
     if (IS_STWALL(location.typ) || IS_TREE(location.typ)) return location.wall_info;
@@ -1783,14 +1802,14 @@ function restoreOverlaidTerrainFlags(location: MapLocation, flags: number): void
     else location.flags = flags;
 }
 
-// C shk.c shk_impaired().
+// C shk.c:shk_impaired()
 function shopkeeperImpaired(keeper: Shopkeeper, state: GameState): boolean {
     if (!keeper?.isshk || !keeper.eshk
         || !shopkeeperInOwnShop(keeper, state)) return true;
     return monsterHelpless(keeper) || !!keeper.eshk.following;
 }
 
-// C shk.c repairable_damage().
+// C shk.c:repairable_damage()
 export function repairableShopDamage(
     record: ShopDamage | null | undefined, keeper: Shopkeeper, state: GameState = game,
 ): boolean {
@@ -1827,7 +1846,7 @@ export function repairableShopDamage(
     return true;
 }
 
-// C shk.c find_damage().
+// C shk.c:find_damage()
 function findDamage(keeper: Shopkeeper, state: ShopGameState): ShopDamage | null {
     if (shopkeeperImpaired(keeper, state)) return null;
     for (const record of damageRecords(state)) {
@@ -1836,14 +1855,14 @@ function findDamage(keeper: Shopkeeper, state: ShopGameState): ShopDamage | null
     return null;
 }
 
-// C shk.c discard_damage_struct().
+// C shk.c:discard_damage_struct()
 function discardDamageRecord(record: ShopDamage, state: ShopGameState): void {
     const records = damageRecords(state);
     const index = records.indexOf(record);
     if (index >= 0) records.splice(index, 1);
 }
 
-// C shk.c discard_damage_owned_by().
+// C shk.c:discard_damage_owned_by()
 export function discardDamageOwnedByShopkeeper(keeper: Shopkeeper, state: GameState = game): void {
     requireShopGame(state);
     const records = damageRecords(state);
@@ -1879,7 +1898,8 @@ export function finishShopkeeperDeparture(keeper: Shopkeeper, state: GameState =
     }
 }
 
-// C shk.c shk_fixes_damage(): one repair attempt during the keeper's move.
+// C shk.c:shk_fixes_damage()
+// One repair attempt during the keeper's move.
 export async function shopkeeperRepairsDamage(
     keeper: Shopkeeper, state: GameState = game,
 ): Promise<0 | 1 | 2 | 3> {
@@ -1901,7 +1921,8 @@ export async function shopkeeperRepairsDamage(
     return disposition;
 }
 
-// C shk.c getcad(): the scolding that precedes hot pursuit.
+// C shk.c:getcad()
+// The scolding that precedes hot pursuit.
 async function getcad(
     keeper: Shopkeeper, dmgstr: string, x: number, y: number,
     { uinshp, animal, pursue }: { uinshp: boolean; animal: boolean; pursue: boolean },
@@ -1932,8 +1953,9 @@ async function getcad(
     hotPursuitShopkeeper(keeper, state);
 }
 
-// C shk.c pay_for_damage().  verb is the C dmgstr ("damage", "break",
-// "ruin", "dig into", "destroy", "burn away").
+// C shk.c:pay_for_damage()
+// verb is the C dmgstr ("damage", "break", "ruin", "dig into", "destroy",
+// "burn away").
 export async function payForShopDamage(
     verb: string,
     { cantMollify = false, state = game }: { cantMollify?: boolean; state?: GameState } = {},
@@ -2112,7 +2134,7 @@ const horiz = (i: number): number => (i % 3) - 1;
 
 const vert = (i: number): number => Math.trunc(i / 3) - 1;
 
-// C shk.c litter_getpos().
+// C shk.c:litter_getpos()
 function litterGetpos(
     x: number, y: number, keeper: Shopkeeper, state: ShopGameState,
 ): { litter: number[]; count: number } {
@@ -2137,7 +2159,7 @@ function litterGetpos(
     return { litter, count };
 }
 
-// C shk.c litter_scatter().
+// C shk.c:litter_scatter()
 async function litterScatter(
     litter: number[], x: number, y: number, keeper: Shopkeeper, state: ShopGameState,
 ): Promise<void> {
@@ -2208,14 +2230,14 @@ async function litterScatter(
     }
 }
 
-// C shk.c litter_newsyms().
+// C shk.c:litter_newsyms()
 async function litterNewsyms(litter: readonly number[], x: number, y: number): Promise<void> {
     for (let i = 0; i < 9; i++)
         if ((litter[i] ?? 0) & LITTER_UPDATE) await newsym(x + horiz(i), y + vert(i));
 }
 
-// C shk.c repair_damage().  Returns 0: postponed, 1: silent repair,
-// 2: normal repair, 3: untrap.
+// C shk.c:repair_damage()
+// Returns 0: postponed, 1: silent repair, 2: normal repair, 3: untrap.
 export async function repairShopDamage(
     keeper: Shopkeeper, record: ShopDamage,
     { catchup = false, state = game }: { catchup?: boolean; state?: GameState } = {},
@@ -2324,7 +2346,8 @@ export async function repairShopDamage(
     return disposition;
 }
 
-// C shk.c fix_shop_damage(): catch-up repairs when a level is revisited.
+// C shk.c:fix_shop_damage()
+// Catch-up repairs when a level is revisited.
 export async function fixShopDamage(state: GameState = game): Promise<void> {
     requireShopGame(state);
     const records = damageRecords(state);
@@ -2345,8 +2368,9 @@ export async function fixShopDamage(state: GameState = game): Promise<void> {
     }
 }
 
-// C shk.c shopdig().  fall=0 while the hero digs the shop floor; fall=1
-// when the floor opens under the hero.
+// C shk.c:shopdig()
+// fall=0 while the hero digs the shop floor; fall=1 when the floor opens
+// under the hero.
 export async function shopDig(fall: number | boolean, state: GameState = game): Promise<void> {
     requireShopGame(state);
     const keeper = currentShopResident(state);
@@ -3031,7 +3055,9 @@ export function onBillEntry(object: GameObject, resident: Monster | null | undef
         .find(entry => entry.bo_id === object?.o_id) ?? null;
 }
 
-// C shk.c:1278 check_credit(): messages are not silent-gated in C.
+// Part of C shk.c:check_credit(): messages are not silent-gated in C;
+// publisher-parameterized twin of checkCredit() for callers that route
+// messages through a MessagePublisher.
 async function checkShopCredit(value: number, resident: Shopkeeper, publish: MessagePublisher): Promise<number> {
     const credit = resident.eshk.credit ?? 0;
     if (credit === 0) return value;
@@ -3164,8 +3190,8 @@ export function containedBuyCost(container: GameObject, resident: Monster | null
     return price;
 }
 
-// C picked_container() (shk.c:3093): picking a no_charge container up again
-// clears the flag from its contents.
+// C shk.c:picked_container()
+// Picking a no_charge container up again clears the flag from its contents.
 export function pickedContainer(container: GameObject): void {
     for (const content of container.contents || []) {
         if (content.oclass === COIN_CLASS) continue;
@@ -3349,12 +3375,13 @@ export async function minimumShopPurchase(resident: Monster, state: GameState = 
     };
 }
 
-// Contents share one entry for their outermost container. Used portions stay
-// separate, so they can be paid before buying the remaining contained goods.
-// C shk.c:make_itemized_bill(): the alternate bill hiding container
-// contents behind one entry, split by used-up portion.
-// C shk.c:sortbill_cmp().
-// C shk.c:bp_to_obj().
+// C shk.c:make_itemized_bill()
+// The alternate bill hiding container contents behind one entry, split by
+// used-up portion.  Contents share one entry for their outermost
+// container; used portions stay separate, so they can be paid before
+// buying the remaining contained goods.
+// Also C shk.c:sortbill_cmp(): inlined as the final sort comparator.
+// Also C shk.c:bp_to_obj(): the inlined o_id lookup for each bill entry.
 export async function itemizedShopBill(resident: Monster | null | undefined, state: GameState = game): Promise<ShopBillItem[]> {
     if (!hasShopBill(resident)) return [];
     const objects = objectsInTimerGraph(state);
@@ -3652,10 +3679,11 @@ function removeBillEntry(resident: BilledShopkeeper, entry: ShopBillEntry): void
     resident.eshk.billct = resident.eshk.bill.length;
 }
 
-// C refs: shk.c:dopay(), rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
+// C shk.c:dopay()
 // An empty bill takes a turn when the keeper can respond. A payment menu
-// takes no time until a debt or billed item is paid.
-// C shk.c:pay_billed_items(): the gold/credit checks and the per-item
+// takes no time until a debt or billed item is paid.  Also calls
+// shk.c:rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
+// Also C shk.c:pay_billed_items(): the gold/credit checks and the per-item
 // purchase loop over the itemized bill are inlined in this command.
 export async function dopay(): Promise<void> {
     setMulti(0);
@@ -3980,7 +4008,8 @@ async function rejectRestitution(keeper: Shopkeeper, money: number, stashed: boo
         : `Besides, you don't have enough to interest ${monsterObjectPronoun(keeper, { noIt: true })}.`);
 }
 
-// C shk.c:1381 rouse_shk(): greed-induced recovery.
+// C shk.c:rouse_shk()
+// Greed-induced recovery.
 export async function rouseShopkeeper(resident: Monster, publish: MessagePublisher = plineWithContinuation): Promise<void> {
     if (monsterIsHelpless(resident)) {
         if (canSpotMonster(resident)) {
@@ -3993,8 +4022,9 @@ export async function rouseShopkeeper(resident: Monster, publish: MessagePublish
     }
 }
 
-// ---- pricing: C shk.c:set_cost() over the shared pure price owner ------
-// Charisma and surcharge never enter the sell price.
+// C shk.c:set_cost()
+// Pricing over the shared pure price owner; charisma and surcharge never
+// enter the sell price.
 export function shopOfferForObject(object: GameObject, resident: Monster | null, state: GameState = game): number {
     let tmp = objectPricingUnits(object)
         * shopGetPrice(object, true, state);
@@ -4160,8 +4190,9 @@ function goldPieces(amount: number): string {
     return `${amount} gold piece${amount === 1 ? '' : 's'}`;
 }
 
-// shk.c asks the credit offer with ynaq() (default yes) and the cash offer
-// with nyaq() (default no); hack.h's two macros differ in that default.
+// Part of C shk.c:sellobj(): shk.c asks the credit offer with ynaq()
+// (default yes) and the cash offer with nyaq() (default no); hack.h's two
+// macros differ in that default, which this adapter supplies.
 function askSell(question: string, { query, defaultAnswer = 'n' }:
     { query: SaleQuery; defaultAnswer?: 'y' | 'n' }): SellAnswer | Promise<SellAnswer> {
     return query(question, defaultAnswer);

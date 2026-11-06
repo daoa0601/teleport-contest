@@ -8,7 +8,6 @@ src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
 src/js/color_query.ts	coloratt.c
-src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
 src/js/do.ts	do.c
 src/js/do_name.ts	do_name.c
@@ -26,6 +25,7 @@ src/js/explode.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/familiar.ts	dog.c
+src/js/fire_explosion.ts	explode.c
 src/js/game_state.ts	decl.c
 src/js/hack.ts	hack.c
 src/js/hacklib.ts	hacklib.c
@@ -58,7 +58,6 @@ src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
 src/js/music.ts	music.c
-src/js/o_init.ts	o_init.c
 src/js/occupation.ts	allmain.c
 src/js/option_escapes.ts	options.c
 src/js/pager.ts	pager.c

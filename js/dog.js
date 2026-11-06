@@ -497,7 +497,7 @@ export function updateMonsterLastMove(state = game) {
         monster.mlstmv = state.moves;
     }
 }
-// C dog.c mon_catchup_elapsed_time().
+// C dog.c:mon_catchup_elapsed_time()
 export async function catchUpMonster(monster, moves, state) {
     if (moves < 0)
         throw new RangeError('Monster catch-up cannot start in the future.');
@@ -588,7 +588,8 @@ function wanderLocale(state, x, y, wander) {
         y: rn1(highY - lowY, lowY),
     };
 }
-// C dog.c mon_arrive(); returns false when no placement was possible.
+// C dog.c:mon_arrive()
+// Returns false when no placement was possible.
 export async function monsterArrive(monster, when, state) {
     const level = requireGameLevel(state);
     const queue = migrationQueue(state);
@@ -782,9 +783,12 @@ export function discardMigrations(state = game) {
 }
 // C dog.c:keepdogs(), keep_mon_accessible(), and mondata.c:levl_follower().
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
-// The caller skips this entire transaction when iflags.nofollowers is set.
-// Returned monsters are detached from the old level in native mydogs order.
-// C dog.c:keepdogs().
+// C dog.c:keepdogs()
+// The caller skips this entire transaction when iflags.nofollowers is
+// set.  Returned monsters are detached from the old level in native
+// mydogs order.
+// Also C dog.c:keep_mon_accessible(): merged here.
+// Also C mondata.c:levl_follower(): merged here.
 export async function collectLevelFollowers(state = game, petsOnly = false) {
     requireLiveGame(state);
     requirePlayingGame(state);

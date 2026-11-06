@@ -120,7 +120,8 @@ export function deleteEngravingAt(x, y, level = game.level) {
     level.engravings = level.engravings.filter((candidate) => candidate !== engraving);
     return true;
 }
-// C engrave.c del_engr(): unlink one known engraving unconditionally.
+// C engrave.c:del_engr()
+// Unlink one known engraving unconditionally.
 export function deleteEngraving(engraving, level = game.level) {
     if (!level?.engravings?.includes(engraving))
         return false;
@@ -171,7 +172,7 @@ export function make_grave(x, y, text) {
     const epitaph = text ?? getRandomTextLine(RANDOM_EPITAPHS);
     make_engr_at(x, y, epitaph, null, 0, HEADSTONE);
 }
-// C ref: engrave.c wipeout_text().
+// C engrave.c:wipeout_text()
 export function wipeoutText(text, count, seed = 0) {
     seed >>>= 0;
     const chars = [...text];
@@ -448,7 +449,7 @@ function trapAtHeroInState(state) {
 const ATHAME = 38;
 const S_VAMPIRE = 48;
 const DRAWBRIDGE_DOWN = 34;
-// C engrave.c cant_reach_floor().
+// C engrave.c:cant_reach_floor()
 async function cantReachFloor(x, y, up, checkPit, wandEngraving, state) {
     const unreachable = up
         ? ceilingName(x, y, state)
@@ -459,7 +460,7 @@ async function cantReachFloor(x, y, up, checkPit, wandEngraving, state) {
         ? 'The wand does nothing more, and the tip of the wand'
         : 'You'} can't reach the ${unreachable}.`);
 }
-// C engrave.c u_can_engrave().
+// C engrave.c:u_can_engrave()
 async function heroCanEngrave(state) {
     const hero = state.u;
     const location = requireGameLevel(state).at(hero.ux, hero.uy);
@@ -505,8 +506,9 @@ async function heroCanEngrave(state) {
     }
     return true;
 }
-// C engrave.c stylus_ok(): the getobj() callback classifying each object and
-// the bare-hand alternative.
+// C engrave.c:stylus_ok()
+// The getobj() callback classifying each object and the bare-hand
+// alternative.
 function stylusClass(object) {
     if (object.oclass === WEAPON_CLASS || object.oclass === WAND_CLASS
         || object.oclass === GEM_CLASS || object.oclass === RING_CLASS)
@@ -516,8 +518,9 @@ function stylusClass(object) {
         return GETOBJ_SUGGEST;
     return GETOBJ_DOWNPLAY;
 }
-// C engrave.c doengrave(): getobj("write with", stylus_ok, GETOBJ_PROMPT).
-// stylus_ok(NULL) is GETOBJ_SUGGEST, so '-' leads the displayed choices.
+// Part of C engrave.c:doengrave(): its
+// getobj("write with", stylus_ok, GETOBJ_PROMPT) call.  stylus_ok(NULL)
+// is GETOBJ_SUGGEST, so '-' leads the displayed choices.
 async function chooseStylus(state) {
     const selection = await getobj('write with', stylusClass, {
         forcePrompt: true, hands: GETOBJ_SUGGEST, handsText: `your ${body_part(FINGERTIP, state)}`,
@@ -536,7 +539,7 @@ const BLIND_WRITINGS = [
     '\x44\x66\x6d\x7c\x78\x21\x50\x65\x66\x65\x6c',
     '\x44\x66\x73\x69\x62\x65\x22\x56\x7d\x63\x69\x76\x6b\x66',
 ];
-// C engrave.c blengr().
+// C engrave.c:blengr()
 function blindEngraving() {
     const chosen = BLIND_WRITINGS[rn2(BLIND_WRITINGS.length)];
     if (chosen === undefined)
@@ -554,8 +557,9 @@ function blindEngraving() {
     }
     return out;
 }
-// C engrave.c doengrave_sfx_item_WAN(): the wand-specific engraving effects.
-// Returns the post-engraving message and mutates the shared setup flags.
+// C engrave.c:doengrave_sfx_item_WAN()
+// The wand-specific engraving effects.  Returns the post-engraving
+// message and mutates the shared setup flags.
 async function wandEngraveEffects(wand, setup, oep, oetype, frosted, state) {
     const hero = state.u;
     const surface = surfaceName(hero.ux, hero.uy, state);
@@ -679,8 +683,9 @@ async function wandEngraveEffects(wand, setup, oep, oetype, frosted, state) {
             return '';
     }
 }
-// The #engrave command.  C engrave.c doengrave(); engrave.c:engrave() runs as
-// the occupation installed at the end.
+// C engrave.c:doengrave()
+// The #engrave command; engrave.c:engrave() runs as the occupation
+// installed at the end.
 // Also C engrave.c:doengrave_ctx_init(): inlined here as EngraveSetup
 // and the jello/frosted/oetype captures.
 // Also C engrave.c:doengrave_sfx_item(): inlined here as the stylus effects.
@@ -1141,8 +1146,9 @@ export async function doengrave(state = game) {
     // occupation, so this setup pass consumes no game time.
     await exit();
 }
-// C engrave.c engrave(), the occupation callback.  Returns whether another
-// engraving action remains.
+// C engrave.c:engrave()
+// The occupation callback.  Returns whether another engraving action
+// remains.
 export async function continueEngraving(state = game) {
     requireLiveGame(state);
     const occupation = state._occupation;

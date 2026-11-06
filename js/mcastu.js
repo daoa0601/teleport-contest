@@ -701,7 +701,9 @@ async function publishMonsterSpellFailure(monster, spell, state, random, calls) 
         await plineWithContinuation(`${canonicalMonsterName(monster, { state, capitalized: true })} points ${points}.`);
     }
 }
-// Also C mcastu.c:is_undirected_spell(): inlined here for movement-phase casting.
+// Part of C mcastu.c:castmu(): the spell selection and its
+// mspec_used/range gates for movement-phase casting.
+// Also C mcastu.c:is_undirected_spell(): inlined here.
 export async function movementSpellSelections(monster, state, random, calls) {
     if (monster.mspec_used ||
         dist2(monster.mx, monster.my, state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my) > 49)

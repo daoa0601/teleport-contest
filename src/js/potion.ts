@@ -297,9 +297,10 @@ export function heroIsSliming(state: GameState = game): boolean {
     return (state.u?.slimedTurns ?? 0) > 0 || !!state.u?.slimed;
 }
 
-// Starting the sliming countdown.
-// C end.c:delayed_killer(): the slime death defers its killer string until
-// the timeout fires; dropHeroSliming() in timeout.ts deallocates it.
+// Part of C potion.c:make_slimed(): starting the sliming countdown (the
+// timeout).  Also inlines C end.c:delayed_killer(): the slime death
+// defers its killer string until the timeout fires; dropHeroSliming()
+// in timeout.ts deallocates it.
 export function startHeroSliming({
     state = game,
     turns = 10,
@@ -515,7 +516,8 @@ export async function makeHallucinated(turns: number, {
     return changed;
 }
 
-// Native potion.c:make_deaf(). Commit the timeout before publishing its change.
+// C potion.c:make_deaf()
+// Commit the timeout before publishing its change.
 export async function makeDeaf(turns: number, {
     state = game, talk = true, publish = plineWithContinuation,
 }: { state?: GameState; talk?: boolean; publish?: MessagePublisher } = {}) {
@@ -1473,8 +1475,9 @@ const HALLUCINATED_BOTTLE_NAMES = [
     'bowl', 'ampoule',
 ];
 
-// potion.c:bottlename() is shared by hero- and monster-thrown impacts.  The
-// selector callback lets source-turn planners retain their own RNG ledger.
+// C potion.c:bottlename()
+// Shared by hero- and monster-thrown impacts.  The selector callback lets
+// source-turn planners retain their own RNG ledger.
 export function randomBottleName(
     state: GameState = game, select: (range: number) => number = rn2,
 ) {
@@ -1816,8 +1819,9 @@ function sicknessCannotHarmMonster(monster: Monster) {
             attack[1] === AD_DISE || attack[1] === AD_PEST);
 }
 
-// Potion impacts use zap.c:resist() with attack level 6 and the target's runtime level.
-// NOTELL suppresses shield presentation but the resistance draw still occurs.
+// Part of C zap.c:resist() as potion.c:potionhit() calls it: attack
+// level 6 and the target's runtime level.  NOTELL suppresses shield
+// presentation but the resistance draw still occurs.
 function monsterResistsPotion(monster: Monster, state: GameState = game) {
     const mnum = monster?.mnum;
     let defenseLevel = monster?.m_lev
@@ -1842,10 +1846,11 @@ function monsterIsWere(monster: Monster) {
     return is_were(monster?.mnum);
 }
 
-// potion.c:potionhit() shares this exact pain/wake transaction between holy
-// water and acid.  Silence selects writhing and suppresses wake_nearto(); an
-// audible species wakes the level-scaled radius before any damage die.
-// Monnam() also names sensed monsters and the hero's engulfer without sight.
+// Part of C potion.c:potionhit(): it shares this exact pain/wake
+// transaction between holy water and acid.  Silence selects writhing and
+// suppresses wake_nearto(); an audible species wakes the level-scaled
+// radius before any damage die.  Monnam() also names sensed monsters and
+// the hero's engulfer without sight.
 async function publishPotionPainAndWakeRadius({
     monster, wakeNearby, effectName,
     publish = plineWithContinuation,

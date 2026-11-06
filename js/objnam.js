@@ -156,10 +156,11 @@ export function preferredFruitName(state) {
         throw new Error('Preferred fruit has not been initialized');
     return state.fruitName;
 }
-// objnam.c:xname() visible name without inventory annotations.
+// C objnam.c:xname()
+// The visible name without inventory annotations.  Unlike doname(),
+// this omits quantity, beatitude, enchantment, and article.
 // Also C objnam.c:xcalled(): inlined as the "<class> called <name>"
 // compositions below; JS string concatenation needs no truncation.
-// Unlike doname(), this omits quantity, beatitude, enchantment, and article.
 export function objectName(object, state = game, { minimal = false } = {}) {
     const personalName = object.oextra?.oname || object.oname;
     if (!minimal && personalName && objectHasPersonalName(object, state))
@@ -1254,8 +1255,9 @@ function requiredArtifact(name, state) {
         throw new RangeError(`No native artifact named ${name}`);
     return artifact;
 }
-// C ref: objnam.c rnd_class().  Object probabilities are absolute weights
-// within the requested inclusive type range rather than a uniform index.
+// C objnam.c:rnd_class()
+// Object probabilities are absolute weights within the requested
+// inclusive type range rather than a uniform index.
 export function rndClass(first, last) {
     if (first >= last)
         return first === last ? first : 0;
@@ -1782,9 +1784,10 @@ function parseWishClass(search, state) {
     }
     return null;
 }
-// C postparse2 is also the armor retry target, even with a class selected.
-// C objnam.c:readobjnam_postparse2(): the class ranges, " stone"/" gem",
-// and the "glass" family before a general name search.
+// Part of C objnam.c:readobjnam_postparse2(): the class ranges,
+// " stone"/" gem", and the "glass" family before a general name search;
+// C's postparse2 is also the armor retry target, even with a class
+// selected.
 function parseWishRange(parsed, search) {
     const range = ranges.find(([range]) => range === search.name.toLowerCase());
     if (range)

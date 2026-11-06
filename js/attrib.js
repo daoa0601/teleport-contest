@@ -802,6 +802,7 @@ const FLAGS = {
     warnOfMonster: 'SPFX_WARN', warning: 'SPFX_WARN', energyRegeneration: 'SPFX_EREGEN',
     halfSpellDamage: 'SPFX_HSPDAM', halfPhysicalDamage: 'SPFX_HPHDAM', reflection: 'SPFX_REFLECT',
 };
+// C artifact.c:what_gives()
 // The first item conveying a particular intrinsic.
 // C artifact.c:abil_to_adtyp(): the C extrinsic-pointer table became the
 // DEFENSES map above.
