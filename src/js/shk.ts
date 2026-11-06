@@ -108,7 +108,7 @@ import { isQuantumBox } from './quantum_cat.js';
 import { bookDisappears } from './spell.js';
 import {
     checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex,
-    showGetposTip, distu,
+    showGetposTip, distu, mNext2u,
 } from './hack.js';
 
 const GLASS = 19;
@@ -1305,12 +1305,6 @@ function monsterAt(state: ShopGameState, x: number, y: number): Monster | null {
 // C display.h:vobj_at(): the object pile at a square.
 function objectsAt(state: GameState, x: number, y: number): GameObject[] {
     return state.level?.objects?.[x]?.[y] || [];
-}
-
-// C you.h:m_next2u().
-// C include/you.h m_next2u(): squared distance within 2, the 8 neighbors.
-function mNext2u(monster: Monster, state: GameState): boolean {
-    return distu(monster.mx, monster.my, state) <= 2;
 }
 
 // Part of C shk.c:muteshk(): the msound read.

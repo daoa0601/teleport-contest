@@ -4279,6 +4279,10 @@ export function maybeHalfPhysicalDamage(amount: number, state: GameState): numbe
 export function distu(x: number, y: number, state: GameState): number {
     return dist2(x, y, state.u.ux, state.u.uy);
 }
+// C you.h:m_next2u(): is the monster on top of or next to the hero.
+export function mNext2u(monster: Monster, state: GameState): boolean {
+    return distu(monster.mx, monster.my, state) <= 2;
+}
 
 // Part of C hack.c:dosinkfall(): the weapon-or-weptool test.
 function isWeaponOrWeaponTool(object: GameObject): boolean {

@@ -72,7 +72,7 @@ import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { bookDisappears } from './spell.js';
-import { checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex, showGetposTip, distu, } from './hack.js';
+import { checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex, showGetposTip, distu, mNext2u, } from './hack.js';
 const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
 const G_UNIQ = 0x1000;
@@ -1243,11 +1243,6 @@ function monsterAt(state, x, y) {
 // C display.h:vobj_at(): the object pile at a square.
 function objectsAt(state, x, y) {
     return state.level?.objects?.[x]?.[y] || [];
-}
-// C you.h:m_next2u().
-// C include/you.h m_next2u(): squared distance within 2, the 8 neighbors.
-function mNext2u(monster, state) {
-    return distu(monster.mx, monster.my, state) <= 2;
 }
 // Part of C shk.c:muteshk(): the msound read.
 function monsterSound(monster) {

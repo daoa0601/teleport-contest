@@ -4210,6 +4210,10 @@ export function maybeHalfPhysicalDamage(amount, state) {
 export function distu(x, y, state) {
     return dist2(x, y, state.u.ux, state.u.uy);
 }
+// C you.h:m_next2u(): is the monster on top of or next to the hero.
+export function mNext2u(monster, state) {
+    return distu(monster.mx, monster.my, state) <= 2;
+}
 // Part of C hack.c:dosinkfall(): the weapon-or-weptool test.
 function isWeaponOrWeaponTool(object) {
     return object.oclass === WEAPON_CLASS
