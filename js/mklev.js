@@ -10,7 +10,7 @@ import { stack_object } from './invent.js';
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, GEM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
-import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, mkcorpstat, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, updateIceObjectTimersAt } from './mkobj.js';
+import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, mkcorpstat, set_corpsenm, rndmonnum, rndmonnumAdj, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, updateIceObjectTimersAt } from './mkobj.js';
 import { restoreMonsterInventoryOwnership } from './mon.js';
 import { oinit, objectMaterial } from './o_init.js';
 import { isRoom } from './map_types.js';
@@ -18,7 +18,7 @@ import { restoreLevelTimers, stopLevelTimer } from './timeout.js';
 import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, mintrap, resetUtrap, maketrap } from './trap.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';
+import { makemon, mkclass, setMimicAppearance, setMonsterMalign, unmakeNastySubstitute } from './makemon.js';
 import { addFruit } from './options.js';
 import { set_tin_variety } from './eat.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './steed.js';
@@ -103,7 +103,6 @@ export const PM_SALAMANDER = 329;
 export const S_MIMIC = 13;
 const S_ANGEL = 27;
 const S_DEMON = 56;
-const G_UNIQ_MASK = 0x1000;
 export const PM_BLACK_LIGHT = 119;
 export const PM_STALKER = 153;
 export const XLIM = 4;
@@ -334,20 +333,6 @@ export async function summonNastyMonsters(summoner) {
 function nastyMonsterCensus() {
     return game.level?.monsters.filter(monster => !monster.dead && monster.mhp > 0
         && !(monster.isgd && monster.mx === 0)).length ?? 0;
-}
-// C makemon.c:unmakemon(). Rejected substitutes undo their counted birth
-// and artifact creation before the ordinary non-death removal.
-async function unmakeNastySubstitute(monster) {
-    const vital = game.mvitals?.[monster.mnum];
-    if (vital) {
-        if (vital.born > 0 && vital.born < 255)
-            vital.born--;
-        if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ_MASK)
-            vital.mvflags &= ~G_EXTINCT;
-    }
-    monster.mhp = 0;
-    await discardMonsterInventory(monster, true);
-    await removeMonsterFromGame(monster);
 }
 export async function finishBuriedZombieTimer(event, state = game) {
     if (!event || event.kind !== 'revived' || event.finished)

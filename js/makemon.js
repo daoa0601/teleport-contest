@@ -19,10 +19,10 @@ import { visibleRegionAt } from './region.js';
 import { monsterEmitsLight, block_point, visionCellBlocksLight } from './vision.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { depth as depth_of_level, level_difficulty, specialLevelAt } from './dungeon.js';
-import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth } from './mon.js';
+import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth, removeMonsterFromGame } from './mon.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { beginObjectBurn, stopObjectTimer } from './timeout.js';
-import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, addCreatedObjectToContainer, nextIdent, objectWeight } from './mkobj.js';
+import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, addCreatedObjectToContainer, nextIdent, objectWeight, discardMonsterInventory } from './mkobj.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
 import { tameMonster } from './dog.js';
@@ -1783,6 +1783,21 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
 // enexto(), such as savebones() creating the dead hero's ghost on u.ux/u.uy.
 export async function makemonAt(mnum, x, y, flags = 0) {
     return makemon(mnum, x, y, flags);
+}
+const G_UNIQ_MASK = 0x1000;
+// C makemon.c:unmakemon(). Rejected substitutes undo their counted birth
+// and artifact creation before the ordinary non-death removal.
+export async function unmakeNastySubstitute(monster) {
+    const vital = game.mvitals?.[monster.mnum];
+    if (vital) {
+        if (vital.born > 0 && vital.born < 255)
+            vital.born--;
+        if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ_MASK)
+            vital.mvflags &= ~G_EXTINCT;
+    }
+    monster.mhp = 0;
+    await discardMonsterInventory(monster, true);
+    await removeMonsterFromGame(monster);
 }
 // C makemon.c:create_critters().  Wands, scrolls, and spells all create
 // monsters through the ordinary constructor.  The return value says whether
