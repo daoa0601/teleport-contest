@@ -732,8 +732,9 @@ export function str2align(name) {
     const lc = name.toLowerCase();
     return aligns.find(a => a.name.startsWith(lc));
 }
-// C ref: role.c randomstr[] — the ROLE_RANDOM tail shared by all four
-// str2XXX() matchers ('*', '@', or a prefix of "random").
+// Part of C role.c:str2role()/str2race()/str2gend()/str2align(): their
+// shared randomstr[] tail — the ROLE_RANDOM matcher ('*', '@', or a
+// prefix of "random").
 export function randomCharacterOption(option) {
     if (!option)
         return false;
@@ -966,9 +967,10 @@ function questMonsterGender(species) {
         return 0;
     return rn2(100) < 50 ? 1 : 0;
 }
-// role_init at role.c:2064-2078: Priests borrow a pantheon from a random
-// non-Priest role. C draws randrole() until the role has gods (max 99
-// tries), then falls back to the first role with gods; priest is index 6.
+// Part of C role.c:role_init() (role.c:2064-2078): Priests borrow a
+// pantheon from a random non-Priest role.  C draws randrole() until the
+// role has gods (max 99 tries), then falls back to the first role with
+// gods; priest is index 6.
 export function roleInitPriestPantheon(state) {
     if (state.urole?.key !== 'priest')
         return;
@@ -979,11 +981,11 @@ export function roleInitPriestPantheon(state) {
     // C falls back to the first role with gods after 99 failed draws.
     state._priestPantheonIndex = pantheon === 6 ? 0 : pantheon;
 }
-// role_init at role.c:2087 gives a Cleric's light spell the clerical
-// school: objects[SPE_LIGHT].oc_skill = P_CLERIC_SPELL for
-// Role_if(PM_CLERIC). The generated object table stays immutable so a
-// later non-Priest keeps divination, so the override is applied where
-// the school is read.
+// Part of C role.c:role_init() (role.c:2087): it gives a Cleric's light
+// spell the clerical school: objects[SPE_LIGHT].oc_skill =
+// P_CLERIC_SPELL for Role_if(PM_CLERIC).  The generated object table
+// stays immutable so a later non-Priest keeps divination, so the port
+// applies the override where the school is read.
 export function roleInitClericLightSchool(otyp, state) {
     return otyp === SPE_LIGHT && state.urole?.key === 'priest';
 }
@@ -1499,7 +1501,7 @@ class CharacterSelection {
         return result === 'filtered';
     }
 }
-// C ref: role.c genl_player_setup()'s yn_function() call for the
+// Part of C role.c:genl_player_setup(): its yn_function() call for the
 // pick-for-you question, drawn over the base window before the game
 // windows exist.
 async function readSetupAnswer(question) {
@@ -1523,15 +1525,16 @@ async function readSetupAnswer(question) {
     }
     return String.fromCharCode(answer);
 }
-// C ref: role.c role_menu_extra()'s add_menu_str() — a text-only row.
+// Part of C role.c:role_menu_extra(): its add_menu_str() call — a
+// text-only row.
 function addText(window, text) {
     tty_add_menu(window, { identifier: null, text });
 }
-// C ref: role.c role_menu_extra()'s add_menu() calls.
+// Part of C role.c:role_menu_extra(): its add_menu() calls.
 function addChoice(window, identifier, selector, text, selected = false) {
     tty_add_menu(window, { identifier, selector, text, itemflags: selected ? MENU_ITEMFLAGS_SELECTED : 0 });
 }
-// C ref: role.c genl_player_setup()'s end_menu()/select_menu()/
+// Part of C role.c:genl_player_setup(): its end_menu()/select_menu()/
 // destroy_nhwindow() tail, with the PICK_ONE preselection quirk: a
 // second answer comes back alongside the preselected row.
 async function finishMenu(window, title, defaultChoice) {

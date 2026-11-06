@@ -122,9 +122,10 @@ export async function doputon(): Promise<void> {
     await putOnAccessoryObject(object);
 }
 
-// do_wear.c:accessory_or_armor_on() is shared by both W and P.  getobj()
-// downplays the other command's class in its compact prompt but still accepts
-// a directly typed inventory letter and routes it through this same owner.
+// C do_wear.c:accessory_or_armor_on()
+// Shared by both W and P.  getobj() downplays the other command's class
+// in its compact prompt but still accepts a directly typed inventory
+// letter and routes it through this same owner.
 async function putOnAccessoryObject(object: GameObject): Promise<void> {
     if (object.worn) {
         await pline('You are already wearing that!');
@@ -236,9 +237,10 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
 // C ref: objnam.c armor_simple_name() and category helpers.  Delayed armor
 // nomovemsg deliberately uses a short category noun, not xname()/doname().
 
-// C ref: do_wear.c Armor_off()/off_msg().  Delayed removal calls this from
-// allmain only after negative multi has reached zero; zero-delay armor can use
-// the same state owner immediately.
+// C do_wear.c:off_msg()
+// The Armor_off()/off_msg() completion.  Delayed removal calls this from
+// allmain only after negative multi has reached zero; zero-delay armor
+// can use the same state owner immediately.
 export async function finishArmorRemoval(
     object: GameObject, { silent = false }: { silent?: boolean } = {},
 ): Promise<string> {
@@ -365,6 +367,7 @@ const MZ_SMALL = 1;
 
 interface ArmorWearDecision { refusal: string | null; checkedWeldedWeapon: GameObject | null }
 
+// C do_wear.c:canwearobj()
 // Also C do_wear.c:already_wearing(): inlined in this decision as the
 // occupied-slot refusal ("You are already wearing ...").
 export function armorWearDecision(object: GameObject, state: GameState = game): ArmorWearDecision {
@@ -498,10 +501,11 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
     game.context.move = 1;
 }
 
-// C refs: do_wear.c dowear(), accessory_or_armor_on(), and the negative
-// `multi`/afternmv completion in allmain.c.  Armor is installed in its worn
-// slot immediately, but its known state and completion message are delayed
-// until the required elapsed-turn scheduler round has finished.
+// Part of C do_wear.c:dowear() (with accessory_or_armor_on()): armor is
+// installed in its worn slot immediately, but its known state and
+// completion message are delayed until the required elapsed-turn
+// scheduler round has finished — the negative `multi`/afternmv
+// completion in allmain.c.
 function classifyWearChoice(object: GameObject, action: 'wear' | 'put on') {
     const classification = equipmentClassification(object, action);
     // Native canwearobj() checks welded() even during getobj's silent fit
@@ -616,14 +620,14 @@ export async function takeOffAll(): Promise<void> {
     await continueBulkTakeoff();
 }
 
-// The initiating command schedules work; each later callback completes one
-// working turn. Even zero-delay armor requires one such turn in native 'A'.
-// C do_wear.c:take_off(): the 'A' occupation body — finish the current
-// piece after its delay, walk takeoff_order for the next one (covering
-// cloaks and suits over a shirt costs extra), and announce "You finish
-// disrobing." when the mask empties.
-// do_takeoff() is removeSelectedSlot(); set_occupation() is the
-// _occupation assignment at the end of each round.
+// C do_wear.c:take_off()
+// The 'A' occupation body.  The initiating command schedules work; each
+// later callback completes one working turn; even zero-delay armor
+// requires one such turn in native 'A'.  Finish the current piece after
+// its delay, walk takeoff_order for the next one (covering cloaks and
+// suits over a shirt costs extra), and announce "You finish disrobing."
+// when the mask empties.  do_takeoff() is removeSelectedSlot();
+// set_occupation() is the _occupation assignment at the end of each round.
 export async function continueBulkTakeoff(state: GameState = game): Promise<boolean> {
     const progress = state.context.takeoff;
     if (!progress) return false;
@@ -888,9 +892,9 @@ function bucCategory(object: GameObject): BucCategory {
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 
-// Removal-category subset of invent.c:count_buc(): the priest knowledge pass and
-// per-status tallies for the removal-category menu (query_classes in
-// pickup.ts builds the same set for pickup menus).
+// Part of C invent.c:count_buc(): the removal-category subset — the
+// priest knowledge pass and per-status tallies for the removal-category
+// menu (query_classes in pickup.ts builds the same set for pickup menus).
 function wornBucCategories(worn: readonly GameObject[]): Set<BucCategory> {
     // Native count_buc() grants priest knowledge before applying is_worn().
     if (game.urole?.key === 'priest')
@@ -915,7 +919,8 @@ function matchesCategories(object: GameObject, categories: readonly Category[]):
         && (!categories.includes('P') || !!object.pickup_prev);
 }
 
-// Also C pickup.c:count_categories(): inlined as the single-category skip
+// Part of C do_wear.c:menu_remarm(): the removal-category menu; also
+// inlines C pickup.c:count_categories() as the single-category skip
 // below (one class and no special filter needs no menu).
 async function categoryMenu(): Promise<Category[]> {
     const worn = wornInventory();
@@ -1238,8 +1243,9 @@ export function heroKnowsLavaWalking(state: GameState = game) {
     return !!fireResistant && !!boots?.oerodeproof && !!boots.rknown;
 }
 
-// do_wear.c's *_on() callbacks distinguish the physical worn property from
-// the observable feedback which identifies the shuffled object type.
+// Part of C do_wear.c:Gloves_on()/Cloak_on()/Boots_on(): these callbacks
+// distinguish the physical worn property from the observable feedback
+// which identifies the shuffled object type.
 export function armorOnIdentifiesType(object: GameObject | null | undefined, effectMessages: readonly string[] = []) {
     if (object?.otyp === GAUNTLETS_OF_POWER) return true;
     if (object?.otyp === CLOAK_OF_DISPLACEMENT)
@@ -1249,10 +1255,11 @@ export function armorOnIdentifiesType(object: GameObject | null | undefined, eff
     return false;
 }
 
-// C obj.h armor macros (is_shield()/is_helmet()/is_boots()/is_gloves()/
-// is_cloak()/is_shirt()/is_suit()) classify the worn slot by oc_armcat
-// behind the armor-class guard, exactly as do_wear.c's wear dispatch does.
-// The generic armor marker (otyp 3, ARM_SUIT) is a suit to C.
+// Part of C do_wear.c:dowear(): its wear dispatch selects the slot
+// through the C obj.h armor macros (is_shield()/is_helmet()/is_boots()/
+// is_gloves()/is_cloak()/is_shirt()/is_suit()), which classify the worn
+// slot by oc_armcat behind the armor-class guard.  The generic armor
+// marker (otyp 3, ARM_SUIT) is a suit to C.
 export function armorSlotFor(otyp: number | undefined): ArmorSlot | null {
     if (otyp === undefined) return null;
     const object = { otyp, oclass: objectClassForType(otyp) };
@@ -1424,12 +1431,12 @@ async function losePetrificationProtection(armor: GameObject, state: GameState, 
     }
 }
 
-// Slot/source removal without the Boots_off() transition.
-// C do_wear.c:Armor_gone(): the destroyed-armor path — setnotworn() rather
-// than setworn(0), the artifact-light stop message, and dragon handling
-// with on_purpose FALSE.
-// C do_wear.c:Shield_off().
-// C do_wear.c:Shirt_off().
+// C do_wear.c:Armor_gone()
+// Slot/source removal without the Boots_off() transition — the
+// destroyed-armor path: setnotworn() rather than setworn(0), the
+// artifact-light stop message, and dragon handling with on_purpose FALSE.
+// Also C do_wear.c:Shield_off(): merged here.
+// Also C do_wear.c:Shirt_off(): merged here.
 export async function clearHeroArmor(object: GameObject, state: GameState = game, {
     cancelledDon = pendingArmorAction(state)?.kind === 'wear'
         && pendingArmorAction(state)?.object === object,

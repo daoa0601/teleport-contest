@@ -335,9 +335,10 @@ export function rndmonstAdj(minAdjustment = 0, maxAdjustment = 0) {
     }
     return rndmonstReservoir(minAdjustment, maxAdjustment);
 }
-// C ref: makemon.c peace_minded().  Random level monsters must resolve their
-// attitude before inventory creation; the live hero alignment record is an
-// input, so prayer and other alignment mutations remain observable here.
+// C makemon.c:peace_minded()
+// Random level monsters must resolve their attitude before inventory
+// creation; the live hero alignment record is an input, so prayer and
+// other alignment mutations remain observable here.
 export function peaceMinded(mndx) {
     if (always_peaceful(mndx))
         return true;
@@ -372,10 +373,11 @@ export function peaceMinded(mndx) {
         return record >= 0;
     return !!rn2(16 + record) && !!rn2(2 + Math.abs(monsterAlignment));
 }
-// C ref: makemon.c's post-placement species switch.  This runs after
-// peace_minded() and before shapechanging, group construction, and inventory.
-// Keep it shared with ambient births: leprechauns always start asleep, while
-// nymphs and jabberwocks own the same conditional sleep roll everywhere.
+// Part of C makemon.c:makemon(): its post-placement species switch.
+// This runs after peace_minded() and before shapechanging, group
+// construction, and inventory.  Keep it shared with ambient births:
+// leprechauns always start asleep, while nymphs and jabberwocks own the
+// same conditional sleep roll everywhere.
 export function initialMonsterSleepState(mndx, forceAsleep = false) {
     let sleeping = forceAsleep ? 1 : 0;
     const monsterClass = MONSTER_SYMBOL[mndx];
@@ -443,10 +445,11 @@ function levelMonsterAt(x, y, ignore = null) {
     return game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) && monster !== ignore
         && monsterOccupiesPosition(monster, x, y));
 }
-// C ref: makemon.c makemon_rnd_goodpos().  The random phase owns a complete
-// x/y pair for every rejected candidate.  Level generation skips the
-// visibility-avoidance pass, then falls back to a deterministic wrapped scan
-// only if all fifty random candidates fail.
+// C makemon.c:makemon_rnd_goodpos()
+// The random phase owns a complete x/y pair for every rejected
+// candidate.  Level generation skips the visibility-avoidance pass, then
+// falls back to a deterministic wrapped scan only if all fifty random
+// candidates fail.
 function randomMonsterPosition(mndx, gpflags) {
     const subject = mndx == null ? null : { kind: 'species', mnum: mndx };
     let x = 0, y = 0, good = false, tryCount = 0;
@@ -644,6 +647,7 @@ export function setMonsterMalign(monster, state = game) {
         monster.malign = absoluteAlignment;
     }
 }
+// C makemon.c:makemon()
 // Also C makemon.c:m_initweap(): species-specific starting weapons are inlined here.
 // Also C makemon.c:m_initinv(): species-specific starting inventory is inlined here.
 export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
@@ -1811,7 +1815,8 @@ export function isHomeElemental(mnum) {
         default: return false;
     }
 }
-// C ref: makemon.c:adj_lev(). Creation and polymorph share the live level.
+// C makemon.c:adj_lev()
+// Creation and polymorph share the live level.
 export function adjustedMonsterLevel(mnum) {
     const baseLevel = MONSTER_LEVEL[mnum] ?? 0;
     if (mnum === PM_WIZARD_OF_YENDOR) {
@@ -1832,7 +1837,7 @@ export function adjustedMonsterLevel(mnum) {
     const upperLimit = Math.min(49, Math.trunc(3 * baseLevel / 2));
     return Math.min(upperLimit, Math.max(0, adjusted));
 }
-// C ref: makemon.c:newmonhp().
+// C makemon.c:newmonhp()
 export function newMonsterHitPoints(mnum) {
     const rawLevel = MONSTER_LEVEL[mnum] ?? 0;
     let level = adjustedMonsterLevel(mnum);

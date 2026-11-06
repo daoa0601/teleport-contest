@@ -924,6 +924,7 @@ const FLAGS: Readonly<Partial<Record<PropertyName, ArtifactFlag>>> = {
     halfSpellDamage: 'SPFX_HSPDAM', halfPhysicalDamage: 'SPFX_HPHDAM', reflection: 'SPFX_REFLECT',
 };
 
+// C artifact.c:what_gives()
 // The first item conveying a particular intrinsic.
 // C artifact.c:abil_to_adtyp(): the C extrinsic-pointer table became the
 // DEFENSES map above.

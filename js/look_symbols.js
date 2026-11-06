@@ -5,8 +5,9 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { withIndefiniteArticle } from './objnam.js';
-// pager.c:do_screen_description() with looked=FALSE. Typed symbols use the
-// default class and dungeon symbols, even when the map uses another set.
+// Part of C pager.c:do_screen_description() with looked=FALSE.  Typed
+// symbols use the default class and dungeon symbols, even when the map
+// uses another set.
 export function typedSymbolDescription(symbol, context) {
     const meanings = [];
     let firstMatch = '';

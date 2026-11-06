@@ -124,8 +124,9 @@ function monsterAt(x: number, y: number, state: GameState): Monster | null {
     ) || null;
 }
 
-// C dig.c pick_can_reach(): whether a pick can reach a statue or boulder
-// that sits in (or beside) a pit.
+// C dig.c:pick_can_reach()
+// Whether a pick can reach a statue or boulder that sits in (or beside)
+// a pit.
 function pickCanReach(tool: GameObject, x: number, y: number, state: GameState): boolean {
     const trap = trapAt(state, x, y);
     const targetInPit = !!(trap && is_pit(trap.ttyp) && trap.tseen);
@@ -139,8 +140,9 @@ function pickCanReach(tool: GameObject, x: number, y: number, state: GameState):
     return !targetInPit;
 }
 
-// C dig.c dig_typ(): what is actually being dug at <x,y> with this tool.
-// Returns the numeric DIGTYP_* constants from const.js.
+// C dig.c:dig_typ()
+// What is actually being dug at <x,y> with this tool.  Returns the numeric
+// DIGTYP_* constants from const.js.
 export function diggingTarget(tool: GameObject | null | undefined, x: number, y: number, state = game): DiggingTarget {
     if (!isok(x, y) || !tool || (!isPick(tool) && !isAxe(tool)))
         return DIGTYP_UNDIGGABLE;
@@ -166,7 +168,8 @@ export function diggingTarget(tool: GameObject | null | undefined, x: number, y:
                         : DIGTYP_UNDIGGABLE;
 }
 
-// C dig.c is_digging(): whether the dig occupation is currently running.
+// C dig.c:is_digging()
+// Whether the dig occupation is currently running.
 export function isDigging(state = game): boolean {
     return state._occupation?.key === 'dig';
 }
@@ -213,7 +216,9 @@ export function clearDiggingContext(state: GameState): void {
 // weapon.c's abon() lives in weapon.js (heroAttackBonus); dig.c's digmon()
 // reads the same strength/dexterity ladder for digging effort.
 
-// C weapon.c greatest_erosion(): worst of fire and rot damage.
+// C obj.h:greatest_erosion()
+// The include/obj.h macro (not weapon.c, as an earlier revision of this
+// comment said): worst of fire and rot damage.
 function greatestErosion(object: Pick<GameObject, 'oeroded' | 'oeroded2'>): number {
     return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
 }
@@ -229,7 +234,7 @@ async function feelNewsym(x: number, y: number, state: GameState): Promise<void>
     else await newsym(x, y);
 }
 
-// C dig.c rm_waslit().
+// C dig.c:rm_waslit()
 function rmWasLit(state: GameState): boolean {
     const hero = state.u;
     const level = requireGameLevel(state);
@@ -241,7 +246,7 @@ function rmWasLit(state: GameState): boolean {
     return false;
 }
 
-// C dig.c mkcavepos().
+// C dig.c:mkcavepos()
 async function mkcavepos(x: number, y: number, dist: number, waslit: boolean, rockit: boolean, state: GameState): Promise<void> {
     if (!isok(x, y)) return;
     const location = requireGameLevel(state).at(x, y);
@@ -271,7 +276,8 @@ async function mkcavepos(x: number, y: number, dist: number, waslit: boolean, ro
     await feelNewsym(x, y, state);
 }
 
-// C dig.c mkcavearea(): the Earth plane's collapsing/created cave.
+// C dig.c:mkcavearea()
+// The Earth plane's collapsing/created cave.
 async function mkcavearea(rockit: boolean, state: GameState): Promise<void> {
     const hero = state.u;
     const level = requireGameLevel(state);
@@ -320,9 +326,10 @@ async function mkcavearea(rockit: boolean, state: GameState): Promise<void> {
     state.vision_full_recalc = 1;
 }
 
-// C dig.c use_pick_axe2() digging-target branches: fresh-versus-continue
-// wording, context reset, and the dig occupation setup.  The caller has
-// already wielded the tool and resolved the target square.
+// Part of C dig.c:use_pick_axe2(): the digging-target branches —
+// fresh-versus-continue wording, context reset, and the dig occupation
+// setup (the citation owner is applyPickAxeDirection() below).  The
+// caller has already wielded the tool and resolved the target square.
 export async function startHeroDigging(
     tool: GameObject, x: number, y: number, { down = false, state = game } = {},
 ): Promise<{ spentTime: true }> {
@@ -391,7 +398,8 @@ export async function startHeroDigging(
     return { spentTime: true };
 }
 
-// C dig.c dig(): one dig occupation tick.  Returns true to keep digging.
+// C dig.c:dig()
+// One dig occupation tick.  Returns true to keep digging.
 export async function continueHeroDigging(state = game): Promise<boolean> {
     const digging = state.context?.digging;
     if (!digging) return false;
@@ -744,8 +752,9 @@ function alignmentWord(alignment: number): string {
     return 'neutral';
 }
 
-// C do_name.c hliquid(): dig.c names flowing or refusing liquids through
-// it, so hallucinating heroes see a randomly displayed substitute.
+// Part of C do_name.c:hliquid(): dig.c names flowing or refusing liquids
+// through it, so hallucinating heroes see a randomly displayed substitute
+// (hliquid()'s citation owner is displayLiquidName() in do_name.ts).
 function liquidName(typ: number, state: GameState = game): string {
     return displayLiquidName(typ === LAVAPOOL ? 'lava' : 'water', state);
 }
@@ -2040,8 +2049,9 @@ function impaired(state: GameState) {
     );
 }
 
-// Also C cmd.c:dxdy_moveok(): inlined here (a grid bug's diagonal is
-// filtered from the direction hints).
+// Part of C dig.c:use_pick_axe()/use_pick_axe2(): the direction hint
+// list; also inlines C cmd.c:dxdy_moveok() — a grid bug's diagonal is
+// filtered from the direction hints.
 function prepareDiggingDirections(tool: GameObject, state: GameState) {
     const hero = state.u;
     const downOK = heroCanReachFloor(state);

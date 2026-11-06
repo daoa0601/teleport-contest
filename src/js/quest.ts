@@ -269,11 +269,12 @@ export async function prepareQuestArrival({ fromDepth }: {
     return null;
 }
 
-// C do.c main-dungeon arrival branch: every arrival at the Quest entrance
-// level from outside the Quest branch delivers the leader's summons
-// (quest_portal first, then quest_portal_again, or _demand for Rogues).
-// Loading quest.lua consumes nhlib's alignment shuffle before its plines
-// collide with any pending level-teleport message.
+// Part of C do.c's main-dungeon arrival branch (do.c:1927-1930): every
+// arrival at the Quest entrance level from outside the Quest branch
+// delivers the leader's summons through com_pager() — the "quest_portal"
+// message key first, then "quest_portal_again", or "quest_portal_demand"
+// for Rogues.  Loading quest.lua consumes nhlib's alignment shuffle
+// before its plines collide with any pending level-teleport message.
 export async function prepareMainQuestPortalCall({ fromDepth }: {
     fromDepth?: DungeonLocation;
 } = {}, g: GameState = game) {
@@ -480,10 +481,10 @@ export async function chatWithQuestLeader(monster: Monster | null | undefined, g
     return true;
 }
 
-// C quest_chat(): chat uses a random threat; spontaneous nemesis speech has
-// its own encounter progression and battle gate.
-// C quest.c:chat_with_guardian().
-// C quest.c:chat_with_nemesis().
+// C quest.c:quest_chat()
+// Chat uses a random threat; spontaneous nemesis speech has its own
+// encounter progression and battle gate.  The per-character helpers are
+// quest.c:chat_with_guardian() and quest.c:chat_with_nemesis().
 export async function chatWithQuestCharacter(monster: Monster, state: GameState = game): Promise<void> {
     const status = ensureQuestStatus(state);
     if (isQuestLeader(monster, state)) {
@@ -553,10 +554,11 @@ function forgetQuestOverview(state: GameState): void {
     markOverviewUnreachable(dungeon, state);
 }
 
-// quest.c:expulsion(FALSE) schedules a portal arrival on the parent side of
-// the Quest branch.  The deferred transition is executed by moveloop after
-// the leader's modal dialogue returns, while the original hero action still
-// owns the surrounding monster/global-turn transaction.
+// Part of C quest.c:expulsion() (its FALSE branch): it schedules a
+// portal arrival on the parent side of the Quest branch.  The deferred
+// transition is executed by moveloop after the leader's modal dialogue
+// returns, while the original hero action still owns the surrounding
+// monster/global-turn transaction.
 export async function performQuestExpulsion(g: GameState = game) {
     const current = g.u.uz;
     if (!current) return false;

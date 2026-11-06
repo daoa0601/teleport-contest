@@ -657,6 +657,7 @@ export function teleportHeroAtWill<Arrival extends ArrivalResult>(
     options: TeleportAtWillOptions<Arrival> & { finishArrival: (movement: HeroTeleportMovement) => Promise<Arrival> },
 ): Promise<TeleportAtWillResult<Arrival>>;
 export function teleportHeroAtWill(options?: TeleportAtWillOptions<DefaultArrival>): Promise<TeleportAtWillResult<DefaultArrival>>;
+// C teleport.c:teleport()
 // Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
 export async function teleportHeroAtWill({
     state = game, random = rn2, rollOne = rnd, chooseDestination = null,
@@ -1241,11 +1242,12 @@ export async function teleds(x: number, y: number, state = game, {
     return { movement, arrival };
 }
 
-// teleds()'s landing tail (C teleport.c:teleds() lines 543-571): the verbose
-// materialize line, switch_terrain(), the vault-guard exit check, and
-// spoteffects(TRUE) + invocation_message().  Kept as a named continuation
-// because trap paths and liquid rescues pass it (or a custom landing) into
-// teleds(); hack.c:spoteffects() itself lives in hack.ts.
+// Part of C teleport.c:teleds(): the landing tail (C teleport.c:teleds()
+// lines 543-571) — the materialize line, switch_terrain(), the vault-guard
+// exit check, and spoteffects(TRUE) + invocation_message().  Kept as a
+// named continuation because trap paths and liquid rescues pass it (or a
+// custom landing) into teleds(); hack.c:spoteffects() itself lives in
+// hack.ts.
 export async function finishTeleportArrival(
     movement: HeroTeleportMovement, { announceTeleport = true } = {},
 ): Promise<SpotEffectResult> {
@@ -1392,10 +1394,11 @@ export async function askTeleportDestination({ onPrompt = null }: {
     return destination;
 }
 
-// C refs: teleport.c dotelecmd(), dotele()/teleds(), getpos.c getpos(),
-// and priest.c intemple(). A successful position teleport returns
-// ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
-// the destination room separately owns entry effects after relocation.
+// C teleport.c:dotelecmd()
+// dotele()/teleds(), getpos.c getpos(), and priest.c intemple(): a
+// successful position teleport returns ECMD_TIME.  Its first getpos use
+// still owns the shared Lua tutorial, while the destination room
+// separately owns entry effects after relocation.
 export async function teleportAtWillCommand(ignoreRestrictions: boolean): Promise<void> {
     const result = await teleportHeroAtWill({
         ignoreRestrictions, chooseDestination: askTeleportDestination,

@@ -171,9 +171,10 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     }
     return key;
 }
-// Text-backed menu windows page prose without accepting menu commands.
-// C wintty.c:process_text_window()'s full-screen pages acknowledge each
-// prompt through dmore(); quitchars are ESC, space, newline and return.
+// Part of C win/tty/wintty.c:process_text_window(): its full-screen
+// pages acknowledge each prompt through dmore(); quitchars are ESC,
+// space, newline and return.  Text-backed menu windows page prose
+// without accepting menu commands.
 async function pageDisclosureWindow(d, lines, marker, extraDismissKey = null) {
     const pageSize = d.rows - 1;
     const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));

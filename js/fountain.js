@@ -116,8 +116,9 @@ export async function splitSittingGremlin() {
     await dryFountainAt(game.u.ux, game.u.uy);
     return clone;
 }
+// C fountain.c:dogushforth()
 // Gushing water along line of sight from an overflowing fountain.
-// C refs: fountain.c dogushforth() and gush().
+// Also C fountain.c:gush(): inlined here as the per-step callback.
 export async function gushForthFromFountain({ drinking = false, state = game } = {}) {
     const level = requireGameLevel(state);
     const ux = state.u.ux;
@@ -643,8 +644,9 @@ async function triggerFountainActorTrap(monster, trapAt, triggerTrap) {
         return null;
     return triggerTrap(monster);
 }
-// fountain.c:dowaternymph().  Placement, trap effects, and presentation stay
-// injected subsystem owners; this reducer owns only their source ordering.
+// C fountain.c:dowaternymph()
+// Placement, trap effects, and presentation stay injected subsystem
+// owners; this reducer owns only their source ordering.
 export async function applyFountainNymphActor({ gone = false, blind = false, createMonster = async () => null, announce = async () => { }, nymphDescription = () => 'a water nymph', wakeMonster = monster => { monster.msleeping = 0; }, trapAt = () => false, triggerTrap = async () => null, }) {
     const monster = gone ? null : await createMonster();
     if (!monster) {
@@ -665,9 +667,10 @@ export async function applyFountainNymphActor({ gone = false, blind = false, cre
     const trap = await triggerFountainActorTrap(monster, trapAt, triggerTrap);
     return { created: true, monster, message, trap, fallback: false };
 }
-// fountain.c:dowaterdemon().  The wish roll is eligible only after a
-// successful construction and its release message; a winning grant replaces
-// immediate trap entry because mongrantswish() removes the actor first.
+// C fountain.c:dowaterdemon()
+// The wish roll is eligible only after a successful construction and its
+// release message; a winning grant replaces immediate trap entry because
+// mongrantswish() removes the actor first.
 export async function applyFountainDemonActor({ gone = false, blind = false, difficulty = 1, createMonster = async () => null, announce = async () => { }, random = rnd, demonIndefiniteName = () => 'a water demon', demonPronouns = () => ({ possessive: 'his', pronoun: 'he' }), grantWish = async () => { }, trapAt = () => false, triggerTrap = async () => null, }) {
     if (gone) {
         await announceFountainActor(FURIOUS_BUBBLING_MESSAGE, announce);
@@ -705,9 +708,10 @@ export async function applyFountainDemonActor({ gone = false, blind = false, dif
         grantedWish: false, trap, fallback: false,
     };
 }
-// fountain.c:dowatersnakes().  Unlike the other helpers, rn1(5,2) is paid
-// before G_GONE.  Each requested actor independently constructs and enters a
-// trap before the next request begins.
+// C fountain.c:dowatersnakes()
+// Unlike the other helpers, rn1(5,2) is paid before G_GONE.  Each
+// requested actor independently constructs and enters a trap before the
+// next request begins.
 export async function applyFountainSnakeActors({ gone = false, blind = false, hallucinating = false, random = rn2, hallucinatedPlural = () => 'snakes', announce = async () => { }, createMonster = async () => null, trapAt = () => false, triggerTrap = async () => null, }) {
     const requested = 2 + random(5);
     if (gone) {

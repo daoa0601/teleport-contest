@@ -299,6 +299,7 @@ function petCanReachObject(monster, object, state) {
     return (monsterCouldReachItem(monster, targetX, targetY, state) &&
         petCanReachLocation(monster, monster.mx, monster.my, targetX, targetY, state));
 }
+// C dogmove.c:dog_goal()
 // Also C dogmove.c:cursed_object_at(): inlined here.
 // Also C dogmove.c:wantdoor(): inlined here.
 function dogGoal(monster, state, random, calls) {
@@ -487,10 +488,10 @@ async function starvePet(monster, state) {
     }
     await finishEnvironmentalMonsterDeath(monster, state);
 }
+// C dogmove.c:dog_hunger()
 // A starvation attempt ends this pet action even when an amulet saves it.
-// Check only at dog_move entry; sleeping, frozen and eating pets wait until
-// their next movement opportunity, as in dochug()/m_move().
-// C dogmove.c:dog_hunger().
+// Check only at dog_move entry; sleeping, frozen and eating pets wait
+// until their next movement opportunity, as in dochug()/m_move().
 export async function applyPetHunger(monster, state) {
     const dog = monster.mtame ? monster.edog ?? monster.mextra?.edog : null;
     if (!dog || state.moves <= dog.hungrytime + DOG_WEAK)
@@ -614,8 +615,9 @@ async function dogInvent(monster, state, random, rollDice, rollOne, calls) {
     }
     return { result: 0 };
 }
-// dogmove.c:dog_invent(): after the visible "picks up" line, obj_extract_self()
-// and mpickobj() move the chosen object into the pet's inventory.
+// Part of C dogmove.c:dog_invent(): after the visible "picks up" line,
+// obj_extract_self() and mpickobj() move the chosen object into the
+// pet's inventory (the citation owner is dogInvent() above).
 export async function commitPetPickup(monster, object, state) {
     remove_object(object, state);
     await newsym(monster.mx, monster.my);
@@ -823,6 +825,7 @@ async function pullLeashedPetCloser(monster, state, random, calls) {
     await newsym(monster.mx, monster.my);
     setMonsterApparentHeroPosition(monster, state, random, calls);
 }
+// C dogmove.c:dog_move()
 // Also C dogmove.c:cursed_object_at(): inlined here.
 export async function movePet(monster, state, random, rollDice, rollOne, calls) {
     const oldx = monster.mx;
@@ -1150,7 +1153,9 @@ const DISGUISES = [
     { symbol: DOG_SYMBOL, type: M_AP_FURNITURE, appearance: SINK_APPEARANCE },
     FOOD_DISGUISE,
 ];
-// Also C dogmove.c:mnum_leashable(): all monster disguises in this table are leashable.
+// C dogmove.c:quickmimic()
+// Also C dogmove.c:mnum_leashable(): all monster disguises in this table
+// are leashable.
 export async function beginMonsterMealMimicry(monster, state = game) {
     requireLiveGame(state);
     const wasLeashed = !!monster.mleashed;

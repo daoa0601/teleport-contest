@@ -427,9 +427,10 @@ export async function burnAwayHeroSlime({
     return true;
 }
 
-// The bare Slimed reset shared by potion.c's make_slimed(0) and
-// slimed_to_death() below: no botl request, so the status line keeps
-// "Slime" until something else asks for a redraw.
+// Part of C potion.c:make_slimed(): the bare Slimed reset its
+// make_slimed(0) call performs, shared with slimed_to_death() below —
+// no botl request, so the status line keeps "Slime" until something
+// else asks for a redraw.
 // Also C end.c:dealloc_killer(): the delayed slime killer is removed inline here
 export function dropHeroSliming(hero: GameState['u']): void {
     hero.slimedTurns = 0;
@@ -558,9 +559,10 @@ export function expiredFatally(active: boolean | undefined, turns: number | unde
     return !!active && !turns;
 }
 
-// C timeout.c decrements every intrinsic timeout in prop.h order. These
-// properties have no dedicated recovery action; their source projection still
-// needs refreshing when the timed source ends.
+// Part of C timeout.c:nh_timeout(): the loop that decrements every
+// intrinsic timeout in prop.h order.  These properties have no dedicated
+// recovery action; their source projection still needs refreshing when
+// the timed source ends.
 function advanceSimplePropertyTimeouts(properties: readonly PropertyName[], state: GameState): void {
     for (const property of properties) advancePropertyTimeout(property, state);
 }
@@ -665,8 +667,8 @@ export async function advanceHeroPetrification({
     return { active: false, died: !!died, turns: 0 };
 }
 
-// Reading the stored petrification killer and its prefix format back for
-// the death report (C end.c:find_delayed_killer()).
+// Part of C end.c:find_delayed_killer(): reading the stored petrification
+// killer and its prefix format back for the death report.
 function petrificationDeathCause(state: GameState): string {
     const name = state.u.stoneKiller;
     if (!name) return 'killed by petrification';
@@ -1319,8 +1321,8 @@ export function stopObjectTimers(object: GameObject, state: GameState): void {
     if (burn) cleanupObjectBurn(object, burn.deadline, state);
 }
 
-// The port's whole-object graph: every list that C shk.c:find_oid()
-// searches by o_id, walked once so callers can inline their o_on() scan.
+// Part of C shk.c:find_oid()'s search domain: every list it searches by
+// o_id, walked once so callers can inline their o_on() scan.
 export function objectsInTimerGraph(state: GameState = game): GameObject[] {
     const objects: GameObject[] = [];
     const seen = new Set<GameObject>();
@@ -1456,11 +1458,12 @@ function objectTimerIsGlobal(object: GameObject, state: GameState): boolean {
         && !!state._migratingMonsters?.includes(outer.ocarry);
 }
 
-// A light's global/local batch split: light.c decides with
-// `is_global = !obj_is_local(...)` (light.c:450,583), using its own local
-// `mon_is_local(mon)` macro — `(mon)->mx > 0` (light.c:373) — rather than
-// timeout.c's mon_is_local(); the timer queue's port of obj_is_local() is
-// objectTimerIsGlobal() above.
+// Part of C light.c's obj_is_local() test (light.c:450,583): a light's
+// global/local batch split decided with
+// `is_global = !obj_is_local(...)`, using its own local
+// `mon_is_local(mon)` macro — `(mon)->mx > 0` (light.c:373) — rather
+// than timeout.c's mon_is_local(); the timer queue's port of
+// obj_is_local() is objectTimerIsGlobal() above.
 export function lightObjectIsGlobal(object: GameObject): boolean {
     let outermost = object;
     while (outermost.where === 'contained' && outermost.container)
@@ -2008,9 +2011,9 @@ function timerQueueLines(state: GameState): string[] {
     return rows;
 }
 
-// The #timeout listing's timed-property rows.
-// C timeout.c:property_by_index(): the PROPERTY_NAMES iteration; its
-// bounds guard is the typed table itself.
+// Part of C timeout.c:property_by_index(): the PROPERTY_NAMES iteration
+// for the #timeout listing's timed-property rows; its bounds guard is
+// the typed table itself.
 function timedPropertyLines(state: GameState): string[] {
     const timed = PROPERTY_NAMES
         .map((entry, index) => ({ ...entry, index, timeout: propertyTimeout(entry.property, state) }))

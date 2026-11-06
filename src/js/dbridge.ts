@@ -41,8 +41,8 @@ import type { Monster } from './monster_types.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterSubjectPronoun, monsterPassesWalls, monsterIsFlyer, monsterIsSwimmer } from './mondata.js';
 
-// C dbridge.c terrain predicates.
-// C ref: dbridge.c is_pool().
+// C dbridge.c:is_pool()
+// The terrain predicate family of dbridge.c.
 export function isPoolAt(x: number, y: number, state = game) {
     if (!isok(x, y)) return false;
     const location = state.level?.at?.(x, y);
@@ -150,8 +150,9 @@ export function findDrawbridgeAt(x: number, y: number, state = game): Drawbridge
     return bridgeLocation ? { x: bridge.x, y: bridge.y, location: bridgeLocation } : null;
 }
 
-// The closing drawbridge destroys the pile at a square; C invent.c
-// delallobj() is this whole-pile deletion.
+// C invent.c:delallobj()
+// The closing drawbridge destroys the pile at a square — this
+// whole-pile deletion.
 async function destroyObjectsAt(x: number, y: number, state: GameState): Promise<void> {
     for (const object of [...state.level?.objects[x]?.[y] ?? []]) {
         if (object.where === 'gone') continue;

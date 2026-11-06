@@ -784,7 +784,9 @@ async function publishMonsterSpellFailure(monster: Monster, spell: MonsterSpell,
     }
 }
 
-// Also C mcastu.c:is_undirected_spell(): inlined here for movement-phase casting.
+// Part of C mcastu.c:castmu(): the spell selection and its
+// mspec_used/range gates for movement-phase casting.
+// Also C mcastu.c:is_undirected_spell(): inlined here.
 export async function movementSpellSelections(
     monster: Monster,
     state: PlayingGameState,

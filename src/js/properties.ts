@@ -152,10 +152,11 @@ export function levitationAtWill(state: PropertyState = game) {
         && !(record?.carried.length) && !permanent;
 }
 
-// C spoteffects()'s timeout-1 handling (hack.c:3362-3363) tests
-// !(ELevitation || (HLevitation & ~(I_SPECIAL | TIMEOUT))) together with a
-// one-turn timeout: levitation whose only sources are the timeout counter
-// and the blessed-potion at-will marker.  The worn/invoked/intrinsic decode
+// Part of C hack.c:spoteffects(): its timeout-1 handling
+// (hack.c:3362-3363) tests !(ELevitation || (HLevitation &
+// ~(I_SPECIAL | TIMEOUT))) together with a one-turn timeout —
+// levitation whose only sources are the timeout counter and the
+// blessed-potion at-will marker.  The worn/invoked/intrinsic decode
 // stays here with the record owner instead of the call site.
 export function levitationIsPurelyTimed(state: PropertyState = game) {
     const hero = state.u;

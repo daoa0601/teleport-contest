@@ -266,8 +266,9 @@ export function updateHeroRegions(state: GameState = game,
         region.heroInside = regionContains(region, x, y);
 }
 
-// C m_in_out_region()/update_monster_region(). Membership changes at the
-// movement boundary; swapping with the hero does not cross this boundary.
+// C region.c:update_monster_region()
+// Membership changes at the movement boundary (m_in_out_region());
+// swapping with the hero does not cross this boundary.
 // C region.c:mon_in_region(): membership test against the id list.
 // C region.c:add_mon_to_reg(): join the list once; C's impossible()
 // duplicate report is the index test.

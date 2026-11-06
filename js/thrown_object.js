@@ -154,8 +154,9 @@ export async function snuffThrownCandle(object, state = game, publish = plineWit
         endObjectBurn(object, state);
     }
 }
-// dothrow.c throwit(): the landing sound, before flooreffects() can
-// consume the object. Shared by thrown and fired objects.
+// Part of C dothrow.c:throwit(): the landing sound, before
+// flooreffects() can consume the object.  Shared by thrown and fired
+// objects.
 export async function announceThrownObjectLiquidImpact(object, x, y, { state = game, publish = plineWithContinuation, } = {}) {
     if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater
         && (isPoolAt(x, y, state)

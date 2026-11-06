@@ -218,10 +218,11 @@ function copyStateKey<Key extends PersistentStateKey>(
     snapshot[key] = state[key];
 }
 
-// Also C artifact.c:restore_artifacts(): inlined here through the
-// persistent artifact existence, provenance, discovery and runtime fields.
-// Install only fields admitted by the saved-state schema. Keep the live state
-// object and the decoded graph references; process-only fields stay in place.
+// TS saved-state restore; also inlines C artifact.c:restore_artifacts()
+// through the persistent artifact existence, provenance, discovery and
+// runtime fields.  Install only fields admitted by the saved-state
+// schema. Keep the live state object and the decoded graph references;
+// process-only fields stay in place.
 export function restorePersistentState(state: GameState, snapshot: PersistentState): void {
     // An absent optional field must clear its previous live value too.
     for (const key of persistentStateKeys) restoreStateKey(state, snapshot, key);
@@ -233,8 +234,9 @@ function restoreStateKey<Key extends PersistentStateKey>(
     state[key] = snapshot[key];
 }
 
-// Also C artifact.c:save_artifacts(): inlined here through the persistent
-// artifact existence, provenance, discovery and runtime fields.
+// TS saved-state snapshot; also inlines C artifact.c:save_artifacts()
+// through the persistent artifact existence, provenance, discovery and
+// runtime fields.
 export function copyPersistentState(state: GameState): PersistentState {
     const snapshot: PersistentState = {
         u: state.u, urole: state.urole, urace: state.urace,

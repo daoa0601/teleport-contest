@@ -107,8 +107,8 @@ async function revealAttackingMonsters(aggressor, defender, visible) {
             await newsym(monster.mx, monster.my);
     }
 }
+// C mhitm.c:missmm()
 // Feedback for when a monster-versus-monster attack misses.
-// C mhitm.c:missmm().
 export async function showMonsterCombatMiss(aggressor, defender, attack, { state = game, visible, publish = plineWithContinuation }) {
     await revealAttackingMonsters(aggressor, defender, visible);
     if (!visible) {
@@ -126,9 +126,10 @@ export function canSeeMonsterCombat(attacker, defender) {
         || (cansee(defender.mx, defender.my)
             && canSpotMonster(defender));
 }
-// Admission exposes a concealed defender before visibility and hit chances
-// are finalized. A disguise is instead revealed by the individual hit/miss.
-// C mhitm.c:mattackm(), the attacked-mundetected-monster block.
+// Part of C mhitm.c:mattackm(): its attacked-mundetected-monster block.
+// Admission exposes a concealed defender before visibility and hit
+// chances are finalized; a disguise is instead revealed by the
+// individual hit/miss.
 export async function revealMonsterCombatDefender(defender, state = game) {
     if (!defender.mundetected)
         return;

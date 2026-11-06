@@ -1,4 +1,5 @@
-// options.c:escapes(): byte-oriented control, numeric, and meta escapes.
+// C options.c:escapes()
+// Byte-oriented control, numeric, and meta escapes.
 export function decodeOptionEscapes(value: string): string {
     const bytes = String.fromCharCode(...new TextEncoder().encode(value));
     let decoded = '';

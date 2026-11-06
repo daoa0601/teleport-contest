@@ -279,6 +279,7 @@ async function clearStaleObjects(objectClass: number, material: number, state: P
     return changed;
 }
 
+// C detect.c:gold_detect()
 // Also C steal.c:findgold(): inlined as the GOLD_PIECE membership tests
 // (monsters' gold and the golem special case) below.
 export async function detectGold(source: GameObject | null, { state = game }: DetectionOptions = {}): Promise<DetectionResult> {
@@ -1400,12 +1401,14 @@ async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise
     return 1;
 }
 
-// C ref: detect.c:dosearch0().  Coordinate order is x-major, then y; each
-// secret square owns its Luck-adjusted roll before later neighbours are
-// examined.  Finding one cancels an active count-prefixed occupation via
-// nomul(0), but the successful search still consumes the current action.
-// Also C artifact.c:spec_ability(): inlined here; the SPFX_SEARCH check on
-// the wielded artifact's flags stands in for uwep->spe as search bonus.
+// C detect.c:dosearch0()
+// Coordinate order is x-major, then y; each secret square owns its
+// Luck-adjusted roll before later neighbours are examined.  Finding one
+// cancels an active count-prefixed occupation via nomul(0), but the
+// successful search still consumes the current action.
+// Also C artifact.c:spec_ability(): inlined here; the SPFX_SEARCH check
+// on the wielded artifact's flags stands in for uwep->spe as search
+// bonus.
 async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearchResult> {
     const u = game.u;
     const weapon = game.uwep;
@@ -1525,9 +1528,10 @@ export async function revealWarnedMonsters(): Promise<void> {
     }
 }
 
-// C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
-// finalized background, boulders, and traps before deferred room filling.
-// C detect.c:skip_premap_detect().
+// C detect.c:premap_detect()
+// Sokoban's Lua `premapped` flag maps the finalized background,
+// boulders, and traps before deferred room filling.
+// Also C detect.c:skip_premap_detect(): merged here.
 export async function premap_detect() {
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {

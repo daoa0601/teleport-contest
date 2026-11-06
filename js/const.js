@@ -2647,8 +2647,9 @@ export function Is_valley(uz) {
         && level?.dnum === specialLevel.dnum
         && level?.dlevel === specialLevel.dlevel;
 }
-// C ref: dungeon.c:1637 — Is_botlevel checks if level is the deepest
-// in its dungeon branch. Each branch has its own num_dunlevs.
+// C dungeon.c:Is_botlevel()
+// dungeon.c:1637 — checks if the level is the deepest in its dungeon
+// branch. Each branch has its own num_dunlevs.
 export function Is_botlevel(uz) {
     const lev = uz ?? game?.u?.uz;
     if (!lev)

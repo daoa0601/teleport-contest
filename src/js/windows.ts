@@ -281,9 +281,10 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     return key;
 }
 
-// Text-backed menu windows page prose without accepting menu commands.
-// C wintty.c:process_text_window()'s full-screen pages acknowledge each
-// prompt through dmore(); quitchars are ESC, space, newline and return.
+// Part of C win/tty/wintty.c:process_text_window(): its full-screen
+// pages acknowledge each prompt through dmore(); quitchars are ESC,
+// space, newline and return.  Text-backed menu windows page prose
+// without accepting menu commands.
 async function pageDisclosureWindow(
     d: GameDisplay, lines: readonly TextMenuLine[], marker: string,
     extraDismissKey: number | null = null,

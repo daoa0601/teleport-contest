@@ -184,8 +184,9 @@ export async function completeHeroLifeSaving(
     return true;
 }
 
-// C ref: end.c:savelife().  Wizard/explore refusal and amulet life saving
-// share this viability repair after their distinct prompt/item transactions.
+// C end.c:savelife()
+// Wizard/explore refusal and amulet life saving share this viability
+// repair after their distinct prompt/item transactions.
 export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions = {}) {
     requireInitializedHero(game.u);
     const constitution = currentAttribute(A_CON);
@@ -313,8 +314,8 @@ export function recordHeroKillConduct(state: GameState = game) {
         recordGameLogEvent('killed for the first time', { state, flags: LL_CONDUCT });
 }
 
-// The final disclosure's overview lines, through dungeon.ts's
-// dungeonOverviewDisclosure() (dungeon.c show_overview() with why > 0);
+// Part of C dungeon.c:show_overview(): the final disclosure's overview
+// lines, through dungeon.ts's dungeonOverviewDisclosure() (why > 0);
 // only real deaths (final == 2) list the hero's own resting place.
 function overviewLines(
     killer: string, deathVerb = 'killed', deathCause: string | null = null,
@@ -469,7 +470,9 @@ function deathSummaryLines(killer: string, { gold, score, moves }: GameSummary, 
     ];
 }
 
-// C hacklib.c plur(): the summary lines in end.c pluralize every count.
+// C hack.h:plur()
+// The include/hack.h macro (not hacklib.c, as an earlier revision of
+// this comment said): the summary lines in end.c pluralize every count.
 function plur(count: number): string {
     return count === 1 ? '' : 's';
 }
@@ -515,12 +518,11 @@ function scoreIdentity() {
     };
 }
 
-// C svk.killer.name/format (decl.c) are assigned by each fatal caller and
-// expanded by topten.c:formatkiller() with killed_by_prefix[how] and an()
-// for the KILLED_BY formats. The port composes that expansion once where
-// the killer is assigned and threads the resulting cause string through
-// the ending; topten.ts:formatKiller() owns the shared tail every C call
-// site adds: sanitization, the caller's buffer bound and the
+// Part of C topten.c:formatkiller(): the killed_by_prefix[how] and an()
+// expansion of the KILLED_BY formats, composed here once where the
+// killer is assigned (C svk.killer.name/format live in decl.c) instead
+// of at read time.  topten.ts:formatKiller() owns the shared tail every
+// C call site adds: sanitization, the caller's buffer bound and the
 // incl_helpless suffix.
 export function killerDeathCause(
     killer: string, deathVerb = 'died', deathType: number | null = null,
@@ -534,11 +536,11 @@ export function killerDeathCause(
     return `${prefix ?? 'killed by '}${name}`;
 }
 
-// The topten.c:topten() record phase — this game's entry (C lines 668-700),
-// composed from the killer plumbing end.c's done() callers own. Stays in
-// end.ts: moving it to topten.ts would need killerDeathCause(),
-// scoreIdentity() and currentDungeonName() from here, an end.ts <->
-// topten.ts import cycle.
+// Part of C topten.c:topten(): the record phase — this game's entry
+// (C lines 668-700), composed from the killer plumbing end.c's done()
+// callers own.  Stays in end.ts: moving it to topten.ts would need
+// killerDeathCause(), scoreIdentity() and currentDungeonName() from
+// here, an end.ts <-> topten.ts import cycle.
 function currentScoreRecord(summary: GameSummary, {
     outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, deathType = null,
 }: ScoreOptions = {}): ScoreRecord {
@@ -567,10 +569,11 @@ function currentScoreRecord(summary: GameSummary, {
     };
 }
 
-// The topten.c:topten() record update — pointsmin, the insertion rank,
-// PERSMAX per role and ENTRYMAX (C lines 756-816). Stays beside
-// currentScoreRecord() for the same end.ts <-> topten.ts import cycle;
-// the display half of topten() is topten.ts scoreListLines().
+// Part of C topten.c:topten(): the record update — pointsmin, the
+// insertion rank, PERSMAX per role and ENTRYMAX (C lines 756-816).
+// Stays beside currentScoreRecord() for the same end.ts <-> topten.ts
+// import cycle; the display half of topten() is topten.ts
+// scoreListLines().
 function updateScoreRecord(current: ScoreRecord): ScoreUpdate {
     const prior = loadScoreRecords();
     if (game.flags.debug || game.flags.explore || game.discover) {
@@ -1033,9 +1036,9 @@ export async function doquit() {
     await finishOrdinaryQuit();
 }
 
-// C refs: end.c done(QUIT)/really_done().  QUIT skips the tombstone,
-// but otherwise owns disclosures, a role-aware summary text window, and the
-// score-list handoff as one terminal transaction.
+// Part of C end.c:done(QUIT) and really_done(): QUIT skips the
+// tombstone, but otherwise owns disclosures, a role-aware summary text
+// window, and the score-list handoff as one terminal transaction.
 export async function finishOrdinaryQuit() {
     requireInitializedHero(game.u);
     await bot();
@@ -1112,14 +1115,14 @@ function objectBaseValue(type: number): number {
     return value;
 }
 
-// The final-disclosure inventory walk.
-// C end.c:get_valuables(): amulets and non-artifact gems, glass merged
-// into one slot, recursing through containers.
-// C end.c:sort_valuables(): most copies first within each of gems and
-// amulets (the listing prints the gems before the amulets).
-// C end.c:artifact_score(): the counting pass — artifacts and the three
-// invocation items add five-halves their value as points; artiname() is
-// the artifact's own name from the record.
+// C end.c:get_valuables()
+// The final-disclosure inventory walk: amulets and non-artifact gems,
+// glass merged into one slot, recursing through containers.
+// Also C end.c:sort_valuables(): most copies first within each of gems
+// and amulets (the listing prints the gems before the amulets).
+// Also C end.c:artifact_score(): the counting pass — artifacts and the
+// three invocation items add five-halves their value as points;
+// artiname() is the artifact's own name from the record.
 function collectFinalPossessions(): FinalPossessions {
     const artifacts: FinalArtifact[] = [];
     const valuables = new Map<number, number>();

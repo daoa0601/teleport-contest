@@ -1051,7 +1051,9 @@ export async function angryGods(alignment: number, state: GameState = game): Pro
         hero.ublesscnt = Math.max(hero.ublesscnt || 0, rnz(300));
 }
 
-// Also C pray.c:gods_angry(): the fixed godVoice message is inlined here
+// Part of C pray.c:angrygods() (the citation owner is angryGods()
+// above): the godVoice + glow + curse tail, with C pray.c:gods_angry()'s
+// fixed message inlined.
 async function curseHero(alignment: number, state: PlayingGameState): Promise<void> {
     await godVoice(alignment, 'Thou hast angered me.', state);
     if (!heroIsBlind(state) && !state.u.antimagic) {
@@ -1523,8 +1525,9 @@ export async function dosacrifice(): Promise<void> {
     game.context.move = 1;
 }
 
-// Also C eat.c:offer_ok(): inlined as the sacrifice chooser callback at the
-// end (corpses, and amulets of Yendor only; astral downplays the mismatch).
+// Part of C pray.c:dosacrifice(): its sacrifice chooser; also inlines
+// C eat.c:offer_ok() as the chooser callback at the end (corpses, and
+// amulets of Yendor only; astral downplays the mismatch).
 async function chooseOffering(): Promise<GameObject | null> {
     const game = requireInitializedGame();
     const hero = game.u;
