@@ -2734,7 +2734,7 @@ export async function selectFoodToEat({ state = game } = {}) {
                 if (answer === 'y') {
                     deleteTrap(trap, state);
                     if (held)
-                        await resetUtrap(false, state);
+                        await resetUtrap(true, state);
                     const object = await mksobj(BEARTRAP, true, false);
                     object.ox = hero.ux;
                     object.oy = hero.uy;

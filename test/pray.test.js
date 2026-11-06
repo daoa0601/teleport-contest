@@ -17,6 +17,7 @@ import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, CORPSE, DAGGER, FIGURINE, GA
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
+import { setHeroTrap } from '../js/trap.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -159,6 +160,27 @@ void test('#pray announces the safe ground reached after rescuing a hero from la
     await finishHeroHelplessness();
     assert.equal(game.u.utrap, 0);
     assert.match(game._pending_message, /You find yourself on solid ground\./);
+});
+// C pray.c:398-402 fix_worst_trouble(): when the rescue teleport finds no
+// safe ground, reset_utrap(TRUE) releases the lava trap and announces the
+// return of a levitation source it had blocked (float_up()'s message).
+void test('#pray floats a lava-trapped hero back up when no safe ground exists', async () => {
+    await prayerRoom({
+        left: 10, right: 10, top: 10, bottom: 10,
+        hero: { ualign: { type: 0, record: 1 } },
+    });
+    requirePlayingGame(game);
+    game.level.requireAt(10, 10).typ = LAVAPOOL;
+    grantIntrinsicProperty('fireResistance', 'outside');
+    game.u.levitationTurns = 50;
+    setHeroTrap(5, TT_LAVA);
+    assert.equal(game.u.levitating, false, 'the lava blocks the levitation source');
+    const messages = await prayAndReadMessages();
+    assert.equal(game.u.utrap, 0);
+    assert.equal(game.u.levitating, true, 'the unblocked source floats the hero');
+    const spoken = messages.join('\n');
+    assert.ok(spoken.includes('You start to float in the air!'), 'reset_utrap(TRUE) must announce the returning levitation');
+    assert.ok(spoken.includes('You find yourself on top of molten lava.'));
 });
 void test('Moloch\'s laughter during #pray visibly wakes a nearby sleeping monster', async () => {
     await prayerRoom();
