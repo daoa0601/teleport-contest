@@ -20,8 +20,8 @@ import { isPoolAt } from './dbridge.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, glyphAt, map_invisible, map_location, newsym, senseWithTelepathy, shieldeff, show_glyph_cell, transientMonsterGlyph, unmap_invisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName, randomDisplayMonsterSubject } from './do_name.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeAction, objectIsHardHelmet, some_armor } from './do_wear.js';
-import { abusePetAfterHeroHit, tameMonster } from './dog.js';
-import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, tryUnarmedStagger, willMonsterHurtle } from './dothrow.js';
+import { abusePet, tameMonster } from './dog.js';
+import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, willMonsterHurtle } from './dothrow.js';
 import { levelIsWaterLevel } from './dungeon.js';
 import { eat_brains, eating_conducts, morehungry, newuhs } from './eat.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
@@ -52,7 +52,7 @@ import { normalDemon } from './minion.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
 import { angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone, wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages, } from './mon.js';
-import { is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous, herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, isHeroDefender, } from './mondata.js';
+import { is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous, herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsBig, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, isHeroDefender, } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
 import { recordRandom } from './monster_action_types.js';
@@ -67,8 +67,8 @@ import { stopHeroOccupation } from './occupation.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './pet_eating.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
-import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
-import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroSlimingTimeout, splitMonster, } from './potion.js';
+import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
+import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroSlimingTimeout, splitMonster, startHeroSliming, } from './potion.js';
 import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { paranoidQuery } from './cmd.js';
@@ -1150,6 +1150,41 @@ export async function resolveHeroJoust(monster, weapon, { damage, joust, state =
     }
     return { damage, alreadyKilled, heroDied, specialMessage: true, weapon: survivingWeapon };
 }
+// C uhitm.c:hmon_hitmon_stagger()
+export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), wakeMonster = async () => {
+    monster.msleeping = 0;
+}, finishLiquidDeath, finishMonsterDeath, }) {
+    if (rnd(100) >= skill)
+        return { staggered: false };
+    if (monsterIsBig(monster.mnum)
+        || monsterIsThickSkinned({ mnum: monster.mnum })) {
+        return { staggered: false };
+    }
+    if (canSpotMonster(monster)) {
+        await announce(`${nameMonster(monster)} ${staggerVerb(monster.mnum)} from your powerful strike!`);
+    }
+    if (damage >= (monster.mhp ?? 1))
+        return { staggered: true };
+    const hurtle = await hurtleMonster(monster, dx, dy, 1, {
+        state,
+        announce,
+        nameMonster,
+        wakeMonster,
+        finishLiquidDeath,
+        finishMonsterDeath,
+    });
+    return { staggered: true, ...hurtle };
+}
+// C uhitm.c:hmon_hitmon_pet()
+export async function abusePetAfterHeroHit(monster, damage, state = game) {
+    if (damage <= 0 || !await abusePet(monster, state))
+        return { heroDied: false };
+    if ((monster.mtame ?? 0) > 0 && monster.mhp > 0) {
+        const turns = 10 * rnd(damage);
+        return makeMonsterFlee(monster, { state, turns, announce: false });
+    }
+    return { heroDied: false };
+}
 // C uhitm.c:hmon_hitmon_splitmon().
 export async function tryHeroPuddingSplit(monster, weapon, { handToHand, material, offMap, state = game, publish = plineWithContinuation }) {
     requirePlayingGame(state);
@@ -2057,10 +2092,9 @@ export async function mhitmAdBlnd(call) {
         return statusContinueResult(0);
     }
 }
-// C uhitm.c:mhitm_ad_ench() (mhitu branch): the ring/amulet/blindfold
+// C uhitm.c:mhitm_ad_ench(). The mhitu branch's ring/amulet/blindfold
 // rn2(5) fallback below runs only when some_armor() (do_wear.ts) finds
 // nothing worn.
-// C uhitm.c:mhitm_ad_ench().
 export async function mhitmAdEnch(call) {
     if ('magr' in call) {
         /* uhitm: there's no msomearmor() function, so just do damage */
@@ -2561,9 +2595,9 @@ export async function mhitm_mgc_atk_negated(attacker, defender, { state = game, 
     }
     return negated;
 }
-// Native uhitm.c monster-vs-monster acid and erosion; mhitm_ad_fire(),
-// mhitm_ad_cold() and mhitm_ad_elec() live above with their other
-// actor branches.
+// Native uhitm.c monster-vs-monster acid; mhitm_ad_fire(), mhitm_ad_cold(),
+// mhitm_ad_elec(), mhitm_ad_rust(), mhitm_ad_corr() and mhitm_ad_dcay() live
+// with their other actor branches.
 export async function applyMonsterElementEffect(attacker, defender, context) {
     const type = context.attack[1];
     if (type === AD_FIRE)
@@ -2572,30 +2606,15 @@ export async function applyMonsterElementEffect(attacker, defender, context) {
         return await mhitmAdCold({ attacker, defender, context });
     if (type === AD_ELEC)
         return await mhitmAdElec({ attacker, defender, context });
-    if (type === AD_RUST || type === AD_CORR || type === AD_DCAY)
-        return await erosionContact(attacker, defender, type, context);
+    if (type === AD_RUST)
+        return await mhitmAdRust({ attacker, defender, context });
+    if (type === AD_CORR)
+        return await mhitmAdCorr({ attacker, defender, context });
+    if (type === AD_DCAY)
+        return await mhitmAdDcay({ attacker, defender, context });
     if (type === AD_ACID)
         return await acidContact(attacker, defender, context);
     throw new RangeError(`Unsupported monster elemental damage type: ${type}`);
-}
-async function erosionContact(attacker, defender, type, context) {
-    // Unlike elemental cancellation, cancelled erosion retains rolled damage.
-    if (attacker.mcan)
-        return damageResult(context.damage);
-    const { state, visible, publish, random } = context;
-    const species = MONSTER_NAME[defender.mnum];
-    if (type === AD_RUST && species === 'iron golem'
-        || type === AD_DCAY && (species === 'wood golem' || species === 'leather golem')) {
-        if (visible && canSeeMonster(defender))
-            await publish(`${monsterName(defender, { state, capitalized: true })} ${wornMonsterLifeSaver(defender)
-                ? 'starts to fall' : 'falls'} to pieces!`);
-        return await killGolem(type, context);
-    }
-    await erodeArmor(defender, type === AD_RUST ? 'rust' : type === AD_CORR ? 'corrosion' : 'rot', {
-        state, publish, random,
-    });
-    defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
-    return damageResult(0);
 }
 async function acidContact(attacker, defender, context) {
     if (attacker.mcan)
@@ -2657,6 +2676,142 @@ async function escapeAfterTheft(attacker, before, { state, publish, visible, ran
     if (visible && spotted && !canSpotMonster(attacker))
         await publish(`${before} suddenly disappears!`);
     return { ...effectResult(0), nativeResult: M_ATTK_AGR_DONE };
+}
+const PM_IRON_GOLEM = MONSTER_NAME.indexOf('iron golem');
+const PM_LEATHER_GOLEM = MONSTER_NAME.indexOf('leather golem');
+const PM_WOOD_GOLEM = MONSTER_NAME.indexOf('wood golem');
+// C mhitm_ad_rust()/mhitm_ad_dcay() mhitu branches: the "You rust!"/"You
+// rot!" line and rehumanize() (mhitu.c).  KMH -- this is okay with unchanging.
+async function rehumanizeErosionForm(effectMessage, state, publish) {
+    await publish(effectMessage);
+    const restored = await returnHeroToHumanForm(state, { publish });
+    return restored.died;
+}
+// C uhitm.c:mhitm_ad_rust().
+export async function mhitmAdRust(call) {
+    if ('magr' in call) {
+        /* uhitm: the hero rusts a monster's armor */
+        const monster = call.defender;
+        const { state, publish, random } = call.context;
+        // completelyrusts(pd): iron golem; xkilled() then erode_armor() still
+        // runs on its remains.  The DEF_DIED flag comes from damageum's tail.
+        if (speciesIs(monster, 'iron golem')) {
+            await publish(`${subject(monster, call.context)} ${wornMonsterLifeSaver(monster) ? 'starts to fall' : 'falls'} to pieces!`);
+            await killNaturalTarget(monster, call.context);
+        }
+        if (!state.program_state.gameover)
+            await erodeArmor(monster, 'rust', { state, publish, random });
+        return statusContinueResult(0);
+    }
+    else if ('mdef' in call) {
+        /* mhitu: a monster rusts the hero */
+        const { state, hitMessage, cancelled, publish } = call.context;
+        // hitmsg(magr, mattk); a cancelled attacker stops after it.
+        if (hitMessage)
+            await publish(hitMessage);
+        if (cancelled)
+            return statusContinueResult(call.context.damage);
+        if (Upolyd(state.u) && state.u.umonnum === PM_IRON_GOLEM) {
+            const died = await rehumanizeErosionForm('You rust!', state, publish);
+            return { ...statusContinueResult(call.context.damage), heroDied: died };
+        }
+        await erodeArmor(state.u, 'rust', { publish });
+        return statusContinueResult(call.context.damage);
+    }
+    else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        // Unlike elemental cancellation, cancelled erosion retains rolled damage.
+        if (attacker.mcan)
+            return damageResult(context.damage);
+        const { state, visible, publish, random } = context;
+        if (speciesIs(defender, 'iron golem')) {
+            if (visible && canSeeMonster(defender))
+                await publish(`${monsterName(defender, { state, capitalized: true })} ${wornMonsterLifeSaver(defender) ? 'starts to fall' : 'falls'} to pieces!`);
+            return await killGolem(AD_RUST, context);
+        }
+        await erodeArmor(defender, 'rust', { state, publish, random });
+        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+        return damageResult(0);
+    }
+}
+// C uhitm.c:mhitm_ad_corr().
+export async function mhitmAdCorr(call) {
+    if ('magr' in call) {
+        /* uhitm: the hero corrodes a monster's armor */
+        const monster = call.defender;
+        const { state, publish, random } = call.context;
+        await erodeArmor(monster, 'corrosion', { state, publish, random });
+        return statusContinueResult(0);
+    }
+    else if ('mdef' in call) {
+        /* mhitu: a monster corrodes the hero's armor */
+        const { hitMessage, cancelled, publish } = call.context;
+        // hitmsg(magr, mattk); a cancelled attacker stops after it.
+        if (hitMessage)
+            await publish(hitMessage);
+        if (cancelled)
+            return statusContinueResult(call.context.damage);
+        await erodeArmor(call.context.state.u, 'corrosion', { publish });
+        return statusContinueResult(call.context.damage);
+    }
+    else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        if (attacker.mcan)
+            return damageResult(context.damage);
+        const { state, publish, random } = context;
+        await erodeArmor(defender, 'corrosion', { state, publish, random });
+        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+        return damageResult(0);
+    }
+}
+// C uhitm.c:mhitm_ad_dcay().
+export async function mhitmAdDcay(call) {
+    if ('magr' in call) {
+        /* uhitm: the hero rots a monster's armor */
+        const monster = call.defender;
+        const { state, publish, random } = call.context;
+        // completelyrots(pd): wood golem or leather golem.
+        if (speciesIs(monster, 'wood golem') || speciesIs(monster, 'leather golem')) {
+            await publish(`${subject(monster, call.context)} ${wornMonsterLifeSaver(monster) ? 'starts to fall' : 'falls'} to pieces!`);
+            await killNaturalTarget(monster, call.context);
+        }
+        if (!state.program_state.gameover)
+            await erodeArmor(monster, 'rot', { state, publish, random });
+        return statusContinueResult(0);
+    }
+    else if ('mdef' in call) {
+        /* mhitu: a monster rots the hero */
+        const { state, hitMessage, cancelled, publish } = call.context;
+        // hitmsg(magr, mattk); a cancelled attacker stops after it.
+        if (hitMessage)
+            await publish(hitMessage);
+        if (cancelled)
+            return statusContinueResult(call.context.damage);
+        if (Upolyd(state.u)
+            && (state.u.umonnum === PM_LEATHER_GOLEM || state.u.umonnum === PM_WOOD_GOLEM)) {
+            const died = await rehumanizeErosionForm('You rot!', state, publish);
+            return { ...statusContinueResult(call.context.damage), heroDied: died };
+        }
+        await erodeArmor(state.u, 'rot', { publish });
+        return statusContinueResult(call.context.damage);
+    }
+    else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        if (attacker.mcan)
+            return damageResult(context.damage);
+        const { state, visible, publish, random } = context;
+        if (speciesIs(defender, 'wood golem') || speciesIs(defender, 'leather golem')) {
+            if (visible && canSeeMonster(defender))
+                await publish(`${monsterName(defender, { state, capitalized: true })} ${wornMonsterLifeSaver(defender) ? 'starts to fall' : 'falls'} to pieces!`);
+            return await killGolem(AD_DCAY, context);
+        }
+        await erodeArmor(defender, 'rot', { state, publish, random });
+        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+        return damageResult(0);
+    }
 }
 // C uhitm.c:mhitm_ad_dren/deth/pest/famn/dise/curs(), monster defenders;
 // mhitm_ad_drli() lives above with its other actor branches and
@@ -2773,7 +2928,7 @@ export async function applyMonsterTransformEffect(attacker, defender, context) {
     if (damageType === AD_POLY)
         return polymorphDefender(attacker, defender, context);
     if (damageType === AD_SLIM)
-        return slimeDefender(attacker, defender, context);
+        return mhitmAdSlim({ attacker, defender, context });
     throw new RangeError(`Unsupported transformation attack ${damageType}`);
 }
 async function teleportDefender(attacker, defender, context) {
@@ -2881,34 +3036,6 @@ async function announcePolymorph(defender, before, { state, publish }) {
     else if (wasSeen) {
         await publish(`${before} undergoes a freakish metamorphosis and disappears.`);
     }
-}
-async function slimeDefender(attacker, defender, context) {
-    const { state, visible, publish, random, rollDice, rollOne, finishDeath } = context;
-    const result = transformationResult(context.damage);
-    if (await mhitm_mgc_atk_negated(attacker, defender, {
-        state, visible, publish, random, verbose: false,
-    }) || random(4) !== 0 || monsterIsSlimeproof(defender))
-        return result;
-    const cure = await munslime(defender, { state, byHero: false, publish, random, rollDice, rollOne });
-    if (cure.heroDied)
-        return { ...result, done: true, heroDied: true };
-    if (!cure.cured && defender.mhp > 0) {
-        const change = await changeMonsterForm(defender, PM_GREEN_SLIME, state, {
-            showMessage: visible && canSeeMonster(defender), publish, finishDeath, creditHero: false,
-        });
-        if (change?.heroDied)
-            return { ...result, done: true, heroDied: true };
-        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
-        result.nativeResult = M_ATTK_HIT;
-    }
-    if (attacker.mhp <= 0)
-        result.nativeResult |= M_ATTK_AGR_DIED;
-    if (defender.mhp <= 0)
-        result.nativeResult |= M_ATTK_DEF_DIED;
-    result.damage = 0;
-    // Unlike polymorph, sliming retains the common knockback/zero-damage path,
-    // even when the defender's cure killed one or both participants.
-    return result;
 }
 function transformationResult(damage) {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
@@ -3079,36 +3206,57 @@ export async function mhitm_ad_drin(call) {
             heroDied: result.heroDied, skipBrainDrain: lifeSaving && !(defender.minvent ?? defender.inventory ?? []).some(object => (object.owornmask ?? 0) & W_AMUL) };
     }
 }
-// ─── C uhitm.c:m_slips_free()/mhitm_ad_stck()/mhitm_ad_wrap(), hero attacker (from hero_natural_grip.ts) ───
-// Hero stick and wrap attacks. C uhitm.c:mhitm_ad_stck(), mhitm_ad_wrap().
 const PM_BARBED_DEVIL = MONSTER_NAME.indexOf('barbed devil');
-const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
-export async function applyHeroNaturalGrip(monster, context) {
-    let damage = context.damage;
-    if (context.attack[1] === AD_STCK) {
-        await stickToMonster(monster, context);
+// C uhitm.c:mhitm_ad_stck().
+export async function mhitmAdStck(call) {
+    if ('magr' in call) {
+        /* uhitm: the hero's sticky contact holds a monster */
+        const monster = call.defender;
+        const { state, publish, random } = call.context;
+        // mhitm_mgc_atk_negated(magr, mdef, FALSE); m_next2u(mdef).
+        const negated = await mhitm_mgc_atk_negated(state.u, monster, { state, random });
+        const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
+        if (!negated && !monsterSpeciesSticks(monster.mnum) && distance <= 2) {
+            setHeroGrip(monster, state); /* it's now stuck to you */
+            if (heroSpecies(state) === PM_BARBED_DEVIL) {
+                const target = monsterName(monster, {
+                    state, article: monster.mtame ? 'your' : 'the',
+                    suppressSaddle: !!MGIVENNAME(monster) || state.u.usteed === monster,
+                });
+                await publish(`Your barbs stick to ${target}!`);
+            }
+        }
+        return statusContinueResult(call.context.damage);
     }
-    else if (context.attack[1] === AD_WRAP) {
-        damage = await wrapMonster(monster, context);
+    else if ('mdef' in call) {
+        /* mhitu: a monster's sticky contact holds the hero */
+        const { state, attacker, hitMessage, negated, publish } = call.context;
+        // hitmsg(magr, mattk)
+        if (hitMessage)
+            await publish(hitMessage);
+        if (!negated && !state.u.ustuck && !heroFormSticks(state)) {
+            setHeroGrip(attacker, state);
+            if (attacker.mnum === PM_BARBED_DEVIL)
+                await publish('The barbs stick to you!');
+        }
+        return statusContinueResult(call.context.damage);
     }
     else {
-        throw new RangeError(`Unsupported hero grip damage type ${context.attack[1]}`);
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        if (await mhitm_mgc_atk_negated(attacker, defender, { ...context, verbose: false }))
+            return statusContinueResult(0);
+        return statusContinueResult(context.damage);
     }
-    return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
-async function stickToMonster(monster, { state, publish, random, }) {
-    const negated = await mhitm_mgc_atk_negated(state.u, monster, { state, random });
-    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
-    if (negated || monsterSpeciesSticks(monster.mnum) || distance > 2)
-        return;
-    setHeroGrip(monster, state);
-    if (heroSpecies(state) === PM_BARBED_DEVIL) {
-        const target = monsterName(monster, {
-            state, article: monster.mtame ? 'your' : 'the',
-            suppressSaddle: !!MGIVENNAME(monster) || state.u.usteed === monster,
-        });
-        await publish(`Your barbs stick to ${target}!`);
-    }
+// ─── C uhitm.c:m_slips_free()/mhitm_ad_wrap(), hero attacker (from hero_natural_grip.ts) ───
+// Hero wrap attacks. C uhitm.c:mhitm_ad_wrap(), hero attacker.
+const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
+export async function applyHeroNaturalGrip(monster, context) {
+    if (context.attack[1] !== AD_WRAP)
+        throw new RangeError(`Unsupported hero grip damage type ${context.attack[1]}`);
+    const damage = await wrapMonster(monster, context);
+    return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
 async function wrapMonster(monster, context) {
     const { state, publish, random, damage, attack, target } = context;
@@ -3214,13 +3362,108 @@ function heroSurvivesWrappingUnderwater(state) {
         || (monsterIsAmphibious(heroSpecies(state)) || monsterIsBreathless(heroSpecies(state)))
         || propertyIsActive('swimming', state) || propertyIsActive('magicalBreathing', state));
 }
+// C uhitm.c:mhitm_ad_slim().
+export async function mhitmAdSlim(call) {
+    if ('magr' in call) {
+        /* uhitm: the hero turns a monster into slime */
+        const monster = call.defender;
+        const { state, publish, random, rollDice, rollOne } = call.context;
+        const normal = {
+            damage: call.context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false,
+        };
+        if (await mhitm_mgc_atk_negated(state.u, monster, { state, random })
+            || random(4) !== 0 || monsterIsSlimeproof(monster))
+            return normal;
+        const cure = await munslime(monster, {
+            state, byHero: true, publish, random, rollDice, rollOne,
+        });
+        if (cure.heroDied)
+            return { ...normal, damage: 0, done: true, heroDied: true };
+        if (!cure.cured && monster.mhp > 0) {
+            await publish(`You turn ${monsterName(monster, { state })} into slime.`);
+            const change = await changeMonsterForm(monster, PM_GREEN_SLIME, state, {
+                showMessage: false, publish,
+            });
+            if (change?.heroDied)
+                return { ...normal, damage: 0, done: true, heroDied: true };
+        }
+        if (monster.mhp <= 0)
+            return { damage: call.context.damage, nativeResult: M_ATTK_DEF_DIED, done: true, heroDied: false };
+        return { ...normal, damage: 0 };
+    }
+    else if ('mdef' in call) {
+        /* mhitu: a monster covers the hero in slime */
+        const { state, attacker, hitMessage, negated, cancelled, publish } = call.context;
+        // hitmsg(magr, mattk)
+        if (hitMessage)
+            await publish(hitMessage);
+        let damage = call.context.damage;
+        if (negated) {
+            if (!cancelled)
+                await publish('You escape harm.');
+            return statusContinueResult(damage);
+        }
+        if (heroIsFlaming(state)) {
+            await publish('The slime burns away!');
+            damage = 0;
+        }
+        else if (state.u.unchanging || state.unchanging
+            || heroIsNoncorporeal(state)
+            || heroIsGreenSlime(state)) {
+            await publish('You are unaffected.');
+            damage = 0;
+        }
+        else if (!heroIsSliming(state)) {
+            await publish("You don't feel very well.");
+            // make_slimed(10L, NULL) with delayed_killer(SLIMED, KILLED_BY_AN,
+            // pmname(magr->data, Mgender(magr))).
+            await startHeroSliming({
+                state, killer: requireMonsterData(MONSTER_NAME, attacker.mnum),
+            });
+        }
+        else {
+            await publish('Yuck!');
+        }
+        return statusContinueResult(damage);
+    }
+    else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        const { state, visible, publish, random, rollDice, rollOne, finishDeath } = context;
+        const result = transformationResult(context.damage);
+        if (await mhitm_mgc_atk_negated(attacker, defender, {
+            state, visible, publish, random, verbose: false,
+        }) || random(4) !== 0 || monsterIsSlimeproof(defender))
+            return result;
+        const cure = await munslime(defender, { state, byHero: false, publish, random, rollDice, rollOne });
+        if (cure.heroDied)
+            return { ...result, done: true, heroDied: true };
+        if (!cure.cured && defender.mhp > 0) {
+            const change = await changeMonsterForm(defender, PM_GREEN_SLIME, state, {
+                showMessage: visible && canSeeMonster(defender), publish, finishDeath, creditHero: false,
+            });
+            if (change?.heroDied)
+                return { ...result, done: true, heroDied: true };
+            defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+            result.nativeResult = M_ATTK_HIT;
+        }
+        if (attacker.mhp <= 0)
+            result.nativeResult |= M_ATTK_AGR_DIED;
+        if (defender.mhp <= 0)
+            result.nativeResult |= M_ATTK_DEF_DIED;
+        result.damage = 0;
+        // Unlike polymorph, sliming retains the common knockback/zero-damage path,
+        // even when the defender's cure killed one or both participants.
+        return result;
+    }
+}
 // Monster-versus-monster status attacks from uhitm.c:mhitm_adtyping();
 // mhitm_ad_blnd(), mhitm_ad_stun(), mhitm_ad_legs() and mhitm_ad_ench()
 // live above with their other actor branches.
 const PM_ARCHON = MONSTER_NAME.indexOf('Archon');
 const STATUS_DAMAGE = [
     AD_HALU, AD_PLYS, AD_SLEE, AD_SLOW, AD_CONF,
-    AD_WERE, AD_HEAL, AD_STCK, AD_WRAP,
+    AD_WERE, AD_HEAL, AD_WRAP,
 ];
 function isStatusDamage(type) {
     return STATUS_DAMAGE.some(candidate => candidate === type);
@@ -3297,10 +3540,6 @@ export async function applyMonsterStatusEffect(attacker, defender, context) {
         case AD_WERE:
         case AD_HEAL:
             return context.applyPhysical();
-        case AD_STCK:
-            if (await mhitm_mgc_atk_negated(attacker, defender, { state, visible, publish, random, verbose: false }))
-                damage = 0;
-            break;
         case AD_WRAP:
             if (attacker.mcan)
                 damage = 0;
@@ -3622,6 +3861,89 @@ export async function mhitm_ad_phys(call) {
         return { damage, done: false, nativeResult, heroDied: false };
     }
 }
+// C uhitm.c:mhitm_ad_ston().
+export async function mhitmAdSton(call) {
+    if ('magr' in call) {
+        /* uhitm: the hero's stoning touch; mhm->damage = 0. */
+        const monster = call.defender;
+        const { state, publish, rollOne } = call.context;
+        await petrifyMonsterFromContact(monster, {
+            state, publish, rollOne, creditHero: true,
+            finishDeath: (target, death) => finishHeroMonsterKillOutcome(target, target.mx, target.my, {
+                ...death, publish, showKillMessage: false,
+                recordConduct: !death?.noCorpse,
+            }),
+        });
+        return statusContinueResult(0);
+    }
+    else if ('mdef' in call) {
+        /* mhitu: a monster's hissing touch threatens to petrify the hero */
+        const { state, attacker, hitMessage, publish, random } = call.context;
+        // hitmsg(magr, mattk)
+        if (hitMessage)
+            await publish(hitMessage);
+        if (random(3) !== 0)
+            return statusContinueResult(0);
+        const spotted = canSpotMonster(attacker);
+        const hallucinating = heroIsHallucinating(state);
+        const subject = () => !spotted ? 'It'
+            : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(attacker);
+        // C mon_nam(magr): the mid-sentence name; a given name stays as typed
+        // instead of being decapitalized from the sentence subject.
+        const target = () => monsterName(attacker, { state });
+        const deaf = heroIsDeaf(state);
+        const hear = async (text) => {
+            const message = formatHeardMessage(text, state);
+            if (message)
+                await publish(message);
+        };
+        if (attacker.mcan) {
+            if (!deaf)
+                await hear(`a cough from ${target()}!`);
+            return statusContinueResult(0);
+        }
+        const blind = heroIsBlind(state);
+        if (hallucinating && !blind) {
+            await hear('hissing.');
+            await publish(`${subject()} appears to be blowing you a kiss...`);
+        }
+        else if (!deaf) {
+            await hear(`${possessiveName(target())} hissing!`);
+        }
+        else if (!blind) {
+            await publish(`${subject()} seems to grimace.`);
+        }
+        if (random(10) !== 0 && state.flags.moonphase !== NEW_MOON)
+            return statusContinueResult(0);
+        const stoned = await startHeroPetrificationFromMonster(attacker, state);
+        // A successful do_stone_u() sets mhm.done (and M_ATTK_HIT), but
+        // mhitu.c:hitmu() still runs mhitm_knockback() before it returns on
+        // mhm.done.
+        return { damage: 0, nativeResult: stoned ? M_ATTK_HIT : M_ATTK_MISS,
+            done: stoned, heroDied: false };
+    }
+    else {
+        /* mhitm: monster versus monster; do_stone_mon(). */
+        const { attacker, defender, context } = call;
+        if (attacker.mcan)
+            return statusContinueResult(context.damage);
+        const stone = await petrifyMonsterDefender(defender, {
+            ...context, visible: context.visible && canSeeMonster(defender),
+        });
+        if (stone.heroDied)
+            return { damage: 0, nativeResult: M_ATTK_MISS, done: false, heroDied: true };
+        let nativeResult = M_ATTK_MISS;
+        let heroDied = false;
+        if (!stone.survived) {
+            if (defender.mtame && !context.visible)
+                await context.publish('You have a peculiarly sad feeling for a moment, then it passes.');
+            const growth = await context.growAttacker(defender);
+            nativeResult = M_ATTK_DEF_DIED | (growth.survived ? 0 : M_ATTK_AGR_DIED);
+            heroDied = growth.heroDied;
+        }
+        return { damage: 0, nativeResult, done: stone.stopped, heroDied };
+    }
+}
 // C uhitm.c:mhitm_ad_heal(), against the hero.
 export function nurseContactMode(monster, state) {
     if (monster.mcan || (Upolyd(state.u) && touchPetrifies(heroSpecies(state))))
@@ -3774,9 +4096,10 @@ export async function applyMonsterCombatEffect(attacker, defender, context) {
         case AD_CONF:
         case AD_WERE:
         case AD_HEAL:
-        case AD_STCK:
         case AD_WRAP:
             return applyMonsterStatusEffect(attacker, defender, context);
+        // C uhitm.c:mhitm_ad_stck() owns its mhitm branch in uhitm.ts.
+        case AD_STCK: return mhitmAdStck({ attacker, defender, context });
         // C uhitm.c:mhitm_ad_drli/blnd/ench/stun/legs() own their mhitm
         // branches in uhitm.ts.
         case AD_DRLI: return mhitmAdDrli({ attacker, defender, context });
@@ -3802,7 +4125,7 @@ export async function applyMonsterCombatEffect(attacker, defender, context) {
             return applyMonsterTransformEffect(attacker, defender, context);
         case AD_DGST: return applyMonsterDigestionEffect(attacker, defender, context);
         case AD_DRIN: return mhitm_ad_drin({ attacker, defender, damage: context.damage, context });
-        case AD_STON: return petrifyingEffect(attacker, defender, context);
+        case AD_STON: return mhitmAdSton({ attacker, defender, context });
         case AD_DRST:
         case AD_DRDX:
         case AD_DRCO: {
@@ -3822,25 +4145,6 @@ export async function applyMonsterCombatEffect(attacker, defender, context) {
         case AD_RBRE:
             return effectResult(0);
     }
-}
-async function petrifyingEffect(attacker, defender, context) {
-    if (attacker.mcan)
-        return effectResult(context.damage);
-    const stone = await petrifyMonsterDefender(defender, {
-        ...context, visible: context.visible && canSeeMonster(defender),
-    });
-    if (stone.heroDied)
-        return effectResult(0, M_ATTK_MISS, true);
-    let nativeResult = M_ATTK_MISS;
-    let heroDied = false;
-    if (!stone.survived) {
-        if (defender.mtame && !context.visible)
-            await context.publish('You have a peculiarly sad feeling for a moment, then it passes.');
-        const growth = await context.growAttacker(defender);
-        nativeResult = M_ATTK_DEF_DIED | (growth.survived ? 0 : M_ATTK_AGR_DIED);
-        heroDied = growth.heroDied;
-    }
-    return { damage: 0, nativeResult, done: stone.stopped, heroDied };
 }
 export function effectResult(damage, nativeResult = M_ATTK_MISS, heroDied = false) {
     return { damage, nativeResult, heroDied, done: false };
@@ -3938,10 +4242,16 @@ async function applyNaturalEffect(monster, context) {
                 damage = 0;
             break;
         case AD_RUST:
+            // C uhitm.c:mhitm_ad_rust() uhitm branch now owns the rust attack.
+            damage = (await mhitmAdRust({ magr: 'youmonst', defender: monster, context })).damage;
+            break;
         case AD_CORR:
+            // C uhitm.c:mhitm_ad_corr() uhitm branch now owns the corrosion attack.
+            damage = (await mhitmAdCorr({ magr: 'youmonst', defender: monster, context })).damage;
+            break;
         case AD_DCAY:
-            await erodeNaturalTarget(monster, context);
-            damage = 0;
+            // C uhitm.c:mhitm_ad_dcay() uhitm branch now owns the rot attack.
+            damage = (await mhitmAdDcay({ magr: 'youmonst', defender: monster, context })).damage;
             break;
         case AD_CURS:
             await curseNaturalTarget(monster, context);
@@ -4000,8 +4310,8 @@ async function applyNaturalEffect(monster, context) {
             damage = await teleportNaturalTarget(monster, context);
             break;
         case AD_STON:
-            await petrifyNaturalTarget(monster, context);
-            damage = 0;
+            // C uhitm.c:mhitm_ad_ston() uhitm branch now owns the stoning attack.
+            damage = (await mhitmAdSton({ magr: 'youmonst', defender: monster, context })).damage;
             break;
         case AD_SGLD:
         case AD_SITM:
@@ -4011,12 +4321,15 @@ async function applyNaturalEffect(monster, context) {
         case AD_DRIN:
             return mhitm_ad_drin({ magr: 'youmonst', defender: monster, context });
         case AD_STCK:
+            // C uhitm.c:mhitm_ad_stck() uhitm branch now owns the stick attack.
+            return mhitmAdStck({ magr: 'youmonst', defender: monster, context });
         case AD_WRAP:
             return applyHeroNaturalGrip(monster, context);
         case AD_POLY:
             return applyHeroNaturalPolymorph(monster, context);
         case AD_SLIM:
-            return applyHeroNaturalSliming(monster, context);
+            // C uhitm.c:mhitm_ad_slim() uhitm branch now owns the sliming attack.
+            return mhitmAdSlim({ magr: 'youmonst', defender: monster, context });
         case AD_DISE:
         case AD_PEST:
             if (MONSTER_SYMBOL[monster.mnum] === S_FUNGUS || speciesIs(monster, 'ghoul')
@@ -4063,16 +4376,6 @@ async function summonDemonPet(context) {
         await tameMonster(pet, null, { state });
     exerciseWisdom(true, state);
     return true;
-}
-async function erodeNaturalTarget(monster, context) {
-    const { attack, state, publish, random } = context;
-    if (attack[1] === AD_RUST && speciesIs(monster, 'iron golem')
-        || attack[1] === AD_DCAY && (speciesIs(monster, 'wood golem') || speciesIs(monster, 'leather golem'))) {
-        await publish(`${subject(monster, context)} ${wornMonsterLifeSaver(monster) ? 'starts to fall' : 'falls'} to pieces!`);
-        await killNaturalTarget(monster, context);
-    }
-    if (!state.program_state.gameover)
-        await erodeArmor(monster, attack[1] === AD_RUST ? 'rust' : attack[1] === AD_CORR ? 'corrosion' : 'rot', { state, publish, random });
 }
 async function curseNaturalTarget(monster, context) {
     const { state, publish, random } = context;
@@ -4159,15 +4462,6 @@ async function teleportNaturalTarget(monster, context) {
         damage = monster.mhp - 1;
     }
     return damage;
-}
-async function petrifyNaturalTarget(monster, context) {
-    await petrifyMonsterFromContact(monster, {
-        state: context.state, publish: context.publish, rollOne: context.rollOne, creditHero: true,
-        finishDeath: (target, death) => finishHeroMonsterKillOutcome(target, target.mx, target.my, {
-            ...death, publish: context.publish, showKillMessage: false,
-            recordConduct: !death?.noCorpse,
-        }),
-    });
 }
 function wearsDragonDefense(monster, species, scales, mail) {
     return speciesIs(monster, species) || (monster.minvent ?? []).some(object => ((object.owornmask ?? 0) & W_ARM) && (object.otyp === scales || object.otyp === mail));
@@ -5571,44 +5865,6 @@ export async function startHeroPetrificationFromMonster(monster, state = game) {
         killerFormat: unique ? KILLED_BY : KILLED_BY_AN,
     });
 }
-// ─── C uhitm.c:mhitm_ad_ston() (from stoning.ts) ───
-// C uhitm.c:mhitm_ad_ston(), after the ordinary hit message.
-export async function applyMonsterStoningAttack(monster, { state = game, random = rn2, publish = plineWithContinuation, } = {}) {
-    if (random(3) !== 0)
-        return false;
-    const spotted = canSpotMonster(monster);
-    const hallucinating = heroIsHallucinating(state);
-    const subject = () => !spotted ? 'It'
-        : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
-    // C mon_nam(magr): the mid-sentence name; a given name stays as typed
-    // instead of being decapitalized from the sentence subject.
-    const target = () => monsterName(monster, { state });
-    const deaf = heroIsDeaf(state);
-    const hear = async (text) => {
-        const message = formatHeardMessage(text, state);
-        if (message)
-            await publish(message);
-    };
-    if (monster.mcan) {
-        if (!deaf)
-            await hear(`a cough from ${target()}!`);
-        return false;
-    }
-    const blind = heroIsBlind(state);
-    if (hallucinating && !blind) {
-        await hear('hissing.');
-        await publish(`${subject()} appears to be blowing you a kiss...`);
-    }
-    else if (!deaf) {
-        await hear(`${possessiveName(target())} hissing!`);
-    }
-    else if (!blind) {
-        await publish(`${subject()} seems to grimace.`);
-    }
-    if (random(10) !== 0 && state.flags.moonphase !== NEW_MOON)
-        return false;
-    return startHeroPetrificationFromMonster(monster, state);
-}
 // ─── C uhitm.c:mhitm_ad_poly(), hero attacker (from hero_natural_polymorph.ts) ───
 // C uhitm.c:mhitm_ad_poly() and mhitm.c:mon_poly(), for a hero attacker.
 export async function applyHeroNaturalPolymorph(monster, context) {
@@ -5689,33 +5945,6 @@ async function showHeroPolymorphResistance(monster, context) {
     await shieldeff(monster.mx, monster.my, context.state);
     if (cansee(monster.mx, monster.my))
         await context.publish(`${monsterName(monster, { state: context.state, capitalized: true })} resists!`);
-}
-// ─── C uhitm.c:mhitm_ad_slim(), hero attacker (from hero_natural_sliming.ts) ───
-// C uhitm.c:mhitm_ad_slim(), hero attacking a monster.
-export async function applyHeroNaturalSliming(monster, context) {
-    const { state, publish, random, rollDice, rollOne } = context;
-    const normal = {
-        damage: context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false,
-    };
-    if (await mhitm_mgc_atk_negated(state.u, monster, { state, random })
-        || random(4) !== 0 || monsterIsSlimeproof(monster))
-        return normal;
-    const cure = await munslime(monster, {
-        state, byHero: true, publish, random, rollDice, rollOne,
-    });
-    if (cure.heroDied)
-        return { ...normal, damage: 0, done: true, heroDied: true };
-    if (!cure.cured && monster.mhp > 0) {
-        await publish(`You turn ${monsterName(monster, { state })} into slime.`);
-        const change = await changeMonsterForm(monster, PM_GREEN_SLIME, state, {
-            showMessage: false, publish,
-        });
-        if (change?.heroDied)
-            return { ...normal, damage: 0, done: true, heroDied: true };
-    }
-    if (monster.mhp <= 0)
-        return { damage: context.damage, nativeResult: M_ATTK_DEF_DIED, done: true, heroDied: false };
-    return { ...normal, damage: 0 };
 }
 // C uhitm.c:do_stone_mon(). A cure or life saving ends this hit.
 export async function petrifyMonsterDefender(monster, { publish = plineWithContinuation, visible = canSeeMonster(monster), ...options } = {}) {

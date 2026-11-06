@@ -31,7 +31,6 @@ import {
 } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
-import { makeMonsterFlee } from './monmove.js';
 import { setMonsterMalign } from './makemon.js';
 import type { Monster, MonsterLevel, PetData } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -157,16 +156,6 @@ export async function abusePet(monster: Monster, state: GameState = game): Promi
     return true;
 }
 
-// C uhitm.c:hmon_hitmon_pet()
-export async function abusePetAfterHeroHit(monster: Monster, damage: number, state: GameState = game) {
-    if (damage <= 0 || !await abusePet(monster, state))
-        return { heroDied: false };
-    if ((monster.mtame ?? 0) > 0 && monster.mhp > 0) {
-        const turns = 10 * rnd(damage);
-        return makeMonsterFlee(monster, { state, turns, announce: false });
-    }
-    return { heroDied: false };
-}
 
 // C dog.c:initedog(). Existing pet history survives renewed taming.
 export function initializePet(monster: Monster | null | undefined, { state = game, everything = true }: { state?: GameState; everything?: boolean } = {}): boolean {

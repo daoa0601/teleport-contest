@@ -48,9 +48,10 @@ import { isPolearm, isMissileObject, isWeaponTool } from './object_properties.js
 import type { WeaponView } from './object_properties.js';
 import {
     mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu,
-    mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster,
-    resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack,
-    startHeroPetrificationFromMonster, passiveDamage, erodeArmor,
+    mhitmAdCorr, mhitmAdDcay, mhitmAdRust, mhitmAdSlim, mhitmAdStck, mhitmAdStun, mhitm_mgc_atk_negated,
+    nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster,
+    resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, mhitmAdSton,
+    passiveDamage, erodeArmor,
 } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifact.js';
@@ -75,8 +76,6 @@ import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMons
 import { attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero } from './mthrowu.js';
 import { castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay } from './mcastu.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal } from './polyself.js';
-import { heroIsSliming, startHeroSliming } from './potion.js';
 import { bot } from './botl.js';
 import {
     burnArmorByFire, trapAt, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately,
@@ -130,9 +129,6 @@ import { finishHeroHelplessness } from './allmain.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
-const PM_LEATHER_GOLEM = 253;
-const PM_WOOD_GOLEM = 254;
-const PM_IRON_GOLEM = 259;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const M1_NOEYES = 0x00001000;
 const S_EEL = 57;
@@ -200,25 +196,6 @@ async function hitmsg(
         && attack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[attack.attackIndex]
         ? ' again' : '';
     return `${attack.attackType === 16 ? possessiveName(subject) : subject} ${verb}${again}!`;
-}
-async function resolveErosionFormRehumanization(
-    heroAttack: HeroContactAttack, effectMessage: string,
-) {
-    const game = requireInitializedGame();
-    let pagerOwned = false;
-    const effectDismissal = await plineWithContinuation(effectMessage);
-    if (effectDismissal !== null && effectDismissal !== undefined)
-        pagerOwned = true;
-
-    const restored = await returnHeroToHumanForm(game, {
-        publish: async (message: string) => {
-            const dismissal = await plineWithContinuation(message);
-            if (dismissal !== null && dismissal !== undefined) pagerOwned = true;
-        },
-    });
-    heroAttack.heroDied = restored.died;
-
-    return pagerOwned;
 }
 export async function presentMonsterAttackEffects(
     action: MonsterMovementAction,
@@ -508,9 +485,9 @@ export async function presentMonsterAttackEffects(
                     heroAttack.damage = physical.damage;
                     if (physical.heroDied) return { heroDied: true };
                 }
-                // mhitm_ad_fire/cold/elec/drli/blnd/ench/stun/legs/sedu
-                // project hitmsg() themselves from uhitm.ts, so one of
-                // those slots composes its hit line there instead of here.
+                // The mhitm_ad_*() ports in uhitm.ts project hitmsg()
+                // themselves, so one of those slots composes its hit line
+                // there instead of here.
                 const message = physicalContact && !contactCompletedInline
                     || heroAttack.effect === 'fire-natural'
                     || heroAttack.effect === 'cold-natural'
@@ -520,6 +497,15 @@ export async function presentMonsterAttackEffects(
                     || heroAttack.effect === 'enchantment-natural'
                     || heroAttack.effect === 'stun-natural'
                     || heroAttack.effect === 'leg-natural'
+                    || heroAttack.effect === 'sticking-natural'
+                    || heroAttack.effect === 'slime-natural'
+                    || heroAttack.effect === 'rust-natural'
+                    || heroAttack.effect === 'cancelled-rust-natural'
+                    || heroAttack.effect === 'corrosion-natural'
+                    || heroAttack.effect === 'cancelled-corrosion-natural'
+                    || heroAttack.effect === 'decay-natural'
+                    || heroAttack.effect === 'cancelled-decay-natural'
+                    || heroAttack.effect === 'stoning-natural'
                     || heroAttack.effect === 'item-theft'
                     ? null
                     : await hitmsg(
@@ -538,20 +524,24 @@ export async function presentMonsterAttackEffects(
                 if (game.program_state.gameover)
                     return { heroDied: true };
                 if (heroAttack.effect === 'sticking-natural') {
-                    // C uhitm.c:mhitm_ad_stck() mhitu branch: set_ustuck()
-                    // and the barbs line follow hitmsg() directly.
-                    if (!heroAttack.negated && !game.u?.ustuck && !heroFormSticks(game)) {
-                        setHeroGrip(monster, game);
-                        if (monster.mnum === 293) {
-                            const stickingDismissal = await plineWithContinuation(
-                                'The barbs stick to you!',
-                            );
-                            if (stickingDismissal !== null
-                                && stickingDismissal !== undefined) {
-                                paging.pagerOwned = true;
-                            }
-                        }
-                    }
+                    // C uhitm.c:mhitm_ad_stck() mhitu branch: uhitm.ts
+                    // composes set_ustuck() and the barbs line after the
+                    // precomposed hitmsg() line.
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const stck = await mhitmAdStck({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            negated: !!heroAttack.negated,
+                            publish: publishSlotMessage,
+                        },
+                    });
+                    heroAttack.damage = stck.damage;
                 }
                 if (heroAttack.effect === 'item-theft') {
                     // C uhitm.c:mhitm_ad_sedu() mhitu branch (uhitm.c:
@@ -603,40 +593,27 @@ export async function presentMonsterAttackEffects(
                     if (engulf?.died || game.program_state.gameover) return { heroDied: true };
                 }
                 if (heroAttack.effect === 'slime-natural') {
-                    // C uhitm.c:mhitm_ad_slim() mhitu branch: the negation
-                    // gate, the slime line and make_slimed() follow hitmsg();
-                    // the contact's ordinary damage remains unless the hero's
-                    // current form cannot be slimed.
-                    let slimeMessage: string | null = null;
-                    let slimeKiller: string | null = null;
-                    if (heroAttack.slimeNegated) {
-                        if (!heroAttack.slimeCancelled)
-                            slimeMessage = 'You escape harm.';
-                    } else if (heroIsFlaming(game)) {
-                        heroAttack.damage = 0;
-                        slimeMessage = 'The slime burns away!';
-                    } else if (game.u?.unchanging || game.unchanging
-                        || heroIsNoncorporeal(game)
-                        || heroIsGreenSlime(game)) {
-                        heroAttack.damage = 0;
-                        slimeMessage = 'You are unaffected.';
-                    } else if (!heroIsSliming(game)) {
-                        slimeMessage = "You don't feel very well.";
-                        slimeKiller = requireMonsterData(MONSTER_NAME, monster.mnum);
-                    } else {
-                        slimeMessage = 'Yuck!';
-                    }
-                    if (slimeMessage) {
-                        const slimeDismissal = await plineWithContinuation(
-                            slimeMessage,
-                        );
-                        if (slimeDismissal !== null
-                            && slimeDismissal !== undefined) {
-                            paging.pagerOwned = true;
-                        }
-                    }
-                    if (slimeKiller !== null)
-                        startHeroSliming({ state: game, killer: slimeKiller });
+                    // C uhitm.c:mhitm_ad_slim() mhitu branch: uhitm.ts runs
+                    // the negation gate, the slime line and make_slimed()
+                    // after the precomposed hitmsg() line; the contact's
+                    // ordinary damage remains unless the hero's current form
+                    // cannot be slimed.
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const slim = await mhitmAdSlim({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            negated: !!heroAttack.slimeNegated,
+                            cancelled: !!heroAttack.slimeCancelled,
+                            publish: publishSlotMessage,
+                        },
+                    });
+                    heroAttack.damage = slim.damage;
                 }
                 if (heroAttack.effect === 'cold-natural') {
                     // C uhitm.c:mhitm_ad_cold() mhitu branch: hitmsg(),
@@ -814,34 +791,100 @@ export async function presentMonsterAttackEffects(
                     heroAttack.damage = legs.damage;
                 }
                 // C uhitm.c:mhitm_ad_rust()/mhitm_ad_corr()/mhitm_ad_dcay()
-                // mhitu branches: a cancelled attacker stops after hitmsg();
-                // a completely rustable/rottable hero form rehumanizes, and
-                // every other hero loses armor erosion before hitmu()'s
-                // shared knockback and damage tail.
-                if (heroAttack.effect === 'rust-natural') {
-                    if (Upolyd(game.u) && game.u.umonnum === PM_IRON_GOLEM) {
-                        const rehumanizePager = await resolveErosionFormRehumanization(
-                            heroAttack, 'You rust!',
-                        );
-                        paging.pagerOwned ||= rehumanizePager;
-                        if (heroAttack.heroDied) contactTailPending = false;
-                    } else {
-                        await erodeArmor(game.u, 'rust', { publish: publishEquipmentMessage });
+                // mhitu branches: uhitm.ts runs the cancelled-attacker stop,
+                // the rusting/rotting hero's rehumanize() and armor erosion
+                // after the precomposed hitmsg() line; hitmu()'s shared
+                // knockback and damage tail follows.
+                if (heroAttack.effect === 'rust-natural'
+                    || heroAttack.effect === 'cancelled-rust-natural') {
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const rust = await mhitmAdRust({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            cancelled: heroAttack.effect === 'cancelled-rust-natural',
+                            publish: publishEquipmentMessage,
+                        },
+                    });
+                    heroAttack.damage = rust.damage;
+                    if (rust.heroDied) {
+                        heroAttack.heroDied = true;
+                        contactTailPending = false;
                     }
                 }
-                if (heroAttack.effect === 'corrosion-natural') {
-                    await erodeArmor(game.u, 'corrosion', { publish: publishEquipmentMessage });
+                if (heroAttack.effect === 'corrosion-natural'
+                    || heroAttack.effect === 'cancelled-corrosion-natural') {
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const corr = await mhitmAdCorr({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            cancelled: heroAttack.effect === 'cancelled-corrosion-natural',
+                            publish: publishEquipmentMessage,
+                        },
+                    });
+                    heroAttack.damage = corr.damage;
                 }
-                if (heroAttack.effect === 'decay-natural') {
-                    if (Upolyd(game.u)
-                        && (game.u.umonnum === PM_LEATHER_GOLEM || game.u.umonnum === PM_WOOD_GOLEM)) {
-                        const rehumanizePager = await resolveErosionFormRehumanization(
-                            heroAttack, 'You rot!',
+                if (heroAttack.effect === 'decay-natural'
+                    || heroAttack.effect === 'cancelled-decay-natural') {
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const decay = await mhitmAdDcay({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            cancelled: heroAttack.effect === 'cancelled-decay-natural',
+                            publish: publishEquipmentMessage,
+                        },
+                    });
+                    heroAttack.damage = decay.damage;
+                    if (decay.heroDied) {
+                        heroAttack.heroDied = true;
+                        contactTailPending = false;
+                    }
+                }
+                if (heroAttack.effect === 'stoning-natural') {
+                    // C uhitm.c:mhitm_ad_ston() mhitu branch: uhitm.ts runs
+                    // the hiss or cough and do_stone_u() after the
+                    // precomposed hitmsg() line.  A successful do_stone_u()
+                    // sets mhm.done, but mhitu.c:hitmu() still runs
+                    // mhitm_knockback() before it returns on mhm.done.
+                    const hitMessage = await hitmsg(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
+                    const ston = await mhitmAdSton({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            publish: publishSlotMessage,
+                            random,
+                        },
+                    });
+                    if (ston.done) {
+                        heroAttack.contactDone = true;
+                        const knockback = await knockHeroFromMonster(
+                            monster, heroAttack, game, random, publishSlotMessage,
                         );
-                        paging.pagerOwned ||= rehumanizePager;
-                        if (heroAttack.heroDied) contactTailPending = false;
-                    } else {
-                        await erodeArmor(game.u, 'rot', { publish: publishEquipmentMessage });
+                        if (knockback.defenderLeftLevel) heroAttack.attackerDone = true;
+                        if (knockback.defenderDied) heroAttack.heroDied = true;
+                        contactTailPending = false;
+                        if (game.program_state?.gameover) return { heroDied: true };
                     }
                 }
                 if (contactTailPending) {
@@ -2895,10 +2938,10 @@ async function knockHeroFromMonster(
 }
 
 // C mhitu.c:hitmu(): the contact tail after mhitm_adtyping() — the deferred
-// stoning and poison fragments, mhitm_knockback(), the negative-AC and
-// permanent-damage reductions, mdamageu() and passiveum().  The begin-phase
-// inline physical, grid-bug and poison slots run this same tail; deferred
-// slots reach it from the presenter.
+// poison fragment, mhitm_knockback(), the negative-AC and permanent-damage
+// reductions, mdamageu() and passiveum().  The begin-phase inline physical,
+// grid-bug and poison slots run this same tail; deferred slots reach it from
+// the presenter.
 async function hitmu(
     monster: Monster,
     attack: HeroContactAttack,
@@ -2912,19 +2955,6 @@ async function hitmu(
         calls = [],
     }: MonsterDamageOptions & { calls?: MonsterCallLog } = {},
 ) {
-    if (
-        attack.damageType === AD_STON &&
-        await applyMonsterStoningAttack(monster, { state, random, publish })
-    ) {
-        // C uhitm.c:mhitm_ad_ston() mhitu branch: a successful do_stone_u()
-        // sets mhm.done, but mhitu.c:hitmu() still runs mhitm_knockback()
-        // before it returns on mhm.done.
-        attack.contactDone = true;
-        const knockback = await knockHeroFromMonster(monster, attack, state, random, publish);
-        if (knockback.defenderLeftLevel) attack.attackerDone = true;
-        if (knockback.defenderDied) attack.heroDied = true;
-        return;
-    }
     if (attack.poison) {
         const poison = await poisonHeroFromMonster(monster, attack.attackType, {
             ...attack.poison,

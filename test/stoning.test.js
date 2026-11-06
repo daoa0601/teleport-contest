@@ -5,11 +5,11 @@ import { A_DEX, NO_MINVENT, STONING } from '../js/const.js';
 import { currentAttribute } from '../js/attrib.js';
 import { woundHeroLegs } from '../js/do.js';
 import { rhack } from '../js/cmd.js';
-import { game } from '../js/gstate.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { FOOD_RATION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { applyMonsterStoningAttack } from '../js/uhitm.js';
+import { mhitmAdSton } from '../js/uhitm.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { freshHeroConditionRoom } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -45,10 +45,17 @@ void test('a named stoning attacker hisses under its given name', async () => {
     await freshObjectRoom();
     const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
     cockatrice.mgivenname = 'wide';
+    requirePlayingGame(game);
     const messages = [];
-    await applyMonsterStoningAttack(cockatrice, {
-        random: sides => sides === 3 ? 0 : 1,
-        publish: message => { messages.push(message); },
+    await mhitmAdSton({
+        mdef: 'youmonst',
+        context: {
+            state: game,
+            attacker: cockatrice,
+            hitMessage: null,
+            random: (sides) => sides === 3 ? 0 : 1,
+            publish: (message) => { messages.push(message); },
+        },
     });
     assert.ok(messages.includes("You hear wide's hissing!"), messages.join('\n'));
 });
@@ -57,10 +64,17 @@ void test('a cancelled stoning attacker coughs under its given name', async () =
     const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
     cockatrice.mgivenname = 'wide';
     cockatrice.mcan = 1;
+    requirePlayingGame(game);
     const messages = [];
-    await applyMonsterStoningAttack(cockatrice, {
-        random: sides => sides === 3 ? 0 : 1,
-        publish: message => { messages.push(message); },
+    await mhitmAdSton({
+        mdef: 'youmonst',
+        context: {
+            state: game,
+            attacker: cockatrice,
+            hitMessage: null,
+            random: (sides) => sides === 3 ? 0 : 1,
+            publish: (message) => { messages.push(message); },
+        },
     });
     assert.ok(messages.includes('You hear a cough from wide!'), messages.join('\n'));
 });

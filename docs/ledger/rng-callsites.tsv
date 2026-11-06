@@ -291,7 +291,7 @@ src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""9""]"	constant
 src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.length""]"	constant
 src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
 src/js/dog.ts	abusePet	rn2	"[""monster.mtame""]"	guarded
-src/js/dog.ts	abusePetAfterHeroHit	rnd	"[""damage""]"	guarded
+src/js/uhitm.ts	abusePetAfterHeroHit	rnd	"[""damage""]"	guarded
 src/js/dog.ts	makePetWary	random	"[""(dog.abuse ?? 0) + 1""]"	unproved
 src/js/dog.ts	makePetWary	random	"[""2""]"	constant
 src/js/dog.ts	makePetWary	random	"[""monster.mtame + 1""]"	unproved
@@ -572,7 +572,7 @@ src/js/uhitm.ts	monsterSlipsFromHeroGrip	random	"[""2""]"	constant
 src/js/uhitm.ts	monsterSlipsFromHeroGrip	random	"[""3""]"	constant
 src/js/uhitm.ts	wrapMonster	random	"[""10""]"	constant
 src/js/uhitm.ts	applyHeroNaturalPolymorph	random	"[""25""]"	constant
-src/js/uhitm.ts	applyHeroNaturalSliming	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitmAdSlim	random	"[""4""]"	constant
 src/js/uhitm.ts	resolveHeroObjectContact	random	"[""25""]"	constant
 src/js/uhitm.ts	resolveHeroObjectContact	random	"[""object.spe + 1""]"	unproved
 src/js/uhitm.ts	resolveHeroObjectContact	rollDice	"[""2"", ""4""]"	constant
@@ -1414,7 +1414,7 @@ src/js/uhitm.ts	applyMonsterStatusEffect	rollOne	"[""10""]"	constant
 src/js/uhitm.ts	applyMonsterStatusEffect	rollOne	"[""10""]"	constant
 src/js/uhitm.ts	polymorphDefender	random	"[""25""]"	constant
 src/js/uhitm.ts	polymorphDefender	rollOne	"[""2""]"	constant
-src/js/uhitm.ts	slimeDefender	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitmAdSlim	random	"[""4""]"	constant
 src/js/uhitm.ts	curseHero	random	"[""10""]"	constant
 src/js/uhitm.ts	infectHero	random	"[""4""]"	constant
 src/js/uhitm.ts	paralyzeHero	random	"[""3""]"	constant
@@ -1547,7 +1547,7 @@ src/js/makemon.ts	newMonsterHitPoints	d	"[""10"", ""8""]"	constant
 src/js/makemon.ts	newMonsterHitPoints	d	"[""level"", ""4""]"	unproved
 src/js/makemon.ts	newMonsterHitPoints	d	"[""level"", ""8""]"	unproved
 src/js/makemon.ts	newMonsterHitPoints	rnd	"[""4""]"	constant
-src/js/dothrow.ts	tryUnarmedStagger	rnd	"[""100""]"	constant
+src/js/uhitm.ts	tryUnarmedStagger	rnd	"[""100""]"	constant
 src/js/muse.ts	precheck	random	"[""WAND_BACKFIRE_CHANCE""]"	constant
 src/js/muse.ts	precheck	rollDice	"[""object.spe + 2"", ""6""]"	unproved
 src/js/muse.ts	precheck	random	"[""13 + 2 * (state.mvitals?.[species]?.born ?? 0)""]"	unproved
@@ -2229,8 +2229,8 @@ src/js/steed.ts	useSaddle	rn2	"[""100""]"	constant
 src/js/steed.ts	wakeSteedForRiding	rn2	"[""remaining""]"	unproved
 src/js/apply.ts	useStethoscope	rn2	"[""2""]"	constant
 src/js/apply.ts	useStethoscope	rn2	"[""game.urole.key === 'healer' ? 10 : 3""]"	constant
-src/js/stoning.ts	applyMonsterStoningAttack	random	"[""10""]"	constant
-src/js/stoning.ts	applyMonsterStoningAttack	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdSton	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdSton	random	"[""3""]"	constant
 src/js/timeout.ts	doStorms	rn1	"[""20"", ""30""]"	constant
 src/js/timeout.ts	doStorms	rn2	"[""3""]"	constant
 src/js/timeout.ts	doStorms	rn2	"[""3""]"	constant

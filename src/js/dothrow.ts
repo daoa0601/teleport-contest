@@ -126,7 +126,7 @@ import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './d
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import {
     monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous,
-    monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls,
+    monsterIsFlyer, monsterIsSlithy, monsterIsWhirly, monsterPassesWalls,
     monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies,
     formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race,
 } from './mondata.js';
@@ -998,22 +998,6 @@ export interface MonsterHurtleOutcome {
     occupant?: Monster | null;
 }
 
-export interface UnarmedStaggerOptions {
-    skill: number;
-    damage: number;
-    dx: number;
-    dy: number;
-    state?: GameState;
-    announce?: MessagePublisher;
-    nameMonster?: (monster: Monster) => string;
-    wakeMonster?: (() => Promise<{ heroDied?: boolean } | void>) | undefined;
-    finishLiquidDeath?: HurtleLiquidDeathHandler | undefined;
-    finishMonsterDeath?: HurtleDeathHandler | undefined;
-}
-
-export interface UnarmedStaggerOutcome extends Partial<MonsterHurtleOutcome> {
-    staggered: boolean;
-}
 
 function monsterAt(state: GameState, x: number, y: number, ignoredMonster: Monster): Monster | null {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
@@ -1222,44 +1206,6 @@ export function willMonsterHurtle(
     });
 }
 
-// C uhitm.c:hmon_hitmon_stagger()
-export async function tryUnarmedStagger(monster: Monster, {
-    skill,
-    damage,
-    dx,
-    dy,
-    state = game,
-    announce = async () => {},
-    nameMonster = target => monsterName(target, { state, capitalized: true }),
-    wakeMonster = async () => {
-        monster.msleeping = 0;
-    },
-    finishLiquidDeath,
-    finishMonsterDeath,
-}: UnarmedStaggerOptions): Promise<UnarmedStaggerOutcome> {
-    if (rnd(100) >= skill) return { staggered: false };
-    if (monsterIsBig(monster.mnum)
-        || monsterIsThickSkinned({ mnum: monster.mnum })) {
-        return { staggered: false };
-    }
-
-    if (canSpotMonster(monster)) {
-        await announce(
-            `${nameMonster(monster)} ${staggerVerb(monster.mnum)} from your powerful strike!`,
-        );
-    }
-    if (damage >= (monster.mhp ?? 1)) return { staggered: true };
-
-    const hurtle = await hurtleMonster(monster, dx, dy, 1, {
-        state,
-        announce,
-        nameMonster,
-        wakeMonster,
-        finishLiquidDeath,
-        finishMonsterDeath,
-    });
-    return { staggered: true, ...hurtle };
-}
 
 // C dothrow.c:gem_accept(), reached from thitmonst()'s unicorn catch
 // (dothrow.c:2087-2099).  Null means ordinary combat; false means caught

@@ -9,7 +9,7 @@ import { pushKeys } from '../js/input.js';
 import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { poisonHero } from '../js/attrib.js';
-import { applyMonsterStoningAttack } from '../js/uhitm.js';
+import { mhitmAdSton } from '../js/uhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a hero awakened by combat staggers aloud when the next blow knocks them back', async () => {
@@ -44,10 +44,17 @@ void test('a sleeping hero dreams of the cockatrice hiss', async () => {
     await freshObjectRoom();
     const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
     await putHeroToSleep(5);
+    requirePlayingGame(game);
     const messages = [];
-    await applyMonsterStoningAttack(cockatrice, {
-        random: sides => sides === 3 ? 0 : 1,
-        publish: message => { messages.push(message); },
+    await mhitmAdSton({
+        mdef: 'youmonst',
+        context: {
+            state: game,
+            attacker: cockatrice,
+            hitMessage: null,
+            random: sides => sides === 3 ? 0 : 1,
+            publish: message => { messages.push(message); },
+        },
     });
     assert.ok(messages.includes("You dream that you hear the cockatrice's hissing!"));
 });
