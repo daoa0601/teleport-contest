@@ -445,7 +445,11 @@ export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines =
     if (boundary === 0)
         d.clearScreen();
     else {
-        clearRect(boundary, 0, d.cols, maxRows);
+        // process_menu_window() cl_end()s its rows plus the spare lines down
+        // to maxrow-1; process_text_window() cl_end()s every row and the
+        // pager row before dmore() (wintty.c:1834-1838, 1892-1894), so a
+        // putstr window erases one row beyond its measured line count.
+        clearRect(boundary, 0, d.cols, menu.putstrMeasured ? maxRows + 1 : maxRows);
         // A shorter corner page exposes the map again below two blank rows.
         // Keep those cells from the already-painted map, like docorner().
         const firstRestoredRow = Math.min(rows.length + 3, maxRows - 1);
@@ -609,7 +613,12 @@ export function menuLayout(rows, columns, terminalRows, putstrMeasured = false) 
     // putstr() measures a line as strlen + 1; tty_end_menu() re-measures its
     // own rows, and every stored line, as strlen + 2.
     const width = clippedRows.reduce((widest, row) => Math.max(widest, row.text.length + (putstrMeasured ? 1 : 2)), putstrMeasured ? 0 : Math.min(columns, pager.length));
-    const maxRows = (pageCount > 1 ? pageSize : rows.length) + 1;
+    // tty_end_menu() sizes maxrow as the page height or item count plus the
+    // pager row (wintty.c:2826-2828); a window filled only with putstr()
+    // never runs it, so its maxrow stays the raw line count and the pager
+    // row does not grow the window (wintty.c:2465-2466).
+    const maxRows = putstrMeasured ? rows.length
+        : (pageCount > 1 ? pageSize : rows.length) + 1;
     return { rows: clippedRows, pageSize, pageCount, maxRows, width, endMarker, putstrMeasured };
 }
 export function tty_end_menu(window, prompt = null, putstrMeasured = false) {
