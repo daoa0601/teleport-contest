@@ -48,7 +48,7 @@ import type { MenuUnderlay } from './wintty.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNoQuit, getLine, promptChoice, tty_yn_function } from './query.js';
 import { useUpFloorObject } from './invent.js';
-import { heroCanReachFloor, heroHasFreeHand, floorReachProblem } from './engrave.js';
+import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { hideHeroUnder, finishEnvironmentalMonsterDeath,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome,
     isRider,
@@ -1046,8 +1046,7 @@ async function do_loot_cont(container: GameObject, containerIndex: number, conta
 export async function ableToLoot(x: number, y: number, looting: boolean): Promise<boolean> {
     const verb = looting ? 'loot' : 'tip';
     const trap = requireGameLevel().traps.find(trap => trap.tx === x && trap.ty === y);
-    const reach = floorReachProblem(game, { checkPit: !!trap && is_pit(trap.ttyp) });
-    if (reach) {
+    if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
         if (game.u.usteed && (game.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC) {
             await plineWithContinuation(riderCannotReachMessage());
         } else {

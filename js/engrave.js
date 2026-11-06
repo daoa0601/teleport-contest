@@ -395,38 +395,34 @@ export function heroHasFreeHand(state) {
     return !isBimanualObject(weapon) && !shield?.cursed;
 }
 const MZ_HUGE = 4;
-// C engrave.c:can_reach_floor(): the shared floor-reach test;
-// pickup_checks() calls floorReachProblem() directly.
-export function floorReachProblem(state = game, { checkPit = false } = {}) {
+// C engrave.c:can_reach_floor(): the shared floor-reach test; the
+// trap.c uteetering_at_seen_pit() and uescaped_shaft() halves live in trap.ts.
+export function heroCanReachFloor(state = game, { checkPit = false } = {}) {
     const hero = state.u;
     if (hero.uswallow)
-        return 'swallowed';
+        return false;
     if (hero.ustuck && !heroFormSticks(state) && holderHugs(hero.ustuck))
-        return 'held';
+        return false;
     const airLevel = sameDungeonLevel(hero.uz, state.air_level);
     const waterLevel = sameDungeonLevel(hero.uz, state.water_level);
     if ((hero.levitating || hero.levitation || state.levitating)
         && !airLevel && !waterLevel)
-        return 'levitating';
+        return false;
     if (hero.usteed && ridingSkill(state) < 2)
-        return 'riding';
+        return false;
     if (heroHidesOnCeiling(state))
-        return 'ceiling';
+        return false;
     const form = heroMonsterForm(state);
     if (heroIsFlying(state)
         || (form != null && (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE)) {
-        return null;
+        return true;
     }
     const trap = checkPit ? trapAtHeroInState(state) : null;
     if (heroTeetersAtPit(state, trap))
-        return 'pit-edge';
+        return false;
     if (heroEscapedShaft(trap))
-        return 'shaft-edge';
-    return null;
-}
-// C engrave.c:can_reach_floor(). Boolean wrapper.
-export function heroCanReachFloor(state = game, options = {}) {
-    return floorReachProblem(state, options) === null;
+        return false;
+    return true;
 }
 function holderHugs(holder) {
     return (MONSTER_ATTACKS[holder?.mnum] || [])

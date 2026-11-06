@@ -475,53 +475,38 @@ export function heroHasFreeHand(state: GameState): boolean {
     return !isBimanualObject(weapon) && !shield?.cursed;
 }
 
-// ── moved from src/js/floor_reach.ts ──
-// Whether the hero can touch the floor at the current square.
-// C refs: engrave.c can_reach_floor(); the trap.c uteetering_at_seen_pit()
-// and uescaped_shaft() halves live in trap.ts.
-
-export type FloorReachProblem = 'swallowed' | 'held' | 'levitating'
-    | 'riding' | 'ceiling' | 'pit-edge' | 'shaft-edge';
 export interface FloorReachOptions { checkPit?: boolean }
 
 const MZ_HUGE = 4;
 
-// C engrave.c:can_reach_floor(): the shared floor-reach test;
-// pickup_checks() calls floorReachProblem() directly.
-export function floorReachProblem(
+// C engrave.c:can_reach_floor(): the shared floor-reach test; the
+// trap.c uteetering_at_seen_pit() and uescaped_shaft() halves live in trap.ts.
+export function heroCanReachFloor(
     state: GameState = game,
     { checkPit = false }: FloorReachOptions = {},
-): FloorReachProblem | null {
+): boolean {
     const hero = state.u;
-    if (hero.uswallow) return 'swallowed';
+    if (hero.uswallow) return false;
     if (hero.ustuck && !heroFormSticks(state) && holderHugs(hero.ustuck))
-        return 'held';
+        return false;
 
     const airLevel = sameDungeonLevel(hero.uz, state.air_level);
     const waterLevel = sameDungeonLevel(hero.uz, state.water_level);
     if ((hero.levitating || hero.levitation || state.levitating)
-        && !airLevel && !waterLevel) return 'levitating';
-    if (hero.usteed && ridingSkill(state) < 2) return 'riding';
-    if (heroHidesOnCeiling(state)) return 'ceiling';
+        && !airLevel && !waterLevel) return false;
+    if (hero.usteed && ridingSkill(state) < 2) return false;
+    if (heroHidesOnCeiling(state)) return false;
 
     const form = heroMonsterForm(state);
     if (heroIsFlying(state)
         || (form != null && (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE)) {
-        return null;
+        return true;
     }
 
     const trap = checkPit ? trapAtHeroInState(state) : null;
-    if (heroTeetersAtPit(state, trap)) return 'pit-edge';
-    if (heroEscapedShaft(trap)) return 'shaft-edge';
-    return null;
-}
-
-// C engrave.c:can_reach_floor(). Boolean wrapper.
-export function heroCanReachFloor(
-    state: GameState = game,
-    options: FloorReachOptions = {},
-): boolean {
-    return floorReachProblem(state, options) === null;
+    if (heroTeetersAtPit(state, trap)) return false;
+    if (heroEscapedShaft(trap)) return false;
+    return true;
 }
 
 function holderHugs(holder: Monster): boolean {
