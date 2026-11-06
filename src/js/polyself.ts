@@ -461,34 +461,34 @@ export function heroIsSlimeproof(state: GameState = game): boolean {
         || heroIsNoncorporeal(state);
 }
 
-// C polyself.c:check_strangling(), turning the amulet's grip off and on.
-export async function stopStrangulationInImmuneForm(
-    state = game, publish: MessagePublisher = plineWithContinuation,
+// C polyself.c:check_strangling(): for changing into a form that's immune
+// to strangulation (on=false, maybe block it) and back into a vulnerable
+// one (on=true, maybe resume it). polymon() and polyman() reach both
+// halves. The grip tightening also runs makeknown(AMULET_OF_STRANGULATION)
+// — discover_object() through learnObjectType() — so the amulet enters the
+// discoveries list even when it was first put on in an immune body.
+export async function checkStrangling(
+    on: boolean, state = game, publish: MessagePublisher = plineWithContinuation,
 ) {
-    if (!heroIsStrangled(state) || heroCanBeStrangled(state)) return;
-    clearHeroStrangulation(state);
-    await publish('You are no longer being strangled.');
-}
-
-// C polyself.c:check_strangling() with on=TRUE: polymon() and polyman()
-// reach this half. The grip tightening also runs
-// makeknown(AMULET_OF_STRANGULATION) — discover_object() through
-// learnObjectType() — so the amulet enters the discoveries list even when
-// it was first put on in an immune body.
-export async function restartAmuletStrangulation(
-    state = game, publish: MessagePublisher = plineWithContinuation,
-) {
-    const amulet = state.uamul || state.u.uamul;
-    if (amulet?.otyp !== AMULET_OF_STRANGULATION || !heroCanBeStrangled(state))
-        return;
-    const wasStrangled = heroIsStrangled(state);
-    state.u.strangledTurns = 6;
-    state.context.botl = true;
-    refreshProperty('strangled', state);
-    const action = wasStrangled ? 'still constricts' : 'begins constricting';
-    const name = simpleObjectName(amulet, state);
-    await publish(`Your ${name} ${action} your ${body_part(NECK, state)}!`); /* "throat" */
-    learnObjectType(AMULET_OF_STRANGULATION, state);
+    if (on) {
+        /* on -- maybe resume strangling */
+        const amulet = state.uamul || state.u.uamul;
+        if (amulet?.otyp !== AMULET_OF_STRANGULATION || !heroCanBeStrangled(state))
+            return;
+        const wasStrangled = heroIsStrangled(state);
+        state.u.strangledTurns = 6;
+        state.context.botl = true;
+        refreshProperty('strangled', state);
+        const action = wasStrangled ? 'still constricts' : 'begins constricting';
+        const name = simpleObjectName(amulet, state);
+        await publish(`Your ${name} ${action} your ${body_part(NECK, state)}!`); /* "throat" */
+        learnObjectType(AMULET_OF_STRANGULATION, state);
+    } else {
+        /* off -- maybe block strangling */
+        if (!heroIsStrangled(state) || heroCanBeStrangled(state)) return;
+        clearHeroStrangulation(state);
+        await publish('You are no longer being strangled.');
+    }
 }
 
 function speciesEntry<Value>(table: readonly Value[], species: number): Value {
@@ -627,7 +627,7 @@ async function finishHumanFormChange(
         setHeroBlindnessTimeout(1, state);
         await makeBlinded(0, { state, publish });
     }
-    await restartAmuletStrangulation(state, publish);
+    await checkStrangling(true, state, publish);
     if (!hero.levitation && !hero.ustuck
         && (isPoolAt(hero.ux, hero.uy, state) || isLavaAt(hero.ux, hero.uy, state))) {
         const result = await applyHeroLocationEffects(publish);
@@ -749,7 +749,7 @@ async function beginMonsterForm(mnum: number, {
             clearHeroSliming(game);
         }
     }
-    await stopStrangulationInImmuneForm();
+    await checkStrangling(false);
     if (heroHasNoHands(game)) setSlipperyHands(0, game);
 
     const monsterLevel = MONSTER_LEVEL[mnum] ?? 0;
@@ -878,7 +878,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
         if (result.died) return { transformed: true, mnum, died: true };
     }
     await escapeTrapsAfterFormChange();
-    await restartAmuletStrangulation();
+    await checkStrangling(true);
     game.context.botl = true;
     game.vision_full_recalc = 1;
     await see_monsters();
