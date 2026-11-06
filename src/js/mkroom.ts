@@ -52,6 +52,7 @@ const PM_SERGEANT = 278;
 const PM_LIEUTENANT = 280;
 const PM_CAPTAIN = 281;
 
+// C mkroom.c:search_special():
 // C search_special(): search ordinary rooms first, then their subrooms.
 export function searchSpecial(type: number, state: GameState = game): Room | null {
     for (const rooms of [state.level?.rooms ?? [], state.level?.subrooms ?? []]) {
@@ -116,14 +117,17 @@ export function cmapToType(symbol: number): number {
     }
 }
 
+// C mkroom.c:somex():
 export function somex(room: Rectangle): number {
     return rn1(room.hx - room.lx + 1, room.lx);
 }
 
+// C mkroom.c:somey():
 export function somey(room: Rectangle): number {
     return rn1(room.hy - room.ly + 1, room.ly);
 }
 
+// C mklev.c:occupied():
 export function occupied(x: number, y: number, state: GameState = game): boolean {
     const location = state.level?.at?.(x, y);
     if (!location) return false;
@@ -133,6 +137,7 @@ export function occupied(x: number, y: number, state: GameState = game): boolean
         || isPoolOrLavaAt(x, y, state));
 }
 
+// C mkroom.c:somexy():
 export function somexy(room: Room, coordinate: Position, state: GameState = game): boolean {
     if (room.irregular) {
         const roomNumber = (room.roomnoidx ?? -1) + ROOMOFFSET;
@@ -179,6 +184,7 @@ export function somexy(room: Room, coordinate: Position, state: GameState = game
     return false;
 }
 
+// C mkroom.c:somexyspace():
 export function somexyspace(room: Room, coordinate: Position, state: GameState = game): boolean {
     let attempts = 0;
     let valid;
@@ -193,6 +199,8 @@ export function somexyspace(room: Room, coordinate: Position, state: GameState =
     } while (attempts++ < 100 && !valid);
     return !!valid;
 }
+// C mkroom.c:has_upstairs():
+// Also C mkroom.c:has_dnstairs(): merged into one direction parameter.
 export function roomHasStair(croom: Room, up: boolean): boolean {
     for (let stair = game.stairs; stair; stair = stair.next) {
         if (!!stair.up !== !!up) continue;
@@ -350,6 +358,8 @@ async function makeRandomTemple(room: Room): Promise<boolean> {
     return true;
 }
 
+// Part of C mkroom.c:do_mkroom(), mkroom.c:mkzoo(): the special-room type
+// dispatch and the rtype-with-needfill marking.
 export async function markRandomSpecialRoom(roomType: number): Promise<boolean> {
     if (roomType === SWAMP) return makeSwamps();
     const room = pickSpecialRoom(roomType === TEMPLE);
@@ -400,6 +410,7 @@ async function makeSwamps(): Promise<boolean> {
     return madeSwamp;
 }
 
+// C mkroom.c:nexttodoor():
 function swampSquareBordersDoor(x: number, y: number): boolean {
     const level = requireGameLevel();
     for (let dx = -1; dx <= 1; dx++) {
@@ -412,6 +423,7 @@ function swampSquareBordersDoor(x: number, y: number): boolean {
     return false;
 }
 
+// C mkroom.c:fill_zoo():
 export async function fillZooRoom(room: Room): Promise<void> {
     const level = requireGameLevel();
     // C ref: mkroom.c fill_zoo(), ZOO branch.  Irregular-room membership and
@@ -485,6 +497,7 @@ export function antholeMonsterType(): number | null {
     return null;
 }
 
+// C mkroom.c:courtmon():
 export function courtMonsterType(): number | null {
     const roll = rn2(60) + rn2(3 * level_difficulty());
     if (roll > 100) return mkclass(30, 0); // S_DRAGON
@@ -594,6 +607,7 @@ export async function fillCourtRoom(room: Room): Promise<void> {
 
 interface UndeadCreationOptions { state?: GameState; reviveCorpses?: boolean; flags?: number; }
 
+// C mkroom.c:mkundead():
 export async function makeUndeadNear(x: number, y: number, { state = game, reviveCorpses = false, flags = 0 }: UndeadCreationOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -628,6 +642,7 @@ export function morgueMonsterType(): number | null {
     return mkclass(52, 0); // S_ZOMBIE
 }
 
+// Part of C mkroom.c:fill_zoo(): the MORGUE branch.
 export async function fillMorgueRoom(room: Room): Promise<void> {
     const level = requireGameLevel();
     const entrance = room.doorct ? level.doors[room.fdoor] : null;
@@ -687,6 +702,7 @@ function barracksMonsterType(): number | null {
         ? null : mndx;
 }
 
+// Part of C mkroom.c:fill_zoo(): the BARRACKS branch.
 export async function fillBarracksRoom(room: Room): Promise<void> {
     const level = requireGameLevel();
     const entrance = room.doorct ? level.doors?.[room.fdoor] : null;

@@ -142,6 +142,8 @@ export async function castmuSpellEffect(attack, monster, ctx) {
         return await finishSpellDamage(attack, outcome.dmg, outcome.effectLineDismissal, ctx);
     return outcome.died || !!state.program_state.gameover;
 }
+// Part of C mcastu.c:castmu(): the mdamageu-and-rehumanize tail after
+// mcast_spell returns its damage.
 // castmu() reaches mdamageu() here after mcast_spell(): raw HP is kept for
 // tty's -1 sentinel, so rehumanization and the fatal input stay with the
 // presenter hooks.  An escaped pager (dismissal 27) has the
@@ -240,6 +242,8 @@ export async function mcastSpell(monster, spell, dmg, ctx) {
             return { dmg: 0, died: false, effectLineDismissal: null };
     }
 }
+// Port only: builds the context for the castmu(FALSE, FALSE) movement cast:
+// publishers, RNG and the standard monster-message death handlers.
 // The context for castmu(FALSE,FALSE) from dochug(): zero damage and
 // undirected spells only, so the finishers below stay out of reach (the
 // damaging spells are all directed); they carry the standard
@@ -601,6 +605,9 @@ async function mcastConfuseYou(monster, ctx) {
         : alreadyConfused ? 'more confused!' : 'confused!', state));
     monstersForgetHeroResistance(M_SEEN_MAGR, state);
 }
+// Part of C mhitu.c:mdamageu(): the raw synchronous HP subtraction, with
+// rehumanize and death deferred to the castmu presenter (mhitu.ts owns the
+// full async port).
 // mdamageu() subtracts from the active body. Keep raw HP for tty's -1
 // sentinel; the presenter owns rehumanization and fatal input afterward.
 export function applyHeroSpellDamage(attack, damage, state) {
@@ -613,9 +620,11 @@ export function applyHeroSpellDamage(attack, damage, state) {
     attack.rehumanize = hpKey === 'mh' && state.u.mh < 1;
     attack.heroDied = hpKey === 'uhp' && state.u.uhp < 1;
 }
+// C youprop.h:See_invisible(): intrinsic or extrinsic seeing of invisible.
 export function heroCanSeeInvisible(state) {
     return !!(state?.u?.seeInvisible || (state?.u?.seeInvisibleTurns ?? 0) > 0);
 }
+// C mcastu.c:spell_would_be_useless():
 export function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     if (spell.flags & MCF_HOSTILE && monster.mpeaceful)
         return true;
@@ -747,6 +756,8 @@ export async function movementSpellSelections(monster, state, random, calls) {
     }
     return null;
 }
+// C mcastu.c:mcast_summon_mons(): the summons and the "Destroy the thief" /
+// "Monsters appear" messages.
 async function monsterSummonSpellEffect(monster, state) {
     let effect = { count: 0, created: [], message: null };
     const summoned = await summonNastyMonsters(monster);
@@ -806,6 +817,7 @@ export async function touchHeroWithDeath(monster, state, publish, rollDice = d) 
 const DEATH_G_UNIQ = 0x1000;
 const DEATH_PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const DEATH_PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
+// C mcastu.c:death_inflicted_by():
 export function monsterSpellDeathReason(monster, reason) {
     const current = monster.mnum;
     const base = ismnum(monster.cham) ? monster.cham : current;
@@ -827,6 +839,8 @@ export function monsterSpellDeathReason(monster, reason) {
 // C mcastu.c:buzzmu(). Ranged spell rays are one original attack slot.
 // ---------------------------------------------------------------------------
 const STRANGE_OBJECT = 0;
+// C mcastu.c:cursetxt(): the points-and-curses message and the mumbled
+// curse heard when the caster is unseen.
 async function curseDirectedSpell(monster, state, publish, random) {
     if (canSeeMonster(monster)
         && couldsee(monster.mx, monster.my)) {
@@ -849,6 +863,7 @@ async function curseDirectedSpell(monster, state, publish, random) {
             await publish(message, { noRepeat: true });
     }
 }
+// C mcastu.c:buzzmu(): the ranged magic-ray attack slot.
 export async function resolveMonsterMagicRay(monster, attack, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, calls = [], die = finishHeroDeath, } = {}) {
     requirePlayingGame(state);
     const damageType = attack[1];
@@ -880,6 +895,7 @@ export async function resolveMonsterMagicRay(monster, attack, { state = game, pu
 // ---------------------------------------------------------------------------
 const S_ANT = 1;
 const S_SNAKE = 45;
+// C mcastu.c:mcast_insects():
 export async function summonMonsterInsects(caster, state) {
     const monsterClass = mkclassAligned(S_ANT, 0) === null ? S_SNAKE : S_ANT;
     const oldSeen = spottedMonsterCount(state);
@@ -938,6 +954,7 @@ export async function summonMonsterInsects(caster, state) {
     }
     return { count: created.length, created, message };
 }
+// C minion.c:monster_census(): the spotted count, monster_census(TRUE).
 function spottedMonsterCount(state) {
     return state.level.monsters.filter(monster => !monster.dead && monster.mhp > 0
         && !(monster.isgd && monster.mx === 0) && canSpotMonster(monster)).length;

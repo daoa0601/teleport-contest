@@ -3,7 +3,9 @@ import { COLNO, ROWNO } from './const.js';
 import { validSavedGlyph, validSavedGlyphMetadata } from './display_validation.js';
 import { isSavedRecord } from './saved_graph.js';
 import { arrayOf, boolean, closedFieldsMatch as fieldsMatch, integer, nullable, optional, string, validateSavedEntity } from './saved_validation.js';
+// Port only: saved-state type guard for a MapBit (boolean or 0/1).
 const mapBit = (value) => typeof value === 'boolean' || value === 0 || value === 1;
+// Port only: saved-state type guard for a bones cemetery record.
 export function validSavedCemeteryEntry(value) {
     return fieldsMatch(value, {
         who: string, how: string,
@@ -13,17 +15,21 @@ export function validSavedCemeteryEntry(value) {
         bonesknown: boolean,
     });
 }
+// Port only: saved-state type guard for an x/y position.
 export function validSavedPosition(value) {
     return fieldsMatch(value, { x: integer, y: integer });
 }
+// Port only: saved-state type guard for a dnum/dlevel location.
 export function validSavedDungeonLocation(value) {
     return fieldsMatch(value, { dnum: integer, dlevel: integer });
 }
+// Port only: saved-state type guard for an lx/ly/hx/hy rectangle.
 function validRectangle(value) {
     return fieldsMatch(value, {
         lx: integer, ly: integer, hx: integer, hy: integer,
     });
 }
+// Port only: saved-state type guard for one map cell's declared fields.
 export function validSavedMapLocation(value) {
     return fieldsMatch(value, {
         typ: integer, roomno: integer, lit: boolean, waslit: boolean,
@@ -41,11 +47,13 @@ export function validSavedMapLocation(value) {
         altarmask: optional(integer),
     });
 }
+// Port only: saved-state type guard for the fixed COLNO by ROWNO cell grid.
 function validSavedLocations(value) {
     return arrayOf(arrayOf(validSavedMapLocation))(value)
         && value.length === COLNO
         && value.every(column => column.length === ROWNO);
 }
+// Port only: saved-state type guard for one trap record.
 export function validSavedTrap(value) {
     return fieldsMatch(value, {
         ttyp: integer, tx: integer, ty: integer, tseen: mapBit, once: mapBit,
@@ -54,6 +62,7 @@ export function validSavedTrap(value) {
         conjoined: optional(integer), tnote: optional(integer), madeby_u: optional(mapBit),
     });
 }
+// Port only: saved-state type guard for the level flags record.
 function validFlags(value) {
     return fieldsMatch(value, {
         nfountains: integer, nsinks: integer, hero_memory: boolean,
@@ -76,6 +85,7 @@ function validFlags(value) {
         waterlevel: optional(boolean),
     });
 }
+// Port only: saved-state type guard for a gas-cloud region.
 function validGasCloud(value) {
     return fieldsMatch(value, {
         kind: (kind) => kind === 'gas-cloud',
@@ -86,12 +96,14 @@ function validGasCloud(value) {
         heroFault: optional(boolean),
     });
 }
+// Port only: saved-state type guard for a level timer.
 function validTimer(value) {
     return fieldsMatch(value, {
         kind: (kind) => kind === 'melt-ice-away',
         deadline: integer, id: integer, order: integer, x: integer, y: integer,
     });
 }
+// Port only: saved-state type guard for an exclusion zone.
 function validExclusion(value) {
     return fieldsMatch(value, {
         type: (type) => type === 'teleport'
@@ -100,12 +112,14 @@ function validExclusion(value) {
         lx: integer, ly: integer, hx: integer, hy: integer,
     });
 }
+// Port only: saved-state type guard for a stair arrival region.
 function validArrivalRegion(value) {
     return fieldsMatch(value, {
         lx: integer, ly: integer, hx: integer, hy: integer,
         exclude: optional(nullable(validRectangle)),
     });
 }
+// Port only: saved-state type guard for one engraving record.
 function validEngraving(value) {
     return fieldsMatch(value, {
         x: integer, y: integer, text: string, pristine: string,
@@ -115,12 +129,14 @@ function validEngraving(value) {
         nowipeout: boolean, guardobjects: boolean, eread: boolean, erevealed: boolean,
     });
 }
+// Port only: saved-state type guard for one shop-damage record.
 function validDamage(value) {
     return fieldsMatch(value, {
         when: integer, place: validSavedPosition, cost: integer,
         typ: integer, flags: integer,
     });
 }
+// Port only: saved-state type guard for the elemental-plane bubble bounds.
 function validElementalBounds(value) {
     return fieldsMatch(value, {
         xmin: integer, ymin: integer, xmax: integer, ymax: integer,
@@ -128,6 +144,8 @@ function validElementalBounds(value) {
         bubbleXMax: integer, bubbleYMax: integer,
     });
 }
+// Port only: saved-state type guard for a room, sharing subroom entity
+// identity with the room table.
 export function validSavedRoom(value, context) {
     return validateSavedEntity(value, 'room', context, {
         lx: integer, ly: integer, hx: integer, hy: integer, rtype: integer,
@@ -139,6 +157,8 @@ export function validSavedRoom(value, context) {
         orig_rtype: optional(integer),
     });
 }
+// Port only: validates the whole saved level, reinstalls its methods, and
+// rebuilds the subroom pointers C restores via memory layout.
 // This validates the full map shape before installing its methods. Merely
 // setting the prototype would not establish a typed map or its nested cells.
 export function restoreSavedMap(value, entities) {
@@ -237,6 +257,7 @@ export function restoreSavedMap(value, entities) {
     }
     return value;
 }
+// Port only: saved-state type guard for the linked stairway list.
 export function validSavedStairways(value) {
     const seen = new WeakSet();
     function stairway(stair) {

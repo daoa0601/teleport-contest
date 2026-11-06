@@ -54,16 +54,21 @@ const DRAGON_HIDE = 10;
 const PLASTIC = 18;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
+// Part of C mkobj.c:bless(), mkobj.c:curse(), mkobj.c:unbless(): the shared
+// luck-and-weight tail.
 function updateBlessingEffects(object, state) {
     if (object && state.inventory.includes(object) && confersLuck(object, state))
         setMoreLuck(state);
     if (object?.otyp === BAG_OF_HOLDING)
         object.owt = objectWeight(object);
 }
+// Part of C mkobj.c:bless(), mkobj.c:uncurse(): stopping a figurine's
+// transformation timer.
 function stopFigurineTransformation(object) {
     if (object.otyp === FIGURINE && object.timed)
         stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
 }
+// C mkobj.c:bless():
 export function blessObjectState(object, state = game) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
@@ -75,6 +80,7 @@ export function blessObjectState(object, state = game) {
     stopFigurineTransformation(object);
     return changed;
 }
+// C mkobj.c:unbless():
 export function unblessObjectState(object, state = game) {
     if (!object)
         return false;
@@ -84,6 +90,8 @@ export function unblessObjectState(object, state = game) {
     updateBlessingEffects(object, state);
     return changed;
 }
+// Part of C mkobj.c:curse(): the pure state half used by constructors and
+// bones.
 export function curseObjectState(object, state = game) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
@@ -99,6 +107,7 @@ export function curseObjectState(object, state = game) {
         attachCursedFigurineTimer(object, state);
     return changed;
 }
+// C mkobj.c:curse():
 // Live gameplay curses can interrupt an active study through its real input
 // boundary. Constructors and bones retain the atomic state initializer.
 export async function curseObject(object, { state = game } = {}) {
@@ -113,6 +122,7 @@ export async function curseObject(object, { state = game } = {}) {
         await adjustObjectLightAfterBlessing(object, oldLight, state);
     return changed;
 }
+// C mkobj.c:uncurse():
 export function uncurseObjectState(object, state = game) {
     if (!object)
         return false;
@@ -190,6 +200,7 @@ export async function mksobj(otyp, init, artif, { zombify = false } = {}) {
 function bcsign(otmp) {
     return Number(!!otmp.blessed) - Number(!!otmp.cursed);
 }
+// C mkobj.c:may_generate_eroded():
 function mayGenerateEroded(otmp) {
     // C ref: mkobj.c:may_generate_eroded(): starting inventory is pristine, while
     // objects produced by mklev on move zero may still be damaged.
@@ -627,9 +638,11 @@ export async function mkobj(oclass, artif) {
 export async function mkobj_at(oclass, x, y, artif) {
     return placeCreatedObject(await mkobj(oclass, artif), x, y);
 }
+// Part of C mkobj.c:weight(): the gold-coin stack case.
 function coinStackWeight(quantity) {
     return Math.max(1, Math.trunc((quantity + 50) / 100));
 }
+// C mkobj.c:mkgold():
 export async function mkgold(amount, x, y, state = game) {
     // C ref: mkobj.c mkgold()
     if (amount <= 0) {
@@ -653,9 +666,13 @@ export async function mkgold(amount, x, y, state = game) {
 }
 const PM_LICHEN = 158;
 const PM_LIZARD = 326;
+// Part of C mkobj.c:start_corpse_timeout(): the lichen and lizard no-timer
+// case.
 function corpseHasNoTimer(mndx) {
     return mndx === PM_LICHEN || mndx === PM_LIZARD;
 }
+// Part of C mkobj.c:start_corpse_timeout(): the special-timing test for
+// revivers and timerless corpses.
 function corpseHasSpecialTiming(mndx) {
     return corpseHasNoTimer(mndx) || isReviver(mndx);
 }
@@ -948,25 +965,31 @@ export function updateIceObjectTimersAt(x, y, state = game, { includeBuried = fa
         }
     }
 }
+// Port only: placement precondition — C place_object panics on a non-free
+// object.
 function assertFreeFloorObject(object) {
     if (object.where !== 'free')
         throw new Error(`floor placement requires a free object, got ${object.where}`);
 }
+// Part of C mkobj.c:place_object(): entry for a just-created free object.
 export function placeCreatedObject(object, x, y, state = game) {
     createdObjectNoLongerHeld(object, state);
     return linkFloorObject(object, x, y, state);
 }
+// Port only: synchronous placement entry for constructors and restore.
 export function placeObjectSynchronously(object, x, y, state = game) {
     assertFreeFloorObject(object);
     objectNoLongerHeldSynchronously(object, state);
     return linkFloorObject(object, x, y, state);
 }
+// C mkobj.c:place_object():
 export async function placeObject(object, x, y, state = game) {
     requireLiveGame(state);
     assertFreeFloorObject(object);
     await objectNoLongerHeld(object, state);
     return linkFloorObject(object, x, y, state);
 }
+// Part of C mkobj.c:place_object(): the floor-chain linking body.
 function linkFloorObject(object, x, y, state) {
     const level = requireGameLevel(state);
     object.ox = x;
@@ -994,6 +1017,8 @@ function linkFloorObject(object, x, y, state) {
     updateCorpseIceTimer(object, x, y, isIceAt(x, y, state), state);
     return object;
 }
+// Part of C zap.c:bhitpile(), muse.c:fhito_loc(): the shared floor-pile
+// walk.
 // Shared floor-chain traversal used by zap.c:bhitpile() and muse.c:fhito_loc().
 // Both save each successor before
 // applying the effect. Fracturing can reinsert rocks below another boulder,
@@ -1016,6 +1041,7 @@ export async function sweepFloorPile(x, y, state, visit) {
         current = next;
     }
 }
+// C mkobj.c:remove_object():
 export function remove_object(object, state = game) {
     if (!object || !state.level)
         return object;
@@ -1029,6 +1055,8 @@ export function remove_object(object, state = game) {
     updateCorpseIceTimer(object, object.ox, object.oy, false, state);
     return object;
 }
+// Port only: split one unit from a floor stack; C inlines this idiom at
+// each extraction call site.
 export function detachFloorObjectUnit(object, state) {
     const quantity = objectQuantity(object);
     if (quantity <= 1) {
@@ -1055,6 +1083,8 @@ function linkMonsterObject(monster, object, inventory, atFront) {
     object.carrierMid = monster.m_id ?? null;
     return object;
 }
+// Part of C mkobj.c:add_to_minv(): the free-object entry with the merge
+// scan.
 export async function linkObjectToMonsterInventory(monster, object, { atFront = true, state = game } = {}) {
     requireLiveGame(state);
     if (!monster || !object)
@@ -1066,6 +1096,7 @@ export async function linkObjectToMonsterInventory(monster, object, { atFront = 
     return existing ? await mergeObjectStacks(existing, object, state)
         : linkMonsterObject(monster, object, inventory, atFront);
 }
+// Part of C mkobj.c:add_to_minv(): the synchronous constructor path.
 export async function linkCreatedObjectToMonsterInventory(monster, object, { atFront = true, state = game } = {}) {
     assertCreatedObject(object, state);
     const inventory = monster.minvent || monster.inventory || [];
@@ -1111,6 +1142,8 @@ export async function discardMonsterInventory(monster, uncreateArtifacts, state 
     }
     return discarded;
 }
+// Part of C mkobj.c:obj_extract_self(): extraction from every owner kind;
+// the minvent case lives in unlinkMonsterObject.
 export function unlinkObject(object, state = game) {
     if (object.where === 'floor') {
         remove_object(object, state);
@@ -1159,6 +1192,8 @@ export function unlinkObject(object, state = game) {
     delete object.carrierMid;
     return object;
 }
+// Port only: resolves the linked list that holds an object; C walks nobj
+// chains directly.
 // The chain that holds an object, for linking a neighbor beside it. Free
 // objects have none.
 function ownerChain(object, state) {
@@ -1332,6 +1367,8 @@ export function deallocateObject(object, state = game) {
     delete object.carrierMid;
     return true;
 }
+// Part of C mkobj.c:mksobj(): the shared newobj head — base fields and the
+// dknown and known defaults.
 // Shared head of C mkobj.c:mksobj() (newobj(), zeroobj, age, o_id, quan,
 // and unknow_object()'s dknown/known defaults): the bones tests and hero
 // gold construct plain objects through it too.  Identity allocation belongs
@@ -1366,14 +1403,18 @@ export function createObjectBase(otyp, objectId, currentTurn) {
 }
 // Object ownership inside containers.
 // C ref: mkobj.c:add_to_container().
+// Part of C mkobj.c:add_to_container(): the free-object precondition.
 function assertFreeObject(object) {
     if (object.where !== 'free')
         throw new Error(`add_to_container requires a free object, got ${object.where}`);
 }
+// Part of C mkobj.c:add_to_container(): the mergable scan.
 function containerStack(container, object, state) {
     container.contents ||= [];
     return container.contents.find(candidate => mergable(candidate, object, state));
 }
+// Part of C mkobj.c:add_to_container(): linking the object into the
+// container.
 function linkContainerObject(container, object) {
     object.where = 'contained';
     object.container = container;
@@ -1382,6 +1423,7 @@ function linkContainerObject(container, object) {
     (container.contents ||= []).unshift(object);
     return object;
 }
+// C mkobj.c:add_to_container():
 // C add_to_container(): the IMMEDIATE container's state decides the
 // release - an inventory- or monster-held container keeps the addition
 // held; any other container first releases the object. The release is
@@ -1399,6 +1441,7 @@ export async function addObjectToContainer(container, object, state = game) {
     return existing ? await mergeObjectStacks(existing, object, state)
         : linkContainerObject(container, object);
 }
+// Part of C mkobj.c:add_to_container(): the synchronous constructor path.
 // Constructor graphs cannot own a display continuation. The merge boundary
 // also verifies that no billed or worn object reaches this synchronous path.
 export async function addCreatedObjectToContainer(container, object, state = game) {
@@ -1418,6 +1461,7 @@ export async function addCreatedObjectToContainer(container, object, state = gam
 export const CONTAINER_TYPES = new Set([
     LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK, BAG_OF_TRICKS,
 ]);
+// C obj.h:Is_container():
 export function isContainer(object) {
     return !!object && CONTAINER_TYPES.has(object.otyp);
 }
@@ -1432,6 +1476,7 @@ export function containerWeight(object, state = game) {
             containerWeight(parent, state);
     }
 }
+// C mkobj.c:unsplitobj():
 // C unsplitobj(): a failed merge leaves the split piece beside its parent.
 export async function restoreRejectedSplit(transfer, state) {
     if (transfer.parent)
@@ -1520,11 +1565,13 @@ export async function useHornOfPlenty(horn, { tipping = false, target = null, } 
 // Splitting one quantity from an ordinary object stack.
 // C refs: mkobj.c splitobj()/unsplitobj().
 // ---------------------------------------------------------------------------
+// Port only: quantity accessor over the port's dual quan/quantity fields.
 export function objectQuantity(object) {
     if (!object)
         return 0;
     return Math.max(0, Math.trunc(object.quan ?? object.quantity ?? 1));
 }
+// Part of C mkobj.c:splitobj(): setting each half's quantity and weight.
 function setQuantity(object, count) {
     object.quan = object.quantity = count;
     object.owt = objectWeight(object);
@@ -1591,6 +1638,7 @@ export function splitObjectStack(object, count, state = game, objectId = null) {
 // Shared object and monster identity allocation.
 // C ref: mkobj.c next_ident().
 // ---------------------------------------------------------------------------
+// C mkobj.c:next_ident():
 // Object and monster identities share one counter.  Every source call must
 // pass through this boundary even when its caller only needs the RNG-visible
 // side effect and does not retain the returned id yet.
@@ -1601,6 +1649,7 @@ export function nextIdent(state = game) {
         state._nextIdent = rnd(2) + 1;
     return ident;
 }
+// C mkobj.c:nextoid():
 // C mkobj.c nextoid(): a split or bill copy keeps the old price adjustment.
 export function nextObjectId(oldObject, newObject, state = game) {
     const oldAdjustment = objectPriceAdjustment(oldObject, oldObject.o_id, state);
@@ -1630,12 +1679,16 @@ export async function rejoinObjectStack(parent, split, state = game) {
         return null;
     return await mergeObjectStacks(parent, split, state);
 }
+// Port only: resets the pending-split marker; C restores this context field
+// at its save boundaries.
 export function clearSplitObjects(state = game) {
     state.context.objsplit = { parent_oid: 0, child_oid: 0 };
 }
 // ---------------------------------------------------------------------------
 // Glob absorption. C ref: mkobj.c obj_absorb().
 // ---------------------------------------------------------------------------
+// Part of C mkobj.c:obj_absorb(): combining matter, knowledge flags, age
+// and the shrink timer.
 function combineGlobMatter(survivor, incoming, state) {
     const firstWeight = survivor.oeaten || survivor.owt;
     const secondWeight = incoming.oeaten || incoming.owt;
@@ -1663,6 +1716,7 @@ function combineGlobMatter(survivor, incoming, state) {
     const delay = Math.trunc(((firstDelay || 25) + (secondDelay || 25) + 1) / 2);
     startGlobTimeout(survivor, state, moves, delay);
 }
+// C mkobj.c:obj_absorb():
 // C obj_absorb(), distinct from merged(): billing precedes all changes,
 // then raw deallocation skips ordinary name, knowledge and bill folding.
 export async function absorbGlob(survivor, incoming, state = game, { publish = plineWithContinuation } = {}) {
@@ -1672,6 +1726,8 @@ export async function absorbGlob(survivor, incoming, state = game, { publish = p
     deallocateObject(incoming, state);
     return survivor;
 }
+// Port only: the glob otyp-range test; C stores the globby flag on the
+// object.
 function isGlobType(otyp) {
     return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
 }
@@ -1698,6 +1754,7 @@ function nearbyMergableGlob(glob, x, y, state, random) {
     }
     return null;
 }
+// C mkobj.c:pudding_merge_message():
 // C pudding_merge_message(): inventory merging remains noticeable while
 // blind; visible monster/container merges can intentionally say nothing.
 export async function announceGlobMerge(first, second, state = game, publish = plineWithContinuation) {
@@ -1723,6 +1780,8 @@ export async function announceGlobMerge(first, second, state = game, publish = p
             await publish(heard);
     }
 }
+// Part of C do.c:flooreffects(), mkobj.c:obj_meld(): a landing glob melds
+// with a neighboring glob.
 // C flooreffects()/obj_meld(): a free glob is always absorbed by a floor
 // glob, even when the landing glob is heavier. Otherwise it remains free.
 export async function meldLandingGlob(glob, x, y, { state = game, publish = plineWithContinuation, random = rn2, } = {}) {
@@ -1733,6 +1792,8 @@ export async function meldLandingGlob(glob, x, y, { state = game, publish = plin
     await announceGlobMerge(glob, nearby, state, publish);
     return await absorbGlob(nearby, glob, state, { publish });
 }
+// Part of C do.c:flooreffects(): the globby landing loop that melds every
+// neighboring glob.
 export async function meldNearbyFloorGlobs(glob, { state = game, publish = plineWithContinuation, random = rn2, } = {}) {
     let combined = glob;
     for (;;) {
@@ -1753,25 +1814,31 @@ export async function meldNearbyFloorGlobs(glob, { state = game, publish = pline
         await maybeUnhideAt(oldX, oldY, state);
     }
 }
+// Part of C mkobj.c:start_glob_timeout(): the shrink-timer scheduling.
 function scheduleNextGlobAttempt(glob, state, currentTurn, delay = 0) {
     stopObjectTimer(glob, OBJECT_TIMER_KIND.SHRINK_GLOB);
     const turns = delay > 0 ? delay : 23 + rn2(5);
     return scheduleObjectTimer(glob, OBJECT_TIMER_KIND.SHRINK_GLOB, currentTurn + turns, state);
 }
+// C mkobj.c:start_glob_timeout():
 export function startGlobTimeout(glob, state = game, currentTurn = state.moves ?? 0, delay = 0) {
     return scheduleNextGlobAttempt(glob, state, currentTurn, delay);
 }
+// Port only: resolves the immediate container; C follows the ocontainer
+// pointer.
 function parentContainer(object, state) {
     if (object.container)
         return object.container;
     return objectsInTimerGraph(state).find(candidate => candidate !== object && candidate.contents?.includes(object)) ?? null;
 }
+// Port only: resolves the carrying monster; C follows the ocarry pointer.
 function carryingMonster(object, state) {
     if (object.ocarry)
         return object.ocarry;
     return (state.level?.monsters || []).find(monster => monster.m_id === object.carrierMid
         || (monster.minvent || monster.inventory || []).includes(object)) ?? null;
 }
+// Port only: walks to the outermost container through the port's back-links.
 function outermostContainer(object, state) {
     let outer = object;
     const seen = new Set();
@@ -1784,6 +1851,7 @@ function outermostContainer(object, state) {
     }
     return outer;
 }
+// C zap.c:get_obj_location():
 function objectLocation(object, state) {
     const outer = outermostContainer(object, state);
     if (!outer)
@@ -1810,6 +1878,8 @@ function globIceState(glob, state) {
         return 'none';
     return outer.where === 'buried' ? 'buried' : 'on-ice';
 }
+// Part of C steal.c:remove_worn_item(): clearing every hero slot the object
+// occupied; shrinking_glob_gone reaches it.
 function clearHeroEquipment(object, state) {
     const slots = [
         'uwep', 'uswapwep', 'uquiver',
@@ -1862,6 +1932,8 @@ async function deleteGlob(glob, state) {
         return;
     deallocateObject(glob, state);
 }
+// Part of C mkobj.c:shrink_glob(): the partly-eaten name built before
+// shrinking.
 // shrink_glob() asks xname to include partly eaten food before reducing its mass.
 function shrinkingGlobName(glob, state) {
     const previous = state.iflags.partly_eaten_hack;
@@ -1876,6 +1948,7 @@ function shrinkingGlobName(glob, state) {
             state.iflags.partly_eaten_hack = previous;
     }
 }
+// C mkobj.c:shrink_glob(): the timer claim phase.
 export async function runClaimedGlobTimer(claimed, state = game, currentTurn = state.moves ?? 0) {
     if (!claimed || claimed.timer?.kind !== OBJECT_TIMER_KIND.SHRINK_GLOB)
         return null;
@@ -1986,6 +2059,8 @@ export async function runClaimedGlobTimer(claimed, state = game, currentTurn = s
         shrinkThreshold, gone, message,
     };
 }
+// Part of C mkobj.c:shrink_glob(): the completion tail — delete, reschedule
+// and the encumbrance message.
 export async function finishGlobTimer(event, state = game, currentTurn = state.moves ?? 0, publish = plineWithContinuation) {
     if (!event?.finishPending || !event.glob)
         return event;
@@ -2029,9 +2104,11 @@ export async function placeTreeFruit(x, y, state = game, random = rn2) {
 const WEIGHTED_CONTENT_TYPES = new Set([
     LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, STATUE,
 ]);
+// Part of C mkobj.c:weight(): reading obj->quan for the weight computation.
 export function quantity(object) {
     return object?.quan ?? object?.quantity ?? 1;
 }
+// C mkobj.c:weight():
 export function objectWeight(object) {
     if (!object)
         return 0;

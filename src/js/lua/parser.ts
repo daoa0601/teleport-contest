@@ -17,10 +17,13 @@ const binaryPrecedence: Readonly<Record<BinaryOperator, number>> = {
     '*': 10, '/': 10, '//': 10, '%': 10, '^': 12,
 };
 
+// C lparser.c:getbinopr(): classifies a token as a binary operator via the
+// precedence table (C switches over the token to a BinOpr).
 function isBinaryOperator(value: string | number): value is BinaryOperator {
     return typeof value === 'string' && Object.hasOwn(binaryPrecedence, value);
 }
 
+// C lparser.c:getunopr(): classifies a token as one of the four unary operators.
 function isUnaryOperator(value: string | number): value is UnaryOperator {
     return value === 'not' || value === '#' || value === '-' || value === '~';
 }
@@ -28,6 +31,8 @@ function isUnaryOperator(value: string | number): value is UnaryOperator {
 const rightAssociative = new Set(['..', '^']);
 const blockEnds = new Set(['end', 'else', 'elseif', 'until']);
 
+// C lparser.c:luaY_parser(): parses a whole chunk; the recursive-descent
+// sub-parsers below are the body of luaY_parser and its static helpers.
 export function parseLua(source: string, filename = '<lua>'): Program {
     const tokens = lexLua(source, filename);
     let cursor = 0;

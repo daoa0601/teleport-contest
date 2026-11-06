@@ -6,6 +6,8 @@ export function luaSyntaxError(
     return new SyntaxError(`${luaChunkId(chunkName)}:${line}: ${message} near ${near}`);
 }
 
+// C lobject.c:luaO_chunkid(): renders a chunk name for error messages,
+// truncated to LUA_IDSIZE.
 export function luaChunkId(source: string): string {
     // LUA_IDSIZE includes the terminating null byte.
     if (source.startsWith('=')) return source.slice(1, 60);
