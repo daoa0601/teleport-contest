@@ -3,6 +3,7 @@ import { CORPSE, FIGURINE, LOADSTONE, OBJECT_NAMES, STATUE } from './object_data
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string, validateSavedEntity, } from './saved_validation.js';
+// Port only: membership type-guard combinator for saved field domains.
 function oneOf(...values) {
     return (value) => values.some((candidate) => candidate === value);
 }
@@ -10,9 +11,11 @@ const objectWhere = oneOf('free', 'inventory', 'floor', 'contained', 'minvent', 
 const timerKind = oneOf('rot-organic', 'rot-corpse', 'revive-mon', 'zombify-mon', 'burn-object', 'hatch-egg', 'shrink-glob', 'fig-transform');
 const wornSlot = oneOf('uarm', 'uarmc', 'uarmf', 'uarmg', 'uarmh', 'uarms', 'uarmu', 'uskin', 'uamul', 'ublindf', 'left-ring', 'right-ring', 'helmet');
 const lostReason = oneOf(0, 1, 2, 3, 4);
+// Port only: accept a native object flag stored as boolean, 0, or 1.
 const objectBit = (value) => typeof value === 'boolean' || value === 0 || value === 1;
 // Native object indices include STRANGE_OBJECT (0) and unnamed appearances.
 const objectType = (value) => integer(value) && value >= 0 && value < OBJECT_NAMES.length;
+// Port only: saved object-timer shape check.
 function validTimer(value) {
     return closedFieldsMatch(value, {
         kind: timerKind,
@@ -21,6 +24,7 @@ function validTimer(value) {
         order: integer,
     });
 }
+// Port only: saved object-migration shape check.
 function validMigration(value) {
     const location = (entry) => closedFieldsMatch(entry, { dnum: integer, dlevel: integer });
     return closedFieldsMatch(value, {
@@ -30,6 +34,7 @@ function validMigration(value) {
         speciesFlags: optional(integer),
     });
 }
+// Port only: saved levitation-state shape check.
 function validLevitationState(value) {
     return closedFieldsMatch(value, {
         hasSource: boolean,
@@ -40,6 +45,7 @@ function validLevitationState(value) {
         flyingBlocked: boolean,
     });
 }
+// Port only: gate every decoded object through its saved-field domain.
 export function validSavedObject(value, context) {
     const checkedContents = context.acyclicObjectContents ??= new WeakSet();
     if (!contentsAreAcyclic(value, checkedContents, new WeakSet())) {
@@ -166,6 +172,7 @@ export function validSavedObject(value, context) {
         empty: optional(boolean),
     });
 }
+// Port only: reject cycles among a saved object's contents.
 // Parent and carrier references legitimately point back to their contents.
 // Only traversal through contents must be acyclic. Cache that check for
 // this decoded graph; every object's fields still undergo full validation.

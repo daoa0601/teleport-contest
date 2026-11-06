@@ -32,6 +32,7 @@ const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
 const FLAMING_SPECIES = new Set(['fire vortex', 'flaming sphere', 'fire elemental', 'salamander']
     .map(name => MONSTER_NAME.indexOf(name)));
+// C dog.c:dogfood(): rank an object as pet food, from DOGFOOD to TABU.
 // Lower ranks are preferred. TABU forbids eating or fetching; UNDEF is merely
 // unsuitable. The object resistance check belongs here even for ordinary food.
 export function dogFood(monster, object, random, calls, state) {
@@ -52,6 +53,7 @@ export function dogFood(monster, object, random, calls, state) {
         return foodQuality(monster, object, state);
     return nonfoodQuality(monster, object, state);
 }
+// Part of C dog.c:dogfood(): the FOOD_CLASS branch.
 function foodQuality(monster, object, state) {
     const carni = carnivorous(monster.mnum), herbi = herbivorous(monster.mnum);
     const flesh = [CORPSE, TIN, EGG].includes(object.otyp) ? object.corpsenm : undefined;
@@ -110,6 +112,8 @@ function foodQuality(monster, object, state) {
                 : herbi ? ACCFOOD : MANFOOD;
     }
 }
+// Part of C dog.c:dogfood(): the ghoul preference for old corpses and
+// stale eggs.
 function ghoulFood(object, flesh, starving, state) {
     if (object.otyp === CORPSE) {
         if (oldCorpse(object, state))
@@ -123,6 +127,7 @@ function ghoulFood(object, flesh, starving, state) {
     }
     return TABU;
 }
+// Part of C dog.c:dogfood(): the CORPSE case of the food switch.
 function corpseQuality(monster, object, flesh, starving, carni, herbi, state) {
     if ((oldCorpse(object, state) && MONSTER_SYMBOL[monster.mnum] !== S_FUNGUS)
         || (acidic(flesh ?? -1) && !monsterHasAcidResistance(monster))
@@ -143,6 +148,7 @@ function corpseQuality(monster, object, flesh, starving, carni, herbi, state) {
     }
     return carni ? CADAVER : MANFOOD;
 }
+// Part of C dog.c:dogfood(): peek at iced corpse age to spot an old corpse.
 function oldCorpse(object, state) {
     // Ice slows decay without changing the object's timers or stored age.
     const age = object.on_ice
@@ -150,6 +156,7 @@ function oldCorpse(object, state) {
     return age + 50 <= state.moves
         && object.corpsenm !== PM_LIZARD && object.corpsenm !== PM_LICHEN;
 }
+// Part of C dog.c:dogfood(): the non-food default branch.
 function nonfoodQuality(monster, object, state) {
     if (object.otyp === AMULET_OF_STRANGULATION || object.otyp === RIN_SLOW_DIGESTION)
         return TABU;

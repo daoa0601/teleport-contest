@@ -27,6 +27,7 @@ import {
     validateSavedEntity,
 } from './saved_validation.js';
 
+// Port only: membership type-guard combinator for saved field domains.
 function oneOf<const Values extends readonly (string | number)[]>(
     ...values: Values
 ): Check<Values[number]> {
@@ -70,6 +71,7 @@ const wornSlot: Check<WornObjectSlot> = oneOf(
     'helmet',
 );
 const lostReason: Check<ObjectLostReason> = oneOf(0, 1, 2, 3, 4);
+// Port only: accept a native object flag stored as boolean, 0, or 1.
 const objectBit = (value: unknown): value is boolean | 0 | 1 =>
     typeof value === 'boolean' || value === 0 || value === 1;
 
@@ -77,6 +79,7 @@ const objectBit = (value: unknown): value is boolean | 0 | 1 =>
 const objectType: Check<number> = (value): value is number =>
     integer(value) && value >= 0 && value < OBJECT_NAMES.length;
 
+// Port only: saved object-timer shape check.
 function validTimer(value: unknown): value is ObjectTimer {
     return closedFieldsMatch<ObjectTimer>(value, {
         kind: timerKind,
@@ -86,6 +89,7 @@ function validTimer(value: unknown): value is ObjectTimer {
     });
 }
 
+// Port only: saved object-migration shape check.
 function validMigration(value: unknown): value is ObjectMigration {
     const location: Check<ObjectMigration['source']> = (
         entry,
@@ -99,6 +103,7 @@ function validMigration(value: unknown): value is ObjectMigration {
     });
 }
 
+// Port only: saved levitation-state shape check.
 function validLevitationState(value: unknown): value is LevitationState {
     return closedFieldsMatch<LevitationState>(value, {
         hasSource: boolean,
@@ -110,6 +115,7 @@ function validLevitationState(value: unknown): value is LevitationState {
     });
 }
 
+// Port only: gate every decoded object through its saved-field domain.
 export function validSavedObject(value: unknown, context: SavedEntityContext): value is GameObject {
     const checkedContents = context.acyclicObjectContents ??= new WeakSet<object>();
     if (!contentsAreAcyclic(value, checkedContents, new WeakSet<object>())) {
@@ -250,6 +256,7 @@ export function validSavedObject(value: unknown, context: SavedEntityContext): v
     });
 }
 
+// Port only: reject cycles among a saved object's contents.
 // Parent and carrier references legitimately point back to their contents.
 // Only traversal through contents must be acyclic. Cache that check for
 // this decoded graph; every object's fields still undergo full validation.

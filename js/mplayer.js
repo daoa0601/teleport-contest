@@ -30,6 +30,7 @@ const PLATE_MAIL = OBJECT_NAMES.indexOf('plate mail');
 const SHURIKEN = OBJECT_NAMES.indexOf('shuriken');
 const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
+// C mplayer.c:create_mplayers(): scatter player monsters near the hero.
 export async function createPlayerMonsters(count, special) {
     while (count-- > 0) {
         const species = rn1(PM_WIZARD - PM_ARCHEOLOGIST + 1, PM_ARCHEOLOGIST);
@@ -43,6 +44,7 @@ export async function createPlayerMonsters(count, special) {
         await createPlayerMonster(species, x, y, special);
     }
 }
+// C mplayer.c:mk_mplayer(): create one equipped player monster.
 export async function createPlayerMonster(species, x, y, special) {
     if (!monsterIsPlayerMonster(species))
         return null;
@@ -73,6 +75,7 @@ export async function createPlayerMonster(species, x, y, special) {
         await giveMonsterStartingObject(monster, rnd_misc_item(monster));
     return monster;
 }
+// Part of C mplayer.c:mk_mplayer(): the per-role weapon and armor picks.
 function selectPlayerEquipment(species) {
     let weapon = !rn2(2) ? LONG_SWORD : rndClass(SPEAR, BULLWHIP);
     let armor = rndClass(GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL);
@@ -173,6 +176,7 @@ function selectPlayerEquipment(species) {
     }
     return { weapon, armor, cloak, helm, shield };
 }
+// Part of C mplayer.c:mk_mplayer(): create and enchant the chosen weapon.
 async function givePlayerWeapon(monster, type, special) {
     if (type === STRANGE_OBJECT)
         return;
@@ -194,6 +198,8 @@ async function givePlayerWeapon(monster, type, special) {
         object.spe = rnd(4);
     await addCreatedObjectToMonsterInventory(monster, object);
 }
+// Part of C mplayer.c:mk_mplayer(): the special (Ascension-worthy)
+// equipment tail for a player monster.
 async function equipSpecialPlayer(monster, equipment) {
     if (!rn2(10))
         await giveMonsterStartingObject(monster, rn2(3) ? LUCKSTONE : LOADSTONE);

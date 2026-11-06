@@ -5,6 +5,7 @@ import { putMessageHistory } from './topl.js';
 import { rn2 } from './rng.js';
 import { NOVEL_PASSAGES } from './tribute_data.js';
 import { showTextMenuOverlay } from './windows.js';
+// C files.c:choose_passage(): pick an unread passage of a novel.
 export function selectTributePassage(count, bookId, state) {
     const tracking = state.context.novel ||= { id: 0, count: 0, pasg: [] };
     if (tracking.id !== bookId || !tracking.count) {
@@ -28,6 +29,7 @@ export function selectTributePassage(count, bookId, state) {
     tracking.pasg[index] = lastPassage;
     return passage;
 }
+// C files.c:read_tribute(): show a novel passage and file its attribution.
 export async function readNovelTribute(book, title, state = game) {
     const passages = NOVEL_PASSAGES[title];
     if (!passages?.length) {

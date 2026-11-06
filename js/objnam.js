@@ -64,6 +64,8 @@ const japaneseItems = new Map([
 export function japaneseItemName(type) {
     return japaneseItems.get(type);
 }
+// Part of C objnam.c:xname_flags(): its observation prologue (dknown,
+// beatitude, artifact identity).
 // C xname_flags() observation, kept separate from reusable name formatting.
 // distant_name() suppresses new appearance knowledge, not existing knowledge.
 export function observeObjectForNaming(object, { distant = false, source = object, state = game, } = {}) {
@@ -75,6 +77,7 @@ export function observeObjectForNaming(object, { distant = false, source = objec
     observeBucForNaming(object, state);
     findArtifact(object, { source, state });
 }
+// Part of C objnam.c:distant_name(): the distance-dependent observation.
 // C distant_name(): only the appearance-observation step depends on distance.
 export function observeDistantObjectForNaming(object, state = game) {
     const location = getObjectLocation(object, state);
@@ -87,6 +90,7 @@ export function observeDistantObjectForNaming(object, state = game) {
         distant: !visible || (!object.oartifact && !close), state,
     });
 }
+// C objnam.c:distant_name(): format a name as seen from a distance.
 // C distant_name() also suppresses inscriptions during final map browsing.
 // Restore the identity before returning; it still selects inventory text.
 export async function distantObjectName(object, format, state = game) {
@@ -144,6 +148,7 @@ export function fruitFromName(name, { exact = false, state = game } = {}) {
     }
     return result;
 }
+// Port only: the per-game fruit list (C gf.ffruit) and preferred name.
 // C gf.ffruit and svp.pl_fruit: the fruit chain and the preferred name only
 // exist after options initialization; naming before that is a port error.
 export function fruitRegistry(state) {
@@ -151,6 +156,7 @@ export function fruitRegistry(state) {
         throw new Error('Fruit registry has not been initialized');
     return state.fruits;
 }
+// Port only: the preferred fruit name (C svp.pl_fruit).
 export function preferredFruitName(state) {
     if (state.fruitName === undefined)
         throw new Error('Preferred fruit has not been initialized');
@@ -269,6 +275,8 @@ export function singularObjectName(object, state = game) {
     return object.otyp === CORPSE ? corpseName(object, { singular: true })
         : objectName(object, state);
 }
+// C objnam.c:cxname(): contact-feedback name with quantity but no count
+// prefix.
 // C cxname()/xname(): contact feedback observes the object and retains its
 // quantity, poison, physical details, and personal name without a count prefix.
 export function objectCombatName(object, { state = game, includeCorpseSpecies = true, } = {}) {
@@ -328,6 +336,7 @@ export function killerObjectName(object, state = game) {
     return objectUnique(object.otyp) ? definiteName(name, state)
         : withIndefiniteArticle(name);
 }
+// Part of C objnam.c:corpse_xname(): the unique-species possessive test.
 function corpseMonsterIsUnique(species) {
     if (species === undefined)
         return false;
@@ -353,6 +362,7 @@ export function objectNeedsFullIdentification(object) {
         return false;
     return ['rust', 'burn', 'rot', 'corrosion', 'crack'].some(kind => objectIsVulnerableToErosion(object, kind));
 }
+// C objnam.c:corpse_xname(): corpse species with adjectives and articles.
 // C corpse_xname(): corpse species is visible even when the object type has
 // not been discovered. Possessive species put adjectives after their name.
 export function corpseName(object, { adjective = '', includeArticle = false, singular = false, definite = false, omitPrefix = false, } = {}) {
@@ -375,6 +385,8 @@ export function corpseName(object, { adjective = '', includeArticle = false, sin
     return !omitPrefix && includeArticle && !personal && !unique && !definite && !plural
         && !/^\d/.test(adjective) ? withIndefiniteArticle(name) : name;
 }
+// Part of C objnam.c:xname(): the tin/figurine/statue/ball/boulder/glob/
+// holy-water noun overrides.
 function physicalObjectNoun(object, noun, state) {
     const override = state.iflags.override_ID || object.overrideIdentified;
     if (object.otyp === TIN && (object.known || override)) {
@@ -449,6 +461,7 @@ export function definiteName(name, state = game) {
         return `the ${name}`;
     return name;
 }
+// C objnam.c:simple_typename(): the type-only name.
 // C simple_typename()/obj_typename(): type knowledge alone selects the name.
 // Potions, rings, scrolls, wands and spellbooks retain their generic noun
 // until identified; other unknown types use their appearance.
@@ -502,6 +515,7 @@ export function mimicObjectName(monster, state = game) {
         return 'whatcha-may-callit';
     return appearance === GOLD_PIECE ? 'gold' : simpleObjectTypeName(appearance, state);
 }
+// C objnam.c:obj_typename(): type name, call name, and appearance.
 // C obj_typename(): discoveries-style type name, call name, and appearance.
 export function objectTypeName(otyp, state = game) {
     const oclass = objectClassForType(otyp);
@@ -521,6 +535,8 @@ export function objectTypeName(otyp, state = game) {
         name += ` (${appearance})`;
     return name;
 }
+// C objnam.c:minimal_xname(): a bare-object name that hides personal and
+// call names.
 // C minimal_xname() builds a bare object so personal names, call names,
 // quantity, and statue identity cannot reveal more than the known type.
 export function minimalObjectName(object, state = game) {
@@ -536,11 +552,13 @@ export function minimalObjectName(object, state = game) {
     };
     return objectName(bare, state, { minimal: true });
 }
+// Part of C objnam.c:xname(): the samurai Japanese-name substitution.
 function actualObjectTypeName(object, state) {
     const ordinaryName = OBJ_NAME(object.otyp) || object.name || 'object';
     return state.urole?.key === 'samurai'
         ? japaneseItemName(object.otyp) || ordinaryName : ordinaryName;
 }
+// Part of C objnam.c:xname_flags(): its GEM_CLASS branch.
 // C xname_flags() GEM_CLASS. Inventory adds quantity and individual names;
 // minimal_xname suppresses only the user-supplied type call name here.
 export function gemObjectName(object, state = game, { minimal = false } = {}) {
@@ -558,6 +576,7 @@ export function gemObjectName(object, state = game, { minimal = false } = {}) {
         ?? actualName;
     return gemPresentationName(object.otyp, actualName, appearance);
 }
+// Part of C objnam.c:xname_flags(): its ARMOR_CLASS branch.
 // C xname_flags() ARMOR_CLASS. The concrete type owns pair/set grammar.
 export function armorObjectName(object, state, { minimal = false } = {}) {
     const actualName = actualObjectTypeName(object, state);
@@ -580,12 +599,14 @@ export function armorObjectName(object, state, { minimal = false } = {}) {
             : OBJ_DESCR(object.otyp, state) ?? actualName;
     return armorPresentationName(noun, object);
 }
+// C objnam.c:simpleonames(): simple name without personal or call names.
 // C simpleonames(): suppress personal/call names and the quantity prefix.
 export function simpleObjectName(object, state = game) {
     const noun = minimalObjectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
     return quantity === 1 ? noun : pluralizeObjectNoun(object, noun);
 }
+// C objnam.c:the_unique_obj(): does the object claim its unique article?
 // C the_unique_obj(): an unidentified imitation must look like the real Amulet.
 export function objectLooksUnique(object, state = game) {
     const override = !!state.iflags.override_ID;
@@ -596,6 +617,7 @@ export function objectLooksUnique(object, state = game) {
         return true;
     return !!objectUnique(object.otyp) && (!!known || object.otyp === AMULET_OF_YENDOR);
 }
+// C objnam.c:ansimpleoname(): an article for a simple singular name.
 // C ansimpleoname(): add an article to singular simple names.
 export function simpleObjectNameWithArticle(object, state = game) {
     const noun = simpleObjectName(object, state);
@@ -607,6 +629,8 @@ export function simpleObjectNameWithArticle(object, state = game) {
         return definiteName(noun, state);
     return withIndefiniteArticle(noun);
 }
+// C objnam.c:yname(): the your-object name.
+// Also C objnam.c:yobjnam(): the count-prefix form for messages.
 export function ownedObjectName(object, state = game, { capitalized = true, includeQuantity = false } = {}) {
     if (object.otyp !== CORPSE)
         observeObjectForNaming(object, { state });
@@ -624,10 +648,14 @@ export function ownedObjectName(object, state = game, { capitalized = true, incl
         ? noun : pluralizeObjectNoun(object, noun)}`;
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
+// C objnam.c:ysimple_name(): your-object name from the type alone.
+// Also C objnam.c:Ysimple_name2(): the capitalized variant.
 // C ysimple_name()/Ysimple_name2(): ownership with only the known type name.
 export function ownedSimpleObjectName(object, state = game, { capitalized = true } = {}) {
     return objectOwnershipPrefix(object, state, { capitalized }) + minimalObjectName(object, state);
 }
+// Part of C objnam.c:safe_qbuf(): a question built on the owned name
+// forms.
 export async function ownedObjectQuestion(object, { prefix, suffix, fallback, capitalized }, state = game) {
     return await objectQuestion(object, {
         prefix, suffix, fallback,
@@ -635,6 +663,8 @@ export async function ownedObjectQuestion(object, { prefix, suffix, fallback, ca
         shortFormat: (item, nameState) => ownedSimpleObjectName(item, nameState, { capitalized }),
     }, state);
 }
+// C objnam.c:safe_qbuf(): fit a name into its question, shortening via
+// short_oname.
 // C safe_qbuf()/short_oname(): reserve the question before shortening names.
 // `reserve` models a standalone short_oname() call whose length limit comes
 // from a fixed worst-case prompt rather than this question's own text.
@@ -750,6 +780,7 @@ export async function objectQuestion(object, { prefix, suffix, fallback, format,
     });
     return question(name.length <= limit ? name : fallback ?? name);
 }
+// Part of C objnam.c:xname(): pluralize a multi-object stack name.
 // Native fruit labels imported from bones can already be plural. xname
 // singularizes those labels before pluralizing a multi-object stack.
 export function pluralizeObjectNoun(object, noun) {
@@ -778,6 +809,7 @@ export function objectHasPersonalName(object, state = game) {
         .includes(object.oclass) || isWeaponTool(object);
     return !!object.rknown || !showsProofing || !is_damageable(object);
 }
+// C obj.h:is_plural(): plural name even as a single object.
 // C objnam.c:Yobjnam2(), for messages such as "Your 12 arrows glow".
 // C obj.h is_plural(): the discovered Eyes are plural even as one object.
 export function objectNameIsPlural(object, state = game) {
@@ -785,6 +817,7 @@ export function objectNameIsPlural(object, state = game) {
         || (object.oartifact === requiredArtifact('The Eyes of the Overworld', state).id
             && !!state._artifactDiscoveries?.includes(object.oartifact));
 }
+// C objnam.c:aobjnam(): cxname with a count and a conjugated verb.
 // C aobjnam(): cxname with a stack count and an optional conjugated verb.
 export function objectAction(object, verb, state = game) {
     const name = objectCombatName(object, { state });
@@ -792,17 +825,21 @@ export function objectAction(object, verb, state = game) {
     const subject = quantity === 1 ? name : `${quantity} ${name}`;
     return objectActionText(object, subject, verb, state);
 }
+// C objnam.c:Tobjnam(): The(cxname) with a conjugated verb.
 // C Tobjnam(): The(xname), without a count or corpse species.
 export function definiteObjectAction(object, verb, state = game) {
     const name = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
     const subject = name.charAt(0).toUpperCase() + name.slice(1);
     return objectActionText(object, subject, verb, state);
 }
+// Part of C objnam.c:aobjnam(), Tobjnam(), Yobjnam2(): the verb
+// conjugation through is_plural.
 function objectActionText(object, subject, verb, state) {
     if (!verb)
         return subject;
     return `${subject} ${objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb)}`;
 }
+// C objnam.c:Yobjnam2(): your-object name with an optional verb.
 export function ownedObjectAction(object, verb, state = game, { capitalized = true } = {}) {
     if (object.otyp !== CORPSE)
         observeObjectForNaming(object, { state });
@@ -840,6 +877,7 @@ const CLASS_PRESENTATION = {
     [GEM_CLASS]: 'Gems/Stones',
     [ROCK_CLASS]: 'Boulders',
 };
+// Part of C objnam.c:xname_flags(): unseen-description class nouns.
 // C objnam.c:xname_flags(): several shuffled-description classes collapse to
 // their class noun when this particular object has not been seen.  Global
 // type knowledge does not override `dknown` here; a blind hero can know which
@@ -862,6 +900,7 @@ export function unseenObjectNoun(object) {
             return object?.name || OBJ_NAME(object?.otyp) || 'object';
     }
 }
+// Port only: read the per-game shuffled description.
 function currentDescription(otyp) {
     return OBJ_DESCR(otyp);
 }
@@ -874,18 +913,23 @@ export function erosionMatters(object) {
         return true;
     return isWeaponTool(object);
 }
+// Part of C objnam.c:readobjnam(): the primary erosion acceptance test.
 function objectAcceptsPrimaryErosion(object) {
     return objectIsFlammable(object) || objectIsRustprone(object)
         || objectIsCrackable(object);
 }
+// Part of C objnam.c:readobjnam(): the secondary erosion acceptance test.
 function objectAcceptsSecondaryErosion(object) {
     return objectIsCorrodeable(object) || objectIsRottable(object);
 }
+// C objnam.c:rnd_otyp_by_namedesc(): draw an object type by name or
+// description.
 // C adds xtra_prob=1 for readobjnam() so 0%-generation objects remain
 // wishable.  The draw is over total probability, not candidate count.
 export function rndObjectTypeByName(name, xtraProb = 1) {
     return randomTypeByDescription(name, RANDOM_CLASS, xtraProb);
 }
+// C objnam.c:readobjnam(): parse a wish and construct the object.
 export async function readObjectName(text, { wizardWish = false } = {}) {
     const parsed = parseWishText(text);
     if (['nothing', 'nil', 'none'].includes(text.trim().toLowerCase()))
@@ -1006,6 +1050,8 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
         object, parsed, lookupOtyp, finalOtyp: object.otyp, artifact,
     };
 }
+// Part of C objnam.c:readobjnam(): the nowish and quest-artifact
+// substitutions.
 function permittedWishType(type) {
     switch (type) {
         case AMULET_OF_YENDOR: return FAKE_AMULET_OF_YENDOR;
@@ -1016,6 +1062,7 @@ function permittedWishType(type) {
         default: return oc_nowish(type) ? null : type;
     }
 }
+// Part of C objnam.c:readobjnam(): the enchantment and charge adjustment.
 function applyWishEnchantment(object, parsed, wizardWish, luck) {
     const requested = parsed.charges ?? parsed.enchantment;
     // A request for -0 still curses the item, as a negative C spesgn does.
@@ -1071,6 +1118,7 @@ function applyWishEnchantment(object, parsed, wizardWish, luck) {
     }
     return sign;
 }
+// Part of C objnam.c:readobjnam(): the requested beatitude.
 function applyWishBlessing(object, parsed, wizardWish, luck, enchantmentSign) {
     if (parsed.buc === 'cursed') {
         object.blessed = false;
@@ -1085,6 +1133,8 @@ function applyWishBlessing(object, parsed, wizardWish, luck, enchantmentSign) {
         object.cursed = true;
     }
 }
+// Part of C objnam.c:readobjnam(): the requested quantity, glob weight,
+// and stack limit.
 async function applyWishQuantity(object, parsed, wizardWish) {
     let count = parsed.count;
     if (object.globby) {
@@ -1115,6 +1165,7 @@ async function applyWishQuantity(object, parsed, wizardWish) {
     if (allowed)
         object.quan = count;
 }
+// Part of C objnam.c:makeplural(): pair and class-compound plurals.
 function pluralizePair(name) {
     if (name.startsWith('pair of '))
         return `pairs of ${name.slice('pair of '.length)}`;
@@ -1131,6 +1182,7 @@ const PLAIN_GEMSTONE_NAMES = new Set([
     'dilithium crystal', 'ruby', 'diamond', 'sapphire',
     'black opal', 'emerald', 'opal',
 ]);
+// Part of C objnam.c:xname(): the gem appearance word and stone suffix.
 function gemPresentationName(otyp, realName, description) {
     if (description) {
         const classNoun = objectMaterial(otyp) === 21 ? 'stone' : 'gem';
@@ -1141,6 +1193,8 @@ function gemPresentationName(otyp, realName, description) {
             && !PLAIN_GEMSTONE_NAMES.has(realName));
     return needsStone ? `${realName} stone` : realName;
 }
+// Port only: menu presentation of an object's unknown appearance, built
+// from xname grammar.
 export function wishedObjectPresentation(object) {
     const otyp = object.otyp;
     const cls = objectClassForType(otyp);
@@ -1202,12 +1256,14 @@ export function wishedObjectPresentation(object) {
             ? OBJECT_SPELL_CATEGORY[otyp] : undefined,
     };
 }
+// Port only: checked read of an object type's native name.
 function requireObjectName(otyp) {
     const name = OBJ_NAME(otyp);
     if (!name)
         throw new RangeError(`Object type ${otyp} has no native name`);
     return name;
 }
+// Port only: checked lookup of a required artifact.
 function requiredArtifact(name, state) {
     const artifact = artifactByName(name, state);
     if (!artifact)
@@ -1390,6 +1446,8 @@ export function parseWishText(text) {
     parsed.originalName = prefixes + remaining;
     return parsed;
 }
+// Part of C objnam.c:readobjnam_postparse1(): pair/set/glob/species noun
+// handling.
 // Called ranges and the Amulet rule skip this part of postparse1. The lookup
 // owner decides when to advance here rather than parsing every noun eagerly.
 export function parseWishNoun(parsed) {
@@ -1438,6 +1496,8 @@ export function parseWishNoun(parsed) {
     parsed.unphaseable = remaining.includes('unphaseable ') || remaining.includes('nonpasswall ');
     return 'lookup';
 }
+// Part of C objnam.c:readobjnam_postparse1(): the fruit reparsing of food
+// prefixes.
 // Fruit names can contain ordinary object modifiers. C reparses only food
 // prefixes and restores these values after a case-sensitive fruit match.
 function parseFruitWish(text) {
@@ -1483,6 +1543,8 @@ function parseFruitWish(text) {
     return { name, count: count || null, partlyEaten,
         buc: cursed ? 'cursed' : uncursed ? 'uncursed' : blessed ? 'blessed' : null };
 }
+// Part of C objnam.c:readobjnam_postparse1(): corpse/statue/figurine/tin
+// species extraction.
 function parseWishSpecies(text, parsed) {
     const depicted = /^(corpse|statue|figurine) of (?:an? |the )?(male|female|neuter) (.+)$/i.exec(text);
     if (depicted) {
@@ -1537,11 +1599,14 @@ function parseWishSpecies(text, parsed) {
     }
     return text;
 }
+// Port only: mirror a noun rewrite into the saved original wish text.
 function rewriteOriginalNoun(parsed, before, after) {
     if (before === after)
         return;
     parsed.originalName = parsed.originalName.slice(0, -before.length) + after;
 }
+// Part of C objnam.c:readobjnam_postparse1(): record the depicted species
+// and its gender.
 function recordWishSpecies(parsed, match) {
     parsed.monsterSpecies = match.mnum;
     // C aliases always replace the hint; canonical neutral names preserve it.
@@ -1637,6 +1702,8 @@ const alternateSpellings = [
     ['luck stone', objects.LUCKSTONE], ['load stone', objects.LOADSTONE],
     ['touch stone', objects.TOUCHSTONE], ['flintstone', objects.FLINT],
 ];
+// Part of C objnam.c:readobjnam(): the type-lookup jumps across the
+// postparse stages.
 // Follow readobjnam's jumps: an early type or rejection ends lookup; class
 // parsing goes directly to name search; only unclassified nouns try ranges.
 export function lookupWishType(parsed, { wizardWish = false, state = game, } = {}) {
@@ -1706,6 +1773,8 @@ export function lookupWishType(parsed, { wizardWish = false, state = game, } = {
     const rangeResult = parseWishRange(parsed, search);
     return rangeResult ?? searchWishNames(parsed, search, state);
 }
+// Part of C objnam.c:readobjnam_postparse1(): the "class potion, scroll
+// of class" search with its wrapper exceptions.
 function parseWishClass(search, state) {
     const wrapperException = /^(?:enchant |destroy |detect food|food detection|ring mail|studded leather armor|leather armor|tooled horn|food ration|meat ring)/i;
     if (wrapperException.test(search.name))
@@ -1843,15 +1912,18 @@ function searchWishNames(parsed, search, state) {
     }
     return { kind: 'unresolved', name: search.name };
 }
+// Port only: the found-type WishLookup form.
 function foundWishType(type) {
     return { kind: 'object', type, fruit: null, artifact: null };
 }
+// Port only: mirror a noun rewrite into the search's original name.
 function rewriteSearchNoun(search, name) {
     if (name === search.name)
         return;
     search.originalName = search.originalName.slice(0, search.originalName.length - search.name.length) + name;
     search.name = name;
 }
+// Part of C objnam.c:readobjnam(): the polearm and hammer fallback draws.
 // Native tries these only after wizard terrain lookup fails.
 export function randomUnqualifiedWishType(name) {
     if (/^polearm/i.test(name))
@@ -1896,14 +1968,17 @@ export function randomTypeByDescription(name, oclass = RANDOM_CLASS, extraProbab
     }
     return matches.at(-1)?.type ?? null;
 }
+// C objnam.c:rnd_otyp_by_wpnskill(): a random weapon of one skill.
 function randomWeaponBySkill(skill) {
     const matches = objects.OBJECT_NAMES.flatMap((name, type) => name
         && objectClassForType(type) === WEAPON_CLASS && objects.objectSkill(type) === skill ? [type] : []);
     return matches.length ? matches[rn2(matches.length)] ?? null : null;
 }
+// Part of C objnam.c:wishymatch(): the space and dash insensitive compare.
 function fuzzyEqual(first, second) {
     return first.replace(/[ -]/g, '').toLowerCase() === second.replace(/[ -]/g, '').toLowerCase();
 }
+// Part of C objnam.c:wishymatch(): the "X of Y" inversion.
 function invertedName(name) {
     const index = name.toLowerCase().indexOf(' of ');
     return index < 0 ? null : `${name.slice(index + 4)} ${name.slice(0, index)}`;
@@ -1937,6 +2012,7 @@ function wishMatches(request, canonical, invert) {
         return fuzzyEqual(request.replace(/abilities$/i, 'ability'), canonical);
     return canonical === 'aluminum' && request.toLowerCase() === 'aluminium';
 }
+// Port only: name-to-otyp lookup for a wish-table constant.
 function objectType(name) {
     const type = objects.OBJECT_NAMES.indexOf(name);
     if (type < 0)
@@ -1946,6 +2022,7 @@ function objectType(name) {
 // ---------------------------------------------------------------------------
 // C objnam.c:readobjnam(), physical modifiers after object generation.
 // ---------------------------------------------------------------------------
+// Part of C objnam.c:readobjnam(): light the wished lamp or candle.
 export function lightWishedObject(object, parsed) {
     if (!parsed.lit || ![OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN,
         TALLOW_CANDLE, WAX_CANDLE, POT_OIL].includes(object.otyp))
@@ -1954,6 +2031,8 @@ export function lightWishedObject(object, parsed) {
     beginObjectBurn(object);
     unlinkObject(object);
 }
+// Part of C objnam.c:readobjnam(): towel, poison, trap, empty, lock,
+// grease, and dilution modifiers.
 export async function applyWishProperties(object, parsed, wizardWish, luck) {
     if (object.otyp === TOWEL && parsed.wetness)
         object.spe = parsed.wetness;
@@ -1987,6 +2066,8 @@ export async function applyWishProperties(object, parsed, wizardWish, luck) {
     if (parsed.diluted && object.oclass === POTION_CLASS)
         object.odiluted = object.otyp !== POT_WATER;
 }
+// Part of C objnam.c:readobjnam(): partly-eaten and heavy weight
+// adjustments.
 export async function finishWishWeight(object, parsed) {
     if (parsed.partlyEaten && object.oclass === FOOD_CLASS) {
         const nutrition = obj_nutrition(object);
@@ -2007,6 +2088,7 @@ const G_UNIQ = 0x1000;
 const PM_GRAY_DRAGON = MONSTER_NAME.indexOf('gray dragon');
 const PM_YELLOW_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
 const SCALE_MAIL = OBJECT_NAMES.indexOf('scale mail');
+// Part of C objnam.c:readobjnam(): a pudding corpse becomes a glob.
 export function substituteWishedGlob(type, parsed) {
     const species = parsed.monsterSpecies;
     if (type !== CORPSE || species === null || monsterClassSymbol(species) !== 'P')
@@ -2014,6 +2096,8 @@ export function substituteWishedGlob(type, parsed) {
     parsed.monsterSpecies = null;
     return GLOB_OF_GRAY_OOZE + species - MONSTER_NAME.indexOf('gray ooze');
 }
+// Part of C objnam.c:readobjnam(): the depicted species for tin, corpse,
+// egg, figurine, statue, and scale mail.
 export async function applyWishSpecies(object, parsed, wizardWish) {
     const requestedSpecies = parsed.monsterSpecies;
     if ([STATUE, FIGURINE, CORPSE].includes(object.otyp)) {
@@ -2074,10 +2158,12 @@ export async function applyWishSpecies(object, parsed, wizardWish) {
             break;
     }
 }
+// Part of C objnam.c:readobjnam(): the requested tin variety.
 export function applyWishedTinVariety(object, parsed, wizardWish) {
     if (object.otyp === TIN && parsed.tin_variety !== null && (rn2(4) || wizardWish))
         set_tin_variety(object, parsed.tin_variety);
 }
+// Part of C objnam.c:readobjnam(): the corpse/statue gender flags.
 function wishedGender(species, parsed) {
     if (species === null)
         return CORPSTAT_RANDOM;
@@ -2097,6 +2183,8 @@ function wishedGender(species, parsed) {
 // C objnam.c:wizterrainwish(). Terrain wishes use the ordinary map, trap,
 // light, and liquid-effect owners, then refresh the hero's changed square.
 // ---------------------------------------------------------------------------
+// Part of C objnam.c:wizterrainwish(): the bear-trap or land-mine
+// object-versus-terrain choice.
 // Bear traps and mines are objects unless explicitly armed or followed by
 // a suffix other than " object". "Untrapped" always asks for the object.
 export function wizardTrapRequest(parsed) {
@@ -2115,6 +2203,7 @@ export function wizardTrapRequest(parsed) {
     parsed.name = trapName(type, { ignoreHallucination: true });
     return type;
 }
+// Part of C objnam.c:wizterrainwish(): create the wished trap.
 export async function wishForWizardTrap(type) {
     const { ux: x, uy: y } = game.u;
     if (is_hole(type) && !canFallThrough())
@@ -2124,6 +2213,7 @@ export async function wishForWizardTrap(type) {
     await say(trap ? `${withIndefiniteArticle(name)}${trap.ttyp === MAGIC_PORTAL ? ' to nowhere' : ''}.`
         : `Creation of ${withIndefiniteArticle(name)} failed.`);
 }
+// C objnam.c:wizterrainwish(): a terrain wish rewrites the hero's square.
 export async function tryWizardTerrainWish(parsed) {
     const name = parsed.name;
     for (let type = 1; type < TRAPNUM; type++) {
@@ -2322,6 +2412,7 @@ export async function tryWizardTerrainWish(parsed) {
     await switchHeroTerrain();
     return true;
 }
+// Part of C objnam.c:wizterrainwish(): the door terrain case.
 function makeWishedDoor(location, parsed, secret, previousType) {
     const wallInfo = previousType === DOOR ? 0 : location.wall_info;
     location.typ = secret ? SDOOR : DOOR;
@@ -2335,6 +2426,7 @@ function makeWishedDoor(location, parsed, secret, previousType) {
     location.wall_info = secret ? wallInfo & WM_MASK : 0;
     setMapFlags(location, location.doormask | location.wall_info);
 }
+// Part of C objnam.c:wizterrainwish(): the resulting door's description.
 function describeWishedDoor(location, secret) {
     const mask = location.doormask;
     const prefix = `${mask & D_TRAPPED ? 'trapped ' : ''}${mask & D_LOCKED ? 'locked ' : ''}`;
@@ -2343,18 +2435,23 @@ function describeWishedDoor(location, secret) {
     const state = mask & D_CLOSED ? 'closed ' : mask & D_ISOPEN ? 'open ' : mask & D_BROKEN ? 'broken ' : '';
     return `${prefix}${state}${(mask & ~D_TRAPPED) === D_NODOOR ? 'doorless doorway' : 'door'}`;
 }
+// Part of C objnam.c:wizterrainwish(): set the terrain's looted bits.
 function setLooted(location, flags) {
     setMapFlags(location, flags);
 }
+// Port only: clear the aliased terrain flag fields.
 function clearMapFlags(location) {
     setMapFlags(location, 0);
 }
+// Port only: write the five aliased terrain flag fields at once (C rm.h
+// views them as one).
 // C rm.h stores these terrain-specific views in the same five flag bits.
 function setMapFlags(location, flags) {
     location.flags = location.doormask = location.wall_info = location.icedpool = flags;
     location.looted = location.ladder = location.drawbridgemask = location.altarmask = flags;
     location.emptygrave = flags !== 0;
 }
+// Part of C objnam.c:wizterrainwish(): a drawbridge's new under-surface.
 function setBridgeSurface(location, surface) {
     location.drawbridgemask = ((location.drawbridgemask ?? location.flags) & ~DB_UNDER) | surface;
     setMapFlags(location, location.drawbridgemask);
@@ -2369,6 +2466,8 @@ function setWallProperties(location, parsed) {
 async function bridgeMessage(surface, type) {
     await say(`${surface} ${type === DRAWBRIDGE_UP ? 'in front of' : 'under'} the drawbridge.`);
 }
+// Part of C objnam.c:wizterrainwish(): the capitalized terrain-wish
+// announcements.
 async function say(message) {
     await plineWithContinuation(message.charAt(0).toUpperCase() + message.slice(1));
 }
@@ -2429,12 +2528,17 @@ const CH_K_SUFFIXES = [
     'anarch', 'atriarch', 'azedarach', 'broch', 'gastrotrich', 'isopach',
     'loch', 'oligarch', 'peritrich', 'sandarach', 'sumach', 'symposiarch',
 ];
+// Part of C objnam.c:makeplural(), makesingular(): case-insensitive
+// suffix test.
 function hasSuffix(text, suffix) {
     return text.toLowerCase().endsWith(suffix.toLowerCase());
 }
+// Part of C objnam.c:makeplural(), makesingular(): replace a known suffix.
 function replacePluralSuffix(text, singular, plural) {
     return replaceWithMatchingCase(text, text.length - singular.length, plural);
 }
+// Part of C objnam.c:makeplural(), makesingular(): the case-preserving
+// replacement of Strcasecpy.
 // Native Strcasecpy() preserves each overwritten character's case. Once it
 // reaches the old end, it continues the case of the last written character.
 function replaceWithMatchingCase(text, start, replacement) {
@@ -2447,6 +2551,8 @@ function replaceWithMatchingCase(text, start, replacement) {
     }
     return result;
 }
+// Part of C objnam.c:makeplural(), makesingular(): copy a replacement in
+// the source's case.
 function caseLike(source, replacement) {
     return replaceWithMatchingCase(source, 0, replacement);
 }
@@ -2571,6 +2677,7 @@ export function indefiniteArticlePrefix(text) {
         && !/^(?:eu|uke|ukulele|unicorn|uranium|useful)/.test(word);
     return vowelSound || /^x[^aeiou]/.test(word) ? 'an ' : 'a ';
 }
+// C objnam.c:an(): the full indefinite-article form.
 export function withIndefiniteArticle(text) {
     return indefiniteArticlePrefix(text) + text;
 }
@@ -2664,6 +2771,8 @@ export function verbForSubject(subject, verb) {
     return verb + caseLike(verb.slice(-1), 's');
 }
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
+// Part of C objnam.c:xname_flags(): the end-game T-shirt, smock, candy,
+// and shirt disclosure text.
 // Native xname_flags appends this after pluralizing the base noun and before
 // the individual name. Dummy naming views omit the object's identity.
 export function objectDisclosureText(object, state = game) {
@@ -2683,6 +2792,8 @@ export function objectDisclosureText(object, state = game) {
             return '';
     }
 }
+// Part of C objnam.c:doname_base(): the class-specific tool, food, potion,
+// and wand suffixes.
 export async function objectClassDescription(item, state = game) {
     const details = { prefix: [], suffix: '' };
     const known = item.known || item.overrideIdentified || state.iflags.override_ID;
@@ -2717,6 +2828,7 @@ export async function objectClassDescription(item, state = game) {
     }
     return details;
 }
+// Part of C objnam.c:doname_base(): the TOOL_CLASS detail suffixes.
 async function describeTool(item, details, known, state) {
     // The native worn-tool branch ends before attachment, fuel, or charges.
     if ((item.owornmask ?? 0) & (W_TOOL | W_SADDLE))
@@ -2749,12 +2861,14 @@ async function describeTool(item, details, known, state) {
     if (known && objectCharged(item.otyp))
         details.suffix = chargeDescription(item);
 }
+// Part of C objnam.c:doname_base(): a burning candle's remaining fuel.
 function remainingCandleFuel(item, state) {
     if (!item.lamplit)
         return item.age;
     const deadline = item.objectTimers?.find(timer => timer.kind === OBJECT_TIMER_KIND.BURN_OBJECT)?.deadline ?? 0;
     return item.age + deadline - state.moves;
 }
+// Part of C objnam.c:doname_base(): the "(recharged:spe)" charge suffix.
 function chargeDescription(item) {
     return ` (${item.recharged}:${item.spe})`;
 }
@@ -2762,6 +2876,8 @@ function chargeDescription(item) {
 // C objnam.c:doname_base() pricing suffixes. Describing a current price also
 // remembers the quote and chooses the displayed currency.
 // ---------------------------------------------------------------------------
+// Part of C objnam.c:doname_base(): the unpaid and for-sale price
+// suffixes.
 export async function objectDescriptionPrice(object, { state = game, withPrice = false, } = {}) {
     if (state.iflags.suppress_price || state.program_state.restoring)
         return '';
@@ -2779,11 +2895,14 @@ export async function objectDescriptionPrice(object, { state = game, withPrice =
     return state.flags.price_quotes && !objectTypeKnown(object, state)
         ? priceQuoteSuffix(object.otyp, state) : '';
 }
+// Part of C objnam.c:doname_base(): the quoted price suffix and its
+// remembered quote.
 function quotedPriceSuffix(object, label, price, state) {
     const suffix = ` (${label}, ${price} ${currency(price, { state })})`;
     recordObjectPriceQuote(object.otyp, Math.trunc(price / object.quan), 'buy', state);
     return suffix;
 }
+// Part of C objnam.c:doname_base(): the worn-object annotations.
 export function wornObjectDescription(item, state = game) {
     const mask = item.owornmask ?? 0;
     switch (isWeaponTool(item) ? WEAPON_CLASS : item.oclass) {
@@ -2805,6 +2924,7 @@ export function wornObjectDescription(item, state = game) {
             return '';
     }
 }
+// Part of C objnam.c:doname_base(): the wielded and quivered annotations.
 export function heldObjectDescription(item, { state = game, primaryHandDetail = null, projectPrimaryHand = false, } = {}) {
     const mask = (item.owornmask ?? 0) | (projectPrimaryHand ? W_WEP : 0);
     let description = '';
@@ -2830,6 +2950,8 @@ export function heldObjectDescription(item, { state = game, primaryHandDetail = 
         description += ` (${quiverDescription(item)})`;
     return description;
 }
+// Part of C objnam.c:doname_base(): the wielded artifact's glow or lit
+// detail.
 // Materialize only at a menu/prinv boundary: hallucinated glow colors draw
 // from display RNG, and the native abbreviated "(wielded)" has no light detail.
 export function primaryHandDescriptionDetail(item, state = game) {
@@ -2842,6 +2964,8 @@ export function primaryHandDescriptionDetail(item, state = game) {
     return item.lamplit && artifactEmitsLight(item)
         ? `${equipmentLightDescription(item, state)} lit` : null;
 }
+// Part of C objnam.c:doname_base(): the armor wearing, doffing, and
+// embedded states.
 function wornArmorDescription(item, state) {
     const pending = pendingArmorAction(state);
     const dressing = pending?.object === item ? pending.kind : null;
@@ -2859,6 +2983,7 @@ function wornArmorDescription(item, state) {
         description = `${description.slice(0, -1)}, ${equipmentLightDescription(item, state)} lit)`;
     return description;
 }
+// Part of C objnam.c:doname_base(): the ring finger annotations.
 function wornRingDescription(mask, state) {
     if (!(mask & W_RING))
         return '';
@@ -2869,6 +2994,7 @@ function wornRingDescription(mask, state) {
         description += ' (on left ';
     return `${description}${body_part(HAND, state)})`;
 }
+// Part of C objnam.c:doname_base(): which wielded items name their hand.
 function usesPrimaryHandPhrase(item, state) {
     if (isTwoWeaponPrimary(item, state))
         return true;
@@ -2877,9 +3003,11 @@ function usesPrimaryHandPhrase(item, state) {
     return item.oclass === WEAPON_CLASS
         ? !isLauncherAmmunition(item) && !isMissileObject(item) : isWeaponTool(item);
 }
+// Part of C objnam.c:doname_base(): the two-weapon primary test.
 function isTwoWeaponPrimary(item, state) {
     return item === (state.uwep || state.u.uwep) && !!state.u.twoweap;
 }
+// Part of C objnam.c:doname_base(): the quiver annotation.
 function quiverDescription(item) {
     switch (item.oclass) {
         case WEAPON_CLASS:
@@ -3008,6 +3136,7 @@ export async function objectDescription(object, { state = game, withPrice = fals
     }
     return description.slice(0, BUFSZ - 1);
 }
+// Part of C objnam.c:doname_base(): the blessed/cursed/uncursed prefix.
 export function objectBlessingDescription(object, state = game) {
     const override = state.iflags.override_ID || object.overrideIdentified;
     if ((!object.bknown && !override) || object.otyp === GOLD_PIECE)
@@ -3027,6 +3156,7 @@ export function objectBlessingDescription(object, state = game) {
         && state.urole?.key !== 'priest';
     return state.flags.implicit_uncursed === false || retainsUncursed ? 'uncursed' : null;
 }
+// Part of C objnam.c:doname_base(): its the_unique_obj article test.
 function uniqueObject(object, state) {
     const override = state.iflags.override_ID || object.overrideIdentified;
     if (!object.dknown && !override)
@@ -3036,6 +3166,8 @@ function uniqueObject(object, state) {
     return !!objectUnique(object.otyp)
         && (object.known || !!override || object.otyp === AMULET_OF_YENDOR);
 }
+// Part of C objnam.c:xname_flags(): clerics recognize beatitude while
+// naming.
 // C xname_flags(): Clerics recognize beatitude whenever an object is named.
 export function observeBucForNaming(object, state = game) {
     if (state.urole?.key !== 'priest')
@@ -3068,6 +3200,8 @@ function erosionDescription(object, state) {
     }
     return words;
 }
+// Part of C objnam.c:add_erosion_words(): the very/thoroughly degree
+// prefix.
 function erosionDegree(level) {
     return level === 2 ? 'very ' : level === 3 ? 'thoroughly ' : '';
 }

@@ -32,6 +32,7 @@ const DISCOVERY_ORDERS = {
     c: 'alphabetical within each class',
     a: 'alphabetical across all classes',
 };
+// Part of C o_init.c:dodiscovered(): the discosort order's description.
 export function discoverySortDescription() {
     return DISCOVERY_ORDERS[game.flags.discosort ?? 'o'];
 }
@@ -64,6 +65,8 @@ export async function chooseDiscoverySort(mode) {
         await tty_destroy_nhwindow(window);
     }
 }
+// C o_init.c:init_objects(): reset per-game object knowledge, base
+// probabilities, and shuffled descriptions.
 export function init_objects() {
     // o_init.c initializes per-game object-class knowledge and disco[] along
     // with the shuffled descriptions.  Never inherit a prior game's order.
@@ -75,6 +78,7 @@ export function init_objects() {
     initializeObjectProbabilities();
     return initializeObjectDescriptions();
 }
+// Port only: name-to-otyp index into the generated object tables.
 function objectId(name) {
     const index = OBJECT_NAMES.indexOf(name);
     if (index < 0)
@@ -146,6 +150,8 @@ export function initializeObjectDescriptions() {
     game.wandNothingDirection = rn2(2);
     return game.objectDescriptions;
 }
+// Part of C o_init.c:shuffle(): swap one row's description, color,
+// toughness, and material.
 function swapObjectField(table, first, second) {
     const firstValue = requireObjectData(table, first);
     const secondValue = requireObjectData(table, second);
@@ -161,6 +167,7 @@ const PLAIN_GEMSTONE_NAMES = new Set([
     'emerald',
     'opal',
 ]);
+// Part of C objnam.c:obj_typename(): the GemStone "stone" class suffix.
 function gemStoneGrammar(otyp, name) {
     // objnam.c:GemStone() appends the class noun to flint and to the
     // non-precious GEMSTONE-material objects.  Their generated metadata keeps
@@ -168,6 +175,8 @@ function gemStoneGrammar(otyp, name) {
     const needsStone = otyp === FLINT || (objectBaseMaterial(otyp) === 20 && !PLAIN_GEMSTONE_NAMES.has(name));
     return needsStone ? `${name} stone` : name;
 }
+// Part of C o_init.c:disco_typename(): the per-class known/unknown row
+// name.
 function discoveryBaseName(otyp, known, actualName, appearance) {
     switch (objectClassForType(otyp)) {
         case ARMOR_CLASS:
@@ -383,6 +392,8 @@ export async function doclassdisco() {
         : order === 's' ? "'sortloot' order" : 'alphabetical order';
     await showDiscoveries([`Discovered ${name} in ${description}`, ...entries]);
 }
+// Part of C o_init.c:doclassdisco(): the class-choice prompt (traditional
+// yn or menu).
 async function chooseDiscoveryClass(choices) {
     const prompt = 'View discoveries for which sort of objects?';
     const style = game.flags.menu_style ?? MENU_FULL;
@@ -418,11 +429,15 @@ function discoveryClassName(oclass) {
         throw new Error(`Missing discovery heading for object class ${oclass}`);
     return name;
 }
+// Part of C o_init.c:dodiscovered(), doclassdisco(): show the discoveries
+// text window.
 async function showDiscoveries(rows) {
     // Destroying the full-screen text window redraws the map itself.
     await showTextWindow(rows);
     game.context.move = 0;
 }
+// Part of C o_init.c:dodiscovered(), doclassdisco(): inv_order classes
+// plus venom.
 function discoveryClassOrder() {
     const classes = inventoryClassOrder();
     return classes.includes(VENOM_CLASS) ? classes : [...classes, VENOM_CLASS];
@@ -454,6 +469,8 @@ function compareDiscoveryNames(left, right) {
     const a = left.slice(2).toLowerCase(), b = right.slice(2).toLowerCase();
     return a < b ? -1 : a > b ? 1 : 0;
 }
+// Part of C o_init.c:dodiscovered(), doclassdisco(): heading rows in the
+// menu_headings attribute.
 function discoveryHeading(text) {
     return { text, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE) };
 }
@@ -474,6 +491,8 @@ function discoveredRelics() {
 // Object probabilities are mutable because gemstone rarity changes with
 // dungeon depth.  This is the level-dependent half of o_init.c.
 export let objectProb = OBJECT_PROB.slice();
+// Part of C o_init.c:init_objects(): reset base probabilities and gem
+// rarity to the static tables.
 function initializeObjectProbabilities() {
     objectProb = OBJECT_PROB.slice();
     setGemProbabilities(0);
@@ -495,8 +514,12 @@ function setGemProbabilities(ledger) {
             / (lastRealGem + 1 - first));
     }
 }
+// Port only: live per-game oc_material read after o_init.c shuffle
+// permutes materials.
 // Per-game object material after unidentified object classes are shuffled.
 // C refs: o_init.c shuffle() and objects[].oc_material.
+// Port only: live per-game oc_material read after o_init.c shuffle
+// permutes materials.
 export function objectMaterial(objectOrType, state = game) {
     const type = typeof objectOrType === 'number'
         ? objectOrType : objectOrType?.otyp;
@@ -531,10 +554,14 @@ export function objectTypeKnown(object, state = game) {
     return !!OBJECT_INITIAL_KNOWN[object.otyp]
         || !!state._knownObjectTypes?.has(object.otyp);
 }
+// Part of C o_init.c:discover_object(): append a type to its class's
+// discovery order.
 // ---------------------------------------------------------------------------
 // Object discovery order and encounters. C refs: o_init.c observe_object(),
 // discover_object() (the makeknown() macro).
 // ---------------------------------------------------------------------------
+// Part of C o_init.c:discover_object(): append a type to its class's
+// discovery order.
 export function rememberType(otyp, state = game) {
     if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT)
         return;
@@ -550,6 +577,7 @@ export function observeObject(object, state = game) {
         recordObjectEncounter(object.otyp, state);
     }
 }
+// Part of C o_init.c:discover_object(): mark a type encountered.
 export function recordObjectEncounter(otyp, state = game) {
     if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT)
         return;
@@ -564,6 +592,8 @@ export function recordObjectEncounter(otyp, state = game) {
 export function recordObjectKnowledge(otyp, state = game) {
     discoverKnownType(otyp, false, state);
 }
+// Part of C o_init.c:discover_object(): mark a type known, credit Wisdom
+// once, reprice gems.
 function discoverKnownType(otyp, creditHero, state) {
     if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT)
         return;
@@ -580,6 +610,7 @@ function discoverKnownType(otyp, creditHero, state) {
         && !state.program_state.gameover)
         repriceDiscoveredGems(otyp, state);
 }
+// C hack.h:makeknown(): the discover_object(TRUE, TRUE, TRUE) macro.
 // C makeknown() — the macro every caller's call graph spells
 // discover_object(): learning a type also records the encounter and
 // credits Wisdom once. Restoring saved knowledge does not grant that credit.

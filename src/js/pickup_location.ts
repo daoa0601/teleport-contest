@@ -30,6 +30,7 @@ interface PickupLocationOptions {
     monster?: Monster | null;
 }
 
+// Part of C hack.c:pickup_checks(): does the hero stay dry above liquid?
 function heroStaysAboveLiquid(state: GameState): boolean {
     const hero = state.u || {};
     const form = heroMonsterForm(state);
@@ -40,11 +41,14 @@ function heroStaysAboveLiquid(state: GameState): boolean {
         || (flying && !breathless);
 }
 
+// Part of C hack.c:pickup_checks(): likes_lava exemption for lava squares.
 function heroLikesLava(state: GameState): boolean {
     const form = heroMonsterForm(state);
     return form === PM_FIRE_ELEMENTAL || form === PM_SALAMANDER;
 }
 
+// Part of C hack.c:pickup_checks(): the nothing-to-pick-up message per
+// terrain type.
 function emptyFloorMessage(location: MapLocation | null | undefined, state: GameState): string {
     if (location?.typ === THRONE)
         return `It must weigh${location.looted ? ' almost' : ''} a ton!`;
@@ -63,11 +67,13 @@ function emptyFloorMessage(location: MapLocation | null | undefined, state: Game
     return 'There is nothing here to pick up.';
 }
 
+// Part of C hack.c:pickup_checks(): the trap under the hero's square.
 function trapAtHero(state: GameState): Trap | null {
     return state.level?.traps?.find(trap =>
         trap.tx === state.u?.ux && trap.ty === state.u?.uy) || null;
 }
 
+// Part of C hack.c:pickup_checks(): the cannot-reach-the-floor message.
 function reachMessage(state: GameState, trap: Trap | null): string {
     if (heroTeetersAtPit(state, trap))
         return 'You cannot reach the bottom of the pit.';

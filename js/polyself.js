@@ -91,32 +91,40 @@ const PM_VAMPIRE_LEADER = MONSTER_NAME.indexOf('vampire leader');
 const S_LICH = MONSTER_SYMBOL[MONSTER_NAME.indexOf('lich')];
 const PLACEHOLDER_MONSTERS = new Set(['orc', 'giant', 'elf', 'human']
     .map(name => MONSTER_NAME.indexOf(name)));
+// Part of C youprop.h:Polymorph_control(), Unchanging(),
+// Protection_from_shape_changers(): their worn ring or amulet source.
 function wornPropertyObject(state, otyp, slots) {
     return slots.some(slot => {
         const object = state[slot] || state.u?.[slot];
         return object?.otyp === otyp && object.worn !== false;
     });
 }
+// C youprop.h:Polymorph_control().
 export function heroHasPolymorphControl(state = game) {
     return !!(state.u?.polymorphControl || state.polymorphControl)
         || wornPropertyObject(state, RIN_POLYMORPH_CONTROL, ['uleft', 'uright']);
 }
+// C youprop.h:Unchanging().
 export function heroIsUnchanging(state = game) {
     return !!(state.u?.unchanging || state.unchanging)
         || wornPropertyObject(state, AMULET_OF_UNCHANGING, ['uamul']);
 }
+// Part of C polyself.c:polyself(): Polymorph_control while neither Stunned
+// nor Unaware.
 export function heroCanControlPolymorph(state = game) {
     const unaware = heroIsUnaware(state);
     const stunned = !!(state.u?.stunned
         || (state.u?.stunnedTurns ?? 0) > 0);
     return heroHasPolymorphControl(state) && !unaware && !stunned;
 }
+// C youprop.h:Protection_from_shape_changers().
 export function heroHasProtectionFromShapeChangers(state = game) {
     if (state.u?.protectionFromShapeChangers
         || state.protectionFromShapeChangers)
         return true;
     return wornPropertyObject(state, RIN_PROTECTION_FROM_SHAPE_CHANGERS, ['uleft', 'uright']);
 }
+// C you.h:Upolyd().
 export function heroIsPolymorphed(state = game) {
     return Upolyd(state.u);
 }
@@ -138,6 +146,7 @@ export async function applyHeroGolemEffects(damageType, damage, { state = game, 
     await publish('Strangely, you feel better than before.');
     await exerciseAttribute(A_STR, true, state);
 }
+// Port only: the polymorphed hero's species (C youmonst.data).
 export function heroMonsterForm(state = game) {
     if (!heroIsPolymorphed(state))
         return null;
@@ -146,18 +155,24 @@ export function heroMonsterForm(state = game) {
         throw new Error('A polymorphed hero requires a current species');
     return form;
 }
+// C youprop.h:Flying().
 export function heroIsFlying(state = game) {
     return !!state.u?.flying;
 }
+// Port only: the hero form's clinger test (mondata.h is_clinger).
 export function heroFormClings(state = game) {
     return monsterIsClinger(heroMonsterForm(state) ?? -1);
 }
+// Port only: the hero form's hides-under test (mondata.h hides_under).
 export function heroFormHidesUnderObjects(state = game) {
     return monsterHidesUnder(heroMonsterForm(state) ?? -1);
 }
+// Port only: the hero form's hider test (mondata.h is_hider).
 export function heroFormHidesWithoutCover(state = game) {
     return monsterIsHider(heroMonsterForm(state) ?? -1);
 }
+// Port only: does the hiding hero cling to the ceiling (flying, or a
+// non-mimic clinger)?
 export function heroHidesOnCeiling(state = game) {
     const form = heroMonsterForm(state);
     if (form == null || !state.u?.uundetected
@@ -166,16 +181,20 @@ export function heroHidesOnCeiling(state = game) {
     return heroIsFlying(state)
         || (heroFormClings(state) && MONSTER_SYMBOL[form] !== S_MIMIC);
 }
+// Port only: the hero form's no-hands test (mondata.h nohands).
 export function heroHasNoHands(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && monsterHasNoHands(form);
 }
+// Port only: the hero form's notake test (mondata.h notake).
 export function heroCannotTake(state = game) {
     return notake(heroMonsterForm(state) ?? -1);
 }
+// Port only: the hero form's nolimbs test (mondata.h nolimbs).
 export function heroHasNoLimbs(state = game) {
     return monsterHasNoLimbs(heroMonsterForm(state) ?? -1);
 }
+// Port only: the hero form's verysmall test (mondata.h verysmall).
 export function heroIsVerySmall(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && monsterIsVerySmall(form);
@@ -193,10 +212,13 @@ const RESISTANCE_BITS = [
 const TELEPATHIC_SPECIES = new Set([
     'floating eye', 'mind flayer', 'master mind flayer',
 ].map(name => MONSTER_NAME.indexOf(name)));
+// C mondata.c:sticks(): does the hero's current form stick?
 // C ref: mondata.c sticks().
 export function heroFormSticks(state = game) {
     return Upolyd(state.u) && monsterSpeciesSticks(heroSpecies(state));
 }
+// C polyself.c:set_uasmon(): install the hero's new body and its form
+// properties.
 // C set_uasmon(): install the body and replace only its property sources.
 export function setHeroSpecies(mnum, state = game) {
     const hero = state.u;
@@ -271,6 +293,7 @@ export function setHeroSpecies(mnum, state = game) {
     reassessStatusFields(state);
     state.were_changes = 0;
 }
+// C hack.h:MATCH_WARN_OF_MON(): does this monster trip the hero's warning?
 export function heroWarnsOfMonster(monster, state = game) {
     if (!state.u.warnOfMonster || !monster)
         return false;
@@ -297,6 +320,7 @@ function setFormSenses(mnum, state) {
     else
         revokeIntrinsicProperty('warnOfMonster', 'form', state);
 }
+// Port only: the hero's current species number (C youmonst.data).
 // C youmonst.data always describes u.umonnum, including the unpolymorphed
 // role body. Racial rules use urace separately; a human Monk is herbivorous.
 export function heroSpecies(state = game) {
@@ -333,15 +357,19 @@ export function changeHeroSex(state = game) {
         setHeroSpecies(species, state);
     }
 }
+// Port only: the hero's silver hatred (mondata.h hates_silver over ulycn
+// and the current form).
 export function heroHatesSilver(state) {
     if ((state.u.ulycn ?? -1) >= 0)
         return true;
     return monsterSpeciesHatesSilver(heroSpecies(state));
 }
+// Port only: the hero form's headless test.
 export function heroHasNoHead(state) {
     return Upolyd(state.u)
         && !monsterHasHead({ mnum: heroSpecies(state) });
 }
+// C youprop.h:Breathless().
 export function heroIsBreathless(state = game) {
     return !!state.u.magicalBreathing
         || monsterIsBreathless(heroSpecies(state));
@@ -351,11 +379,13 @@ export function heroIsAmphibious(state = game) {
     return !!state.u.magicalBreathing
         || monsterIsAmphibious(heroSpecies(state));
 }
+// C youprop.h:Passes_walls().
 export function heroPassesWalls(state = game) {
     return !!state.u.passesWalls || monsterPassesWalls(heroSpecies(state));
 }
 const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
 const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
+// Port only: the hero form's likes_lava test (mondata.h likes_lava).
 export function heroLikesLava(state = game) {
     const hero = state.u;
     if (!Upolyd(hero))
@@ -363,19 +393,23 @@ export function heroLikesLava(state = game) {
     return hero.umonnum === PM_FIRE_ELEMENTAL
         || hero.umonnum === PM_SALAMANDER;
 }
+// C mondata.h:flaming(): the hero form's burning body.
 // C mondata.h:flaming()/noncorporeal()/slimeproof(), for the hero's current
 // form; the species predicates live in mondata.js.
 export function heroIsFlaming(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && FLAMING_SPECIES.has(form);
 }
+// C mondata.h:noncorporeal(): the hero form's ghostly body.
 export function heroIsNoncorporeal(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && MONSTER_SYMBOL[form] === S_GHOST;
 }
+// Port only: is the hero polymorphed into a green slime?
 export function heroIsGreenSlime(state = game) {
     return heroMonsterForm(state) === PM_GREEN_SLIME;
 }
+// C mondata.h:slimeproof(): the hero form's green-slime immunity.
 export function heroIsSlimeproof(state = game) {
     return heroIsGreenSlime(state)
         || heroIsFlaming(state)
@@ -410,12 +444,14 @@ export async function checkStrangling(on, state = game, publish = plineWithConti
         await publish('You are no longer being strangled.');
     }
 }
+// Port only: checked monster-species table read.
 function speciesEntry(table, species) {
     const value = table[species];
     if (value === undefined)
         throw new RangeError(`No monster species data for ${species}`);
     return value;
 }
+// Part of C polyself.c:polyman(): restore the human body and senses.
 async function restoreHumanBody(state, publish = plineWithContinuation) {
     const u = state.u;
     const changed = heroIsPolymorphed(state);
@@ -455,6 +491,8 @@ async function restoreHumanBody(state, publish = plineWithContinuation) {
         race: state.urace?.adj || state.urace?.noun || 'human',
     };
 }
+// Part of C polyself.c:polyman(): the fatal boundary shared by
+// rehumanization and renewal.
 // C polyman(): both a restored body and newman() cross this same fatal
 // boundary before any regained senses, terrain, or equipment aftermath.
 async function becomeHuman(announcement, state, publish = plineWithContinuation, die = finishHeroDeath) {
@@ -470,6 +508,7 @@ async function becomeHuman(announcement, state, publish = plineWithContinuation,
     const died = await finishHumanFormChange(restored, state, publish);
     return { ...restored, died };
 }
+// C polyself.c:rehumanize(): return the polymorphed hero to human form.
 export async function returnHeroToHumanForm(state = game, { publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
     requirePlayingGame(state);
     if (!heroIsPolymorphed(state))
@@ -520,6 +559,8 @@ export async function returnHeroToHumanForm(state = game, { publish = plineWithC
         : await selfTouchPetrifyingWeapons({ state, publish, die });
     return { ...restored, died: selfTouch.died };
 }
+// Part of C polyself.c:polyman(): the senses, terrain, and equipment
+// aftermath.
 async function finishHumanFormChange(restored, state, publish) {
     const hero = state.u;
     // C polyman() only toggles mimic light blocking; its closing see_monsters() redraws.
@@ -554,6 +595,7 @@ async function dropCarriedObject(object, options = {}) {
         return;
     await dropInventoryObjectAtHero(object);
 }
+// Part of C polyself.c:break_armor(): cancel a delayed don or doff.
 function cancelPolymorphDressing(object) {
     const delayed = pendingArmorAction(game);
     const cancelledDon = delayed?.object === object && delayed.kind === 'wear';
@@ -561,6 +603,7 @@ function cancelPolymorphDressing(object) {
         cancelDonning();
     return { cancelledDon };
 }
+// Part of C polyself.c:polymon(): the form installation prologue.
 async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm = true, } = {}) {
     requirePlayingGame(game);
     const u = game.u;
@@ -800,6 +843,7 @@ export async function polymonHero(mnum, options = {}) {
         await explainFormAbilities();
     return { transformed: true, mnum };
 }
+// Part of C polyself.c:polymon(): the verbose form-ability explanation.
 async function explainFormAbilities() {
     requirePlayingGame(game);
     const form = game.u.umonnum;
@@ -841,6 +885,7 @@ async function explainFormAbilities() {
         await plineWithContinuation(`Use the command #sit to ${waterEggs ? 'spawn in the water' : 'lay an egg'}.`);
     }
 }
+// Part of C polyself.c:polymon(): slipping free of traps in the new form.
 async function escapeTrapsAfterFormChange() {
     requirePlayingGame(game);
     const hero = game.u;
@@ -886,6 +931,8 @@ async function escapeTrapsAfterFormChange() {
         await resetUtrap(true);
     }
 }
+// C polyself.c:break_armor(): garments react to the new body in slot
+// order.
 // C break_armor(): garments react in body-slot order. Read each slot when
 // reached because removing one item can change the remaining equipment.
 async function changeArmorForHeroForm(mnum) {
@@ -1061,11 +1108,14 @@ async function dropPolymorphWeapons(alone) {
             return;
     }
 }
+// Part of C polyself.c:drop_weapon(): the dropped weapon's noun.
 function droppedWeaponNoun(object) {
     const skill = objectSkill(object.otyp);
     return object.oclass === WEAPON_CLASS && skill >= P_SHORT_SWORD && skill <= P_SABER
         ? 'sword' : weaponDescription(object);
 }
+// Part of C polyself.c:drop_weapon(): whether the weapon can actually be
+// dropped.
 function canDropPolymorphWeapon(object) {
     if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE))
         return false;
@@ -1090,6 +1140,7 @@ const INITIAL_ENERGY_RANDOM = {
     knight: 4,
     monk: 2,
 };
+// Part of C polyself.c:newman(): the role energy multiplier.
 function energyModifier(energy) {
     requirePlayingGame(game);
     if (['priest', 'wizard'].includes(game.urole?.key))
@@ -1100,6 +1151,7 @@ function energyModifier(energy) {
         return Math.trunc(3 * energy / 4);
     return energy;
 }
+// Part of C polyself.c:newman(): one level's power increment.
 function newmanPowerIncrement(level) {
     requirePlayingGame(game);
     const role = game.urole.enadv;
@@ -1128,11 +1180,14 @@ function newmanPowerIncrement(level) {
         game.u.ueninc[level] = power;
     return power;
 }
+// Part of C polyself.c:newman(): the new human form's name.
 function newHumanFormName() {
     if (game.urace?.name === 'human' || game.urace?.noun === 'human')
         return (Upolyd(game.u) ? game.u.mfemale : game.flags.female) ? 'woman' : 'man';
     return game.urace?.noun || game.urace?.name || 'creature';
 }
+// C polyself.c:newman(): rebuild the human level, health, power, and
+// attributes.
 // C newman(): rebuild the human level, health, power, and attributes.
 // Both random polymorph and a selected human form can reach this operation.
 async function renewHumanForm(sexChangeAllowed = true) {
@@ -1223,6 +1278,7 @@ async function renewHumanForm(sexChangeAllowed = true) {
         newLevel,
     };
 }
+// Part of C polyself.c:newman(): the unsuccessful-polymorph death.
 async function unsuccessfulPolymorph() {
     await plineWithContinuation("Your new form doesn't seem healthy enough to survive.", { urgent: true });
     const died = await finishHeroDeath({ killer: 'unsuccessful polymorph', deathLineShown: true });
@@ -1253,6 +1309,8 @@ function recordRenewedHumanGender(oldGender) {
             : `${game.flags.female ? 'female' : 'male'} ${newRank}`;
     recordGameLogEvent(`polymorphed into ${withIndefiniteArticle(description)}`, { flags: LL_MINORAC });
 }
+// Part of C polyself.c:polyself(), rehumanize(): delete the old body's
+// light source.
 // C polyself(): select a form, then use the same body-change operations
 // whether the request came from a wand, a throne, or a monster ability.
 // C light.c:del_light_source(LS_MONSTER, &youmonst), as rehumanize() and
@@ -1263,6 +1321,7 @@ export function extinguishHeroFormLight(state) {
     delete state.u.formLightRange;
     state.vision_full_recalc = 1;
 }
+// Part of C polyself.c:polyself(): the new body's light source swap.
 // C polyself.c:polyself() made_change. polymon() leaves the old body's light
 // in place, so vision during the change still sees it; only polyself()
 // replaces it, doubling a radius of one so the light is detectable.
@@ -1278,6 +1337,7 @@ function updateHeroFormLight(oldLight, state) {
     state.u.formLightRange = 2;
     state.vision_full_recalc = 1;
 }
+// C polyself.c:polyself(): one polymorph of the hero.
 export async function polymorphHero(flags = POLY_NOFLAGS) {
     requirePlayingGame(game);
     if (heroIsUnchanging(game)) {
@@ -1290,6 +1350,7 @@ export async function polymorphHero(flags = POLY_NOFLAGS) {
     updateHeroFormLight(oldLight, state);
     return result;
 }
+// Part of C polyself.c:polyself(): the form selection and body change.
 async function changeHeroForm(flags) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -1358,19 +1419,23 @@ async function changeHeroForm(flags) {
         return renewHumanForm();
     return polymonHero(mnum, { sexChangeAllowed: true });
 }
+// Part of C polyself.c:polyself(): the legal-form test.
 function legalPolymorph(mnum) {
     const flags = MONSTER_FLAGS2[mnum];
     return flags !== undefined && polyok(mnum);
 }
+// Part of C polyself.c:polyself(): the own-race test.
 function ownRace(mnum) {
     requirePlayingGame(game);
     return !!(your_race(mnum));
 }
+// Part of C polyself.c:polyself(): the selectable-form test.
 function mayChooseForm(mnum) {
     return legalPolymorph(mnum) || mnum === PM_HUMAN
         || mnum === game.u.umonster
         || (ownRace(mnum) && !((MONSTER_GENO[mnum] ?? 0) & G_UNIQ));
 }
+// Part of C polyself.c:polyself(): the controlled form choice prompt.
 async function chooseHeroForm({ forced, dragon, lycanthrope }) {
     requirePlayingGame(game);
     let tries = 5;
@@ -1443,8 +1508,9 @@ async function chooseHeroForm({ forced, dragon, lycanthrope }) {
     await plineWithContinuation("That's enough tries!");
     return { mnum, random: true };
 }
-// C mkclass_poly(): choose by generation frequency, allowing extinction
-// but excluding genocide, placeholders, and specially generated monsters.
+// C makemon.c:mkclass_poly(): choose by generation frequency, allowing
+// extinction but excluding genocide, placeholders, and specially
+// generated monsters.
 export function pickFormFromClass(monsterClass) {
     requirePlayingGame(game);
     const first = MONSTER_SYMBOL.indexOf(monsterClass);
@@ -1477,6 +1543,8 @@ export function pickFormFromClass(monsterClass) {
     }
     throw new Error('Polymorph class selection exhausted its generation weights');
 }
+// Part of C polyself.c:polyself(): the form's name and article in the
+// refusal.
 function formNameWithArticle(mnum) {
     const name = monsterTypeName(mnum, game.flags.female);
     if (monsterHasProperName(mnum))
@@ -1486,18 +1554,21 @@ function formNameWithArticle(mnum) {
         return `the ${name}`;
     return withIndefiniteArticle(name);
 }
+// Part of C polyself.c:polyself(): the lycanthrope form change.
 function changeWereForm(requested) {
     requirePlayingGame(game);
     return Upolyd(game.u) && wereBeastForSpecies(requested) !== game.u.ulycn
         ? renewHumanForm(false)
         : polymonHero(game.u.ulycn);
 }
+// Part of C polyself.c:polyself(): is the hero a vampire shape-shifter?
 export function heroCanChangeVampireShape(state = game) {
     const form = state.u.umonnum;
     const originalForm = state.u.mcham;
     return form !== undefined && (monsterIsVampire(form)
         || (originalForm !== undefined && validVampireShiftForm(originalForm, form)));
 }
+// Part of C polyself.c:polyself(): the vampire shape change.
 async function changeVampireForm(mnum, controlled) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -1546,22 +1617,26 @@ export async function useHeroBreath({ state = game, attack = heroBreathAttack(st
         });
     return { ...result, spentTime: true };
 }
+// Part of C polyself.c:dospit(): the form's spit attack.
 export function heroSpitAttack(state = game) {
     const form = heroMonsterForm(state);
     if (form == null)
         return null;
     return (MONSTER_ATTACKS[form] || []).find(([attackType]) => attackType === AT_SPIT) || null;
 }
+// Part of C polyself.c:dospit(): blinding or acid venom.
 function venomTypeForAttack(attack) {
     const damageType = attack?.[1];
     return damageType === AD_BLND || damageType === AD_DRST
         ? BLINDING_VENOM : ACID_VENOM;
 }
+// Part of C polyself.c:dospit(): place and stack the spent venom.
 async function settleVenom(venom, x, y, state) {
     placeCreatedObject(venom, x, y);
     await stack_object(venom, state);
     await newsym(x, y);
 }
+// Part of C polyself.c:dospit(): the venom breaking where it lands.
 async function breakVenomAtEndpoint(venom, x, y, state, publish, random) {
     venom.ox = x;
     venom.oy = y;
@@ -1572,6 +1647,8 @@ async function breakVenomAtEndpoint(venom, x, y, state, publish, random) {
         x, y, fromInventory: true, inView: cansee(x, y), state, publish, random,
     });
 }
+// Part of C polyself.c:dospit(): the venom dropped at the hero's own
+// square.
 async function dropVenomAtHero(venom, state, publish, random, verbose) {
     const x = state.u.ux;
     const y = state.u.uy;
@@ -1593,6 +1670,7 @@ async function dropVenomAtHero(venom, state, publish, random, verbose) {
         await settleVenom(venom, x, y, state);
     return result;
 }
+// Part of C polyself.c:dospit(): the venom striking a monster.
 async function hitMonsterWithVenom({ monster, target, venom, state, publish, random, rollOne, swallowed, finishMonsterKill, }) {
     const impact = await hitMonsterWithThrownObject(monster, venom, {
         state,
@@ -1607,6 +1685,7 @@ async function hitMonsterWithVenom({ monster, target, venom, state, publish, ran
     });
     return impact;
 }
+// Part of C polyself.c:dospit(): the venom's horizontal flight.
 async function spitHorizontally({ venom, direction, state, publish, random, rollOne, recoilHero, finishMonsterKill, }) {
     if (state.u?.uswallow && state.u?.ustuck) {
         const impact = await hitMonsterWithVenom({
@@ -1688,10 +1767,12 @@ export async function useHeroSpit({ state = game, attack = heroSpitAttack(state)
     }
     return { ...result, venom, used: true, spentTime: true };
 }
+// Part of C polyself.c:doremove(): the nymph form test.
 export function heroCanRemovePunishment(state = game) {
     return heroIsPolymorphed(state) && state.u.umonnum !== undefined
         && MONSTER_SYMBOL[state.u.umonnum] === S_NYMPH;
 }
+// C polyself.c:doremove(): a nymph hero sheds ball and chain.
 export async function useHeroNymphAbility({ state = game, publish = plineWithContinuation, } = {}) {
     if (!heroCanRemovePunishment(state))
         return { used: false, spentTime: false, reason: 'not-nymph' };
@@ -1713,19 +1794,24 @@ const TRAPS_TRIGGERED_BY_WEBBING = new Set([
     ARROW_TRAP, DART_TRAP, BEAR_TRAP, ROCKTRAP, FIRE_TRAP, LANDMINE,
     SLP_GAS_TRAP, RUST_TRAP, MAGIC_TRAP, ANTI_MAGIC, POLY_TRAP,
 ]);
+// Part of C polyself.c:dospinweb(): the web-making form test.
 function webMaker(form) {
     return form === PM_CAVE_SPIDER || form === PM_GIANT_SPIDER;
 }
+// Part of C polyself.c:dospinweb(): can the hero's form spin webs?
 export function heroCanSpinWeb(state = game) {
     return webMaker(heroMonsterForm(state));
 }
+// Part of C polyself.c:dospinweb(): the hide-or-spin choice.
 export async function chooseSpiderAbility() {
     const { answer } = await yn_function('Hide [h] or spin a web [s]?', 'hsq', 'q', true, { menuable: true });
     return answer === 'h' ? 'hide' : answer === 's' ? 'spin' : null;
 }
+// Part of C polyself.c:dospinweb(): the trap on the hero's square.
 function trapAtHero(state) {
     return state.level?.traps?.find(trap => trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
 }
+// Part of C polyself.c:dospinweb(): the On_stairs test.
 function heroIsOnStairway(state) {
     for (let stair = state.stairs; stair; stair = stair.next) {
         if (stair.sx === state.u.ux && stair.sy === state.u.uy)
@@ -1733,9 +1819,11 @@ function heroIsOnStairway(state) {
     }
     return false;
 }
+// Part of C polyself.c:dospinweb(): the engulfer's attack type.
 function engulfingAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(([attackType]) => attackType === AT_ENGL);
 }
+// Part of C polyself.c:dospinweb(): the whirly monster's web fate.
 function whirlyWebMessage(monster) {
     const damageType = engulfingAttack(monster)?.[1];
     let action = '';
@@ -1747,6 +1835,7 @@ function whirlyWebMessage(monster) {
         action = 'freezes, shatters and ';
     return `The web ${action}is swept away!`;
 }
+// Part of C polyself.c:dospinweb(): web fluid released inside an engulfer.
 async function spinWhileSwallowed(state, publish, refresh) {
     const monster = state.u.ustuck;
     if (!monster)
@@ -1762,6 +1851,7 @@ async function spinWhileSwallowed(state, publish, refresh) {
         await publish(`The web dissolves into ${monsterName(monster, { state })}.`);
     }
 }
+// C polyself.c:dospinweb(): spin a web on the hero's square.
 export async function useHeroWeb({ state = game, publish = plineWithContinuation, refresh = newsym, createTrap = maketrap, activateTrap = dotrap, } = {}) {
     if (!heroCanSpinWeb(state))
         return { used: false, spentTime: false };
@@ -1865,15 +1955,18 @@ export async function useHeroWereSummon({ state = game, publish = plineWithConti
 const MR_FIRE = 0x01;
 const PM_FLOATING_EYE = 28;
 const PM_MEDUSA = 284;
+// Part of C polyself.c:dogaze(): the form's gaze attack.
 export function heroGazeAttack(state = game) {
     const form = heroMonsterForm(state);
     if (form == null)
         return null;
     return (MONSTER_ATTACKS[form] || []).find(([attackType]) => attackType === AT_GAZE) || null;
 }
+// Part of C polyself.c:dogaze(): the Confusion test.
 function heroIsConfused(state) {
     return !!(state.u?.confused || (state.u?.confusionTurns ?? 0) > 0);
 }
+// Part of C polyself.c:dogaze(): monsters a gaze cannot affect.
 function gazeCannotAffect(monster) {
     const helpless = monster.msleeping || monster.mcanmove === 0
         || monster.mcanmove === false
@@ -1882,12 +1975,14 @@ function gazeCannotAffect(monster) {
     const eyeless = !monsterHasEyes(monster.mnum);
     return helpless || monster.mstun || blind || eyeless;
 }
+// Part of C polyself.c:dogaze(): the floating eye's freeze duration.
 function floatingEyeFreezeDuration(monster, state, random, rollDice) {
     if ((state.u?.ulevel ?? 1) <= 6 && random(4) === 0)
         return 200;
     const attack = MONSTER_ATTACKS[monster.mnum]?.[0] || [];
     return rollDice((monster.m_lev ?? 0) + 1, attack[3] ?? 1);
 }
+// Part of C polyself.c:dogaze(): the gazed-at monster's passive effect.
 async function applyGazePassive(monster, state, publish, random, rollDice, die) {
     if (monster.mnum === PM_FLOATING_EYE && !monster.mcan) {
         const owner = possessiveName(monsterName(monster, { state }));
@@ -1916,6 +2011,7 @@ async function applyGazePassive(monster, state, publish, random, rollDice, die) 
     });
     return { heroDied, stopped: heroDied };
 }
+// Part of C polyself.c:dogaze(): the confusing gaze effect.
 async function applyConfusingGaze(monster, state, publish) {
     if (!monster.mconf)
         await publish(`Your gaze confuses ${monsterName(monster, { state })}!`);
@@ -1923,6 +2019,7 @@ async function applyConfusingGaze(monster, state, publish) {
         await publish(`${monsterName(monster, { state, capitalized: true })} is getting more and more confused.`);
     monster.mconf = 1;
 }
+// Part of C polyself.c:dogaze(): the fiery gaze effect.
 async function applyFieryGaze({ monster, state, publish, random, rollDice, finishMonsterKill, }) {
     const name = monsterName(monster, { state });
     const originalDamage = rollDice(2, 6);
@@ -1951,6 +2048,7 @@ async function applyFieryGaze({ monster, state, publish, random, rollDice, finis
     await finishMonsterKill(monster, monster.mx, monster.my);
     return monster.mhp <= 0 || !!monster.dead;
 }
+// Part of C polyself.c:dogaze(): the peaceful-target confirmation.
 async function confirmPeacefulGaze(monster, damageType, state) {
     const action = damageType === AD_CONF ? 'confuse' : 'attack';
     return await promptYesNo(`Really ${action} ${monsterName(monster, { state })}?`) === 'y';
@@ -2032,6 +2130,7 @@ export async function useHeroGaze({ state = game, attack = heroGazeAttack(state)
         await publish('You gaze at no place in particular.');
     return { used: true, spentTime: true, looked, heroDied: false };
 }
+// C polyself.c:dopoly(): the vampire's #monster shape change.
 export async function useHeroVampireShift() {
     const previous = game.u.umonnum;
     if (heroCanChangeVampireShape(game)) {
@@ -2049,11 +2148,13 @@ export async function useHeroVampireShift() {
     }
     return { spentTime: true, changed: previous !== game.u.umonnum };
 }
+// Part of C polyself.c:domindblast(): the mind flayer form test.
 export function heroCanMindBlast(state = game) {
     const form = state.u.umonnum;
     return (state.u.mtimedone ?? 0) > 0
         && form !== undefined && monsterIsMindFlayer(form);
 }
+// C polyself.c:domindblast(): the hero's mental blast.
 export async function useHeroMindBlast({ state = game, publish = plineWithContinuation, random = rn2, rollDamage = rnd, wake = wakeMonster, finishMonsterKill = finishHeroMonsterKill, } = {}) {
     const hero = state.u;
     const energy = hero.uen ?? 0;
@@ -2084,6 +2185,7 @@ export async function useHeroMindBlast({ state = game, publish = plineWithContin
     }
     return { spentTime: true, hitCount };
 }
+// Part of C polyself.c:domindblast(): which minds the blast reaches.
 function canReachMonsterMind(monster, hero) {
     if (!monster || monster.dead || (monster.mhp ?? 0) <= 0)
         return false;
@@ -2092,6 +2194,8 @@ function canReachMonsterMind(monster, hero) {
     return dist2(hero.ux, hero.uy, monster.mx, monster.my)
         <= BOLT_LIM * BOLT_LIM;
 }
+// Part of C polyself.c:domindblast(): telepathy, latent telepathy, or
+// mind.
 function mindBlastSense(monster, random) {
     const telepathic = monsterIsTelepathic(monster.mnum);
     const blind = monster.mcansee === 0 || monster.mcansee === false;
@@ -2111,6 +2215,7 @@ export async function releaseHeroGrip(state = game, publish = plineWithContinuat
     setHeroGrip(null, state);
     await publish(`${monsterName(holder, { state, capitalized: true })} is no longer in your clutches.`);
 }
+// Part of C polyself.c:polymon(): merging with worn dragon scales.
 async function mergeDragonArmor(armor, mnum) {
     if (!armor)
         throw new Error('Merging with a dragon form requires worn dragon armor');
@@ -2295,6 +2400,7 @@ const not_claws = [
     S_HUMAN, S_MUMMY, S_ZOMBIE, S_ANGEL, S_NYMPH, S_LEPRECHAUN,
     S_QUANTMECH, S_VAMPIRE, S_ORC, S_GIANT, /* quest nemeses */
 ];
+// Port only: bounds-checked read of a body-part table.
 // C indexes the static part tables directly; out-of-range part ids (a port
 // bug) fall back to the bad-part name rather than reading past the table.
 function tablePart(parts, part) {
@@ -2387,6 +2493,7 @@ export function mbodypart(mnum, part) {
         return tablePart(humanoid_parts, part);
     return tablePart(animal_parts, part);
 }
+// Port only: the permonst index modeling youmonst.data for body_part.
 // The permonst index of the hero's current body, this port's model of
 // youmonst.data: u.umonnum when polymorphed, the saved role body otherwise.
 function currentHeroMonsterNumber(state) {
@@ -2417,9 +2524,12 @@ export function dragonFormForArmor(object) {
         return firstDragon + type - GRAY_DRAGON_SCALES;
     return null;
 }
+// Port only: record which effect genocided the hero's form.
 export function rememberPolymorphGenocide(cause, state = game) {
     state._polymorphGenocideCause = cause;
 }
+// Port only: consume the recorded genocide cause for the rehumanize
+// death.
 // Native polyman removes the delayed killer before done(), which can return
 // when a wizard refuses death. A later reversion then uses self-genocide.
 export function takePolymorphGenocide(state = game) {
@@ -2445,6 +2555,7 @@ export function feelingAfterSelfGenocide(state = game) {
         return 'dead';
     return monsterIsWeirdNonliving(species) ? 'empty' : 'condemned';
 }
+// Part of C polyself.c:polyman(): the self-genocide killer strings.
 export function genocideDeathOptions(cause) {
     let killer;
     let description;
@@ -2466,6 +2577,7 @@ export function genocideDeathOptions(cause) {
     }
     return { killer, deathCause: `killed by ${description}`, deathType: GENOCIDED, deathLineShown: true };
 }
+// Part of C polyself.c:dohide(): the hiding form's abilities.
 function heroHidingAbility(state) {
     const form = heroMonsterForm(state);
     if (form == null)
@@ -2483,15 +2595,18 @@ function heroHidingAbility(state) {
         onCeiling: flying || heroFormClings(state),
     };
 }
+// Part of C polyself.c:dohide(): can this form hide at all?
 export function heroHasHidingAbility(state = game) {
     return !!heroHidingAbility(state);
 }
+// Part of C polyself.c:dohide(): stop hiding and repaint.
 async function revealHero(ability, state, refresh) {
     state.u.uundetected = 0;
     if (ability.mimic)
         state.u.m_ap_type = M_AP_NOTHING;
     await refresh(state.u.ux, state.u.uy);
 }
+// Part of C polyself.c:dohide(): the held, trapped, or swallowed reasons.
 function heldReason(state) {
     const holder = state.u.ustuck;
     if (!holder)
@@ -2503,9 +2618,11 @@ function heldReason(state) {
     return monsterIsHumanoid(holder.mnum)
         ? 'holding someone' : 'holding that creature';
 }
+// Part of C polyself.c:dohide(): the objects on the hero's square.
 export function floorObjects(state) {
     return state.level?.objects?.[state.u.ux]?.[state.u.uy] || [];
 }
+// Part of C polyself.c:dohide(): the fatal petrifying-corpse cover.
 function petrifyingCorpseCover(objects) {
     const first = objects[0];
     if (!first || first.corpsenm === undefined || objects.some(object => object.otyp !== CORPSE || object.corpsenm === undefined
@@ -2518,13 +2635,16 @@ function petrifyingCorpseCover(objects) {
     const corpse = corpseName(first);
     return count === 1 ? withIndefiniteArticle(corpse) : `${corpse}s`;
 }
+// Port only: same-dungeon-level comparison.
 function sameLevel(left, right) {
     return !!left && !!right
         && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
+// Part of C polyself.c:dohide(): the Is_airlevel comparison.
 function isAirLevel(state) {
     return sameLevel(state.u.uz, state.air_level);
 }
+// Part of C polyself.c:dohide(): the Is_waterlevel comparison.
 function isWaterLevel(state) {
     return sameLevel(state.u.uz, state.water_level);
 }

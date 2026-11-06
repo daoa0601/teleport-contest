@@ -43,18 +43,27 @@ const DRUMS = new Set([LEATHER_DRUM, DRUM_OF_EARTHQUAKE]);
 const WIND_INSTRUMENTS = new Set([
     WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, BUGLE,
 ]);
+// Part of C music.c:awaken_monsters(), put_monsters_to_sleep(),
+// charm_snakes(), calm_nymphs(), charm_monsters(), awaken_soldiers(): the
+// mdistu squared-distance test.
 function monsterDistance(monster) {
     const dx = (monster.mx ?? 0) - (game.u?.ux ?? 0);
     const dy = (monster.my ?? 0) - (game.u?.uy ?? 0);
     return dx * dx + dy * dy;
 }
+// Part of C music.c:awaken_monsters(), put_monsters_to_sleep(),
+// charm_snakes(), calm_nymphs(), charm_monsters(), awaken_soldiers(): the
+// fmon traversal order.
 function liveMonsters() {
     // C prepends actors to fmon. This port appends them to the level array.
     return Array.from(game.level?.monsters || []).reverse().filter(monster => monster && (monster.mhp ?? 1) > 0);
 }
+// Part of C music.c:awaken_scare(), put_monsters_to_sleep(),
+// charm_monsters(): the resist TOOL_CLASS test.
 function monsterResistsInstrument(monster) {
     return monsterResistsEffect(monster, TOOL_ATTACK_LEVEL);
 }
+// Part of C music.c:awaken_scare(): the onscary immunity test.
 function instrumentCanScare(monster) {
     return monsterIsScaredAt(monster, game, 0, 0);
 }
@@ -76,6 +85,8 @@ async function awakenMonster(monster, scary) {
         return;
     return makeMonsterFlee(monster, { publish: plineWithContinuation });
 }
+// C music.c:awaken_monsters(): wake and maybe scare every monster in
+// range.
 async function awakenMonsters(distance) {
     for (const monster of liveMonsters()) {
         const distanceFromHero = monsterDistance(monster);
@@ -86,6 +97,8 @@ async function awakenMonsters(distance) {
             return flight;
     }
 }
+// C music.c:improvised_notes(): the improvised jingle, remembered while
+// unchanging.
 function improvisedNotes() {
     if ((game.u?.unchanging || game.unchanging) && game.context.jingle)
         return { notes: game.context.jingle, familiar: true };
@@ -96,11 +109,15 @@ function improvisedNotes() {
     game.context.jingle = notes;
     return { notes, familiar: false };
 }
+// Part of C music.c:do_improvisation(), do_play_instrument(): the
+// Stunned-or-Confusion impairment test.
 function heroIsImpaired() {
     const hero = game.u;
     return !!(hero.stunned || (hero.stunnedTurns ?? 0) > 0
         || hero.confused || (hero.confusionTurns ?? 0) > 0);
 }
+// Part of C music.c:do_improvisation(): the impairment-mode performance
+// message.
 async function announceImprovisation(instrument) {
     const stunned = !!(game.u?.stunned
         || (game.u?.stunnedTurns ?? 0) > 0);
@@ -135,6 +152,8 @@ async function announceImprovisation(instrument) {
         await plineWithContinuation('What you perform is quite far from music...');
     }
 }
+// C music.c:put_monsters_to_sleep(): sleep monsters in range that do not
+// resist.
 async function putMonstersToSleep(distance) {
     for (const monster of liveMonsters()) {
         if (monsterDistance(monster) >= distance)
@@ -157,6 +176,7 @@ async function putMonstersToSleep(distance) {
         }
     }
 }
+// C music.c:charm_snakes(): snakes in range sway with the music.
 async function charmSnakes(distance) {
     for (const monster of liveMonsters()) {
         if (MONSTER_SYMBOL[monster.mnum] !== S_SNAKE
@@ -180,6 +200,7 @@ async function charmSnakes(distance) {
         }
     }
 }
+// C music.c:calm_nymphs(): nymphs in range turn peaceful.
 async function calmNymphs(distance) {
     for (const monster of liveMonsters()) {
         if (MONSTER_SYMBOL[monster.mnum] !== S_NYMPH
@@ -195,6 +216,8 @@ async function calmNymphs(distance) {
         }
     }
 }
+// C music.c:awaken_soldiers(): mercenaries ready for battle, others
+// flee the bugle.
 export async function awakenSoldiers(distance, bugler = null) {
     for (const monster of liveMonsters()) {
         const dist = bugler ? (bugler.mx - monster.mx) ** 2 + (bugler.my - monster.my) ** 2 : monsterDistance(monster);
@@ -221,6 +244,8 @@ export async function awakenSoldiers(distance, bugler = null) {
         }
     }
 }
+// C music.c:charm_monsters(): tame monsters in range that do not
+// resist.
 async function charmMonsters(distance) {
     const effectiveDistance = game.u?.uswallow ? 0 : distance;
     for (const monster of liveMonsters()) {
@@ -230,12 +255,15 @@ async function charmMonsters(distance) {
             await tameMonster(monster, null, { announce: true });
     }
 }
+// Part of C music.c:do_improvisation(): the magic flute case.
 async function playMagicFlute(instrument, familiar) {
     await consumeObjectCharge(instrument);
     await plineWithContinuation(`You ${heroIsDeaf() ? 'seem to ' : ''}produce ${heroIsHallucinating() ? 'piped' : 'soft'}${familiar ? ', familiar' : ''} music.`);
     await putMonstersToSleep((game.u?.ulevel || 1) * 5);
     await exerciseAttribute(A_DEX, true);
 }
+// Part of C music.c:do_improvisation(): the wooden flute case, charming
+// snakes.
 async function playWoodenFlute(instrument, familiar, canUseSpecial) {
     const skilledRoll = rn2(Math.max(1, currentAttribute(A_DEX)))
         + (game.u?.ulevel || 1) > 25;
@@ -250,6 +278,7 @@ async function playWoodenFlute(instrument, familiar, canUseSpecial) {
         await charmSnakes((game.u?.ulevel || 1) * 3);
     await exerciseAttribute(A_DEX, true);
 }
+// Part of C music.c:do_improvisation(): the tooled horn case.
 async function playTooledHorn(familiar) {
     await plineWithContinuation(heroIsDeaf()
         ? 'You blow into the horn.'
@@ -259,6 +288,8 @@ async function playTooledHorn(familiar) {
         return flight;
     await exerciseAttribute(A_WIS, false);
 }
+// Part of C music.c:do_improvisation(): the elemental horns' getdir
+// prompt.
 async function readHornDirection() {
     const direction = await promptDirection();
     if (!direction)
@@ -275,6 +306,8 @@ async function readHornDirection() {
         throw new RangeError('The horn direction is outside the adjacent squares.');
     return selected[0];
 }
+// Part of C music.c:do_improvisation(): the frost and fire horn zap
+// case.
 async function playElementalHorn(instrument, element) {
     await consumeObjectCharge(instrument);
     const direction = await readHornDirection();
@@ -309,6 +342,7 @@ async function playElementalHorn(instrument, element) {
     learnObjectType(instrument.otyp);
     return { heroDied: false };
 }
+// Part of C music.c:do_improvisation(): the bugle case.
 async function playBugle(instrument, familiar) {
     await plineWithContinuation(heroIsDeaf()
         ? 'You blow into the bugle.'
@@ -318,6 +352,7 @@ async function playBugle(instrument, familiar) {
         return flight;
     await exerciseAttribute(A_WIS, false);
 }
+// Part of C music.c:do_improvisation(): the magic harp case.
 async function playMagicHarp(instrument, familiar) {
     await consumeObjectCharge(instrument);
     await plineWithContinuation(heroIsDeaf()
@@ -326,6 +361,8 @@ async function playMagicHarp(instrument, familiar) {
     await charmMonsters(Math.trunc(((game.u?.ulevel || 1) - 1) / 3) + 1);
     await exerciseAttribute(A_DEX, true);
 }
+// Part of C music.c:do_improvisation(): the wooden harp case, calming
+// nymphs.
 async function playWoodenHarp(instrument, familiar, canUseSpecial) {
     const skilledRoll = rn2(Math.max(1, currentAttribute(A_DEX)))
         + (game.u?.ulevel || 1) > 25;
@@ -347,6 +384,7 @@ const DRUM_BEATS = [
     'stepper', 'one drop', 'slow two', 'triple stroke roll',
     'double shuffle', 'half-time shuffle', 'second line', 'train',
 ];
+// Part of C music.c:do_improvisation(): the leather drum case.
 async function playLeatherDrum(familiar, mundane = false) {
     if (mundane) {
         const verb = rn2(2) ? 'butcher' : rn2(2) ? 'manage' : 'pull off';
@@ -389,6 +427,7 @@ function levelDescription() {
         return 'tower';
     return 'dungeon';
 }
+// Part of C music.c:do_improvisation(): the earthquake drum case.
 async function playEarthquakeDrum(instrument) {
     await consumeObjectCharge(instrument);
     await plineWithContinuation('You produce a heavy, thunderous rolling!');
@@ -449,6 +488,8 @@ async function improvise(instrument) {
         return;
     game.context.move = 1;
 }
+// C music.c:do_play_instrument(): underwater and wind-instrument gates,
+// then the improvise-or-tune prompt.
 export async function playInstrument(instrument, options = {}) {
     if (game.underwater || game.u?.uinwater) {
         await pline("You can't play music underwater!");

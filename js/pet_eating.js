@@ -21,6 +21,8 @@ import { tunnels } from './mondata.js';
 const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
 const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
 const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
+// C dogmove.c:dog_nutrition(): nutrition a pet draws from an object,
+// including its chewing time.
 // dog_nutrition() also sets chewing time. Its denominator is the original
 // food's nutrition, before the pet-size multiplier is applied.
 export function petFoodNutrition(monster, object) {
@@ -63,6 +65,8 @@ export function petFoodNutrition(monster, object) {
     }
     return nutrition;
 }
+// Part of C dogmove.c:dog_eat(), muse.c:mon_consume_unstone(): extend the
+// pet's hunger deadline and clear its confusion.
 // Stoning cures share the deadline and confusion rules, but deliberately do
 // not restore starvation HP, shorten flight, or reward ordinary feeding.
 export function extendPetHungerDeadline(monster, nutrition, state) {
@@ -72,6 +76,8 @@ export function extendPetHungerDeadline(monster, nutrition, state) {
     dog.hungrytime = Math.max(dog.hungrytime, state.moves) + nutrition;
     monster.mconf = 0;
 }
+// Part of C dogmove.c:dog_eat(): the prologue bookkeeping before the meal
+// is announced (devour, starving recovery, jelly, stack split).
 export function beginPetEating(monster, object, from, state = game, devour = false) {
     const dog = monster.edog;
     if (!dog || !monster.mtame || monster.isminion)
@@ -97,6 +103,7 @@ export function beginPetEating(monster, object, from, state = game, devour = fal
                 && !candidate.dead && candidate.mhp > 0));
     return { object: royalJelly ? object : splitMealObject(object, state), from, devour, royalJelly };
 }
+// Part of C dogmove.c:dog_eat(): split one unit from a food stack.
 function splitMealObject(object, state) {
     if (object.oclass !== FOOD_CLASS || object.quan <= 1)
         return object;
@@ -106,6 +113,7 @@ function splitMealObject(object, state) {
     // dog_eat's unit stays beside the stack until its message is acknowledged.
     return split;
 }
+// Part of C dogmove.c:dog_eat(): the pool-visibility meal message block.
 async function describePetMeal(monster, meal, state) {
     if (isPoolAt(monster.mx, monster.my, state) && !state.underwater)
         return;
@@ -128,6 +136,8 @@ async function describePetMeal(monster, meal, state) {
     else
         await plineWithContinuation(`It ${meal.devour ? 'devours' : 'eats'} ${food}.`);
 }
+// Part of C dogmove.c:dog_eat(): the meal tail (rust-monster disgust,
+// apport reward, unpaid cost, consumption).
 export async function finishPetEating(monster, meal, state = game, random = rn2, calls = []) {
     if (meal.from.x !== monster.mx || meal.from.y !== monster.my) {
         await newsym(meal.from.x, meal.from.y);

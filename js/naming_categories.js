@@ -2,6 +2,7 @@
 import { NHW_MENU, PICK_ONE } from './const.js';
 import { game } from './gstate.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './wintty.js';
+// Part of C do_name.c:docallcmd(): the what-do-you-want-to-name menu.
 export async function chooseNamingCategory() {
     const window = tty_create_nhwindow(NHW_MENU);
     try {

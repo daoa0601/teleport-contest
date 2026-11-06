@@ -389,6 +389,7 @@ export const IRON_CHAIN = 478;
 export const BLINDING_VENOM = 479;
 export const ACID_VENOM = 480;
 /** Read a required native object field. Null is a valid unnamed appearance. */
+// Port only: checked accessor for native object table rows.
 export function requireObjectData(table, otyp) {
     const value = table[otyp];
     if (!Number.isInteger(otyp) || value === undefined) {
@@ -525,6 +526,8 @@ export function oc_wldam(otyp) {
 export function oc_wsdam(otyp) {
     return requireObjectData(OBJECT_SMALL_DAMAGE, otyp);
 }
+// Port only: per-class otyp bounds standing in for the bases table the
+// o_init.c init loop builds.
 export function getObjectClassBounds(oclass) {
     const first = OBJECT_BASES[oclass];
     const next = OBJECT_BASES[oclass + 1];
@@ -533,6 +536,7 @@ export function getObjectClassBounds(oclass) {
     }
     return { first, last: next - 1 };
 }
+// Port only: bundle of native objects row fields as one validated view.
 export function getObjectDefinition(otyp) {
     requireObjectData(OBJECT_NAMES, otyp);
     return {
@@ -546,6 +550,8 @@ export function getObjectDefinition(otyp) {
     };
 }
 const NODIR = 1, IMMEDIATE = 2;
+// C objclass.h:objects[].oc_dir: live read including the wand of
+// nothing's per-game direction.
 // objects[].oc_dir, including the wand of nothing's direction, which o_init.c
 // draws for each game (rn2(2) ? NODIR : IMMEDIATE).
 export function objectDirection(otyp, state) {

@@ -38,6 +38,8 @@ const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
 const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
 const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 
+// C dogmove.c:dog_nutrition(): nutrition a pet draws from an object,
+// including its chewing time.
 // dog_nutrition() also sets chewing time. Its denominator is the original
 // food's nutrition, before the pet-size multiplier is applied.
 export function petFoodNutrition(monster: Monster, object: GameObject): number {
@@ -77,6 +79,8 @@ export function petFoodNutrition(monster: Monster, object: GameObject): number {
     return nutrition;
 }
 
+// Part of C dogmove.c:dog_eat(), muse.c:mon_consume_unstone(): extend the
+// pet's hunger deadline and clear its confusion.
 // Stoning cures share the deadline and confusion rules, but deliberately do
 // not restore starvation HP, shorten flight, or reward ordinary feeding.
 export function extendPetHungerDeadline(monster: Monster, nutrition: number, state: GameState): void {
@@ -86,6 +90,8 @@ export function extendPetHungerDeadline(monster: Monster, nutrition: number, sta
     monster.mconf = 0;
 }
 
+// Part of C dogmove.c:dog_eat(): the prologue bookkeeping before the meal
+// is announced (devour, starving recovery, jelly, stack split).
 export function beginPetEating(
     monster: Monster, object: GameObject, from: Position,
     state: GameState = game, devour = false,
@@ -114,6 +120,7 @@ export function beginPetEating(
     return { object: royalJelly ? object : splitMealObject(object, state), from, devour, royalJelly };
 }
 
+// Part of C dogmove.c:dog_eat(): split one unit from a food stack.
 function splitMealObject(object: GameObject, state: GameState): GameObject {
     if (object.oclass !== FOOD_CLASS || object.quan <= 1) return object;
     const split = splitObjectStack(object, 1, state);
@@ -122,6 +129,7 @@ function splitMealObject(object: GameObject, state: GameState): GameObject {
     return split;
 }
 
+// Part of C dogmove.c:dog_eat(): the pool-visibility meal message block.
 async function describePetMeal(monster: Monster, meal: PetMeal, state: GameState): Promise<void> {
     if (isPoolAt(monster.mx, monster.my, state) && !state.underwater) return;
     const sawPet = cansee(meal.from.x, meal.from.y) && monsterVisible(monster);
@@ -140,6 +148,8 @@ async function describePetMeal(monster: Monster, meal: PetMeal, state: GameState
     } else await plineWithContinuation(`It ${meal.devour ? 'devours' : 'eats'} ${food}.`);
 }
 
+// Part of C dogmove.c:dog_eat(): the meal tail (rust-monster disgust,
+// apport reward, unpaid cost, consumption).
 export async function finishPetEating(
     monster: Monster, meal: PetMeal, state: GameState = game,
     random: RandomBelow = rn2, calls: MonsterCallLog = [],

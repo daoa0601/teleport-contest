@@ -66,6 +66,7 @@ const GENDERED_MONSTER_NAMES = new Map([
     [333, ['caveman', 'cavewoman']],
     [337, ['priest', 'priestess']],
 ]);
+// C do_name.c:pmname(): pick a species' male or female display name.
 export function monsterTypeName(mnum, female = false) {
     const genderedNames = GENDERED_MONSTER_NAMES.get(mnum);
     if (genderedNames)
@@ -102,6 +103,7 @@ export const MONSTER_CLASS_EXPLAIN = [
     'human or elf', 'ghost', 'golem', 'major demon', 'sea monster',
     'lizard', 'long worm tail', 'mimic',
 ];
+// C mondata.h:monsym(): the class letter of a species.
 export function monsterClassSymbol(mnum) {
     return MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] ?? '?';
 }
@@ -115,6 +117,7 @@ export const MONSTER_CONVEYS = [0, 32, 32, 1, 32, 32, 192, 32, 23, 160, 160, 33,
 export const MONSTER_NUTRITION = MONSTER_BODY_META.map(row => row[1]);
 // END GENERATED MONSTER FOOD DATA
 /** Read a required native species field. Invalid species never acquire defaults. */
+// Port only: checked accessor for native species table rows.
 export function requireMonsterData(table, mnum) {
     const value = table[mnum];
     if (!Number.isInteger(mnum) || value === undefined) {
@@ -168,6 +171,8 @@ export function adjustErinys(abuse) {
         flatBonus, eelWrap,
     ];
 }
+// Port only: rebuild the erinys species from the saved abuse count on
+// restore and new game; native replay is C restore.c calling adj_erinys.
 // Native starts new games and restores in a fresh process. Species changes
 // are rebuilt from the saved abuse count rather than saved as monster traits.
 export function resetErinys(abuse = 0) {

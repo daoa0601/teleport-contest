@@ -4,6 +4,7 @@
 // keyboard input, then runs the game loop.
 import { Engine } from './jsmain.js';
 import { GameDisplay } from './game_display.js';
+// Port only: browser bootstrap replacing unixmain.c/nttty.c platform entry.
 // Start an interactive browser game with the given terminal container.
 export async function startBrowser(container, seed = 42) {
     const display = new GameDisplay(container);

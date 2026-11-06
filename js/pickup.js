@@ -59,6 +59,8 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType } from './mkroom.js';
 import { makemonAt, useBagOfTricks } from './makemon.js';
+// Part of C pickup.c:query_classes(): the pickup class menu's heading
+// order.
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
 }
@@ -123,6 +125,8 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0),
     game.context.move = attempted ? 1 : 0;
     game._pickupEncumbrance = 0;
 }
+// Part of C pickup.c:pickup(): re-check the hero's cover after pickup
+// ends.
 // C pickup(): once picking up ends outside an engulfer, a hider re-checks its
 // cover; taking the whole pile leaves nothing to hide under.
 async function reassessHeroCover(source) {
@@ -200,6 +204,7 @@ export async function autopickupAtHero() {
         await checkHere(source, picked > 0);
     game._pickupEncumbrance = 0;
 }
+// Part of C pickup.c:pickup(): the traditional-mode class prompt path.
 async function pickUpTraditionally(source, count) {
     const objects = [...source.objects];
     const onlyObject = objects[0];
@@ -343,6 +348,8 @@ export async function pickupFloorObject(object, count, telekinesis = false) {
     const result = await takeSelectedObjects(source, [{ value: object, count }], telekinesis, false);
     return result.picked > 0;
 }
+// Part of C pickup.c:pickup(): the pick_list loop that lifts each selected
+// object.
 async function takeSelectedObjects(source, selected, telekinesis = false, batch = true) {
     if (!selected.length)
         return { picked: 0, attempted: false, stopped: false };
@@ -464,6 +471,8 @@ export function pickupInventoryMessage(description, verb, state = game) {
     state._pickupEncumbrance = capacity;
     return prefix ? `${prefix} ${verb} ${description}` : description;
 }
+// Part of C pickup.c:pickup_object(): add the lifted object to inventory
+// and remember it.
 export async function addPickedInventoryObject(object) {
     recordHeroPrizeAcquisition(object, game);
     const count = objectQuantity(object);
@@ -472,6 +481,7 @@ export async function addPickedInventoryObject(object) {
     observeObjectForNaming(carried);
     return { object: carried, count };
 }
+// C pickup.c:pickup_prinv(): the picked object's inventory line.
 // C pickup_prinv(): format after pick_obj() has settled remote shop billing.
 async function pickedInventoryDescription(carried, count) {
     const picked = { ...carried, quan: count, quantity: count };
@@ -484,6 +494,8 @@ async function pickedInventoryDescription(carried, count) {
         : ` (${objectQuantity(carried)} in total).` : '.';
     return `${carried.invlet} - ${await floorObjectDescription(picked)}${total}`;
 }
+// Part of C pickup.c:pickup(): the engulfer's stomach or the hero's
+// square as the pickup source.
 function pickupSourceAtHero() {
     const x = game.u?.ux, y = game.u?.uy;
     const monster = game.u?.uswallow ? game.u?.ustuck : null;
@@ -502,6 +514,7 @@ function pickupSourceAtHero() {
 function pickupObjects(source) {
     return source.objects.filter(object => object !== game.uchain && object !== game.u?.uchain);
 }
+// C pickup.c:autopick(): does the autopickup pass want this object?
 export async function autopickupAllows(object) {
     if (object.where === 'floor' && !object.no_charge
         && costlySpot(object.ox, object.oy))
@@ -528,10 +541,13 @@ export async function autopickupAllows(object) {
     }
     return pickit;
 }
+// Part of C pickup.c:pickup(): observe the object when picking it up.
 function observePickupObject(object) {
     if (!heroIsBlind(game))
         observeObject(object);
 }
+// Part of C pickup.c:pickup_object(): the scare-monster scroll's blessing
+// and curse handling.
 async function prepareScareScrollPickup(object, requested, telekinesis) {
     const count = await carryableObjectCount({ object, count: requested });
     if (count < 1)
@@ -563,6 +579,8 @@ async function reviveRiderCorpse(corpse, remotely) {
     await exerciseAttribute(A_WIS, false);
     return true;
 }
+// Part of C pickup.c:pickup_object(): split a counted subset from the
+// stack.
 function splitPickupStack(object, count) {
     if (count >= objectQuantity(object))
         return object;
@@ -573,6 +591,7 @@ export function clearJustPicked(state) {
     for (const object of state?.inventory || [])
         object.pickup_prev = false;
 }
+// C pickup.c: pickup_prev marking; reset by reset_justpicked().
 export function markJustPicked(object) {
     if (object)
         object.pickup_prev = true;
@@ -673,15 +692,20 @@ export async function forceDescribeDecor({ state = game, probing = false } = {})
     location.lastseentyp = location.typ;
 }
 const INVENTORY_SLOT_COUNT = 52;
+// Port only: a view of a stack with a different count.
 function withQuantity(object, count) {
     return { ...object, quan: count, quantity: count };
 }
+// C pickup.c:GOLD_WT(): (amount + 50) / 100.
 function coinWeight(count) {
     return Math.trunc((Math.max(0, count) + 50) / 100);
 }
+// Part of C pickup.c:carry_count(): the gold-piece test.
 function isCoin(object) {
     return object.otyp === GOLD_PIECE || object.oclass === COIN_CLASS;
 }
+// Part of C pickup.c:carry_count(): the top-level weight of a lifted
+// count, gold-merge adjusted.
 // C carry_count() adds the stack's weight() (at least one unit for coins),
 // then subtracts only the GOLD_WT() change from merging with carried gold.
 function topLevelWeight(object, count, state) {
@@ -691,6 +715,8 @@ function topLevelWeight(object, count, state) {
     const purse = heroGoldAmount(state);
     return weight - (coinWeight(purse) + coinWeight(count) - coinWeight(purse + count));
 }
+// Part of C pickup.c:delta_cwt(): the container's weight after removing a
+// count.
 function containerWeightAfterRemoval(container, object, count) {
     const total = objectQuantity(object);
     const contents = (container.contents || []).flatMap(candidate => {
@@ -737,6 +763,8 @@ function maximumLiftedCount(object, requested, container, state) {
     }
     return low;
 }
+// Part of C pickup.c:carry_count(), lift_object(): an object's description
+// in the lift messages.
 async function itemDescription(object, count = objectQuantity(object)) {
     if (isCoin(object))
         return count === 1 ? 'a gold piece' : `${count} gold pieces`;
@@ -749,19 +777,24 @@ async function itemDescription(object, count = objectQuantity(object)) {
     }
     return await inventoryItemDescription(view);
 }
+// Part of C pickup.c:lift_object(): the "lying here" or "in <container>"
+// phrase.
 function locationPhrase(container, state, short = false) {
     if (!container)
         return short ? 'here' : 'lying here';
     return `in ${definiteName(objectCombatName(container, { state, includeCorpseSpecies: false }), state)}`;
 }
+// Part of C pickup.c:lift_object(): the is/are agreement.
 function presentTense(object) {
     return objectQuantity(object) === 1 ? 'is' : 'are';
 }
+// Part of C pickup.c:carry_count(): the "can only carry some" message.
 async function reportPartialLift(object, count, container, telekinesis, state) {
     observeObjectForNaming(object, { state });
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
     await plineWithContinuation(`You can only ${verb} ${count === 1 ? 'one' : 'some'} of the ${await itemDescription(object)} ${locationPhrase(container, state)}.`);
 }
+// Part of C pickup.c:carry_count(): the cannot-lift message.
 async function reportUnliftable(object, container, state, telekinesis) {
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
     observeObjectForNaming(object, { state });
@@ -774,9 +807,11 @@ async function reportUnliftable(object, container, state, telekinesis) {
     const subject = objectQuantity(object) === 1 ? 'it ' : 'even one ';
     await plineWithContinuation(`There ${presentTense(object)} ${description} ${where}, but ${subject}is too heavy for you to ${verb}.`);
 }
+// Part of C pickup.c:pickup_object(): the non-gold inventory count.
 function inventoryObjectCount(state) {
     return (state.inventory || []).filter(object => object.otyp !== GOLD_PIECE && object.oclass !== COIN_CLASS).length;
 }
+// Part of C pickup.c:pickup_object(): the stack-merge test.
 function canMergeWithInventory(object, count, state) {
     const candidate = {
         ...withQuantity(object, count),
@@ -785,11 +820,15 @@ function canMergeWithInventory(object, count, state) {
     };
     return (state.inventory || []).some(carried => mergable(carried, candidate, state));
 }
+// Part of C pickup.c:lift_object(): the rock-throwing hero's boulder
+// exemption.
 function heroThrowsRocks(state) {
     return heroIsPolymorphed(state)
         && state.u.umonnum !== undefined
         && monsterThrowsRocks(state.u.umonnum);
 }
+// Part of C options.c:optfn_pickup_burden(): the burden letter to
+// encumbrance level.
 export function pickupBurden(state) {
     const setting = state.flags?.pickup_burden;
     if (typeof setting === 'number' && Number.isInteger(setting))
@@ -798,6 +837,8 @@ export function pickupBurden(state) {
     return new Map([['u', 0], ['b', 1], ['s', 2], ['n', 3],
         ['o', 4], ['t', 4], ['l', 5]]).get(first) ?? MOD_ENCUMBER;
 }
+// Part of C pickup.c:pickup_object(): whether gold follows this object in
+// its pile.
 function goldFollows(object, container, state) {
     const list = container
         ? container.contents || []
@@ -805,10 +846,13 @@ function goldFollows(object, container, state) {
     const index = list.indexOf(object);
     return index >= 0 && list.slice(index + 1).some(candidate => candidate.otyp === GOLD_PIECE || candidate.oclass === COIN_CLASS);
 }
+// Part of C pickup.c:pickup_object(): reset a rejected scare-monster
+// scroll.
 function resetRejectedScareScroll(object, container) {
     if (!container && object.otyp === SCR_SCARE_MONSTER)
         object.spe = 0;
 }
+// C pickup.c:carry_count(): how many of a stack can be lifted.
 export async function carryableObjectCount({ object, container = null, count = objectQuantity(object), telekinesis = false, state = game, }) {
     const total = objectQuantity(object);
     const requested = Math.max(0, Math.min(Math.trunc(count || total), total));
@@ -819,6 +863,7 @@ export async function carryableObjectCount({ object, container = null, count = o
         await reportUnliftable(object, container, state, telekinesis);
     return lifted;
 }
+// C pickup.c:lift_object(): the encumbrance gate before lifting.
 export async function liftObject({ object, container = null, count = objectQuantity(object), telekinesis = false, state = game, }) {
     const total = objectQuantity(object);
     count = Math.max(0, Math.min(Math.trunc(count || total), total));
@@ -876,9 +921,11 @@ export async function liftObject({ object, container = null, count = objectQuant
     }
     return { decision: 'lift', count: liftedCount };
 }
+// Part of C pickup.c:pickup(): the pile's sortloot order.
 export function orderedPickupObjects(pile) {
     return sortObjects(pile, { mode: lootSortMode() });
 }
+// Part of C pickup.c:query_classes(): an object's class heading.
 export function pickupObjectClass(object) {
     const oclass = object.oclass || objectClassForType(object.otyp);
     return objectClassHeading(oclass);
@@ -1126,6 +1173,8 @@ function monBeside(x, y) {
     }
     return false;
 }
+// Part of C pickup.c:choose_tip_container_menu(), tipcontainer(): the
+// doname-based container descriptions.
 // doname() wrapper for tip menus and prompts; the tip mechanics live in the
 // dotip/tipcontainer functions below.
 async function containerDescription(object) {
@@ -1508,6 +1557,8 @@ export async function query_classes(action, objects) {
         return { classes: selected, categories, oneAtATime, everything, menu: 'none' };
     }
 }
+// Part of C pickup.c:query_objlist(): does an object match the chosen
+// class, BUC, unpaid, and just-picked filters?
 export function matchesObjectCategories(object, selection) {
     const classes = selection.categories.filter((category) => typeof category === 'number');
     const statuses = selection.categories.filter((category) => category === 'B' || category === 'U' || category === 'C' || category === 'X');
@@ -1523,9 +1574,11 @@ export function matchesObjectCategories(object, selection) {
         && (!selection.categories.includes('u') || hasUnpaidContents(object))
         && (!selection.categories.includes('P') || !!object.pickup_prev);
 }
+// Part of C pickup.c:query_objlist(): whether BUC categories were chosen.
 export function hasBucCategory(selection) {
     return selection.categories.some(category => typeof category === 'string' && 'BUCX'.includes(category));
 }
+// Part of C pickup.c:query_objlist(): an object's B/U/C/X category.
 function bucCategory(object) {
     if (object.oclass === COIN_CLASS)
         return game.flags.goldX ? 'X' : 'U';
@@ -1548,6 +1601,7 @@ async function lookAtObjects(objects) {
     }
     await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }
+// Part of C pickup.c:query_objlist(): the unpaid-contents filter.
 function hasUnpaidContents(object) {
     return !!object.unpaid || !!object.contents?.some(hasUnpaidContents);
 }
@@ -1598,6 +1652,8 @@ export async function encumber_msg(state = game, publish = plineWithContinuation
         state.context.botl = true;
     state._encumbranceLevel = capacity;
 }
+// Part of C pickup.c:pickup_object(): the encumbrance prefix before
+// "lifting X".
 export function pickupLoadPrefix(level) {
     return [
         '',
@@ -1665,6 +1721,7 @@ export async function reverseLoot() {
     }
     return true;
 }
+// Part of C pickup.c:reverse_loot(): the throne room's royal coffer.
 function royalCoffers() {
     const { ux: x, uy: y } = game.u;
     const chests = requireGameLevel().objects.flatMap(column => column?.flatMap(pile => pile ?? []) ?? [])
@@ -1683,14 +1740,17 @@ const FORBIDDEN_CONTENTS = new Set([
     SPE_BOOK_OF_THE_DEAD,
 ]);
 const quantity = objectQuantity;
+// Part of C pickup.c:query_objlist(): an item's doname_with_price row.
 async function lootObjectDescription(object, primaryHandDetail = null, withPrice = false) {
     // objnam.c:doname() names one gold piece "a gold piece" and appends
     // the wield/quiver suffixes, so no local coin formatting is allowed.
     return await inventoryItemDescription(object, { primaryHandDetail, withPrice });
 }
+// Part of C pickup.c:query_category(): a class group's name.
 function className(object) {
     return objectClassHeading(object.oclass || objectClassForType(object.otyp));
 }
+// C pickup.c:count_categories(): the class groups in inventory order.
 function objectsByClass(objects) {
     const groups = new Map();
     for (const object of objects) {
@@ -1703,6 +1763,7 @@ function objectsByClass(objects) {
     return headings.filter(name => groups.has(name))
         .map(name => ({ name, members: groups.get(name) ?? [] }));
 }
+// Part of C pickup.c:query_category(): an object's B/C/U/X menu category.
 function menuBucCategory(object) {
     if (object.oclass === COIN_CLASS)
         return game.flags?.goldX ? 'X' : 'U';
@@ -1716,6 +1777,7 @@ function menuBucCategory(object) {
         return 'C';
     return 'U';
 }
+// C pickup.c:query_category(): the category menu's choices.
 // C pickup.c:query_category(), for menu_loot's ALL_TYPES/UNPAID/BUCX/
 // CHOOSE_ALL/JUSTPICKED flags. Special filters stay out of menu inversion.
 async function categoryChoices(objects) {
@@ -1786,6 +1848,8 @@ async function categoryChoices(objects) {
         choices.push({ selectable: false, text: '' }, ...special);
     return choices;
 }
+// C pickup.c:allow_category(): one selection from every active filter
+// group.
 // allow_category(): match one selection in every active filter group.
 // Selecting coins by class takes precedence over the other filters.
 function categoryMatcher(filters) {
@@ -1802,6 +1866,8 @@ function categoryMatcher(filters) {
         });
     };
 }
+// Part of C pickup.c:query_category(): the category menu and its
+// autoselect paranoia check.
 export async function chooseObjectCategories(title, objects) {
     if (game.flags.menu_style !== undefined && game.flags.menu_style !== MENU_FULL)
         return { matchers: [() => true], autoSelect: false };
@@ -1835,6 +1901,7 @@ export async function chooseObjectCategories(title, objects) {
     }
     return { matchers, autoSelect, ...(picked ? { justPickedCount: Math.max(0, picked.count) } : {}) };
 }
+// Part of C pickup.c:query_objlist(): the menu sections and their rows.
 async function selectionSections(objects, useInventoryLetters) {
     const ordered = sortObjects(objects, {
         mode: lootSortMode({ inventoryLetters: useInventoryLetters }),
@@ -1868,6 +1935,7 @@ async function selectionSections(objects, useInventoryLetters) {
     }
     return sections;
 }
+// Part of C pickup.c:query_objlist(): the counted object menu.
 async function chooseObjects(title, objects, useInventoryLetters) {
     if (!objects.length)
         return [];
@@ -1878,6 +1946,7 @@ async function chooseObjects(title, objects, useInventoryLetters) {
         returnCounts: true,
     });
 }
+// C pickup.c:mbag_explodes(): does a bag-of-holding nest explode?
 export function magicBagExplodes(object, depth = 0) {
     if ((object.otyp === WAN_CANCELLATION
         || object.otyp === BAG_OF_TRICKS)
@@ -1891,6 +1960,7 @@ export function magicBagExplodes(object, depth = 0) {
         return true;
     return (object.contents || []).some(content => magicBagExplodes(content, depth + 1));
 }
+// C pickup.c:do_boh_explosion(): scatter the exploding bag's contents.
 async function scatterBagContents(container, state, held) {
     container.in_use = true;
     const contents = [...(container.contents || [])];
@@ -1952,6 +2022,7 @@ export async function explodeBag(container, trigger, state, { tipping = false, t
         await bot();
     return { moved: false, destroyedContainer: true, message: null };
 }
+// C pickup.c:mbag_item_gone(): an item vanishes in the magical explosion.
 // C mbag_item_gone(): announce before settling the loss and freeing the item.
 export async function loseMagicBagItem(object, held, state = game, silent = false) {
     if (!silent) {
@@ -1984,10 +2055,14 @@ async function loseCursedBagContents(container, state) {
     }
     return loss;
 }
+// Part of C pickup.c:in_container(), out_container(): the fuel-storing
+// age exemption while frozen.
 export function ageStoresFuel(object) {
     return [BRASS_LANTERN, OIL_LAMP, CANDELABRUM_OF_INVOCATION,
         TALLOW_CANDLE, WAX_CANDLE, POT_OIL].includes(object.otyp);
 }
+// Part of C pickup.c:in_container(): freeze an object's age and timers in
+// the ice box.
 function freezeObject(object, state) {
     if (ageStoresFuel(object) || object.ageRelative)
         return;
@@ -2004,6 +2079,8 @@ function freezeObject(object, state) {
         stopObjectTimer(object, OBJECT_TIMER_KIND.SHRINK_GLOB);
     }
 }
+// Part of C pickup.c:out_container(): thaw an object's age and timers out
+// of the ice box.
 export function thawObject(object, state) {
     if (ageStoresFuel(object))
         return;
@@ -2018,16 +2095,21 @@ export function thawObject(object, state) {
         startGlobTimeout(object, state, state.moves ?? 0);
     }
 }
+// Part of C pickup.c:in_container(): objects too big for the container.
 function cannotFit(object) {
     if ([LARGE_BOX, CHEST, ICE_BOX, BOULDER].includes(object.otyp))
         return true;
     return object.otyp === STATUE
         && object.corpsenm !== undefined && monsterIsBig(object.corpsenm);
 }
+// Part of C pickup.c:in_container(): the welded-cursed primary weapon
+// refusal.
 function weldedPrimary(object, state) {
     const primary = state.uwep || state.u?.uwep;
     return object === primary && willWeld(object);
 }
+// Part of C pickup.c:in_container(): the refusal messages for an object
+// that cannot be put in.
 function rejectedPutMessage(container, object, state) {
     if (object === state.uball || object === state.uchain
         || object === state.u?.uball || object === state.u?.uchain) {
@@ -2056,10 +2138,13 @@ function rejectedPutMessage(container, object, state) {
     }
     return null;
 }
+// Port only: clamp a requested transfer count.
 function transferQuantity(object, count) {
     const total = quantity(object);
     return count > 0 ? Math.min(Math.trunc(count), total) : total;
 }
+// Part of C pickup.c:in_container(), out_container(): split a counted
+// transfer from its stack.
 function splitForTransfer(object, count, state) {
     const amount = transferQuantity(object, count);
     const split = splitObjectStack(object, amount, state);
@@ -2078,6 +2163,7 @@ export async function touchPetrifyingCorpse(object) {
         await displayMessageWindow();
     return result;
 }
+// C pickup.c:in_container(): put one object stack into a container.
 export async function putIntoContainer(container, object, state = game, count = -1) {
     const transfer = splitForTransfer(object, count, state);
     object = transfer.object;
@@ -2348,6 +2434,7 @@ async function menu_loot(container, putIn, resetPicked = false, retry = null) {
     return { results, spentTime: categories.autoSelect
             ? results.some(result => result.moved) : selected.length > 0 };
 }
+// Part of C pickup.c:in_or_out_menu(): the lootabc command letters.
 function actionKeys() {
     const menuStyle = game.flags.menu_style ?? MENU_FULL;
     return game.flags.lootabc && (menuStyle === MENU_PARTIAL || menuStyle === MENU_FULL)
