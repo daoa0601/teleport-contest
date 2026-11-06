@@ -369,7 +369,7 @@ create_gas_cloud_selection	selection_getpoint	inlined	cell membership tests (reg
 create_particular	create_particular_creation	inlined	createParticularMonster creation half (read.ts)
 create_particular	create_particular_parse	inlined	createParticularMonster parse half (read.ts)
 critically_low_hp	xlev_to_rank	inlined	level band mapping (prayer_trouble.ts)
-deliver_splev_message	deliver_by_pline	inlined	deliverSpecialLevelMessages (level_change.ts)
+deliver_splev_message	deliver_by_pline	inlined	deliverSpecialLevelMessages (questpgr.ts)
 dip_ok	inaccessible_equipment	inlined	coveringEquipment excludes covered items (do_wear.ts)
 dismount_steed	sobj_at	inlined	boulder check on the landing square (steed.ts)
 dlord	sgn	inlined	Math.sign alignment match (minion.ts)

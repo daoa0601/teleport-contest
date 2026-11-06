@@ -307,4 +307,16 @@ export function questMonsterType() {
         return species;
     return mkclass(first ? role.enemy1sym : role.enemy2sym, 0);
 }
+// C questpgr.c:deliver_splev_message(): a special level's custom arrival
+// message prints once and is freed, so returning to the level later cannot
+// repeat it.  Bones loads generate no level script, so they carry none.
+// goto_level() (do.ts) delivers this ahead of every other arrival message.
+export async function deliverSpecialLevelMessages(active = game._activeSpecialLevel) {
+    const messages = active?.specialMessages;
+    if (!active || !messages?.length)
+        return;
+    for (const line of messages)
+        await plineWithContinuation(line);
+    active.specialMessages = [];
+}
 //# sourceMappingURL=questpgr.js.map

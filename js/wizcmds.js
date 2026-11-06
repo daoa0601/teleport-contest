@@ -29,7 +29,7 @@ import { finishMonsterKilled, finishMonsterLiquidDeath, killGenocidedMonsters, p
 import { finishHeroDeath } from './end.js';
 import { hurtleHero, hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
-import { deliverSpecialLevelMessages } from './level_change.js';
+import { deliverSpecialLevelMessages } from './questpgr.js';
 import { gotoLevel, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { levelTeleport } from './level_teleport.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
