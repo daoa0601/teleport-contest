@@ -28,11 +28,10 @@ function downStairwayAtHero(state) {
         stairs = stairs.next;
     return stairs && !stairs.up ? stairs : null;
 }
-// C artifact_has_invprop(obj, LEVITATION) over the whole inventory: the
-// artifact confers levitation via #invoke, whether or not it is the source
-// currently keeping the hero aloft.
 // Part of C do.c:dodown(): the inventory walk adding rnz(100) to each
-// levitation artifact's age.
+// levitation artifact's age (artifact_has_invprop(obj, LEVITATION) over
+// the whole inventory, whether or not it is the source currently keeping
+// the hero aloft).
 function refreshLevitationArtifactCooldowns(state) {
     const turn = state.moves;
     for (const object of state.inventory) {

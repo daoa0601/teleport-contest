@@ -536,6 +536,7 @@ export class NethackGame {
         });
     }
 }
+// Port only: run one recorded session segment (the contest contract below).
 // ── Per-segment runner — the contest contract ──
 //
 // The judge calls this once per segment with five input fields:
@@ -544,8 +545,6 @@ export class NethackGame {
 //     datetime: string,    // fixed datetime "YYYYMMDDHHMMSS"
 //     nethackrc: string,   // game-options rc text
 //     moves: string,       // raw key sequence supplied from launch
-// Port only: run one recorded session segment (see the interface sketch
-// below).
 //     storage: object }    // Web-Storage-shaped (getItem/setItem/...)
 //                          //   handle for cross-segment persistence —
 //                          //   shared across all segments of a

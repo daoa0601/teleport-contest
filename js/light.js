@@ -167,6 +167,7 @@ export async function snuffMonsterInventoryLights(defender, state, publish) {
         endObjectBurn(object, state);
     }
 }
+// C uhitm.c:light_hits_gremlin(): the implementation.
 export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
     const dx = monster.mx - game.u.ux;
     const dy = monster.my - game.u.uy;

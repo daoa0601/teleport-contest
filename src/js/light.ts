@@ -215,9 +215,11 @@ export async function snuffMonsterInventoryLights(
 export function lightHitsGremlin(
     monster: Monster, damage: number,
 ): Promise<LightDeathOutcome | void>;
+// C uhitm.c:light_hits_gremlin(): the overload with a kill handler.
 export function lightHitsGremlin(
     monster: Monster, damage: number, finishMonsterKill: FinishMonsterKill,
 ): Promise<boolean | LightDeathOutcome | void>;
+// C uhitm.c:light_hits_gremlin(): the implementation.
 export async function lightHitsGremlin(
     monster: Monster, damage: number,
     finishMonsterKill?: FinishMonsterKill,
