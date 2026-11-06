@@ -35,7 +35,7 @@ import { objectProb } from './o_init.js';
 import { upstart } from './hacklib.js';
 import { addFruit } from './options.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
-import { randomOrcName, setMonsterGivenName } from './do_name.js';
+import { nameOrc, randomOrcName, setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { randomTypeByDescription } from './objnam.js';
 import { migrateMonsterOffLevel } from './dog.js';
@@ -667,13 +667,6 @@ const DELIVER_SPECIES = 0x21fe; // undead, were, human, elf, dwarf, gnome, orc, 
 const PM_ORC = MONSTER_NAME.indexOf('orc');
 const PM_ORC_SHAMAN = MONSTER_NAME.indexOf('orc shaman');
 const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
-// C do_name.c:christen_orc()
-// The gang name is composed into the orc's given
-// name.  Shared by stolen_booty() and the booty delivery below.
-function nameOrc(monster, gang, suffix = '') {
-    const name = upstart(randomOrcName());
-    setMonsterGivenName(monster, gang === null ? name + suffix : `${name} of ${upstart(gang)}`);
-}
 // C mkmaze.c:migrate_orc().
 async function migrate_orc(monster, leader, state) {
     const current = state.u.uz;

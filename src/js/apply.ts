@@ -49,7 +49,7 @@ import {
 } from './dig.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, howMonsterSeen, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
 import type { GlyphMetadata } from './display.js';
-import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName } from './do_name.js';
 import {
     attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTimers, stopLevelTimer, stopObjectTimer,
 } from './timeout.js';
@@ -135,7 +135,7 @@ import {
 import type { GameObject } from './object_types.js';
 import {
     corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName,
-    objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName,
+    objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName,
     simpleObjectTypeName, singularObjectName, withIndefiniteArticle,
 } from './objnam.js';
 import {

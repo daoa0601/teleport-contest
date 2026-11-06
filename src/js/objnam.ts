@@ -28,7 +28,7 @@ import type { Artifact } from './artifact.js';
 import { objectOwnershipPrefix, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { impossible } from './diagnostics.js';
-import { displayColorName, lookupNovelTitle, monsterName } from './do_name.js';
+import { displayColorName, lookupNovelTitle, monsterName, objectMonsterName } from './do_name.js';
 import { currency } from './invent.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
@@ -77,7 +77,7 @@ export type ObjectNameView = Pick<GameObject, 'otyp' | 'oclass'> & Partial<Pick<
     | 'spe' | 'quan' | 'quantity' | 'corpsenm' | 'owt' | 'globby'
     | 'blessed' | 'cursed' | 'odiluted' | 'opoisoned' | 'o_id' | 'oeroded' | 'oeroded2' | 'oeaten'>>;
 
-type CorpseNameView = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject,
+export type CorpseNameView = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject,
     'corpsenm' | 'spe' | 'globby' | 'quan' | 'quantity'>>;
 
 export type ObjectWishResult =
@@ -363,19 +363,6 @@ export function killerObjectName(object: GameObject, state: GameState = game): s
     if (quantity !== 1 || /(?:'s |s' )/i.test(name)) return name;
     return objectUnique(object.otyp) ? definiteName(name, state)
         : withIndefiniteArticle(name);
-}
-
-// C do_name.c:obj_pmname(): object gender describes the depicted creature,
-// independently of any saved traits used when a corpse revives.
-export function objectMonsterName(object: CorpseNameView): string {
-    let species = object.corpsenm;
-    if (species === undefined) return 'thing';
-    const gender = (object.spe || 0) & 3;
-    if (MONSTER_NAME[species] === 'aligned cleric' && gender === 0)
-        species = MONSTER_NAME.indexOf('cleric');
-    return gender === 1 || gender === 2
-        ? monsterTypeName(species, gender === CORPSTAT_FEMALE)
-        : MONSTER_NAME[species] || 'thing';
 }
 
 function corpseMonsterIsUnique(species: number | undefined): boolean {

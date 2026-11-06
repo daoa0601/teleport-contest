@@ -5,8 +5,9 @@
 // rndghostname(), roguename(), mon_nam(), distant_monnam(), l_monnam(),
 // noname_monnam(), x_monnam(), Monnam(), monverbself(), objtyp_is_callable(),
 // docall(), docall_xname(), namefloorobj(), bogusmon(), rndmonnam(),
-// hcolor(), rndcolor(), hliquid(), rndorcname(), noveltitle(),
-// lookup_novel().  The category menu is naming_categories.ts.
+// hcolor(), rndcolor(), hliquid(), rndorcname(), christen_orc(),
+// obj_pmname(), noveltitle(), lookup_novel().  The category menu is
+// naming_categories.ts.
 
 import {
     WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS,
@@ -22,7 +23,7 @@ import {
 import {
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER,
     M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND,
-    LL_ARTIFACT, LL_CONDUCT,
+    LL_ARTIFACT, LL_CONDUCT, CORPSTAT_FEMALE, MD_PAD_BOGONS,
 } from './const.js';
 import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition, visibleCommandKey } from './cmd.js';
 import { OBJ_DESCR } from './o_init.js';
@@ -32,13 +33,15 @@ import { queryLevelAnnotation } from './dungeon.js';
 import { chooseInventoryObject } from './invent.js';
 import {
     canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible,
-    randomBogusMonsterIdentity, seeMonsterWithInfrared, type MonsterIdentity,
+    seeMonsterWithInfrared,
 } from './display.js';
+import { getRndLine } from './rumors.js';
+import { BOGUS_MONSTERS } from './random_text_data.js';
 import { repriceDiscoveredGems, objectOwnershipPrefix, updateUnpaidObjectPrice } from './shk.js';
 import {
     definiteName, makePlural, objectName, objectNameIsPlural, observeObjectForNaming,
     pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, verbForSubject,
-    withIndefiniteArticle,
+    withIndefiniteArticle, type CorpseNameView,
 } from './objnam.js';
 import { impossible } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
@@ -53,7 +56,7 @@ import { cansee } from './vision.js';
 import { priestName } from './priest.js';
 import { shopkeeperName } from './shknam.js';
 import { rankOf, roleSwitch } from './botl.js';
-import { possessiveName } from './hacklib.js';
+import { possessiveName, upstart } from './hacklib.js';
 import {
     monsterPossessive, monsterPronounGender, monsterSubjectPronoun, monsterHasProperName, monsterIsAnimal,
     monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider,
@@ -194,11 +197,40 @@ export function randomGhostName(state: GameState = game): string {
 const G_NOGEN = 0x0200;
 const BOGUSMONSIZE = 100;
 
-// Name-only view of C do_name.c:bogusmon() for descriptions that require a
-// fictitious species; the port lives in display.ts
-// (randomBogusMonsterIdentity) because its get_rnd_line() call goes to
-// rumors.ts, which imports this module for mon_nam() the way C's
-// do_name.c and rumors.c call each other.
+// C do_name.c:obj_pmname(): object gender describes the depicted creature,
+// independently of any saved traits used when a corpse revives.
+export function objectMonsterName(object: CorpseNameView): string {
+    let species = object.corpsenm;
+    if (species === undefined) return 'thing';
+    const gender = (object.spe || 0) & 3;
+    if (MONSTER_NAME[species] === 'aligned cleric' && gender === 0)
+        species = MONSTER_NAME.indexOf('cleric');
+    return gender === 1 || gender === 2
+        ? monsterTypeName(species, gender === CORPSTAT_FEMALE)
+        : MONSTER_NAME[species] || 'thing';
+}
+
+export interface MonsterIdentity { name: string; personal: boolean }
+
+// C do_name.c:bogusmon(). get_rnd_line() goes to rumors.ts, which imports
+// this module for mon_nam() the way C's do_name.c and rumors.c call each
+// other; the cycle is function-body-only.
+// Also C do_name.c:bogon_is_pname() (inlined): a leading code character is
+// stripped and reported, and '-', '+', and '=' suppress ARTICLE_THE. Empty
+// strings are considered substrings in JavaScript, so retain the source's
+// explicit "has a control prefix" gate.
+export function randomBogusMonsterIdentity(): MonsterIdentity {
+    const selected = getRndLine(BOGUS_MONSTERS, MD_PAD_BOGONS, rn2Display) || 'bogon';
+    const first = selected.charAt(0);
+    const code = '-_+|='.includes(first) ? first : '';
+    return {
+        name: code ? selected.slice(1) : selected,
+        personal: !!code && '-+='.includes(code),
+    };
+}
+
+// Name-only view of bogusmon() above for descriptions that require a
+// fictitious species.
 export function randomBogusMonsterName(): string {
     return randomBogusMonsterIdentity().name;
 }
@@ -308,6 +340,14 @@ export function randomOrcName(): string {
         name += syllable;
     }
     return name;
+}
+
+// C do_name.c:christen_orc()
+// The gang name is composed into the orc's given
+// name.  Shared by stolen_booty() and the booty delivery below.
+export function nameOrc(monster: Monster, gang: string | null, suffix = ''): void {
+    const name = upstart(randomOrcName());
+    setMonsterGivenName(monster, gang === null ? name + suffix : `${name} of ${upstart(gang)}`);
 }
 
 export const NOVEL_TITLES: readonly string[] = [

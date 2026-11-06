@@ -27,9 +27,6 @@ import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, 
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
-import { getRndLine } from './rumors.js';
-import { BOGUS_MONSTERS } from './random_text_data.js';
-import { MD_PAD_BOGONS } from './const.js';
 import { recordObjectEncounter, objectTypeColor } from './o_init.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasWornProperty, propertyIsActive, refreshProperty } from './properties.js';
 import { infravisible, monsterIsMindless } from './mondata.js';
@@ -2263,25 +2260,6 @@ export async function see_traps() {
 // C display.c:curs_on_u(). Flush waiting glyphs & put cursor on hero.
 export async function curs_on_u() {
     await flush_screen(1);
-}
-// C do_name.c:bogusmon(). The random line selection is C rumors.c:
-// get_rnd_line() (getRndLine in rumors.ts) with MD_PAD_BOGONS padding and
-// the display RNG; a leading code character is then stripped and reported,
-// and C do_name.c:bogon_is_pname() (inlined) decides the personal-name
-// flag. Lives here rather than do_name.ts because rumors.ts imports
-// do_name.ts for mon_nam(); C's do_name.c and rumors.c call each other
-// the same way.
-export function randomBogusMonsterIdentity() {
-    const selected = getRndLine(BOGUS_MONSTERS, MD_PAD_BOGONS, rn2Display) || 'bogon';
-    const first = selected.charAt(0);
-    const code = '-_+|='.includes(first) ? first : '';
-    return {
-        name: code ? selected.slice(1) : selected,
-        // bogon_is_pname(): '-', '+', and '=' suppress ARTICLE_THE. Empty
-        // strings are considered substrings in JavaScript, so retain the
-        // source's explicit "has a control prefix" gate.
-        personal: !!code && '-+='.includes(code),
-    };
 }
 let lastSwallowedX = 0;
 let lastSwallowedY = 0;

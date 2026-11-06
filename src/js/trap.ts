@@ -48,7 +48,7 @@ import {
     objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName,
     objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName,
     corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle,
-    bareArtifactOrPlainName, killerObjectName, definiteObjectAction, objectMonsterName, erosionMatters,
+    bareArtifactOrPlainName, killerObjectName, definiteObjectAction, erosionMatters,
 } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
@@ -136,7 +136,8 @@ import {
 import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
 import {
     displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName,
-    monsterName as perceivedMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName,
+    monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName,
+    randomColorName,
 } from './do_name.js';
 import { munstone } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, removeHeroEquipment } from './worn.js';

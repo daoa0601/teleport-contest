@@ -23,7 +23,7 @@ import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
-import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName, erosionMatters } from './objnam.js';
+import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
@@ -50,7 +50,7 @@ import { rn2, rnd } from './rng.js';
 import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
-import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName, objectMonsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
 import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious, monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, heroResistsStoning, touchPetrifies, heroCanBeStrangled, } from './mondata.js';
 import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';

@@ -10,7 +10,7 @@ import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArt
 import { objectOwnershipPrefix, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { impossible } from './diagnostics.js';
-import { displayColorName, lookupNovelTitle, monsterName } from './do_name.js';
+import { displayColorName, lookupNovelTitle, monsterName, objectMonsterName } from './do_name.js';
 import { currency } from './invent.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
@@ -327,19 +327,6 @@ export function killerObjectName(object, state = game) {
         return name;
     return objectUnique(object.otyp) ? definiteName(name, state)
         : withIndefiniteArticle(name);
-}
-// C do_name.c:obj_pmname(): object gender describes the depicted creature,
-// independently of any saved traits used when a corpse revives.
-export function objectMonsterName(object) {
-    let species = object.corpsenm;
-    if (species === undefined)
-        return 'thing';
-    const gender = (object.spe || 0) & 3;
-    if (MONSTER_NAME[species] === 'aligned cleric' && gender === 0)
-        species = MONSTER_NAME.indexOf('cleric');
-    return gender === 1 || gender === 2
-        ? monsterTypeName(species, gender === CORPSTAT_FEMALE)
-        : MONSTER_NAME[species] || 'thing';
 }
 function corpseMonsterIsUnique(species) {
     if (species === undefined)
