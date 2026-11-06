@@ -994,7 +994,9 @@ function finalAttributePages({ final, killer = '' }) {
     }
     return pages;
 }
-// C end.c:disclose() -> enlightenment(BASIC | MAGIC, final).
+// C insight.c:enlightenment(): the final-gameover form end.c:disclose()
+// requests with BASICENLIGHTENMENT | MAGICENLIGHTENMENT; the in-progress
+// menu form is showEnlightenment().
 export async function showFinalAttributes(options) {
     return showTextPages(finalAttributePages(options), {
         validKeys: [27, 32, 10, 13],

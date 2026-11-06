@@ -10,7 +10,7 @@ import { encumber_msg } from './pickup.js';
 import { cureHeroSickness } from './potion.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { endmultishot } from './dothrow.js';
-import { BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd, LL_CONDUCT, } from './const.js';
+import { BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, PANICKED, PICK_ONE, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd, LL_CONDUCT, } from './const.js';
 import { isok, setMulti, paranoidQuery } from './cmd.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
@@ -27,7 +27,7 @@ import { clearMessageWindow, displayMessageWindow, flushPendingTopline, resetTop
 import { vision_recalc } from './vision.js';
 import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOnExit, deleteObject } from './shk.js';
 import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
-import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects, currency, stack_object } from './invent.js';
+import { consumeInventoryItem, identifyObjectForDisclosure, selectInventoryObject, lootSortMode, sortObjects, currency, stack_object } from './invent.js';
 import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.js';
 import { artifactById } from './artifact.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
@@ -660,7 +660,12 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
         }
         if (possessionAnswer === 'y') {
             game.flags.force_invmenu = false;
-            await showIdentifiedInventory();
+            // C display_inventory((char *) 0, TRUE): disclose() requests a
+            // reply so an inventory letter closes the menu; it ignores the
+            // selected object and continues with the next question.
+            // really_done()'s discovery loop above already identified every
+            // carried object.
+            await selectInventoryObject({ headingAttr: 0, pickMode: PICK_ONE });
             await containerContents(game.inventory, true, true, false);
         }
         if (possessionAnswer === 'q')
