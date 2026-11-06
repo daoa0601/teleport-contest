@@ -1243,20 +1243,6 @@ function ownerChain(object: GameObject, state: GameState): GameObject[] | null |
     }
 }
 
-// C mkobj.c:splitobj() links the new piece right after the original in
-// whatever chain owns it (nobj, and nexthere on the floor), so the piece
-// stays where the original is until a caller extracts it.
-export function linkObjectAfter(
-    object: GameObject, next: GameObject, state: GameState = game,
-): void {
-    if (object.where === 'free') return;
-    const chain = ownerChain(object, state);
-    const index = chain?.indexOf(object) ?? -1;
-    if (!chain || index < 0)
-        throw new Error(`Object ${object.o_id} is missing from its ${object.where} chain`);
-    chain.splice(index + 1, 0, next);
-}
-
 
 // C mkobj.c:replace_object(). Keep the owner's order without pickup,
 // dropping, merging, or transferring the old object's timers.
@@ -1591,7 +1577,16 @@ export function splitObjectStack(
     setQuantity(object, total - count);
     setQuantity(split, count);
     state.context.objsplit = { parent_oid: object.o_id, child_oid: split.o_id };
-    linkObjectAfter(object, split, state);
+    // splitobj() links the new piece right after the original in whatever
+    // chain owns it (nobj, and nexthere on the floor), so the piece stays
+    // where the original is until a caller extracts it.
+    if (object.where !== 'free') {
+        const chain = ownerChain(object, state);
+        const index = chain?.indexOf(object) ?? -1;
+        if (!chain || index < 0)
+            throw new Error(`Object ${object.o_id} is missing from its ${object.where} chain`);
+        chain.splice(index + 1, 0, split);
+    }
     // C mkobj.c:494 splitobj(): an unpaid stack's bill follows the split.
     if (object.unpaid) splitObjectBill(object, split, state);
     copyObjectTimers(object, split, state);
