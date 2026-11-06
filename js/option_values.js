@@ -2,10 +2,9 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { planInventoryOrder } from './options.js';
+import { decodeOptionEscapes, planInventoryOrder } from './options.js';
 import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { WARNCOUNT } from './const.js';
-import { decodeOptionEscapes } from './option_escapes.js';
 import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
 import { resetStatusHilites } from './botl.js';
 export function textOptionValue(name) {

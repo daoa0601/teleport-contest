@@ -2,7 +2,7 @@
 import { def_warnsyms } from './const.js';
 import { game } from './gstate.js';
 import type { InterfaceFlags } from './flags.js';
-import { decodeOptionEscapes } from './option_escapes.js';
+import { decodeOptionEscapes } from './options.js';
 
 // C options.c:warning_opts()/assign_warnings(): the string-valued warnings
 // option; the numeric WARNINGS= statement lives in cfgfiles.ts.
