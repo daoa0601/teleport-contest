@@ -17,7 +17,7 @@ import {
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
-import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
+import { artifactById, artifactByName, artifactExistCount, mk_artifact, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 
@@ -1860,7 +1860,7 @@ async function bestowArtifact(value: number): Promise<boolean> {
         ? await promptYesNo('Gift an artifact?') === 'y'
         : rn2(6 + 2 * (hero.ugifts || 0) * count) === 0;
     if (!selected) return false;
-    const object = await createArtifactGift(hero.ualign.type, value);
+    const object = await mk_artifact({ object: null, alignment: hero.ualign.type }, value, true);
     if (!object) return false;
     if (object.oartifact === undefined) throw new Error('An artifact gift requires an artifact id.');
     setArtifactOrigin(object, 'gift', { knownOrigin: true });

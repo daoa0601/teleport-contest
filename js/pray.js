@@ -8,7 +8,7 @@ import { objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_Y
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
-import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
+import { artifactById, artifactByName, artifactExistCount, mk_artifact, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { monsterResistsEffect, reviveCorpseForHero } from './zap.js';
@@ -1924,7 +1924,7 @@ async function bestowArtifact(value) {
         : rn2(6 + 2 * (hero.ugifts || 0) * count) === 0;
     if (!selected)
         return false;
-    const object = await createArtifactGift(hero.ualign.type, value);
+    const object = await mk_artifact({ object: null, alignment: hero.ualign.type }, value, true);
     if (!object)
         return false;
     if (object.oartifact === undefined)

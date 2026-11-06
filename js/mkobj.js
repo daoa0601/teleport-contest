@@ -15,11 +15,11 @@ import { newsym } from './display.js';
 import { heroCanReachFloor } from './engrave.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level, level_difficulty, surfaceName } from './dungeon.js';
-import { ALTAR, ICE, IRONBARS, In_quest, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND, LARGEST_INT, } from './const.js';
+import { ALTAR, A_NONE, ICE, IRONBARS, In_quest, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND, LARGEST_INT, } from './const.js';
 import { isok } from './cmd.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
 import { forgetTempleEntry } from './priest.js';
-import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifact.js';
+import { artifactExistCount, mk_artifact, uncreateArtifact } from './artifact.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph, copyObjectTimers } from './timeout.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
@@ -253,7 +253,7 @@ async function mksobj_init(otmp, artif, definition) {
             if (isPoisonableObject(otmp))
                 otmp.opoisoned = rn2(100) === 0;
             if (artif && !rn2(20 + 10 * artifactExistCount()))
-                createRandomArtifact(otmp);
+                await mk_artifact({ object: otmp, alignment: A_NONE }, 99, true);
             break;
         case ARMOR_CLASS:
             if (rn2(10)
@@ -271,7 +271,7 @@ async function mksobj_init(otmp, artif, definition) {
                 blessorcurse(otmp, 10);
             }
             if (artif && !rn2(40 + 10 * artifactExistCount()))
-                createRandomArtifact(otmp);
+                await mk_artifact({ object: otmp, alignment: A_NONE }, 99, true);
             // Native lacquer protects Samurai armor created at startup or
             // anywhere in the hero's quest, including armor carried by monsters.
             if (game.urole?.key === 'samurai' && otmp.otyp === SPLINT_MAIL

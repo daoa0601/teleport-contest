@@ -164,7 +164,7 @@ import {
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
+import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import {
     burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
@@ -7691,7 +7691,7 @@ export async function untrap({
     rollDice = d,
     luckRandom = rnl,
 }: UntrapOptions = {}): Promise<boolean> {
-    if (!force && heroHasMagicKey(state)) force = true;
+    if (!force && hasMagicKey({ youmonst: true }, state)) force = true;
 
     if (container) {
         await inspectBox(container, { state, force, ask, publish, random, rollOne, rollDice });
