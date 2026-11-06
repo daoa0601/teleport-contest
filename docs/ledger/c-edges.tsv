@@ -39,6 +39,9 @@ Mb_hit	rn2
 Mb_hit	rnd
 Mb_hit	shieldeff
 On_ladder	stairway_at
+On_stairs	stairway_at
+On_stairs_dn	stairway_at
+On_stairs_up	stairway_at
 RND	isaac64_next_uint64
 Ring_off_or_gone	float_down
 Ring_off_or_gone	learnring
@@ -54,6 +57,7 @@ a_gname_at	align_gname
 able_to_loot	hliquid
 able_to_loot	is_pool
 abon	acurr
+accessible	closed_door
 accessory_or_armor_on	setworn
 accessory_or_armor_on	yn_function
 act_on_act	cmdq_add_dir
@@ -71,6 +75,8 @@ add_room	do_room_or_subroom
 addinv_core0	picked_container
 addinv_core0	setuqwep
 addinv_core0	update_inventory
+adj_pit_checks	On_ladder
+adj_pit_checks	On_stairs
 adj_pit_checks	closed_door
 adj_pit_checks	is_pool
 adj_pit_checks	isok
@@ -104,6 +110,7 @@ angrygods	rnz
 angrygods	summon_minion
 antholemon	level_difficulty
 append_honorific	rn2
+armoroff	cursed
 arti_invoke	arti_invoke_cost
 arti_invoke	d
 arti_invoke	enlightenment
@@ -151,6 +158,8 @@ avoid_trap_andor_region	visible_region_at
 baalz_fixup	isok
 baalz_fixup	wallification
 back_on_ground	surface
+back_to_glyph	known_branch_stairs
+back_to_glyph	stairway_at
 back_to_glyph	wall_angle
 backfire	d
 backfire	losehp
@@ -179,6 +188,7 @@ bestow_artifact	align_gname
 bestow_artifact	discover_artifact
 bestow_artifact	exercise
 bestow_artifact	godvoice
+bestow_artifact	mk_artifact
 bestow_artifact	nartifact_exist
 bestow_artifact	rn2
 bestow_artifact	rnz
@@ -326,6 +336,7 @@ clear_fcorr	blackout
 clear_fcorr	map_location
 clear_fcorr	recalc_block_point
 clear_level_structures	init_rect
+clear_level_structures	stairway_free_all
 clear_no_charge_obj	isok
 clear_stale_map	unmap_object
 click_to_cmd	cmdq_add_ec
@@ -338,6 +349,8 @@ clonewiz	newsym
 clonewiz	rn2
 close_drawbridge	newsym
 cmdq_add_ec	ext_func_tab_from_func
+cnf_line_OPTIONS	find_optparam
+cnf_line_OPTIONS	parseoptions
 com_pager_core	rn2
 confdir	rn2
 confused_book	rn2
@@ -473,6 +486,7 @@ deadbook	d
 deadbook	makemon
 deadbook	record_achievement
 deadbook	rn2
+defends	get_artifact
 defends_when_carried	get_artifact
 deferred_decor	describe_decor
 deferred_goto	newsym
@@ -591,6 +605,7 @@ disarm_squeaky_board	try_disarm
 discard_broken_wand	nomul
 discard_damage_owned_by	in_rooms
 disclose	container_contents
+disclose	enlightenment
 disclose	list_genocided
 disclose	should_query_disclose_option
 disclose	yn_function
@@ -999,6 +1014,8 @@ domonability	dryup
 domonability	is_pool
 domonability	use_unicorn_horn
 domonability	yn_function
+domouseaction	On_stairs_dn
+domouseaction	On_stairs_up
 domouseaction	cmdq_add_ec
 domouseaction	test_move
 domove	domove_core
@@ -1527,6 +1544,7 @@ findone	magic_map_background
 findone	map_invisible
 findone	newsym
 findone	recalc_block_point
+findone	sense_trap
 findone	unmap_invisible
 findtravelpath	end_running
 findtravelpath	isok
@@ -1809,6 +1827,7 @@ handler_rebind_keys	count_bind_keys
 handler_rebind_keys	handler_rebind_keys_add
 handler_rebind_keys_add	bind_key
 handler_rebind_keys_add	pgetchar
+has_magic_key	is_magic_key
 heal_legs	encumber_msg
 healup	make_blinded
 healup	make_deaf
@@ -1846,6 +1865,7 @@ hmon_hitmon_misc_obj	d
 hmon_hitmon_misc_obj	exercise
 hmon_hitmon_misc_obj	rn2
 hmon_hitmon_misc_obj	rnd
+hmon_hitmon_misc_obj	weight
 hmon_hitmon_pet	rnd
 hmon_hitmon_poison	adjalign
 hmon_hitmon_poison	permapoisoned
@@ -1987,6 +2007,7 @@ is_boh_item_gone	rn2
 is_drawbridge_wall	isok
 is_ice	isok
 is_innate	innately
+is_lava	isok
 is_moat	isok
 is_ok_location	is_pool
 is_pool	isok
@@ -1996,6 +2017,7 @@ is_valid_jump_pos	isok
 is_valid_travelpt	findtravelpath
 is_valid_travelpt	glyph_at
 is_valid_travelpt	isok
+is_waterwall	isok
 isaac64_init	isaac64_reseed
 isaac64_next_uint	isaac64_next_uint64
 isaac64_next_uint64	isaac64_update
@@ -2004,6 +2026,7 @@ isaac64_reseed	isaac64_update
 isaac64_update	lower_bits
 isaac64_update	upper_bits
 isclearpath	isok
+iswall	isok
 iswall_or_stone	isok
 iswall_or_stone	iswall
 itemactions_pushkeys	cmdq_add_ec
@@ -2358,6 +2381,7 @@ lvlfill_swamp	lvlfill_solid
 lvlfill_swamp	rn2
 lvlfill_swamp	set_levltyp_lit
 m_balks_at_approaching	dist2
+m_calcdistress	vision_recalc
 m_cure_self	d
 m_detach	dismount_steed
 m_detach	mon_leaving_level
@@ -2424,6 +2448,7 @@ make_niches	rn2
 make_niches	rnd
 make_sick	exercise
 make_stunned	unconscious
+make_vomiting	unconscious
 makecorridors	join
 makecorridors	rn2
 makedog	pet_type
@@ -2783,6 +2808,7 @@ mksink	find_okay_roompos
 mksobj_init	can_be_hatched
 mksobj_init	dead_species
 mksobj_init	level_difficulty
+mksobj_init	mk_artifact
 mksobj_init	mkbox_cnts
 mksobj_init	mkobj_erosions
 mksobj_init	nartifact_exist
@@ -2880,6 +2906,7 @@ moveloop	moveloop_core
 moveloop	moveloop_preamble
 moveloop_core	acurr
 moveloop_core	amulet
+moveloop_core	bot
 moveloop_core	check_leash
 moveloop_core	clear_bypasses
 moveloop_core	clear_splitobjs
@@ -2894,20 +2921,26 @@ moveloop_core	dosounds
 moveloop_core	encumber_msg
 moveloop_core	end_running
 moveloop_core	exerchk
+moveloop_core	fumaroles
 moveloop_core	gethungry
 moveloop_core	glibr
+moveloop_core	intervene
 moveloop_core	invault
 moveloop_core	l_nhcore_call
 moveloop_core	makewish
+moveloop_core	maybe_generate_rnd_mon
 moveloop_core	mcalcdistress
 moveloop_core	mkot_trap_warn
+moveloop_core	movebubbles
 moveloop_core	near_capacity
 moveloop_core	next_to_u
 moveloop_core	nh_timeout
 moveloop_core	night
 moveloop_core	overexert_hp
 moveloop_core	polyself
+moveloop_core	pooleffects
 moveloop_core	regen_hp
+moveloop_core	regen_pw
 moveloop_core	rhack
 moveloop_core	rn2
 moveloop_core	rnd
@@ -2922,6 +2955,8 @@ moveloop_core	status_eval_next_unhilite
 moveloop_core	swallowed
 moveloop_core	tele
 moveloop_core	timebot
+moveloop_core	u_calc_moveamt
+moveloop_core	u_wipe_engr
 moveloop_core	under_ground
 moveloop_core	under_water
 moveloop_core	vision_recalc
@@ -2932,6 +2967,7 @@ moveloop_preamble	pickup
 moveloop_preamble	rnd
 moveloop_preamble	see_monsters
 moveloop_preamble	set_wear
+movemon	clear_bypasses
 moverock	moverock_done
 moverock_core	boulder_hits_pool
 moverock_core	cannot_push
@@ -3159,6 +3195,8 @@ parse	readchar
 parse_condition	splitsubfields
 parse_condition	str2conditionbitmask
 parse_conf_buf	choose_random_part
+parse_conf_buf	find_optparam
+parse_conf_buf	handle_config_section
 parse_role_opt	clearrolefilter
 parse_status_hl1	parse_status_hl2
 parse_status_hl2	has_ltgt_percentnumber
@@ -3374,6 +3412,7 @@ pluslvl	newpw
 pluslvl	record_achievement
 poison_strdmg	losehp
 poisontell	acurr
+polyman	check_strangling
 polyman	done
 polyman	make_blinded
 polyman	newsym
@@ -3383,6 +3422,7 @@ polyman	set_mimic_blocking
 polyman	set_uasmon
 polyman	spoteffects
 polymon	can_ride
+polymon	check_strangling
 polymon	d
 polymon	dismount_steed
 polymon	encumber_msg
@@ -3430,6 +3470,7 @@ populate_maze	rn2
 possible_places	level_range
 postadjabil	see_monsters
 postmov	dissolve_bars
+postmov	has_magic_key
 postmov	in_rooms
 postmov	may_dig
 postmov	newsym
@@ -3514,6 +3555,7 @@ randrole_filtered	ok_race
 randrole_filtered	ok_role
 randrole_filtered	rn2
 rank	rank_of
+rcfile	parseoptions
 read_engr_at	surface
 readchar	readchar_core
 readchar_core	randomkey
@@ -3625,7 +3667,10 @@ reset_needed_visuals	reglyph_darkroom
 reset_occupations	reset_pick
 reset_role_filtering	gotrolefilter
 reset_utrap	float_up
+resetobjs	artifact_exists
+resetobjs	in_rooms
 responsive_mon_at	isok
+restmonchn	propagate
 restrap	rn2
 restrap	set_mimic_sym
 restricted_spell_discipline	spell_skilltype
@@ -4391,6 +4436,7 @@ tty_start_menu	tty_clear_nhwindow
 tty_yn_function	digit
 tty_yn_function	readchar
 u_adtyp_resistance_obj	adtyp_to_prop
+u_calc_moveamt	rn2
 u_can_engrave	cant_reach_floor
 u_can_engrave	is_pool
 u_can_engrave	surface
@@ -4483,6 +4529,7 @@ untrap	disarm_shooting_trap
 untrap	disarm_squeaky_board
 untrap	exercise
 untrap	getdir
+untrap	has_magic_key
 untrap	help_monster_out
 untrap	in_rooms
 untrap	isok
@@ -4743,6 +4790,7 @@ you_were	paranoid_query
 you_were	unconscious
 youhiding	is_pool
 youhiding	surface
+zap_dig	On_stairs
 zap_dig	closed_door
 zap_dig	dighole
 zap_dig	fillholetyp
