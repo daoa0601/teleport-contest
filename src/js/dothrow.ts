@@ -115,7 +115,7 @@ import {
     exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects,
     heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt,
 } from './hack.js';
-import { heroCanBeBlindedByObject } from './blinding_attack.js';
+import { AT_WEAP } from './monster_attack_types.js';
 import { propertyIsActive } from './properties.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import type { MonsterProjectileDisplay } from './mthrowu.js';
@@ -128,7 +128,7 @@ import {
     monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous,
     monsterIsFlyer, monsterIsSlithy, monsterIsWhirly, monsterPassesWalls,
     monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies,
-    formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race,
+    formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, canBlnd,
 } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -2547,7 +2547,9 @@ export async function tossObjectUp(object: GameObject, {
     const helmet = state.uarmh || hero.uarmh || null;
     if (objectBreaksOnImpact(object, random)) {
         // C dothrow.c passes &gy.youmonst as both magr and mdef here.
-        const blindIncrement = heroCanBeBlindedByObject(object.otyp, state, { thrownByHero: true }) ? rollOne(25) : 0;
+        const blindIncrement = (object.otyp === CREAM_PIE || object.otyp === BLINDING_VENOM)
+            && canBlnd({ youmonst: true }, { youmonst: true }, AT_WEAP, object, state)
+            ? rollOne(25) : 0;
         const broken = await breakObject();
         if (state.program_state.gameover) return null;
         const remaining = broken.destroyed ? null : object;

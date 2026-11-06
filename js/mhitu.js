@@ -13,7 +13,7 @@ import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisi
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, randomDisplayMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, touchPetrifies, } from './mondata.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense, } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -22,8 +22,7 @@ import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitValue } from './weap
 import { isPolearm, isMissileObject, isWeaponTool } from './object_properties.js';
 import { mhitm_adtyping, isHeroDeferredContactDamageType, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, mhitm_knockback, passiveDamage, erodeArmor, } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
-import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifact.js';
-import { heroResistsBlindingLight } from './blinding_attack.js';
+import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject } from './artifact.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explode.js';
 import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
@@ -2463,11 +2462,6 @@ async function snuffEngulfedLights(state, publish) {
         endObjectBurn(object, state);
     }
 }
-// C mondata.c:can_blnd(AT_ENGL). Cancellation and light resistance do not help.
-function engulfCanBlindHero(state) {
-    return monsterHasEyes(heroSpecies(state)) && !blindfolded(state)
-        && !heroIsUnaware(state) && !state.u.ucreamed;
-}
 // C mhitu.c:gulpmu(): the monster swallows the hero, or damages one it has
 // already swallowed. An 'engulf' slot is the initial capture (C !u.uswallow);
 // every later tick, and gulp_blnd_check()'s re-entry, run the shared body.
@@ -2600,7 +2594,7 @@ export async function gulpmu(monster, attack, { state = game, random = rn2, roll
         case AD_BLND:
             // C gulpmu() AD_BLND: can_blnd(AT_ENGL) keeps the hero blind until
             // disgorged.
-            if (engulfCanBlindHero(state)) {
+            if (canBlnd({ monster }, { youmonst: true }, AT_ENGL, null, state)) {
                 if (!heroIsBlind(state)) {
                     const wasBlinded = heroIsBlinded(state);
                     if (!wasBlinded)
@@ -2781,7 +2775,8 @@ async function presentHeroEngulfSlot(monster, attack, state, { random = rn2, rol
 // C mhitu.c:gulp_blnd_check(): taking a blindfold off inside a blinding
 // swallower immediately applies the engulfing blindness, like a passive.
 export async function gulp_blnd_check({ state = game, publish = plineWithContinuation, } = {}) {
-    if (heroIsBlinded(state) || !state.u.uswallow || !engulfCanBlindHero(state))
+    if (heroIsBlinded(state) || !state.u.uswallow
+        || !canBlnd(state.u.ustuck ? { monster: state.u.ustuck } : null, { youmonst: true }, AT_ENGL, null, state))
         return { triggered: false, died: false };
     const monster = state.u.ustuck;
     if (!monster)
@@ -3565,7 +3560,7 @@ export async function resolveMonsterSelfExplosion(monster, attack, { foundHero, 
                 break;
             }
             case AD_BLND:
-                unaffected = heroResistsBlindingLight(state);
+                unaffected = resistsBlnd({ youmonst: true }, state);
                 if (foundHero && !unaffected) {
                     // mon_visible() ignores the square's visibility, unlike canseemon().
                     const visible = !monster.mundetected
@@ -3741,7 +3736,7 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
             }
             break;
         case AD_BLND:
-            if (!visible() || heroResistsBlindingLight(state)
+            if (!visible() || resistsBlnd({ youmonst: true }, state)
                 || (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2 > BOLT_LIM ** 2)
                 break;
             if (cancelled) {

@@ -47,7 +47,6 @@ import { displayColorName, monsterName } from './do_name.js';
 import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './region.js';
 import { openFallingTrap, openHoldingTrap, trapName, triggerBoobyTrap, activateStatueTrapAt } from './trap.js';
-import { heroResistsBlindingLight } from './blinding_attack.js';
 import { cmapToGlyph, CmapSymbol, GlyphOffset } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { Hero } from './hero_types.js';
@@ -58,7 +57,7 @@ import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { consumeObjectCharge, currency, useUpInventoryStack } from './invent.js';
 import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
-import { MONSTER_CLASS_SYMBOLS, monsterDigests, monsterHidesUnder, monsterIsHider } from './mondata.js';
+import { MONSTER_CLASS_SYMBOLS, monsterDigests, monsterHidesUnder, monsterIsHider, resistsBlnd } from './mondata.js';
 import { expelHero } from './mhitu.js';
 import { body_part, heroPolyGender } from './polyself.js';
 
@@ -784,7 +783,7 @@ export async function useCrystalBall(object: GameObject): Promise<GameObject | n
             break;
         }
         case 3:
-            if (heroResistsBlindingLight()) {
+            if (resistsBlnd({ youmonst: true })) {
                 const name = definiteName(objectCombatName(object));
                 await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} ${verbForSubject(name, 'assault')} your vision.`);
                 await plineWithContinuation('You are unaffected!');

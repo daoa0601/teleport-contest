@@ -59,7 +59,7 @@ import {
     finishHeroMonsterKill,
     isRider, zombieForm,
 } from './mon.js';
-import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import {
@@ -109,7 +109,7 @@ import {
 } from './dungeon.js';
 import {
     is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls,
-    monsterThrowsRocks, touchPetrifies, heroResistsStoning,
+    monsterThrowsRocks, touchPetrifies, heroResistsStoning, heroHasOlfaction,
 } from './mondata.js';
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';

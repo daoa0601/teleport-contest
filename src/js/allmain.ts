@@ -53,7 +53,7 @@ import { askKeepRestoredSave } from './save.js';
 import { finishScheduledLevelChange } from './do.js';
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion, monsterIsAnimal, monsterIsNonliving } from './mondata.js';
+import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion, monsterIsAnimal, monsterIsNonliving, heroHasOlfaction } from './mondata.js';
 import { MONSTER_GENO, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import {
@@ -64,7 +64,7 @@ import type { MonsterAttackDeathOptions, FinishHeroDeathOptions } from './end.js
 import { releaseObjectLeash, checkHeroLeashes, heroNextToLeashedFollowers } from './apply.js';
 import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, } from './object_data.js';
 import { heroIsUnaware } from './senses.js';
-import { heroSpecies, setHeroSpecies, feelingAfterSelfGenocide, heroHasBeenGenocided, heroHasOlfaction, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
+import { heroSpecies, setHeroSpecies, feelingAfterSelfGenocide, heroHasBeenGenocided, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import {
     openHoldingTrap, igniteItems, petrifyMonsterImmediately, burnHeroArmorByFire, sinkHeroIntoLava,

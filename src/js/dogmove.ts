@@ -5,7 +5,7 @@ import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack, mattacku, presentMonsterAttackEffects } from './mhitu.js';
 import { inventoryItemDescription } from './invent.js';
 import {
-    monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, monsterCarryAmount, resistConflict,
+    monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, monsterCarryAmount,
     checkMonsterGearNextTurn, finishEnvironmentalMonsterDeath,
 } from './mon.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -64,7 +64,7 @@ import { begForFood, monsterSentenceSubject, publishMonsterNoise, publishMonster
 import {
     maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes,
     monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks, tunnels,
-    speciesHasWeaponAttack, touchPetrifies, carnivorous, herbivorous,
+    speciesHasWeaponAttack, touchPetrifies, carnivorous, herbivorous, resistConflict,
 } from './mondata.js';
 import { monsterReflectsRay } from './muse.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';

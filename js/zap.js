@@ -22,7 +22,7 @@ import { formatDraftMessage } from './draft_message.js';
 import { waterbodyName } from './pager.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount } from './mondata.js';
+import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount, resistsBlnd } from './mondata.js';
 import { setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue, } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, mungWishSpaces } from './hacklib.js';
@@ -84,7 +84,6 @@ import { shopkeeperName } from './shknam.js';
 import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
 import { setArtifactOrigin } from './artifact.js';
 import { heroIsPunished } from './ball.js';
-import { heroResistsBlindingLight, monsterResistsBlindingLight } from './blinding_attack.js';
 import { dropBoulderIntoLiquid } from './do.js';
 import { xyToDirection } from './cmd.js';
 import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, In_mines, Luck, MOAT, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NHW_MENU, NON_PM, PICK_ONE, PLNMSG_OBJ_GLOWS, P_BASIC, P_EXPERT, P_SKILLED, STONE, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMS, W_ARMU } from './const.js';
@@ -2799,7 +2798,7 @@ export async function lightDamage(source, ordinary, amount, { state = game } = {
 // The duration is rolled by the caller even when resisted.
 export async function flashBurn(duration, viaLightning = false, { state = game, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
-    if (!heroResistsBlindingLight(state)) {
+    if (!resistsBlnd({ youmonst: true }, state)) {
         await publish('You are blinded by the flash!');
         await makeBlinded(duration, { state, talk: false, publish });
         if (!heroIsBlind(state))
@@ -3633,7 +3632,7 @@ async function damageRayMonster(monster, nativeType, dice, { state, publish, ran
         sourceDamage = spellDamage(rollDice(dice, 6));
         hit.resisted = monsterHasShockResistance(monster);
         hit.damage = hit.resisted ? 0 : sourceDamage;
-        if (!inside && dice > 2 && !monsterResistsBlindingLight(monster, state)) {
+        if (!inside && dice > 2 && !resistsBlnd({ monster }, state)) {
             monster.mcansee = 0;
             monster.mblinded = Math.min(127, (monster.mblinded ?? 0) + rollOne(50));
         }

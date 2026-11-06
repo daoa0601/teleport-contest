@@ -37,7 +37,7 @@ import {
     monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
     monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance,
     monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance,
-    heroResistsStoning, touchPetrifies,
+    heroResistsStoning, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense,
 } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
@@ -52,9 +52,8 @@ import {
     mhitm_knockback, passiveDamage, erodeArmor,
 } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
-import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifact.js';
+import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject } from './artifact.js';
 import type { ArtifactDefenseQuery } from './artifact.js';
-import { heroResistsBlindingLight } from './blinding_attack.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explode.js';
 import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
@@ -2575,12 +2574,6 @@ async function snuffEngulfedLights(state: PlayingGameState, publish: MessagePubl
     }
 }
 
-// C mondata.c:can_blnd(AT_ENGL). Cancellation and light resistance do not help.
-function engulfCanBlindHero(state: GameState): boolean {
-    return monsterHasEyes(heroSpecies(state)) && !blindfolded(state)
-        && !heroIsUnaware(state) && !state.u.ucreamed;
-}
-
 export interface HeroEngulfOptions {
     state?: GameState;
     random?: (range: number) => number;
@@ -2727,7 +2720,7 @@ export async function gulpmu(
     case AD_BLND:
         // C gulpmu() AD_BLND: can_blnd(AT_ENGL) keeps the hero blind until
         // disgorged.
-        if (engulfCanBlindHero(state)) {
+        if (canBlnd({ monster }, { youmonst: true }, AT_ENGL, null, state)) {
             if (!heroIsBlind(state)) {
                 const wasBlinded = heroIsBlinded(state);
                 if (!wasBlinded) await publish("You can't see in here!");
@@ -2911,7 +2904,9 @@ export async function gulp_blnd_check({
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<{
     triggered: boolean; died: boolean;
 }> {
-    if (heroIsBlinded(state) || !state.u.uswallow || !engulfCanBlindHero(state))
+    if (heroIsBlinded(state) || !state.u.uswallow
+        || !canBlnd(state.u.ustuck ? { monster: state.u.ustuck } : null,
+            { youmonst: true }, AT_ENGL, null, state))
         return { triggered: false, died: false };
     const monster = state.u.ustuck;
     if (!monster) throw new Error('Swallowed hero has no swallowing monster');
@@ -3750,7 +3745,7 @@ export async function resolveMonsterSelfExplosion(monster: Monster, attack: Mons
         break;
     }
     case AD_BLND:
-        unaffected = heroResistsBlindingLight(state);
+        unaffected = resistsBlnd({ youmonst: true }, state);
         if (foundHero && !unaffected) {
             // mon_visible() ignores the square's visibility, unlike canseemon().
             const visible = !monster.mundetected
@@ -3949,7 +3944,7 @@ export async function resolveMonsterGaze(monster: Monster, attack: MonsterAttack
         }
         break;
     case AD_BLND:
-        if (!visible() || heroResistsBlindingLight(state)
+        if (!visible() || resistsBlnd({ youmonst: true }, state)
             || (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2 > BOLT_LIM ** 2) break;
         if (cancelled) {
             reaction = random(2) + 2;

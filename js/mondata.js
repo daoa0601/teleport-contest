@@ -1,12 +1,14 @@
 // Species and actor predicates, and monster data queries.
-// C mondata.h and mondata.c, including can_chant(), petrifying species and
-// poly_when_stoned().
+// C mondata.h and mondata.c, including defended(), resists_blnd(),
+// can_blnd(), can_blow(), can_be_strangled(), olfaction(), can_chant(),
+// resist_conflict(), petrifying species and poly_when_stoned().
 import { levelHasCeiling } from './dungeon.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, MONSTER_RESISTS, MONSTER_COLOR, monsterClassSymbol, FLAMING_SPECIES, MONSTER_FLAGS3, PM_GREEN_SLIME, S_GHOST, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP, } from './monster_attack_types.js';
-import { dragonFormForArmor, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
-import { artifactById } from './artifact.js';
-import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP, G_GENOD, } from './const.js';
+import { dragonFormForArmor, heroHasNoHead, heroIsBreathless, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
+import { artifactById, heroHasArtifactDefense, monsterHasArtifactDefense } from './artifact.js';
+import { currentAttribute } from './attrib.js';
+import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_ARMH, W_WEP, G_GENOD, A_CHA, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
 import { rn2 } from './rng.js';
@@ -15,11 +17,11 @@ import { makeSingular } from './objnam.js';
 import { titleToMon } from './botl.js';
 import { monsterHasLineOfSightToHero, clearPath } from './vision.js';
 import { canSpotMonster } from './display.js';
-import { heroIsHallucinating } from './senses.js';
+import { blindfolded, heroIsBlind, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
-import { BANANA, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, CORPSE } from './object_data.js';
+import { BANANA, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BLINDING_VENOM, CORPSE, CREAM_PIE, POT_BLINDNESS } from './object_data.js';
 import { FOOD_CLASS } from './objclass.js';
-import { objectMaterial } from './o_init.js';
+import { OBJ_DESCR, objectMaterial } from './o_init.js';
 import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { dist2 } from './hacklib.js';
@@ -259,6 +261,153 @@ export function monsterCombatDefense(monster, damageType, state = game) {
         ? monster.mnum : dragonFormForArmor(armor);
     return dragon !== null && dragon === DRAGON_DEFENSE[damageType];
 }
+// C mondata.c:defended() — explmu()'s base immunity test for the exploding
+// monster itself: a wielded artifact that defends against the damage type,
+// or dragon scales — worn as body armor, or implicit in an adult dragon's
+// own body. Unlike artifact.c's carries-defense helpers, items that merely
+// defend while carried do not count.
+const SCALE_DEFENDING_DRAGON = {
+    fire: 'red dragon',
+    cold: 'white dragon',
+    shock: 'blue dragon',
+    hallucination: 'gold dragon',
+};
+export function monsterWieldsOrWearsDefense(monster, damageType, state) {
+    if (!monster || damageType == null)
+        return false;
+    const weapon = monsterWieldedWeapon(monster);
+    if (artifactById(weapon?.oartifact, state)?.defense === damageType)
+        return true;
+    const dragonName = SCALE_DEFENDING_DRAGON[damageType];
+    if (!dragonName)
+        return false;
+    const defender = MONSTER_NAME.indexOf(dragonName);
+    if (defender < 0)
+        return false;
+    if (monster.mnum === defender)
+        return true; /* an adult dragon is its own suit */
+    const worn = (monster.minvent || monster.inventory || [])
+        .find(object => ((object.owornmask ?? 0) & W_ARM) !== 0);
+    return dragonFormForArmor(worn) === defender;
+}
+// C mondata.c:resists_blnd(). Light-induced blindness fails against an
+// unconscious or blind hero, an eyeless, sleeping or already-blind monster,
+// a body with its own AD_BLND explosion or gaze attack (yellow light,
+// Archon; not dust vortex, cobra or raven), or an artifact defense such as
+// a wielded Sunsword.
+export function resistsBlnd(mdef, state = game) {
+    if ('youmonst' in mdef) {
+        // The hero branch folds in C's Blnd_resist catchall, which native
+        // code cannot reach without resists_blnd() already having returned.
+        if (heroIsBlind(state) || heroIsUnaware(state) || !!state.u.blindResistance)
+            return true;
+    }
+    else {
+        const monster = mdef.monster;
+        if (!!monster.mblinded || !monster.mcansee || !monsterHasEyes(monster.mnum)
+            || !!monster.msleeping)
+            return true;
+    }
+    const species = 'youmonst' in mdef ? heroSpecies(state) : mdef.monster.mnum;
+    if ((MONSTER_ATTACKS[species] || []).some(([method, damage]) => damage === AD_BLND && (method === AT_EXPL || method === AT_GAZE)))
+        return true;
+    /* Sunsword, and artifacts that defend while carried */
+    return 'youmonst' in mdef
+        ? heroHasArtifactDefense('blindness', state)
+        : monsterHasArtifactDefense(mdef.monster, 'blindness', state);
+}
+const PM_RAVEN = MONSTER_NAME.indexOf('raven');
+// C mondata.c:can_blnd(). magr may be null (no specific aggressor); the
+// hero's monster fields come from the state, and the hero is never
+// cancelled. The object callers only ever hold a cream pie, blinding venom
+// or a potion of blindness: thrown and scattered potions are routed to
+// potionhit() before these contact paths can run.
+export function canBlnd(magr, mdef, aatyp, obj, state = game) {
+    const isYou = 'youmonst' in mdef;
+    const defenderSpecies = isYou ? heroSpecies(state) : mdef.monster.mnum;
+    const attackerSpecies = magr === null ? null
+        : 'youmonst' in magr ? heroSpecies(state) : magr.monster.mnum;
+    /* no eyes protect against all attacks for now */
+    if (!monsterHasEyes(defenderSpecies))
+        return false;
+    /* if monster has been permanently blinded, the deed is already done */
+    if (!isYou && !mdef.monster.mcansee && !(mdef.monster.mblinded ?? 0))
+        return false;
+    /* /corvus oculum corvi non eruit/
+       a saying expressed in Latin rather than a zoological observation:
+       "a crow will not pluck out the eye of another crow"
+       so prevent ravens from blinding each other */
+    if (attackerSpecies === PM_RAVEN && defenderSpecies === PM_RAVEN)
+        return false;
+    let checkVisor = false;
+    switch (aatyp) {
+        case AT_EXPL:
+        case AT_BOOM:
+        case AT_GAZE:
+        case AT_MAGC:
+        case AT_BREA: /* assumed to be lightning */
+            /* light-based attacks may be cancelled or resisted */
+            if (magr !== null && 'monster' in magr && magr.monster.mcan)
+                return false;
+            return !resistsBlnd(mdef, state);
+        case AT_WEAP:
+        case AT_SPIT:
+        case AT_NONE:
+            /* an object is used (thrown/spit/other) */
+            if (obj !== null && obj.otyp === CREAM_PIE) {
+                if (isYou && blindfolded(state))
+                    return false;
+            }
+            else if (obj !== null && obj.otyp === BLINDING_VENOM) {
+                /* all ublindf, including LENSES, protect, cream-pies too */
+                if (isYou && ((state.ublindf ?? state.u.ublindf) || state.u.ucreamed))
+                    return false;
+                checkVisor = true;
+            }
+            else if (obj !== null && obj.otyp === POT_BLINDNESS) {
+                return true; /* no defense */
+            }
+            else {
+                return false; /* other objects cannot cause blindness yet */
+            }
+            if (magr !== null && 'youmonst' in magr && state.u.uswallow)
+                return false; /* can't affect eyes while inside monster */
+            break;
+        case AT_ENGL:
+            if (isYou && (blindfolded(state) || heroIsUnaware(state) || state.u.ucreamed))
+                return false;
+            if (!isYou && mdef.monster.msleeping)
+                return false;
+            break;
+        case AT_CLAW:
+            /* e.g. raven: all ublindf, including LENSES, protect */
+            if (isYou && (state.ublindf ?? state.u.ublindf))
+                return false;
+            if (magr !== null && 'youmonst' in magr && state.u.uswallow)
+                return false; /* can't affect eyes while inside monster */
+            checkVisor = true;
+            break;
+        case AT_TUCH:
+        case AT_STNG:
+            /* some physical, blind-inducing attacks can be cancelled */
+            if (magr !== null && 'monster' in magr && magr.monster.mcan)
+                return false;
+            break;
+        default:
+            break;
+    }
+    /* check if wearing a visor (only checked if visor might help).  Worn
+       armor stays in the inventory, so the hero scan needs no extra slot
+       lookups. */
+    if (checkVisor) {
+        const worn = isYou ? state.inventory
+            : mdef.monster.minvent ?? mdef.monster.inventory ?? [];
+        if (worn.some(object => ((object.owornmask ?? 0) & W_ARMH)
+            && OBJ_DESCR(object.otyp, state) === 'visored helmet'))
+            return false;
+    }
+    return true;
+}
 // C mondata.c:passes_bars(). Rust monsters and some puddings destroy bars;
 // postmov (monmove.c) reuses the same corrosion test for its iron-bars meal.
 const M1_WALLWALK = 0x00000008;
@@ -287,6 +436,13 @@ export function speciesCanBlow(mnum) {
         && requireMonsterData(MONSTER_SIZE, mnum) >= MZ_SMALL
         && requireMonsterData(MONSTER_SYMBOL, mnum) !== S_EEL;
 }
+// C mondata.c:can_blow(). The species half is speciesCanBlow() above; this
+// is the youmonst half, whose only extra check is hero strangulation.
+export function heroCanBlow(state = game) {
+    if (state.u.strangled || (state.u.strangledTurns ?? 0) > 0)
+        return false;
+    return speciesCanBlow(heroSpecies(state));
+}
 // C mondata.c:can_chant(), shared by reading and calling on a deity.
 export function heroCanChant(state = game) {
     const hero = state.u;
@@ -300,6 +456,17 @@ export function heroCanChant(state = game) {
         && sound !== MS_BUZZ
         && sound !== MS_BURBLE
         && monsterHasHead({ mnum });
+}
+// C mondata.c:can_be_strangled(): headless bodies have no neck to squeeze,
+// and a mindless body that does not breathe is not strangled by pressure.
+// The hero cannot be mindless, but polymorphing into a mindless form still
+// confers the protection.
+export function heroCanBeStrangled(state = game) {
+    if (heroHasNoHead(state))
+        return false;
+    const form = state.u.umonnum;
+    const mindless = monsterIsMindless(form ?? -1);
+    return !mindless || !heroIsBreathless(state);
 }
 // C mondata.c:can_track().  u_wield_art(ART_EXCALIBUR) comes first: the
 // artifact lets even eyeless monsters follow the hero's tracks.
@@ -470,6 +637,27 @@ export function monsterFireDescription(monster, method) {
             return method === AT_HUGS ? 'being roasted' : 'on fire';
     }
 }
+// C mondata.c:olfaction().  This is a current-form sensory capability, not
+// a blindness check: molds and several other body classes can sense smoke
+// but cannot smell it, while an ordinary blind humanoid still has olfaction.
+const OLFACTIONLESS_SYMBOLS = new Set([
+    2, // S_BLOB
+    5, // S_EYE
+    10, // S_JELLY
+    22, // S_VORTEX
+    25, // S_LIGHT
+    31, // S_ELEMENTAL
+    32, // S_FUNGUS
+    42, // S_PUDDING
+    55, // S_GOLEM
+]);
+export function heroHasOlfaction(state = game) {
+    const form = heroMonsterForm(state);
+    if (form === null)
+        return true;
+    const symbol = MONSTER_SYMBOL[form];
+    return symbol === undefined || !OLFACTIONLESS_SYMBOLS.has(symbol);
+}
 // C mondata.c:cvt_adtyp_to_mseenres(): these eight damage types and bits share an order.
 export function seenResistanceForDamage(damageType) {
     return damageType >= AD_MAGM && damageType <= AD_ACID
@@ -522,6 +710,18 @@ export function monstersForgetHeroResistance(resistance, state = game, canSeeHer
             & ~resistance;
     }
     return observers.length;
+}
+// C mondata.c:resist_conflict(). High-charisma heroes convince monsters
+// bound by the ring of conflict's charm more easily; there is always a
+// small chance at 19.
+export function resistConflict(monster, state, rollOne, calls) {
+    const charisma = currentAttribute(A_CHA, state);
+    const monsterLevel = monster?.m_lev ?? MONSTER_LEVEL[monster?.mnum] ?? 0;
+    const heroLevel = state?.u?.ulevel ?? 1;
+    const resistChance = Math.min(19, charisma - monsterLevel + heroLevel);
+    const roll = rollOne(20);
+    calls.push('rnd(20)');
+    return roll > resistChance;
 }
 // C mondata.c:dmgtype(AD_SEDU/AD_SSEX): seducers keep their powers when
 // traits are saved and restored.

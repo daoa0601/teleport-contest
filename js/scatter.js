@@ -11,10 +11,11 @@ import { applyFloorEffects } from './floor_effects.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { unlinkObject, placeObject, splitObjectStack } from './mkobj.js';
 import { revealMonsterAppearance, angerAttackedMonster, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster, wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome, finishHeroMonsterKill, } from './mon.js';
-import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
+import { applyMonsterBlindness } from './blinding_attack.js';
+import { AT_SPIT, AT_WEAP } from './monster_attack_types.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter, passes_rocks, touchPetrifies, } from './mondata.js';
+import { monsterObjectPronoun, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter, passes_rocks, touchPetrifies, canBlnd, } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
 import { applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
 import { heroSpecies } from './polyself.js';
@@ -25,7 +26,7 @@ import { unpunishHero } from './read.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './worn.js';
-import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
+import { ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
 import { observeObject, objectMaterial } from './o_init.js';
 import { verbForSubject, withIndefiniteArticle, objectCombatName, objectNameIsPlural } from './objnam.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
@@ -237,7 +238,7 @@ async function hitMonster(monster, node, state, options) {
                 return true;
         }
     }
-    if (monster.mhp > 0 && monsterCanBeBlindedByObject(monster, object.otyp, { state })) {
+    if (monster.mhp > 0 && canBlnd(null, { monster }, object.otyp === BLINDING_VENOM ? AT_SPIT : AT_WEAP, object, state)) {
         if (visible && monster.mcansee) {
             const cause = object.oclass === VENOM_CLASS ? 'venom' : object.otyp === CREAM_PIE ? 'pie' : objectCombatName(object, { state });
             await options.publish(`${monsterName(monster, { state, capitalized: true })} is blinded by the ${cause}.`);

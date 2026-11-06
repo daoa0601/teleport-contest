@@ -89,13 +89,13 @@ import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsAct
 import {
     monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious,
     monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid,
-    monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, heroResistsStoning, touchPetrifies,
+    monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, heroResistsStoning, touchPetrifies, heroCanBeStrangled,
 } from './mondata.js';
 import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';
 import { experienceRankIndex } from './botl.js';
 import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { heroIsInDangerousRegion } from './region.js';
-import { heroCanBeStrangled } from './polyself.js';
+
 import { canLetGo } from './do.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mon.js';
 import { weaponDescription } from './weapon.js';

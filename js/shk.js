@@ -21,7 +21,7 @@ import { heroSpecies, heroPolyGender, heroPassesWalls, body_part, mbodypart } fr
 import { monsterName } from './do_name.js';
 import { possessiveName, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
 import { depth } from './dungeon.js';
-import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls, } from './mondata.js';
+import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls, resistConflict, } from './mondata.js';
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
 import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval, pricedInventoryLine } from './invent.js';
@@ -32,7 +32,7 @@ import { heroGoldObject, detachHeroGold } from './hero_gold.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
-import { angerWatchGuards, removeMonsterFromGame, mnearto, resistConflict, moveMonsterNextToHero } from './mon.js';
+import { angerWatchGuards, removeMonsterFromGame, mnearto, moveMonsterNextToHero } from './mon.js';
 import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_NSIZ, ROOMOFFSET, SHOPBASE, Upolyd, MGIVENNAME, LL_ACHIEVE, G_GONE, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL, MENU_TRADITIONAL, MIGR_APPROX_XY, IS_DOOR, SVALL, SDOOR, IS_STWALL, IS_TREE, IS_ROOM, BOLT_LIM, RLOC_NOMSG, RLOC_MSG, D_CLOSED, ZAP_POS, LANDMINE, BEAR_TRAP, HOLE, PIT, SPIKED_PIT, IS_WALL, TT_PIT, W_SWAPWEP, W_QUIVER, ACH_SHOP, ARM, HEAD, HAND } from './const.js';
 import { isok, commandResultCancelled, setMulti } from './cmd.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';

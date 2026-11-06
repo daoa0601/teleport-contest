@@ -36,7 +36,7 @@ import { buryFloorObjectsAt, addBuriedObject, buriedBallToPunishment, applyPickA
 import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, } from './display.js';
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, finishHeroMonsterKill, isRider, zombieForm, } from './mon.js';
-import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt, selfTouchPetrifyingWeapons, } from './trap.js';
@@ -71,7 +71,7 @@ import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './minion.js';
 import { randomMonsterRelocation, enexto, safe_teleds, finishTeleportArrival } from './teleport.js';
 import { placeHeroOnLevel, depth, dungeonBuildsUp, dungeonDepth, endgameLevelName, initOverviewRecord, level_difficulty, markOverviewUnreachable, recordMappedOverviewState, recordOverviewBranch, specialPrototypeAt, u_on_rndspot, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt, ledgerNo, surfaceName, next_level, prev_level, } from './dungeon.js';
-import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks, touchPetrifies, heroResistsStoning, } from './mondata.js';
+import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks, touchPetrifies, heroResistsStoning, heroHasOlfaction, } from './mondata.js';
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { addExperience, checkExperienceLevel } from './exper.js';

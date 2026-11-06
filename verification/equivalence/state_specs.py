@@ -1593,7 +1593,7 @@ STATE_SPECS += [
 
 
 CAN_BLOW_ASSUMPTIONS = (
-    'mondata.c:can_blow: the monster argument is a modeled struct monst distinct from &gy.youmonst, so the hero-only Strangled re-check does not run; that check is ported in polyself.js heroCanBlow and stays outside this claim',
+    'mondata.c:can_blow: the monster argument is a modeled struct monst distinct from &gy.youmonst, so the hero-only Strangled re-check does not run; that check is ported in mondata.js heroCanBlow and stays outside this claim',
     'monst.c:monst_globals_init: mons[] and the emitted MONSTER_SOUND/MONSTER_SIZE/MONSTER_SYMBOL/MONSTER_FLAGS1 rows retain their initial values',
     'mondata.h:is_silent/breathless/verysmall/has_head expand to the same four mons[] fields the emitted speciesCanBlow reads',
 )

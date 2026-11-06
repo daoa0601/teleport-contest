@@ -126,7 +126,7 @@ import {
     monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving,
     monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst,
     monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning,
-    formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, isHeroDefender,
+    formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, isHeroDefender, resistsBlnd,
 } from './mondata.js';
 import {
     teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk,
@@ -199,7 +199,7 @@ import { autopickupAtHero, encumber_msg } from './pickup.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { heroResistsBlindingLight } from './blinding_attack.js';
+
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
@@ -5976,7 +5976,7 @@ export async function triggerHeroMagicTrapEffect(): Promise<void> {
     const fate = rnd(20);
     if (fate < 10) {
         const count = rnd(4);
-        if (!heroResistsBlindingLight(game)) {
+        if (!resistsBlnd({ youmonst: true }, game)) {
             await plineWithContinuation('You are momentarily blinded by a flash of light!');
             await makeBlinded(rn1(5, 10), { talk: false });
             if (!heroIsBlind(game)) await plineWithContinuation('Your vision clears.');

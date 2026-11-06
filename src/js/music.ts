@@ -19,7 +19,7 @@ import { possessiveName } from './hacklib.js';
 import { revealMonsterAppearance, releaseHeroFromMonster } from './mon.js';
 import { displayRayName } from './zap.js';
 import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
-import { monsterResistsSleep, is_mercenary, monsterIsMindless } from './mondata.js';
+import { monsterResistsSleep, is_mercenary, monsterIsMindless, heroCanBlow } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import {
@@ -34,7 +34,7 @@ import {
     definiteName, ownedObjectName, simpleObjectName,
 } from './objnam.js';
 import { askForTune, playTune } from './passtune.js';
-import { heroCanBlow, heroFormSticks } from './polyself.js';
+import { heroFormSticks } from './polyself.js';
 import { d, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
 import { promptDirection } from './cmd.js';

@@ -61,7 +61,7 @@ import {
     monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless,
     monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsSlithy, monsterIsUndead,
     monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterPassesWalls,
-    monsterThrowsRocks, needspick, acidic as speciesIsAcidic, touchPetrifies,
+    monsterThrowsRocks, needspick, acidic as speciesIsAcidic, touchPetrifies, resistsBlnd,
 } from './mondata.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, shieldeff, show_glyph_cell, transientMonsterGlyph } from './display.js';
@@ -94,7 +94,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './worn.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
-import { heroResistsBlindingLight } from './blinding_attack.js';
+
 import { dropBoulderOnHero, dropBoulderOnMonster } from './read.js';
 import { beginObjectBurn } from './timeout.js';
 import { lightDamage } from './zap.js';
@@ -996,7 +996,7 @@ export function find_offensive(
             choice = { kind: 'earth-scroll', object };
         if (choice?.object.otyp === EXPENSIVE_CAMERA) continue;
         if (object.otyp === EXPENSIVE_CAMERA
-            && ((!heroIsBlind(state) && !heroResistsBlindingLight(state))
+            && ((!heroIsBlind(state) && !resistsBlnd({ youmonst: true }, state))
                 || monsterHatesLight({ mnum: heroSpecies(state) }))
             && distance <= 2 && charged && !random(6))
             choice = { kind: 'camera', object };
@@ -1273,7 +1273,7 @@ export async function use_offensive(
             const name = withIndefiniteArticle(objectCombatName(object, { state }));
             await publish(`${subject} takes a picture of you with ${name}!`);
         }
-        if (!heroIsBlind(state) && !heroResistsBlindingLight(state)) {
+        if (!heroIsBlind(state) && !resistsBlnd({ youmonst: true }, state)) {
             await publish('You are blinded by the flash of light!');
             await makeBlinded((state.u.blindTurns ?? 0) + rollOne(51), { state, talk: false, publish });
         }

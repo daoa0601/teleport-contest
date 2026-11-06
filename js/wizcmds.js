@@ -19,7 +19,7 @@ import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryIte
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
 import { makeWish } from './zap.js';
-import { polymorphHero, heroSpecies, heroHasOlfaction, body_part } from './polyself.js';
+import { polymorphHero, heroSpecies, body_part } from './polyself.js';
 import { createParticularMonster } from './read.js';
 import { findit, mapMagicLevel } from './detect.js';
 import { monsterName } from './do_name.js';
@@ -63,7 +63,7 @@ import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './options.js';
 import { rumorCheck } from './rumors.js';
 import { resetUtrap } from './trap.js';
-import { monsterIsNonliving } from './mondata.js';
+import { monsterIsNonliving, heroHasOlfaction } from './mondata.js';
 // C wizcmds.c:wiz_wish().
 export async function wizWish() {
     const verbose = game.flags.verbose;
