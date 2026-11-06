@@ -83,8 +83,7 @@ export function parseColorAttr(text, addError) {
 export function attributeName(attr) {
     return ATTRIBUTE_NAMES.find(([, value]) => value === attr)?.[0] ?? 'none';
 }
-// C coloratt.c:clr2colorname()
-// Like attr2attrname(), uses the first canonical table
+// C coloratt.c:clr2colorname(): the first canonical table
 // entry naming the value.
 export function colorName(color) {
     return COLOR_NAMES.find(([, value]) => value === color)?.[0] ?? 'no color';
