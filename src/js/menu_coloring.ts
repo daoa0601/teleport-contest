@@ -4,7 +4,7 @@
 // most recently added matching rule wins.
 import { MENU_ITEMFLAGS_SKIPINVERT } from './const.js';
 import { game } from './gstate.js';
-import type { MenuColoringRule } from './flags.js';
+import type { MenuColoringRule } from './coloratt.js';
 
 export function getMenuColoring(text: string): MenuColoringRule | null {
     if (!game.flags.menucolors) return null;

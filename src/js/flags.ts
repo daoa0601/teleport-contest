@@ -1,3 +1,4 @@
+import type { MenuColoringRule } from './coloratt.js';
 import type { MessageTypeRule } from './message_types.js';
 import type { PosixRegex } from './posix_regex.js';
 import type { Position } from './map_types.js';
@@ -66,15 +67,6 @@ export interface AutopickupExceptionRule {
     regex: PosixRegex;
 }
 
-// C coloratt.c:struct menucoloring (gm.menu_colorings), kept newest first.
-// attr holds the C ATR_* value (wintype.h), color a CLR_* constant; regex is
-// the compiled pattern (the C rule keeps its regex_t in ->match).
-export interface MenuColoringRule {
-    origstr: string;
-    color: number;
-    attr: number;
-    regex: PosixRegex;
-}
 
 export interface InterfaceFlags {
     autopickupExceptions?: AutopickupExceptionRule[];

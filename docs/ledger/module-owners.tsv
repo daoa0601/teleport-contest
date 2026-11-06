@@ -8,7 +8,7 @@ src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
 src/js/cfgfiles.ts	cfgfiles.c
-src/js/color_query.ts	coloratt.c
+src/js/coloratt.ts	coloratt.c
 src/js/detect.ts	detect.c
 src/js/do.ts	do.c
 src/js/do_name.ts	do_name.c
