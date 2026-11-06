@@ -189,7 +189,9 @@ export async function showMonsterCombatMiss(
     await publish(`${subject} ${friendly ? 'pretends to be friendly to' : 'misses'} ${combatTargetName(defender, aggressor, state)}.`);
 }
 
-// C mhitm.c:mattackm(): "Set up the visibility of action".
+// Part of C mhitm.c:mattackm(): "Set up the visibility of action" (gv.vis).
+// Kept as its own export because the combat tests verify the visibility
+// rule independently.
 export function canSeeMonsterCombat(attacker: Monster, defender: Monster): boolean {
     return (cansee(attacker.mx, attacker.my)
             && canSpotMonster(attacker))
@@ -222,24 +224,6 @@ export async function revealMonsterCombatDefender(defender: Monster, state: Game
     }
 }
 
-// C mhitm.c:mattackm() handles an AT_WEAP slot before its to-hit roll.
-// An unarmed weapon attacker first calls mon_wield_item(); selecting a new
-// carried weapon consumes the complete counterattack action.
-async function monsterVersusMonsterWieldAction(
-    aggressor: Monster,
-    defender: Monster,
-    attack: MonsterMeleeAttack,
-    state: PlayingGameState,
-): Promise<MonsterWieldAction | null> {
-    if (attack?.attackType !== AT_WEAP) return null;
-    const currentWeapon = monsterWieldedWeapon(aggressor);
-    if (aggressor.weaponCheck !== NEED_WEAPON && currentWeapon) return null;
-
-    aggressor.weaponCheck = NEED_HTH_WEAPON;
-    return await wieldMonsterWeapon(aggressor, state)
-        ? { kind: 'monster-wield', aggressor, defender }
-        : null;
-}
 
 interface MonsterCombatOptions {
     state: PlayingGameState;
@@ -392,8 +376,16 @@ export async function attackMonsterWithMonster(
             }
             const isHug = attack.attackType === AT_HUGS;
             if (!isHug && distmin(aggressor.mx, aggressor.my, defender.mx, defender.my) > 1) continue;
-            const wield = await monsterVersusMonsterWieldAction(aggressor, defender, attack, state);
-            if (wield) return wield;
+            // mattackm() handles an AT_WEAP slot before its to-hit roll: an
+            // unarmed weapon attacker first calls mon_wield_item(), and
+            // selecting a new carried weapon consumes the complete
+            // counterattack action.
+            if (attack.attackType === AT_WEAP
+                && (aggressor.weaponCheck === NEED_WEAPON || !monsterWieldedWeapon(aggressor))) {
+                aggressor.weaponCheck = NEED_HTH_WEAPON;
+                if (await wieldMonsterWeapon(aggressor, state))
+                    return { kind: 'monster-wield', aggressor, defender };
+            }
             if (attack.attackType === AT_WEAP) await updateMonsterWeaponAfterPolymorph(aggressor, state);
             weapon = attack.attackType === AT_WEAP ? monsterWieldedWeapon(aggressor) ?? null : null;
             if (weapon) {
