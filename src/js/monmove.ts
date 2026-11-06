@@ -67,7 +67,7 @@ import {
     monsterIsHelpless, monsterResistsSleep, is_mercenary, is_minion, is_wanderer, likes_gems, likes_gold,
     likes_magic, likes_objs, metallivorous, monsterIsClinger, monsterPassesWalls, needspick, tunnels,
     monsterCanTeleport, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal,
-    monsterIsCovetous, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless,
+    monsterIsCovetous, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless,
     monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned,
     monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall,
     monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses, monsterHasNoAttacks,
@@ -130,7 +130,8 @@ import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMons
 import { moveVaultGuard } from './vault.js';
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './region.js';
 
-import { talkToDemon } from './demon_talk.js';
+import { demandDemonBribe } from './minion.js';
+import { setMonsterMalign } from './makemon.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 
@@ -2523,6 +2524,27 @@ export async function beginMonsterMove(
         monster, state, random, rollDice, rollOne, DISCARDED_CALL_LOG, undefined, null,
     );
     return { monster, ...turn };
+}
+
+// C monmove.c:dochug() "Demonic Blackmail!" block. The adjacent branch calls
+// minion.c:demon_talk() (demandDemonBribe in minion.ts).
+export async function talkToDemon(monster: Monster, state: PlayingGameState,
+    random = rn2, rollOne = rnd): Promise<boolean> {
+    if (monster.mux !== state.u.ux || monster.muy !== state.u.uy) {
+        await plineWithContinuation(`${cansee(monster.mux ?? 0, monster.muy ?? 0)
+            ? monsterName(monster, { state, capitalized: true }) : 'It'} whispers at thin air.`);
+        if (monsterIsDemon(heroSpecies(state))) {
+            if (!await reportMonsterTeleportRestriction(monster, { state }))
+                await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
+        } else {
+            monster.minvis = monster.perminvis = false;
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true, article: 'a' })} gets angry!`);
+            monster.mpeaceful = 0;
+            setMonsterMalign(monster, state);
+        }
+        return false;
+    }
+    return demandDemonBribe(monster, state, random, rollOne);
 }
 
 // First non-combat slice of monmove.c:dochug(), m_move(), and dog_move().
