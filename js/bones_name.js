@@ -1,8 +1,10 @@
 import { game } from './gstate.js';
-// C bones.c:sanitize_name(): while loading bones (and when the fruit option
-// names a fruit), strip text that could disrupt display. High-bit control
-// bytes are still controls; printable high-bit characters follow the tty
-// eight-bit input option. optfn_fruit() also runs this over pl_fruit.
+// C bones.c:sanitize_name(): while loading bones, strip text that could
+// disrupt display. High-bit control bytes are still controls; printable
+// high-bit characters follow the tty eight-bit input option. The port's
+// bones names are UTF-8-decoded strings, so this masks per character; the
+// fruit option's byte buffer is masked per byte in options.ts
+// (sanitizeFruitCopy), which is where C's caller actually sees bytes.
 export function sanitizeName(name, iflags = game.iflags) {
     return [...String(name || '')].map(character => {
         const code = character.charCodeAt(0);

@@ -40,7 +40,6 @@ import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
 import { mungSpaces } from './hacklib.js';
-import { sanitizeName } from './bones_name.js';
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
@@ -2911,9 +2910,9 @@ async function editSortLoot() {
         game.flags.sortloot = mode;
 }
 // Part of C options.c:optfn_fruit(): the goodfruit normalization — mungspaces,
-// the PL_FSIZ copy (nmcpy), sanitize_name (sanitizeName in bones_name.ts), and
-// the "slime mold" fallback — shared with the config-parse and initoptions
-// paths; changePreferredFruit() below is the optfn_fruit() port.
+// the PL_FSIZ copy (nmcpy) and per-byte sanitize_name (sanitizeFruitCopy
+// below), and the "slime mold" fallback — shared with the config-parse and
+// initoptions paths; changePreferredFruit() below is the optfn_fruit() port.
 export function normalizePreferredFruitName(name, state = game) {
     const firstLine = String(name).split('\n', 1)[0] ?? '';
     const spaced = firstLine.replace(/\t/g, ' ')
@@ -3002,12 +3001,20 @@ export function addFruit(name, { preferred = false, initial = false, replacement
     return fruit.fid;
 }
 // C copynchars(altname, str, PL_FSIZ - 1) followed by sanitize_name():
-// optfn_fruit() (above) and fruitadd() (below) both cap the bytes before
-// sanitizing through bones.c:sanitize_name() (sanitizeName in bones_name.ts).
+// optfn_fruit() (above) and fruitadd() (below) both cap the bytes and then
+// run bones.c:sanitize_name() over each byte of the native buffer — control
+// bytes become '.', and a high byte is masked to '_' unless the tty accepts
+// eight-bit input, which keeps the byte itself. The port's bones names are
+// decoded strings (sanitizeName in bones_name.ts masks those per character);
+// the fruit option still sees the raw UTF-8 bytes here.
 function sanitizeFruitCopy(name, iflags) {
-    const capped = new TextDecoder().decode(new TextEncoder()
-        .encode(name).subarray(0, FRUIT_NAME_BYTES));
-    return sanitizeName(capped, iflags ?? { wc_eight_bit_input: false });
+    const bytes = new TextEncoder().encode(name).subarray(0, FRUIT_NAME_BYTES);
+    return [...bytes].map(byte => {
+        const low = byte & 127;
+        if (low < 32 || low === 127)
+            return '.';
+        return byte > 127 && !iflags?.wc_eight_bit_input ? '_' : String.fromCharCode(byte);
+    }).join('');
 }
 // fruitadd()'s highest_fruit_id and fruit_from_name()'s out-parameter share
 // this highest-fid scan over the registry.
