@@ -2525,6 +2525,18 @@ async function doorganizeCore(
     game.context.move = 0;
 }
 
+// C pickup.c:query_objlist()'s INCLUDE_HERO branch: an engulfer's loot
+// menu closes after the last class group with an "Engulfed Creatures"
+// heading ("Swallowed" when the engulfer digests) and a fake hero entry
+// selectable through CONTAINED_SYM and described by an(self_lookat()).
+export function engulfedHeroMenuSection(monster: Monster): InventorySection<GameObject> {
+    // query_objlist() attaches a monster glyph even though tty only shows text.
+    transientMonsterGlyph({ mnum: heroSpecies(game),
+        female: !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female) });
+    return { heading: `${monsterDigests(monster) ? 'Swallowed' : 'Engulfed'} Creatures`,
+        items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()) }] };
+}
+
 // C invent.c:display_minventory(). The swallowed inventory view includes the hero.
 async function displayMonsterInventory(
     monster: Monster, objects: readonly GameObject[], location: string, blind: boolean,
@@ -2550,11 +2562,7 @@ async function displayMonsterInventory(
         }
         sections.push({ heading: objectClassHeading(oclass), items });
     }
-    // query_objlist() attaches a monster glyph even though tty only shows text.
-    transientMonsterGlyph({ mnum: heroSpecies(game),
-        female: !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female) });
-    sections.push({ heading: `${monsterDigests(monster) ? 'Swallowed' : 'Engulfed'} Creatures`,
-        items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()) }] });
+    sections.push(engulfedHeroMenuSection(monster));
     await showInventoryWindow(sections, { title: blind ? 'You feel:'
         : `Contents of ${location}:` });
 }

@@ -32,7 +32,7 @@ import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { rechargeRing, unpunishHero } from './read.js';
 import { finishHeroDeath } from './end.js';
 import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
-import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval, displayBuriedInventory, probedContentsTitle } from './invent.js';
+import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval, displayBuriedInventory, probedContentsTitle, engulfedHeroMenuSection } from './invent.js';
 import { cleanupTransientLight, lightRoom, showTransientLight } from './light.js';
 import { buryFloorObjectsAt, zapDigWithObject } from './dig.js';
 import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
@@ -886,13 +886,18 @@ export async function probeMonster(monster, { state = game, onHead = true, x = m
     // inventory through query_objlist() with INVORDER_SORT: entries group
     // by class in inv_order under class headings, the tty layer generates
     // the selector letters, and only a leading gold stack keeps its own
-    // '$' selector (pickup.c:1129-1139).
+    // '$' selector (pickup.c:1129-1139). display_minventory(MINV_ALL)
+    // adds INCLUDE_HERO when engulfing_u(mon) holds, so the menu closes
+    // with the engulfer's fake hero row (pickup.c:1146-1164).
     const name = monsterName(monster, { state, capitalized: true, article: 'your', suppressIt: true });
-    await showProbedObjectInventory(inventory, `${possessiveName(name)} possessions:`, { state });
+    const engulfer = state.u.uswallow && state.u.ustuck === monster ? monster : null;
+    await showProbedObjectInventory(inventory, `${possessiveName(name)} possessions:`, { state, engulfer });
 }
 // C query_objlist(): PICK_NONE still gives each object a menu identifier,
 // so tty assigns letters. INVORDER_SORT adds headings even for one item.
-export async function showProbedObjectInventory(objects, title, { state = game, groupByClass = true, } = {}) {
+// An engulfer's list closes with query_objlist(INCLUDE_HERO)'s fake hero
+// row (pickup.c:1146-1164).
+export async function showProbedObjectInventory(objects, title, { state = game, groupByClass = true, engulfer = null, } = {}) {
     const sorted = sortObjects(objects, { mode: lootSortMode({ state }), state });
     const sections = [];
     const classes = groupByClass ? inventoryClassOrder(state) : [null];
@@ -913,6 +918,8 @@ export async function showProbedObjectInventory(objects, title, { state = game, 
         }
         sections.push({ heading: oclass === null ? null : objectClassHeading(oclass), items });
     }
+    if (engulfer)
+        sections.push(engulfedHeroMenuSection(engulfer));
     await showInventoryWindow(sections, { title });
 }
 // C zap.c:get_obj_location().
