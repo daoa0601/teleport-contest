@@ -2646,10 +2646,9 @@ export type MhitmAdEnchCall =
     | { mdef: 'youmonst'; context: HeroDefenderStatusContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
-// C uhitm.c:mhitm_ad_ench() (mhitu branch): the ring/amulet/blindfold
+// C uhitm.c:mhitm_ad_ench(). The mhitu branch's ring/amulet/blindfold
 // rn2(5) fallback below runs only when some_armor() (do_wear.ts) finds
 // nothing worn.
-// C uhitm.c:mhitm_ad_ench().
 export async function mhitmAdEnch(call: MhitmAdEnchCall): Promise<MhitmAdStatusResult> {
     if ('magr' in call) {
         /* uhitm: there's no msomearmor() function, so just do damage */
