@@ -19,6 +19,8 @@ export interface BreathRayOptions extends NativeRayOptions {
     attack?: MonsterAttack | null;
 }
 
+// Part of C polyself.c:dobreathe(): the hero's ubuzz(BZ_U_BREATH(...))
+// breath ray.
 export async function breatheInDirection(direction: string, {
     attack, state = game, sourceMonster = null, ...options
 }: BreathRayOptions = {}) {
@@ -29,6 +31,8 @@ export async function breatheInDirection(direction: string, {
     });
 }
 
+// Part of C mcastu.c:buzzmu(): the buzz(BZ_M_SPELL(...)) monster-spell
+// ray.
 // A null sourceMonster is divine retribution, not a hero-caused ray.
 export async function castMonsterSpellRay(
     direction: string, originX: number, originY: number,
@@ -39,6 +43,8 @@ export async function castMonsterSpellRay(
     });
 }
 
+// Part of C mthrowu.c:breamm(): aiming the monster's breath at its
+// target.
 export async function breatheFromMonster(
     sourceMonster: Monster, target: Pick<Monster, 'mx' | 'my'>,
     options: BreathRayOptions = {},

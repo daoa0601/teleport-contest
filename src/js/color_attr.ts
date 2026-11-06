@@ -24,6 +24,8 @@ const C_ATTR_TERMINAL_BITS: Readonly<Record<number, number>> = {
     [C_ATR_INVERSE]: ATR_INVERSE,
 };
 
+// Port only: map the wintype.h ATR_* value onto this terminal's attribute
+// bits.
 export function terminalAttrFromCAttr(attr: number): number {
     return C_ATTR_TERMINAL_BITS[attr] ?? ATR_NONE;
 }

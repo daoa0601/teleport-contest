@@ -22,6 +22,8 @@ export interface MenuColoringRule {
 }
 
 
+// Part of C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept
+// UTF-8 safe.
 // vconfig_error_add()'s BUFSZ-1 cut and printf's %.Ns precision count
 // bytes; a UTF-8 sequence split by the cut survives as one character.
 export function cutConfigBytes(text: string, limit: number): string {
@@ -141,6 +143,7 @@ const ATR_TO_HL: ReadonlyMap<number, number> = new Map([
     [4, HL_ULINE], [5, HL_BLINK], [7, HL_INVERSE],
 ]);
 
+// Part of C coloratt.c:query_attr(): PICK_ANY over the attribute names.
 export async function queryAttributeSet(title: string): Promise<number> {
     const picks = await showMultiSelectWindow<number>({
         title: title || 'Pick an attribute', omitHeadings: true, signalEscape: true,
@@ -193,6 +196,7 @@ export async function queryColorMenu(title: string, current: number): Promise<nu
 let alternateMenuColors: MenuColoringRule[] | null = null;
 let savedMenuColors: { menucolors: boolean; colorings: MenuColoringRule[] | null } | null = null;
 
+// C coloratt.c:basic_menu_colors()
 function basicMenuColors(loadColors: boolean): void {
     if (loadColors) {
         savedMenuColors = { menucolors: game.flags.menucolors === true,

@@ -10,6 +10,7 @@ import {
     arrayOf, boolean, closedFieldsMatch, integer, nullable, oneOf, optional, string,
 } from './saved_validation.js';
 
+// Port only: saved-state validation of a role record.
 export function validSavedRole(value: unknown): value is Role {
     return closedFieldsMatch<Role>(value, {
         key: oneOf('archeologist', 'barbarian', 'caveman', 'healer', 'knight',
@@ -47,10 +48,12 @@ export function validSavedRole(value: unknown): value is Role {
     });
 }
 
+// Port only: saved-state validation of a quest monster class index.
 function validQuestMonsterClass(value: unknown): value is number {
     return typeof value === 'number' && MONSTER_SYMBOL.includes(value);
 }
 
+// Port only: saved-state validation of a race record.
 export function validSavedRace(value: unknown): value is Race {
     return closedFieldsMatch<Race>(value, {
         name: oneOf('human', 'elf', 'dwarf', 'gnome', 'orc'),
@@ -71,6 +74,7 @@ export function validSavedRace(value: unknown): value is Race {
     });
 }
 
+// Port only: saved-state validation of an alignment record.
 export function validSavedAlignment(value: unknown): value is Alignment {
     return closedFieldsMatch<Alignment>(value, {
         name: oneOf('lawful', 'neutral', 'chaotic'),
@@ -78,6 +82,7 @@ export function validSavedAlignment(value: unknown): value is Alignment {
     });
 }
 
+// Port only: saved-state validation of the game flags.
 export function validSavedGameFlags(value: unknown): value is GameFlags {
     return closedFieldsMatch<GameFlags>(value, {
         statusConditionMask: optional((entry): entry is number =>
@@ -191,30 +196,36 @@ export function validSavedGameFlags(value: unknown): value is GameFlags {
     });
 }
 
+// Port only: saved-state validation of the six attribute values.
 export function validSavedAttributeValues(value: unknown): value is AttributeValues {
     return arrayOf(integer)(value) && value.length === 6;
 }
 
+// Port only: saved-state validation of an alignment value.
 export function validSavedAlignmentValue(value: unknown): value is AlignmentValue {
     return value === -1 || value === 0 || value === 1;
 }
 
+// Port only: saved-state validation of the hero alignment record.
 export function validSavedHeroAlignment(value: unknown): value is HeroAlignment {
     return closedFieldsMatch<HeroAlignment>(value, {
         type: validSavedAlignmentValue, record: integer, abuse: optional(integer),
     });
 }
 
+// Port only: saved-state validation of a gendered name pair.
 function validGenderedName(value: unknown): value is GenderedName {
     return closedFieldsMatch<GenderedName>(value, { m: string, f: string });
 }
 
+// Port only: saved-state validation of the role's god names.
 function validGodNames(value: unknown): value is Record<AlignmentName, string> {
     return closedFieldsMatch<Record<AlignmentName, string>>(value, {
         lawful: string, neutral: string, chaotic: string,
     });
 }
 
+// Port only: saved-state validation of an advancement record.
 function validAdvancement(value: unknown): value is Advancement {
     return closedFieldsMatch<Advancement>(value, {
         infix: integer, inrnd: integer, lofix: integer,
@@ -222,6 +233,7 @@ function validAdvancement(value: unknown): value is Advancement {
     });
 }
 
+// Port only: saved-state validation of a spellcasting record.
 function validSpellcasting(value: unknown): value is Spellcasting {
     return closedFieldsMatch<Spellcasting>(value, {
         base: integer, healing: integer, shield: integer, armor: integer,
