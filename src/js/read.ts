@@ -1873,10 +1873,10 @@ async function fallingRock(confused: boolean): Promise<GameObject> {
     return object;
 }
 
-// C doname() observes the falling object, so later blind feeling still
-// calls seen rocks "rocks" rather than "stones".
 // Part of C read.c:drop_boulder_on_player(), drop_boulder_on_monster():
 // the falling object's doname description.
+// C doname() observes the falling object, so later blind feeling still
+// calls seen rocks "rocks" rather than "stones".
 async function fallingRockName(object: GameObject, state: GameState): Promise<string> {
     observeObjectForNaming(object, { state });
     return await inventoryItemDescription(object);
