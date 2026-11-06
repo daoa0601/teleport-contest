@@ -260,11 +260,11 @@ jobs:
           make -C dat bogusmon
       - run: npm ci --ignore-scripts
       - run: npm run compile
-      - name: Build the native difftest harness and run its differential batch
+      - name: Build the native difftest harness, self-test it, and run its differential batch
         working-directory: verification/difftest
         run: |
           set -o pipefail
-          /usr/bin/time -p uv run --locked run.py --build 2>&1 | tee ../../.cache/difftest/build-and-run.txt
+          /usr/bin/time -p uv run --locked run.py --build --self-test 2>&1 | tee ../../.cache/difftest/build-and-run.txt
       - name: Run the difftest behavior tests
         working-directory: verification/difftest
         run: |
