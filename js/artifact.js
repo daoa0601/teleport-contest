@@ -1032,7 +1032,7 @@ function ringCount(state) {
     return Number(!!slotObject('uleft', state))
         + Number(!!slotObject('uright', state));
 }
-// C artifact.c:invoke_untrap()
+// C artifact.c:mkot_trap_warn()
 // Warmth counts locations whose trap is not displayed, including trapped
 // doors and containers beneath other floor objects.
 // C artifact.c:count_surround_traps().

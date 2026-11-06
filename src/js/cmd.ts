@@ -2133,7 +2133,8 @@ export async function showExtendedCommandList(): Promise<void> {
     }
 }
 
-// Part of C cmd.c:keylist_putcmds(): the keylist description wording.
+// Part of C cmd.c:doextlist(): the #genocided description wording for
+// ordinary games.
 // C doextlist() changes the description before both searching and display.
 function listedCommandDescription(command: NativeCommand): string {
     const description = commandDescription(command);
@@ -2142,7 +2143,8 @@ function listedCommandDescription(command: NativeCommand): string {
     return description.replace(' been genocided or become extinct', ' been genocided');
 }
 
-// Part of C cmd.c:extcmd_via_menu(): the '*'/'?' search pattern.
+// Part of C cmd.c:doextlist(): the substring-then-pmatchi() wildcard
+// search filter.
 function matchesSearch(text: string, pattern: string): boolean {
     if (text.toLowerCase().includes(pattern.toLowerCase())) return true;
     const expression = [...pattern].map(character => character === '*' ? '.*'

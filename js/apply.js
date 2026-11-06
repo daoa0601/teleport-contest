@@ -3219,7 +3219,8 @@ async function consumeJelly(jelly) {
 function quiverMessage(egg, adverb) {
     return `${definiteObjectAction(egg, 'quiver')} ${adverb}.`;
 }
-// C apply.c:jelly_ok()
+// Port only: type guard for the royal jelly object type (C tests otyp
+// inline; jelly_ok() filters the EGG rub targets).
 export function isRoyalJelly(object) {
     return object?.otyp === LUMP_OF_ROYAL_JELLY;
 }
