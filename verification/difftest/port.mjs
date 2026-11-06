@@ -5,21 +5,21 @@ import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 
 const changes = {
-    create_object: ['mklev.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
+    create_object: ['mkobj.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
         'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0); otmp.spe = 100;'],
-    creation_log: ['mklev.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
-        'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0); d(0, 1);'],
-    create_class: ['mklev.js', 'const excludeNovel = oclass === SPBOOK_no_NOVEL;',
+    creation_log: ['mkobj.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
+        'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0); rne(0);'],
+    create_class: ['mkobj.js', 'const excludeNovel = oclass === SPBOOK_no_NOVEL;',
         'oclass = WEAPON_CLASS; const excludeNovel = oclass === SPBOOK_no_NOVEL;'],
-    random_range: ['mklev.js', 'return first === last ? first : 0;',
+    random_range: ['objnam.js', 'return first === last ? first : 0;',
         'return first === last ? first + 1 : 0;'],
-    random_monster: ['mklev.js', 'return selected >= 0 ? selected : null;',
+    random_monster: ['makemon.js', 'return selected >= 0 ? selected : null;',
         'return selected >= 0 ? selected + 1 : null;'],
-    monster_class: ['mklev.js', 'if ((choice -= weight) <= 0)\n            return mndx;',
+    monster_class: ['makemon.js', 'if ((choice -= weight) <= 0)\n            return mndx;',
         'if ((choice -= weight) <= 0)\n            return mndx + 1;'],
-    monster_weapons: ['mklev.js', 'if (!initializeMonsterEquipment) {',
+    monster_weapons: ['makemon.js', 'if (!initializeMonsterEquipment) {',
         'if (true) {'],
-    monster_inventory: ['mklev.js', 'if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 12) {',
+    monster_inventory: ['makemon.js', 'if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 12) {',
         'if (false) {'],
     stasis: ['teleport.js', '&& stasisUntil >= (state?.moves ?? 1);',
         '&& stasisUntil > (state?.moves ?? 1);'],
@@ -67,6 +67,30 @@ if (mutation) {
         if (!source.includes(before)) throw new Error(`Mutant no longer applies: ${mutation}`);
         return { format: 'module', source: source.replaceAll(before, after), shortCircuit: true };
     } });
+}
+
+// CI guard: every mutant must still apply to the emitted file it names,
+// whether or not a run loads that module. A fold that moves code out from
+// under a mutant fails here with the mutant's name instead of letting the
+// table pass vacuously because --metadata never imported the target.
+if (process.argv.includes('--check-mutants')) {
+    const stale = [];
+    for (const [name, [file, before]] of Object.entries(changes)) {
+        let source;
+        try {
+            source = readFileSync(new URL(`../../js/${file}`, import.meta.url), 'utf8');
+        } catch {
+            stale.push(`${name}: js/${file} is missing`);
+            continue;
+        }
+        if (!source.includes(before)) stale.push(`${name}: before text no longer in js/${file}`);
+    }
+    if (stale.length) {
+        console.error(`Stale difftest mutants:\n${stale.join('\n')}`);
+        process.exit(1);
+    }
+    console.log(`${Object.keys(changes).length} mutants apply to their emitted files`);
+    process.exit(0);
 }
 
 const data = await import('../../js/object_data.js');

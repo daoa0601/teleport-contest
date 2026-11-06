@@ -7,12 +7,12 @@ from model import TARGETS, integer, record
 
 CREATION_TARGETS = ['mksobj', 'mkobj', 'rnd_class', 'rndmonst', 'mkclass', 'makemon_inventory']
 CREATION_LOCATIONS = [
-    ('mkobj.c:mksobj', 'mklev.js:mksobj'),
-    ('mkobj.c:mkobj', 'mklev.js:mkobj'),
-    ('objnam.c:rnd_class', 'mklev.js:rndClass'),
-    ('makemon.c:rndmonst', 'mklev.js:rndmonstAdj'),
-    ('makemon.c:mkclass_aligned', 'mklev.js:mkclassAligned'),
-    ('makemon.c:makemon (m_initweap/m_initinv)', 'mklev.js:makemonAt'),
+    ('mkobj.c:mksobj', 'mkobj.js:mksobj'),
+    ('mkobj.c:mkobj', 'mkobj.js:mkobj'),
+    ('objnam.c:rnd_class', 'objnam.js:rndClass'),
+    ('makemon.c:rndmonst', 'makemon.js:rndmonstAdj'),
+    ('makemon.c:mkclass_aligned', 'makemon.js:mkclassAligned'),
+    ('makemon.c:makemon (m_initweap/m_initinv)', 'makemon.js:makemonAt'),
 ]
 ARGUMENTS = {
     6: ('otyp', 'init', 'artif'), 7: ('oclass', 'artif'), 8: ('first', 'last'),

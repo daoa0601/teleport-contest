@@ -159,8 +159,9 @@ creation schema probes reject invalid object types, object classes, range
 endpoints, depths, monster classes, species, override bits, population flags and
 duplicate species histories. The original five invalid-domain probes and seven
 mutants remain active, including independent state, extra-word and log-only
-changes. A new `creation_log` mutant adds `d(0, 1)` during object construction.
-Both `rnd.c:d` and emitted `rng.js:d` consume no words for zero dice; the JS call
+changes. A `creation_log` mutant adds `rne(0)` during object construction.
+Zero-dice `d(0, 1)` has the same effect but is out of scope in `mkobj.js`;
+`rng.js:rne` calls `rn2(0)`, which returns before drawing, so the JS call
 adds only a log entry. The differential runner rejects it at `rng.log`.
 
 All ten creation behavior tests pass with `creation_log` enabled (10.663 s).
