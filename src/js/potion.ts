@@ -70,7 +70,6 @@ import {
 } from './mon.js';
 import { removeWornHeroItem } from './steal.js';
 import { holdAnotherObject } from './invent.js';
-import { staggerVerb } from './dothrow.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
 import {
     freeInventoryObject, learnUnseenInventory, useUpInventoryStack, chooseInventoryObject,
@@ -100,7 +99,7 @@ import { putMonsterToSleep } from './mhitm.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { mkobj, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack, adjustObjectLightAfterBlessing } from './mkobj.js';
 import type { MonsterFormChange, MonsterSelfTouchResult } from './mon.js';
-import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount } from './mondata.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount, monsterStagger } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import type { Monster } from './monster_types.js';
@@ -187,7 +186,7 @@ export async function makeStunned(turns: number, {
             await publish(formatFeltMessage(`${heroIsHallucinating(state) ? 'less wobbly' : 'a bit steadier'} now.`, state));
         } else if (turns && !old) {
             await publish(state.u.usteed ? 'You wobble in the saddle.'
-                : `You ${staggerVerb(heroSpecies(state)).replace(/s$/, '')}...`);
+                : `You ${monsterStagger(heroSpecies(state), 'stagger')}...`);
         }
     }
     if (!!turns !== old) state.context.botl = true;

@@ -20,7 +20,7 @@ import { MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_S
 import { heroSpecies, heroPolyGender, heroPassesWalls, body_part, mbodypart } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
-import { depth } from './dungeon.js';
+import { depth, sameDungeonLevel } from './dungeon.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls, resistConflict, } from './mondata.js';
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
@@ -76,11 +76,6 @@ const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
 const G_UNIQ = 0x1000;
 const FIRST_REAL_GEM = OBJECT_NAMES.indexOf('dilithium crystal');
-// C dungeon.c:on_level(): compares two dungeon locations.
-function sameLevel(a, b) {
-    return (a?.dnum ?? 0) === (b?.dnum ?? 0)
-        && (a?.dlevel ?? 1) === (b?.dlevel ?? 1);
-}
 // Part of C shk.c:inside_shop(): a room boundary is not merchandise floor
 // space.
 export function insideShopRoomAt(state, x, y) {
@@ -108,7 +103,7 @@ function firstShopRoomAt(state, x, y) {
 export function shopkeeperInOwnShop(monster, state = game) {
     if (!monster?.isshk || !monster?.eshk)
         return false;
-    if (!sameLevel(monster.eshk.shoplevel, state?.u?.uz))
+    if (!sameDungeonLevel(monster.eshk.shoplevel, state?.u?.uz))
         return false;
     return roomsAt(state.level, monster.mx, monster.my, SHOPBASE)
         .includes(monster.eshk.shoproom);
@@ -1293,10 +1288,6 @@ function shopKeeper(state, roomno) {
     return hasShopkeeperData(resident) && resident.isshk && !resident.dead
         && (resident.mhp ?? 1) > 0 ? resident : null;
 }
-// C hack.c:in_rooms(): the SHOPBASE membership list.
-function shopRoomnosAt(state, x, y) {
-    return roomsAt(state.level, x, y, SHOPBASE);
-}
 // C shk.c:inside_shop()
 // Strictly inside shop walls, boundary excluded.
 function insideShop(state, x, y) {
@@ -1639,7 +1630,7 @@ export function addShopDamage(x, y, cost, state = game) {
     if (IS_DOOR(location.typ)) {
         // Only a real shop entrance is worth repairing.
         let entrance = false;
-        for (const roomno of shopRoomnosAt(state, x, y)) {
+        for (const roomno of roomsAt(state.level, x, y, SHOPBASE)) {
             const keeper = shopKeeper(state, roomno);
             if (keeper && x === keeper.eshk.shd?.x
                 && y === keeper.eshk.shd?.y) {
@@ -1726,7 +1717,7 @@ export function repairableShopDamage(record, keeper, state = game) {
             return false;
     }
     // Does it belong to this keeper?
-    if (!shopRoomnosAt(state, x, y).includes(keeper.eshk.shoproom))
+    if (!roomsAt(state.level, x, y, SHOPBASE).includes(keeper.eshk.shoproom))
         return false;
     return true;
 }
@@ -1751,7 +1742,7 @@ function discardDamageRecord(record, state) {
 export function discardDamageOwnedByShopkeeper(keeper, state = game) {
     requireShopGame(state);
     const records = damageRecords(state);
-    state.level.damagelist = records.filter(record => !shopRoomnosAt(state, record.place.x, record.place.y)
+    state.level.damagelist = records.filter(record => !roomsAt(state.level, record.place.x, record.place.y, SHOPBASE)
         .includes(keeper.eshk.shoproom));
 }
 // C shk.c:shkgone(). This is not migration's temporary loss of residency.
@@ -1842,7 +1833,7 @@ export async function payForShopDamage(verb, { cantMollify = false, state = game
         if (record.when !== (state.moves ?? 0) || !record.cost)
             continue;
         costOfDamage += record.cost;
-        for (const roomno of shopRoomnosAt(state, record.place.x, record.place.y)) {
+        for (const roomno of roomsAt(state.level, record.place.x, record.place.y, SHOPBASE)) {
             const candidate = shopKeeper(state, roomno);
             if (!candidate)
                 continue;
@@ -1886,7 +1877,7 @@ export async function payForShopDamage(verb, { cantMollify = false, state = game
         return;
     }
     // If the keeper is not in any shop...
-    if (shopRoomnosAt(state, keeper.mx, keeper.my).length === 0) {
+    if (roomsAt(state.level, keeper.mx, keeper.my, SHOPBASE).length === 0) {
         if (!cansee(keeper.mx, keeper.my))
             return;
         pursue = true;
@@ -4601,17 +4592,11 @@ export async function moveShopkeeper(monster, state, random, rollDice, rollOne, 
 export function setShopResidency(monster, zeroOut, state) {
     if (!monster.isshk || !monster.eshk)
         return;
-    if (!sameShopLevel(monster.eshk.shoplevel, state.u?.uz))
+    if (!sameDungeonLevel(monster.eshk.shoplevel, state.u?.uz))
         return;
     const room = roomForRoomno(state.level, monster.eshk.shoproom);
     if (room)
         room.resident = zeroOut ? null : monster;
-}
-// C dungeon.c:on_level(): compares two shop levels.
-function sameShopLevel(first, second) {
-    return !!first && !!second
-        && first.dnum === second.dnum
-        && first.dlevel === second.dlevel;
 }
 // C shk.c:pick_pick().
 // C shk.c:pick_pick(), called by pickup.c:out_container() before addinv().

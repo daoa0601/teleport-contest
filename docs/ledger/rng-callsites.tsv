@@ -1364,9 +1364,9 @@ src/js/mon.ts	maybeHumanoidGasp	rn2	"[""HUMANOID_GASP_EXCLAMATIONS.length""]"	co
 src/js/sounds.ts	publishMonsterGrowl	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
 src/js/sounds.ts	publishMonsterWhimper	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
 src/js/sounds.ts	publishMonsterYelp	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
-src/js/mon.ts	reactHumanoidBystander	rn2	"[""10""]"	constant
-src/js/mon.ts	reactHumanoidBystander	rn2	"[""5""]"	constant
-src/js/mon.ts	reactHumanoidBystander	rn2	"[""50""]"	constant
+src/js/mon.ts	reactPeacefulBystanders	rn2	"[""10""]"	constant
+src/js/mon.ts	reactPeacefulBystanders	rn2	"[""5""]"	constant
+src/js/mon.ts	reactPeacefulBystanders	rn2	"[""50""]"	constant
 src/js/mon.ts	reactPeacefulBystanders	rn2	"[""25""]"	constant
 src/js/mon.ts	reactPeacefulBystanders	rn2	"[""3""]"	constant
 src/js/mon.ts	reactPeacefulBystanders	rn2	"[""4""]"	constant

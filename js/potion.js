@@ -42,7 +42,6 @@ import { depth, ledgerNo } from './dungeon.js';
 import { releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, } from './mon.js';
 import { removeWornHeroItem } from './steal.js';
 import { holdAnotherObject } from './invent.js';
-import { staggerVerb } from './dothrow.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
 import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack, chooseInventoryObject, consumeInventoryItem, getobj, inventoryItemDescription, } from './invent.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
@@ -59,7 +58,7 @@ import { cloneMonster, setMonsterMalign } from './makemon.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { mkobj, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack, adjustObjectLightAfterBlessing } from './mkobj.js';
-import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount } from './mondata.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount, monsterStagger } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { tryCallObjectType, healHeroLegs } from './do.js';
@@ -101,7 +100,7 @@ export async function makeStunned(turns, { state = game, talk = true, publish = 
         }
         else if (turns && !old) {
             await publish(state.u.usteed ? 'You wobble in the saddle.'
-                : `You ${staggerVerb(heroSpecies(state)).replace(/s$/, '')}...`);
+                : `You ${monsterStagger(heroSpecies(state), 'stagger')}...`);
         }
     }
     if (!!turns !== old)

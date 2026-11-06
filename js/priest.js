@@ -6,7 +6,7 @@
 // shopkeepers use to reach a goal square.
 import { SPBOOK_no_NOVEL } from './objclass.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
-import { recordTempleOverview } from './dungeon.js';
+import { recordTempleOverview, sameDungeonLevel } from './dungeon.js';
 import { deityName, hallucinatedDeityName } from './pray.js';
 import { nomul, checkSpecialRoom, roomForRoomno, roomsAt } from './hack.js';
 import { recordAchievement } from './insight.js';
@@ -44,11 +44,6 @@ import { is_minion, monsterPerceives, resistConflict } from './mondata.js';
 import { body_part } from './polyself.js';
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
 const PM_ALIGNED_CLERIC = 275, PM_HIGH_CLERIC = 276;
-// C dungeon.c:on_level(): compares two dungeon locations.
-function sameLevel(left, right) {
-    return (left?.dnum ?? 0) === (right?.dnum ?? 0)
-        && (left?.dlevel ?? 1) === (right?.dlevel ?? 1);
-}
 // C mextra.h:EPRI(): the epri extra-data read.
 function priestData(priest) {
     return priest?.epri || priest?.mextra?.epri || null;
@@ -62,7 +57,7 @@ function minionData(priest) {
 export function priestInOwnTemple(priest, roomno, state = game) {
     const epri = priestData(priest);
     if (!priest?.ispriest || !epri || epri.shroom !== roomno
-        || !sameLevel(epri.shrlevel, state.u?.uz))
+        || !sameDungeonLevel(epri.shrlevel, state.u?.uz))
         return false;
     return roomsAt(state.level, priest.mx, priest.my, TEMPLE)[0] === roomno;
 }
@@ -118,7 +113,7 @@ export async function clearNonlocalPriestsOnExit() {
         const shrine = priestData(priest);
         if (!shrine)
             throw new Error(`Priest ${priest.m_id} has no shrine record.`);
-        if (!sameLevel(shrine.shrlevel, state.u.uz))
+        if (!sameDungeonLevel(shrine.shrlevel, state.u.uz))
             await removeMonsterFromGame(priest);
     }
 }
@@ -426,7 +421,7 @@ export async function intemple(roomno, state = game) {
     const moves = state.moves ?? 0;
     const canSpeak = priestCanSpeak(priest, state);
     const shrined = priestHasShrine(priest, state);
-    const inSanctum = !!state.sanctum_level && sameLevel(state.sanctum_level, state.u.uz);
+    const inSanctum = !!state.sanctum_level && sameDungeonLevel(state.sanctum_level, state.u.uz);
     const sanctum = priest.mnum === 276 && (inSanctum || In_endgame(state.u.uz));
     if (canSpeak && moves >= epri.intone_time) {
         const wasPriest = priest.ispriest;

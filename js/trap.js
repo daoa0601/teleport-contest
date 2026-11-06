@@ -36,7 +36,7 @@ import { plineWithContinuation, pline, set_msg_xy, formatSeenMessage, formatFelt
 import { requireInitializedHero } from './hero_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor, } from './worn.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, isHeroDefender, resistsBlnd, } from './mondata.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, monsterStagger, isHeroDefender, resistsBlnd, } from './mondata.js';
 import { teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, teleds, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds, teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth, } from './teleport.js';
 import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName, } from './do_name.js';
@@ -52,7 +52,7 @@ import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existin
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
-import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, } from './hack.js';
+import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { displayMessageWindow } from './topl.js';
 import { abusePet, tameMonster, makePetWary } from './dog.js';
@@ -78,7 +78,7 @@ import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
-import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
+import { rangedTargetHitBonus } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
 import { createPoisonGasCloud } from './region.js';
 import { stopHeroOccupation } from './allmain.js';
@@ -6140,8 +6140,8 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
     // test_move(): bad rock in both orthogonal squares plus overencumbrance
     // or a big form.  cant_squeeze_thru()'s extra exemptions do not apply.
     const tooTight = !!(dx && dy
-        && heroBadRock(state, state.u.ux, trap.ty)
-        && heroBadRock(state, trap.tx, state.u.uy)
+        && badRock(heroSpecies(state), state.u.ux, trap.ty, state)
+        && badRock(heroSpecies(state), trap.tx, state.u.uy, state)
         && (((state.inventory || []).length > 0
             && inventoryWeight(state) > WT_TOOMUCH_DIAGONAL)
             || monsterIsBig(heroSpecies(state))));
@@ -7133,7 +7133,7 @@ export async function triggerChestTrap(container, { state = game, disarm = false
                 if (hallucinating)
                     await publish('What a groovy feeling!');
                 else {
-                    const movement = staggerVerb(heroSpecies(state)).replace(/s$/, '');
+                    const movement = monsterStagger(heroSpecies(state), 'stagger');
                     const feeling = state.u.hallucinationResistance ? ''
                         : blind ? ' and get dizzy' : ' and your vision blurs';
                     await publish(`You ${movement}${feeling}...`);

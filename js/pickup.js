@@ -481,8 +481,9 @@ export async function addPickedInventoryObject(object) {
     observeObjectForNaming(carried);
     return { object: carried, count };
 }
-// C pickup.c:pickup_prinv(): the picked object's inventory line.
-// C pickup_prinv(): format after pick_obj() has settled remote shop billing.
+// Part of C pickup.c:pickup_prinv(): the prinv() inventory line for the
+// picked stack, formatted after pick_obj() has settled remote shop billing
+// (the encumbrance prefix above is pickup_prinv()'s own half).
 async function pickedInventoryDescription(carried, count) {
     const picked = { ...carried, quan: count, quantity: count };
     // Native pickup suppresses the primary-hand annotation when the new
@@ -1989,7 +1990,11 @@ async function scatterBagContents(container, state, held) {
             return;
     }
 }
-// C pickup.c:in_container() names the trigger before either bag blows up.
+// Part of C pickup.c:in_container(): the bag-of-holding explosion branch,
+// which names the trigger before either bag blows up.  Kept callable
+// because tipcontainer() (pickup.c:3776) repeats the same explosion; the
+// tipping flag selects its phrasing.  scatterBagContents above is
+// do_boh_explosion().
 export async function explodeBag(container, trigger, state, { tipping = false, triggerHeld = true, rebillTrigger = false } = {}) {
     observeObjectForNaming(trigger, { state });
     await plineWithContinuation(tipping ? `As ${await lootObjectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`

@@ -212,8 +212,10 @@ const RESISTANCE_BITS = [
 const TELEPATHIC_SPECIES = new Set([
     'floating eye', 'mind flayer', 'master mind flayer',
 ].map(name => MONSTER_NAME.indexOf(name)));
-// C mondata.c:sticks(): does the hero's current form stick?
-// C ref: mondata.c sticks().
+// Part of C mondata.c:sticks(): the hero form — C callers pass
+// gy.youmonst.data, the port resolves heroSpecies() and only a polymorphed
+// hero can carry a sticking form. monsterSpeciesSticks (mondata.ts) is the
+// C-shaped species test.
 export function heroFormSticks(state = game) {
     return Upolyd(state.u) && monsterSpeciesSticks(heroSpecies(state));
 }

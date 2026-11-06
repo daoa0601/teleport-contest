@@ -18,7 +18,7 @@ import { verbForSubject, withIndefiniteArticle, rndClass } from './objnam.js';
 import { visibleRegionAt } from './region.js';
 import { monsterEmitsLight, block_point, visionCellBlocksLight } from './vision.js';
 import { objectAtMonsterDescription } from './pager.js';
-import { depth as depth_of_level, level_difficulty, specialLevelAt } from './dungeon.js';
+import { depth as depth_of_level, level_difficulty, sameDungeonLevel, specialLevelAt } from './dungeon.js';
 import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth, removeMonsterFromGame } from './mon.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { beginObjectBurn, stopObjectTimer } from './timeout.js';
@@ -1881,10 +1881,10 @@ export function isHomeElemental(mnum, state = game) {
     if (name === undefined)
         return false;
     switch (name) {
-        case 'air elemental': return sameLevel(state.u?.uz, state.air_level);
-        case 'earth elemental': return sameLevel(state.u?.uz, state.earth_level);
-        case 'fire elemental': return sameLevel(state.u?.uz, state.fire_level);
-        case 'water elemental': return sameLevel(state.u?.uz, state.water_level);
+        case 'air elemental': return sameDungeonLevel(state.u?.uz, state.air_level);
+        case 'earth elemental': return sameDungeonLevel(state.u?.uz, state.earth_level);
+        case 'fire elemental': return sameDungeonLevel(state.u?.uz, state.fire_level);
+        case 'water elemental': return sameDungeonLevel(state.u?.uz, state.water_level);
         default: return false;
     }
 }
@@ -2059,12 +2059,6 @@ export async function giveMonsterStartingGold(monster, amount) {
 }
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
-// C dungeon.c:on_level():
-function sameLevel(left, right) {
-    return !!left && !!right
-        && left.dnum === right.dnum
-        && left.dlevel === right.dlevel;
-}
 // Part of C makemon.c:grow_up(): choosing the adult form.
 function targetSpecies(mnum, killedMonster) {
     if (!killedMonster && mnum === PM_KILLER_BEE)

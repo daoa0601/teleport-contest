@@ -200,10 +200,6 @@ function classDescriptionMatches(description, wanted) {
     return end === description.length || description[end] === ' ';
 }
 // C mondata.c:name_to_monclass():
-export function nameToMonsterClass(value) {
-    return resolveMonsterClass(value).monsterClass;
-}
-// C mondata.c:name_to_monclass():
 // name_to_monclass() can identify one species as well as its class.
 export function resolveMonsterClass(value) {
     const raw = value;
@@ -491,7 +487,8 @@ export function canTrack(mnum, state = game) {
         return true;
     return monsterHasEyes(mnum);
 }
-// C mondata.c:same_race(). Species families used by cannibalism.
+// Port only: MONSTER_NAME.indexOf for mondata.c:same_race()'s family
+// tables, like symbol() below.
 function species(name) {
     return MONSTER_NAME.indexOf(name);
 }
@@ -886,16 +883,13 @@ export function levelFollower(monster, state) {
     return !!(questMonsterFlags2(monster.mnum, state) & M2_STALK)
         && (!monster.mflee || !!state.u.uhave?.amulet);
 }
-// C mondata.c:poly_when_stoned():
-export function monsterPolymorphsWhenStoned(monster) {
-    return formCanBecomeStoneGolem(monster.mnum, game);
-}
 const POSSESSIVE_PRONOUNS = ['his', 'her', 'its', 'their'];
 const SUBJECT_PRONOUNS = ['he', 'she', 'it', 'they'];
 const OBJECT_PRONOUNS = ['him', 'her', 'it', 'them'];
 const PRONOUN_G_UNIQ = 0x1000;
-// C mondata.c:pronoun_gender(), the mhis()/mhim() macros in include/you.h.
-// Hallucination precedes visibility and sex and uses the core RNG.
+// Part of C you.h:mhis(): the possessive pronoun through pronoun_gender,
+// like its mhe()/mhim() siblings below. Hallucination precedes visibility
+// and sex and uses the core RNG.
 export function monsterPossessive(monster, { state = game, random = rn2, noIt = false } = {}) {
     return POSSESSIVE_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
 }

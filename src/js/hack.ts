@@ -751,8 +751,8 @@ function heroFloorType(state: GameState, x: number, y: number) {
     return ROOM;
 }
 
-// C hack.c:avoid_moving_on_liquid(): whether running should stop at the
-// edge of the water or lava ahead.
+// C hack.c:swim_move_danger(): whether moving to x,y is dangerous for the
+// hero because of water or lava ahead.
 export function heroShouldAvoidLiquid(x: number, y: number, state = game) {
     const hero = state.u;
     const destination = state.level?.at?.(x, y);
@@ -808,8 +808,16 @@ export function blocksDiagonalDoor(current: MapLocation | null | undefined, dest
         || (current?.typ === DOOR && !doorlessDoor(current));
 }
 
-// C hack.c:bad_rock(): the hero-species test.
-export function heroBadRock(state: GameState, x: number, y: number) {
+// C hack.c:bad_rock(). One species test for monsters and for the hero:
+// the hero passes heroSpecies(state), the same youmonst.data C passes.
+// The species decides tunnelling and wall-passing even when the actor has
+// a temporary property; test_move() applies such properties after
+// direction selection, and the orthogonal cells around a diagonal move
+// use the species' intrinsic abilities, not the allow flags computed for
+// the destination itself.
+export function badRock(
+    mdat: number, x: number, y: number, state: GameState = game,
+) {
     const location = state.level?.at?.(x, y);
     if (!location) return true;
     const pile = state.level?.objects?.[x]?.[y] || [];
@@ -817,39 +825,19 @@ export function heroBadRock(state: GameState, x: number, y: number) {
         && pile.some(object => object.otyp === BOULDER)) return true;
     if (!IS_OBSTRUCTED(location.typ)) return false;
 
-    // C bad_rock() tests the species, even when the hero has temporary
-    // wall passing. test_move() applies that property after direction selection.
-
-    const mayDig = !((IS_STWALL(location.typ) || location.typ === TREE)
-        && ((location.wall_info ?? 0) & W_NONDIGGABLE));
-    const cannotTunnel = !speciesTunnels(heroSpecies(state))
-        || needspick(heroSpecies(state)) || !mayDig;
-    const canPass = monsterPassesWalls(heroSpecies(state))
+    const cannotTunnel = !speciesTunnels(mdat)
+        || needspick(mdat) || !mayDig(x, y, state);
+    const canPass = monsterPassesWalls(mdat)
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
     return cannotTunnel && !canPass;
 }
 
-// C hack.c:bad_rock() for a monster actor. The orthogonal cells around a
-// diagonal move use the species' intrinsic tunnelling/passwall abilities,
-// not the allow flags which were computed for the destination itself.
-export function badRockForMonster(
-    monster: Monster, state: GameState, x: number, y: number,
-) {
-    const loc = state?.level?.at?.(x, y);
-    if (!loc) return true;
-    const pile = state?.level?.objects?.[x]?.[y] || [];
-    if (state?.level?.flags?.sokoban_rules && pile.some((object) => object.otyp === BOULDER))
-        return true;
-    if (!IS_OBSTRUCTED(loc.typ)) return false;
-
-    const mayTunnel = speciesTunnels(monster?.mnum) && !needspick(monster?.mnum) && mayDig(x, y, state);
-    const mayPassWall =
-        monsterPassesWalls(monster?.mnum) && !(IS_STWALL(loc.typ) && (loc.wall_info ?? 0) & W_NONPASSWALL);
-    return !mayTunnel && !mayPassWall;
-}
-
-// C hack.c:cant_squeeze_thru(): why a diagonal between blocked shoulders
-// does not fit (big body, too much weight, Sokoban rules).
+// Part of C hack.c:cant_squeeze_thru(): the youmonst branch, which reads
+// the hero's wall-passing property rather than the species flag, weighs
+// inventory with inv_weight()+weight_cap(), and is the only branch subject
+// to the Sokoban rule.  Returns the C reason code: 0 fits, 1 body too
+// big, 2 too much junk, 3 Sokoban.  The monster branch stays in mon.ts's
+// monsterCannotSqueezeThrough (its only caller is mon.c:mfndpos).
 export function heroTightDiagonalReason(state = game) {
     const u = state.u;
 
@@ -887,8 +875,8 @@ export async function crawlDestinationAllowed(
             return false;
         }
     }
-    return !(heroBadRock(state, u.ux, y)
-        && heroBadRock(state, x, u.uy)
+    return !(badRock(heroSpecies(state), u.ux, y, state)
+        && badRock(heroSpecies(state), x, u.uy, state)
         && heroTightDiagonalReason(state));
 }
 
@@ -1196,7 +1184,7 @@ function testHeroMove(
             const blockedBy = shopkeeperBlockingDoor(x, y, g);
             if (blockedBy) return { passes: false, blockedBy };
         }
-        if (heroBadRock(g, fromX, y) && heroBadRock(g, x, fromY)) {
+        if (badRock(heroSpecies(g), fromX, y, g) && badRock(heroSpecies(g), x, fromY, g)) {
             if (heroTightDiagonalReason(g)) return { passes: false };
         } else if (wormCrossesBetween(fromX, fromY, x, y, g)) return { passes: false };
     }
@@ -1271,17 +1259,6 @@ function travelCellKnown(x: number, y: number, g: GameState): boolean {
     return !!location && (!!location.seenv || !heroIsBlind(g) && couldsee(x, y));
 }
 
-interface TravelSearch {
-    distance: Map<number, number>;
-    direction: { dx: number; dy: number } | null;
-}
-
-interface TravelDirection {
-    dx: number;
-    dy: number;
-    checkVisited: boolean;
-}
-
 // Part of C hack.c:findtravelpath(): its DISP_ALL display, so search
 // markers include unseen squares.  Crawl mode holds frontiers for three
 // delays and guessed goals for five; ending the effect restores the map
@@ -1304,49 +1281,6 @@ async function showTravelSearch(
     } finally {
         await effect.end();
     }
-}
-
-// C hack.c:findtravelpath(): each radius preserves cardinal-first frontier
-// Door, boulder and trap delays apply to each edge before TEST_TRAV, in all
-// three search modes. The origin starts unmarked, as in C's zeroed matrix.
-async function searchTravelPath(
-    startX: number, startY: number, goalX: number, goalY: number,
-    mode: 'travel' | 'guess' | 'valid', g: GameState,
-): Promise<TravelSearch> {
-    let frontier: readonly (readonly [number, number])[] = [[startX, startY]];
-    const distance = new Map<number, number>();
-    const directions = MONSTER_NAME[heroSpecies(g)] === 'grid bug'
-        ? TRAVEL_DIRECTIONS.slice(0, 4) : TRAVEL_DIRECTIONS;
-    for (let radius = 1; frontier.length; radius++) {
-        const next: [number, number][] = [];
-        for (const [x, y] of frontier) {
-            let repeated = false;
-            for (const [dx, dy] of directions) {
-                const nx = x + dx, ny = y + dy;
-                if (!isok(nx, ny) || mode === 'guess' && !couldsee(nx, ny)) continue;
-                const delayed = !heroPassesWalls(g) && !heroCanOoze(g) && closedTravelDoor(x, y, g)
-                    || travelBoulderAt(x, y, g) && !heroCouldMoveOntoBoulder(x, y, g)
-                    || await testTravelMove(x, y, nx, ny, 'trap', g);
-                if (delayed && (distance.get(y * COLNO + x) ?? 0) > radius - 3) {
-                    if (!repeated) next.push([x, y]);
-                    repeated = true;
-                    continue;
-                }
-                if (!await testTravelMove(x, y, nx, ny, 'travel', g)
-                    || !travelCellKnown(nx, ny, g)) continue;
-                if (nx === goalX && ny === goalY) {
-                    if (mode !== 'guess')
-                        return { distance, direction: { dx: x - goalX, dy: y - goalY } };
-                } else if (!distance.has(ny * COLNO + nx)) {
-                    distance.set(ny * COLNO + nx, radius);
-                    next.push([nx, ny]);
-                }
-            }
-        }
-        await showTravelSearch(next, 1, g);
-        frontier = next;
-    }
-    return { distance, direction: null };
 }
 
 // C hack.c:is_valid_travelpt().  Saves and restores the travel target
@@ -1385,8 +1319,8 @@ function travelDistanceSquared(x1: number, y1: number, x2: number, y2: number): 
 // backward search from the guessed goal; TRAVP_VALID searches forward to a
 // candidate.  Like C, the direction travels in u.dx/u.dy and the travel
 // map in gt.travelmap (g._travelMap); domove_core()'s travel block below
-// and is_valid_travelpt() above are the callers.  searchTravelPath() is
-// the shared `noguess' loop of hack.c:1315-1449.
+// and is_valid_travelpt() above are the callers.  The `noguess' loop of
+// hack.c:1315-1449 is inline below, re-entered per guessed goal as in C.
 async function findtravelpath(
     mode: 'travel' | 'guess' | 'valid',
     targetX: number, targetY: number, g: GameState,
@@ -1415,11 +1349,56 @@ async function findtravelpath(
         let searchMode = mode;
         let searchTargetX = targetX, searchTargetY = targetY;
         for (;;) { /* noguess: */
-            const search = searchMode === 'travel'
-                ? await searchTravelPath(searchTargetX, searchTargetY, g.u.ux, g.u.uy, 'travel', g)
-                : await searchTravelPath(g.u.ux, g.u.uy, searchTargetX, searchTargetY, searchMode, g);
+            /* C hack.c:1315-1449: the `noguess' search loop.  Each radius
+               preserves a cardinal-first frontier; door, boulder and trap
+               delays apply to each edge before TEST_TRAV, in all three
+               search modes, and the origin starts unmarked, as in C's
+               zeroed matrix.  TRAVP_TRAVEL searches backward from the
+               target so the predecessor of the hero is the next step;
+               TRAVP_GUESS and TRAVP_VALID search forward. */
+            const distance = new Map<number, number>();
+            let direction: { dx: number; dy: number } | null = null;
+            search: {
+                const startX = searchMode === 'travel' ? searchTargetX : g.u.ux;
+                const startY = searchMode === 'travel' ? searchTargetY : g.u.uy;
+                const goalX = searchMode === 'travel' ? g.u.ux : searchTargetX;
+                const goalY = searchMode === 'travel' ? g.u.uy : searchTargetY;
+                const directions = MONSTER_NAME[heroSpecies(g)] === 'grid bug'
+                    ? TRAVEL_DIRECTIONS.slice(0, 4) : TRAVEL_DIRECTIONS;
+                let frontier: readonly (readonly [number, number])[] = [[startX, startY]];
+                for (let radius = 1; frontier.length; radius++) {
+                    const next: [number, number][] = [];
+                    for (const [x, y] of frontier) {
+                        let repeated = false;
+                        for (const [dx, dy] of directions) {
+                            const nx = x + dx, ny = y + dy;
+                            if (!isok(nx, ny) || searchMode === 'guess' && !couldsee(nx, ny)) continue;
+                            const delayed = !heroPassesWalls(g) && !heroCanOoze(g) && closedTravelDoor(x, y, g)
+                                || travelBoulderAt(x, y, g) && !heroCouldMoveOntoBoulder(x, y, g)
+                                || await testTravelMove(x, y, nx, ny, 'trap', g);
+                            if (delayed && (distance.get(y * COLNO + x) ?? 0) > radius - 3) {
+                                if (!repeated) next.push([x, y]);
+                                repeated = true;
+                                continue;
+                            }
+                            if (!await testTravelMove(x, y, nx, ny, 'travel', g)
+                                || !travelCellKnown(nx, ny, g)) continue;
+                            if (nx === goalX && ny === goalY) {
+                                if (searchMode !== 'guess') {
+                                    direction = { dx: x - goalX, dy: y - goalY };
+                                    break search;
+                                }
+                            } else if (!distance.has(ny * COLNO + nx)) {
+                                distance.set(ny * COLNO + nx, radius);
+                                next.push([nx, ny]);
+                            }
+                        }
+                    }
+                    await showTravelSearch(next, 1, g);
+                    frontier = next;
+                }
+            }
             if (searchMode !== 'guess') {
-                const direction = search.direction;
                 if (direction) {
                     /* reached the search goal (C hack.c:1398-1418) */
                     const nextX = g.u.ux + direction.dx, nextY = g.u.uy + direction.dy;
@@ -1444,7 +1423,7 @@ async function findtravelpath(
             }
 
             /* if guessing, find best location in travel matrix and go there */
-            const { distance } = search;
+
             let pickX = g.u.ux, pickY = g.u.uy;
             let bestDistance = travelDistance(targetX, targetY, g.u.ux, g.u.uy);
             let bestSquared = travelDistanceSquared(targetX, targetY, g.u.ux, g.u.uy);
@@ -3010,7 +2989,7 @@ export function beastChoosesHeroDisplacement(
         || u.utrap || u.ustuck || u.usteed) return false;
     if (u.dx && u.dy && (u.umonnum === GRID_BUG
         || (beastBadRock(state, x, u.uy0) && beastBadRock(state, u.ux0, y))
-        || (heroBadRock(state, u.ux0, y) && heroBadRock(state, x, u.uy0)))) return false;
+        || (badRock(heroSpecies(state), u.ux0, y, state) && badRock(heroSpecies(state), x, u.uy0, state)))) return false;
     return goodPosition(u.ux0, u.uy0, { kind: 'monster', monster: beast },
         { state, gpflags: GP_ALLOW_U });
 }
@@ -3304,7 +3283,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             dx = u.dx ?? 0;
             dy = u.dy ?? 0;
             const x = u.ux + dx, y = u.uy + dy;
-            if (!isok(x, y) || heroBadRock(game, x, y)) continue;
+            if (!isok(x, y) || badRock(heroSpecies(game), x, y, game)) continue;
             found = true;
             break;
         }
@@ -3645,7 +3624,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
 
     // C test_move()'s tight-diagonal reject (hack.c:1153-1171): both
     // orthogonal shoulders blocked by rock asks cant_squeeze_thru().
-    if (dx && dy && heroBadRock(game, u.ux, newy) && heroBadRock(game, newx, u.uy)) {
+    if (dx && dy && badRock(heroSpecies(game), u.ux, newy, game) && badRock(heroSpecies(game), newx, u.uy, game)) {
         const reason = heroTightDiagonalReason(game);
         if (reason) {
             if (reason === 1) await pline('Your body is too large to fit through.');
@@ -3657,7 +3636,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         }
     }
 
-    if (!(dx && dy && heroBadRock(game, u.ux, newy) && heroBadRock(game, newx, u.uy))
+    if (!(dx && dy && badRock(heroSpecies(game), u.ux, newy, game) && badRock(heroSpecies(game), newx, u.uy, game))
         && wormCrossesBetween(u.ux, u.uy, newx, newy, game)) {
         const worm = monsterAtPosition(game.level, u.ux, newy);
         if (!worm) throw new Error('A crossing worm must occupy the adjacent square.');
@@ -4142,17 +4121,6 @@ export async function overexertHeroHp(state = game) {
     }
 }
 
-// C hack.c:invocation_message().  The vibrating square's felt announcement.
-function heroPositionDescription(): string {
-    const steed = game.u?.usteed;
-    if (steed) {
-        const name = monsterName(steed, { article: 'your' });
-        return `beneath ${name}`;
-    }
-    if (game.u.levitating || game.u.flying) return 'beneath you';
-    return `under your ${makePlural(body_part(FOOT))}`;
-}
-
 // Part of C hack.c:invocation_message(): carrying(CANDELABRUM_OF_INVOCATION).
 function carriedCandelabrum(): GameObject | undefined {
     return (game.inventory || []).find(object =>
@@ -4165,8 +4133,15 @@ export async function announceInvocationSquare(): Promise<boolean> {
         || heroIsOnStairs()) return false;
 
     stopRun();
+    // C invocation_message(): the "beneath ..." position phrase — the
+    // steed's name, the airborne hero, or the hero's own feet.
+    const steed = game.u?.usteed;
+    const position = steed
+        ? `beneath ${monsterName(steed, { article: 'your' })}`
+        : game.u.levitating || game.u.flying ? 'beneath you'
+        : `under your ${makePlural(body_part(FOOT))}`;
     await plineWithContinuation(
-        formatFeltMessage(`a strange vibration ${heroPositionDescription()}.`),
+        formatFeltMessage(`a strange vibration ${position}.`),
     );
     if (!game.u.uevent) game.u.uevent = {};
     game.u.uevent.uvibrated = 1;

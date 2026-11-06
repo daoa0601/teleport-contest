@@ -19,7 +19,7 @@ import { splitMonster } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
-import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, is_dwarf, is_elf, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsAlwaysHostile, monsterIsPlainHuman, monsterIsQuestGuardian, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, resistConflict, heroHasOlfaction, } from './mondata.js';
+import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, formCanBecomeStoneGolem, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, is_dwarf, is_elf, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsAlwaysHostile, monsterIsPlainHuman, monsterIsQuestGuardian, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, resistConflict, heroHasOlfaction, } from './mondata.js';
 import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { randomMonsterRelocation, relocateMonsterTo, reportMonsterTeleportRestriction, monsterTeleportRestricted, enexto, goodPosition } from './teleport.js';
@@ -54,7 +54,7 @@ import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
-import { badRockForMonster, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects } from './hack.js';
+import { badRock, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects } from './hack.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
@@ -426,8 +426,10 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
     }
     return null;
 }
-// C mon.c:minliquid_core() asks context.mon_moving who owns a liquid death: a
-// monster's own move dies by mondead()/mondied(), anything else by xkilled().
+// Part of C mon.c:minliquid_core(): asks context.mon_moving who owns a
+// liquid death — a monster's own move dies by mondead()/mondied(), anything
+// else by xkilled(). Shared as the finishDeath option by the dbridge.c,
+// dig.c, dog.c and fountain.c callers of resolveMonsterLiquid().
 export function finishLiquidDeathForCurrentMover(monster, options) {
     return options.state.context.mon_moving
         ? finishMonsterLiquidDeath(monster, options)
@@ -1111,8 +1113,8 @@ export async function mfndpos(monster, state, flags = monAllowFlags(monster, sta
                     info |= NOTONL;
                 }
                 if (diagonal &&
-                    badRockForMonster(monster, state, x, ny) &&
-                    badRockForMonster(monster, state, nx, y) &&
+                    badRock(monster.mnum, x, ny, state) &&
+                    badRock(monster.mnum, nx, y, state) &&
                     monsterCannotSqueezeThrough(monster, state))
                     continue;
                 const trap = trapAt(state, nx, ny);
@@ -1221,7 +1223,8 @@ export async function hideMonsterUnder(monster, state = game) {
     await finishMonsterHideUnder(monster, concealment, state);
     return concealment.undetected;
 }
-// C mon.c:hideunder(&youmonst) reassesses cover without announcing hero hiding.
+// Part of C mon.c:hideunder(): the youmonst branch — reassesses the hero's
+// cover without the announce-new-hiding messages the monster branch prints.
 export async function hideHeroUnder(state = game) {
     requireLiveGame(state);
     const oldUndetected = !!state.u.uundetected;
@@ -1597,58 +1600,6 @@ function maybeHumanoidGasp(observer) {
         ? { text: `${name} gasps`, needsPeriod: true }
         : { text: `${name} exclaims "${exclamation}"`, needsPeriod: false };
 }
-// C mon.c:peacefuls_respond():
-async function reactHumanoidBystander(observer, attackedSpecies) {
-    requirePlayingGame(game);
-    if (isWatch(observer)) {
-        await plineWithContinuation('"Halt!  You\'re under arrest!"');
-        await angerWatchGuards(heroIsDeaf(game));
-        return;
-    }
-    let exclaimed = false;
-    let message = '';
-    let needsPeriod = false;
-    if (!heroIsDeaf(game) && rn2(5) === 0) {
-        const gasp = maybeHumanoidGasp(observer);
-        if (gasp) {
-            message = gasp.text;
-            needsPeriod = gasp.needsPeriod;
-            exclaimed = true;
-        }
-    }
-    if (observer.isshk || observer.ispriest
-        || (observer.mnum === game.urole.ldrnum
-            && attackedSpecies !== game.urole.guardnum)) {
-        if (exclaimed)
-            await plineWithContinuation(`${message} then shrugs.`);
-        return;
-    }
-    if ((MONSTER_LEVEL[observer.mnum] ?? 0) < rn2(10)
-        && observer.mnum !== game.urole.guardnum) {
-        const alreadyFleeing = !!(observer.mflee || observer.mfleetim);
-        await makeMonsterFlee(observer, {
-            turns: rn2(50) + 25, first: true, announce: !exclaimed,
-        });
-        if (exclaimed && game.flags?.verbose !== false && !alreadyFleeing) {
-            message += ' and then turns to flee.';
-            needsPeriod = false;
-        }
-        else if (!exclaimed) {
-            exclaimed = true;
-        }
-    }
-    if (message) {
-        await plineWithContinuation(`${message}${needsPeriod ? '.' : ''}`);
-    }
-    if ((observer.mtame ?? 0) > 0)
-        return;
-    observer.mpeaceful = 0;
-    observer.mstrategy = (observer.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    adjustHeroAlignment(-1);
-    if (!exclaimed) {
-        await plineWithContinuation(`${monsterName(observer, { capitalized: true })} gets angry!`);
-    }
-}
 // C mon.c:angry_guards().
 export async function angerWatchGuards(silent, { state = game, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
@@ -1719,7 +1670,57 @@ async function reactPeacefulBystanders(attackedMonster) {
         if (heroInvisible && !monsterPerceives(observer?.mnum))
             continue;
         if (monsterIsHumanoid(observer?.mnum) || observer.isshk || observer.ispriest) {
-            await reactHumanoidBystander(observer, attackedSpecies);
+            /* C mon.c:peacefuls_respond(): the humanoid/shopkeeper/priest
+               reaction, which replaces the rest of this iteration. */
+            requirePlayingGame(game);
+            if (isWatch(observer)) {
+                await plineWithContinuation('"Halt!  You\'re under arrest!"');
+                await angerWatchGuards(heroIsDeaf(game));
+                continue;
+            }
+            let exclaimed = false;
+            let message = '';
+            let needsPeriod = false;
+            if (!heroIsDeaf(game) && rn2(5) === 0) {
+                const gasp = maybeHumanoidGasp(observer);
+                if (gasp) {
+                    message = gasp.text;
+                    needsPeriod = gasp.needsPeriod;
+                    exclaimed = true;
+                }
+            }
+            if (observer.isshk || observer.ispriest
+                || (observer.mnum === game.urole.ldrnum
+                    && attackedSpecies !== game.urole.guardnum)) {
+                if (exclaimed)
+                    await plineWithContinuation(`${message} then shrugs.`);
+                continue;
+            }
+            if ((MONSTER_LEVEL[observer.mnum] ?? 0) < rn2(10)
+                && observer.mnum !== game.urole.guardnum) {
+                const alreadyFleeing = !!(observer.mflee || observer.mfleetim);
+                await makeMonsterFlee(observer, {
+                    turns: rn2(50) + 25, first: true, announce: !exclaimed,
+                });
+                if (exclaimed && game.flags?.verbose !== false && !alreadyFleeing) {
+                    message += ' and then turns to flee.';
+                    needsPeriod = false;
+                }
+                else if (!exclaimed) {
+                    exclaimed = true;
+                }
+            }
+            if (message) {
+                await plineWithContinuation(`${message}${needsPeriod ? '.' : ''}`);
+            }
+            if ((observer.mtame ?? 0) > 0)
+                continue;
+            observer.mpeaceful = 0;
+            observer.mstrategy = (observer.mstrategy ?? 0) & ~STRAT_WAITMASK;
+            adjustHeroAlignment(-1);
+            if (!exclaimed) {
+                await plineWithContinuation(`${monsterName(observer, { capitalized: true })} gets angry!`);
+            }
             continue;
         }
         if (!monsterGrowthFamilyMatch(attackedMonster.mnum, observer.mnum))
@@ -1877,11 +1878,13 @@ export async function publishMonsterWake(monster, interesting = false, state = g
     const alive = monster.mnum === PM_FLESH_GOLEM ? " It's alive!" : '';
     await publish(`${monsterName(monster, { capitalized: true, state })} wakes up${punctuation}${alive}`);
 }
-// C mon.c:wake_nearto_core() (wake_nearto() is this with petCall false):
-// the distance filter (monstersNear), the wake message, indeterminate-sleep
-// clearing, petcall whistles, and the closing disturb_buried_zombies() all
-// live here.
-// C mon.c:wake_nearby() for a non-deliberate noise.
+// C mon.c:wake_nearby() for a non-deliberate noise: the petcall-false
+// form of wake_nearto_core() at the hero's own square with the hero's
+// level * 20 radius. The distance filter (monstersNear), the wake
+// message, indeterminate-sleep clearing, petcall whistles, and the
+// closing disturb_buried_zombies() all live in
+// wakeMonstersNearWithMessages below (wake_nearto() is that with
+// petCall false).
 export async function wakeNearby(state) {
     await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
 }
@@ -3294,17 +3297,15 @@ export async function finishMonsterLiquidDeath(monster, { state = game, random =
         corpse,
     };
 }
-// C mon.c:monkilled(). Its death line is square-visible or worm-known,
-// independently of whether the actor can be identified.
-export function monsterKillLineVisible(monster) {
-    return monster.wormno ? wormKnown(monster) : cansee(monster.mx, monster.my);
-}
 // C mon.c:monkilled():
 // C monkilled(): the death line precedes recovery, but pet grief follows it.
 // A null cause suppresses the line even when the monster's square is visible.
 export async function finishMonsterKilled(monster, state, { damageType, cause = '', publish = plineWithContinuation, ...options }) {
     const species = monster.mnum;
-    const visible = cause !== null && monsterKillLineVisible(monster);
+    // C monkilled(): the death line is square-visible or worm-known,
+    // independently of whether the actor can be identified.
+    const visible = cause !== null
+        && (monster.wormno ? wormKnown(monster) : cansee(monster.mx, monster.my));
     const deathMessage = visible
         ? `${monsterName(monster, { state, capitalized: true })} is ${monsterIsNonliving(species) ? 'destroyed' : 'killed'}${cause ? ` by the ${cause}` : ''}!`
         : null;
@@ -3672,7 +3673,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
 }
 // C mon.c:mon_to_stone():
 export async function turnGolemToStone(monster, publish) {
-    if (!monsterPolymorphsWhenStoned(monster))
+    if (!formCanBecomeStoneGolem(monster.mnum))
         return null;
     const visible = canSeeMonster(monster);
     if (visible) {

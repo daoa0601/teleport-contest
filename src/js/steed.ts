@@ -49,7 +49,7 @@ import { teleds, randomMonsterRelocation, relocateMonsterTo, enexto } from './te
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './do.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';
+import { blocksDiagonalDoor, badRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';
 import { levelHasCeiling, surfaceName } from './dungeon.js';
 import { isAccessibleAt, heroCanOoze } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
@@ -263,7 +263,7 @@ async function ridingStepIsClear(
                 return false;
             }
         }
-        if (heroBadRock(state, hero.ux, y) && heroBadRock(state, x, hero.uy)) {
+        if (badRock(heroSpecies(state), hero.ux, y, state) && badRock(heroSpecies(state), x, hero.uy, state)) {
             if (heroTightDiagonalReason(state)) return false;
         } else if (wormCrossesBetween(hero.ux, hero.uy, x, y, state)) return false;
     }

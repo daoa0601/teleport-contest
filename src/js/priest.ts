@@ -7,9 +7,8 @@
 
 import { SPBOOK_no_NOVEL } from './objclass.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
-import { recordTempleOverview } from './dungeon.js';
+import { recordTempleOverview, sameDungeonLevel } from './dungeon.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName, hallucinatedDeityName } from './pray.js';
@@ -55,14 +54,6 @@ import { body_part } from './polyself.js';
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
 const PM_ALIGNED_CLERIC = 275, PM_HIGH_CLERIC = 276;
 
-// C dungeon.c:on_level(): compares two dungeon locations.
-function sameLevel(
-    left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined,
-): boolean {
-    return (left?.dnum ?? 0) === (right?.dnum ?? 0)
-        && (left?.dlevel ?? 1) === (right?.dlevel ?? 1);
-}
-
 // C mextra.h:EPRI(): the epri extra-data read.
 function priestData(priest: Monster | null | undefined): PriestData | null {
     return priest?.epri || priest?.mextra?.epri || null;
@@ -80,7 +71,7 @@ export function priestInOwnTemple(
 ): boolean {
     const epri = priestData(priest);
     if (!priest?.ispriest || !epri || epri.shroom !== roomno
-        || !sameLevel(epri.shrlevel, state.u?.uz)) return false;
+        || !sameDungeonLevel(epri.shrlevel, state.u?.uz)) return false;
     return roomsAt(state.level, priest.mx, priest.my, TEMPLE)[0] === roomno;
 }
 
@@ -133,7 +124,7 @@ export async function clearNonlocalPriestsOnExit(): Promise<void> {
         if (priest.mhp <= 0 || !priest.ispriest) continue;
         const shrine = priestData(priest);
         if (!shrine) throw new Error(`Priest ${priest.m_id} has no shrine record.`);
-        if (!sameLevel(shrine.shrlevel, state.u.uz)) await removeMonsterFromGame(priest);
+        if (!sameDungeonLevel(shrine.shrlevel, state.u.uz)) await removeMonsterFromGame(priest);
     }
 }
 
@@ -421,7 +412,7 @@ export async function intemple(roomno: number, state: GameState = game): Promise
     const moves = state.moves ?? 0;
     const canSpeak = priestCanSpeak(priest, state);
     const shrined = priestHasShrine(priest, state);
-    const inSanctum = !!state.sanctum_level && sameLevel(state.sanctum_level, state.u.uz);
+    const inSanctum = !!state.sanctum_level && sameDungeonLevel(state.sanctum_level, state.u.uz);
     const sanctum = priest.mnum === 276 && (inSanctum || In_endgame(state.u.uz));
 
     if (canSpeak && moves >= epri.intone_time) {

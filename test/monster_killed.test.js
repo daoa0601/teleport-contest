@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { MM_FEMALE, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { canSpotMonster } from '../js/display.js';
-import { monsterKillLineVisible } from '../js/mon.js';
 import { clearMessageWindow } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
@@ -51,7 +50,6 @@ for (const [species, invisible, message] of [
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 12, 10, NO_MINVENT);
         monster.minvis = invisible;
-        assert.equal(monsterKillLineVisible(monster), true);
         assert.equal(canSpotMonster(monster), !invisible);
         const messages = acknowledgeDeathMessages();
         const death = await finishMonsterKilled(monster, game, {
@@ -73,7 +71,6 @@ for (const lifeSaving of [false, true]) {
             : null;
         setHeroBlindnessTurns(10);
         await vision_recalc(0);
-        assert.equal(monsterKillLineVisible(dog), false);
         const messages = acknowledgeDeathMessages();
         initRng(1n);
         const death = await finishMonsterKilled(dog, game, { damageType: AD_PHYS });

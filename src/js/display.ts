@@ -335,18 +335,7 @@ function observeNearbyObject(object: ObjectGlyphSource, x: number, y: number) {
     return true;
 }
 
-// C display.c:see_nearby_objects(), called by dungeon.c:u_on_newpos().  A
-// generic object can remain continuously visible while the hero crosses the
-// close-observation boundary, so visibility transitions alone cannot own its
-// repaint.
-// C display.h:glyph_is_generic_object(). Generic object numbers are the
-// class slots below MAXOCLASSES; zero is the strange object, not a class.
-function rememberedGenericObject(glyph: DisplayGlyph | null | undefined): boolean {
-    return glyph?.kind === 'object' && !glyph.statueGlyph
-        && glyph.otyp > 0 && glyph.otyp < MAXOCLASSES;
-}
-
-// C display.c:see_nearby_objects().
+// C display.c:see_nearby_objects(), called by dungeon.c:u_on_newpos().
 export async function see_nearby_objects() {
     const r = Math.max(game.u?.xray_range ?? -1, 2);
     const nearDistance = r * r * 2 - r;
@@ -364,7 +353,15 @@ export async function see_nearby_objects() {
                 continue;
             object.dknown = true;
             recordObjectEncounter(object.otyp);
-            if (rememberedGenericObject(game.level?.at(x, y)?.remembered_glyph))
+            // C display.h:glyph_is_generic_object(), on the remembered glyph:
+            // generic object numbers are the class slots below MAXOCLASSES;
+            // zero is the strange object, not a class.  A generic object can
+            // remain continuously visible while the hero crosses the
+            // close-observation boundary, so the repaint keys on the
+            // remembered glyph, not on a visibility transition.
+            const memory = game.level?.at(x, y)?.remembered_glyph;
+            if (memory?.kind === 'object' && !memory.statueGlyph
+                && memory.otyp > 0 && memory.otyp < MAXOCLASSES)
                 await newsym_force(x, y);
         }
     }
@@ -1796,7 +1793,27 @@ export async function show_glyph_cell(
     const loc = game.level?.at(x, y);
     if (!loc) return;
     const nextGlyph: GlyphMetadata = glyph || { kind: 'effect' };
-    const mentionChange = shouldMentionGlyphChange(x, y, loc, nextGlyph);
+    // C display.c:show_glyph(): show_glyph_change — announce discoveries and
+    // furniture changes, excluding floor, walls, the hero, and disappearing
+    // monsters. Monster sightings belong to spot_monsters when that option is
+    // also enabled.
+    let mentionChange = false;
+    if (game.flags.mention_map && !game._monsterNoticesBlocked
+        && !game.program_state.in_docrt && !game.program_state.gameover
+        && !game.program_state.in_getlev && !game.program_state.stopprint) {
+        const old = loc.disp_glyph?.glyph ?? GlyphOffset.unexplored;
+        const symbol = nextGlyph.glyph === undefined ? null : glyphToCmapSymbol(nextGlyph.glyph);
+        const furniture = symbol !== null
+            && symbol >= CmapSymbol.upstair && symbol <= CmapSymbol.fountain;
+        const discovered = old === GlyphOffset.nothing || old === GlyphOffset.unexplored;
+        mentionChange = nextGlyph.glyph !== undefined
+            && (old !== nextGlyph.glyph || !!loc.gnew)
+            && (discovered || furniture)
+            && !(symbol !== null && (symbol >= CmapSymbol.stone && symbol <= CmapSymbol.trwall
+                || symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom))
+            && !(glyphIsMonster(old) || game.flags.spot_monsters && glyphIsMonster(nextGlyph.glyph))
+            && (x !== game.u.ux || y !== game.u.uy);
+    }
     // display.c:reset_glyphmap() clears every color on the Rogue level
     // (GMAP_ROGUELEVEL) unless the loaded rogue set declares IBM handling
     // with `Color: Yes` (RogueEpyx); then the Rogue color tables apply and
@@ -1855,28 +1872,6 @@ export async function show_glyph_cell(
             else game.flags.accessiblemsg = accessible;
         }
     }
-}
-
-// C display.c:show_glyph(). Announce discoveries and furniture changes,
-// excluding floor, walls, the hero, and disappearing monsters. Monster
-// sightings belong to spot_monsters when that option is also enabled.
-function shouldMentionGlyphChange(
-    x: number, y: number, location: MapLocation, next: GlyphMetadata,
-): boolean {
-    if (!game.flags.mention_map || game._monsterNoticesBlocked
-        || game.program_state.in_docrt || game.program_state.gameover
-        || game.program_state.in_getlev || game.program_state.stopprint) return false;
-    const old = location.disp_glyph?.glyph ?? GlyphOffset.unexplored;
-    if (next.glyph === undefined || old === next.glyph && !location.gnew) return false;
-    const symbol = glyphToCmapSymbol(next.glyph);
-    const furniture = symbol !== null
-        && symbol >= CmapSymbol.upstair && symbol <= CmapSymbol.fountain;
-    const discovered = old === GlyphOffset.nothing || old === GlyphOffset.unexplored;
-    if (!(discovered || furniture)) return false;
-    if (symbol !== null && (symbol >= CmapSymbol.stone && symbol <= CmapSymbol.trwall
-        || symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom)) return false;
-    if (glyphIsMonster(old) || game.flags.spot_monsters && glyphIsMonster(next.glyph)) return false;
-    return x !== game.u.ux || y !== game.u.uy;
 }
 
 // display.h:glyph_is_monster() (the shared owner in glyph_numbers.ts)
@@ -2407,10 +2402,6 @@ export async function curs_on_u(): Promise<void> {
 let lastSwallowedX = 0;
 let lastSwallowedY = 0;
 
-// C display.c:swallowed().  This bypasses ordinary vision/memory projection:
-// the first draw clears the map, then eight stomach cells surround the hero.
-// When hallucinating, every stomach cell independently chooses a display-only
-// monster color.
 // C display.c:swallow_to_glyph(): each border cell is monster<<3 | position,
 // with display.h:what_mon resolving a hallucinated species through the
 // display RNG.  The stomach color reads the same resolved species back out
@@ -2418,6 +2409,10 @@ let lastSwallowedY = 0;
 // impossible("swallow_to_glyph: bad swallow location") before clamping an
 // out-of-range location to S_sw_br; this sync encoder clamps without the
 // report, which no caller reaches (swallowed() passes S_sw_tl..S_sw_br).
+// Its only caller, swallowed(), bypasses ordinary vision/memory projection:
+// the first draw clears the map, then eight stomach cells surround the hero,
+// and when hallucinating every stomach cell independently chooses a
+// display-only monster color.
 export function swallowToGlyph(mnum: number, loc: number): number {
     const shown = heroIsHallucinating() ? rn2Display(MONSTER_COLOR.length) : mnum;
     const position = loc < CmapSymbol.swallowTopLeft || CmapSymbol.swallowBottomRight < loc

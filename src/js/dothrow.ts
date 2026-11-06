@@ -113,7 +113,7 @@ import {
 } from './shk.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import {
-    exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects,
+    exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, badRock, heroLiquidEffects,
     heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt,
 } from './hack.js';
 import { AT_WEAP } from './monster_attack_types.js';
@@ -1018,20 +1018,6 @@ function monsterAt(state: GameState, x: number, y: number, ignoredMonster: Monst
         monster !== ignoredMonster && !monster.dead
         && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
-}
-
-// C mondata.c:stagger().
-export function staggerVerb(mnum: number): string {
-    const symbol = MONSTER_SYMBOL[mnum];
-    if (symbol === S_EYE || symbol === S_LIGHT) return 'wobbles';
-    if (monsterIsFlyer(mnum))
-        return (MONSTER_SIZE[mnum] ?? 2) <= 1
-            ? 'flutters' : 'staggers';
-    if (monsterIsSlithy(mnum)) return 'falters';
-    if (monsterIsAmorphous({ mnum })) return 'trembles';
-    if ((MONSTER_MOVE[mnum] ?? 0) === 0) return 'pulsates';
-    if (monsterHasNoLimbs(mnum)) return 'falters';
-    return 'staggers';
 }
 
 // Part of C dothrow.c:mhurtle_step(): the silent stoning finisher
@@ -2193,8 +2179,8 @@ function obstacleAt(x: number, y: number): HurtleObstacle | null {
     }
 
     if ((!passage.hasAbility || !passage.mayPass) && diagonal
-        && heroBadRock(game, hero.ux, y)
-        && heroBadRock(game, x, hero.uy)) {
+        && badRock(heroSpecies(game), hero.ux, y, game)
+        && badRock(heroSpecies(game), x, hero.uy, game)) {
         const tight = heroTightDiagonalReason(game);
         if (tight === 1 || tight === 2) {
             return {
@@ -2383,8 +2369,8 @@ async function moveOneSquare(x: number, y: number, options: HeroHurtleOptions, r
     const hero = game.u;
     const diagonal = hero.ux !== x && hero.uy !== y;
     if (diagonal && game.level?.flags?.sokoban_rules
-        && heroBadRock(game, hero.ux, y)
-        && heroBadRock(game, x, hero.uy)) {
+        && badRock(heroSpecies(game), hero.ux, y, game)
+        && badRock(heroSpecies(game), x, hero.uy, game)) {
         await plineWithContinuation('You come to an abrupt halt!');
         return false;
     }

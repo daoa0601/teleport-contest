@@ -125,7 +125,7 @@ import {
     monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving,
     monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst,
     monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning,
-    formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, isHeroDefender, resistsBlnd,
+    formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, monsterStagger, isHeroDefender, resistsBlnd,
 } from './mondata.js';
 import {
     teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk,
@@ -166,7 +166,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import {
-    burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt,
+    burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
     applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim,
     moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense,
@@ -205,7 +205,7 @@ import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
-import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
+import { rangedTargetHitBonus } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
 import { createPoisonGasCloud } from './region.js';
 import { stopHeroOccupation } from './allmain.js';
@@ -7382,8 +7382,8 @@ async function tryDisarm(trap: Trap, {
     // test_move(): bad rock in both orthogonal squares plus overencumbrance
     // or a big form.  cant_squeeze_thru()'s extra exemptions do not apply.
     const tooTight = !!(dx && dy
-        && heroBadRock(state, state.u.ux, trap.ty)
-        && heroBadRock(state, trap.tx, state.u.uy)
+        && badRock(heroSpecies(state), state.u.ux, trap.ty, state)
+        && badRock(heroSpecies(state), trap.tx, state.u.uy, state)
         && (((state.inventory || []).length > 0
             && inventoryWeight(state) > WT_TOOMUCH_DIAGONAL)
             || monsterIsBig(heroSpecies(state))));
@@ -8447,7 +8447,7 @@ export async function triggerChestTrap(container: GameObject | null | undefined,
             if (!alreadyStunned) {
                 if (hallucinating) await publish('What a groovy feeling!');
                 else {
-                    const movement = staggerVerb(heroSpecies(state)).replace(/s$/, '');
+                    const movement = monsterStagger(heroSpecies(state), 'stagger');
                     const feeling = state.u.hallucinationResistance ? ''
                         : blind ? ' and get dizzy' : ' and your vision blurs';
                     await publish(`You ${movement}${feeling}...`);
