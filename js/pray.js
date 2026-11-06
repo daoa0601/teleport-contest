@@ -764,7 +764,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
             return;
         case Trouble.LAVA:
             if (!await safe_teleds())
-                await resetUtrap(false, state);
+                await resetUtrap(true, state);
             await announceTerrainRescue(DISSOLVED, state);
             return;
         case Trouble.STARVING:

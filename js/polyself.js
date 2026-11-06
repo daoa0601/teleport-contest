@@ -853,7 +853,7 @@ async function escapeTrapsAfterFormChange() {
             await plineWithContinuation('The buried ball is no longer bound to you.');
             await freeHeroFromBuriedBall();
         }
-        await resetUtrap(false);
+        await resetUtrap(true);
     }
     else if (heroLikesLava() && hero.utrap && hero.utraptype === TT_LAVA) {
         await plineWithContinuation(`The ${displayLiquidName('lava')} now feels soothing.`);
