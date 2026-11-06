@@ -212,10 +212,10 @@ export function reassessStatusFields(state: GameState = game): void {
     state.context.botl = true;
 }
 
-// C display.c:flush_screen() and allmain.c once-per-input dispatch:
-// `if (disp.botl || disp.botlx) bot(); else if (disp.time_botl) timebot();`.
-// The status window updates while map changes stay in the glyph buffer
-// until the next flush_screen().
+// Part of C display.c:flush_screen(): the
+// `if (disp.botl || disp.botlx) bot(); else if (disp.time_botl) timebot()`
+// dispatch, also run once per input by allmain.c. The status window updates
+// while map changes stay in the glyph buffer until the next flush_screen().
 export function updateStatusLines(): void {
     if (game.context.botl || game.nhDisplay?.statusLines === null) refreshStatusLines();
     else if (game.context.time_botl) timebot();
