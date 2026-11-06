@@ -24,7 +24,6 @@ function spit(aim: DirectionSelection | null, options: Partial<Parameters<typeof
         state: game,
         attack: heroSpitAttack(game),
         readDirection: async () => aim,
-        captureFlight: async () => undefined,
         ...options,
     });
 }

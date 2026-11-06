@@ -546,6 +546,7 @@ export function monsterProjectileDisplay(object: GameObject, state: PlayingGameS
     };
     return {
         glyph,
+        tethered,
         start: begin,
         async show(position: Position): Promise<void> {
             if (!isok(position.x, position.y)) return;

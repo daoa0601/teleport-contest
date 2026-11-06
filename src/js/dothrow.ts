@@ -61,7 +61,7 @@ import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronous
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './wintty.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget , heroDirectGoldThrowRange, snuffThrownCandle } from './thrown_object.js';
-import type { ProjectileFlightCapture, ProjectileFlight } from './thrown_object.js';
+import type { ProjectileFlight } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster , angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult, FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './mon.js';
 import { canLetGo, dropObjectAtHero } from './do.js';
@@ -578,7 +578,6 @@ async function throwCommand(
             state: game,
             gold: item,
             dx, dy, dz,
-            captureFlight: captureThrownObjectFlight,
             wakeMonster: wakeAttackedMonster,
             angerMonster: angerAttackedMonster,
         });
@@ -667,7 +666,6 @@ async function throwSelectedUnit(
             state: game,
             gold: item,
             dx, dy, dz: game.u.dz ?? 0,
-            captureFlight: captureThrownObjectFlight,
             wakeMonster: wakeAttackedMonster,
         });
         return false;
@@ -733,7 +731,6 @@ async function throwSelectedUnit(
         selectedQuantity,
         dx,
         dy,
-        captureFlight: captureThrownObjectFlight,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNearWithMessages,
         finishKill: finishOrdinaryMapPotionKill,
@@ -784,7 +781,6 @@ export interface MapPotionThrowOptions {
     splitObjectId?: number | null;
     dx: number;
     dy: number;
-    captureFlight?: ProjectileFlightCapture | null;
     wakeMonster?: PotionWakeMonster | null;
     wakeNearby?: PotionWakeNearby | null;
     finishKill?: FinishHeroMonsterDeath | null;
@@ -834,7 +830,6 @@ export async function resolveMapPotionThrow({
     splitObjectId = null,
     dx,
     dy,
-    captureFlight = null,
     wakeMonster = null,
     wakeNearby = null,
     finishKill = null,
@@ -886,13 +881,14 @@ export async function resolveMapPotionThrow({
         const trajectory = underwater
             ? { range: 1, recoil: 0 }
             : heroThrowTrajectory(thrown, state);
+        requirePlayingGame(state);
         const flight = await flyHeroThrownObject({
             state,
             object: thrown,
             dx: actualDx,
             dy: actualDy,
             range: trajectory.range,
-            captureFlight,
+            display: monsterProjectileDisplay(thrown, state),
             publish,
         });
         if (trajectory.recoil) {
@@ -3260,8 +3256,7 @@ export async function throwOrdinaryObject({
                 dx: actualDx,
                 dy: actualDy,
                 range,
-                ...(tetherDisplay ? { display: tetherDisplay }
-                    : { captureFlight: captureThrownObjectFlight }),
+                display: tetherDisplay ?? monsterProjectileDisplay(thrown, state),
             });
 
         if ('heroDied' in flight && flight.heroDied) return { heroDied: true };
@@ -3393,7 +3388,6 @@ export interface GoldThrowOptions extends GoldContactCallbacks {
     dx?: number;
     dy?: number;
     dz?: number;
-    captureFlight?: ProjectileFlightCapture | null;
 }
 
 async function settleGoldOnFloor(
@@ -3446,7 +3440,7 @@ async function resolveQuiveredGoldMonsterContact({
 
 export async function resolveDirectGoldThrow({
     state, gold, dx = 0, dy = 0, dz = 0,
-    captureFlight = null, wakeMonster = null, angerMonster = null,
+    wakeMonster = null, angerMonster = null,
 }: GoldThrowOptions): Promise<boolean> {
     if (!gold || gold.oclass !== COIN_CLASS || !state.inventory.includes(gold)) return false;
     await freeInventoryObject(gold, state);
@@ -3489,9 +3483,11 @@ export async function resolveDirectGoldThrow({
         return true;
     }
 
+    requirePlayingGame(state);
     const range = heroDirectGoldThrowRange(gold, state);
     const { x, y, contact } = await flyHeroThrownObject({
-        state, object: gold, dx, dy, range, captureFlight,
+        state, object: gold, dx, dy, range,
+        display: monsterProjectileDisplay(gold, state),
     });
     if (contact) {
         const caught = await resolveGoldMonsterContact({
@@ -3510,7 +3506,7 @@ export async function resolveDirectGoldThrow({
 
 export async function resolveQuiveredGoldThrow({
     state, gold, dx = 0, dy = 0, dz = 0,
-    captureFlight = null, wakeMonster = null,
+    wakeMonster = null,
 }: GoldThrowOptions): Promise<boolean> {
     if (!gold || gold !== heroGoldObject(state) || gold !== state.uquiver)
         return false;
@@ -3546,9 +3542,11 @@ export async function resolveQuiveredGoldThrow({
 
     const underwater = !!(state.underwater || state.u?.uinwater);
     const trajectory = heroThrowTrajectory(gold, state);
+    requirePlayingGame(state);
     const range = underwater ? 1 : trajectory.range;
     const { x, y, contact } = await flyHeroThrownObject({
-        state, object: gold, dx, dy, range, captureFlight,
+        state, object: gold, dx, dy, range,
+        display: monsterProjectileDisplay(gold, state),
     });
     // throwit() recoils after bhit(), before resolving the monster contact.
     if (trajectory.recoil) {

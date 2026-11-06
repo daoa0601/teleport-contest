@@ -501,6 +501,7 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
     };
     return {
         glyph,
+        tethered,
         start: begin,
         async show(position) {
             if (!isok(position.x, position.y))

@@ -35,6 +35,7 @@ import { chargeAlteredUnpaidObject } from '../js/shk.js';
 import { bookCursed, studyBook } from '../js/spell.js';
 import { applyThrowSlip } from '../js/throw_state.js';
 import { flyHeroThrownObject } from '../js/thrown_object.js';
+import { monsterProjectileDisplay } from '../js/mthrowu.js';
 import { turnObjectWithUndeadMagic } from '../js/zap.js';
 import { untrap } from '../js/trap.js';
 import { beginMonsterVibratingSquare, finishMonsterVibratingSquare } from '../js/trap.js';
@@ -311,7 +312,9 @@ void test('a web snags a named thrown dagger', async () => {
     addTrap(level, WEB, 11, 10);
     const dagger = await knownObject(DAGGER, { oextra: { oname: 'Webcatcher' } });
     const messages = [];
+    requirePlayingGame(game);
     await flyHeroThrownObject({ object: dagger, dx: 1, dy: 0, range: 1,
+        display: monsterProjectileDisplay(dagger, game),
         random: () => 0, publish: text => { messages.push(text); } });
     assert.equal(messages[0], 'The dagger named Webcatcher gets stuck in a web!');
 });
