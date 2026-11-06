@@ -93,12 +93,16 @@ import { removeObjectAndContentsFromBill, currentShopResident, fixShopDamage } f
 import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout } from './properties.js';
 import { nhTimeout } from './timeout.js';
+// Port only: raw map-display cell writer for the legacy screen (C draws the
+// intro through window putstr calls).
 function putLine(col, row, text, attr = 0) {
     const game = requireInitializedGame();
     const display = requireGameDisplay(game);
     for (let i = 0; i < text.length && col + i < display.cols; i++)
         display.setCell(col + i, row, text.charAt(i), NO_COLOR, attr);
 }
+// Part of C allmain.c:newgame(): the flags.legacy introduction screen C shows
+// through the common pager, drawn directly on the map display.
 // C ref: com_pager("legacy") and dat/quest.lua.  The role-independent
 // creation story is laid out by the tty pager; role, rank, and god are live.
 async function showLegacy() {
@@ -205,10 +209,14 @@ export async function welcome(newGame) {
         await plineWithContinuation(`You ${heroHasOlfaction(g) ? 'smell' : 'sense'} smoke...`);
     await printLevelAnnotation(g);
 }
+// Port only: message adapter — print a line, then drain the pending topline
+// before the redraw that follows.
 async function showInlineMore(message) {
     await plineWithContinuation(message);
     await flushPendingTopline();
 }
+// Part of C allmain.c:moveloop_preamble(): the real-world calendar
+// side-effects — moon phase and Friday-the-13th luck.
 async function applyCalendarMessages() {
     const game = requireInitializedGame();
     const calendar = fixedCalendar(game.datetime);
@@ -393,6 +401,9 @@ async function enterTutorial() {
     await flush_screen(1);
     return true;
 }
+// C allmain.c:moveloop_preamble()
+// Also C allmain.c:maybe_do_tutorial(): the ask_do_tutorial() prompt C's
+// moveloop() runs immediately after the preamble.
 async function moveloopPreamble() {
     const game = requireInitializedGame();
     if (game._moveloopStarted)
@@ -428,8 +439,9 @@ async function moveloopPreamble() {
         }
     }
 }
-// C allmain.c:moveloop_preamble(), shared new/restore tail. Equipment and
-// pickup messages may suspend before this boundary makes command input live.
+// Part of C allmain.c:moveloop_preamble(): the shared new/restore tail.
+// Equipment and pickup messages may suspend before this boundary makes
+// command input live.
 async function finishMoveloopPreamble() {
     const game = requireInitializedGame();
     // moveloop_preamble() sets botlx after assigning the gold encoding.
@@ -532,6 +544,9 @@ export async function regenerateHeroHp(capacity, turn) {
     hero.uhp = Math.min(hero.uhpmax, hero.uhp + healing);
     return hero.uhp === hero.uhpmax;
 }
+// Part of C allmain.c:moveloop_core(): the per-turn run_regions() step,
+// wiring the wake/anger/death callbacks C routes through region.c's
+// callback table.
 async function runLevelRegionTurn() {
     const game = requireInitializedGame();
     return runLevelRegions(game, {
@@ -644,6 +659,8 @@ export async function newgame() {
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }
+// Part of C allmain.c:newgame(): the fresh-game setup body, init_dungeons()
+// through welcome(TRUE).
 async function initializeNewGame() {
     delete game._pendingHeroShapeChange;
     const g = game;
@@ -720,6 +737,8 @@ async function initializeNewGame() {
     await welcome(true);
 }
 let playStep = null;
+// Port only: contest play-page hook binding the per-keystroke moveloop_core
+// driver.
 export function bindPlayStep(step) {
     playStep = step;
 }

@@ -30,6 +30,7 @@ OPTIONS=pickup_types:$
 OPTIONS=runmode:walk
 OPTIONS=disclose:+i +a +v +g +c +o
 `;
+// Port only: browser play-page entry point.
 async function main() {
     const snapshot = await loadSnapshot();
     if (snapshot?.owner)
@@ -75,6 +76,7 @@ async function main() {
     await engine.run();
     showGameOver(vfsReadFile('/record'));
 }
+// Port only: load the fork snapshot from browser storage.
 async function loadSnapshot() {
     try {
         const response = await fetch('./snapshot.json', { cache: 'no-store' });
@@ -92,6 +94,7 @@ async function loadSnapshot() {
         return null;
     }
 }
+// Port only: render the fork identity in the page header.
 function showFork(owner, fork) {
     const subtitle = document.getElementById('play-subtitle');
     if (!subtitle)
@@ -117,6 +120,7 @@ function showFork(owner, fork) {
         subtitle.append(link);
     }
 }
+// Port only: read the saved .nethackrc from browser storage.
 function readSavedOptions() {
     try {
         const stored = localStorage.getItem(NETHACKRC_KEY);
@@ -126,6 +130,7 @@ function readSavedOptions() {
         return null;
     }
 }
+// Port only: render the previous game's end message.
 function showGameOver(record) {
     const panel = document.getElementById('game-over-panel');
     const recordDisplay = document.getElementById('game-over-record');
@@ -136,6 +141,7 @@ function showGameOver(record) {
         : '(no record file)';
     panel.classList.add('visible');
 }
+// Port only: wire a toolbar button to its panel.
 function wireToolbarButton(id, activate) {
     const button = document.getElementById(id);
     if (!(button instanceof HTMLButtonElement))
@@ -147,6 +153,7 @@ function wireToolbarButton(id, activate) {
         activate();
     });
 }
+// Port only: clear saved games from browser storage.
 function clearSavedGames() {
     const prefix = window.__TELEPORT_VFS_PREFIX || 'vfs:';
     const keys = [];

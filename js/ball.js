@@ -33,6 +33,7 @@ import { body_part } from './polyself.js';
 export const BCPOS_DIFFER = 0;
 export const BCPOS_CHAIN = 1;
 export const BCPOS_BALL = 2;
+// C youprop.h:Punished()
 export function heroIsPunished(state = game) {
     return !!(state.uball || state.u?.uball);
 }
@@ -100,11 +101,15 @@ export async function fallWithIronBall(state = game) {
     }
     return ballDamage(damage, 'crunched in the head by an iron ball', state, NO_KILLER_PREFIX);
 }
+// Part of C ball.c:drag_down(), ball.c:ballfall(): the shared
+// losehp(Maybe_Half_Phys(...)) call at their ball-damage sites.
 async function ballDamage(amount, killer, state, killerFormat = KILLED_BY_AN) {
     if (state.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
     return loseHeroHp(amount, killer, { state, killerFormat });
 }
+// C ball.c:litter()
+// The punished hero randomly loses inventory while dragged down stairs.
 async function scatterCarriedItems(state) {
     const capacity = weightCapacity(state);
     const ball = state.uball || state.u.uball;
@@ -154,6 +159,7 @@ export async function unplaceBallAndChain(state = game) {
     }
     await unplaceBallAndChainCore(state);
 }
+// C ball.c:unplacebc_and_covet_placebc()
 export async function reserveBallAndChainPlacement(state = game) {
     if (state._ballChainRestriction) {
         await impossible('unplacebc_and_covet_placebc denied, already restricted', { state });
@@ -193,7 +199,8 @@ async function unplaceBallAndChainCore(state) {
     await newsym(chain.ox, chain.oy);
     state.u.bc_felt = 0;
 }
-// C gulpmu(): the swallowed floor pair stays FREE but follows its swallower.
+// Part of C mhitu.c:gulpmu(): the swallowed floor pair stays FREE but
+// follows its swallower.
 export function moveSwallowedBallAndChain(monster, state = game) {
     const ball = state.uball || state.u.uball;
     if (!ball)
@@ -208,6 +215,7 @@ export function moveSwallowedBallAndChain(monster, state = game) {
         }
     }
 }
+// C ball.c:placebc()
 export async function placeBallAndChain(state = game, publish = plineWithContinuation) {
     if (state._ballChainRestriction)
         return;
@@ -244,9 +252,12 @@ export async function restoreBallAndChainPlacement(pin, state = game, publish = 
     await newsym(x, y);
     state._ballChainRestriction = 0;
 }
+// C obj.h:carried()
+// The port also accepts the object being present in the inventory list.
 function carried(object, state = game) {
     return !!object && (object.where === 'inventory' || state.inventory.includes(object));
 }
+// C ball.c:IS_CHAIN_ROCK()
 function chainRock(x, y, state = game) {
     const loc = state.level?.at(x, y);
     return !loc || IS_OBSTRUCTED(loc.typ)
@@ -347,6 +358,7 @@ export async function dropBall(x, y, { state = game, publish = plineWithContinua
             await applyHeroLocationEffects(publish);
     }
 }
+// Port only: read the remembered glyph through the display-memory layer.
 // Display memory records are replaced, not mutated, by their display owners.
 // Use this layer rather than glyphAt(), which can return a live actor overlay.
 function rememberedGlyphAt(x, y, state) {
@@ -414,10 +426,13 @@ export async function setBallAndChainFelt(alreadyBlind, state = game) {
         await newsym(ball.ox, ball.oy);
     }
 }
+// C ball.c:CHAIN_IN_MIDDLE()
 function chainInMiddle(targetX, targetY, chainX, chainY, ballX, ballY) {
     return distmin(targetX, targetY, chainX, chainY) <= 1
         && distmin(chainX, chainY, ballX, ballY) <= 1;
 }
+// Part of C ball.c:drag_ball(): the drag-label route — the teleport gap
+// case, the midpoint chain square, and the both-under-control plan.
 function dragBothPlan(plan, targetX, targetY, state) {
     const { chain } = plan;
     const oldHeroX = state.u.ux;
@@ -451,7 +466,7 @@ function dragBothPlan(plan, targetX, targetY, state) {
     plan.causeDelay = true;
     return plan;
 }
-// C drag_ball(): lift the pair before choosing the chain route. A route
+// C ball.c:drag_ball(): lift the pair before choosing the chain route. A route
 // blocked by rock must restore that move before trying to drag the ball.
 export async function beginBallAndChainMove(targetX, targetY, { state = game, allowDrag = true, } = {}) {
     requireLiveGame(state);
@@ -611,6 +626,8 @@ export async function beginBallAndChainMove(targetX, targetY, { state = game, al
     }
     return beginDraggingBall(plan, targetX, targetY, state);
 }
+// Part of C ball.c:drag_ball(): the water/holding-trap check that either
+// jerks the hero back or begins the drag.
 async function beginDraggingBall(plan, targetX, targetY, state) {
     const { ball, chain } = plan;
     const level = requireGameLevel(state);
@@ -637,6 +654,8 @@ async function beginDraggingBall(plan, targetX, targetY, state) {
     await unplaceMovingBallAndChain(plan, state);
     return dragBothPlan(plan, targetX, targetY, state);
 }
+// Part of C ball.c:drag_ball(): the "jerked back by the iron ball" branch
+// with its ball damage and hero displacement.
 async function jerkHeroBackToChain(plan, state) {
     const { ball, chain } = plan;
     const level = requireGameLevel(state);
@@ -677,6 +696,8 @@ async function jerkHeroBackToChain(plan, state) {
     await finishBallAndChainMove(plan, state);
     await applyHeroLocationEffects();
 }
+// Part of C ball.c:move_bc(): the sighted before-half that lifts the pair
+// from their old squares.
 async function unplaceMovingBallAndChain(plan, state) {
     if (heroIsBlind(state))
         return;
@@ -691,6 +712,8 @@ async function unplaceMovingBallAndChain(plan, state) {
         await newsym(plan.ball.ox, plan.ball.oy);
     }
 }
+// Part of C read.c:litroom(): the move_bc() pair redraw around litroom's
+// vision refresh, without moving either object.
 // C litroom() calls move_bc() around its vision refresh without moving
 // either object. Preserve their pile order while removing their old glyphs.
 export async function beginBallAndChainRedraw(state = game) {
@@ -780,6 +803,7 @@ export async function finishBallAndChainMove(plan, state = game) {
     if (ballOnFloor)
         await newsym(ballx, bally);
 }
+// Port only: map-cell accessor that throws on an off-map punishment square.
 function locationAt(x, y, state) {
     const location = requireGameLevel(state).at(x, y);
     if (!location)

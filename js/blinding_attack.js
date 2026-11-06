@@ -15,12 +15,16 @@ import { plineWithContinuation } from './pline.js';
 import { monsterName } from './do_name.js';
 import { canBlnd, eyecount, monsterHasEyes } from './mondata.js';
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the mcansee/mblinded
+// application for a blinding hit, shared with the thrown-pie callers.
 export function applyMonsterBlindness(monster, blindIncrement) {
     const wasSeeing = !!monster.mcansee;
     monster.mcansee = 0;
     monster.mblinded = Math.min(127, (monster.mblinded ?? 0) + blindIncrement);
     return { blindIncrement, wasSeeing };
 }
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the CREAM_PIE/BLINDING_VENOM
+// impact and blinded-target messages.
 export function heroBlindingObjectHitMessage(monster, object, { canBlind, state = game, thrown = false, describeTarget = () => monsterName(monster, { state }), } = {}) {
     const impact = object?.otyp === CREAM_PIE ? 'Splat!' : 'Splash!';
     if (!canBlind || heroIsBlind(state))
@@ -35,6 +39,8 @@ export function heroBlindingObjectHitMessage(monster, object, { canBlind, state 
     const subject = `${!thrown && count > 1 ? 'A' : 'The'} ${plural ? pluralizeObjectNoun(object, noun) : noun}`;
     return `${subject} ${plural ? 'splash' : 'splashes'} over ${target}!`;
 }
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the s_suffix + mbodypart FACE
+// "whom" of the pie-splash message.
 function creamPieTarget(monster, name) {
     const hasFace = monsterHasEyes(monster.mnum)
         && monster.mnum !== PM_FLOATING_EYE;
@@ -43,6 +49,8 @@ function creamPieTarget(monster, name) {
     const face = mbodypart(monster.mnum, FACE);
     return /s$/i.test(name) ? `${name}' ${face}` : `${name}'s ${face}`;
 }
+// Part of C mthrowu.c:m_throw(): the blinding-venom hit message for the
+// hero ("The venom blinds you." / "Your eyes sting.").
 function venomBlindMessage(state, wasBlind) {
     if (!wasBlind)
         return 'The venom blinds you.';
@@ -50,11 +58,16 @@ function venomBlindMessage(state, wasBlind) {
     const eyes = eyecount(heroSpecies(state)) === 1 ? eye : makePlural(eye);
     return `Your ${eyes} ${verbForSubject(eyes, 'sting')}.`;
 }
+// Part of C mthrowu.c:m_throw(): the cream-pie hit message for the hero
+// ("Yecch!  You've been creamed." / sticky FACE).
 function creamPieBlindMessage(state, wasBlind) {
     return wasBlind
         ? `There's something sticky all over your ${body_part(FACE, state)}.`
         : "Yecch!  You've been creamed.";
 }
+// Part of C mthrowu.c:m_throw(): the hero-side can_blnd() check and rnd(25)
+// blinding roll of a monster-thrown pie or venom.
+// The impact message precedes the end of the visible missile flight.
 // The impact message precedes the end of the visible missile flight.
 export function prepareHeroThrownBlindness(objectType, state = game, rollOne = rnd) {
     // C mthrowu.c passes a null aggressor (magr) for a monster-thrown
@@ -68,6 +81,8 @@ export function prepareHeroThrownBlindness(objectType, state = game, rollOne = r
         : venomBlindMessage(state, wasBlind);
     return { blindIncrement, wasBlind, message };
 }
+// Part of C mthrowu.c:m_throw(): the blindinc tail — ucreamed,
+// make_blinded(), and the quick-clear notice.
 export async function finishHeroThrownBlindness(effect, state = game, publish = plineWithContinuation) {
     if (!effect.blindIncrement)
         return;

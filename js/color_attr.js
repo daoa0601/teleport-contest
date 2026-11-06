@@ -21,6 +21,8 @@ const C_ATTR_TERMINAL_BITS = {
     [C_ATR_BLINK]: ATR_BLINK,
     [C_ATR_INVERSE]: ATR_INVERSE,
 };
+// Port only: map the wintype.h ATR_* value onto this terminal's attribute
+// bits.
 export function terminalAttrFromCAttr(attr) {
     return C_ATTR_TERMINAL_BITS[attr] ?? ATR_NONE;
 }

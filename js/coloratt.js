@@ -8,6 +8,8 @@ import { showMultiSelectWindow } from './windows.js';
 import { BUFSZ, CLR_MAX, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_NONE, terminalAttrFromCAttr } from './color_attr.js';
+// Part of C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept
+// UTF-8 safe.
 // vconfig_error_add()'s BUFSZ-1 cut and printf's %.Ns precision count
 // bytes; a UTF-8 sequence split by the cut survives as one character.
 export function cutConfigBytes(text, limit) {
@@ -120,6 +122,7 @@ const ATR_TO_HL = new Map([
     [0, HL_NONE], [1, HL_BOLD], [2, HL_DIM], [3, HL_ITALIC],
     [4, HL_ULINE], [5, HL_BLINK], [7, HL_INVERSE],
 ]);
+// Part of C coloratt.c:query_attr(): PICK_ANY over the attribute names.
 export async function queryAttributeSet(title) {
     const picks = await showMultiSelectWindow({
         title: title || 'Pick an attribute', omitHeadings: true, signalEscape: true,
@@ -174,6 +177,7 @@ export async function queryColorMenu(title, current) {
 // ones and win as substrings.
 let alternateMenuColors = null;
 let savedMenuColors = null;
+// C coloratt.c:basic_menu_colors()
 function basicMenuColors(loadColors) {
     if (loadColors) {
         savedMenuColors = { menucolors: game.flags.menucolors === true,
