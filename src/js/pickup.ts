@@ -13,7 +13,7 @@ import {
     endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount,
     calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity,
 } from './hack.js';
-import { monsterStagger, monsterIsBig, monsterThrowsRocks } from './mondata.js';
+import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, body_part } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -51,7 +51,6 @@ import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { hideHeroUnder, finishEnvironmentalMonsterDeath,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome,
-    isRider,
 } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, SELL_DELIBERATE, SELL_DONTSELL, currentShopResident, stolenValue, sellHeroDroppedObject, warnAboutRemovedPick, deleteObject } from './shk.js';
 import { pickupLocationProblem } from './pickup_location.js';
@@ -601,7 +600,7 @@ async function prepareScareScrollPickup(object: GameObject, requested: number, t
 // C pickup.c:rider_corpse_revival(): touching (or telekinetically grabbing)
 // a Rider corpse revives it and dents wisdom.
 async function reviveRiderCorpse(corpse: GameObject, remotely: boolean): Promise<boolean> {
-    if (!isRider(corpse.corpsenm)) return false;
+    if (!monsterIsRider({ mnum: corpse.corpsenm })) return false;
     await pline(`At your ${remotely ? 'attempted acquisition' : 'touch'}, the corpse suddenly moves...`);
     const revival = await reviveCorpseImmediately(corpse, game);
     for (const message of revival?.messages || [])

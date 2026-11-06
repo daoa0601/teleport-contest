@@ -3,7 +3,7 @@ import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.
 import { objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, } from './hack.js';
-import { monsterStagger, monsterIsBig, monsterThrowsRocks } from './mondata.js';
+import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, body_part } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -24,7 +24,7 @@ import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNoQuit, getLine, promptChoice, tty_yn_function } from './query.js';
 import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
-import { hideHeroUnder, finishEnvironmentalMonsterDeath, finishHeroMonsterKill, finishHeroMonsterKillOutcome, isRider, } from './mon.js';
+import { hideHeroUnder, finishEnvironmentalMonsterDeath, finishHeroMonsterKill, finishHeroMonsterKillOutcome, } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, SELL_DELIBERATE, SELL_DONTSELL, currentShopResident, stolenValue, sellHeroDroppedObject, warnAboutRemovedPick, deleteObject } from './shk.js';
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
@@ -571,7 +571,7 @@ async function prepareScareScrollPickup(object, requested, telekinesis) {
 // C pickup.c:rider_corpse_revival(): touching (or telekinetically grabbing)
 // a Rider corpse revives it and dents wisdom.
 async function reviveRiderCorpse(corpse, remotely) {
-    if (!isRider(corpse.corpsenm))
+    if (!monsterIsRider({ mnum: corpse.corpsenm }))
         return false;
     await pline(`At your ${remotely ? 'attempted acquisition' : 'touch'}, the corpse suddenly moves...`);
     const revival = await reviveCorpseImmediately(corpse, game);

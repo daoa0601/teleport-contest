@@ -641,18 +641,11 @@ export function zombieForm(mnum: number): number | null {
     }
 }
 
-// C mondata.h:is_rider():
-// C include/mondata.h:is_rider(). Death, Pestilence and Famine never leave
-// a revivable corpse behind for long.
-export function isRider(mnum: number | undefined): boolean {
-    return mnum !== undefined && mnum >= 311 && mnum <= 313;
-}
-
 // C mondata.h:is_reviver():
 // C include/mondata.h:is_reviver(). Riders and trolls rise from their
 // corpses unless the corpse is timed or eaten first.
 export function isReviver(mnum: number | undefined): boolean {
-    return isRider(mnum) || mnum !== undefined && MONSTER_SYMBOL[mnum] === 46; // S_TROLL
+    return monsterIsRider({ mnum }) || mnum !== undefined && MONSTER_SYMBOL[mnum] === 46; // S_TROLL
 }
 
 const UNDEAD_CORPSE_TYPES = new Map([
@@ -2358,7 +2351,7 @@ async function eatOrEngulfPile(monster: Monster, context: FloorMealContext): Pro
     let eaten = 0, engulfed = 0, engulfMessage = '';
     for (const object of [...(level.objects[monster.mx]?.[monster.my] ?? [])]) {
         if (isLevelPrize(object, state)) continue;
-        if (object.otyp === CORPSE && isRider(object.corpsenm)) {
+        if (object.otyp === CORPSE && monsterIsRider({ mnum: object.corpsenm })) {
             if (await reviveMeal(object, context) || mealInterrupted(monster, context)) break;
             continue;
         }
@@ -2410,7 +2403,7 @@ async function meatcorpse(monster: Monster, context: FloorMealContext): Promise<
     for (const corpse of [...pile]) {
         if (corpse.otyp !== CORPSE || veganCorpse(corpse.corpsenm)
             || (fleshPetrifies(corpse.corpsenm) && !monsterHasStoneResistance(monster))) continue;
-        if (isRider(corpse.corpsenm)) {
+        if (monsterIsRider({ mnum: corpse.corpsenm })) {
             if (await reviveMeal(corpse, context) || mealInterrupted(monster, context)) break;
             continue;
         }

@@ -35,7 +35,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
-import { setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, isRider, } from './mon.js';
+import { setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting, heroIsSick, heroIsSliming, } from './potion.js';
 import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -55,7 +55,7 @@ import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { canDigDown } from './mklev.js';
 import { billDummyObject, mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object, } from './mkobj.js';
-import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow, } from './mondata.js';
+import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsRider, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow, } from './mondata.js';
 import { wakeAttackedMonster } from './mon.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
 import { AD_BLND, AT_ENGL, AT_WEAP } from './monster_attack_types.js';
@@ -1799,7 +1799,7 @@ export async function useTinningKit(kit) {
         if (game.program_state.gameover)
             return;
     }
-    if (isRider(corpse.corpsenm)) {
+    if (monsterIsRider({ mnum: corpse.corpsenm })) {
         const revival = await reviveCorpseImmediately(corpse);
         for (const message of revival?.messages ?? [])
             await pline(message);

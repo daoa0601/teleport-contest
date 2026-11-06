@@ -1,7 +1,6 @@
 
 import {
     setHeroGrip, releaseHeroFromMonster, maybeUnhideAt, monsterInAir, sendMonsterToLimbo,
-    isRider,
 } from './mon.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { updateHeroRegions, updateMonsterRegions } from './region.js';
@@ -1950,7 +1949,7 @@ export async function relocateObjectRandomly(object: GameObject, {
     random?: (limit: number) => number;
 } = {}): Promise<boolean> {
     requireLiveGame(state);
-    if (object.otyp === CORPSE && isRider(object.corpsenm)) {
+    if (object.otyp === CORPSE && monsterIsRider({ mnum: object.corpsenm })) {
         const revival = await reviveCorpseImmediately(object, state);
         if (!revival) throw new Error('Corpse revival returned no result for a Rider corpse');
         for (const message of revival.messages) await publish(message);

@@ -35,7 +35,7 @@ import { applyFloorEffects } from './floor_effects.js';
 import { buryFloorObjectsAt, addBuriedObject, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, } from './display.js';
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
-import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, finishHeroMonsterKill, isRider, zombieForm, } from './mon.js';
+import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, finishHeroMonsterKill, zombieForm, } from './mon.js';
 import { heroSpecies, heroFormSticks, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
@@ -93,7 +93,7 @@ import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, cat
 import { deliverSpecialLevelMessages } from './questpgr.js';
 import { descendFromLevitation } from './levitation_commands.js';
 import { do_attack, hitMonsterWithHeroObject } from './uhitm.js';
-import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer } from './mondata.js';
+import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer, monsterIsRider } from './mondata.js';
 import { LL_ACHIEVE, LL_DEBUG, G_GENOD, OBJECT_TIMER_KIND } from './const.js';
 import { rotCorpse } from './corpse_rot.js';
 import { canSeeMonster } from './display.js';
@@ -2493,14 +2493,14 @@ async function reviveMon(corpse, state, currentTurn) {
         await plineWithContinuation(message);
     let kind;
     let delay;
-    if (isRider(corpse.corpsenm) && rn2(99)) {
+    if (monsterIsRider({ mnum: corpse.corpsenm }) && rn2(99)) {
         kind = OBJECT_TIMER_KIND.REVIVE_MON;
         delay = riderRevivalTime(corpse, true);
     }
     else {
         kind = OBJECT_TIMER_KIND.ROT_CORPSE;
         if (!objectTimers(corpse).some(timer => timer.kind === kind)) {
-            await plineWithContinuation(`You feel ${isRider(corpse.corpsenm) ? 'much ' : ''}less hassled.`);
+            await plineWithContinuation(`You feel ${monsterIsRider({ mnum: corpse.corpsenm }) ? 'much ' : ''}less hassled.`);
         }
         delay = Math.max(1, d(5, 50) - (currentTurn - (corpse.age ?? currentTurn)));
     }

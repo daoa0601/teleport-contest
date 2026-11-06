@@ -1256,10 +1256,6 @@ function monsterHelpless(monster) {
     return !!(monster?.msleeping || monster?.mcanmove === 0
         || (monster?.mfrozen ?? 0) > 0);
 }
-// C mondata.h:nolimbs().
-function monsterNolimbs(monster) {
-    return monsterHasNoLimbs(monster?.mnum);
-}
 // Part of C shk.c:muteshk(): the msound read.
 function monsterSound(monster) {
     return MONSTER_SOUND[monster?.mnum] ?? 0;
@@ -2248,7 +2244,7 @@ export async function shopDig(fall, state = game) {
         || keeper.eshk.debit))
         return;
     let grabs = 'grabs';
-    if (monsterNolimbs(keeper))
+    if (monsterHasNoLimbs(keeper.mnum))
         grabs = 'knocks off';
     if (!mNext2u(keeper, state)) {
         await moveMonsterNextToHero(keeper, state, { flags: RLOC_MSG });

@@ -478,7 +478,9 @@ export function heroIsFlaming(state: GameState = game): boolean {
     return form !== null && FLAMING_SPECIES.has(form);
 }
 
-// C mondata.h:noncorporeal(): the hero form's ghostly body.
+// Part of C mondata.h:noncorporeal(): the hero form's ghostly body
+// (noncorporeal(youmonst.data); mondata.ts monsterIsNoncorporeal() is the
+// monster form).
 export function heroIsNoncorporeal(state: GameState = game): boolean {
     const form = heroMonsterForm(state);
     return form !== null && MONSTER_SYMBOL[form] === S_GHOST;
@@ -489,7 +491,8 @@ export function heroIsGreenSlime(state: GameState = game): boolean {
     return heroMonsterForm(state) === PM_GREEN_SLIME;
 }
 
-// C mondata.h:slimeproof(): the hero form's green-slime immunity.
+// Part of C mondata.h:slimeproof(): the hero form's green-slime immunity
+// (slimeproof(uasmon); mondata.ts monsterIsSlimeproof() is the monster form).
 export function heroIsSlimeproof(state: GameState = game): boolean {
     return heroIsGreenSlime(state)
         || heroIsFlaming(state)

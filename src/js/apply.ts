@@ -79,7 +79,6 @@ import {
     setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
     moveMonsterNextToHero,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
-    isRider,
 } from './mon.js';
 import {
     makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands,
@@ -121,7 +120,7 @@ import {
     is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive,
     monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests,
     monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid,
-    monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives,
+    monsterIsRider, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives,
     monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow,
 } from './mondata.js';
 import { wakeAttackedMonster } from './mon.js';
@@ -1818,7 +1817,7 @@ export async function useTinningKit(kit: GameObject) {
         await resolveImmediatePetrification({ killer: transform ? '' : `trying to tin ${name} without gloves` });
         if (game.program_state.gameover) return;
     }
-    if (isRider(corpse.corpsenm)) {
+    if (monsterIsRider({ mnum: corpse.corpsenm })) {
         const revival = await reviveCorpseImmediately(corpse);
         for (const message of revival?.messages ?? []) await pline(message);
         await pline(revival?.monster ? '"Yes...  But War does not preserve its enemies..."' : 'The corpse evades your grasp.');
