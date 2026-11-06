@@ -77,6 +77,7 @@ src/js/scatter.ts	explode.c
 src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c
+src/js/sp_lev.ts	sp_lev.c
 src/js/spell.ts	spell.c
 src/js/stairs.ts	stairs.c
 src/js/steal.ts	steal.c
