@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { AD_SGLD, AD_SSEX, AT_CLAW, AT_BITE } from '../js/monster_attack_types.js';
 import type { HeroContactAttack } from '../js/monster_action_types.js';
-import { resolveMonsterContactEffect } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -25,8 +25,9 @@ void test('a leprechaun steals a small purse, keeps the gold, and flees without 
     const messages: string[] = [];
     installPagerInput(resetInputState(), { expected: /leprechaun|lighter|mysterious force/, limit: 4 });
 
-    await resolveMonsterContactEffect(leprechaun, attack, { state: game,
-        publish: async message => { messages.push(message); }, random: () => 0 });
+    await mhitm_adtyping({ adtyp: AD_SGLD, mdef: 'youmonst', context: {
+        state: game, attacker: leprechaun, attack,
+        publish: async message => { messages.push(message); }, random: () => 0 } });
 
     assert.equal(heroGoldAmount(game), 0);
     assert.equal(leprechaun.minvent.find(object => object.otyp === GOLD_PIECE)?.quan, 20);
@@ -48,8 +49,9 @@ for (const amount of [20, 100]) {
         const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_CLAW,
             damageType: AD_SGLD, hit: true, damage: 2 };
 
-        await resolveMonsterContactEffect(leprechaun, attack, { state: game,
-            publish: async () => {}, random: () => 0 });
+        await mhitm_adtyping({ adtyp: AD_SGLD, mdef: 'youmonst', context: {
+            state: game, attacker: leprechaun, attack,
+            publish: async () => {}, random: () => 0 } });
 
         const stolen = leprechaun.minvent.find(object => object.otyp === GOLD_PIECE);
         assert.ok(stolen);
@@ -80,9 +82,10 @@ for (const amount of [20, 1000]) {
         const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
             damageType: AD_SSEX, hit: true, damage: 0 };
 
-        await resolveMonsterContactEffect(incubus, attack, { state: game,
+        await mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: incubus, attack,
             publish: async () => {}, random: range => range === 20 ? 19 : 0,
-            rollOne: () => 1 });
+            rollOne: () => 1 } });
 
         const payment = incubus.minvent.find(object => object.otyp === GOLD_PIECE);
         assert.ok(payment);

@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import type { HeroContactAttack } from '../js/monster_action_types.js';
-import { resolveMonsterContactEffect } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import { GAUNTLETS_OF_POWER, LEATHER_ARMOR } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -33,8 +33,9 @@ for (const datetime of ['20000229000000', '20000301000000']) {
         const messages: string[] = [];
         const input = resetInputState();
 
-        await answerPrompts(resolveMonsterContactEffect(succubus, attack, { state: game,
-            publish: async message => { messages.push(message); }, random: () => 0 }), input, [
+        await answerPrompts(mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: succubus, attack,
+            publish: async message => { messages.push(message); }, random: () => 0 } }), input, [
             { prompt: /Shall I remove your suit, lover/, keys: 'n' },
         ]);
 

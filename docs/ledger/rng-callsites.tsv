@@ -554,24 +554,24 @@ src/js/uhitm.ts	mhitm_ad_drin	random	"[""8""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""10""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""30""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""4""]"	constant
-src/js/uhitm.ts	applyNaturalEffect	random	"[""3""]"	constant
-src/js/uhitm.ts	applyNaturalEffect	random	"[""4""]"	constant
-src/js/uhitm.ts	applyNaturalEffect	rollOne	"[""10""]"	constant
-src/js/uhitm.ts	applyNaturalEffect	rollOne	"[""Math.trunc(damage / 2)""]"	unproved
-src/js/uhitm.ts	curseNaturalTarget	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdPlys	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdDren	context.random	"[""4""]"	constant
+src/js/uhitm.ts	mhitmAdSlee	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdDeth	context.rollOne	"[""Math.trunc(damage / 2)""]"	unproved
+src/js/uhitm.ts	mhitmAdCurs	random	"[""10""]"	constant
 src/js/uhitm.ts	mhitmAdDrli	random	"[""3""]"	constant
 src/js/uhitm.ts	mhitmAdDrli	rollDice	"[""2"", ""6""]"	constant
-src/js/uhitm.ts	poisonNaturalTarget	random	"[""10""]"	constant
-src/js/uhitm.ts	poisonNaturalTarget	random	"[""10""]"	constant
-src/js/uhitm.ts	poisonNaturalTarget	random	"[""8""]"	constant
+src/js/uhitm.ts	mhitmAdDrst	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdDrst	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdDrst	random	"[""8""]"	constant
 src/js/uhitm.ts	resolveHeroNaturalDamage	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
-src/js/uhitm.ts	sleepNaturalTarget	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdSlee	rollOne	"[""10""]"	constant
 src/js/uhitm.ts	summonDemonPet	random	"[""13""]"	constant
 src/js/uhitm.ts	summonDemonPet	random	"[""6""]"	constant
 src/js/uhitm.ts	monsterSlipsFromHeroGrip	random	"[""2""]"	constant
 src/js/uhitm.ts	monsterSlipsFromHeroGrip	random	"[""3""]"	constant
-src/js/uhitm.ts	wrapMonster	random	"[""10""]"	constant
-src/js/uhitm.ts	applyHeroNaturalPolymorph	random	"[""25""]"	constant
+src/js/uhitm.ts	mhitmAdWrap	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdPoly	random	"[""25""]"	constant
 src/js/uhitm.ts	mhitmAdSlim	random	"[""4""]"	constant
 src/js/uhitm.ts	resolveHeroObjectContact	random	"[""25""]"	constant
 src/js/uhitm.ts	resolveHeroObjectContact	random	"[""object.spe + 1""]"	unproved
@@ -1395,39 +1395,39 @@ src/js/uhitm.ts	mhitm_ad_drin	random	"[""8""]"	constant
 src/js/mon.ts	monsterCarryAmount	random	"[""LARGEST_INT - 20000 + 1""]"	constant
 src/js/makemon.ts	cloneMonster	random	"[""attitudeRange""]"	constant
 src/js/makemon.ts	cloneMonster	random	"[""attitudeRange""]"	constant
-src/js/mhitm.ts	applyMonsterCombatEffect	context.random	"[""8""]"	constant
+src/js/uhitm.ts	mhitmAdDrst	context.random	"[""8""]"	constant
 src/js/mhitm.ts	resolveMonsterCombatDamage	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
-src/js/uhitm.ts	applyMonsterDrainEffect	context.rollOne	"[""Math.trunc(result.damage / 2)""]"	unproved
-src/js/uhitm.ts	curseDefender	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdDeth	context.rollOne	"[""Math.trunc(damage / 2)""]"	unproved
+src/js/uhitm.ts	mhitmAdCurs	random	"[""10""]"	constant
 src/js/uhitm.ts	drainEnergy	random	"[""4""]"	constant
 src/js/uhitm.ts	mhitmAdDrli	random	"[""3""]"	constant
 src/js/uhitm.ts	mhitmAdDrli	rollDice	"[""2"", ""6""]"	constant
-src/js/uhitm.ts	acidContact	random	"[""30""]"	constant
-src/js/uhitm.ts	acidContact	random	"[""6""]"	constant
+src/js/uhitm.ts	mhitmAdAcid	random	"[""30""]"	constant
+src/js/uhitm.ts	mhitmAdAcid	random	"[""6""]"	constant
 src/js/mhitm.ts	resolveMonsterCombatExplosion	rollDice	"[""(MONSTER_LEVEL[attacker.mnum] ?? 0) + 1"", ""sides""]"	unproved
 src/js/mhitm.ts	resolveMonsterCombatExplosion	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/mhitm.ts	resolveMonsterCombatGaze	random	"[""2""]"	constant
 src/js/uhitm.ts	applyMonsterCombatBlindness	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
-src/js/uhitm.ts	applyMonsterStatusEffect	random	"[""3""]"	constant
-src/js/uhitm.ts	applyMonsterStatusEffect	rollOne	"[""10""]"	constant
-src/js/uhitm.ts	applyMonsterStatusEffect	rollOne	"[""10""]"	constant
-src/js/uhitm.ts	applyMonsterStatusEffect	rollOne	"[""10""]"	constant
-src/js/uhitm.ts	polymorphDefender	random	"[""25""]"	constant
-src/js/uhitm.ts	polymorphDefender	rollOne	"[""2""]"	constant
+src/js/uhitm.ts	mhitmAdPlys	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdSlee	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdSlee	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdPlys	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdPoly	random	"[""25""]"	constant
+src/js/uhitm.ts	mhitmAdPoly	rollOne	"[""2""]"	constant
 src/js/uhitm.ts	mhitmAdSlim	random	"[""4""]"	constant
-src/js/uhitm.ts	curseHero	random	"[""10""]"	constant
-src/js/uhitm.ts	infectHero	random	"[""4""]"	constant
-src/js/uhitm.ts	paralyzeHero	random	"[""3""]"	constant
-src/js/uhitm.ts	paralyzeHero	rollOne	"[""10""]"	constant
-src/js/uhitm.ts	polymorphHeroOnContact	rollOne	"[""2""]"	constant
-src/js/uhitm.ts	resolveMonsterContactEffect	random	"[""20""]"	constant
-src/js/uhitm.ts	resolveMonsterContactEffect	random	"[""4""]"	constant
-src/js/uhitm.ts	resolveMonsterContactEffect	random	"[""4""]"	constant
-src/js/uhitm.ts	resolveMonsterContactEffect	random	"[""40""]"	constant
-src/js/uhitm.ts	resolveMonsterContactEffect	random	"[""6""]"	constant
-src/js/uhitm.ts	sleepHero	random	"[""5""]"	constant
-src/js/uhitm.ts	sleepHero	rollOne	"[""10""]"	constant
-src/js/uhitm.ts	splashHeroWithAcid	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdCurs	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdWere	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitmAdPlys	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdPlys	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdPoly	rollOne	"[""2""]"	constant
+src/js/uhitm.ts	mhitmAdSamu	random	"[""20""]"	constant
+src/js/uhitm.ts	mhitmAdSlow	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitmAdConf	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitmAdFamn	random	"[""40""]"	constant
+src/js/uhitm.ts	mhitmAdConf	random	"[""6""]"	constant
+src/js/uhitm.ts	mhitmAdSlee	random	"[""5""]"	constant
+src/js/uhitm.ts	mhitmAdSlee	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdAcid	random	"[""3""]"	constant
 src/js/mhitm.ts	applyMonsterContactPassive	random	"[""2""]"	constant
 src/js/mhitm.ts	applyMonsterContactPassive	random	"[""3""]"	constant
 src/js/mhitm.ts	applyMonsterContactPassive	random	"[""30""]"	constant
@@ -1481,7 +1481,7 @@ src/js/mon.ts	woodGolemMaterial	rn2	"[""3""]"	constant
 src/js/mon.ts	woodGolemMaterial	rn2	"[""3""]"	constant
 src/js/mon.ts	woodGolemMaterial	rn2	"[""3""]"	constant
 src/js/mon.ts	createSteamVortexDeathCloud	random	"[""10""]"	constant
-src/js/uhitm.ts	resolveDeathTouchContact	random	"[""20""]"	constant
+src/js/uhitm.ts	mhitmAdDeth	random	"[""20""]"	constant
 src/js/mcastu.ts	touchHeroWithDeath	rollDice	"[""8"", ""6""]"	constant
 src/js/muse.ts	find_defensive	random	"[""3""]"	constant
 src/js/muse.ts	find_defensive	random	"[""3""]"	constant
@@ -1587,17 +1587,17 @@ src/js/do_name.ts	formatMonsterName	rn2	"[""2""]"	constant
 src/js/mondata.ts	monsterPronounGender	random	"[""4""]"	constant
 src/js/shknam.ts	shopkeeperName	rn2	"[""RANDOM_SHOP_TYPES.length""]"	unproved
 src/js/shknam.ts	shopkeeperName	rn2	"[""shop.names.length""]"	unproved
-src/js/uhitm.ts	resolveNurseContact	random	"[""13""]"	constant
-src/js/uhitm.ts	resolveNurseContact	random	"[""13""]"	constant
-src/js/uhitm.ts	resolveNurseContact	random	"[""3""]"	constant
-src/js/uhitm.ts	resolveNurseContact	random	"[""3""]"	constant
-src/js/uhitm.ts	resolveNurseContact	random	"[""33""]"	constant
-src/js/uhitm.ts	resolveNurseContact	random	"[""7""]"	constant
-src/js/uhitm.ts	resolveNurseContact	random	"[""7""]"	constant
-src/js/uhitm.ts	resolveNurseContact	rollDice	"[""2 * hero.ulevel"", ""10""]"	invariant
-src/js/uhitm.ts	resolveNurseContact	rollDice	"[""3"", ""6""]"	constant
-src/js/uhitm.ts	resolveNurseContact	rollOne	"[""7""]"	constant
-src/js/uhitm.ts	resolveNurseContact	rollOne	"[""7""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	random	"[""13""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	random	"[""13""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	random	"[""33""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	random	"[""7""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	random	"[""7""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	rollDice	"[""2 * hero.ulevel"", ""10""]"	invariant
+src/js/uhitm.ts	mhitmAdHeal	rollDice	"[""3"", ""6""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	rollOne	"[""7""]"	constant
+src/js/uhitm.ts	mhitmAdHeal	rollOne	"[""7""]"	constant
 src/js/muse.ts	use_offensive	rollOne	"[""51""]"	constant
 src/js/muse.ts	use_offensive	random	"[""6""]"	constant
 src/js/muse.ts	find_offensive	random	"[""10""]"	constant
@@ -1693,7 +1693,7 @@ src/js/worm.ts	placeMonsterWormTailRandomly	random	"[""remaining""]"	unproved
 src/js/worm.ts	shrinkStationaryMonsterWorm	rollDice	"[""2"", ""2""]"	constant
 src/js/mhitu.ts	u_slip_free	random	"[""2""]"	constant
 src/js/mhitu.ts	u_slip_free	random	"[""3""]"	constant
-src/js/uhitm.ts	resolveMonsterWrapping	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitmAdWrap	random	"[""10""]"	constant
 src/js/worn.ts	adjustMonsterClothingAfterPolymorph	rnl	"[""3""]"	constant
 src/js/mplayer.ts	createPlayerMonster	d	"[""monster.m_lev"", ""10""]"	invariant
 src/js/mplayer.ts	createPlayerMonster	rn1	"[""16"", ""15""]"	constant

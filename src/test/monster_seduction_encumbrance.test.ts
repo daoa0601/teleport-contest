@@ -7,7 +7,7 @@ import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import type { HeroContactAttack } from '../js/monster_action_types.js';
-import { resolveMonsterContactEffect } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import { initRng } from '../js/rng.js';
 
 import { createMonsterAt } from './support/monsters.js';
@@ -36,10 +36,11 @@ for (const improving of [false, true]) {
         const messages: string[] = [];
         initRng(6n);
         await plineWithContinuation('You pause while catching your breath after the encounter.');
-        const operation = resolveMonsterContactEffect(incubus, attack, { state: game,
+        const operation = mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: incubus, attack,
             publish: async message => { messages.push(message); },
             random: range => range === 35 ? (improving ? 0 : 34) : 1,
-            rollOne: () => 4 });
+            rollOne: () => 4 } });
         const observed = operation.then(() => 'completed' as const);
 
         const boundary = await Promise.race([

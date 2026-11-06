@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_DEF_DIED, NO_MINVENT, POOL, W_AMUL, W_ARM, W_ARMC, W_ARMH, W_ARMU } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroNaturalGrip, mhitmAdStck, monsterSlipsFromHeroGrip, resolveHeroNaturalDamage } from '../js/uhitm.js';
+import { mhitmAdStck, mhitmAdWrap, monsterSlipsFromHeroGrip, resolveHeroNaturalDamage } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { AD_STCK, AD_WRAP, AT_TUCH } from '../js/monster_attack_types.js';
 import { AMULET_OF_LIFE_SAVING, OBJECT_NAMES } from '../js/object_data.js';
@@ -79,9 +79,8 @@ void test('barbed devil adhesion names the held creature', async () => {
 void test('the pinned wrap rule brushes a head contact instead of grabbing', async () => {
     const { monster, context, messages } = await gripScene('giant eel');
 
-    const result = await applyHeroNaturalGrip(monster, {
-        ...context, attack: [AT_TUCH, AD_WRAP, 0, 0], random: () => 0,
-    });
+    const result = await mhitmAdWrap({ magr: 'youmonst', defender: monster,
+        context: { ...context, attack: [AT_TUCH, AD_WRAP, 0, 0], random: () => 0 } });
 
     assert.equal(result.damage, 0);
     assert.ok(!game.u.ustuck);
@@ -93,9 +92,8 @@ void test('an eel wrap can catch a long worm away from its head', async () => {
     const target = monster.wormSegments?.find(segment => segment.x !== 0);
     assert.ok(target, 'The long worm should have a tail to touch.');
 
-    const result = await applyHeroNaturalGrip(monster, {
-        ...context, target, attack: [AT_TUCH, AD_WRAP, 0, 0], random: () => 0,
-    });
+    const result = await mhitmAdWrap({ magr: 'youmonst', defender: monster,
+        context: { ...context, target, attack: [AT_TUCH, AD_WRAP, 0, 0], random: () => 0 } });
 
     assert.equal(game.u.ustuck, monster);
     assert.equal(result.damage, 3);
@@ -109,9 +107,8 @@ void test('an established water grip deals enough damage to drown a breathing wo
     game.u.ustuck = monster;
     context.state.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
 
-    const result = await applyHeroNaturalGrip(monster, {
-        ...context, target, attack: [AT_TUCH, AD_WRAP, 0, 0],
-    });
+    const result = await mhitmAdWrap({ magr: 'youmonst', defender: monster,
+        context: { ...context, target, attack: [AT_TUCH, AD_WRAP, 0, 0] } });
 
     assert.equal(result.damage, monster.mhp);
     assert.equal(result.done, false, 'The common damage owner must resolve death and life saving.');

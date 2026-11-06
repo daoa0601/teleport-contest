@@ -4,7 +4,7 @@ import { monsterAtPosition } from '../js/steed.js';
 
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NO_MINVENT, W_AMUL, W_ARMC } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroNaturalPolymorph } from '../js/uhitm.js';
+import { mhitmAdPoly } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { magic_negation } from '../js/mhitu.js';
 import { AD_POLY, AT_CLAW } from '../js/monster_attack_types.js';
@@ -55,7 +55,7 @@ for (const guard of ['wielded weapon', 'lethal damage'] as const) {
         const damage = guard === 'lethal damage' ? 20 : 2;
         initRng(1n);
 
-        const result = await applyHeroNaturalPolymorph(orc, effectContext(orc, damage));
+        const result = await mhitmAdPoly({ magr: 'youmonst', defender: orc, context: effectContext(orc, damage) });
 
         assert.equal(result.done, false);
         assert.equal(result.nativeResult, M_ATTK_MISS);
@@ -75,7 +75,7 @@ void test('worn magic negation blocks transformation while preserving the ordina
     const species = orc.mnum;
     initRng(1n);
 
-    const result = await applyHeroNaturalPolymorph(orc, effectContext(orc));
+    const result = await mhitmAdPoly({ magr: 'youmonst', defender: orc, context: effectContext(orc) });
 
     assert.equal(result.done, false);
     assert.equal(result.damage, 2);
@@ -93,7 +93,7 @@ for (const [species, antimagic] of [['baby gray dragon', true], ['arch-lich', fa
         const originalSpecies = target.mnum;
         initRng(1n);
 
-        const result = await applyHeroNaturalPolymorph(target, effectContext(target));
+        const result = await mhitmAdPoly({ magr: 'youmonst', defender: target, context: effectContext(target) });
 
         assert.equal(result.done, true);
         assert.equal(result.nativeResult, M_ATTK_HIT);
@@ -115,7 +115,7 @@ void test('an unarmed genetic engineer transforms its target and teleports even 
     const polymorphs = game.u.uconduct.polyselfs ?? 0;
     initRng(1n);
 
-    const result = await applyHeroNaturalPolymorph(target, effectContext(target));
+    const result = await mhitmAdPoly({ magr: 'youmonst', defender: target, context: effectContext(target) });
 
     assert.equal(result.done, true);
     assert.equal(result.nativeResult, M_ATTK_HIT);
@@ -148,7 +148,7 @@ void test('natural system shock removes half the maximum HP plus the hit and cre
         requirePlayingGame(game);
         const originalSpecies = orc.mnum;
         initRng(BigInt(seed));
-        const result = await applyHeroNaturalPolymorph(orc, effectContext(orc));
+        const result = await mhitmAdPoly({ magr: 'youmonst', defender: orc, context: effectContext(orc) });
         if (orc.mnum !== originalSpecies || orc.mhp !== 48) continue;
         shockSeed = seed;
         assert.equal(result.done, true);
@@ -165,7 +165,7 @@ void test('natural system shock removes half the maximum HP plus the hit and cre
         requirePlayingGame(game);
         initRng(BigInt(shockSeed));
 
-        const result = await applyHeroNaturalPolymorph(orc, effectContext(orc));
+        const result = await mhitmAdPoly({ magr: 'youmonst', defender: orc, context: effectContext(orc) });
 
         assert.equal(result.done, true);
         assert.equal(result.damage, 0);
@@ -183,7 +183,7 @@ void test('natural system shock removes half the maximum HP plus the hit and cre
     const ordinary = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     ordinary.mhp = ordinary.mhpmax = 100;
     initRng(BigInt(shockSeed));
-    await applyHeroNaturalPolymorph(ordinary, effectContext(ordinary));
+    await mhitmAdPoly({ magr: 'youmonst', defender: ordinary, context: effectContext(ordinary) });
     assert.ok(ordinary.mhp > 0);
     assert.doesNotMatch([...messages, game._pending_message].join('\n'), /shudders/,
         'ordinary uncancelled monsters do not use wand system-shock rules');
@@ -198,7 +198,7 @@ void test('a failed form change still completes the polymorph hit without subtra
         const species = erinys.mnum;
         initRng(BigInt(seed));
 
-        const result = await applyHeroNaturalPolymorph(erinys, effectContext(erinys));
+        const result = await mhitmAdPoly({ magr: 'youmonst', defender: erinys, context: effectContext(erinys) });
 
         assert.equal(result.done, true);
         assert.equal(result.nativeResult, M_ATTK_HIT);

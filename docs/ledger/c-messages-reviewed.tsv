@@ -538,8 +538,8 @@ uhitm.c	mhitm_ad_cold	is covered in frost!	composed	src/js/uhitm.ts:mhitmAdCold;
 uhitm.c	mhitm_ad_elec	gets zapped!	composed	src/js/uhitm.ts:mhitmAdElec; The monster-to-monster electric branch selects gets zapped after the defender name.
 uhitm.c	mhitm_ad_fire	fire doesn't heat	composed	src/js/uhitm.ts:mhitmAdFire; The uhitm branch composes fire does not heat; the mhitm branch composes the seem to burn variant.
 uhitm.c	mhitm_ad_fire	fire doesn't seem to burn	composed	src/js/uhitm.ts:mhitmAdFire; The uhitm branch composes fire does not heat; the mhitm branch composes the seem to burn variant.
-uhitm.c	mhitm_ad_wrap	brushes against you.	composed	src/js/uhitm.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
-uhitm.c	mhitm_ad_wrap	brushes against your	composed	src/js/uhitm.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
+uhitm.c	mhitm_ad_wrap	brushes against you.	composed	src/js/uhitm.ts:mhitmAdWrap; Selects you or your body-part name for coils or ordinary wrapping attacks.
+uhitm.c	mhitm_ad_wrap	brushes against your	composed	src/js/uhitm.ts:mhitmAdWrap; Selects you or your body-part name for coils or ordinary wrapping attacks.
 version.c	check_version	Configuration incompatibility for file "	out-of-scope	Checks native feature bits and entity-count metadata in binary save/bones/data headers; native binary file compatibility is outside the browser runtime.
 version.c	check_version	Version mismatch for file "	out-of-scope	Checks the binary incarnation header of native save/bones/data files; the browser validates its own saved-state format and does not load native binary files.
 uhitm.c	that_is_a_mimic	mndx >= LOW_PM && mndx <= HIGH_PM	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.

@@ -20,7 +20,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, objectIsHardHelmet, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitValue } from './weapon.js';
 import { isPolearm, isMissileObject, isWeaponTool } from './object_properties.js';
-import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdCorr, mhitmAdDcay, mhitmAdRust, mhitmAdSlim, mhitmAdStck, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, mhitmAdSton, passiveDamage, erodeArmor, } from './uhitm.js';
+import { mhitm_adtyping, isHeroDeferredContactDamageType, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, mhitm_knockback, passiveDamage, erodeArmor, } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifact.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
@@ -419,7 +419,7 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                         || heroAttack.effect === 'silent-physical-touch');
                 if (physicalContact && !contactCompletedInline) {
                     const physicalAttack = heroAttack;
-                    const physical = await mhitm_ad_phys({ mdef: 'youmonst', context: {
+                    const physical = await mhitm_adtyping({ adtyp: AD_PHYS, mdef: 'youmonst', context: {
                             state: game, attacker: monster, attack: heroAttack, calls: action.calls,
                             publish: publishEquipmentMessage, random, rollOne, rollDice,
                             hitMessage: () => hitmsg(monster, physicalAttack, previousHeroAttack, random),
@@ -459,10 +459,18 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     && contactDismissal !== undefined) {
                     paging.pagerOwned = true;
                 }
-                if (heroAttack.deferredSpecialContact)
-                    await resolveMonsterContactEffect(monster, heroAttack, {
-                        state: game, publish: publishEquipmentMessage, random, rollOne, rollDice,
+                if (heroAttack.deferredSpecialContact) {
+                    heroAttack.deferredSpecialContact = false;
+                    if (!isHeroDeferredContactDamageType(heroAttack.damageType))
+                        throw new Error(`Damage type ${heroAttack.damageType} has no deferred contact effect`);
+                    await mhitm_adtyping({
+                        adtyp: heroAttack.damageType, mdef: 'youmonst',
+                        context: {
+                            state: game, attacker: monster, attack: heroAttack,
+                            publish: publishEquipmentMessage, random, rollOne, rollDice,
+                        },
                     });
+                }
                 if (game.program_state.gameover)
                     return { heroDied: true };
                 if (heroAttack.effect === 'sticking-natural') {
@@ -470,7 +478,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // composes set_ustuck() and the barbs line after the
                     // precomposed hitmsg() line.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const stck = await mhitmAdStck({
+                    const stck = await mhitm_adtyping({
+                        adtyp: AD_STCK,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -491,7 +500,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // every steal() result, including refusal and armor
                     // removal still in progress (mhitu.c:1196-1199).
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const theft = await mhitm_ad_sedu({
+                    const theft = await mhitm_adtyping({
+                        adtyp: heroAttack.damageType === AD_SITM ? AD_SITM : AD_SEDU,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -538,7 +548,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // ordinary damage remains unless the hero's current form
                     // cannot be slimed.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const slim = await mhitmAdSlim({
+                    const slim = await mhitm_adtyping({
+                        adtyp: AD_SLIM,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -557,7 +568,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // magic cancellation, the frost lines and the gated
                     // inventory destruction run here with direct awaits.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const cold = await mhitmAdCold({
+                    const cold = await mhitm_adtyping({
+                        adtyp: AD_COLD,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -583,7 +595,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // inventory destruction, ignition and the slime cure all
                     // run here with direct awaits.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const fire = await mhitmAdFire({
+                    const fire = await mhitm_adtyping({
+                        adtyp: AD_FIRE,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -609,7 +622,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // magic cancellation, the zap lines and the gated
                     // inventory destruction run here with direct awaits.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const electric = await mhitmAdElec({
+                    const electric = await mhitm_adtyping({
+                        adtyp: AD_ELEC,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -634,7 +648,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // selection gate, magic cancellation and losexp() run
                     // here with direct awaits.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const drain = await mhitmAdDrli({
+                    const drain = await mhitm_adtyping({
+                        adtyp: AD_DRLI,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -654,7 +669,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // C uhitm.c:mhitm_ad_blnd() mhitu branch: the blinding
                     // line, make_blinded() and hitmu()'s knockback draws run
                     // here with direct awaits.
-                    const blnd = await mhitmAdBlnd({
+                    const blnd = await mhitm_adtyping({
+                        adtyp: AD_BLND,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -672,7 +688,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // probe precedes hitmsg(); the armor selection, drain and
                     // "less effective" line follow it with direct awaits.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const ench = await mhitmAdEnch({
+                    const ench = await mhitm_adtyping({
+                        adtyp: AD_ENCH,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -690,7 +707,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // one-in-four gate and make_stunned() run here with
                     // direct awaits.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const stun = await mhitmAdStun({
+                    const stun = await mhitm_adtyping({
+                        adtyp: AD_STUN,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -707,7 +725,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // C uhitm.c:mhitm_ad_legs() mhitu branch: the side and
                     // boot rolls, the contact line, set_wounded_legs() and
                     // both exercise() calls run here with direct awaits.
-                    const legs = await mhitmAdLegs({
+                    const legs = await mhitm_adtyping({
+                        adtyp: AD_LEGS,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -727,7 +746,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                 if (heroAttack.effect === 'rust-natural'
                     || heroAttack.effect === 'cancelled-rust-natural') {
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const rust = await mhitmAdRust({
+                    const rust = await mhitm_adtyping({
+                        adtyp: AD_RUST,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -747,7 +767,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                 if (heroAttack.effect === 'corrosion-natural'
                     || heroAttack.effect === 'cancelled-corrosion-natural') {
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const corr = await mhitmAdCorr({
+                    const corr = await mhitm_adtyping({
+                        adtyp: AD_CORR,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -763,7 +784,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                 if (heroAttack.effect === 'decay-natural'
                     || heroAttack.effect === 'cancelled-decay-natural') {
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const decay = await mhitmAdDcay({
+                    const decay = await mhitm_adtyping({
+                        adtyp: AD_DCAY,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -787,7 +809,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // sets mhm.done, but mhitu.c:hitmu() still runs
                     // mhitm_knockback() before it returns on mhm.done.
                     const hitMessage = await hitmsg(monster, heroAttack, previousHeroAttack, random);
-                    const ston = await mhitmAdSton({
+                    const ston = await mhitm_adtyping({
+                        adtyp: AD_STON,
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -2010,7 +2033,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
         if (deferVisibleContact)
             return physical;
-        const outcome = await mhitm_ad_phys({ mdef: 'youmonst', context: {
+        const outcome = await mhitm_adtyping({ adtyp: AD_PHYS, mdef: 'youmonst', context: {
                 state, attacker: monster, attack: physical, calls, random, rollOne, rollDice,
                 publish: physicalHug ? monsterAttackMessagePublisher(sequence.paging) : plineWithContinuation,
             } });

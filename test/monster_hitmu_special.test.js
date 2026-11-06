@@ -4,7 +4,7 @@ import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { mattacku } from '../js/mhitu.js';
-import { resolveMonsterContactEffect } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import { AD_CURS, AT_CLAW } from '../js/monster_attack_types.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from '../js/properties.js';
 import { RING_MAIL } from '../js/object_data.js';
@@ -88,8 +88,10 @@ for (const [hour, stolen] of [['05', true], ['06', false], ['21', false], ['22',
         const messages = [];
         const attack = { kind: 'hero-attack', attackType: AT_CLAW, damageType: AD_CURS,
             hit: true, damage: 0 };
-        await resolveMonsterContactEffect(gremlin, attack, { state: game,
-            publish: async (message) => { messages.push(message); }, random: () => 0 });
+        await mhitm_adtyping({ adtyp: AD_CURS, mdef: 'youmonst', context: {
+                state: game, attacker: gremlin, attack,
+                publish: async (message) => { messages.push(message); }, random: () => 0
+            } });
         assert.equal(hasPermanentIntrinsicProperty('fireResistance'), !stolen);
         assert.equal(hasPermanentIntrinsicProperty('poisonResistance'), true);
         assert.equal(!!((gremlin.mintrinsics ?? 0) & 0x01), stolen);
