@@ -15,6 +15,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { monsterHidesUnder } from './mondata.js';
 
+// C dig.c:rot_corpse().
 export async function rotCorpse(corpse: GameObject, state: GameState = game): Promise<void> {
     requireLiveGame(state);
     const { where, ox: x, oy: y } = corpse;

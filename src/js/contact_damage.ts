@@ -31,6 +31,7 @@ const ARMOR_SLOTS = new Map<number, ArmorSlot>([
     [W_ARMS, 'uarms'], [W_ARMG, 'uarmg'], [W_ARMF, 'uarmf'], [W_ARMU, 'uarmu'],
 ]);
 
+// C weapon.c:special_dmgval(): blessed and/or silver damage for non-weapon hit.
 export function specialContactDamage(
     attacker: ContactActor, defender: ContactActor, mask: number,
     { state = game }: SpecialContactDamageOptions = {},
@@ -77,6 +78,7 @@ export function specialContactDamage(
     return { damage, silverMask };
 }
 
+// Port only: defender view of Hero|Monster for the mon_hates_* checks.
 function contactDefender(actor: ContactActor, state: GameState): Pick<Monster, 'mnum' | 'cham'> {
     if ('mnum' in actor) return actor;
     if (actor !== state.u)
@@ -86,6 +88,7 @@ function contactDefender(actor: ContactActor, state: GameState): Pick<Monster, '
     return body;
 }
 
+// Part of C worn.c:which_armor(): hero-slot and monster-inventory armor lookup.
 function wornArmor(actor: ContactActor, mask: number, state: GameState): GameObject | null {
     if (actor !== state.u) {
         if (!('mnum' in actor))

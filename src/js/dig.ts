@@ -118,6 +118,8 @@ export type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
     | typeof DIGTYP_STATUE | typeof DIGTYP_BOULDER | typeof DIGTYP_DOOR
     | typeof DIGTYP_TREE;
 
+// Port only: m_at() lookups with the call sites' MON_AT()/DEADMONSTER()
+// checks.
 function monsterAt(x: number, y: number, state: GameState): Monster | null {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
@@ -182,6 +184,7 @@ export function diggingTimeToHole(state = game): number {
     return Math.trunc((250 - digging.effort) / 20);
 }
 
+// Port only: ensures the svc.context.digging record exists.
 export function ensureDiggingContext(state: GameState): DiggingContext {
     if (!state.context.digging)
         state.context.digging = {
@@ -193,11 +196,14 @@ export function ensureDiggingContext(state: GameState): DiggingContext {
     return state.context.digging;
 }
 
+// Part of C dig.c:dig(), dig.c:use_pick_axe(): the on_level() digging-context
+// test.
 function onDiggingLevel(digging: DiggingContext, state: GameState): boolean {
     const uz = state.u.uz;
     return !!uz && digging.level.dnum === uz.dnum && digging.level.dlevel === uz.dlevel;
 }
 
+// Part of C dig.c:dig(): the memset of svc.context.digging.
 // C memset(&svc.context.digging, 0, ...) after a completed or aborted dig.
 export function clearDiggingContext(state: GameState): void {
     const digging = state.context?.digging;
@@ -216,11 +222,13 @@ export function clearDiggingContext(state: GameState): void {
 // weapon.c's abon() lives in weapon.js (heroAttackBonus); dig.c's digmon()
 // reads the same strength/dexterity ladder for digging effort.
 
+// Part of C dig.c:dig(): the Maybe_Half_Phys() damage halving.
 function maybeHalfPhysical(damage: number, state: GameState): number {
     return state.u.halfPhysicalDamage
         ? Math.ceil(damage / 2) : damage;
 }
 
+// Part of C display.c:feel_newsym(): local copy; the owner is display.ts.
 async function feelNewsym(x: number, y: number, state: GameState): Promise<void> {
     // C display.c feel_newsym(): blind heroes feel the changed location.
     if (heroIsBlind(state)) await feel_location(x, y);
@@ -717,28 +725,34 @@ const S_ZOMBIE = 52;
 const S_MUMMY = 39;
 const MZ_HUGE = 4;
 
+// Part of C dig.c:dig_check(), dig.c:dighole(): the sobj_at(BOULDER) lookup.
 function boulderAt(x: number, y: number, state: GameState): GameObject | null {
     return (state.level?.objects?.[x]?.[y] || []).find(
         object => object.otyp === BOULDER) || null;
 }
 
+// Part of C dig.c:digactualhole(): the level.objects[x][y] pile accesses.
 function pileAt(x: number, y: number, state: GameState): GameObject[] {
     return state.level?.objects?.[x]?.[y] || [];
 }
 
+// Part of C dig.c:dig_check(), dig.c:dighole(): the is_pool_or_lava() test.
 function isPoolOrLava(x: number, y: number, state: GameState): boolean {
     return isPoolAt(x, y, state) || isLavaAt(x, y, state);
 }
 
+// Part of C dig.c:digactualhole(): the Levitation || Flying test.
 function heroIsAirborne(state: GameState): boolean {
     return !!(state.u?.levitating || state.u?.levitation
         || state.u?.flying);
 }
 
+// Part of C dig.c:digactualhole(): the flags.verbose gate.
 function verbose(state: GameState): boolean {
     return state.flags?.verbose !== false;
 }
 
+// Part of C dig.c:digactualhole(): align_str() word for the altar message.
 function alignmentWord(alignment: number): string {
     if (alignment > 0) return 'lawful';
     if (alignment < 0) return 'chaotic';
@@ -1340,6 +1354,7 @@ export async function digUpGrave(
 // Liquid which can flow into a newly opened hole (hole)
 // ---------------------------------------------------------------------------
 
+// Part of C dig.c:fillholetyp(): the is_moat/is_pool/is_lava classification.
 function nearbyTerrain(x: number, y: number, state: GameState) {
     if (isMoatAt(x, y, state)) return 'moat';
     if (isPoolAt(x, y, state)) return 'pool';
@@ -1347,6 +1362,7 @@ function nearbyTerrain(x: number, y: number, state: GameState) {
     return null;
 }
 
+// C dig.c:fillholetyp().
 export function liquidForHole(
     x: number,
     y: number,
@@ -1587,6 +1603,7 @@ export async function zapDigWithObject(
         await payForShopDamage(shopDoor ? 'destroy' : 'dig into', { state });
 }
 
+// Part of C dig.c:zap_dig(): piercing an engulfer.
 async function pierceEngulfer(monster: Monster, state: GameState): Promise<void> {
     if (monsterIsWhirly(monster)) return;
     const digesting = monsterDigests(monster);
@@ -1602,6 +1619,7 @@ async function pierceEngulfer(monster: Monster, state: GameState): Promise<void>
     await expelHero(monster, { state, message: !digesting });
 }
 
+// Part of C dig.c:zap_dig(): the vertical beam branch (falling rock, hole).
 async function digVertically(state: GameState, direction: number): Promise<void> {
     const hero = state.u;
     if (Is_airlevel(hero.uz) || Is_waterlevel(hero.uz)
@@ -1676,6 +1694,8 @@ async function floodConnectedPits(trap: Trap | null | undefined, liquid: number,
     }
 }
 
+// Part of C dig.c:adj_pit_checks(), dig.c:pit_flow(): clears the rm.flags
+// union before reuse.
 function clearTerrainFlags(location: MapLocation): void {
     location.flags = 0;
     location.doormask = 0;
@@ -1699,8 +1719,11 @@ export interface BurialResult {
 
 // ---------------------------------------------------------------------------
 
+// Port only: TypeScript overload for a required object.
 export function addBuriedObject(object: GameObject, x: number, y: number, state?: GameState): GameObject;
+// Port only: TypeScript overload accepting an absent object.
 export function addBuriedObject(object: GameObject | null | undefined, x: number, y: number, state?: GameState): GameObject | null | undefined;
+// C mkobj.c:add_to_buried().
 export function addBuriedObject(object: GameObject | null | undefined, x: number, y: number, state: GameState = game): GameObject | null | undefined {
     if (!object) return object;
     removeFloorReference(object, state);
@@ -1743,6 +1766,7 @@ export async function buryFloorObjectsAt(x: number, y: number, state: GameState 
     return buried;
 }
 
+// C dig.c:bury_an_obj().
 export async function buryObject(object: GameObject, state: GameState = game, {
     publish = plineWithContinuation,
 }: BurialOptions = {}): Promise<BurialResult> {
@@ -1782,12 +1806,14 @@ export async function buryObject(object: GameObject, state: GameState = game, {
     return { outcome: 'buried', next };
 }
 
+// Port only: drops an object from its floor pile for burial.
 function removeFloorReference(object: GameObject, state: GameState): void {
     const pile = state.level?.objects?.[object.ox]?.[object.oy];
     const index = pile?.indexOf(object) ?? -1;
     if (pile && index >= 0) pile.splice(index, 1);
 }
 
+// Part of C dig.c:bury_an_obj(): the ROT_ORGANIC start_timer.
 function scheduleBuriedRot(object: GameObject, underIce: boolean, state: GameState): void {
     const canRot = underIce
         ? object.oclass === POTION_CLASS
@@ -1875,6 +1901,7 @@ interface MonsterTunnelOptions {
 
 export interface MonsterTunnelResult { died: boolean; heroDied: boolean }
 
+// C dig.c:mdig_tunnel().
 export async function digMonsterTunnel(monster: Monster, state: PlayingGameState, {
     random = rn2, rollOne = rnd, publish = plineWithContinuation,
 }: MonsterTunnelOptions = {}): Promise<MonsterTunnelResult> {
@@ -2014,17 +2041,20 @@ interface PickAxeOptions extends PickAxeDirectionOptions {
 
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
+// Port only: asserts a chosen direction for use_pick_axe().
 function requirePickAxeDirection(hero: Hero): asserts hero is Hero & PickAxeDirection {
     if (hero.dx === undefined || hero.dy === undefined || hero.dz === undefined)
         throw new Error('Using a pick-axe requires a chosen direction.');
 }
 
+// Port only: bounds-checked levl[x][y] access for digging targets.
 function diggingLocation(x: number, y: number, state: GameState) {
     const location = requireGameLevel(state).at(x, y);
     if (!location) throw new Error(`Digging target (${x}, ${y}) is outside the map.`);
     return location;
 }
 
+// Part of C uhitm.c:do_attack(): the confused/stunned/hallucinating gate.
 function impaired(state: GameState) {
     const hero = state.u;
     return (
@@ -2069,6 +2099,8 @@ function prepareDiggingDirections(tool: GameObject, state: GameState) {
     return keys.join('').split('\0')[0] ?? '';
 }
 
+// Part of C shk.c:tended_shop(): the in_rooms(SHOPBASE) resident test
+// reached from do_attack().
 function tendedShopAt(monster: Monster, state: GameState) {
     const level = requireGameLevel(state);
     return roomsAt(level, monster.mx, monster.my, SHOPBASE).some((roomno) => {
@@ -2078,6 +2110,8 @@ function tendedShopAt(monster: Monster, state: GameState) {
     });
 }
 
+// Part of C uhitm.c:do_attack(): the pick-axe attack path; the shared port
+// lives in uhitm.ts.
 async function attackWithTool(
     tool: GameObject,
     monster: Monster,
@@ -2143,11 +2177,13 @@ async function attackWithTool(
     return true;
 }
 
+// Part of C dig.c:use_pick_axe(): the losehp(Maybe_Half_Phys()) wrapper.
 async function hurtHero(amount: number, killer: string, state: GameState) {
     if (state.u.halfPhysicalDamage) amount = Math.trunc((amount + 1) / 2);
     await loseHeroHp(amount, killer, { state, killerFormat: KILLED_BY });
 }
 
+// Part of C dig.c:use_pick_axe(): striking an undiggable target (web, bars).
 async function strikeUndiggable(tool: GameObject, x: number, y: number, state: GameState) {
     const hero = state.u;
     const location = diggingLocation(x, y, state);

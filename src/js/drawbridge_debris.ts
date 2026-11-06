@@ -14,6 +14,8 @@ import type { DrawbridgeOptions } from './dbridge.js';
 
 import type { Position } from './map_types.js';
 
+// Part of C dbridge.c:destroy_drawbridge(): the iron-chain debris loop
+// around explode.c:scatter().
 export async function scatterDrawbridgeDebris(
     bridge: Position,
     wall: Position,

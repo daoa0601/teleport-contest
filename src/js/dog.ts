@@ -69,6 +69,7 @@ import { insideWizardTower } from './dungeon.js';
 import { roomForRoomno, roomsAt } from './hack.js';
 import { expelHero } from './mhitu.js';
 
+// Part of C dog.c:abuse_dog(): the Aggravate_monster || Conflict test.
 function heroAggravatesMonsters(state: GameState): boolean {
     const rings = [
         state.uleft, state.uright, state.u?.uleft, state.u?.uright,
@@ -78,6 +79,7 @@ function heroAggravatesMonsters(state: GameState): boolean {
         || heroHasConflict(state));
 }
 
+// C dog.c:abuse_dog().
 export async function abusePet(monster: Monster, state: GameState = game): Promise<boolean> {
     requireLiveGame(state);
     if (monster.mtame === undefined || monster.mtame <= 0) return false;
@@ -250,6 +252,7 @@ export async function makeFamiliar(
     return monster;
 }
 
+// C dog.c:wary_dog().
 export async function makePetWary(
     monster: Monster | null | undefined, {
         wasDead = true, state = game, random = rn2,
@@ -319,7 +322,8 @@ export async function makePetWary(
     }
 }
 
-// C newedog() allocates a zeroed record and sets its parent before initedog().
+// C dog.c:newedog(). Allocates a zeroed record and sets its parent before
+// initedog().
 function newPetData(monster: Monster): PetData {
     return {
         parentmid: monster.m_id, droptime: 0, dropdist: 0, apport: 0,
@@ -328,14 +332,13 @@ function newPetData(monster: Monster): PetData {
     };
 }
 
-// C dog.c:tamedog(). Food may be caught and consumed; magic has no object
-// transfer. A true result tells a projectile caller that the food was caught,
-// even when its meal kills the new pet.
 
 const M3_WANTSARTI = 0x0010;
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const S_DOG = 4;
-
+// C dog.c:tamedog(). Food may be caught and consumed; magic has no object
+// transfer. A true result tells a projectile caller that the food was caught,
+// even when its meal kills the new pet.
 export async function tameMonster(monster: Monster, source: GameObject | null = null, {
     state = game, announce = false,
 }: { state?: GameState; announce?: boolean } = {}): Promise<boolean> {
@@ -412,6 +415,7 @@ export async function tameMonster(monster: Monster, source: GameObject | null = 
     return true;
 }
 
+// Part of C dog.c:tamedog(): the thrown-food catch test.
 function willCatchFood(monster: Monster, food: GameObject, state: GameState): boolean {
     if (!monster.mcanmove || monster.mconf || monster.meating) return false;
     const quality = dogFood(monster, food, rn2, [], state);
@@ -420,6 +424,7 @@ function willCatchFood(monster: Monster, food: GameObject, state: GameState): bo
     return quality <= ACCFOOD && !!pet && pet.hungrytime <= state.moves;
 }
 
+// Part of C dog.c:tamedog(): the "catches" / "stop" messages.
 async function describeFoodCatch(monster: Monster, food: GameObject, state: GameState): Promise<void> {
     const visible = canSeeMonster(monster);
     if (!visible && !cansee(monster.mx, monster.my)) return;
@@ -437,6 +442,7 @@ async function describeFoodCatch(monster: Monster, food: GameObject, state: Game
     }
 }
 
+// Part of C dog.c:tamedog(): the the(xname(obj)) noun for the catch message.
 function catchFoodName(food: GameObject, state: GameState): string {
     if (food.otyp === CORPSE) return corpseName(food, { definite: true });
     const name = objectName(food, state);
@@ -444,6 +450,7 @@ function catchFoodName(food: GameObject, state: GameState): string {
     return /^the /i.test(noun) ? noun.replace(/^The /, 'the ') : `the ${noun}`;
 }
 
+// Part of C dog.c:tamedog(): place_object() + dog_eat() of the caught food.
 async function feedTamedMonster(monster: Monster, food: GameObject, devour: boolean, state: GameState): Promise<void> {
     await placeObject(food, monster.mx, monster.my, state);
     const meal = beginPetEating(monster, food, { x: monster.mx, y: monster.my }, state, devour);
@@ -488,23 +495,28 @@ const PM_LONG_WORM_MIGRATION = 114;
 // migrationArrival (mtrack[0].x), migrationFlags (mtrack[0].y),
 // migrationSource (mtrack[1]), migrationOrigin (mtrack[2]).
 
+// Part of C dog.c:losedogs(): the mux/muy == u.uz destination test.
 function sameMigrationLevel(first: DungeonLocation | null | undefined, second: DungeonLocation | null | undefined): boolean {
     return !!first && !!second
         && first.dnum === second.dnum
         && first.dlevel === second.dlevel;
 }
 
+// Port only: accessor for the migrating_mons list.
 export function migrationQueue(state: GameState): Monster[] {
     if (!Array.isArray(state._migratingMonsters))
         state._migratingMonsters = [];
     return state._migratingMonsters;
 }
 
+// Port only: u.uz access with an initialized-location check.
 export function currentDungeonLevel(state: GameState): DungeonLocation {
     if (!state.u.uz) throw new Error('Monster migration requires an initialized hero dungeon location.');
     return state.u.uz;
 }
 
+// Part of C dog.c:migrate_to_level(): the one-level-down fall destination
+// (ledger_to_dnum()/ledger_to_dlev()).
 function defaultFallDestination(state: GameState): DungeonLocation {
     // C hole falls land on the next level down within the same dungeon.
     const uz = currentDungeonLevel(state);
@@ -516,6 +528,7 @@ function defaultFallDestination(state: GameState): DungeonLocation {
     };
 }
 
+// Part of C dog.c:mon_leave(): the no_charge reset via picked_container().
 function clearNoCharge(object: GameObject): void {
     // C dog.c mon_leave() resets shop pricing on carried containers.
     object.no_charge = false;
@@ -523,6 +536,8 @@ function clearNoCharge(object: GameObject): void {
         clearNoCharge(content);
 }
 
+// Part of C dog.c:mon_arrive(): the no-room failure path (relmon(),
+// m_into_limbo()).
 // losedogs() requeues ordinary failures after all arrivals. Wizard
 // resurrection has no such caller tail and returns to limbo immediately.
 async function failArrival(monster: Monster, when: MonsterArrivalPhase, state: GameState): Promise<false> {
@@ -534,8 +549,9 @@ async function failArrival(monster: Monster, when: MonsterArrivalPhase, state: G
     return false;
 }
 
-// C mon_leave(): both followers and independently migrating monsters lose
-// their old shop residency and carry only a tail length between levels.
+// C dog.c:mon_leave().
+// Both followers and independently migrating monsters lose their old shop
+// residency and carry only a tail length between levels.
 export async function prepareMonsterDeparture(monster: Monster, state: GameState): Promise<void> {
     for (const object of monster.minvent || monster.inventory || [])
         clearNoCharge(object);
@@ -549,23 +565,29 @@ export async function prepareMonsterDeparture(monster: Monster, state: GameState
     }
 }
 
+// Part of C dog.c:mon_leave(), dog.c:migrate_to_level(): place_monster()
+// head-back and the mtrack[] destination-overload reset.
 async function placeMigratingMonster(monster: Monster, x: number, y: number): Promise<void> {
     await placeMonsterOnMap(monster, x, y);
     monster.mtrack = [];
 }
 
+// Port only: TypeScript overload for a fall through a trap.
 export function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
     monster: Monster, state: GameState, trap: T,
     options?: Omit<MonsterMigrationOptions, 'kind'> & { kind?: 'level-fall-migration' },
 ): Promise<MonsterMigrationResult<T, 'level-fall-migration'>>;
+// Port only: TypeScript overload selecting the migration kind.
 export function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>, K extends MonsterMigrationKind>(
     monster: Monster, state: GameState, trap: T,
     options: Omit<MonsterMigrationOptions, 'kind'> & { kind: K },
 ): Promise<MonsterMigrationResult<T, K>>;
+// Port only: TypeScript overload for the default fall migration.
 export function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
     monster: Monster, state: GameState, trap: T,
     options: MonsterMigrationOptions,
 ): Promise<MonsterMigrationResult<T>>;
+// C dog.c:migrate_to_level().
 export async function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
     monster: Monster, state: GameState, trap: T, {
         kind = 'level-fall-migration',
@@ -684,6 +706,8 @@ export async function catchUpMonster(monster: Monster, moves: number, state: Gam
 }
 
 
+// Part of C dog.c:mon_arrive(): limbo wander placement within its room or
+// `wander` squares.
 function wanderLocale(state: GameState, x: number, y: number, wander: number): Position | null {
     // C mon_arrive(): a monster that moved during limbo arrives within
     // `wander` squares, or somewhere inside its room.
@@ -845,6 +869,7 @@ export async function monsterArrive(monster: Monster, when: MonsterArrivalPhase,
     return true;
 }
 
+// C dog.c:losedogs().
 export async function deliverMigratingMonsters(
     state: GameState = game, followers: readonly Monster[] = [],
 ): Promise<number> {
@@ -891,6 +916,7 @@ export async function deliverMigratingMonsters(
     return delivered;
 }
 
+// C dog.c:discard_migrations().
 export function discardMigrations(state: GameState = game): void {
     // C dog.c discard_migrations(): entering the endgame discards monsters
     // scheduled for unreachable levels; the Wizard always stays queued.
@@ -960,6 +986,7 @@ export async function collectLevelFollowers(state: GameState = game, petsOnly = 
     return followers;
 }
 
+// C mon.c:monnear().
 function nearHero(monster: Monster, state: GameState): boolean {
     const dx = monster.mx - state.u.ux;
     const dy = monster.my - state.u.uy;
@@ -967,6 +994,8 @@ function nearHero(monster: Monster, state: GameState): boolean {
     return distance < 3 && !(distance === 2 && monster.mnum === PM_GRID_BUG);
 }
 
+// Part of C dog.c:keepdogs(): the stay-behind branch (eating, trapped,
+// amulet, loose leash).
 async function staysBehind(monster: Monster, state: GameState): Promise<boolean> {
     let message: string;
     if (monster.meating || monster.mtrapped) {

@@ -99,6 +99,7 @@ import { canLetGo } from './do.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mon.js';
 import { weaponDescription } from './weapon.js';
 
+// C do_wear.c:doputon().
 export async function doputon(): Promise<void> {
     if (wearingFullEquipment()) {
         const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
@@ -442,6 +443,7 @@ export function armorWearDecision(object: GameObject, state: GameState = game): 
     return refuse(null);
 }
 
+// Part of C do_wear.c:accessory_or_armor_on(): the armor branch.
 async function putOnArmorObject(object: GameObject): Promise<void> {
     if (object.worn) {
         await pline('You are already wearing that!');
@@ -516,6 +518,7 @@ function classifyWearChoice(object: GameObject, action: 'wear' | 'put on') {
     return classification;
 }
 
+// C do_wear.c:dowear().
 export async function dowear(): Promise<void> {
     // do_wear.c:dowear() owns this form-capability check before getobj().
     // W therefore rejects the whole transaction without exposing either
@@ -544,6 +547,8 @@ export async function dowear(): Promise<void> {
     else await putOnAccessoryObject(object);
 }
 
+// Part of C do_wear.c:donning(), do_wear.c:doffing(): the pending afternmv
+// armor action.
 // C donning()/doffing() inspect afternmv, not a separate armor timer.
 export function pendingArmorAction(state: GameState = game): ArmorCompletion | null {
     const after = state._afterMove;
@@ -564,6 +569,7 @@ export interface TakeoffContext {
     text: 'disrobing' | 'disarming';
 }
 
+// Port only: object currently in a takeoff-order slot.
 export function takeoffSlotObject(slot: TakeoffSlot, state: GameState = game): GameObject | null {
     return state[slot] || state.u[slot] || null;
 }
@@ -573,7 +579,9 @@ export function resetBulkTakeoff(state: GameState = game): void {
     delete state.context.takeoff;
 }
 
-// Slot replacement cancels work on that item, including an interrupted delay.
+// Part of C do_wear.c:cancel_doff(): cancel one slot's pending removal.
+// Slot replacement cancels work on that item, including an interrupted
+// delay.
 export function cancelSlotTakeoff(slot: TakeoffSlot, state: GameState = game): void {
     const progress = state.context.takeoff;
     if (!progress) return;
@@ -584,6 +592,8 @@ export function cancelSlotTakeoff(slot: TakeoffSlot, state: GameState = game): v
     }
 }
 
+// Part of C do_wear.c:doffing(): whether this object is the current
+// removal.
 export function isBeingTakenOff(object: GameObject, state: GameState = game): boolean {
     const slot = state.context.takeoff?.current;
     return !!slot && takeoffSlotObject(slot, state) === object;
@@ -654,6 +664,8 @@ export async function continueBulkTakeoff(state: GameState = game): Promise<bool
     return true;
 }
 
+// Part of C do_wear.c:take_off(): the armor removal delay with cloak and
+// suit additions.
 function removalDelay(slot: TakeoffSlot, state: GameState): number {
     const object = takeoffSlotObject(slot, state);
     const armor = ['uarm', 'uarmc', 'uarmh', 'uarmg', 'uarms', 'uarmu', 'uarmf'].includes(slot);
@@ -666,6 +678,7 @@ function removalDelay(slot: TakeoffSlot, state: GameState): number {
     return delay;
 }
 
+// Part of C do_wear.c:take_off(): removing one selected slot.
 async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<void> {
     const object = takeoffSlotObject(slot, state);
     if (!object) return;
@@ -711,6 +724,7 @@ async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<
     }
 }
 
+// Part of C do_wear.c:take_off(): the off_msg() call after a removal.
 async function offMessage(object: GameObject, state: GameState): Promise<void> {
     const message = await armorOffMessage(object, state);
     if (message) await plineWithContinuation(message);
@@ -795,13 +809,16 @@ async function betterNotTakeThatOff(object: GameObject, state: GameState = game)
         `Take off your ${armorSimpleName(object)} despite carrying a dead ${objectMonsterName(corpse)}?`);
 }
 
+// Part of C do_wear.c:canwearobj(), do_wear.c:armoroff(): the
+// is_sword()/axe/weapon noun.
 function weaponNoun(object: GameObject | null): string {
     const skill = object ? objectSkill(object.otyp) : undefined;
     return skill !== undefined && [P_SHORT_SWORD, P_BROAD_SWORD, P_LONG_SWORD, P_TWO_HANDED_SWORD, P_SABER].includes(skill)
         ? 'sword' : object?.otyp === BATTLE_AXE ? 'axe' : 'weapon';
 }
 
-// C welded() reveals the curse even when the weapon does not block removal.
+// Part of C do_wear.c:cursed(): the welded() test revealing the curse.
+// welded() reveals the curse even when the weapon does not block removal.
 function checkWeldedWeapon(object: GameObject | null, state: GameState = game): boolean {
     if (!object || !isWeldedPrimary(object, state)) return false;
     object.bknown = true;
@@ -882,10 +899,12 @@ export async function selectBulkTakeoff(selectOff: SelectOff): Promise<void> {
     for (const selection of selected) await selectOff(selection.value);
 }
 
+// Part of C do_wear.c:menu_remarm(): the worn (W_TAKEOFF) inventory.
 function wornInventory(): GameObject[] {
     return game.inventory.filter(object => TAKEOFF_ORDER.some(slot => takeoffSlotObject(slot) === object));
 }
 
+// Part of C pickup.c:allow_category(): the BUC-state categorization.
 function bucCategory(object: GameObject): BucCategory {
     if (object.oclass === COIN_CLASS) return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
@@ -901,10 +920,14 @@ function wornBucCategories(worn: readonly GameObject[]): Set<BucCategory> {
     return new Set(worn.map(bucCategory));
 }
 
+// Part of C pickup.c:allow_category(): the unpaid filter including
+// contents.
 function hasUnpaid(object: GameObject): boolean {
     return !!object.unpaid || (object.contents || []).some(hasUnpaid);
 }
 
+// Part of C pickup.c:allow_category(): the removal-menu filter
+// (menu_remarm's use).
 function matchesCategories(object: GameObject, categories: readonly Category[]): boolean {
     const classes = categories.filter(category => typeof category === 'number');
     const statuses = categories.filter(category => category === 'B' || category === 'C' || category === 'U' || category === 'X');
@@ -963,6 +986,7 @@ async function categoryMenu(): Promise<Category[]> {
     return selected;
 }
 
+// Part of C invent.c:query_category(): the removal-category prompt.
 async function traditionalCategories(combo: boolean, selectOff: SelectOff): Promise<Category[] | null> {
     const worn = wornInventory();
     const classes = [...new Set(worn.map(object => object.oclass))];
@@ -1060,6 +1084,7 @@ async function traditionalCategories(combo: boolean, selectOff: SelectOff): Prom
     return null;
 }
 
+// Port only: restores the map after a takeoff menu.
 function restoreMap(underlay: MenuUnderlay | null): void {
     game._pending_message = '';
     game._retained_message = '';
@@ -1092,6 +1117,7 @@ export function equipmentClassification(
     return GETOBJ_SUGGEST;
 }
 
+// Part of C do_wear.c:inaccessible_equipment(): the covering-layer test.
 function equipmentIsCovered(object: GameObject, knownCursedOnly: boolean, state: GameState): boolean {
     const blocks = (covering: GameObject | null | undefined) => !!covering
         && (!knownCursedOnly || !!covering.cursed && !!covering.bknown);
@@ -1111,6 +1137,8 @@ export function coveringEquipment(object: GameObject): GameObject[] {
     return [];
 }
 
+// Part of C do_wear.c:inaccessible_equipment(): the "need to take off"
+// report.
 export async function reportCoveredEquipment(object: GameObject): Promise<boolean> {
     const covering = coveringEquipment(object);
     const first = covering[0];
@@ -1127,6 +1155,7 @@ export async function reportCoveredEquipment(object: GameObject): Promise<boolea
     return true;
 }
 
+// Port only: worn accessory/armor slot lists.
 export function accessibleEquipment(accessory: boolean, state: GameState = game): GameObject[] {
     const objects = accessory
         ? [state.uleft, state.uright, state.uamul, state.ublindf]
@@ -1135,6 +1164,8 @@ export function accessibleEquipment(accessory: boolean, state: GameState = game)
     return objects.filter((object): object is GameObject => object != null);
 }
 
+// Part of C do_wear.c:dowear(), do_wear.c:doputon(): the every-slot-worn
+// test.
 export function wearingFullEquipment(state: GameState = game): boolean {
     return !!(state.uarm && state.uarmu && state.uarmc && state.uarmh
         && state.uarms && state.uarmg && state.uarmf && state.uleft
@@ -1188,6 +1219,7 @@ const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
 const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');
 const HELM_OF_BRILLIANCE = OBJECT_NAMES.indexOf('helm of brilliance');
 
+// C youprop.h:Displaced(): timed or cloak-of-displacement extrinsic.
 export function heroIsDisplaced(state: GameState = game) {
     const cloak = state?.uarmc || state?.u?.uarmc;
     return cloak?.otyp === CLOAK_OF_DISPLACEMENT
@@ -1220,6 +1252,7 @@ export function heroHasFreeAction(state: GameState = game) {
         || right?.otyp === RIN_FREE_ACTION);
 }
 
+// C youprop.h:Wwalking(): intrinsic or water-walking boots.
 export function heroHasWaterWalking(state: GameState = game) {
     const hero = state.u;
     const boots = state?.uarmf || hero.uarmf;
@@ -1227,6 +1260,7 @@ export function heroHasWaterWalking(state: GameState = game) {
         || boots?.otyp === WATER_WALKING_BOOTS);
 }
 
+// C hack.c:Known_wwalking().
 export function heroKnowsWaterWalking(state: GameState = game) {
     const hero = state.u;
     const boots = state?.uarmf || hero.uarmf;
@@ -1234,6 +1268,7 @@ export function heroKnowsWaterWalking(state: GameState = game) {
     return !hero.usteed && boots?.otyp === WATER_WALKING_BOOTS && !!typeKnown;
 }
 
+// C hack.c:Known_lwalking().
 export function heroKnowsLavaWalking(state: GameState = game) {
     if (!heroKnowsWaterWalking(state)) return false;
     const hero = state.u;
@@ -1272,6 +1307,8 @@ export function armorSlotFor(otyp: number | undefined): ArmorSlot | null {
     return null;
 }
 
+// Port only: installs a worn armor's oc_oprop extrinsic (C derives it from
+// the slot in youprop.h).
 export function applyWornArmorProperty(object: GameObject, state: GameState = game) {
     const slot = armorSlotFor(object?.otyp);
     const property = objectPropertyName(object?.otyp);
@@ -1281,9 +1318,9 @@ export function applyWornArmorProperty(object: GameObject, state: GameState = ga
     return property;
 }
 
-// Armor-slot installation.  The Type_on() callbacks run later (afternmv in
-// C); this step is the setworn() call that accessory_or_armor_on() and the
-// polymorph paths perform, plus the pre-captures Armor_on() needs.
+// Part of C worn.c:setworn(): the armor-slot installation from
+// accessory_or_armor_on(), with the pre-captures Armor_on() needs.
+// The Type_on() callbacks run later (afternmv in C).
 export async function wearHeroArmor(
     object: GameObject, state: GameState = game,
 ): Promise<ArmorSlot | null> {
@@ -1392,7 +1429,8 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     return removed;
 }
 
-// C Cloak_off(): toggle_displacement() runs after the cloak's source is removed.
+// Part of C do_wear.c:Cloak_off(): the toggle_displacement() loss message.
+// toggle_displacement() runs after the cloak's source is removed.
 async function announceDisplacementLoss(object: GameObject, state: GameState = game): Promise<void> {
     if (object.otyp !== CLOAK_OF_DISPLACEMENT) return;
     const hero = state.u;
@@ -1404,8 +1442,9 @@ async function announceDisplacementLoss(object: GameObject, state: GameState = g
     await plineWithContinuation(formatFeltMessage('that monsters no longer have difficulty pinpointing your location.', state));
 }
 
-// C wielding_corpse(): losing gloves or yellow dragon armor can expose a
-// petrifying weapon. Resolve life saving before the removal continues.
+// Part of C do_wear.c:wielding_corpse(): bare hands on a petrifying weapon.
+// Losing gloves or yellow dragon armor can expose one; resolve life saving
+// before the removal continues.
 async function losePetrificationProtection(armor: GameObject, state: GameState, voluntary: boolean) {
     if (equippedObject(state, 'uarmg')) return;
     const armorSlot = armorSlotFor(armor.otyp);
@@ -1500,6 +1539,7 @@ export function objectIsHardHelmet(
     return objectIsMetallic(object) || objectIsCrackable(object);
 }
 
+// Part of C do_wear.c:destroy_arm(): the worn-armor gathering.
 export function wornArmorInDestroyOrder(state: GameState = game) {
     return (['uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu'] as const)
         .map(slot => state[slot] || state.u?.[slot])
@@ -1627,6 +1667,10 @@ export async function disintegrateWornArmor(armor: GameObject, {
     return true;
 }
 
+// C objnam.c:suit_simple_name(), objnam.c:cloak_simple_name(),
+// objnam.c:helm_simple_name(), objnam.c:gloves_simple_name(),
+// objnam.c:boots_simple_name(), objnam.c:shield_simple_name(),
+// objnam.c:shirt_simple_name().
 export function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameState): string {
     const name = OBJ_NAME(armor.otyp);
     if (!name) throw new RangeError(`Missing name for armor type ${armor.otyp}`);
@@ -1659,24 +1703,28 @@ export function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameS
     }
 }
 
+// Part of C hack.h:ARM_BONUS(): the objects[].a_ac base.
 export function armorBaseBonus(otyp: number) {
     if (!Number.isInteger(otyp) || otyp < ARMOR_FIRST || otyp > ARMOR_LAST)
         return 0;
     return a_ac(otyp);
 }
 
+// Part of C hack.h:ARM_BONUS(): the armor's spe enchantment.
 function objectEnchantment(object: ArmorBonusSource | null | undefined): number {
     if (object && Number.isInteger(object.spe) && object.spe !== undefined) return object.spe;
     if (object && Number.isInteger(object.enchantment) && object.enchantment !== undefined) return object.enchantment;
     return 0;
 }
 
+// C obj.h:greatest_erosion().
 function greatestErosion(object: ArmorBonusSource) {
     return Math.max(0,
         object?.oeroded || 0,
         object?.oeroded2 || 0);
 }
 
+// C hack.h:ARM_BONUS().
 export function armorBonus(object: ArmorBonusSource | null | undefined) {
     if (!object) return 0;
     const base = armorBaseBonus(object.otyp);
@@ -1699,6 +1747,7 @@ const DRAGON_ARMOR_EXTRA_PROPERTY = Object.freeze({
     white: 'slowDigestion',
 } as const);
 
+// Part of C do_wear.c:dragon_armor_handling(): the dragon color test.
 function dragonArmorColor(object: GameObject): keyof typeof DRAGON_ARMOR_EXTRA_PROPERTY | null {
     const name = OBJ_NAME(object?.otyp) || '';
     const color = name.match(/^([a-z]+) dragon scale(?: mail|s)$/)?.[1];
@@ -1711,6 +1760,8 @@ function dragonArmorColor(object: GameObject): keyof typeof DRAGON_ARMOR_EXTRA_P
     }
 }
 
+// Part of C do_wear.c:dragon_armor_handling(): the suit's oc_oprop and the
+// Very_fast gate.
 function grantArmorProperty(object: GameObject, state: GameState, property: PropertyName) {
     const hero = state.u;
     grantWornProperty(property, object, 'uarm', state);
@@ -1771,6 +1822,8 @@ async function applyHelmetOnEffects(object: GameObject, state: GameState): Promi
     } else if (object.otyp === HELM_OF_CAUTION) await see_monsters();
 }
 
+// Part of C do_wear.c:Gloves_on(), do_wear.c:Gloves_off(): remaining
+// fumbling sources.
 function fumblingHasPermanentOrEquipmentSource(state: GameState): boolean {
     const sources = state.u._propertySources?.fumbling;
     return hasIntrinsicProperty('fumbling', null, state) || hasWornProperty('fumbling', state)
@@ -1778,6 +1831,8 @@ function fumblingHasPermanentOrEquipmentSource(state: GameState): boolean {
         || !!state.u.fumblingIntrinsic || !!state.u.fumblingFromIce;
 }
 
+// Part of C do_wear.c:toggle_stealth(), do_wear.c:toggle_displacement():
+// the other-property-source test.
 function armorHasOtherPropertySource(property: PropertyName, object: GameObject, state: GameState): boolean {
     const sources = state.u._propertySources?.[property];
     const slot = armorSlotFor(object.otyp);
@@ -1809,6 +1864,8 @@ async function toggleArmorStealth(object: GameObject, on: boolean, state: GameSt
     }
 }
 
+// Part of C do_wear.c:toggle_displacement(): whether the hero can notice
+// the change.
 function canObserveDisplacement(state: GameState): boolean {
     const blind = heroIsBlind(state);
     const invisible = propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state);
@@ -1859,6 +1916,7 @@ async function applyCloakOnEffects(
     return [];
 }
 
+// C do_wear.c:Cloak_off().
 async function applyCloakOffEffects(object: GameObject, state: GameState): Promise<void> {
     if (heroIsBlind(state)) return;
     if (object.otyp === MUMMY_WRAPPING && propertyIsActive('invisible', state)) {
@@ -2070,15 +2128,18 @@ export async function removeArmorProperties(
     }
 }
 
+// Port only: object in a worn property slot.
 function equippedObject(state: GameState, slot: WornPropertySlot): GameObject | null | undefined {
     if (Object.prototype.hasOwnProperty.call(state, slot)) return state[slot];
     return state.u?.[slot] || null;
 }
 
+// Part of C do_wear.c:find_ac(): the protection ring bonus.
 function protectionItemBonus(object: GameObject | null | undefined, expectedType: number) {
     return object?.otyp === expectedType ? objectEnchantment(object) : 0;
 }
 
+// Part of C do_wear.c:find_ac(): the AC sum (base, slots, rings, guarding).
 // Rebuild current AC from authoritative equipment state. The default base is
 // human AC 10; polymorph can supply `formArmorClass` without changing callers.
 export function projectedArmorClass(state: GameState = game) {
@@ -2117,6 +2178,10 @@ export function findArmorClass(state: GameState = game) {
     return hero.uac;
 }
 
+// Part of C objnam.c:suit_simple_name(), objnam.c:cloak_simple_name(),
+// objnam.c:helm_simple_name(), objnam.c:gloves_simple_name(),
+// objnam.c:boots_simple_name(), objnam.c:shield_simple_name(): the
+// slot-derived form.
 export function armorSimpleName(
     object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'name' | 'dknown'>>,
     state: GameState = game,
@@ -2173,14 +2238,16 @@ export function fingersOrGloves(): string {
     return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(body_part(FINGER));
 }
 
+// C do_wear.c:off_msg().
 export async function armorOffMessage(object: GameObject, state: GameState = game) {
     if (state.flags?.verbose === false) return '';
     observeObjectForNaming(object, { state });
     return `You were wearing ${await inventoryItemDescription(object)}.`;
 }
 
-// C cancel_don(): discard the interrupted callback and its recovery text.
-// The caller retains whether this was donning before clearing the action.
+// C do_wear.c:cancel_don().
+// Discard the interrupted callback and its recovery text. The caller
+// retains whether this was donning before clearing the action.
 export function cancelDonning(state: GameState = game): void {
     state._afterMove = null;
     state._helplessDoneMessage = null;
@@ -2192,8 +2259,9 @@ export function cancelDonning(state: GameState = game): void {
     }
 }
 
-// C stop_donning(): a cancelled dressing action loses its incomplete armor;
-// interrupted removal leaves the item worn.
+// C do_wear.c:stop_donning().
+// A cancelled dressing action loses its incomplete armor; interrupted
+// removal leaves the item worn.
 export async function stopDonning(stolenObject: GameObject | null = null, state: GameState = game) {
     const delayed = pendingArmorAction(state);
     if (!delayed) {
@@ -2217,6 +2285,8 @@ export async function stopDonning(stolenObject: GameObject | null = null, state:
     return true;
 }
 
+// Part of C do_wear.c:Amulet_on(), do_wear.c:Amulet_off(): the timed
+// strangulation predicate shared with the countdown.
 // The amulet of strangulation's timed grip on the hero: the predicate
 // Amulet_on()/Amulet_off() and timeout's countdown share; the timed
 // value lives in strangledTurns.
@@ -2224,6 +2294,7 @@ export function heroIsStrangled(state = game) {
     return !!state.u.strangled || (state.u.strangledTurns ?? 0) > 0;
 }
 
+// Part of C do_wear.c:Amulet_on(): starting strangulation.
 export function startAmuletStrangulation(state = game) {
     if (!heroCanBeStrangled(state) || heroIsStrangled(state)) return false;
     learnObjectType(AMULET_OF_STRANGULATION, state);
@@ -2233,6 +2304,7 @@ export function startAmuletStrangulation(state = game) {
     return true;
 }
 
+// Part of C do_wear.c:Amulet_off(): clearing strangulation.
 export function clearHeroStrangulation(state = game) {
     if (heroIsStrangled(state)) state.context.botl = true;
     state.u.strangledTurns = 0;
@@ -2286,6 +2358,8 @@ export function ringRemovalObstacle(
     return state.uarmg && (state.u.glibTurns ?? 0) > 0 ? state.uarmg : null;
 }
 
+// Part of C do_wear.c:Ring_on(), do_wear.c:Amulet_on(): setworn() plus the
+// ring/amulet on-effects.
 export async function wearHeroAccessory(
     object: GameObject | null | undefined, slot: AccessorySlot, state: GameState = game,
 ): Promise<PropertyName | null> {
@@ -2352,6 +2426,7 @@ export async function wearHeroAccessory(
     return property || null;
 }
 
+// Part of C do_wear.c:Amulet_on(): the on_msg() announcement.
 async function showWornAmulet(object: GameObject, state: GameState): Promise<void> {
     const message = await objectWearMessage(object, state);
     if (message) await plineWithContinuation(message);
@@ -2394,6 +2469,7 @@ async function applyAmuletOnEffects(
     if (message) await plineWithContinuation(message);
 }
 
+// Part of C do_wear.c:Amulet_on(): the change-sex arm.
 async function changeSexFromAmulet(object: GameObject, state: GameState): Promise<void> {
     const original = heroPolyGender(state);
     if (!heroIsUnchanging(state)) changeHeroSex(state);
@@ -2530,6 +2606,8 @@ async function removeAmulet(object: GameObject, state: GameState): Promise<Prope
     return property;
 }
 
+// Part of C worn.c:setworn(), worn.c:setnotworn(): clear the slot without
+// Ring_off().
 // C setworn/setnotworn: remove the source without running Ring_off().
 export async function clearHeroAccessory(
     object: GameObject, state: GameState = game,
@@ -2591,10 +2669,13 @@ function learnRing(ring: GameObject, observable: boolean, state: GameState): voi
         ring.known = true;
 }
 
+// Port only: ublindf accessor.
 function currentEyewear(): GameObject | null {
     return game.ublindf || game.u?.ublindf || null;
 }
 
+// Part of C do_wear.c:Blindf_on(), do_wear.c:already_wearing2(): the
+// eyewear nouns.
 function simpleEyewearName(object: GameObject): string {
     if (isEyesOfTheOverworld(object)) return 'the Eyes of the Overworld';
     if (object.otyp === LENSES) return 'a pair of lenses';
@@ -2602,6 +2683,7 @@ function simpleEyewearName(object: GameObject): string {
     return 'a blindfold';
 }
 
+// Part of C do_wear.c:on_msg(): the "You are now wearing" announcement.
 async function announceWorn(object: GameObject): Promise<void> {
     const message = await objectWearMessage(object);
     if (message) await pline(message);
@@ -2628,6 +2710,8 @@ async function announceOccupiedSlot(object: GameObject, worn: GameObject): Promi
     }
 }
 
+// Part of C do_wear.c:Blindf_on(), do_wear.c:Blindf_off(): the
+// BLINDFOLD/LENSES/TOWEL test.
 export function isEyewear(object: Pick<GameObject, 'otyp'> | null | undefined): boolean {
     return !!object && [BLINDFOLD, LENSES, TOWEL].includes(object.otyp);
 }
@@ -2713,6 +2797,7 @@ export async function removeEyewear(object: GameObject | null = null, {
     return true;
 }
 
+// Part of C apply.c:doapply(): the BLINDFOLD/LENSES toggle branch.
 export async function applyEyewear(object: GameObject): Promise<boolean> {
     const worn = currentEyewear();
     if (worn === object) {
@@ -2737,16 +2822,19 @@ export async function applyEyewear(object: GameObject): Promise<boolean> {
     return false;
 }
 
-// C do_wear.c:glibr(). Each turn, slippery fingers shed uncursed rings and
-// any wielded weapon that is not welded or an aklys.
+// Part of C do_wear.c:glibr(): the Glib test.
+// Each turn, slippery fingers shed uncursed rings and any wielded weapon
+// that is not welded or an aklys.
 export function heroHasSlipperyHands(state: GameState): boolean {
     return !!state.u.glib || (state.u.glibTurns ?? 0) > 0;
 }
 
+// Port only: slip/slips verb.
 function slipVerb(plural: boolean): string {
     return plural ? 'slip' : 'slips';
 }
 
+// C do_wear.c:glibr().
 export async function slipFromSlipperyHands(
     state: GameState, publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {

@@ -103,6 +103,7 @@ const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
 
+// Port only: the currently shown symbol set (rogue or primary).
 export function shownSymbolSet(state: GameState = game) {
     const rogue = Is_rogue_level(state.u?.uz, state);
     return state.shownSymbols ?? {
@@ -110,11 +111,13 @@ export function shownSymbolSet(state: GameState = game) {
     };
 }
 
+// Port only: DECgraphics symset test.
 function usesDecSymbols(): boolean {
     const symbols = shownSymbolSet();
     return !symbols.rogue && /^DECgraphics$/i.test(symbols.name ?? '');
 }
 
+// Port only: the active set's object-class symbol table.
 export function activeObjectSymbols() {
     const shown = shownSymbolSet();
     if (!shown.rogue) return OBJECT_CLASS_SYMBOLS;
@@ -126,6 +129,7 @@ export function activeObjectSymbols() {
     return ROGUE_OBJECT_SYMBOLS;
 }
 
+// Port only: object-class symbol lookup.
 export function objectClassSymbol(index: number): string {
     return activeObjectSymbols()[index] ?? '';
 }
@@ -149,6 +153,8 @@ const HELM_OF_TELEPATHY = 100;
 const AMULET_OF_ESP = 201;
 const PM_LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 
+// Part of C worn.c:recalc_telepat_range(): the worn telepathy count as
+// u.unblind_telepat_range.
 export function unblindTelepathyRange() {
     const wornSources = [game.uarmh, game.uamul].filter(object => object
         && (object.otyp === HELM_OF_TELEPATHY
@@ -158,6 +164,7 @@ export function unblindTelepathyRange() {
     return Math.max(liveRange || -1, storedRange);
 }
 
+// C display.c:sensemon().
 export function senseWithTelepathy(monster: Monster | null | undefined) {
     if (!monster
         || monsterIsMindless(monster.mnum)) return false;
@@ -172,19 +179,22 @@ export function senseWithTelepathy(monster: Monster | null | undefined) {
     return dx * dx + dy * dy <= range;
 }
 
-// C mon_visible(): this does not check the square or sensory detection.
+// C display.c:mon_visible().
+// This does not check the square or sensory detection.
 export function monsterVisible(monster: Monster, state: GameState = game) {
     const seesInvisible = !!(state.u.seeInvisible
         || (state.u.seeInvisibleTurns ?? 0) > 0);
     return (!monster.minvis || seesInvisible) && !monster.mundetected;
 }
 
+// C display.c:see_with_infrared().
 export function seeMonsterWithInfrared(monster: Monster) {
     return !game.blind && !!game.u?.infravision
         && !!infravisible(monster.mnum)
         && couldsee(monster.mx, monster.my);
 }
 
+// Part of C display.c:newsym(): the physically-seen test.
 function canPhysicallyProjectMonster(monster: Monster, x: number, y: number) {
     return monsterVisible(monster) && (cansee(x, y) || seeMonsterWithInfrared(monster));
 }
@@ -218,10 +228,13 @@ export function howMonsterSeen(monster: Monster) {
     return ways;
 }
 
+// Part of C display.c:newsym(): the worm-tail test.
 function isWormTail(monster: Monster | null | undefined, x: number, y: number) {
     return !!monster?.wormno && (x !== monster.mx || y !== monster.my);
 }
 
+// Part of C display.c:newsym(): which sense projects the monster at this
+// cell.
 function monsterProjectionAtCell(monster: Monster, x: number, y: number): MonsterProjection | null {
     const wormTail = isWormTail(monster, x, y);
     // newsym() checks each sense directly after its viewport guards. Only
@@ -265,6 +278,8 @@ export function canSpotMonster(monster: Monster | null | undefined) {
     return !!monster && (canSeeMonster(monster) || canSenseMonster(monster));
 }
 
+// Part of C display.c:mon_warning(), display.c:warning_of(): the warning
+// projection test.
 export function monsterHasWarningProjection(monster: Monster | null | undefined) {
     if (!monster || !game.u?.warning || monster.mpeaceful) return null;
     const dx = monster.mx - game.u.ux, dy = monster.my - game.u.uy;
@@ -291,6 +306,7 @@ function warningProjection(monster: Monster | null | undefined) {
     return warning ? { ...warning, glyph: warningToGlyph(level) } : null;
 }
 
+// C display.h:obj_is_generic().
 export function objectUsesGenericGlyph(object: ObjectGlyphSource | null | undefined) {
     if (!object || object.dknown) return false;
     return object?.oclass === POTION_CLASS
@@ -298,6 +314,7 @@ export function objectUsesGenericGlyph(object: ObjectGlyphSource | null | undefi
         || (object?.otyp >= 366 && object?.otyp <= 407); // ordinary spells
 }
 
+// Part of C display.c:map_object(): the close-observation promotion.
 function observeNearbyObject(object: ObjectGlyphSource, x: number, y: number) {
     const generic = objectUsesGenericGlyph(object);
     // C display.c:map_object() only promotes a map projection into an
@@ -329,6 +346,7 @@ function rememberedGenericObject(glyph: DisplayGlyph | null | undefined): boolea
         && glyph.otyp > 0 && glyph.otyp < MAXOCLASSES;
 }
 
+// C display.c:see_nearby_objects().
 export async function see_nearby_objects() {
     const r = Math.max(game.u?.xray_range ?? -1, 2);
     const nearDistance = r * r * 2 - r;
@@ -352,6 +370,8 @@ export async function see_nearby_objects() {
     }
 }
 
+// Part of C display.c:map_glyphinfo(): the object color with corpse and
+// generic rows.
 export function objectColor(object: ObjectGlyphSource): number {
     if (typeof object.color === 'number' && Number.isInteger(object.color)) return object.color;
     // C obj_is_generic(): hide potion/gem/spellbook appearance until the
@@ -372,8 +392,8 @@ export function objectColor(object: ObjectGlyphSource): number {
         ? metadataColor : CLR_GRAY;
 }
 
-// C display.c:newsym(): only remembered room and corridor terrain changes
-// when it leaves sight. Objects, traps, and engravings retain their glyphs.
+// Part of C display.c:newsym(): the remembered dark-room/corridor
+// downgrade.
 function rememberedGlyph(glyph: DisplayGlyph, loc: MapLocation, x: number, y: number): DisplayGlyph {
     if (glyph.kind !== 'terrain' || cansee(x, y)) return glyph;
     const rogue = Is_rogue_level(game.u.uz);
@@ -395,6 +415,7 @@ function rememberedGlyph(glyph: DisplayGlyph, loc: MapLocation, x: number, y: nu
         terrainName: 'dark part of a room', glyph: cmapToGlyph(CmapSymbol.darkroom) };
 }
 
+// Part of C display.c:newsym(): showing the remembered location.
 async function showRememberedLocation(x: number, y: number, loc: MapLocation): Promise<void> {
     const memory = loc.remembered_glyph;
     if (!memory) return;
@@ -447,10 +468,10 @@ export function reglyph_darkroom(): void {
     }
 }
 
-// symbols.c:switch_symbols()/assign_graphics() keep every glyph number and
-// let doredraw() resolve characters again; mirror that for the map memory,
-// which stores its character. Object classes differ on Rogue, and terrain
-// characters and branch wall colors also depend on the selected set.
+// Part of C symbols.c:switch_symbols(), symbols.c:assign_graphics():
+// re-resolve memory characters after a set change.  Object classes differ
+// on Rogue, and terrain characters and branch wall colors also depend on
+// the selected set.
 export function reglyphSymbolSet(): void {
     if (!game.level) return;
     for (let x = 1; x < COLNO; x++) {
@@ -514,9 +535,8 @@ export function reglyphSymbolSet(): void {
     }
 }
 
-// optfn_boulder() refreshes showsyms[SYM_BOULDER] mid-game and doredraw()
-// repaints every boulder through it, so already-displayed boulders adopt
-// the new symbol immediately.
+// Part of C options.c:optfn_boulder(): repaint remembered boulders through
+// the refreshed symbol.
 export function reglyphBoulderSymbols(): void {
     if (!game.level) return;
     for (let x = 1; x < COLNO; x++) {
@@ -537,6 +557,8 @@ function rememberedTerrainIndex(glyph: number): number | null {
     return symbol !== null && symbol < CmapSymbol.arrowTrap ? symbol : null;
 }
 
+// Part of C display.c:reglyph_darkroom(), display.c:newsym(): the
+// remembered room glyph.
 function roomMemoryGlyph(dark: boolean, dec: boolean): DisplayGlyph {
     return {
         ch: dec ? '~' : '.', color: dark ? 16 : NO_COLOR, decgfx: dec,
@@ -544,7 +566,8 @@ function roomMemoryGlyph(dark: boolean, dec: boolean): DisplayGlyph {
         glyph: cmapToGlyph(dark ? CmapSymbol.darkroom : CmapSymbol.room),
     };
 }
-
+// Part of C display.c:back_to_glyph(): the stair glyph with known-branch
+// stairs.
 function stairGlyphIndex(loc: MapLocation, x: number, y: number) {
     // C display.c:back_to_cmap(). Direction belongs to the terrain cell;
     // the traversed stairway determines whether its branch is known.
@@ -554,6 +577,7 @@ function stairGlyphIndex(loc: MapLocation, x: number, y: number) {
         + (loc.typ === LADDER ? 2 : 0) + (((loc.ladder ?? 0) & LA_DOWN) ? 1 : 0);
 }
 
+// Part of C display.c:back_to_glyph(): the stair symbol lookup.
 function stairSymbol(loc: MapLocation, x: number, y: number) {
     const index = stairGlyphIndex(loc, x, y);
     const symbol = MAP_SYMBOLS[index];
@@ -571,7 +595,7 @@ const TERRAIN_NAMES = new Map([
     [GRAVE, 'grave'], [ALTAR, 'altar'], [ICE, 'ice'], [AIR, 'air'],
     [CLOUD, 'cloud'], [DRAWBRIDGE_DOWN, 'lowered drawbridge'],
 ]);
-
+// Part of C pager.c:lookat(): the terrain name for a square.
 function terrainGlyphName(loc: MapLocation, x: number, y: number, glyph: GlyphAppearance): string {
     if (isArborealBackground(loc)) return 'tree';
     if (loc.typ === DBWALL) return 'raised drawbridge';
@@ -605,7 +629,7 @@ export function back_to_glyph(loc: MapLocation, x: number, y: number): TerrainGl
     };
 }
 
-// display.h:cmap_walls_to_glyph() applies to both real walls and disguises.
+// Part of C display.h:cmap_walls_to_glyph(): the branch wall offset.
 function currentWallGlyphOffset(): GlyphOffset {
     const branch = game.dungeons[game.u.uz?.dnum ?? 0];
     return branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
@@ -613,7 +637,7 @@ function currentWallGlyphOffset(): GlyphOffset {
             : Is_knox_level(game.u.uz) ? GlyphOffset.cmapKnox
                 : In_sokoban(game.u.uz) ? GlyphOffset.cmapSokoban : GlyphOffset.cmapMain;
 }
-
+// Part of C display.c:back_to_glyph(): the cmap symbol for the terrain.
 function terrainSymbolIndex(loc: MapLocation, x: number, y: number, typ: number, appearance: GlyphAppearance) {
     if ((IS_WALL(typ) && typ !== DBWALL) || typ === SDOOR) {
         if (appearance.ch === ' ') return CmapSymbol.stone;
@@ -650,7 +674,8 @@ function terrainSymbolIndex(loc: MapLocation, x: number, y: number, typ: number,
     default: return CmapSymbol.stone;
     }
 }
-
+// Part of C display.c:back_to_glyph(): the exposed surface type with
+// wall_angle().
 function projectedTerrainType(loc: MapLocation) {
     // back_to_glyph() shows the exposed surface under a raised bridge.
     // db_under_typ() uses STONE for dry ground, but its map symbol is room.
@@ -666,6 +691,8 @@ function projectedTerrainType(loc: MapLocation) {
     return loc.typ;
 }
 
+// Part of C display.c:map_glyphinfo(): the terrain appearance (rogue set
+// overlay).
 function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAppearance & { dec: boolean } {
     const appearance = terrainGlyphChars(loc, x, y);
     if (!shownSymbolSet().rogue) return appearance;
@@ -677,7 +704,8 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
     const index = terrainSymbolIndex(loc, x, y, projectedTerrainType(loc), appearance);
     return { ...cmapSymbolAppearance(index), color: NO_COLOR };
 }
-
+// Part of C display.c:map_glyphinfo(): the terrain character and branch
+// wall color.
 function terrainGlyphChars(loc: MapLocation, x: number, y: number): GlyphAppearance & { dec: boolean } {
     const typ = projectedTerrainType(loc);
     const rogue = Is_rogue_level(game.u?.uz);
@@ -812,6 +840,7 @@ function isArborealBackground(loc: MapLocation): boolean {
         || (loc.typ === SDOOR && !!loc.arboreal_sdoor);
 }
 
+// C display.h:obj_is_piletop().
 function objectIsPiletop(object: ObjectGlyphSource) {
     if (object.ox === undefined || object.oy === undefined) return false;
     const pile = game.level?.objects?.[object.ox]?.[object.oy];
@@ -819,6 +848,7 @@ function objectIsPiletop(object: ObjectGlyphSource) {
         && (object.otyp !== BOULDER || pile[1]?.otyp === BOULDER);
 }
 
+// Part of C display.c:map_glyphinfo(): the hilite_pile inverse attribute.
 function objectGlyphAttr(glyph: GlyphMetadata) {
     const useInverse = game.flags?.use_inverse !== false
         && game.iflags?.wc_inverse !== false
@@ -827,6 +857,7 @@ function objectGlyphAttr(glyph: GlyphMetadata) {
         ? ATR_INVERSE : 0;
 }
 
+// Part of C display.h:mon_to_glyph(): symbol, color, and glyph number.
 function displayMonsterGlyph(
     mnum: number, female = false,
     monsterState: 'normal' | 'pet' | 'detected' | 'ridden' = 'normal',
@@ -841,6 +872,9 @@ function displayMonsterGlyph(
     };
 }
 
+// Part of C display.h:monnum_to_glyph(), display.h:petnum_to_glyph(),
+// display.h:detected_monnum_to_glyph(), display.h:ridden_monnum_to_glyph():
+// the glyph number by monster state.
 function monsterGlyphNumber(mnum: number, female: boolean, state: 'normal' | 'pet' | 'detected' | 'ridden') {
     const gender = female ? FEMALE : MALE;
     return state === 'pet' ? petnumToGlyph(mnum, gender)
@@ -849,6 +883,7 @@ function monsterGlyphNumber(mnum: number, female: boolean, state: 'normal' | 'pe
         : monnumToGlyph(mnum, gender);
 }
 
+// C display.h:hero_glyph().
 function heroDisplayGlyph(): DisplayGlyph {
     if (game.u?.m_ap_type === M_AP_OBJECT)
         return apparentObjectGlyph(game.u);
@@ -1026,12 +1061,14 @@ const ROGUE_SYMSET_OBJECT_TABLES: Readonly<Record<string, readonly string[]>> = 
             set.objectClasses?.[index] ?? symbol)]),
 );
 
+// Port only: the named Rogue symbol set (C's loaded rogue showsyms).
 function activeRogueSymset(state: GameState = game): RogueSymsetSymbols | null {
     const shown = shownSymbolSet(state);
     if (!shown.rogue || !shown.name) return null;
     return ROGUE_SYMSETS[shown.name.toLowerCase()] ?? null;
 }
 
+// Port only: rogue-set cmap symbol override.
 function rogueCmapSymbol(set: RogueSymsetSymbols | null, symbol: number): string | undefined {
     if (!set) return undefined;
     if (set.blank) return BLANK_SYMBOL;
@@ -1042,6 +1079,7 @@ function rogueCmapSymbol(set: RogueSymsetSymbols | null, symbol: number): string
 // set can replace the human symbol (RogueEpyx) or every class (Blank).
 const HUMAN_CLASS_INDEX = MONSTER_CLASS_SYMBOLS.indexOf('@');
 
+// Port only: monster-class symbol for the shown set.
 export function monsterClassSymbol(index: number): string {
     const shown = shownSymbolSet();
     if (shown.rogue) {
@@ -1052,7 +1090,8 @@ export function monsterClassSymbol(index: number): string {
     return MONSTER_CLASS_SYMBOLS[index] ?? '';
 }
 
-// pager.c:is_swallow_sym() and display.c:swallowed() read the same showsyms.
+// Part of C display.c:swallowed(), pager.c:is_swallow_sym(): the swallow
+// border symbol.
 export function swallowSymbolAppearance(index: number): { ch: string; dec: boolean } {
     if (!Number.isInteger(index) || index < 0 || index > 7)
         throw new RangeError(`Unknown swallow border ${index}`);
@@ -1124,8 +1163,8 @@ const decWallColors = new Map<GlyphOffset, number>([
 // (clear_symsetentry() → clear_all_glyphmap_colors()).
 const BRANCH_WALL_COLOR_SYMSETS = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i;
 
-// wizcmds.c:wizcustom_callback() prints the loaded showsyms byte before
-// wintty.c:g_putch() converts high-bit characters to an alternate font.
+// Part of C wizcmds.c:wizcustom_callback(), wintty.c:g_putch(): the shown
+// symbol's byte.
 export function cmapSymbolByte(symbol: number): number {
     const shown = shownSymbolSet();
     const name = shown.name?.toLowerCase();
@@ -1146,6 +1185,7 @@ export function cmapSymbolByte(symbol: number): number {
     return ch.charCodeAt(0);
 }
 
+// Part of C display.c:display_monster(): the furniture-disguise glyph.
 function furnitureDisplayGlyph(appearance: number): DisplayGlyph {
     const symbol = MAP_SYMBOLS[appearance];
     if (!symbol) throw new RangeError(`Unknown furniture disguise ${appearance}`);
@@ -1174,8 +1214,9 @@ export function canSpotHeroSelf() {
     return canSeeSelf || sensesSelf;
 }
 
-// display.h:random_obj_to_glyph().  Generic object slots 0..17 are excluded;
-// a randomly selected corpse consumes a second display draw for its color.
+// Part of C display.h:random_obj_to_glyph(): the hallucinated object
+// glyph.  Generic object slots 0..17 are excluded; a randomly selected
+// corpse consumes a second display draw for its color.
 function randomHallucinatedObjectGlyph(): ObjectGlyph {
     const firstObject = OBJECT_BASES[WEAPON_CLASS];
     if (firstObject === undefined) throw new Error('Missing first real object class in object data');
@@ -1205,6 +1246,7 @@ function randomHallucinatedObjectGlyph(): ObjectGlyph {
     };
 }
 
+// C display.h:obj_to_glyph().
 function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
     const piletop = objectIsPiletop(object);
     if (heroIsHallucinating()) {
@@ -1243,7 +1285,8 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
         };
 }
 
-// display.h:obj_to_glyph() selects a species range or an object number.
+// Part of C display.h:statue_to_glyph(), display.h:corpse_to_glyph(),
+// display.h:generic_obj_to_glyph(): the piletop-adjusted glyph number.
 // An unobserved potion uses its class number in the same object range.
 function objectGlyphNumber(object: ObjectGlyphSource, piletop: boolean) {
     if (object.otyp === STATUE) {
@@ -1295,8 +1338,9 @@ export function zapdir_to_glyph(dx: number, dy: number, beamType: number): Displ
         kind: 'effect', glyph };
 }
 
-// Native explosion_to_glyph(): rows run from top left to bottom right, and
-// every style but the six named ones, including dark, defaults to fiery.
+// Part of C display.h:explosion_to_glyph(): the explosion glyph by style
+// and cell.  Rows run from top left to bottom right, and every style but
+// the six named ones, including dark, defaults to fiery.
 export function explosionGlyph(style: number, dx: number, dy: number): DisplayGlyph {
     const type = [EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS]
         .includes(style) ? style : EXPL_FIERY;
@@ -1310,6 +1354,7 @@ export function explosionGlyph(style: number, dx: number, dy: number): DisplayGl
         kind: 'effect', glyph: explosionToGlyph(style, CmapSymbol.explosionTopLeft + index) };
 }
 
+// Part of C display.c:shieldeff(): the shield-effect glyph.
 export function shieldGlyph(character: string): DisplayGlyph {
     const index = ['0', '#', '@', '*'].indexOf(character);
     if (index < 0) throw new RangeError(`Unknown shield symbol ${character}`);
@@ -1334,6 +1379,7 @@ export function transientObjectGlyph(object: ObjectGlyphSource): DisplayGlyph {
     };
 }
 
+// Port only: obj_to_glyph() metadata for inventory menus.
 // C inventory menus attach obj_to_glyph() metadata to every real item even
 // though tty's text presentation does not show a separate glyph column.  The
 // metadata construction remains display-RNG-visible under Hallucination.
@@ -1342,12 +1388,15 @@ export function consumeHallucinatedMenuObjectGlyph(object: ObjectGlyphSource | n
     return objectGlyph(object);
 }
 
+// Port only: mappearance accessor for a disguised creature.
 export function mimicAppearance(monster: MimicAppearance): number {
     if (monster.mappearance === undefined)
         throw new Error('A disguised creature has no appearance');
     return monster.mappearance;
 }
 
+// Part of C display.c:display_monster(), display.c:display_self(): the
+// object-disguise glyph.
 function apparentObjectGlyph(monster: MimicAppearance) {
     const otyp = mimicAppearance(monster);
     const oclass = objectClassForType(otyp);
@@ -1374,6 +1423,7 @@ export async function map_background(x: number, y: number, show = true) {
     if (show) await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.dec, 0, glyph);
 }
 
+// Port only: bounds-checked levl[] access for display.
 function requireDisplayLocation(x: number, y: number): MapLocation {
     const location = requireGameLevel().at(x, y);
     if (!location) throw new RangeError(`Display coordinate (${x}, ${y}) is outside the map`);
@@ -1410,6 +1460,7 @@ export async function magic_map_background(x: number, y: number, show = true) {
     updateLastSeenTerrain(x, y);
 }
 
+// C display.c:map_object().
 export async function map_object(object: FloorObjectGlyphSource | null | undefined, show = true, observe = true) {
     if (!object) return;
     if (observe && cansee(object.ox, object.oy))
@@ -1436,6 +1487,7 @@ const TRAP_COLOR = [
     CLR_BRIGHT_BLUE, CLR_BRIGHT_GREEN, CLR_MAGENTA, CLR_ORANGE, CLR_ORANGE,
 ];
 
+// C display.h:trap_to_glyph().
 export function transientTrapGlyph(trap: Pick<Trap, 'ttyp'>): DisplayGlyph {
     // Blank replaces every trap symbol including the vibrating square,
     // while RogueEpyx replaces only the twenty-two real traps.
@@ -1471,6 +1523,7 @@ export async function flashGlyphAt(x: number, y: number, glyph: TransientGlyph, 
 
 export type TrapGlyphSource = Pick<Trap, 'tx' | 'ty' | 'ttyp'> & Partial<Pick<Trap, 'tseen'>>;
 
+// C display.c:map_trap().
 export async function map_trap(trap: TrapGlyphSource | null | undefined, show = true) {
     if (!trap) return;
     const glyph = transientTrapGlyph(trap);
@@ -1480,6 +1533,7 @@ export async function map_trap(trap: TrapGlyphSource | null | undefined, show = 
     if (show) await show_glyph_cell(trap.tx, trap.ty, glyph.ch, glyph.color, false, 0, glyph);
 }
 
+// C display.c:map_engraving().
 export async function map_engraving(engraving: Engraving | null | undefined, show = true) {
     if (!engraving) return;
     const loc = game.level?.at(engraving.x, engraving.y);
@@ -1494,6 +1548,7 @@ export async function map_engraving(engraving: Engraving | null | undefined, sho
         await show_glyph_cell(engraving.x, engraving.y, ch, CLR_BRIGHT_BLUE, false, 0, glyph);
 }
 
+// Port only: m_at() lookup including dying actors.
 function monsterAtMapCell(x: number, y: number) {
     // Native m_at() retains a dying actor until remove_monster(), including
     // a vision refresh while its death announcement awaits acknowledgment.
@@ -1531,6 +1586,7 @@ export async function feel_newsym(x: number, y: number) {
     else await newsym(x, y);
 }
 
+// C display.c:suppress_map_output().
 // Native suppress_map_output(): initialization and persistence can leave
 // terrain, hero properties, and ownership links temporarily incomplete.
 function suppressMapOutput(): boolean {
@@ -1601,6 +1657,7 @@ export async function feel_location(x: number, y: number) {
     }
 }
 
+// Part of C display.c:feel_location(): the remembered felt room.
 async function rememberFeltRoom(
     x: number, y: number, location: MapLocation,
     symbol: typeof CmapSymbol.stone | typeof CmapSymbol.room | typeof CmapSymbol.darkroom,
@@ -1622,6 +1679,8 @@ async function rememberFeltRoom(
     await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
 }
 
+// Part of C display.c:feel_location(): the felt dark-room/corridor
+// downgrade.
 async function darkenFeltFloor(x: number, y: number, location: MapLocation): Promise<void> {
     const glyph = location.remembered_glyph;
     if (location.typ === ROOM && glyph?.glyph === cmapToGlyph(CmapSymbol.room)
@@ -1640,6 +1699,7 @@ async function darkenFeltFloor(x: number, y: number, location: MapLocation): Pro
     }
 }
 
+// C display.c:glyph_at().
 // ── show_glyph_cell ──
 export function glyphAt(x: number, y: number, state: GameState = game) {
     if (x < 0 || x >= COLNO || y < 0 || y >= ROWNO) {
@@ -1667,6 +1727,7 @@ function isRogueShowraceHeroGlyph(glyph: GlyphMetadata | null, x: number, y: num
     return glyph.glyph === heroGlyphNumber;
 }
 
+// Part of C display.c:reset_glyphmap(): the RogueEpyx color gate.
 // HAS_ROGUE_IBM_GRAPHICS with nocolor cleared (only RogueEpyx declares
 // `Color: Yes`) keeps color on the Rogue level through cmap_to_roguecolor()
 // and the object/monster branches of reset_glyphmap().
@@ -1676,9 +1737,10 @@ export function rogueColorsActive(): boolean {
         && set?.ibm === true && set.color === true;
 }
 
-// The Rogue color tables of reset_glyphmap(); null keeps the glyph's own
-// color where the native branches have no rogue override (explosions, the
- // branch wall ranges).
+// Part of C display.c:reset_glyphmap(), display.c:cmap_to_roguecolor():
+// the Rogue color tables.  Null keeps the glyph's own color where the
+// native branches have no rogue override (explosions, the branch wall
+// ranges).
 function rogueLevelGlyphColor(glyph: GlyphMetadata, x: number, y: number): number | null {
     const glyphNumber = glyph.glyph;
     if (glyph.kind === 'object' && typeof glyphNumber === 'number') {
@@ -1725,6 +1787,7 @@ function rogueLevelGlyphColor(glyph: GlyphMetadata, x: number, y: number): numbe
     return NO_COLOR;
 }
 
+// C display.c:show_glyph().
 export async function show_glyph_cell(
     x: number, y: number, ch: string, color: number = NO_COLOR, decgfx = false,
     attr = 0, glyph: GlyphMetadata | null = null,
@@ -1819,9 +1882,11 @@ function shouldMentionGlyphChange(
 // display.h:glyph_is_monster() (the shared owner in glyph_numbers.ts)
 // excludes bodies and statues.
 
+// Part of C display.c:flush_screen(): the cursor after the last printed
+// glyph.
 // flush_screen() prints queued glyphs in row order. tty_print_glyph() leaves
-// the cursor one column after the last printed cell, even when it was restored
-// to the glyph already on the terminal before the flush.
+// the cursor one column after the last printed cell, even when it was
+// restored to the glyph already on the terminal before the flush.
 export function lastDirtyMapCursor(g: GameState = game): [number, number] | null {
     if (!g.nhDisplay) return null;
     let cursor: [number, number] | null = null;
@@ -2002,6 +2067,7 @@ export async function unmapObject(x: number, y: number) {
     }
 }
 
+// C display.c:unmap_invisible().
 export async function unmap_invisible(x: number, y: number, show = true) {
     if (game.level?.at(x, y)?.remembered_glyph?.kind !== 'invisible') return false;
     await unmapObject(x, y);
@@ -2009,6 +2075,7 @@ export async function unmap_invisible(x: number, y: number, show = true) {
     return true;
 }
 
+// C display.c:display_self().
 export async function displaySelf() {
     // display.h:maybe_display_usteed() gives a visible steed its own identity.
     const steed = game.u.usteed;
@@ -2027,6 +2094,7 @@ export async function newsym_force(x: number, y: number): Promise<void> {
     if (location) location.gnew = 1;
 }
 
+// Part of C wintty.c:tty_print_glyph(): the pet and detected highlighting.
 // ── newsym ──
 function monsterDisplayAttribute(state: 'normal' | 'pet' | 'detected') {
     // C tty_print_glyph() applies pet highlighting independently of use_inverse.
@@ -2037,8 +2105,8 @@ function monsterDisplayAttribute(state: 'normal' | 'pet' | 'detected') {
     return state === 'detected' && inverse ? ATR_INVERSE : 0;
 }
 
-// C show_mon_or_warn(): a located actor replaces remembered invisibility.
-// Its departure must reveal the lower layer rather than restore a stale I.
+// Part of C display.c:show_mon_or_warn(): a located actor replaces
+// remembered invisibility.
 async function showMonsterOrWarning(x: number, y: number, glyph: DisplayGlyph, attr = 0) {
     if (game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible') {
         await unmapObject(x, y);
@@ -2048,12 +2116,14 @@ async function showMonsterOrWarning(x: number, y: number, glyph: DisplayGlyph, a
     await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, attr, glyph);
 }
 
+// Part of C display.c:newsym(): the visible region at a cell.
 function visibleMapRegionAt(x: number, y: number) {
     return (game.level?.regions || []).find(region => region.visible
         && region.ttl !== -2 && region.cells?.some(cell =>
             cell.x === x && cell.y === y)) || null;
 }
 
+// Part of C display.c:newsym(): displaying a gas cloud.
 async function showMapRegion(x: number, y: number) {
     const region = visibleMapRegionAt(x, y);
     if (!region) return;
@@ -2081,6 +2151,7 @@ function monsterOverridesMapRegion(monster: Monster | null | undefined, x: numbe
     return ordinaryVisible && dx * dx + dy * dy <= range * (range + 1);
 }
 
+// C display.c:newsym().
 export async function newsym(x: number, y: number) {
     if (suppressMapOutput()) return;
     const loc = game.level?.at(x, y);
@@ -2275,9 +2346,10 @@ export function set_mimic_blocking({ state = game } = {}): void {
         if (!monster.dead) mimic_light_blocking(monster);
 }
 
-// The set_mimic_blocking() + see_monsters() pair each caller performs after
-// a See_invisible change; see_monsters() includes the hero, so callers that
-// also repaint the hero's own square use refreshHeroSeeing() below.
+// Port only: the set_mimic_blocking() + see_monsters() refresh pair.
+// Each caller performs this after a See_invisible change; see_monsters()
+// includes the hero, so callers that also repaint the hero's own square
+// use refreshHeroSeeing() below.
 export async function refreshInvisibleMonsters({ state = game } = {}) {
     set_mimic_blocking({ state });
     await see_monsters();
@@ -2319,6 +2391,7 @@ export async function see_objects() {
     for (const object of objects) await newsym(object.ox, object.oy);
 }
 
+// C display.c:see_traps().
 export async function see_traps() {
     for (const trap of game.level?.traps || []) {
         const loc = game.level?.at?.(trap.tx, trap.ty);
@@ -2352,6 +2425,7 @@ export function swallowToGlyph(mnum: number, loc: number): number {
     return ((shown << 3) | (position - CmapSymbol.swallowTopLeft)) + GlyphOffset.swallow;
 }
 
+// C display.c:swallowed().
 export async function swallowed(first = false) {
     if (!game.level || !game.u?.uswallow || !game.u?.ustuck) return;
     if (first) {
@@ -2394,18 +2468,21 @@ export async function swallowed(first = false) {
     lastSwallowedY = y;
 }
 
+// Part of C display.c:under_water(): the restricted-view gate.
 function restrictedUnderwaterView() {
     return !!(game.u?.uinwater || game.underwater) && !Is_waterlevel(game.u?.uz);
 }
 
+// Part of C display.c:under_water(): the underwater terrain test.
 function underwaterTerrain(x: number, y: number) {
     return isPoolOrLavaAt(x, y) || isIceAt(x, y);
 }
 
 type RestrictedDisplayMode = 0 | 1 | 2;
 
-// Native under_water(): mode 2 defers the full clear until the next update;
-// mode 0 clears only the previous three-by-three view before drawing the new one.
+// C display.c:under_water().
+// Mode 2 defers the full clear until the next update; mode 0 clears only
+// the previous three-by-three view before drawing the new one.
 export async function under_water(mode: RestrictedDisplayMode): Promise<void> {
     if (!game.level || Is_waterlevel(game.u.uz) || game.u.uswallow) return;
     const view = game._underwaterView ??= { position: null, fullRedrawPending: false };
@@ -2434,7 +2511,8 @@ export async function under_water(mode: RestrictedDisplayMode): Promise<void> {
     view.position = { x: game.u.ux, y: game.u.uy };
 }
 
-// Native under_ground(): a full reset stays blank until the next hero update.
+// C display.c:under_ground().
+// A full reset stays blank until the next hero update.
 export async function under_ground(mode: RestrictedDisplayMode): Promise<void> {
     if (!game.level || game.u.uswallow) return;
     const view = game._undergroundView ??= { fullRedrawPending: false };
@@ -2446,6 +2524,8 @@ export async function under_ground(mode: RestrictedDisplayMode): Promise<void> {
     } else await newsym(game.u.ux, game.u.uy);
 }
 
+// Part of C display.c:docrt_flags(), display.c:redraw_map(): the restricted
+// redraw dispatch.
 async function redrawRestrictedMap(full: boolean): Promise<void> {
     if (restrictedUnderwaterView()) {
         await under_water(full || !game._underwaterView ? 1 : 0);
@@ -2496,6 +2576,7 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
     }
 }
 
+// C display.c:redraw_map().
 // Refresh map cells after an ordinary vision change or a temporary overlay.
 // This does not reset the tty screen or require message acknowledgment.
 export async function redrawMap() {
@@ -2567,6 +2648,7 @@ export function row_refresh(start: number, stop: number, y: number): void {
     }
 }
 
+// C display.c:flush_screen().
 // ── flush_screen ──
 export async function flush_screen(mode?: number) {
     if (suppressMapOutput() || game._suppressMapStatusForFlush) return;
@@ -2702,6 +2784,7 @@ const SWALLOW_NAMES = ['top_left', 'top_center', 'top_right', 'middle_left',
 const EXPLOSION_NAMES = ['dark', 'noxious', 'muddy', 'wet', 'magical', 'fiery', 'frosty'];
 const EXPLOSION_COLORS = [CLR_BLACK, CLR_GREEN, CLR_BROWN, CLR_BLUE, CLR_MAGENTA, CLR_ORANGE, CLR_WHITE];
 
+// Part of C glyphs.c:wizcustom_glyphids(): the glyph enumeration.
 export function customizedGlyphs(): CustomizedGlyph[] {
     const name = game.symset?.toLowerCase() ?? '';
     const enhanced = name === 'enhanced1' || name === 'enhanced2';
@@ -2747,6 +2830,7 @@ export function customizedGlyphs(): CustomizedGlyph[] {
     return [...glyphs.values()].sort((left, right) => left.glyph - right.glyph);
 }
 
+// Port only: applies the customsymbol/customcolor flags to one glyph.
 function customize(glyphs: Map<number, CustomizedGlyph>, glyph: GlyphDefinition,
     unicode: number | null, color: number): void {
     const appliedUnicode = game.flags.customsymbols === false ? null : unicode;
@@ -2755,6 +2839,8 @@ function customize(glyphs: Map<number, CustomizedGlyph>, glyph: GlyphDefinition,
         glyphs.set(glyph.glyph, { ...glyph, unicode: appliedUnicode, customColor });
 }
 
+// Part of C glyphs.c:wizcustom_glyphids(): the cmap glyph entries
+// (walls, altars, zaps, swallows, explosions).
 function cmapGlyphs(symbol: number, name: string): GlyphDefinition[] {
     if (symbol >= CmapSymbol.vwall && symbol <= CmapSymbol.trwall) {
         const index = symbol - CmapSymbol.vwall;
@@ -2801,16 +2887,19 @@ function cmapGlyphs(symbol: number, name: string): GlyphDefinition[] {
     return [dungeonGlyph(cmapToGlyph(symbol), symbol, name, color, cmapToRogueColor(symbol))];
 }
 
+// Part of C glyphs.c:wizcustom_glyphids(): one wall entry with branch names.
 function wallGlyph(offset: GlyphOffset, branch: string, index: number, name: string): GlyphDefinition {
     return dungeonGlyph(offset + index, CmapSymbol.vwall + index, `${name}_${branch}`,
         CLR_GRAY, branch === 'main' ? CLR_BROWN : CLR_GRAY);
 }
 
+// Port only: GlyphDefinition constructor.
 function dungeonGlyph(glyph: number, symbol: number, id: string,
     baseColor: number, rogueColor: number): GlyphDefinition {
     return { glyph, id: `G_${id}`, symbol: { kind: 'cmap', index: symbol }, baseColor, rogueColor };
 }
 
+// Part of C glyphs.c:wizcustom_glyphids(): the object and piletop entries.
 function objectGlyphs(otyp: number): GlyphDefinition[] {
     const name = OBJ_NAME(otyp);
     if (!name) throw new Error(`Missing object glyph name ${otyp}`);
@@ -2823,6 +2912,7 @@ function objectGlyphs(otyp: number): GlyphDefinition[] {
     }));
 }
 
+// Port only: glyph id name for a monster (human_* were-forms).
 function monsterGlyphName(name: string, mnum: number): string {
     const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
     // monsters.h enum names distinguish human were-creatures from animal forms.
@@ -2967,7 +3057,8 @@ export function set_wall_state(): void {
     }
 }
 
-// The SDOOR, straight-wall and corner cases of the angle switch below: a
+// Part of C display.c:wall_angle(): straight-wall and corner visibility.
+// The SDOOR, straight-wall and corner cases of the angle switch: a
 // unfinished exterior face is stored in the low three wall_info bits.  Seen
 // vectors which only approach from that rock side project unexplored stone,
 // not the nominal line-drawing wall.
@@ -3014,11 +3105,12 @@ function simpleWallVisible(loc: MapLocation) {
     }
 }
 
-// The do_twall block of the angle switch below: T walls retain their topology
-// type while their visible glyph changes with the accumulated seen vector.
-// This matters when opening a nearby door reveals a previously hidden arm:
-// the same TUWALL can project as a corner, straight wall, or full tee.
-// Rows are C's wall_matrix[][], columns its T_stone..T_tdwall results.
+// Part of C display.c:wall_angle(): the do_twall block (wall_matrix).
+// T walls retain their topology type while their visible glyph changes
+// with the accumulated seen vector.  This matters when opening a nearby
+// door reveals a previously hidden arm: the same TUWALL can project as a
+// corner, straight wall, or full tee.  Rows are C's wall_matrix[][],
+// columns its T_stone..T_tdwall results.
 function projectedTWallType(loc: MapLocation): number {
     let seenv = (loc.seenv || 0) & 0xff;
     let row: readonly [number, number, number, number, number];
@@ -3074,11 +3166,11 @@ function projectedTWallType(loc: MapLocation): number {
     return row[column];
 }
 
-// The CROSSWALL case of the angle switch below.  Cross-wall topology is stable,
-// but its visible glyph is the subset of arms approached by the hero.  The
-// wall mode additionally records which quadrant(s) remain unfinished rock.
-// Rows are C's cross_matrix[][]; all single-solid quarters rotate to the
-// bottom right before the pattern match.
+// Part of C display.c:wall_angle(): the CROSSWALL case (cross_matrix).
+// Cross-wall topology is stable, but its visible glyph is the subset of
+// arms approached by the hero.  The wall mode additionally records which
+// quadrant(s) remain unfinished rock.  All single-solid quarters rotate to
+// the bottom right before the pattern match.
 function projectedCrossWallType(loc: MapLocation): number {
     let seenv = (loc.seenv || 0) & 0xff;
     const mode = (loc.wall_info || 0) & 0x07;

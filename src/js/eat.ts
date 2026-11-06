@@ -219,6 +219,7 @@ type TimedCorpseResistance = 'acidResistance' | 'stoneResistance';
 interface CorpseMealOptions { state?: GameState; }
 
 const S_FUNGUS = 32;
+// Port only: otyp lookup by object name for the amulet/potion constants.
 const type = (name: string): number => OBJECT_NAMES.indexOf(name);
 const ADORNMENT = type('adornment'), STRENGTH = type('gain strength');
 const CONSTITUTION = type('gain constitution'), ACCURACY = type('increase accuracy');
@@ -433,6 +434,7 @@ export async function touchfood(food: GameObject, { state = game }: FoodOptions 
     return food;
 }
 
+// Port only: narrow an object whose oeaten field has been initialized.
 // Port boundary: narrow an object whose oeaten field has been initialized.
 export function requirePreparedFood(food: GameObject): asserts food is PreparedFoodObject {
     if (food.oeaten === undefined)
@@ -505,6 +507,7 @@ export async function eatfood(_occupation: FoodOccupation, state: GameState = ga
     return !choked && !state.program_state.gameover;
 }
 
+// Port only: require the shared context.victual food-meal state.
 // Port boundary: require the shared context.victual food-meal state.
 function currentFoodMeal(state: GameState): FoodMeal {
     const meal = state.context.victual;
@@ -512,6 +515,7 @@ function currentFoodMeal(state: GameState): FoodMeal {
     return meal;
 }
 
+// Port only: require the food retained by context.victual.
 // Port boundary: require the food retained by context.victual.
 function currentMealFood(meal: FoodMeal): PreparedFoodObject {
     if (!meal.piece) throw new Error(`The current meal no longer has food object ${meal.o_id}`);
@@ -546,6 +550,8 @@ async function done_eating(state: PlayingGameState, showMessage: boolean) {
     state.context.victual = null;
 }
 
+// Part of C eat.c:done_eating(), eat.c:consume_tin(): the carried() ?
+// useup() : useupf() removal expression.
 // Shared carried()/useup()/useupf() expression used by meal and tin owners.
 export async function consumeFoodObject(food: GameObject, { all = false, state = game }: ConsumptionOptions = {}) {
     requireLiveGame(state);
@@ -583,6 +589,8 @@ function incrementFood(message: string, state: PlayingGameState): boolean {
     return first;
 }
 
+// Part of C eat.c:eating_conducts(), eat.c:violated_vegetarian(): the shared
+// u.uconduct field increment.
 // Shared u.uconduct field increment expression in eat.c.
 function incrementConduct(key: 'food' | 'unvegan' | 'unvegetarian', state: PlayingGameState): boolean {
     const conduct = state.u.uconduct;
@@ -621,8 +629,11 @@ interface MonsterBrainMealResult {
     heroDied: boolean;
 }
 
+// Port only: TypeScript overload for the hero-defender branch.
 export function eat_brains(meal: HeroBrainMeal): Promise<boolean>;
+// Port only: TypeScript overload for the monster-defender branch.
 export function eat_brains(meal: MonsterBrainMeal): Promise<MonsterBrainMealResult>;
+// Port only: TypeScript overload for the hero-attacker branch.
 export function eat_brains(meal: HeroAttackerBrainMeal): Promise<void>;
 // C eat.c:eat_brains(). Participant types select the native combat branch.
 export async function eat_brains(meal: HeroBrainMeal | MonsterBrainMeal | HeroAttackerBrainMeal): Promise<boolean | MonsterBrainMealResult | void> {
@@ -888,7 +899,6 @@ export function heroCanBeSlimed(state = game): boolean {
 }
 
 // C eat.c:fix_petrification(): the timeout stops before its cure feedback.
-
 export async function fix_petrification({ state = game }: { state?: GameState } = {}): Promise<boolean> {
     if (!heroIsPetrifying(state)) return false;
     const message = heroIsHallucinating(state)
@@ -1278,6 +1288,7 @@ export function tin_variety(tin: TinContents, display = false) {
     return variety;
 }
 
+// Part of C eat.c:consume_tin(): checked tintxts[r] table access.
 // C eat.c tintxts[] access with a checked preparation index.
 function tinPreparation(variety: number): TinPreparation {
     const preparation = preparations[variety];
@@ -1417,6 +1428,7 @@ async function consume_tin(message: string, { state }: {
         await use_up_tin(tin, { state });
 }
 
+// Port only: require the tin retained by context.tin.
 // Port boundary: require the tin retained by context.tin.
 function currentTin(state: GameState): GameObject {
     const tin = currentTinOpening(state).tin;
@@ -1424,6 +1436,7 @@ function currentTin(state: GameState): GameObject {
     return tin;
 }
 
+// Port only: require corpsenm before reading tin contents.
 // Port boundary: require corpsenm before reading tin contents.
 function tinSpecies(tin: TinContents): number {
     if (tin.corpsenm === undefined)
@@ -1456,6 +1469,7 @@ export async function opentin(opening: TinOpening, state: GameState = game) {
     return true;
 }
 
+// Port only: require the shared context.tin opening state.
 // Port boundary: require the shared context.tin opening state.
 function currentTinOpening(state: GameState): TinOpening {
     const opening = state.context.tin;
@@ -1513,6 +1527,8 @@ export async function start_tin(tin: GameObject, { state = game }: TinOptions = 
     return { started: true, completed: duration === 0, heroDied: !!state.program_state.gameover };
 }
 
+// Part of C eat.c:costly_tin(), eat.c:start_tin(): the splitobj(tin, 1)
+// expression.
 // Shared splitobj(tin, 1) expression in costly_tin() and start_tin().
 function splitTin(tin: GameObject, state: PlayingGameState) {
     const split = splitObjectStack(tin, 1, state);
@@ -1561,6 +1577,7 @@ export async function rottenfood(food: GameObject, { state = game }: FoodEffectO
     return false;
 }
 
+// Port only: require corpsenm before indexing monster data.
 // Port boundary: require corpsenm before indexing monster data.
 function corpseSpecies(food: GameObject): number {
     if (food.corpsenm === undefined)
@@ -2890,6 +2907,8 @@ export async function selectFoodToEat({ state = game }: { state?: GameState } = 
     { hands: declinedFloorFood ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
 }
 
+// Part of C eat.c:floorfood(): the skipfloor gate (menu flag, reach, steed,
+// liquid).
 function canSelectFloorFood(state: PlayingGameState): boolean {
     if (state.iflags.menu_requested || !heroCanReachFloor(state, { checkPit: true }) || state.u.usteed)
         return false;
@@ -2898,6 +2917,7 @@ function canSelectFloorFood(state: PlayingGameState): boolean {
         || heroIsFlying(state) && !heroIsBreathless(state));
 }
 
+// Part of C eat.c:floorfood(): the yn_function(..., ynqchars, 'n') prompts.
 function askFloorFood(prompt: string): Promise<'y' | 'n' | 'q'> {
     return promptYesNoQuit(`${prompt}`, 'n');
 }
