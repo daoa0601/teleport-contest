@@ -111,20 +111,15 @@ export async function displayQuestText(text: QuestText | null, state: GameState 
     return true;
 }
 
+// C questpgr.c:qt_pager(): the role section with its common fallback.
 export async function qtPager(messageId: string, state: GameState = game): Promise<boolean> {
     return displayQuestText(await prepareQuestText(messageId, state), state);
 }
 
+// C questpgr.c:com_pager(): the shared "common" section wizard.c and the
+// quest flow cuss from.
 export async function comPager(messageId: string, state: GameState = game): Promise<boolean> {
     return displayQuestText(await prepareQuestText(messageId, state, true), state);
-}
-
-// C questpgr.c:com_pager_core(). Each insult opens a fresh quest.lua state,
-// so nhlib's initialization precedes selection and message delivery.
-export async function deliverCommonQuestInsult(
-    messageId: 'angel_cuss' | 'demon_cuss', state: GameState = game,
-): Promise<void> {
-    await comPager(messageId, state);
 }
 
 // C questpgr.c:ldrname()/neminame() use the role's named species directly

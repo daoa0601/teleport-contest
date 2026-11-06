@@ -940,8 +940,9 @@ export function writeMapCell(display, x, y, loc, frameColor) {
     const byteGlyph = !loc.disp_decgfx && ROGUE_SYMSETS[name]?.ibm === true;
     display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR, loc.disp_attr ?? 0, frameColor, byteGlyph);
 }
-// C wintty.c:tty_clear_nhwindow(WIN_MAP): clear the map rows of the
-// physical screen.
+// Part of C win/tty/wintty.c:tty_clear_nhwindow(): the NHW_MAP/NHW_BASE
+// term_clear_screen() case, which just clears the map rows of the physical
+// screen and flags the bottom lines for redraw.
 export function clearMapDisplay() {
     for (let row = 1; row <= ROWNO; row++)
         game.nhDisplay?.clearRow(row);

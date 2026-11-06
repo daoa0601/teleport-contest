@@ -413,8 +413,9 @@ export function restoreMonsterWormHeads(level: WormRestoreLevel): void {
     }
 }
 
-// C restore.c:getlev() rechecks existing cover before catch-up and shape
-// changes. A saved mundetected bit alone does not establish valid cover.
+// Part of C restore.c:getlev(): the hides_under()+mundetected hideunder()
+// recheck after place_monster(), re-run before catch-up and shape changes.
+// A saved mundetected bit alone does not establish valid cover.
 export async function restoreMonsterCover(monster: Monster, state: GameState = game): Promise<void> {
     if (monster !== state.u.usteed && monster.mundetected
         && monsterHidesUnder(monster.mnum))
