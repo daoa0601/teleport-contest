@@ -25,7 +25,7 @@ import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import { BOULDER, SCR_MAIL, TRIPE_RATION, } from './object_data.js';
-import { loseGuardianAngel } from './guardian_angel.js';
+import { loseGuardianAngel } from './minion.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { updateMonsterRegions } from './region.js';
 import { goodPosition } from './teleport.js';

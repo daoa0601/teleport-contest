@@ -1,32 +1,37 @@
 // Monster summoning by demons, minions, and the Wizard of Yendor.
 // C ref: minion.c msummon(), dprince(), dlord(), ndemon(), demon_talk(),
-// and bribe().
+// bribe(), lose_guardian_angel(), and gain_guardian_angel().
 import { artifactById } from './artifact.js';
 import { deityName } from './pray.js';
-import { A_CHA, A_NONE, FAINTED, In_endgame, In_hell, LL_UMONST, MM_EMIN, MM_NOMSG, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './const.js';
+import { A_CHA, A_NONE, FAINTED, In_endgame, In_hell, LL_UMONST, MM_ADJACENTOK, MM_EMIN, MM_NOMSG, NON_PM, RLOC_MSG, STRAT_APPEARMSG, W_ARMS } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
-import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { currentAttribute } from './attrib.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { mkclassAligned, setMonsterMalign } from './makemon.js';
+import { giveMonsterStartingObject, makemonAt, mkclassAligned, setMonsterMalign } from './makemon.js';
 import { MONSTER_ALIGNMENT, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { currency } from './invent.js';
-import { reset_faint } from './eat.js';
+import { Hear_again, reset_faint } from './eat.js';
 import { heroSpecies } from './polyself.js';
 import { removeMonsterFromGame } from './mon.js';
-import { AMULET_OF_YENDOR } from './object_data.js';
+import { AMULET_OF_REFLECTION, AMULET_OF_YENDOR, OBJECT_NAMES, SHIELD_OF_REFLECTION } from './object_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { getLine } from './query.js';
-import { addObjectToMonsterInventory } from './steal.js';
+import { addCreatedObjectToMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { detachHeroGold } from './hero_gold.js';
-import { rn1, rn2, rnd } from './rng.js';
+import { d, rn1, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
+import { enexto, randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
 import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
+import { mksobj, blessObjectState } from './mkobj.js';
+import { selectHandToHandWeapon } from './weapon.js';
+import { initializeMonsterArmor } from './worn.js';
+import { finishSpecialRoamer } from './sp_lev.js';
+import { heroHasConflict } from './hero_conflict.js';
 import { is_lord, is_minion, monsterIsDemon, is_ndemon, is_dlord, is_dprince, } from './mondata.js';
 const S_DEMON = 56;
 const G_GONE = 0x03;
@@ -38,6 +43,7 @@ const PM_YEENOGHU = MONSTER_NAME.indexOf('Yeenoghu');
 const PM_ORCUS = MONSTER_NAME.indexOf('Orcus');
 const PM_DEMOGORGON = MONSTER_NAME.indexOf('Demogorgon');
 const ELEMENTALS = ['air elemental', 'fire elemental', 'earth elemental', 'water elemental'].map((name) => MONSTER_NAME.indexOf(name));
+const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
 function summonedElemental() {
     const mnum = ELEMENTALS[rn2(ELEMENTALS.length)];
     if (mnum === undefined)
@@ -373,5 +379,85 @@ export async function offerGoldToMonster(monster, prompt, state, random = rn2) {
         await addObjectToMonsterInventory(monster, gold, state);
     state.context.botl = true;
     return offer;
+}
+// C minion.c:lose_guardian_angel(). A guardian has minion data, not pet data.
+export async function loseGuardianAngel(monster, state = requireInitializedGame()) {
+    requireLiveGame(state);
+    if (monster) {
+        if (canSpotMonster(monster)) {
+            const name = monsterName(monster, { state, capitalized: true });
+            if (heroIsDeaf(state)) {
+                await plineWithContinuation(`${name} vanishes!`);
+            }
+            else {
+                await plineWithContinuation(`${name} rebukes you, saying:`);
+                await plineWithContinuation('"Since you desire conflict, have some more!"');
+            }
+        }
+        await removeMonsterFromGame(monster);
+        if (state.program_state.gameover)
+            return { heroDied: true };
+    }
+    for (let remaining = rn1(3, 2); remaining > 0; remaining--) {
+        await createGuardianAngel(false, state);
+        if (state.program_state.gameover)
+            return { heroDied: true };
+    }
+    return { heroDied: false };
+}
+// C minion.c:gain_guardian_angel(), called only on the first Astral arrival.
+export async function gainGuardianAngel(state = requireInitializedGame()) {
+    await Hear_again({ state });
+    if (heroHasConflict(state)) {
+        await plineWithContinuation(heroIsDeaf(state)
+            ? formatFeltMessage('a booming voice:', state) : 'A voice booms:');
+        await plineWithContinuation('"Thy desire for conflict shall be fulfilled!"');
+        await loseGuardianAngel(null, state);
+        return;
+    }
+    if (state.u.ualign.record <= 8)
+        return;
+    await plineWithContinuation(heroIsDeaf(state)
+        ? formatFeltMessage('a soft voice:', state) : 'A voice whispers:');
+    await plineWithContinuation('"Thou hast been worthy of me!"');
+    const angel = await createGuardianAngel(true, state);
+    if (!angel)
+        return;
+    angel.mstrategy = (angel.mstrategy ?? 0) & ~STRAT_APPEARMSG;
+    if (state.u.uconduct.pets) {
+        angel.mtame = 10;
+        state.u.uconduct.pets++;
+    }
+    await newsym(angel.mx, angel.my);
+    await plineWithContinuation(heroIsBlind(state)
+        ? formatFeltMessage('the presence of a friendly angel near you.', state)
+        : 'An angel appears near you.');
+    angel.m_lev = rn1(8, 15);
+    angel.mhp = angel.mhpmax = d(angel.m_lev, 10) + 30 + rnd(30);
+    let weapon = selectHandToHandWeapon(angel, state);
+    if (!weapon) {
+        weapon = await mksobj(SILVER_SABER, false, false);
+        await addCreatedObjectToMonsterInventory(angel, weapon, state);
+        if (weapon.where === 'gone')
+            throw new Error("The guardian's new saber unexpectedly merged");
+    }
+    blessObjectState(weapon, state);
+    if (weapon.spe < 4)
+        weapon.spe += rnd(4);
+    const shield = angel.minvent?.find(object => ((object.owornmask ?? 0) & W_ARMS) !== 0);
+    if (shield?.otyp !== SHIELD_OF_REFLECTION) {
+        await giveMonsterStartingObject(angel, AMULET_OF_REFLECTION);
+        await initializeMonsterArmor(angel, state);
+    }
+}
+async function createGuardianAngel(peaceful, state) {
+    const position = enexto(PM_ANGEL, state.u.ux, state.u.uy, { state });
+    if (!position)
+        return null;
+    // enexto supplies an empty square before mk_roamer creates the angel.
+    const angel = await makemonAt(PM_ANGEL, position.x, position.y, MM_ADJACENTOK | MM_EMIN | MM_NOMSG);
+    if (angel && !state.program_state.gameover)
+        finishSpecialRoamer(angel, state.u.ualign.type, peaceful);
+    return angel;
 }
 //# sourceMappingURL=minion.js.map
