@@ -96,6 +96,8 @@ function energyModifier(energy: number, role: RoleKey) {
     return energy;
 }
 
+// C exper.c:newpw(): the energy a new experience level adds (the
+// ulevel != 0 branch).
 function levelEnergyIncrease(state: PlayingGameState) {
     const u = state.u;
     const role = state.urole.enadv;
@@ -235,6 +237,8 @@ export async function loseHeroExperience(drainer: string | null = null, {
     return false;
 }
 
+// C exper.c:experience(): the award for killing one monster, including the
+// revived/cloned kill-count halving bands.
 export function monsterExperience(monster: ExperienceMonster | null | undefined, {
     killCount = 1, amphibious = false, armorClass,
 }: MonsterExperienceOptions = {}): number {
@@ -270,6 +274,8 @@ export function monsterExperience(monster: ExperienceMonster | null | undefined,
     return award;
 }
 
+// Part of C mon.c:xkilled(): the experience() + more_experienced() award
+// pair for a hero-credited kill.
 export function awardMonsterExperience(monster: ExperienceMonster | null | undefined, {
     state = game, ...options
 }: MonsterExperienceOptions & { state?: GameState } = {}) {

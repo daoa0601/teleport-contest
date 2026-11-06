@@ -11,12 +11,16 @@ import { hasWornProperty, propertyIsActive, refreshProperty } from './properties
 import { heroIsBlind } from './senses.js';
 import { d } from './rng.js';
 
+// Part of C eat.c:cpostfx(): the PM_DISPLACER_BEAST branch —
+// toggle_displacement() before gaining incr_itimeout(&HDisplaced, d(6, 6)).
 export async function gainCorpseDisplacement({ state = game }: { state?: GameState } = {}): Promise<void> {
     if (!heroIsDisplaced(state)) await announceDisplacementChange(true, state);
     state.u.displacedTurns = Math.min(TIMEOUT, (state.u.displacedTurns || 0) + d(6, 6));
     refreshProperty('displaced', state);
 }
 
+// Part of C timeout.c:nh_timeout(): the DISPLACED decrement and its expiry
+// toggle_displacement(0, 0, FALSE).
 export async function advanceDisplacementTimeout(state: GameState = game): Promise<void> {
     const turns = state.u.displacedTurns;
     if (turns === undefined || turns <= 0) return;
@@ -26,6 +30,8 @@ export async function advanceDisplacementTimeout(state: GameState = game): Promi
     if (!heroIsDisplaced(state)) await announceDisplacementChange(false, state);
 }
 
+// C do_wear.c:toggle_displacement(): the message test — see self, or
+// sense monsters via telepathy or monster detection.
 async function announceDisplacementChange(on: boolean, state: GameState): Promise<void> {
     const hero = state.u;
     const blind = heroIsBlind(state);

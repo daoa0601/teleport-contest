@@ -34,6 +34,8 @@ export interface HeroEggHitOptions {
     finishMonsterKill?: FinishHeroMonsterDeath;
 }
 
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the EGG case of the misc-object
+// hit switch (the main port is in uhitm.ts).
 export async function resolveHeroEggHit(monster: Monster, egg: GameObject, {
     state = game, mode, publish, random = rn2, rollOne = rnd,
     finishMonsterKill = (victim, death) => finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, death),
@@ -90,6 +92,8 @@ export async function resolveHeroEggHit(monster: Monster, egg: GameObject, {
     return result;
 }
 
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the useup_eggs() macro it
+// defines for that case (obfree when thrown, useupall otherwise).
 async function consumeEggs(egg: GameObject, mode: HeroPhysicalAttackMode, state: GameState): Promise<void> {
     if (mode === 'melee' && egg.where === 'inventory') await useUpInventoryStack(egg, state);
     else await deleteObject(egg, state);

@@ -1,6 +1,8 @@
 // C obj.h:is_mines_prize()/is_soko_prize(). The pending prize is one
 // concrete object identity, not every object of its type or former prizes.
 import { game } from './gstate.js';
+// Part of C obj.h:is_mines_prize()/is_soko_prize(): which pending prize,
+// if any, this concrete object identity is.
 export function levelPrizeKind(object, state = game) {
     if (!Number.isInteger(object.o_id) || object.o_id <= 0)
         return null;
@@ -11,6 +13,7 @@ export function levelPrizeKind(object, state = game) {
         return 'sokoban';
     return null;
 }
+// Part of C obj.h:is_mines_prize()/is_soko_prize(): the combined test.
 export function isLevelPrize(object, state = game) {
     return levelPrizeKind(object, state) !== null;
 }

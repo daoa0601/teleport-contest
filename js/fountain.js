@@ -53,6 +53,7 @@ import { inTown, loseHeroHp, heroGoldAmount } from './hack.js';
 // ---------------------------------------------------------------------------
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
+// C fountain.c:dryup().
 export async function dryFountainAt(x, y, { causedByHero = true, random = rn2, state = game, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
     const level = requireGameLevel(state);
@@ -108,6 +109,8 @@ async function warnAboutFountain(state, publish) {
         await publish('"Hey, stop using that fountain!"');
     }
 }
+// Part of C sit.c:dosit(): the in_water gremlin branch — split_mon()
+// then dryup() when sitting in a fountain.
 export async function splitSittingGremlin() {
     const clone = await splitHeroMonsterForm(game);
     if (!clone)
@@ -163,6 +166,8 @@ export async function gushForthFromFountain({ drinking = false, state = game } =
             : 'Water sprays all over you.');
     }
 }
+// C mkroom.c:nexttodoor(): local copy for gush()'s room test; the mkroom
+// port does not export one.
 function nextToDoor(x, y, state) {
     for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
@@ -189,18 +194,27 @@ async function discoverFountainGem(loc) {
         exerciseWisdom,
     });
 }
+// Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
+// the mvitals[PM_...].mvflags & G_GONE test.
 function fountainActorGone(mnum) {
     return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);
 }
+// Part of C fountain.c:dowaterdemon(), dowaternymph(): a_monnam() naming
+// of the summoned actor.
 function fountainActorIndefiniteName(monster) {
     return monsterName(monster, { article: 'a' });
 }
+// Port only: capitalized monster-name adapter for mintrap()'s messages.
 function fountainActorVisibleSubject(monster) {
     return monsterName(monster, { capitalized: true });
 }
+// Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
+// the t_at(mtmp->mx, mtmp->my) test.
 function fountainTrapAt(monster) {
     return game.level?.traps?.some(trap => trap.tx === monster.mx && trap.ty === monster.my) ?? false;
 }
+// Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
+// the mintrap() call on the summoned actor (fountain.c:55).
 async function triggerFountainTrap(monster) {
     const state = requireInitializedGame();
     // The fountain square hosts no trap whose effect can end the game in its
@@ -544,6 +558,7 @@ export async function dipFountain(object, loc) {
         await plineWithContinuation(eventMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
 }
+// C fountain.c:wash_hands(). Dipping '-' in fountain, pool, or sink.
 export async function washHands() {
     const glib = (game.u.glibTurns ?? 0) > 0;
     await pline(`You wash your ${game.uarmg ? 'gloved ' : ''}${makePlural(body_part(HAND))} in the ${displayLiquidName('water')}.`);
@@ -555,12 +570,16 @@ export async function washHands() {
     const result = game.uarmg ? await waterDamageObject(game.uarmg, [], game, { force: true, publish: pline }) : 'nothing';
     return glib && result === 'nothing' ? 'greased' : result;
 }
+// Port only: resolve a lazy message part.
 function resolvedLiquidName(liquidName) {
     return typeof liquidName === 'function' ? liquidName() : liquidName;
 }
+// Port only: resolve a lazy message part.
 function resolvedArmName(armName) {
     return typeof armName === 'function' ? armName() : armName;
 }
+// Part of C fountain.c:dipfountain(): the fate 26 and 27 strange-feeling
+// messages.
 export function resolveDippedSensationFate({ fate, armName = 'arm' }) {
     if (fate === 26) {
         return {
@@ -576,6 +595,8 @@ export function resolveDippedSensationFate({ fate, armName = 'arm' }) {
     }
     return { handled: false, message: '' };
 }
+// Part of C fountain.c:dipfountain(): the fate 29 coin decision (looted
+// test and the depth-scaled quantity).
 export function resolveDippedCoinFate({ fate, looted = false, dungeonLevels = 1, dungeonLevel = 1, blind = false, random = rnd, }) {
     const empty = {
         createsCoins: false,
@@ -594,9 +615,13 @@ export function resolveDippedCoinFate({ fate, looted = false, dungeonLevels = 1,
         showMessage: !blind,
     };
 }
+// Part of C fountain.c:dipfountain(): the fate 29 "Far below you..."
+// message.
 export function dippedCoinMessage(liquidName = 'water') {
     return `Far below you, you see coins glistening in the ${liquidName}.`;
 }
+// Part of C fountain.c:dipfountain(): the fate 29 effect — loot the
+// fountain, mkgold(), exercise and newsym().
 export async function applyDippedCoinFate({ fate, loc, dungeonLevels = 1, dungeonLevel = 1, blind = false, random = rnd, createGold = () => { }, liquidName = 'water', exerciseWisdom = () => { }, repaint = () => { }, }) {
     const effect = resolveDippedCoinFate({
         fate,
@@ -617,6 +642,8 @@ export async function applyDippedCoinFate({ fate, loc, dungeonLevels = 1, dungeo
     await repaint();
     return { ...effect, message };
 }
+// Part of C fountain.c:dofindgem(): the body — spot/feel the gem,
+// mksobj_at(), loot the fountain, exercise.
 export async function applyFountainGemDiscovery({ loc, blind = false, announce = async () => { }, chooseGem, createGem, placeGem, repaint = () => { }, exerciseWisdom = () => { }, }) {
     if ((loc?.looted ?? 0) & 1) {
         return {
@@ -639,14 +666,17 @@ export async function applyFountainGemDiscovery({ loc, blind = false, announce =
     return { discovered: true, message, gemType, gem };
 }
 const FURIOUS_BUBBLING_MESSAGE = 'The fountain bubbles furiously for a moment, then calms.';
-// A blind hero hears the actor only when You_hear() itself would speak.
-// dowatersnakes() passes the ordinary pline; the other actors continue.
+// Part of C fountain.c:dowaternymph(), dowatersnakes(): the You_hear()
+// half of the summon messages. A blind hero hears the actor only when
+// You_hear() itself would speak; dowatersnakes() passes the ordinary
+// pline; the other actors continue.
 async function announceFountainHeard(heard, publish = plineWithContinuation) {
     const message = formatHeardMessage(heard);
     if (message)
         await publish(message);
 }
-// The failed-summon fallback pop: C fountain.c:108-115.
+// Part of C fountain.c:dowaternymph(): the failed-summon fallback pop
+// (fountain.c:108-115).
 async function announceFountainPop() {
     if (!heroIsBlind())
         await plineWithContinuation('A large bubble rises to the surface and pops.');
@@ -656,6 +686,8 @@ async function announceFountainPop() {
 // ---------------------------------------------------------------------------
 // The Lady of the Lake judges a long sword (fountain_sword)
 // ---------------------------------------------------------------------------
+// Part of C fountain.c:dipfountain(): the Lady of the Lake Excalibur
+// branch.
 export async function dipFountainSword(object, location) {
     requirePlayingGame(game);
     if (object.otyp !== LONG_SWORD || game.u.ulevel < 5
@@ -712,6 +744,7 @@ export async function dipFountainSword(object, location) {
 // ---------------------------------------------------------------------------
 // Converting a sink to a fountain by breaking it (sink_terrain)
 // ---------------------------------------------------------------------------
+// C fountain.c:breaksink().
 export async function breakSinkAt(x, y, state = game) {
     const level = state.level;
     const location = level?.at(x, y);
@@ -733,6 +766,7 @@ export async function breakSinkAt(x, y, state = game) {
 // ---------------------------------------------------------------------------
 const PM_SEWER_RAT = MONSTER_NAME.indexOf('sewer rat');
 const PM_WATER_ELEMENTAL = MONSTER_NAME.indexOf('water elemental');
+// C fountain.c:drinksink().
 export async function drinkSink({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -828,6 +862,7 @@ export async function drinkSink({ state = game } = {}) {
     }
     return outcome(state);
 }
+// Part of C fountain.c:drinksink(): the sewer-rat case.
 async function releaseSewerRat(state) {
     if ((state.mvitals?.[PM_SEWER_RAT]?.mvflags ?? 0) & G_GONE) {
         await pline('The sink seems quite dirty.');
@@ -840,6 +875,7 @@ async function releaseSewerRat(state) {
         ? 'something squirmy' : monsterName(monster, { article: 'a', state });
     await pline(`Eek!  There's ${description} in the sink!`);
 }
+// Part of C fountain.c:drinksink(): the potion-from-the-faucet case.
 async function drinkFaucetPotion(state) {
     let source;
     for (;;) {
@@ -863,16 +899,21 @@ async function drinkFaucetPotion(state) {
         await deleteObject(source, state);
     }
 }
+// Part of C fountain.c:drinksink(): the clanking-pipes and sewer-song
+// cases (You_hear).
 async function hearSink(message, state) {
     await publishHeardMessage(message, pline, state);
 }
+// Part of C fountain.c:drinksink(): the stench case's poison gas cloud.
 async function releaseSinkGas(state) {
     const { ux, uy } = state.u;
     await createPoisonGasCloud(state, ux, uy, 1, 4);
 }
+// Port only: drinksink() result adapter (time spent, hero death).
 function outcome(state) {
     return { spentTime: true, heroDied: !!state.program_state.gameover };
 }
+// Part of C fountain.c:drinksink(): the ordinary temperature sip.
 async function ordinarySip(state) {
     const temperature = rn2(3) ? rn2(2) ? 'cold' : 'warm' : 'hot';
     await pline(`You take a sip of ${temperature} ${displayLiquidName('water', state)}.`);
@@ -880,6 +921,7 @@ async function ordinarySip(state) {
 // ---------------------------------------------------------------------------
 // Dipping into a sink (sink_dipping)
 // ---------------------------------------------------------------------------
+// C fountain.c:dipsink().
 export async function dipSink(object) {
     requirePlayingGame(game);
     const { ux, uy } = game.u;
@@ -953,6 +995,7 @@ export async function dipSink(object) {
         await tryCallObjectType(object);
     await consumeInventoryItem(object);
 }
+// C fountain.c:sink_backs_up().
 export async function sinkBacksUp(x = game.u.ux, y = game.u.uy) {
     requirePlayingGame(game);
     const sight = heroIsBlind(), deaf = heroIsDeaf();

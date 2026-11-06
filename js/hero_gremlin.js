@@ -9,15 +9,20 @@ import { splitHeroMonsterForm } from './potion.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';
 const PM_GREMLIN = MONSTER_NAME.indexOf('gremlin');
+// Part of C cmd.c:domonability(): the u.umonnum == PM_GREMLIN test.
 export function heroCanSplitLikeGremlin(state = game) {
     return heroMonsterForm(state) === PM_GREMLIN;
 }
+// Part of C cmd.c:domonability(): split_mon(&gy.youmonst, 0) and its
+// "You multiply!" message.
 async function splitGremlin(state, publish) {
     const clone = await splitHeroMonsterForm(state);
     if (clone)
         await publish('You multiply!');
     return clone;
 }
+// Part of C cmd.c:domonability(): the gremlin water-splitting branch —
+// split on a fountain or pool, dryup() on the fountain, else the refusal.
 export async function useHeroGremlinSplit({ state = game, publish = plineWithContinuation, } = {}) {
     if (!heroCanSplitLikeGremlin(state))
         return { used: false, spentTime: false, reason: 'not-gremlin' };

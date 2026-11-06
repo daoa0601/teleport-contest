@@ -14,6 +14,8 @@ import { chargeUnpaidObjectAsDebt, currentShopResident, removeObjectAndContentsF
 import { cansee } from './vision.js';
 import { loseHeroHp } from './hack.js';
 import { HEAD } from './const.js';
+// Part of C potion.c:potionhit(): the mon == &youmonst impact — bottle
+// crash and 1d2 pain, direct effect, vapor, unpaid bill, obfree.
 export async function hitHeroWithThrownPotion(potion, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, source = 'thrown', } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -48,6 +50,8 @@ export async function hitHeroWithThrownPotion(potion, { state = game, publish = 
     await deleteObject(potion, state);
     return { heroDied };
 }
+// Part of C potion.c:potionhit(): the hero's lit-oil, polymorph and acid
+// direct effects.
 async function applyDirectHeroPotion(potion, state, publish, random, rollDice) {
     if (potion.otyp === POT_OIL && potion.lamplit) {
         const explosion = await explodeLitOilPotion(potion, state.u.ux, state.u.uy, {
@@ -68,6 +72,8 @@ async function applyDirectHeroPotion(potion, state, publish, random, rollDice) {
     }
     return false;
 }
+// Part of C hack.h:Maybe_Half_Phys(): the shared port is
+// maybeHalfPhysicalDamage() in hack.ts.
 function physicalDamage(damage, state) {
     return propertyIsActive('halfPhysicalDamage', state) ? Math.trunc((damage + 1) / 2) : damage;
 }

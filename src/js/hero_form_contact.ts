@@ -19,12 +19,16 @@ const SILVER = 14;
 const STRANGE_OBJECT = 0;
 const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
 
+// Part of C mhitu.c:could_seduce(): the hero-perspective call (the shared
+// port is could_seduce() in seduction_compatibility.ts).
 export function heroSeductionCompatibility(
     monster: Monster, attack: AttackTuple, state: GameState = game,
 ): 0 | 1 | 2 {
     return could_seduce('hero', monster, attack, state);
 }
 
+// Part of C mhitm.c:failed_grab(): the magr == &gy.youmonst branch —
+// unsolid or notonhead targets defeat hug/wrap/stick/digest grabs.
 export async function heroGrabMisses(
     monster: Monster, attack: AttackTuple, target: Position,
     { state = game, publish = plineWithContinuation }: {
@@ -42,6 +46,7 @@ export async function heroGrabMisses(
     return true;
 }
 
+// C weapon.c:silver_sears(): the hero's silver rings searing the target.
 export async function showHeroSilverContact(
     monster: Monster, silverMask: number,
     { state = game, publish = plineWithContinuation }: {
@@ -63,6 +68,7 @@ export async function showHeroSilverContact(
     await publish(`Your ${material}ring${both ? 's sear' : ' sears'} ${monsterName(monster, { state })}!`);
 }
 
+// Part of C mondata.c:can_be_strangled(): the shared port is in mondata.ts.
 export function monsterCanBeStrangled(monster: Monster): boolean {
     if (!monsterHasHead(monster)) return false;
     const nonbreathing = monsterIsBreathless(monster.mnum)

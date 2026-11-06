@@ -19,6 +19,8 @@ import { loseHeroHp } from './hack.js';
 const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;
+// Part of C mthrowu.c:thitu(): the object-hit rule shared by polearms and
+// thrown weapons (the missile-side port is in mthrowu.ts).
 export async function hitHeroWithObject(object, damage, accuracy, { state = game, publish = plineWithContinuation, rollOne = rnd, random = rn2, rollDice = d, die = finishHeroDeath, name: requestedName, killer: requestedKiller, volley, } = {}) {
     requirePlayingGame(state);
     // C thitu() uses doname() for stacks and mshot_xname() for single objects.

@@ -76,6 +76,9 @@ const S_EYE = 5;
 const S_MIMIC = 13;
 const S_LIGHT = 25;
 
+// Part of C mondata.c:locomotion(): figurine-message copy of the motion-verb
+// mapping; C fig_transform() calls locomotion(mtmp->data, "drop"). The
+// general port is monsterLocomotion() in mondata.ts.
 function figurineLocomotion(mnum: number, fallback = 'drop') {
     const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === S_EYE || symbol === S_LIGHT) return 'float';
@@ -87,11 +90,13 @@ function figurineLocomotion(mnum: number, fallback = 'drop') {
     return fallback;
 }
 
+// Part of C apply.c:figurine_location_checks(): the silent quietly==TRUE
+// verdict fig_transform() applies to the chosen spot.
 function figurineMayTransformAt(figurine: GameObject, x: number, y: number, state: GameState) {
     return figurinePlacementFailure(figurine, x, y, state) === null;
 }
 
-// C figurine_location_checks(): timers use the same rules silently.
+// C apply.c:figurine_location_checks(): timers use the same rules silently.
 export function figurinePlacementFailure(figurine: GameObject, x: number, y: number, state: GameState): string | null {
     if (figurine.where === 'inventory' && state.u.uswallow)
         return "You don't have enough room in here.";
@@ -117,12 +122,16 @@ export function figurinePlacementFailure(figurine: GameObject, x: number, y: num
     return null;
 }
 
+// Part of C zap.c:get_obj_location(): resolves the carrying monster
+// (C's figurine->ocarry) for the OBJ_MINVENT case of fig_transform().
 function monsterCarryingFigurine(figurine: GameObject, state: GameState) {
     return state.level?.monsters?.find(monster =>
         (monster.minvent || monster.inventory || []).includes(figurine)
     ) || null;
 }
 
+// Part of C zap.c:get_obj_location(): the INVENT/FLOOR/MINVENT location
+// cases fig_transform() relies on.
 function figurineLocation(figurine: GameObject, state: GameState): FigurineLocation | null {
     if (figurine.where === 'inventory') {
         return {
@@ -147,6 +156,8 @@ function figurineLocation(figurine: GameObject, state: GameState): FigurineLocat
     return null;
 }
 
+// Part of C apply.c:fig_transform(): the start_timer(rnd(5000), FIG_TRANSFORM)
+// retry when the spot is not okay.
 function scheduleFigurineRetry(
     figurine: GameObject, carrier: ObjectWhere, currentTurn: number, state: GameState,
 ): FigurineRetry {
@@ -165,10 +176,14 @@ function scheduleFigurineRetry(
     };
 }
 
+// Part of C hacklib.c:s_suffix(): local possessive for the "pack" phrase;
+// the general port is possessiveName() in hacklib.ts.
 function possessive(noun: string) {
     return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
 }
 
+// Part of C apply.c:fig_transform(): the OBJ_MINVENT "%s pack|empty water|
+// thin air" carrier description (canseemon + wormno + is_pool).
 function monsterCarrierDescription(monster: Monster, state: GameState) {
     if (canSeeMonster(monster)
         && (!monster.wormno || cansee(monster.mx, monster.my))) {
@@ -178,6 +193,9 @@ function monsterCarrierDescription(monster: Monster, state: GameState) {
     return isPoolAt(monster.mx, monster.my, state) ? 'empty water' : 'thin air';
 }
 
+// Part of C apply.c:fig_transform(): the You_feel/You_see message switch
+// for the newly created familiar, including the mundetected "and vanish"
+// and hides_under endings.
 async function familiarPresentation(
     monster: Monster, figurine: GameObject, location: FigurineLocation, overdue: boolean,
     state: GameState,
@@ -224,6 +242,8 @@ async function familiarPresentation(
     }${ending}!`, state);
 }
 
+// Part of C apply.c:fig_transform(): the "free figurine now" disposition
+// (useup when carried, obj_extract_self + obfree otherwise).
 function deleteFigurine(figurine: GameObject, state: GameState) {
     if (figurine.where === 'floor') remove_object(figurine);
     else if (figurine.where === 'minvent') {
@@ -238,6 +258,9 @@ function deleteFigurine(figurine: GameObject, state: GameState) {
     figurine.ox = figurine.oy = 0;
 }
 
+// Part of C apply.c:fig_transform(): the timer callback up to make_familiar()
+// and the presentation message, split so the caller publishes the message
+// before the finishing phase frees the figurine.
 export async function runClaimedFigurineTimer(
     claimed: DueObjectTimer | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
 ): Promise<FigurineTimerEvent | null> {
@@ -297,6 +320,8 @@ export async function runClaimedFigurineTimer(
     };
 }
 
+// Part of C apply.c:fig_transform(): the tail of the timer callback, after
+// the message: free the figurine and redraw its former location.
 export async function finishFigurineTimer<T extends FigurineTimerEvent | null | undefined>(
     event: T, state: GameState = game,
 ): Promise<T> {

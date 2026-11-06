@@ -2,7 +2,7 @@
 // C ref: rm.h struct rm, dungeon.h, you.h
 import { COLNO, ROWNO, STONE } from './const.js';
 import { NO_COLOR } from './terminal.js';
-// A single map cell. Mirrors C's struct rm.
+// Port only: construct one map cell (C's levl[x][y] entries are static).
 export function makeLocation() {
     return {
         typ: STONE, // terrain type (STONE, ROOM, CORR, DOOR, etc.)

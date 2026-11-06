@@ -58,9 +58,9 @@ import { stopHeroOccupation } from './allmain.js';
 import { impossible } from './diagnostics.js';
 import { roomsAt } from './hack.js';
 
+// C lock.c:doforce().
 // Lock forcing.
 // C ref: lock.c doforce(), forcelock(), and breakchestlock().
-
 export async function doforce(state: GameState = game): Promise<void> {
     if (state.u?.uswallow) {
         await pline("You can't force anything from inside here.");
@@ -222,11 +222,14 @@ export function isForceableWeapon(weapon: GameObject | null | undefined): boolea
     return weapon.oclass === ROCK_CLASS;
 }
 
+// C obj.h:is_pick(): the P_PICK_AXE-skill tool test.
 function isPick(weapon: GameObject | null | undefined): boolean {
     return (weapon?.oclass === WEAPON_CLASS || weapon?.oclass === TOOL_CLASS)
         && objectSkill(weapon.otyp) === P_PICK_AXE;
 }
 
+// Part of C lock.c:doforce(): the "can't force anything ..." weapon
+// refusals.
 function forceWeaponFailure(weapon: GameObject | null | undefined): string {
     if (!weapon)
         return "You can't force anything when not wielding a weapon.";
@@ -237,10 +240,14 @@ function forceWeaponFailure(weapon: GameObject | null | undefined): string {
     return `You can't force anything ${description} weapon${plural ? 's' : ''}.`;
 }
 
+// Port only: obj->quan accessor.
 function objectQuantity(object: GameObject | null | undefined): number {
     return object?.quan ?? object?.quantity ?? 1;
 }
 
+// Part of C lock.c:forcelock(): the blade-break roll
+// (rn2(1000 - spe) vs 992 - greatest_erosion * 10, cursed and
+// obj_resists survive).
 function bladeBreaks(weapon: GameObject): boolean {
     const enchantment = weapon.spe ?? weapon.enchantment ?? 0;
     const erosion = Math.max(weapon.oeroded ?? 0, weapon.oeroded2 ?? 0);
@@ -249,6 +256,7 @@ function bladeBreaks(weapon: GameObject): boolean {
     return !objectResistsDestruction(weapon, 0, 99);
 }
 
+// Part of C lock.c:forcelock(): the "%sour %s broke!" message.
 function bladeBreakMessage(weapon: GameObject, state: GameState): string {
     const name = objectName(weapon, state);
     return objectQuantity(weapon) > 1
@@ -256,6 +264,8 @@ function bladeBreakMessage(weapon: GameObject, state: GameState): string {
         : `Your ${name} broke!`;
 }
 
+// Part of C lock.c:forcelock(): the give-up message, the >=50-usedtime
+// exercise, and clearing the occupation.
 async function giveUpForcing(occupation: ForceLockOccupation, state: GameState): Promise<void> {
     await pline('You give up your attempt to force the lock.');
     if (occupation.usedtime >= 50) {
@@ -268,6 +278,8 @@ async function giveUpForcing(occupation: ForceLockOccupation, state: GameState):
     state.context.move = 1;
 }
 
+// Part of C lock.c:chest_shatter_msg(): the material-specific destruction
+// phrase.
 function forceShatterMessage(object: GameObject, state: GameState): string {
     const thing = singularObjectName(object, state);
     const material = objectMaterial(object, state);
@@ -295,6 +307,7 @@ async function shatterChestContent(object: GameObject, state: GameState): Promis
     }
 }
 
+// C lock.c:breakchestlock().
 export async function breakChestLock(box: GameObject, destroyIt: boolean, state: GameState): Promise<void> {
     if (!destroyIt) {
         const contents = box.contents;
@@ -581,6 +594,8 @@ async function openClosedDoor(door: MapLocation, x: number, y: number): Promise<
     vision_note_blocker_change(x, y);
 }
 
+// Part of C lock.c:doopen(): the locked-door branch — autounlock key,
+// kick (canned dokick) and force offers.
 async function openLockedDoor(x: number, y: number): Promise<boolean> {
     await pline('This door is locked.');
     const flags = autoUnlockFlags(game);
@@ -612,11 +627,14 @@ export function pickingAt(state: GameState, x: number, y: number): boolean {
         && occupation.x === x && occupation.y === y;
 }
 
-// Native lock.c keeps progress separately from the running occupation.
+// C lock.c:reset_pick(). Native lock.c keeps progress separately from the
+// running occupation.
 export function resetPick(state: GameState = game): void {
     state._lockAttempt = null;
 }
 
+// C lock.c:maybe_reset_pick(): called from obfree() with the freed
+// container.
 export function maybeResetPick(container: GameObject | null, state: GameState = game): void {
     const attempt = state._lockAttempt;
     if (container ? attempt?.container === container : attempt?.container?.where !== 'inventory')
@@ -654,12 +672,15 @@ export function autoUnlockFlags(state: GameState = game): number {
     return flags;
 }
 
+// Part of C artifact.c:is_magic_key(): the Master Key of Thievery bless
+// or curse test (non-cursed for rogues, blessed otherwise).
 export function isHeroMagicKey(tool: GameObject | null, state: GameState = game): boolean {
     if (!tool) return false;
     return artifactById(tool.oartifact, state)?.name === 'The Master Key of Thievery'
         && (state.urole?.key === 'rogue' ? !tool.cursed : !!tool.blessed);
 }
 
+// C lock.c:autokey(). Pick a tool for autounlock.
 export function autokey(opening: boolean, state: GameState = game): GameObject | null {
     let key: GameObject | null = null, pick: GameObject | null = null, card: GameObject | null = null;
     let foreignKey: GameObject | null = null, foreignPick: GameObject | null = null, foreignCard: GameObject | null = null;
@@ -683,12 +704,14 @@ export function autokey(opening: boolean, state: GameState = game): GameObject |
     return key || pick || card;
 }
 
+// Part of C lock.c:pick_lock(): the tool's owned name after observing it.
 export function lockToolName(tool: GameObject, state: GameState = game): string {
     observeObjectForNaming(tool);
     return ownedObjectName(tool, state, { capitalized: false });
 }
 
-// True includes the native "learned something" result, which takes a turn.
+// C lock.c:pick_lock(). True includes the native "learned something"
+// result, which takes a turn.
 export async function pickLock(tool: GameObject | null, {
     state = game, target = null, container = null,
 }: { state?: GameState; target?: Position | null; container?: GameObject | null } = {}): Promise<boolean> {
@@ -749,6 +772,7 @@ export async function pickLock(tool: GameObject | null, {
     return pickDoorLock(tool, x, y, automatic, state);
 }
 
+// Part of C lock.c:pick_lock(): the u_at(u.ux, u.uy) box branch.
 async function pickBoxLock(tool: GameObject | null, container: GameObject | null, automatic: boolean, state: GameState): Promise<boolean> {
     const { ux: x, uy: y } = state.u;
     if ((state.u.dz ?? 0) < 0 && !automatic) {
@@ -811,6 +835,8 @@ async function pickBoxLock(tool: GameObject | null, container: GameObject | null
     return true;
 }
 
+// Part of C lock.c:pick_lock(): the door branch, including the door
+// mimic stumble and the "no door there" discovery.
 async function pickDoorLock(tool: GameObject | null, x: number, y: number, automatic: boolean, state: GameState): Promise<boolean> {
     requirePlayingGame(state);
     if (state.u.utrap && state.u.utraptype === TT_PIT) {
@@ -868,6 +894,8 @@ async function pickDoorLock(tool: GameObject | null, x: number, y: number, autom
     return true;
 }
 
+// Part of C lock.c:pick_lock(): the xlock setup — chance, magic_key, and
+// set_occupation(picklock, lock_action()).
 function startPicking(tool: GameObject | null, target: Pick<PickLockOccupation, 'door' | 'container'> & Partial<Position>, state: GameState): void {
     const attempt: PickLockOccupation = {
         key: 'pick-lock', text: '', remaining: 51, usedtime: 0, tool,
@@ -878,6 +906,7 @@ function startPicking(tool: GameObject | null, target: Pick<PickLockOccupation, 
     state._lockAttempt = state._occupation = attempt;
 }
 
+// C lock.c:picklock(). The occupation callback.
 export async function continuePicking(occupation: PickLockOccupation, state: GameState = game): Promise<boolean> {
     requirePlayingGame(state);
     const box = occupation.container;
@@ -957,6 +986,7 @@ export async function continuePicking(occupation: PickLockOccupation, state: Gam
     return false;
 }
 
+// C lock.c:lock_action().
 function lockAction(attempt: PickLockOccupation): string {
     if (attempt.door && !(attempt.door.doormask & D_LOCKED)) return 'locking the door';
     if (attempt.container && !attempt.container.olocked)
@@ -969,6 +999,8 @@ function lockAction(attempt: PickLockOccupation): string {
     return 'picking the lock';
 }
 
+// Part of C lock.c:pick_lock(): the chance computation from Dexterity,
+// role, tool and cursed box.
 function lockPickChance(tool: GameObject | null, box: GameObject | undefined, state: GameState): number {
     if (!tool) return 0;
     const dexterity = currentAttribute(A_DEX, state);
@@ -991,7 +1023,6 @@ function lockPickChance(tool: GameObject | null, box: GameObject | undefined, st
 
 // C lock.c:doorlock()/obstructed(). Traversal owns wand discovery, billable
 // shop damage, drawbridge effects, and the decision to target a door.
-
 export async function changeDoorByMagic(source: GameObject, x: number, y: number, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1119,6 +1150,7 @@ export async function doorObstructed(x: number, y: number, quietly: boolean, sta
     return false;
 }
 
+// Port only: publish through You_hear() semantics.
 async function publishHeard(text: string, state: GameState) {
     const message = formatHeardMessage(text, state);
     if (message) await plineWithContinuation(message);

@@ -7,6 +7,7 @@ import { showTextMenuOverlay } from '../windows.js';
 import { luaCheckString } from './runtime.js';
 import type { LuaValue } from './runtime.js';
 
+// C nhlua.c:nhl_pline().
 export async function luaPline(...args: LuaValue[]) {
     if (args.length !== 1 && args.length !== 2)
         throw new NethackLuaError('Wrong args');
@@ -14,6 +15,7 @@ export async function luaPline(...args: LuaValue[]) {
     if (args[1] != null && args[1] !== false) await flushPendingTopline();
 }
 
+// C nhlua.c:nhl_text().
 export async function luaText(...args: LuaValue[]) {
     if (!args.length) return;
     const text = messageString(args[0]);
@@ -26,11 +28,14 @@ export async function luaText(...args: LuaValue[]) {
     await showTextMenuOverlay(lines);
 }
 
+// Part of C nhlua.c:nhl_pline(), nhl_text(): the luaL_checkstring read.
 function messageString(value: LuaValue | undefined): string {
     // nhl_pline() and nhl_text() read their text with luaL_checkstring.
     return luaCheckString(1, value);
 }
 
+// Part of C nhlua.c:nhl_text(): the 76-column line split at blanks and
+// newlines.
 function textMenuLines(text: string): string[] {
     const lines: string[] = [];
     let start = 0;

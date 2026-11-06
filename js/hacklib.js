@@ -164,9 +164,11 @@ export function recorderSort(values, compare) {
         return entry;
     }
 }
+// C hacklib.c:distmin().
 export function distmin(x1, y1, x2, y2) {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }
+// C hacklib.c:dist2().
 export function dist2(x1, y1, x2, y2) {
     return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
 }

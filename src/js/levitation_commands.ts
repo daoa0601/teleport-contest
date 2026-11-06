@@ -21,7 +21,8 @@ export type LevitationDescentResult =
     | { handled: false; spentTurn: false }
     | { handled: true; spentTurn: boolean };
 
-// C (HLevitation & I_SPECIAL) || (ELevitation & W_ARTI).  Deliberately not
+// Part of C do.c:dodown(): the (HLevitation & I_SPECIAL) ||
+// (ELevitation & W_ARTI) controlled-source test. Deliberately not
 // levitationAtWill(): an uncontrolled source may coexist with a controlled
 // one, and '>' still ends only the controlled part.
 function heroHasControlledLevitation(state: GameState): boolean {
@@ -29,6 +30,7 @@ function heroHasControlledLevitation(state: GameState): boolean {
         || hasInvokedProperty('levitation', state);
 }
 
+// Part of C do.c:dodown(): the stway walk that sets stairs_down/ladder_down.
 function downStairwayAtHero(state: GameState): Stairway | null {
     const { ux, uy } = state.u;
     let stairs = state.stairs;
@@ -40,6 +42,8 @@ function downStairwayAtHero(state: GameState): Stairway | null {
 // C artifact_has_invprop(obj, LEVITATION) over the whole inventory: the
 // artifact confers levitation via #invoke, whether or not it is the source
 // currently keeping the hero aloft.
+// Part of C do.c:dodown(): the inventory walk adding rnz(100) to each
+// levitation artifact's age.
 function refreshLevitationArtifactCooldowns(state: GameState): void {
     const turn = state.moves;
     for (const object of state.inventory) {
@@ -66,6 +70,9 @@ export async function floatingAbove(
     await publish(`You are floating high above the ${what}.`);
 }
 
+// Part of C do.c:dodown(): the whole '>' levitation-descent block —
+// float_down(I_SPECIAL | TIMEOUT, W_ARTI), the latent-levitation note,
+// and the floating_above message for the blocked or uncontrolled case.
 export async function descendFromLevitation(
     state: GameState = game,
     { publish = plineWithContinuation }: { publish?: MessagePublisher } = {},

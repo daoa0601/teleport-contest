@@ -1,4 +1,4 @@
-// luaL_checkinteger accepts numbers and numeric strings, but not booleans,
+// C lauxlib.c:luaL_checkinteger(): accepts numbers and numeric strings, but not booleans,
 // nil, or host objects. Empty strings are not numeric Lua values.
 export function luaInteger(value) {
     if ((typeof value !== 'number' && typeof value !== 'string')
@@ -9,13 +9,13 @@ export function luaInteger(value) {
         throw new TypeError('Lua argument must be an integer');
     return number;
 }
-// lua_tointeger() accepts integral numbers and numeric strings and
+// C lapi.c:lua_tointegerx(): lua_tointeger() accepts integral numbers and numeric strings and
 // quietly yields zero for anything else; it never raises.
 export function luaToInteger(value) {
     const converted = luaNumberValue(value);
     return converted !== null && isIntegralLuaInteger(converted) ? converted : 0;
 }
-// lua_isnumber() over the value types the bindings receive: numbers, or
+// C lapi.c:lua_isnumber(): over the value types the bindings receive: numbers, or
 // strings that luaO_str2num() accepts.
 export function luaNumberValue(value) {
     if (typeof value === 'number')
@@ -24,16 +24,19 @@ export function luaNumberValue(value) {
         return luaStrToNumber(value);
     return null;
 }
+// C lua.h:lua_numbertointeger()
 // A float converts to a Lua integer only inside the lua_Integer range;
 // lua_numbertointeger() rejects everything past 2^63.
 function isIntegralLuaInteger(value) {
     return Number.isInteger(value) && value >= -(2 ** 63) && value < 2 ** 63;
 }
 const LUA_SPACES = ' \t\n\v\f\r';
+// Part of C lobject.c:l_str2int(): the lisxdigit() test.
 function isHexCode(code) {
     return code >= 48 && code <= 57 || code >= 97 && code <= 102
         || code >= 65 && code <= 70;
 }
+// Part of C lobject.c:l_str2int(): hex digit value.
 function hexValue(code) {
     if (code >= 97)
         return code - 87;
@@ -41,15 +44,17 @@ function hexValue(code) {
         return code - 55;
     return code - 48;
 }
+// Part of C lobject.c:l_str2int(), l_str2d(): the lisdigit() test.
 function isDecimalCode(code) {
     return code >= 48 && code <= 57;
 }
+// Part of C lobject.c:l_str2int(), l_str2d(): skip lisspace() characters.
 function skipLuaSpaces(text, index) {
     while (index < text.length && LUA_SPACES.includes(text.charAt(index)))
         index++;
     return index;
 }
-// l_str2int(): [spaces][sign](digits | 0x hexdigits)[spaces], with C's
+// C lobject.c:l_str2int()
 // unsigned wrap-around for hex and rejection of decimal overflow.
 function luaStringToInteger(text) {
     let index = skipLuaSpaces(text, 0);
@@ -90,7 +95,7 @@ function luaStringToInteger(text) {
         return null;
     return Number(negative ? -magnitude : magnitude);
 }
-// l_str2d(): strtod's subject sequence -- a decimal or C99 hex float
+// C lobject.c:l_str2d()
 // with optional sign and surrounding spaces -- except that the leading
 // 'n'/'N' check rejects inf and nan spellings.
 function luaStringToFloat(text) {
@@ -190,6 +195,7 @@ function luaStringToFloat(text) {
         return null;
     return negative ? -value : value;
 }
+// Part of C lobject.c:l_str2dloc()
 // strtod-grade mantissa * 2^shift: the arithmetic stays exact in BigInt
 // space and crosses into double precision once, so a zero mantissa with
 // a huge exponent is zero rather than 0 * Infinity = NaN, and a long
@@ -213,6 +219,8 @@ function hexFloatValue(mantissa, shift) {
         ? Number(`${digits.slice(0, wholeDigits)}.${digits.slice(wholeDigits)}`)
         : Number(`0.${'0'.repeat(-wholeDigits)}${digits}`);
 }
+// Part of C lobject.c:l_str2dloc(): the mantissa's bit length for the
+// exponent shift.
 function bitLength(value) {
     return value.toString(2).length;
 }
@@ -224,11 +232,14 @@ function bitLength(value) {
 export function luaStrToNumber(text) {
     return luaStringToInteger(text) ?? luaStringToFloat(text);
 }
+// C lauxlib.c:luaL_checklstring(): a number argument coerces to its
+// string form.
 export function luaString(value) {
     if (typeof value === 'string' || typeof value === 'number')
         return String(value);
     throw new TypeError('Lua argument must be a string or number');
 }
+// C lapi.c:lua_toboolean(): nil and false are false, everything else true.
 export function luaTruthy(value) {
     return value != null && value !== false;
 }

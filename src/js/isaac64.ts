@@ -20,12 +20,14 @@ export interface Isaac64Context {
     m: bigint[];
 }
 
+// Port only: bounds-checked state-word access.
 function wordAt(words: readonly bigint[], index: number): bigint {
     const word = words[index];
     if (word === undefined) throw new RangeError(`ISAAC64 state has no word at ${index}`);
     return word;
 }
 
+// Port only: bounds-checked seed-byte access.
 function seedByteAt(bytes: ArrayLike<number>, index: number): number {
     const byte = bytes[index];
     if (byte === undefined) throw new RangeError(`ISAAC64 seed has no byte at ${index}`);
@@ -210,7 +212,8 @@ export function isaac64_next_uint64(_ctx: Isaac64Context): bigint {
     return wordAt(_ctx.r, --_ctx.n);
 }
 
-// Peek at the next PRNG value without consuming it.
+// Port only: peek at the next PRNG value without consuming it; used by
+// mail daemon delivery to leave the RNG stream untouched.
 // Used by mail daemon to check delivery probability without
 // perturbing the RNG stream.
 export function isaac64_peek_uint64(_ctx: Isaac64Context): bigint {

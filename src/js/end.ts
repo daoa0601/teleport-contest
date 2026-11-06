@@ -134,7 +134,7 @@ interface FinalPossessions {
     quantumCat: boolean;
 }
 
-// C end.c:done() records the fatal event before "But wait...". The caller
+// Part of C end.c:done(): records the fatal event before "But wait...". The caller
 // identifies the amulet after that message returns, then consumes it and
 // revives the hero after the crumble message.
 export function beginHeroLifeSaving(): LifeSavingTransaction | null {
@@ -145,6 +145,8 @@ export function beginHeroLifeSaving(): LifeSavingTransaction | null {
     return { amulet };
 }
 
+// Part of C end.c:done(): umortality++ and forcing HP to zero for deaths
+// not triggered by hit-point loss.
 function recordHeroFatalEvent(): void {
     game.u.umortality = (game.u.umortality || 0) + 1;
     if (game.u.uhp !== 0 || (Upolyd(game.u) && game.u.mh !== 0)) {
@@ -154,6 +156,8 @@ function recordHeroFatalEvent(): void {
     }
 }
 
+// Part of C end.c:done(): makeknown(AMULET_OF_LIFE_SAVING) with its
+// Wisdom exercise (C discover_object path).
 export function identifyLifeSavingAmulet(random = rn2): void {
     recordObjectEncounter(AMULET_OF_LIFE_SAVING);
     if (!game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING)) {
@@ -165,6 +169,8 @@ export function identifyLifeSavingAmulet(random = rn2): void {
     }
 }
 
+// Part of C end.c:done(): the Lifesaved branch's tail — useup(uamul),
+// adjattrib(A_CON, -1) and savelife(how), plus the GENOCIDED rejection.
 export async function completeHeroLifeSaving(
     transaction: LifeSavingTransaction | null | undefined,
     { deathType = null }: RevivalOptions = {},
@@ -234,6 +240,9 @@ export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions
     return game.u.uhp;
 }
 
+// C end.c:done(). The death dispatch: TRICKED wizard escape, QUIT and
+// escape/ascension hand-offs, the "You die..." line, the Lifesaved amulet
+// and explore/wizard "Die?" survival paths, then really_done().
 export async function finishHeroDeath({
     killer,
     killerFormat = KILLED_BY_AN,
@@ -299,11 +308,13 @@ export async function finishHeroDeath({
     return true;
 }
 
+// Port only: u.uconduct accessor with lazy initialization.
 function conductState(state: GameState = game) {
     if (!state.u.uconduct) state.u.uconduct = {};
     return state.u.uconduct;
 }
 
+// Part of C mon.c:xkilled(): the killer-conduct break.
 // xkilled() breaks killer conduct before its credited kill pline can suspend
 // on an older tty message.  Vanquished/mvitals bookkeeping happens later,
 // after mondead(), so keep this mutation independently callable.
@@ -326,6 +337,9 @@ function overviewLines(
     return dungeonOverviewDisclosure(ending, cause);
 }
 
+// Part of C end.c:really_done(): the final score calculation — net gold
+// gain (minus the 1/10 death penalty), deepest-level bonus, and the
+// ascension alignment bonus.
 function gameSummaryValues(outcome: ScoreOutcome, deathType = DIED): GameSummary {
     requireInitializedHero(game.u);
     const visibleGold = heroGoldAmount(game);
@@ -346,6 +360,8 @@ function gameSummaryValues(outcome: ScoreOutcome, deathType = DIED): GameSummary
     return { gold, score, depth: currentDepth, moves: game.moves ?? 1 };
 }
 
+// Port only: write one row of the quit summary straight into the terminal
+// display (C renders the same lines through the NHW_TEXT window).
 function terminalLine(row: number, col: number, value: string, attr = 0) {
     const display = game.nhDisplay;
     for (let index = 0; index < value.length; index++)
@@ -359,6 +375,8 @@ function tombstoneLine(value: string | undefined) {
     return `${' '.repeat(col - 19)}${text}${' '.repeat(37 - col - text.length)}`;
 }
 
+// Part of C rip.c:genl_outrip(): the death year (yyyymmdd(when)/10000
+// % 10000, printed %4d).
 function tombstoneYear(when: number): string {
     const year = Number(new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/New_York', year: 'numeric',
@@ -368,6 +386,8 @@ function tombstoneYear(when: number): string {
     return String(calendarYear % 10000).padStart(4, ' ');
 }
 
+// Part of C end.c:really_done(): the "You died in %s" dungeon name
+// (svd.dungeons[u.uz.dnum].dname).
 function currentDungeonName() {
     const dnum = game.u?.uz?.dnum ?? 0;
     return game.dungeons?.[dnum]?.dname
@@ -389,6 +409,8 @@ const DEATH_NAMES: readonly string[] = [
     'turned into slime', 'genocided', 'panic', 'trickery', 'quit', 'escaped', 'ascended',
 ];
 
+// Part of C end.c:really_done(): the "You %s [beyond the confines | in %s
+// [on dungeon level %d]] with %ld points," location line.
 function finalLocationLine(verb: string, score: number): string {
     const here = game.u.uz;
     let text: string;
@@ -428,6 +450,9 @@ function tombstoneDeathRows(cause: string) {
     return rows;
 }
 
+// Part of C end.c:really_done(): the end-of-game NHW_TEXT summary —
+// tombstone, goodbye line, location, gold and level lines.
+// Also C rip.c:genl_outrip(): the stone itself is composed in here.
 function deathSummaryLines(killer: string, { gold, score, moves }: GameSummary, endtime: number, {
     deathVerb = 'died', deathCause = null, deathType = null,
 }: DeathDescription & { deathType?: number | null } = {}): string[] {
@@ -478,11 +503,15 @@ function plur(count: number): string {
     return count === 1 ? '' : 's';
 }
 
+// Part of C end.c:really_done(): the role title in the "Goodbye" line
+// (finishLivingGame() overrides it with Demigod/Demigoddess).
 function roleName() {
     return game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
 }
 
+// Part of C end.c:really_done(): the quit summary page — the same
+// dump_forward_putstr lines, rendered without a tombstone.
 function renderQuitSummaryPage({ gold, score, moves }: GameSummary) {
     const display = game.nhDisplay;
     display?.clearScreen();
@@ -505,6 +534,8 @@ function renderQuitSummaryPage({ gold, score, moves }: GameSummary) {
     display?.setCursor(8, 23);
 }
 
+// Part of C topten.c:topten(): this game's name/role/race/gender/align
+// record fields.
 function scoreIdentity() {
     const state = requireInitializedGame();
     const gender = game.flags?.female ? 'Fem' : 'Mal';
@@ -670,6 +701,8 @@ async function finishScoreDisplay(current: ScoreRecord, { stopPrinting = false }
     game.program_state.windows_exited = true;
 }
 
+// Port only: wait out the --More-- on the summary page (C blocks in
+// display_nhwindow(endwin, TRUE)).
 async function waitForCurrentMore() {
     let key;
     do key = await nhgetch();
@@ -685,6 +718,8 @@ export const DISCLOSURE_CATEGORIES = ['i', 'a', 'v', 'g', 'c', 'o'] as const;
 type DisclosureCategory = (typeof DISCLOSURE_CATEGORIES)[number];
 export type DisclosureDefault = 'y' | 'n' | 'a';
 
+// C options.c:optfn_disclose(): parse the "disclose" option string into
+// per-category settings (the TS game stores it as flags.disclose).
 export function parseDisclosureSettings(raw: unknown): Record<string, string> {
     const settings: Record<string, string> = {
         i: '', a: '', v: '', g: '', c: '', o: '',
@@ -721,6 +756,8 @@ export function parseDisclosureSettings(raw: unknown): Record<string, string> {
     return settings;
 }
 
+// Part of C end.c:should_query_disclose_option(): reads the parsed
+// end_disclose settings for one disclosure category.
 function endDiscloseSettings(): Record<DisclosureCategory, string> {
     return parseDisclosureSettings(game.flags?.disclose);
 }
@@ -740,7 +777,7 @@ function shouldQueryDiscloseOption(
     }
 }
 
-// C yn_function(): the answer set is shown as "[ynq]"; answers hidden
+// Part of C cmd.c:yn_function(): the answer set is shown as "[ynq]"; answers hidden
 // behind ESC (the single-vanquished-species 'a') stay acceptable.
 export async function ynQuestion(
     question: string, visible: 'ynq' | 'ynaq', defquery: DisclosureDefault,
@@ -889,6 +926,9 @@ export function stopDisclosure(): false {
     return false;
 }
 
+// Part of C end.c:really_done(): the preamble — gameover,
+// done_object_cleanup(), the endtime and at_night/at_midnight snapshots,
+// final achievements, "Do not pass Go", and bones_ok.
 async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promise<number> {
     game.program_state.gameover = true;
     game.program_state.something_worth_saving = false;
@@ -918,6 +958,8 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     return endtime;
 }
 
+// Part of C end.c:really_done(): paybill(), paygd() and clearpriests()
+// (JS: settleShopkeepersOnExit, payVaultGuardOnExit, clearNonlocalPriests).
 async function settleGameExit(outcome: ShopExitOutcome): Promise<boolean> {
     const silent = !!game.program_state.stopprint;
     const publish = async (message: string): Promise<void> => {
@@ -931,12 +973,17 @@ async function settleGameExit(outcome: ShopExitOutcome): Promise<boolean> {
     return taken;
 }
 
+// Part of C end.c:really_done(): the death entry over startGameExit() and
+// completeOrdinaryDeath().
 export async function finishOrdinaryDeath(options: OrdinaryDeathOptions): Promise<void> {
     const endtime = await startGameExit('died', options.deathType ?? DIED);
     if (options.deathType != null) setHeroRemainsFromDeath(options.deathType, game);
     await completeOrdinaryDeath(options, endtime);
 }
 
+// Part of C end.c:really_done(): the main body — killer fixups, fixup_death,
+// paybill, disclosure, the score block, the ugrave_arise message, bones,
+// the summary window and the score list.
 async function completeOrdinaryDeath({
     killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
     deathType = null, killerFormat = KILLED_BY_AN,
@@ -1072,6 +1119,9 @@ export async function finishOrdinaryQuit() {
     game.context.move = 0;
 }
 
+// Part of C end.c:really_done(): the escaped/ascended branch — keepdogs,
+// get_valuables, artifact_score, pet and Schroedinger's-cat points, and
+// the summary pages.
 export async function finishLivingGame(outcome: LivingOutcome) {
     requireInitializedHero(game.u);
     await bot();
@@ -1116,6 +1166,7 @@ export async function finishLivingGame(outcome: LivingOutcome) {
     game.context.move = 0;
 }
 
+// Port only: validated objects[].oc_cost lookup for the final scoring.
 function objectBaseValue(type: number): number {
     const value = objectBaseCost(type);
     if (value === undefined) throw new RangeError(`No base value for object type ${type}`);
@@ -1212,9 +1263,9 @@ export interface MonsterAttackDeathOptions {
     deathType?: number | null;
 }
 
+const G_UNIQ = 0x1000;
 // C end.c:done_in_by(). Fatal attribution describes the real killer even
 // when its appearance, given name, or the hero's hallucination differs.
-const G_UNIQ = 0x1000;
 function fatalMonsterDescription(monster: Monster): string {
     const current = monster.mnum;
     const champion = ismnum(monster.cham) ? monster.cham : current;
@@ -1261,6 +1312,9 @@ function fatalMonsterDescription(monster: Monster): string {
     return article === null ? withIndefiniteArticle(name) : article + name;
 }
 
+// Part of C end.c:done_in_by(), end.c:done(): the fatal-attack flow —
+// announce the death, build the killer, fix multi_reason, commit the
+// fatal event, life saving, the "Die?" escape, then really_done().
 export async function finishMonsterAttackDeath(monster: Monster, {
     pagerOwned = false, attribution = { kind: 'done-in-by' }, deathType = null,
 }: MonsterAttackDeathOptions = {}): Promise<boolean> {
@@ -1374,14 +1428,17 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     return true;
 }
 
-// losehp() enters urgent_pline(), whose map flush precedes paging the
-// previous message. Its pending HP request must reach that pager.
+// Port only: tty ordering adapter — flush the urgent fatal line's pending
+// map and --More-- before finishHeroDeath() runs. losehp() enters
+// urgent_pline(), whose map flush precedes paging the previous message;
+// its pending HP request must reach that pager.
 export async function finishHeroDeathAfterMonsterMessage(options: FinishHeroDeathOptions) {
     await flush_screen(1);
     await waitForCurrentMonsterMore();
     return finishHeroDeath(options);
 }
 
+// Port only: tty paging — wait out the pending topline message window.
 export async function waitForCurrentMonsterMore(fallbackMessage = '') {
     if (!game._pending_message) {
         game._pending_message = fallbackMessage;
@@ -1425,7 +1482,6 @@ export async function containerContents(
 }
 
 // C end.c:done_object_cleanup(), shared by terminal outcomes and saves.
-
 export async function doneObjectCleanup(): Promise<void> {
     await finishInUseInventory(true);
     const flightFields = ['_thrownObject', '_kickedObject'] as const;

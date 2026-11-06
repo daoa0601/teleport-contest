@@ -70,6 +70,7 @@ import { inTown, loseHeroHp, heroGoldAmount } from './hack.js';
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
 
+// C fountain.c:dryup().
 export async function dryFountainAt(x: number, y: number, {
     causedByHero = true, random = rn2, state = game,
     publish = plineWithContinuation,
@@ -130,6 +131,8 @@ async function warnAboutFountain(state: GameState, publish: MessagePublisher): P
     }
 }
 
+// Part of C sit.c:dosit(): the in_water gremlin branch — split_mon()
+// then dryup() when sitting in a fountain.
 export async function splitSittingGremlin() {
     const clone = await splitHeroMonsterForm(game);
     if (!clone) return null;
@@ -186,6 +189,8 @@ export async function gushForthFromFountain({ drinking = false, state = game }: 
     }
 }
 
+// C mkroom.c:nexttodoor(): local copy for gush()'s room test; the mkroom
+// port does not export one.
 function nextToDoor(x: number, y: number, state: GameState): boolean {
     for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
@@ -214,23 +219,32 @@ async function discoverFountainGem(loc: MapLocation) {
     });
 }
 
+// Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
+// the mvitals[PM_...].mvflags & G_GONE test.
 function fountainActorGone(mnum: number) {
     return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);
 }
 
+// Part of C fountain.c:dowaterdemon(), dowaternymph(): a_monnam() naming
+// of the summoned actor.
 function fountainActorIndefiniteName(monster: Monster) {
     return monsterName(monster, { article: 'a' });
 }
 
+// Port only: capitalized monster-name adapter for mintrap()'s messages.
 function fountainActorVisibleSubject(monster: Monster) {
     return monsterName(monster, { capitalized: true });
 }
 
+// Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
+// the t_at(mtmp->mx, mtmp->my) test.
 function fountainTrapAt(monster: Monster) {
     return game.level?.traps?.some(trap =>
         trap.tx === monster.mx && trap.ty === monster.my) ?? false;
 }
 
+// Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
+// the mintrap() call on the summoned actor (fountain.c:55).
 async function triggerFountainTrap(monster: Monster) {
     const state = requireInitializedGame();
     // The fountain square hosts no trap whose effect can end the game in its
@@ -550,6 +564,7 @@ export async function dipFountain(object: DipTarget, loc: MapLocation) {
 
 export type DipTarget = GameObject | 'hands';
 
+// C fountain.c:wash_hands(). Dipping '-' in fountain, pool, or sink.
 export async function washHands(): Promise<WaterDamageOutcome> {
     const glib = (game.u.glibTurns ?? 0) > 0;
     await pline(`You wash your ${game.uarmg ? 'gloved ' : ''}${makePlural(body_part(HAND))} in the ${displayLiquidName('water')}.`);
@@ -573,14 +588,18 @@ interface FountainTrapResult {
     heroDied: boolean;
 }
 
+// Port only: resolve a lazy message part.
 function resolvedLiquidName(liquidName: DescribedPart): string {
     return typeof liquidName === 'function' ? liquidName() : liquidName;
 }
 
+// Port only: resolve a lazy message part.
 function resolvedArmName(armName: DescribedPart): string {
     return typeof armName === 'function' ? armName() : armName;
 }
 
+// Part of C fountain.c:dipfountain(): the fate 26 and 27 strange-feeling
+// messages.
 export function resolveDippedSensationFate({ fate, armName = 'arm' }: { fate: number; armName?: DescribedPart }) {
     if (fate === 26) {
         return {
@@ -599,6 +618,8 @@ export function resolveDippedSensationFate({ fate, armName = 'arm' }: { fate: nu
     return { handled: false, message: '' };
 }
 
+// Part of C fountain.c:dipfountain(): the fate 29 coin decision (looted
+// test and the depth-scaled quantity).
 export function resolveDippedCoinFate({
     fate,
     looted = false,
@@ -624,10 +645,14 @@ export function resolveDippedCoinFate({
     };
 }
 
+// Part of C fountain.c:dipfountain(): the fate 29 "Far below you..."
+// message.
 export function dippedCoinMessage(liquidName = 'water') {
     return `Far below you, you see coins glistening in the ${liquidName}.`;
 }
 
+// Part of C fountain.c:dipfountain(): the fate 29 effect — loot the
+// fountain, mkgold(), exercise and newsym().
 export async function applyDippedCoinFate({
     fate,
     loc,
@@ -664,6 +689,8 @@ export async function applyDippedCoinFate({
     return { ...effect, message };
 }
 
+// Part of C fountain.c:dofindgem(): the body — spot/feel the gem,
+// mksobj_at(), loot the fountain, exercise.
 export async function applyFountainGemDiscovery({
     loc,
     blind = false,
@@ -708,14 +735,17 @@ export async function applyFountainGemDiscovery({
 const FURIOUS_BUBBLING_MESSAGE
     = 'The fountain bubbles furiously for a moment, then calms.';
 
-// A blind hero hears the actor only when You_hear() itself would speak.
-// dowatersnakes() passes the ordinary pline; the other actors continue.
+// Part of C fountain.c:dowaternymph(), dowatersnakes(): the You_hear()
+// half of the summon messages. A blind hero hears the actor only when
+// You_hear() itself would speak; dowatersnakes() passes the ordinary
+// pline; the other actors continue.
 async function announceFountainHeard(heard: string, publish: MessagePublisher = plineWithContinuation): Promise<void> {
     const message = formatHeardMessage(heard);
     if (message) await publish(message);
 }
 
-// The failed-summon fallback pop: C fountain.c:108-115.
+// Part of C fountain.c:dowaternymph(): the failed-summon fallback pop
+// (fountain.c:108-115).
 async function announceFountainPop(): Promise<void> {
     if (!heroIsBlind())
         await plineWithContinuation('A large bubble rises to the surface and pops.');
@@ -727,6 +757,8 @@ async function announceFountainPop(): Promise<void> {
 // The Lady of the Lake judges a long sword (fountain_sword)
 // ---------------------------------------------------------------------------
 
+// Part of C fountain.c:dipfountain(): the Lady of the Lake Excalibur
+// branch.
 export async function dipFountainSword(object: GameObject, location: MapLocation): Promise<boolean> {
     requirePlayingGame(game);
     if (object.otyp !== LONG_SWORD || game.u.ulevel < 5
@@ -774,6 +806,7 @@ export async function dipFountainSword(object: GameObject, location: MapLocation
 // Converting a sink to a fountain by breaking it (sink_terrain)
 // ---------------------------------------------------------------------------
 
+// C fountain.c:breaksink().
 export async function breakSinkAt(x: number, y: number, state: GameState = game) {
     const level = state.level;
     const location = level?.at(x, y);
@@ -797,6 +830,7 @@ export async function breakSinkAt(x: number, y: number, state: GameState = game)
 const PM_SEWER_RAT = MONSTER_NAME.indexOf('sewer rat');
 const PM_WATER_ELEMENTAL = MONSTER_NAME.indexOf('water elemental');
 
+// C fountain.c:drinksink().
 export async function drinkSink({ state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -889,6 +923,7 @@ export async function drinkSink({ state = game }: { state?: GameState } = {}) {
     return outcome(state);
 }
 
+// Part of C fountain.c:drinksink(): the sewer-rat case.
 async function releaseSewerRat(state: PlayingGameState) {
     if ((state.mvitals?.[PM_SEWER_RAT]?.mvflags ?? 0) & G_GONE) {
         await pline('The sink seems quite dirty.');
@@ -901,6 +936,7 @@ async function releaseSewerRat(state: PlayingGameState) {
     await pline(`Eek!  There's ${description} in the sink!`);
 }
 
+// Part of C fountain.c:drinksink(): the potion-from-the-faucet case.
 async function drinkFaucetPotion(state: PlayingGameState) {
     let source: GameObject;
     for (;;) {
@@ -921,19 +957,24 @@ async function drinkFaucetPotion(state: PlayingGameState) {
     }
 }
 
+// Part of C fountain.c:drinksink(): the clanking-pipes and sewer-song
+// cases (You_hear).
 async function hearSink(message: string, state: PlayingGameState) {
     await publishHeardMessage(message, pline, state);
 }
 
+// Part of C fountain.c:drinksink(): the stench case's poison gas cloud.
 async function releaseSinkGas(state: PlayingGameState) {
     const { ux, uy } = state.u;
     await createPoisonGasCloud(state, ux, uy, 1, 4);
 }
 
+// Port only: drinksink() result adapter (time spent, hero death).
 function outcome(state: GameState) {
     return { spentTime: true, heroDied: !!state.program_state.gameover };
 }
 
+// Part of C fountain.c:drinksink(): the ordinary temperature sip.
 async function ordinarySip(state: GameState) {
     const temperature = rn2(3) ? rn2(2) ? 'cold' : 'warm' : 'hot';
     await pline(`You take a sip of ${temperature} ${displayLiquidName('water', state)}.`);
@@ -943,6 +984,7 @@ async function ordinarySip(state: GameState) {
 // Dipping into a sink (sink_dipping)
 // ---------------------------------------------------------------------------
 
+// C fountain.c:dipsink().
 export async function dipSink(object: DipTarget): Promise<void> {
     requirePlayingGame(game);
     const { ux, uy } = game.u;
@@ -997,6 +1039,7 @@ export async function dipSink(object: DipTarget): Promise<void> {
     await consumeInventoryItem(object);
 }
 
+// C fountain.c:sink_backs_up().
 export async function sinkBacksUp(x = game.u.ux, y = game.u.uy): Promise<void> {
     requirePlayingGame(game);
     const sight = heroIsBlind(), deaf = heroIsDeaf();

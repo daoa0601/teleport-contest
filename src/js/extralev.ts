@@ -41,12 +41,15 @@ interface RogueRoomCell extends RogueCellBase {
 
 type RogueCell = RogueRoomCell | (RogueCellBase & { real: false });
 
+// Port only: bounds-checked access to the 3x3 Rogue grid (C indexes
+// the gr array directly).
 function rogueGridCell(grid: readonly (readonly RogueCell[])[], x: number, y: number): RogueCell {
     const cell = grid[x]?.[y];
     if (!cell) throw new RangeError(`Missing Rogue grid cell ${x},${y}`);
     return cell;
 }
 
+// Port only: resolves a grid cell's nroom index into its generated room.
 function rogueGridRoom(cell: RogueRoomCell): Room {
     const room = cell.nroom === undefined ? undefined : requireGameLevel().rooms[cell.nroom];
     if (!isRoom(room)) throw new Error('Rogue room cell has no generated room.');
@@ -59,6 +62,7 @@ function rogueCorrCell(x: number, y: number): void {
     if (loc) loc.typ = rn2(50) ? CORR : SCORR;
 }
 
+// C extralev.c:roguejoin().
 function roguejoin(x1: number, y1: number, x2: number, y2: number, horiz: boolean): void {
     if (horiz) {
         const middle = x1 + rn2(x2 - x1 + 1);
@@ -79,6 +83,7 @@ function roguejoin(x1: number, y1: number, x2: number, y2: number, horiz: boolea
     }
 }
 
+// C extralev.c:roguecorr().
 async function roguecorr(grid: RogueCell[][], x: number, y: number, dir: number): Promise<void> {
     const level = requireGameLevel();
     let fromx, fromy, tox, toy;
@@ -181,6 +186,7 @@ function rogueMiniwalk(grid: RogueCell[][], x: number, y: number): void {
     }
 }
 
+// C extralev.c:makeroguerooms().
 export async function makeroguerooms(): Promise<void> {
     const g = game;
     const level = requireGameLevel();
@@ -239,6 +245,7 @@ export async function makeroguerooms(): Promise<void> {
     }
 }
 
+// C extralev.c:makerogueghost().
 export async function makerogueghost(): Promise<void> {
     const level = requireGameLevel();
     if (!level.nroom) return;

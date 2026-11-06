@@ -5,20 +5,27 @@ import { LuaArgumentError, NethackLuaError } from './errors.js';
 import { ANY_LOC, get_location_coord } from '../sp_lev.js';
 import { game } from '../gstate.js';
 import { isRoom } from '../map_types.js';
+// Port only: wrap to C's 16-bit coordxy range.
 function coordxy(value) {
     return (value << 16) >> 16;
 }
+// Part of C nhlsel.c:l_selection_setpoint(), l_selection_rect(): the
+// luaL_checkinteger coordinate read.
 function luaCoordinate(value) {
     return coordxy(luaInteger(value));
 }
+// Part of C nhlsel.c:l_selection_line(): the integer argument read.
 function luaInt(value) {
     return luaInteger(value) | 0;
 }
-// The two-axis get form uses lua_tointeger, which returns zero on failure.
+// Part of C nhlsel.c:l_selection_getpoint(): lua_tointeger()
+// returns zero on failure.
 function getAxis(value) {
     const number = typeof value === 'number' || typeof value === 'string' ? Number(value) : 0;
     return Number.isInteger(number) ? coordxy(number) : 0;
 }
+// Part of C lauxlib.c:luaL_typeerror(): the value's type name for error
+// messages.
 function argumentType(value) {
     if (value === undefined)
         return 'no value';
@@ -26,6 +33,8 @@ function argumentType(value) {
         return value.metatable.__name ?? 'userdata';
     return luaType(value);
 }
+// Part of C lauxlib.c:luaL_checkinteger(): the raising form, with its
+// "number has no integer representation" message.
 function integerArgument(value, argument) {
     try {
         return luaInteger(value);
@@ -38,6 +47,7 @@ function integerArgument(value, argument) {
         throw new LuaArgumentError(argument, message, { cause });
     }
 }
+// C nhlsel.c:l_selection_check(): the selection userdata, or an error.
 function selectionValue(value, argument = 1) {
     if (!(value instanceof LuaUserdata))
         throw new LuaArgumentError(argument, `userdata expected, got ${argumentType(value)}`);
@@ -45,6 +55,8 @@ function selectionValue(value, argument = 1) {
         throw new LuaArgumentError(argument, `selection expected, got ${argumentType(value)}`);
     return value.value;
 }
+// Part of C nhlsel.c:l_selection_push_copy(): copy one selection's fields
+// into another.
 function copySelectionInto(target, source) {
     const copy = source.clone().selection;
     target.selection.wid = copy.wid;
@@ -53,6 +65,7 @@ function copySelectionInto(target, source) {
     target.selection.bounds = copy.bounds;
     target.selection.map = copy.map;
 }
+// Part of C nhlsel.c:l_selection_rndcoord(): the {x, y} result table.
 function pointTable(point) {
     if (!point)
         return null;
@@ -61,6 +74,7 @@ function pointTable(point) {
     table.set('y', point.y);
     return table;
 }
+// Part of C nhlsel.c:l_selection_getbounds(): the lx/ly/hx/hy table.
 function boundsTable(bounds) {
     const table = new LuaTable();
     for (const field of ['lx', 'ly', 'hx', 'hy'])
@@ -359,9 +373,11 @@ export function createSelectionApi(context, invoke = null) {
     };
     return { bindings: methods, wrap };
 }
+// Port only: bindings-only view of createSelectionApi().
 export function createSelectionBindings(context, invoke = null) {
     return createSelectionApi(context, invoke).bindings;
 }
+// Port only: exported l_selection_check() wrapper.
 export function unwrapSelection(value) {
     return selectionValue(value);
 }

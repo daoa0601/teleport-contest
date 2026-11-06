@@ -34,6 +34,8 @@ interface HeroPotionImpactOptions {
     source?: 'thrown' | 'propelled';
 }
 
+// Part of C potion.c:potionhit(): the mon == &youmonst impact — bottle
+// crash and 1d2 pain, direct effect, vapor, unpaid bill, obfree.
 export async function hitHeroWithThrownPotion(potion: GameObject, {
     state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d,
     source = 'thrown',
@@ -68,6 +70,8 @@ export async function hitHeroWithThrownPotion(potion: GameObject, {
     return { heroDied };
 }
 
+// Part of C potion.c:potionhit(): the hero's lit-oil, polymorph and acid
+// direct effects.
 async function applyDirectHeroPotion(
     potion: GameObject, state: PlayingGameState, publish: MessagePublisher,
     random: typeof rn2, rollDice: typeof d,
@@ -91,6 +95,8 @@ async function applyDirectHeroPotion(
     return false;
 }
 
+// Part of C hack.h:Maybe_Half_Phys(): the shared port is
+// maybeHalfPhysicalDamage() in hack.ts.
 function physicalDamage(damage: number, state: GameState): number {
     return propertyIsActive('halfPhysicalDamage', state) ? Math.trunc((damage + 1) / 2) : damage;
 }

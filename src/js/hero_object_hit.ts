@@ -48,6 +48,8 @@ const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;
 
+// Part of C mthrowu.c:thitu(): the object-hit rule shared by polearms and
+// thrown weapons (the missile-side port is in mthrowu.ts).
 export async function hitHeroWithObject(object: GameObject, damage: number, accuracy: number, {
     state = game,
     publish = plineWithContinuation,

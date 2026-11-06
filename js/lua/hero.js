@@ -8,6 +8,8 @@ const HERO_FIELDS = [
     'uhunger', 'nv_range', 'xray_range', 'umonster', 'umonnum', 'mh',
     'mhmax', 'mtimedone', 'uluck', 'uhp', 'uhpmax', 'uen', 'uenmax',
 ];
+// Part of C nhlua.c:nhl_meta_u_index(): membership in the ustruct[] field
+// list.
 function isHeroField(value) {
     return HERO_FIELDS.some(field => field === value);
 }

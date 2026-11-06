@@ -14,6 +14,8 @@ interface FallingArtifactOptions {
     dieRoll: number;
 }
 
+// Port only: artifact_hit() entry for falling and returning weapons, which
+// have no attacker (C passes &gy.youmonst to artifact_hit() directly).
 export async function hitHeroWithFallingArtifact(
     object: GameObject, baseDamage: number, options: FallingArtifactOptions,
 ): Promise<ArtifactHitResult> {

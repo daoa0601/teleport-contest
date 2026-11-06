@@ -7,6 +7,7 @@ import { rn1, rn2, rnd } from './rng.js';
 import { isok } from './cmd.js';
 import { randomKey, resetFuzzerCommandState } from './cmd.js';
 export const MAP_CLICK_KEY = 256;
+// Port only: normalize a character string or code to its key code.
 function keyCode(key) {
     if (typeof key === 'number')
         return key;
@@ -106,12 +107,13 @@ export class InputGate {
     }
 }
 let activeInputGate = new InputGate();
-// The gate itself stays private; the folded cmd.c readchar()/pgetchar()
+// Port only: the gate accessor. The gate itself stays private; the folded cmd.c readchar()/pgetchar()
 // ports read through this accessor, exactly like their C bodies call
 // the windowport's key entry points.
 export function inputGate() {
     return activeInputGate;
 }
+// Port only: bind the process-wide input gate for a new game.
 export function bindInputGate(inputGate) {
     if (!(inputGate instanceof InputGate))
         throw new TypeError('bindInputGate requires an InputGate');
@@ -121,9 +123,11 @@ export function bindInputGate(inputGate) {
     // the table index and repeat key start from their head again here.
     resetFuzzerCommandState();
 }
+// Port only: queue one key into the active gate.
 export function pushKey(key) {
     activeInputGate.feed(key);
 }
+// Port only: queue one or many keys into the active gate.
 export function pushKeys(keys) {
     activeInputGate.feed(keys);
 }
@@ -151,6 +155,7 @@ export async function nhgetch(inputState = 'other') {
 export async function nh_poskey(inputState = 'other') {
     return await nhgetch(inputState);
 }
+// Port only: fresh input gate and command-queue state for a new game.
 export function resetInputState() {
     activeInputGate = new InputGate();
     resetFuzzerCommandState();

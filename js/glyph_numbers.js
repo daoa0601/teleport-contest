@@ -46,8 +46,10 @@ const cmapA = WALL_GLYPHS + cmapSokoban;
 const altar = CmapSymbol.brdnladder - CmapSymbol.ndoor + 1 + cmapA;
 const cmapB = 5 + altar;
 const zap = CmapSymbol.arrowTrap + MAXTCHARS - CmapSymbol.grave + cmapB;
+// C display.h:GLYPH_CMAP_C_OFF member of enum glyph_offsets.
 const cmapC = (NUM_ZAP << 2) + zap;
 const swallow = CmapSymbol.goodpos - CmapSymbol.digbeam + 1 + cmapC;
+// C display.h:GLYPH_EXPLODE_DARK_OFF member of enum glyph_offsets.
 const explodeDark = (NUMMONS << 3) + swallow;
 const explodeNoxious = MAXEXPCHARS + explodeDark;
 const explodeMuddy = MAXEXPCHARS + explodeNoxious;
@@ -74,7 +76,7 @@ export const GlyphOffset = {
     statueFemale, objectPiletop, bodyPiletop, statueMalePiletop,
     statueFemalePiletop, unexplored, nothing, max,
 };
-// display.h:cmap_to_glyph(), with the caller selecting its branch's wall range
+// C display.h:cmap_to_glyph(), with the caller selecting its branch's wall range
 // (display.h:cmap_walls_to_glyph reads the hero's dungeon branch, which the
 // caller derives from the current level).
 export function cmapToGlyph(symbol, wallOffset = GlyphOffset.cmapMain) {
@@ -152,15 +154,19 @@ export function explosionToGlyph(expltyp, idx) {
 export function glyphIsNormalMaleMonster(glyph) {
     return glyph >= GlyphOffset.monMale && glyph < GlyphOffset.monMale + NUMMONS;
 }
+// C display.h:glyph_is_normal_female_monster().
 export function glyphIsNormalFemaleMonster(glyph) {
     return glyph >= GlyphOffset.monFemale && glyph < GlyphOffset.monFemale + NUMMONS;
 }
+// C display.h:glyph_is_normal_monster().
 export function glyphIsNormalMonster(glyph) {
     return glyphIsNormalMaleMonster(glyph) || glyphIsNormalFemaleMonster(glyph);
 }
+// C display.h:glyph_is_male_pet().
 export function glyphIsMalePet(glyph) {
     return glyph >= GlyphOffset.petMale && glyph < GlyphOffset.petMale + NUMMONS;
 }
+// C display.h:glyph_is_female_pet().
 export function glyphIsFemalePet(glyph) {
     return glyph >= GlyphOffset.petFemale && glyph < GlyphOffset.petFemale + NUMMONS;
 }
@@ -168,9 +174,11 @@ export function glyphIsFemalePet(glyph) {
 export function glyphIsPet(glyph) {
     return glyphIsMalePet(glyph) || glyphIsFemalePet(glyph);
 }
+// C display.h:glyph_is_detected_male_monster().
 export function glyphIsDetectedMaleMonster(glyph) {
     return glyph >= GlyphOffset.detectMale && glyph < GlyphOffset.detectMale + NUMMONS;
 }
+// C display.h:glyph_is_detected_female_monster().
 export function glyphIsDetectedFemaleMonster(glyph) {
     return glyph >= GlyphOffset.detectFemale && glyph < GlyphOffset.detectFemale + NUMMONS;
 }
@@ -178,9 +186,11 @@ export function glyphIsDetectedFemaleMonster(glyph) {
 export function glyphIsDetectedMonster(glyph) {
     return glyphIsDetectedMaleMonster(glyph) || glyphIsDetectedFemaleMonster(glyph);
 }
+// C display.h:glyph_is_ridden_male_monster().
 export function glyphIsRiddenMaleMonster(glyph) {
     return glyph >= GlyphOffset.riddenMale && glyph < GlyphOffset.riddenMale + NUMMONS;
 }
+// C display.h:glyph_is_ridden_female_monster().
 export function glyphIsRiddenFemaleMonster(glyph) {
     return glyph >= GlyphOffset.riddenFemale && glyph < GlyphOffset.riddenFemale + NUMMONS;
 }
@@ -201,6 +211,7 @@ export function glyphIsInvisible(glyph) {
 function glyphIsBodyPiletop(glyph) {
     return glyph >= GlyphOffset.bodyPiletop && glyph < GlyphOffset.bodyPiletop + NUMMONS;
 }
+// C display.h:glyph_is_body().
 export function glyphIsBody(glyph) {
     return glyph >= GlyphOffset.body && glyph < GlyphOffset.body + NUMMONS
         || glyphIsBodyPiletop(glyph);
@@ -210,18 +221,22 @@ function glyphIsFemStatuePiletop(glyph) {
     return glyph >= GlyphOffset.statueFemalePiletop
         && glyph < GlyphOffset.statueFemalePiletop + NUMMONS;
 }
+// C display.h:glyph_is_male_statue_piletop().
 function glyphIsMaleStatuePiletop(glyph) {
     return glyph >= GlyphOffset.statueMalePiletop
         && glyph < GlyphOffset.statueMalePiletop + NUMMONS;
 }
+// C display.h:glyph_is_fem_statue().
 export function glyphIsFemStatue(glyph) {
     return glyph >= GlyphOffset.statueFemale && glyph < GlyphOffset.statueFemale + NUMMONS
         || glyphIsFemStatuePiletop(glyph);
 }
+// C display.h:glyph_is_male_statue().
 export function glyphIsMaleStatue(glyph) {
     return glyph >= GlyphOffset.statueMale && glyph < GlyphOffset.statueMale + NUMMONS
         || glyphIsMaleStatuePiletop(glyph);
 }
+// C display.h:glyph_is_statue().
 export function glyphIsStatue(glyph) {
     return glyphIsMaleStatue(glyph) || glyphIsFemStatue(glyph);
 }
@@ -231,10 +246,12 @@ export function glyphIsStatue(glyph) {
 function glyphIsNormalGenericObj(glyph) {
     return glyph > GlyphOffset.object && glyph < GlyphOffset.object + FIRST_OBJECT - 1;
 }
+// C display.h:glyph_is_piletop_generic_obj().
 function glyphIsPiletopGenericObj(glyph) {
     return glyph > GlyphOffset.objectPiletop
         && glyph < GlyphOffset.objectPiletop + FIRST_OBJECT - 1;
 }
+// C display.h:glyph_is_generic_object().
 export function glyphIsGenericObject(glyph) {
     return glyphIsNormalGenericObj(glyph) || glyphIsPiletopGenericObj(glyph);
 }
@@ -244,6 +261,7 @@ function glyphIsNormalPiletopObj(glyph) {
         || glyph > GlyphOffset.objectPiletop + FIRST_OBJECT - 1
             && glyph < GlyphOffset.objectPiletop + NUM_OBJECTS;
 }
+// C display.h:glyph_is_normal_object().
 export function glyphIsNormalObject(glyph) {
     return glyph === GlyphOffset.object
         || glyph >= GlyphOffset.object + FIRST_OBJECT - 1
@@ -289,29 +307,36 @@ export function glyphIsCmapMain(glyph) {
     return glyph >= GlyphOffset.cmapMain
         && glyph < WALL_GLYPHS + GlyphOffset.cmapMain;
 }
+// C display.h:glyph_is_cmap_mines().
 export function glyphIsCmapMines(glyph) {
     return glyph >= GlyphOffset.cmapMines
         && glyph < WALL_GLYPHS + GlyphOffset.cmapMines;
 }
+// C display.h:glyph_is_cmap_gehennom().
 export function glyphIsCmapGehennom(glyph) {
     return glyph >= GlyphOffset.cmapGehennom
         && glyph < WALL_GLYPHS + GlyphOffset.cmapGehennom;
 }
+// C display.h:glyph_is_cmap_knox().
 export function glyphIsCmapKnox(glyph) {
     return glyph >= GlyphOffset.cmapKnox
         && glyph < WALL_GLYPHS + GlyphOffset.cmapKnox;
 }
+// C display.h:glyph_is_cmap_sokoban().
 export function glyphIsCmapSokoban(glyph) {
     return glyph >= GlyphOffset.cmapSokoban
         && glyph < WALL_GLYPHS + GlyphOffset.cmapSokoban;
 }
+// C display.h:glyph_is_cmap_a().
 export function glyphIsCmapA(glyph) {
     return glyph >= GlyphOffset.cmapA
         && glyph < CmapSymbol.brdnladder - CmapSymbol.ndoor + 1 + GlyphOffset.cmapA;
 }
+// C display.h:glyph_is_cmap_altar().
 export function glyphIsCmapAltar(glyph) {
     return glyph >= GlyphOffset.altar && glyph < 5 + GlyphOffset.altar;
 }
+// C display.h:glyph_is_cmap_b().
 export function glyphIsCmapB(glyph) {
     return glyph >= GlyphOffset.cmapB
         && glyph < CmapSymbol.arrowTrap + MAXTCHARS - CmapSymbol.grave + GlyphOffset.cmapB;
@@ -320,6 +345,7 @@ export function glyphIsCmapB(glyph) {
 export function glyphIsCmapZap(glyph) {
     return glyph >= GlyphOffset.zap && glyph < (NUM_ZAP << 2) + GlyphOffset.zap;
 }
+// C display.h:glyph_is_cmap_c().
 export function glyphIsCmapC(glyph) {
     return glyph >= GlyphOffset.cmapC
         && glyph < CmapSymbol.goodpos - CmapSymbol.digbeam + 1 + GlyphOffset.cmapC;

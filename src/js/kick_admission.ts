@@ -16,6 +16,9 @@ import { strikeSteed } from './steed.js';
 import { nearCapacity, SLT_ENCUMBER } from './hack.js';
 import { monsterDigests, monsterHasNoLimbs, monsterIsSlithy, monsterIsVerySmall } from './mondata.js';
 
+// Part of C dokick.c:dokick(): the refusal chain before the direction
+// prompt (no legs, too small, steed, wounded legs, burden, lizard, water,
+// trap, boulder).
 export async function admitHeroKick(): Promise<boolean> {
     requirePlayingGame(game);
     const hero = game.u;
@@ -66,7 +69,8 @@ export async function admitHeroKick(): Promise<boolean> {
     return false;
 }
 
-// These checks use the chosen direction but do not reach the target square.
+// Part of C dokick.c:dokick(): the direction-dependent admission checks
+// that never reach the target square.
 export async function kickCanReachTarget(): Promise<boolean> {
     requirePlayingGame(game);
     const hero = game.u;

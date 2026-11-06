@@ -2,6 +2,8 @@
 import { game, requireLiveGame } from './gstate.js';
 import { LL_CONDUCT } from './const.js';
 import { recordGameLogEvent } from './pline.js';
+// Part of C read.c:doread(): the u.uconduct.literate break with its
+// first-time livelog (C inlines this at every reading site).
 export function recordLiteracy(message, { state = game } = {}) {
     requireLiveGame(state);
     const conduct = state.u.uconduct;

@@ -12,14 +12,20 @@ import { d } from './rng.js';
 import { objectWeight } from './mkobj.js';
 const MAX_EGG_HATCH_TIME = 200;
 const PM_PYROLISK = MONSTER_NAME.indexOf('pyrolisk');
+// Part of C monst.h:ismnum(): local egg variant of the valid-corpsenm
+// test; the shared port is ismnum() in const.ts.
 export function eggHasMonsterSpecies(egg) {
     return !!egg && egg.corpsenm !== undefined && Number.isInteger(egg.corpsenm)
         && egg.corpsenm >= 0
         && egg.corpsenm < MONSTER_NAME.length;
 }
+// C obj.h:stale_egg(): an egg too old to hatch (moves - age exceeds
+// 2 * MAX_EGG_HATCH_TIME).
 export function eggIsStale(egg, state = game) {
     return (state.moves ?? 0) - (egg?.age ?? 0) > 2 * MAX_EGG_HATCH_TIME;
 }
+// Part of C dothrow.c:breakobj(), uhitm.c:hmon_hitmon_misc_obj(): the
+// "breaking your own eggs is bad luck" change_luck(-min(quan, 5)).
 export function applyHeroEggLuckPenalty(egg, state = game) {
     if (egg?.otyp !== EGG || !egg.spe || !eggHasMonsterSpecies(egg))
         return 0;
@@ -28,9 +34,14 @@ export function applyHeroEggLuckPenalty(egg, state = game) {
     changeHeroLuck(-penalty, state);
     return penalty;
 }
+// Part of C dothrow.c:breakobj(), uhitm.c:hmon_hitmon_misc_obj(): the
+// corpsenm == PM_PYROLISK egg test.
 export function isPyroliskEgg(egg) {
     return egg?.otyp === EGG && egg.corpsenm === PM_PYROLISK;
 }
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the egg-to-rock
+// transformation for hitting a hatching-eggs monster while the egg
+// is not stale (obj_stop_timers + otyp/oclass/oartifact/known reset).
 export function turnEggIntoRock(egg) {
     stopAllObjectTimers(egg);
     egg.otyp = ROCK;
@@ -45,6 +56,8 @@ export function turnEggIntoRock(egg) {
     egg.owt = objectWeight(egg);
     return egg;
 }
+// Part of C dothrow.c:breakobj(), uhitm.c:hmon_hitmon_misc_obj(): the
+// pyrolisk egg explosion, explode(x, y, -11, d(3, 6), 0, EXPL_FIERY).
 export function explodePyroliskEggAt(x, y, { state = game, heroCaused = !state.context.mon_moving, publish, random, rollDice = d, } = {}) {
     return createFireExplosion(x, y, rollDice(3, 6), {
         state,

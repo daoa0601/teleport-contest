@@ -7,10 +7,13 @@ import { heroMonsterForm } from './polyself.js';
 import { rn2 } from './rng.js';
 import { aggravateMonsters } from './wizard.js';
 const MS_SHRIEK = 18;
+// Part of C cmd.c:domonability(): the shrieker-form test (msound == MS_SHRIEK).
 export function heroCanShriek(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && form !== undefined && MONSTER_SOUND[form] === MS_SHRIEK;
 }
+// Part of C cmd.c:domonability(): the #monster shriek — "You shriek.",
+// the buried-hero note, and aggravate_monsters().
 export async function useHeroShriek({ state = game, publish = plineWithContinuation, random = rn2, } = {}) {
     if (!heroCanShriek(state))
         return { used: false, spentTime: false, reason: 'cannot-shriek' };

@@ -157,7 +157,7 @@ export function tendedShop(room: Room | null | undefined, state: GameState = gam
     return shopkeeperInOwnShop(room?.resident, state);
 }
 
-// C end.c:done_in_by().  General shopkeeper names carry a gendered
+// Part of C end.c:done_in_by(): the isshk branch of the killer name;
 // honorific in killer identity; prefix-coded personal names (-, +, =) do
 // not.  formatkiller() later changes the descriptive comma to a semicolon,
 // so expose the already-sanitized identity consumed by both the tombstone

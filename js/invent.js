@@ -2463,6 +2463,8 @@ export async function displayBuriedInventory(x, y, state) {
         await showProbedObjectInventory(buried, `Things that are buried ${underwhat}:`, { state });
     return count + buried.length;
 }
+// Part of C objnam.c:obj_typename(): the class-qualified type name ("potion
+// of ..."); the shared port is in objnam.ts.
 function qualifiedObjectName(raw) {
     if (raw.otyp === CORPSE && raw.corpsenm !== undefined && MONSTER_NAME[raw.corpsenm])
         return `${MONSTER_NAME[raw.corpsenm]} corpse`;
@@ -2476,6 +2478,8 @@ function qualifiedObjectName(raw) {
         default: return name;
     }
 }
+// Port only: the presentation cache for a fully known object (objnam.c
+// naming materialized once per type).
 function sourceKnownPresentation(raw) {
     const name = qualifiedObjectName(raw);
     const plural = raw.oclass === RING_CLASS ? `rings of ${OBJ_NAME(raw.otyp)}`
@@ -2497,12 +2501,12 @@ function sourceKnownPresentation(raw) {
             ? OBJECT_SPELL_CATEGORY[raw.otyp] : undefined,
     };
 }
-// Display-only callers receive a projection without changing the carried object.
+// Port only: display-only projection without changing the carried object.
 export function inventoryItem(raw, presentation = null) {
     return { ...raw, ...inventoryPresentation(raw, presentation) };
 }
-// Acquisition and polymorph retain the same object already held by timers and
-// ownership links. Only presentation fields are updated here.
+// Port only: acquisition and polymorph retain the same object already held
+// by timers and ownership links. Only presentation fields are updated here.
 export function updateInventoryPresentation(raw, presentation = null) {
     const view = inventoryPresentation(raw, presentation);
     raw.class = view.class;
@@ -2529,6 +2533,8 @@ export function updateInventoryPresentation(raw, presentation = null) {
     raw.buc = view.buc;
     return raw;
 }
+// Port only: the presentation view (role-specific sword and dagger names
+// follow objnam.c's xname() adjustments).
 function inventoryPresentation(raw, presentation) {
     let view = presentation || ITEM_PRESENTATION.get(raw.otyp)
         || (raw._startingInventory || objectTypeKnown(raw)
@@ -2588,6 +2594,8 @@ function inventoryPresentation(raw, presentation) {
             ? undefined : buc,
     };
 }
+// Part of C invent.c:addinv_core2(): normalize the new object before
+// linking — how_lost, no_charge, the picked container, and ox/oy.
 function prepareInventoryItem(raw, presentation, observe) {
     raw.how_lost = LOST_NONE;
     raw.no_charge = false;
@@ -2600,6 +2608,8 @@ function prepareInventoryItem(raw, presentation, observe) {
     recordHeroPrizeAcquisition(item, game);
     return item;
 }
+// Part of C invent.c:addinv_core2(): assigninvlet, mark carried, link into
+// invent, and reorder under fixinv.
 function linkInventoryItem(item) {
     assignInventoryLetter(item);
     item.where = 'inventory';
@@ -2611,10 +2621,13 @@ function linkInventoryItem(item) {
     }
     return item;
 }
-// The reorder_invent() key toggles ASCII case to put a-z before A-Z.
+// Part of C invent.c:reorder_invent(): the key toggles ASCII case to put
+// a-z before A-Z.
 export function inventoryLetterRank(item) {
     return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
 }
+// Part of C invent.c:addinv_core2(): the tail — the pickup_thrown quiver,
+// pickup_prev, carry_obj_effects(), and the cursed-figurine timer.
 async function finishAddedInventoryItem(item, recoveredThrownStack = false) {
     if (recoveredThrownStack && game.flags.pickup_thrown !== false && !game.uquiver
         && item.otyp !== AKLYS && artifactById(item.oartifact)?.name !== 'Mjollnir'
@@ -2625,6 +2638,8 @@ async function finishAddedInventoryItem(item, recoveredThrownStack = false) {
     attachCursedFigurineTimer(item, game);
     return item;
 }
+// Part of C invent.c:addinv(): the created-object entry — the same
+// admission, merge and tail as addInventoryItem().
 export async function addCreatedInventoryItem(raw, presentation = null, observe = true) {
     assertCreatedObject(raw, game);
     const wasThrown = raw.how_lost === LOST_THROWN;
@@ -2639,7 +2654,8 @@ export async function addCreatedInventoryItem(raw, presentation = null, observe 
     item = added;
     return await finishAddedInventoryItem(item, wasThrown && !existing);
 }
-// C addinv_core1(): clear prize protection before addinv tests stack merging.
+// Part of C invent.c:addinv_core1(): clear prize protection before addinv
+// tests stack merging.
 export function recordHeroPrizeAcquisition(object, state = game) {
     const prizes = state.context.achieveo;
     const kind = levelPrizeKind(object, state);
@@ -2654,6 +2670,7 @@ export function recordHeroPrizeAcquisition(object, state = game) {
         prizes.soko_prize_oid = 0;
     object.nomerge = false;
 }
+// Part of C invent.c:addinv_core1(): the uhave possession flags.
 function updateCarriedFlags(object, carried, state) {
     const flag = carriedPossessionFlag(object, state);
     if (flag) {
@@ -2662,18 +2679,23 @@ function updateCarriedFlags(object, carried, state) {
         state.u.uhave[flag] = carried;
     }
 }
+// Part of C invent.c:addinv_core1(): the object to uhave-flag mapping.
 function carriedPossessionFlag(object, state) {
     return CARRIED_FLAGS.get(object.otyp) ?? (isQuestArtifact(object, state) ? 'questart' : undefined);
 }
+// Part of C attrib.c:stone_luck(): whether this object contributes to the
+// luckstone balance.
 export function confersLuck(object, state = game) {
     return object.otyp === LUCKSTONE
         || !!artifactById(object.oartifact, state)?.flags.includes('SPFX_LUCK');
 }
+// Part of C invent.c:getobj(): the classifications that offer a choice.
 function admitsChoice(classification) {
     return classification === GETOBJ_SUGGEST || classification === GETOBJ_DOWNPLAY;
 }
-// getobj() followed by its split_otmp tail, for callers which take the
-// object getobj() returns; hands are not a choice for these callbacks.
+// Part of C invent.c:getobj(): followed by its split_otmp tail, for
+// callers which take the object getobj() returns; hands are not a choice
+// for these callbacks.
 export async function chooseInventoryObject(word, classify, options = {}) {
     const selection = await getobj(word, classify, options);
     const object = selection.object;
@@ -2689,10 +2711,12 @@ export async function chooseInventoryObject(word, classify, options = {}) {
     }
     return object;
 }
+// Part of C invent.c:getobj(): the "Never mind." answer.
 async function neverMind() {
     await pline('Never mind.');
 }
-// Inventory prompt order: '$' first, then a-z, then A-Z, then other.
+// Part of C invent.c:reorder_invent(): '$' first, then a-z, then A-Z,
+// then other.
 export function inventoryLetterOrder(letter) {
     if (letter == null)
         return 53;
@@ -2704,13 +2728,14 @@ export function inventoryLetterOrder(letter) {
         return letter.charCodeAt(0) - 38;
     return 53;
 }
-// C getobj() has already consumed its queued selection or user-input marker.
-// Its interactive query must leave later canned answers for the caller.
+// Part of C invent.c:getobj(): the prompt after its queued selection or
+// user-input marker was consumed; later canned answers stay for the caller.
 async function askInventoryPrompt(prompt) {
     await flushPendingTopline();
     const { answer } = await yn_function(prompt, null, '', false);
     return answer.charCodeAt(0);
 }
+// Part of C invent.c:count_buc(): the BUC letter of one object.
 function identificationBuc(object) {
     if (object.oclass === COIN_CLASS)
         return game.flags.goldX ? 'X' : 'U';
@@ -2718,9 +2743,13 @@ function identificationBuc(object) {
         return 'X';
     return object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
+// Part of C invent.c:dounpaid()/count_buc(): the unpaid recursion into
+// containers.
 function hasUnpaidContents(object) {
     return !!object.unpaid || (object.contents || []).some(hasUnpaidContents);
 }
+// Part of C invent.c:dotypeinv(): the traditional class+BUCX+uP+aim
+// answer set, with count_buc()'s priest recognition.
 function traditionalIdentifyChoices(candidates) {
     const classes = [...new Set(candidates.map(object => OBJECT_CLASS_SYMBOLS[object.oclass]))];
     const inventory = game.inventory;
@@ -2742,6 +2771,8 @@ function traditionalIdentifyChoices(candidates) {
         choices += 'P';
     return choices + 'aim';
 }
+// Part of C invent.c:dotypeinv(): parse the category answer into classes,
+// beatitudes, unpaid, picked, all and menu.
 async function parseIdentificationCategories(answer) {
     const classes = [];
     const beatitudes = new Set();
@@ -2769,6 +2800,8 @@ async function parseIdentificationCategories(answer) {
     }
     return { classes, beatitudes, unpaid, picked, all, menu };
 }
+// Part of C invent.c:dotypeinv(): whether one object matches the chosen
+// categories.
 function matchesIdentificationCategories(object, categories) {
     if (categories.unpaid && !hasUnpaidContents(object))
         return false;
@@ -2776,6 +2809,8 @@ function matchesIdentificationCategories(object, categories) {
         return false;
     return !categories.picked || !!object.pickup_prev;
 }
+// Part of C invent.c:menu_identify(): the "What would you like to identify
+// first/next?" menu over inventory letters.
 async function identificationMenu(candidates, first) {
     await flushPendingTopline();
     clearMessageWindow();
@@ -2795,20 +2830,23 @@ async function identificationMenu(candidates, first) {
         sections, signalEscape: true,
     });
 }
+// Part of C invent.c:xprname(): the BUC adjective.
 export function bucAdjectiveForName(item) {
     return objectBlessingDescription(item);
 }
-// Materialize only at a menu/prinv boundary. Hallucinated colors use display RNG.
+// Part of C invent.c:xprname(): the primary-hand detail materialized only
+// at a menu/prinv boundary; hallucinated colors use display RNG.
 export function inventoryPrimaryHandDetail(item) {
     return primaryHandDescriptionDetail(item);
 }
+// Part of C objnam.c:doname(): the display wrapper.
 export async function inventoryItemDescription(item, options = {}) {
     return await objectDescription(item, options);
 }
+// Part of C invent.c:reroll_menu(): distant_name(doname) under
+// override_ID.  Identify a temporary view rather than mutating the live
+// object or discovery tables for a character which might be rejected.
 async function rerollItemDescription(item) {
-    // invent.c:reroll_menu() brackets distant_name(doname) with
-    // override_ID.  Identify a temporary view rather than mutating the live
-    // object or discovery tables for a character which might be rejected.
     return await inventoryItemDescription({
         ...item,
         known: true,
@@ -2818,6 +2856,7 @@ async function rerollItemDescription(item) {
         overrideIdentified: true,
     });
 }
+// Part of C invent.c:reroll_menu(): the St/Dx/Co/In/Wi/Ch line.
 function rerollAttributeLine() {
     const values = game.u?.acurr?.a || [];
     const displayed = ATTRIBUTE_DISPLAY_ORDER.map(attribute => values[attribute]);
@@ -2825,6 +2864,7 @@ function rerollAttributeLine() {
         + `Co:${displayed[2] ?? '?'} In:${displayed[3] ?? '?'} Wi:${displayed[4] ?? '?'} `
         + `Ch:${displayed[5] ?? '?'}`;
 }
+// Part of C invent.c:reroll_menu(): the plain [yn] fallback prompt.
 async function rerollFallbackPrompt() {
     const message = 'Reroll this character? [yn] (n) ';
     await pline(message);
@@ -2839,9 +2879,13 @@ async function rerollFallbackPrompt() {
             return false;
     }
 }
+// Part of C invent.c:display_pickinv(): sortloot() grouping into class
+// sections under sortpack.
 async function inventorySections(items = game.inventory || [], includeGold = true, letters = null) {
     return await inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold, letters);
 }
+// Part of C invent.c:display_pickinv(): the grouped render in chain order,
+// with letter filtering after naming.
 async function inventorySectionsInOrder(items, includeGold = true, letters = null) {
     const grouped = new Map();
     for (const item of items) {
@@ -2869,6 +2913,8 @@ async function inventorySectionsInOrder(items, includeGold = true, letters = nul
     }
     return [...grouped].map(([heading, items]) => ({ heading, items }));
 }
+// Part of C iactions.c:itemactions(): the action-choice window for one
+// item.
 async function showItemActionMenu(item) {
     const repairGold = item.oclass === COIN_CLASS && await checkInventoryGold('item-action');
     return showChoiceWindow({
@@ -2876,6 +2922,7 @@ async function showItemActionMenu(item) {
         entries: itemActionEntries(item, game, repairGold),
     });
 }
+// Part of C iactions.c:itemactions(): the selection entry over the menu.
 export async function inventoryActionForObject(item) {
     const key = await showItemActionMenu(item);
     return key === 0 ? null : { key: inventoryActionKey(key), item };
@@ -3025,6 +3072,7 @@ function itemActionEntries(item, state, repairGold) {
         entries.push({ key: '/', text: `Look up information about ${stack ? 'these' : 'this'}` });
     return entries;
 }
+// Part of C iactions.c:itemactions(): the 'a' apply-row classification.
 function itemApplyText(item, state) {
     const light = item.lamplit ? 'Extinguish' : 'Light';
     if (item.oclass === COIN_CLASS)
@@ -3088,12 +3136,15 @@ function itemApplyText(item, state) {
         return 'Play this musical instrument';
     return item.oclass === WAND_CLASS ? 'Break this wand' : null;
 }
+// Part of C do_name.c:docall(): which object types accept a type call.
 export function objectTypeCallable(object, state = game) {
     return !!state._objectCallNames?.[object.otyp]
         || ![AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(object.otyp)
             && [ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, VENOM_CLASS].includes(object.oclass)
             && !!OBJ_DESCR(object.otyp, state);
 }
+// Part of C iactions.c:itemactions(): the 'P' wear rows for amulet, rings
+// and eyewear.
 function accessoryActionText(item, state) {
     if (item.oclass === AMULET_CLASS)
         return state.uamul ? '[already wearing an amulet]' : 'Put this amulet on';
@@ -3133,6 +3184,7 @@ function itemReadingText(item, state) {
     const noun = novel ? simpleObjectName(item, state) : tome ? 'tome' : 'spellbook';
     return `${verb} this ${noun}`;
 }
+// Port only: the action key adapter.
 function inventoryActionKey(code) {
     const key = String.fromCharCode(code);
     switch (key) {
@@ -3171,6 +3223,8 @@ function inventoryActionKey(code) {
             throw new RangeError(`Unexpected inventory action key ${code}`);
     }
 }
+// Part of C invent.c:fully_identify_obj(), end.c:really_done(): identify
+// one carried object for final disclosure.
 export function identifyObjectForDisclosure(item, identifyTinContents = false) {
     recordObjectEncounter(item.otyp);
     recordObjectKnowledge(item.otyp);
@@ -3192,7 +3246,8 @@ export function identifyObjectForDisclosure(item, identifyTinContents = false) {
     if (item.oclass === GEM_CLASS && canonicalName)
         item.name = canonicalName;
 }
-// Command dispatch shared by the inventory report keys.
+// Part of C invent.c:dotypeinv()/ddoinv(): dispatch the report keys to the
+// pr* commands.
 export async function inventoryReport(report) {
     game.context.move = 0;
     switch (report) {
@@ -3206,6 +3261,7 @@ export async function inventoryReport(report) {
         case 'inuse': return doprinuse();
     }
 }
+// Part of C invent.c:prinv(): the "invlet - doname()." line.
 async function describeCarriedObject(object) {
     if (game.flags.fixinv === false)
         reassignInventoryLetters();
@@ -3214,6 +3270,8 @@ async function describeCarriedObject(object) {
         primaryHandDetail: inventoryPrimaryHandDetail(object),
     })}.`);
 }
+// Part of C invent.c:doprinuse(): the section headings (accessories,
+// weapons, armor, miscellaneous).
 function inUseHeading(object, accessoryLabel) {
     const mask = object.owornmask ?? 0;
     if (mask & W_ACCESSORY)
@@ -3224,11 +3282,13 @@ function inUseHeading(object, accessoryLabel) {
         return 'Worn Armor';
     return 'Miscellaneous';
 }
+// Part of C invent.c:count_buc(): the BUC classification of one object.
 function beatitude(object) {
     if (object.oclass === COIN_CLASS)
         return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
+// Part of C invent.c:dotypeinv(): the BUCX answer keys.
 function bucChoice(choice) {
     switch (choice) {
         case 'B':
@@ -3238,6 +3298,8 @@ function bucChoice(choice) {
         default: throw new Error(`Unknown inventory status ${choice}`);
     }
 }
+// Part of C invent.c:dotypeinv(): the category menu — classes, unpaid,
+// BUCX and just-picked entries.
 async function inventoryCategoryMenu(classes, unpaid, billed, statuses, picked, prompt) {
     if (!game.inventory.length)
         return null;
@@ -3268,6 +3330,8 @@ async function inventoryCategoryMenu(classes, unpaid, billed, statuses, picked, 
     });
     return selected[0] ?? null;
 }
+// Part of C invent.c:dotypeinv(): an unvalidated containing chain
+// excludes the item.
 function unknownContainer(object) {
     let container = object.container;
     while (container) {
@@ -3277,9 +3341,11 @@ function unknownContainer(object) {
     }
     return false;
 }
+// Part of C invent.c:dfeature_at(): the sentence for the hero's square.
 export function dungeonFeatureSentenceAt(x, y) {
     return dungeonFeatureSentence(dungeonFeatureAt(x, y));
 }
+// Part of C invent.c:dfeature_at(): the "There is %s here." sentence.
 export function dungeonFeatureSentence(feature) {
     if (!feature || feature === 'pool of water' && (game.underwater || game.u.uinwater))
         return '';
@@ -3287,6 +3353,8 @@ export function dungeonFeatureSentence(feature) {
         || feature.startsWith('frozen ') || feature.slice(feature.indexOf(' ')) === ' ice';
     return `There is ${noArticle ? feature : withIndefiniteArticle(feature)} here.`;
 }
+// Part of C invent.c:look_here(): read_engr_at() plus nomul(0) for a real
+// run.
 export async function readFloorEngraving(x, y) {
     const read = await readEngravingAt(x, y, plineWithContinuation);
     // engrave.c:read_engr_at() only calls nomul(0) for a real run
@@ -3294,12 +3362,13 @@ export async function readFloorEngraving(x, y) {
     if (read && (game.context.run ?? 0) > 0)
         nomul(0);
 }
+// Port only: the pile_limit option read with its default.
 function configuredPileLimit() {
     const configured = Number(game.flags?.pile_limit ?? 5);
     return Number.isFinite(configured) && configured >= 0 ? Math.trunc(configured) : 5;
 }
-// The object part of look_here(). objectCount at or above pile_limit only
-// summarizes the pile.
+// Part of C invent.c:look_here(): the object part — objectCount at or
+// above pile_limit summarizes the pile.
 export async function showFloorPile(objects, pickedSome = false, featureDescription = '', { objectCount = 0 } = {}) {
     const first = objects[0];
     if (!first)
@@ -3395,8 +3464,8 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
         await readFloorEngraving(game.u.ux, game.u.uy);
     return result;
 }
-// tty corner placement for a short pile window. Only a menu-dismissal key
-// destroys it and returns that input boundary to the command loop.
+// Part of C invent.c:look_here(): the tty corner window (docorner
+// placement) for a short pile window.
 async function showFloorPileCorner(display, lines) {
     // Tty menus leave one blank column after the widest line and align the
     // window to the right.
@@ -3414,27 +3483,34 @@ async function showFloorPileCorner(display, lines) {
     while (![27, 32, 10, 13].includes(key));
     return left;
 }
+// Part of C objnam.c:doname(): the priced floor description.
 export async function pricedFloorObjectDescription(object) {
     return await objectDescription(object, { withPrice: true });
 }
+// Part of C objnam.c:doname(): the plain floor description.
 export async function floorObjectDescription(object) {
     return await objectDescription(object);
 }
+// Port only: the validated inventory letter.
 export function inventoryCommandLetter(item) {
     if (item.invlet === null || item.invlet === undefined)
         throw new TypeError(`Carried object ${item.o_id} has no inventory letter`);
     return item.invlet;
 }
+// Part of C invent.c:sortloot_cmp(): the flags.inv_order class order.
 export function inventoryClassOrder(state = game) {
     return [...(state.flags.inv_order || DEFAULT_PACK_ORDER)];
 }
+// Part of C invent.c:sortloot_cmp(): the inv_order symbols string.
 export function inventoryOrderSymbols(state = game) {
     return inventoryClassOrder(state).map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('');
 }
+// Part of C invent.c:sortloot(): the sortloot and sortpack option bits.
 export function inventorySortMode(state = game) {
     return ((state.flags.sortloot ?? 'l') === 'f' ? SORTLOOT_LOOT : SORTLOOT_INVLET)
         | (state.flags.sortpack !== false ? SORTLOOT_PACK : 0);
 }
+// Part of C invent.c:sortloot(): the sort bits for a loot-context caller.
 export function lootSortMode({ inventoryLetters = false, state = game } = {}) {
     const sortloot = state.flags.sortloot ?? 'l';
     return (sortloot === 'f' || sortloot === 'l' && !inventoryLetters
@@ -3455,6 +3531,7 @@ export function sortObjects(objects, { mode = 0, state = game, filter = null, } 
     return recorderSort(entries, (left, right) => compareLoot(left, right, mode, state))
         .map(entry => entry.object);
 }
+// Part of C invent.c:loot_classify(): the per-class subclass ranking.
 function lootSubclass(object, oclass, seen, discovered) {
     const skill = objectSkill(object.otyp);
     if (oclass === ARMOR_CLASS)
@@ -3491,6 +3568,8 @@ function lootSubclass(object, oclass, seen, discovered) {
     }
     return 1;
 }
+// Part of C invent.c:sortloot(): the observation and classification
+// boundary per entry.
 function classifyEntry(entry, state) {
     if (!entry.classification) {
         if (!heroIsBlind(state))
@@ -3499,16 +3578,19 @@ function classifyEntry(entry, state) {
     }
     return entry.classification;
 }
+// Part of C invent.c:sortloot_cmp(): the case-normalized loot name.
 function normalizedLootName(object, state) {
     const name = lootObjectName(object, state);
     if (typeof name !== 'string')
         throw new Error(`Loot object ${object.o_id} has no sortable name`);
     return name.replace(/[A-Z]/g, letter => letter.toLowerCase());
 }
+// Part of C invent.c:sortloot_cmp(): the BUC rank.
 function beatitudeRating(object) {
     return object.bknown ? object.blessed ? 3 : object.cursed ? 1 : 2 : 0;
 }
-// obj.h aliases these conditions to the fields read by greatest_erosion().
+// Part of C invent.c:sortloot_cmp(): greatest_erosion(), with the obj.h
+// aliases from the existing prose below.
 function lootErosion(object) {
     return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0, Number(!!object.orotten), Number(!!object.odiluted), Number(!!object.norevive));
 }
@@ -3516,14 +3598,17 @@ function lootErosion(object) {
 // Ordinary stack compatibility and merging. C refs: invent.c:mergable(),
 // merged(), same_price().
 // ---------------------------------------------------------------------------
+// Part of C invent.c:mergable(): the object's given-name compare.
 function objectMergeName(object) {
     return object?.oextra?.oname ?? object?.oname ?? '';
 }
+// Part of C invent.c:mergable(): the omid/omonst attachment test.
 function hasAttachment(object) {
     return !!(object?.oextra?.omid || object?.oextra?.omonst);
 }
-// C same_price(): each search follows next_shkp(TRUE), with its riling
-// side effects, and prefers the first keeper for the second object.
+// Part of C invent.c:same_price(): the next_shkp(TRUE) bill search, with
+// its riling side effects, preferring the first keeper's bill for the
+// second object.
 function billedStackOwner(object, state) {
     for (const keeper of visitBilledShopkeepers(state)) {
         const billed = billForObject(object, state, keeper);
@@ -3532,6 +3617,7 @@ function billedStackOwner(object, state) {
     }
     return null;
 }
+// C invent.c:same_price().
 function sameBillPrice(first, second, state) {
     const firstBill = billedStackOwner(first, state);
     const secondBill = (firstBill
@@ -3541,18 +3627,23 @@ function sameBillPrice(first, second, state) {
         && firstBill.resident === secondBill.resident
         && firstBill.entry.price === secondBill.entry.price;
 }
+// Part of C invent.c:merged(): whether the comparison discovers
+// known/bknown/rknown.
 function comparisonDiscovers(survivor, incoming, state) {
     return !!survivor.known !== !!incoming.known
         || (!!survivor.rknown !== !!incoming.rknown && !!survivor.oerodeproof)
         || ((survivor.oclass === COIN_CLASS ? false : !!survivor.bknown)
             !== !!incoming.bknown && state.urole?.key !== 'priest');
 }
+// Part of C invent.c:merged(): the discovery-message conditions
+// (carried, and neither half thrown).
 function comparisonNeedsMessage(survivor, incoming, state) {
     return survivor.where === 'inventory'
         && incoming.how_lost !== LOST_THROWN && survivor.how_lost !== LOST_THROWN
         && comparisonDiscovers(survivor, incoming, state);
 }
-// C merged() prelude, completed before either kind of display can yield.
+// Part of C invent.c:merged(): the prelude, completed before either kind
+// of display can yield.
 async function prepareStackMerge(survivor, incoming, state) {
     const discovered = comparisonDiscovers(survivor, incoming, state);
     if (!survivor.globby) {
@@ -3608,8 +3699,8 @@ async function prepareStackMerge(survivor, incoming, state) {
         survivor.bypass = true;
     return discovered;
 }
-// A creation merge has no display continuation. Reject such work before
-// changing ages, quantities, timers or ownership; live callers must await it.
+// Part of C invent.c:merged(): the creation-time merge with no display
+// continuation.
 export async function mergeCreatedObjectStacks(survivor, incoming, state = game) {
     assertCreatedObject(incoming, state);
     if (survivor.unpaid || billForObject(survivor, state) || incoming.owornmask)

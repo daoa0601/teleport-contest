@@ -34,15 +34,20 @@ const CALLBACK_NAMES = ['cmd_before', 'level_enter', 'level_leave', 'end_turn'] 
 export type LuaCallbackName = typeof CALLBACK_NAMES[number];
 export type LuaAlignmentName = 'law' | 'neutral' | 'chaos';
 
+// Part of C nhlua.c:nhl_callback(): membership in decl.c's nhcb_name[]
+// callback list.
 function isCallbackName(name: string): name is LuaCallbackName {
     return CALLBACK_NAMES.some(event => event === name);
 }
 
+// Port only: validate a Lua alignment name for the des bindings.
 function alignmentName(value: LuaValue): LuaAlignmentName {
     if (value === 'law' || value === 'neutral' || value === 'chaos') return value;
     throw new TypeError(`Invalid Lua alignment name: ${String(value)}`);
 }
 
+// Part of C nhlua.c:nhl_init(): the nh.* function registration
+// (rn2, parse_config, callback, pline, text, ...).
 function bindingsFor(
     gameState: GameState, lifecycle: LuaLifecycle, objects: ObjectApi,
     additionalBindings: LuaBindings = {},
@@ -280,6 +285,7 @@ export class LuaLifecycle {
     }
 }
 
+// Port only: look up a packaged Lua source by file name.
 function luaSource(filename: string): string {
     const source = LUA_SOURCES[filename];
     if (!source) throw new Error(`Lua source is not packaged: ${filename}`);
@@ -288,12 +294,14 @@ function luaSource(filename: string): string {
 
 let activeLifecycle = new LuaLifecycle();
 
+// Port only: bind the process-wide active Lua lifecycle.
 export function bindLuaLifecycle(lifecycle: LuaLifecycle): void {
     if (!(lifecycle instanceof LuaLifecycle))
         throw new TypeError('bindLuaLifecycle requires a LuaLifecycle');
     activeLifecycle = lifecycle;
 }
 
+// Port only: the process-wide active Lua lifecycle.
 export function currentLuaLifecycle(): LuaLifecycle {
     return activeLifecycle;
 }

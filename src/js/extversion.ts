@@ -51,6 +51,7 @@ const VERSION_PAGE_2 = [
     '--More--',
 ];
 
+// C version.c:doextversion(): show the version and license text pages.
 export async function doextversion() {
     // version.c substitutes :LUAVERSION:/:LUACOPYRIGHT: lazily. The first
     // get_lua_version() opens a Lua state and loads nhlib; later calls reuse
