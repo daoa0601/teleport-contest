@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { displayMessageWindow } from '../js/tty_topline.js';
+import { displayMessageWindow } from '../js/topl.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';

@@ -5,7 +5,7 @@ import { currentMulti } from '../js/cmd.js';
 import { CLR_BRIGHT_BLUE } from '../js/terminal.js';
 import { M_SEEN_FIRE, M_SEEN_SLEEP, NO_MINVENT, STONE } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';

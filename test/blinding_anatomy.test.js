@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { finishHeroThrownBlindness, prepareHeroThrownBlindness } from '../js/blinding_attack.js';
 import { eyecount } from '../js/mondata.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

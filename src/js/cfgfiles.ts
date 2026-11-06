@@ -10,9 +10,10 @@
 import type { ConfigurationSettings, OptionParseState } from './options.js';
 import {
     bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException,
-    parseMenuColoring, parseOptions, visctrl, MENU_KEY_OPTIONS,
+    parseOptions, visctrl, MENU_KEY_OPTIONS,
 } from './options.js';
 import { mungSpaces } from './hacklib.js';
+import { parseMenuColoring } from './coloratt.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';
 import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
@@ -22,7 +23,7 @@ import type { InterfaceFlags } from './flags.js';
 import { game } from './gstate.js';
 import { CommandBindings } from './command_bindings.js';
 import { C_ATR_INVERSE } from './color_attr.js';
-import { cutConfigBytes } from './color_query.js';
+import { cutConfigBytes } from './coloratt.js';
 import { rawPrint, rawPrintf, truncatePlineMessage } from './pline.js';
 import { getret } from './wintty.js';
 import { rn2 } from './rng.js';

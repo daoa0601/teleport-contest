@@ -37,7 +37,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { releaseMonsterLeash } from './apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { begForFood, monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './sounds.js';
 import { maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes, monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks, tunnels, speciesHasWeaponAttack, touchPetrifies, carnivorous, herbivorous, resistConflict, } from './mondata.js';
 import { monsterReflectsRay } from './muse.js';

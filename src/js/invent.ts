@@ -49,7 +49,7 @@ import {
 import { ATTRIBUTE_DISPLAY_ORDER, setMoreLuck } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, transientMonsterGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './topl.js';
 import { showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin } from './wintty.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -79,7 +79,7 @@ import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroCanReachFloor, readEngravingAt } from './engrave.js';
 import { surfaceName } from './dungeon.js';
-import { stairwayDescription } from './mklev.js';
+import { stairwayDescription } from './stairs.js';
 import { deityName } from './pray.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';

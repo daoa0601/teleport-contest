@@ -3,7 +3,7 @@ import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MFAST, M_ATTK_DEF_DIED, M_ATTK_MISS, MM_NOGRP, NO_MINVENT, NORMAL_SPEED, STRAT_WAITFORU, FIRE_TRAP, W_ARMC } from '../js/const.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { wearEyewear } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { mhitmAdSlim } from '../js/uhitm.js';

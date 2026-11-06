@@ -5,7 +5,7 @@ import { mhitmAdCold, mhitmAdElec } from '../js/uhitm.js';
 import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { M_SEEN_COLD, M_SEEN_ELEC, MM_ANGRY, MM_NOGRP, MSLOW, NO_MINVENT, W_ARM, } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_PROTECTION, OBJECT_NAMES, POT_HEALING, WAN_STRIKING, WHITE_DRAGON_SCALE_MAIL, } from '../js/object_data.js';

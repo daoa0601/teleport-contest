@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { W_ARM, W_ARMC } from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { changeMonsterForm, grantMonsterCorpseIntrinsic } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

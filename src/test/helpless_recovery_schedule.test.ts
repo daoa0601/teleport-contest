@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { nomul } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
 import type { InputGate } from '../js/input.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { HOLE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';

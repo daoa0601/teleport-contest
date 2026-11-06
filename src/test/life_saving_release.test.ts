@@ -10,7 +10,7 @@ import { setHeroGrip } from '../js/mon.js';
 import { installPagerInput } from './support/pager-input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { Monster } from '../js/monster_types.js';
 

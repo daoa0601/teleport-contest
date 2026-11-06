@@ -36,7 +36,7 @@ import { scheduleLevelChange } from './do.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';
 import { canSpotMonster, flush_screen } from './display.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline, resetToplineClip } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, resetToplineClip } from './topl.js';
 import { vision_recalc } from './vision.js';
 import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOnExit, deleteObject } from './shk.js';
 import type { ShopExitOutcome } from './shk.js';

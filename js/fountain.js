@@ -11,7 +11,7 @@ import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, 
 import { monsterHasMapPosition } from './steed.js';
 import { canSpotMonster, glyphAt, newsym } from './display.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
-import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { displayMessageWindow, flushPendingTopline } from './topl.js';
 import { deleteEngravingAt } from './engrave.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { countLevelFeatures, makemonNear } from './mklev.js';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { resetInputState } from '../js/input.js';
 import { P_ATTACK_SPELL, P_DAGGER } from '../js/const.js';
 import { addHeroWeaponSkillSlots, advanceHeroSkill, ensureHeroSkills, loseHeroWeaponSkillSlots, useHeroSkill, } from '../js/weapon.js';

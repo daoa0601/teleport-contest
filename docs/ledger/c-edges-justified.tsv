@@ -346,7 +346,6 @@ clear_bypasses	clear_bypass	inlined	bypass marks cleared across all object lists
 clear_level_structures	clear_regions	inlined	fresh GameMap drops all regions (mklev.ts)
 clear_level_structures	free_exclusions	inlined	fresh GameMap drops exclusion zones (mklev.ts)
 clear_level_structures	reset_xystart_size	inlined	fresh map resets the coder frame (mklev.ts)
-clear_level_structures	stairway_free_all	inlined	g.stairs = null (mklev.ts)
 clear_no_charge	clear_no_charge_obj	inlined	no_charge cleared per object (dog.ts)
 clear_unpaid_obj	onbill	inlined	onBillOf before clearing unpaid (shk.ts)
 climb_pit	m_easy_escape_pit	inlined	heroEscapesPitEasily (trap.ts)
@@ -876,7 +875,6 @@ mcast_insects	monster_census	inlined	spottedMonsterCount before and after (mcast
 offer_corpse	a_gname	inlined	altar god naming (sacrifice.ts)
 offer_corpse	rider_corpse_revival	inlined	reviveCorpseImmediately for rider corpses (sacrifice.ts)
 offer_corpse	u_gname	inlined	own god naming (sacrifice.ts)
-On_stairs	stairway_at	inlined	stairway chain scan (digging_terrain.ts)
 propagate	mbirth_limit	inlined	monsterBirthLimit via speciesAfterBirth in propagateMonsterSpecies (makemon.ts)
 ready_weapon	arti_speak	inlined	speakArtifact after wielding (wield.ts)
 ready_weapon	artifact_light	inlined	lightWieldedArtifact (wield.ts)
@@ -1148,8 +1146,6 @@ yn_function	cmdq_add_key	inlined	rememberYnAnswerKey files the CQ_REPEAT answer 
 yn_function	dumplogmsg	n/a	dumplog file output; the port has no dumplog
 yn_function	rn2	inlined	fuzzer random answers come from input.ts randomKey under debug_fuzzer
 yn_function	yn_function_menu	inlined	tty_yn_function renders and answers the question (query.ts)
-back_to_glyph	known_branch_stairs	inlined	u_traversed plus cross-branch destination check (display.ts stairGlyphIndex)
-back_to_glyph	stairway_at	inlined	game.stairs walk to the square (display.ts stairGlyphIndex)
 do_break_wand	broken_wand_explode	inlined	explode with the type-specific damage multipliers (apply.ts)
 do_break_wand	discover_object	inlined	learnObjectType after the ray explosion (apply.ts)
 do_break_wand	maybe_dunk_boulders	inlined	boulder-into-liquid loop after digging (apply.ts digWithBrokenWand)
@@ -1481,8 +1477,6 @@ check_shop_obj	costly_spot	inlined	costlySpot(x, y, state) (shk.ts)
 check_shop_obj	in_rooms	inlined	roomsAt(level, x, y, SHOPBASE)[0] (shk.ts)
 check_shop_obj	shop_keeper	inlined	shopResident(heroShop) (shk.ts)
 check_shop_obj	subfrombill	inlined	removeObjectAndContentsFromBill (shk.ts)
-domouseaction	On_stairs_dn	inlined	stairs chain walk; !up queues 'down' (cmd.ts mouseAction)
-domouseaction	On_stairs_up	inlined	stairs chain walk; up queues 'up' (cmd.ts mouseAction)
 domouseaction	cmdq_add_ec	inlined	queue() pushes into _cannedCommands (cmd.ts mouseAction)
 domouseaction	sgn	inlined	Math.sign (cmd.ts mouseAction)
 domouseaction	xytodir	inlined	contextMenuCommand direction index (cmd.ts)
@@ -1519,9 +1513,9 @@ moveloop_preamble	initrack	inlined	initTrack (allmain.ts)
 mv_bubble	block_point	inlined	drawBubble repaints cells and vision_reset() recomputes blockers (mkmaze.ts)
 mv_bubble	sgn	inlined	Math.sign on out-of-range deltas (mkmaze.ts moveBubblePosition)
 mv_bubble	unblock_point	inlined	drawBubble repaints cells and vision_reset() recomputes blockers (mkmaze.ts)
-process_text_window	end_glyphout	inlined	overlay painting restores the map underlay (prevmsg.ts)
-process_text_window	g_putch	inlined	overlay writes through the display cell grid (prevmsg.ts)
-process_text_window	tty_curs	inlined	setCursor while paging (prevmsg.ts)
+process_text_window	end_glyphout	inlined	overlay painting restores the map underlay (topl.ts)
+process_text_window	g_putch	inlined	overlay writes through the display cell grid (topl.ts)
+process_text_window	tty_curs	inlined	setCursor while paging (topl.ts)
 reverse_loot	dist2	inlined	squared distance in royalCoffers nearest-chest pick (pickup.ts)
 reverse_loot	g_at	inlined	objects[x][y] gold pile check after dropping (pickup.ts)
 reverse_loot	inv_cnt	inlined	inventory length for the 1/(n+1) pass (pickup.ts)
@@ -1891,7 +1885,7 @@ wiz_level_tele	ecname_from_fn	inlined	same centralized admission gate (cmd.ts co
 vpline	alloc	n/a	memory allocation for the accessiblemsg coordinate prefix; plineWithContinuation builds the prefixed string directly (pline.ts:82-87)
 vpline	dumplogmsg	n/a	DUMPLOG_CORE dump-file message log; the replay grader writes no dump log
 vpline	execplinehandler	n/a	MSGHANDLER fork/exec of a user message handler; an operating-system feature with no grader effect (c-js-semantics lists it out of scope)
-vpline	putmesg	inlined	the ATR_URGENT/ATR_NOHISTORY attributes are computed where vpline is ported: plineWithContinuation passes urgent to updateTopline (tty_topline.ts), the putstr(WIN_MESSAGE) owner
+vpline	putmesg	inlined	the ATR_URGENT/ATR_NOHISTORY attributes are computed where vpline is ported: plineWithContinuation passes urgent to updateTopline (topl.ts), the putstr(WIN_MESSAGE) owner
 mcast_stun_you	make_stunned	inlined	the stun timeout write, the 0<->nonzero botl flag, and the status transition are inline (mcastu.ts:484-486); set_itimeout replaces the timeout, matching duration over stunnedTurns
 mcast_fire_pillar	burn_away_slime	inlined	clearHeroSliming drops the slimed state and the caller prints the burn-away message (mcastu.ts:563-565); slime.ts burnAwayHeroSlime is the shared timeout.c owner
 missmu	map_invisible	inlined	the attack transaction maps an unseen attacker before projecting its contact line (mhitu.ts:484-497)

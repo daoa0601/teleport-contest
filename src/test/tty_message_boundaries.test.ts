@@ -5,7 +5,7 @@ import { performMonsterHeroAttack, gulpmu } from '../js/mhitu.js';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';

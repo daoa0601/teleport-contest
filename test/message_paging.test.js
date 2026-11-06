@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { flushPendingTopline, moreUntilDismissed } from '../js/tty_topline.js';
+import { flushPendingTopline, moreUntilDismissed } from '../js/topl.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

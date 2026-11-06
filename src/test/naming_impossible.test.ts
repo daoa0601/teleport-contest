@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { FUZZER_IMPOSSIBLE_PANIC, impossible } from '../js/diagnostics.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
-import { moreUntilDismissed } from '../js/tty_topline.js';
+import { moreUntilDismissed } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { containerContents } from '../js/end.js';
 

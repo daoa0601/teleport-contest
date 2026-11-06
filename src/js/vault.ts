@@ -16,7 +16,7 @@ import { newsym, canSpotMonster, map_invisible, map_location, monsterVisible, xy
 import {
     formatSeenMessage, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage,
 } from './pline.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, MM_NOMSG, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, LEVEL_TIMER_KIND, RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, ACCESSIBLE, COLNO, COULD_SEE, GD_DESTROYGOLD, GD_EATGOLD, IN_SIGHT, IS_POOL, IS_ROOM, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_NOMSG, ROWNO, SCORR } from './const.js';
 import { isok, heroHasInvoluntaryDelay } from './cmd.js';
 import { makemonAt, setMonsterMalign } from './makemon.js';

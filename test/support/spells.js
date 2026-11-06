@@ -2,7 +2,7 @@ import { game, requirePlayingGame } from '../../js/gstate.js';
 import { P_BASIC } from '../../js/const.js';
 import { forceLearnSpell } from '../../js/spell.js';
 import { spellSkillType } from '../../js/spell.js';
-import { flushPendingTopline } from '../../js/tty_topline.js';
+import { flushPendingTopline } from '../../js/topl.js';
 import { resetInputState } from '../../js/input.js';
 import { addHeroWeaponSkillSlots, advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance, useHeroSkill, } from '../../js/weapon.js';
 // Divine teaching creates the same memorized entry as play. Practice and

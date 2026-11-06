@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { OBJECT_NAMES, SMALL_SHIELD, TWO_HANDED_SWORD } from '../js/object_data.js';

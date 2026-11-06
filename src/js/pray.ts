@@ -88,7 +88,7 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { attrcurse, rndcurse } from './throne.js';
 import { safe_teleds } from './teleport.js';
 import { cansee, couldsee } from './vision.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { newsym, see_monsters, shieldeff } from './display.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { purifyHeroLycanthropy } from './were.js';

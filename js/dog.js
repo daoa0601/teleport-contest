@@ -19,6 +19,7 @@ import { CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVA
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
 import { setMonsterMalign } from './makemon.js';
+import { stairway_find, stairway_find_from } from './stairs.js';
 import { levelFollower, carnivorous, herbivorous, is_domestic, monsterHasEyes, monsterIsAnimal, monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, monsterIsMindless, needspick, regenerates, tunnels, cantwield, speciesHasWeaponAttack, } from './mondata.js';
 import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
@@ -557,16 +558,6 @@ export async function catchUpMonster(monster, moves, state) {
     healMonster(monster, healing);
     monster.mlstmv = state.moves ?? 0;
 }
-function arrivalStairway(state, origin, ladder) {
-    // C stairway_find_from()/stairway_find(): the stair on this level that
-    // connects back to the origin level.
-    for (let stair = state.stairs; stair; stair = stair.next) {
-        if (sameMigrationLevel(stair.tolev, origin)
-            && (ladder === undefined || stair.isladder === ladder))
-            return stair;
-    }
-    return null;
-}
 function wanderLocale(state, x, y, wander) {
     // C mon_arrive(): a monster that moved during limbo arrives within
     // `wander` squares, or somewhere inside its room.
@@ -661,20 +652,20 @@ export async function monsterArrive(monster, when, state) {
             break;
         case MIGR_STAIRS_UP:
         case MIGR_STAIRS_DOWN: {
-            const stair = arrivalStairway(state, origin, false);
+            const stair = stairway_find_from(state, origin, false);
             if (stair)
                 xlocale = stair.sx, ylocale = stair.sy;
             break;
         }
         case MIGR_LADDER_UP:
         case MIGR_LADDER_DOWN: {
-            const stair = arrivalStairway(state, origin, true);
+            const stair = stairway_find_from(state, origin, true);
             if (stair)
                 xlocale = stair.sx, ylocale = stair.sy;
             break;
         }
         case MIGR_SSTAIRS: {
-            const stair = arrivalStairway(state, origin);
+            const stair = stairway_find(state, origin);
             if (stair)
                 xlocale = stair.sx, ylocale = stair.sy;
             break;

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { A_STR, BEAR_TRAP, IRONBARS, GD_EATGOLD, ROOMOFFSET, VAULT, W_ARM } from '../js/const.js';
 import { eataccessory, doeat } from '../js/eat.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { isEdibleFood, selectFoodToEat } from '../js/food_selection.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { continueCountedCommand } from '../js/cmd.js';
 import { doeat } from '../js/eat.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeHeroVomiting } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';

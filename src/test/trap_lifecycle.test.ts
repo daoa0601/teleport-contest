@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ARROW_TRAP, BEAR_TRAP, CORR, HOLE, LAVAWALL, PIT, ROOM, SPIKED_PIT, STONE, TT_LAVA, TT_PIT, VWALL, WEB } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { back_to_glyph } from '../js/display.js';
 import { CLR_BLUE, NO_COLOR } from '../js/terminal.js';
 import { digActualHole } from '../js/dig.js';

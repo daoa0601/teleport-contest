@@ -9,7 +9,7 @@ import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { shrinePosition, roomHasStair } from '../js/mkroom.js';
 import { bound_digging, setLevelTerrainType } from '../js/mkmaze.js';
 import { specialShrinePriest } from '../js/priest.js';
-import { stairway_add } from '../js/mklev.js';
+import { stairway_add } from '../js/stairs.js';
 import { initRng } from '../js/rng.js';
 import type { Room } from '../js/map_types.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_STR, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

@@ -81,7 +81,7 @@ import { monsterAlignmentType, inHeroSanctuary, priestIsInOwnTemple, movePriest 
 import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.js';
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
 
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
 import { dropMonsterObject } from './steal.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';

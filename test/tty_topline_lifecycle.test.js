@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { promptKey, rhack } from '../js/cmd.js';
 import { readCommandInput } from '../js/cmd.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from '../js/tty_topline.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from '../js/topl.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';

@@ -8,7 +8,7 @@ import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';

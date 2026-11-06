@@ -13,7 +13,8 @@ import { randomCharacterOption, str2align, str2gend, str2race, str2role } from '
 import { NATIVE_COMMANDS } from './command_data.js';
 import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAutocomplete } from './cmd.js';
 import type { MessageType, MessageTypeRule } from './message_types.js';
-import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuColoringRule, MenuStyle } from './flags.js';
+import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
+import type { MenuColoringRule } from './coloratt.js';
 import type { ConfigurationErrorReport } from './cfgfiles.js';
 import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
@@ -39,7 +40,7 @@ import {
     currentBoulderSymbol, docrt, flush_screen,
     reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet,
 } from './display.js';
-import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
@@ -56,8 +57,8 @@ import { mungSpaces } from './hacklib.js';
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
-import { attributeName, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName,
-    matchColorName, queryAttributeMenu, queryColorMenu } from './color_query.js';
+import { attributeName, colorAttrToString, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName,
+    matchColorName, parseColorAttr, parseMenuColoring, queryAttributeMenu, queryColorMenu } from './coloratt.js';
 import {
     BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
     MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
@@ -638,74 +639,6 @@ function parseScoreOption(value: string | null, negated: boolean): ScoreChoices 
     return choices;
 }
 
-// C coloratt.c:add_menu_coloring(). The compiled pattern is kept on the
-// rule like C's ->match regex_t; the first matching rule (newest first)
-// colors the menu entry at the add_menu() seam.
-export function parseMenuColoring(valueText: string, addError: (message: string) => void): MenuColoringRule | null {
-    // coloratt.c copies the statement into str[BUFSZ] before parsing, so a
-    // '=' past byte 255 is invisible and the line looks malformed.
-    const value = cutConfigBytes(valueText, BUFSZ - 1);
-    const equals = value.indexOf('=');
-    if (equals < 0) {
-        addError('Malformed MENUCOLOR');
-        return null;
-    }
-    let tail = value.slice(equals + 1).replace(/[ \t]+/g, ' ').trim();
-    const ampersand = tail.indexOf('&');
-    if (ampersand >= 0) tail = tail.slice(0, ampersand);
-    const color = matchColorName(tail, addError);
-    if (color >= CLR_MAX) return null;
-    let attr = 0;
-    if (ampersand >= 0) {
-        const attribute = value.slice(equals + 1)
-            .replace(/[ \t]+/g, ' ').trim().slice(ampersand + 1);
-        attr = matchAttributeName(attribute, addError);
-        if (attr === -1) return null;
-    }
-    // The regexp portion is not condensed by mungspaces(); a matching pair
-    // of quotes around it is stripped.
-    let pattern = value.slice(0, equals);
-    const quote = pattern.charAt(0);
-    if (quote === '"' || quote === '\'') {
-        let end = pattern.length - 1;
-        while (end >= 0 && /[ \t]/.test(pattern.charAt(end))) end--;
-        if (pattern.charAt(end) === quote) pattern = pattern.slice(1, end);
-    }
-    let regex: PosixRegex;
-    try {
-        regex = new PosixRegex(pattern);
-    } catch (error) {
-        if (!(error instanceof SyntaxError)) throw error;
-        addError(`Menucolor regex error: ${error.message}`);
-        return null;
-    }
-    return { origstr: pattern, color, attr, regex };
-}
-
-// C coloratt.c:color_attr_parse_str(): "color&attr", "color", or "attr"
-// (a lone name is tried as an attribute first). Returns null on failure;
-// matchColorName()/matchAttributeName() emit C's diagnostics.
-function parseColorAttr(
-    text: string, addError: (message: string) => void,
-): { attr: number; color: number } | null {
-    const ampersand = text.indexOf('&');
-    if (ampersand >= 0) {
-        const left = text.slice(0, ampersand);
-        const right = text.slice(ampersand + 1);
-        let color = matchColorName(left, addError);
-        let attr = matchAttributeName(right, addError);
-        if (color >= CLR_MAX && attr === -1) {
-            color = matchColorName(right, addError);
-            attr = matchAttributeName(left, addError);
-        }
-        if (color >= CLR_MAX || attr === -1) return null;
-        return { attr, color };
-    }
-    const attr = matchAttributeName(text, null);
-    if (attr !== -1) return { attr, color: NO_COLOR };
-    const color = matchColorName(text, addError);
-    return color >= CLR_MAX ? null : { attr: C_ATR_NONE, color };
-}
 
 // C options.c:add_autopickup_exception(): sscanf() forms `"<%s`, `">%s`, or
 // `"%s`, each with an optional whitespace + '#' comment after the closing
@@ -2018,7 +1951,7 @@ function rogueSymsetMenuValue(): string {
 // strNsubst() turning each blank into '-'.
 function menuHeadingsValue(): string {
     const style = game.iflags.menu_headings ?? { attr: C_ATR_INVERSE, color: NO_COLOR };
-    return `${colorName(style.color)}&${attributeName(style.attr)}`.replace(/ /g, '-');
+    return colorAttrToString(style).replace(/ /g, '-');
 }
 
 // options.c:optfn_statushilites() get_val.
@@ -2396,7 +2329,7 @@ async function editAutopickupExceptions(): Promise<void> {
     }
 }
 
-// options.c:handler_menu_colors() and coloratt.c:query_color()/query_attr().
+// options.c:handler_menu_colors().
 async function editMenuColors(): Promise<void> {
     for (;;) {
         const colorings = game.iflags.menuColorings ?? [];

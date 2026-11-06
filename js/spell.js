@@ -51,7 +51,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { roleInitClericLightSchool } from './role.js';
 import { monsterAtPosition } from './steed.js';
 import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow, } from './wintty.js';
-import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { clearMessageWindow, flushPendingTopline } from './topl.js';
 import { cansee } from './vision.js';
 import { showInventoryWindow } from './windows.js';
 import { heroHasFreeHand } from './engrave.js';

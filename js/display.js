@@ -4,10 +4,11 @@ import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMUL
 import { objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, oc_color, OBJ_NAME, getObjectDefinition, } from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt, heroCanReachFloor } from './engrave.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { updateStatusLines } from './botl.js';
 import { _buildScreenOutput, writeMapCell } from './wintty.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { known_branch_stairs, stairwayAt } from './stairs.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { monsterAtPosition } from './steed.js';
 import { redrawMonsterWormSegments } from './worm.js';
@@ -493,13 +494,8 @@ function roomMemoryGlyph(dark, dec) {
 function stairGlyphIndex(loc, x, y) {
     // C display.c:back_to_cmap(). Direction belongs to the terrain cell;
     // the traversed stairway determines whether its branch is known.
-    let stair = game.stairs;
-    while (stair && (stair.sx !== x || stair.sy !== y))
-        stair = stair.next;
-    const currentDungeon = game.u?.uz?.dnum ?? 0;
-    const knownBranch = stair?.u_traversed
-        && stair?.tolev?.dnum !== undefined
-        && stair.tolev.dnum !== currentDungeon;
+    const stair = stairwayAt(game, x, y);
+    const knownBranch = stair !== null && known_branch_stairs(stair, game);
     return (knownBranch ? 29 : 25)
         + (loc.typ === LADDER ? 2 : 0) + (((loc.ladder ?? 0) & LA_DOWN) ? 1 : 0);
 }

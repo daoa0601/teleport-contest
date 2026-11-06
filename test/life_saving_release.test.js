@@ -9,7 +9,7 @@ import { setHeroGrip } from '../js/mon.js';
 import { installPagerInput } from './support/pager-input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';

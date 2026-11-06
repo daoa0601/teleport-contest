@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { rhack } from '../js/cmd.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { queueCannedKeys } from './support/canned-input.js';

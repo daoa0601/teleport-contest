@@ -35,8 +35,9 @@ import { makemonAt } from './makemon.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
 import { bringLeashedFollowers } from './apply.js';
-import { displayMessageWindow } from './tty_topline.js';
-import { canFallThrough, stairwayAt } from './mklev.js';
+import { displayMessageWindow } from './topl.js';
+import { canFallThrough } from './mklev.js';
+import { stairwayAt, stairway_find_from } from './stairs.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
@@ -1644,14 +1645,6 @@ export async function shipObject(object, x, y, { state = requireInitializedGame(
     }
     return true;
 }
-function arrivalStairway(state, migration, ladder) {
-    for (let stair = state.stairs; stair; stair = stair.next) {
-        if (sameLevel(stair.tolev, migration.source)
-            && !!stair.isladder === ladder)
-            return stair;
-    }
-    return null;
-}
 async function breaksOnArrival(object, state, x, y, random, noBreak, withHero, publish) {
     const location = state.level.at(x, y);
     if (noBreak || (location !== null && IS_SOFT(location.typ)))
@@ -1719,9 +1712,9 @@ export async function deliverMigratingObjects(state = requireInitializedGame(), 
         delete object.migration;
         let passage = null;
         if ([MIGR_STAIRS_UP, MIGR_SSTAIRS].includes(arrival))
-            passage = arrivalStairway(state, migration, false);
+            passage = stairway_find_from(state, migration.source, false);
         else if (arrival === MIGR_LADDER_UP)
-            passage = arrivalStairway(state, migration, true);
+            passage = stairway_find_from(state, migration.source, true);
         else if (arrival === MIGR_WITH_HERO) {
             passage = { x: state.u.ux, y: state.u.uy };
         }

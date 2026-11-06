@@ -4,7 +4,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { OIL_LAMP } from '../js/object_data.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { planInput } from './support/planned-input.js';

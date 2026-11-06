@@ -74,7 +74,7 @@ import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { heroIsPetrifying } from './stoning.js';
 import { waterbodyName } from './pager.js';
 import { isPoolAt } from './dbridge.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { dropCursedSecondaryWeapon } from './wield.js';
 import { cansee, vision_recalc } from './vision.js';
 import { applyHeroWaterVaporChange, applyHeroWereChange, purifyHeroLycanthropy, revertHeroWereForm, setHeroLycanthropy, transformWereMonster } from './were.js';

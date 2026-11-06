@@ -174,7 +174,7 @@ import {
 } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { abusePet, tameMonster, makePetWary } from './dog.js';
 import { heroCanReachFloor, deleteEngravingAt } from './engrave.js';
 import type { DirectionSelection } from './cmd.js';

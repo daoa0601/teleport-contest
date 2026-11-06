@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ROOM, STAIRS } from '../js/const.js';
-import { u_on_downstairs, u_on_sstairs, u_on_upstairs } from '../js/mklev.js';
+import { u_on_downstairs, u_on_sstairs, u_on_upstairs } from '../js/stairs.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { createSaddledSteed } from './support/monsters.js';

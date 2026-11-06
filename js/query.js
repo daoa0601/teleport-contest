@@ -1,7 +1,7 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
-import { clearMessageWindow, flushPendingTopline, rememberToplines, resetToplineClip, } from './tty_topline.js';
+import { clearMessageWindow, flushPendingTopline, messageWindowMode, readChoiceNumber, rememberToplines, resetToplineClip, } from './topl.js';
 import { flush_screen } from './display.js';
 import { pline, setTopline, truncateRawMessage } from './pline.js';
 import { game } from './gstate.js';
@@ -9,7 +9,6 @@ import { nhgetch } from './input.js';
 import { readchar, cmdq_pop } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
 import { CMDQ_KEY } from './const.js';
-import { messageWindowMode } from './prevmsg.js';
 import { doprevMessage, keyText } from './cmd.js';
 import { visibleCommandKey } from './cmd.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
@@ -348,41 +347,6 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
             continue;
         return number === 0n ? finish('n') : finish('#', number);
     }
-}
-// C topl.c:tty_yn_function(): numeric response entry.
-// Also C topl.c:removetopl(): inlined here when erasing digits or abandoning the count.
-async function readChoiceNumber(first, prompt, readAnswer, paint) {
-    let digits = first === '#' ? '' : first;
-    let value = digits ? BigInt(digits) : 0n;
-    paint(prompt + '#' + digits);
-    for (;;) {
-        const character = await readAnswer();
-        if (/^[0-9]$/.test(character)) {
-            const next = value * 10n + BigInt(character);
-            if (next > 9223372036854775807n)
-                break;
-            value = next;
-            digits += character;
-        }
-        else if (character === 'y' || ' \n\r\x1b\0'.includes(character)) {
-            if (character !== '\x1b')
-                return value;
-            break;
-        }
-        else if (character === '\x7f' || character === '\b') {
-            if (!digits)
-                break;
-            value /= 10n;
-            digits = digits.slice(0, -1);
-        }
-        else
-            break;
-        paint(prompt + '#' + digits);
-    }
-    // Escape, overflow, erasing the '#', or an invalid character aborts the
-    // number and returns to the same yes/no question without that character.
-    paint(prompt);
-    return null;
 }
 export function promptYesNo(message, defaultAnswer = 'n', addCommandQueue = true) {
     return promptChoice(message, ['y', 'n'], defaultAnswer, { addCommandQueue, menuable: true });

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { Upolyd } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { GameDisplay } from '../js/game_display.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from '../js/read.js';
 import { game, requireGameDisplay, requirePlayingGame, resetGame } from '../js/gstate.js';

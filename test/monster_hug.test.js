@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { rhack } from '../js/cmd.js';
 import { MM_ANGRY, NO_MINVENT, W_ARM, W_ARMC } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { releaseHold } from '../js/zap.js';
 import { setHeroGrip, finishHeroMonsterKill, } from '../js/mon.js';

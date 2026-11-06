@@ -10,7 +10,7 @@ import { applyArmorOnEffects, findArmorClass, removeHeroArmor, wearHeroArmor } f
 
 import { currentAttribute } from '../js/attrib.js';
 import { A_DEX } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

@@ -14,7 +14,7 @@ import { addExperience, checkExperienceLevel } from './exper.js';
 import { recordAchievement } from './insight.js';
 import { BOGUS_MONSTERS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, TRUE_RUMORS } from './random_text_data.js';
 import { showTextWindow } from './windows.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { ORACLE_TEXT } from './oracle_data.js';
 import { heroGoldAmount } from './hack.js';
 // C rumors.c:doconsult(). Refusals are free; payment commits a turn even

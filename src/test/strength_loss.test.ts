@@ -8,7 +8,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { installPagerInput, finishAtCommandInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';

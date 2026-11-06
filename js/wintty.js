@@ -4,10 +4,10 @@
 // source order. Status content decisions live in botl.ts; glyph choice and
 // vision live in display.ts. Functions whose browser port lives elsewhere:
 //   tty_clear_nhwindow(WIN_MESSAGE)/tty_create_nhwindow(NHW_MESSAGE)/
-//   tty_display_nhwindow(WIN_MESSAGE)   -> tty_topline.ts (topl.c module)
-//   tty_putstr()   -> updateTopline (tty_topline.ts, NHW_MESSAGE) and
+//   tty_display_nhwindow(WIN_MESSAGE)   -> topl.ts (topl.c module)
+//   tty_putstr()   -> updateTopline (topl.ts, NHW_MESSAGE) and
 //                     showTextWindow (windows.ts, NHW_TEXT)
-//   tty_putmixed() -> the mixed-glyph decode paths in tty_topline.ts
+//   tty_putmixed() -> the mixed-glyph decode paths in topl.ts
 //   g_putch()      -> the captured glyph cells in game_display.ts/display.ts
 //   tty_raw_print()/tty_raw_print_bold() -> pline.ts rawPrint, end.ts scores
 //   tty_nhgetch()/tty_nh_poskey() -> input.ts (the browser input seam)
@@ -18,7 +18,7 @@
 //                            tty_putstr() page flush live in windows.ts
 //                            (showTextWindow/readTextPage)
 import { game } from './gstate.js';
-import { clipToplineToColumn, clearMessageWindow, decodeMixedTopline, flushPendingTopline, pageTopline, updateTopline } from './tty_topline.js';
+import { clipToplineToColumn, clearMessageWindow, decodeMixedTopline, flushPendingTopline, pageTopline, updateTopline } from './topl.js';
 import { plineWithContinuation, rawPrint } from './pline.js';
 import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS, HI_ZAP, BL_LEVELDESC, BL_GOLD, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC, BL_XP, BL_HD, BL_EXP, BL_TIME, BL_HUNGER, BL_CAP, BL_CONDITION, BL_VERS, CLR_MAX, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE, HL_ATTCLR_BLINK, HL_ATTCLR_INVERSE } from './const.js';
 import { NO_COLOR, ATR_INVERSE, ATR_BOLD, ATR_UNDERLINE, CLR_GRAY, DEC_TO_UNICODE } from './terminal.js';

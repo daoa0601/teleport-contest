@@ -3,7 +3,7 @@ import test from 'node:test';
 import { moveMonsterForHeroAttack } from '../js/uhitm.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { MMOVE_DONE, MMOVE_NOMOVES, MMOVE_NOTHING, MM_NOGRP, NO_MINVENT, POLY_TRAP, POOL, ROOM } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { makeHallucinated } from '../js/potion.js';

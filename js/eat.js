@@ -61,7 +61,7 @@ import { dismountHero } from './steed.js';
 import { surfaceName } from './dungeon.js';
 import { isIceAt } from './dbridge.js';
 import { attrcurse } from './throne.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { vaultGdWatching } from './vault.js';
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';
 import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone, wieldTool } from './wield.js';

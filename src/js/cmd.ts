@@ -7,6 +7,7 @@ import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS,
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting } from './apply.js';
 import { doname, monsterName } from './do_name.js';
 import { doannotate, doDungeonOverview, levelIsWizardTower, recordMappedOverviewState, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
+import { On_stairs_dn, On_stairs_up } from './stairs.js';
 import { dochat } from './sounds.js';
 import { doloot, pickupAtHero, dotip, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifact.js';
@@ -31,7 +32,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import { continueSpellbookStudy } from './spell.js';
-import { clearMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
+import { CTRL_P, clearMessageWindow, flushPendingTopline, messageWindowMode, putMessageHistory, redotoplin, renderKeyPrompt, showMessageHistoryWindow, stepHistoryBack } from './topl.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
 import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
@@ -59,7 +60,6 @@ import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js'
 import {
     pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy, truncateRawMessage,
 } from './pline.js';
-import { messageWindowMode, CTRL_P, redotoplin, showMessageHistoryWindow, stepHistoryBack } from './prevmsg.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
 import { heroBreathAttack } from './zap.js';
@@ -957,8 +957,6 @@ async function domouseaction(): Promise<void> {
 }
 
 // C cmd.c:domouseaction(), the optional mouse binding which chooses an action.
-// Also C stairs.c:On_stairs_up(): inlined here for the stairway under the hero.
-// Also C stairs.c:On_stairs_dn(): inlined here for the same direction choice.
 function mouseAction(click: Position): void {
     requirePlayingGame(game);
     let dx = click.x - game.u.ux, dy = click.y - game.u.uy;
@@ -975,12 +973,11 @@ function mouseAction(click: Position): void {
         if (!dx && !dy) {
             if (location?.typ === FOUNTAIN || location?.typ === SINK) queue('quaff');
             else if (location?.typ === THRONE) queue('sit');
+            else if (On_stairs_up(game, click.x, click.y)) queue('up');
+            else if (On_stairs_dn(game, click.x, click.y)) queue('down');
             else {
-                let stair = game.stairs;
-                while (stair && (stair.sx !== click.x || stair.sy !== click.y)) stair = stair.next;
                 const object = game.level?.objects[click.x]?.[click.y]?.[0];
-                if (stair) queue(stair.up ? 'up' : 'down');
-                else queue(object ? isContainer(object) ? 'loot' : 'pickup' : 'wait');
+                queue(object ? isContainer(object) ? 'loot' : 'pickup' : 'wait');
             }
             return;
         }

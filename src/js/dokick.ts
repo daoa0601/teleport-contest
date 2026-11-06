@@ -47,10 +47,11 @@ import { makemonAt } from './makemon.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
 import { bringLeashedFollowers } from './apply.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import { canFallThrough, stairwayAt } from './mklev.js';
+import { canFallThrough } from './mklev.js';
+import { stairwayAt, stairway_find_from } from './stairs.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
@@ -1755,13 +1756,6 @@ export async function shipObject(
     }
     return true;
 }
-function arrivalStairway(state: PlayingGameState, migration: ObjectMigration, ladder: boolean): Stairway | null {
-    for (let stair = state.stairs; stair; stair = stair.next) {
-        if (sameLevel(stair.tolev, migration.source)
-            && !!stair.isladder === ladder) return stair;
-    }
-    return null;
-}
 async function breaksOnArrival(object: GameObject, state: PlayingGameState, x: number, y: number,
     random: RandomBelow, noBreak: boolean, withHero: boolean, publish: MessagePublisher,
 ): Promise<boolean> {
@@ -1840,9 +1834,9 @@ export async function deliverMigratingObjects(
         delete object.migration;
         let passage: Stairway | Position | null = null;
         if ([MIGR_STAIRS_UP, MIGR_SSTAIRS].includes(arrival))
-            passage = arrivalStairway(state, migration, false);
+            passage = stairway_find_from(state, migration.source, false);
         else if (arrival === MIGR_LADDER_UP)
-            passage = arrivalStairway(state, migration, true);
+            passage = stairway_find_from(state, migration.source, true);
         else if (arrival === MIGR_WITH_HERO) {
             passage = { x: state.u.ux, y: state.u.uy };
         }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { CORR } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

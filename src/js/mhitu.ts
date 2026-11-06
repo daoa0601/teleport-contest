@@ -23,7 +23,7 @@ import type { AttackMethod, DamageType } from './monster_attack_types.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, RLOC_NOMSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, TT_WEB, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT, is_pit, HAND, HAIR } from './const.js';
 import { formatFeltMessage, formatHeardMessage, plineWithContinuation, set_msg_xy } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName } from './do_name.js';

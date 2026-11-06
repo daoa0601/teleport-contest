@@ -19,7 +19,7 @@ import {
     publishHeardMessage, recordGameLogEvent,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { displayMessageWindow, flushPendingTopline } from './topl.js';
 import { deleteEngravingAt } from './engrave.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';

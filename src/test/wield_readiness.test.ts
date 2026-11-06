@@ -5,7 +5,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { artifactByName } from '../js/artifact.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

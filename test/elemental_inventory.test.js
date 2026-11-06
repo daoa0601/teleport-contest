@@ -9,7 +9,7 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addTrap } from './support/level-state.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { dodiscovered } from '../js/o_init.js';

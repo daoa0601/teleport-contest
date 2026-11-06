@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { MM_NOGRP, MM_NOMSG, NO_MINVENT } from '../js/const.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { Engine, runSegment, type AnimationFrame } from '../js/jsmain.js';
 import { makemonNear } from '../js/mklev.js';

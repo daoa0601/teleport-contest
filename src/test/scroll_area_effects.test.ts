@@ -9,7 +9,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { CORR, D_CLOSED, DOOR, PIT, P_DAGGER, STONE, W_ARMH } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { glyphAt } from '../js/display.js';
 import { setHeroSpecies } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';

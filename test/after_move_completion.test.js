@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { setMulti } from '../js/cmd.js';
 import { nomul } from '../js/hack.js';
 import { M_AP_NOTHING, M_AP_OBJECT, NO_MINVENT, POOL } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { resolveHeroCombatEngulf } from '../js/uhitm.js';

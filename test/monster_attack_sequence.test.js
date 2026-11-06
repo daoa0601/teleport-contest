@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { GRAY_DRAGON_SCALE_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

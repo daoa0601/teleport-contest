@@ -6,7 +6,7 @@ import { getLine, promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';

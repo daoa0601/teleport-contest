@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { moveloop_core } from '../js/allmain.js';
 import { FAINTED, HUNGRY } from '../js/const.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { encumber_msg } from '../js/pickup.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

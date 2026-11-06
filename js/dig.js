@@ -34,7 +34,8 @@ import { heroIsUnaware } from './senses.js';
 import { delobj } from './invent.js';
 import { gotoLevel } from './do.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
-import { canDigDown, stairwayAt } from './mklev.js';
+import { canDigDown } from './mklev.js';
+import { On_ladder, On_stairs, stairwayAt } from './stairs.js';
 import { createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
@@ -66,7 +67,7 @@ import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './zap.js';
 import { captureRayTraversalFrame } from './zap.js';
 import { endObjectBurn } from './timeout.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { fireDamageObject } from './trap.js';
 import { nomul, roomForRoomno } from './hack.js';
 import { artifactById } from './artifact.js';
@@ -1534,7 +1535,6 @@ async function digVertically(state, direction) {
 }
 // C dig.c:adj_pit_checks(). Returns null to permit digging, an empty string
 // to reject silently, or the rejection message.
-// Also C stairs.c:On_ladder(): inlined here as the stairway's ladder flag test.
 function adjacentPitRejection(x, y, state) {
     const location = requireGameLevel(state).requireAt(x, y);
     const type = location.typ;
@@ -1551,14 +1551,10 @@ function adjacentPitRejection(x, y, state) {
         return 'The bars go much deeper than your pit.';
     if (type === SINK)
         return 'A tangled mass of plumbing remains below the sink.';
-    const stairs = stairwayAt(state, x, y);
-    // C stairs.c:On_ladder().
-    if (stairs?.isladder)
+    if (On_ladder(state, x, y))
         return 'The ladder is unaffected.';
-    // C stairs.c:On_stairs() names the stairs as the supporting structure;
-    // stairs.c:On_ladder() is handled above.
     const support = type === FOUNTAIN ? 'fountain' : type === THRONE ? 'throne'
-        : type === ALTAR ? 'altar' : stairs ? 'stairs'
+        : type === ALTAR ? 'altar' : On_stairs(state, x, y) ? 'stairs'
             : type === DRAWBRIDGE_DOWN || type === DBWALL ? 'drawbridge' : null;
     return support ? `The ${possessiveName(support)} supporting structures remain intact.` : null;
 }

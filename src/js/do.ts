@@ -96,7 +96,8 @@ import { propertyIsActive } from './properties.js';
 import { dropBall, dragBallDownStairs, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { requireHeroAttributes, requireInitializedHero } from './hero_types.js';
 import { objectResistsDestruction } from './zap.js';
-import { countLevelFeatures, mklev, u_on_downstairs, u_on_sstairs, u_on_upstairs, stairwayAt } from './mklev.js';
+import { countLevelFeatures, mklev } from './mklev.js';
+import { stairway_find_from, stairwayAt, u_on_downstairs, u_on_sstairs, u_on_upstairs } from './stairs.js';
 import { monsterAlignmentType, forgetTempleEntry } from './priest.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './minion.js';
@@ -1748,10 +1749,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     const beforeGlow = () => maybeLvltportFeedback(deferredPostMessage);
     try {
         if (atStairs && !In_endgame(game.u.uz)) {
-            let stairs = game.stairs;
-            while (stairs && (stairs.tolev?.dnum !== oldDepth.dnum
-                || stairs.tolev?.dlevel !== oldDepth.dlevel
-                || !!stairs.isladder !== ladder)) stairs = stairs.next;
+            const stairs = stairway_find_from(game, oldDepth, ladder);
             if (stairs) {
                 await placeHeroOnLevel(stairs.sx, stairs.sy);
                 stairs.u_traversed = true;

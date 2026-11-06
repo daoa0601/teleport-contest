@@ -11,7 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 // monmove.c:m_move() refreshes the actor's apparent hero position exactly
 // once (set_apparxy(), monmove.c:1761) before dispatching to shk_move(),
 // gd_move(), or pri_move().  When gd_move() returns -1 (monmove.c:1812),

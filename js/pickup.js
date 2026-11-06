@@ -46,7 +46,7 @@ import { reviveCorpseImmediately } from './do.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsUnaware } from './senses.js';
 import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage, triggerChestTrap } from './trap.js';
-import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { containerContents } from './end.js';
 import { bot } from './botl.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject, willWeld } from './wield.js';

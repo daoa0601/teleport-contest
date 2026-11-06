@@ -71,7 +71,7 @@ import { makemonAt, rndmonstAdj } from './makemon.js';
 
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol } from './glyph_numbers.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './options.js';
 

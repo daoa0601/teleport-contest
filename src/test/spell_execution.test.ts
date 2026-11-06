@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { A_INT, A_WIS, NOT_HUNGRY, P_EXPERT } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
