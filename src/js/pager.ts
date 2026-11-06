@@ -842,11 +842,50 @@ export function screenDescription(x: number, y: number, description: string): Sc
     return { text: prefix + decodeMixedLiteral(literal), count, firstMatch, needsDetail };
 }
 
-// C pager.c:lookat() gives the sensed hero priority over the map glyph.
-// Terrain-only inspection deliberately omits that self description.
+// Part of C pager.c:lookat(): the hero-priority gate — the sensed hero at
+// (x, y) wins over the map glyph, unless terrain mode omits monsters. Shared
+// with do_screen_description()'s monster-info pass above.
 export function farlookDescribesHero(x: number, y: number): boolean {
     return x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
         && (!game.iflags.terrainmode || !!(game.iflags.terrainmode & TER_MON));
+}
+
+// Part of C pager.c:lookat(): the second branch — C self_lookat() plus
+// lookat()'s "[seen: ...]" suffix naming how an invisible, undetected hero
+// is sensed. Shared by the farlook dispatcher below and the getpos and
+// look-list describers (lookatDescription); it applies regardless of
+// canspotself(), which only the lookat() gate above checks.
+async function sensedSelfDescription(): Promise<string> {
+    const species = game.u.umonnum;
+    const polymorphName = heroIsPolymorphed(game) && species !== undefined
+        ? monsterTypeName(species, !!game.u.mfemale) : '';
+    const race = game.urace?.adj || game.urace?.name || 'human';
+    const role = game.urole?.name;
+    const roleName = game.flags.female && role?.f ? role.f : role?.m;
+    const form = polymorphName
+        || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
+    const punishment = heroIsPunished()
+        ? ', chained to a heavy iron ball' : '';
+    const blind = heroIsBlind(game);
+    const telepathy = unblindTelepathyRange() >= 0;
+    const detection = heroDetectsMonsters(game);
+    const invisible = propertyIsActive('invisible', game);
+    // self_lookat() includes invisibility while blind only when sensed.
+    const prefix = invisible && (!blind || telepathy || detection)
+        ? 'invisible ' : '';
+    const description = `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
+    const unseen = invisible && !game.u.seeInvisible
+        && (game.u.seeInvisibleTurns ?? 0) === 0;
+    // lookat() treats touch while blind or swallowed as normal vision.
+    if (blind || game.u.uswallow || !(unseen || game.u.uundetected))
+        return description;
+    const senses = [
+        game.u.infravision ? 'infravision' : '',
+        telepathy ? 'telepathy' : '',
+        detection ? 'monster detection' : '',
+    ].filter(sense => sense.length > 0);
+    return senses.length > 0
+        ? `${description} [seen: ${senses.join(', ')}]` : description;
 }
 
 // C pager.c:lookat(): the detailed description of the displayed glyph at
@@ -860,7 +899,7 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
     const describesEngulfer = engulfer
         && glyphAt(x, y)?.glyph === transientMonsterGlyph(engulfer).glyph;
     if (!describesEngulfer && farlookDescribesHero(x, y))
-        return lookatDescription(x, y);
+        return sensedSelfDescription();
     if (game.u.uswallow && game.u.ustuck)
         return `interior of ${monsterName(game.u.ustuck)}`;
     const glyph = lookGlyphAt(x, y);
@@ -893,41 +932,13 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
     return description;
 }
 
-// C pager.c:lookat() and self_lookat(): the hero's own square as getpos
-// autodescribe, travel menus, and the look lists present it.
+// Descriptions for getpos autodescribe, travel menus, and the look lists
+// (C getpos.c:auto_describe()/getpos_menu() and pager.c:look_all()): the
+// sensed-self branch of lookat() (sensedSelfDescription above) on the hero
+// square, and C pager.c:do_screen_description()'s remembered-terrain
+// fallback elsewhere.
 export async function lookatDescription(x: number, y: number): Promise<string> {
-    if (x === game.u?.ux && y === game.u?.uy) {
-        const species = game.u.umonnum;
-        const polymorphName = heroIsPolymorphed(game) && species !== undefined
-            ? monsterTypeName(species, !!game.u.mfemale) : '';
-        const race = game.urace?.adj || game.urace?.name || 'human';
-        const role = game.urole?.name;
-        const roleName = game.flags.female && role?.f ? role.f : role?.m;
-        const form = polymorphName
-            || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
-        const punishment = heroIsPunished()
-            ? ', chained to a heavy iron ball' : '';
-        const blind = heroIsBlind(game);
-        const telepathy = unblindTelepathyRange() >= 0;
-        const detection = heroDetectsMonsters(game);
-        const invisible = propertyIsActive('invisible', game);
-        // self_lookat() includes invisibility while blind only when sensed.
-        const prefix = invisible && (!blind || telepathy || detection)
-            ? 'invisible ' : '';
-        const description = `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
-        const unseen = invisible && !game.u.seeInvisible
-            && (game.u.seeInvisibleTurns ?? 0) === 0;
-        // lookat() treats touch while blind or swallowed as normal vision.
-        if (blind || game.u.uswallow || !(unseen || game.u.uundetected))
-            return description;
-        const senses = [
-            game.u.infravision ? 'infravision' : '',
-            telepathy ? 'telepathy' : '',
-            detection ? 'monster detection' : '',
-        ].filter(sense => sense.length > 0);
-        return senses.length > 0
-            ? `${description} [seen: ${senses.join(', ')}]` : description;
-    }
+    if (x === game.u?.ux && y === game.u?.uy) return sensedSelfDescription();
     const loc = game.level?.at(x, y);
     if (!loc) return 'unexplored area';
     const glyph = glyphAt(x, y);

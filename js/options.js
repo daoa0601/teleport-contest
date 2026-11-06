@@ -39,6 +39,7 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { mungSpaces } from './hacklib.js';
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
@@ -339,35 +340,6 @@ function serializeDisclosureSlots(slots) {
             parts.push(`${value} ${category}`);
     }
     return parts.length ? parts.join(' ') : undefined;
-}
-// C options.c:parseoptions()'s match loop: option names in table order at
-// their minimum length, then aliases at full length.  Returns null when no
-// entry matches, which parseoptions() reports as "Unknown option".
-function matchOptionElement(element) {
-    const nameLength = lengthWithoutValue(element);
-    for (const entry of OPTION_ENTRIES) {
-        if (entry.pfx) {
-            // str_start_is() on the whole element; a hit wins immediately.
-            if (entry.name.length <= element.length
-                && asciiNameEqual(entry.name, element, entry.name.length)) {
-                return { ...entry, viaAlias: false };
-            }
-        }
-        // match_optname() at the entry's minimum length also serves the
-        // prefix entries, so "cond" reaches pfxfn_cond_ like "cond_x".
-        if (nameLength >= entry.minmatch
-            && asciiNameEqual(entry.name, element, nameLength)) {
-            return { ...entry, viaAlias: false };
-        }
-    }
-    for (const entry of OPTION_ENTRIES) {
-        const { alias } = entry;
-        if (alias !== null && nameLength === alias.length
-            && asciiNameEqual(alias, element, nameLength)) {
-            return { ...entry, viaAlias: true };
-        }
-    }
-    return null;
 }
 // options.c:default_menu_cmd_info[] — the menu_* names that bind a key to
 // a menu paging command rather than configuring a compound option.
@@ -756,11 +728,40 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
             negated = !negated;
         }
         // parseoptions() matches each element against the option table
-        // before any handler runs; an element matching nothing is an
-        // unknown option, apart from the S_name:c symbol forms that
-        // parsesymbols() accepts (the symbol tables are not ported, so
-        // they are accepted without validation).
-        const optionMatch = matchOptionElement(stripped);
+        // before any handler runs: option names in table order at their
+        // minimum length (str_start_is() for the prefix entries, where a
+        // hit wins immediately, and match_optname() at the entry's minimum
+        // length, which also serves the prefix entries so "cond" reaches
+        // pfxfn_cond_ like "cond_x"), then aliases at full length. An
+        // element matching nothing is an unknown option, apart from the
+        // S_name:c symbol forms that parsesymbols() accepts (the symbol
+        // tables are not ported, so they are accepted without validation).
+        const nameLength = lengthWithoutValue(stripped);
+        let optionMatch = null;
+        for (const entry of OPTION_ENTRIES) {
+            if (entry.pfx) {
+                if (entry.name.length <= stripped.length
+                    && asciiNameEqual(entry.name, stripped, entry.name.length)) {
+                    optionMatch = { ...entry, viaAlias: false };
+                    break;
+                }
+            }
+            if (nameLength >= entry.minmatch
+                && asciiNameEqual(entry.name, stripped, nameLength)) {
+                optionMatch = { ...entry, viaAlias: false };
+                break;
+            }
+        }
+        if (!optionMatch) {
+            for (const entry of OPTION_ENTRIES) {
+                const { alias } = entry;
+                if (alias !== null && nameLength === alias.length
+                    && asciiNameEqual(alias, stripped, nameLength)) {
+                    optionMatch = { ...entry, viaAlias: true };
+                    break;
+                }
+            }
+        }
         if (!optionMatch) {
             if (!stripped.startsWith('S_'))
                 addError(`Unknown option '${stripped}'`);
@@ -1629,26 +1630,6 @@ function configurationOptions(bytes) {
         start = index + 1;
     }
     return options.reverse();
-}
-// C hacklib.c:mungspaces(): tabs become spaces, runs of spaces collapse to
-// one, and leading/trailing spaces vanish. The statement parser in
-// cfgfiles.ts and the interactive autopickup-exception reader share it;
-// line framing already trimmed the statement, so an all-space result
-// cannot reach the statement path.
-export function mungSpaces(bytes) {
-    const out = [];
-    let pendingSpace = false;
-    for (const byte of bytes) {
-        if (byte === 32 || byte === 9) {
-            pendingSpace = out.length > 0;
-            continue;
-        }
-        if (pendingSpace && out.length)
-            out.push(32);
-        pendingSpace = false;
-        out.push(byte);
-    }
-    return new Uint8Array(out);
 }
 function trimConfigurationOption(bytes) {
     // C parseoptions() uses isspace() on individual bytes before parsing.
@@ -2928,17 +2909,21 @@ async function editSortLoot() {
     if (isLootSortMode(mode))
         game.flags.sortloot = mode;
 }
-// C options.c:optfn_fruit(): the goodfruit normalization — mungspaces, the
-// PL_FSIZ copy, sanitize_name, and the "slime mold" fallback.
+// Part of C options.c:optfn_fruit(): the goodfruit normalization — mungspaces,
+// the PL_FSIZ copy (nmcpy) and per-byte sanitize_name (sanitizeFruitCopy
+// below), and the "slime mold" fallback — shared with the config-parse and
+// initoptions paths; changePreferredFruit() below is the optfn_fruit() port.
 export function normalizePreferredFruitName(name, state = game) {
     const firstLine = String(name).split('\n', 1)[0] ?? '';
     const spaced = firstLine.replace(/\t/g, ' ')
         .replace(/ +/g, ' ').replace(/^ | $/g, '');
-    return sanitizedFruitName(spaced.split(',', 1)[0] ?? '', state) || 'slime mold';
+    // nmcpy(svp.pl_fruit, op, PL_FSIZ) caps the copy at PL_FSIZ-1 bytes
+    // before sanitize_name() runs.
+    return sanitizeFruitCopy(spaced.split(',', 1)[0] ?? '', state.iflags) || 'slime mold';
 }
-// C options.c:optfn_fruit(). Runtime option changes can rename an unused
-// current entry. Once an object or mimic represents it, its existing identity
-// remains part of the history.
+// C options.c:optfn_fruit(): the do_set path outside opt_initial. Runtime
+// option changes can rename an unused current entry. Once an object or mimic
+// represents it, its existing identity remains part of the history.
 export function changePreferredFruit(name, state = game) {
     const value = (String(name).split('\n', 1)[0] ?? '').replace(/\t/g, ' ')
         .replace(/ +/g, ' ').replace(/^ | $/g, '');
@@ -2997,7 +2982,7 @@ export function addFruit(name, { preferred = false, initial = false, replacement
     }
     else {
         // Not user-specified, so assumed to be from bones (or orc gang).
-        value = sanitizedFruitName(name, state);
+        value = sanitizeFruitCopy(name, state.iflags);
         state.flags.made_fruit = true;
     }
     const existing = fruitFromName(value, { state });
@@ -3015,14 +3000,20 @@ export function addFruit(name, { preferred = false, initial = false, replacement
         state.context.current_fruit = fruit.fid;
     return fruit.fid;
 }
-// C bones.c:sanitize_name(): strip text that could disrupt display.
-function sanitizedFruitName(name, state) {
-    const bytes = new TextEncoder().encode(String(name)).slice(0, FRUIT_NAME_BYTES);
+// C copynchars(altname, str, PL_FSIZ - 1) followed by sanitize_name():
+// optfn_fruit() (above) and fruitadd() (below) both cap the bytes and then
+// run bones.c:sanitize_name() over each byte of the native buffer — control
+// bytes become '.', and a high byte is masked to '_' unless the tty accepts
+// eight-bit input, which keeps the byte itself. The port's bones names are
+// decoded strings (sanitizeName in bones_name.ts masks those per character);
+// the fruit option still sees the raw UTF-8 bytes here.
+function sanitizeFruitCopy(name, iflags) {
+    const bytes = new TextEncoder().encode(name).subarray(0, FRUIT_NAME_BYTES);
     return [...bytes].map(byte => {
         const low = byte & 127;
         if (low < 32 || low === 127)
             return '.';
-        return byte > 127 && !state.iflags?.wc_eight_bit_input ? '_' : String.fromCharCode(byte);
+        return byte > 127 && !iflags?.wc_eight_bit_input ? '_' : String.fromCharCode(byte);
     }).join('');
 }
 // fruitadd()'s highest_fruit_id and fruit_from_name()'s out-parameter share

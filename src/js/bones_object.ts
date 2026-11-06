@@ -5,7 +5,7 @@ import {
     ORCISH_BOW, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN, WAX_CANDLE, YUMI,
 } from './object_data.js';
 import { artifactById, nameArtifact } from './artifact.js';
-import { sanitizeBonesName } from './bones_name.js';
+import { sanitizeName } from './bones_name.js';
 import { ROOMOFFSET, SHOPBASE, OBJECT_TIMER_KIND } from './const.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
@@ -147,9 +147,9 @@ export function prepareBonesObjectForRestore<T extends GameObject | null | undef
             removeArtifactIdentity(object);
         }
     } else {
-        if (object.oname) object.oname = sanitizeBonesName(object.oname);
+        if (object.oname) object.oname = sanitizeName(object.oname);
         if (object.oextra?.oname) {
-            object.oextra.oname = sanitizeBonesName(object.oextra.oname);
+            object.oextra.oname = sanitizeName(object.oextra.oname);
         }
     }
 

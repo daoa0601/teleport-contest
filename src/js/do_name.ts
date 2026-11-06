@@ -194,7 +194,11 @@ export function randomGhostName(state: GameState = game): string {
 const G_NOGEN = 0x0200;
 const BOGUSMONSIZE = 100;
 
-// C do_name.c:bogusmon(), for descriptions that require a fictitious species.
+// Name-only view of C do_name.c:bogusmon() for descriptions that require a
+// fictitious species; the port lives in display.ts
+// (randomBogusMonsterIdentity) because its get_rnd_line() call goes to
+// rumors.ts, which imports this module for mon_nam() the way C's
+// do_name.c and rumors.c call each other.
 export function randomBogusMonsterName(): string {
     return randomBogusMonsterIdentity().name;
 }

@@ -2395,8 +2395,12 @@ function monsterGrabPassesThroughHero(attack, state) {
     return monsterIsUnsolid({ mnum: heroSpecies(state) })
         && (attack[0] === AT_HUGS || [AD_DGST, AD_STCK, AD_WRAP].includes(attack[1]));
 }
-// C mhitm.c:engulf_target() (hero defender): whether the attacker can
-// swallow the hero's current body from its square.
+// Part of C mhitm.c:engulf_target(): the defender-is-the-hero case. C takes
+// a struct monst* that may be &gy.youmonst; the hero has no Monster shape
+// here, so the monster-vs-monster port (monsterCanEngulfMonster) lives in
+// mhitm.ts. This variant decides whether the attacker can swallow the
+// hero's current body from its square, and folds in mhitu.c:gulpmu()'s
+// pit-and-boulder gate at the end.
 function engulf_target(monster, state = game) {
     requireLiveGame(state);
     requirePlayingGame(state);

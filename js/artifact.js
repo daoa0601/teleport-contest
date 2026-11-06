@@ -27,7 +27,7 @@ import { see_monsters, glyphAt, canSeeMonster, canSpotMonster, map_invisible, ne
 import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive, refreshProperty, setInvokedProperty, clearLevitationMasks, restoreLevitationSources, stashLevitationSources } from './properties.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsBlinded, permanentBlind } from './senses.js';
-import { getRumor } from './mklev.js';
+import { getRumor } from './rumors.js';
 import { exerciseAttribute } from './attrib.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';

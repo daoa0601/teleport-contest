@@ -47,7 +47,7 @@ import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedPr
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsBlinded, permanentBlind } from './senses.js';
-import { getRumor } from './mklev.js';
+import { getRumor } from './rumors.js';
 import { exerciseAttribute } from './attrib.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';

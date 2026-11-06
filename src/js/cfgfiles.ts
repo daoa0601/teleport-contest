@@ -9,9 +9,10 @@
 
 import type { ConfigurationSettings, OptionParseState } from './options.js';
 import {
-    bindingFields, bindingKeyCode, menuCommandKeyError, mungSpaces, parseAutopickupException,
+    bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException,
     parseMenuColoring, parseOptions, visctrl, MENU_KEY_OPTIONS,
 } from './options.js';
+import { mungSpaces } from './hacklib.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';
 import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';

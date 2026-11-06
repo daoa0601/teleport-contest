@@ -54,9 +54,22 @@ export function ordinalSuffix(number: number): string {
     return digit === 1 ? 'st' : digit === 2 ? 'nd' : 'rd';
 }
 
-// C hacklib.c:mungspaces() over one getlin line: tabs become spaces, runs
-// collapse, and leading/trailing spaces vanish.
-export function mungWishSpaces(text: string): string {
-    return text.replace(/\t/g, ' ').replace(/ +/g, ' ').trim();
+// C hacklib.c:mungspaces(): tabs become spaces, runs of spaces collapse to
+// one, and leading/trailing spaces vanish, all over the raw bytes. The
+// config-statement parser in cfgfiles.ts and the interactive readers (the
+// autopickup-exception pattern and zap.c:makewish()'s wish line) share it.
+export function mungSpaces(bytes: Uint8Array): Uint8Array {
+    const out: number[] = [];
+    let pendingSpace = false;
+    for (const byte of bytes) {
+        if (byte === 32 || byte === 9) {
+            pendingSpace = out.length > 0;
+            continue;
+        }
+        if (pendingSpace && out.length) out.push(32);
+        pendingSpace = false;
+        out.push(byte);
+    }
+    return new Uint8Array(out);
 }
 

@@ -37,7 +37,6 @@ import { randomMonsterRelocation } from './teleport.js';
 import { pickNastyShape } from './wizard.js';
 import { restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies } from './restore.js';
 import { restoreLevelPetHistory } from './save.js';
-import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible, panic } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
@@ -62,7 +61,6 @@ import { nhgetch } from './input.js';
 import { flush_screen, newsym, back_to_glyph, canOverwriteTerrain, set_wall_state } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { premap_detect, convertSecretDoor } from './detect.js';
-import { TRUE_RUMORS, FALSE_RUMORS } from './random_text_data.js';
 import { deleteEngravingAt, makeEngravingAt, make_grave, randomEngraving, make_engr_at, restoreEngravings, sanitizeEngravings, wipeEngravingAt } from './engrave.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { insideShopRoomAt, addShopDamage, fixShopDamage, deleteObject } from './shk.js';
@@ -547,48 +545,6 @@ export async function runClaimedObjectRotTimer(claimed: DueObjectTimer | null | 
     if (kind === OBJECT_TIMER_KIND.ROT_CORPSE) await rotCorpse(object, state);
     else await deleteObject(object, state);
     return { kind, object, where, x, y };
-}
-
-// C rumors.c:get_rnd_line()
-// makedefs pads each source line to a
-// minimum of 59 text bytes plus its newline.  Selection deliberately seeks
-// into one line and returns the following line.
-export function getRandomTextLine(lines: readonly string[]): string {
-    if (!lines.length) throw new Error('Random text needs at least one source line');
-    const sizes = lines.map(line => Math.max(line.length, 59) + 1);
-    const fileSize = sizes.reduce((sum, size) => sum + size, 0);
-    let picked = 0;
-    for (let tries = 10; tries > 0; tries--) {
-        let offset = rn2(fileSize);
-        picked = 0;
-        let size = sizes[picked];
-        if (size === undefined) throw new Error('Random text is missing its first line size');
-        while (offset >= size) {
-            offset -= size;
-            size = sizes[++picked];
-            if (size === undefined) throw new Error('Random text offset exceeds its source text');
-        }
-        const remainder = size - offset;
-        if (remainder <= 61) break;
-    }
-    const line = lines[(picked + 1) % lines.length];
-    if (line === undefined) throw new Error('Random text selection is missing its source line');
-    return line;
-}
-
-export function getRumor(excludeCookie: boolean, truth = 0): string {
-    let rumor = '';
-    let count = 0;
-    let trueRumor = false;
-    do {
-        trueRumor = truth + rn2(2) > 0;
-        rumor = getRandomTextLine(trueRumor
-            ? TRUE_RUMORS : FALSE_RUMORS);
-    } while (count++ < 50 && excludeCookie && rumor.startsWith('[cookie] '));
-    if (count < 50 && !game.in_mklev) exerciseWisdom(trueRumor);
-    if (!excludeCookie && rumor.startsWith('[cookie] '))
-        rumor = rumor.slice('[cookie] '.length);
-    return rumor;
 }
 
 // Part of C nhlua.c:l_nhcore_init(): entry adapter; LuaLifecycle.startCore() initializes the core.

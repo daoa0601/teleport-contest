@@ -914,33 +914,6 @@ function monsterHasAvailableDistanceAttack(monster: Monster, random: RandomBelow
     return false;
 }
 
-// C monmove.c:dochug() phase two.  A close weapon attacker may spend its
-// whole action readying carried equipment before phase-three movement.  This
-// transition is deliberately RNG-free but changes every later actor's stream.
-async function readyCloseMonsterWeapon(monster: Monster, state: PlayingGameState,
-    range: { inRange: boolean; nearby: boolean; scared: boolean }) {
-    if (
-        (monster.mpeaceful && !heroHasConflict(state)) ||
-        !range.inRange ||
-        !speciesHasWeaponAttack(monster.mnum) ||
-        monster.weaponCheck !== NEED_WEAPON
-    )
-        return null;
-    const apparentX = isFiniteNumber(monster.mux) ? monster.mux : state?.u?.ux;
-    const apparentY = isFiniteNumber(monster.muy) ? monster.muy : state?.u?.uy;
-    if (
-        !isFiniteNumber(apparentX) ||
-        !isFiniteNumber(apparentY) ||
-        dist2(monster.mx, monster.my, apparentX, apparentY) > 8
-    )
-        return null;
-
-    const weapon = monsterWieldedWeapon(monster);
-    if ((range.scared && weapon && isPick(weapon))
-        || (monster.mtrapped && !range.nearby && selectMonsterRangedWeapon(monster, state))) return null;
-    monster.weaponCheck = NEED_HTH_WEAPON;
-    return wieldMonsterWeapon(monster, state);
-}
 
 async function createFogEveryturnRegion(
     state: PlayingGameState,
@@ -2523,7 +2496,8 @@ export async function beginMonsterMove(
     return { monster, ...turn };
 }
 
-// C monmove.c:dochug() "Demonic Blackmail!" block. The adjacent branch calls
+// Part of C monmove.c:dochug(): the "Demonic Blackmail!" phase-two block
+// (whispers at thin air, angering, or the bribe), which ends by calling C
 // minion.c:demon_talk() (demandDemonBribe in minion.ts).
 export async function talkToDemon(monster: Monster, state: PlayingGameState,
     random = rn2, rollOne = rnd): Promise<boolean> {
@@ -2544,7 +2518,9 @@ export async function talkToDemon(monster: Monster, state: PlayingGameState,
     return demandDemonBribe(monster, state, random, rollOne);
 }
 
-// First non-combat slice of monmove.c:dochug(), m_move(), and dog_move().
+// Part of monmove.c:dochug()'s phases two and three — distfleeck, defensive
+// and misc items, demon blackmail, watch duty, mind blast, weapon readying,
+// movement and its status switch — shared with m_move() and dog_move().
 // distfleeck() always draws the brave-gremlin roll; ordinary starting actors
 // then choose and own a live adjacent destination before the post-move draw.
 export async function takeMonsterTurn(
@@ -2750,7 +2726,30 @@ export async function takeMonsterTurn(
         range = await checkMonsterHeroRange(monster, { state, random, rollOne });
         dochugContext.range = range;
     }
-    if (await readyCloseMonsterWeapon(monster, state, range)) {
+    // If monster is nearby you, and has to wield a weapon, do so. This
+    // costs the monster a move (C monmove.c:dochug() phase two). The scared
+    // check keeps a fleeing pick-carrier from toggling between pick-axe and
+    // weapon; a monster stuck in a trap prefers its ranged weapon (wielding
+    // happens in thrwmu). The transition is deliberately RNG-free but
+    // changes every later actor's stream.
+    let readiedCloseWeapon = false;
+    if (!(monster.mpeaceful && !heroHasConflict(state)) && range.inRange
+        && speciesHasWeaponAttack(monster.mnum)
+        && monster.weaponCheck === NEED_WEAPON) {
+        const apparentX = isFiniteNumber(monster.mux) ? monster.mux : state?.u?.ux;
+        const apparentY = isFiniteNumber(monster.muy) ? monster.muy : state?.u?.uy;
+        if (isFiniteNumber(apparentX) && isFiniteNumber(apparentY)
+            && dist2(monster.mx, monster.my, apparentX, apparentY) <= 8) {
+            const weapon = monsterWieldedWeapon(monster);
+            if (!((range.scared && weapon && isPick(weapon))
+                || (monster.mtrapped && !range.nearby
+                    && selectMonsterRangedWeapon(monster, state)))) {
+                monster.weaponCheck = NEED_HTH_WEAPON;
+                readiedCloseWeapon = !!await wieldMonsterWeapon(monster, state);
+            }
+        }
+    }
+    if (readiedCloseWeapon) {
         return {
             calls,
             dochugContext,
@@ -3073,9 +3072,12 @@ export async function runMonsterAction(
     return beginMonsterDochug(monster, state, random, rollDice, rollOne);
 }
 
-// C monmove.c:dochug(), without movemon_singlemon()'s hiding and Conflict checks.
-// Direct callers such as shop entry do not spend a scheduled movement ration.
-// C monmove.c:m_arrival().
+// C monmove.c:dochug(): the phase-one entry (arrival, wait masks, quest
+// status, frozen and sleeping rejection), then the phase-two/three
+// continuation in takeMonsterTurn() below. This is the port of the whole C
+// function without movemon_singlemon()'s hiding and Conflict checks, so
+// direct callers such as shop entry do not spend a scheduled movement
+// ration. m_arrival() is inlined (C monmove.c:m_arrival()).
 export async function beginMonsterDochug(
     monster: Monster,
     state: PlayingGameState,
@@ -3276,8 +3278,10 @@ export async function presentMonsterAction(
     await presentMonsterMoveMessage(action, game);
     return 'check-occupation';
 }
-// C monmove.c:dochug(). Shop entry gives its keeper an immediate action,
-// including resumed messages and attacks, without movemon()'s per-turn work.
+// Part of C monmove.c:dochug(): the direct-call composition. Shop entry
+// (C shk.c:914 calls dochug(shkp) synchronously) gives its keeper an
+// immediate action, including resumed messages and attacks, without
+// movemon()'s per-turn work.
 export async function performMonsterTurn(
     monster: Monster, state: PlayingGameState = requireInitializedGame(),
 ): Promise<void> {

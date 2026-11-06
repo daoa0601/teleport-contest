@@ -63,7 +63,7 @@ import {
     deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue,
 } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
-import { possessiveName, mungWishSpaces } from './hacklib.js';
+import { possessiveName, mungSpaces } from './hacklib.js';
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor, isEyewear, wearEyewear } from './do_wear.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
@@ -6028,7 +6028,7 @@ export async function makeWish(): Promise<void> {
         );
         // zap.c:makewish() mungspaces() the typed line before comparing it,
         // parsing it, recording it in the history, and livelogging it.
-        value = mungWishSpaces(value ?? '');
+        value = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(value ?? '')));
         if ((value ?? '').trim().toLowerCase() === 'help') {
             await showWishHelp(5 - failedAttempts);
             continue;

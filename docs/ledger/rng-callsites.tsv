@@ -270,7 +270,6 @@ src/js/display.ts	displayMonsterAtCell	rn2Display	"[""MONSTER_COLOR.length""]"	c
 src/js/display.ts	displaySelf	rn2Display	"[""MONSTER_COLOR.length""]"	constant
 src/js/display.ts	objectGlyph	rn2Display	"[""2""]"	constant
 src/js/display.ts	objectGlyph	rn2Display	"[""MONSTER_COLOR.length""]"	constant
-src/js/display.ts	randomBogusMonsterIdentity	rn2Display	"[""BOGUS_MONSTER_FILE_SIZE""]"	constant
 src/js/do_name.ts	randomColorName	random	"[""OBJECT_COLOR_NAMES.length""]"	constant
 src/js/do_name.ts	randomDisplayMonsterIdentity	rn2Display	"[""2""]"	constant
 src/js/do_name.ts	randomDisplayMonsterIdentity	rn2Display	"[""SPECIAL_PM + BOGUSMONSIZE""]"	constant
@@ -1089,8 +1088,6 @@ src/js/mkmaze.ts	generateRandomMaze	rn2	"[""3""]"	constant
 src/js/mkmaze.ts	generateRandomMaze	rn2	"[""5""]"	constant
 src/js/mklev.ts	generate_stairs_find_room	rn2	"[""candidates.length""]"	guarded
 src/js/mklev.ts	generate_stairs_find_room	rn2	"[""level.nroom""]"	unproved
-src/js/mklev.ts	getRandomTextLine	rn2	"[""fileSize""]"	unproved
-src/js/mklev.ts	getRumor	rn2	"[""2""]"	constant
 src/js/shknam.ts	getShopItem	rnd	"[""100""]"	constant
 src/js/bones.ts	getbones	rn2	"[""3""]"	constant
 src/js/mkroom.ts	makeSwamps	rn2	"[""2""]"	constant
@@ -2089,8 +2086,8 @@ src/js/trap.ts	launchRollingBoulder	random	"[""20""]"	constant
 src/js/trap.ts	launchRollingBoulder	random	"[""3""]"	constant
 src/js/trap.ts	launchRollingBoulder/hitMonster	rollOne	"[""20""]"	constant
 src/js/eat.ts	fpostfx	rn2	"[""17""]"	constant
-src/js/eat.ts	fpostfx	rn2	"[""17""]"	constant
 src/js/eat.ts	fpostfx	rnd	"[""20""]"	constant
+src/js/rumors.ts	getRumor	rn2	"[""2""]"	constant
 src/js/rumors.ts	outOracle	rnd	"[""remaining.length - 1""]"	guarded
 src/js/rumors.ts	outRumor	rn2	"[""2""]"	constant
 src/js/rumors.ts	outRumor	rn2	"[""3""]"	constant

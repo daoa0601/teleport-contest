@@ -52,6 +52,24 @@ void test('newgame registers the configured fruit before slime molds and mimics 
     assert.equal(game.flags.made_fruit, true);
 });
 
+void test('a multibyte fruit name is sanitized per byte like the native buffer', async () => {
+    const engine = await runSegment({
+        storage: memoryStorage(),
+        seed: 314, datetime: '20260830190000', moves: ' ',
+        nethackrc: [
+            'OPTIONS=name:Ada,role:Valkyrie,race:human,gender:female,align:lawful',
+            'OPTIONS=!legacy,!tutorial,!autopickup,pettype:none,fruit:café',
+        ].join('\n'),
+    });
+    assert.ok(engine.lastRunResult !== null && engine.lastRunResult !== undefined);
+    assert.equal(engine.lastRunResult.kind, 'input-needed');
+
+    // bones.c:sanitize_name() runs over pl_fruit's bytes: é is 0xC3 0xA9,
+    // and the tty's eight-bit input default masks each to '_'.
+    assert.equal(game.fruitName, 'caf__');
+    assert.equal(fruitFromName('caf__', { state: game })?.fname, 'caf__');
+});
+
 void test('changing an unmaterialized preferred fruit reuses its identity through real options', async () => {
     await freshObjectRoom();
     requireFixtureGame(game);

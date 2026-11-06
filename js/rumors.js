@@ -3,7 +3,6 @@ import { setMulti } from './cmd.js';
 import { ACH_ORCL, BY_COOKIE, BY_ORACLE, BY_OTHER, BY_PAPER, FAINTED, MD_PAD_BOGONS, MD_PAD_RUMORS } from './const.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { getRumor } from './mklev.js';
 import { heroIsBlind } from './senses.js';
 import { moneyToMonster } from './shk.js';
 import { currency } from './invent.js';
@@ -115,6 +114,57 @@ export async function outOracle(special, delphi, state = game) {
 }
 export async function readCookieFortune(cookie, { state = game } = {}) {
     await outRumor(cookie.blessed ? 1 : cookie.cursed ? -1 : 0, BY_COOKIE, state);
+}
+// C rumors.c:get_rnd_line(): load one randomly chosen line from a padded
+// section of compiled data. 'rng' is the caller's draw — rn2 for rumors and
+// epitaphs, rn2Display for bogus monster names (do_name.c:bogusmon()).
+// makedefs pads each source line to padlength-1 text bytes plus its
+// newline; selection seeks into one line and returns the following line,
+// and a long line is retried unless the offset falls within its final
+// padlength+1 characters.
+export function getRndLine(lines, padlength, rng) {
+    if (!lines.length)
+        throw new Error('Random text needs at least one source line');
+    const sizes = lines.map(line => Math.max(line.length, padlength - 1) + 1);
+    const fileSize = sizes.reduce((sum, size) => sum + size, 0);
+    let picked = 0;
+    for (let tries = 10; tries > 0; tries--) {
+        let offset = rng(fileSize);
+        picked = 0;
+        let size = sizes[picked];
+        if (size === undefined)
+            throw new Error('Random text is missing its first line size');
+        while (offset >= size) {
+            offset -= size;
+            size = sizes[++picked];
+            if (size === undefined)
+                throw new Error('Random text offset exceeds its source text');
+        }
+        const remainder = size - offset;
+        if (remainder <= padlength + 1)
+            break;
+    }
+    const line = lines[(picked + 1) % lines.length];
+    if (line === undefined)
+        throw new Error('Random text selection is missing its source line');
+    return line;
+}
+// C rumors.c:getrumor(). Reading via a cookie excludes the fortune lines
+// that mention them; graffiti in mklev does not exercise wisdom.
+export function getRumor(excludeCookie, truth = 0) {
+    let rumor = '';
+    let count = 0;
+    let trueRumor = false;
+    do {
+        trueRumor = truth + rn2(2) > 0;
+        rumor = getRndLine(trueRumor
+            ? TRUE_RUMORS : FALSE_RUMORS, MD_PAD_RUMORS, rn2);
+    } while (count++ < 50 && excludeCookie && rumor.startsWith('[cookie] '));
+    if (count < 50 && !game.in_mklev)
+        exerciseWisdom(trueRumor);
+    if (!excludeCookie && rumor.startsWith('[cookie] '))
+        rumor = rumor.slice('[cookie] '.length);
+    return rumor;
 }
 // C rumors.c:outrumor(). Reading permits cookie-specific fortunes; spoken
 // and other rumors exclude them. Callers own literacy and consumed objects.
