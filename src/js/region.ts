@@ -96,6 +96,8 @@ interface RegionTurnHandlers extends RegionTurnOptions {
     wake: WakeNearGas;
 }
 
+// Part of C region.c:create_gas_cloud_selection(): the x-then-y cell walk
+// over the selection.
 function uniqueXMajorCells(cells: readonly Position[] | null | undefined): Position[] {
     const points = new Map<string, Position>();
     for (const cell of cells || []) {
@@ -106,6 +108,8 @@ function uniqueXMajorCells(cells: readonly Position[] | null | undefined): Posit
         left.x - right.x || left.y - right.y);
 }
 
+// Part of C region.c:create_gas_cloud_selection(): the damage-0 steam
+// cloud.
 // Store the cells and lifetime shared by harmless and poisonous gas clouds.
 export async function createHarmlessGasCloudSelection(
     state: GameState | null | undefined, cells: readonly Position[], { ttl = -1 } = {},
@@ -113,6 +117,7 @@ export async function createHarmlessGasCloudSelection(
     return await createGasCloudSelection(state, cells, ttl, 0);
 }
 
+// C region.c:create_gas_cloud_selection().
 export async function createGasCloudSelection(
     state: GameState | null | undefined, cells: readonly Position[], ttl: number, damage: number,
     publish: MessagePublisher = plineWithContinuation,
@@ -173,6 +178,8 @@ async function makeGasCloud(
     return region;
 }
 
+// Part of C region.c:create_gas_cloud(): the shuffled breadth-first cell
+// fill.
 function gasCloudCells(
     state: GameState, x: number, y: number, cloudSize: number,
     random: (limit: number) => number,
@@ -210,18 +217,22 @@ function gasCloudCells(
     return cells;
 }
 
+// Part of C region.c:create_gas_cloud(): the ttl rolls and
+// constrained-space bonus.
 function gasCloudTtl(
     cloudSize: number, cellCount: number, random: (limit: number) => number,
 ): number {
     return Math.trunc((4 + random(3)) * cloudSize / cellCount);
 }
 
+// Port only: the damage-0 steam variant of create_gas_cloud.
 export async function createSteamCloud(
     state: GameState, x: number, y: number, cloudSize: number, random = rn2,
 ): Promise<GasCloud | null> {
     return await createPoisonGasCloud(state, x, y, cloudSize, 0, random);
 }
 
+// C region.c:create_gas_cloud().
 export async function createPoisonGasCloud(
     state: GameState | null | undefined,
     x: number, y: number, cloudSize: number, damage: number,
@@ -247,6 +258,7 @@ function regionContains(region: GasCloud, x: number, y: number): boolean {
     return region.cells?.some(cell => cell.x === x && cell.y === y);
 }
 
+// C region.c:update_player_regions().
 // C in_out_region()/update_player_regions(): exposure changes at the caller's
 // movement boundary, which can precede a blocked or refused step.
 export function updateHeroRegions(state: GameState = game,
@@ -301,6 +313,7 @@ export function resetRegionMonsterIds(
     }
 }
 
+// C region.c:visible_region_at().
 export function visibleRegionAt(state: GameState, x: number, y: number): GasCloud | null {
     return requireGameLevel(state).regions.find(region => region.visible
         && region.ttl !== -2 && regionContains(region, x, y)) || null;
@@ -362,6 +375,7 @@ export async function rescueHeroFromRegion(state: GameState = game): Promise<voi
     }
 }
 
+// C dungeon.c:on_level(): compares two dungeon locations.
 function sameLevel(
     left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined,
 ): boolean {
@@ -370,11 +384,14 @@ function sameLevel(
         && left.dlevel === right.dlevel;
 }
 
+// Part of C mon.c:m_poisongas_ok(): the poison-gas breath exclusion.
 function poisonBreather(mnum: number): boolean {
     return (MONSTER_ATTACKS[mnum] || []).some(([type, damage]) =>
         type === AT_BREA && (damage === AD_DRST || damage === AD_RBRE));
 }
 
+// Part of C mon.c:m_poisongas_ok(): the species-level M_POISONGAS_OK
+// tests.
 function poisonGasImmuneSpecies(
     mnum: number | null | undefined, state: GameState, x: number, y: number,
 ): boolean {
@@ -388,6 +405,8 @@ function poisonGasImmuneSpecies(
         && isPoolAt(x, y, state);
 }
 
+// Part of C mon.c:m_poisongas_ok(): the hero half (invulnerable,
+// breathing, resistance).
 export function heroGasTolerance(state: GameState = game): GasTolerance {
     const hero = state.u;
     const mnum = Upolyd(hero) ? hero.umonnum : null;
@@ -400,6 +419,8 @@ export function heroGasTolerance(state: GameState = game): GasTolerance {
     return hero.poisonResistance ? GAS_MINOR : GAS_BAD;
 }
 
+// Part of C mon.c:m_poisongas_ok(): the monster half (vampshifter,
+// resists_poison).
 export function monsterGasTolerance(monster: Monster, state: GameState): GasTolerance {
     if (monsterIsVampireShifter(monster)
         || poisonGasImmuneSpecies(
@@ -408,6 +429,8 @@ export function monsterGasTolerance(monster: Monster, state: GameState): GasTole
     return monsterHasPoisonResistance(monster) ? GAS_MINOR : GAS_BAD;
 }
 
+// Part of C region.c:inside_gas_cloud(): the hero damage halving by
+// Maybe_Half_Phys and Half_gas_damage.
 function halfHeroGasDamage(damage: number, state: GameState): number {
     const hero = state.u;
     if (hero.halfPhysicalDamage)
@@ -417,6 +440,7 @@ function halfHeroGasDamage(damage: number, state: GameState): number {
     return damage;
 }
 
+// Part of C region.c:inside_gas_cloud(): the wake_nearto cough wake.
 // C wake_nearto(): coughing wakes nearby sleepers.
 async function wakeNearGas(
     x: number, y: number, state: GameState,
@@ -539,6 +563,8 @@ async function removeGasCloud(region: GasCloud, state: GameState): Promise<void>
         if (cansee(cell.x, cell.y)) await newsym(cell.x, cell.y);
 }
 
+// Part of C region.c:rest_regions(): elapsed-time decay and removal of
+// expired clouds.
 // C rest_regions() removes expired clouds without running their expiry callback.
 // Time spent on another level reduces a finite lifetime, never its damage.
 export async function restoreLevelRegions(state: GameState, elapsed: number): Promise<void> {
@@ -581,6 +607,7 @@ async function expireRegions(state: GameState): Promise<{ aroundHero: boolean; i
     return { aroundHero: dissipatedAroundHero, inSight: dissipatedInSight };
 }
 
+// Part of C region.c:run_regions(): the gas-cloud dissipation messages.
 async function announceDissipation(
     state: GameState, { aroundHero, inSight }: { aroundHero: boolean; inSight: number },
     publish: MessagePublisher,
@@ -595,10 +622,12 @@ async function announceDissipation(
         await publish(formatSeenMessage('some gas clouds dissipate.', state));
 }
 
+// Part of C region.c:inside_gas_cloud(): the fog-cloud ttl refresh.
 function maintainCloudForFog(region: GasCloud, species: number | undefined): void {
     if (region.ttl < 20 && species === PM_FOG_CLOUD) region.ttl += 5;
 }
 
+// C region.c:run_regions().
 export async function runLevelRegions(state: GameState | null | undefined, {
     publish = plineWithContinuation,
     rollOne = rnd,
