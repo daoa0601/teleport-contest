@@ -15,10 +15,11 @@
 // caller counterpart's own body, or in a port function that one calls up to
 // REACH_DEPTH deep, except that a reached function which counterparts a
 // DIFFERENT C function owns its calls (they are compared in that function's
-// own pair); only helpers without a C counterpart — code the port moved out
-// of the caller — are transparent. This keeps C's `fix_worst_trouble →
-// safe_teleds → teleds → reset_utrap(FALSE)` chain out of the
-// fix_worst_trouble pair, which owns only its direct reset_utrap(TRUE).
+// own pair) and the walk does not continue through it; only helpers without
+// a C counterpart — code the port moved out of the caller — are
+// transparent. This keeps C's `fix_worst_trouble → safe_teleds → teleds →
+// reset_utrap(FALSE)` chain, and potionbreathe's exercise() calls, out of
+// the pairs that merely call into those functions.
 //
 // Comparison per pair: the C side contributes one TRUE/FALSE sequence per
 // call site that spells at least one of them (other arguments ignored); the
@@ -36,7 +37,7 @@ import ts from 'typescript';
 import { INFRASTRUCTURE_FILES, baseName, calleeName, forEachTopLevelDecl, walkJson } from './c-sources.mjs';
 import { REACH_DEPTH, counterpartsOf, portIndex, readAliases } from './gap-edges.mjs';
 import { arrayValue, numberValue, objectValue, stringValue } from './session-types.mjs';
-const EXTRACTOR_VERSION = 'args-2';
+const EXTRACTOR_VERSION = 'args-3';
 function asRecord(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value) ? Object.fromEntries(Object.entries(value)) : null;
 }
@@ -89,13 +90,17 @@ function booleanArg(arg, readLines) {
         return 'FALSE';
     return null;
 }
-function callLine(call) {
+// clang's JSON dump omits a location's `line` when it did not change since
+// the previous location, so the walk keeps the last line it saw and a call
+// whose own range omits the line falls back to it (enter runs before the
+// call's range children, so `lastLine` is the location just above it).
+function callLine(call, lastLine) {
     const range = asRecord(call['range']);
     const begin = range === null ? null : asRecord(range['begin']);
     if (begin !== null && typeof begin['line'] === 'number')
         return begin['line'];
     const expansion = begin === null ? null : asRecord(begin['expansionLoc']);
-    return expansion !== null && typeof expansion['line'] === 'number' ? expansion['line'] : 0;
+    return expansion !== null && typeof expansion['line'] === 'number' ? expansion['line'] : lastLine;
 }
 async function extractArgFacts(tree, file) {
     const calls = [];
@@ -124,7 +129,12 @@ async function extractArgFacts(tree, file) {
         // a function defined right here. The first CompoundStmt in emission
         // order is the body; header declarations have none.
         let bodyFile = null;
+        let depth = 0;
+        let lastLine = 0;
         walkJson(decl, tracker, node => {
+            depth++;
+            if (typeof node['line'] === 'number' && typeof node['offset'] === 'number')
+                lastLine = node['line'];
             if (bodyFile === null && node['kind'] === 'CompoundStmt')
                 bodyFile = tracker.current;
             if (node['kind'] !== 'CallExpr')
@@ -142,9 +152,14 @@ async function extractArgFacts(tree, file) {
                     args.push({ index: index - 1, value });
             }
             if (args.length)
-                pending.push({ caller: name, callee, line: callLine(node), args });
+                pending.push({ caller: name, callee, line: callLine(node, lastLine), args });
         }, node => {
-            if (node['id'] === decl['id'] && bodyFile === file) {
+            depth--;
+            // Commit only when the walk returns to the declaration itself:
+            // a recursive call's referencedDecl reuses the declaration's
+            // id, and a leave in mid-walk would append the calls collected
+            // so far a second time (mkobj.c obj_nexto_xy doubled its calls).
+            if (depth === 0 && bodyFile === file) {
                 functions.push(name);
                 calls.push(...pending);
             }
@@ -307,19 +322,23 @@ export async function compareArgs(root, tree, cacheDir) {
                     if (seen.has(fn))
                         continue;
                     seen.add(fn);
+                    // A function that counterparts a different C function
+                    // owns its calls and its callees: charging them to this
+                    // caller would credit, say, potionbreathe's exercise()
+                    // calls to dip_potion_explosion, which merely calls the
+                    // vapor helper. The walk stops at such a function.
                     const owners = ownedBy.get(fn);
-                    const transparent = callerFns.has(fn)
-                        || owners === undefined || ([...owners].every(owner => owner === caller));
-                    if (transparent) {
-                        for (const call of index.callsOf(fn)) {
-                            if (!calleeFns.has(call.callee))
-                                continue;
-                            const args = portCallArgs(call.node);
-                            const source = call.node.getSourceFile();
-                            portCalls.push({ fn: index.locate(fn),
-                                line: source.getLineAndCharacterOfPosition(call.node.getStart(source)).line + 1,
-                                values: args.values, optionsObject: args.optionsObject });
-                        }
+                    if (!callerFns.has(fn) && owners !== undefined
+                        && [...owners].some(owner => owner !== caller))
+                        continue;
+                    for (const call of index.callsOf(fn)) {
+                        if (!calleeFns.has(call.callee))
+                            continue;
+                        const args = portCallArgs(call.node);
+                        const source = call.node.getSourceFile();
+                        portCalls.push({ fn: index.locate(fn),
+                            line: source.getLineAndCharacterOfPosition(call.node.getStart(source)).line + 1,
+                            values: args.values, optionsObject: args.optionsObject });
                     }
                     next.push(...index.calleesOf(fn));
                 }

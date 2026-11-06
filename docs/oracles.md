@@ -151,9 +151,10 @@ expansion site, not the folded 1/0, so booleans a header macro such as
 counterparts the same name, alias and citation mapping finds, it collects
 the bare `true`/`false` literals of the counterpart calls: the
 counterpart's own body, plus port helpers up to the same two levels, where
-a helper that counterparts a different C function owns its calls (they are
-compared in that function's own pair) and only helpers without a C
-counterpart — code the port moved out of the caller — are transparent.
+a helper that counterparts a different C function owns its calls and is not
+walked through (they are compared in that function's own pair); only
+helpers without a C counterpart — code the port moved out of the caller —
+are transparent.
 Equal multisets of per-call sequences match; equal call and argument counts
 with different values are mismatches, the class of bug an edge check cannot
 see (`reset_utrap(TRUE)` called as `resetUtrap(false)`); different counts,

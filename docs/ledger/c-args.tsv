@@ -9,6 +9,7 @@ animate_statue	cant_revive	true
 arti_speak	getrumor	true
 b_trapped	exercise	false;false
 ballfall	ballrelease	true
+bestow_artifact	exercise	true
 bestow_artifact	mk_artifact	true
 bhito	exercise	true
 billable	contained_gold	true
@@ -30,6 +31,8 @@ clonewiz	mksobj	true+false
 cnv_trap_obj	mksobj	true+false
 cnv_trap_obj	reset_utrap	true
 consume_offering	exercise	true
+container_contents	container_contents	true
+cprefx	exercise	false
 create_corridor	dig_corridor	false
 create_monster	discard_minvent	true
 create_object	propagate	true+false
@@ -49,6 +52,7 @@ dig_up_grave	exercise	false
 digactualhole	desecrate_altar	false
 digactualhole	reset_utrap	false;true
 dighole	furniture_handled	true
+dip_potion_explosion	exercise	false
 dipfountain	angry_guards	false
 disarm_box	exercise	true
 disclose	container_contents	true+true+false
@@ -87,6 +91,7 @@ dopush	exercise	true
 dorecover	inven_inuse	false
 dorecover	welcome	false
 dosinkfall	exercise	false;false
+dosit	exercise	false;false
 dospinweb	exercise	true
 dosummon	exercise	true
 dosummon	were_summon	true
@@ -97,10 +102,12 @@ dotwoweapon	set_twoweap	false;true
 dotypeinv	yn_function	true
 doup	stucksteed	true
 dowhatdoes	yn_function	true;true
+dozap	exercise	false
 drag_down	exercise	false;false
 drinkfountain	exercise	false;false;true;true;true;true
 drinkfountain	fruitname	false
 drinkfountain	newuhs	false
+drinksink	exercise	true
 drop_ball	reset_utrap	true
 drop_boulder_on_monster	mksobj	false+false
 drop_boulder_on_player	mksobj	false+false
@@ -113,10 +120,11 @@ explode	exercise	false
 extract_from_minvent	update_mon_extrinsics	false
 fill_empty_maze	mkobj_at	true
 fill_empty_maze	mksobj_at	true+false
+fill_ordinary_room	fill_ordinary_room	false
 fill_ordinary_room	mkobj	false;false
 fill_ordinary_room	mkobj_at	true;true
+fill_ordinary_room	mksobj	true+false
 fill_ordinary_room	mksobj_at	false+false;true+false;true+false
-fill_zoo	mksobj	true+false
 final_level	create_mplayers	true
 findtravelpath	end_running	false
 fix_worst_trouble	reset_utrap	true
@@ -177,6 +185,7 @@ kick_steed	m_unleash	true
 l_obj_new_readobjnam	mkobj	false
 l_obj_new_readobjnam	mksobj	true+false
 lay_an_egg	mksobj	false+false
+learn	exercise	true;true
 lesshungry	newuhs	false
 level_finalize_topology	mineralize	false
 level_tele	mksobj	true+false
@@ -206,6 +215,7 @@ makeniche	mksobj_at	true+false
 makerogueghost	mksobj_at	false+false;false+false;false+false;false+false;false+false;false+false;false+false;true+false
 makeroguerooms	add_room	false
 maketrap	reset_utrap	false
+maybe_destroy_item	exercise	false
 maybe_smudge_engr	wipe_engr_at	false;false
 mcast_lightning	flashburn	true
 menu_drop	bypass_objlist	false;false;false;true
@@ -266,6 +276,7 @@ offer_different_alignment_altar	summon_minion	true;true
 offer_real_amulet	fry_by_god	true
 openholdingtrap	reset_utrap	true
 overexert_hp	exercise	false
+paranoid_query	paranoid_ynq	false
 pay_for_damage	pacify_shk	false
 peffect_booze	exercise	false
 peffect_booze	newuhs	false
@@ -284,6 +295,7 @@ place_branch	stairway_add	false
 place_monster	minimal_monnam	false;true;true
 polyman	check_strangling	true
 polymon	check_strangling	false;true
+polymon	exercise	false;true;true
 polymon	reset_utrap	true;true;true;true
 polyself	exercise	false
 pooleffects	back_on_ground	false
@@ -318,6 +330,7 @@ savelife	reset_utrap	false
 searches_for_item	cures_stoning	false;true
 seffect_amnesia	exercise	false
 seffect_light	lightdamage	true
+seffects	exercise	true
 sellobj	contained_gold	true
 set_cost	getprice	true
 set_moreluck	stone_luck	true
@@ -330,12 +343,14 @@ sickness_dialogue	exercise	false
 sink_backs_up	exercise	true;true
 sink_into_lava	reset_utrap	false;true
 slime_dialogue	exercise	false
+special_throne_effect	exercise	false
 special_throne_effect	map_background	false
 speed_up	exercise	true
 spelleffects	exercise	true
 spelleffects	make_familiar	false
 spelleffects	mksobj	false+false
 start_engulf	map_location	true
+stolen_container	billable	true
 stolen_value	angry_guards	false
 stolen_value	billable	true
 stolen_value	contained_gold	true
@@ -347,9 +362,11 @@ thitu	exercise	false;false
 throne_sit_effect	exercise	false
 throne_sit_effect	identify_pack	false
 throne_sit_effect	map_background	false
+throwit	exercise	false;true
 throwspell	exercise	false
 tin_details	tin_variety	true
 tipcontainer	tipcontainer_checks	false;true
+tipcontainer_checks	tipcontainer_checks	true
 topten	deepest_lev_reached	true
 topten	formatkiller	true
 toss_up	hitfloor	false;false;false;true
@@ -384,11 +401,16 @@ wand_explode	exercise	false
 watchman_door_damage	angry_guards	false
 watchman_thief_arrest	angry_guards	false
 weffects	exercise	true
+wishymatch	wishymatch	true;true
 wiz_flip_level	flip_level	true
 wiz_flip_level	flip_level_rnd	true
 wiz_fuzzer	paranoid_query	true
 wiz_kill	paranoid_query	true
+wiz_makemap	makemap_prepost	false;true
+wiz_map	map_engraving	true
+wiz_map	map_trap	true
 wiz_panic	paranoid_query	true
+wiz_where	print_dungeon	false
 wizterrainwish	reset_utrap	false
 worm_move	mcalcmove	false
 xkilled	mkobj	true
@@ -398,5 +420,6 @@ zap_over_floor	draft_message	false
 zap_over_floor	reset_utrap	true
 zapnodir	lightdamage	true
 zapnodir	litroom	true
+zapyourself	exercise	false;false
 zapyourself	flashburn	false;true
 zhitu	exercise	false;false;false

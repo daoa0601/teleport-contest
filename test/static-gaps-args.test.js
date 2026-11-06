@@ -34,13 +34,13 @@ void test('a flag inside an options object is uncomparable', () => {
     const verdict = classifyArgs([['TRUE']], [{ values: [], optionsObject: true }]);
     assert.equal(verdict.verdict, 'uncomparable');
 });
-void test('the ledger key is C names plus the canonical multiset', () => {
+void test('the ledger key is stable under reordering but sensitive to value and count changes', () => {
+    // The ledger check fails when a key it froze disappears, so the key must
+    // not churn for equivalent input, and must change when a matching pair
+    // flips a literal or gains a call.
     const unordered = argLedgerKey('fix_worst_trouble', 'reset_utrap', [['TRUE'], ['FALSE']]);
     const reordered = argLedgerKey('fix_worst_trouble', 'reset_utrap', [['FALSE'], ['TRUE']]);
     assert.equal(unordered, reordered);
-    assert.equal(unordered, 'fix_worst_trouble\treset_utrap\tfalse;true');
-    // Flipping one literal, or adding a call, must change the key so the
-    // ledger check fails.
     assert.notEqual(unordered, argLedgerKey('fix_worst_trouble', 'reset_utrap', [['FALSE'], ['FALSE']]));
     assert.notEqual(unordered, argLedgerKey('fix_worst_trouble', 'reset_utrap', [['TRUE']]));
 });

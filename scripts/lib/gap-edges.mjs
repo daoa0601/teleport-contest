@@ -219,12 +219,20 @@ export function portIndex(root) {
                     ? node.expression.name : node.expression);
                 if (symbol && symbol.flags & ts.SymbolFlags.Alias)
                     symbol = checker.getAliasedSymbol(symbol);
+                // The call list records self-calls too (a recursive C caller
+                // passes booleans to itself, end.c container_contents); the
+                // callee set keeps excluding them, so the reach depth of the
+                // edges mode is unchanged.
+                const resolved = new Set();
                 for (const declaration of symbol?.declarations ?? []) {
                     const callee = asPortFunction(declaration);
-                    if (callee && callee !== fn) {
+                    if (callee)
+                        resolved.add(callee);
+                }
+                for (const callee of resolved) {
+                    calls.push({ node, callee });
+                    if (callee !== fn)
                         callees.add(callee);
-                        calls.push({ node, callee });
-                    }
                 }
             }
             ts.forEachChild(node, visit);
