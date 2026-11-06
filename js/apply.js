@@ -10,7 +10,6 @@ import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectType
 import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear, heroHasSlipperyHands, } from './do_wear.js';
 import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
 import { currentAttribute } from './attrib.js';
-import { useBagOfTricks } from './bag_of_tricks.js';
 import { bot } from './botl.js';
 import { dropBoulderIntoLiquid, dropInventoryObjectAtHero, woundHeroLegs, reviveCorpseImmediately, gotoLevel, objectNoLongerHeld, } from './do.js';
 import { commandResultCancelled, commandResultFailed, commandResultSpentTime, cmdq_add_ec, cmdq_add_key, setMulti, isok, paranoidQuery, confusePromptDirection, promptDirection, } from './cmd.js';
@@ -50,7 +49,7 @@ import { stack_object } from './invent.js';
 import { lightRoom, transformMagicLampToOilLamp } from './light.js';
 import { finishTeleportArrival, askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet, } from './teleport.js';
 import { pickLock } from './lock.js';
-import { makemonAt, mkclassAligned } from './makemon.js';
+import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { canDigDown } from './mklev.js';
 import { mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object, } from './mkobj.js';

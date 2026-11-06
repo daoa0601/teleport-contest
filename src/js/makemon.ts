@@ -8,7 +8,7 @@ import {
     WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, MAXOCLASSES,
 } from './objclass.js';
 import {
-    objectBaseWeight, objectSkill, SPE_BOOK_OF_THE_DEAD, AXE, BOULDER, BULLWHIP,
+    objectBaseWeight, objectSkill, SPE_BOOK_OF_THE_DEAD, AXE, BAG_OF_TRICKS, BOULDER, BULLWHIP,
     CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART,
     DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT,
     DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, EGG, ELVEN_ARROW, ELVEN_BOOTS,
@@ -28,6 +28,8 @@ import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
+import { consumeObjectCharge } from './invent.js';
+import { learnObjectType, objectTypeKnown } from './o_init.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { verbForSubject, withIndefiniteArticle, rndClass } from './objnam.js';
@@ -2367,6 +2369,31 @@ export async function cloneMonster(
     setMonsterMalign(clone, state);
     if (state === game) await newsym(clone.mx, clone.my);
     return clone;
+}
+
+// C makemon.c:bagotricks(), shared by applying and tipping.
+export async function useBagOfTricks(bag: GameObject, { tipping = false }: { tipping?: boolean } = {}): Promise<{ created: number; seen: number }> {
+    if (bag.spe < 1) {
+        await plineWithContinuation(tipping && bag.cknown ? "It's empty." : 'Nothing happens.');
+        if (bag.dknown && objectTypeKnown(bag, game)) bag.cknown = true;
+        return { created: 0, seen: 0 };
+    }
+    await consumeObjectCharge(bag, { maybeUnpaid: !tipping });
+    let count = 1;
+    if (!rn2(23)) count += rnd(7);
+    let created = 0, seen = 0;
+    for (let index = 0; index < count; index++) {
+        const monster = await makemonAt(null, game.u.ux, game.u.uy);
+        if (!monster) continue;
+        created++;
+        const appearance = M_AP_TYPE(monster);
+        if (canSeeMonster(monster) && (appearance === 0 || appearance === M_AP_MONSTER)
+            || canSenseMonster(monster)) seen++;
+    }
+    if (seen) {
+        if (bag.dknown) learnObjectType(BAG_OF_TRICKS, game);
+    } else if (!tipping) await plineWithContinuation(created ? 'Nothing seems to happen.' : 'Nothing happens.');
+    return { created, seen };
 }
 
 // C makemon.c:summon_furies(). Erinyes are a real species with a birth

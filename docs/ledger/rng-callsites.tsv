@@ -117,8 +117,6 @@ src/js/attrib.ts	redistributeActiveAttributes	rn2	"[""5""]"	constant
 src/js/attrib.ts	varyInitAttr	rn2	"[""20""]"	constant
 src/js/attrib.ts	varyInitAttr	rn2	"[""7""]"	constant
 src/js/potion.ts	restoreHeroBaseAttributes	rn2	"[""A_MAX""]"	constant
-src/js/bag_of_tricks.ts	useBagOfTricks	rn2	"[""23""]"	constant
-src/js/bag_of_tricks.ts	useBagOfTricks	rnd	"[""7""]"	constant
 src/js/ball.ts	beginBallAndChainMove	rn2	"[""2""]"	constant
 src/js/ball.ts	dragBallDownStairs	rn2	"[""2""]"	constant
 src/js/ball.ts	dragBallDownStairs	rn2	"[""3""]"	constant

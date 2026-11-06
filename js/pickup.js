@@ -31,7 +31,6 @@ import { finishGhostlyPickup } from './bones_object.js';
 import { touchArtifactByHero } from './artifact.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
-import { useBagOfTricks } from './bag_of_tricks.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { waterbodyName } from './pager.js';
 import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
@@ -59,7 +58,7 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType } from './mkroom.js';
-import { makemonAt } from './makemon.js';
+import { makemonAt, useBagOfTricks } from './makemon.js';
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
 }
