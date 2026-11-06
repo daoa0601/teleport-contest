@@ -1148,7 +1148,11 @@ function hasUnpaid(object: GameObject): boolean {
     return !!object.unpaid || !!object.contents?.some(hasUnpaid);
 }
 
-// C pickup.c:allow_category().
+// Part of C pickup.c:allow_category(): the do.c drop path's form.  The
+// drop prompt answers with category letters rather than query_category's
+// menu, so this half walks the same class/BUC/unpaid/just-picked groups
+// over DropCategory values; pickup.ts:categoryMatcher is the C-shaped
+// owner over the loot menu's selections.
 function matchesCategories(object: GameObject, categories: readonly DropCategory[]): boolean {
     const classes = categories.filter((category): category is number => typeof category === 'number');
     if (object.oclass === COIN_CLASS && classes.length) return classes.includes(COIN_CLASS);
