@@ -54,7 +54,7 @@ import {
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
 import { explode } from './explode.js';
-import { makeFamiliar } from './familiar.js';
+import { makeFamiliar } from './dog.js';
 import { figurinePlacementFailure } from './figurine.js';
 import {
     useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse, holdAnotherObject, freeInventoryObject,

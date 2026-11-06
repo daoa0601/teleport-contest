@@ -2,7 +2,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_EXTINCT, G_GENOD } from '../js/const.js';
-import { makeFamiliar } from '../js/familiar.js';
+import { makeFamiliar } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { FIGURINE } from '../js/object_data.js';

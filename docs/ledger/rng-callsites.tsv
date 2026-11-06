@@ -380,9 +380,6 @@ src/js/exper.ts	randomExperience	rn2	"[""range""]"	unproved
 src/js/extversion.ts	doextversion	rn2	"[""2""]"	constant
 src/js/extversion.ts	doextversion	rn2	"[""3""]"	constant
 src/js/read.ts	fallingRock	rn1	"[""5"", ""2""]"	constant
-src/js/familiar.ts	familiarSpecies	rn2	"[""2""]"	constant
-src/js/familiar.ts	familiarSpecies	rn2	"[""3""]"	constant
-src/js/familiar.ts	makeFamiliar	rn2	"[""10""]"	constant
 src/js/figurine.ts	scheduleFigurineRetry	rnd	"[""5000""]"	constant
 src/js/figurine_timer.ts	attachFigurineTimer	rnd	"[""9000""]"	constant
 src/js/trap.ts	burnContainer	context.random	"[""chance""]"	constant

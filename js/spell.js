@@ -6,7 +6,6 @@ import { formatFeltMessage, plineWithContinuation, plineWithContinuation as plin
 import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir, FACE, SPINE, EYE, HEAD, LL_CONDUCT, } from './const.js';
 import { exerciseWisdom, currentAttribute, exerciseAttribute, poisonHeroStrengthAndHp } from './attrib.js';
 import { impossible } from './diagnostics.js';
-import { makeFamiliar } from './familiar.js';
 import { zapHeroWithObject, paintRayCell, turnCarriedObjects, adjustSpellDamage, applyWandEffect, hitMonsterWithRay } from './zap.js';
 import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
@@ -43,7 +42,7 @@ import { teleportHero, askTeleportDestination } from './teleport.js';
 import { rndcurse } from './throne.js';
 import { aggravateMonsters } from './wizard.js';
 import { makeMonsterFlee } from './monmove.js';
-import { tameMonster } from './dog.js';
+import { makeFamiliar, tameMonster } from './dog.js';
 import { readNovelTribute } from './novel_tribute.js';
 import { makemonAt, setMonsterMalign } from './makemon.js';
 import { makeUndeadNear } from './mkroom.js';

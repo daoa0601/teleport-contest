@@ -24,7 +24,7 @@ import { attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTim
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
 import { explode } from './explode.js';
-import { makeFamiliar } from './familiar.js';
+import { makeFamiliar } from './dog.js';
 import { figurinePlacementFailure } from './figurine.js';
 import { useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse, holdAnotherObject, freeInventoryObject, useUpInventoryStack, consumeInventoryItem, consumeObjectCharge, delobj, inventoryCommandLetter, inventoryItemDescription, chooseInventoryObject, getobj, addInventoryItem, } from './invent.js';
 import { doBlindingRay, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn, objectResistsDestruction, zappable, } from './zap.js';
