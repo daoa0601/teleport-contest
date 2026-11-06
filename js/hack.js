@@ -42,7 +42,7 @@ import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_chan
 import { depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain, } from './dungeon.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
-import { ingSuffix, upstart } from './hacklib.js';
+import { dist2, ingSuffix, upstart } from './hacklib.js';
 import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
 import { updateHeroRegions, visibleRegionAt } from './region.js';
 import { requireShopGame } from './shop_types.js';
@@ -4200,10 +4200,15 @@ function heroHasOwnFlight(state) {
         || (state.u.flyingTurns ?? 0) > 0;
 }
 // C hack.h:Maybe_Half_Phys().
-function maybeHalfPhysicalDamage(amount, state) {
+export function maybeHalfPhysicalDamage(amount, state) {
     const hero = state.u;
     return hero.halfPhysicalDamage
         ? Math.trunc((amount + 1) / 2) : amount;
+}
+// C hack.h:distu().
+// C hack.h distu()/mdistu(): squared euclidean distance to the hero.
+export function distu(x, y, state) {
+    return dist2(x, y, state.u.ux, state.u.uy);
 }
 // Part of C hack.c:dosinkfall(): the weapon-or-weptool test.
 function isWeaponOrWeaponTool(object) {

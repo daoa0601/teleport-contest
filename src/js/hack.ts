@@ -94,7 +94,7 @@ import type { Monster } from './monster_types.js';
 import type { PropertyState, PropertyName } from './property_types.js';
 import type { Hero } from './hero_types.js';
 import type { GameMap } from './game.js';
-import { ingSuffix, upstart } from './hacklib.js';
+import { dist2, ingSuffix, upstart } from './hacklib.js';
 
 import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
 import { updateHeroRegions, visibleRegionAt } from './region.js';
@@ -4269,10 +4269,16 @@ function heroHasOwnFlight(state: GameState): boolean {
 }
 
 // C hack.h:Maybe_Half_Phys().
-function maybeHalfPhysicalDamage(amount: number, state: GameState): number {
+export function maybeHalfPhysicalDamage(amount: number, state: GameState): number {
     const hero = state.u;
     return hero.halfPhysicalDamage
         ? Math.trunc((amount + 1) / 2) : amount;
+}
+
+// C hack.h:distu().
+// C hack.h distu()/mdistu(): squared euclidean distance to the hero.
+export function distu(x: number, y: number, state: GameState): number {
+    return dist2(x, y, state.u.ux, state.u.uy);
 }
 
 // Part of C hack.c:dosinkfall(): the weapon-or-weptool test.

@@ -64,7 +64,7 @@ import { feelingAfterSelfGenocide, genocideDeathOptions, heroIsUnchanging, heroM
 import { sokobanGuilt } from './trap.js';
 import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription, chooseInventoryObject } from './invent.js';
 import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
-import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity, roomForRoomno } from './hack.js';
+import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity, roomForRoomno, maybeHalfPhysicalDamage } from './hack.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition, monsterHasMapPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
@@ -371,7 +371,7 @@ export async function rechargeRing(ring: GameObject, blessing: number, state: Ga
         await publish(`${ownedObjectName(ring, state)} pulsates momentarily, then explodes!`);
         if (slot) await removeHeroAccessory(ring, state);
         if (state.program_state.gameover) return { damage: 0, heroDied: true };
-        const damage = physicalDamage(rollOne(3 * Math.abs(ring.spe)), state);
+        const damage = maybeHalfPhysicalDamage(rollOne(3 * Math.abs(ring.spe)), state);
         await consumeInventoryItem(ring, state);
         if (state.program_state.gameover) return { damage: 0, heroDied: true };
         // C read.c:recharge() explodes the ring without find_ac(); the
@@ -532,15 +532,9 @@ export async function explodeWand(wand: GameObject, extraCharges = 0, state: Gam
     wand.in_use = true;
     const motion = extraCharges ? 'vibrates violently and' : 'suddenly';
     await pline(`${ownedObjectName(wand, state)} ${motion} explodes!`);
-    if (await loseHeroHp(physicalDamage(damage, state), 'exploding wand', { state })) return;
+    if (await loseHeroHp(maybeHalfPhysicalDamage(damage, state), 'exploding wand', { state })) return;
     await consumeInventoryItem(wand, state);
     await exerciseAttribute(A_STR, false, state);
-}
-
-// C hack.h:Maybe_Half_Phys().
-function physicalDamage(amount: number, state: GameState) {
-    return state.u.halfPhysicalDamage
-        ? Math.trunc((amount + 1) / 2) : amount;
 }
 
 export interface RoomLightOptions {

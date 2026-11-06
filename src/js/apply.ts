@@ -72,7 +72,7 @@ import {
 import type { GameState, PlayingGameState } from './game_state.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity } from './hack.js';
+import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import {
@@ -2851,13 +2851,6 @@ function floorHasObject(otyp: number, x: number, y: number, state: GameState) {
     return (state.level?.objects?.[x]?.[y] || []).some((object) => object.otyp === otyp);
 }
 
-// C hack.h:distu()
-function squaredDistance(x: number, y: number, state: GameState) {
-    const dx = x - state.u.ux;
-    const dy = y - state.u.uy;
-    return dx * dx + dy * dy;
-}
-
 // C rm.h:m_at()
 function monsterAt(x: number, y: number, state: GameState) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
@@ -2888,7 +2881,7 @@ function calcPoleRange(weapon: GameObject, { state = game } = {}) {
 // C apply.c:get_valid_polearm_position()
 function validPolearmPosition(x: number, y: number, min: number, max: number, state: GameState) {
     if (!isok(x, y)) return false;
-    const distance = squaredDistance(x, y, state);
+    const distance = distu(x, y, state);
     return (
         distance >= min &&
         distance <= max &&
@@ -2957,7 +2950,7 @@ export function couldPoleMonster(weapon: GameObject | null | undefined, { state 
     if (findPoleableSpot(state, min, max)) return true;
     const remembered = rememberedPolearmMonster(state);
     if (!remembered || !canSenseMonster(remembered)) return false;
-    const distance = squaredDistance(remembered.mx, remembered.my, state);
+    const distance = distu(remembered.mx, remembered.my, state);
     return distance <= max && distance >= min;
 }
 
@@ -3033,7 +3026,7 @@ export async function usePolearm(
     else {
         const remembered = rememberedPolearmMonster(state);
         if (remembered && canSenseMonster(remembered)) {
-            const distance = squaredDistance(remembered.mx, remembered.my, state);
+            const distance = distu(remembered.mx, remembered.my, state);
             if (distance <= max && distance >= min) cc = { x: remembered.mx, y: remembered.my };
         }
     }
@@ -3045,7 +3038,7 @@ export async function usePolearm(
     }
 
     const glyph = glyphAt(cc.x, cc.y, state);
-    const distance = squaredDistance(cc.x, cc.y, state);
+    const distance = distu(cc.x, cc.y, state);
     if (distance > max) {
         await syncPline('Too far!');
         return { spentTime: false, failure: true };
@@ -3395,14 +3388,6 @@ function hookRange(skill: number) {
     return 8;
 }
 
-// Port only: local distu duplicate kept beside the grapple code (same as
-// squaredDistance above).
-function squaredDistanceFromHero(x: number, y: number, state: GameState) {
-    const dx = x - state.u.ux;
-    const dy = y - state.u.uy;
-    return dx * dx + dy * dy;
-}
-
 // Part of C apply.c:use_grapple(): the skilled "Aim for what?" menu.
 async function chooseAim(x: number, y: number, state: GameState) {
     const surface = surfaceName(x, y, state);
@@ -3468,7 +3453,7 @@ async function chooseGrappleTarget(hook: GameObject, state: GameState) {
     await syncPline('Where do you want to hit?');
     const range = hookRange(hookSkill(hook, state));
     const valid = (x: number, y: number) => isok(x, y) && cansee(x, y)
-        && squaredDistanceFromHero(x, y, state) <= range;
+        && distu(x, y, state) <= range;
     await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) await showGetposTip(state);
@@ -3508,7 +3493,7 @@ export async function useGrapplingHook(hook: GameObject, {
     }
 
     const range = hookRange(hookSkill(hook, state));
-    if (squaredDistanceFromHero(target.x, target.y, state) > range) {
+    if (distu(target.x, target.y, state) > range) {
         await syncPline('Too far!');
         return { spentTime: false };
     }

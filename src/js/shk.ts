@@ -107,7 +107,7 @@ import { isPick } from './object_properties.js';
 import { bookDisappears } from './spell.js';
 import {
     checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex,
-    showGetposTip,
+    showGetposTip, distu,
 } from './hack.js';
 
 const GLASS = 19;
@@ -1310,16 +1310,10 @@ function objectsAt(state: GameState, x: number, y: number): GameObject[] {
     return state.level?.objects?.[x]?.[y] || [];
 }
 
-// C hack.h:distu().
-// C hack.h distu()/mdistu(): squared euclidean distance.
-function distu(state: GameState, x: number, y: number): number {
-    return dist2(x, y, state.u.ux, state.u.uy);
-}
-
 // C you.h:m_next2u().
 // C include/you.h m_next2u(): squared distance within 2, the 8 neighbors.
 function mNext2u(monster: Monster, state: GameState): boolean {
-    return distu(state, monster.mx, monster.my) <= 2;
+    return distu(monster.mx, monster.my, state) <= 2;
 }
 
 // C monst.h:helpless().
@@ -1876,7 +1870,7 @@ export async function shopkeeperRepairsDamage(
     const record = findDamage(keeper, state);
     if (!record) return 0;
 
-    const shkCloseby = distu(state, keeper.mx, keeper.my)
+    const shkCloseby = distu(keeper.mx, keeper.my, state)
         <= (BOLT_LIM / 2) * (BOLT_LIM / 2);
     if (canSeeMonster(keeper)) {
         await pline(`${shopkeeperName(keeper, { capitalized: true })} whispers ${
@@ -1947,8 +1941,7 @@ export async function payForShopDamage(
             const candidate = shopKeeper(state, roomno);
             if (!candidate) continue;
             if (candidate === keeper) {
-                const damageDistance = distu(
-                    state, record.place.x, record.place.y);
+                const damageDistance = distu(record.place.x, record.place.y, state);
                 if (damageDistance < nearestDamage) {
                     nearestDamage = damageDistance;
                     appearHere = record;
@@ -1967,7 +1960,7 @@ export async function payForShopDamage(
             keeper = candidate;
             nearestShk = shkDistance;
             appearHere = record;
-            nearestDamage = distu(state, record.place.x, record.place.y);
+            nearestDamage = distu(record.place.x, record.place.y, state);
         }
     }
 
