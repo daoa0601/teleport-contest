@@ -26,6 +26,8 @@ interface AltarLandingOptions {
 }
 
 
+// Part of C do.c:doaltarobj(): the landing object's doname() description
+// for the flash and land messages.
 async function objectDescription(object: GameObject, state: GameState): Promise<string> {
     observeObjectForNaming(object, { state });
     return state === game
@@ -34,12 +36,16 @@ async function objectDescription(object: GameObject, state: GameState): Promise<
 }
 
 
+// Part of C do.c:doaltarobj(): the observed BUC state becomes known
+// (C sets bknown directly here).
 function rememberBlessingOrCurse(object: GameObject): void {
     object.bknown = true;
     object.buc = object.blessed ? 'blessed'
         : object.cursed ? 'cursed' : undefined;
 }
 
+// C do.c:doaltarobj()
+// What an altar reveals when an object lands on it.
 export async function landObjectOnAltar(
     object: GameObject, {
         state = game,

@@ -93,6 +93,7 @@ export function canMakeBones(state: GameState = game, random: typeof rn2 = rn2):
     return !state.discover && !state.flags.explore;
 }
 
+// C bones.c:no_bones_level()
 export function levelAllowsBones(location: DungeonLocation, state: GameState = game): boolean {
     const dungeon = state.dungeons[location.dnum];
     if (!dungeon?.bonetag) return false;
@@ -103,6 +104,7 @@ export function levelAllowsBones(location: DungeonLocation, state: GameState = g
     return !Invocation_lev(location, state);
 }
 
+// C dungeon.c:Is_branchlev()
 function isBranchLevel(location: DungeonLocation, state: Pick<GameState, 'branches'>): boolean {
     const here = (end: DungeonLocation) => end.dnum === location.dnum
         && end.dlevel === location.dlevel;
@@ -114,6 +116,8 @@ const PM_HUMAN = 260;
 const PM_GHOST = 287;
 const S_MUMMY = 39;
 
+// Part of C bones.c:drop_upon_death(): clearing worn and wielded state
+// (C zeroes owornmask).
 function clearHeroCarriedState(object: GameObject): void {
     object.owornmask = 0;
     object.worn = false;
@@ -123,6 +127,8 @@ function clearHeroCarriedState(object: GameObject): void {
     object.ready = false;
 }
 
+// Part of C bones.c:give_to_nearby_mon(): the m_at() candidate lookup
+// (the port filters dead monsters inline).
 function monsterAt(x: number, y: number): Monster | null {
     return (game.level?.monsters || []).find(monster => monsterHasMapPosition(monster, game) &&
         !monster.dead && (monster.mhp ?? 1) > 0
@@ -157,6 +163,7 @@ async function giveToNearbyMonster(object: GameObject, x: number, y: number): Pr
         placeObjectSynchronously(object, x, y);
 }
 
+// C bones.c:drop_upon_death()
 export async function dropHeroInventoryForBones(
     x: number, y: number, { carrier = null, container = null }: {
         carrier?: Monster | null; container?: GameObject | null;
@@ -189,6 +196,8 @@ export async function dropHeroInventoryForBones(
     if (container) container.owt = objectWeight(container);
 }
 
+// Part of C bones.c:savebones(): makemon() under in_mklev so it accepts
+// the hero's square.
 async function makeBonesMonster(mnum: number, x: number, y: number, flags: number) {
     game.in_mklev = true;
     try {
@@ -198,6 +207,7 @@ async function makeBonesMonster(mnum: number, x: number, y: number, flags: numbe
     }
 }
 
+// Part of C bones.c:savebones(): the arisen mummy's wrapping gift.
 async function addMummyWrapping(monster: Monster): Promise<void> {
     if (MONSTER_SYMBOL[monster.mnum] !== S_MUMMY
         || (monster.minvent ?? []).some(object => object.otyp === MUMMY_WRAPPING)) {
@@ -346,6 +356,7 @@ export async function prepareBonesMonstersForSave(): Promise<void> {
     purgeDeadMonsters(level);
 }
 
+// C bones.c:fixuporacle()
 async function fixupOracle(oracle: Monster): Promise<boolean> {
     if (!Is_oracle_level(game.u.uz)) return false;
     const level = requireGameLevel();
@@ -364,6 +375,8 @@ async function fixupOracle(oracle: Monster): Promise<boolean> {
     return true;
 }
 
+// Part of C bones.c:getbones(): sanitize_name() over a restored
+// monster's given name.
 function sanitizeMonsterName(monster: Monster): void {
     const name = monster?.mextra?.mgivenname
         || monster?.mgivenname
@@ -384,17 +397,20 @@ const HERO_RESISTANCES = Object.freeze([
     ['stoneResistance', 0x80],
 ] satisfies Array<readonly [PropertyName, number]>);
 
+// Part of C bones.c:savebones(): the EBONES role index lookup.
 function roleIndex(state: GameState): number {
     const index = roles.findIndex(role => role.key === state.urole?.key);
     return index < 0 ? 0 : index;
 }
 
+// Part of C bones.c:savebones(): the EBONES race index lookup.
 function raceIndex(state: GameState): number {
     const index = races.findIndex(race =>
         race.noun === state.urace?.noun);
     return index < 0 ? 0 : index;
 }
 
+// C mondata.c:give_u_to_m_resistances()
 export function giveHeroResistancesToMonster(monster: Monster, state: GameState = game): number {
     let inherited = 0;
     for (const [property, bit] of HERO_RESISTANCES) {
@@ -404,6 +420,8 @@ export function giveHeroResistancesToMonster(monster: Monster, state: GameState 
     return inherited;
 }
 
+// Part of C bones.c:savebones(): the new monster block — level, HP,
+// gender, sleep, and the EBONES record.
 export function completeBonesMonster<T extends Monster>(monster: T, state: GameState = game): T {
     requirePlayingGame(state);
     const finalRole = roleIndex(state);
@@ -434,6 +452,10 @@ export function completeBonesMonster<T extends Monster>(monster: T, state: GameS
     return monster;
 }
 
+// Part of C restore.c:restmonchn(), restore.c:getlev(), bones.c:getbones():
+// bones monster-chain restore — restmonchn()'s ghostly propagate and
+// restshk()/restpriest() reassignment, getlev()'s peaceful/malign/hide
+// pass, getbones()'s sanitize_name and defunct purge.
 export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, state: GameState): Promise<void> {
     // C restmonchn() admits the complete chain before getbones() starts
     // purging it. Inventory drops during purge must not affect admission
@@ -496,14 +518,18 @@ function bonesLevelId(location: DungeonLocation | undefined = game.u.uz): string
     return `${tag}${role}.${special ? special.bonetag ?? '' : location.dlevel}`;
 }
 
+// Port only: browser-storage key for a bones level (C names a bones file).
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${bonesLevelId(level)}`;
 }
 
+// Port only: storage probe standing in for C's open_bonesfile()
+// existence check.
 export function bonesLevelExists(level: DungeonLocation | undefined = game.u.uz): boolean {
     return game.storage?.getItem(bonesStorageKey(level)) != null;
 }
 
+// C files.c:delete_bonesfile()
 export function deleteBonesLevel(): boolean {
     const storage = game.storage;
     if (!storage) return false;
@@ -518,6 +544,8 @@ export function deleteBonesLevel(): boolean {
     }
 }
 
+// Part of C bones.c:getbones(), bones.c:savebones(): the wizard y_n()
+// prompts with their screen flush.
 async function bonesPrompt(message: string, displayLevel: GameMap | null = null): Promise<string> {
     await pline(message);
     const restoredLevel = game.level;
@@ -528,6 +556,8 @@ async function bonesPrompt(message: string, displayLevel: GameMap | null = null)
     return String.fromCharCode(await nhgetch()).toLowerCase();
 }
 
+// Part of C bones.c:savebones(), bones.c:getbones(): the minvent, fobj,
+// and buried chain enumeration around their resetobjs() calls.
 function eachTopLevelBonesObject(level: GameMap, visit: (object: GameObject) => void): void {
     for (const monster of [...level.monsters].reverse()) {
         for (const object of monster.minvent || monster.inventory || [])
@@ -537,6 +567,7 @@ function eachTopLevelBonesObject(level: GameMap, visit: (object: GameObject) => 
     for (const object of level?.buriedObjects || []) visit(object);
 }
 
+// Port only: flatten the floor grid into C's fobj chain order.
 function bonesFloorObjects(level: GameMap): GameObject[] {
     const objects: GameObject[] = [];
     for (const column of level.objects)
@@ -544,6 +575,8 @@ function bonesFloorObjects(level: GameMap): GameObject[] {
     return objects.sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
 }
 
+// Part of C bones.c:savebones(), bones.c:getbones(): the recursive
+// contents walk over every saved or restored chain.
 function eachObjectInBonesGraph(level: GameMap, visit: (object: GameObject) => void): void {
     const walk = (object: GameObject): void => {
         if (!object) return;
@@ -573,6 +606,8 @@ function resetBonesObjectList(
     return kept;
 }
 
+// Part of C bones.c:savebones(), bones.c:getbones(): the resetobjs()
+// passes over minvent, fobj, and buried.
 function resetBonesObjects(level: GameMap, mode: 'save' | 'restore'): void {
     for (const monster of [...level.monsters].reverse()) {
         const inventory = resetBonesObjectList(
@@ -690,6 +725,8 @@ export function saveBonesLevel(
     }
 }
 
+// Part of C save.c:save_stairs(), save.c:savetrapchn(): destinations are
+// stored relative to the saved level; restore re-adds depth on load.
 // C save_stairs()/savetrapchn() store same-dungeon destinations relative
 // to the saved level. rest_stairs()/getlev() add the receiving level's depth.
 // Only the bones copy is shifted; live and cached maps retain absolute depths.
@@ -705,10 +742,12 @@ function shiftBonesDestinations(payload: BonesPayload, location: DungeonLocation
     }
 }
 
+// C restore.c:lookup_id_mapping()
 function remappedMonsterId(oldId: number | undefined, monsterIds: ReadonlyMap<number, number>): number | undefined {
     return oldId !== undefined && Number.isInteger(oldId) ? monsterIds.get(oldId) : undefined;
 }
 
+// Part of C restore.c:restobjchn(): the ocontainer back-pointer repair.
 function repairContainedObjects(container: GameObject): void {
     for (const object of container.contents || []) {
         object.container = container;
@@ -718,6 +757,8 @@ function repairContainedObjects(container: GameObject): void {
     }
 }
 
+// Part of C restore.c:reset_oattached_mids(): ghostly omonst zeroing and
+// omid remap; the port also remaps leashmon.
 function repairObjectMonsterIds(object: GameObject, monsterIds: ReadonlyMap<number, number>): void {
     const extra = object.oextra;
     const omid = extra?.omid;
@@ -741,6 +782,9 @@ function repairObjectMonsterIds(object: GameObject, monsterIds: ReadonlyMap<numb
     }
 }
 
+// Port only: re-point the port's duplicated monster-extension records at
+// the restored monster's fresh id (C sets parentmid == m_id when it
+// creates each extension).
 function repairMonsterExtensions(monster: Monster): void {
     const edog = monster.edog || monster.mextra?.edog;
     if (edog) {
@@ -818,6 +862,7 @@ async function renewBonesIdentities(level: GameMap, fruits: readonly Fruit[]): P
     }
 }
 
+// Port only: re-seed the floor-chain order counter after a bones restore.
 function restoreBonesFloorOrder(level: GameMap): void {
     let newestOrder = game._fobjSerial ?? 0;
     eachObjectInBonesGraph(level, object => {
@@ -912,6 +957,8 @@ export async function getbones(): Promise<boolean> {
     return game._restoredBones;
 }
 
+// Part of C bones.c:getbones(): the tail — numbones++, the wizard
+// Unlink prompt, and delete_bonesfile().
 async function finishBonesRestore(displayLevel: GameMap | null = null): Promise<boolean> {
     const roleplay = game.u.uroleplay;
     if (!roleplay) throw new Error('Bones restoration requires initialized roleplay counters');

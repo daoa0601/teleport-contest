@@ -101,10 +101,13 @@ export const ATTRIBUTE_DISPLAY_ORDER: readonly AttributeIndex[] = Object.freeze(
 ] as const);
 
 
+// Part of C attrib.c:acurr(), attrib.c:adjattrib(): equipment-slot accessor
+// for the checks C writes as direct uarmg/uwep/uarmh reads.
 function wornObject(state: GameState, slot: 'uarmg' | 'uwep' | 'uarmh'): GameObject | null {
     return state?.[slot] || state?.u?.[slot] || null;
 }
 
+// C attrib.c:acurr()
 // Equipment changes the effective value without overwriting the base value.
 export function currentAttribute(attribute: number, state: GameState = game): number {
     requireAttributeIndex(attribute);
@@ -125,6 +128,8 @@ export function currentStrength(state: GameState = game): number {
     return Math.min(strength, 125) - 100;
 }
 
+// Part of C attrib.c:acurr(): the per-equipment bounds (gauntlets of power,
+// Ogresmasher, dunce cap) and the 3..25 clamp, returned as a pair.
 function attributeLimits(attribute: AttributeIndex, state: GameState): [minimum: number, maximum: number] {
     if (attribute === A_STR)
         return [wornObject(state, 'uarmg')?.otyp === GAUNTLETS_OF_POWER ? STR25 : 3, STR25];
@@ -487,6 +492,8 @@ export function setMoreLuck(state: GameState = game): void {
         state.u.moreluck = -LUCKADD;
 }
 
+// Part of C attrib.c:adjattrib(): the msgflg message half, split out for
+// async callers.
 // adjattrib()'s message half (msgflg handling), split out for async callers.
 export function attributeChangeMessage(attribute: number, result: AttributeChangeResult | null | undefined, state = game): string | null {
     requireAttributeIndex(attribute);
@@ -517,6 +524,8 @@ export async function exerciseAttribute(attribute: number, improving: boolean, s
         await encumber_msg(state);
 }
 
+// Part of C attrib.c:exercise(): the synchronous Wisdom-only entry callers
+// reach without an input boundary.
 // Sync wrapper over exercise() for Wisdom: exercise(A_WIS, ...) never
 // reaches the encumber_msg() tail, so knowledge and identification can use
 // the same accumulation rule without an input boundary.
@@ -524,6 +533,8 @@ export function exerciseWisdom(improving = true, state: GameState = game): void 
     accumulateAttributeExercise(A_WIS, improving, state);
 }
 
+// Part of C attrib.c:exercise(): the accumulation core shared by the async
+// and sync paths.
 function accumulateAttributeExercise(attribute: number, improving: boolean, state: GameState): boolean {
     requireAttributeIndex(attribute);
     const hero = state.u;
@@ -755,6 +766,7 @@ export function varyInitAttr(): void {
     }
 }
 
+// Part of C attrib.c:exerchk(): the deferral test for the periodic check.
 function exerciseCheckIsDeferred(state: GameState): boolean {
     // C attrib.c:exerchk() runs its test whenever `moves >=
     // next_attrib_check && !multi`.  An occupation installed with multi
@@ -770,6 +782,9 @@ const SLOT_MASKS: Readonly<Record<WornPropertySlot, number>> = {
     uwep: W_WEP, uswapwep: W_SWAPWEP, uquiver: W_QUIVER,
 };
 
+// Port only: recompute a property's intrinsic bit mask (FROMEXPER,
+// FROMRACE, ...) from the recorded property sources, mirroring the
+// u.uprops[] intrinsic field C maintains in place.
 export function intrinsicPropertyMask(property: PropertyName, state: GameState = game): number {
     const sources = state.u._propertySources?.[property]?.intrinsic;
     return propertyTimeout(property, state)
@@ -780,6 +795,9 @@ export function intrinsicPropertyMask(property: PropertyName, state: GameState =
         | (sources?.potion ? I_SPECIAL : 0);
 }
 
+// Port only: recompute a property's extrinsic worn-slot mask (W_ARM,
+// W_RINGL, ...) from the recorded property sources, mirroring the
+// u.uprops[] extrinsic field C maintains in place.
 export function extrinsicPropertyMask(property: PropertyName, state: GameState = game): number {
     const sources = state.u._propertySources?.[property];
     let mask = (sources?.carried.length ? W_ART : 0) | (sources?.invoked ? W_ARTI : 0);
@@ -789,6 +807,7 @@ export function extrinsicPropertyMask(property: PropertyName, state: GameState =
     return mask;
 }
 
+// C youprop.h:Very_fast()
 export function veryFast(state: GameState = game): boolean {
     return !!((intrinsicPropertyMask('fast', state) & ~INTRINSIC)
         || extrinsicPropertyMask('fast', state));
@@ -890,11 +909,15 @@ export function fromWhat(property: PropertyName, state: GameState = game, blocke
     return suffix;
 }
 
+// Part of C attrib.c:from_what(): the owning object's display name in
+// provenance strings.
 function propertyObjectName(object: GameObject, state: GameState): string {
     return artifactById(object.oartifact, state)?.name.replace(/^The /, 'the ')
         ?? ownedSimpleObjectName(object, state, { capitalized: false });
 }
 
+// Part of C attrib.c:from_what(): the "because of ..." tails for sources
+// blocked by a conflicting item.
 function blockedProvenance(property: PropertyName, state: GameState): string {
     const blindfold = state.ublindf || state.u.ublindf;
     if (property === 'blinded' && blindnessBlocked(state) && isEyesOfTheOverworld(blindfold, state)
@@ -908,6 +931,7 @@ function blockedProvenance(property: PropertyName, state: GameState): string {
     return '';
 }
 
+// Port only: hero-shaped wrapper for mondata.c's noeyes() species test.
 export function heroHasNoEyes(state: GameState = game): boolean {
     return !monsterHasEyes(state.u.umonnum ?? -1);
 }
@@ -989,6 +1013,7 @@ export function newHeroHitPoints(state: PlayingGameState): number {
     return hp;
 }
 
+// Part of C attrib.c:newhp(): the Con adjustment table.
 // The Con adjustment table of C newhp().
 function newHeroConstitutionBonus(constitution: number) {
     if (constitution <= 3) return -2;
@@ -1100,6 +1125,8 @@ export async function changeHeroAlignment(
 
 
 
+// Port only: runtime validation that an attribute index is one of the six
+// hero attributes.
 export function requireAttributeIndex(attribute: number): asserts attribute is AttributeIndex {
     if (!Number.isInteger(attribute) || attribute < A_STR || attribute > A_CHA)
         throw new RangeError(`Unknown hero attribute ${attribute}`);
