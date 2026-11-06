@@ -16,7 +16,7 @@ import { finishHeroDeath } from './end.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, adjustErinys } from './monster_data.js';
 import { monsterHasEyes, monsterHasProperName, nameToMonster } from './mondata.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { retouchEquipment } from './artifact.js';
+import { retouchEquipment, whatGives } from './artifact.js';
 import { makeConfused } from './potion.js';
 import { summonFuries } from './makemon.js';
 import {
@@ -39,7 +39,6 @@ import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.j
 import type { AlignmentValue, AttributeValues, Race } from './role.js';
 import type { LevelAbility } from './innate_abilities.js';
 import type { IntrinsicOrigin, PropertyName, WornPropertySlot } from './property_types.js';
-import type { ArtifactDefense, ArtifactFlag } from './data_types.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE,
     FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, Is_astralevel, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV,
@@ -911,45 +910,6 @@ function blockedProvenance(property: PropertyName, state: GameState): string {
 
 export function heroHasNoEyes(state: GameState = game): boolean {
     return !monsterHasEyes(state.u.umonnum ?? -1);
-}
-
-const DEFENSES: Readonly<Partial<Record<PropertyName, ArtifactDefense>>> = {
-    fireResistance: 'fire', coldResistance: 'cold', antimagic: 'magic',
-    poisonResistance: 'poison', drainResistance: 'life-drain',
-};
-const FLAGS: Readonly<Partial<Record<PropertyName, ArtifactFlag>>> = {
-    searching: 'SPFX_SEARCH', hallucinationResistance: 'SPFX_HALRES', telepathy: 'SPFX_ESP',
-    stealth: 'SPFX_STLTH', regeneration: 'SPFX_REGEN', teleportControl: 'SPFX_TCTRL',
-    warnOfMonster: 'SPFX_WARN', warning: 'SPFX_WARN', energyRegeneration: 'SPFX_EREGEN',
-    halfSpellDamage: 'SPFX_HSPDAM', halfPhysicalDamage: 'SPFX_HPHDAM', reflection: 'SPFX_REFLECT',
-};
-
-// C artifact.c:what_gives()
-// The first item conveying a particular intrinsic.
-// C artifact.c:abil_to_adtyp(): the C extrinsic-pointer table became the
-// DEFENSES map above.
-// C artifact.c:abil_to_spfx(): likewise the FLAGS map for spfx bits.
-export function whatGives(property: PropertyName, state: GameState = game): GameObject | null {
-    const wornmask = W_ARM | W_ARMC | W_ARMH | W_ARMS | W_ARMG | W_ARMF | W_ARMU
-        | W_AMUL | W_RINGL | W_RINGR | W_TOOL | W_ART | W_ARTI
-        | (state.u.twoweap ? W_SWAPWEP : 0);
-    const extrinsic = extrinsicPropertyMask(property, state);
-    const wornbits = wornmask & extrinsic;
-    for (const object of state.inventory) {
-        if (object.oartifact && (property !== 'warnOfMonster' || state.context.warntype?.obj)) {
-            const artifact = artifactById(object.oartifact, state);
-            if (!artifact) continue;
-            const defense = DEFENSES[property];
-            const flag = FLAGS[property];
-            if (defense && (artifact.carriedDefense === defense
-                || artifact.defense === defense && ((object.owornmask ?? 0) & ~(W_ART | W_ARTI))))
-                return object;
-            if (flag && (artifact.carriedFlags.includes(flag)
-                || artifact.flags.includes(flag) && object.owornmask)) return object;
-            if (object === state.uwep && property === 'blindResistance' && (extrinsic & W_WEP)) return object;
-        } else if (wornbits && wornbits === (wornmask & (object.owornmask ?? 0))) return object;
-    }
-    return null;
 }
 
 // C attrib.c:adjabil(). A level change grants or revokes role (FROMEXPER)
