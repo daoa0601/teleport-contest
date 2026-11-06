@@ -36,7 +36,7 @@ import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { setHeroGrip, paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, isRider, } from './mon.js';
-import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting, } from './potion.js';
+import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting, } from './potion.js';
 import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
@@ -1843,9 +1843,7 @@ async function cureHornTrouble(trouble, state, publish) {
         return;
     }
     if (trouble === VOMITING) {
-        cureHeroVomiting(state);
-        if (talk)
-            await publish(formatFeltMessage('much less nauseated now.', state));
+        await makeHeroVomiting(0, { state, talk, publish });
         return;
     }
     if (trouble === CONFUSED) {
@@ -1897,7 +1895,7 @@ async function causeHornTrouble(object, state, publish, random, rollDice) {
             await vomit({ state, publish, random, rollDice });
         }
         else {
-            startHeroVomiting({ state, turns: 14 });
+            await makeHeroVomiting(14, { state });
         }
         return VOMITING;
     }

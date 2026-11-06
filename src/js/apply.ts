@@ -81,7 +81,7 @@ import {
 } from './mon.js';
 import {
     makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands,
-    makeBlinded, cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting,
+    makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting,
 } from './potion.js';
 import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -1872,8 +1872,7 @@ async function cureHornTrouble(trouble: HornTrouble, state: GameState, publish: 
         return;
     }
     if (trouble === VOMITING) {
-        cureHeroVomiting(state);
-        if (talk) await publish(formatFeltMessage('much less nauseated now.', state));
+        await makeHeroVomiting(0, { state, talk, publish });
         return;
     }
     if (trouble === CONFUSED) {
@@ -1930,7 +1929,7 @@ async function causeHornTrouble(
         if (heroIsVomiting(state)) {
             await vomit({ state, publish, random, rollDice });
         } else {
-            startHeroVomiting({ state, turns: 14 });
+            await makeHeroVomiting(14, { state });
         }
         return VOMITING;
     }

@@ -8,7 +8,7 @@
 // timeout_luck.js, and timeout_body.js.
 import { castMonsterSpellRay } from './breath_ray.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
-import { clearHeroSliming, cureHeroSickness, cureHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, } from './potion.js';
+import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, } from './potion.js';
 import { clearHeroStrangulation } from './do_wear.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle, } from './objnam.js';
 import { advanceSpellProtection } from './spell.js';
@@ -111,7 +111,7 @@ export async function petrificationDialogue({ state = game, publish = plineWithC
     else if (turns === 2) {
         if (hero.deafTurns !== undefined && hero.deafTurns > 0 && hero.deafTurns < 5)
             hero.deafTurns = 5;
-        cureHeroVomiting(state);
+        await makeHeroVomiting(0, { state });
         clearHeroSliming(state);
     }
     await exerciseAttribute(A_DEX, false, state);

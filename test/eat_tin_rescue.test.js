@@ -5,7 +5,7 @@ import { continueCountedCommand } from '../js/cmd.js';
 import { doeat } from '../js/eat.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { startHeroVomiting } from '../js/potion.js';
+import { makeHeroVomiting } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { DAGGER, TIN } from '../js/object_data.js';
@@ -45,7 +45,7 @@ async function advanceThreat(threat) {
         await advanceHeroSliming();
     }
     else {
-        startHeroVomiting({ turns: 7 });
+        await makeHeroVomiting(7);
         await advanceHeroVomiting();
     }
 }

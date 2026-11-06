@@ -14,7 +14,7 @@ import { initRng } from '../js/rng.js';
 import { useUnicornHorn } from '../js/apply.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startHeroSickness } from '../js/potion.js';
-import { startHeroVomiting } from '../js/potion.js';
+import { makeHeroVomiting } from '../js/potion.js';
 import { vomit } from '../js/eat.js';
 import { statusConditions } from '../js/botl.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';
@@ -126,7 +126,7 @@ void test('nausea worsens, confuses, stuns, and ends in vomiting', async () => {
         cause: 'tainted meat',
         type: SICK_VOMITABLE,
     });
-    startHeroVomiting({ state: game, turns: 15 });
+    await makeHeroVomiting(15, { state: game });
     const messages = [];
     for (let turn = 0; turn < 15; turn++) {
         await advanceHeroVomiting({
@@ -171,7 +171,7 @@ void test('a rat form cannot vomit away food poisoning', async () => {
 });
 void test('natural vomiting expiry announces the vomit without a cure message', async () => {
     await freshHeroConditionRoom();
-    startHeroVomiting({ turns: 1 });
+    await makeHeroVomiting(1);
     const messages = [];
     await advanceHeroVomiting({ publish: async (message) => { messages.push(message); } });
     assert.deepEqual(messages, ['You vomit!']);

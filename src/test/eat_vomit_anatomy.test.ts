@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { FAINTING, HUNGRY } from '../js/const.js';
 import { doeat } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { startHeroVomiting } from '../js/potion.js';
+import { makeHeroVomiting } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { FOOD_RATION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -23,7 +23,7 @@ void test('empty-stomach vomiting describes the current monster form anatomy', a
     await doeat();
     game.u.uhunger = 0;
     game.u.uhs = FAINTING;
-    startHeroVomiting({ turns: 1 });
+    await makeHeroVomiting(1);
 
     await advanceHeroVomiting();
 
@@ -38,7 +38,7 @@ void test('pony-form nausea gags instead of announcing vomit', async () => {
     requirePlayingGame(game);
     installPolymorphedHero('pony');
     resetInputState();
-    startHeroVomiting({ turns: 3 });
+    await makeHeroVomiting(3);
 
     await advanceHeroVomiting();
 
