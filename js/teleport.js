@@ -55,6 +55,7 @@ import { applyFloorEffects } from './floor_effects.js';
 import { unlinkObject, placeObject, mksobj } from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import { monsterIsAmphibious, monsterIsSwimmer, monsterPassesWalls, monsterIsAmorphous, monsterThrowsRocks, is_lord, is_prince, monsterHasEyes, monsterIsCovetous, monsterIsEel, monsterCanTeleport, monsterControlsTeleport, monsterIsRider, monsterIsSilent, } from './mondata.js';
+// Port only: narrow teleportation state to a loaded level.
 export function requireLevel(state) {
     if (!state.level)
         throw new Error('Teleportation requires a dungeon level.');
@@ -73,12 +74,14 @@ const PM_DEATH = 311;
 const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_SALAMANDER = 329;
+// Port only: find a ring across the runtime equipment aliases.
 function wornRing(state, objectType) {
     return [
         state?.uleft, state?.uright,
         state?.u?.uleft, state?.u?.uright,
     ].some(ring => ring?.otyp === objectType);
 }
+// C youprop.h:Teleportation()
 export function heroHasTeleportation(state) {
     const u = state?.u;
     if (u?._propertySources?.teleportation)
@@ -87,19 +90,23 @@ export function heroHasTeleportation(state) {
         || (u?.teleportingTurns ?? 0) > 0
         || wornRing(state, RIN_TELEPORTATION));
 }
+// Part of C teleport.c:dotele(): test teleportation granted by the hero's form.
 export function heroFormCanTeleport(state) {
     return Upolyd(state.u) && state.u.umonnum !== undefined
         && monsterCanTeleport(state.u.umonnum);
 }
+// Part of C teleport.c:dotele(): combine intrinsic and form-based teleportation.
 export function heroCanTeleport(state = game) {
     return heroHasTeleportation(state) || heroFormCanTeleport(state);
 }
+// C youprop.h:Teleport_control()
 export function heroControlsTeleport(state = game) {
     const u = state?.u;
     return !!(u?.teleportControl
         || wornRing(state, RIN_TELEPORT_CONTROL)
         || (Upolyd(u) && u.umonnum !== undefined && monsterControlsTeleport(u.umonnum)));
 }
+// Part of C teleport.c:tele_trap(): decide why a hero teleport trap is blocked.
 export function heroTeleportTrapBlock(state = game) {
     const level = state?.u?.uz;
     const astral = state?.astral_level;
@@ -116,8 +123,9 @@ function monsterIsDemonRuler(monster) {
     return MONSTER_SYMBOL[monster?.mnum] === S_DEMON
         && (is_lord(monster?.mnum) || is_prince(monster?.mnum));
 }
-// noteleport_level()'s In_hell half: the demon court in Gehennom, scanned
-// through get_iter_mons(m_blocks_teleporting).
+// Part of C teleport.c:noteleport_level(): check Gehennom's demon court.
+// noteleport_level's In_hell half: the demon court in Gehennom, scanned
+// through get_iter_mons with the m_blocks_teleporting filter.
 function demonCourtBlocksTeleport(monster, state) {
     const inHell = !!state?.dungeons?.[state?.u?.uz?.dnum ?? -1]
         ?.flags?.hellish;
@@ -145,7 +153,8 @@ export async function reportMonsterTeleportRestriction(monster, { state = game, 
         await publish(`A mysterious force prevents ${monsterName(monster, { state })} from teleporting!`);
     return true;
 }
-// noteleport_level(&gy.youmonst): the hero's active polymorph form decides,
+// Part of C teleport.c:noteleport_level(): apply the restriction to the hero's current form.
+// The native caller passes gy.youmonst: the hero's active polymorph form decides,
 // with the original body when unpolyed.
 export function heroTeleportRestricted(state = game) {
     const currentForm = state?.u?.mtimedone
@@ -363,6 +372,7 @@ export function collect_coords(cx, cy, maxradius = 0, ccflags = CC_NO_FLAGS, { s
     }
     return coords;
 }
+// Port only: test membership in a runtime rectangle.
 function inside(area, x, y) {
     return area && x >= area.lx && x <= area.hx
         && y >= area.ly && y <= area.hy;
@@ -385,6 +395,7 @@ function crossesTeleportBoundary(state, fromX, fromY, toX, toY) {
     }
     return false;
 }
+// Part of C teleport.c:teleok(): permit harmless destination traps for a floating hero.
 function trapAllowedAtDestination(state, trap, allowTrap) {
     if (!trap || allowTrap)
         return true;
@@ -407,6 +418,7 @@ export function heroTeleportDestinationOk(x, y, { state = game, allowTrap = fals
     updateHeroRegions(state, x, y);
     return true;
 }
+// C teleport.c:safe_teleds()
 export async function safe_teleds(state = game, { random = rn2, rollOne = rnd, allowDrag = false, finishArrival = movement => finishTeleportArrival(movement, { announceTeleport: false }), } = {}) {
     let destination = null;
     for (let attempt = 0; attempt < 40; attempt++) {
@@ -449,6 +461,7 @@ export async function safe_teleds(state = game, { random = rn2, rollOne = rnd, a
         return null;
     return await teleds(destination.x, destination.y, state, { allowDrag, finishArrival });
 }
+// C teleport.c:scrolltele()
 export async function teleportHero({ chooseDestination, source = null, discover = null, state = game, random = rn2, rollOne = rnd, finishArrival = finishTeleportArrival, publish = plineWithContinuation, } = {}) {
     let sourceDiscovered = false;
     const discoverSource = async () => {
@@ -511,10 +524,12 @@ export async function teleportHero({ chooseDestination, source = null, discover 
         state._travelTarget = null;
     return { moved: true, died, movement, arrival };
 }
+// Port only: read the hero's runtime stun flag and timeout.
 function heroIsStunned(state) {
     return !!(state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0);
 }
-// C teleport.c:teleport_pet(mtmp, FALSE).  A steed never follows; a cursed
+// Part of C teleport.c:teleport_pet(): the non-forced pet-following case.
+// A steed never follows; a cursed
 // leash yelps and holds the pet; any other leash goes slack and releases it.
 export async function teleportPetVictim(monster, state) {
     if (monster === state.u?.usteed)
@@ -534,7 +549,7 @@ export async function teleportPetVictim(monster, state) {
     await releaseMonsterLeash(monster, false, { state });
     return true;
 }
-// C teleport.c:teleport()
+// C teleport.c:dotele()
 // Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
 export async function teleportHeroAtWill({ state = game, random = rn2, rollOne = rnd, chooseDestination = null, finishArrival = finishTeleportArrival, publish = plineWithContinuation, ignoreRestrictions = false, } = {}) {
     requirePlayingGame(state);
@@ -663,6 +678,7 @@ export async function teleportHeroAtWill({ state = game, random = rn2, rollOne =
         await morehungry(100, { state });
     return { ...result, died: !!state.program_state.gameover, spentTime: true };
 }
+// C teleport.c:rloc()
 export async function randomMonsterRelocation(monster, { state = game, calls = [], random = rn2, rollOne = rnd, flags = RLOC_NONE, } = {}) {
     if (!monster)
         return null;
@@ -861,6 +877,7 @@ export async function chooseWizardLevelDestination() {
     await endgamePrerequisite(destination);
     return { destination };
 }
+// Part of C teleport.c:level_tele(): read and interpret the requested destination.
 async function readLevelRequest(state, menuRequested) {
     const wizard = !!state.flags.debug;
     menuRequested ||= !!state.iflags.menu_requested;
@@ -923,12 +940,17 @@ export function randomTeleportDepth(state = game, random = rn2, rollOne = rnd) {
     }
     return destination;
 }
+// Port only: duplicate the Fort Ludios location test for an explicit game state.
+// The full macro port is Is_knox_level in const.ts.
 function atKnox(state) {
     return sameLevel(state.u.uz, state.knox_level);
 }
+// Port only: compare optional runtime dungeon locations.
+// This duplicates sameDungeonLevel in dungeon.ts for teleport destinations.
 function sameLevel(left, right) {
     return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
+// Part of C teleport.c:level_tele(): clamp and resolve the requested dungeon depth.
 async function destinationAtDepth(requested, state) {
     const hero = state.u;
     const dungeon = dungeonAt(state, hero.uz.dnum);
@@ -957,6 +979,7 @@ async function destinationAtDepth(requested, state) {
     }
     return destination;
 }
+// Part of C teleport.c:level_tele(): handle level-zero suicide and life saving.
 async function teleportToNowhere(state) {
     if (await promptYesNoQuit('Go to Nowhere.  Are you sure?') !== 'y')
         return;
@@ -972,6 +995,7 @@ async function teleportToNowhere(state) {
     await plineWithContinuation('An energized cloud of dust begins to coalesce.');
     await plineWithContinuation(`Your body rematerializes${state.inventory.length ? ', and you gather up all your possessions' : ''}.`);
 }
+// Part of C teleport.c:level_tele(): handle destinations above the dungeon.
 async function teleportAboveDungeon(destination, state, gotoLevel) {
     if (state.u.ushops0?.length) {
         const generating = state.in_mklev;
@@ -1024,12 +1048,14 @@ async function teleportAboveDungeon(destination, state, gotoLevel) {
     await plineWithContinuation(`You ${escape}.`);
     await gotoLevel({ dnum: 0, dlevel: 0 });
 }
+// Port only: require a dungeon entry for level teleportation.
 function dungeonAt(state, dnum) {
     const dungeon = state.dungeons[dnum];
     if (!dungeon)
         throw new Error(`Level teleport cannot find dungeon ${dnum}`);
     return dungeon;
 }
+// Port only: require a named special-level destination.
 function requiredSpecialLevel(state, name) {
     const level = state.specialLevels?.get(name);
     if (!level)
@@ -1228,6 +1254,7 @@ export async function teleportHeroToRandomPet(state = game) {
     await teleds(x, y, state, { finishArrival: finishTeleportArrival });
     return true;
 }
+// Part of C teleport.c:tele_trap(): relocate an occupant of the fixed trap destination.
 export async function clearFixedTeleportDestination(x, y, state = game, random = rn2) {
     const monster = state.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, state) &&
         (candidate.mhp ?? 1) > 0
@@ -1249,9 +1276,11 @@ export async function clearFixedTeleportDestination(x, y, state = game, random =
         },
     };
 }
+// Port only: compute a monster's grid distance to the hero.
 export function distanceToHero(monster, state) {
     return Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy));
 }
+// C teleport.c:teleport_pet()
 // C teleport_pet(): feedback may wait for input while the leash is attached.
 async function teleportMonsterPet(monster, state, force, publish) {
     if (monster === state.u.usteed)
@@ -1510,8 +1539,9 @@ export async function mlevel_tele_trap(monster, trap, { state = game, random = r
         monster.mconf = 1;
     return migrateMonsterOffLevel(monster, state, destination === undefined ? trap : { ...trap, dst: destination }, mode === undefined ? { kind } : { kind, mode });
 }
-// control_mon_tele()'s getpos() prelude, mirroring scrolltele()'s reader
-// below; getpos() itself lives in getpos.ts.
+// Part of C teleport.c:control_mon_tele(): prompt for a controlled monster destination.
+// control_mon_tele's getpos prelude, mirroring scrolltele's reader
+// below; getpos itself lives in getpos.ts.
 export async function askMonsterTeleportDestination(monster, start) {
     await plineWithContinuation(`Teleport ${monsterName(monster, {
         article: 'your', suppressIt: true,
@@ -1531,6 +1561,7 @@ export async function askMonsterTeleportDestination(monster, start) {
     });
     return destination;
 }
+// Part of C teleport.c:scrolltele(): prompt for a controlled hero destination.
 export async function askTeleportDestination({ onPrompt = null } = {}) {
     const subject = game.u.usteed
         ? `you and ${monsterName(game.u.usteed)}` : 'you';
@@ -1696,14 +1727,17 @@ export async function teleportMonsterByHero(monster, { state = game, giveFeedbac
     }
     return !!await randomMonsterRelocation(monster, { state, flags: RLOC_MSG });
 }
+// Port only: read the dungeon name for an optional level location.
 // Magic portals under the hero.
-// C ref: teleport.c domagicportal().
+// C ref: teleport.c domagicportal.
 function dungeonName(level) {
     return level ? game.dungeons[level.dnum]?.dname ?? '' : '';
 }
+// Port only: recognize the tutorial dungeon in the runtime graph.
 function isTutorialLevel(level) {
     return dungeonName(level) === 'The Tutorial';
 }
+// Part of C teleport.c:domagicportal(): apply and describe portal dizziness.
 async function addPortalStun() {
     const hero = game.u;
     const alreadyStunned = !!(hero.stunned
@@ -1711,6 +1745,7 @@ async function addPortalStun() {
     await makeStunned((hero.stunnedTurns ?? 0) + 3, { talk: false });
     return alreadyStunned ? 'You feel dizzier.' : 'You feel slightly dizzy.';
 }
+// C teleport.c:domagicportal()
 export async function activateMagicPortal(trap, gotoLevel) {
     requirePlayingGame(game);
     // C teleport.c:domagicportal() (1450-1451): a buried ball surfaces
@@ -1746,6 +1781,7 @@ export async function activateMagicPortal(trap, gotoLevel) {
 }
 // Random object relocation, including floor effects and shop ownership.
 // C teleport.c:rloco() and goodpos(..., NULL, 0).
+// C teleport.c:rloco()
 export async function relocateObjectRandomly(object, { state = game, publish = plineWithContinuation, random = rn2, } = {}) {
     requireLiveGame(state);
     if (object.otyp === CORPSE && isRider(object.corpsenm)) {
@@ -1775,6 +1811,7 @@ export async function relocateObjectRandomly(object, { state = game, publish = p
     await newsym(x, y);
     return true;
 }
+// Part of C teleport.c:rloco(): select a permitted object destination.
 function relocationPosition(oldx, oldy, region, state, random) {
     const fallRegion = oldx === 0 && region?.lx ? region : null;
     for (let attempt = 0;; attempt++) {
@@ -1795,6 +1832,7 @@ function relocationPosition(oldx, oldy, region, state, random) {
         return { x, y };
     }
 }
+// Part of C teleport.c:rloco(): settle shop ownership after object relocation.
 async function settleRelocatedObject(object, oldx, oldy, x, y, state, publish) {
     const level = requireGameLevel(state);
     const owner = findObjectOwner(object, oldx, oldy, state);

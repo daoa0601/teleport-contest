@@ -109,6 +109,7 @@ const COLOR_CSS = [
  * @param {string} fontFamily - The CSS font-family string
  * @returns {number} line-height as a unitless ratio (e.g. 1.125)
  */
+// Port only: measure browser font metrics for terminal row spacing.
 function computeTerminalLineHeight(fontSize: number, fontFamily: string): number {
     const DEFAULT_LINE_HEIGHT = 1.1875;
     if (typeof document === 'undefined') return DEFAULT_LINE_HEIGHT;

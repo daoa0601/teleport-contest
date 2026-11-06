@@ -45,17 +45,19 @@ export function clearMessageWindow(coveredRows) {
     display.setCursor(0, 0);
 }
 export const CTRL_P = 16;
-// iflags.prevmsg_window holds the option's first letter; initoptions()
+// Port only: decode the runtime message-history mode option.
+// iflags.prevmsg_window holds the option's first letter; initoptions
 // leaves the tty default 'single'.
 export function messageWindowMode() {
     const mode = (game.iflags.prevmsg_window ?? 's').charAt(0).toLowerCase();
     return mode === 'c' || mode === 'f' || mode === 'r' ? mode : 's';
 }
-// One step back through the recall ring. tty_doprev_message() decrements
+// Part of C topl.c:tty_doprev_message(): step backward through the recall ring.
+// One step back through the recall ring. tty_doprev_message decrements
 // cw->maxcol and resets it to maxrow once the walk leaves the filled slots.
 // In a full ring the oldest message occupies maxrow's own slot, so the walk
 // reaches the pending line there instead of displaying that entry.
-// C win/tty/topl.c:tty_doprev_message().
+// C win/tty/topl.c:tty_doprev_message.
 export function stepHistoryBack() {
     const history = game._messageHistory;
     const cursor = game._messageHistoryCursor;
@@ -73,11 +75,12 @@ export function stepHistoryBack() {
         && history.length === messageHistoryCapacity()
         ? null : cursor - 1;
 }
-// tty_doprev_message()'s putstr-built NHW_MENU: "Message History", a blank
-// line, the ring, and the pending topline. tty_display_nhwindow() pages it
-// through process_text_window() because putstr() (unlike add_menu()) owns
-// cw->data, and destroy_nhwindow() erases the corner again.
-// C win/tty/topl.c:tty_doprev_message().
+// Part of C topl.c:tty_doprev_message(): construct and display the recall menu.
+// tty_doprev_message's putstr-built NHW_MENU: "Message History", a blank
+// line, the ring, and the pending topline. tty_display_nhwindow pages it
+// through process_text_window because putstr (unlike add_menu) owns
+// cw->data, and destroy_nhwindow erases the corner again.
+// C win/tty/topl.c:tty_doprev_message.
 export async function showMessageHistoryWindow({ reversed, acceptCtrlP }) {
     const lines = ['Message History', ''];
     if (reversed) {
@@ -198,6 +201,7 @@ export function putMessageHistory(message) {
     rememberToplines();
     game._toplines = message;
 }
+// Port only: decode terminal graphics and spacing into visible cells.
 export function decodeMixedTopline(message) {
     const cells = [];
     let dec = false;
@@ -230,14 +234,16 @@ export function decodeMixedTopline(message) {
     }
     return cells;
 }
+// Port only: clear the browser display's temporary topline clipping.
 // Every write that starts or extends a topline message goes through
-// update_topl()/addtopl(), whose output repaints the physical row, so a
-// docorner() clip of that row ends as soon as new text is written.
+// update_topl/addtopl, whose output repaints the physical row, so a
+// docorner clip of that row ends as soon as new text is written.
 export function resetToplineClip() {
     if (game.nhDisplay)
         game.nhDisplay.toplineClipColumn = null;
 }
-// docorner() cl_end()s physical columns, while a mixed topline also carries
+// Port only: clip encoded terminal text by visible columns.
+// docorner clears physical columns through cl_end, while a mixed topline also carries
 // \x0e/\x0f markers and ESC[nC spacing that occupy no cell. Keep the raw
 // byte segments whose decoded cells fall before the clip column, replacing
 // a partially covered spacing run with plain blanks so no code is cut in
@@ -354,6 +360,7 @@ export function renderKeyPrompt(message, cursorOffset = 0) {
     display.setCursor(lastLine.length + cursorOffset, lines.length - 1);
     return lines.length;
 }
+// Port only: publish and page a message through the shared topline boundary.
 export async function moreUntilDismissed(message, { urgent = false } = {}) {
     await setTopline(message);
     return pageTopline(message, { urgent });
@@ -416,6 +423,7 @@ export async function pageTopline(message, { urgent = false, dismissKey, rawGlyp
     }
     return key;
 }
+// Part of C wintty.c:tty_display_nhwindow(): flush the older topline before a text window.
 // Opening a tty text window flushes any older topline before the window is
 // displayed.  Quest pages and other modal producers use this boundary when a
 // time-consuming command has left ordinary prose pending for the scheduler.

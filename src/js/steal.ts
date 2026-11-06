@@ -68,11 +68,13 @@ import {
     monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, touchPetrifies,
 } from './mondata.js';
 
-// C Some_Monnam(): unseen thieves are "Someone" or "Something".
+// Port only: format a thief's visible or unseen sentence subject.
+// C Some_Monnam: unseen thieves are "Someone" or "Something".
 function wornItemRemover(monster: Monster, state: GameState): string {
     return monsterName(monster, { state, capitalized: true, augmentIt: true });
 }
 
+// Part of C steal.c:worn_item_removal(): describe equipment before removing it.
 async function wornTheftObjectDescription(object: GameObject): Promise<string> {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
     // the ownership and equipment-location suffix for its pre-removal line.
@@ -87,6 +89,7 @@ async function wornTheftObjectDescription(object: GameObject): Promise<string> {
     return description;
 }
 
+// Port only: enumerate runtime hero equipment aliases.
 function heroEquipmentSlots() {
     return [
         'uwep', 'uswapwep', 'uquiver',
@@ -505,6 +508,7 @@ export function someGold(amount: number, random: typeof rn2): number {
     return minimum + random(gold - minimum + 1);
 }
 
+// Part of C steal.c:stealgold(): teleport and flee after stealing coins.
 async function fleeWithGold(
     monster: Monster, state: PlayingGameState, publish: MessagePublisher,
     random: typeof rn2, rollOne: typeof rnd,
@@ -567,6 +571,7 @@ export async function addObjectToMonsterInventory(
     return carried;
 }
 
+// Port only: validate newly created ownership before the shared monster pickup boundary.
 export async function addCreatedObjectToMonsterInventory(
     monster: Monster, object: GameObject, state: GameState = game,
     { atFront = true }: MonsterPickupOptions = {},
@@ -614,6 +619,7 @@ export async function stealHeroQuestObject(
     await encumber_msg(state);
 }
 
+// Part of C steal.c:stealamulet(): choose the quest item or invocation object to steal.
 function chooseQuestTheftTarget(monster: Monster, state: PlayingGameState, rollOne: typeof rnd): GameObject | undefined {
     let candidates = state.inventory.filter(object => artifactById(object.oartifact, state)?.questArtifact);
     if (!candidates.length) {
@@ -629,6 +635,7 @@ function chooseQuestTheftTarget(monster: Monster, state: PlayingGameState, rollO
     return candidates[candidates.length > 1 ? rollOne(candidates.length) - 1 : 0];
 }
 
+// Part of C steal.c:worn_item_removal(): announce and remove the selected worn quest item.
 async function removeForQuestTheft(
     monster: Monster, object: GameObject, state: PlayingGameState, publish: MessagePublisher,
 ): Promise<void> {
@@ -645,6 +652,7 @@ async function removeForQuestTheft(
 
 // C steal.c:maybe_absorb_item(). A mimic can take a carried or flying item.
 
+// C steal.c:maybe_absorb_item()
 export async function maybeAbsorbItem(
     monster: Monster, object: GameObject, state: GameState = game,
     ordinaryChance = 50, artifactChance = 10,
@@ -723,6 +731,7 @@ export async function dropMonsterObject(monster: Monster, object: GameObject, st
     return landed;
 }
 
+// Port only: observe and name a monster's dropped object at a distance.
 async function distantDropObjectName(object: GameObject, state: GameState): Promise<string> {
     observeDistantObjectForNaming(object, state);
     return await inventoryItemDescription(inventoryItem(object));

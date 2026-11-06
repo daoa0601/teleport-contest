@@ -667,6 +667,7 @@ const VEGETARIAN_CLASS = 19;
 const PM_SHOPKEEPER = 271;
 // Scroll constant (normally from objects.js, not in contest template)
 const SCR_CHARGING = 342;
+// C shknam.c:good_shopdoor()
 function goodShopDoor(sroom) {
     const level = requireGameLevel();
     for (let i = 0; i < sroom.doorct; i++) {
@@ -703,6 +704,7 @@ function goodShopDoor(sroom) {
     }
     return null;
 }
+// C shknam.c:stock_room_goodpos()
 function stockRoomGoodPos(sroom, shopDoor, x, y) {
     const loc = requireGameLevel().at(x, y);
     if (!loc || !IS_ROOM(loc.typ))
@@ -779,8 +781,10 @@ function assignShopkeeperIdentity(monster, shopIndex) {
         throw new Error('Shopkeeper name selection did not choose a name.');
     shopkeeper.shknam = selected.slice(0, PL_NSIZ - 1);
 }
-// C shknam.c:shkname()/Shknam(). The scratch monster name consumes display
-// RNG before the hallucinated shop type and name consume the core stream.
+// C shknam.c:shkname()
+// Also C shknam.c:Shknam(): capitalize the shopkeeper name when requested.
+// The scratch monster name consumes display RNG before the hallucinated
+// shop type and name consume the core stream.
 export function shopkeeperName(monster, { state = game, capitalized = false } = {}) {
     requireLiveGame(state);
     formatMonsterName(monster, state, {
@@ -827,7 +831,9 @@ const PM_STALKER = MONSTER_NAME.indexOf('stalker');
 const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
 const PM_LEATHER_GOLEM = MONSTER_NAME.indexOf('leather golem');
 const PM_BLACK_PUDDING = MONSTER_NAME.indexOf('black pudding');
-// C mondata.h vegan()/vegetarian() over monster symbols; noncorporeal()
+// Port only: duplicate the vegan species predicate for shop stock checks.
+// The full macro port is veganCorpse in food_traits.ts.
+// C mondata.h vegan/vegetarian over monster symbols; noncorporeal
 // is exactly S_GHOST (wraiths are unsolid but not vegan).
 function veganSpecies(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
@@ -839,12 +845,14 @@ function veganSpecies(mnum) {
         || (symbol === S_GOLEM && mnum !== PM_FLESH_GOLEM
             && mnum !== PM_LEATHER_GOLEM);
 }
+// Port only: duplicate the vegetarian species predicate for shop stock checks.
+// The full macro port is vegetarianCorpse in food_traits.ts.
 function vegetarianSpecies(mnum) {
     return veganSpecies(mnum)
         || (MONSTER_SYMBOL[mnum] === S_PUDDING
             && mnum !== PM_BLACK_PUDDING);
 }
-// C shknam.c:380 veggy_item().
+// C shknam.c:veggy_item()
 function veggyItem(object) {
     if (object.oclass !== FOOD_CLASS)
         return false;
@@ -861,6 +869,7 @@ function veggyItem(object) {
     }
     return false;
 }
+// Part of C shknam.c:saleable(): match an object against the shop stock table.
 // Pure stock-membership test (probabilities are generation-only in C).
 export function shopStocksObject(shoptype, object) {
     const stock = SHOP_STOCK[shoptype - SHOPBASE];
@@ -870,9 +879,11 @@ export function shopStocksObject(shoptype, object) {
         : 'class' in entry ? object.oclass === entry.class
             : object.otyp === entry.otyp);
 }
+// C shknam.c:saleable()
 export function saleable(resident, object) {
     return shopStocksObject(resident?.eshk?.shoptype ?? SHOPBASE, object);
 }
+// C shknam.c:get_shop_item()
 export function getShopItem(shopIndex) {
     const table = SHOP_TYPES[shopIndex]?.items;
     if (!table)

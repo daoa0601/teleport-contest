@@ -20,6 +20,7 @@ import {
 } from './wield.js';
 
 
+// Part of C u_init.c:ini_inv_use_obj(): equip starting items and learn starting spells after discovery.
 export async function useStartingItem(item: GameObject, state: GameState): Promise<void> {
     const weapon = state.uwep || state.u.uwep;
     const shield = state.uarms || state.u.uarms;

@@ -16,7 +16,9 @@ export interface StorageBackend {
 
 // Safe localStorage access -- returns null when unavailable (e.g. Node.js tests).
 
+// Port only: inject a storage backend for tests.
 export function setStorageForTesting(mock: StorageBackend | null): void { game.mockStorage = mock; }
+// Port only: select the test or browser storage backend.
 function storage(): StorageBackend | null {
     if (game?.mockStorage) return game.mockStorage;
     try {
@@ -25,6 +27,7 @@ function storage(): StorageBackend | null {
     } catch (e) { return null; }
 }
 
+// Port only: read a virtual file from browser storage.
 export function vfsReadFile(path: string): string | null {
     const s = storage();
     if (!s) return null;
@@ -34,6 +37,7 @@ export function vfsReadFile(path: string): string | null {
     } catch (e) { return null; }
 }
 
+// Port only: write a virtual file to browser storage.
 export function vfsWriteFile(path: string, content: string): boolean {
     const s = storage();
     if (!s) return false;
@@ -41,6 +45,7 @@ export function vfsWriteFile(path: string, content: string): boolean {
     catch (e) { return false; }
 }
 
+// Port only: delete a virtual file from browser storage.
 export function vfsDeleteFile(path: string): boolean {
     const s = storage();
     if (!s) return false;
@@ -51,6 +56,7 @@ export function vfsDeleteFile(path: string): boolean {
     } catch (e) { return false; }
 }
 
+// Port only: list virtual files by path prefix.
 export function vfsListFiles(prefix?: string): string[] {
     const s = storage();
     if (!s) return [];
@@ -66,6 +72,7 @@ export function vfsListFiles(prefix?: string): string[] {
     } catch (e) { return []; }
 }
 
+// Port only: reset the injected storage backend.
 export function init_storage_globals() {
     if (game) game.mockStorage = null;
 }

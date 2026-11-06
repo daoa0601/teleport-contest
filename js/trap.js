@@ -84,6 +84,7 @@ import { createPoisonGasCloud } from './region.js';
 import { stopHeroOccupation } from './allmain.js';
 import { reset_faint } from './eat.js';
 import { holdingMonsterName, holdingMonsterSubject } from './mhitu.js';
+// C trap.c:burnarmor()
 export async function burnArmorByFire(victim, state, emitMessage, calls = [], random = rn2, { visible = victim === state.u, } = {}) {
     const monster = 'mnum' in victim ? victim : null;
     if (victim !== state.u && !monster)
@@ -151,16 +152,20 @@ export async function burnArmorByFire(victim, state, emitMessage, calls = [], ra
             return false;
     }
 }
+// Port only: record a diagnostic random-call argument before drawing.
 function recordRoll(random, calls, range) {
     calls?.push(range);
     return random(range);
 }
+// Port only: read a monster's runtime inventory aliases.
 function inventoryOf(monster) {
     return monster?.minvent || monster?.inventory || [];
 }
+// Port only: find an inventory object by worn-mask bits.
 function wornObject(monster, mask) {
     return inventoryOf(monster).find(object => ((object.owornmask ?? 0) & mask) !== 0) || null;
 }
+// Port only: resolve hero or monster armor from runtime equipment state.
 function armorAt(monster, state, mask) {
     if (monster)
         return wornObject(monster, mask);
@@ -174,6 +179,7 @@ function armorAt(monster, state, mask) {
         [W_ARMU]: state.uarmu,
     }[mask] || null;
 }
+// Port only: construct a trap-magic outcome with hero survival.
 function result(changed, noticed, state) {
     return { changed, noticed, heroDied: !!state.program_state.gameover };
 }
@@ -253,6 +259,7 @@ export async function erodeObject(object, kind, { state = game, publish = plineW
     }
     return 'nothing';
 }
+// Part of C trap.c:erode_obj(): choose the material vulnerability for an erosion type.
 export function objectIsVulnerableToErosion(object, kind, state = game) {
     if (kind === 'burn')
         return objectIsFlammable(object, state);
@@ -264,6 +271,7 @@ export function objectIsVulnerableToErosion(object, kind, state = game) {
         return objectIsRottable(object, state);
     return objectIsCrackable(object, state);
 }
+// Part of C zap.c:inventory_resistance_check(), zap.c:u_adtyp_resistance_obj(): protect carried items from fire or acid.
 function inventoryResists(kind, state, random) {
     if (kind !== 'burn' && kind !== 'corrosion')
         return false;
@@ -273,6 +281,7 @@ function inventoryResists(kind, state, random) {
     return kind === 'burn' && state.uarmc?.otyp === DWARVISH_CLOAK
         && random(100) < 90;
 }
+// C trap.c:grease_protect()
 async function protectWithGrease(object, view, state, publish, random) {
     if (view && (view.hero || view.monsterVisible)) {
         // Native grease feedback appends 's even when the name ends in s.
@@ -295,12 +304,14 @@ async function protectWithGrease(object, view, state, publish, random) {
             await publish('The grease dissolves.');
     }
 }
+// Port only: resolve a carried object's monster identity in runtime state.
 function objectCarrier(object, state) {
     if (object.where !== 'minvent')
         return null;
     return state.u.usteed && state.u.usteed.m_id === object.carrierMid ? state.u.usteed
         : (state.level?.monsters.find(monster => monster.m_id === object.carrierMid) ?? null);
 }
+// Part of C trap.c:erode_obj(): determine visibility and naming for erosion feedback.
 function objectView(object, state, position = { x: object.ox, y: object.oy }, displayName = null) {
     const hero = object.where === 'inventory';
     const carrier = objectCarrier(object, state);
@@ -319,6 +330,7 @@ function objectView(object, state, position = { x: object.ox, y: object.oy }, di
         visible: hero || monsterVisible || floorVisible,
     };
 }
+// Port only: compose an erosion message's subject from its resolved object view.
 function objectSubject(view, state, capitalized = true) {
     if (view.hero)
         return `${capitalized ? 'Your' : 'your'} ${view.name}`;
@@ -637,6 +649,7 @@ const PM_CAVE_SPIDER = 94;
 const PM_GIANT_SPIDER = 96;
 const PM_GREMLIN = 40;
 const IRON = 11;
+// Port only: require and read the live hero's species.
 function heroMonsterForm() {
     requirePlayingGame(game);
     return game.u.umonnum;
@@ -791,6 +804,7 @@ export async function activateStatueTrapAt(x, y, { state = game, shatter = false
 // ---------------------------------------------------------------------------
 // C trap.c:deltrap()/maybe_finish_sokoban(). Callers own actor release,
 // terrain changes, and redraw; raw deletion only removes the trap itself.
+// C trap.c:deltrap()
 export function deleteTrap(trap, state = game) {
     const level = requireGameLevel(state);
     clearPitConnections(trap, state);
@@ -897,6 +911,7 @@ export function setHeroTrap(turns, type, state = game) {
 }
 // C trap.c:reset_utrap(): leave the trap (set_utrap(0, 0)), optionally
 // announcing a regained sense of levitation or flight.
+// C trap.c:reset_utrap()
 export async function resetUtrap(message = true, state = game) {
     // C trap.c:reset_utrap() snapshots the Levitation/Flying macros, which
     // read the blocked masks that only float_vs_flight() updates; after a
@@ -965,13 +980,16 @@ export function monsterTrapIsHarmless(monster, trap, state) {
             return false;
     }
 }
+// Port only: read a monster's runtime inventory aliases.
 function monsterInventory(monster) {
     return monster?.minvent || monster?.inventory || [];
 }
+// Port only: resolve the runtime monster weapon slot.
 function monsterWeapon(monster) {
     return (monster?.mw ||
         monsterInventory(monster).find((object) => object?.wielded || (object?.owornmask ?? 0) & W_WEP));
 }
+// Part of C mondata.c:resists_magm(): combine monster species and equipment magic resistance.
 export function monsterHasMagicResistance(monster) {
     if (monster?.mnum === PM_BABY_GRAY_DRAGON ||
         (MONSTER_ATTACKS[monster?.mnum] || []).some(([, damageType]) => damageType === AD_MAGM || damageType === AD_RBRE)) {
@@ -1027,6 +1045,7 @@ export async function beginMonsterProjectileTrap(monster, trap, state = game, { 
         ...visibility,
     };
 }
+// Port only: capture monster and square visibility for deferred trap events.
 export function monsterTrapVisibility(monster, state = game) {
     const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
     const seeSquare = !blind
@@ -1169,6 +1188,7 @@ async function trapeffectRocktrap(mtmp, trap, { state = game, movement, random =
     event.finished = true;
     return event;
 }
+// Part of C trap.c:trapeffect_rocktrap(): place and stack the fallen rock.
 async function placeRock(rock, trap, state) {
     if (state === game)
         placeCreatedObject(rock, trap.tx, trap.ty);
@@ -1183,6 +1203,8 @@ async function placeRock(rock, trap, state) {
     }
     return await stack_object(rock, state);
 }
+// Port only: duplicate rounded half-physical damage for hero trap effects.
+// The full macro port is maybeHalfPhysicalDamage in hack.ts.
 function physicalDamage(amount) {
     if (game.u?.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
@@ -1251,6 +1273,8 @@ async function trapeffectSqkyBoard(mtmp, trap, { state = game, movement, publish
     event.finished = true;
     return event;
 }
+// Port only: query potential visibility for an explicit game state.
+// This duplicates couldsee in vision.ts.
 function canAlmostSee(state, x, y) {
     return !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }
@@ -1280,6 +1304,7 @@ export function beginMonsterBearTrap(monster, trap, state = game, { forced = fal
 const MZ_SMALL = 1;
 const PM_OWLBEAR = MONSTER_NAME.indexOf('owlbear');
 const PM_BUGBEAR = MONSTER_NAME.indexOf('bugbear');
+// Part of C trap.c:trapeffect_bear_trap(): test monster size, shape and airborne immunity.
 function bearTrapCanCatch(monster, state) {
     return ((MONSTER_SIZE[monster?.mnum] ?? 0) > MZ_SMALL &&
         !monsterIsAmorphous(monster) &&
@@ -1479,9 +1504,11 @@ async function trapeffectRustTrap(mtmp, trap, { state = game, movement, roll = r
     event.finished = true;
     return event;
 }
+// Port only: test membership in the runtime hero inventory array.
 function carriedByHero(object, state) {
     return (state.inventory || []).includes(object);
 }
+// Part of C apply.c:splash_lit(): decide whether the hero's lantern is submerged.
 function heroLanternIsDunked(state) {
     if (!isPoolAt(state.u.ux, state.u.uy, state))
         return false;
@@ -1489,8 +1516,10 @@ function heroLanternIsDunked(state) {
         || !(state.u?.levitating || state.levitating
             || heroIsFlying(state) || heroHasWaterWalking(state));
 }
-// C splash_lit()/snuff_lit(): each message precedes end_burn(), so the
-// darkened view waits for the next flush instead of preceding the message.
+// C apply.c:splash_lit()
+// Also C apply.c:snuff_lit(): snuff the splashed light source.
+// Each message precedes end_burn, so the darkened view waits for the next
+// flush instead of preceding the message.
 export async function splashLitObject(object, publish, state = game) {
     if (!object?.lamplit)
         return false;
@@ -1550,9 +1579,11 @@ export async function splashLitObject(object, publish, state = game) {
     }
     return true;
 }
+// Port only: resolve a hero equipment slot across runtime aliases.
 function heroObject(slot) {
     return game[slot] || game.u?.[slot] || null;
 }
+// Port only: publish the shared water-damage result for hero equipment.
 async function wetHeroObject(object, description = null) {
     const messages = [];
     const result = await waterDamageObject(object, messages, game, {
@@ -1563,6 +1594,7 @@ async function wetHeroObject(object, description = null) {
         await plineWithContinuation(message);
     return result;
 }
+// Part of C trap.c:trapeffect_rust_trap(): damage or destroy the hero's iron-golem form.
 async function rustIronGolemHero() {
     const hero = game.u;
     await plineWithContinuation('You are covered with rust!');
@@ -1674,6 +1706,7 @@ export async function finishMonsterFireTrap(monster, event, state = game, { publ
     event.finished = true;
     return event;
 }
+// Part of C trap.c:trapeffect_fire_trap(): choose material-specific golem fire damage.
 function golemFireDamage(form, maximumHitPoints) {
     if (form === PM_PAPER_GOLEM)
         return maximumHitPoints;
@@ -1909,10 +1942,12 @@ async function trapeffectPit(mtmp, trap, { state = game, movement, publish = pli
 }
 const PM_PIT_FIEND = 300;
 const PM_PIT_VIPER = 218;
+// Part of C trap.c:trapeffect_pit(): exclude airborne and sufficiently long worm bodies from falling.
 function monsterIsUngrounded(monster, state) {
     return !grounded(monster.mnum, state)
         || !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
 }
+// Part of C trap.c:wearing_iron_shoes(): inspect the hero's boots.
 function heroIronShoes() {
     const boots = heroObject('uarmf');
     return boots && objectMaterial(boots.otyp) === IRON ? boots : null;
@@ -2031,6 +2066,7 @@ async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forc
     }
     setHeroTrap(turns, TT_WEB);
 }
+// Part of C trap.c:trapeffect_web(): choose the hero's web duration by strength.
 function webTrapDuration(strength) {
     if (strength <= 3)
         return rn2(6) + 6;
@@ -2125,6 +2161,7 @@ export async function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne
         killed: monster.mhp <= 0,
     };
 }
+// Part of C trap.c:trapeffect_poly_trap(): find the monster's worn iron boots.
 export function monsterWornIronShoes(monster) {
     return monsterInventory(monster).find((object) => objectMaterial(object?.otyp) === IRON && !!((object?.owornmask ?? 0) & W_ARMF));
 }
@@ -2174,6 +2211,7 @@ export async function applyMonsterPolymorphTrap(monster, trap, state = game, { r
         ...visibility,
     };
 }
+// Part of C trap.c:trapeffect_poly_trap(): transform and re-equip a monster's iron boots.
 async function transformWornIronShoes(monster, shoes, state) {
     await removeObjectFromMonsterInventory(monster, shoes, state, { silently: true });
     const linked = await addObjectToMonsterInventory(monster, shoes, state);
@@ -2279,14 +2317,17 @@ async function triggerLandmine(trap, { failedUntrap = false, forceTrap = false, 
         return;
     await fillPitWithBoulderAt(hero.ux, hero.uy, game);
 }
+// Part of C trap.c:wearing_iron_shoes(): test the hero's iron boots.
 function heroWearsIronShoes() {
     return !!heroIronShoes();
 }
+// Port only: find a floor object type at the hero's square.
 function objectAtHero(type) {
     const hero = game.u;
     return (game.level?.objects?.[hero.ux]?.[hero.uy] || [])
         .find(object => object.otyp === type) || null;
 }
+// Port only: find a trap by coordinates before invoking its shared effect.
 export async function dotrapAt(x, y, options = {}) {
     const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
     return dotrap(trap, options);
@@ -2548,18 +2589,22 @@ export async function triggerHeroAntiMagicTrap(trap) {
         maximumAlreadyDrained,
     }));
 }
+// Part of C trap.c:trapeffect_anti_magic(): test wall-passing protection against compression.
 function heroPassesWallsForAntiMagic() {
     return !!game.u?.passesWalls || monsterPassesWalls(heroMonsterForm());
 }
+// Part of C trap.c:trapeffect_anti_magic(): test the wielded artifact's magic defense.
 function heroWieldsMagicbane() {
     return artifactById(heroObject('uwep')?.oartifact)?.name === 'Magicbane';
 }
+// Part of C trap.c:trapeffect_anti_magic(): detect carried non-quest magic defense.
 function heroCarriesNonQuestMagicDefense() {
     return (game.inventory || []).some((object) => {
         const artifact = artifactById(object?.oartifact);
         return artifact && !artifact.questArtifact && artifact.carriedDefense === 'magic';
     });
 }
+// Part of C trap.c:trapeffect_anti_magic(): roll and reduce hero compression damage.
 function implosionDamage() {
     const hero = game.u;
     let damage = rnd(4);
@@ -2576,6 +2621,7 @@ function implosionDamage() {
         damage = Math.trunc((damage + 3) / 4);
     return damage;
 }
+// Port only: form a possessive monster-message subject.
 function possessive(subject) {
     return /s$/iu.test(subject) ? `${subject}'` : `${subject}'s`;
 }
@@ -2847,6 +2893,7 @@ export async function hitSteedWithTrapMissile(steed, trap, missile, state = game
     await finishMonsterProjectileTrap(steed, event, state, { publish });
     return event;
 }
+// Part of C trap.c:thitm(): place and stack a trap missile that missed.
 async function placeMissile(missile, trap, state) {
     if (state === game)
         placeCreatedObject(missile, trap.tx, trap.ty);
@@ -2861,6 +2908,7 @@ async function placeMissile(missile, trap, state) {
     }
     return await stack_object(missile, state);
 }
+// Part of C trap.c:thitm(), trap.c:trapeffect_arrow_trap(), trap.c:trapeffect_dart_trap(): finish missile damage or spent-trap feedback.
 export async function finishMonsterProjectileTrap(monster, event, state = game, { publish = async () => { }, random = rn2, rollOne = rnd, describeMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     if (!event || event.finished)
         return event;
@@ -3286,14 +3334,17 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
         return false;
     }
 }
+// Port only: route trap sound text through the shared hearing formatter.
 async function hear(text) {
     const message = formatHeardMessage(text);
     if (message)
         await plineWithContinuation(message);
 }
+// Port only: find a boulder in a runtime floor pile.
 function boulderAt(position, state) {
     return state.level.objects[position.x]?.[position.y]?.find(object => object.otyp === BOULDER) ?? null;
 }
+// Part of C trap.c:launch_obj(): display one visible boulder step and its delay.
 export async function animateRollingBoulderCell(boulder, glyph, x, y, previous) {
     if (previous)
         await newsym(previous.x, previous.y);
@@ -4020,6 +4071,7 @@ export async function finishDeferredMonsterTrap(monster, movement, event, state,
     }
     return 'finished';
 }
+// Part of C trap.c:trapeffect_fire_trap(): capture visibility and roll initial monster fire damage.
 export function beginMonsterFireTrap(monster, trap, state, { rollDice = d } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     return {
@@ -4034,10 +4086,12 @@ export function beginMonsterFireTrap(monster, trap, state, { rollDice = d } = {}
         visible: visibility.inSight,
     };
 }
+// Port only: identify deferred projectile-trap events.
 export function projectileTrapNeedsResume(event) {
     return (event?.kind === 'projectile-trap' ||
         (event?.kind === 'spent-projectile-trap' && !event.finished));
 }
+// Part of C trap.c:trapeffect_bear_trap(): publish capture and resolve monster damage.
 export async function finishMonsterBearTrap(monster, event, state = game, { publish = plineWithContinuation, random = rn2, rollDice = d, describeMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     if (!event)
         return event;
@@ -4072,6 +4126,7 @@ export async function finishMonsterBearTrap(monster, event, state = game, { publ
     event.finished = true;
     return event;
 }
+// Part of C trap.c:trapeffect_anti_magic(): publish monster energy loss or fatal compression.
 export async function finishMonsterAntiMagicTrap(monster, event, state = game, { random = rn2, publish = plineWithContinuation, describeMonster = actor => monsterName(actor, { state, capitalized: true }), } = {}) {
     if (event.energyDrain > 0)
         await publish(`${describeMonster(monster)} seems lethargic.`);
@@ -4091,6 +4146,7 @@ export async function finishMonsterAntiMagicTrap(monster, event, state = game, {
         await newsym(event.trap.tx, event.trap.ty);
     return death;
 }
+// Part of C trap.c:trapeffect_poly_trap(): publish resistance or complete the monster's form change.
 export async function finishMonsterPolymorphTrap(event, { publish = async () => { }, finishDeath, state = game, } = {}) {
     if (!event)
         return event;
@@ -4129,6 +4185,7 @@ export async function finishMonsterPolymorphTrap(event, { publish = async () => 
     event.finished = true;
     return event;
 }
+// Part of C trap.c:trapeffect_landmine(): finish a monster's mine-blast death.
 async function finishMineDeath(monster, event, state, options) {
     const death = await finishMonsterTrapDeath(monster, state, {
         damageType: AD_PHYS,
@@ -4143,6 +4200,7 @@ async function finishMineDeath(monster, event, state, options) {
     monster.dead = false;
     return false;
 }
+// Part of C trap.c:trapeffect_landmine(): force the surviving monster into the new pit.
 async function fallIntoMinePit(monster, trap, event, state, options) {
     if (!trap)
         return;
@@ -4165,6 +4223,7 @@ async function fallIntoMinePit(monster, trap, event, state, options) {
     if (pit.killed)
         event.killed = true;
 }
+// Part of C trap.c:blow_up_landmine(): resolve liquid exposed by the blast.
 async function resolveMineLiquid(monster, state, options) {
     return resolveMonsterLiquid(monster, state, {
         announce: options.publish,
@@ -4222,9 +4281,11 @@ export function beginMonsterLandMine(monster, trap, state = game, { random = rn2
     event.exploded = true;
     return event;
 }
+// Port only: identify deferred land-mine events.
 export function landMineNeedsResume(event) {
     return event?.kind === 'land-mine' && !!(event.exploded || event.discoveredTrigger);
 }
+// Part of C trap.c:trapeffect_landmine(): finish detonation, damage, the new pit and awakening.
 export async function finishMonsterLandMine(monster, event, state = game, { finishDeath, publish = plineWithContinuation, random = rn2, rollOne = rnd, describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), forceTrapAtMonster, } = {}) {
     if (event.finished)
         return event;
@@ -4303,6 +4364,7 @@ export async function finishMonsterLandMine(monster, event, state = game, { fini
     event.finished = true;
     return event;
 }
+// Part of C trap.c:trapeffect_vibrating_square(): publish a monster's vibration feedback.
 export async function finishMonsterVibratingSquare(monster, event, { state = game, publish = async () => { }, } = {}) {
     if (!event || event.finished)
         return event;
@@ -4320,6 +4382,7 @@ export async function finishMonsterVibratingSquare(monster, event, { state = gam
     event.finished = true;
     return event;
 }
+// Part of C trap.c:trapeffect_web(): catch a monster or tear through its web.
 export async function finishMonsterWebTrap(monster, trap, { state = game, publish = plineWithContinuation, subject = () => monsterName(monster, { capitalized: true, state }), } = {}) {
     const species = MONSTER_NAME[monster.mnum];
     if (species === 'cave spider' || species === 'giant spider')
@@ -4354,6 +4417,7 @@ export async function finishMonsterWebTrap(monster, trap, { state = game, publis
         await newsym(monster.mx, monster.my);
     }
 }
+// C trap.c:instapetrify()
 export async function resolveImmediatePetrification({ state = game, killer, publish = plineWithContinuation, die = finishHeroDeath, }) {
     // C trap.c:instapetrify() is a no-op for a stoning-resistant hero.
     if (heroResistsStoning(state))
@@ -4473,12 +4537,14 @@ export function monsterWearsGloves(monster) {
     return !!((monster?.misc_worn_check ?? 0) & W_ARMG)
         || (monster?.minvent || monster?.inventory || []).some(object => ((object.owornmask ?? 0) & W_ARMG) !== 0);
 }
+// Part of C trap.c:mselftouch(): adjust the monster subject after an introductory phrase.
 function selfTouchSubject(monster, prefix) {
     const subject = monsterSubject(monster);
     if (!prefix || monster.name)
         return subject;
     return subject.charAt(0).toLowerCase() + subject.slice(1);
 }
+// C trap.c:float_up()
 export async function floatHeroUp(state = game, previous = null) {
     // World transitions (trap triggers, pickups, level changes) must run on
     // the live singleton; pure property snapshots keep an injected state.
@@ -4551,6 +4617,7 @@ export async function floatHeroUp(state = game, previous = null) {
     await encumber_msg(state);
 }
 // C trap.c:fill_pit() and do.c:flooreffects()'s boulder/pit branch.
+// C trap.c:fill_pit()
 export async function fillPitWithBoulderAt(x, y, state = game, { publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
     const level = requireGameLevel(state);
@@ -4569,7 +4636,8 @@ export async function fillPitWithBoulderAt(x, y, state = game, { publish = pline
         heroDied: !!result.heroDied || !!state.program_state.gameover,
     };
 }
-// C trap.c:float_down(hmask, emask).  The raw C bitmask arguments are kept:
+// C trap.c:float_down()
+// The raw C bitmask arguments hmask and emask are kept:
 // hmask clears intrinsic levitation (TIMEOUT zeroes the timeout, I_SPECIAL
 // drops the blessed-potion at-will marker), emask clears extrinsic levitation
 // (W_ARTI the invoked artifact; W_SADDLE is never stored in this model — the
@@ -4782,6 +4850,7 @@ export function captureLevitationState(state = game) {
         flyingBlocked: propertyIsBlocked('flying', state),
     };
 }
+// C trap.c:climb_pit()
 export async function climbOutOfPit() {
     requirePlayingGame(game);
     const hero = game.u;
@@ -4836,15 +4905,18 @@ export async function climbOutOfPit() {
         await plineWithContinuation(message, { noRepeat: true });
     }
 }
+// Port only: require and decrement the hero's active restraint duration.
 export function reduceHeroTrapDuration() {
     const hero = game.u;
     if (hero.utrap === undefined)
         throw new Error('An active hero trap requires a remaining duration.');
     return --hero.utrap;
 }
+// Part of C trap.c:climb_pit(): fill the hero's vacated pit.
 async function fillHeroPitWithBoulder() {
     await fillPitWithBoulderAt(game.u.ux, game.u.uy);
 }
+// Part of C trap.c:m_easy_escape_pit(): apply easy pit escape to the hero form.
 function heroEscapesPitEasily() {
     const form = heroMonsterForm();
     return form === PM_PIT_FIEND || (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE;
@@ -4900,6 +4972,7 @@ export async function triggerHeroFireTrap(box = null, { publish = plineWithConti
     await burnFloorAndIce(box, couldSeeFire, publish);
     return { died: !!game.program_state.gameover };
 }
+// Port only: invoke shared armor burning for the live hero.
 export function burnHeroArmorByFire(state, emitMessage, calls = [], random = rn2) {
     return burnArmorByFire(state.u, state, emitMessage, calls, random);
 }
@@ -4907,9 +4980,11 @@ const PM_STRAW_GOLEM = 249;
 const PM_PAPER_GOLEM = 250;
 const PM_LEATHER_GOLEM = 253;
 const PM_WOOD_GOLEM = 254;
+// Port only: combine hero fire resistance with wielded artifact defense.
 function heroResistsFire() {
     return !!game.u.fireResistance || heroHasArtifactDefense('fire');
 }
+// Part of C trap.c:dofiretrap(): reduce the burning hero form's maximum health.
 function reduceMonsterFormMaximumHitPoints(hero, damage) {
     const formLevel = MONSTER_LEVEL[hero.umonnum] ?? 0;
     if ((hero.mhmax ?? 1) > formLevel) {
@@ -4918,6 +4993,7 @@ function reduceMonsterFormMaximumHitPoints(hero, damage) {
     }
     hero.mh = Math.min(hero.mh ?? hero.mhmax, hero.mhmax);
 }
+// Part of C trap.c:dofiretrap(): reduce maximum hero health after severe burns.
 async function reduceHeroMaximumHitPoints(hero, damage, publish) {
     const oldMaximum = hero.uhpmax ?? 1;
     const minimum = minHeroMaxHitPoints(1, game);
@@ -4933,6 +5009,7 @@ async function reduceHeroMaximumHitPoints(hero, damage, publish) {
     hero.uhp = Math.min(hero.uhp ?? hero.uhpmax, hero.uhpmax);
     return false;
 }
+// Part of C trap.c:dofiretrap(): damage the hero, remove slime and burn carried gear.
 async function burnHeroAndPossessions(damage, originalDamage, publish) {
     if (!damage)
         await publish('You are uninjured.');
@@ -4951,6 +5028,7 @@ async function burnHeroAndPossessions(damage, originalDamage, publish) {
     }
     return { died: false };
 }
+// Part of C trap.c:dofiretrap(): burn floor objects and melt the hero's ice square.
 async function burnFloorAndIce(box, couldSeeFire, publish) {
     const hero = game.u;
     if (!box) {
@@ -5072,6 +5150,7 @@ export async function triggerHeroMagicTrapEffect() {
             return;
     }
 }
+// Part of C trap.c:domagictrap(): toggle intrinsic invisibility with its feedback.
 async function toggleIntrinsicInvisibility() {
     await hear('a low hum.');
     const intrinsic = hasInternalInvisibility(game);
@@ -5099,6 +5178,7 @@ async function toggleIntrinsicInvisibility() {
     syncHeroInvisibility(game);
     await newsym(game.u.ux, game.u.uy);
 }
+// C trap.c:fire_damage_chain()
 export async function fireDamageChain(objects, { carrier = null, force = false, luckRandom = rnl, publish = async () => { }, random = rn2, state = game, x = carrier?.mx ?? 0, y = carrier?.my ?? 0, } = {}) {
     if (!Array.isArray(objects))
         return 0;
@@ -5117,10 +5197,12 @@ export async function fireDamageChain(objects, { carrier = null, force = false, 
         await publish('You smell smoke.');
     return destroyed;
 }
+// Port only: read an object's runtime class with a metadata fallback.
 function objectClass(object) {
     return Number.isInteger(object?.oclass)
         ? object.oclass : objectClassForType(object?.otyp);
 }
+// Part of C trap.c:fire_damage(): destroy a floor or monster-carried burned object.
 async function removeObject(object, context) {
     const { carrier, state, random } = context;
     const inventory = carrier?.minvent || carrier?.inventory || [];
@@ -5132,6 +5214,7 @@ async function removeObject(object, context) {
     await delobj(object, state, random);
     return true;
 }
+// Part of C trap.c:fire_damage(): spill a burned container through floor effects.
 async function dropContents(container, context) {
     const contents = [...(container.contents || [])];
     container.contents = [];
@@ -5150,6 +5233,7 @@ async function dropContents(container, context) {
         await placeObject(object, context.x, context.y, context.state);
     }
 }
+// Part of C trap.c:fire_damage(): burn vulnerable containers and release their contents.
 async function burnContainer(object, context) {
     if (object.otyp === STATUE || object.otyp === ICE_BOX)
         return false;
@@ -5172,6 +5256,7 @@ async function burnContainer(object, context) {
     await removeObject(object, context);
     return true;
 }
+// Part of C trap.c:fire_damage(): burn paper or explode potions with native exceptions.
 async function burnPaperOrPotion(object, context) {
     const oclass = objectClass(object);
     if (oclass === SCROLL_CLASS || oclass === SPBOOK_CLASS) {
@@ -5206,6 +5291,7 @@ async function burnPaperOrPotion(object, context) {
     await removeObject(object, context);
     return true;
 }
+// C trap.c:fire_damage()
 // C fire_damage(): unlike the chain owner, this has no smoke epilogue.
 export async function fireDamageObject(object, { carrier = null, force = false, luckRandom = rnl, publish = async () => { }, random = rn2, state = game, x = carrier?.mx ?? 0, y = carrier?.my ?? 0, } = {}) {
     const squareVisible = state === game
@@ -5282,6 +5368,7 @@ export async function lava_damage(object, { state = game, publish = async () => 
     }
     return true;
 }
+// C trap.c:acid_damage()
 export async function damageObjectWithAcid(object, { state = game, publish = plineWithContinuation, random = rn2, ...options } = {}) {
     if (!object)
         return;
@@ -5308,6 +5395,7 @@ export async function damageObjectWithAcid(object, { state = game, publish = pli
         });
     }
 }
+// C trap.c:water_damage()
 export async function waterDamageObject(object, messages = [], state = game, { force = false, description = null, random = rn2, luckRoll = rnl, rollOne = rnd, publish, mentionWater, acidContext, position } = {}) {
     if (!object)
         return 'nothing';
@@ -5426,9 +5514,11 @@ export async function waterDamageObject(object, messages = [], state = game, { f
     return erodeObject(object, 'rust', { state, publish: emit, random, luckRandom: luckRoll,
         grease: false, displayName: name, ...(position ? { position } : {}) });
 }
+// Port only: read the runtime container contents array.
 function objectContents(object) {
     return object.contents || [];
 }
+// C trap.c:pot_acid_damage()
 // C pot_acid_damage(): water destroys the bottle without impact or vapors.
 async function destroyWetAcidPotion(object, described, emit, state, context) {
     if (heroIsBlind(state) && !carriedByHero(object, state))
@@ -5449,6 +5539,7 @@ async function destroyWetAcidPotion(object, described, emit, state, context) {
     await delobj(object, state);
     return 'destroyed';
 }
+// Part of C trap.c:water_damage_chain(): expose collected messages from shared chain damage.
 export async function waterDamageChain(objects, messages = [], state = game, options = {}) {
     if (!objects)
         return messages;
@@ -5484,6 +5575,7 @@ async function damageWaterChain(objects, messages, state, options) {
         context.knownExplosions = context.unknownExplosions = 0;
     }
 }
+// C trap.c:emergency_disrobe()
 export async function emergencyDisrobe(state, random) {
     const capacityLimit = state.uball || state.u?.uball
         ? UNENCUMBERED : SLT_ENCUMBER;
@@ -5800,11 +5892,13 @@ export async function drown({ state, location, x, y, publish, random, rollDice, 
 }
 const PM_WATER_ELEMENTAL = MONSTER_NAME.indexOf('water elemental');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
+// Part of C trap.c:drown(): combine swimming and underwater-survival properties.
 export function heroCanLiveUnderwater(state) {
     const u = state.u;
     return !!(u.amphibious || u.swimming || u.breathless || u.magicalBreathing
         || cant_drown(polymorphedHeroForm(state) ?? -1));
 }
+// Part of C end.c:done(): resolve the liquid victim's life-saving amulet.
 export async function reviveHeroFromLiquid(state, publish, random) {
     if (state !== game)
         return false;
@@ -5821,6 +5915,7 @@ export async function reviveHeroFromLiquid(state, publish, random) {
     await completeHeroLifeSaving(lifeSaving);
     return true;
 }
+// Port only: finish shared teleport display and landing effects after liquid escape.
 async function finishLiquidTeleport(movement, { state, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
     // spoteffects() announces surfacing before it clears the submerged view.
     const from = { x: movement.oldx, y: movement.oldy };
@@ -5831,11 +5926,13 @@ async function finishLiquidTeleport(movement, { state, repaint, resetVision, rec
     const landing = await applyLandingEffects({ from, to });
     return { entered: true, moved: true, died: !!landing?.died, from, to };
 }
+// Part of C trap.c:drown(): test breathless and amphibious survival.
 function heroDoesNotNeedAir(state) {
     const u = state.u;
     return !!(u.amphibious || u.breathless || u.magicalBreathing
         || (monsterIsAmphibious(polymorphedHeroForm(state) ?? -1) || monsterIsBreathless(polymorphedHeroForm(state) ?? -1)));
 }
+// C trap.c:dountrap()
 export async function doUntrap({ state = game, enterTrap = null, } = {}) {
     const problem = untrapAbilityProblem(state);
     if (problem) {
@@ -5869,6 +5966,7 @@ export function untrapAbilityProblem(state = game, { checkFloor = false } = {}) 
         return "You can't reach the floor.";
     return null;
 }
+// Part of C trap.c:could_untrap(): detect a welded two-handed weapon.
 function weldedTwoHandedWeapon(state) {
     const weapon = state.uwep || state.u?.uwep;
     return isWeldedPrimary(weapon, state) && isBimanualObject(weapon);
@@ -5915,22 +6013,27 @@ function untrapFailureRoll(trap, state, random) {
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 const G_UNIQ = 0x1000;
 const S_HUMAN = 53;
+// Port only: combine runtime confusion and hallucination for untrapping.
 function heroIsImpaired(state) {
     const hero = state.u;
     return !!hero.confused || (hero.confusionTurns ?? 0) > 0
         || heroIsHallucinating(state);
 }
+// Port only: read runtime stun state for untrapping.
 function heroIsStunned(state) {
     return !!(state.u?.stunned || (state.u?.stunnedTurns ?? 0) > 0);
 }
+// Port only: read runtime fumbling state for untrapping.
 function heroIsFumbling(state) {
     return !!(state.u?.fumbling || (state.u?.fumblingTurns ?? 0) > 0);
 }
+// Port only: find a living mapped monster head at an untrapping square.
 function monsterAt(state, x, y) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
 }
+// Part of C trap.c:untrap(): choose a blade to cut an unoccupied web.
 function webCuttingWeapon(trap, state) {
     if (monsterAt(state, trap.tx, trap.ty))
         return null;
@@ -5941,6 +6044,7 @@ function webCuttingWeapon(trap, state) {
     return state.u.twoweap && secondary && isBlade(secondary) ? secondary : null;
 }
 // C trap.c:cnv_trap_obj(). Convert a set trap before releasing its occupants.
+// C trap.c:cnv_trap_obj()
 export async function convertTrapToObject(trap, objectType, count, state = game, { bury = false } = {}) {
     requireLiveGame(state);
     const object = await mksobj(objectType, true, false);
@@ -6015,6 +6119,7 @@ export async function moveIntoFailedUntrap(trap) {
     await exerciseAttribute(A_WIS, false);
     return { entered: true, died: false };
 }
+// C trap.c:try_disarm()
 async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, enterTrap, forceFailure = false, }) {
     const monster = monsterAt(state, trap.tx, trap.ty);
     const holdingTrap = trap.ttyp === BEAR_TRAP || trap.ttyp === WEB;
@@ -6087,6 +6192,7 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
     }
     return 1;
 }
+// Port only: combine runtime and form wall-passing for untrapping.
 function heroPassesWallsForUntrap(state) {
     if (state.u.passesWalls)
         return true;
@@ -6094,6 +6200,7 @@ function heroPassesWallsForUntrap(state) {
     return form !== null && form !== undefined && Number.isInteger(form)
         && monsterPassesWalls(form);
 }
+// Part of C trap.c:try_disarm(): injure a held monster or become entangled on failed rescue.
 async function failMonsterRescue(monster, trap, { state, publish, random, rollOne, }) {
     if (trap.ttyp === BEAR_TRAP) {
         if (monster.mtame)
@@ -6123,6 +6230,7 @@ async function failMonsterRescue(monster, trap, { state, publish, random, rollOn
             await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} remains entangled.`);
     }
 }
+// C trap.c:reward_untrap()
 export async function rewardMonsterRescue(trap, monster, { state = game, publish = plineWithContinuation, random = rn2, luckRandom = rnl, } = {}) {
     if (trap.madeby_u)
         return;
@@ -6140,6 +6248,7 @@ export async function rewardMonsterRescue(trap, monster, { state = game, publish
         await publish(formatFeltMessage('that you did the right thing.', state));
     }
 }
+// Port only: read monster helplessness for rescue decisions.
 function monsterIsHelplessForUntrap(monster) {
     return !!(monster.msleeping || monster.mfrozen
         || monster.mcanmove === 0);
@@ -6189,9 +6298,11 @@ async function disarmHoldingTrap(trap, options) {
     await newsym(trap.tx, trap.ty);
     return true;
 }
+// Port only: select trap ownership wording.
 function possessiveTrap(trap) {
     return trap?.madeby_u ? 'your' : 'the';
 }
+// Port only: remove a trap and clear runtime hero and monster restraint state.
 function removeTrap(trap, state) {
     deleteTrap(trap, state);
     if (state.u?.utrap && state.u.ux === trap.tx && state.u.uy === trap.ty) {
@@ -6202,6 +6313,7 @@ function removeTrap(trap, state) {
     if (monster?.mtrapped)
         monster.mtrapped = 0;
 }
+// C trap.c:disarm_landmine()
 async function disarmLandmine(trap, options) {
     const result = await tryDisarm(trap, options);
     if (result < 2)
@@ -6210,6 +6322,7 @@ async function disarmLandmine(trap, options) {
     await convertTrapToObject(trap, LAND_MINE, 1, options.state);
     return true;
 }
+// C trap.c:disarm_squeaky_board()
 async function disarmSqueakyBoard(trap, options) {
     const tool = await chooseSqueakyBoardTool(options);
     if (!tool)
@@ -6235,8 +6348,10 @@ async function disarmSqueakyBoard(trap, options) {
     await awardExperience(1, 5, options.state, options.publish);
     return true;
 }
-// C trap.c:disarm_squeaky_board(): getobj("untrap with", unsqueak_ok,
-// GETOBJ_PROMPT).  unsqueak_ok() downplays potions other than known oil.
+// Part of C trap.c:disarm_squeaky_board(): prompt for oil or grease.
+// Also C trap.c:unsqueak_ok(): select oil or grease in the object-picker callback.
+// Native getobj requests "untrap with" using the unsqueak_ok callback and
+// GETOBJ_PROMPT. The unsqueak_ok callback downplays potions other than known oil.
 async function chooseSqueakyBoardTool({ state, chooseObject }) {
     return chooseObject('untrap with', object => {
         if (object.otyp === CAN_OF_GREASE)
@@ -6246,6 +6361,7 @@ async function chooseSqueakyBoardTool({ state, chooseObject }) {
         return object.oclass === POTION_CLASS ? GETOBJ_DOWNPLAY : GETOBJ_EXCLUDE;
     }, { forcePrompt: true });
 }
+// Port only: consume one object and refresh its runtime stack weight.
 async function consumeOne(object, state) {
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity <= 1) {
@@ -6255,11 +6371,13 @@ async function consumeOne(object, state) {
     object.quan = object.quantity = quantity - 1;
     object.owt = objectWeight(object);
 }
+// Port only: grant experience and run the shared level-up boundary.
 async function awardExperience(experience, scoreBonus, state, publish) {
     addExperience(experience, scoreBonus, state);
     if (state === game)
         await checkExperienceLevel({ publish });
 }
+// C trap.c:disarm_shooting_trap()
 async function disarmShootingTrap(trap, objectType, options) {
     const result = await tryDisarm(trap, options);
     if (result < 2)
@@ -6269,6 +6387,7 @@ async function disarmShootingTrap(trap, objectType, options) {
     await convertTrapToObject(trap, objectType, count, options.state);
     return true;
 }
+// C trap.c:try_lift()
 async function canLiftMonster(monster, trap, weight, carrying, options) {
     const { state, publish, luckRandom } = options;
     if (calcCapacity(state, weight) < HVY_ENCUMBER)
@@ -6284,6 +6403,7 @@ async function canLiftMonster(monster, trap, weight, carrying, options) {
     }
     return false;
 }
+// C trap.c:help_monster_out()
 async function helpMonsterOut(monster, trap, options) {
     const { state, publish, random, luckRandom } = options;
     if (!monster.mtrapped) {
@@ -6347,6 +6467,7 @@ async function helpMonsterOut(monster, trap, options) {
     await fillPitWithBoulder(trap.tx, trap.ty, state, publish);
     return true;
 }
+// Part of C trap.c:fill_pit(): consume a boulder, fill a pit and bury its floor objects.
 async function fillPitWithBoulder(x, y, state, publish) {
     const trap = trapAt(state, x, y);
     if (!trap || (trap.ttyp !== PIT && trap.ttyp !== SPIKED_PIT))
@@ -6367,6 +6488,7 @@ async function fillPitWithBoulder(x, y, state, publish) {
     await newsym(x, y);
     return true;
 }
+// C trap.c:disarm_box()
 async function disarmBox(box, { state, force, publish, random, rollOne, rollDice, }) {
     if (!box.otrapped) {
         await publish(`That ${objectCombatName(box, { state, includeCorpseSpecies: false })} was not trapped.`);
@@ -6392,6 +6514,7 @@ async function disarmBox(box, { state, force, publish, random, rollOne, rollDice
     }
     await exerciseAttribute(A_DEX, true, state);
 }
+// C trap.c:untrap_box()
 async function inspectBox(box, options) {
     const { state, force, ask, publish, random } = options;
     const impaired = heroIsImpaired(state);
@@ -6416,6 +6539,7 @@ async function inspectBox(box, options) {
     if (await ask('Disarm it?') === 'y')
         await disarmBox(box, options);
 }
+// C trap.c:untrap()
 export async function untrap({ state = game, container = null, door = null, force = false, enterTrap = null, chooseDirection = promptDirection, ask = promptYesNoQuit, chooseObject = chooseInventoryObject, publish = pline, random = rn2, rollOne = rnd, rollDice = d, luckRandom = rnl, } = {}) {
     if (!force && hasMagicKey({ youmonst: true }, state))
         force = true;
@@ -6518,9 +6642,11 @@ export async function untrap({ state = game, container = null, door = null, forc
         rollOne,
     });
 }
+// Part of C trap.c:untrap(): collect boxes on the hero's square.
 function boxesAt(state, x, y) {
     return (state.level?.objects?.[x]?.[y] || []).filter(object => object.otyp === LARGE_BOX || object.otyp === CHEST);
 }
+// Part of C trap.c:untrap(): describe floor traps and containers the hero cannot reach.
 function unreachableTrapMessage(description, boxCount, here, state) {
     const things = [];
     if (description)
@@ -6535,6 +6661,7 @@ function unreachableTrapMessage(description, boxCount, here, state) {
     return `There ${plural ? 'are' : 'is'} ${subject} ${location} `
         + `but you can't reach ${object}${mounted}.`;
 }
+// Part of C trap.c:untrap(): offer the floor trap before checking containers.
 async function chooseFloorTrapOrBox(trap, noun, boxCount, ask) {
     const containers = boxCount === 1 ? 'a container' : 'containers';
     const verb = trap.ttyp === WEB ? 'Remove' : 'Disarm';
@@ -6542,6 +6669,7 @@ async function chooseFloorTrapOrBox(trap, noun, boxCount, ask) {
         + `and ${withIndefiniteArticle(noun)} here.`;
     return ask(`${subject}  ${verb} the ${noun}?`);
 }
+// Part of C trap.c:untrap(): dispatch the selected floor trap.
 async function handleFloorTrap(trap, description, options) {
     const { state, publish } = options;
     const here = trap.tx === state.u.ux && trap.ty === state.u.uy;
@@ -6574,6 +6702,7 @@ async function handleFloorTrap(trap, description, options) {
             return false;
     }
 }
+// Part of C trap.c:untrap(): offer to rescue a monster in an adjacent pit.
 async function handlePit(trap, options) {
     const { state, publish } = options;
     const here = trap.tx === state.u.ux && trap.ty === state.u.uy;
@@ -6588,6 +6717,7 @@ async function handlePit(trap, options) {
     }
     return helpMonsterOut(monster, trap, options);
 }
+// Part of C trap.c:untrap(): prompt for and inspect each floor container.
 async function handleBoxes(boxes, { state, force, ask, publish, random, rollOne, rollDice, }) {
     for (const box of boxes) {
         const known = box.tknown && box.dknown;
@@ -6621,6 +6751,7 @@ async function handleBoxes(boxes, { state, force, ask, publish, random, rollOne,
     await publish('There are no other chests or boxes here.');
     return null;
 }
+// Part of C trap.c:untrap(): inspect and disarm a door trap.
 async function handleDoor(x, y, { state, force, trapSkipped, ask, publish, random, rollOne, }) {
     const door = state.level?.at?.(x, y);
     if (door?.typ !== DOOR) {
@@ -6672,6 +6803,7 @@ async function handleDoor(x, y, { state, force, trapSkipped, ask, publish, rando
     }
     return true;
 }
+// Part of C trap.c:untrap(): trigger a failed door disarm and update terrain and shop damage.
 async function triggerDoorTrap(door, x, y, { state, publish, rollOne }) {
     if (await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne }))
         return;
@@ -6681,6 +6813,7 @@ async function triggerDoorTrap(door, x, y, { state, publish, rollOne }) {
     if (roomsAt(state.level, x, y, SHOPBASE).length)
         addShopDamage(x, y, 0, state);
 }
+// C trap.c:openholdingtrap()
 export async function openHoldingTrap(target, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -6743,6 +6876,7 @@ export async function openHoldingTrap(target, { state = game } = {}) {
 }
 // Magic releases and activates traps without removing them.
 // C trap.c:openholdingtrap(), closeholdingtrap(), openfallingtrap().
+// Part of C trap.c:openholdingtrap(), trap.c:closeholdingtrap(), trap.c:openfallingtrap(): resolve a hero or monster's trap square.
 function targetTrap(target, state) {
     const hero = target === state.u || target === state.u.usteed;
     if (!hero && !('mnum' in target))
@@ -6751,6 +6885,7 @@ function targetTrap(target, state) {
     const y = 'mnum' in target && !hero ? target.my : state.u.uy;
     return { hero, trap: state.level.traps.find(t => t.tx === x && t.ty === y) };
 }
+// C trap.c:closeholdingtrap()
 export async function closeHoldingTrap(target, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -6761,6 +6896,7 @@ export async function closeHoldingTrap(target, { state = game } = {}) {
         return result(false, false, state);
     return activateTrap(target, hero, trap, state, false);
 }
+// Part of C trap.c:closeholdingtrap(), trap.c:openfallingtrap(): force an eligible hero or monster trap effect.
 async function activateTrap(target, hero, trap, state, falling) {
     if (hero) {
         if (state.u.utrap)
@@ -6784,6 +6920,7 @@ async function activateTrap(target, hero, trap, state, falling) {
         || action.movement.moved;
     return result(!!changed, noticed, state);
 }
+// C trap.c:openfallingtrap()
 export async function openFallingTrap(target, { trapdoorOnly = false, state = game, } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -7397,6 +7534,7 @@ export async function lava_effects(options) {
     }
     return result;
 }
+// Part of C trap.c:lava_effects(), trap.c:sink_into_lava(): attempt safe teleportation out of lava.
 export async function teleportHeroOutOfLiquid({ state, random, rollOne, publish, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
     // C trap.c:6936/7021 call safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT):
     // a light hero may drag an adjacent ball, and the verbose materialize
@@ -7482,6 +7620,7 @@ export function sokobanGuilt(state) {
     state.u.uconduct.sokocheat = (state.u.uconduct.sokocheat ?? 0) + 1;
     changeHeroLuck(-1, state);
 }
+// C trap.c:maybe_finish_sokoban()
 export function finishSokobanIfSolved(state = game) {
     const level = requireGameLevel(state);
     if (!level.flags.sokoban_rules || state.in_mklev)
@@ -7565,6 +7704,7 @@ const HALLUCINATED_TRAPS = [
     "thirst trap",
     "suntrap"
 ];
+// C trap.c:trapname()
 export function trapName(type, { ignoreHallucination = false, state = game } = {}) {
     if (heroIsHallucinating(state) && !ignoreHallucination) {
         const total = TRAPNUM + HALLUCINATED_TRAPS.length;
@@ -7591,6 +7731,8 @@ export function trapName(type, { ignoreHallucination = false, state = game } = {
         throw new RangeError(`Invalid native trap type ${type}`);
     return name;
 }
+// C trap.c:ignite_items()
+// Also C apply.c:catch_lit(): ignite each object and bill unpaid fuel.
 export async function igniteItems(objects, { state = game, publish = async () => { }, random = rn2, visible = true, } = {}) {
     const ignited = [];
     for (const object of objects || []) {
@@ -7625,6 +7767,7 @@ export async function igniteItems(objects, { state = game, publish = async () =>
     }
     return ignited;
 }
+// Part of C apply.c:catch_lit(): decide whether an object can catch light.
 function catchesFire(object, random) {
     if (!object || object.lamplit || object.in_use
         || !LIGHT_TYPES.has(object.otyp)
@@ -7641,13 +7784,14 @@ function catchesFire(object, random) {
     return !([OIL_LAMP, MAGIC_LAMP].includes(object.otyp)
         && object.cursed && random(2) === 0);
 }
+// Part of C apply.c:catch_lit(): name the ignited light source.
 function lightSourceName(object, state) {
     observeObjectForNaming(object, { state });
     const name = objectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
     return quantity > 1 ? makePlural(name) : name;
 }
-// C trap.c:trap_ice_effects(..., TRUE).
+// Part of C trap.c:trap_ice_effects(): melt the ice beneath a trap.
 export async function meltIceTrap(x, y) {
     const trap = requireGameLevel(game).traps.find(candidate => candidate.tx === x && candidate.ty === y);
     if (!trap)
@@ -7662,6 +7806,7 @@ export async function meltIceTrap(x, y) {
         deleteTrap(trap);
     }
 }
+// Port only: combine the shared monster stone cure and immediate petrification boundaries.
 export async function petrifyMonsterFromContact(monster, { creditHero = false, finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, } = {}) {
     const cure = await munstone(monster, {
         byHero: creditHero, publish, rollOne, state,
@@ -7688,6 +7833,7 @@ const EROSION = {
     corrosion: { field: 'oeroded2', verb: 'corrode', past: 'corroded', cause: 'corrosion' },
     crack: { field: 'oeroded', verb: 'crack', past: 'cracked', cause: 'impact' },
 };
+// Part of C trap.c:join_adjacent_pits(): set reciprocal connections between adjacent pits.
 export function connectPits(first, second) {
     const direction = pitDirection(first, second);
     if (direction < 0)
@@ -7699,6 +7845,7 @@ export function connectPits(first, second) {
     second.conjoined = (second.conjoined || 0) | (1 << opposite);
     return changed;
 }
+// Port only: route liquid deaths through the shared death boundary.
 export async function finishLiquidDeath(options) {
     // The liquid effect has usually announced the death already. done() still
     // owns life saving and the wizard/explore recovery question.

@@ -55,15 +55,18 @@ const CURSEABLE_INTRINSICS = Object.freeze([
     ['protection', 'vulnerable.'],
     ['aggravateMonster', 'less attractive.'],
 ]);
+// Port only: read a valid current hero species index.
 function currentForm() {
     const species = game.u.umonnum;
     return species !== undefined && Number.isInteger(species) ? species : null;
 }
 // C sit.c:special_throne_effect() — cases 9-11 read the Luck macro
 // (you.h:Luck), case 6 reads u.uluck alone.
+// Part of C sit.c:throne_sit_effect(): choose Vlad's special throne effects.
 function inVladsTower() {
     return (game.u.uz ? game.dungeons[game.u.uz.dnum]?.dname : undefined) === "Vlad's Tower";
 }
+// Part of C sit.c:throne_sit_effect(), sit.c:special_throne_effect(): replace a vanished throne with room terrain.
 async function removeThrone(x, y) {
     const location = game.level?.at?.(x, y);
     if (!location)
@@ -74,6 +77,7 @@ async function removeThrone(x, y) {
     await map_background(x, y, false);
     await newsym_force(x, y);
 }
+// Port only: publish shared attribute changes and refresh carrying capacity.
 async function announceAttributeChange(attribute, amount, conditional) {
     const result = adjustAttribute(attribute, amount, game);
     if (conditional && !result.changed)
@@ -89,6 +93,7 @@ async function announceAttributeChange(attribute, amount, conditional) {
         await encumber_msg(game);
     return result;
 }
+// Part of C sit.c:throne_sit_effect(): restore health and cure ailments.
 async function healHeroCompletely() {
     const game = requireInitializedGame();
     const hero = game.u;
@@ -108,6 +113,7 @@ async function healHeroCompletely() {
     await healHeroLegs(game);
     game.context.botl = true;
 }
+// Part of C sit.c:throne_sit_effect(): summon a royal audience.
 async function summonCourt(x, y) {
     let count = rnd(10);
     const title = game.flags?.female ? 'Dame' : 'Sire';
@@ -116,6 +122,7 @@ async function summonCourt(x, y) {
     while (count-- > 0)
         await makemonNear(courtMonsterType(), x, y);
 }
+// Part of C sit.c:throne_sit_effect(): grant sight of invisible creatures.
 async function grantSeeInvisible() {
     const hero = game.u;
     if (!heroIsBlind()) {
@@ -134,6 +141,7 @@ async function grantSeeInvisible() {
     grantIntrinsicProperty('seeInvisible', 'outside', game);
     await newsym(hero.ux, hero.uy);
 }
+// Part of C sit.c:throne_sit_effect(): dispatch the thirteen ordinary throne effects.
 async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
     switch (effect) {
         case 1:
@@ -226,6 +234,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
             break;
     }
 }
+// C sit.c:special_throne_effect()
 async function specialThroneEffect(effect, x, y, { gotoLevel }) {
     const game = requireInitializedGame();
     switch (effect) {
@@ -323,6 +332,7 @@ async function specialThroneEffect(effect, x, y, { gotoLevel }) {
             break;
     }
 }
+// C sit.c:throne_sit_effect()
 export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestination = null, } = {}) {
     const x = game.u?.ux;
     const y = game.u?.uy;
@@ -362,6 +372,7 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
         await plineWithContinuation(`The throne ${cansee(x, y) ? 'vanishes' : 'has vanished'} in a puff of logic.`);
     }
 }
+// C sit.c:attrcurse()
 // Selection falls through the source list until it finds an intrinsic the
 // hero actually has. Worn sources stay active.
 export async function attrcurse({ publish = plineWithContinuation } = {}) {

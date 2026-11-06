@@ -355,6 +355,7 @@ interface SlimeAdvanceResult {
     genocided?: boolean;
 }
 
+// Part of C timeout.c:stoned_dialogue(): remove intrinsic and temporary speed while petrifying.
 function removeHeroSpeed(state: GameState): void {
     setPropertyTimeout('fast', 0, state);
     removeIntrinsicProperty('fast', state);
@@ -567,6 +568,7 @@ function advanceSimplePropertyTimeouts(properties: readonly PropertyName[], stat
     for (const property of properties) advancePropertyTimeout(property, state);
 }
 
+// Part of C timeout.c:nh_timeout(): decrement one active property timeout.
 function advancePropertyTimeout(property: PropertyName, state: GameState): boolean {
     const remaining = propertyTimeout(property, state);
     if (remaining <= 0) return false;
@@ -574,6 +576,7 @@ function advancePropertyTimeout(property: PropertyName, state: GameState): boole
     return remaining === 1;
 }
 
+// Part of C timeout.c:nh_timeout(): expire vomiting and publish any remaining-source feedback.
 export async function advanceHeroVomiting({
     state = game, publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}) {
@@ -591,6 +594,7 @@ export async function advanceHeroVomiting({
     return { active: hero.vomiting, turns: nextTurns };
 }
 
+// Part of C timeout.c:nh_timeout(): expire illness through recovery or fatal poisoning.
 export async function advanceHeroSickness({
     state = game,
     publish = pline,
@@ -645,6 +649,7 @@ export async function advanceHeroSickness({
     return { active: false, died: !!died, recovered: false, turns: 0 };
 }
 
+// Part of C timeout.c:nh_timeout(): expire petrification and resolve its delayed killer.
 export async function advanceHeroPetrification({
     state = game, die = finishHeroDeath,
 }: { state?: GameState; die?: DeathHandler } = {}): Promise<PetrificationAdvanceResult> {
@@ -678,6 +683,7 @@ function petrificationDeathCause(state: GameState): string {
     return `petrified by ${format === KILLED_BY_AN ? withIndefiniteArticle(name) : name}`;
 }
 
+// Part of C timeout.c:nh_timeout(): expire strangulation and consume its amulet after life saving.
 export async function advanceHeroStrangulation({
     state = game, publish = plineWithContinuation, die = finishHeroDeath,
 }: { state?: GameState; publish?: MessagePublisher; die?: DeathHandler } = {}) {
@@ -1225,6 +1231,7 @@ export type DueObjectTimer = {
     timer: LevelTimer;
 };
 const OBJECT_TIMER_KINDS = new Set(Object.values(OBJECT_TIMER_KIND));
+// Port only: initialize an object's runtime timer array and count.
 function timersFor(object: GameObject | null | undefined): ObjectTimer[] {
     if (!object) return [];
     if (!Array.isArray(object.objectTimers))
@@ -1232,22 +1239,26 @@ function timersFor(object: GameObject | null | undefined): ObjectTimer[] {
     object.timed = object.objectTimers.length;
     return object.objectTimers;
 }
+// Port only: initialize the current level's runtime timer array.
 function levelTimersFor(state: GameState = game): LevelTimer[] {
     if (!state.level) return [];
     if (!Array.isArray(state.level.levelTimers))
         state.level.levelTimers = [];
     return state.level.levelTimers;
 }
+// Part of C timeout.c:start_timer(): allocate a timer identity.
 function allocateTimerId(state: GameState = game): number {
     const prior = state._nextObjectTimerId ?? 0;
     const id = prior + 1;
     state._nextObjectTimerId = id;
     return id;
 }
+// Port only: preserve native timer insertion order across runtime arrays.
 function nextTimerOrder(state: GameState): number {
     state._timerSerial = (state._timerSerial ?? 0) + 1;
     return state._timerSerial;
 }
+// Part of C timeout.c:start_timer(): reject duplicate object callbacks and schedule a deadline.
 export function scheduleObjectTimer(
     object: GameObject | null | undefined, kind: ObjectTimerKind,
     deadline: number, state: GameState = game,
@@ -1261,6 +1272,7 @@ export function scheduleObjectTimer(
     object.timed = timers.length;
     return timer;
 }
+// Part of C timeout.c:start_timer(): schedule a level-coordinate callback.
 export function scheduleLevelTimer(
     x: number, y: number, kind: LevelTimer['kind'],
     deadline: number, state: GameState = game,
@@ -1306,6 +1318,7 @@ export function stopObjectTimer(
     object.timed = timers.length;
     return timer;
 }
+// Part of C timeout.c:obj_stop_timers(): detach all timers from an object.
 export function stopAllObjectTimers(
     object: GameObject | null | undefined,
 ): ObjectTimer[] {
@@ -1314,6 +1327,7 @@ export function stopAllObjectTimers(
     object.timed = 0;
     return timers;
 }
+// C timeout.c:obj_stop_timers()
 export function stopObjectTimers(object: GameObject, state: GameState): void {
     const stoppedTimers = stopAllObjectTimers(object);
     const burn = stoppedTimers.find(timer =>
@@ -1347,16 +1361,19 @@ export function objectsInTimerGraph(state: GameState = game): GameObject[] {
     }
     return objects;
 }
+// Port only: filter timer callbacks requested by the runtime scheduler.
 function allowedKind(
     kind: TimerKind, allowedKinds: ReadonlySet<TimerKind> | null,
 ): boolean {
     return !allowedKinds || allowedKinds.has(kind);
 }
+// Part of C timeout.c:insert_timer(): order equal-deadline timers newest first.
 function precedes(left: DueObjectTimer, right: DueObjectTimer | null): boolean {
     return !right || left.timer.deadline < right.timer.deadline
         || (left.timer.deadline === right.timer.deadline
             && left.timer.order > right.timer.order);
 }
+// Part of C timeout.c:run_timers(): find the next due callback across runtime timer arrays.
 export function peekNextDueObjectTimer(
     state: GameState = game, currentTurn: number = state.moves ?? 0,
     allowedKinds: ReadonlySet<TimerKind> | null = null,
@@ -1386,6 +1403,7 @@ export function peekNextDueObjectTimer(
     }
     return next;
 }
+// Part of C timeout.c:run_timers(): detach the selected callback before executing it.
 export function claimNextDueObjectTimer(
     state: GameState = game, currentTurn: number = state.moves ?? 0,
     allowedKinds: ReadonlySet<TimerKind> | null = null,
@@ -1404,9 +1422,11 @@ export function claimNextDueObjectTimer(
     }
     return next;
 }
+// Port only: expose copies of an object's timer records.
 export function objectTimers(object: GameObject | null | undefined): ObjectTimer[] {
     return timersFor(object).map(timer => ({ ...timer }));
 }
+// C timeout.c:obj_split_timers()
 export function copyObjectTimers(
     source: GameObject | null | undefined, destination: GameObject,
     state: GameState = game,
@@ -1422,6 +1442,7 @@ export function copyObjectTimers(
     }
     return objectTimers(destination);
 }
+// Port only: expose copies of the level's timer records.
 export function levelTimers(state: GameState = game): LevelTimer[] {
     return levelTimersFor(state).map(timer => ({ ...timer }));
 }
@@ -1434,8 +1455,9 @@ export interface QueuedLevelTimer {
     timer: LevelTimer;
 }
 export type QueuedTimer = QueuedObjectTimer | QueuedLevelTimer;
-// C timeout.c: the timer queue holds object and level timers in one
-// deadline-ordered list; insert_timer() places a new entry before existing
+// Port only: expose a sorted view of runtime object and level timers.
+// The native timer queue holds object and level timers in one
+// deadline-ordered list; insert_timer places a new entry before existing
 // equal-deadline entries, so ties run most recently inserted first.
 export function queuedTimers(state: GameState = game): QueuedTimer[] {
     const queued: QueuedTimer[] = [];
@@ -1450,6 +1472,7 @@ export function queuedTimers(state: GameState = game): QueuedTimer[] {
 // C timeout.c:obj_is_local(). Contents follow their outermost owner;
 // objects carried by migrating monsters belong to the global batch.
 // Also C timeout.c:timer_is_local(): object-timer classification is inlined here
+// Also C timeout.c:mon_is_local(): test the carrier's migrating-monster membership.
 function objectTimerIsGlobal(object: GameObject, state: GameState): boolean {
     let outer = object;
     while (outer.where === 'contained' && outer.container) outer = outer.container;
@@ -1458,12 +1481,10 @@ function objectTimerIsGlobal(object: GameObject, state: GameState): boolean {
         && !!state._migratingMonsters?.includes(outer.ocarry);
 }
 
-// Part of C light.c's obj_is_local() test (light.c:450,583): a light's
-// global/local batch split decided with
-// `is_global = !obj_is_local(...)`, using its own local
-// `mon_is_local(mon)` macro — `(mon)->mx > 0` (light.c:373) — rather
-// than timeout.c's mon_is_local(); the timer queue's port of
-// obj_is_local() is objectTimerIsGlobal() above.
+// Part of C light.c:obj_is_local(): classify a light's outermost owner.
+// The light batch uses the inverse of obj_is_local. Its mon_is_local macro
+// tests whether the carrier's mx is positive, unlike timeout.c's migration-list test.
+// The timer queue uses objectTimerIsGlobal above for its corresponding test.
 export function lightObjectIsGlobal(object: GameObject): boolean {
     let outermost = object;
     while (outermost.where === 'contained' && outermost.container)
@@ -1483,19 +1504,22 @@ export function lightObjectIsGlobal(object: GameObject): boolean {
             return false;
     }
 }
-// save_timers() writes queue order; restore_timers() calls insert_timer()
+// Part of C timeout.c:restore_timers(): reinsert a saved batch in native queue order.
+// save_timers writes queue order; restore_timers calls insert_timer
 // for each saved entry. Equal-time entries reverse within each batch.
 function restoreTimerBatch(timers: readonly (ObjectTimer | LevelTimer)[], state: GameState): void {
     const savedOrder = [...timers].sort((left, right) =>
         left.deadline - right.deadline || right.order - left.order);
     for (const timer of savedOrder) timer.order = nextTimerOrder(state);
 }
+// Part of C timeout.c:restore_timers(): restore local timers before equal-deadline global timers.
 export function restoreLevelTimers(state: GameState = game): void {
     const local = objectsInTimerGraph(state).filter(object => !objectTimerIsGlobal(object, state));
     restoreTimerBatch([
         ...local.flatMap(object => timersFor(object)), ...levelTimersFor(state),
     ], state);
 }
+// Port only: restore global and current-level timer ordering in runtime state.
 export function restoreSavedTimers(state: GameState = game): void {
     const global = objectsInTimerGraph(state).filter(object => objectTimerIsGlobal(object, state));
     restoreTimerBatch(global.flatMap(object => timersFor(object)), state);
@@ -1507,6 +1531,7 @@ export function restoreSavedTimers(state: GameState = game): void {
 // C timeout.c:slip_or_trip().  Fumbling arrival message, ice slides, and
 // the pet-loss dismount, all after the fumbling source's timeout fires.
 
+// C timeout.c:slip_or_trip()
 export async function slipOrTrip(publish: MessagePublisher = plineWithContinuation): Promise<void> {
     const hero = game.u;
     const steed = hero.usteed;
@@ -1618,6 +1643,7 @@ async function lanternMessage(object: GameObject, state: GameState): Promise<voi
         await plineWithContinuation('Batteries have not been invented yet.');
 }
 
+// Part of C timeout.c:burn_object(): announce shortening, flickering and exhausted candles.
 async function announceCandleBurn(
     object: GameObject, threshold: number, visible: boolean, byTouch: boolean,
     state: GameState, ownership: string,
@@ -1711,6 +1737,7 @@ export async function runClaimedObjectBurnTimer(
     return { object, threshold, overdue: false, destroyed };
 }
 
+// Part of C timeout.c:burn_object(): choose ownership text for a burning object.
 function burnOwner(object: GameObject, state: GameState) {
     if (object.where === 'inventory') {
         const owner = carriedObjectOwner(object, state);
@@ -1723,12 +1750,14 @@ function burnOwner(object: GameObject, state: GameState) {
     return carrier ? possessiveName(monsterName(carrier, { article: 'your', capitalized: true, state })) : 'The';
 }
 
+// Part of C timeout.c:burn_object(): name a burning stack with its owner.
 function burnName(object: GameObject, state: GameState) {
     const count = object.quan ?? object.quantity ?? 1;
     const name = objectName(object, state);
     return `${burnOwner(object, state)} ${count > 1 ? makePlural(name) : name}`;
 }
 
+// Part of C timeout.c:burn_object(): extinguish and consume exhausted fuel.
 async function finishBurnedObject(object: GameObject, state: GameState, { overdue = false } = {}) {
     extinguishTimedLight(object, state);
     if (object.otyp === CANDELABRUM_OF_INVOCATION) {
@@ -1749,6 +1778,7 @@ async function finishBurnedObject(object: GameObject, state: GameState, { overdu
     return true;
 }
 
+// Part of C timeout.c:burn_object(): stop the exhausted object's light and burn timer.
 function extinguishTimedLight(object: GameObject, state: GameState) {
     object.lamplit = false;
     delete object._litSeq;
@@ -2077,6 +2107,7 @@ export async function runDueTimers(): Promise<void> {
     }
 }
 
+// Part of C timeout.c:run_timers(): dispatch a claimed timer to its callback.
 // The caller has removed this timer from the queue. Its callback may add or
 // cancel timers, so the next due timer must be selected after it finishes.
 export async function runObjectTimer(claimed: DueObjectTimer, currentTurn: number) {
@@ -2122,6 +2153,7 @@ export async function runObjectTimer(claimed: DueObjectTimer, currentTurn: numbe
     return event;
 }
 
+// Part of C do.c:revive_corpse(): announce a corpse clawing out of its grave.
 async function announceBuriedRevival(event: CorpseRevivalTimerEvent): Promise<void> {
     if (event.kind !== 'revived' || !event.monster) return;
     const { monster, trap } = event;

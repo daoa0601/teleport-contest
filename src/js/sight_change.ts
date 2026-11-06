@@ -9,6 +9,7 @@ import { game } from './gstate.js';
 
 import { cansee, vision_recalc } from './vision.js';
 
+// Port only: fill the terminal map's visible terrain memory.
 export function rememberVisibleTerrain() {
     for (let y = 0; y < ROWNO; y++) {
         for (let x = 1; x < COLNO; x++) {
@@ -21,6 +22,7 @@ export function rememberVisibleTerrain() {
     }
 }
 
+// Port only: refresh vision and the terminal map after sight changes.
 export async function redrawSight() {
     game.vision_full_recalc = 1;
     await vision_recalc(0);

@@ -281,6 +281,7 @@ const WIZARD_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
+// Port only: build a terminated one-item starting-inventory table.
 function oneItem(typ: number, spe = 0): InitialInventoryEntry[] {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
@@ -289,12 +290,14 @@ function oneItem(typ: number, spe = 0): InitialInventoryEntry[] {
 }
 
 
+// Port only: roll one initial advancement entry from role or race data.
 function initialRoll(adv: Advancement | undefined): number {
     if (!adv) return 0;
     return (adv.infix || 0) + (adv.inrnd > 0 ? rnd(adv.inrnd) : 0);
 }
 
-// C u_init_misc(): establish the role body before any polymorph can occur.
+// Part of C u_init.c:u_init_misc(): establish the hero's original body and polymorph state.
+// C u_init_misc: establish the role body before any polymorph can occur.
 export function initializeHeroSpecies(state: GameState = game): void {
     const hero = state.u;
     if (!state.urole) throw new Error('Hero role must be selected before species initialization');
@@ -319,6 +322,7 @@ export function initializeHeroRoomMembership(state: Pick<GameState, 'u' | '_empt
     hero.ushops_left = [];
     state._emptyShops = [];
 }
+// C u_init.c:u_init_misc()
 // The caller supplies the handedness roll from pre-level initialization.
 export function uInitMisc(handednessRoll: number): void {
     const g = game;
@@ -532,6 +536,7 @@ export async function makedog(): Promise<Monster | null> {
     return pet;
 }
 
+// C u_init.c:trquan()
 function trquan(trobj: InitialInventoryEntry): number {
     if (!trobj.min) return 1;
     return trobj.min + rn2(trobj.max - trobj.min + 1);
@@ -708,8 +713,9 @@ function roleAllowsSpellbook(otyp: number, state: GameState): boolean {
         && skill <= P_LAST_SPELL && !!roleMaximums(state)?.has(skill);
 }
 
-// C ref: u_init_skills_discoveries()->ini_inv_use_obj().  This runs after
-// the first map/status display and turns fully known starting objects with an
+// C u_init.c:u_init_skills_discoveries()
+// Also C u_init.c:ini_inv_use_obj(): discover starting objects before equipping them.
+// This runs after the first map/status display and turns fully known starting objects with an
 // appearance into encountered discoveries without changing their earlier
 // role-preknowledge position.
 export async function finishStartingDiscoveries(): Promise<boolean> {
@@ -746,6 +752,7 @@ interface StartingInventoryRestrictions {
     previousRingOrBook: number | null;
 }
 
+// Part of C u_init.c:ini_inv(): initialize excluded random item combinations.
 function startingInventoryRestrictions(): StartingInventoryRestrictions {
     return {
         polymorphRing: null, polymorphSpellbook: null,
@@ -819,6 +826,7 @@ async function randomStartingItem(
     }
 }
 
+// Part of C u_init.c:ini_inv_mkobj_filter(): reject prohibited or unusable random starting items.
 function randomStartingItemAllowed(
     item: GameObject, gotLevelOneSpellbook: boolean,
     restrictions: StartingInventoryRestrictions,
@@ -837,6 +845,7 @@ function randomStartingItemAllowed(
             && roleAllowsSpellbook(type, game));
 }
 
+// Part of C u_init.c:ini_inv(): prevent duplicate books, rings and polymorph combinations.
 function restrictStartingCombinations(
     item: GameObject, restrictions: StartingInventoryRestrictions,
 ): void {
@@ -851,6 +860,7 @@ function restrictStartingCombinations(
         restrictions.previousRingOrBook = item.otyp;
 }
 
+// C u_init.c:ini_inv_adjust_obj()
 function adjustStartingItem(entry: InitialInventoryEntry, item: GameObject): boolean {
     if (entry.cls === COIN_CLASS) {
         item.quan = game._initialGoldCount ?? 0;
@@ -882,6 +892,7 @@ function adjustStartingItem(entry: InitialInventoryEntry, item: GameObject): boo
     return stop;
 }
 
+// Port only: require an entry in a terminated starting-inventory table.
 function initialInventoryEntry(table: readonly InitialInventoryEntry[], index: number): InitialInventoryEntry {
     const entry = table[index];
     if (!entry) throw new Error(`Initial inventory has no terminator at entry ${index}`);
@@ -889,6 +900,7 @@ function initialInventoryEntry(table: readonly InitialInventoryEntry[], index: n
 }
 
 
+// C u_init.c:u_init_carry_attr_boost()
 // C ref: u_init_carry_attr_boost(). Starting inventory must not leave the
 // hero over normal capacity. Strength is exhausted first, then Constitution.
 export function uInitCarryAttrBoost(state: GameState = game) {

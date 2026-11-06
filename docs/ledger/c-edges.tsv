@@ -1889,6 +1889,7 @@ hmon_hitmon_potion	setuwep
 hmon_hitmon_stagger	rnd
 hmon_hitmon_weapon_melee	d
 hmon_hitmon_weapon_melee	joust
+hmon_hitmon_weapon_melee	permapoisoned
 hmon_hitmon_weapon_melee	rn2
 hmon_hitmon_weapon_melee	rnd
 hmon_hitmon_weapon_ranged	rnd
@@ -2184,6 +2185,7 @@ launch_obj	random_teleport_level
 launch_obj	recalc_block_point
 launch_obj	rn2
 launch_obj	scatter
+launch_obj	set_msg_xy
 launch_obj	ship_object
 launch_obj	wake_nearto
 lava_effects	d
@@ -2223,6 +2225,7 @@ level_tele	random_teleport_level
 level_tele	rn2
 level_tele	rnl
 level_tele	surface
+level_tele	yn_function
 levitation_dialogue	surface
 levregion_add	get_location
 lift_object	calc_capacity
@@ -3122,6 +3125,9 @@ nh_timeout	spoteffects
 nh_timeout	unconscious
 nh_timeout	vomiting_dialogue
 nh_timeout	you_unwere
+nhl_gamestate	init_uhunger
+nhl_gamestate	setnotworn
+nhl_gamestate	setworn
 noisy_shop	wake_nearto
 nomul	cmdq_clear
 nomul	end_running
@@ -4379,6 +4385,7 @@ trapeffect_landmine	newsym
 trapeffect_landmine	rn2
 trapeffect_landmine	rnd
 trapeffect_landmine	set_wounded_legs
+trapeffect_landmine	unconscious
 trapeffect_magic_trap	losehp
 trapeffect_magic_trap	newsym
 trapeffect_magic_trap	rn2

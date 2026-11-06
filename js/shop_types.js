@@ -1,9 +1,12 @@
+// Port only: narrow monsters with a shopkeeper extension.
 export function hasShopkeeperData(monster) {
     return !!monster?.eshk;
 }
+// Port only: narrow shopkeepers with a bill array.
 export function hasShopBill(monster) {
     return !!monster?.eshk?.bill;
 }
+// Port only: validate the state needed for shop interaction.
 export function requireShopGame(state) {
     const hero = state.u;
     if (!state.level || !hero.uz || !hero.urooms || !hero.urooms0

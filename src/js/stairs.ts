@@ -134,6 +134,7 @@ export function known_branch_stairs(sway: Stairway | null, state: GameState): bo
         && sway.u_traversed;
 }
 
+// Port only: compare optional runtime level locations for stair lookup.
 function sameLevel(left: DungeonLocation, right: DungeonLocation | null | undefined): boolean {
     return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }

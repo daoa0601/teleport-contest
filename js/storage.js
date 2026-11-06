@@ -5,7 +5,9 @@ import { game } from './gstate.js';
 // Example: localStorage['vfs:/home/rodney/notes'] = 'Remember to buy scrolls'
 const VFS_PREFIX = 'vfs:';
 // Safe localStorage access -- returns null when unavailable (e.g. Node.js tests).
+// Port only: inject a storage backend for tests.
 export function setStorageForTesting(mock) { game.mockStorage = mock; }
+// Port only: select the test or browser storage backend.
 function storage() {
     if (game?.mockStorage)
         return game.mockStorage;
@@ -18,6 +20,7 @@ function storage() {
         return null;
     }
 }
+// Port only: read a virtual file from browser storage.
 export function vfsReadFile(path) {
     const s = storage();
     if (!s)
@@ -30,6 +33,7 @@ export function vfsReadFile(path) {
         return null;
     }
 }
+// Port only: write a virtual file to browser storage.
 export function vfsWriteFile(path, content) {
     const s = storage();
     if (!s)
@@ -42,6 +46,7 @@ export function vfsWriteFile(path, content) {
         return false;
     }
 }
+// Port only: delete a virtual file from browser storage.
 export function vfsDeleteFile(path) {
     const s = storage();
     if (!s)
@@ -56,6 +61,7 @@ export function vfsDeleteFile(path) {
         return false;
     }
 }
+// Port only: list virtual files by path prefix.
 export function vfsListFiles(prefix) {
     const s = storage();
     if (!s)
@@ -76,6 +82,7 @@ export function vfsListFiles(prefix) {
         return [];
     }
 }
+// Port only: reset the injected storage backend.
 export function init_storage_globals() {
     if (game)
         game.mockStorage = null;

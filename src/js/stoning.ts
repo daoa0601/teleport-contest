@@ -14,10 +14,14 @@ import { polymonHero } from './polyself.js';
 import { resolveImmediatePetrification } from './trap.js';
 import {
     PM_STONE_GOLEM, touchPetrifies, fleshPetrifies, heroResistsStoning, formCanBecomeStoneGolem,
-} from './mondata.js';export function heroIsPetrifying(state: GameState = game): boolean {
+} from './mondata.js';
+
+// Part of C youprop.h:Stoned(): read the runtime petrification timeout.
+export function heroIsPetrifying(state: GameState = game): boolean {
     return !!state.u?.stoned || (state.u?.stonedTurns ?? 0) > 0;
 }
 
+// Part of C potion.c:make_stoned(): start the timeout and retain its delayed killer.
 export function startHeroPetrification({
     state = game,
     turns = 5,
@@ -35,6 +39,7 @@ export function startHeroPetrification({
     return hero.stoned;
 }
 
+// Part of C potion.c:make_stoned(): clear the timeout and delayed killer.
 export function clearHeroPetrification(state: GameState = game): boolean {
     const hero = state.u;
     const wasPetrifying = heroIsPetrifying(state);
@@ -46,11 +51,13 @@ export function clearHeroPetrification(state: GameState = game): boolean {
     return wasPetrifying;
 }
 
+// Part of C pickup.c:u_safe_from_fatal_corpse(): test protection from bare-handed petrifying corpse contact.
 export function handlesPetrifyingCorpseBareHanded(object: GameObject | null | undefined): object is GameObject {
     return object?.otyp === CORPSE && touchPetrifies(object.corpsenm)
         && !(game.uarmg || game.u?.uarmg) && !heroResistsStoning();
 }
 
+// Part of C pickup.c:fatal_corpse_mistake(): attempt stone-golem conversion before fatal corpse contact.
 export async function petrifyFromCorpseContact(
     message: string, killer: string, beforeDeath: (() => unknown) | null = null,
 ): Promise<{ died: boolean } | null> {
@@ -70,6 +77,7 @@ export async function petrifyFromCorpseContact(
     return { died: result.died };
 }
 
+// Part of C eat.c:fpostfx(): petrifying egg aftereffects.
 export async function eatPetrifyingEgg(object: GameObject | null | undefined): Promise<{ started: boolean; transformed?: boolean }> {
     if (object?.otyp !== EGG || !fleshPetrifies(object.corpsenm)
         || heroResistsStoning()) return { started: false };
@@ -86,6 +94,7 @@ export async function eatPetrifyingEgg(object: GameObject | null | undefined): P
     return { started, transformed: false };
 }
 
+// Part of C mthrowu.c:m_throw(): petrifying egg contact with the hero.
 export async function hitByPetrifyingEgg(object: GameObject | null | undefined, state: GameState = game): Promise<{ started: boolean; transformed: boolean }> {
     if (object?.otyp !== EGG || !touchPetrifies(object.corpsenm)
         || heroResistsStoning(state)) {
@@ -101,6 +110,7 @@ export async function hitByPetrifyingEgg(object: GameObject | null | undefined, 
     return { started, transformed: false };
 }
 
+// Port only: require a corpse or egg's species-table name.
 function corpseSpeciesName(object: Pick<GameObject, 'corpsenm'>): string {
     if (object.corpsenm === undefined)
         throw new Error('Petrifying contact requires a corpse or egg species.');

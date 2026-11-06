@@ -126,6 +126,7 @@ export function known_branch_stairs(sway, state) {
     return sway !== null && sway.tolev.dnum !== (state.u.uz?.dnum ?? 0)
         && sway.u_traversed;
 }
+// Port only: compare optional runtime level locations for stair lookup.
 function sameLevel(left, right) {
     return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }

@@ -39,13 +39,16 @@ const PM_FIRE_ELEMENTAL = 155;
 const PM_GIANT_EEL = 319;
 const PM_ELECTRIC_EEL = 320;
 const PM_SALAMANDER = 329;
+// Part of C sit.c:dosit(): choose the hero's sitting anatomy.
 function formIsHumanoid() {
     return heroMonsterForm(game) == null
         || monsterIsHumanoid(heroMonsterForm(game) ?? -1);
 }
+// Port only: read object quantities from the runtime representation.
 function objectQuantity(object) {
     return object?.quan ?? object?.quantity ?? 1;
 }
+// Part of C sit.c:dosit(), sit.c:lay_an_egg(): check the current form's aquatic egg laying.
 function waterEggLayer() {
     const form = heroMonsterForm(game);
     return form !== null && eggs_in_water(form);
@@ -66,12 +69,15 @@ export async function takeHeroGold(state = game) {
     if (lostMoney)
         state.context.botl = true;
 }
+// Port only: read a nonnegative carried coin quantity.
 export function heroGoldQuantity(object) {
     return Math.max(0, Math.trunc(object?.quan ?? object?.quantity ?? 0));
 }
+// Part of C mkobj.c:weight(): compute coin-stack weight.
 function coinWeight(amount) {
     return Math.max(1, Math.trunc((amount + 50) / 100));
 }
+// Port only: synchronize the runtime fields of a coin stack.
 function normalizeGoldObject(object, amount = heroGoldQuantity(object)) {
     object.otyp = GOLD_PIECE;
     object.oclass = COIN_CLASS;
@@ -82,9 +88,11 @@ function normalizeGoldObject(object, amount = heroGoldQuantity(object)) {
     object.owt = coinWeight(amount);
     return object;
 }
+// Port only: find the hero's coin stack in the inventory array.
 export function heroGoldObject(state) {
     return (state?.inventory || []).find(object => object?.otyp === GOLD_PIECE || object?.oclass === COIN_CLASS) || null;
 }
+// Port only: merge coin stacks in the runtime inventory representation.
 export function addHeroGoldObject(state, incoming) {
     if (!incoming)
         return { object: heroGoldObject(state), merged: false };
@@ -111,6 +119,7 @@ export function addHeroGoldObject(state, incoming) {
         state.inventory.unshift(incoming);
     return { object: markJustPicked(incoming), merged: false };
 }
+// Port only: update or construct the hero's runtime coin stack.
 export function setHeroGoldAmount(state, amount) {
     amount = Math.max(0, Math.trunc(amount ?? 0));
     let object = heroGoldObject(state);
@@ -150,6 +159,7 @@ export function setHeroGoldAmount(state, amount) {
     normalizeGoldObject(object, amount);
     return object;
 }
+// Port only: detach a requested coin quantity through shared ownership operations.
 export function detachHeroGold(state, requested = null) {
     const object = heroGoldObject(state);
     if (!object)
@@ -211,6 +221,7 @@ async function layEgg() {
     await morehungry(nutrition);
     return !game.program_state.gameover;
 }
+// Part of C sit.c:dosit(): sitting on the floor's top object.
 async function sitOnObject(object) {
     if (MONSTER_SYMBOL[heroMonsterForm(game) ?? -1] === S_DRAGON
         && object.oclass === COIN_CLASS) {
@@ -241,6 +252,7 @@ async function sitOnObject(object) {
         await pline("It's not very comfortable...");
     }
 }
+// Part of C sit.c:dosit(): sitting while already held by a trap.
 // Returns true when the hero died.
 async function sitWhileTrapped(trap) {
     const game = requireInitializedGame();
@@ -284,6 +296,7 @@ async function sitWhileTrapped(trap) {
     }
     return false;
 }
+// Part of C sit.c:dosit(): water exposure while sitting.
 async function sitInWater() {
     await pline(`You sit in the ${displayLiquidName('water')}.`);
     if (heroMonsterForm(game) === PM_GREMLIN) {
@@ -300,10 +313,12 @@ async function sitInWater() {
         await waterDamageObject(armor, [], game, { force: true, description: 'armor', publish: pline });
     }
 }
+// Part of C sit.c:dosit(): recognize forms comfortable sitting in lava.
 function formLikesLava() {
     const form = heroMonsterForm(game);
     return form === PM_FIRE_ELEMENTAL || form === PM_SALAMANDER;
 }
+// C sit.c:dosit()
 export async function dosit({ finishTeleport = null, gotoLevel = null, chooseTeleportDestination = null, } = {}) {
     const game = requireInitializedGame();
     const u = game.u;

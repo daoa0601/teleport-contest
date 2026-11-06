@@ -214,6 +214,7 @@ export async function dosounds(state: PlayingGameState = requireInitializedGame(
     }
 }
 
+// C sounds.c:temple_priest_sound()
 async function templePriestSound(priest: Monster, state: PlayingGameState, hallu: number): Promise<boolean> {
     const shrine = priest.epri ?? priest.mextra?.epri;
     if (!priest.ispriest || !shrine || !priestIsInOwnTemple(priest, state)
@@ -238,6 +239,7 @@ async function templePriestSound(priest: Monster, state: PlayingGameState, hallu
     return true;
 }
 
+// Part of C mon.c:get_iter_mons(): enumerate living floor monsters for ambient sounds.
 function livingResidents(state: PlayingGameState): Monster[] {
     // C get_iter_mons() tests mstate, not square occupancy: a mounted steed
     // remains on fmon with MON_FLOOR even though the hero shares its square.
@@ -245,25 +247,30 @@ function livingResidents(state: PlayingGameState): Monster[] {
         !monster.dead && monster.mhp > 0 && (monster.mstate ?? MON_FLOOR) === MON_FLOOR);
 }
 
+// C sounds.c:mon_in_room()
 function monInRoom(monster: Monster, type: number, state: PlayingGameState): boolean {
     const roomno = state.level.at(monster.mx, monster.my)?.roomno ?? 0;
     return roomForRoomno(state.level, roomno)?.rtype === type;
 }
 
+// Port only: find the hero's room membership by room type.
 function heroOccupies(type: number, state: PlayingGameState): number | undefined {
     return state.u.urooms.find(roomno => roomForRoomno(state.level, roomno)?.rtype === type);
 }
 
+// Port only: validate an ambient-message table index.
 function choice(messages: readonly string[], selection: number): string {
     const message = messages[selection];
     if (message === undefined) throw new RangeError(`Ambient choice ${selection} is outside ${messages.length} messages`);
     return message;
 }
 
+// Port only: publish an indexed ambient message through the hearing boundary.
 async function hearChoice(state: PlayingGameState, messages: readonly string[], selection: number): Promise<void> {
     await hear(state, choice(messages, selection));
 }
 
+// Port only: route ambient messages through the shared hearing publisher.
 async function hear(state: PlayingGameState, message: string): Promise<void> {
     await publishHeardMessage(message, plineWithContinuation, state);
 }
@@ -396,6 +403,7 @@ export async function tipWornHelmet(helmet: GameObject): Promise<boolean> {
     return true;
 }
 
+// Part of C sounds.c:tiphat(): scan along the chosen direction for a recipient.
 function findTipRecipient(dx: number, dy: number): TipRecipient {
     const level = requireGameLevel();
     let target: TipRecipient = { monster: null, visible: false, unseen: false,
@@ -422,6 +430,7 @@ function findTipRecipient(dx: number, dy: number): TipRecipient {
     return target;
 }
 
+// Part of C sounds.c:tiphat(): publish the recipient's response.
 async function acknowledgeHelmetTip({ monster, visible, unseen, statue, x, y }: TipRecipient): Promise<void> {
     if (unseen || statue && heroIsHallucinating()) {
         await pline(`That ${unseen ? 'unseen ' : ''}creature is ignoring you!`);
@@ -460,6 +469,7 @@ async function acknowledgeHelmetTip({ monster, visible, unseen, statue, x, y }: 
         : 'Nothing happens.');
 }
 
+// Part of C sounds.c:responsive_mon_at(): test whether the target monster can respond.
 function canAcknowledgeTip(monster: Monster, x: number, y: number): boolean {
     return !monsterIsHelpless(monster) && !!monster.mcansee && monsterHasEyes(monster.mnum)
         && (!heroIsInvisible(game) || monsterPerceives(monster.mnum))
@@ -501,10 +511,12 @@ const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const PM_GECKO = MONSTER_NAME.indexOf('gecko');
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 
+// Port only: format a monster name at the start of a sentence.
 export function monsterSentenceSubject(monster: Monster): string {
     return monsterName(monster, { capitalized: true });
 }
 
+// C calendar.c:night()
 export function sessionIsNight(datetime: string | null | undefined): boolean {
     const hour = recorderLocalHour(datetime);
     return hour < 6 || hour > 21;
@@ -658,6 +670,7 @@ export async function publishMonsterNoise(
     return true;
 }
 
+// Part of C sounds.c:domonnoise(): canine sound selection.
 function bark(monster: Monster, state: GameState): string | null {
     if (state.flags.moonphase === 4 && sessionIsNight(state.datetime)) return 'howls.';
     if (!monster.mpeaceful) return 'growls.';
@@ -668,6 +681,7 @@ function bark(monster: Monster, state: GameState): string | null {
     return monster.mnum === PM_DINGO ? null : 'barks.';
 }
 
+// Part of C sounds.c:domonnoise(): feline sound selection.
 function mew(monster: Monster, state: GameState): string {
     if (!monster.mtame) return monster.mpeaceful ? 'snarls.' : 'growls!';
     if (monster.mconf || monster.mflee || monster.mtrapped || monster.mtame < 5)
@@ -697,7 +711,7 @@ const HALLUCINATED_GROWL_VERBS = [
     'toot', 'gargle', 'hoot', 'warble',
 ];
 
-// C sounds.c:vtense() third-person verb ending for monster noises.
+// Part of C objnam.c:vtense(): third-person verb endings used by monster noises.
 function thirdPersonSoundVerb(verb: string) {
     return /(?:s|sh|ch|x|z)$/.test(verb) ? `${verb}es` : `${verb}s`;
 }
@@ -799,6 +813,7 @@ interface MonsterReply {
     speech?: string;
 }
 
+// Part of C sounds.c:domonnoise(): speaking-monster branches and reply publication.
 export async function publishMonsterConversation(
     monster: Monster, sound: number, state: PlayingGameState,
 ): Promise<boolean> {
@@ -929,6 +944,7 @@ export async function publishMonsterConversation(
     return true;
 }
 
+// Part of C sounds.c:domonnoise(): peaceful humanoid conversation.
 function humanoidReply(monster: Monster, state: PlayingGameState): MonsterReply {
     if (!monster.mpeaceful) return { action: 'threatens you.' };
     if (monster.mflee) return { action: 'wants nothing to do with you.' };
@@ -967,6 +983,7 @@ function humanoidReply(monster: Monster, state: PlayingGameState): MonsterReply 
     }
 }
 
+// Part of C sounds.c:domonnoise(): nurse dialogue about the hero's equipment.
 function nurseReply(state: PlayingGameState): string {
     const weapon = state.uwep || state.u.uwep;
     if (weapon && (weapon.oclass === WEAPON_CLASS || isWeaponTool(weapon)))
@@ -979,6 +996,7 @@ function nurseReply(state: PlayingGameState): string {
     return state.uarmu || hero.uarmu ? 'Take off your shirt, please.' : "Relax, this won't hurt a bit.";
 }
 
+// C mplayer.c:mplayer_talk()
 function playerMonsterReply(monster: Monster, state: PlayingGameState): string {
     const sameRole = monster.mnum === MONSTER_NAME.indexOf('archeologist') + state.urole.mnum;
     return `Talk? -- ${select(sameRole ? [
@@ -987,6 +1005,7 @@ function playerMonsterReply(monster: Monster, state: PlayingGameState): string {
     ] : ['The low-life wants to talk, eh?', 'Fight, scum!', 'Here is what I have to say!'])}`;
 }
 
+// Part of C sounds.c:domonnoise(): vampire conversation by attitude, form and time.
 function vampireReply(monster: Monster, state: PlayingGameState): string {
     const night = sessionIsNight(state.datetime);
     const species = MONSTER_NAME[heroSpecies(state)];
@@ -1032,6 +1051,7 @@ function deathReply(state: PlayingGameState): MonsterReply {
         : { speech: 'Who do you think you are, War?' };
 }
 
+// Port only: select a random entry from a monster-speech table.
 function select(messages: readonly string[]): string {
     const message = messages[rn2(messages.length)];
     if (message === undefined) throw new RangeError('Monster speech selection is outside its message table');

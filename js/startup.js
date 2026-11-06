@@ -9,8 +9,9 @@ import { initializeArtifacts } from './artifact.js';
 import { rn2, rnd } from './rng.js';
 import { initializeRoleQuestGenders, roleInitPriestPantheon } from './role.js';
 import { initializeMonsterVitals } from './allmain.js';
-// This is the part of newgame() that runs before level creation. Role
-// inventory and starting attributes run from u_init.js after mklev().
+// Part of C allmain.c:newgame(): initialize source state before level creation.
+// This is the part of newgame that runs before level creation. Role
+// inventory and starting attributes run from u_init.js after mklev.
 export async function initializeSourceStartup() {
     initializeMonsterVitals(game);
     init_objects();
