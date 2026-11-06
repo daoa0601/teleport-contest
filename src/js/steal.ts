@@ -55,7 +55,7 @@ import type { MonsterPickupOptions } from './mkobj.js';
 import { removeObjectFromMonsterInventory, updateMonsterEquipment, removeHeroEquipment } from './worn.js';
 import { landFloorObject } from './floor_effects.js';
 import { cansee } from './vision.js';
-import { petDroppableObject } from './dog.js';
+import { petDroppableObject } from './dogmove.js';
 import { artifactById, artifactByName, monsterCanTouchArtifact } from './artifact.js';
 import { objectResistsDestruction } from './zap.js';
 import { costlySpot, removeObjectAndContentsFromBill, currentShopResident, deleteObject } from './shk.js';

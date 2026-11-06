@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { W_ARMF, W_WEP, MM_ANGRY, LOST_STOLEN, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, OBJECT_TIMER_KIND } from '../js/const.js';
-import { petDroppableObject, initializePet } from '../js/dog.js';
+import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
@@ -12,7 +12,7 @@ import { giveSpecialMonsterObject } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { mksobj } from '../js/mkobj.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { commitPetPickup } from '../js/dogmove.js';
+import { commitPetPickup, petDroppableObject } from '../js/dogmove.js';
 import { linkObjectToMonsterInventory, runClaimedGlobTimer, placeCreatedObject } from '../js/mkobj.js';
 import { removeObjectFromMonsterInventory } from '../js/worn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

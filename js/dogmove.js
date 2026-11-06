@@ -19,16 +19,15 @@ import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountH
 import { dist2, distmin } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
-import { petDroppableObject } from './dog.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
-import { BOULDER, SCR_MAIL, TRIPE_RATION, } from './object_data.js';
+import { BOULDER, SCR_MAIL, TRIPE_RATION, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
 import { loseGuardianAngel } from './minion.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { updateMonsterRegions } from './region.js';
 import { goodPosition } from './teleport.js';
-import { ALLOW_M, ALLOW_TRAPS, ALLOW_U, COLNO, D_CLOSED, D_LOCKED, DISMOUNT_THROWN, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, Is_rogue_level, MAGIC_PORTAL, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED, MMOVE_NOTHING, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, DISMOUNT_POLY, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, NEED_WEAPON, xdir, ydir, } from './const.js';
+import { ALLOW_M, ALLOW_TRAPS, ALLOW_U, COLNO, D_CLOSED, D_LOCKED, DISMOUNT_THROWN, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, Is_rogue_level, MAGIC_PORTAL, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED, MMOVE_NOTHING, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, DISMOUNT_POLY, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, NEED_WEAPON, xdir, ydir, W_ARMS, } from './const.js';
 import { isok } from './cmd.js';
 import { AT_BREA } from './monster_attack_types.js';
 import { canSeeMonster, canSpotMonster, glyphAt, newsym } from './display.js';
@@ -39,7 +38,7 @@ import { releaseMonsterLeash } from './apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { displayMessageWindow } from './topl.js';
 import { begForFood, monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './sounds.js';
-import { maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes, monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks, tunnels, speciesHasWeaponAttack, touchPetrifies, carnivorous, herbivorous, resistConflict, } from './mondata.js';
+import { maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes, monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks, tunnels, speciesHasWeaponAttack, touchPetrifies, carnivorous, herbivorous, resistConflict, monsterIsAnimal, monsterIsMindless, needspick, cantwield, } from './mondata.js';
 import { monsterReflectsRay } from './muse.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { getTrack } from './track.js';
@@ -53,6 +52,68 @@ const MS_GUARDIAN = 38;
 const S_VAMPIRE = 48;
 // include/monst.h flag bits used by the moved dogmove.c helpers.
 // include/objclass.h nofetch classes dog_invent() refuses to carry.
+// C dogmove.c:droppables(). Pets keep equipment and usable tools.
+export function petDroppableObject(monster) {
+    const animalOrMindless = (monsterIsAnimal({ mnum: monster.mnum }) || monsterIsMindless(monster.mnum));
+    const canDig = (tunnels(monster.mnum) && needspick(monster.mnum));
+    const canUnlock = !cantwield(monster.mnum);
+    const weapon = monster.mw;
+    // Undefined means this body cannot use the tool; null means no tool has
+    // been selected yet. C represents the first case with a dummy artifact.
+    let pick = animalOrMindless || !canDig ? undefined : null;
+    let horn = animalOrMindless ? undefined : null;
+    let key = animalOrMindless || !canUnlock ? undefined : null;
+    if (weapon) {
+        if ([PICK_AXE, DWARVISH_MATTOCK].includes(weapon.otyp))
+            pick = weapon;
+        if (weapon.otyp === UNICORN_HORN)
+            horn = weapon;
+    }
+    for (const object of monster.minvent || []) {
+        switch (object.otyp) {
+            case DWARVISH_MATTOCK:
+            case PICK_AXE:
+                if (object.otyp === DWARVISH_MATTOCK && ((monster.misc_worn_check ?? 0) & W_ARMS))
+                    break;
+                if (object.otyp === DWARVISH_MATTOCK && pick?.otyp === PICK_AXE && pick !== weapon
+                    && (!pick.oartifact || object.oartifact))
+                    return pick;
+                if (pick === null || (pick !== undefined && object.oartifact && !pick.oartifact)) {
+                    if (pick)
+                        return pick;
+                    pick = object;
+                    continue;
+                }
+                break;
+            case UNICORN_HORN:
+                if (object.cursed)
+                    break;
+                if (horn === null || (horn !== undefined && object.oartifact && !horn.oartifact)) {
+                    if (horn)
+                        return horn;
+                    horn = object;
+                    continue;
+                }
+                break;
+            case SKELETON_KEY:
+            case LOCK_PICK:
+            case CREDIT_CARD:
+                if (key && object.otyp < key.otyp
+                    && (!key.oartifact || object.oartifact))
+                    return key;
+                if (key === null || (key !== undefined && object.oartifact && !key.oartifact)) {
+                    if (key)
+                        return key;
+                    key = object;
+                    continue;
+                }
+                break;
+        }
+        if (!object.owornmask && object !== weapon)
+            return object;
+    }
+    return null;
+}
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
