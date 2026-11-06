@@ -44,7 +44,7 @@ import ts from 'typescript';
 import { INFRASTRUCTURE_FILES, baseName, calleeName, forEachTopLevelDecl, walkJson } from './c-sources.mjs';
 import { REACH_DEPTH, counterpartsOf, portIndex, readAliases } from './gap-edges.mjs';
 import { arrayValue, numberValue, objectValue, stringValue } from './session-types.mjs';
-const EXTRACTOR_VERSION = 'args-6';
+const EXTRACTOR_VERSION = 'args-7';
 function asRecord(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value) ? Object.fromEntries(Object.entries(value)) : null;
 }
@@ -165,16 +165,26 @@ function booleanArg(arg, token, readLines) {
         return 'FALSE';
     return null;
 }
-// The call's own line, with the same elision handled through the tracker's
-// last seen line (enter runs before the call's range children, so that line
-// is the location just above the call).
-function callLine(call, lastLine) {
+// The call's own line for the report. An omitted `line` means the line
+// equals the previously printed location's, in print order: the expansion
+// location falls back to the spelling location printed just before it, and
+// only a spelling location that omits its line too falls back to the
+// tracker's line from before the call (enter runs before the call's range
+// children, so that is the location just above the call).
+export function callLine(call, lastLine) {
     const range = asRecord(call['range']);
     const begin = range === null ? null : asRecord(range['begin']);
     if (begin !== null && typeof begin['line'] === 'number')
         return begin['line'];
-    const expansion = begin === null ? null : asRecord(begin['expansionLoc']);
-    return expansion !== null && typeof expansion['line'] === 'number' ? expansion['line'] : lastLine;
+    if (begin !== null) {
+        const expansion = asRecord(begin['expansionLoc']);
+        if (expansion !== null && typeof expansion['line'] === 'number')
+            return expansion['line'];
+        const spelling = asRecord(begin['spellingLoc']);
+        if (spelling !== null && typeof spelling['line'] === 'number')
+            return spelling['line'];
+    }
+    return lastLine;
 }
 async function extractArgFacts(tree, file) {
     const calls = [];
@@ -244,7 +254,9 @@ async function extractArgFacts(tree, file) {
             // so far a second time (mkobj.c obj_nexto_xy doubled its calls).
             if (collect && depth === 0 && hasBody && declFile === file) {
                 functions.push(name);
-                calls.push(...pending);
+                const callerFile = baseName(file);
+                calls.push(...pending.map(call => ({ file: callerFile, caller: call.caller,
+                    callee: call.callee, line: call.line, args: call.args })));
             }
         });
     });
@@ -262,6 +274,7 @@ function decodeArgCall(value, label) {
     if (!args.length)
         throw new Error(`${label}.args must not be empty`);
     return {
+        file: stringValue(row['file'], `${label}.file`),
         caller: stringValue(row['caller'], `${label}.caller`),
         callee: stringValue(row['callee'], `${label}.callee`),
         line: numberValue(row['line'], `${label}.line`),
@@ -377,35 +390,32 @@ export async function compareArgs(root, tree, cacheDir) {
             ownedBy.set(fn, new Set([...(ownedBy.get(fn) ?? []), name]));
         }
     }
-    // Pair the C occurrences: caller → callee → calls (with the caller's file).
+    // Pair the C occurrences: (file, caller) → callee → calls. The file keys
+    // the pair so that two static functions sharing a name stay separate
+    // instead of being checked against whichever file `definedIn` recorded
+    // first.
     const pairs = new Map();
     for (const call of calls) {
-        const callees = pairs.get(call.caller) ?? new Map();
-        const entry = callees.get(call.callee) ?? { files: new Set(), calls: [] };
-        entry.files.add(definedIn.get(call.caller) ?? '?');
-        entry.calls.push(call);
-        callees.set(call.callee, entry);
-        pairs.set(call.caller, callees);
+        const key = `${call.file}\u0000${call.caller}`;
+        const entry = pairs.get(key)
+            ?? { file: call.file, caller: call.caller, callees: new Map() };
+        entry.callees.set(call.callee, [...(entry.callees.get(call.callee) ?? []), call]);
+        pairs.set(key, entry);
     }
     const rows = [];
     let comparedCalls = 0;
-    for (const [caller, callees] of [...pairs].sort((a, b) => a[0].localeCompare(b[0]))) {
-        for (const [callee, entry] of [...callees].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const sorted = [...pairs.values()].sort((a, b) => a.file.localeCompare(b.file) || a.caller.localeCompare(b.caller));
+    for (const entry of sorted) {
+        const caller = entry.caller;
+        for (const [callee, callsInFile] of [...entry.callees].sort((a, b) => a[0].localeCompare(b[0]))) {
             const calleeFile = definedIn.get(callee) ?? '?';
             const calleeCounterparts = counterpartsOf(index, aliases, callee, calleeFile);
             if (!calleeCounterparts.fns.length)
                 continue;
-            // The caller can be defined in several C files; each file's
-            // counterparts count.
-            let mapping = 'citation';
-            const callerFns = new Set();
-            for (const file of entry.files) {
-                const counterparts = counterpartsOf(index, aliases, caller, file);
-                if (counterparts.mapping === 'name')
-                    mapping = 'name';
-                for (const fn of counterparts.fns)
-                    callerFns.add(fn);
-            }
+            // This pair's caller is the function as defined in this one file.
+            const counterparts = counterpartsOf(index, aliases, caller, entry.file);
+            const mapping = counterparts.mapping;
+            const callerFns = new Set(counterparts.fns);
             if (!callerFns.size)
                 continue;
             const calleeFns = new Set(calleeCounterparts.fns);
@@ -459,12 +469,12 @@ export async function compareArgs(root, tree, cacheDir) {
                 }
                 frontier = next;
             }
-            const cCalls = entry.calls.map(call => ({ line: call.line, args: call.args }));
+            const cCalls = callsInFile.map(call => ({ line: call.line, args: call.args }));
             const { verdict, reason } = classifyArgs(cCalls.map(call => call.args.map(arg => arg.value)), portCalls);
             comparedCalls += cCalls.length;
             rows.push({
-                file: [...entry.files].sort().join('|'), caller, callee, mapping,
-                infrastructure: [...entry.files].every(file => INFRASTRUCTURE_FILES.has(file)),
+                file: entry.file, caller, callee, mapping,
+                infrastructure: INFRASTRUCTURE_FILES.has(entry.file),
                 port: [...callerFns].map(index.locate).sort(),
                 cCalls, portCalls, verdict, reason,
             });

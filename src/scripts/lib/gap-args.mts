@@ -48,13 +48,16 @@ import { REACH_DEPTH, counterpartsOf, portIndex, readAliases } from './gap-edges
 import type { PortFunction } from './gap-edges.mjs';
 import { arrayValue, numberValue, objectValue, stringValue } from './session-types.mjs';
 
-const EXTRACTOR_VERSION = 'args-6';
+const EXTRACTOR_VERSION = 'args-7';
 
 export type CBool = 'TRUE' | 'FALSE';
 export type PortBool = 'true' | 'false';
 
 // One C call site with at least one TRUE/FALSE argument.
 export interface CArgCall {
+    // The .c file the calling function is defined in; a static name can
+    // exist in several files, and each definition is its own pair.
+    file: string;
     caller: string;
     callee: string;
     line: number;
@@ -213,15 +216,23 @@ function booleanArg(arg: unknown, token: TokenLoc | null, readLines: (path: stri
     return null;
 }
 
-// The call's own line, with the same elision handled through the tracker's
-// last seen line (enter runs before the call's range children, so that line
-// is the location just above the call).
-function callLine(call: Record<string, unknown>, lastLine: number): number {
+// The call's own line for the report. An omitted `line` means the line
+// equals the previously printed location's, in print order: the expansion
+// location falls back to the spelling location printed just before it, and
+// only a spelling location that omits its line too falls back to the
+// tracker's line from before the call (enter runs before the call's range
+// children, so that is the location just above the call).
+export function callLine(call: Record<string, unknown>, lastLine: number): number {
     const range = asRecord(call['range']);
     const begin = range === null ? null : asRecord(range['begin']);
     if (begin !== null && typeof begin['line'] === 'number') return begin['line'];
-    const expansion = begin === null ? null : asRecord(begin['expansionLoc']);
-    return expansion !== null && typeof expansion['line'] === 'number' ? expansion['line'] : lastLine;
+    if (begin !== null) {
+        const expansion = asRecord(begin['expansionLoc']);
+        if (expansion !== null && typeof expansion['line'] === 'number') return expansion['line'];
+        const spelling = asRecord(begin['spellingLoc']);
+        if (spelling !== null && typeof spelling['line'] === 'number') return spelling['line'];
+    }
+    return lastLine;
 }
 
 async function extractArgFacts(tree: CSourceTree, file: string): Promise<FileArgFacts> {
@@ -246,7 +257,7 @@ async function extractArgFacts(tree: CSourceTree, file: string): Promise<FileArg
         // way). Only a FunctionDecl collects calls.
         const name = decl['name'];
         const collect = decl['kind'] === 'FunctionDecl' && typeof name === 'string';
-        const pending: CArgCall[] = [];
+        const pending: { caller: string; callee: string; line: number; args: { index: number; value: CBool }[] }[] = [];
         // The file of the declaration's own location: `loc`/`range` print
         // before previousDecl and inner, so the first location in the chunk
         // resolves — through the tracker, which has seen everything printed
@@ -284,7 +295,9 @@ async function extractArgFacts(tree: CSourceTree, file: string): Promise<FileArg
             // so far a second time (mkobj.c obj_nexto_xy doubled its calls).
             if (collect && depth === 0 && hasBody && declFile === file) {
                 functions.push(name);
-                calls.push(...pending);
+                const callerFile = baseName(file);
+                calls.push(...pending.map(call => ({ file: callerFile, caller: call.caller,
+                    callee: call.callee, line: call.line, args: call.args })));
             }
         });
     });
@@ -301,6 +314,7 @@ function decodeArgCall(value: unknown, label: string): CArgCall {
     });
     if (!args.length) throw new Error(`${label}.args must not be empty`);
     return {
+        file: stringValue(row['file'], `${label}.file`),
         caller: stringValue(row['caller'], `${label}.caller`),
         callee: stringValue(row['callee'], `${label}.callee`),
         line: numberValue(row['line'], `${label}.line`),
@@ -423,35 +437,35 @@ export async function compareArgs(root: string, tree: CSourceTree, cacheDir: str
         }
     }
 
-    // Pair the C occurrences: caller → callee → calls (with the caller's file).
-    const pairs = new Map<string, Map<string, { files: Set<string>; calls: CArgCall[] }>>();
+    // Pair the C occurrences: (file, caller) → callee → calls. The file keys
+    // the pair so that two static functions sharing a name stay separate
+    // instead of being checked against whichever file `definedIn` recorded
+    // first.
+    const pairs = new Map<string, { file: string; caller: string; callees: Map<string, CArgCall[]> }>();
     for (const call of calls) {
-        const callees = pairs.get(call.caller) ?? new Map<string, { files: Set<string>; calls: CArgCall[] }>();
-        const entry = callees.get(call.callee) ?? { files: new Set<string>(), calls: [] };
-        entry.files.add(definedIn.get(call.caller) ?? '?');
-        entry.calls.push(call);
-        callees.set(call.callee, entry);
-        pairs.set(call.caller, callees);
+        const key = `${call.file}\u0000${call.caller}`;
+        const entry = pairs.get(key)
+            ?? { file: call.file, caller: call.caller, callees: new Map<string, CArgCall[]>() };
+        entry.callees.set(call.callee, [...(entry.callees.get(call.callee) ?? []), call]);
+        pairs.set(key, entry);
     }
 
     const rows: ArgRow[] = [];
     let comparedCalls = 0;
-    for (const [caller, callees] of [...pairs].sort((a, b) => a[0].localeCompare(b[0]))) {
-        for (const [callee, entry] of [...callees].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const sorted = [...pairs.values()].sort((a, b) => a.file.localeCompare(b.file) || a.caller.localeCompare(b.caller));
+    for (const entry of sorted) {
+        const caller = entry.caller;
+        for (const [callee, callsInFile] of [...entry.callees].sort((a, b) => a[0].localeCompare(b[0]))) {
             const calleeFile = definedIn.get(callee) ?? '?';
             const calleeCounterparts = counterpartsOf(index, aliases, callee, calleeFile);
             if (!calleeCounterparts.fns.length) continue;
-            // The caller can be defined in several C files; each file's
-            // counterparts count.
-            let mapping: 'name' | 'citation' = 'citation';
-            const callerFns = new Set<PortFunction>();
-            for (const file of entry.files) {
-                const counterparts = counterpartsOf(index, aliases, caller, file);
-                if (counterparts.mapping === 'name') mapping = 'name';
-                for (const fn of counterparts.fns) callerFns.add(fn);
-            }
+            // This pair's caller is the function as defined in this one file.
+            const counterparts = counterpartsOf(index, aliases, caller, entry.file);
+            const mapping = counterparts.mapping;
+            const callerFns = new Set<PortFunction>(counterparts.fns);
             if (!callerFns.size) continue;
             const calleeFns = new Set(calleeCounterparts.fns);
+
 
             // Walk REACH_DEPTH levels, attributing only the calls of the
             // caller counterparts and of helpers no other C function owns.
@@ -500,13 +514,13 @@ export async function compareArgs(root: string, tree: CSourceTree, cacheDir: str
                 frontier = next;
             }
 
-            const cCalls = entry.calls.map(call => ({ line: call.line, args: call.args }));
+            const cCalls = callsInFile.map(call => ({ line: call.line, args: call.args }));
             const { verdict, reason } = classifyArgs(
                 cCalls.map(call => call.args.map(arg => arg.value)), portCalls);
             comparedCalls += cCalls.length;
             rows.push({
-                file: [...entry.files].sort().join('|'), caller, callee, mapping,
-                infrastructure: [...entry.files].every(file => INFRASTRUCTURE_FILES.has(file)),
+                file: entry.file, caller, callee, mapping,
+                infrastructure: INFRASTRUCTURE_FILES.has(entry.file),
                 port: [...callerFns].map(index.locate).sort(),
                 cCalls, portCalls, verdict, reason,
             });

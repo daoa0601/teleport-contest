@@ -10,7 +10,7 @@
 // `getrumor(..., TRUE)` to that elision, pr730).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { argumentTokens, classifyArgs } from '../scripts/lib/gap-args.mjs';
+import { argumentTokens, callLine, classifyArgs } from '../scripts/lib/gap-args.mjs';
 void test('an argument whose expansion location omits both elided keys resolves in print order', () => {
     // clang's JSON dumper omits a location's `file` and `line` when they
     // equal the last location it printed (CI lost engrave.c's
@@ -112,5 +112,29 @@ void test('a flag inside an options object makes the pair uncomparable even when
     const verdict = classifyArgs([['TRUE']], [{ values: [], optionsObject: true }, { values: ['true'], optionsObject: false }]);
     assert.equal(verdict.verdict, 'uncomparable');
     assert.equal(classifyArgs([['TRUE']], [{ values: [], optionsObject: true }]).verdict, 'uncomparable');
+});
+void test('a call line omitted by the expansion location resolves through the spelling location', () => {
+    // clang omits a location's line when it equals the previously printed
+    // location's; within a macro location the spelling location prints
+    // first, so an expansion location without a line takes the spelling
+    // location's line, not whatever line the tracker held before the call.
+    const call = {
+        kind: 'CallExpr',
+        range: { begin: {
+                spellingLoc: { offset: 3947, file: 'include/global.h', line: 100, col: 15, tokLen: 6 },
+                expansionLoc: { offset: 42, file: 'src/engrave.c', col: 57, tokLen: 4 },
+            } },
+    };
+    assert.equal(callLine(call, 55), 100);
+    // When the spelling location omits its line as well, the line comes
+    // from the location just above the call.
+    const bothElided = {
+        kind: 'CallExpr',
+        range: { begin: {
+                spellingLoc: { offset: 3947, col: 15, tokLen: 6 },
+                expansionLoc: { offset: 42, col: 57, tokLen: 4 },
+            } },
+    };
+    assert.equal(callLine(bothElided, 57), 57);
 });
 //# sourceMappingURL=static-gaps-args.test.js.map
