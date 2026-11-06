@@ -73,7 +73,7 @@ import { setMonsterMalign } from './makemon.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { chooseCovetousStrategy, pursueCovetousTarget, retreatCovetousMonster, publishMonsterCuss } from './wizard.js';
 import { migrateMonsterOffLevel } from './dog.js';
 export const NORMAL_SPEED = 12;

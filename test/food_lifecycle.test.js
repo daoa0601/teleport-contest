@@ -14,7 +14,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { CARROT, CRAM_RATION, FOOD_RATION, LEMBAS_WAFER } from '../js/object_data.js';
 import { delobj } from '../js/invent.js';
 import { objectTimers } from '../js/timeout.js';
-import { stopHeroOccupation } from '../js/occupation.js';
+import { stopHeroOccupation } from '../js/allmain.js';
 import { polymonHero } from '../js/polyself.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { runDueTimers } from '../js/timeout.js';

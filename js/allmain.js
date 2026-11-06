@@ -10,7 +10,7 @@ import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './s
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
 import { makeBlinded, makeStunned } from './potion.js';
-import { eatmdone, Finish_digestion, gethungry, unfaint, Hear_again } from './eat.js';
+import { eatmdone, Finish_digestion, gethungry, unfaint, Hear_again, eatfood } from './eat.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { recordRandom } from './monster_action_types.js';
@@ -47,7 +47,6 @@ import { openHoldingTrap, igniteItems, petrifyMonsterImmediately, burnHeroArmorB
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
 import { loseHeroExperience } from './exper.js';
 import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction } from './monmove.js';
-import { stopHeroOccupation } from './occupation.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './wield.js';
 import { finishInventoryRemoval } from './invent.js';
@@ -647,6 +646,27 @@ function u_calc_moveamt(wtcap, state) {
         moveAmount -= Math.trunc(moveAmount * 7 / 8);
     }
     state.u.umovement = Math.max(0, (state.u.umovement ?? 0) + moveAmount);
+}
+// C allmain.c:stop_occupation().
+// Also C eat.c:maybe_finished_meal(): inlined as the eat-food branch that
+// finishes a completed meal before printing any stop message.
+export async function stopHeroOccupation(state = game, publish = plineWithContinuation, { finishMeal = true } = {}) {
+    const occupation = state._occupation;
+    if (occupation) {
+        if (finishMeal && occupation.key === 'eat-food'
+            && (state.context.victual?.usedtime ?? 0) >= (state.context.victual?.reqtime ?? 0)) {
+            state._occupation = null;
+            await eatfood(occupation, state);
+        }
+        else {
+            await publish(`You stop ${occupation.text}.`);
+        }
+        state._occupation = null;
+        state.context.botl = true;
+    }
+    if (occupation || (state.multi ?? 0) >= 0)
+        endVoluntaryMultiTurn(state);
+    cmdq_clear(CQ_CANNED, state);
 }
 // Part of C do_wear.c:Armor_on()/Armor_off(): the delayed don/doff
 // completion that hack.c:unmul() dispatches through afternmv when the

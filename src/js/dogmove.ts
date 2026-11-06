@@ -55,7 +55,7 @@ import { isok } from './cmd.js';
 import { AT_BREA } from './monster_attack_types.js';
 import { canSeeMonster, canSpotMonster, glyphAt, newsym } from './display.js';
 import { formatFeltMessage, plineWithContinuation } from './pline.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { releaseMonsterLeash } from './apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';

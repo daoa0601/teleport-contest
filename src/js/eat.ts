@@ -25,7 +25,7 @@ import {
 } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { finishHeroHelplessness, stopHeroOccupation } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
 
@@ -86,7 +86,6 @@ import type { Monster } from './monster_types.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
 import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
-import { stopHeroOccupation } from './occupation.js';
 import type { FoodMeal, FoodOccupation, NonfoodMeal, PreparedFoodObject, TinOpening } from './occupation_types.js';
 import {
     pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation,

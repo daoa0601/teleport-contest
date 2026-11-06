@@ -44,7 +44,7 @@ import { untrap, untrapAbilityProblem, triggerChestTrap, triggerBoobyTrap } from
 import { possessiveName } from './hacklib.js';
 import { heroIsUnaware } from './senses.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { impossible } from './diagnostics.js';
 import { roomsAt } from './hack.js';
 // Lock forcing.

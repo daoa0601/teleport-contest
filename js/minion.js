@@ -19,7 +19,7 @@ import { Hear_again, reset_faint } from './eat.js';
 import { heroSpecies } from './polyself.js';
 import { removeMonsterFromGame } from './mon.js';
 import { AMULET_OF_REFLECTION, AMULET_OF_YENDOR, OBJECT_NAMES, SHIELD_OF_REFLECTION } from './object_data.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { getLine } from './query.js';
 import { addCreatedObjectToMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { detachHeroGold } from './sit.js';

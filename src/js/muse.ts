@@ -103,7 +103,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './s
 import { makeBlinded } from './potion.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { changeDoorByMagic } from './lock.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { propertyIsActive } from './properties.js';
 import { rayHitMessage, rayMissMessage } from './zap.js';
 import { heroHasHalfSpellDamage, monsterResistsEffect, learnWand } from './zap.js';

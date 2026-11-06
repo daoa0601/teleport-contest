@@ -58,7 +58,7 @@ import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel } from './do.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';

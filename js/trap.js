@@ -77,13 +77,12 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
-import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
 import { createPoisonGasCloud } from './region.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { finishHeroHelplessness, stopHeroOccupation } from './allmain.js';
 import { reset_faint } from './eat.js';
 import { holdingMonsterName, holdingMonsterSubject } from './mhitu.js';
 export async function burnArmorByFire(victim, state, emitMessage, calls = [], random = rn2, { visible = victim === state.u, } = {}) {

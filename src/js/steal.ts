@@ -61,7 +61,7 @@ import { objectResistsDestruction } from './zap.js';
 import { costlySpot, removeObjectAndContentsFromBill, currentShopResident, deleteObject } from './shk.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { nomul, heroGoldAmount, roomsAt } from './hack.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { encumber_msg } from './pickup.js';
 import { makeMonsterFlee } from './monmove.js';
 import {

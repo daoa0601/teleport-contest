@@ -129,7 +129,7 @@ import {
     observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject,
     withIndefiniteArticle,
 } from './objnam.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './pet_eating.js';
 import {

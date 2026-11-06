@@ -7,7 +7,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { BEARTRAP, BOULDER, DAGGER, LAND_MINE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { stopHeroOccupation } from '../js/occupation.js';
+import { stopHeroOccupation } from '../js/allmain.js';
 import { applyInventoryObject, dropInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';

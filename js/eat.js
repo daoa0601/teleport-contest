@@ -5,7 +5,7 @@ import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTe
 import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting, } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { finishHeroHelplessness, stopHeroOccupation } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
 import { bot } from './botl.js';
@@ -48,7 +48,6 @@ import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, PM_GREEN_SLIME, } from './monster_data.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
-import { stopHeroOccupation } from './occupation.js';
 import { pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation, recordGameLogEvent, formatFeltMessage, publishHeardMessage, } from './pline.js';
 import { altarWrath } from './pray.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty, setPropertyTimeout } from './properties.js';

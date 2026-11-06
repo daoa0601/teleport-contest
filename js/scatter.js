@@ -21,7 +21,7 @@ import { applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.
 import { heroSpecies } from './polyself.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { endVoluntaryMultiTurn, roomsAt } from './hack.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { unpunishHero } from './read.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 import { MONSTER_NAME } from './monster_data.js';

@@ -31,7 +31,7 @@ import type { MessagePublisher } from './pline.js';
 import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery } from './cmd.js';
 import type { ArmorCompletion } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects } from './hack.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { finishHeroHelplessness, stopHeroOccupation } from './allmain.js';
 import type { GameObject } from './object_types.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import {
@@ -71,7 +71,6 @@ import {
     erodeObject, objectIsVulnerableToErosion, resolveImmediatePetrification,
     captureLevitationState, floatHeroUp, floatHeroDown, selfTouchPetrifyingWeapons,
 } from './trap.js';
-import { stopHeroOccupation } from './occupation.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling, levelIsWaterLevel, surfaceName } from './dungeon.js';
 import { removeWornHeroItem } from './hero_equipment.js';

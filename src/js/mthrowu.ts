@@ -80,7 +80,7 @@ import {
 } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { rayDamageType, buzz } from './zap.js';
 import { displayRayName } from './zap.js';

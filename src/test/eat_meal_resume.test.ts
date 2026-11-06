@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { FOOD_RATION } from '../js/object_data.js';
-import { stopHeroOccupation } from '../js/occupation.js';
+import { stopHeroOccupation } from '../js/allmain.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

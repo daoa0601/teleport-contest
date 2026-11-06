@@ -9,7 +9,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CHEST, CREDIT_CARD, LOCK_PICK, SKELETON_KEY } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { stopHeroOccupation } from '../js/occupation.js';
+import { stopHeroOccupation } from '../js/allmain.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -29,7 +29,6 @@ import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBli
 import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, paralyzeMonster, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
-import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
 import { adjustAttribute, adjustHeroAlignment, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { heroHasHalfSpellDamage, drainObjectEnchantment, destroyInventoryByElement } from './zap.js';
@@ -78,7 +77,7 @@ import { releaseAllMonsterLeashes } from './apply.js';
 import { dismountHero } from './steed.js';
 import { encumber_msg } from './pickup.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { finishHeroHelplessness, stopHeroOccupation } from './allmain.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');

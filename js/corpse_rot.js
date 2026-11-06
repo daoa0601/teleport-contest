@@ -10,7 +10,7 @@ import { hideHeroUnder } from './mon.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 import { corpseName } from './objnam.js';
 import { deleteObject } from './shk.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { monsterHidesUnder } from './mondata.js';
 export async function rotCorpse(corpse, state = game) {
     requireLiveGame(state);

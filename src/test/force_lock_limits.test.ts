@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CHEST, CLUB, DAGGER, OBJECT_NAMES, BOULDER, TOWEL } from '../js/object_data.js';
-import { stopHeroOccupation } from '../js/occupation.js';
+import { stopHeroOccupation } from '../js/allmain.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

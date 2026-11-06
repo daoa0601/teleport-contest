@@ -1,5 +1,5 @@
 // allmain.js — Main game loop.
-// C ref: allmain.c — newgame, moveloop, moveloop_core.
+// C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
 import type { ArmorCompletion } from './cmd.js';
 import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom } from './hack.js';
@@ -17,7 +17,7 @@ import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './s
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
 import { makeBlinded, makeStunned } from './potion.js';
-import { eatmdone, Finish_digestion, gethungry, unfaint, Hear_again } from './eat.js';
+import { eatmdone, Finish_digestion, gethungry, unfaint, Hear_again, eatfood } from './eat.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -73,7 +73,6 @@ import {
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
 import { loseHeroExperience } from './exper.js';
 import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction } from './monmove.js';
-import { stopHeroOccupation } from './occupation.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './wield.js';
 import { finishInventoryRemoval } from './invent.js';
@@ -700,6 +699,29 @@ function u_calc_moveamt(wtcap: number, state: PlayingGameState): void {
     state.u.umovement = Math.max(
         0, (state.u.umovement ?? 0) + moveAmount,
     );
+}
+
+// C allmain.c:stop_occupation().
+// Also C eat.c:maybe_finished_meal(): inlined as the eat-food branch that
+// finishes a completed meal before printing any stop message.
+export async function stopHeroOccupation(
+    state: GameState = game, publish: MessagePublisher = plineWithContinuation, { finishMeal = true } = {},
+) {
+    const occupation = state._occupation;
+    if (occupation) {
+        if (finishMeal && occupation.key === 'eat-food'
+            && (state.context.victual?.usedtime ?? 0) >= (state.context.victual?.reqtime ?? 0)) {
+            state._occupation = null;
+            await eatfood(occupation, state);
+        } else {
+            await publish(`You stop ${occupation.text}.`);
+        }
+        state._occupation = null;
+        state.context.botl = true;
+    }
+    if (occupation || (state.multi ?? 0) >= 0)
+        endVoluntaryMultiTurn(state);
+    cmdq_clear(CQ_CANNED, state);
 }
 
 // Part of C do_wear.c:Armor_on()/Armor_off(): the delayed don/doff

@@ -99,7 +99,7 @@ import { migrateMonsterOffLevel } from './dog.js';
 import { deleteEngravingAt } from './engrave.js';
 import { removeWornHeroItem, removeHeroEquipment } from './hero_equipment.js';
 import { pickingAt, maybeResetPick } from './lock.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
 import { deleteTrap, trapAt, trapName } from './trap.js';

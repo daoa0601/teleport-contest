@@ -36,7 +36,7 @@ import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType } from './do.js';
 import { erodeObject } from './trap.js';
 import { putHeroToSleep } from './timeout.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { promptYesNo } from './query.js';
 import { teleportHero, askTeleportDestination } from './teleport.js';
 import { rndcurse } from './throne.js';

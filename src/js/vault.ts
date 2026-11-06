@@ -27,7 +27,7 @@ import { containedGold, deleteObject } from './shk.js';
 import { reset_faint } from './eat.js';
 import { heroIsDeaf, heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './attrib.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsSilent } from './mondata.js';

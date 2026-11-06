@@ -92,7 +92,7 @@ import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands, heroFormHidesUnderObjects, body_part } from './polyself.js';
 import { createPoisonGasCloud } from './region.js';
 import { dryFountainAt } from './fountain.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './cmd.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
