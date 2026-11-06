@@ -15,7 +15,7 @@ import { game, requireGameLevel, requirePlayingGame, requireLiveGame } from './g
 import { doloot } from './pickup.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { feel_location, feel_newsym, newsym, canSeeMonster, glyphAt, canSpotMonster, map_invisible } from './display.js';
-import { promptDirection, readDirectionKey } from './cmd.js';
+import { promptDirection } from './cmd.js';
 import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { recordMappedOverviewState, surfaceName } from './dungeon.js';
@@ -434,7 +434,7 @@ export async function doopen(x = 0, y = 0) {
         const inPitWithContainer = game.u.utrap && game.u.utraptype === TT_PIT
             && boxes.some(object => isContainer(object));
         const direction = await promptDirection(inPitWithContainer
-            ? (_message, retry) => readDirectionKey('Open where? [.>] ', retry) : readDirectionKey);
+            ? 'Open where? [.>] ' : 'In what direction? ');
         if (!direction) {
             await pline('Never mind.');
             game.context.move = 0;

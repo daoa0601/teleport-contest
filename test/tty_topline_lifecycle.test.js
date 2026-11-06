@@ -10,7 +10,7 @@ import { docrt, flush_screen } from '../js/display.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
-import { readDirectionKey } from '../js/cmd.js';
+import { promptDirection } from '../js/cmd.js';
 import { DART } from '../js/object_data.js';
 import { NO_MINVENT } from '../js/const.js';
 import { finishMonsterAttackDeath } from '../js/end.js';
@@ -156,22 +156,34 @@ void test('dismissing invalid throw-direction help returns without paging the an
     assert.ok(game.inventory.includes(dart));
     assert.equal(game.context.move, 0);
 });
-for (const key of ['h', '\x1b', '+']) {
+for (const key of ['h', '\x1b']) {
     void test(`a direction query clears its message window before returning ${JSON.stringify(key)}`, async () => {
         await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
-        const answer = readDirectionKey();
+        const answer = promptDirection();
         await input.waitUntilBlocked();
         assert.equal(topline(), 'In what direction?');
         input.feed(key);
-        assert.equal(await answer, key.charCodeAt(0));
+        assert.equal((await answer)?.key ?? null, key === 'h' ? 'h' : null);
         assert.equal(topline(), '');
         await flush_screen(1);
         assert.equal(topline(), '');
         assert.equal(await flushPendingTopline(), null);
     });
 }
+void test('an invalid direction key leaves the query cleared and files the complaint', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.flags.cmdassist = false;
+    const input = resetInputState();
+    const answer = promptDirection();
+    await input.waitUntilBlocked();
+    input.feed('+');
+    assert.equal(await answer, null);
+    assert.equal(await flushPendingTopline(), 'What a strange direction!');
+    assert.equal(topline(), 'What a strange direction!');
+});
 void test('a successful ordinary throw leaves no answered direction query on the screen', async () => {
     await freshObjectRoom({ left: 1, right: 30 });
     requirePlayingGame(game);

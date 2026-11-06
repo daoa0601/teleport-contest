@@ -4,7 +4,7 @@
 import { WEAPON_CLASS } from './objclass.js';
 import { hallucinatedDeityName } from './pray.js';
 import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd, NECK, HEAD, HAIR, BLOOD } from './const.js';
-import { isok, commandResultCancelled, promptDirection, readDirectionKey } from './cmd.js';
+import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { canSeeMonster, canSpotMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline, publishHeardMessage } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
@@ -268,7 +268,7 @@ export async function dochat() {
         game.context.move = 1;
         return;
     }
-    const direction = await promptDirection((_message, retry) => readDirectionKey('Talk to whom? (in what direction) ', retry));
+    const direction = await promptDirection('Talk to whom? (in what direction) ');
     if (!direction) {
         commandResultCancelled(); // sounds.c:dochat() returns ECMD_CANCEL.
         return;
