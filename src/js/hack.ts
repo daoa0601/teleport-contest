@@ -1705,7 +1705,11 @@ export interface RunContinuation {
     tookTime: boolean;
 }
 
-// C allmain.c:moveloop_core() repeats hack.c:lookaround() and domove().
+// Part of C allmain.c:moveloop_core(): the `gm.multi > 0 && context.mv`
+// branch between key reads — lookaround() then the counted end_running()
+// and domove() step. Kept in hack.ts beside the run-state helpers it reads,
+// because the port resumes a pending run from its turn driver on a later
+// keystroke instead of looping synchronously like C's moveloop_core().
 export async function continueRun(g: GameState = game): Promise<RunContinuation> {
     const state = g._runState;
     if (state?.mode === 8) {

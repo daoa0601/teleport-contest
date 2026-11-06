@@ -1,22 +1,19 @@
 file	function	callee	arguments	class
 src/js/do_wear.ts	applyAmuletOnEffects	rnd	"[""98""]"	constant
-src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""100""]"	constant
-src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""80 - (sessionIsNight(game.datetime) ? 20 : 0)""]"	constant
+src/js/allmain.ts	moveloop_core	rn2	"[""100""]"	constant
+src/js/allmain.ts	moveloop_core	rn2	"[""80 - (sessionIsNight(g.datetime) ? 20 : 0)""]"	constant
 src/js/timeout.ts	nhTimeout	rnd	"[""100""]"	constant
 src/js/timeout.ts	nhTimeout	rnd	"[""100""]"	constant
 src/js/timeout.ts	nhTimeout	rnd	"[""20""]"	constant
-src/js/allmain.ts	advanceWorldTurn	rn2	"[""200""]"	constant
+src/js/allmain.ts	moveloop_core	rn2	"[""200""]"	constant
 src/js/timeout.ts	nhTimeout	rnd	"[""20""]"	constant
-src/js/allmain.ts	finishHeroTookTime	rn2	"[""31""]"	constant
-src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""3""]"	constant
-src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""3""]"	constant
-src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""generationRate""]"	constant
-src/js/allmain.ts	finishInitialTurnMaintenanceAfterRegions	rn2	"[""upper""]"	invariant
-src/js/allmain.ts	finishInitialTurnMaintenanceRng	rn2	"[""200""]"	constant
-src/js/allmain.ts	finishInitialTurnMaintenanceRng	rn2	"[""40 + currentAttribute(A_DEX) * 3""]"	invariant
-src/js/allmain.ts	finishInitialTurnMaintenanceRng	rn2	"[""6""]"	constant
-src/js/allmain.ts	finishInitialTurnMaintenanceRng	rnd	"[""3""]"	constant
-src/js/allmain.ts	finishInitialTurnMaintenanceRng	rnd	"[""4""]"	constant
+src/js/allmain.ts	moveloop_core	rn2	"[""31""]"	constant
+src/js/allmain.ts	u_calc_moveamt	rn2	"[""3""]"	constant
+src/js/allmain.ts	u_calc_moveamt	rn2	"[""3""]"	constant
+src/js/allmain.ts	maybe_generate_rnd_mon	rn2	"[""generationRate""]"	constant
+src/js/allmain.ts	regen_pw	rn2	"[""upper""]"	invariant
+src/js/allmain.ts	moveloop_core	rn2	"[""40 + currentAttribute(A_DEX) * 3""]"	invariant
+src/js/allmain.ts	moveloop_core	rnd	"[""3""]"	constant
 src/js/allmain.ts	moveloopPreamble	rnd	"[""30""]"	constant
 src/js/allmain.ts	moveloopPreamble	rnd	"[""9000""]"	constant
 src/js/monmove.ts	presentMonsterAction	rn2	"[""5""]"	constant
@@ -28,7 +25,7 @@ src/js/mcastu.ts	mcastFirePillar	d	"[""8"", ""6""]"	constant
 src/js/mcastu.ts	mcastGeyser	d	"[""8"", ""6""]"	constant
 src/js/mcastu.ts	mcastLightning	d	"[""8"", ""6""]"	constant
 src/js/mcastu.ts	mcastLightning	rnd	"[""100""]"	constant
-src/js/allmain.ts	rollHeroTeleportitis	rn2	"[""85""]"	constant
+src/js/allmain.ts	moveloop_core	rn2	"[""85""]"	constant
 src/js/sounds.ts	dosounds	rn2	"[""2""]"	constant
 src/js/sounds.ts	dosounds	rn2	"[""2""]"	constant
 src/js/sounds.ts	dosounds	rn2	"[""2""]"	constant
