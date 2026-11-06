@@ -71,7 +71,7 @@ import type { MessagePublisher } from './pline.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind, LevelTimer } from './object_types.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
 import { eating_dangerous_corpse, Popeye, morehungry, vomit } from './eat.js';
-import { removeWornHeroItem } from './hero_equipment.js';
+import { removeWornHeroItem } from './steal.js';
 import {
     captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification,
 } from './trap.js';

@@ -18,7 +18,7 @@ import { flushPendingTopline } from '../js/topl.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { LEATHER_CLOAK, OBJECT_NAMES } from '../js/object_data.js';
-import { removeWornHeroItem } from '../js/hero_equipment.js';
+import { removeWornHeroItem } from '../js/steal.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

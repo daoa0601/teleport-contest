@@ -67,7 +67,7 @@ import {
     releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster,
     revealMonsterAppearance, wakeMonstersNearWithMessages,
 } from './mon.js';
-import { removeWornHeroItem } from './hero_equipment.js';
+import { removeWornHeroItem } from './steal.js';
 import { holdAnotherObject } from './invent.js';
 import { staggerVerb } from './dothrow.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';

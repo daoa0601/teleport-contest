@@ -32,7 +32,7 @@ import {
     pair_of, isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo,
     isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition,
 } from './object_properties.js';
-import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn } from './worn.js';
+import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn, removeHeroEquipment } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
@@ -63,7 +63,6 @@ import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, GETOB
 import type { GameFlags } from './flags.js';
 import { MONSTER_NAME } from './monster_data.js';
 import type { SpellCategory } from './data_types.js';
-import { removeHeroEquipment } from './hero_equipment.js';
 import { levelPrizeKind } from './level_prize.js';
 import { recordLiteracy } from './literacy.js';
 import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';

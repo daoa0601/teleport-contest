@@ -74,12 +74,11 @@ import { inventoryItemDescription, delobj, currency, stack_object } from './inve
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
 import { scatterFloorObjects } from './scatter.js';
 import { objectMaterial } from './o_init.js';
-import { addObjectToMonsterInventory } from './steal.js';
+import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { hiddenGold } from './vault.js';
 import { finishMonsterEating } from './dogmove.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { removeWornHeroItem } from './hero_equipment.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { ceilingName, dungeonDepth, surfaceName } from './dungeon.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';

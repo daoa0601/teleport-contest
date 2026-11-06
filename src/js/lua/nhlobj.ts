@@ -14,7 +14,7 @@ import { isok } from '../cmd.js';
 import { buryObject } from '../dig.js';
 import { newsym } from '../display.js';
 import { game } from '../gstate.js';
-import { removeHeroEquipment } from '../hero_equipment.js';
+import { removeHeroEquipment } from '../worn.js';
 import { finishInventoryRemoval } from '../invent.js';
 import { cleanupObjectBurn } from '../timeout.js';
 import { mkobj, mksobj, addObjectToContainer, unlinkObject } from '../mkobj.js';

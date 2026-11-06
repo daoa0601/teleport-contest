@@ -73,7 +73,6 @@ import {
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
 import { loseHeroExperience } from './exper.js';
 import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction } from './monmove.js';
-import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './wield.js';
 import { finishInventoryRemoval } from './invent.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -97,7 +96,7 @@ import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { addObjectToMonsterInventory, finishDelayedArmorTheft } from './steal.js';
+import { addObjectToMonsterInventory, finishDelayedArmorTheft, removeWornHeroItem } from './steal.js';
 import { aligns, nativeRoleAt } from './role.js';
 import { initializeSourceStartup } from './startup.js';
 import { fumaroles } from './mkmaze.js';

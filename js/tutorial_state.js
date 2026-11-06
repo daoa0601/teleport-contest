@@ -4,7 +4,7 @@ import { impossible } from './diagnostics.js';
 import { plineWithContinuation } from './pline.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { game } from './gstate.js';
-import { removeHeroEquipment } from './hero_equipment.js';
+import { removeHeroEquipment } from './worn.js';
 import { prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './invent.js';
 import { deleteObject } from './shk.js';
 import { syncBlindness } from './senses.js';

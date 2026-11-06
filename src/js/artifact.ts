@@ -85,7 +85,7 @@ import { AT_MAGC } from './monster_attack_types.js';
 import { dismountHero, monsterSaddle } from './steed.js';
 import { dropInventoryObjectAtHero } from './do.js';
 import { hitFloorWithObject } from './dothrow.js';
-import { removeWornHeroItem } from './hero_equipment.js';
+import { removeWornHeroItem } from './steal.js';
 import { depth, surfaceName } from './dungeon.js';
 import { gotoLevel } from './do.js';
 import { levelTeleport, teleportMonsterByHero } from './teleport.js';
