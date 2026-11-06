@@ -21,6 +21,8 @@ import { showTextWindow } from './windows.js';
 import { flushPendingTopline } from './topl.js';
 import { ORACLE_TEXT } from './oracle_data.js';
 import { heroGoldAmount } from './hack.js';
+import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { monsterHasProperName } from './mondata.js';
 
 // C rumors.c:doconsult(). Refusals are free; payment commits a turn even
 // when the hero can afford only the deliberately unhelpful major oracle.
@@ -253,4 +255,31 @@ function paddedLine(line: string, lengthWithNewline: number): string {
 
 function decimal(value: number): string {
     return String(value).padStart(6, '0');
+}
+
+// C rumors.c:init_CapMons()
+// Native rumors.c:CapitalMon() includes capitalized species names and titles,
+// but excludes individual names in both the real and hallucinatory tables.
+// Read trait owners after module initialization; their module also uses
+// objnam, which calls back into this table through CapitalMon() below.
+export function capitalizedMonsterTitles(): string[] {
+    return [
+        ...MONSTER_NAME.flatMap((name, species) => {
+            const unique = !!((MONSTER_GENO[species] ?? 0) & 0x1000);
+            const personal = monsterHasProperName(species);
+            if (unique && (personal || name === 'high cleric' || name === 'long worm tail')) return [];
+            return [name, monsterTypeName(species), monsterTypeName(species, true)];
+        }),
+        ...BOGUS_MONSTERS.flatMap(name => {
+            const code = name.charAt(0);
+            if (code && '-+='.includes(code)) return [];
+            return ['_', '|'].includes(code) ? [name.slice(1)] : [name];
+        }),
+    ].filter(name => /^[A-Z]/u.test(name));
+}
+
+// C rumors.c:CapitalMon().
+export function capitalizedMonsterTitle(name: string): boolean {
+    return capitalizedMonsterTitles().some(title => name.startsWith(title)
+        && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));
 }

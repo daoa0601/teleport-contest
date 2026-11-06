@@ -8,7 +8,7 @@ import {
     EXPENSIVE_CAMERA, MIRROR, BAG_OF_HOLDING, BAG_OF_TRICKS, APPLE, BANANA, DILITHIUM_CRYSTAL,
     EUCALYPTUS_LEAF, LUCKSTONE, ORANGE, PEAR,
 } from './object_data.js';
-import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole, FOOT, LEG } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, NON_PM, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole, FOOT, LEG } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { rn1, rnd, rn2, rnl } from './rng.js';
 import { canSeeMonster, canSpotMonster, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
@@ -29,7 +29,7 @@ import {
 import { applyHeroContactPassive, applyCaitiffPenalty, prepareAppliedWeaponAttack } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { deleteEngravingAt, wipeHeroEngraving, disturbGrave } from './engrave.js';
-import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName, nameOrc } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { useHeroSkill } from './weapon.js';
@@ -52,7 +52,7 @@ import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { canFallThrough } from './mklev.js';
 import { stairwayAt, stairway_find_from } from './stairs.js';
-import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META, MONSTER_FLAGS2 } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './region.js';
@@ -1856,5 +1856,38 @@ export async function deliverMigratingObjects(
         delivered++;
     }
     return delivered;
+}
+
+const DELIVER_SPECIES = 0x21fe; // undead, were, human, elf, dwarf, gnome, orc, demon, giant
+const M2_ORC = 0x80;
+
+// C dokick.c:deliver_obj_to_mon()
+// Migrated MIGR_TO_SPECIES booty from dog.c is
+// handed to the first matching monster that is created or arrives.  The
+// species flags ride the object's overloaded owornmask/corpsenm fields,
+// which is why the food filters above exclude them.
+export async function deliverOrcRaidLoot(monster: Monster, state: GameState, all = false): Promise<void> {
+    for (const object of [...(state.migratingObjects ?? [])]) {
+        const migration = object.migration;
+        if (!migration || !(migration.arrival & MIGR_TO_SPECIES)
+            || migration.speciesFlags === undefined || migration.speciesFlags === NON_PM
+            || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & DELIVER_SPECIES) !== migration.speciesFlags) continue;
+        const index = state.migratingObjects?.indexOf(object) ?? -1;
+        if (index >= 0) state.migratingObjects?.splice(index, 1);
+        object.where = 'free';
+        object.owornmask = 0;
+        object.ox = object.oy = 0;
+        if ((migration.speciesFlags & M2_ORC) && object.oextra?.oname) {
+            if (!monster.name) {
+                const inMines = state.u.uz?.dnum === state.mines_dnum;
+                if (inMines || rn2(2) === 0) nameOrc(monster, inMines ? object.oextra.oname : null, ' the Fence');
+            }
+            delete object.oextra.oname;
+        }
+        object.corpsenm = NON_PM;
+        delete object.migration;
+        await addObjectToMonsterInventory(monster, object, state);
+        if (!all) break;
+    }
 }
 

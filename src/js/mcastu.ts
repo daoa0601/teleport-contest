@@ -37,13 +37,13 @@ import type { MonsterAttack } from './data_types.js';
 import type { Monster } from './monster_types.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { monsterName as canonicalMonsterName, randomBogusMonsterName } from './do_name.js';
-import { makemonNear, summonNastyMonsters } from './mklev.js';
+import { makemonNear } from './mklev.js';
 import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { makemonAt, mkclassAligned, setMonsterMalign } from './makemon.js';
 import { enexto } from './teleport.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { cansee, couldsee } from './vision.js';
-import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters } from './wizard.js';
+import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters, summonNastyMonsters } from './wizard.js';
 import { msummon } from './minion.js';
 
 import { dist2 } from './hacklib.js';

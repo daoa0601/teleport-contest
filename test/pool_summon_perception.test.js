@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { msummon, summonMinion } from '../js/minion.js';
-import { summonNastyMonsters } from '../js/mklev.js';
+import { summonNastyMonsters } from '../js/wizard.js';
 void test('a demon summon knows the hero position at birth', async () => {
     await freshObjectRoom();
     const devil = await createMonsterAt('bone devil', 13, 10, NO_MINVENT);

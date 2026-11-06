@@ -30,7 +30,7 @@ import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
 import { mksobj, blessObjectState } from './mkobj.js';
 import { selectHandToHandWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './worn.js';
-import { finishSpecialRoamer } from './sp_lev.js';
+import { finishSpecialRoamer } from './priest.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { is_lord, is_minion, monsterIsDemon, is_ndemon, is_dlord, is_dprince, } from './mondata.js';
 const S_DEMON = 56;

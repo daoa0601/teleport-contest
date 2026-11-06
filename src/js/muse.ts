@@ -80,9 +80,10 @@ import { thawObject } from './pickup.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { canLetGo, tryCallObjectType, dropObjectAtHero } from './do.js';
 import { finishInventoryRemoval, inventoryItemDescription } from './invent.js';
-import { changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, healMonster, maybeUnhideAt, paralyzeMonster, removeMonsterFromGame, wakeMonster, monsterCanCarryObject, revealMonsterAppearance, presentMonsterGrowth,
+import { changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, healMonster, maybeUnhideAt, removeMonsterFromGame, wakeMonster, monsterCanCarryObject, revealMonsterAppearance, presentMonsterGrowth,
     finishHeroMonsterKillOutcome,
 } from './mon.js';
+import { paralyzeMonster } from './mhitm.js';
 import { advanceMonsterWormBody } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon.js';

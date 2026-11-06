@@ -22,6 +22,7 @@ import { carriedObjectOwner } from './shk.js';
 import { getObjectLocation } from './zap.js';
 import { placeObjectSynchronously, remove_object } from './mkobj.js';
 import { roomForRoomno } from './hack.js';
+import { snuffLitObject } from './apply.js';
 import { monsterDigests, monsterIsWhirly } from './mondata.js';
 export const CANDLE_TYPES = new Set([
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
@@ -30,7 +31,6 @@ export const TIMED_LIGHT_TYPES = new Set([
     BRASS_LANTERN, OIL_LAMP, POT_OIL, ...CANDLE_TYPES,
 ]);
 export const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
-const PM_GREMLIN = 40;
 export function objectShedsLight(object) {
     return !!object?.lamplit
         && (LIGHT_TYPES.has(object.otyp) || artifactEmitsLight(object));
@@ -54,24 +54,6 @@ export function objectLightRadius(object, state = game) {
         return Math.min(15, Math.floor(Math.sqrt(object.quan ?? object.quantity ?? 1)) + 1);
     return LIGHT_TYPES.has(object.otyp) ? 3 : 0;
 }
-// C mkobj.c:maybe_adjust_light(). The active radius follows the blessing state.
-export async function adjustObjectLightAfterBlessing(object, oldRadius, state = game) {
-    const delta = objectLightRadius(object, state) - oldRadius;
-    if (!delta)
-        return;
-    state.vision_full_recalc = 1;
-    if (heroIsBlind(state))
-        return;
-    const location = getObjectLocation(object, state);
-    if (!location)
-        return;
-    const justGlowed = state._lastPlineKind === PLNMSG_OBJ_GLOWS;
-    if (!justGlowed && object.where !== 'inventory' && !cansee(location.x, location.y))
-        return;
-    const subject = justGlowed ? (object.quan === 1 ? 'It' : 'They') : ownedObjectName(object, state);
-    const verb = objectNameIsPlural(object, state) ? 'shine' : 'shines';
-    await plineWithContinuation(`${subject} ${verb} ${Math.abs(delta) > 1 ? 'much ' : ''}${delta > 0 ? 'brighter' : 'less brightly'}.`);
-}
 export function equipmentLightDescription(object, state = game) {
     return ['strangely', 'dimly', 'brightly', 'brilliantly', 'radiantly'][objectLightRadius(object, state)] || 'strangely';
 }
@@ -86,37 +68,6 @@ export async function lightWieldedArtifact(object, state = game, publish = pline
     beginObjectBurn(object, state);
     if (!heroIsBlind(state))
         await publish(equipmentLightMessage(object, true, state));
-}
-function swallowedLightMessage() {
-    const swallower = game.u?.ustuck;
-    if (!swallower)
-        return null;
-    const subject = monsterName(swallower, { capitalized: true });
-    if (monsterDigests(swallower))
-        return `${possessiveName(subject)} stomach is lit.`;
-    return monsterIsWhirly(swallower)
-        ? `${subject} shines briefly.`
-        : `${subject} glistens.`;
-}
-async function roomEffectCells(radius, lit) {
-    if (!Is_rogue_level(game.u?.uz)) {
-        // Sunsword illuminates the hero's spot directly; do_clear_area
-        // rejects radius zero in both the native source and the port.
-        if (radius === 0)
-            return [{ x: game.u.ux, y: game.u.uy }];
-        return await clearAreaCells(game.u.ux, game.u.uy, radius);
-    }
-    const roomno = game.level?.at?.(game.u.ux, game.u.uy)?.roomno;
-    const room = roomForRoomno(game.level, roomno ?? 0);
-    if (!room)
-        return [];
-    const cells = [];
-    for (let x = room.lx - 1; x <= room.hx + 1; x++) {
-        for (let y = room.ly - 1; y <= room.hy + 1; y++)
-            cells.push({ x, y });
-    }
-    room.rlit = lit ? 1 : 0;
-    return cells;
 }
 function snuffOrdinaryLight(object) {
     if (!object?.lamplit || !LIGHT_TYPES.has(object.otyp))
@@ -180,45 +131,10 @@ export function restoreSavedLightSources(state = game) {
     restoreLightSourceBatch(objectsInTimerGraph(state).filter(lightObjectIsGlobal), state);
     restoreLevelLightSources(state);
 }
-async function affectCarriedLights(worsen) {
-    let stillLit = 0;
-    for (const object of [...game.inventory]) {
-        if (!object.lamplit)
-            continue;
-        if (artifactEmitsLight(object))
-            await impactArtifactLight(object, worsen);
-        else if (worsen)
-            await snuffLitObject(object);
-        if (object.lamplit)
-            stillLit++;
-    }
-    return stillLit;
-}
-// C apply.c:snuff_lit()/snuff_candle(). Callers keep the object in its
-// native ownership phase: in_container() has already removed it from inventory.
-export async function snuffLitObject(object, state = game, publish = plineWithContinuation) {
-    if (!object.lamplit || !LIGHT_TYPES.has(object.otyp))
-        return false;
-    const location = getObjectLocation(object, state);
-    const visible = object.where === 'minvent'
-        ? !!location && cansee(location.x, location.y) : !heroIsBlind(state);
-    if (visible) {
-        if (CANDLE_TYPES.has(object.otyp)) {
-            const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
-            const many = candelabrum ? object.spe > 1 : object.quan > 1;
-            await publish(`${carriedObjectOwner(object, state)} ${candelabrum ? "candelabrum's " : ''}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
-        }
-        else {
-            await publish(`${ownedObjectName(object, state)} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out!`);
-        }
-    }
-    endObjectBurn(object, state);
-    return true;
-}
 // Part of C mhitm.c:gulpmm(): the engulfed inventory light pass, shared with uhitm.c:gulpum().
 // The engulf loops at mhitm.c:868 and uhitm.c:4985 inline this pass: every
 // light a swallowed actor carries is snuffed with apply.c:snuff_lit()
-// semantics (snuffLitObject above is its port), the carrier's square
+// semantics (apply.ts:snuffLitObject is its port), the carrier's square
 // deciding visibility.
 export async function snuffMonsterInventoryLights(defender, state, publish) {
     for (const object of defender.minvent || defender.inventory || []) {
@@ -266,73 +182,6 @@ export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
         && !canSpotMonster(monster)) {
         await map_invisible(monster.mx, monster.my);
     }
-}
-// C read.c:litroom()
-// Also C read.c:set_lit(): inlined as the per-cell lit flag write and the
-// gremlin collection below.
-export async function lightRoom(lit, { radius = 5, source, finishMonsterKill } = {}) {
-    const blind = heroIsBlind();
-    const swallowed = !!game.u?.uswallow;
-    const noEffect = swallowed || game.underwater || game.u?.uinwater
-        || Is_waterlevel(game.u?.uz);
-    if (!lit) {
-        const stillLit = await affectCarriedLights(true);
-        if (!blind) {
-            const message = stillLit
-                ? 'The ambient light seems dimmer.'
-                : swallowed
-                    ? 'It seems even darker in here than before.'
-                    : 'You are surrounded by darkness!';
-            await plineWithContinuation(message);
-        }
-    }
-    else {
-        if (source?.oclass === SCROLL_CLASS && source.blessed)
-            await affectCarriedLights(false);
-        if (swallowed) {
-            const message = swallowedLightMessage();
-            if (!blind && message)
-                await plineWithContinuation(message);
-        }
-        else if (!blind && (!Is_rogue_level(game.u?.uz)
-            || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
-            await plineWithContinuation(`A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`);
-        }
-    }
-    if (noEffect)
-        return false;
-    const ballAndChain = !lit && !blind ? await beginBallAndChainRedraw() : null;
-    const gremlins = [];
-    for (const { x, y } of await roomEffectCells(radius, lit)) {
-        const location = game.level?.at?.(x, y);
-        if (!location)
-            continue;
-        location.lit = !!lit;
-        if (!lit) {
-            snuffLightSource(x, y);
-            continue;
-        }
-        const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-            candidate.mx === x && candidate.my === y
-            && candidate.mnum === PM_GREMLIN
-            && !candidate.dead && (candidate.mhp ?? 1) > 0);
-        if (monster)
-            gremlins.push(monster);
-    }
-    if (!blind) {
-        await vision_recalc(2);
-        await finishBallAndChainMove(ballAndChain);
-    }
-    game.vision_full_recalc = 1;
-    if (lit && gremlins.length) {
-        await vision_recalc(0);
-        for (const gremlin of gremlins.reverse()) {
-            if (!finishMonsterKill)
-                throw new TypeError('lightRoom needs a monster death handler');
-            await lightHitsGremlin(gremlin, rnd(5), finishMonsterKill);
-        }
-    }
-    return true;
 }
 // C light.c:show_transient_light(). A thrown or kicked lit object lights its
 // flight; a null object is an camera flash lighting one square.

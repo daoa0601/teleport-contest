@@ -34,6 +34,7 @@ import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttr
 
 import { commandResultCancelled, commandResultFailed, setMulti, cmdq_peek } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
+import { restorationLeavesTrouble } from './apply.js';
 import {
     A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, ENL_GAMEINPROGRESS, EXPL_FIERY,
     FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT,
@@ -90,14 +91,14 @@ import { enlightenment } from './insight.js';
 import type { InventoryClassification } from './invent.js';
 import { gotoLevel, doup } from './do.js';
 import { floatingAbove } from './levitation_commands.js';
-import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
+import { objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';
 import type { CloneOptions } from './makemon.js';
 import type { MapLocation, Position, Stairway } from './map_types.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
-import { mkobj, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack } from './mkobj.js';
+import { mkobj, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack, adjustObjectLightAfterBlessing } from './mkobj.js';
 import type { MonsterFormChange, MonsterSelfTouchResult } from './mon.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
@@ -701,18 +702,6 @@ async function restoreAbility(source: GameObject, state: PlayingGameState) {
             if (!source.blessed) break;
         }
     }
-}
-
-// C apply.c:unfixable_trouble_count(FALSE). Restoration does not treat these
-// ailments or temporary attribute penalties; they only change its feedback.
-function restorationLeavesTrouble(state: PlayingGameState) {
-    const hero = state.u;
-    return heroIsPetrifying(state) || heroIsSliming(state) || heroIsStrangled(state)
-        || hero.atemp.a[A_DEX] < 0 && (hero._woundedLegTurns ?? 0) > 0
-        || hero.atemp.a[A_STR] < 0 && hero.uhs >= WEAK
-        || heroIsSick(state) || propertyIsActive('stunned', state)
-        || (hero.confusionTurns ?? 0) > 0 || heroIsHallucinating(state)
-        || heroIsVomiting(state) || heroIsDeaf(state);
 }
 
 // C potion.c:peffect_hallucination().

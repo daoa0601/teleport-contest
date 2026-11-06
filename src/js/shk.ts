@@ -69,7 +69,7 @@ import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { dropObjectAtHero } from './do.js';
 import {
     splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent,
-    nextObjectId, objectWeight, placeObject, remove_object,
+    nextObjectId, objectWeight, placeObject, remove_object, billDummyObject,
 } from './mkobj.js';
 import { recordAchievement } from './insight.js';
 import { getObjectLocation } from './zap.js';
@@ -664,7 +664,7 @@ export function splitObjectBill(original: GameObject, split: GameObject, state: 
 
 // C add_to_billobjs(): only bookkeeping survives; active use, bypass,
 // and live timers cannot follow an object onto the used-up bill chain.
-function retainBillObject(object: GameObject, state: GameState): void {
+export function retainBillObject(object: GameObject, state: GameState): void {
     if (object.where !== 'free')
         throw new Error('add_to_billobjs requires a free object');
     if (object.timed) stopObjectTimers(object, state);
@@ -723,63 +723,6 @@ const ALTERATION_VERBS = [
     'tarnish', 'crack',
 ];
 
-// C mkobj.c:bill_dummy_object()
-// Move the altered object onto the bill as a used-up dummy entry,
-// retaining the charge for the remaining quantity.
-export async function billDummyObject(object: GameObject, state: GameState = game): Promise<ShopTransaction | null> {
-    requireLiveGame(state);
-    requireShopGame(state);
-    let cost = 0;
-    if (object.unpaid) {
-        // C unpaid_cost(COST_SINGLEOBJ): scan current shop rooms for the
-        // per-unit charge, then remove from the first room's keeper below.
-        for (const roomno of state.u.ushops) {
-            const keeper = shopResident(roomno, state);
-            const billed = keeper && billForObject(object, state, keeper);
-            if (!billed) continue;
-            cost = billed.entry.price;
-            break;
-        }
-        removeObjectAndContentsFromBill(object, state,
-            { resident: currentShopResident(state) });
-    }
-    const dummy: GameObject = {
-        ...object,
-        contents: [],
-        oextra: object.oextra ? structuredClone(object.oextra) : null,
-        where: 'free',
-        unpaid: false,
-        owornmask: 0,
-        worn: false,
-        in_use: false,
-        objectTimers: [],
-        timed: 0,
-    };
-    if (dummy.oextra) delete dummy.oextra.omid;
-    dummy.o_id = nextObjectId(object, dummy, state);
-    if (objectIsCandle(dummy)) dummy.lamplit = 0;
-    const transaction = await addShopObjectToBill(dummy, state,
-        { ininv: false, silent: true });
-    if (transaction) {
-        if (!transaction.entry) throw new Error('A billed dummy object has no bill entry');
-        // C add_one_tobill(dummy=TRUE): used-up entries live on the bill.
-        transaction.entry.useup = true;
-        retainBillObject(dummy, state);
-        if (cost) {
-            // C alter_cost(dummy, -cost): visit keepers in monster order,
-            // including their riling, then replace the unit price.
-            for (const owner of visitBilledShopkeepers(state)) {
-                const billed = billForObject(dummy, state, owner);
-                if (!billed) continue;
-                billed.entry.price = cost;
-                break;
-            }
-        }
-    }
-    object.no_charge = object.where === 'floor' || object.where === 'contained';
-    object.unpaid = false;
-    return transaction;
-}
 
 // C shk.c:globby_bill_fixup(). Globs transfer prices and ownership before
 // absorption; ordinary stack quantity consolidation is not applicable.

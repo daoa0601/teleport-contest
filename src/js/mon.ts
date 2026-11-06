@@ -149,7 +149,7 @@ import { resolveMonsterGaze,
 } from './mhitu.js';
 import type { MonsterGazeOptions } from './mhitu.js';
 import { monsterCanBeLeashed, releaseMonsterLeash } from './apply.js';
-import { wormKnown } from './display.js';
+import { wormKnown } from './worm.js';
 import { controlMonsterTeleport, requireLevel } from './teleport.js';
 import { heroIsUnaware } from './senses.js';
 import { A_WIS, A_CHAOTIC, A_NONE, D_NODOOR, D_TRAPPED, W_AMUL, I_SPECIAL } from './const.js';
@@ -218,14 +218,6 @@ interface GenocideRemovalResult {
     reshaped: Monster[];
     sterileEggs?: GameObject[];
     heroDied?: boolean;
-}
-
-// C mhitm.c:paralyze_monst(). Paralysis also interrupts eating and waiting.
-export function paralyzeMonster(monster: Monster, turns: number): void {
-    monster.mcanmove = 0;
-    monster.mfrozen = Math.min(127, turns);
-    monster.meating = 0;
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
 }
 
 // C healmon(). Overhealing can increase the monster's maximum health.
@@ -1404,6 +1396,31 @@ export async function hideHeroUnder(state: GameState = game): Promise<boolean> {
     state.u.uundetected = undetected ? 1 : 0;
     if (undetected !== oldUndetected) await newsym(state.u.ux, state.u.uy);
     return undetected;
+}
+
+// C mon.c:hide_monst(), whose only native caller is restore.c:getlev():
+// restored hiders get their attempt before normal vision can expose their
+// spot. Only that square's vision bits are hidden, and hideunder sees
+// restored vision.
+export async function hideMonsterOnRestore(monster: Monster, state: GameState = game): Promise<void> {
+    requireLiveGame(state);
+
+    const hiderUnder = monsterHidesUnder(monster.mnum) || monsterIsEel(monster.mnum);
+    if (!monsterIsHider(monster.mnum) && !hiderUnder) return;
+    if (monster.mundetected || M_AP_TYPE(monster)) return;
+    const row = state.viz_array?.[monster.my];
+    const savedVision = row?.[monster.mx];
+    if (!row || savedVision === undefined)
+        throw new Error('Restoring monster hiding requires an initialized vision square.');
+    row[monster.mx] = savedVision & ~(IN_SIGHT | COULD_SEE);
+    try {
+        if (monsterIsHider(monster.mnum)) await attemptMonsterRestrap(monster, state);
+        if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC && !M_AP_TYPE(monster))
+            await attemptMonsterRestrap(monster, state);
+    } finally {
+        row[monster.mx] = savedVision;
+    }
+    if (hiderUnder) await hideMonsterUnder(monster, state);
 }
 
 export async function maybeUnhideAt(x: number, y: number, state: GameState = game): Promise<void> {

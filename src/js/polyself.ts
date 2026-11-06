@@ -77,7 +77,7 @@ import {
     hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp,
     hitMonsterWithThrownObject,
 } from './dothrow.js';
-import { mksobj, placeCreatedObject } from './mkobj.js';
+import { mksobj, placeCreatedObject, adjustObjectLightAfterBlessing as adjustObjectLight } from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
@@ -92,7 +92,7 @@ import { addShopDamage, deleteObject } from './shk.js';
 import { is_elven_armor, isFlimsyObject } from './object_properties.js';
 import { grantIntrinsicProperty, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
-import { adjustObjectLightAfterBlessing as adjustObjectLight, objectLightRadius } from './light.js';
+import { objectLightRadius } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
 import {
     nameToMonster, resolveMonsterClass, heroCanBeStrangled, your_race, monsterIsMindless, infravision, is_dwarf,

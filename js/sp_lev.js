@@ -59,7 +59,7 @@ import { make_engr_at } from './engrave.js';
 import { fix_wall_spines, setLevelTerrainLit, setLevelTerrainType, vibratingSquarePoint } from './mkmaze.js';
 import { makeroguerooms } from './extralev.js';
 import { stockShopRoom } from './shknam.js';
-import { specialShrinePriest } from './priest.js';
+import { finishSpecialRoamer, specialShrinePriest } from './priest.js';
 import { isLavaAt, isPoolAt, makeSpecialDrawbridge } from './dbridge.js';
 import { is_dwarf, is_gnome, is_male, is_shapeshifter, monsterHasStoneResistance, monsterIsFemale, monsterPolymorphsWhenStoned, setMonsterSpecies, monsterIsAmphibious, monsterIsFlyer, monsterIsSwimmer, monsterPassesWalls, monsterIsGolem, monsterIsPlayerMonster, monsterIsVampireShifter, nameToMonster } from './mondata.js';
 import { roomForIndex, roomsAt } from './hack.js';
@@ -729,21 +729,6 @@ export async function flip_level_rnd(allowed, extras = false) {
     if ((allowed & 2) && rn2(2))
         flp |= 2;
     await flip_level(flp, extras);
-}
-// C priest.c:mk_roamer()
-// The caller creates the monster; this is its aligned-minion initialization.
-export function finishSpecialRoamer(monster, alignment, peaceful) {
-    const coaligned = alignment === (game.u?.ualign?.type ?? A_NEUTRAL);
-    monster.ispriest = 0;
-    monster.isminion = 1;
-    const minion = ensureMinionData(monster);
-    minion.min_align = alignment;
-    minion.renegade = coaligned && !peaceful;
-    monster.maligntyp = alignment;
-    monster.mpeaceful = peaceful ? 1 : 0;
-    monster.msleeping = 0;
-    monster.mtrapseen = 0x7fffffff;
-    setMonsterMalign(monster);
 }
 export async function giveSpecialMonsterObject(context, monster, otyp, spe) {
     const point = await specialRandomLocation(context);
@@ -2151,7 +2136,7 @@ export async function lspo_monster(context, state, inventories, id, x, y) {
     return monster;
 }
 // C sp_lev.c:create_monster()
-// Also C priest.c:mk_roamer(): creation is inlined here; finishSpecialRoamer initializes it
+// Also C priest.c:mk_roamer(): creation is inlined here; priest.ts:finishSpecialRoamer initializes it
 // Resolve species and location, then apply the requested attributes.
 export async function create_monster(context, options) {
     const { point, monsterClass, monsterType } = options;
@@ -2479,6 +2464,15 @@ export function flipLuaRegions(active) {
         if (region.exclude)
             region.exclude = flipSpecialRegion(region.exclude) ?? region.exclude;
     }
+}
+// C sp_lev.c:floodfillchk_match_under(). The terrain travels with the
+// predicate instead of global state.
+export function floodfillchk_match_under(x, y, terrain) {
+    return game.level?.at?.(x, y)?.typ === terrain;
+}
+// C sp_lev.c:set_floodfillchk_match_under().
+export function set_floodfillchk_match_under(terrain) {
+    return (x, y) => floodfillchk_match_under(x, y, terrain);
 }
 // C sp_lev.c:floodfillchk_match_accessible(): ACCESSIBLE terrain plus
 // secret corridors and doors.

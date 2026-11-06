@@ -222,17 +222,6 @@ export async function createSteamCloud(
     return await createPoisonGasCloud(state, x, y, cloudSize, 0, random);
 }
 
-// C monmove.c:m_postmove_effect(), shared by monsters and the polymorphed
-// hero: the cloud is left on the square the mover has just departed.
-export async function leaveMovementCloud(
-    state: GameState, species: number, cancelled: boolean, x: number, y: number,
-    random = rn2,
-): Promise<void> {
-    if (species === PM_HEZROU) await createPoisonGasCloud(state, x, y, 1, 8, random);
-    else if (species === PM_STEAM_VORTEX && !cancelled)
-        await createPoisonGasCloud(state, x, y, 1, 0, random);
-}
-
 export async function createPoisonGasCloud(
     state: GameState | null | undefined,
     x: number, y: number, cloudSize: number, damage: number,
@@ -290,6 +279,26 @@ function removeRegionMonster(region: GasCloud, index: number): void {
     const lastId = region.monsterIds.pop();
     if (lastId !== undefined && index < region.monsterIds.length)
         region.monsterIds[index] = lastId;
+}
+
+// C region.c:reset_region_mids(): bones region membership is remapped to
+// the renewed monster ids; a missing id drops out by slot swap.
+export function resetRegionMonsterIds(
+    region: GasCloud, monsterIds: ReadonlyMap<number, number>,
+): void {
+    let index = 0;
+    while (index < region.monsterIds.length) {
+        const oldId = region.monsterIds[index];
+        const mapped = oldId !== undefined && Number.isInteger(oldId)
+            ? monsterIds.get(oldId) : undefined;
+        if (mapped !== undefined) {
+            region.monsterIds[index++] = mapped;
+        } else {
+            const last = region.monsterIds.pop();
+            if (last !== undefined && index < region.monsterIds.length)
+                region.monsterIds[index] = last;
+        }
+    }
 }
 
 export function visibleRegionAt(state: GameState, x: number, y: number): GasCloud | null {

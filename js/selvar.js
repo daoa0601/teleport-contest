@@ -1,9 +1,8 @@
 // selvar.js — map selections used by the Lua level API.
-// C refs: src/selvar.c and src/nhlsel.c.
-// sp_lev.c floodfillchk_match_under()/set_floodfillchk_match_under() also
-// live here: their only caller is specialSelectionFloodFill() (nhlsel.c
-// l_selection_flood) in this module, and sp_lev.ts already imports
-// SpecialSelection from here, so moving them would add an import cycle.
+// C refs: src/selvar.c and src/nhlsel.c. sp_lev.c's
+// floodfillchk_match_under()/set_floodfillchk_match_under() live in
+// sp_lev.ts; this module imports them for l_selection_flood() below
+// (the cycle is function-body-only).
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { newsym_force } from './display.js';
@@ -11,6 +10,7 @@ import { impossible } from './diagnostics.js';
 import { NethackLuaError } from './lua/errors.js';
 import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL } from './const.js';
 import { isok } from './cmd.js';
+import { set_floodfillchk_match_under } from './sp_lev.js';
 export const SEL_GRADIENT_RADIAL = 0;
 export const SEL_GRADIENT_SQUARE = 1;
 export function selection_new() {
@@ -656,14 +656,6 @@ export function specialSelectionOfTerrain(context, typ) {
             if (game.level?.at?.(context.xstart + x, context.ystart + y)?.typ === typ)
                 selection_setpoint(context.xstart + x, context.ystart + y, selection, 1);
     return new SpecialSelection(selection);
-}
-// C sp_lev.c:floodfillchk_match_under(). The terrain travels with the predicate instead of global state.
-function floodfillchk_match_under(x, y, terrain) {
-    return game.level?.at?.(x, y)?.typ === terrain;
-}
-// C sp_lev.c:set_floodfillchk_match_under().
-function set_floodfillchk_match_under(terrain) {
-    return (x, y) => floodfillchk_match_under(x, y, terrain);
 }
 // The Lua flood operation matches the starting square's terrain.
 export function specialSelectionFloodFill(context, x, y, diagonals = false) {

@@ -1,8 +1,9 @@
 // apply.js — Apply/use-tool command and the apply.c tool ports.
 // C ref: apply.c doapply(), dorub(), dojump(), do_break_wand(), use_trap(),
-// use_whip(), and the use_*() tool functions this file owns. The candle
-// snuff/splash/catch helpers stay in light.ts with the burning-object
-// owners: importing them here would cycle apply.ts <-> light.ts.
+// use_whip(), the use_*() tool functions, snuff_lit()/snuff_candle() and
+// unfixable_trouble_count(). The splash/catch helpers stay in light.ts with
+// the burning-object owners; the apply.ts <-> light.ts import cycle is
+// function-body-only.
 
 import {
     WEAPON_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS,
@@ -25,6 +26,7 @@ import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from '
 import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
 import {
     armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear, heroHasSlipperyHands,
+    heroIsStrangled,
 } from './do_wear.js';
 import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
 import { currentAttribute } from './attrib.js';
@@ -47,12 +49,13 @@ import {
 } from './dig.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, howMonsterSeen, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
 import type { GlyphMetadata } from './display.js';
-import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName } from './do_name.js';
 import {
     attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTimers, stopLevelTimer, stopObjectTimer,
 } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
+import { paralyzeMonster } from './mhitm.js';
 import { explode } from './explode.js';
 import { makeFamiliar } from './dog.js';
 import { figurinePlacementFailure } from './figurine.js';
@@ -62,8 +65,9 @@ import {
     inventoryItemDescription, chooseInventoryObject, getobj, addInventoryItem,
 } from './invent.js';
 import {
-    doBlindingRay, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap, hitFloorPileWithWand,
-    hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn, objectResistsDestruction, zappable,
+    doBlindingRay, getObjectLocation, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap,
+    hitFloorPileWithWand, hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn,
+    objectResistsDestruction, zappable,
 } from './zap.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
@@ -72,14 +76,14 @@ import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposT
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import {
-    setHeroGrip, paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
+    setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
     moveMonsterNextToHero,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
     isRider,
 } from './mon.js';
 import {
     makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands,
-    makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting,
+    makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting, heroIsSick, heroIsSliming,
 } from './potion.js';
 import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -98,7 +102,8 @@ import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { stack_object } from './invent.js';
 import type { InventoryClassification } from './invent.js';
-import { lightRoom, transformMagicLampToOilLamp } from './light.js';
+import { CANDLE_TYPES, LIGHT_TYPES, transformMagicLampToOilLamp } from './light.js';
+import { lightRoom } from './read.js';
 import {
     finishTeleportArrival, askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted,
     monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet,
@@ -109,8 +114,8 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
 import { canDigDown } from './mklev.js';
 import {
-    mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight,
-    isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object,
+    billDummyObject, mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject,
+    objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object,
 } from './mkobj.js';
 import {
     is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive,
@@ -132,7 +137,7 @@ import {
 import type { GameObject } from './object_types.js';
 import {
     corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName,
-    objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName,
+    objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName,
     simpleObjectTypeName, singularObjectName, withIndefiniteArticle,
 } from './objnam.js';
 import {
@@ -145,7 +150,7 @@ import { unpunishHero } from './read.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { mon_reflects } from './muse.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
-import { addShopDamage, billDummyObject, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
+import { addShopDamage, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
 import {
     ensureHeroSkills, uwepSkillType, dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon,
     unwieldMonsterWeapon,
@@ -153,7 +158,7 @@ import {
 import { castSpell, knownSpell } from './spell.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle, strikeSteed } from './steed.js';
-import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
+import { handlesPetrifyingCorpseBareHanded, heroIsPetrifying, petrifyFromCorpseContact } from './stoning.js';
 import { ceilingName, surfaceName } from './dungeon.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import type { DirectionSelection } from './cmd.js';
@@ -1311,6 +1316,34 @@ export async function useCandle(object: GameObject, { state = game }: { state?: 
     await useUpInventoryStack(object, state);
     candelabrum.owt = objectWeight(candelabrum);
     return result(remainder, state);
+}
+
+// Only message delivery is observed; display callbacks may return input status.
+type Publish = (message: string) => unknown;
+
+// C apply.c:snuff_lit()/snuff_candle(). Callers keep the object in its
+// native ownership phase: in_container() has already removed it from inventory.
+export async function snuffLitObject(
+    object: GameObject, state: GameState = game,
+    publish: Publish = plineWithContinuation,
+): Promise<boolean> {
+    if (!object.lamplit || !LIGHT_TYPES.has(object.otyp)) return false;
+    const location = getObjectLocation(object, state);
+    const visible = object.where === 'minvent'
+        ? !!location && cansee(location.x, location.y) : !heroIsBlind(state);
+    if (visible) {
+        if (CANDLE_TYPES.has(object.otyp)) {
+            const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
+            const many = candelabrum ? object.spe > 1 : object.quan > 1;
+            await publish(`${carriedObjectOwner(object, state)} ${
+                candelabrum ? "candelabrum's " : ''}candle${
+                many ? "s' flames are" : "'s flame is"} extinguished.`);
+        } else {
+            await publish(`${ownedObjectName(object, state)} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out!`);
+        }
+    }
+    endObjectBurn(object, state);
+    return true;
 }
 
 export async function lightCocktail(object: GameObject, { state = game }: { state?: GameState } = {}) {
@@ -3899,6 +3932,18 @@ export async function applyTool(
     // queues so a later ^A reports nothing to repeat.
     commandResultFailed();
     return null;
+}
+
+// C apply.c:unfixable_trouble_count(FALSE). Restoration does not treat these
+// ailments or temporary attribute penalties; they only change its feedback.
+export function restorationLeavesTrouble(state: PlayingGameState) {
+    const hero = state.u;
+    return heroIsPetrifying(state) || heroIsSliming(state) || heroIsStrangled(state)
+        || hero.atemp.a[A_DEX] < 0 && (hero._woundedLegTurns ?? 0) > 0
+        || hero.atemp.a[A_STR] < 0 && hero.uhs >= WEAK
+        || heroIsSick(state) || propertyIsActive('stunned', state)
+        || (hero.confusionTurns ?? 0) > 0 || heroIsHallucinating(state)
+        || heroIsVomiting(state) || heroIsDeaf(state);
 }
 
 const FADED_INK = [

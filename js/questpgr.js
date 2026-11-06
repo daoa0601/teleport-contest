@@ -12,6 +12,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
 import { heroIsBlind } from './senses.js';
+import { artifactByName } from './artifact.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { QUEST_LUA_SOURCE } from './quest_data.js';
@@ -152,6 +153,30 @@ export function questHomebase(g = game) {
 // C questpgr.c:intermed().
 export function questIntermed(g = game) {
     return g.urole?.intermediate ?? '';
+}
+// C questpgr.c:is_quest_artifact()
+export function isQuestArtifact(object, state = game) {
+    return !!object.oartifact
+        && object.oartifact === artifactByName(state.urole?.artifactName, state)?.id;
+}
+// C questpgr.c:find_qarti()
+// The caller walks the outer chain; this searches one object and its contents.
+export function objectContainsQuestArtifact(object, state) {
+    if (!object)
+        return false;
+    return isQuestArtifact(object, state)
+        || (object.contents ?? []).some(content => objectContainsQuestArtifact(content, state));
+}
+// C questpgr.c:find_quest_artifact()
+// The on_goal caller searches floor, monster inventory, and buried objects.
+export function levelContainsQuestArtifact(g = game) {
+    const level = g.level;
+    if ((level?.objects || []).flat(2).some(object => objectContainsQuestArtifact(object, g)))
+        return true;
+    if ((level?.buriedObjects || []).some(object => objectContainsQuestArtifact(object, g)))
+        return true;
+    return (level?.monsters || []).some(monster => !monster.dead && monster.mhp > 0 && (monster.minvent || [])
+        .some(object => objectContainsQuestArtifact(object, g)));
 }
 function alignmentName(alignment) {
     if (alignment === undefined)

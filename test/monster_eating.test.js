@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { M_AP_MONSTER } from '../js/const.js';
-import { paralyzeMonster } from '../js/mon.js';
+import { paralyzeMonster } from '../js/mhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

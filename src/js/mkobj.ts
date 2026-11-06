@@ -50,6 +50,7 @@ import {
     ALTAR, A_NONE, ICE, IRONBARS, In_quest, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE,
     MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE,
     CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND, LARGEST_INT,
+    PLNMSG_OBJ_GLOWS,
 } from './const.js';
 import { isok } from './cmd.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
@@ -60,13 +61,13 @@ import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './
 import { rndmonstAdj } from './makemon.js';
 import { learnObjectType, objectMaterial, objectProb } from './o_init.js';
 import { nameObjectFromTopten } from './topten.js';
-import { makePlural, objectName, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass, erosionMatters } from './objnam.js';
+import { makePlural, objectName, objectNameIsPlural, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass, erosionMatters } from './objnam.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { assignCandyWrapper } from './read.js';
 import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks, confersLuck } from './invent.js';
 import { setMoreLuck } from './attrib.js';
 import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously } from './do.js';
-import { addShopObjectToBill, costlyAdjacent, costlySpot, deleteObject, findObjectOwner, objectPriceAdjustment, reconcileObjectDeletionBill, settleGlobAbsorptionBilling, splitObjectBill } from './shk.js';
+import { addShopObjectToBill, billForObject, costlyAdjacent, costlySpot, currentShopResident, deleteObject, findObjectOwner, objectIsCandle, objectPriceAdjustment, reconcileObjectDeletionBill, removeObjectAndContentsFromBill, retainBillObject, settleGlobAbsorptionBilling, shopResident, splitObjectBill, visitBilledShopkeepers } from './shk.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nearCapacity } from './hack.js';
 import { encumber_msg } from './pickup.js';
@@ -78,7 +79,10 @@ import {
     formatHeardMessage, formatSeenMessage, plineWithContinuation, plineWithContinuation as pline,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
+import { objectLightRadius, objectShedsLight } from './light.js';
+import { getObjectLocation } from './zap.js';
+import { requireShopGame } from './shop_types.js';
+import type { ShopTransaction } from './shop_types.js';
 import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { dropCursedAlternateWeapon } from './wield.js';
@@ -1306,6 +1310,65 @@ export function replaceObject(
     object.ocarry = null;
     delete object.carrierMid;
 }
+
+// C mkobj.c:bill_dummy_object()
+// Move the altered object onto the bill as a used-up dummy entry,
+// retaining the charge for the remaining quantity.
+export async function billDummyObject(object: GameObject, state: GameState = game): Promise<ShopTransaction | null> {
+    requireLiveGame(state);
+    requireShopGame(state);
+    let cost = 0;
+    if (object.unpaid) {
+        // C unpaid_cost(COST_SINGLEOBJ): scan current shop rooms for the
+        // per-unit charge, then remove from the first room's keeper below.
+        for (const roomno of state.u.ushops) {
+            const keeper = shopResident(roomno, state);
+            const billed = keeper && billForObject(object, state, keeper);
+            if (!billed) continue;
+            cost = billed.entry.price;
+            break;
+        }
+        removeObjectAndContentsFromBill(object, state,
+            { resident: currentShopResident(state) });
+    }
+    const dummy: GameObject = {
+        ...object,
+        contents: [],
+        oextra: object.oextra ? structuredClone(object.oextra) : null,
+        where: 'free',
+        unpaid: false,
+        owornmask: 0,
+        worn: false,
+        in_use: false,
+        objectTimers: [],
+        timed: 0,
+    };
+    if (dummy.oextra) delete dummy.oextra.omid;
+    dummy.o_id = nextObjectId(object, dummy, state);
+    if (objectIsCandle(dummy)) dummy.lamplit = 0;
+    const transaction = await addShopObjectToBill(dummy, state,
+        { ininv: false, silent: true });
+    if (transaction) {
+        if (!transaction.entry) throw new Error('A billed dummy object has no bill entry');
+        // C add_one_tobill(dummy=TRUE): used-up entries live on the bill.
+        transaction.entry.useup = true;
+        retainBillObject(dummy, state);
+        if (cost) {
+            // C alter_cost(dummy, -cost): visit keepers in monster order,
+            // including their riling, then replace the unit price.
+            for (const owner of visitBilledShopkeepers(state)) {
+                const billed = billForObject(dummy, state, owner);
+                if (!billed) continue;
+                billed.entry.price = cost;
+                break;
+            }
+        }
+    }
+    object.no_charge = object.where === 'floor' || object.where === 'contained';
+    object.unpaid = false;
+    return transaction;
+}
+
 // C mkobj.c:dealloc_obj(). Billing, inventory release and meal cleanup
 // belong to callers; raw absorption must not perform obfree() bookkeeping.
 export function deallocateObject(object: GameObject, state: GameState = game): boolean {
@@ -2088,6 +2151,23 @@ export async function finishGlobTimer(
     event.finished = true;
     await encumber_msg(state, publish);
     return event;
+}
+
+// C mkobj.c:maybe_adjust_light(). The active radius follows the blessing state.
+export async function adjustObjectLightAfterBlessing(
+    object: GameObject, oldRadius: number, state: GameState = game,
+): Promise<void> {
+    const delta = objectLightRadius(object, state) - oldRadius;
+    if (!delta) return;
+    state.vision_full_recalc = 1;
+    if (heroIsBlind(state)) return;
+    const location = getObjectLocation(object, state);
+    if (!location) return;
+    const justGlowed = state._lastPlineKind === PLNMSG_OBJ_GLOWS;
+    if (!justGlowed && object.where !== 'inventory' && !cansee(location.x, location.y)) return;
+    const subject = justGlowed ? (object.quan === 1 ? 'It' : 'They') : ownedObjectName(object, state);
+    const verb = objectNameIsPlural(object, state) ? 'shine' : 'shines';
+    await plineWithContinuation(`${subject} ${verb} ${Math.abs(delta) > 1 ? 'much ' : ''}${delta > 0 ? 'brighter' : 'less brightly'}.`);
 }
 
 const TREE_FRUITS = [APPLE, ORANGE, PEAR, BANANA, EUCALYPTUS_LEAF];

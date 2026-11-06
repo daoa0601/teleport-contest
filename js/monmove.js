@@ -30,12 +30,12 @@ import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotio
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './zap.js';
 import { drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
-import { billDummyObject, costlySpot, afterShopkeeperMove, moveShopkeeper, shopkeeperInOwnShop, shopkeeperIsMuted, addShopDamage, rileShopkeeper, shopkeeperRepairsDamage } from './shk.js';
+import { costlySpot, afterShopkeeperMove, moveShopkeeper, shopkeeperInOwnShop, shopkeeperIsMuted, addShopDamage, rileShopkeeper, shopkeeperRepairsDamage } from './shk.js';
 import { monsterAlignmentType, inHeroSanctuary, priestIsInOwnTemple, movePriest } from './priest.js';
 import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.js';
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
 import { displayMessageWindow } from './topl.js';
-import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
+import { billDummyObject, splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
 import { dropMonsterObject } from './steal.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
@@ -50,7 +50,8 @@ import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fig
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { swingMonsterWeapon, advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero } from './mhitu.js';
+import { advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero } from './mhitu.js';
+import { swingMonsterWeapon } from './mhitm.js';
 import { isPick, isPolearm, is_cloak, is_gloves, is_shirt, is_launcher, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
 import { currentAttribute } from './attrib.js';
@@ -67,7 +68,7 @@ import { getTrack, hasTrack } from './track.js';
 import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween } from './worm.js';
 import { moveVaultGuard } from './vault.js';
-import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './region.js';
+import { createPoisonGasCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './region.js';
 import { demandDemonBribe } from './minion.js';
 import { setMonsterMalign } from './makemon.js';
 import { isQuantumBox } from './quantum_cat.js';
@@ -768,6 +769,16 @@ export async function heroEveryturnEffect(state = requireInitializedGame(), rand
     if ((state.u?.mtimedone ?? 0) <= 0 || state.u?.umonnum !== PM_FOG_CLOUD)
         return null;
     return await createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
+}
+const PM_STEAM_VORTEX = 110;
+const PM_HEZROU = 296;
+// C monmove.c:m_postmove_effect(), shared by monsters and the polymorphed
+// hero: the cloud is left on the square the mover has just departed.
+export async function leaveMovementCloud(state, species, cancelled, x, y, random = rn2) {
+    if (species === PM_HEZROU)
+        await createPoisonGasCloud(state, x, y, 1, 8, random);
+    else if (species === PM_STEAM_VORTEX && !cancelled)
+        await createPoisonGasCloud(state, x, y, 1, 0, random);
 }
 // C ref: monmove.c:m_avoid_kicked_loc().  dokick() retains its directed
 // target through the elapsed monster turn, so a cooperative monster which

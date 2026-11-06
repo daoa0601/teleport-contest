@@ -48,7 +48,7 @@ import {
     objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName,
     objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName,
     corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle,
-    bareArtifactOrPlainName, killerObjectName, definiteObjectAction, objectMonsterName, erosionMatters,
+    bareArtifactOrPlainName, killerObjectName, definiteObjectAction, erosionMatters,
 } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
@@ -66,7 +66,7 @@ import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormStic
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import {
     levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel, levelAtDepth,
-    depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel,
+    depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain,
 } from './dungeon.js';
 import {
     monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt,
@@ -82,14 +82,14 @@ import type {
 } from './mon.js';
 import {
     objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig,
-    billDummyObject, chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt,
+    chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt,
     makeAngryShopkeeper, deleteObjectContents,
 } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import {
     canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor, show_glyph_cell,
-    canOverwriteTerrain, updateLastSeenTerrain, transientObjectGlyph, feel_newsym, map_invisible, under_water,
+    canOverwriteTerrain, transientObjectGlyph, feel_newsym, map_invisible, under_water,
 } from './display.js';
 import type { DisplayGlyph } from './display.js';
 import {
@@ -136,7 +136,8 @@ import {
 import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
 import {
     displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName,
-    monsterName as perceivedMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName,
+    monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName,
+    randomColorName,
 } from './do_name.js';
 import { munstone } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, removeHeroEquipment } from './worn.js';
@@ -146,8 +147,8 @@ import {
 import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
 import {
-    mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable,
-    placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack,
+    billDummyObject, mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable,
+    objectIsRottable, placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack,
     updateIceObjectTimersAt,
 } from './mkobj.js';
 import {

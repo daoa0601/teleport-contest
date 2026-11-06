@@ -13,7 +13,7 @@ import {
 } from './objclass.js';
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
-import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, mkcorpstat, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, updateIceObjectTimersAt } from './mkobj.js';
+import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, mkcorpstat, set_corpsenm, rndmonnum, rndmonnumAdj, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, updateIceObjectTimersAt } from './mkobj.js';
 import { restoreMonsterInventoryOwnership } from './mon.js';
 import { oinit, objectMaterial } from './o_init.js';
 import type { GameObject, ObjectWhere } from './object_types.js';
@@ -34,7 +34,6 @@ import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } fro
 import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { pickNastyShape } from './wizard.js';
 import { restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies } from './restore.js';
 import { restoreLevelPetHistory } from './save.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -51,12 +50,12 @@ import { decodeBonesPayload } from './bones_validation.js';
 import type { BonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
-import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
+import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { init_rect, rnd_rect } from './rect.js';
-import { depth as depth_of_level, dungeonDepth, inducedAlignment, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot } from './dungeon.js';
+import { Is_botlevel, depth as depth_of_level, dungeonDepth, inducedAlignment, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot } from './dungeon.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, oc_level } from './object_data.js';
-import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, back_to_glyph, canOverwriteTerrain, set_wall_state } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -120,9 +119,6 @@ const PM_ARCHAEOLOGIST = 331;
 const PM_WIZARD = 343;
 export const PM_SALAMANDER = 329;
 export const S_MIMIC = 13;
-const S_ANGEL = 27;
-const S_DEMON = 56;
-const G_UNIQ_MASK = 0x1000;
 export const PM_BLACK_LIGHT = 119;
 export const PM_STALKER = 153;
 
@@ -271,133 +267,6 @@ export async function makemonNear(
     // teleport.c:enexto_core() tests every shuffled coordinate through
     // goodpos() for the requested species before makemon() owns construction.
     return makemon(mnum, pos.x, pos.y, flags, requestedByHero);
-}
-
-// C wizard.c:nasty()
-// Uses wizard.c:pick_nasty() for mcastu.c:mcast_summon_mons().
-// A monster-cast summon deliberately chooses an explicit high-difficulty
-// species, asks enexto() for a square around the caster's apparent hero
-// position, then runs the ordinary makemon() constructor.  The created
-// actors retain the normal constructor's messages and display updates.
-export async function summonNastyMonsters(
-    summoner: Monster | null,
-): Promise<{ count: number; created: Monster[]; deferredDemonSummon?: boolean }> {
-    const created: Monster[] = [];
-    const census = nastyMonsterCensus();
-    const flags = summoner ? MM_NOMSG : 0;
-    const inHell = !!game.dungeons?.[
-        game.u?.uz?.dnum ?? 0
-    ]?.flags?.hellish;
-
-    // wizard.c:nasty() occasionally delegates to demon.c:msummon().  The
-    // caller handles that different summoning path.
-    if (!rn2(10) && inHell) {
-        return {
-            count: 0,
-            created,
-            deferredDemonSummon: true,
-        };
-    }
-
-    const summonerClass = summoner ? MONSTER_SYMBOL[summoner.mnum] ?? 0 : 0;
-    let difficultyCap = summoner ? MONSTER_DIFFICULTY[summoner.mnum] ?? 0 : 0;
-    const casterAlignment = Math.sign(
-        summoner ? MONSTER_ALIGNMENT[summoner.mnum] ?? 0 : 0,
-    );
-    const outerLimit = (game.u?.ulevel ?? 1) > 3
-        ? Math.trunc((game.u?.ulevel ?? 1) / 3) : 1;
-    const outerCount = rnd(outerLimit);
-    const archLich = MONSTER_NAME.indexOf('arch-lich');
-    const archon = MONSTER_NAME.indexOf('Archon');
-    const lowerArchDifficulty = Math.min(
-        MONSTER_DIFFICULTY[archon] ?? 0,
-        MONSTER_DIFFICULTY[archLich] ?? 0,
-    );
-
-    for (let i = outerCount; i > 0 && created.length < 10; --i) {
-        for (let j = 0; j < 20; ++j) {
-            let makeindex = null;
-            let candidateClass = 0;
-            let tryLimit = 11;
-            do {
-                if (!--tryLimit) {
-                    makeindex = null;
-                    break;
-                }
-                makeindex = pickNastyShape(difficultyCap);
-                candidateClass = MONSTER_SYMBOL[makeindex] ?? 0;
-            } while (
-                (difficultyCap > 0
-                    && (MONSTER_DIFFICULTY[makeindex] ?? 0)
-                        >= difficultyCap
-                    && (MONSTER_ATTACKS[makeindex] || []).some(
-                        ([attackType]) => attackType === 255,
-                    ))
-                || (summonerClass === S_DEMON && candidateClass === S_ANGEL)
-                || (summonerClass === S_ANGEL && candidateClass === S_DEMON)
-            );
-            if (makeindex == null) continue;
-
-            const position = summoner ? enexto(makeindex,
-                summoner.mux ?? game.u.ux, summoner.muy ?? game.u.uy)
-                : { x: game.u.ux, y: game.u.uy };
-            if (!position) continue;
-            let monster = await makemon(makeindex, position.x, position.y, flags);
-            if (monster) {
-                monster.msleeping = 0;
-                monster.mpeaceful = 0;
-                monster.mtame = 0;
-                setMonsterMalign(monster);
-            } else {
-                monster = await makemon(null, position.x, position.y, flags);
-                if (monster) {
-                    const replacementClass = MONSTER_SYMBOL[monster.mnum] ?? 0;
-                    if ((difficultyCap > 0 && (MONSTER_DIFFICULTY[monster.mnum] ?? 0) >= difficultyCap
-                        && rn2(In_endgame(game.u.uz) ? 3 : 7)
-                        && (MONSTER_ATTACKS[monster.mnum] ?? []).some(([type]) => type === 255))
-                        || (summonerClass === S_DEMON && replacementClass === S_ANGEL)
-                        || (summonerClass === S_ANGEL && replacementClass === S_DEMON)) {
-                        await unmakeNastySubstitute(monster);
-                        monster = null;
-                    }
-                }
-            }
-            if (!monster) continue;
-
-            if (monster.mnum === archLich || monster.mnum === archon) {
-                if (!difficultyCap || difficultyCap > lowerArchDifficulty)
-                    difficultyCap = lowerArchDifficulty;
-            }
-            monster.mspec_used = rnd(4);
-            created.push(monster);
-            const monsterAlignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;
-            if (created.length >= 10
-                || monsterAlignment === 0
-                || Math.sign(monsterAlignment) === casterAlignment) {
-                break;
-            }
-        }
-    }
-
-    return { count: created.length ? nastyMonsterCensus() - census : 0, created };
-}
-
-function nastyMonsterCensus(): number {
-    return game.level?.monsters.filter(monster => !monster.dead && monster.mhp > 0
-        && !(monster.isgd && monster.mx === 0)).length ?? 0;
-}
-
-// C makemon.c:unmakemon(). Rejected substitutes undo their counted birth
-// and artifact creation before the ordinary non-death removal.
-async function unmakeNastySubstitute(monster: Monster): Promise<void> {
-    const vital = game.mvitals?.[monster.mnum];
-    if (vital) {
-        if (vital.born > 0 && vital.born < 255) vital.born--;
-        if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ_MASK) vital.mvflags &= ~G_EXTINCT;
-    }
-    monster.mhp = 0;
-    await discardMonsterInventory(monster, true);
-    await removeMonsterFromGame(monster);
 }
 
 // revive_corpse() reaches fill_pit() only after its visible or audible

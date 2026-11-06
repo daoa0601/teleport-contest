@@ -24,14 +24,14 @@ import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CL
 import { formatFeltMessage, formatHeardMessage, plineWithContinuation, set_msg_xy } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { displayMessageWindow } from './topl.js';
-import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
+import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import {
     monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
     monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage,
-    monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests,
+    is_minion, is_orc, likes_gold, monsterDigests,
     monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder,
     monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider,
     monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
@@ -44,7 +44,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blin
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, objectIsHardHelmet, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitValue } from './weapon.js';
-import { isPolearm, isMissileObject, isWeaponTool } from './object_properties.js';
+import { isMissileObject, isWeaponTool } from './object_properties.js';
 import type { WeaponView } from './object_properties.js';
 import {
     mhitm_adtyping, isHeroDeferredContactDamageType, mhitm_mgc_atk_negated,
@@ -57,7 +57,7 @@ import type { ArtifactDefenseQuery } from './artifact.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explode.js';
 import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
-import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, paralyzeMonster, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
+import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import type { MonsterDeathOptions, MonsterLiquidDeathContext, HeroMonsterKillOptions, ReleaseHeroOptions } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
@@ -82,6 +82,7 @@ import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
 import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
 import {
     attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker, contactIsProtected,
+    paralyzeMonster, swingMonsterWeapon,
 } from './mhitm.js';
 import { msummon } from './minion.js';
 import { isWereMonster, isHumanWereMonster, transformWereMonster, summonWerePack, counterWereSpecies } from './were.js';
@@ -107,7 +108,7 @@ import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
 import { promptYesNo } from './query.js';
 import { could_seduce } from './seduction_compatibility.js';
 import { randomMonsterRelocation, reportMonsterTeleportRestriction, teleds, enexto } from './teleport.js';
-import { advanceMonsterWormBody } from './worm.js';
+import { advanceMonsterWormBody, performWormTailAttacks } from './worm.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './worn.js';
 import { ceilingName } from './dungeon.js';
@@ -1041,26 +1042,6 @@ export async function performMonsterHeroAttack(
         heroDied: effects.heroDied || !!state.program_state.gameover,
     };
 }
-// C worm.c:wormhitu(). Visible segments are stored head-outward; native
-// wtails walks toward the head and excludes its hidden dummy segment.
-async function performWormTailAttacks(
-    worm: Monster, state: PlayingGameState,
-    options: { random: RandomBelow; rollDice: RollDice; rollOne: RollOne; calls: MonsterCallLog },
-): Promise<{ nativeResult: 0 | 1; heroDied: boolean }> {
-    const segments = worm.wormSegments;
-    if (!segments) throw new Error(`Worm ${worm.m_id} has no tail list.`);
-    for (let index = segments.length - 1; index >= 0; index--) {
-        const segment = segments[index];
-        if (!segment) throw new Error(`Worm ${worm.m_id} has no tail segment ${index}.`);
-        if (dist2(segment.x, segment.y, state.u.ux, state.u.uy) >= 3) continue;
-        // Keep the real head position: mattacku() still uses its range and
-        // apparent hero position, including after knockback or a passive.
-        const result = await performMonsterHeroAttack(worm, state, options);
-        if (result.nativeResult === 1 || result.heroDied) return result;
-    }
-    return { nativeResult: 0, heroDied: false };
-}
-
 // C hack.h:AC_VALUE().  Hero AC below zero is deliberately randomized each
 // time an attack transaction evaluates it; callers must retain the returned
 // threshold across later slots of that same mattacku() invocation.
@@ -3783,43 +3764,6 @@ export async function resolveMonsterSelfExplosion(monster: Monster, attack: Mons
     }
     await wakeMonstersNearWithMessages(monster.mx, monster.my, 49, state, publish);
     return { mask: monster.mhp > 0 ? M_ATTK_MISS : M_ATTK_AGR_DIED, heroDied: false };
-}
-
-// ---------------------------------------------------------------------------
-// C mhitu.c:mswings() and mhitm.c:mswingsm().
-// ---------------------------------------------------------------------------
-
-interface WeaponSwingOptions {
-    publish?: MessagePublisher;
-    defender?: Monster | null;
-    random?: (limit: number) => number;
-}
-
-// C mhitm.c:mswingsm() when a defender is given, mhitu.c:mswings() otherwise.
-export async function swingMonsterWeapon(
-    monster: Monster,
-    weapon: GameObject,
-    state: GameState = game,
-    {
-        defender = null,
-        publish = plineWithContinuation,
-        random = rn2,
-    }: WeaponSwingOptions = {},
-): Promise<void> {
-    if (!state.flags.verbose || heroIsBlind(state)
-        || !monsterVisible(monster, state)) return;
-    const x = defender ? defender.mx : state.u.ux;
-    const y = defender ? defender.my : state.u.uy;
-    const bash = isPolearm(weapon)
-        && artifactById(weapon.oartifact, state)?.name !== 'Snickersnee'
-        && (monster.mx - x) ** 2 + (monster.my - y) ** 2 <= 2;
-    const subject = monsterName(monster, { state, capitalized: true });
-    const verb = mswings_verb(weapon, bash, random);
-    const quantity = weapon.quan > 1 ? 'one of ' : '';
-    const possessive = perceivedPossessivePronoun(monster, { state, random });
-    const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
-    const target = defender ? ` at ${monsterName(defender, { state })}` : '';
-    await publish(`${subject} ${verb} ${quantity}${possessive} ${name}${target}.`);
 }
 
 // ---------------------------------------------------------------------------

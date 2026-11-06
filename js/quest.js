@@ -8,8 +8,7 @@ import { pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_WAITMASK, MAGIC_PORTAL, LL_ACHIEVE } from './const.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { questMonsterSound } from './role_monsters.js';
-import { displayQuestText, prepareQuestText, qtPager, comPager } from './questpgr.js';
-import { artifactByName } from './artifact.js';
+import { displayQuestText, prepareQuestText, qtPager, comPager, isQuestArtifact, levelContainsQuestArtifact } from './questpgr.js';
 import { adjustHeroAlignment, exerciseWisdom as exerciseQuestWisdom } from './attrib.js';
 import { fullyIdentifyObject } from './invent.js';
 import { observeObject } from './o_init.js';
@@ -137,29 +136,6 @@ async function prepareQtDelivery(messageId, state) {
     const text = await prepareQuestText(messageId, state);
     return text?.output === 'pline'
         ? { line: text.lines.join('\n'), text } : { page: text };
-}
-export function isQuestArtifact(object, state = game) {
-    return !!object.oartifact
-        && object.oartifact === artifactByName(state.urole?.artifactName, state)?.id;
-}
-// C questpgr.c:find_qarti()
-// The caller walks the outer chain; this searches one object and its contents.
-function objectContainsQuestArtifact(object, state) {
-    if (!object)
-        return false;
-    return isQuestArtifact(object, state)
-        || (object.contents ?? []).some(content => objectContainsQuestArtifact(content, state));
-}
-// C questpgr.c:find_quest_artifact()
-// The on_goal caller searches floor, monster inventory, and buried objects.
-function levelContainsQuestArtifact(g = game) {
-    const level = g.level;
-    if ((level?.objects || []).flat(2).some(object => objectContainsQuestArtifact(object, g)))
-        return true;
-    if ((level?.buriedObjects || []).some(object => objectContainsQuestArtifact(object, g)))
-        return true;
-    return (level?.monsters || []).some(monster => !monster.dead && monster.mhp > 0 && (monster.minvent || [])
-        .some(object => objectContainsQuestArtifact(object, g)));
 }
 // C quest.c:onquest()
 // Also C quest.c:on_start(): inlined here

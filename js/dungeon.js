@@ -13,7 +13,8 @@ import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { questLeaderName } from './questpgr.js';
 import { ATR_INVERSE, addMenuHeading } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
-import { map_location, see_nearby_objects, updateLastSeenTerrain } from './display.js';
+import { canSeeMonster, map_location, mimicAppearance, see_nearby_objects, } from './display.js';
+import { cmapToType } from './mkroom.js';
 import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import { shopResident, shopkeeperInOwnShop } from './shk.js';
 import { monsterAtPosition } from './steed.js';
@@ -195,6 +196,16 @@ export async function u_on_rndspot(region = null, up = false) {
     await place_lregion(area.lx, area.ly, area.hx, area.hy, excluded.lx, excluded.ly, excluded.hx, excluded.hy, up ? LR_UPTELE : LR_DOWNTELE, null);
     await switchHeroTerrain();
     return { x: game.u.ux, y: game.u.uy };
+}
+// C dungeon.c:Is_botlevel()
+// dungeon.c:1637 — checks if the level is the deepest in its dungeon
+// branch. Each branch has its own num_dunlevs.
+export function Is_botlevel(uz) {
+    const lev = uz ?? game?.u?.uz;
+    if (!lev)
+        return false;
+    const dun = game?.dungeons?.[lev.dnum];
+    return !!dun && lev.dlevel === dun.num_dunlevs;
 }
 // C dungeon.c:Can_rise_up(). Branch-top ascent requires its real up stair.
 export function canHeroRiseUp(x, y, { state = game } = {}) {
@@ -549,6 +560,23 @@ export function initOverviewRecord(location, state = game) {
         seenRooms: [],
         untendedRooms: [],
     });
+}
+// C dungeon.c:update_lastseentyp(). Terrain memory is independent of the
+// remembered glyph: an object can hide the terrain, and a mimic can fake it.
+export function updateLastSeenTerrain(x, y) {
+    const location = requireGameLevel().at(x, y);
+    if (!location)
+        throw new RangeError(`Display coordinate (${x}, ${y}) is outside the map`);
+    let typ = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    // Native m_at() retains a dying actor until remove_monster(), including
+    // a vision refresh while its death announcement awaits acknowledgment.
+    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
+    if (monster && M_AP_TYPE(monster) === M_AP_FURNITURE
+        && canSeeMonster(monster)) {
+        typ = cmapToType(mimicAppearance(monster));
+    }
+    location.lastseentyp = typ;
 }
 // C dungeon.c:recalc_mapseen().  The overview records what the hero has
 // learned about the current level, not every feature in the live map.

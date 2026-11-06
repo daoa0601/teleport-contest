@@ -2,7 +2,7 @@
 // C refs: dog.c tamedog(), newedog(), initedog(), pick_familiar_pm(), make_familiar(), and abuse_dog().
 import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { currentAttribute } from './attrib.js';
-import { A_CHA, DISMOUNT_THROWN, G_EXTINCT, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG, NO_MINVENT, W_ARMS, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, EYE, LL_CONDUCT, } from './const.js';
+import { A_CHA, DISMOUNT_THROWN, G_EXTINCT, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG, NO_MINVENT, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, EYE, LL_CONDUCT, } from './const.js';
 import { isPoolAt } from './dbridge.js';
 import { makemonNear } from './mklev.js';
 import { canSpotMonster, newsym, canSeeMonster } from './display.js';
@@ -17,12 +17,12 @@ import { monsterName, setMonsterGivenName } from './do_name.js';
 import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';
 import { cansee, monsterEmitsLight, vision_recalc } from './vision.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, } from './monster_data.js';
-import { CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
+import { CORPSE, RIN_AGGRAVATE_MONSTER, } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
 import { setMonsterMalign, makemonAt, rndmonstAdj, monsterBirthLimit } from './makemon.js';
 import { stairway_find, stairway_find_from } from './stairs.js';
-import { levelFollower, carnivorous, herbivorous, is_domestic, monsterHasEyes, monsterIsAnimal, monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, monsterIsMindless, needspick, regenerates, tunnels, cantwield, speciesHasWeaponAttack, } from './mondata.js';
+import { levelFollower, carnivorous, herbivorous, is_domestic, monsterHasEyes, monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, regenerates, speciesHasWeaponAttack, } from './mondata.js';
 import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo, resolveMonsterLiquid, finishLiquidDeathForCurrentMover } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
@@ -36,7 +36,7 @@ import { depth } from './dungeon.js';
 import { dropSpecialMonsterObjects } from './steal.js';
 import { randomMonsterRelocation, relocateMonsterTo, enexto, goodPosition } from './teleport.js';
 import { somexy } from './mkroom.js';
-import { deliverOrcRaidLoot } from './mkmaze.js';
+import { deliverOrcRaidLoot } from './dokick.js';
 import { mintrap } from './trap.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { setShopResidency, makeShopkeeperHappy, makeShoppersHappy } from './shk.js';
@@ -44,68 +44,6 @@ import { placeObject } from './mkobj.js';
 import { insideWizardTower } from './dungeon.js';
 import { roomForRoomno, roomsAt } from './hack.js';
 import { expelHero } from './mhitu.js';
-// C dogmove.c:droppables(). Pets keep equipment and usable tools.
-export function petDroppableObject(monster) {
-    const animalOrMindless = (monsterIsAnimal({ mnum: monster.mnum }) || monsterIsMindless(monster.mnum));
-    const canDig = (tunnels(monster.mnum) && needspick(monster.mnum));
-    const canUnlock = !cantwield(monster.mnum);
-    const weapon = monster.mw;
-    // Undefined means this body cannot use the tool; null means no tool has
-    // been selected yet. C represents the first case with a dummy artifact.
-    let pick = animalOrMindless || !canDig ? undefined : null;
-    let horn = animalOrMindless ? undefined : null;
-    let key = animalOrMindless || !canUnlock ? undefined : null;
-    if (weapon) {
-        if ([PICK_AXE, DWARVISH_MATTOCK].includes(weapon.otyp))
-            pick = weapon;
-        if (weapon.otyp === UNICORN_HORN)
-            horn = weapon;
-    }
-    for (const object of monster.minvent || []) {
-        switch (object.otyp) {
-            case DWARVISH_MATTOCK:
-            case PICK_AXE:
-                if (object.otyp === DWARVISH_MATTOCK && ((monster.misc_worn_check ?? 0) & W_ARMS))
-                    break;
-                if (object.otyp === DWARVISH_MATTOCK && pick?.otyp === PICK_AXE && pick !== weapon
-                    && (!pick.oartifact || object.oartifact))
-                    return pick;
-                if (pick === null || (pick !== undefined && object.oartifact && !pick.oartifact)) {
-                    if (pick)
-                        return pick;
-                    pick = object;
-                    continue;
-                }
-                break;
-            case UNICORN_HORN:
-                if (object.cursed)
-                    break;
-                if (horn === null || (horn !== undefined && object.oartifact && !horn.oartifact)) {
-                    if (horn)
-                        return horn;
-                    horn = object;
-                    continue;
-                }
-                break;
-            case SKELETON_KEY:
-            case LOCK_PICK:
-            case CREDIT_CARD:
-                if (key && object.otyp < key.otyp
-                    && (!key.oartifact || object.oartifact))
-                    return key;
-                if (key === null || (key !== undefined && object.oartifact && !key.oartifact)) {
-                    if (key)
-                        return key;
-                    key = object;
-                    continue;
-                }
-                break;
-        }
-        if (!object.owornmask && object !== weapon)
-            return object;
-    }
-    return null;
-}
 function heroAggravatesMonsters(state) {
     const rings = [
         state.uleft, state.uright, state.u?.uleft, state.u?.uright,

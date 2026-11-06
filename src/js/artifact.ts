@@ -22,6 +22,7 @@ import {
     ENL_GAMEINPROGRESS, MAGICENLIGHTENMENT, P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP,
     A_WIS, A_CON, A_NONE, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL,
     In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP,
+    W_AMUL, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_RINGL, W_RINGR, W_TOOL,
     NECK, LL_ARTIFACT,
 } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
@@ -49,14 +50,14 @@ import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } f
 import type { MessagePublisher } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsBlinded, permanentBlind } from './senses.js';
 import { getRumor } from './rumors.js';
-import { exerciseAttribute } from './attrib.js';
+import { exerciseAttribute, extrinsicPropertyMask } from './attrib.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 
 import { loseHeroExperience } from './exper.js';
 import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, heroIsOnStairs, isInvocationPosition, nomul } from './hack.js';
 import { lightDamage } from './zap.js';
-import { lightRoom } from './light.js';
+import { lightRoom } from './read.js';
 import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel, setHeroGrip,
     finishHeroMonsterKillOutcome,
 } from './mon.js';
@@ -2541,6 +2542,45 @@ export function beginLevitatingArtifactDrop(object: GameObject | null | undefine
 export async function finishLevitatingArtifactDrop(state: GameState = game): Promise<0 | 1> {
     requireLiveGame(state);
     return floatHeroDown(I_SPECIAL | TIMEOUT, W_ARTI | W_ART, state);
+}
+
+const DEFENSES: Readonly<Partial<Record<PropertyName, ArtifactDefense>>> = {
+    fireResistance: 'fire', coldResistance: 'cold', antimagic: 'magic',
+    poisonResistance: 'poison', drainResistance: 'life-drain',
+};
+const FLAGS: Readonly<Partial<Record<PropertyName, ArtifactFlag>>> = {
+    searching: 'SPFX_SEARCH', hallucinationResistance: 'SPFX_HALRES', telepathy: 'SPFX_ESP',
+    stealth: 'SPFX_STLTH', regeneration: 'SPFX_REGEN', teleportControl: 'SPFX_TCTRL',
+    warnOfMonster: 'SPFX_WARN', warning: 'SPFX_WARN', energyRegeneration: 'SPFX_EREGEN',
+    halfSpellDamage: 'SPFX_HSPDAM', halfPhysicalDamage: 'SPFX_HPHDAM', reflection: 'SPFX_REFLECT',
+};
+
+// C artifact.c:what_gives()
+// The first item conveying a particular intrinsic.
+// C artifact.c:abil_to_adtyp(): the C extrinsic-pointer table became the
+// DEFENSES map above.
+// C artifact.c:abil_to_spfx(): likewise the FLAGS map for spfx bits.
+export function whatGives(property: PropertyName, state: GameState = game): GameObject | null {
+    const wornmask = W_ARM | W_ARMC | W_ARMH | W_ARMS | W_ARMG | W_ARMF | W_ARMU
+        | W_AMUL | W_RINGL | W_RINGR | W_TOOL | W_ART | W_ARTI
+        | (state.u.twoweap ? W_SWAPWEP : 0);
+    const extrinsic = extrinsicPropertyMask(property, state);
+    const wornbits = wornmask & extrinsic;
+    for (const object of state.inventory) {
+        if (object.oartifact && (property !== 'warnOfMonster' || state.context.warntype?.obj)) {
+            const artifact = artifactById(object.oartifact, state);
+            if (!artifact) continue;
+            const defense = DEFENSES[property];
+            const flag = FLAGS[property];
+            if (defense && (artifact.carriedDefense === defense
+                || artifact.defense === defense && ((object.owornmask ?? 0) & ~(W_ART | W_ARTI))))
+                return object;
+            if (flag && (artifact.carriedFlags.includes(flag)
+                || artifact.flags.includes(flag) && object.owornmask)) return object;
+            if (object === state.uwep && property === 'blindResistance' && (extrinsic & W_WEP)) return object;
+        } else if (wornbits && wornbits === (wornmask & (object.owornmask ?? 0))) return object;
+    }
+    return null;
 }
 
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()

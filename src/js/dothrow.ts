@@ -67,7 +67,8 @@ import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext
 import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
 import type { RoleKey, RaceName } from './role.js';
-import { finishQuest, isQuestArtifact, isQuestLeader } from './quest.js';
+import { finishQuest, isQuestLeader } from './quest.js';
+import { isQuestArtifact } from './questpgr.js';
 import { deityName } from './pray.js';
 import { encumber_msg } from './pickup.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile, makeBlinded } from './potion.js';

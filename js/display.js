@@ -11,7 +11,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { known_branch_stairs, stairwayAt } from './stairs.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { monsterAtPosition } from './steed.js';
-import { redrawMonsterWormSegments } from './worm.js';
+import { redrawMonsterWormSegments, wormKnown } from './worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph, detectedMonnumToGlyph, explosionToGlyph, glyphIsCmapA, glyphIsCmapAltar, glyphIsCmapB, glyphIsCmapMain, glyphIsCmapSokoban, glyphIsExplosion, glyphIsMonster, glyphIsNormalMaleMonster, monnumToGlyph, objnumToGlyph, petnumToGlyph, riddenMonnumToGlyph, warningToGlyph } from './glyph_numbers.js';
 import { isok } from './cmd.js';
@@ -27,12 +27,10 @@ import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, 
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
-import { getRndLine } from './rumors.js';
-import { BOGUS_MONSTERS } from './random_text_data.js';
-import { MD_PAD_BOGONS } from './const.js';
 import { recordObjectEncounter, objectTypeColor } from './o_init.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasWornProperty, propertyIsActive, refreshProperty } from './properties.js';
 import { infravisible, monsterIsMindless } from './mondata.js';
+import { updateLastSeenTerrain } from './dungeon.js';
 // C drawing.c:def_r_oc_syms.  Rogue deliberately resembles the older game:
 // armor uses ']', amulets ',', food ':', and coins share gems' '*'.
 const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
@@ -119,13 +117,6 @@ export function seeMonsterWithInfrared(monster) {
 }
 function canPhysicallyProjectMonster(monster, x, y) {
     return monsterVisible(monster) && (cansee(x, y) || seeMonsterWithInfrared(monster));
-}
-// C worm.c:worm_known(). A head-only relocation leaves the hidden segment
-// behind until worm_move() or place_wsegs() updates it.
-export function wormKnown(monster) {
-    const head = monster.wormHead;
-    return !!head && cansee(head.x, head.y)
-        || (monster.wormSegments ?? []).some(segment => segment.x && cansee(segment.x, segment.y));
 }
 // C display.h:canseemon(), an actor-level optical sight query.
 export function canSeeMonster(monster) {
@@ -1247,7 +1238,7 @@ export function consumeHallucinatedMenuObjectGlyph(object) {
         return null;
     return objectGlyph(object);
 }
-function mimicAppearance(monster) {
+export function mimicAppearance(monster) {
     if (monster.mappearance === undefined)
         throw new Error('A disguised creature has no appearance');
     return monster.mappearance;
@@ -1400,19 +1391,6 @@ function monsterAtMapCell(x, y) {
     // Native m_at() retains a dying actor until remove_monster(), including
     // a vision refresh while its death announcement awaits acknowledgment.
     return game.level ? monsterAtPosition(game.level, x, y) : null;
-}
-// C dungeon.c:update_lastseentyp(). Terrain memory is independent of the
-// remembered glyph: an object can hide the terrain, and a mimic can fake it.
-export function updateLastSeenTerrain(x, y) {
-    const location = requireDisplayLocation(x, y);
-    let typ = location.typ === DRAWBRIDGE_UP
-        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
-    const monster = monsterAtMapCell(x, y);
-    if (monster && M_AP_TYPE(monster) === M_AP_FURNITURE
-        && canSeeMonster(monster)) {
-        typ = cmapToType(mimicAppearance(monster));
-    }
-    location.lastseentyp = typ;
 }
 // C display.c:_map_location(). This direct mapper intentionally bypasses
 // line of sight, but object observation and cloud visibility keep their gates.
@@ -2263,25 +2241,6 @@ export async function see_traps() {
 // C display.c:curs_on_u(). Flush waiting glyphs & put cursor on hero.
 export async function curs_on_u() {
     await flush_screen(1);
-}
-// C do_name.c:bogusmon(). The random line selection is C rumors.c:
-// get_rnd_line() (getRndLine in rumors.ts) with MD_PAD_BOGONS padding and
-// the display RNG; a leading code character is then stripped and reported,
-// and C do_name.c:bogon_is_pname() (inlined) decides the personal-name
-// flag. Lives here rather than do_name.ts because rumors.ts imports
-// do_name.ts for mon_nam(); C's do_name.c and rumors.c call each other
-// the same way.
-export function randomBogusMonsterIdentity() {
-    const selected = getRndLine(BOGUS_MONSTERS, MD_PAD_BOGONS, rn2Display) || 'bogon';
-    const first = selected.charAt(0);
-    const code = '-_+|='.includes(first) ? first : '';
-    return {
-        name: code ? selected.slice(1) : selected,
-        // bogon_is_pname(): '-', '+', and '=' suppress ARTICLE_THE. Empty
-        // strings are considered substrings in JavaScript, so retain the
-        // source's explicit "has a control prefix" gate.
-        personal: !!code && '-+='.includes(code),
-    };
 }
 let lastSwallowedX = 0;
 let lastSwallowedY = 0;

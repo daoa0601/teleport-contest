@@ -32,12 +32,13 @@ import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom } from './attrib
 import { is_shield } from './object_properties.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explode.js';
-import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
+import { beginBallAndChainRedraw, finishBallAndChainMove, heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 
 import {
-    A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD,
+    A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, CORR, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD,
     G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
-    In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG,
+    In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Is_waterlevel, Luck, M_SEEN_FIRE,
+    MM_EDOG,
     MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT,
     ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR,
     HAND, HEAD, LEG, STOMACH, LL_CONDUCT, LL_GENOCIDE,
@@ -52,8 +53,10 @@ import type { MessagePublisher } from './pline.js';
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
 import { impossible } from './diagnostics.js';
 import { lightDamage } from './zap.js';
-import { lightRoom, objectLightRadius } from './light.js';
-import type { RoomLightOptions } from './light.js';
+import { lightHitsGremlin, objectLightRadius, snuffLightSource } from './light.js';
+import type { FinishMonsterKill } from './light.js';
+import { snuffLitObject } from './apply.js';
+import { impactArtifactLight } from './potion.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused, finishStrangeFeeling, strangeFeeling, makeStunned } from './potion.js';
@@ -61,10 +64,11 @@ import { feelingAfterSelfGenocide, genocideDeathOptions, heroIsUnchanging, heroM
 import { sokobanGuilt } from './trap.js';
 import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription, chooseInventoryObject } from './invent.js';
 import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
-import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity } from './hack.js';
+import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity, roomForRoomno } from './hack.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
-import { monsterAtPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
+import { monsterAtPosition, monsterHasMapPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
+import { artifactEmitsLight } from './artifact.js';
 import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, withIndefiniteArticle, erosionMatters } from './objnam.js';
 import type { ObjectInscriptionView } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
@@ -77,7 +81,7 @@ import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, 
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, deleteObject, updateUnpaidObjectPrice } from './shk.js';
 import { dropCursedSecondaryWeapon, chwepon, objectEnchantment, setWeaponEnchantment } from './wield.js';
-import { cansee, couldsee } from './vision.js';
+import { cansee, couldsee, clearAreaCells, vision_recalc } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath } from './end.js';
 import { listGenocided } from './insight.js';
@@ -93,7 +97,7 @@ import {
     nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,
     monsterHidesUnder, monsterIsAmorphous, monsterIsDemon, monsterIsFemale, monsterIsHider, monsterIsHuman,
     monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterPassesWalls,
-    heroCanChant,
+    heroCanChant, monsterDigests,
 } from './mondata.js';
 import { addExperience } from './exper.js';
 import type { InventoryClassification } from './invent.js';
@@ -530,6 +534,128 @@ function physicalDamage(amount: number, state: GameState) {
     return state.u.halfPhysicalDamage
         ? Math.trunc((amount + 1) / 2) : amount;
 }
+
+export interface RoomLightOptions {
+    radius?: number;
+    source?: GameObject;
+    finishMonsterKill?: FinishMonsterKill;
+}
+
+// Part of C read.c:litroom(): the swallowed-carrier line.
+function swallowedLightMessage() {
+    const swallower = game.u?.ustuck;
+    if (!swallower) return null;
+    const subject = monsterName(swallower, { capitalized: true });
+    if (monsterDigests(swallower)) return `${possessiveName(subject)} stomach is lit.`;
+    return monsterIsWhirly(swallower)
+        ? `${subject} shines briefly.`
+        : `${subject} glistens.`;
+}
+
+async function roomEffectCells(radius: number, lit: boolean): Promise<Position[]> {
+    if (!Is_rogue_level(game.u?.uz)) {
+        // Sunsword illuminates the hero's spot directly; do_clear_area
+        // rejects radius zero in both the native source and the port.
+        if (radius === 0) return [{ x: game.u.ux, y: game.u.uy }];
+        return await clearAreaCells(game.u.ux, game.u.uy, radius);
+    }
+
+    const roomno = game.level?.at?.(game.u.ux, game.u.uy)?.roomno;
+    const room = roomForRoomno(game.level, roomno ?? 0);
+    if (!room) return [];
+    const cells = [];
+    for (let x = room.lx - 1; x <= room.hx + 1; x++) {
+        for (let y = room.ly - 1; y <= room.hy + 1; y++)
+            cells.push({ x, y });
+    }
+    room.rlit = lit ? 1 : 0;
+    return cells;
+}
+
+async function affectCarriedLights(worsen: boolean) {
+    let stillLit = 0;
+    for (const object of [...game.inventory]) {
+        if (!object.lamplit) continue;
+        if (artifactEmitsLight(object)) await impactArtifactLight(object, worsen);
+        else if (worsen) await snuffLitObject(object);
+        if (object.lamplit) stillLit++;
+    }
+    return stillLit;
+}
+
+const PM_GREMLIN = 40;
+
+// C read.c:litroom()
+// Also C read.c:set_lit(): inlined as the per-cell lit flag write and the
+// gremlin collection below.
+export async function lightRoom(
+    lit: boolean, { radius = 5, source, finishMonsterKill }: RoomLightOptions = {},
+): Promise<boolean> {
+    const blind = heroIsBlind();
+    const swallowed = !!game.u?.uswallow;
+    const noEffect = swallowed || game.underwater || game.u?.uinwater
+        || Is_waterlevel(game.u?.uz);
+
+    if (!lit) {
+        const stillLit = await affectCarriedLights(true);
+        if (!blind) {
+            const message = stillLit
+                ? 'The ambient light seems dimmer.'
+                : swallowed
+                    ? 'It seems even darker in here than before.'
+                    : 'You are surrounded by darkness!';
+            await plineWithContinuation(message);
+        }
+    } else {
+        if (source?.oclass === SCROLL_CLASS && source.blessed)
+            await affectCarriedLights(false);
+        if (swallowed) {
+            const message = swallowedLightMessage();
+            if (!blind && message) await plineWithContinuation(message);
+        } else if (!blind && (!Is_rogue_level(game.u?.uz)
+            || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
+            await plineWithContinuation(
+                `A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`,
+            );
+        }
+    }
+    if (noEffect) return false;
+
+    const ballAndChain = !lit && !blind ? await beginBallAndChainRedraw() : null;
+
+    const gremlins = [];
+    for (const { x, y } of await roomEffectCells(radius, lit)) {
+        const location = game.level?.at?.(x, y);
+        if (!location) continue;
+        location.lit = !!lit;
+        if (!lit) {
+            snuffLightSource(x, y);
+            continue;
+        }
+        const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
+            candidate.mx === x && candidate.my === y
+            && candidate.mnum === PM_GREMLIN
+            && !candidate.dead && (candidate.mhp ?? 1) > 0);
+        if (monster) gremlins.push(monster);
+    }
+    if (!blind) {
+        await vision_recalc(2);
+        await finishBallAndChainMove(ballAndChain);
+    }
+    game.vision_full_recalc = 1;
+    if (lit && gremlins.length) {
+        await vision_recalc(0);
+        for (const gremlin of gremlins.reverse()) {
+            if (!finishMonsterKill)
+                throw new TypeError('lightRoom needs a monster death handler');
+            await lightHitsGremlin(
+                gremlin, rnd(5), finishMonsterKill,
+            );
+        }
+    }
+    return true;
+}
+
 
 // Armor and weapon scroll effects. C read.c:seffect_enchant_armor(),
 // seffect_destroy_armor(), and seffect_enchant_weapon().

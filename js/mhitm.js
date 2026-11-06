@@ -8,12 +8,12 @@ import { setHeroGrip, isZombieMaker, zombieForm } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, newsym, } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, monsterVisible, newsym, } from './display.js';
 import { formatHeardMessage, plineWithContinuation } from './pline.js';
 import { artifactById } from './artifact.js';
-import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, W_ARMC, W_ARMF, W_ARMH, } from './const.js';
+import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, M_AP_MONSTER, STRAT_WAITMASK, STRAT_WAITFORU, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, W_ARMC, W_ARMF, W_ARMH, } from './const.js';
 import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, touchPetrifies, isHeroDefender, resistConflict, resistsBlnd, } from './mondata.js';
-import { heroIsUnaware } from './senses.js';
+import { heroIsUnaware, heroIsBlind } from './senses.js';
 import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './worn.js';
 import { revealMonsterAppearance } from './mon.js';
@@ -21,14 +21,15 @@ import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
 import { splitMonster } from './potion.js';
 import { createElementalMonsterExplosion } from './explode.js';
 import { cansee } from './vision.js';
-import { applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder, paralyzeMonster, prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject, turnGolemToStone, } from './mon.js';
+import { applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder, prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject, turnGolemToStone, } from './mon.js';
 import { staggerVerb } from './dothrow.js';
 import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName } from './do_name.js';
 import { possessiveName, dist2, distmin } from './hacklib.js';
 import { exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, } from './steed.js';
 import { monsterObjectPronoun, monsterPossessive, monsterPolymorphsWhenStoned, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, } from './mondata.js';
 import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
-import { swingMonsterWeapon } from './mhitu.js';
+import { mswings_verb } from './mhitu.js';
+import { isPolearm } from './object_properties.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from './weapon.js';
 import { weaponHitValue } from './weapon.js';
 import { getmattk } from './attack_selection.js';
@@ -1240,6 +1241,31 @@ export async function petrifyMonsterAttacker(monster, { publish = plineWithConti
     if (creditHero)
         recordHeroKillConduct();
     return finishMonsterPetrification(monster, { ...options, publish });
+}
+// C mhitm.c:paralyze_monst(). Paralysis also interrupts eating and waiting.
+export function paralyzeMonster(monster, turns) {
+    monster.mcanmove = 0;
+    monster.mfrozen = Math.min(127, turns);
+    monster.meating = 0;
+    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
+}
+// C mhitm.c:mswingsm() when a defender is given, mhitu.c:mswings() otherwise.
+export async function swingMonsterWeapon(monster, weapon, state = game, { defender = null, publish = plineWithContinuation, random = rn2, } = {}) {
+    if (!state.flags.verbose || heroIsBlind(state)
+        || !monsterVisible(monster, state))
+        return;
+    const x = defender ? defender.mx : state.u.ux;
+    const y = defender ? defender.my : state.u.uy;
+    const bash = isPolearm(weapon)
+        && artifactById(weapon.oartifact, state)?.name !== 'Snickersnee'
+        && (monster.mx - x) ** 2 + (monster.my - y) ** 2 <= 2;
+    const subject = monsterName(monster, { state, capitalized: true });
+    const verb = mswings_verb(weapon, bash, random);
+    const quantity = weapon.quan > 1 ? 'one of ' : '';
+    const possessive = monsterPossessive(monster, { state, random });
+    const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
+    const target = defender ? ` at ${monsterName(defender, { state })}` : '';
+    await publish(`${subject} ${verb} ${quantity}${possessive} ${name}${target}.`);
 }
 // C mhitm.c:sleep_monst(). `mon' is hit by a sleep attack; returns true if
 // it is affected. The mimic-reveal, resistance and shield-effect halves of

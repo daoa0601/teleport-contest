@@ -28,7 +28,7 @@ import type { GameObject } from './object_types.js';
 import { dropCursedSecondaryWeapon } from './wield.js';
 
 import { makePlural, verbForSubject, definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
-import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
+import { objectLightRadius } from './light.js';
 import { healHeroLegs } from './do.js';
 import { takeHeroGold } from './sit.js';
 import { scheduleLevelChange } from './do.js';
@@ -37,7 +37,7 @@ import { msummon } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { courtMonsterType } from './mkroom.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
-import { curseObject, unblessObjectState } from './mkobj.js';
+import { curseObject, unblessObjectState, adjustObjectLightAfterBlessing } from './mkobj.js';
 import {
     grantIntrinsicProperty, hasPermanentIntrinsicProperty,
     removePermanentIntrinsicProperty,
