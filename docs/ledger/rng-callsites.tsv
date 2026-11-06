@@ -247,9 +247,9 @@ src/js/detect.ts	useCrystalBall	rnd	"[""charged ? 10 : 2""]"	constant
 src/js/detect.ts	useCrystalBall	rnd	"[""charged ? 4 : 2""]"	constant
 src/js/detect.ts	useCrystalBall	rnd	"[""difficulty""]"	constant
 src/js/invent.ts	currency	random	"[""CURRENCIES.length""]"	constant
-src/js/demon_talk.ts	demandDemonBribe	random	"[""1000""]"	constant
-src/js/demon_talk.ts	demandDemonBribe	rollOne	"[""5 * currentAttribute(A_CHA, state)""]"	invariant
-src/js/demon_talk.ts	demandDemonBribe	rollOne	"[""80""]"	constant
+src/js/minion.ts	demandDemonBribe	random	"[""1000""]"	constant
+src/js/minion.ts	demandDemonBribe	rollOne	"[""5 * currentAttribute(A_CHA, state)""]"	invariant
+src/js/minion.ts	demandDemonBribe	rollOne	"[""80""]"	constant
 src/js/detect.ts	searchAdjacentSecrets	rnl	"[""7 - bonus""]"	unproved
 src/js/detect.ts	searchAdjacentSecrets	rnl	"[""7 - bonus""]"	unproved
 src/js/detect.ts	searchAdjacentSecrets	rnl	"[""8""]"	constant
@@ -459,11 +459,11 @@ src/js/apply.ts	useGrapplingHook	rnd	"[""2""]"	constant
 src/js/apply.ts	useGrease	rn1	"[""11"", ""5""]"	constant
 src/js/apply.ts	useGrease	rn1	"[""6"", ""10""]"	constant
 src/js/apply.ts	useGrease	rn2	"[""2""]"	constant
-src/js/guardian_angel.ts	gainGuardianAngel	d	"[""angel.m_lev"", ""10""]"	invariant
-src/js/guardian_angel.ts	gainGuardianAngel	rn1	"[""8"", ""15""]"	constant
-src/js/guardian_angel.ts	gainGuardianAngel	rnd	"[""30""]"	constant
-src/js/guardian_angel.ts	gainGuardianAngel	rnd	"[""4""]"	constant
-src/js/guardian_angel.ts	loseGuardianAngel	rn1	"[""3"", ""2""]"	constant
+src/js/minion.ts	gainGuardianAngel	d	"[""angel.m_lev"", ""10""]"	invariant
+src/js/minion.ts	gainGuardianAngel	rn1	"[""8"", ""15""]"	constant
+src/js/minion.ts	gainGuardianAngel	rnd	"[""30""]"	constant
+src/js/minion.ts	gainGuardianAngel	rnd	"[""4""]"	constant
+src/js/minion.ts	loseGuardianAngel	rn1	"[""3"", ""2""]"	constant
 src/js/hack.ts	escapeFromStickyMonster	rn2	"[""frozen ? 8 : 40""]"	constant
 src/js/trap.ts	drown	random	"[""3""]"	constant
 src/js/trap.ts	drown	random	"[""5""]"	constant

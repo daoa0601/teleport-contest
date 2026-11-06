@@ -9,7 +9,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, LEASH, ROCK } from '../js/object_data.js';
-import { applyPetHunger } from '../js/pet_hunger.js';
+import { applyPetHunger } from '../js/dogmove.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { answerPrompts } from './support/input-boundaries.js';

@@ -6,7 +6,7 @@ import { performMonsterHeroAttack, mattacku, presentMonsterAttackEffects } from 
 import { inventoryItemDescription } from './invent.js';
 import {
     monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, monsterCarryAmount, resistConflict,
-    checkMonsterGearNextTurn,
+    checkMonsterGearNextTurn, finishEnvironmentalMonsterDeath,
 } from './mon.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterName, visibleMonsterSubject } from './do_name.js';
@@ -28,7 +28,7 @@ import {
 } from './monmove.js';
 import { mayDig } from './hack.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
-import { couldSeeFromHero, cansee, clearPath, visibleCellsFrom } from './vision.js';
+import { couldSeeFromHero, cansee, couldsee, clearPath, visibleCellsFrom } from './vision.js';
 import { trapAt } from './trap.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor } from './mhitm.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
@@ -36,13 +36,12 @@ import { dist2, distmin } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
 import { petDroppableObject } from './dog.js';
-import { applyPetHunger } from './pet_hunger.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import {
     BOULDER, SCR_MAIL, TRIPE_RATION, } from './object_data.js';
-import { loseGuardianAngel } from './guardian_angel.js';
+import { loseGuardianAngel } from './minion.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { updateMonsterRegions } from './region.js';
 import { goodPosition } from './teleport.js';
@@ -55,16 +54,17 @@ import {
 import { isok } from './cmd.js';
 import { AT_BREA } from './monster_attack_types.js';
 import { canSeeMonster, canSpotMonster, glyphAt, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
+import { stopHeroOccupation } from './occupation.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { releaseMonsterLeash } from './apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './sounds.js';
+import { begForFood, monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './sounds.js';
 import {
     maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes,
     monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks, tunnels,
-    speciesHasWeaponAttack, touchPetrifies,
+    speciesHasWeaponAttack, touchPetrifies, carnivorous, herbivorous,
 } from './mondata.js';
 import { monsterReflectsRay } from './muse.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -73,6 +73,9 @@ import { d, rn2, rnd } from './rng.js';
 import { requireInitializedGame, requireLiveGame, game } from './gstate.js';
 
 const DOG_HUNGRY = 300;
+
+const DOG_WEAK = 500;
+const DOG_STARVE = 750;
 
 const MS_LEADER = 36;
 const MS_GUARDIAN = 38;
@@ -531,6 +534,61 @@ function dogGoal(
         monster.edog.ogoal.x = 0;
     }
     return { x: goalX, y: goalY, appr, whappr };
+}
+
+// C dogmove.c:dog_starve().
+async function starvePet(monster: Monster, state: GameState): Promise<void> {
+    if (monster.mleashed && monster !== state.u.usteed) {
+        await plineWithContinuation('Your leash goes slack.');
+    } else if (cansee(monster.mx, monster.my)) {
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} starves.`);
+    } else {
+        await plineWithContinuation(formatFeltMessage(`${heroIsHallucinating(state) ? 'bummed' : 'sad'} for a moment.`, state));
+    }
+    await finishEnvironmentalMonsterDeath(monster, state);
+}
+
+// A starvation attempt ends this pet action even when an amulet saves it.
+// Check only at dog_move entry; sleeping, frozen and eating pets wait until
+// their next movement opportunity, as in dochug()/m_move().
+// C dogmove.c:dog_hunger().
+export async function applyPetHunger(monster: Monster, state: GameState): Promise<boolean> {
+    const dog = monster.mtame ? monster.edog ?? monster.mextra?.edog : null;
+    if (!dog || state.moves <= dog.hungrytime + DOG_WEAK) return false;
+
+    const diet = (carnivorous(monster.mnum) || herbivorous(monster.mnum));
+    if (!diet) {
+        dog.hungrytime = state.moves + DOG_WEAK;
+        return false;
+    }
+
+    if (!dog.mhpmax_penalty) {
+        const maximum = Math.trunc(monster.mhpmax / 3);
+        monster.mconf = 1;
+        dog.mhpmax_penalty = monster.mhpmax - maximum;
+        monster.mhpmax = maximum;
+        monster.mhp = Math.min(monster.mhp, maximum);
+        if (monster.mhp <= 0) {
+            await starvePet(monster, state);
+            return true;
+        }
+
+        if (cansee(monster.mx, monster.my)) {
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is confused from hunger.`);
+        } else if (couldsee(monster.mx, monster.my)) {
+            await begForFood(monster, state);
+        } else {
+            await plineWithContinuation(formatFeltMessage(`worried about ${monsterName(monster, { state, article: 'your' })}.`, state));
+        }
+        await stopHeroOccupation(state);
+        return false;
+    }
+
+    if (state.moves > dog.hungrytime + DOG_STARVE || monster.mhp <= 0) {
+        await starvePet(monster, state);
+        return true;
+    }
+    return false;
 }
 
 // C dogmove.c:dog_invent().  The drop, the visible "picks up" line, and

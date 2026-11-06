@@ -24,7 +24,7 @@ import { costlySpot, shopkeeperCatch } from './shk.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './invent.js';
 import { endObjectBurn } from './timeout.js';
-import { objectShedsLight } from './light.js';
+import { cleanupTransientLight, objectShedsLight, showTransientLight } from './light.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { distantObjectName, objectName, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import { isPick, isLauncherAmmunition, launcherMatchesAmmo } from './object_properties.js';
@@ -39,7 +39,6 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { objectNoLongerHeld } from './do.js';
 import { cansee } from './vision.js';
-import { cleanupTransientLight, showTransientLight } from './transient_light.js';
 import { rockSkipRange } from './zap.js';
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);

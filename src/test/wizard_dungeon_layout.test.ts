@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MAGIC_PORTAL, VIBRATING_SQUARE } from '../js/const.js';
-import { makeInvocationArea } from '../js/invocation_area.js';
+import { makeInvocationArea } from '../js/mklev.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addTrap } from './support/level-state.js';

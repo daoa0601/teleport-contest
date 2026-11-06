@@ -30,7 +30,7 @@ import { roles } from './role.js';
 import { chatWithQuestCharacter } from './quest.js';
 import { questMonsterSound } from './role_monsters.js';
 import { consultOracle } from './rumors.js';
-import { demandDemonBribe } from './demon_talk.js';
+import { demandDemonBribe } from './minion.js';
 import { DEATH_QUOTES } from './death_quotes.js';
 import { doseduce } from './mhitu.js';
 import { selectTributePassage } from './novel_tribute.js';

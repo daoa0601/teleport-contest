@@ -4,7 +4,7 @@ import { moveMonsterForHeroAttack } from '../js/uhitm.js';
 import { MM_EMIN, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NO_MINVENT } from '../js/const.js';
 import { canSpotMonster, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { loseGuardianAngel } from '../js/guardian_angel.js';
+import { loseGuardianAngel } from '../js/minion.js';
 import { game, requireGameDisplay, requireInitializedGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishSpecialRoamer } from '../js/sp_lev.js';

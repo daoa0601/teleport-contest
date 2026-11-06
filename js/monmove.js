@@ -26,7 +26,7 @@ import { searches_for_item, find_offensive, use_offensive, find_defensive, use_d
 import { monsterHasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from './artifact.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
-import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep, is_mercenary, is_minion, is_wanderer, likes_gems, likes_gold, likes_magic, likes_objs, metallivorous, monsterIsClinger, monsterPassesWalls, needspick, tunnels, monsterCanTeleport, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses, monsterHasNoAttacks, touchPetrifies, } from './mondata.js';
+import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep, is_mercenary, is_minion, is_wanderer, likes_gems, likes_gold, likes_magic, likes_objs, metallivorous, monsterIsClinger, monsterPassesWalls, needspick, tunnels, monsterCanTeleport, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses, monsterHasNoAttacks, touchPetrifies, } from './mondata.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './zap.js';
 import { drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
@@ -69,7 +69,8 @@ import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap,
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween } from './worm.js';
 import { moveVaultGuard } from './vault.js';
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './region.js';
-import { talkToDemon } from './demon_talk.js';
+import { demandDemonBribe } from './minion.js';
+import { setMonsterMalign } from './makemon.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
@@ -1984,6 +1985,26 @@ async function finishMonsterFloorTail(monster, movement, state, random, rollDice
 export async function beginMonsterMove(monster, state = requireInitializedGame(), random = rn2, rollDice = d, rollOne = rnd) {
     const turn = await moveMonsterAfterTrap(monster, state, random, rollDice, rollOne, DISCARDED_CALL_LOG, undefined, null);
     return { monster, ...turn };
+}
+// C monmove.c:dochug() "Demonic Blackmail!" block. The adjacent branch calls
+// minion.c:demon_talk() (demandDemonBribe in minion.ts).
+export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
+    if (monster.mux !== state.u.ux || monster.muy !== state.u.uy) {
+        await plineWithContinuation(`${cansee(monster.mux ?? 0, monster.muy ?? 0)
+            ? monsterName(monster, { state, capitalized: true }) : 'It'} whispers at thin air.`);
+        if (monsterIsDemon(heroSpecies(state))) {
+            if (!await reportMonsterTeleportRestriction(monster, { state }))
+                await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
+        }
+        else {
+            monster.minvis = monster.perminvis = false;
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true, article: 'a' })} gets angry!`);
+            monster.mpeaceful = 0;
+            setMonsterMalign(monster, state);
+        }
+        return false;
+    }
+    return demandDemonBribe(monster, state, random, rollOne);
 }
 // First non-combat slice of monmove.c:dochug(), m_move(), and dog_move().
 // distfleeck() always draws the brave-gremlin roll; ordinary starting actors

@@ -20,13 +20,13 @@ import type { GameObject, ObjectWhere } from './object_types.js';
 import type { Monster, MonsterBirthState, PetData } from './monster_types.js';
 import { isRoom } from './map_types.js';
 import type { Position, Room, Trap, ActiveSpecialLevel, ArrivalRegion, Rectangle, StairRegion, Stairway } from './map_types.js';
-import type { GameState, Fruit } from './game_state.js';
+import type { GameState, PlayingGameState, Fruit } from './game_state.js';
 import type { DungeonBranch, DungeonLocation } from './dungeon_types.js';
 import { restoreLevelTimers, stopLevelTimer } from './timeout.js';
 import type { DueObjectTimer } from './timeout.js';
-import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, resetUtrap, maketrap } from './trap.js';
+import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, mintrap, resetUtrap, maketrap } from './trap.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
-import { game, requireGameLevel } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';
 import { addFruit } from './options.js';
 import { set_tin_variety } from './eat.js';
@@ -39,11 +39,11 @@ import { restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies } f
 import { restoreLevelPetHistory } from './save.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { impossible } from './diagnostics.js';
+import { impossible, panic } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './dig.js';
+import { addBuriedObject, buriedBallToPunishment, buryObject, unearthFloorObjectsAt } from './dig.js';
 import { GameMap } from './game.js';
 import { ageStoresFuel } from './pickup.js';
 import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones_object.js';
@@ -52,7 +52,7 @@ import { decodeBonesPayload } from './bones_validation.js';
 import type { BonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
-import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
+import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { init_rect, rnd_rect } from './rect.js';
 import { depth as depth_of_level, dungeonDepth, inducedAlignment, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot } from './dungeon.js';
@@ -60,7 +60,7 @@ import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TAL
 import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, back_to_glyph, canOverwriteTerrain, set_wall_state } from './display.js';
-import { pline } from './pline.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { premap_detect, convertSecretDoor } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS } from './random_text_data.js';
 import { deleteEngravingAt, makeEngravingAt, make_grave, randomEngraving, make_engr_at, restoreEngravings, sanitizeEngravings, wipeEngravingAt } from './engrave.js';
@@ -77,7 +77,10 @@ import { goodPosition, enexto, enexto_gpflags } from './teleport.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { addToContainer, beginLuaThemerooms, callLuaThemerooms, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, load_special, medusaPetrifiable, putGeneratedMonsterInventoryInStatue, themerooms_generate } from './sp_lev.js';
 import type { MutableNumber, SpecialTrapOptions } from './sp_lev.js';
-import { purgeDeadMonsters, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
+import { finishHeroLiquidMonsterDeath, finishMonsterLiquidDeath, purgeDeadMonsters, removeMonsterFromGame, resolveMonsterLiquid, revealMonsterAppearance, sendMonsterToLimbo } from './mon.js';
+import type { HeroLiquidMonsterDeathOutcome, MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
+import { fractureRock } from './zap.js';
+import { flushPendingTopline } from './tty_topline.js';
 import { switchHeroTerrain, roomsAt } from './hack.js';
 import { is_domestic } from './mondata.js';
 
@@ -2071,6 +2074,111 @@ async function mkgrave_room(croom: Room): Promise<void> {
         addBuriedObject(otmp, pos.x, pos.y);
     }
     if (dobell) await mksobj_at(BELL, pos.x, pos.y, true, false);
+}
+
+// The rings are deliberately visited in native order: actors encounter the
+// changed terrain before the next ring.
+function invocationRings(x: number, y: number): Position[][] {
+    const rings = [[{ x, y }]];
+    let xmin = x, xmax = x, ymin = y, ymax = y;
+    for (let distance = 1; distance < 7; distance++) {
+        xmin--; xmax++;
+        const ring: Position[] = [];
+        if (distance !== 3) {
+            ymin--; ymax++;
+            for (let column = xmin + 1; column < xmax; column++)
+                ring.push({ x: column, y: ymin }, { x: column, y: ymax });
+        }
+        for (let row = ymin; row <= ymax; row++)
+            ring.push({ x: xmin, y: row }, { x: xmax, y: row });
+        rings.push(ring);
+    }
+    return rings;
+}
+
+// C mklev.c:mkinvokearea().
+// Also C mklev.c:mkinvk_check_wall(): inlined here (the wall probe that
+// decides the crumbling-walls message).
+export async function makeInvocationArea({ state = game }: { state?: GameState } = {}): Promise<void> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const level = requireGameLevel(state);
+    const rings = invocationRings(state.u.ux, state.u.uy);
+    await plineWithContinuation('The floor shakes violently under you!');
+    if (rings.flat().some(({ x, y }) => {
+        const location = level.at(x, y);
+        return location && (IS_STWALL(location.typ) || location.typ === IRONBARS);
+    })) await plineWithContinuation('The walls around you begin to bend and crumble!');
+    await flushPendingTopline();
+    if (state.u.utrap) {
+        if (state.u.utraptype === TT_BURIEDBALL) await buriedBallToPunishment();
+        await resetUtrap(false, state);
+    }
+    for (const [distance, ring] of rings.entries()) {
+        for (const position of ring) await changeInvocationSquare(position, distance, state);
+        if (distance) {
+            await flush_screen(1);
+            await state.animationFrame?.();
+        }
+    }
+    await plineWithContinuation('You are standing at the top of a stairwell leading down!');
+    await mkstairs(state.u.ux, state.u.uy, false, null);
+    await newsym(state.u.ux, state.u.uy);
+    state.vision_full_recalc = 1;
+}
+
+// C mklev.c:mkinvpos().
+async function changeInvocationSquare({ x, y }: Position, distance: number, state: PlayingGameState): Promise<void> {
+    if (x < 2 || y < 2 || x > ((COLNO - 1) & ~1) || y > ((ROWNO - 1) & ~1)) {
+        if (distance < 5) {
+            const report = x > 0 && x < COLNO && y >= 0 && y < ROWNO ? impossible : panic;
+            await report(`mkinvpos: <${x},${y}> (${distance}) off map edge!`, { state });
+        }
+        return;
+    }
+    const level = requireGameLevel(state);
+    const location = level.requireAt(x, y);
+    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (trap) deleteTrap(trap, state);
+    let makeRocks = ![1, 4, 5].includes(distance);
+    for (const boulder of [...(level.objects[x]?.[y] || [])].filter(object => object.otyp === BOULDER)) {
+        if (makeRocks) {
+            await fractureRock(boulder, x, y, { state });
+            makeRocks = false;
+        } else await deleteObject(boulder, state);
+    }
+    location.seenv = location.doormask = location.flags = 0;
+    if (distance < 6) location.lit = true;
+    location.waslit = true;
+    location.horizontal = false;
+    const visionRow = state.viz_array?.[y];
+    if (visionRow) visionRow[x] = distance < 6 ? IN_SIGHT | COULD_SEE : COULD_SEE;
+    if (distance === 1) {
+        if (!isPoolAt(x, y, state)) {
+            location.typ = ROOM;
+            const fire = await maketrap(x, y, FIRE_TRAP);
+            if (fire) fire.tseen = true;
+        }
+    } else location.typ = distance === 4 || distance === 5 ? MOAT : ROOM;
+    const monster = monsterAtPosition(level, x, y);
+    if (monster) {
+        if (monster.m_ap_type) await revealMonsterAppearance(monster);
+        if (level.traps.some(candidate => candidate.tx === x && candidate.ty === y)) {
+            await mintrap(monster, state);
+        } else await resolveMonsterLiquid(monster, state, {
+            announce: plineWithContinuation, monsterMoving: false, finishDeath: finishInvocationLiquidDeath,
+        });
+    }
+    vision_note_blocker_change(x, y);
+    await newsym(x, y);
+}
+
+function finishInvocationLiquidDeath(
+    monster: Monster, options: MonsterLiquidDeathContext,
+): Promise<MonsterLiquidDeathResult | HeroLiquidMonsterDeathOutcome> {
+    if (options.cause === 'drowning' || options.cause === 'lava-burning')
+        return finishHeroLiquidMonsterDeath(monster, options);
+    return finishMonsterLiquidDeath(monster, options);
 }
 
 async function fillRandomRoomObjects(croom: Room, pos: Position): Promise<void> {

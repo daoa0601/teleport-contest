@@ -68,7 +68,7 @@ import { objectResistsDestruction } from './zap.js';
 import { countLevelFeatures, mklev, u_on_downstairs, u_on_sstairs, u_on_upstairs, stairwayAt } from './mklev.js';
 import { monsterAlignmentType, forgetTempleEntry } from './priest.js';
 import { createPlayerMonsters } from './mplayer.js';
-import { gainGuardianAngel } from './guardian_angel.js';
+import { gainGuardianAngel } from './minion.js';
 import { randomMonsterRelocation, enexto, safe_teleds, finishTeleportArrival } from './teleport.js';
 import { placeHeroOnLevel, depth, dungeonBuildsUp, dungeonDepth, endgameLevelName, initOverviewRecord, level_difficulty, markOverviewUnreachable, recordMappedOverviewState, recordOverviewBranch, specialPrototypeAt, u_on_rndspot, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt, ledgerNo, surfaceName, next_level, prev_level, } from './dungeon.js';
 import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks, touchPetrifies, heroResistsStoning, } from './mondata.js';
