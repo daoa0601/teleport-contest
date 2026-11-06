@@ -64,7 +64,7 @@ import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
 import { recordAchievement } from './insight.js';
 import { SHOP_TYPES } from './shknam.js';
 import { buryObject } from './dig.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { markQuestLeaderDead, markQuestNemesisDead, isQuestLeader } from './quest.js';
 import { aggravateMonsters, monsterCarriesSpecialObject, pickNastyShape, wizardDeadOrGone } from './wizard.js';
 import { veganCorpse } from './food_traits.js';

@@ -47,7 +47,7 @@ import { makemonAt } from './makemon.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
 import { bringLeashedFollowers } from './apply.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { canFallThrough } from './mklev.js';

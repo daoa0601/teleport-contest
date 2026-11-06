@@ -68,7 +68,6 @@ src/js/pickup.ts	pickup.c
 src/js/pickup_location.ts	hack.c
 src/js/potion.ts	potion.c
 src/js/pray.ts	pray.c
-src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
 src/js/questpgr.ts	questpgr.c
 src/js/quiver.ts	wield.c
@@ -91,10 +90,10 @@ src/js/teleport.ts	teleport.c
 src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
 src/js/tip_hat.ts	sounds.c
+src/js/topl.ts	topl.c
 src/js/topten.ts	topten.c
 src/js/track.ts	track.c
 src/js/trap.ts	trap.c
-src/js/tty_topline.ts	topl.c
 src/js/uhitm.ts	uhitm.c
 src/js/warning_symbols.ts	options.c
 src/js/weapon.ts	weapon.c

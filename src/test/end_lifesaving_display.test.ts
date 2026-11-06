@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 
 import { resetInputState } from '../js/input.js';

@@ -77,7 +77,7 @@ import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './zap.js';
 import { captureRayTraversalFrame } from './zap.js';
 import { endObjectBurn } from './timeout.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import type { MapLocation, Position, Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';

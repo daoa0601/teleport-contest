@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
 import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
-import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './tty_topline.js';
+import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './topl.js';
 import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph, TemporaryMapEffect } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';

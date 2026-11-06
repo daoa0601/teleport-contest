@@ -173,7 +173,7 @@ import { isTwoWeaponObject, setPrimaryWeapon, setTwoWeaponCombat, uwepgone } fro
 import { cutWorm } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { destroyColdInventory, destroyElectricInventory, destroyFireInventory, destroyMonsterInventoryByElement, drainObjectEnchantment, monsterResistsEffect, objectResistsDestruction } from './zap.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { lightHitsGremlin } from './light.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { WAN_LIGHT } from './object_data.js';

@@ -4,7 +4,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, OBJECT_NAMES, TWO_HANDED_SWORD } from '../js/object_data.js';

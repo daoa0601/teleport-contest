@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DOOR, D_CLOSED, D_NODOOR, FOUNTAIN, HWALL, MM_NOGRP, MON_OFFMAP, NO_MINVENT, ROOM, TREE } from '../js/const.js';
 import { watchDigging } from '../js/dig.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { startHeroDigging } from '../js/dig.js';

@@ -32,7 +32,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import { continueSpellbookStudy } from './spell.js';
-import { clearMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
+import { CTRL_P, clearMessageWindow, flushPendingTopline, messageWindowMode, putMessageHistory, redotoplin, renderKeyPrompt, showMessageHistoryWindow, stepHistoryBack } from './topl.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
 import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
@@ -60,7 +60,6 @@ import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js'
 import {
     pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy, truncateRawMessage,
 } from './pline.js';
-import { messageWindowMode, CTRL_P, redotoplin, showMessageHistoryWindow, stepHistoryBack } from './prevmsg.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
 import { heroBreathAttack } from './zap.js';

@@ -5,7 +5,7 @@ import { continueCountedCommand } from '../js/cmd.js';
 import { doeat } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { FOOD_RATION } from '../js/object_data.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { addInventoryObject } from './support/game-objects.js';

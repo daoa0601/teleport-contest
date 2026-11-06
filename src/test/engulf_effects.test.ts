@@ -6,7 +6,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, Upolyd } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { gulpmu } from '../js/mhitu.js';
 import type { Monster } from '../js/monster_types.js';

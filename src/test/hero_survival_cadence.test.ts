@@ -6,7 +6,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

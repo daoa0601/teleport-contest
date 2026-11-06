@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { finishHeroHelplessness } from '../js/allmain.js';
 import { PARANOID_PRAY } from '../js/const.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithThrownPotion } from '../js/hero_potion_hit.js';
 import { POT_PARALYSIS, POT_SLEEPING } from '../js/object_data.js';

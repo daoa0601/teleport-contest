@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { flushPendingTopline, moreUntilDismissed } from '../js/tty_topline.js';
+import { flushPendingTopline, moreUntilDismissed } from '../js/topl.js';
 import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';

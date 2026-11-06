@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_ANGRY, MM_NOGRP, MM_NOTAIL, NO_MINVENT, STONE, STRAT_WAITMASK } from '../js/const.js';
 import { canSeeMonster, newsym } from '../js/display.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';

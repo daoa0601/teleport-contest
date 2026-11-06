@@ -6,7 +6,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { moveloop_core } from '../js/allmain.js';
 import { A_INT, M_AP_OBJECT } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { placeCreatedObject } from '../js/mkobj.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { advanceDisplacementTimeout } from '../js/hero_displacement.js';

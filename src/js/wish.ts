@@ -2,7 +2,7 @@
 // C ref: allmain.c grants it once, after elapsed monster work and before the
 // next player input; zap.c:makewish() itself lives in zap.ts.
 
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { makeWish } from './zap.js';

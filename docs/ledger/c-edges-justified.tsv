@@ -1513,9 +1513,9 @@ moveloop_preamble	initrack	inlined	initTrack (allmain.ts)
 mv_bubble	block_point	inlined	drawBubble repaints cells and vision_reset() recomputes blockers (mkmaze.ts)
 mv_bubble	sgn	inlined	Math.sign on out-of-range deltas (mkmaze.ts moveBubblePosition)
 mv_bubble	unblock_point	inlined	drawBubble repaints cells and vision_reset() recomputes blockers (mkmaze.ts)
-process_text_window	end_glyphout	inlined	overlay painting restores the map underlay (prevmsg.ts)
-process_text_window	g_putch	inlined	overlay writes through the display cell grid (prevmsg.ts)
-process_text_window	tty_curs	inlined	setCursor while paging (prevmsg.ts)
+process_text_window	end_glyphout	inlined	overlay painting restores the map underlay (topl.ts)
+process_text_window	g_putch	inlined	overlay writes through the display cell grid (topl.ts)
+process_text_window	tty_curs	inlined	setCursor while paging (topl.ts)
 reverse_loot	dist2	inlined	squared distance in royalCoffers nearest-chest pick (pickup.ts)
 reverse_loot	g_at	inlined	objects[x][y] gold pile check after dropping (pickup.ts)
 reverse_loot	inv_cnt	inlined	inventory length for the 1/(n+1) pass (pickup.ts)
@@ -1885,7 +1885,7 @@ wiz_level_tele	ecname_from_fn	inlined	same centralized admission gate (cmd.ts co
 vpline	alloc	n/a	memory allocation for the accessiblemsg coordinate prefix; plineWithContinuation builds the prefixed string directly (pline.ts:82-87)
 vpline	dumplogmsg	n/a	DUMPLOG_CORE dump-file message log; the replay grader writes no dump log
 vpline	execplinehandler	n/a	MSGHANDLER fork/exec of a user message handler; an operating-system feature with no grader effect (c-js-semantics lists it out of scope)
-vpline	putmesg	inlined	the ATR_URGENT/ATR_NOHISTORY attributes are computed where vpline is ported: plineWithContinuation passes urgent to updateTopline (tty_topline.ts), the putstr(WIN_MESSAGE) owner
+vpline	putmesg	inlined	the ATR_URGENT/ATR_NOHISTORY attributes are computed where vpline is ported: plineWithContinuation passes urgent to updateTopline (topl.ts), the putstr(WIN_MESSAGE) owner
 mcast_stun_you	make_stunned	inlined	the stun timeout write, the 0<->nonzero botl flag, and the status transition are inline (mcastu.ts:484-486); set_itimeout replaces the timeout, matching duration over stunnedTurns
 mcast_fire_pillar	burn_away_slime	inlined	clearHeroSliming drops the slimed state and the caller prints the burn-away message (mcastu.ts:563-565); slime.ts burnAwayHeroSlime is the shared timeout.c owner
 missmu	map_invisible	inlined	the attack transaction maps an unseen attacker before projecting its contact line (mhitu.ts:484-497)

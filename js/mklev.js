@@ -66,7 +66,7 @@ import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { addToContainer, beginLuaThemerooms, callLuaThemerooms, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, load_special, medusaPetrifiable, putGeneratedMonsterInventoryInStatue, themerooms_generate } from './sp_lev.js';
 import { finishHeroLiquidMonsterDeath, finishMonsterLiquidDeath, purgeDeadMonsters, removeMonsterFromGame, resolveMonsterLiquid, revealMonsterAppearance, sendMonsterToLimbo } from './mon.js';
 import { fractureRock } from './zap.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { stairway_add, stairway_free_all } from './stairs.js';
 import { switchHeroTerrain, roomsAt } from './hack.js';
 import { is_domestic } from './mondata.js';

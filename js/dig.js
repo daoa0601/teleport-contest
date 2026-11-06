@@ -67,7 +67,7 @@ import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './zap.js';
 import { captureRayTraversalFrame } from './zap.js';
 import { endObjectBurn } from './timeout.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { fireDamageObject } from './trap.js';
 import { nomul, roomForRoomno } from './hack.js';
 import { artifactById } from './artifact.js';

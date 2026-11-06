@@ -11,7 +11,7 @@ import { artifactInfoLines, discoveredArtifacts } from './artifact.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import { rn2 } from './rng.js';
 import { ledgerNo, maxLedgerNo } from './dungeon.js';
-import { clearMessageWindow } from './tty_topline.js';
+import { clearMessageWindow } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { yn_function } from './cmd.js';

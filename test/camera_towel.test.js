@@ -18,7 +18,7 @@ import { wearEyewear } from '../js/do_wear.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { initRng } from '../js/rng.js';
 import { canSeeMonster, newsym } from '../js/display.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { vision_recalc } from '../js/vision.js';
 import { makedog } from '../js/u_init.js';
 import { saveGame, restoreGame } from '../js/save.js';

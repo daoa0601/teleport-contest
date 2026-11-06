@@ -13,7 +13,7 @@ import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { AKLYS, APPLE, HEAVY_IRON_BALL, POT_BLINDNESS, POT_WATER } from '../js/object_data.js';
 import { makeBlinded } from '../js/potion.js';
 import { CLR_GRAY, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
-import { displayMessageWindow } from '../js/tty_topline.js';
+import { displayMessageWindow } from '../js/topl.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';

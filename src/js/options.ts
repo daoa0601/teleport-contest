@@ -40,7 +40,7 @@ import {
     currentBoulderSymbol, docrt, flush_screen,
     reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet,
 } from './display.js';
-import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';

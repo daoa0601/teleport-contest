@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { FOUNTAIN, F_LOOTED, G_GENOD, M_SEEN_FIRE, SINK, S_LRING } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';

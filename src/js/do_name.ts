@@ -60,7 +60,7 @@ import {
 } from './mondata.js';
 import { getLine } from './query.js';
 
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { wipeoutText } from './engrave.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { artifactByName, nameArtifact, setWieldedArtifactProperties } from './artifact.js';

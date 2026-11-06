@@ -4,7 +4,7 @@ import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import { ICE, MM_ANGRY, MM_NOGRP, M_SEEN_COLD, M_SEEN_FIRE, NO_MINVENT, POOL } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_PROTECTION, POT_HEALING } from '../js/object_data.js';

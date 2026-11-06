@@ -4,7 +4,7 @@ import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMUL
 import { objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, oc_color, OBJ_NAME, getObjectDefinition, } from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt, heroCanReachFloor } from './engrave.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { updateStatusLines } from './botl.js';
 import { _buildScreenOutput, writeMapCell } from './wintty.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';

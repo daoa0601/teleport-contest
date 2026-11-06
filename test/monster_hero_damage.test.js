@@ -1,7 +1,7 @@
 import { installPagerInput } from './support/pager-input.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { runExtendedCommand } from './support/commands.js';

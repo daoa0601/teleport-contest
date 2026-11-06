@@ -13,7 +13,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { _statusLine2 } from '../js/botl.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';

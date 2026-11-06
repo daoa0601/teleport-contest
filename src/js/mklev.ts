@@ -78,7 +78,7 @@ import type { MutableNumber, SpecialTrapOptions } from './sp_lev.js';
 import { finishHeroLiquidMonsterDeath, finishMonsterLiquidDeath, purgeDeadMonsters, removeMonsterFromGame, resolveMonsterLiquid, revealMonsterAppearance, sendMonsterToLimbo } from './mon.js';
 import type { HeroLiquidMonsterDeathOutcome, MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
 import { fractureRock } from './zap.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { stairway_add, stairway_free_all } from './stairs.js';
 import { switchHeroTerrain, roomsAt } from './hack.js';
 import { is_domestic } from './mondata.js';

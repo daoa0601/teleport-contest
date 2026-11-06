@@ -4,7 +4,7 @@ import { requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MENU_TRADITIONAL } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { makeStunned } from '../js/potion.js';

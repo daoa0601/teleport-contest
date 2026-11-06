@@ -20,7 +20,7 @@ import { commandResultCancelled, cmdq_add_dir, cmdq_add_ec } from './cmd.js';
 import { game, requireGameLevel, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { doloot } from './pickup.js';
 import type { MapLocation, Position } from './map_types.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { feel_location, feel_newsym, newsym, canSeeMonster, glyphAt, canSpotMonster, map_invisible } from './display.js';
 import { promptDirection } from './cmd.js';
 import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';

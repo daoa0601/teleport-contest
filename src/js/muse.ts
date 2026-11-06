@@ -119,7 +119,7 @@ import { explode } from './explode.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { extendPetHungerDeadline, petFoodNutrition } from './pet_eating.js';
 import { impossible } from './diagnostics.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Position, Stairway, Trap } from './map_types.js';

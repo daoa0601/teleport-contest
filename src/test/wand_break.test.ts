@@ -10,7 +10,7 @@ import {
 } from '../js/const.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';

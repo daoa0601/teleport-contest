@@ -14,7 +14,7 @@ import {
 } from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt, heroCanReachFloor } from './engrave.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { updateStatusLines } from './botl.js';
 import { _buildScreenOutput, writeMapCell } from './wintty.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';

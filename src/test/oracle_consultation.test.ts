@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

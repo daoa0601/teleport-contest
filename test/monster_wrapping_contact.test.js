@@ -6,7 +6,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, POOL } from '../js/const.js';
 import { canSpotMonster } from '../js/display.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, LEATHER_CLOAK, OBJECT_NAMES } from '../js/object_data.js';

@@ -35,7 +35,7 @@ import { propertyIsActive } from './properties.js';
 import { cansee, couldsee } from './vision.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { detectedTrapDisguise } from './detect.js';
-import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
 import { option_help } from './options.js';

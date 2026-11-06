@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
 import { setPropertyTimeout } from '../js/properties.js';

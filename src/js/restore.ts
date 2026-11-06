@@ -8,7 +8,7 @@
 // getlev().
 
 import { game, requireLiveGame } from './gstate.js';
-import { rememberToplines } from './tty_topline.js';
+import { rememberToplines } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { consumeInventoryItem } from './invent.js';
 import { objectName, pluralizeObjectNoun } from './objnam.js';

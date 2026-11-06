@@ -5,7 +5,7 @@ import { encumber_msg } from '../js/pickup.js';
 import { rhack } from '../js/cmd.js';
 import { flipCoin } from '../js/apply.js';
 import { AIR, DOOR, D_BROKEN, HUNGRY, NOT_HUNGRY, WATER, WEAK } from '../js/const.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { cmapSymbolAppearance, flush_screen, newsym } from '../js/display.js';
 import { movebubbles } from '../js/mkmaze.js';
 import { doextversion } from '../js/extversion.js';

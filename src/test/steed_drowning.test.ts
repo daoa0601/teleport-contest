@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POOL, TIMEOUT } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';

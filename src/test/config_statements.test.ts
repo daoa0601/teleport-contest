@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { def_warnsyms, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flush_screen, glyphAt, map_object, newsym } from '../js/display.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { rhack } from '../js/cmd.js';
 import { completeExtendedCommand } from '../js/query.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

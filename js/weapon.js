@@ -32,7 +32,7 @@ import { rn2, d, rnd } from './rng.js';
 import { cansee, couldsee } from './vision.js';
 import { possessiveName } from './hacklib.js';
 import { willWeld } from './wield.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { promptYesNo } from './query.js';
 import { showInventoryWindow } from './windows.js';
 import { ATR_INVERSE } from './terminal.js';

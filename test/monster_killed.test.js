@@ -5,7 +5,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { MM_FEMALE, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { canSpotMonster } from '../js/display.js';
 import { monsterKillLineVisible } from '../js/mon.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

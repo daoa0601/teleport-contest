@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { displayMessageWindow } from '../js/tty_topline.js';
+import { displayMessageWindow } from '../js/topl.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { GameDisplay } from '../js/game_display.js';

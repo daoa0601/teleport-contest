@@ -9,7 +9,7 @@ import { messageTypeFor } from './message_types.js';
 import { heroIsBlind, heroIsDeaf, heroIsUnaware } from './senses.js';
 import {
     displayMessageWindow, rememberToplines, replaceTopline, updateTopline,
-} from './tty_topline.js';
+} from './topl.js';
 import { nhgetch } from './input.js';
 import { BUFSZ, LL_NONE, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';

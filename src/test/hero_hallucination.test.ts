@@ -5,7 +5,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { finishArmorRemoval } from '../js/do_wear.js';
 import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor, wearEyewear } from '../js/do_wear.js';
 
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { makeHallucinated } from '../js/potion.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { polymonHero, returnHeroToHumanForm } from '../js/polyself.js';

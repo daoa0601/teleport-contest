@@ -6,7 +6,7 @@
 import { resetErinys } from './monster_data.js';
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
-import { clearMessageWindow, displayMessageWindow, rememberToplines } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow, rememberToplines } from './topl.js';
 import { tty_exit_nhwindows } from './wintty.js';
 import { docrt, reglyphSymbolSet } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';

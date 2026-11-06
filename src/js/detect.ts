@@ -30,7 +30,7 @@ import {
     flashGlyphAt, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt,
     feel_newsym, OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, terrainCoversObjectsAt, cmapSymbolAppearance,
 } from './display.js';
-import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { displayMessageWindow, flushPendingTopline } from './topl.js';
 import { formatFeltMessage, formatSeenMessage, pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import { A_INT, M_AP_FURNITURE, TER_FULL, TREE, BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TOE, FOOT, NOSE } from './const.js';
 import { isok, ynSingleKey } from './cmd.js';

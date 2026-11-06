@@ -35,7 +35,7 @@ import { makemonAt } from './makemon.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
 import { bringLeashedFollowers } from './apply.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { canFallThrough } from './mklev.js';
 import { stairwayAt, stairway_find_from } from './stairs.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META } from './monster_data.js';

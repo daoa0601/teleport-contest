@@ -1,7 +1,7 @@
 // C teleport.c:level_tele() and random_teleport_level().
 import { buriedBallToPunishment } from './dig.js';
 import { In_endgame, In_mines, In_quest, In_sokoban, TT_BURIEDBALL } from './const.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './topl.js';
 import { formatFeltMessage, pline, plineWithContinuation } from './pline.js';
 import { depth, levelAtDepth, levelDepthByName, printDungeon, specialDisplayName, surfaceName } from './dungeon.js';
 import { showPagedPickOneMenu } from './windows.js';

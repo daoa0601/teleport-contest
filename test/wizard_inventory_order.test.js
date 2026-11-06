@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test, {} from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { fullyIdentifyObject } from '../js/invent.js';

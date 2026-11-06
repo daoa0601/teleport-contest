@@ -10,7 +10,7 @@ import { A_STR, TIMEOUT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { nhTimeout, putHeroToSleep } from '../js/timeout.js';
 import { eye_of_newt_buzz, cpostfx } from '../js/eat.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

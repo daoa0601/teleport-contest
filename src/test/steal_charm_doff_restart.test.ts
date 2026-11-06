@@ -15,7 +15,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';

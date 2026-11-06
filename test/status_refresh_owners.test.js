@@ -5,7 +5,7 @@ import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { bot, timebot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { encumber_msg } from '../js/pickup.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

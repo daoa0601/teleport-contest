@@ -1,5 +1,6 @@
 // Message history and physical topline: C win/tty/topl.c.
 // Message-window entry points also follow win/tty/wintty.c.
+// cmd.c:doprev_message() dispatch stays in cmd.ts; cmd.c:key2txt() too.
 import { game } from './gstate.js';
 import { refreshStatusLines } from './botl.js';
 import { _buildScreenOutput, writeMapRow } from './wintty.js';
@@ -8,6 +9,7 @@ import type { ToplineOptions } from './pline.js';
 import { nhgetch } from './input.js';
 import { COLNO, ROWNO, MAX_MSG_HISTORY, PICK_NONE, PICK_ONE } from './const.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
+import { showDisclosureOverlay } from './windows.js';
 
 interface ToplineCell { ch: string; dec: boolean }
 interface ToplinePagingOptions { urgent?: boolean; dismissKey?: number; rawGlyphs?: boolean }
@@ -44,6 +46,71 @@ export function clearMessageWindow(coveredRows?: number) {
     display.setCursor(0, 0);
 }
 
+export const CTRL_P = 16;
+
+export type MessageWindowMode = 's' | 'c' | 'f' | 'r';
+
+// iflags.prevmsg_window holds the option's first letter; initoptions()
+// leaves the tty default 'single'.
+export function messageWindowMode(): MessageWindowMode {
+    const mode = (game.iflags.prevmsg_window ?? 's').charAt(0).toLowerCase();
+    return mode === 'c' || mode === 'f' || mode === 'r' ? mode : 's';
+}
+
+
+// One step back through the recall ring. tty_doprev_message() decrements
+// cw->maxcol and resets it to maxrow once the walk leaves the filled slots.
+// In a full ring the oldest message occupies maxrow's own slot, so the walk
+// reaches the pending line there instead of displaying that entry.
+// C win/tty/topl.c:tty_doprev_message().
+export function stepHistoryBack(): void {
+    const history = game._messageHistory;
+    const cursor = game._messageHistoryCursor;
+    if (cursor === null) {
+        game._messageHistoryCursor = history.length ? history.length - 1 : null;
+        return;
+    }
+    if (cursor <= 0) {
+        game._messageHistoryCursor = null;
+        return;
+    }
+    // In a full ring the oldest message occupies maxrow's own slot, so a
+    // walk about to reach it returns to the pending line instead.
+    game._messageHistoryCursor = cursor - 1 === 0
+        && history.length === messageHistoryCapacity()
+        ? null : cursor - 1;
+}
+
+
+// tty_doprev_message()'s putstr-built NHW_MENU: "Message History", a blank
+// line, the ring, and the pending topline. tty_display_nhwindow() pages it
+// through process_text_window() because putstr() (unlike add_menu()) owns
+// cw->data, and destroy_nhwindow() erases the corner again.
+// C win/tty/topl.c:tty_doprev_message().
+export async function showMessageHistoryWindow(
+    { reversed, acceptCtrlP }: { reversed: boolean; acceptCtrlP?: boolean },
+): Promise<number> {
+    const lines: string[] = ['Message History', ''];
+    if (reversed) {
+        lines.push(game._toplines);
+        // A full ring keeps its oldest message in maxrow's own slot, where
+        // the reversed walk stops before listing it.
+        const oldest = game._messageHistory.length === messageHistoryCapacity() ? 1 : 0;
+        for (let index = game._messageHistory.length - 1; index >= oldest; index--)
+            lines.push(game._messageHistory[index] ?? '');
+    } else {
+        lines.push(...game._messageHistory, game._toplines);
+    }
+    // tty_display_nhwindow() pages a NEED_MORE topline before the window
+    // (wintty.c:1969-1970); only a prompt's TOPLINE_SPECIAL_PROMPT line is
+    // erased without paging.
+    return await showDisclosureOverlay(lines, {
+        restoreUnderlay: true,
+        extraDismissKey: acceptCtrlP ? CTRL_P : null,
+        skipPendingPager: !!game._promptOwnsTopline,
+    });
+}
+
 // Part of C topl.c:redotoplin(): Install and repaint a physical topline.
 export function replaceTopline(msg: string): void {
     // update_topl()/redotoplin() repaint the whole physical line.
@@ -70,6 +137,43 @@ export function replaceTopline(msg: string): void {
                 display.setCell(column, row, cell.ch, NO_COLOR, 0);
         }
     }
+}
+
+// C topl.c:redotoplin()
+// C tty topl.c:redotoplin(): repaint a recalled line at the top. A line
+// covering several rows pages with --More-- accepting ^P so one press can
+// keep walking, except when the previous topline state was
+// TOPLINE_SPECIAL_PROMPT (topl.c:139) — the prompt's own repaint owns that
+// boundary. Ring entries carry update_topl()'s word wrap; raw
+// putmsghistory entries only get topl_putsym()'s hard column wrap.
+export async function redotoplin(text: string): Promise<number> {
+    const fromPrompt = !!game._promptOwnsTopline;
+    game._promptOwnsTopline = false;
+    const display = game.nhDisplay;
+    // redotoplin() repaints the recalled line across the whole row.
+    resetToplineClip();
+    const columns = display?.cols ?? 80;
+    const lines = toplineRows(text, columns, { splitWords: false });
+    if (lines.length > 1 && !fromPrompt)
+        return await pageTopline(text, { dismissKey: CTRL_P, rawGlyphs: true });
+    if (display) {
+        for (const [row, line] of lines.entries()) {
+            display.clearRow(row);
+            for (const [column, cell] of line.entries())
+                // redotoplin() runs without ttyDisplay->mixed: its putsyms()
+                // copy of the leading graphics byte never reaches the tty
+                // shadow, so a recorded recall shows a blank in that cell
+                // whether or not the live display painted the glyph.
+                display.setCell(column, row, cell.dec ? ' ' : cell.ch, NO_COLOR, 0);
+        }
+        const last = lines.at(-1) ?? lines[0];
+        display.setCursor(last.length, lines.length - 1);
+    }
+    // The recalled repaint blanked the glyph cell.
+    game._toplineGlyphPainted = false;
+    game._pending_message = text;
+    game._retained_message = '';
+    return 0;
 }
 
 // Part of C wintty.c:tty_create_nhwindow(): the NHW_MESSAGE recall-ring capacity.
@@ -483,4 +587,35 @@ function wrapStoredToplines(message: string, columns: number): string {
     for (let raw = 0; raw < message.length; raw++)
         wrapped += breaks.has(raw) ? '\n' : message.charAt(raw);
     return wrapped;
+}
+
+// C topl.c:tty_yn_function(): numeric response entry.
+// Also C topl.c:removetopl(): inlined here when erasing digits or abandoning the count.
+export async function readChoiceNumber(
+    first: string, prompt: string, readAnswer: () => Promise<string>, paint: (text: string) => void,
+): Promise<bigint | null> {
+    let digits = first === '#' ? '' : first;
+    let value = digits ? BigInt(digits) : 0n;
+    paint(prompt + '#' + digits);
+    for (;;) {
+        const character = await readAnswer();
+        if (/^[0-9]$/.test(character)) {
+            const next = value * 10n + BigInt(character);
+            if (next > 9223372036854775807n) break;
+            value = next;
+            digits += character;
+        } else if (character === 'y' || ' \n\r\x1b\0'.includes(character)) {
+            if (character !== '\x1b') return value;
+            break;
+        } else if (character === '\x7f' || character === '\b') {
+            if (!digits) break;
+            value /= 10n;
+            digits = digits.slice(0, -1);
+        } else break;
+        paint(prompt + '#' + digits);
+    }
+    // Escape, overflow, erasing the '#', or an invalid character aborts the
+    // number and returns to the same yes/no question without that character.
+    paint(prompt);
+    return null;
 }

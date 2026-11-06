@@ -9,7 +9,7 @@ import {
 } from '../js/const.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';

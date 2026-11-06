@@ -5,7 +5,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { D_BROKEN, D_CLOSED, D_NODOOR, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MM_ANGRY, MM_NOGRP, MON_EXPLODE, IRONBARS, NO_MINVENT, PHYS_EXPL_TYPE, W_AMUL, } from '../js/const.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { explode } from '../js/explode.js';
 import { requireGameLevel, game } from '../js/gstate.js';

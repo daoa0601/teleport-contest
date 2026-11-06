@@ -2,7 +2,7 @@
 // The wintty.c menu port itself lives in wintty.ts.
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { clearMessageWindow, flushPendingTopline } from './topl.js';
 import { docrt, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';

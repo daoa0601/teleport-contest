@@ -10,7 +10,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 
 import { rhack } from '../js/cmd.js';
 import { _statusLine2 } from '../js/botl.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 
 import { heroIsStrangled } from '../js/do_wear.js';

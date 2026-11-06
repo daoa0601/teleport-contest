@@ -75,7 +75,7 @@ import { explode } from './explode.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { extendPetHungerDeadline, petFoodNutrition } from './pet_eating.js';
 import { impossible } from './diagnostics.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { displayMessageWindow } from './topl.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { exerciseWisdom } from './attrib.js';
 import { recordObjectKnowledge } from './o_init.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
 import { P_POLEARMS } from '../js/const.js';
-import { clearMessageWindow } from '../js/tty_topline.js';
+import { clearMessageWindow } from '../js/topl.js';
 import { docrt } from '../js/display.js';
 import { updateStatusLines } from '../js/botl.js';
 import { game } from '../js/gstate.js';

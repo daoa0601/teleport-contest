@@ -6,7 +6,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { A_CON, LAVAPOOL, NO_MINVENT, POOL } from '../js/const.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { flushPendingTopline } from '../js/tty_topline.js';
+import { flushPendingTopline } from '../js/topl.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER } from '../js/object_data.js';
 import { changeMonsterForm } from '../js/mon.js';
