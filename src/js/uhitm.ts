@@ -3559,7 +3559,7 @@ export async function mhitmAdDren(call: MhitmAdDrenCall): Promise<MhitmAdStatusR
     }
 }
 
-// C uhitm.c:mhitm_ad_dren()'s mhitm branch.
+// The mhitm branch of C uhitm.c:mhitm_ad_dren().
 async function drainEnergy(
     attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
 ): Promise<void> {
@@ -3931,7 +3931,6 @@ export async function mhitmAdTlpt(call: MhitmAdTlptCall): Promise<MhitmAdStatusR
     }
 }
 
-
 // One call of mhitm_adtyping(… AD_POLY …); the union member names the actor
 // that C compares against &gy.youmonst.
 export type MhitmAdPolyCall =
@@ -4021,33 +4020,32 @@ export async function mhitmAdPoly(call: MhitmAdPolyCall): Promise<HeroNaturalEff
         const { state, attacker: monster, attack, publish, rollOne = rnd } = call.context;
         const damage = attack.damage ?? 0;
         const physicalDamage = state.u.halfPhysicalDamage ? Math.ceil(damage / 2) : damage;
-        if (physicalDamage < (Upolyd(state.u) ? state.u.mh : state.u.uhp)) {
-            if (!attack.negated) {
-                const oldForm = state.u.umonnum;
-                if (state.u.antimagic) {
-                    await shieldeff(state.u.ux, state.u.uy, state);
-                } else if (!heroIsUnchanging(state)) {
-                    if (state.u.ulycn === -1) {
-                        await publish('You are subjected to a freakish metamorphosis.');
-                        await polymorphHero();
-                    } else if (state.u.umonnum !== state.u.ulycn) {
-                        await publish(formatFeltMessage('an unnatural urge coming on.', state));
-                        await applyHeroWereChange({ state, publish });
-                    } else {
-                        await publish(formatFeltMessage('a natural urge coming on.', state));
-                        await revertHeroWereForm({ state, publish });
-                    }
-                }
-                if (state.u.umonnum !== oldForm)
-                    monster.mspec_used = (monster.mspec_used ?? 0) + rollOne(2);
-            } else if (monster.mcan) {
-                await publish("You aren't transformed.");
-            }
-            // mhitm_ad_poly() marks this hit done even when resistance
-            // prevented the body change. hitmu() still attempts knockback,
-            // then returns.
-            attack.contactDone = true;
+        if (physicalDamage >= (Upolyd(state.u) ? state.u.mh : state.u.uhp))
+            return statusContinueResult(attack.damage ?? 0);
+        if (attack.negated) {
+            if (monster.mcan) await publish("You aren't transformed.");
+            return statusContinueResult(attack.damage ?? 0);
         }
+        const oldForm = state.u.umonnum;
+        if (state.u.antimagic) {
+            await shieldeff(state.u.ux, state.u.uy, state);
+        } else if (!heroIsUnchanging(state)) {
+            if (state.u.ulycn === -1) {
+                await publish('You are subjected to a freakish metamorphosis.');
+                await polymorphHero();
+            } else if (state.u.umonnum !== state.u.ulycn) {
+                await publish(formatFeltMessage('an unnatural urge coming on.', state));
+                await applyHeroWereChange({ state, publish });
+            } else {
+                await publish(formatFeltMessage('a natural urge coming on.', state));
+                await revertHeroWereForm({ state, publish });
+            }
+        }
+        if (state.u.umonnum !== oldForm)
+            monster.mspec_used = (monster.mspec_used ?? 0) + rollOne(2);
+        // mhitm_ad_poly() marks this hit done even when resistance prevented
+        // the body change. hitmu() still attempts knockback, then returns.
+        attack.contactDone = true;
         return statusContinueResult(attack.damage ?? 0);
     } else {
         /* mhitm: monster versus monster */
@@ -4123,7 +4121,6 @@ async function announcePolymorph(defender: Monster, before: string, { state, pub
         await publish(`${before} undergoes a freakish metamorphosis and disappears.`);
     }
 }
-
 
 function transformationResult(damage: number): MonsterCombatEffectResult {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
@@ -4389,7 +4386,6 @@ export async function mhitmAdStck(call: MhitmAdStckCall): Promise<MhitmAdStatusR
 
 // ─── C uhitm.c:mhitm_ad_wrap() (from hero_natural_grip.ts) ───
 
-
 const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
 
 // One call of mhitm_adtyping(… AD_WRAP …); the union member names the actor
@@ -4524,7 +4520,6 @@ export async function monsterSlipsFromHeroGrip(
 }
 const S_NAGA = 40;
 const S_SNAKE = 45;
-
 
 function heroSurvivesWrappingUnderwater(state: PlayingGameState): boolean {
     return !!(state.u.swimming || state.u.amphibious || state.u.breathless || state.u.magicalBreathing
@@ -5318,7 +5313,9 @@ export async function mhitmAdSton(call: MhitmAdStonCall): Promise<MhitmAdStatusR
     }
 }
 
-// C uhitm.c:mhitm_ad_heal(), against the hero.
+// The nurse contact-mode check inside C uhitm.c:mhitm_ad_heal()'s mhitu
+// branch: a cancelled nurse is just an ordinary monster, and nurses don't
+// heal those that cause petrification.
 export function nurseContactMode(monster: Monster, state: PlayingGameState): 'hit' | 'heal' | 'cooperate' {
     if (monster.mcan || (Upolyd(state.u) && touchPetrifies(heroSpecies(state)))) return 'hit';
     const weapon = state.uwep || state.u.uwep;
@@ -5765,8 +5762,6 @@ async function summonDemonPet(context: HeroNaturalEffectContext): Promise<boolea
     exerciseWisdom(true, state);
     return true;
 }
-
-
 
 function wearsDragonDefense(monster: Monster, species: string, scales: number, mail: number): boolean {
     return speciesIs(monster, species) || (monster.minvent ?? []).some(object =>

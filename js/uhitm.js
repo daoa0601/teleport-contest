@@ -2915,7 +2915,7 @@ export async function mhitmAdDren(call) {
         return damageResult(0);
     }
 }
-// C uhitm.c:mhitm_ad_dren()'s mhitm branch.
+// The mhitm branch of C uhitm.c:mhitm_ad_dren().
 async function drainEnergy(attacker, defender, context) {
     const { state, visible, random, rollDice, publish } = context;
     if (await mhitm_mgc_atk_negated(attacker, defender, {
@@ -3352,37 +3352,36 @@ export async function mhitmAdPoly(call) {
         const { state, attacker: monster, attack, publish, rollOne = rnd } = call.context;
         const damage = attack.damage ?? 0;
         const physicalDamage = state.u.halfPhysicalDamage ? Math.ceil(damage / 2) : damage;
-        if (physicalDamage < (Upolyd(state.u) ? state.u.mh : state.u.uhp)) {
-            if (!attack.negated) {
-                const oldForm = state.u.umonnum;
-                if (state.u.antimagic) {
-                    await shieldeff(state.u.ux, state.u.uy, state);
-                }
-                else if (!heroIsUnchanging(state)) {
-                    if (state.u.ulycn === -1) {
-                        await publish('You are subjected to a freakish metamorphosis.');
-                        await polymorphHero();
-                    }
-                    else if (state.u.umonnum !== state.u.ulycn) {
-                        await publish(formatFeltMessage('an unnatural urge coming on.', state));
-                        await applyHeroWereChange({ state, publish });
-                    }
-                    else {
-                        await publish(formatFeltMessage('a natural urge coming on.', state));
-                        await revertHeroWereForm({ state, publish });
-                    }
-                }
-                if (state.u.umonnum !== oldForm)
-                    monster.mspec_used = (monster.mspec_used ?? 0) + rollOne(2);
-            }
-            else if (monster.mcan) {
+        if (physicalDamage >= (Upolyd(state.u) ? state.u.mh : state.u.uhp))
+            return statusContinueResult(attack.damage ?? 0);
+        if (attack.negated) {
+            if (monster.mcan)
                 await publish("You aren't transformed.");
-            }
-            // mhitm_ad_poly() marks this hit done even when resistance
-            // prevented the body change. hitmu() still attempts knockback,
-            // then returns.
-            attack.contactDone = true;
+            return statusContinueResult(attack.damage ?? 0);
         }
+        const oldForm = state.u.umonnum;
+        if (state.u.antimagic) {
+            await shieldeff(state.u.ux, state.u.uy, state);
+        }
+        else if (!heroIsUnchanging(state)) {
+            if (state.u.ulycn === -1) {
+                await publish('You are subjected to a freakish metamorphosis.');
+                await polymorphHero();
+            }
+            else if (state.u.umonnum !== state.u.ulycn) {
+                await publish(formatFeltMessage('an unnatural urge coming on.', state));
+                await applyHeroWereChange({ state, publish });
+            }
+            else {
+                await publish(formatFeltMessage('a natural urge coming on.', state));
+                await revertHeroWereForm({ state, publish });
+            }
+        }
+        if (state.u.umonnum !== oldForm)
+            monster.mspec_used = (monster.mspec_used ?? 0) + rollOne(2);
+        // mhitm_ad_poly() marks this hit done even when resistance prevented
+        // the body change. hitmu() still attempts knockback, then returns.
+        attack.contactDone = true;
         return statusContinueResult(attack.damage ?? 0);
     }
     else {
@@ -4539,7 +4538,9 @@ export async function mhitmAdSton(call) {
         return { damage: 0, nativeResult, done: stone.stopped, heroDied };
     }
 }
-// C uhitm.c:mhitm_ad_heal(), against the hero.
+// The nurse contact-mode check inside C uhitm.c:mhitm_ad_heal()'s mhitu
+// branch: a cancelled nurse is just an ordinary monster, and nurses don't
+// heal those that cause petrification.
 export function nurseContactMode(monster, state) {
     if (monster.mcan || (Upolyd(state.u) && touchPetrifies(heroSpecies(state))))
         return 'hit';
