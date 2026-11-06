@@ -1716,12 +1716,6 @@ export function levelHasCeiling(state = game) {
         && current.dnum === earth.dnum && current.dlevel === earth.dlevel;
     return !inEndgame || onEarth;
 }
-// C dungeon.h:Is_waterlevel().
-export function levelIsWaterLevel(state = game) {
-    const level = state.u?.uz;
-    const water = state.water_level;
-    return !!level && !!water && level.dnum === water.dnum && level.dlevel === water.dlevel;
-}
 // C dungeon.c:ceiling(). Moved from terrain_name.js (pure move).
 export function ceilingName(x, y, state = game) {
     const type = state.level?.at?.(x, y)?.typ;

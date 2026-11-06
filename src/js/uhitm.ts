@@ -45,7 +45,6 @@ import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeActio
 import { abusePet, tameMonster } from './dog.js';
 import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, willMonsterHurtle } from './dothrow.js';
 import type { HurtleDeathHandler, HurtleLiquidDeathHandler, MonsterHurtleOutcome } from './dothrow.js';
-import { levelIsWaterLevel } from './dungeon.js';
 import { eat_brains, eating_conducts, morehungry, newuhs } from './eat.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
@@ -4517,7 +4516,7 @@ export async function mhitmAdWrap(call: MhitmAdWrapCall): Promise<HeroNaturalEff
             const terrain = state.level.requireAt(monster.mx, monster.my).typ;
             const medusa = state.medusa_level;
             const onMedusa = medusa && medusa.dnum === hero.uz.dnum && medusa.dlevel === hero.uz.dlevel;
-            const moat = terrain !== POOL && terrain !== WATER && !onMedusa && !levelIsWaterLevel(state);
+            const moat = terrain !== POOL && terrain !== WATER && !onMedusa && !Is_waterlevel(hero.uz);
             const species = withIndefiniteArticle(monsterTypeName(monster.mnum, !!monster.female));
             const killer = `${moat ? 'moat' : 'pool of water'} by ${species}`;
             attack.heroDied = await finishHeroDeath({

@@ -39,7 +39,7 @@ import { heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHer
 import { finishPrayerOccupation } from './pray.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
-import { depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain, } from './dungeon.js';
+import { depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain, } from './dungeon.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
 import { ingSuffix, upstart } from './hacklib.js';
@@ -916,7 +916,7 @@ async function leaveWater({ state, location, publish, }) {
     let message = null;
     let stillInWater = false;
     if (!isPoolAt(u.ux, u.uy, state)) {
-        if (heroIsOnWaterLevel(state)) {
+        if (Is_waterlevel(u.uz)) {
             message = 'You pop into an air bubble.';
         }
         else if (isLavaAt(u.ux, u.uy, state)) {
@@ -926,7 +926,7 @@ async function leaveWater({ state, location, publish, }) {
             message = backOnGroundMessage(false, state);
         }
     }
-    else if (heroIsOnWaterLevel(state)) {
+    else if (Is_waterlevel(u.uz)) {
         stillInWater = true;
     }
     else if (u.levitating || u.levitation) {
@@ -946,7 +946,7 @@ async function leaveWater({ state, location, publish, }) {
     if (message)
         await publish(message);
     // C Underwater is u.uinwater, still set until set_uinwater(0) below.
-    const wasUnderwater = !!(u.uinwater || state.underwater) && !heroIsOnWaterLevel(state);
+    const wasUnderwater = !!(u.uinwater || state.underwater) && !Is_waterlevel(u.uz);
     await setHeroInWater(false, state);
     state.underwater = false;
     // C restores the surface view by redrawing the screen and deferring the

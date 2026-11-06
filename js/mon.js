@@ -44,7 +44,7 @@ import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_
 import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { insideWizardTower, sameDungeonLevel, level_difficulty, levelIsWaterLevel, levelHasCeiling, surfaceName } from './dungeon.js';
+import { insideWizardTower, sameDungeonLevel, level_difficulty, levelHasCeiling, surfaceName } from './dungeon.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments, removeMonsterWormBody } from './worm.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -97,7 +97,7 @@ import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { simpleObjectTypeName } from './objnam.js';
-import { RLOC_NONE, Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
+import { RLOC_NONE, Is_astralevel, Is_waterlevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { isHomeElemental } from './makemon.js';
 import { AD_STCK, AT_HUGS } from './monster_attack_types.js';
@@ -225,7 +225,7 @@ function heroKeepsSteedAboveLiquid(monster, state, waterWall) {
 export function rollMonsterPoolReaction(monster, state = game, { random = rn2, rollDice = d } = {}) {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     const waterWall = location?.typ === WATER;
-    const waterLevel = levelIsWaterLevel(state);
+    const waterLevel = Is_waterlevel(state.u.uz);
     const safelyAirborne = !waterWall && !waterLevel
         && monsterFliesOrFloats(monster);
     if (heroKeepsSteedAboveLiquid(monster, state, waterWall)
@@ -281,7 +281,7 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
         // conduct and pet responsibility before an amulet can save the victim.
         return finishDeath(monster, { state, random, rollOne, leaveCorpse, cause, sadFeeling, publish: announce });
     };
-    const waterLevel = levelIsWaterLevel(state);
+    const waterLevel = Is_waterlevel(state.u.uz);
     const waterWall = location.typ === WATER;
     if (heroKeepsSteedAboveLiquid(monster, state, waterWall))
         return { survived: true };
@@ -1317,7 +1317,7 @@ function hidingPlace(actor, state) {
     if (monsterIsEel(actor.species)) {
         const heroUnderwater = !!(state.underwater || state.u.uinwater);
         const inLineOfSight = !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
-        const hidden = isPoolAt(x, y, state) && !levelIsWaterLevel(state)
+        const hidden = isPoolAt(x, y, state) && !Is_waterlevel(state.u.uz)
             && (!heroUnderwater || !inLineOfSight);
         return { undetected: hidden, cover: null, water: true };
     }
