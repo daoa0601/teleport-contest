@@ -36,7 +36,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet } from './do_wear.js';
 import { waterbodyName, iceDescriptionAt } from './pager.js';
 import { do_attack, prepareAppliedWeaponAttack, hasDoorAppearance, stumbleOntoMimic, resolveHeroCombatExplosion, } from './uhitm.js';
-import { heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted, finishTeleportArrival, } from './teleport.js';
+import { heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth, } from './teleport.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
 import { depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel, surfaceName, ceilingName, placeHeroOnLevel, } from './dungeon.js';
@@ -62,7 +62,6 @@ import { floorObjectDescription, stack_object, freeInventoryObject, delobj } fro
 import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { randomTeleportDepth } from './level_teleport.js';
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
 import { intemple } from './priest.js';

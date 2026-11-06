@@ -14,11 +14,14 @@ import type { MessagePublisher } from './pline.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
-import { randomTeleportDepth, levelTeleport } from './level_teleport.js';
+import { flushPendingTopline } from './topl.js';
+import { showPagedPickOneMenu } from './windows.js';
+import { addInventoryItem } from './invent.js';
+import { finishHeroDeath } from './end.js';
 import { dist2, distmin } from './hacklib.js';
 import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
-import { levelAtDepth, insideWizardTower, levelIsWizardTower, levelIsWaterLevel } from './dungeon.js';
+import { levelAtDepth, levelDepthByName, insideWizardTower, levelIsWizardTower, levelIsWaterLevel, printDungeon, specialDisplayName, surfaceName } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { bot } from './botl.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, endVoluntaryMultiTurn, shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt, switchHeroTerrain, finishDestinationSpotEffects } from './hack.js';
@@ -27,15 +30,15 @@ import { findVaultGuard, noticeVaultEscape } from './vault.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters, shieldeff } from './display.js';
 import { vision_recalc, couldsee } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash, bringLeashedFollowers } from './apply.js';
-import { rn2, rnd } from './rng.js';
+import { rn2, rnd, rnl } from './rng.js';
 import { isok } from './cmd.js';
 import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { AMULET_OF_YENDOR, BOULDER, CORPSE, oc_level, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SCR_SCARE_MONSTER, SPE_TELEPORT_AWAY, WAN_TELEPORTATION } from './object_data.js';
 import { morehungry } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { ACCESSIBLE, ALTAR, CC_INCL_CENTER, CC_NO_FLAGS, CC_RING_PAIRS, CC_SKIP_INACCS, CC_SKIP_MONS, CC_UNSHUFFLED, COLNO, D_CLOSED, D_LOCKED, DOOR, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, IS_STWALL, LEVEL_TELEP, MAGIC_PORTAL, MAX_TYPE, MM_IGNORELAVA, MM_IGNOREWATER, RLOC_ERR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, ROWNO, SHOPBASE, STRAT_APPEARMSG, TELEP_TRAP, TT_BURIEDBALL, VAULT, VIBRATING_SQUARE, WATER, W_NONPASSWALL, ZAP_POS, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, M_AP_NOTHING, MON_FLOOR, Upolyd, is_hole, is_pit, A_STR, BOLT_LIM, HOLE, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE } from './const.js';
+import { ACCESSIBLE, ALTAR, CC_INCL_CENTER, CC_NO_FLAGS, CC_RING_PAIRS, CC_SKIP_INACCS, CC_SKIP_MONS, CC_UNSHUFFLED, COLNO, D_CLOSED, D_LOCKED, DOOR, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, IS_STWALL, LEVEL_TELEP, MAGIC_PORTAL, MAX_TYPE, MM_IGNORELAVA, MM_IGNOREWATER, RLOC_ERR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, ROWNO, SHOPBASE, STRAT_APPEARMSG, TELEP_TRAP, TT_BURIEDBALL, VAULT, VIBRATING_SQUARE, WATER, W_NONPASSWALL, ZAP_POS, In_endgame, In_mines, In_quest, In_sokoban, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, M_AP_NOTHING, MON_FLOOR, Upolyd, is_hole, is_pit, A_STR, BOLT_LIM, HOLE, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE } from './const.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
-import { costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper, addShopObjectToBill, costlyAdjacent, removeObjectAndContentsFromBill } from './shk.js';
+import { costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper, addShopObjectToBill, costlyAdjacent, removeObjectAndContentsFromBill, leaveHeroShop } from './shk.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { hasCompletedEngraving } from './engrave.js';
@@ -43,16 +46,17 @@ import { searchSpecial, somexyspace } from './mkroom.js';
 import { monsterIsScaredAt } from './monmove.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { heroHasWaterWalking } from './do_wear.js';
-import { heroLikesLava } from './polyself.js';
+import { heroLikesLava, heroSpecies } from './polyself.js';
 import type { MonsterFearProbe } from './monmove.js';
-import { promptYesNo } from './query.js';
+import { promptYesNo, getLine, promptYesNoQuit } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns, heroIsHallucinating } from './senses.js';
 import { buriedBallToPunishment } from './dig.js';
 import { depth, placeHeroOnLevel } from './dungeon.js';
 import { makeStunned, makeConfused } from './potion.js';
-import type { DungeonLocation } from './dungeon_types.js';
-import { learnObjectType } from './o_init.js';
-import type { GameState } from './game_state.js';
+import type { Dungeon, DungeonLocation } from './dungeon_types.js';
+import type { WizardLevelDestination } from './dungeon.js';
+import { learnObjectType, recordObjectEncounter } from './o_init.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameMap } from './game.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -64,12 +68,12 @@ import { migrateMonsterOffLevel } from './dog.js';
 import { isHomeElemental } from './makemon.js';
 import { reviveCorpseImmediately } from './do.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { unlinkObject, placeObject} from './mkobj.js';
+import { unlinkObject, placeObject, mksobj} from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import {
     monsterIsAmphibious, monsterIsSwimmer, monsterPassesWalls, monsterIsAmorphous, monsterThrowsRocks, is_lord,
     is_prince, monsterHasEyes, monsterIsCovetous, monsterIsEel, monsterCanTeleport, monsterControlsTeleport,
-    monsterIsRider,
+    monsterIsRider, monsterIsSilent,
 } from './mondata.js';
 
 // teleport.js - same-level teleportation.
@@ -857,6 +861,300 @@ export async function randomMonsterRelocation(monster: Monster | null, {
         return await relocateMonsterTo(monster, fallback.x, fallback.y, { state, random, rollOne, calls, flags });
     if (flags & RLOC_ERR) await impossible("rloc(): couldn't relocate monster", { state });
     return null;
+}
+
+const shudder = 'You shudder for a moment.';
+
+export type LevelChange = (...args: Parameters<typeof changeLevel>) => unknown;
+
+type LevelRequest =
+    | { random: true; depth?: never; destination?: never }
+    | { random?: false; depth: number; destination?: never }
+    | { random?: false; depth?: never; destination: DungeonLocation };
+
+// C teleport.c:level_tele().
+export async function levelTeleport({ state = game,
+    gotoLevel = (...args: Parameters<typeof changeLevel>) => { scheduleLevelChange(args); },
+    menuRequested = false }: {
+    state?: GameState; gotoLevel?: LevelChange; menuRequested?: boolean;
+} = {}): Promise<void> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const hero = state.u;
+    const wizard = !!state.flags.debug;
+    if (state.iflags.debug_fuzzer) {
+        let dnum;
+        do dnum = rn2(state.dungeons.length);
+        while (dnum === state.astral_level?.dnum || dungeonAt(state, dnum).flags.unconnected
+            || !dungeonAt(state, dnum).num_dunlevs);
+        hero.ucamefrom = { ...hero.uz };
+        await gotoLevel({ dnum, dlevel: 1 + rn2(dungeonAt(state, dnum).num_dunlevs) });
+        return;
+    }
+    if ((hero.uhave?.amulet || In_endgame(hero.uz) || In_sokoban(hero.uz)) && !wizard) {
+        await plineWithContinuation(formatFeltMessage('very disoriented for a moment.', state));
+        return;
+    }
+
+    const controlled = (heroControlsTeleport(state)
+        && !(hero.stunned || (hero.stunnedTurns ?? 0) > 0)) || wizard;
+    const request: LevelRequest | null = controlled
+        ? await readLevelRequest(state, menuRequested) : { random: true };
+    if (!request) return;
+    let newDepth = request.depth;
+    const forced = request.destination;
+    if (request.random) {
+        newDepth = randomTeleportDepth(state);
+        if (newDepth === depth(hero.uz)) {
+            await plineWithContinuation(shudder);
+            return;
+        }
+    } else if (!forced) {
+        if (newDepth === undefined) throw new Error('Controlled level teleport has no requested depth');
+        if (newDepth === 0) {
+            await teleportToNowhere(state);
+            return;
+        }
+        if (atKnox(state) && newDepth > 0) {
+            await plineWithContinuation(shudder);
+            return;
+        }
+        if (In_quest(hero.uz) && newDepth > 0)
+            newDepth += dungeonAt(state, hero.uz.dnum).depth_start - 1;
+    }
+
+    if (hero.utrap && hero.utraptype === TT_BURIEDBALL)
+        await buriedBallToPunishment(state);
+    if (!(await bringLeashedFollowers(state)) && !forced) {
+        await plineWithContinuation(shudder);
+        return;
+    }
+    if (In_endgame(hero.uz)) {
+        // teleport.c: the In_endgame() branch runs for the wizard menu too;
+        // it never passes the "You materialize on a different level!"
+        // deferred message, so traveling between the planes stays silent.
+        const levels = dungeonAt(state, hero.uz.dnum).num_dunlevs;
+        let depthRequest = newDepth;
+        if (forced && depthRequest === undefined)
+            depthRequest = forced.dlevel - levels;
+        if (depthRequest === undefined) throw new Error('Endgame teleport has no requested depth');
+        if (depthRequest >= 0 || depthRequest <= -levels) {
+            await plineWithContinuation("You can't get there from here.");
+            return;
+        }
+        await gotoLevel({ dnum: hero.uz.dnum, dlevel: levels + depthRequest });
+        return;
+    }
+    if (newDepth !== undefined && newDepth < 0 && !forced) {
+        await teleportAboveDungeon(newDepth, state, gotoLevel);
+        return;
+    }
+
+    if (!forced && newDepth === undefined) throw new Error('Level teleport has no destination');
+    const destination = forced || (newDepth !== undefined
+        ? await destinationAtDepth(newDepth, state) : null);
+    if (!destination) return;
+    await gotoLevel({ dnum: destination.dnum, dlevel: destination.dlevel }, {
+        arrival: 'random',
+        postMessage: state.flags.verbose ? 'You materialize on a different level!' : '',
+    });
+}
+
+// Part of C teleport.c:level_tele(): its wizard-menu entry into the
+// Elemental Planes grants the real Amulet before deferred_goto() starts.
+// Object construction, inventory identity, and prinv() precede
+// getbones()/mklev().  Destination placement finishes before tty asks
+// for acknowledgement.
+async function endgamePrerequisite(destination: DungeonLocation) {
+    if (!In_endgame(destination) || In_endgame(game.u?.uz)
+        || game.u?.uhave?.amulet) return;
+    const amulet = await addInventoryItem(
+        await mksobj(AMULET_OF_YENDOR, true, false),
+    );
+    // teleport.c prints the grant with prinv(); its doname()->xname() path
+    // observes the visible object and appends it to the Amulet disco[] class
+    // before the destination transaction begins.
+    recordObjectEncounter(amulet.otyp);
+    if (!game.u.uhave) game.u.uhave = {};
+    game.u.uhave.amulet = 1;
+    const message = `Endgame prerequisite: ${
+        amulet.invlet
+    } - the Amulet of Yendor.`;
+    await pline(message);
+}
+
+// Part of C teleport.c:level_tele(): the wizard level-teleport menu path,
+// 'm ^V' or '?', which calls dungeon.c:print_dungeon(TRUE) and then grants
+// the endgame prerequisite before forcing the destination.
+export async function chooseWizardLevelDestination(): Promise<{ destination: WizardLevelDestination } | null> {
+    const { rows, choices } = printDungeon(true);
+    const destination = await showPagedPickOneMenu({
+        rows, choices, prompt: 'Level teleport to where:',
+    });
+    if (!destination) return null;
+    await endgamePrerequisite(destination);
+    return { destination };
+}
+
+async function readLevelRequest(state: PlayingGameState, menuRequested: boolean): Promise<LevelRequest | null> {
+    const wizard = !!state.flags.debug;
+    menuRequested ||= !!state.iflags.menu_requested;
+    state.iflags.menu_requested = false;
+    if (menuRequested && wizard) return chooseWizardLevelDestination();
+    for (let attempt = 1; attempt <= 10; attempt++) {
+        const help = attempt > 1
+            ? wizard ? ' [type a number, name, or ? for a menu]' : ' [type a number or name]'
+            : '';
+        const text = await getLine(`To what level do you want to teleport?${help}`,
+            character => character >= ' ');
+        if (text === '*') return { random: true };
+        // A confused cancellation can itself be misread as random teleport.
+        if ((state.u.confused || (state.u.confusionTurns ?? 0) > 0) && rnl(5)) {
+            await plineWithContinuation('Oops...');
+            return { random: true };
+        }
+        if (text === null) return null;
+        if (wizard && text === '?') return chooseWizardLevelDestination();
+        const requested = levelDepthByName(text, state) || Number.parseInt(text, 10) || 0;
+        if (requested || /^-?\d/.test(text))
+            return !requested && attempt === 10 ? { random: true } : { depth: requested };
+    }
+    return { random: true };
+}
+
+// C teleport.c:random_teleport_level(). The 1-in-5 no-op is evaluated even
+// in branches which forbid random travel.
+export function randomTeleportDepth(state: GameState = game, random = rn2, rollOne = rnd): number {
+    requirePlayingGame(state);
+    const hero = state.u;
+    const current = depth(hero.uz, state.dungeons);
+    const dungeon = dungeonAt(state, hero.uz.dnum);
+    if (!random(5) || atKnox(state) || In_endgame(hero.uz)) return current;
+    let minimum = 1;
+    let maximum = dungeon.depth_start + dungeon.num_dunlevs - 1;
+    if (In_quest(hero.uz)) {
+        minimum = dungeon.depth_start;
+        const locate = requiredSpecialLevel(state, 'x-loca');
+        if (dungeon.dunlev_ureached < locate.dlevel)
+            maximum = minimum + locate.dlevel - 1;
+    } else if (dungeon.flags?.hellish && !hero.uevent?.invoked) maximum--;
+    let destination = random(current + 3 - minimum) + minimum;
+    if (destination >= current) destination++;
+    if (destination > maximum) {
+        destination = maximum;
+        if (hero.uz.dlevel === dungeon.num_dunlevs) destination -= rollOne(3);
+    }
+    if (destination < minimum) {
+        destination = minimum;
+        if (destination === current) destination = Math.min(maximum, destination + rollOne(3));
+    }
+    return destination;
+}
+
+function atKnox(state: GameState): boolean {
+    return sameLevel(state.u.uz, state.knox_level);
+}
+
+function sameLevel(left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined): boolean {
+    return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
+}
+
+async function destinationAtDepth(requested: number, state: PlayingGameState): Promise<DungeonLocation | null> {
+    const hero = state.u;
+    const dungeon = dungeonAt(state, hero.uz.dnum);
+    if (hero.uz.dnum === state.medusa_level?.dnum
+        && requested >= dungeon.depth_start + dungeon.num_dunlevs) {
+        const valley = state.valley_level;
+        if (!valley) throw new Error('The dungeon graph has no Gehennom entrance');
+        return { dnum: valley.dnum, dlevel: 1 };
+    }
+    const bottom = In_quest(hero.uz) ? requiredSpecialLevel(state, 'x-strt')
+        : In_mines(hero.uz) ? requiredSpecialLevel(state, 'minend') : state.sanctum_level;
+    const bottomDungeon = dungeonAt(state, bottom?.dnum ?? hero.uz.dnum);
+    const deepest = bottomDungeon.depth_start + bottomDungeon.num_dunlevs - 1;
+    if (!state.flags.debug && dungeon.flags?.hellish
+        && !hero.uevent?.invoked && requested >= deepest) {
+        requested = deepest - 1;
+        await plineWithContinuation('Sorry...');
+    }
+    if (In_quest(hero.uz)) requested = Math.max(requested, depth(requiredSpecialLevel(state, 'x-strt')));
+    const destination = levelAtDepth(requested, { state });
+    if (sameLevel(destination, hero.uz) && requested !== depth(hero.uz)) {
+        await plineWithContinuation(`You can't get there from ${requested > deepest ? 'anywhere' : 'here'}.`);
+        return null;
+    }
+    return destination;
+}
+
+
+async function teleportToNowhere(state: PlayingGameState): Promise<void> {
+    if (await promptYesNoQuit('Go to Nowhere.  Are you sure?') !== 'y') return;
+    const action = monsterIsSilent(heroSpecies(state)) ? 'writhe' : 'scream';
+    await plineWithContinuation(`You ${action} in agony as your body begins to warp...`);
+    await flushPendingTopline();
+    await plineWithContinuation('You cease to exist.');
+    if (state.inventory.length)
+        await plineWithContinuation(`Your possessions land on the ${surfaceName(state.u.ux, state.u.uy, state)} with a thud.`);
+    if (await finishHeroDeath({ killer: 'committed suicide', deathCause: 'committed suicide',
+        deathLineShown: true })) return;
+    await plineWithContinuation('An energized cloud of dust begins to coalesce.');
+    await plineWithContinuation(`Your body rematerializes${state.inventory.length ? ', and you gather up all your possessions' : ''}.`);
+}
+
+async function teleportAboveDungeon(destination: number, state: PlayingGameState, gotoLevel: LevelChange): Promise<void> {
+    if (state.u.ushops0?.length) {
+        const generating = state.in_mklev;
+        state.in_mklev = true;
+        try {
+            await leaveHeroShop(state.u.ushops0, { newLevel: true, state });
+            state.u.ushops0 = [];
+            state.u.ushops = [];
+        } finally {
+            if (generating === undefined) delete state.in_mklev;
+            else state.in_mklev = generating;
+        }
+    }
+    let killer = null;
+    if (destination <= -10) {
+        await plineWithContinuation('You arrive in heaven.');
+        await plineWithContinuation('"Thou art early, but we\'ll admit thee."');
+        killer = 'went to heaven prematurely';
+    } else if (destination === -9) {
+        await plineWithContinuation(formatFeltMessage('deliriously happy.', state));
+        await plineWithContinuation("(In fact, you're on Cloud 9!)");
+        await flushPendingTopline();
+    } else await plineWithContinuation('You are now high above the clouds...');
+    let escape;
+    if (!killer) {
+        if (propertyIsActive('levitation', state)) escape = 'float gently down to earth';
+        else if (propertyIsActive('flying', state)) escape = 'fly down to the ground';
+        else {
+            await plineWithContinuation("Unfortunately, you don't know how to fly.");
+            await plineWithContinuation('You plummet a few thousand feet to your death.');
+            killer = `teleported out of the dungeon and fell to ${state.flags.female ? 'her' : 'his'} death`;
+        }
+    }
+    if (killer) {
+        const previous = state.u.uz;
+        state.u.uz = { dnum: 0, dlevel: destination <= -10 ? -10 : 0 };
+        if (await finishHeroDeath({ killer, deathCause: killer, deathLineShown: true })) return;
+        state.u.uz = previous;
+        escape = 'find yourself back on the surface';
+    }
+    await plineWithContinuation(`You ${escape}.`);
+    await gotoLevel({ dnum: 0, dlevel: 0 });
+}
+
+function dungeonAt(state: GameState, dnum: number): Dungeon {
+    const dungeon = state.dungeons[dnum];
+    if (!dungeon) throw new Error(`Level teleport cannot find dungeon ${dnum}`);
+    return dungeon;
+}
+
+function requiredSpecialLevel(state: GameState, name: string): DungeonLocation {
+    const level = state.specialLevels?.get(name);
+    if (!level) throw new Error(`Level teleport cannot find special level ${name}`);
+    return level;
 }
 
 // C teleport.c:control_mon_tele(). False selection resumes the caller's policy.

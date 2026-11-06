@@ -132,7 +132,7 @@ import {
     teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk,
     heroTeleportTrapBlock, teleds, teleportHero, activateMagicPortal, askTeleportDestination,
     triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds,
-    teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival,
+    teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth,
 } from './teleport.js';
 import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
 import {
@@ -203,7 +203,6 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
-import { randomTeleportDepth } from './level_teleport.js';
 import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';

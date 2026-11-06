@@ -74,7 +74,7 @@ import {
 import {
     heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly,
     relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted,
-    finishTeleportArrival,
+    finishTeleportArrival, randomTeleportDepth,
 } from './teleport.js';
 
 import type { HeroTeleportMovement } from './teleport.js';
@@ -128,7 +128,6 @@ import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
 
-import { randomTeleportDepth } from './level_teleport.js';
 
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
