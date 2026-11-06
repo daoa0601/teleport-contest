@@ -1274,7 +1274,7 @@ async function consume_tin(message: string, { state }: {
     state: PlayingGameState;
 }) {
     // Metal has already been swallowed when corpse effects change the form.
-    const alwaysEat = eatsMetal(state);
+    const alwaysEat = metallivorous(heroSpecies(state));
     let tin: GameObject | null = currentTin(state);
     const variety = tin_variety(tin);
     if (tin.otrapped || tin.cursed && variety !== HOMEMADE_TIN && rn2(8) === 0) {
@@ -1444,7 +1444,7 @@ export async function start_tin(tin: GameObject, { state = game }: TinOptions = 
     const weapon = state.uwep;
     let duration: number;
     let message: string | undefined;
-    if (eatsMetal(state)) {
+    if (metallivorous(heroSpecies(state))) {
         duration = 0;
         message = 'You bite right into the metal tin...';
     } else if (heroHasNoHands(state) || heroIsVerySmall(state)) {
@@ -1494,10 +1494,6 @@ function splitTin(tin: GameObject, state: PlayingGameState) {
     return split;
 }
 
-// C mondata.h:metallivorous() expression used by tin functions.
-function eatsMetal(state: PlayingGameState) {
-    return metallivorous(heroSpecies(state));
-}
 
 // C eat.c:Hear_again(). allmain calls this after the awaited
 // recovery message, so neither hearing nor hunger changes before acknowledgment.
