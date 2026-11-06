@@ -39,6 +39,8 @@ const DISCLOSURE_CATEGORIES = [
     ['i', 'inventory'], ['a', 'attributes'], ['v', 'vanquished'],
     ['g', 'genocides'], ['c', 'conduct'], ['o', 'overview'],
 ];
+// Part of C options.c:doset_add_menu(): the get_val current-value string
+// for a compound option row.
 export function compoundMenuValue(name) {
     switch (name) {
         case 'runmode': return game.flags.runmode ?? 'run';
@@ -63,6 +65,7 @@ export function compoundMenuValue(name) {
         default: return null;
     }
 }
+// Part of C options.c:doset(): dispatch a compound option to its handler.
 // Returns false when this option has no special menu handler.
 export async function editCompoundMenu(name, giveMessage) {
     switch (name) {
@@ -114,6 +117,7 @@ const COORDINATE_CHOICES = [
     ['m', 'map', 'map <x,y>'], ['s', 'screen', 'screen [row,column]'],
     ['n', 'none', 'none (no coordinates displayed)'],
 ];
+// C options.c:handler_whatis_coord(): the coordinate-display menu.
 async function editCoordinates() {
     const selection = await showInventoryWindow([{ items: [
                 ...COORDINATE_CHOICES.map(([key, , text]) => ({ key, text })),
@@ -129,6 +133,7 @@ async function editCoordinates() {
     if (chosen)
         game.iflags.getpos_coords = chosen[0];
 }
+// C options.c:handler_whatis_filter(): the location-filter menu.
 async function editLocationFilter() {
     const choices = [['n', 'no filtering', 0], ['v', 'in view only', 1], ['a', 'in same area', 2]];
     const selection = await showInventoryWindow([{ items: choices.map(([key, text]) => ({ key, text })) }], {
@@ -139,6 +144,7 @@ async function editLocationFilter() {
     if (chosen)
         game.iflags.getloc_filter = chosen[2];
 }
+// C options.c:handler_versinfo(): the version-information flags menu.
 async function editVersionInfo() {
     const previous = game.flags.versinfo ?? 1;
     const choices = [['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, '(not applicable)']];
@@ -153,10 +159,12 @@ async function editVersionInfo() {
     const current = game.flags.versinfo ?? 1;
     await plineWithContinuation(`'versinfo' ${current === previous ? 'not changed, still' : 'changed to'} ${current}.`);
 }
+// Part of C options.c:optfn_msg_window(): the current window-mode name.
 function messageWindowName() {
     const mode = (game.iflags.prevmsg_window ?? 's').charAt(0);
     return MESSAGE_WINDOWS.find(([name]) => name.charAt(0) === mode)?.[0] ?? 'reversed';
 }
+// C options.c:handler_msg_window(): the message-history display menu.
 async function editMessageWindow() {
     const previous = messageWindowName();
     const separator = game.iflags.menu_tab_sep ? '\t' : ' ';
@@ -171,9 +179,13 @@ async function editMessageWindow() {
     if (current !== previous || game.flags.verbose)
         await plineWithContinuation(`'msg_window' ${current !== previous ? 'changed to' : 'is still'} "${current}".`);
 }
+// Part of C options.c:optfn_paranoid_confirmation(): the current paranoia
+// mask with its default.
 function paranoiaBits() {
     return game.flags.paranoia_bits ?? DEFAULT_PARANOIA;
 }
+// C options.c:handler_paranoid_confirmation(): the extra-confirmation
+// actions menu.
 async function editParanoidConfirmation() {
     const previous = paranoiaBits();
     const prefix = game.commandBindings.keyForCommand('reqmenu');
@@ -188,11 +200,14 @@ async function editParanoidConfirmation() {
     if (selected !== null)
         game.flags.paranoia_bits = selected.reduce((mask, bit) => mask | bit, 0);
 }
+// Part of C options.c:optfn_autounlock(): the current selected-actions
+// description.
 function unlockDescription() {
     const bits = autoUnlockFlags(game);
     return UNLOCK_ACTIONS.filter((_, index) => (bits & (1 << index)) !== 0)
         .map(([name]) => name).join(' + ') || 'none';
 }
+// C options.c:handler_autounlock(): the autounlock actions menu.
 async function editAutounlock(giveMessage) {
     const previous = autoUnlockFlags(game);
     const separator = game.iflags.menu_tab_sep ? '\t' : ' ';
@@ -209,6 +224,8 @@ async function editAutounlock(giveMessage) {
     if (giveMessage && (changed || game.flags.verbose))
         await plineWithContinuation(`'autounlock' ${changed ? 'changed to' : 'is still'} '${unlockDescription()}'.`);
 }
+// Part of C options.c:optfn_disclose(): the stored disclose string into
+// per-category values.
 function disclosureValues() {
     const values = DISCLOSURE_CATEGORIES.map(() => 'n');
     const raw = game.flags.disclose;
@@ -234,6 +251,7 @@ function disclosureValues() {
     }
     return values;
 }
+// C options.c:handler_disclose(): the disclosure categories menus.
 async function editDisclosure() {
     const values = disclosureValues();
     const categories = await showMultiSelectWindow({
@@ -270,6 +288,8 @@ async function editDisclosure() {
         }
     }
 }
+// Part of C options.c:optfn_disclose(): the per-category values back into
+// the stored disclose string.
 function disclosureDescription(values) {
     return DISCLOSURE_CATEGORIES.map(([key], index) => `${values[index] ?? 'n'}${key}`).join(' ');
 }

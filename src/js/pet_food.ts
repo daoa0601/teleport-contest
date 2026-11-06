@@ -51,6 +51,7 @@ const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
 const FLAMING_SPECIES = new Set(['fire vortex', 'flaming sphere', 'fire elemental', 'salamander']
     .map(name => MONSTER_NAME.indexOf(name)));
 
+// C dog.c:dogfood(): rank an object as pet food, from DOGFOOD to TABU.
 // Lower ranks are preferred. TABU forbids eating or fetching; UNDEF is merely
 // unsuitable. The object resistance check belongs here even for ordinary food.
 export function dogFood(
@@ -73,6 +74,7 @@ export function dogFood(
     return nonfoodQuality(monster, object, state);
 }
 
+// Part of C dog.c:dogfood(): the FOOD_CLASS branch.
 function foodQuality(monster: Monster, object: GameObject, state: GameState): FoodQuality {
     const carni = carnivorous(monster.mnum), herbi = herbivorous(monster.mnum);
     const flesh = [CORPSE, TIN, EGG].includes(object.otyp) ? object.corpsenm : undefined;
@@ -127,6 +129,8 @@ function foodQuality(monster: Monster, object: GameObject, state: GameState): Fo
     }
 }
 
+// Part of C dog.c:dogfood(): the ghoul preference for old corpses and
+// stale eggs.
 function ghoulFood(object: GameObject, flesh: number | undefined, starving: boolean, state: GameState): FoodQuality {
     if (object.otyp === CORPSE) {
         if (oldCorpse(object, state)) return DOGFOOD;
@@ -139,6 +143,7 @@ function ghoulFood(object: GameObject, flesh: number | undefined, starving: bool
     return TABU;
 }
 
+// Part of C dog.c:dogfood(): the CORPSE case of the food switch.
 function corpseQuality(
     monster: Monster, object: GameObject, flesh: number | undefined,
     starving: boolean, carni: boolean, herbi: boolean, state: GameState,
@@ -160,6 +165,7 @@ function corpseQuality(
     return carni ? CADAVER : MANFOOD;
 }
 
+// Part of C dog.c:dogfood(): peek at iced corpse age to spot an old corpse.
 function oldCorpse(object: GameObject, state: GameState): boolean {
     // Ice slows decay without changing the object's timers or stored age.
     const age = object.on_ice
@@ -168,6 +174,7 @@ function oldCorpse(object: GameObject, state: GameState): boolean {
         && object.corpsenm !== PM_LIZARD && object.corpsenm !== PM_LICHEN;
 }
 
+// Part of C dog.c:dogfood(): the non-food default branch.
 function nonfoodQuality(monster: Monster, object: GameObject, state: GameState): FoodQuality {
     if (object.otyp === AMULET_OF_STRANGULATION || object.otyp === RIN_SLOW_DIGESTION) return TABU;
     const material = objectMaterial(object, state);

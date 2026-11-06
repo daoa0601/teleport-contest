@@ -320,6 +320,7 @@ check_special_room	isok
 check_special_room	record_achievement
 check_special_room	rn2
 check_special_room	search_special
+checkfile	yn_function
 choke	adjalign
 choke	done
 choke	exercise
@@ -331,6 +332,7 @@ choke_dialogue	exercise
 choke_dialogue	rn2
 choose_monster_spell	rn2
 choose_monster_spell	spell_would_be_useless
+choose_passage	rn2
 choose_random_part	rn2
 choose_tip_container_menu	tipcontainer
 choose_trapnote	rn2
@@ -617,6 +619,7 @@ disclose	list_genocided
 disclose	should_query_disclose_option
 disclose	yn_function
 disco_typename	Japanese_item_name
+discover_object	exercise
 disintegrate_arm	surface
 disintegrate_cursed_armor	rn2
 dismount_steed	adjalign
@@ -959,6 +962,7 @@ dogaze	done
 dogaze	ignite_items
 dogaze	nomul
 dogaze	rn2
+dogaze	yn_function
 dogenocided	list_genocided
 dohide	hliquid
 dohide	is_pool
@@ -3188,6 +3192,8 @@ openone	open_drawbridge
 openone	openholdingtrap
 openone	wake_nearto
 opentin	consume_tin
+optfn_hilite_status	parse_status_hl1
+optfn_statushilites	reset_status_hilites
 oracle_sound	rn2
 out_container	costly_spot
 out_container	fatal_corpse_mistake
@@ -3465,6 +3471,8 @@ polyself	newman
 polyself	rehumanize
 polyself	rn2
 polyself	rnd
+polyself	unconscious
+polyself	yn_function
 polyuse	costly_spot
 polyuse	rn2
 pooleffects	check_special_room
@@ -3589,7 +3597,9 @@ readobjnam	rnd_class
 readobjnam	rnd_otyp_by_wpnskill
 readobjnam	weight
 readobjnam	wizterrainwish
+readobjnam	yn_function
 readobjnam_postparse1	rn2
+readobjnam_postparse1	tin_variety_txt
 readobjnam_postparse2	rn2
 readobjnam_postparse2	rnd_class
 readobjnam_preparse	rn2

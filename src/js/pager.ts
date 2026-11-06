@@ -122,6 +122,7 @@ export function iceDescriptionAt(x: number, y: number, { state = game, probing =
     return `${strength} ${substance}`;
 }
 
+// Part of C pager.c:do_look(): one location's description without paging.
 // C refs: pager.c:do_look() (mode 0 for whatis, 1 for quick glance),
 // getpos.c:getpos(), pager.c:do_screen_description().
 // Part of C pager.c:do_look(): farlook spends no game time.  Ordinary
@@ -196,6 +197,7 @@ async function lookFromScreen(quick = true): Promise<void> {
     game.context.move = 0;
 }
 
+// Part of C pager.c:checkfile(): the More-info question and entry overlay.
 export async function offerFarlookInformation(description: string, withoutAsking: boolean): Promise<void> {
     // do_look() passes firstmatch with a null monster type. The selected
     // description retains given names for checkfile()'s alternate lookup.
@@ -240,6 +242,7 @@ export async function doquickwhatis(): Promise<void> {
     await runDoLook(1);
 }
 
+// Part of C pager.c:do_look(): the mode-0 category menu.
 // The initial menu of do_look(0) is a true PICK_ONE overlay; choosing the
 // map entry destroys it, restores the map, then hands input ownership to
 // the shared getpos/farlook transaction below.
@@ -275,6 +278,8 @@ async function chooseLookCategory(): Promise<string> {
     return result[0] ?? '';
 }
 
+// Part of C pager.c:do_look(): the category-choice dispatch (inventory,
+// symbol or name, map).
 async function doLookChoice(rawChoice: string, mode: 0 | 1): Promise<void> {
     const choice = rawChoice === 'y' ? '/' : rawChoice;
     const listKind = 'mM'.includes(choice) && choice ? 'monsters'
@@ -392,6 +397,8 @@ export async function dohelp(): Promise<void> {
 // identity; farlook only describes furniture, objects, hiding, and regions.
 // ---------------------------------------------------------------------------
 
+// C pager.c:mhidden_description(): mimicking, masquerading, and hiding
+// conditions of a concealed monster.
 export async function monsterHiddenConditions(
     monster: Monster, state: GameState,
     { showAlternateMonster = true }: { showAlternateMonster?: boolean } = {},
@@ -428,6 +435,8 @@ export async function monsterHiddenConditions(
     return conditions;
 }
 
+// Part of C pager.c:mhidden_description(): the object a mimic or hider
+// impersonates.
 export async function objectAtMonsterDescription(
     monster: Monster, state: GameState = game,
     { glyph = null }: { glyph?: GlyphMetadata | null } = {},
@@ -522,6 +531,7 @@ export async function lookAtMonster(monster: Monster, x: number, y: number): Pro
     return description;
 }
 
+// Part of C pager.c:look_at_monster(): the how-seen annotation.
 export function monsterSeenDescription(monster: Monster): string {
     const seen = howMonsterSeen(monster);
     if (!seen || seen === MONSEEN_NORMAL) return '';
@@ -546,6 +556,8 @@ export function monsterSeenDescription(monster: Monster): string {
     return descriptions.join(', ');
 }
 
+// Part of C pager.c:self_lookat(): the hero's mounted, mimicking, hiding,
+// and cloud clauses.
 export async function selfLookDetails(): Promise<string> {
     const hero = game.u;
     let result = hero.usteed ? `, mounted on ${monsterName(hero.usteed, { article: 'your', suppressSaddle: true })}` : '';
@@ -568,6 +580,8 @@ export async function selfLookDetails(): Promise<string> {
     return result;
 }
 
+// Part of C pager.c:self_lookat(): the utrap predicament clause, via
+// trap.c trap_predicament.
 export function selfTrapDescription(): string {
     const hero = game.u;
     if (!hero.utrap) return '';
@@ -624,6 +638,8 @@ export function quotedEngraving(x: number, y: number, name: string, force = fals
         : ` ${headstone ? 'whose headstone' : 'that'} you haven't read`;
 }
 
+// Part of C pager.c:do_screen_description(): the glyph_at read honoring
+// terrainmode.
 export function lookGlyphAt(x: number, y: number): GlyphMetadata | null {
     const glyph = glyphAt(x, y);
     const mode = game.iflags.terrainmode;
@@ -635,6 +651,8 @@ export function lookGlyphAt(x: number, y: number): GlyphMetadata | null {
     return location ? back_to_glyph(location, x, y) : null;
 }
 
+// Part of C pager.c:do_screen_description(): the unseen-creature wording
+// under clairvoyance or blindness.
 // C do_screen_description() uses alternate wording while clairvoyance's
 // temporary monster detection is active, and whenever the hero is blind.
 export function unseenCreatureDescription(): string {
@@ -697,6 +715,7 @@ export function displayedTrapDescription(type: number, x: number, y: number): st
     return detectedTrapDisguise(type, x, y) ?? trapName(type);
 }
 
+// C you.h:next2u(): distu(px,py) <= 2 adjacency.
 function adjacentToHero(x: number, y: number): boolean {
     return Math.abs(x - game.u.ux) <= 1 && Math.abs(y - game.u.uy) <= 1;
 }
@@ -932,6 +951,8 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
     return description;
 }
 
+// Part of C pager.c:lookat(), do_screen_description(): auto-describe text
+// for a seen or remembered square.
 // Descriptions for getpos autodescribe, travel menus, and the look lists
 // (C getpos.c:auto_describe()/getpos_menu() and pager.c:look_all()): the
 // sensed-self branch of lookat() (sensedSelfDescription above) on the hero
@@ -1058,6 +1079,8 @@ async function* lookListEntries(kind: LookListKind, nearby: boolean, mode: strin
     }
 }
 
+// Part of C pager.c:look_all(), look_traps(), look_engrs(): the list
+// heading line.
 function listHeading(kind: LookListKind, nearby: boolean, mode: string): string {
     if (kind === 'traps' || kind === 'engravings')
         return nearby ? `Nearby seen or remembered ${kind}:` : `Seen or remembered ${kind} on this level:`;
@@ -1066,6 +1089,7 @@ function listHeading(kind: LookListKind, nearby: boolean, mode: string): string 
     return `${name} currently shown near ${mode === 'c' ? canSpotHeroSelf() ? 'you' : 'your position' : coordinateDescription(game.u.ux, game.u.uy, mode)}:`;
 }
 
+// C getpos.c:coord_desc(): map, screen, or compass coordinates.
 export function coordinateDescription(x: number, y: number, mode: string): string {
     if (mode === 'n') return '';
     if (mode === 'm') return `<${x},${y}>`;
@@ -1080,6 +1104,8 @@ export function coordinateDescription(x: number, y: number, mode: string): strin
     return `(${parts.join(',')})`;
 }
 
+// Part of C pager.c:look_all(), look_traps(), look_engrs(): the raw glyph
+// symbol column.
 function mapSymbolAt(x: number, y: number): string {
     const location = game.level?.at(x, y);
     if (!location) return ' ';
@@ -1101,6 +1127,7 @@ function coveringSymbolAt(x: number, y: number): string {
 // C pager.c:doidtrap(). Identifying a known trap never spends a turn.
 // ---------------------------------------------------------------------------
 
+// C pager.c:doidtrap(): describe the known trap in a direction.
 export async function identifyTrap(): Promise<void> {
     game.context.move = 0;
     const direction = await promptDirection('In what direction? ', { ctrlCommandHint: true });
@@ -1134,6 +1161,8 @@ export async function identifyTrap(): Promise<void> {
 // C pager.c:whatdoes_help(): the keyHelp pass over KEYHELP drops comments
 // and indentation.
 
+// C pager.c:dispfile_help(): display one help file through the shared
+// file window.
 export async function displayHelpFile(name: string, keyHelp = false): Promise<void> {
     clearMessageWindow();
     // C display_file() reads the file into an NHW_TEXT window; the pager
@@ -1151,6 +1180,8 @@ export async function displayHelpFile(name: string, keyHelp = false): Promise<vo
     game.context.move = 0;
 }
 
+// Part of C files.c:display_file(): show the collected text window and
+// page through it.
 // tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
 // stays on the bottom row even when the text fits on a short last page.
 export async function displayPagerText(lines: Iterable<string> | AsyncIterable<string>): Promise<void> {
@@ -1159,12 +1190,15 @@ export async function displayPagerText(lines: Iterable<string> | AsyncIterable<s
     await restoreCommandMap();
 }
 
+// Part of C wintty.c:tty_display_file(): expand tabs to eight-column
+// stops.
 function expandTabs(line: string): string {
     let text = '';
     for (const ch of line) text += ch === '\t' ? ' '.repeat(8 - text.length % 8) : ch;
     return text;
 }
 
+// C pager.c:docontact(): the contact information text.
 export async function contactHelp(): Promise<void> {
     await displayPagerText([
         'To contact the NetHack development team directly,',

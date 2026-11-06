@@ -15,6 +15,7 @@ const COPPER = 13;
 const MITHRIL = 17;
 const GLASS = 19;
 const WHACK = 4;
+// Port only: null-safe read of an object's class field.
 function objectClass(object) {
     return object?.oclass ?? 0;
 }

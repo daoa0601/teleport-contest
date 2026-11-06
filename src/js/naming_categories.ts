@@ -6,6 +6,7 @@ import {
     tty_select_menu, tty_start_menu,
 } from './wintty.js';
 
+// Part of C do_name.c:docallcmd(): the what-do-you-want-to-name menu.
 export async function chooseNamingCategory(): Promise<string | null> {
     const window = tty_create_nhwindow<string>(NHW_MENU);
     try {

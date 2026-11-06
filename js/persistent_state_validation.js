@@ -10,6 +10,7 @@ import { validSavedHero, validSavedPropertyName } from './hero_validation.js';
 import { validSavedAlignment, validSavedGameFlags, validSavedRace, validSavedRole, } from './character_validation.js';
 import { restoreSavedMap, validSavedDungeonLocation, validSavedPosition, validSavedStairways, } from './map_validation.js';
 import { validSavedActiveSpecialLevel, validSavedDungeon, validSavedDungeonBranch, validSavedGameContext, validSavedOverviewRecord, validSavedSpecialLevel, } from './state_domain_validation.js';
+// Port only: decode and gate a whole saved game against its save schema.
 export function decodeSavedGame(encoded) {
     const snapshot = decodeSavedGraph(encoded);
     const entities = createSavedEntityChecks();
@@ -20,6 +21,7 @@ export function decodeSavedGame(encoded) {
         throw new TypeError('Saved game must be a versioned state record');
     return snapshot;
 }
+// Port only: validate the persistent half of GameState field by field.
 function validPersistentState(value, entities) {
     function map(candidate) {
         restoreSavedMap(candidate, entities);
@@ -186,6 +188,7 @@ function validMessageHistory(value) {
     return arrayOf(string)(value) && value.length <= MAX_MSG_HISTORY
         && value.every(msg => msg.length > 0 && msg.length < BUFSZ);
 }
+// Port only: saved spell-record shape check.
 function validSpell(value) {
     return closedFieldsMatch(value, {
         name: string, level: integer,
@@ -194,19 +197,23 @@ function validSpell(value) {
         otyp: (type) => integer(type) && OBJECT_SPELL_CATEGORY[type] != null,
     });
 }
+// Port only: saved named-fruit shape check.
 function validFruit(value) {
     return closedFieldsMatch(value, { fid: integer, fname: string });
 }
+// Port only: saved price-quote shape check.
 function validPriceQuote(value) {
     return closedFieldsMatch(value, {
         buy: optional(validPriceRange), sell: optional(validPriceRange),
     }) && (value.buy !== undefined || value.sell !== undefined);
 }
+// Port only: saved price-range shape check.
 function validPriceRange(value) {
     return closedFieldsMatch(value, {
         min: integer, max: integer,
     }) && value.min >= 0 && value.max >= value.min;
 }
+// Port only: saved monster vital statistics shape check.
 function validMonsterVital(value) {
     return closedFieldsMatch(value, {
         born: integer, died: integer, mvflags: integer,
@@ -214,6 +221,7 @@ function validMonsterVital(value) {
         photographed: optional(oneOf(false, true, 0, 1)),
     });
 }
+// Port only: saved quest status shape check.
 function validQuestStatus(value) {
     return closedFieldsMatch(value, {
         first_start: boolean, met_leader: boolean, not_ready: integer,
@@ -225,9 +233,11 @@ function validQuestStatus(value) {
         nemgend: integer, godgend: integer, leader_is_dead: boolean, leader_m_id: integer,
     });
 }
+// Port only: saved artifact id must name a known artifact.
 function validArtifactId(value) {
     return integer(value) && ARTIFACT_DATA.some(artifact => artifact.id === value);
 }
+// Port only: saved artifact gift-target shape check.
 function validArtifactTarget(value) {
     if (!isSavedRecord(value))
         return false;
@@ -242,6 +252,7 @@ function validArtifactTarget(value) {
         });
     return closedFieldsMatch(value, { kind: oneOf('all', 'resistance', 'alignment') });
 }
+// Port only: saved artifact shape check.
 function validArtifact(value) {
     const artifactFlag = oneOf('SPFX_NOGEN', 'SPFX_RESTR', 'SPFX_SEEK', 'SPFX_DEFN', 'SPFX_INTEL', 'SPFX_SEARCH', 'SPFX_ATTK', 'SPFX_DRLI', 'SPFX_WARN', 'SPFX_DFLAG2', 'SPFX_DCLAS', 'SPFX_REFLECT', 'SPFX_HALRES', 'SPFX_REGEN', 'SPFX_BEHEAD', 'SPFX_DALIGN', 'SPFX_SPEAK', 'SPFX_XRAY', 'SPFX_PROTECT', 'SPFX_LUCK', 'SPFX_ESP', 'SPFX_HSPDAM', 'SPFX_STLTH', 'SPFX_TCTRL', 'SPFX_HPHDAM', 'SPFX_EREGEN');
     const defense = nullable(oneOf('life-drain', 'poison', 'magic', 'cold', 'fire', 'lycanthropy', 'blindness'));
@@ -265,6 +276,7 @@ function validArtifact(value) {
         wieldedProperties: arrayOf(validSavedPropertyName),
     });
 }
+// Port only: saved Lua variables shape check, cycle-free.
 function validLuaVariables(value) {
     const active = new WeakSet();
     function variable(entry) {

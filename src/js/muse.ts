@@ -154,6 +154,8 @@ interface MonsterDeviceUseOptions extends MonsterOffensiveOptions {
     self?: boolean;
 }
 
+// Part of C muse.c:precheck(), mzapwand(), mplayhorn(), mreadmsg(): the
+// BOLT_LIM near/distant hearing threshold.
 // The near/far hearing threshold mzapwand(), mplayhorn(), mreadmsg() and
 // precheck()'s explosion feedback share: BOLT_LIM + 1 when the monster's
 // square could be seen, BOLT_LIM - 3 otherwise.
@@ -377,21 +379,28 @@ export type MonsterDefensiveChoice =
     | { kind: 'stairs'; stair: Stairway }
     | { kind: 'trap'; trap: Trap };
 
+// Part of C muse.c:find_defensive(), find_offensive(): the shared
+// noteleport_level and mon_knows_traps test.
 // Shared noteleport_level()/mon_knows_traps() condition in find_defensive() and find_offensive().
 function teleportNotKnownBlocked(monster: Monster, state: PlayingGameState): boolean {
     return !monsterTeleportRestricted(monster, state) || !monsterKnowsTrap(monster, { ttyp: TELEP_TRAP });
 }
 
+// C wizard.c:mon_has_amulet(): does the monster carry the real Amulet?
 // mon_has_amulet() inventory predicate, shared by the teleport paths.
 function hasAmulet(monster: Monster): boolean {
     return (monster.minvent || monster.inventory || []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
 
+// Part of C muse.c:find_defensive(), use_defensive(): the Is_botlevel
+// test.
 // Is_botlevel() expression shared by find_defensive() and use_defensive().
 function atBottom(state: PlayingGameState): boolean {
     return state.u.uz.dlevel === state.dungeons[state.u.uz.dnum]?.num_dunlevs;
 }
 
+// Part of C muse.c:find_defensive(): its is_floater exemptions, the
+// mondata.h macro inlined.
 // is_floater() macro: S_EYE or S_LIGHT.
 function monsterFloats(monster: Monster): boolean {
     const symbol = MONSTER_SYMBOL[monster.mnum];
@@ -776,6 +785,8 @@ export async function use_defensive(monster: Monster, choice: MonsterDefensiveCh
     }
 }
 
+// Part of C muse.c:rnd_offensive_item(), rnd_defensive_item(),
+// rnd_misc_item(): the shared creature exclusions.
 // Common creature exclusions in the three native rnd_*_item() functions.
 function rejectsRandomItem(monster: Monster): boolean {
     const mndx = monster.mnum;
@@ -786,6 +797,7 @@ function rejectsRandomItem(monster: Monster): boolean {
         || symbol === S_GHOST || monsterIsKop(mndx);
 }
 
+// Part of C muse.c:rnd_offensive_item(): its which_armor W_ARMH lookup.
 // which_armor(W_ARMH), including the port's creation-time wornSlot phase.
 function wornHelmet(monster: Monster): GameObject | null {
     const inventory = monster?.minvent || monster?.inventory || [];
@@ -1303,6 +1315,8 @@ export async function use_offensive(
     }
 }
 
+// Part of C muse.c:use_offensive(): the sgn-aimed ray and throw
+// direction.
 // This pure sgn expression is also an equivalence-proof entry point.
 // The sgn(mux - mx)/sgn(muy - my) aim of use_offensive()'s rays and throws.
 function aimedDirection(monster: Monster): string {
@@ -2181,6 +2195,8 @@ export function ureflects(state: GameState = game): ReflectionSource | null {
     return null;
 }
 
+// Part of C muse.c:ureflects(): the boolean reflection test C callers
+// branch on.
 export function heroReflectsRay(state: GameState = game) {
     return !!(state.u?.reflection
         || ureflects(state));
@@ -2212,10 +2228,13 @@ export function mon_reflects(monster: Monster, state: GameState = game): Reflect
     return null;
 }
 
+// Part of C muse.c:mon_reflects(): the boolean reflection test.
 export function monsterReflectsRay(monster: Monster, state: GameState = game) {
     return mon_reflects(monster, state) !== null;
 }
 
+// Part of C muse.c:ureflects(), mon_reflects(): makeknown of a revealed
+// reflection source; the wisdom exercise stays with the callers in C.
 export function discoverHeroReflectionSource(
     source: ReflectionSource | null = ureflects(), state: GameState = game,
 ) {

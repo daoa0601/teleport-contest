@@ -10,6 +10,7 @@ import { game } from './gstate.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { heroIsDeaf } from './senses.js';
+// Part of C music.c:do_play_instrument(): find the adjacent drawbridge.
 function nearbyDrawbridge() {
     for (let y = (game.u?.uy || 0) - 1; y <= (game.u?.uy || 0) + 1; y++) {
         for (let x = (game.u?.ux || 0) - 1; x <= (game.u?.ux || 0) + 1; x++) {
@@ -22,10 +23,14 @@ function nearbyDrawbridge() {
     }
     return null;
 }
+// Part of C music.c:do_play_instrument(): uppercase the typed tune,
+// H becoming B.
 function normalizeTune(tune) {
     return tune.trim().replace(/\s+/gu, ' ').toUpperCase()
         .replaceAll('H', 'B');
 }
+// Part of C music.c:do_play_instrument(): the passtune prompt, or the
+// known tune when the hero has already heard it.
 export async function askForTune() {
     if (game.u?.uevent?.uheard_tune === 2) {
         const answer = await promptYesNoQuit('Play the passtune?', 'q');
@@ -37,6 +42,8 @@ export async function askForTune() {
     const tune = await getLine('What tune are you playing? [5 notes, A-G]', (_ch, key) => key >= 32 && key < 127);
     return tune === null ? null : normalizeTune(tune);
 }
+// Part of C music.c:do_play_instrument(): count tumblers and gears that
+// match the castle tune.
 function tuneHint(played, expected) {
     const matched = Array(5).fill(false);
     let tumblers = 0;
@@ -59,6 +66,7 @@ function tuneHint(played, expected) {
     }
     return { tumblers, gears };
 }
+// Part of C music.c:do_play_instrument(): the tumbler/gear hint messages.
 async function announceTuneHint({ tumblers, gears }) {
     if (tumblers && gears) {
         await publishHeardMessage(`${tumblers} tumbler${tumblers === 1 ? '' : 's'} click `
@@ -71,12 +79,15 @@ async function announceTuneHint({ tumblers, gears }) {
         await publishHeardMessage(`${gears} gear${gears === 1 ? '' : 's'} turn.`, plineWithContinuation);
     }
 }
+// Part of C music.c:do_play_instrument(): mark the passtune fully known.
 function recordKnownPasstune() {
     if (!game.u.uevent)
         game.u.uevent = {};
     game.u.uevent.uheard_tune = 2;
     recordAchievement(game, ACH_TUNE);
 }
+// Part of C music.c:do_play_instrument(): the tune verdict (open the
+// drawbridge, first hearing, or tumbler hints).
 export async function playTune(instrument, tune, options = {}) {
     const name = definiteName(objectCombatName(instrument));
     await pline(heroIsDeaf()

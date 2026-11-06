@@ -8,6 +8,7 @@ import { showTextMenuOverlay } from './windows.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 
+// C files.c:choose_passage(): pick an unread passage of a novel.
 export function selectTributePassage(count: number, bookId: number, state: GameState): number {
     const tracking = state.context.novel ||= { id: 0, count: 0, pasg: [] };
     if (tracking.id !== bookId || !tracking.count) {
@@ -32,6 +33,7 @@ export function selectTributePassage(count: number, bookId: number, state: GameS
     return passage;
 }
 
+// C files.c:read_tribute(): show a novel passage and file its attribution.
 export async function readNovelTribute(book: GameObject, title: string, state: GameState = game) {
     const passages = NOVEL_PASSAGES[title];
     if (!passages?.length) {

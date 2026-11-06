@@ -396,6 +396,7 @@ export const BLINDING_VENOM = 479;
 export const ACID_VENOM = 480;
 
 /** Read a required native object field. Null is a valid unnamed appearance. */
+// Port only: checked accessor for native object table rows.
 export function requireObjectData<T>(table: readonly T[], otyp: number): T {
     const value = table[otyp];
     if (!Number.isInteger(otyp) || value === undefined) {
@@ -563,6 +564,8 @@ export interface ObjectClassBounds {
     readonly last: number;
 }
 
+// Port only: per-class otyp bounds standing in for the bases table the
+// o_init.c init loop builds.
 export function getObjectClassBounds(oclass: number): ObjectClassBounds {
     const first = OBJECT_BASES[oclass];
     const next = OBJECT_BASES[oclass + 1];
@@ -582,6 +585,7 @@ export interface ObjectDefinition {
     readonly subtype: number;
 }
 
+// Port only: bundle of native objects row fields as one validated view.
 export function getObjectDefinition(otyp: number): ObjectDefinition {
     requireObjectData(OBJECT_NAMES, otyp);
     return {
@@ -597,6 +601,8 @@ export function getObjectDefinition(otyp: number): ObjectDefinition {
 
 const NODIR = 1, IMMEDIATE = 2;
 
+// C objclass.h:objects[].oc_dir: live read including the wand of
+// nothing's per-game direction.
 // objects[].oc_dir, including the wand of nothing's direction, which o_init.c
 // draws for each game (rn2(2) ? NODIR : IMMEDIATE).
 export function objectDirection(otyp: number, state: { readonly wandNothingDirection?: number }): number {

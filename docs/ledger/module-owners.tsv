@@ -57,8 +57,9 @@ src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
 src/js/music.ts	music.c
+src/js/novel_tribute.ts	files.c
 src/js/objnam.ts	objnam.c
-src/js/option_values.ts	version.c
+src/js/option_editors.ts	options.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pickup.ts	pickup.c

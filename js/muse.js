@@ -95,6 +95,8 @@ const PM_KI_RIN = MONSTER_NAME.indexOf('ki-rin');
 const PM_LIZARD = MONSTER_NAME.indexOf('lizard');
 const PM_STALKER = MONSTER_NAME.indexOf('stalker');
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
+// Part of C muse.c:precheck(), mzapwand(), mplayhorn(), mreadmsg(): the
+// BOLT_LIM near/distant hearing threshold.
 // The near/far hearing threshold mzapwand(), mplayhorn(), mreadmsg() and
 // precheck()'s explosion feedback share: BOLT_LIM + 1 when the monster's
 // square could be seen, BOLT_LIM - 3 otherwise.
@@ -329,18 +331,25 @@ async function m_tele(monster, type, seen, options, trap = null) {
             await randomMonsterRelocation(monster, { ...options, flags: RLOC_MSG });
     }
 }
+// Part of C muse.c:find_defensive(), find_offensive(): the shared
+// noteleport_level and mon_knows_traps test.
 // Shared noteleport_level()/mon_knows_traps() condition in find_defensive() and find_offensive().
 function teleportNotKnownBlocked(monster, state) {
     return !monsterTeleportRestricted(monster, state) || !monsterKnowsTrap(monster, { ttyp: TELEP_TRAP });
 }
+// C wizard.c:mon_has_amulet(): does the monster carry the real Amulet?
 // mon_has_amulet() inventory predicate, shared by the teleport paths.
 function hasAmulet(monster) {
     return (monster.minvent || monster.inventory || []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
+// Part of C muse.c:find_defensive(), use_defensive(): the Is_botlevel
+// test.
 // Is_botlevel() expression shared by find_defensive() and use_defensive().
 function atBottom(state) {
     return state.u.uz.dlevel === state.dungeons[state.u.uz.dnum]?.num_dunlevs;
 }
+// Part of C muse.c:find_defensive(): its is_floater exemptions, the
+// mondata.h macro inlined.
 // is_floater() macro: S_EYE or S_LIGHT.
 function monsterFloats(monster) {
     const symbol = MONSTER_SYMBOL[monster.mnum];
@@ -805,6 +814,8 @@ export async function use_defensive(monster, choice, options) {
         }
     }
 }
+// Part of C muse.c:rnd_offensive_item(), rnd_defensive_item(),
+// rnd_misc_item(): the shared creature exclusions.
 // Common creature exclusions in the three native rnd_*_item() functions.
 function rejectsRandomItem(monster) {
     const mndx = monster.mnum;
@@ -813,6 +824,7 @@ function rejectsRandomItem(monster) {
         || (MONSTER_ATTACKS[mndx] || []).some(attack => attack[0] === AT_EXPL)
         || symbol === S_GHOST || monsterIsKop(mndx);
 }
+// Part of C muse.c:rnd_offensive_item(): its which_armor W_ARMH lookup.
 // which_armor(W_ARMH), including the port's creation-time wornSlot phase.
 function wornHelmet(monster) {
     const inventory = monster?.minvent || monster?.inventory || [];
@@ -1374,6 +1386,8 @@ export async function use_offensive(monster, choice, options) {
         }
     }
 }
+// Part of C muse.c:use_offensive(): the sgn-aimed ray and throw
+// direction.
 // This pure sgn expression is also an equivalence-proof entry point.
 // The sgn(mux - mx)/sgn(muy - my) aim of use_offensive()'s rays and throws.
 function aimedDirection(monster) {
@@ -2257,6 +2271,8 @@ export function ureflects(state = game) {
         return { object: null, noun: 'scales' };
     return null;
 }
+// Part of C muse.c:ureflects(): the boolean reflection test C callers
+// branch on.
 export function heroReflectsRay(state = game) {
     return !!(state.u?.reflection
         || ureflects(state));
@@ -2283,9 +2299,12 @@ export function mon_reflects(monster, state = game) {
         return { noun: 'scales', object: null };
     return null;
 }
+// Part of C muse.c:mon_reflects(): the boolean reflection test.
 export function monsterReflectsRay(monster, state = game) {
     return mon_reflects(monster, state) !== null;
 }
+// Part of C muse.c:ureflects(), mon_reflects(): makeknown of a revealed
+// reflection source; the wisdom exercise stays with the callers in C.
 export function discoverHeroReflectionSource(source = ureflects(), state = game) {
     const object = source?.object;
     if (!object || ![SHIELD_OF_REFLECTION, AMULET_OF_REFLECTION].includes(object.otyp)

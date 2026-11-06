@@ -110,7 +110,8 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
     game._lastPlineKind = PLNMSG_UNKNOWN;
     return messageType === MSGTYP_STOP ? await displayMessageWindow() : dismissal;
 }
-// C include/hack.h:1026 `#define pline1(cstr) pline("%s", cstr)`.  vpline()'s
+// C hack.h:pline1(): the "%s" format wrapper macro.
+// include/hack.h:1026 `#define pline1(cstr) pline("%s", cstr)`.  vpline()'s
 // empty-line filter tests the "%s" format, never the substituted argument,
 // so pline1("") still reaches putmesg("") and update_topl()'s append, which
 // widens the topline by two blank columns without glyphs or a pager
@@ -137,6 +138,8 @@ export function formatHeardMessage(text, state = game) {
         return `You dream that you hear ${text}`;
     return `You hear ${text}`;
 }
+// Part of C pline.c:You_hear(): format the sound line and publish it
+// unless suppressed.
 // Publishes through You_hear()'s own suppression. Callers must retain their
 // C guards: an unconditional You_hear reaches a deaf unaware hero, but
 // `if (!Deaf)` does not.
@@ -173,12 +176,15 @@ export function recordGameLogEvent(text, { state = game, turn = state.moves || 1
     state.gamelog.push(entry);
     return entry;
 }
+// Port only: expose the saved gamelog chronicle, oldest first.
 // The saved chronicle lines, oldest first: insight.c:do_gamelog()/
 // show_gamelog()'s input. Entries saved before flags were tracked carry
 // none, so they count as ordinary non-spoiler lines.
 export function gameLogEvents(state = game) {
     return Array.isArray(state.gamelog) ? state.gamelog : [];
 }
+// Port only: prompt owners replace the topline without tty's
+// update_topl negotiation (tty_putstr with ATR_NOHISTORY shape).
 // Replace the message line without tty's update_topl() negotiation. Only the
 // tty topline owner, its direct pagers, and prompt owners (whose native
 // TOPLINE_SPECIAL_PROMPT text never pages) write the line this way.
@@ -223,6 +229,8 @@ export function rawPrintf(message) {
 export function rawPrint(message) {
     writeRawText(`${message}\n`);
 }
+// Part of C wintty.c:tty_raw_print(): the character-level terminal writer
+// (cursor, scroll, tab stops).
 function writeRawText(text) {
     const display = game.nhDisplay;
     if (!display)

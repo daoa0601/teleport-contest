@@ -7,6 +7,8 @@ import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { WARNCOUNT } from './const.js';
 import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
 import { resetStatusHilites } from './botl.js';
+// Part of C options.c:optfn_pile_limit(), optfn_menuinvertmode(),
+// optfn_suppress_alert(): echo each option's current value.
 export function textOptionValue(name) {
     switch (name) {
         case 'pile_limit': return String(game.flags.pile_limit ?? 5);
@@ -34,10 +36,16 @@ export function parseBoulderSymbolValue(value) {
         return { error: `Badoption - boulder symbol '${symbol}' would conflict with a warning symbol` };
     return { symbol };
 }
+// Port only: which options take a typed value in the edit UI.
 export function isTextOption(name) {
     return ['packorder', 'pile_limit', 'menuinvertmode', 'hilite_status', 'statuslines',
         'scores', 'suppress_alert', 'statushilites'].includes(name);
 }
+// C options.c:optfn_hilite_status(): apply a typed compound-option value.
+// Also C options.c:optfn_pile_limit(), optfn_packorder(),
+// optfn_menuinvertmode(), optfn_statuslines(), optfn_statushilites(),
+// optfn_suppress_alert(): their typed-value branches.
+// Also C options.c:parseoptions(): the 128-character option length check.
 export async function setTextOption(name, value) {
     if (name.length + 1 + value.length > 128) {
         await optionError('Option too long, max length is 128 characters');
@@ -113,6 +121,7 @@ export async function setTextOption(name, value) {
         }
     }
 }
+// Port only: parse an integer like the native atoi used by option handlers.
 export function cInteger(value) {
     const prefix = value.match(/^\s*[+-]?\d+/)?.[0];
     return prefix ? Number(prefix) : 0;
@@ -121,6 +130,8 @@ export function cInteger(value) {
 export async function optionError(message) {
     await plineWithContinuation(/[.!?]$/.test(message) ? message : `${message}.`);
 }
+// Part of C options.c:optfn_pickup_types(): the object-class letter
+// validation loop.
 export function parsePickupTypes(value) {
     value = value.replace(/^ +/, '');
     if (/^[aA]/.test(value))

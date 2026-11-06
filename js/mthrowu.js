@@ -63,6 +63,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { snuffThrownCandle } from './thrown_object.js';
 import { formatHeardMessage, plineWithContinuation, publishHeardMessage, set_msg_xy } from './pline.js';
 import { requirePerceivedHero, dissolveBars } from './monmove.js';
+// Port only: finite-number type guard for decoded projectile options.
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
@@ -75,6 +76,7 @@ const PM_SAMURAI = MONSTER_NAME.indexOf('samurai');
 const PM_NINJA = MONSTER_NAME.indexOf('ninja');
 const FIRST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of white glass');
 const LAST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of violet glass');
+// Port only: null-safe OBJ_NAME read.
 export function objectTypeName(object) {
     return object ? OBJ_NAME(object.otyp) || '' : '';
 }
@@ -471,6 +473,7 @@ async function catchThrownObject(object, { state, random, publish }) {
     });
     return true;
 }
+// Part of C mthrowu.c:m_throw(), zap.c:bhit(): the tmp_at flight display.
 export function monsterProjectileDisplay(object, state, { tethered = false, } = {}) {
     const glyph = transientObjectGlyph(object);
     const topRow = state.nhDisplay?.grid[0]?.map(cell => ({ ...cell }));
@@ -528,6 +531,8 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
         clear,
     };
 }
+// Part of C mthrowu.c:m_throw(): the per-step obstruction and iron-bars
+// check.
 async function flightBlocked(object, dx, dy, forceHit, { state, publish, random, }) {
     const { x, y } = state.bhitpos;
     const nextX = x + dx, nextY = y + dy;
@@ -839,12 +844,15 @@ export async function resolveMonsterCombatThrow(source, target, { state, random,
         heroDied: volley?.heroDied ?? false,
     };
 }
+// Part of C mthrowu.c:spitmm(): dispatch for a monster target.
 export function resolveMonsterCombatSpit(source, target, attack, options) {
     return spitAtTarget(source, target, attack, options);
 }
+// Part of C mthrowu.c:spitmu(): dispatch for the hero target.
 export function resolveMonsterSpitAtHero(source, attack, options) {
     return spitAtTarget(source, null, attack, options);
 }
+// Part of C mthrowu.c:spitmm(), spitmu(): the shared spit body.
 async function spitAtTarget(source, target, attack, { state, random = rn2, rollOne = rnd, publish = plineWithContinuation, }) {
     requireLiveGame(state);
     if (source.mcan) {
@@ -886,6 +894,7 @@ async function spitAtTarget(source, target, attack, { state, random = rn2, rollO
     }
     return { nativeResult: M_ATTK_HIT, heroDied: false };
 }
+// Part of C mthrowu.c:spitmm(), spitmu(): the mcan dry-rattle message.
 async function reportDryThroat(source, state, publish) {
     if (heroIsDeaf(state)
         || dist2(source.mx, source.my, state.u.ux, state.u.uy) >= BOLT_LIM * BOLT_LIM)
@@ -1065,6 +1074,8 @@ export async function attackHeroWithRangedWeapon(monster, state, random, rollOne
         rollOne, publish,
     });
 }
+// Part of C mthrowu.c:thrwmu(): the polearm branch — swing at the hero
+// from up to two squares away.
 export async function attackHeroWithPolearm(monster, weapon, state = game, { publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
     if (!isPolearm(weapon) || weapon !== monsterWieldedWeapon(monster))
         return;
@@ -1133,9 +1144,12 @@ function linedUp(source, target, state, boulders, random) {
     } while (x !== target.x || y !== target.y);
     return boulders === 'ignore' || random(2 + boulderSquares) < 2;
 }
+// Part of C mthrowu.c:linedup(): the boulder-blocking call form.
 export function monsterLinedUpWithMonster(source, target, state) {
     return linedUp(source, { x: target.mx, y: target.my }, state, 'block', rn2);
 }
+// Part of C mthrowu.c:m_lined_up(): the concealment test and boulder
+// policy before the line check.
 export function monsterLinedUpWithHero(source, state, random = rn2) {
     const appearance = M_AP_TYPE(state.u);
     if (Upolyd(state.u) && random(25)
@@ -1283,6 +1297,7 @@ const BARS_SMALL_TOOLS = new Set([
     SKELETON_KEY, LOCK_PICK, CREDIT_CARD, TALLOW_CANDLE, WAX_CANDLE,
     LENSES, TIN_WHISTLE, MAGIC_WHISTLE,
 ]);
+// Part of C mthrowu.c:hits_bars(): the corpse or statue species' size.
 // A corpse or statue meeting the bars needs its species to read the
 // monster's size (C: mons[otmp->corpsenm].msize).
 function barsCorpseSize(object) {

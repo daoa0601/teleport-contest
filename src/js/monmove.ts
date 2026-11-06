@@ -172,22 +172,26 @@ const IRON = 11;
 const GEMSTONE = 20, MINERAL = 21;
 const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
 
+// Port only: finite-number type guard for decoded movement inputs.
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);
 }
 
+// Port only: checked access to a completed move's capabilities.
 export function requireMovementCapabilities(movement: MonsterMovement) {
     if (!movement.postMoveCapabilities)
         throw new Error('A completed monster move must retain its movement capabilities');
     return movement.postMoveCapabilities;
 }
 
+// Port only: checked access to a deferred move's dochug context.
 export function requireDochugContext(action: MonsterMovementAction): DochugContext {
     if (!action.dochugContext)
         throw new Error('A deferred monster movement needs its original turn context');
     return action.dochugContext;
 }
 
+// Part of C monmove.c:dochugw(): the squared BOLT_LIM+1 threat radius.
 const THREAT_DISTANCE = (BOLT_LIM + 1) * (BOLT_LIM + 1);
 const S_VAMPIRE = 48;
 const G_UNIQ = 0x1000;
@@ -257,6 +261,7 @@ export function monsterCanBreakBoulder(monster: Monster): boolean {
             || questMonsterSound(monster.mnum) === MS_LEADER));
 }
 
+// C monmove.c:m_break_boulder(): a rider or spellcaster breaks a boulder.
 export async function breakMonsterBoulder(monster: Monster, x: number, y: number, state: GameState = game, {
     random = rn2, publish = plineWithContinuation,
 }: { random?: (limit: number) => number; publish?: MessagePublisher } = {}): Promise<void> {
@@ -290,11 +295,13 @@ export interface MonsterSighting {
     y: number;
 }
 
+// Part of C monmove.c:dochugw(): the remembered pre-move sighting.
 // C dochugw() skips canspotmon() when the hero has no occupation.
 export function monsterSightingBeforeAction(monster: Monster, state: GameState): MonsterSighting {
     return { seen: !!state._occupation && canSpotMonster(monster), x: monster.mx, y: monster.my };
 }
 
+// Part of C monmove.c:dochugw(): the stop-occupation threat check.
 export async function interruptOccupationForMonster(
     monster: Monster, state: GameState, before: MonsterSighting | null = null,
 ): Promise<void> {
@@ -327,6 +334,7 @@ export type MonsterFearProbe = Pick<Monster, 'mnum'>
         muy?: never;
     };
 
+// C monmove.c:onscary(): would this actor be scared at (x, y)?
 export function monsterIsScaredAt(
     monster: Monster | MonsterFearProbe, state: GameState, x: number, y: number,
 ): boolean {
@@ -451,6 +459,7 @@ interface MonsterFleeOptions extends MonsterRangeOptions {
     publish?: MessagePublisher;
 }
 
+// C monmove.c:monflee(): make a monster start or extend fleeing.
 // A monster beginning to flee.
 // C ref: monmove.c monflee(), release_hero(), and flees_light().
 export async function makeMonsterFlee(monster: Monster, {
@@ -491,6 +500,7 @@ export async function makeMonsterFlee(monster: Monster, {
     return { heroDied: false };
 }
 
+// Part of C monmove.c:monflee(): the flight announcement and vrock cloud.
 async function announceFlight(
     monster: Monster, state: GameState, publish: MessagePublisher,
     random: (limit: number) => number,
@@ -604,6 +614,8 @@ export async function useMonsterMindBlast(
     return false;
 }
 
+// Part of C monmove.c:mind_blast(): the blast revealing a hiding
+// polymorphed hero.
 async function revealHeroToPsychicBlast(state: PlayingGameState): Promise<void> {
     if (state.u.uundetected) {
         state.u.uundetected = false;
@@ -750,6 +762,7 @@ export interface MonsterDoorResult {
     heroDied: boolean;
 }
 
+// Part of C monmove.c:postmov(): the door-smashing and iron-bars passage.
 export async function resolveMonsterDoorPassage(monster: Monster, state: PlayingGameState, {
     canOpen, canUnlock, canTunnel, wasDoorVisible,
     random = rn2, rollOne = rnd, publish = plineWithContinuation,
@@ -896,6 +909,8 @@ export async function readyMonsterDiggingWeapon(
         : false;
 }
 
+// C mthrowu.c:m_has_launcher_and_ammo(): a wielded launcher with matching
+// ammo.
 function monsterHasLauncherAndAmmo(monster: Monster) {
     const launcher = monsterWieldedWeapon(monster);
     if (!launcher || !is_launcher(launcher)) return false;
@@ -903,6 +918,8 @@ function monsterHasLauncherAndAmmo(monster: Monster) {
     return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
 }
 
+// C mhitu.c:ranged_attk_available(): an unresisted spit, breath, gaze, or
+// magic bolt.
 // mhitu.c:ranged_attk_available() excludes effects the hero has resisted.
 // Also C mondata.c:get_atkdam_type(): inlined here for random breath attacks.
 function monsterHasAvailableDistanceAttack(monster: Monster, random: RandomBelow) {
@@ -916,6 +933,7 @@ function monsterHasAvailableDistanceAttack(monster: Monster, random: RandomBelow
 }
 
 
+// Part of C monmove.c:m_everyturn_effect(): the fog cloud's gas region.
 async function createFogEveryturnRegion(
     state: PlayingGameState,
     x: number,
@@ -946,6 +964,8 @@ async function monsterEveryturnEffect(
     return await createFogEveryturnRegion(state, monster.mx, monster.my, random);
 }
 
+// Part of C mon.c:movemon(): the schedulable pass that runs each monster's
+// every-turn effect.
 export async function runMonsterEveryturnEffects(
     monsters: readonly Monster[],
     state: PlayingGameState,
@@ -963,6 +983,8 @@ export async function runMonsterEveryturnEffects(
     return effects;
 }
 
+// Part of C allmain.c:moveloop_core(): the youmonst every-turn effect
+// between status projection and the next command.
 // C allmain.c invokes the same species hook for `youmonst` after status
 // projection and before accepting the next command.  The region persists on
 // the level and suppresses another TTL draw while it covers the hero square.
@@ -988,6 +1010,8 @@ export async function leaveMovementCloud(
         await createPoisonGasCloud(state, x, y, 1, 0, random);
 }
 
+// C monmove.c:m_avoid_kicked_loc(): keep clear of the square the hero just
+// kicked.
 // C ref: monmove.c:m_avoid_kicked_loc().  dokick() retains its directed
 // target through the elapsed monster turn, so a cooperative monster which
 // can see does not immediately occupy the square the hero just kicked.
@@ -1016,6 +1040,7 @@ export function monsterAvoidsKickedLocation(
     );
 }
 
+// C monmove.c:m_avoid_soko_push_loc(): keep the Sokoban push stance clear.
 // C ref: monmove.c m_avoid_soko_push_loc(). A peaceful monster must not
 // occupy the square two steps from the hero when the intervening square holds
 // a boulder: that is the stance the hero needs for a legal Sokoban push.
@@ -1093,6 +1118,7 @@ async function watchOnDuty(
     return watchDigging(x, y, { state, monster, magic: false });
 }
 
+// C monmove.c:disturb(): wake a sleeping monster near the hero.
 // C ref: monmove.c:disturb().  Sleep is checked inside dochug(), after the
 // scheduler has debited this actor's movement.  A failed wake roll therefore
 // remains part of the actor's observable RNG slice even though no state or
@@ -1142,10 +1168,13 @@ export async function disturbSleepingMonster(
     return true;
 }
 
+// Part of C monmove.c:mon_would_take_item(): the unicorn test.
 function isUnicorn(monster: Monster) {
     return monster?.mnum >= 101 && monster?.mnum <= 103;
 }
 
+// C monmove.c:mon_would_take_item(): would this monster want a floor
+// object?
 // Monster mtmp would love to take object otmp? C monmove.c:mon_would_take_item().
 export function monsterWantsFloorObject(
     monster: Monster, object: GameObject, state: PlayingGameState,
@@ -1174,6 +1203,7 @@ export function monsterWantsFloorObject(
         && !(object.otyp === CORPSE && touchPetrifies(object.corpsenm));
 }
 
+// C monmove.c:mon_would_consume_item(): consume without picking up.
 // Monster mtmp would love to consume object otmp, without picking it up.
 // C monmove.c:mon_would_consume_item().
 export function monsterWouldConsumeItem(
@@ -1271,6 +1301,7 @@ export async function moveMonsterAggress(
     };
 }
 
+// C monmove.c:itsstuck(): a sticky hero keeps the monster in place.
 export async function stopMonsterHeldByHero(monster: Monster, state: PlayingGameState) {
     if (state.u.ustuck !== monster || state.u.uswallow || !heroFormSticks(state)) return false;
     await plineWithContinuation(
@@ -1344,6 +1375,7 @@ export interface PerceptionRandomRecorder {
 
 export type PerceivedHeroMonster = Monster & { mux: number; muy: number };
 
+// Port only: assert the remembered apparent-hero coordinate.
 // Movement and ranged-attack code asserts the remembered apparent-hero
 // coordinate before using it; makemon() and dochug() establish it first.
 export function requirePerceivedHero(
@@ -1354,6 +1386,7 @@ export function requirePerceivedHero(
         throw new Error('An active monster must retain its perceived hero position');
 }
 
+// Port only: record one perception RNG draw for the diagnostic transcript.
 function recordPerceptionRandom(
     random: (limit: number) => number,
     calls: PerceptionRandomRecorder | null,
@@ -1375,11 +1408,15 @@ export function monsterCanFog(monster: Monster, state: GameState): boolean {
         && !inventoryBlocksDoorPassage(monster.minvent || []);
 }
 
+// C monmove.c:can_ooze(): an amorphous body with small inventory fits
+// under a door.
 export function monsterCanOoze(monster: Monster): boolean {
     return monsterIsAmorphous(monster)
         && !inventoryBlocksDoorPassage(monster.minvent || []);
 }
 
+// Part of C monmove.c:can_ooze(): the youmonst form reads the hero's
+// inventory.
 // C can_ooze() uses the hero's inventory for youmonst, not minvent.
 export function heroCanOoze(state: GameState): boolean {
     return monsterIsAmorphous({ mnum: heroSpecies(state) })
@@ -1416,6 +1453,8 @@ const SMALL_PASSAGE_OBJECTS = new Set([
     TIN_OPENER, SKELETON_KEY, LOCK_PICK,
 ]);
 
+// C monmove.c:set_apparxy(): remember the monster's apparent hero
+// coordinate.
 // makemon() initializes this state once when its requested coordinate was the
 // hero's square.  dochug() refreshes it before each movement decision.  Keep
 // both owners on this one implementation: displacement makes the RNG and the
@@ -1494,6 +1533,8 @@ export function setMonsterApparentHeroPosition(
     return true;
 }
 
+// Part of C monmove.c:dochug(): the hostile-move item and target
+// selection.
 // Also C monmove.c:leppie_avoidance(): inlined here.
 async function moveHostile(
     monster: Monster,
@@ -1992,6 +2033,8 @@ async function moveHostile(
     );
 }
 
+// Part of C monmove.c:dochug(): resume the selected offensive item use
+// after movement.
 // The movement presenter reaches this after postmov feedback. Item use keeps
 // its native async stack across messages; only a zero result starts the normal
 // attacks, using the threshold already calculated by this mattacku call.
@@ -2026,6 +2069,8 @@ export async function completeMonsterOffensiveAction(
     }
 }
 
+// Part of C wizard.c:tactics(): the STRAT_HEAL fall-through and STRAT_NONE
+// harassment beside the hero.
 // wizard.c:tactics(), STRAT_HEAL fall-through and STRAT_NONE: an occasional
 // mnexto() beside the hero; dochug() continues after the arrival line.
 async function runCovetousHarassTactics(
@@ -2118,6 +2163,7 @@ function holdsUpMonsterWeb(x: number, y: number, state: PlayingGameState): boole
     return false;
 }
 
+// Part of C monmove.c:postmov(): its awaited mon.c hideunder call site.
 // mon.c:hideunder(), awaited at its monmove.c:postmov() call site: the
 // "You see ..." line pages before the square is repainted, and postmov()
 // continues into after_shk_move() and the dochug() tail afterwards.
@@ -2140,6 +2186,8 @@ async function postMoveHideUnder(
     await newsym(monster.mx, monster.my);
 }
 
+// Part of C monmove.c:dochug(): the post-movement tail (range recheck,
+// engulf digest, attack continuation).
 export async function finishDochugAfterMovement(
     monster: Monster,
     movement: MonsterMovement,
@@ -2213,6 +2261,8 @@ export async function finishDochugAfterMovement(
     );
 }
 
+// Part of C monmove.c:dochug(): phase four — the final standard-attack
+// decision.
 // C dochug() phase four. The entry form and last distfleeck() result survive
 // movement, polymorph, expulsion, and input pauses; attitude is checked now.
 async function beginStandardMonsterAttack(
@@ -2259,6 +2309,7 @@ async function beginStandardMonsterAttack(
     if (attack.heroAttackSequence?.offensive) movement.actionCompleted = true;
 }
 
+// Port only: attach an initiated monster attack to its movement record.
 function attachMonsterAttack(movement: MonsterMovement, attack: MonsterAttackInitiation): void {
     if (attack.heroAttackSequence !== undefined)
         movement.heroAttackSequence = attack.heroAttackSequence;
@@ -2266,6 +2317,8 @@ function attachMonsterAttack(movement: MonsterMovement, attack: MonsterAttackIni
         movement.heroAttackResult = attack.heroAttackResult;
 }
 
+// Part of C monmove.c:postmov(): the early-out when the actor's move
+// already ended.
 // C postmov() has separate gates for movement effects and the floor tail.
 // Whether the coordinates changed does not select either gate.
 function movementHasEnded(movement: MonsterMovement): boolean {
@@ -2278,6 +2331,8 @@ function movementHasEnded(movement: MonsterMovement): boolean {
 // C monmove.c:postmov().  The door, trap, tunneling, and hiding feedback
 // belongs here, awaited inline in C order after the actor's move.
 
+// C monmove.c:postmov(): the awaited post-move effects (door, trap,
+// tunneling, hiding).
 export async function completeMovedMonsterAction(
     monster: Monster,
     movement: MonsterMovement,
@@ -2467,6 +2522,8 @@ export async function completeMovedMonsterAction(
     return movement;
 }
 
+// Part of C monmove.c:postmov(): the web, hiding, and shopkeeper floor
+// tail.
 async function finishMonsterFloorTail(
     monster: Monster,
     movement: MonsterMovement,
@@ -2495,6 +2552,7 @@ async function finishMonsterFloorTail(
     );
 }
 
+// Part of C monmove.c:m_move(): the direct m_move(monster, 0) entry.
 // Native m_move(monster, 0), including its leading mintrap() escape attempt
 // for an already-trapped actor.  A direct caller owns no dochug prelude or
 // post-move attack continuation beyond the m_move tail itself.
@@ -2533,6 +2591,8 @@ export async function talkToDemon(monster: Monster, state: PlayingGameState,
     return demandDemonBribe(monster, state, random, rollOne);
 }
 
+// Part of C monmove.c:dochug(), m_move(), dogmove.c:dog_move(): the shared
+// per-turn movement phases.
 // Part of monmove.c:dochug()'s phases two and three — distfleeck, defensive
 // and misc items, demon blackmail, watch duty, mind blast, weapon readying,
 // movement and its status switch — shared with m_move() and dog_move().
@@ -2876,6 +2936,8 @@ export async function takeMonsterTurn(
     return { ...moved, dochugContext };
 }
 
+// C monmove.c:m_move(): a monster's move, from its trapped escape attempt
+// to its post-move effects.
 export async function moveMonsterAfterTrap(
     monster: Monster,
     state: PlayingGameState,
@@ -2997,6 +3059,8 @@ export async function moveMonsterAfterTrap(
     return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
 }
 
+// C mon.c:movemon_singlemon(): one monster's scheduled turn in the movemon
+// pass.
 export async function runMonsterAction(
     monster: Monster,
     state: PlayingGameState,
@@ -3181,6 +3245,8 @@ export async function beginMonsterDochug(
     calls.push(...actionCalls);
     return { monster, calls, movement, dochugContext };
 }
+// Part of C monmove.c:postmov(): repaint the squares postmov left
+// unpainted.
 // Trap, door, tunneling, and hiding feedback belongs to postmov(), which the
 // movement owners await inline.  This repaints the squares postmov() left
 // unpainted when an earlier phase returned before its redraw, for callers
@@ -3203,10 +3269,13 @@ export async function presentMonsterPostMove(
     }
     return !!game.program_state.gameover || !!movement.heroDied;
 }
+// Port only: publish a movement's deferred message.
 export async function presentMonsterMoveMessage(action: MonsterMovementAction, game: PlayingGameState): Promise<void> {
     const movement = action.movement;
     if (movement?.message) await plineWithContinuation(movement.message);
 }
+// Part of C monmove.c:dochug(): the message and continuation order after
+// a scheduled turn.
 // Complete the same action and message phases for scheduled turns and
 // direct dochug() calls. The caller owns movement rations and dochugw().
 export async function presentMonsterAction(
@@ -3311,6 +3380,7 @@ export async function performMonsterTurn(
     }
 }
 
+// Part of C monmove.c:dochug(): the vile monster's cuss.
 async function presentMonsterCuss(action: MonsterAction): Promise<void> {
     await publishMonsterCuss(action.monster, requireInitializedGame(), sides => {
         action.calls.push(`rn2(${sides})`);

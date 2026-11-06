@@ -14,6 +14,7 @@ import { riderCannotReachMessage } from './steed.js';
 import { heroCanReachFloor } from './engrave.js';
 import { heroTeetersAtPit } from './trap.js';
 import { monsterDigests, monsterIsBreathless, monsterIsFloater } from './mondata.js';
+// Part of C hack.c:pickup_checks(): does the hero stay dry above liquid?
 function heroStaysAboveLiquid(state) {
     const hero = state.u || {};
     const form = heroMonsterForm(state);
@@ -23,10 +24,13 @@ function heroStaysAboveLiquid(state) {
     return heroHasWaterWalking(state) || floater || heroFormClings(state)
         || (flying && !breathless);
 }
+// Part of C hack.c:pickup_checks(): likes_lava exemption for lava squares.
 function heroLikesLava(state) {
     const form = heroMonsterForm(state);
     return form === PM_FIRE_ELEMENTAL || form === PM_SALAMANDER;
 }
+// Part of C hack.c:pickup_checks(): the nothing-to-pick-up message per
+// terrain type.
 function emptyFloorMessage(location, state) {
     if (location?.typ === THRONE)
         return `It must weigh${location.looted ? ' almost' : ''} a ton!`;
@@ -44,9 +48,11 @@ function emptyFloorMessage(location, state) {
         return 'The stairs are solidly affixed.';
     return 'There is nothing here to pick up.';
 }
+// Part of C hack.c:pickup_checks(): the trap under the hero's square.
 function trapAtHero(state) {
     return state.level?.traps?.find(trap => trap.tx === state.u?.ux && trap.ty === state.u?.uy) || null;
 }
+// Part of C hack.c:pickup_checks(): the cannot-reach-the-floor message.
 function reachMessage(state, trap) {
     if (heroTeetersAtPit(state, trap))
         return 'You cannot reach the bottom of the pit.';

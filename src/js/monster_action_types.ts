@@ -38,6 +38,7 @@ export interface MonsterCallLog {
     [Symbol.iterator](): Iterator<string | number | { range: number; value: number }>;
 }
 
+// Port only: diagnostic call-log wrapper for monster RNG draws.
 // Record one core-RNG draw into a monster call log. Monster scheduling
 // shares this wrapper so every recorded decision appends to the same
 // transcript shape regardless of which module draws it.

@@ -42,6 +42,7 @@ export interface SavedGame {
     state: PersistentState;
 }
 
+// Port only: decode and gate a whole saved game against its save schema.
 export function decodeSavedGame(encoded: string): SavedGame {
     const snapshot = decodeSavedGraph(encoded);
     const entities = createSavedEntityChecks();
@@ -53,6 +54,7 @@ export function decodeSavedGame(encoded: string): SavedGame {
     return snapshot;
 }
 
+// Port only: validate the persistent half of GameState field by field.
 function validPersistentState(value: unknown, entities: SavedEntityContext): value is PersistentState {
     function map(candidate: unknown): candidate is GameMap {
         restoreSavedMap(candidate, entities);
@@ -224,6 +226,7 @@ function validMessageHistory(value: unknown): value is string[] {
         && value.every(msg => msg.length > 0 && msg.length < BUFSZ);
 }
 
+// Port only: saved spell-record shape check.
 function validSpell(value: unknown): value is MemorizedSpell {
     return closedFieldsMatch<MemorizedSpell>(value, {
         name: string, level: integer,
@@ -233,22 +236,26 @@ function validSpell(value: unknown): value is MemorizedSpell {
     });
 }
 
+// Port only: saved named-fruit shape check.
 function validFruit(value: unknown): value is Fruit {
     return closedFieldsMatch<Fruit>(value, { fid: integer, fname: string });
 }
 
+// Port only: saved price-quote shape check.
 function validPriceQuote(value: unknown): value is ObjectPriceQuote {
     return closedFieldsMatch<ObjectPriceQuote>(value, {
         buy: optional(validPriceRange), sell: optional(validPriceRange),
     }) && (value.buy !== undefined || value.sell !== undefined);
 }
 
+// Port only: saved price-range shape check.
 function validPriceRange(value: unknown): value is ObjectPriceRange {
     return closedFieldsMatch<ObjectPriceRange>(value, {
         min: integer, max: integer,
     }) && value.min >= 0 && value.max >= value.min;
 }
 
+// Port only: saved monster vital statistics shape check.
 function validMonsterVital(value: unknown): value is MonsterVital {
     return closedFieldsMatch<MonsterVital>(value, {
         born: integer, died: integer, mvflags: integer,
@@ -257,6 +264,7 @@ function validMonsterVital(value: unknown): value is MonsterVital {
     });
 }
 
+// Port only: saved quest status shape check.
 function validQuestStatus(value: unknown): value is QuestStatus {
     return closedFieldsMatch<QuestStatus>(value, {
         first_start: boolean, met_leader: boolean, not_ready: integer,
@@ -269,10 +277,12 @@ function validQuestStatus(value: unknown): value is QuestStatus {
     });
 }
 
+// Port only: saved artifact id must name a known artifact.
 function validArtifactId(value: unknown): value is number {
     return integer(value) && ARTIFACT_DATA.some(artifact => artifact.id === value);
 }
 
+// Port only: saved artifact gift-target shape check.
 function validArtifactTarget(value: unknown): value is ArtifactTarget {
     if (!isSavedRecord(value)) return false;
     if (value.kind === 'flag2')
@@ -287,6 +297,7 @@ function validArtifactTarget(value: unknown): value is ArtifactTarget {
     return closedFieldsMatch(value, { kind: oneOf('all', 'resistance', 'alignment') });
 }
 
+// Port only: saved artifact shape check.
 function validArtifact(value: unknown): value is Artifact {
     const artifactFlag = oneOf(
         'SPFX_NOGEN', 'SPFX_RESTR', 'SPFX_SEEK', 'SPFX_DEFN', 'SPFX_INTEL',
@@ -321,6 +332,7 @@ function validArtifact(value: unknown): value is Artifact {
     });
 }
 
+// Port only: saved Lua variables shape check, cycle-free.
 function validLuaVariables(value: unknown): value is LuaVariables {
     const active = new WeakSet<object>();
     function variable(entry: unknown): entry is LuaSerializedValue {
