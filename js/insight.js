@@ -1620,8 +1620,8 @@ export function vanquishedLines(ask = false) {
         lines.push(`${total} creatures vanquished.`);
     return lines;
 }
-// C insight.c:dovanquished() -> list_vanquished().  The 'm' command prefix
-// (iflags.menu_requested) passes 'A' and forces the sort-order choice even
+// C insight.c:list_vanquished().  The 'm' command prefix (dovanquished's
+// iflags.menu_requested) passes 'A' and forces the sort-order choice even
 // when nothing has been vanquished yet; Escape there keeps the old order
 // and the (possibly empty) list still follows.
 export async function listVanquished(defquery = 'y') {
