@@ -26,7 +26,8 @@ export interface ThrowSlipOptions extends ThrowStateOptions {
     throwingWeapon?: boolean;
 }
 
-// throwit() evaluates this gate before its stamina branch. A real slip
+// Part of C dothrow.c:throwit(): misfire and slippery-projectile direction changes.
+// throwit evaluates this gate before its stamina branch. A real slip
 // rewrites the persistent direction even while engulfed, where every result
 // still contacts the same monster.
 export async function applyThrowSlip({
@@ -57,8 +58,9 @@ export async function applyThrowSlip({
     return true;
 }
 
-// The object has already left inventory here.  calc_capacity(obj->owt)
-// temporarily adds its weight back, reproducing the pre-detachment load.
+// Part of C dothrow.c:throwit(): drop a heavy projectile when stamina is low.
+// The object has already left inventory here. calc_capacity temporarily adds
+// obj->owt back, reproducing the pre-detachment load.
 // While swallowed, changing direction to down does not bypass monster
 // contact; it only records the source direction state.
 export async function applyLowStaminaThrow({

@@ -85,7 +85,6 @@ src/js/sp_lev.ts	sp_lev.c
 src/js/spell.ts	spell.c
 src/js/stairs.ts	stairs.c
 src/js/steal.ts	steal.c
-src/js/steed.ts	steed.c
 src/js/teleport.ts	teleport.c
 src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
@@ -93,6 +92,7 @@ src/js/topl.ts	topl.c
 src/js/topten.ts	topten.c
 src/js/track.ts	track.c
 src/js/trap.ts	trap.c
+src/js/tutorial_state.ts	nhlua.c
 src/js/uhitm.ts	uhitm.c
 src/js/weapon.ts	weapon.c
 src/js/were.ts	were.c

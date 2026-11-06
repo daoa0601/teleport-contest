@@ -13,10 +13,12 @@ export interface BilledShopkeeper extends Shopkeeper {
     eshk: ShopkeeperData & { bill: ShopBillEntry[] };
 }
 
+// Port only: narrow monsters with a shopkeeper extension.
 export function hasShopkeeperData(monster: Monster | null | undefined): monster is Shopkeeper {
     return !!monster?.eshk;
 }
 
+// Port only: narrow shopkeepers with a bill array.
 export function hasShopBill(monster: Monster | null | undefined): monster is BilledShopkeeper {
     return !!monster?.eshk?.bill;
 }
@@ -57,6 +59,7 @@ export interface ShopGameState extends GameState {
     level: GameMap;
 }
 
+// Port only: validate the state needed for shop interaction.
 export function requireShopGame(state: GameState): asserts state is ShopGameState {
     const hero = state.u;
     if (!state.level || !hero.uz || !hero.urooms || !hero.urooms0

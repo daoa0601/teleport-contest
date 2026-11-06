@@ -191,28 +191,32 @@ const transientFields = {
 };
 const persistentStateKeys = new Set(persistentNames);
 const persistentKeyNames = persistentStateKeys;
+// Port only: narrow saved-state keys against the persistence schema.
 function isPersistentStateKey(key) {
     return persistentKeyNames.has(key);
 }
+// Port only: copy one declared persistent field into a snapshot.
 function copyStateKey(snapshot, state, key) {
     snapshot[key] = state[key];
 }
-// TS saved-state restore; also inlines C artifact.c:restore_artifacts()
-// through the persistent artifact existence, provenance, discovery and
-// runtime fields.  Install only fields admitted by the saved-state
-// schema. Keep the live state object and the decoded graph references;
+// Port only: restore the validated persistent state graph.
+// Also C artifact.c:restore_artifacts(): restore persistent artifact existence,
+// provenance, discovery and runtime fields.
+// Install only fields admitted by the saved-state schema. Keep the live state
+// object and the decoded graph references;
 // process-only fields stay in place.
 export function restorePersistentState(state, snapshot) {
     // An absent optional field must clear its previous live value too.
     for (const key of persistentStateKeys)
         restoreStateKey(state, snapshot, key);
 }
+// Port only: restore one declared persistent field.
 function restoreStateKey(state, snapshot, key) {
     state[key] = snapshot[key];
 }
-// TS saved-state snapshot; also inlines C artifact.c:save_artifacts()
-// through the persistent artifact existence, provenance, discovery and
-// runtime fields.
+// Port only: build a snapshot and reject unclassified runtime fields.
+// Also C artifact.c:save_artifacts(): snapshot persistent artifact existence,
+// provenance, discovery and runtime fields.
 export function copyPersistentState(state) {
     const snapshot = {
         u: state.u, urole: state.urole, urace: state.urace,
@@ -241,6 +245,7 @@ export function copyPersistentState(state) {
     }
     return snapshot;
 }
+// Port only: omit transient context fields from a saved snapshot.
 function copyPersistentContext(context) {
     const snapshot = { ...context };
     delete snapshot.botl;

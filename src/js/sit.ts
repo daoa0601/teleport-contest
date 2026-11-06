@@ -53,15 +53,18 @@ const PM_GIANT_EEL = 319;
 const PM_ELECTRIC_EEL = 320;
 const PM_SALAMANDER = 329;
 
+// Part of C sit.c:dosit(): choose the hero's sitting anatomy.
 function formIsHumanoid() {
     return heroMonsterForm(game) == null
         || monsterIsHumanoid(heroMonsterForm(game) ?? -1);
 }
 
+// Port only: read object quantities from the runtime representation.
 function objectQuantity(object: GameObject): number {
     return object?.quan ?? object?.quantity ?? 1;
 }
 
+// Part of C sit.c:dosit(), sit.c:lay_an_egg(): check the current form's aquatic egg laying.
 function waterEggLayer() {
     const form = heroMonsterForm(game);
     return form !== null && eggs_in_water(form);
@@ -92,16 +95,19 @@ export async function takeHeroGold(state: GameState = game): Promise<void> {
     if (lostMoney) state.context.botl = true;
 }
 
+// Port only: read a nonnegative carried coin quantity.
 export function heroGoldQuantity(object: GameObject | null | undefined): number {
     return Math.max(0, Math.trunc(
         object?.quan ?? object?.quantity ?? 0,
     ));
 }
 
+// Part of C mkobj.c:weight(): compute coin-stack weight.
 function coinWeight(amount: number): number {
     return Math.max(1, Math.trunc((amount + 50) / 100));
 }
 
+// Port only: synchronize the runtime fields of a coin stack.
 function normalizeGoldObject(object: GameObject, amount = heroGoldQuantity(object)): GameObject {
     object.otyp = GOLD_PIECE;
     object.oclass = COIN_CLASS;
@@ -113,11 +119,13 @@ function normalizeGoldObject(object: GameObject, amount = heroGoldQuantity(objec
     return object;
 }
 
+// Port only: find the hero's coin stack in the inventory array.
 export function heroGoldObject(state: Pick<GameState, 'inventory'>): GameObject | null {
     return (state?.inventory || []).find(object =>
         object?.otyp === GOLD_PIECE || object?.oclass === COIN_CLASS) || null;
 }
 
+// Port only: merge coin stacks in the runtime inventory representation.
 export function addHeroGoldObject(state: GoldInventoryState, incoming: GameObject | null | undefined): GoldAddition {
     if (!incoming) return { object: heroGoldObject(state), merged: false };
     const amount = heroGoldQuantity(incoming);
@@ -142,6 +150,7 @@ export function addHeroGoldObject(state: GoldInventoryState, incoming: GameObjec
     return { object: markJustPicked(incoming), merged: false };
 }
 
+// Port only: update or construct the hero's runtime coin stack.
 export function setHeroGoldAmount(state: GoldInventoryState, amount: number): GameObject | null {
     amount = Math.max(0, Math.trunc(amount ?? 0));
     let object = heroGoldObject(state);
@@ -179,6 +188,7 @@ export function setHeroGoldAmount(state: GoldInventoryState, amount: number): Ga
     return object;
 }
 
+// Port only: detach a requested coin quantity through shared ownership operations.
 export function detachHeroGold(state: GameState, requested: number | null = null): GameObject | null {
     const object = heroGoldObject(state);
     if (!object) return null;
@@ -237,6 +247,7 @@ async function layEgg(): Promise<boolean> {
     return !game.program_state.gameover;
 }
 
+// Part of C sit.c:dosit(): sitting on the floor's top object.
 async function sitOnObject(object: GameObject): Promise<void> {
     if (MONSTER_SYMBOL[heroMonsterForm(game) ?? -1] === S_DRAGON
         && object.oclass === COIN_CLASS) {
@@ -266,6 +277,7 @@ async function sitOnObject(object: GameObject): Promise<void> {
     }
 }
 
+// Part of C sit.c:dosit(): sitting while already held by a trap.
 // Returns true when the hero died.
 async function sitWhileTrapped(trap: Trap | null): Promise<boolean> {
     const game = requireInitializedGame();
@@ -304,6 +316,7 @@ async function sitWhileTrapped(trap: Trap | null): Promise<boolean> {
     return false;
 }
 
+// Part of C sit.c:dosit(): water exposure while sitting.
 async function sitInWater() {
     await pline(`You sit in the ${displayLiquidName('water')}.`);
     if (heroMonsterForm(game) === PM_GREMLIN) {
@@ -324,11 +337,13 @@ async function sitInWater() {
     }
 }
 
+// Part of C sit.c:dosit(): recognize forms comfortable sitting in lava.
 function formLikesLava() {
     const form = heroMonsterForm(game);
     return form === PM_FIRE_ELEMENTAL || form === PM_SALAMANDER;
 }
 
+// C sit.c:dosit()
 export async function dosit({
     finishTeleport = null,
     gotoLevel = null,

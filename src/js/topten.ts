@@ -153,6 +153,7 @@ const ROLE_WIDTH = 3;
 const NAME_WIDTH = 10;
 const DEATH_WIDTH = 100;
 
+// Part of C topten.c:readentry(): apply native score-record string widths.
 function readNativeFieldWidths(record: ScoreRecord): ScoreRecord {
     return {
         ...record,
@@ -165,7 +166,8 @@ function readNativeFieldWidths(record: ScoreRecord): ScoreRecord {
     };
 }
 
-// The storage boundary check C gets from fscanf()'s return value: only a
+// Port only: validate score records read from storage.
+// The storage boundary check C gets from fscanf's return value: only a
 // row with every native field in its native type is a parseable record.
 function validScoreRecord(record: unknown): record is ScoreRecord {
     if (typeof record !== 'object' || record === null) return false;
@@ -352,6 +354,7 @@ async function roleMonster(code: string, state: GameState): Promise<number> {
     return MONSTER_NAME.indexOf('human mummy');
 }
 
+// C topten.c:get_rnd_toptenentry()
 export function randomToptenEntry({ state = game, rollOne = rnd }: ToptenOptions = {}): ScoreRecord | null {
     // The app's list represents the readable native record file, including
     // its empty state. An empty file still owns the rank selection draw.
@@ -368,6 +371,7 @@ export function randomToptenEntry({ state = game, rollOne = rnd }: ToptenOptions
     return selected;
 }
 
+// C topten.c:tt_oname()
 export async function nameObjectFromTopten(object: GameObject | null | undefined, { state = game, rollOne = rnd }: ToptenOptions = {}): Promise<GameObject | null> {
     requireLiveGame(state);
     if (!object) return null;
@@ -383,6 +387,7 @@ export async function nameObjectFromTopten(object: GameObject | null | undefined
     return object;
 }
 
+// C topten.c:tt_doppel()
 export async function toptenMonsterForm(monster: Monster, {
     state = game, random = rn2, rollOne = rnd,
 }: ToptenOptions & { random?: (limit: number) => number } = {}): Promise<number> {

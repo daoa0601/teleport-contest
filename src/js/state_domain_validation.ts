@@ -20,6 +20,7 @@ import type { TakeoffContext } from './do_wear.js';
 
 import type { PersistentGameContext } from './state_schema.js';
 
+// Port only: validate saved game context data.
 export function validSavedGameContext(
     value: unknown, entities: SavedEntityContext,
 ): value is PersistentGameContext {
@@ -66,6 +67,7 @@ export function validSavedGameContext(
     });
 }
 
+// Port only: validate saved takeoff context data.
 function validTakeoffContext(value: unknown): value is TakeoffContext {
     return closedFieldsMatch<TakeoffContext>(value, {
         pending: arrayOf(oneOf(...TAKEOFF_ORDER)),
@@ -76,6 +78,7 @@ function validTakeoffContext(value: unknown): value is TakeoffContext {
         && (value.current === null || value.pending.includes(value.current));
 }
 
+// Port only: validate saved dungeon data.
 export function validSavedDungeon(value: unknown): value is Dungeon {
     return closedFieldsMatch<Dungeon>(value, {
         dname: string,
@@ -91,6 +94,7 @@ export function validSavedDungeon(value: unknown): value is Dungeon {
     });
 }
 
+// Port only: validate saved dungeon branch data.
 export function validSavedDungeonBranch(value: unknown): value is DungeonBranch {
     return closedFieldsMatch<DungeonBranch>(value, {
         end1: validSavedDungeonLocation,
@@ -101,6 +105,7 @@ export function validSavedDungeonBranch(value: unknown): value is DungeonBranch 
     });
 }
 
+// Port only: validate saved special level data.
 export function validSavedSpecialLevel(value: unknown): value is SpecialLevelDescriptor {
     return closedFieldsMatch<SpecialLevelDescriptor>(value, {
         dnum: integer,
@@ -112,6 +117,7 @@ export function validSavedSpecialLevel(value: unknown): value is SpecialLevelDes
     });
 }
 
+// Port only: validate saved overview record data.
 export function validSavedOverviewRecord(value: unknown): value is OverviewRecord {
     return closedFieldsMatch<OverviewRecord>(value, {
         flags: (entry): entry is OverviewRecord['flags'] => closedFieldsMatch<OverviewRecord['flags']>(entry, {
@@ -132,6 +138,7 @@ export function validSavedOverviewRecord(value: unknown): value is OverviewRecor
     });
 }
 
+// Port only: validate saved active special level data.
 export function validSavedActiveSpecialLevel(
     value: unknown, entities: SavedEntityContext,
 ): value is ActiveSpecialLevel {
@@ -171,6 +178,7 @@ export function validSavedActiveSpecialLevel(
     });
 }
 
+// Port only: validate saved digging context data.
 function validDiggingContext(value: unknown): value is DiggingContext {
     return closedFieldsMatch<DiggingContext>(value, {
         pos: validSavedPosition,
@@ -184,30 +192,35 @@ function validDiggingContext(value: unknown): value is DiggingContext {
     });
 }
 
+// Port only: validate saved life list data.
 function validLifeList(value: unknown): value is NonNullable<GameContext['lifelist']> {
     return closedFieldsMatch<NonNullable<GameContext['lifelist']>>(value, {
         total_seen_upclose: optional(integer), total_photographed: optional(integer),
     });
 }
 
+// Port only: validate saved novel context data.
 function validNovelContext(value: unknown): value is NonNullable<GameContext['novel']> {
     return closedFieldsMatch<NonNullable<GameContext['novel']>>(value, {
         id: integer, count: integer, pasg: arrayOf(integer),
     });
 }
 
+// Port only: validate saved polearm context data.
 function validPolearmContext(value: unknown): value is NonNullable<GameContext['polearm']> {
     return closedFieldsMatch<NonNullable<GameContext['polearm']>>(value, {
         hitmonId: nullable(integer),
     });
 }
 
+// Port only: validate saved warning context data.
 function validWarningContext(value: unknown): value is NonNullable<GameContext['warntype']> {
     return closedFieldsMatch<NonNullable<GameContext['warntype']>>(value, {
         obj: optional(integer), polyd: integer, speciesidx: integer,
     });
 }
 
+// Port only: validate saved achievement objects data.
 function validAchievementObjects(value: unknown): value is NonNullable<GameContext['achieveo']> {
     return closedFieldsMatch<NonNullable<GameContext['achieveo']>>(value, {
         mines_prize_oid: optional(integer), mines_prize_otyp: optional(integer),
@@ -215,6 +228,7 @@ function validAchievementObjects(value: unknown): value is NonNullable<GameConte
     });
 }
 
+// Port only: validate saved meal data.
 function validMeal(
     value: unknown, entities: SavedEntityContext,
 ): value is FoodMeal | NonfoodMeal {
@@ -249,6 +263,7 @@ function validMeal(
     });
 }
 
+// Port only: validate saved tin opening data.
 function validTinOpening(value: unknown, entities: SavedEntityContext): value is TinOpening {
     return closedFieldsMatch<TinOpening>(value, {
         key: oneOf('open-tin'),
@@ -261,6 +276,7 @@ function validTinOpening(value: unknown, entities: SavedEntityContext): value is
     });
 }
 
+// Port only: validate saved dungeon flags data.
 function validDungeonFlags(value: unknown): value is DungeonFlags {
     return closedFieldsMatch<DungeonFlags>(value, {
         maze_like: boolean, hellish: boolean, alignment: nullable(integer),
@@ -268,6 +284,7 @@ function validDungeonFlags(value: unknown): value is DungeonFlags {
     });
 }
 
+// Port only: validate saved overview features data.
 function validOverviewFeatures(value: unknown): value is OverviewRecord['features'] {
     return closedFieldsMatch<OverviewRecord['features']>(value, {
         nshop: integer, shoptype: integer, nfount: integer, nsink: integer,
@@ -276,6 +293,7 @@ function validOverviewFeatures(value: unknown): value is OverviewRecord['feature
     });
 }
 
+// Port only: validate saved baalzebub area data.
 function validBaalzebubArea(
     value: unknown,
 ): value is NonNullable<ActiveSpecialLevel['baalzFixupArea']> {
@@ -284,6 +302,7 @@ function validBaalzebubArea(
     });
 }
 
+// Port only: validate saved rectangle data.
 function validRectangle(value: unknown): value is Rectangle {
     return closedFieldsMatch<Rectangle>(value, {
         lx: integer, ly: integer, hx: integer, hy: integer,

@@ -114,6 +114,8 @@ export function riderCannotReachMessage(state: GameState = game): string {
     return `You aren't skilled enough to reach from ${name}.`;
 }
 
+// Port only: duplicate the grounded predicate for the mounted monster.
+// The full macro port is grounded in mondata.ts.
 export function steedIsGrounded(steed: Monster, state: GameState = game): boolean {
     const symbol = MONSTER_SYMBOL[steed?.mnum];
     if (monsterIsFlyer(steed?.mnum) || symbol === S_EYE || symbol === S_LIGHT)
@@ -121,12 +123,14 @@ export function steedIsGrounded(steed: Monster, state: GameState = game): boolea
     return !monsterIsClinger(steed?.mnum) || !levelHasCeiling(state);
 }
 
+// Port only: read the saddle from the runtime cache or monster inventory.
 export function monsterSaddle(monster: Monster | null | undefined): GameObject | null {
     if (monster?.saddle) return monster.saddle;
     return (monster?.minvent || monster?.inventory || []).find(object =>
         (object.owornmask ?? 0) & W_SADDLE) ?? null;
 }
 
+// C steed.c:doride()
 export async function doride() {
     const hero = game.u;
     if (hero?.usteed) {
@@ -156,6 +160,7 @@ export async function doride() {
     game.context.move = await mountSteed(steed, force, vector) ? 1 : 0;
 }
 
+// C steed.c:can_ride()
 export function heroCanRideSteed(steed: Monster, state: GameState = game): boolean {
     const mnum = state.u.umonnum;
     if (mnum === undefined) return false;
@@ -165,6 +170,7 @@ export function heroCanRideSteed(steed: Monster, state: GameState = game): boole
         && (!state.u.uinwater || monsterIsSwimmer(steed.mnum));
 }
 
+// Part of C polyself.c:polymon(): resolve petrifying contact and riding eligibility after changing form.
 export async function handleRidingAfterFormChange() {
     const steed = game.u.usteed;
     if (!steed) return { died: false };
@@ -181,6 +187,7 @@ export async function handleRidingAfterFormChange() {
     return { died: false };
 }
 
+// C steed.c:poly_steed()
 export async function adjustRiderAfterSteedPolymorph(
     steed: Monster, oldMnum: number, state: GameState = game,
     publish: MessagePublisher = plineWithContinuation,
@@ -194,6 +201,7 @@ export async function adjustRiderAfterSteedPolymorph(
     return { dismounted: false };
 }
 
+// Part of C steed.c:stucksteed(): block movement while the steed is helpless.
 export async function ridingPreventsMovement() {
     const steed = game.u.usteed;
     if (!steed || !monsterIsHelpless(steed)) return false;
@@ -287,6 +295,7 @@ async function ridingStepIsClear(
         || heroCouldMoveOntoBoulder(x, y, state);
 }
 
+// C steed.c:mount_steed()
 async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: DirectionVector): Promise<boolean> {
     requirePlayingGame(game);
     const hero = game.u;
@@ -435,6 +444,7 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
     return true;
 }
 
+// C steed.c:maybewakesteed()
 async function wakeSteedForRiding(steed: Monster) {
     const wasHelpless = monsterIsHelpless(steed);
     steed.msleeping = 0;
@@ -536,6 +546,7 @@ export async function useSaddle(saddle: GameObject): Promise<boolean> {
     return true;
 }
 
+// C steed.c:put_saddle_on_mon()
 export async function putSaddleOnMonster(saddle: GameObject | null, monster: Monster): Promise<GameObject | null> {
     if (!monsterCanBeSaddled(monster) || monsterSaddle(monster)) return null;
     if (!saddle) {
@@ -553,7 +564,8 @@ export async function putSaddleOnMonster(saddle: GameObject | null, monster: Mon
     return carriedSaddle;
 }
 
-// C makemon(): the roll precedes species and equipment eligibility checks.
+// Part of C makemon.c:makemon(): rarely saddle a domestic monster at creation.
+// C makemon: the roll precedes species and equipment eligibility checks.
 export async function maybeGiveDomesticSaddle(monster: Monster): Promise<GameObject | null> {
     if (!rn2(100) && is_domestic(monster.mnum))
         return await putSaddleOnMonster(null, monster);
@@ -565,6 +577,7 @@ const DISMOUNT_DIRECTIONS: readonly DirectionVector[] = [
     [1, 0], [1, 1], [0, 1], [-1, 1],
 ];
 
+// Part of C steed.c:landing_spot(): check terrain, occupancy and a legal riding step.
 async function openLandingSquare(
     state: PlayingGameState, x: number, y: number,
     publish: MessagePublisher,
@@ -575,6 +588,7 @@ async function openLandingSquare(
     return ridingStepIsClear(state, x, y, publish);
 }
 
+// C steed.c:landing_spot()
 async function landingSpot(
     state: PlayingGameState, reason: DismountReason,
     random: (range: number) => number, force = false,
@@ -635,6 +649,7 @@ async function landingSpot(
     ) : null;
 }
 
+// Part of C steed.c:dismount_steed(): relocate the steed beside the hero.
 async function moveSteedOffHero(state: PlayingGameState, steed: Monster, random: (range: number) => number) {
     const point = enexto(
         steed.mnum, state.u.ux, state.u.uy, { state, random },
@@ -644,7 +659,8 @@ async function moveSteedOffHero(state: PlayingGameState, steed: Monster, random:
     return true;
 }
 
-// C steed.c:875-895 stucksteed().  Decides whether the hero's steed is able
+// C steed.c:stucksteed()
+// Decides whether the hero's steed is able
 // to move; holding traps are not checked here (those affect the hero
 // directly).  Announces the reason and returns true, or returns false for a
 // mobile steed; no other state changes.
@@ -667,11 +683,13 @@ export async function stuckSteed(checkFeeding = true, state: GameState = game): 
     return false;
 }
 
+// Part of C steed.c:dismount_steed(): describe dismounting an unnamed steed.
 function unnamedSteedMessage(steed: Monster) {
     const name = monsterTypeName(steed.mnum, !!steed.female);
     return `You've been through the dungeon on ${withIndefiniteArticle(name)} with no name.`;
 }
 
+// C steed.c:dismount_steed()
 export async function dismountHero(
     reason: DismountReason,
     {
@@ -882,6 +900,7 @@ export async function dismountHero(
     };
 }
 
+// Part of C steed.c:dismount_steed(): resolve the steed's fall into water or lava.
 async function dropSteedIntoLiquid(
     steed: Monster, state: PlayingGameState, announce: MessagePublisher,
 ): Promise<{ dead: boolean } | null> {
@@ -967,6 +986,7 @@ export async function strikeSteed({
 // callers own the level/migration list, and placement resets every mstate bit.
 // ---------------------------------------------------------------------------
 
+// C steed.c:place_monster()
 // C place_monster() diagnoses invalid placements before changing the map.
 export async function placeMonsterOnMap(monster: Monster, x: number, y: number, state = game): Promise<void> {
     const levelName = describeLevel(0, state);
@@ -994,6 +1014,7 @@ export async function placeMonsterOnMap(monster: Monster, x: number, y: number, 
     placeMonsterAt(monster, x, y, state);
 }
 
+// C do_name.c:minimal_monnam()
 // C minimal_monnam(): diagnostics describe the real species and attitude,
 // independently of the hero's sight, hallucination, or the monster's name.
 function placementMonsterName(monster: Monster, checkLocation: boolean, state: GameState): string {
@@ -1006,6 +1027,7 @@ function placementMonsterName(monster: Monster, checkLocation: boolean, state: G
     return `${attitude}${monsterTypeName(monster.mnum, !!monster.female)} <${monster.mx},${monster.my}>${shape}`;
 }
 
+// Part of C steed.c:place_monster(): commit coordinates, occupancy and floor state.
 // Commit a map-slot assignment. The monster chain retains an overwritten
 // occupant, but moving the new occupant away must leave an empty square.
 export function placeMonsterAt(monster: MonsterPosition, x: number, y: number, state = game): void {
@@ -1017,6 +1039,7 @@ export function placeMonsterAt(monster: MonsterPosition, x: number, y: number, s
     monster.headOnMap = true;
 }
 
+// C rm.h:remove_monster()
 // C remove_monster() clears the square, even when the caller's monster
 // was overwritten there. It leaves both coordinates and mstate alone.
 export function removeMonsterFromMapAt(x: number, y: number, state = game): void {
@@ -1024,6 +1047,7 @@ export function removeMonsterFromMapAt(x: number, y: number, state = game): void
     if (occupant) clearMonsterMapSquare(occupant, x, y);
 }
 
+// Port only: clear head and worm-segment occupancy in the runtime representation.
 function clearMonsterMapSquare(monster: MonsterPosition, x: number, y: number): void {
     if (monster.mx === x && monster.my === y) monster.headOnMap = false;
     for (const segments of [monster.wormSegments, monster.wormDetachedSegments]) {
@@ -1033,6 +1057,7 @@ function clearMonsterMapSquare(monster: MonsterPosition, x: number, y: number): 
     }
 }
 
+// Part of C rm.h:m_at(): resolve a square's occupant from the runtime monster array.
 // Occupancy ends at unlink/off-map placement, not at zero hit points.
 export function monsterAtPosition<T extends MonsterPosition>(
     level: { monsters: readonly T[] }, x: number, y: number, state: GameState = game,
@@ -1042,7 +1067,8 @@ export function monsterAtPosition<T extends MonsterPosition>(
         && monsterOccupiesPosition(monster, x, y)) || null;
 }
 
-// C m_at(): the live occupant of a square, ignoring one actor and skipping
+// Port only: find a living monster head at a square while excluding an actor.
+// C m_at: the live occupant of a square, ignoring one actor and skipping
 // the dead. Movement destination scans and item-use proximity share this.
 export function monsterAt(
     state: GameState, x: number, y: number, ignore: Monster | null = null,
@@ -1057,7 +1083,8 @@ export function monsterAt(
     ) || null;
 }
 
-// remove_monster() clears the mounted actor's map slot, without unlinking
+// Port only: interpret floor membership, mounted actors and engulf overlap for occupancy.
+// remove_monster clears the mounted actor's map slot, without unlinking
 // it from fmon or changing mstate. Its coordinates still follow the hero.
 export function monsterHasMapPosition(
     monster: MonsterPosition | null | undefined,
@@ -1070,7 +1097,8 @@ export function monsterHasMapPosition(
     return !engulf || monster !== (engulf.defenderExposed ? engulf.attacker : engulf.defender);
 }
 
-// C mdamagem() makes the dying defender the mapped actor before monkilled().
+// Part of C mhitm.c:mdamagem(): expose the engulfed defender's map slot before death handling.
+// C mdamagem makes the dying defender the mapped actor before monkilled.
 // Both actors remain in fmon throughout the temporary engulf overlap.
 export function exposeEngulfedDefenderForDeath(
     attacker: MonsterPosition, defender: MonsterPosition, state: GameState = game,
@@ -1084,6 +1112,7 @@ export function exposeEngulfedDefenderForDeath(
     }
 }
 
+// Port only: test runtime head and worm-segment occupancy.
 export function monsterOccupiesPosition(
     monster: MonsterPosition | null | undefined, x: number, y: number,
 ): boolean {

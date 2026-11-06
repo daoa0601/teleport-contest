@@ -2,6 +2,7 @@ import { arrayOf, boolean, closedFieldsMatch, integer, nullable, oneOf, optional
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedCemeteryEntry, validSavedDungeonLocation, validSavedPosition } from './map_validation.js';
 import { TAKEOFF_ORDER } from './do_wear.js';
+// Port only: validate saved game context data.
 export function validSavedGameContext(value, entities) {
     return closedFieldsMatch(value, {
         move: integer,
@@ -42,6 +43,7 @@ export function validSavedGameContext(value, entities) {
         tin: optional(nullable((entry) => validTinOpening(entry, entities))),
     });
 }
+// Port only: validate saved takeoff context data.
 function validTakeoffContext(value) {
     return closedFieldsMatch(value, {
         pending: arrayOf(oneOf(...TAKEOFF_ORDER)),
@@ -51,6 +53,7 @@ function validTakeoffContext(value) {
     }) && new Set(value.pending).size === value.pending.length
         && (value.current === null || value.pending.includes(value.current));
 }
+// Port only: validate saved dungeon data.
 export function validSavedDungeon(value) {
     return closedFieldsMatch(value, {
         dname: string,
@@ -65,6 +68,7 @@ export function validSavedDungeon(value) {
         themeRooms: optional(string),
     });
 }
+// Port only: validate saved dungeon branch data.
 export function validSavedDungeonBranch(value) {
     return closedFieldsMatch(value, {
         end1: validSavedDungeonLocation,
@@ -74,6 +78,7 @@ export function validSavedDungeonBranch(value) {
         portal: boolean,
     });
 }
+// Port only: validate saved special level data.
 export function validSavedSpecialLevel(value) {
     return closedFieldsMatch(value, {
         dnum: integer,
@@ -83,6 +88,7 @@ export function validSavedSpecialLevel(value) {
         alignment: nullable(integer),
     });
 }
+// Port only: validate saved overview record data.
 export function validSavedOverviewRecord(value) {
     return closedFieldsMatch(value, {
         flags: (entry) => closedFieldsMatch(entry, {
@@ -101,6 +107,7 @@ export function validSavedOverviewRecord(value) {
         finalRestingPlaces: optional(arrayOf(validSavedCemeteryEntry)),
     });
 }
+// Port only: validate saved active special level data.
 export function validSavedActiveSpecialLevel(value, entities) {
     return closedFieldsMatch(value, {
         prototype: string,
@@ -135,6 +142,7 @@ export function validSavedActiveSpecialLevel(value, entities) {
         downTeleportExclude: optional(nullable(validRectangle)),
     });
 }
+// Port only: validate saved digging context data.
 function validDiggingContext(value) {
     return closedFieldsMatch(value, {
         pos: validSavedPosition,
@@ -147,32 +155,38 @@ function validDiggingContext(value) {
         quiet: boolean,
     });
 }
+// Port only: validate saved life list data.
 function validLifeList(value) {
     return closedFieldsMatch(value, {
         total_seen_upclose: optional(integer), total_photographed: optional(integer),
     });
 }
+// Port only: validate saved novel context data.
 function validNovelContext(value) {
     return closedFieldsMatch(value, {
         id: integer, count: integer, pasg: arrayOf(integer),
     });
 }
+// Port only: validate saved polearm context data.
 function validPolearmContext(value) {
     return closedFieldsMatch(value, {
         hitmonId: nullable(integer),
     });
 }
+// Port only: validate saved warning context data.
 function validWarningContext(value) {
     return closedFieldsMatch(value, {
         obj: optional(integer), polyd: integer, speciesidx: integer,
     });
 }
+// Port only: validate saved achievement objects data.
 function validAchievementObjects(value) {
     return closedFieldsMatch(value, {
         mines_prize_oid: optional(integer), mines_prize_otyp: optional(integer),
         soko_prize_oid: optional(integer), soko_prize_otyp: optional(integer),
     });
 }
+// Port only: validate saved meal data.
 function validMeal(value, entities) {
     if (!isSavedRecord(value))
         return false;
@@ -204,6 +218,7 @@ function validMeal(value, entities) {
         doreset: optional(boolean),
     });
 }
+// Port only: validate saved tin opening data.
 function validTinOpening(value, entities) {
     return closedFieldsMatch(value, {
         key: oneOf('open-tin'),
@@ -215,12 +230,14 @@ function validTinOpening(value, entities) {
         usedtime: integer,
     });
 }
+// Port only: validate saved dungeon flags data.
 function validDungeonFlags(value) {
     return closedFieldsMatch(value, {
         maze_like: boolean, hellish: boolean, alignment: nullable(integer),
         unconnected: optional(boolean),
     });
 }
+// Port only: validate saved overview features data.
 function validOverviewFeatures(value) {
     return closedFieldsMatch(value, {
         nshop: integer, shoptype: integer, nfount: integer, nsink: integer,
@@ -228,11 +245,13 @@ function validOverviewFeatures(value) {
         nthrone: integer, ngrave: integer, ntree: integer,
     });
 }
+// Port only: validate saved baalzebub area data.
 function validBaalzebubArea(value) {
     return closedFieldsMatch(value, {
         x1: integer, y1: integer, x2: integer, y2: integer,
     });
 }
+// Port only: validate saved rectangle data.
 function validRectangle(value) {
     return closedFieldsMatch(value, {
         lx: integer, ly: integer, hx: integer, hy: integer,

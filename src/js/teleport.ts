@@ -135,6 +135,7 @@ interface HeroTeleportArrival<Arrival> {
     arrival: Arrival;
 }
 
+// Port only: narrow teleportation state to a loaded level.
 export function requireLevel(state: GameState): asserts state is LevelGameState {
     if (!state.level) throw new Error('Teleportation requires a dungeon level.');
 }
@@ -154,6 +155,7 @@ const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_SALAMANDER = 329;
 
+// Port only: find a ring across the runtime equipment aliases.
 function wornRing(state: GameState, objectType: number) {
     return [
         state?.uleft, state?.uright,
@@ -161,6 +163,7 @@ function wornRing(state: GameState, objectType: number) {
     ].some(ring => ring?.otyp === objectType);
 }
 
+// C youprop.h:Teleportation()
 export function heroHasTeleportation(state: GameState) {
     const u = state?.u;
     if (u?._propertySources?.teleportation)
@@ -170,15 +173,18 @@ export function heroHasTeleportation(state: GameState) {
         || wornRing(state, RIN_TELEPORTATION));
 }
 
+// Part of C teleport.c:dotele(): test teleportation granted by the hero's form.
 export function heroFormCanTeleport(state: GameState) {
     return Upolyd(state.u) && state.u.umonnum !== undefined
         && monsterCanTeleport(state.u.umonnum);
 }
 
+// Part of C teleport.c:dotele(): combine intrinsic and form-based teleportation.
 export function heroCanTeleport(state = game) {
     return heroHasTeleportation(state) || heroFormCanTeleport(state);
 }
 
+// C youprop.h:Teleport_control()
 export function heroControlsTeleport(state = game) {
     const u = state?.u;
     return !!(u?.teleportControl
@@ -186,6 +192,7 @@ export function heroControlsTeleport(state = game) {
         || (Upolyd(u) && u.umonnum !== undefined && monsterControlsTeleport(u.umonnum)));
 }
 
+// Part of C teleport.c:tele_trap(): decide why a hero teleport trap is blocked.
 export function heroTeleportTrapBlock(state = game) {
     const level = state?.u?.uz;
     const astral = state?.astral_level;
@@ -202,8 +209,9 @@ function monsterIsDemonRuler(monster: Pick<Monster, 'mnum'>) {
         && (is_lord(monster?.mnum) || is_prince(monster?.mnum));
 }
 
-// noteleport_level()'s In_hell half: the demon court in Gehennom, scanned
-// through get_iter_mons(m_blocks_teleporting).
+// Part of C teleport.c:noteleport_level(): check Gehennom's demon court.
+// noteleport_level's In_hell half: the demon court in Gehennom, scanned
+// through get_iter_mons with the m_blocks_teleporting filter.
 function demonCourtBlocksTeleport(monster: Pick<Monster, 'mnum'>, state: GameState) {
     const inHell = !!state?.dungeons?.[state?.u?.uz?.dnum ?? -1]
         ?.flags?.hellish;
@@ -234,7 +242,8 @@ export async function reportMonsterTeleportRestriction(monster: Monster, {
     return true;
 }
 
-// noteleport_level(&gy.youmonst): the hero's active polymorph form decides,
+// Part of C teleport.c:noteleport_level(): apply the restriction to the hero's current form.
+// The native caller passes gy.youmonst: the hero's active polymorph form decides,
 // with the original body when unpolyed.
 export function heroTeleportRestricted(state = game) {
     const currentForm = state?.u?.mtimedone
@@ -477,6 +486,7 @@ export function collect_coords(
     return coords;
 }
 
+// Port only: test membership in a runtime rectangle.
 function inside(area: Rectangle | null | undefined, x: number, y: number) {
     return area && x >= area.lx && x <= area.hx
         && y >= area.ly && y <= area.hy;
@@ -499,6 +509,7 @@ function crossesTeleportBoundary(state: GameState, fromX: number, fromY: number,
     return false;
 }
 
+// Part of C teleport.c:teleok(): permit harmless destination traps for a floating hero.
 function trapAllowedAtDestination(state: GameState, trap: Trap | undefined, allowTrap: boolean) {
     if (!trap || allowTrap) return true;
     if (trap.ttyp === VIBRATING_SQUARE) return true;
@@ -528,9 +539,11 @@ export async function safe_teleds<Arrival extends ArrivalResult>(
     state: GameState,
     options: SafeTeledsOptions<Arrival> & { finishArrival: (movement: HeroTeleportMovement) => Promise<Arrival> },
 ): Promise<HeroTeleportArrival<Arrival> | null>;
+// C teleport.c:safe_teleds()
 export async function safe_teleds(
     state?: GameState, options?: SafeTeledsOptions<DefaultArrival>,
 ): Promise<HeroTeleportArrival<DefaultArrival> | null>;
+// C teleport.c:safe_teleds()
 export async function safe_teleds(
     state: GameState = game,
     {
@@ -585,7 +598,9 @@ export async function safe_teleds(
 export function teleportHero<Arrival extends ArrivalResult>(
     options: HeroTeleportOptions<Arrival> & { finishArrival: (movement: HeroTeleportMovement) => Promise<Arrival> },
 ): Promise<HeroTeleportResult<Arrival>>;
+// C teleport.c:scrolltele()
 export function teleportHero(options?: HeroTeleportOptions): Promise<HeroTeleportResult<DefaultArrival>>;
+// C teleport.c:scrolltele()
 export async function teleportHero({
     chooseDestination, source = null, discover = null, state = game,
     random = rn2, rollOne = rnd, finishArrival = finishTeleportArrival,
@@ -651,11 +666,13 @@ export async function teleportHero({
     return { moved: true, died, movement, arrival };
 }
 
+// Port only: read the hero's runtime stun flag and timeout.
 function heroIsStunned(state: GameState) {
     return !!(state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0);
 }
 
-// C teleport.c:teleport_pet(mtmp, FALSE).  A steed never follows; a cursed
+// Part of C teleport.c:teleport_pet(): the non-forced pet-following case.
+// A steed never follows; a cursed
 // leash yelps and holds the pet; any other leash goes slack and releases it.
 export async function teleportPetVictim(monster: Monster, state: GameState): Promise<boolean> {
     if (monster === state.u?.usteed) return false;
@@ -679,8 +696,9 @@ export async function teleportPetVictim(monster: Monster, state: GameState): Pro
 export function teleportHeroAtWill<Arrival extends ArrivalResult>(
     options: TeleportAtWillOptions<Arrival> & { finishArrival: (movement: HeroTeleportMovement) => Promise<Arrival> },
 ): Promise<TeleportAtWillResult<Arrival>>;
+// C teleport.c:dotele()
 export function teleportHeroAtWill(options?: TeleportAtWillOptions<DefaultArrival>): Promise<TeleportAtWillResult<DefaultArrival>>;
-// C teleport.c:teleport()
+// C teleport.c:dotele()
 // Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
 export async function teleportHeroAtWill({
     state = game, random = rn2, rollOne = rnd, chooseDestination = null,
@@ -805,6 +823,7 @@ export async function teleportHeroAtWill({
     return { ...result, died: !!state.program_state.gameover, spentTime: true };
 }
 
+// C teleport.c:rloc()
 export async function randomMonsterRelocation(monster: Monster | null, {
     state = game, calls = [], random = rn2, rollOne = rnd, flags = RLOC_NONE,
 }: RelocationOptions = {}): Promise<MonsterRelocation | null> {
@@ -1015,6 +1034,7 @@ export async function chooseWizardLevelDestination(): Promise<{ destination: Wiz
     return { destination };
 }
 
+// Part of C teleport.c:level_tele(): read and interpret the requested destination.
 async function readLevelRequest(state: PlayingGameState, menuRequested: boolean): Promise<LevelRequest | null> {
     const wizard = !!state.flags.debug;
     menuRequested ||= !!state.iflags.menu_requested;
@@ -1070,14 +1090,19 @@ export function randomTeleportDepth(state: GameState = game, random = rn2, rollO
     return destination;
 }
 
+// Port only: duplicate the Fort Ludios location test for an explicit game state.
+// The full macro port is Is_knox_level in const.ts.
 function atKnox(state: GameState): boolean {
     return sameLevel(state.u.uz, state.knox_level);
 }
 
+// Port only: compare optional runtime dungeon locations.
+// This duplicates sameDungeonLevel in dungeon.ts for teleport destinations.
 function sameLevel(left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined): boolean {
     return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
 
+// Part of C teleport.c:level_tele(): clamp and resolve the requested dungeon depth.
 async function destinationAtDepth(requested: number, state: PlayingGameState): Promise<DungeonLocation | null> {
     const hero = state.u;
     const dungeon = dungeonAt(state, hero.uz.dnum);
@@ -1106,6 +1131,7 @@ async function destinationAtDepth(requested: number, state: PlayingGameState): P
 }
 
 
+// Part of C teleport.c:level_tele(): handle level-zero suicide and life saving.
 async function teleportToNowhere(state: PlayingGameState): Promise<void> {
     if (await promptYesNoQuit('Go to Nowhere.  Are you sure?') !== 'y') return;
     const action = monsterIsSilent(heroSpecies(state)) ? 'writhe' : 'scream';
@@ -1120,6 +1146,7 @@ async function teleportToNowhere(state: PlayingGameState): Promise<void> {
     await plineWithContinuation(`Your body rematerializes${state.inventory.length ? ', and you gather up all your possessions' : ''}.`);
 }
 
+// Part of C teleport.c:level_tele(): handle destinations above the dungeon.
 async function teleportAboveDungeon(destination: number, state: PlayingGameState, gotoLevel: LevelChange): Promise<void> {
     if (state.u.ushops0?.length) {
         const generating = state.in_mklev;
@@ -1164,12 +1191,14 @@ async function teleportAboveDungeon(destination: number, state: PlayingGameState
     await gotoLevel({ dnum: 0, dlevel: 0 });
 }
 
+// Port only: require a dungeon entry for level teleportation.
 function dungeonAt(state: GameState, dnum: number): Dungeon {
     const dungeon = state.dungeons[dnum];
     if (!dungeon) throw new Error(`Level teleport cannot find dungeon ${dnum}`);
     return dungeon;
 }
 
+// Port only: require a named special-level destination.
 function requiredSpecialLevel(state: GameState, name: string): DungeonLocation {
     const level = state.specialLevels?.get(name);
     if (!level) throw new Error(`Level teleport cannot find special level ${name}`);
@@ -1370,6 +1399,7 @@ export async function teleportHeroToRandomPet(state = game) {
     return true;
 }
 
+// Part of C teleport.c:tele_trap(): relocate an occupant of the fixed trap destination.
 export async function clearFixedTeleportDestination(
     x: number, y: number, state = game, random = rn2,
 ) {
@@ -1395,6 +1425,7 @@ export async function clearFixedTeleportDestination(
     };
 }
 
+// Port only: compute a monster's grid distance to the hero.
 export function distanceToHero(monster: Monster, state: GameState) {
     return Math.max(
         Math.abs(monster.mx - state.u.ux),
@@ -1402,6 +1433,7 @@ export function distanceToHero(monster: Monster, state: GameState) {
     );
 }
 
+// C teleport.c:teleport_pet()
 // C teleport_pet(): feedback may wait for input while the leash is attached.
 async function teleportMonsterPet(
     monster: Monster, state: GameState, force: boolean, publish: MessagePublisher,
@@ -1476,10 +1508,12 @@ export async function teleportMonsterFromTrap(
     return event;
 }
 
+// C teleport.c:teleds()
 export function teleds<Arrival extends ArrivalResult>(
     x: number, y: number, state: GameState,
     options: HeroTeleportMoveOptions<Arrival> & { finishArrival: (movement: HeroTeleportMovement) => Promise<Arrival> },
 ): Promise<HeroTeleportArrival<Arrival>>;
+// C teleport.c:teleds()
 export function teleds(
     x: number, y: number, state?: GameState, options?: HeroTeleportMoveOptions<DefaultArrival>,
 ): Promise<HeroTeleportArrival<DefaultArrival>>;
@@ -1664,8 +1698,9 @@ export async function mlevel_tele_trap(monster: Monster, trap: Trap, {
         mode === undefined ? { kind } : { kind, mode });
 }
 
-// control_mon_tele()'s getpos() prelude, mirroring scrolltele()'s reader
-// below; getpos() itself lives in getpos.ts.
+// Part of C teleport.c:control_mon_tele(): prompt for a controlled monster destination.
+// control_mon_tele's getpos prelude, mirroring scrolltele's reader
+// below; getpos itself lives in getpos.ts.
 export async function askMonsterTeleportDestination(
     monster: Monster, start: Position,
 ): Promise<Position | null> {
@@ -1686,6 +1721,7 @@ export async function askMonsterTeleportDestination(
     return destination;
 }
 
+// Part of C teleport.c:scrolltele(): prompt for a controlled hero destination.
 export async function askTeleportDestination({ onPrompt = null }: {
     onPrompt?: (() => void | Promise<void>) | null;
 } = {}): Promise<Position | null> {
@@ -1843,16 +1879,19 @@ export async function teleportMonsterByHero(monster: Monster, {
     return !!await randomMonsterRelocation(monster, { state, flags: RLOC_MSG });
 }
 
+// Port only: read the dungeon name for an optional level location.
 // Magic portals under the hero.
-// C ref: teleport.c domagicportal().
+// C ref: teleport.c domagicportal.
 function dungeonName(level: DungeonLocation | undefined) {
     return level ? game.dungeons[level.dnum]?.dname ?? '' : '';
 }
 
+// Port only: recognize the tutorial dungeon in the runtime graph.
 function isTutorialLevel(level: DungeonLocation | undefined) {
     return dungeonName(level) === 'The Tutorial';
 }
 
+// Part of C teleport.c:domagicportal(): apply and describe portal dizziness.
 async function addPortalStun() {
     const hero = game.u;
     const alreadyStunned = !!(hero.stunned
@@ -1861,6 +1900,7 @@ async function addPortalStun() {
     return alreadyStunned ? 'You feel dizzier.' : 'You feel slightly dizzy.';
 }
 
+// C teleport.c:domagicportal()
 export async function activateMagicPortal(
     trap: Trap, gotoLevel: typeof changeLevel | null | undefined,
 ): Promise<void> {
@@ -1901,6 +1941,7 @@ export async function activateMagicPortal(
 // Random object relocation, including floor effects and shop ownership.
 // C teleport.c:rloco() and goodpos(..., NULL, 0).
 
+// C teleport.c:rloco()
 export async function relocateObjectRandomly(object: GameObject, {
     state = game, publish = plineWithContinuation, random = rn2,
 }: {
@@ -1932,6 +1973,7 @@ export async function relocateObjectRandomly(object: GameObject, {
     await newsym(x, y);
     return true;
 }
+// Part of C teleport.c:rloco(): select a permitted object destination.
 function relocationPosition(
     oldx: number, oldy: number, region: ArrivalRegion | null | undefined,
     state: GameState, random: (limit: number) => number,
@@ -1951,6 +1993,7 @@ function relocationPosition(
         return { x, y };
     }
 }
+// Part of C teleport.c:rloco(): settle shop ownership after object relocation.
 async function settleRelocatedObject(
     object: GameObject, oldx: number, oldy: number, x: number, y: number,
     state: GameState, publish: MessagePublisher,

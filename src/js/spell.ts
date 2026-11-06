@@ -104,6 +104,7 @@ import { body_part, heroSpecies } from './polyself.js';
 export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: GameState; }
 export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
 
+// C spell.c:known_spell()
 export function knownSpell(otyp: number, state: GameState = game): 'unknown' | 'fresh' | 'stale' | 'forgotten' {
     const spell = (state.spells || []).find(spell => spell.otyp === otyp);
     if (!spell) return 'unknown';
@@ -128,6 +129,7 @@ export function forceLearnSpell(otyp: number, state: GameState = game): string |
     return String.fromCharCode(index < 26 ? 97 + index : 65 + index - 26);
 }
 
+// Port only: construct the port's memorized-spell record and knowledge deadline.
 export function createMemorizedSpell(otyp: number, knowledge: number, state: GameState): MemorizedSpell {
     const category = spellCategory(otyp, state);
     const name = OBJ_NAME(otyp);
@@ -139,6 +141,7 @@ export function createMemorizedSpell(otyp: number, knowledge: number, state: Gam
     };
 }
 
+// C spell.c:initialspell()
 export async function learnInitialSpell(book: GameObject, state: GameState = game) {
     const spells = state.spells;
     if (spells.length >= 52)
@@ -156,6 +159,7 @@ interface SpellbookOptions { state?: GameState; }
 const MAX_SPELLS = 52;
 const MAX_STUDIES = 3;
 
+// C spell.c:cursed_book()
 export async function cursedBook(book: GameObject, { state = game }: SpellbookOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -215,6 +219,7 @@ export async function cursedBook(book: GameObject, { state = game }: SpellbookOp
     return { destroyed, heroDied: !!state.program_state.gameover };
 }
 
+// C spell.c:confused_book()
 export async function confusedBook(book: GameObject, { state = game }: SpellbookOptions = {}) {
     if (!rn2(3) && book.otyp !== SPE_BOOK_OF_THE_DEAD) {
         book.in_use = true;
@@ -260,6 +265,7 @@ export async function readBookOfDead(book: GameObject, { state = game }: Spellbo
     return { heroDied: !!state.program_state.gameover };
 }
 
+// Part of C spell.c:deadbook(): check and perform the invocation ritual.
 async function invokeBook(book: GameObject, state: PlayingGameState) {
     if (book.cursed) {
         await pline(heroIsBlind(state) ? 'The Book seems to be ignoring you!'
@@ -302,6 +308,7 @@ async function invokeBook(book: GameObject, state: PlayingGameState) {
     }
 }
 
+// Part of C spell.c:deadbook(): raise undead when the book is cursed or invocation fails.
 async function raiseDead(state: PlayingGameState) {
     await pline('You raised the dead!');
     if (!rn2(3)) {
@@ -329,6 +336,7 @@ async function pacifyUndead(monster: Monster, state: PlayingGameState) {
     } else await makeMonsterFlee(monster, { state, first: false });
 }
 
+// C spell.c:book_cursed()
 export async function bookCursed(book: GameObject, { state = game }: SpellbookOptions = {}) {
     if (!book.cursed || (state._helplessTurns ?? 0) > 0 || (state.multi || 0) < 0
         || state._occupation?.key !== 'study-book' || state.context.spbook?.book !== book) return;
@@ -407,6 +415,7 @@ export async function continueSpellbookStudy({ state = game }: SpellbookOptions 
     return false;
 }
 
+// C spell.c:study_book()
 export async function studyBook(book: GameObject, { state = game }: SpellbookOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -497,6 +506,7 @@ export async function studyBook(book: GameObject, { state = game }: SpellbookOpt
     return outcome(true, state);
 }
 
+// Part of C spell.c:study_book(): read a tribute novel and award its first-reading bonus.
 export async function readNovel(book: GameObject, { state = game }: SpellbookOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -517,6 +527,7 @@ export async function readNovel(book: GameObject, { state = game }: SpellbookOpt
     return { spentTime: true, heroDied: !!state.program_state.gameover };
 }
 
+// C spell.c:book_disappears()
 export function bookDisappears(book: GameObject, { state = game }: SpellbookOptions = {}) {
     const study = state.context?.spbook;
     if (study?.book === book) {
@@ -525,10 +536,12 @@ export function bookDisappears(book: GameObject, { state = game }: SpellbookOpti
     }
 }
 
+// Port only: initialize the runtime spellbook occupation context.
 function studyState(state: GameState): SpellbookContext {
     return state.context.spbook ||= { book: null, o_id: 0, delay: 0 };
 }
 
+// Part of C spell.c:study_book(): calculate study duration from spell level.
 function readingDelay(type: number): number | null {
     const level = oc_level(type);
     const delay = objectDelay(type);
@@ -538,20 +551,24 @@ function readingDelay(type: number): number | null {
     return level === 7 ? -8 * delay : null;
 }
 
+// Port only: query object-type discovery by type index.
 function typeKnown(type: number, state: GameState) {
     return objectTypeKnown({ otyp: type }, state);
 }
 
+// Part of C spell.c:study_book(): become helpless after failed or confused reading.
 function delayReading(delay: number, state: GameState) {
     nomul(delay, state);
     state._helplessReason = 'reading a book';
     state._helplessDoneMessage = null;
 }
 
+// Port only: return spellbook time use and hero survival.
 function outcome(spentTime: boolean, state: GameState) {
     return { spentTime, heroDied: !!state.program_state.gameover };
 }
 
+// C spell.c:spelleffects()
 // Every successful cast creates the same real temporary object as C.
 // Its class/BUC/quantity control shared effects; it never enters inventory.
 export async function castSpell(otyp: number, { atSelf = false, force = false, state = game }: SpellCastOptions = {}): Promise<SpellCastResult> {
@@ -579,6 +596,7 @@ export async function castSpell(otyp: number, { atSelf = false, force = false, s
     return { spentTime: handled, heroDied: false };
 }
 
+// Part of C spell.c:spelleffects(): dispatch spell effects by object type and skill.
 async function applySpellEffect(source: GameObject, skill: number, atSelf: boolean, state: PlayingGameState): Promise<boolean> {
     const skilled = skill >= P_SKILLED;
     switch (source.otyp) {
@@ -671,6 +689,7 @@ async function applySpellEffect(source: GameObject, skill: number, atSelf: boole
     return true;
 }
 
+// Part of C spell.c:spelleffects(): choose a direction and apply wand-like spell effects.
 async function applyDirectedSpell(source: GameObject, atSelf: boolean, state: PlayingGameState) {
     const hero = state.u;
     if (objectBaseDirection(source.otyp) !== 1) {
@@ -692,6 +711,7 @@ async function applyDirectedSpell(source: GameObject, atSelf: boolean, state: Pl
     await applyWandEffect(source, { state });
 }
 
+// C spell.c:docast()
 export async function docast() {
     const spell = await selectSpellToCast(game);
     if (!spell) {
@@ -707,6 +727,7 @@ export async function docast() {
     await castSpell(spell.otyp);
 }
 
+// C spell.c:dowizcast()
 export async function dowizcast() {
     const spell = await selectWizardSpell();
     if (spell === null) {
@@ -716,11 +737,13 @@ export async function dowizcast() {
     await castSpell(spell, { force: true });
 }
 
+// C spell.c:dovspell()
 export async function dovspell() {
     await viewKnownSpells(game);
     game.context.move = 0;
 }
 
+// Port only: require a spell level from object metadata.
 function spellLevel(type: number): number {
     const level = oc_level(type);
     if (level === undefined) throw new RangeError(`Object type ${type} has no spell level.`);
@@ -820,6 +843,7 @@ export async function checkSpellCast(spell: SpellReference | null, { state = gam
     return { allowed: true, spentTime: true, energy };
 }
 
+// C spell.c:rejectcasting()
 export async function rejectCasting(state: GameState = game) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -833,21 +857,22 @@ export async function rejectCasting(state: GameState = game) {
     return true;
 }
 
-// Part of C spell.c's spl_book know-counter: the port stores knowledge as
-// the turn on which it expires.  Casting does not refresh it; every
-// elapsed global turn ages all memorized spells.
-// Also C spell.c:age_spells(): the per-turn decrnknow() loop is replaced
-// by this expiry-deadline subtraction.
+// Part of C spell.c:age_spells(): compute remaining knowledge from its expiry turn.
+// The spl_book know-counter is stored as the turn on which it expires.
+// Casting does not refresh it; every elapsed global turn ages all memorized
+// spells. The per-turn decrnknow loop becomes an expiry-deadline subtraction.
 export function currentSpellKnowledge(spell: Pick<MemorizedSpell, 'know'> | null | undefined, state: GameState = game) {
     if (!spell || !Number.isInteger(spell.know)) return 0;
     return Math.max(0, spell.know - Math.max(0, state.moves - 1));
 }
 
+// Port only: read the hero's current skill for a spell category.
 export function liveSpellSkill(otyp: number, state: GameState = game): number {
     const skills = ensureHeroSkills(state);
     return skills?.[spellSkillType(otyp, state)]?.skill ?? P_ISRESTRICTED;
 }
 
+// C spell.c:percent_success()
 export function percentSuccess(spell: SpellReference, state: GameState = game): number {
     requirePlayingGame(state);
     const type = spell.otyp;
@@ -869,6 +894,7 @@ export function percentSuccess(spell: SpellReference, state: GameState = game): 
     return Math.max(0, Math.min(100, chance));
 }
 
+// Part of C spell.c:percent_success(): combine role and equipment casting penalties.
 function innateCastingPenalty(type: number, state: PlayingGameState) {
     const role = state.urole.spellcasting;
     const paladin = state.urole.key === 'knight' && spellSkillType(type, state) === P_CLERIC_SPELL;
@@ -890,10 +916,12 @@ function innateCastingPenalty(type: number, state: PlayingGameState) {
     return Math.min(20, penalty);
 }
 
+// Port only: read an equipment slot from the runtime hero aliases.
 function wornObject(slot: CastingSlot, state: GameState) {
     return state[slot] || state.u[slot];
 }
 
+// Part of C spell.c:spelleffects_check(): reduce spell hunger cost for wizard intelligence.
 function castingNutritionCost(energy: number, state: PlayingGameState) {
     let cost = energy * 2;
     const intelligence = state.urole.key === 'wizard' ? currentAttribute(A_INT, state) : 10;
@@ -903,6 +931,7 @@ function castingNutritionCost(energy: number, state: PlayingGameState) {
     return Math.min(cost, state.u.uhunger - 3);
 }
 
+// Part of C spell.c:spelleffects_check(): warn about fading spell knowledge.
 async function warnAboutFadingKnowledge(knowledge: number) {
     if (knowledge <= 100) await plineWithContinuation('You strain to recall the spell.');
     else if (knowledge <= 500) await plineWithContinuation('You have difficulty remembering the spell.');
@@ -927,6 +956,7 @@ async function backfireForgottenSpell(spell: SpellReference, state: GameState) {
     } else await makeStunned(stunned + duration, quiet);
 }
 
+// Port only: require a native spell level from object metadata.
 function nativeSpellLevel(type: number): number {
     const level = oc_level(type);
     if (level === undefined) throw new RangeError(`Unknown spell object type ${type}`);
@@ -960,7 +990,8 @@ const SORT_CHOICES = [
     'reassign casting letters to retain current order',
 ];
 
-// C spell.c:dowizcast() lets tty assign page-local selectors to every spell.
+// Part of C spell.c:dowizcast(): build and read the wizard spell menu.
+// Let tty assign page-local selectors to every spell.
 export async function selectWizardSpell(): Promise<number | null> {
     const window = tty_create_nhwindow<number>(NHW_MENU);
     try {
@@ -1007,7 +1038,8 @@ export async function selectSpellToCast(state: GameState = game): Promise<Memori
     return typeof selection === 'number' ? spells[selection] ?? null : null;
 }
 
-// C spell.c:sortspells().
+// Part of C spell.c:dovspell(): view and reorder known spells.
+// Also C spell.c:sortspells(): sorting the selected spell order is inlined here.
 export async function viewKnownSpells(state: GameState = game) {
     requireLiveGame(state);
     if (!state.spells?.length) {
@@ -1044,6 +1076,7 @@ export async function viewKnownSpells(state: GameState = game) {
     }
 }
 
+// Part of C spell.c:getspell(): prompt for a spell letter with bounded retries.
 async function selectTraditionalSpell(spells: readonly MemorizedSpell[]): Promise<MemorizedSpell | 'menu' | null> {
     const count = spells.length;
     const letters = count === 1 ? 'a' : count < 27 ? `a-${spellLetter(count - 1)}`
@@ -1151,6 +1184,7 @@ function compareSpells(first: number, second: number, mode: number, state: GameS
     return firstName < secondName ? -1 : firstName > secondName ? 1 : 0;
 }
 
+// C spell.c:spellretention()
 function spellRetention(spell: MemorizedSpell, state: GameState) {
     const knowledge = currentSpellKnowledge(spell, state);
     if (knowledge < 1) return '(gone)';
@@ -1162,6 +1196,7 @@ function spellRetention(spell: MemorizedSpell, state: GameState) {
     return `${upper - accuracy + 1}%-${upper}%`;
 }
 
+// C spell.c:spellet()
 function spellLetter(index: number) {
     return String.fromCharCode(index < 26 ? 97 + index : 65 + index - 26);
 }
@@ -1172,6 +1207,7 @@ function spellIndex(key: number | null | undefined) {
     return key >= 97 && key <= 122 ? key - 97 : key >= 65 && key <= 90 ? key - 65 + 26 : -1;
 }
 
+// Port only: require a memorized spell at a validated array index.
 function spellAt(state: GameState, index: number): MemorizedSpell {
     const spell = state.spells[index];
     if (!spell) throw new Error(`No memorized spell at index ${index}`);
@@ -1183,6 +1219,7 @@ interface LightningStep extends Position { direction: number; strength: number; 
 const CHAIN_LIGHTNING_LIMIT = 100;
 const LIGHTNING_SPELL_TYPE = 15;
 
+// Part of C spell.c:spelleffects(): skilled fireball and cold spell explosions.
 export async function castSkilledElementalSpell(pseudo: GameObject, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1279,6 +1316,7 @@ async function chooseSpellCenter(state: PlayingGameState) {
     return true;
 }
 
+// C spell.c:cast_chain_lightning()
 export async function castChainLightning({ state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1403,6 +1441,7 @@ export async function castProtection({ state = game }: { state?: GameState } = {
     findArmorClass(state);
 }
 
+// Part of C spell.c:cast_protection(): describe the surroundings of the protective haze.
 function protectionAtmosphere(state: PlayingGameState) {
     const hero = state.u;
     if (hero.uswallow && hero.ustuck) {
@@ -1421,7 +1460,8 @@ function protectionAtmosphere(state: PlayingGameState) {
     return IS_STWALL(terrain) ? 'stone' : 'air';
 }
 
-// Native nh_timeout() commits the updated AC before its fading message.
+// Part of C timeout.c:nh_timeout(): decay spell protection and announce the fading haze.
+// Native nh_timeout commits the updated AC before its fading message.
 export async function advanceSpellProtection(state: GameState = game) {
     const hero = state.u;
     if (!hero.usptime || --hero.usptime || !hero.uspellprot) return;
@@ -1435,10 +1475,12 @@ export async function advanceSpellProtection(state: GameState = game) {
     }
 }
 
+// Part of C spell.c:spelleffects(): cure blindness with a spell.
 export async function castCureBlindness({ state = game }: { state?: GameState } = {}) {
     await healHero(0, 0, { state, cureBlindness: true });
 }
 
+// Part of C spell.c:spelleffects(): cure sickness and green slime with a spell.
 export async function castCureSickness({ state = game }: { state?: GameState } = {}) {
     const wasSick = heroIsSick(state), wasSlimed = heroIsSliming(state);
     await healHero(0, 0, { state, cureSickness: true });

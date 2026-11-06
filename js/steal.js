@@ -46,10 +46,12 @@ import { stopHeroOccupation } from './allmain.js';
 import { encumber_msg } from './pickup.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, touchPetrifies, } from './mondata.js';
-// C Some_Monnam(): unseen thieves are "Someone" or "Something".
+// Port only: format a thief's visible or unseen sentence subject.
+// C Some_Monnam: unseen thieves are "Someone" or "Something".
 function wornItemRemover(monster, state) {
     return monsterName(monster, { state, capitalized: true, augmentIt: true });
 }
+// Part of C steal.c:worn_item_removal(): describe equipment before removing it.
 async function wornTheftObjectDescription(object) {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
     // the ownership and equipment-location suffix for its pre-removal line.
@@ -60,6 +62,7 @@ async function wornTheftObjectDescription(object) {
     description = description.replace(/ \(on (left|right) hand\)$/, ' (from $1 hand)');
     return description;
 }
+// Port only: enumerate runtime hero equipment aliases.
 function heroEquipmentSlots() {
     return [
         'uwep', 'uswapwep', 'uquiver',
@@ -466,6 +469,7 @@ export function someGold(amount, random) {
         : gold < 5000 ? 500 : gold < 10000 ? 1000 : 5000;
     return minimum + random(gold - minimum + 1);
 }
+// Part of C steal.c:stealgold(): teleport and flee after stealing coins.
 async function fleeWithGold(monster, state, publish, random, rollOne) {
     if (!await reportMonsterTeleportRestriction(monster, { state, publish }))
         await randomMonsterRelocation(monster, { state, random, rollOne, flags: RLOC_MSG });
@@ -523,6 +527,7 @@ export async function addObjectToMonsterInventory(monster, object, state = game,
         snuffLightSource(monster.mx, monster.my, state);
     return carried;
 }
+// Port only: validate newly created ownership before the shared monster pickup boundary.
 export async function addCreatedObjectToMonsterInventory(monster, object, state = game, { atFront = true } = {}) {
     assertCreatedObject(object, state);
     const extinguish = await prepareMonsterPickup(monster, object, state);
@@ -568,6 +573,7 @@ export async function stealHeroQuestObject(monster, state, publish, random, roll
         await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
     await encumber_msg(state);
 }
+// Part of C steal.c:stealamulet(): choose the quest item or invocation object to steal.
 function chooseQuestTheftTarget(monster, state, rollOne) {
     let candidates = state.inventory.filter(object => artifactById(object.oartifact, state)?.questArtifact);
     if (!candidates.length) {
@@ -583,6 +589,7 @@ function chooseQuestTheftTarget(monster, state, rollOne) {
     }
     return candidates[candidates.length > 1 ? rollOne(candidates.length) - 1 : 0];
 }
+// Part of C steal.c:worn_item_removal(): announce and remove the selected worn quest item.
 async function removeForQuestTheft(monster, object, state, publish) {
     observeObjectForNaming(object, { state });
     const description = (await inventoryItemDescription(object))
@@ -595,6 +602,7 @@ async function removeForQuestTheft(monster, object, state, publish) {
     await removeWornHeroItem(object, state);
 }
 // C steal.c:maybe_absorb_item(). A mimic can take a carried or flying item.
+// C steal.c:maybe_absorb_item()
 export async function maybeAbsorbItem(monster, object, state = game, ordinaryChance = 50, artifactChance = 10) {
     if (object === state.uball || object === state.uchain || object.oclass === ROCK_CLASS
         || objectResistsDestruction(object, 100 - ordinaryChance, 100 - artifactChance)
@@ -661,6 +669,7 @@ export async function dropMonsterObject(monster, object, state = game, { verbose
         });
     return landed;
 }
+// Port only: observe and name a monster's dropped object at a distance.
 async function distantDropObjectName(object, state) {
     observeDistantObjectForNaming(object, state);
     return await inventoryItemDescription(inventoryItem(object));

@@ -39,9 +39,11 @@ import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { objectNoLongerHeld } from './do.js';
 import { cansee } from './vision.js';
 import { rockSkipRange } from './zap.js';
+// Port only: read an object's runtime class with a metadata fallback.
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);
 }
+// Port only: resolve a living mapped monster at a projectile square.
 function liveMonsterAt(state, x, y) {
     if (!state.level)
         return null;
@@ -49,11 +51,13 @@ function liveMonsterAt(state, x, y) {
     return monster && monsterHasMapPosition(monster, state)
         && !monster.dead && monster.mhp > 0 ? monster : null;
 }
+// Port only: find a web in the runtime trap array.
 function webAt(state, x, y) {
     return (state.level?.traps || []).find(trap => trap?.ttyp === WEB
         && trap.tx === x
         && trap.ty === y) || null;
 }
+// Part of C zap.c:bhit(): exclude shades and unrevealed object mimics from projectile contact.
 function projectileMonsterAt(state, object, x, y) {
     const monster = liveMonsterAt(state, x, y);
     if (!monster)
@@ -71,6 +75,8 @@ function projectileMonsterAt(state, object, x, y) {
     }
     return monster;
 }
+// Port only: duplicate the strength conversion for projectile range.
+// The full native port is currentStrength in attrib.ts.
 function heroThrowStrength(state) {
     let strength = currentAttribute(A_STR, state);
     if (strength <= 18)
@@ -81,12 +87,14 @@ function heroThrowStrength(state) {
         strength = Math.min(strength, 125) - 100;
     return strength;
 }
-// C throw_gold(): the whole purse uses the thrown-object formula without
-// throwit()'s minimum of one, so a heavy purse can fail to leave the hero.
+// Part of C dothrow.c:throw_gold(): compute the whole purse's range.
+// C throw_gold: the whole purse uses the thrown-object formula without
+// throwit's minimum of one, so a heavy purse can fail to leave the hero.
 export function heroDirectGoldThrowRange(object, state = game) {
     return Math.trunc(heroThrowStrength(state) / 2)
         - Math.trunc((object.owt ?? 1) / 40);
 }
+// Part of C dothrow.c:throwit(): compute projectile range, special limits and recoil.
 export function heroThrowTrajectory(object, state = game, launcher = null) {
     const launched = launcherMatchesAmmo(object, launcher);
     const crossbowing = launched && launcher !== null && launcher !== undefined
@@ -130,6 +138,7 @@ export function heroThrowTrajectory(object, state = game, launcher = null) {
         range = 1;
     return { range, recoil };
 }
+// Part of C dothrow.c:omon_adj(): give an immobilized defender a chance to move again.
 export function prepareHeroThrownTarget(monster, random = rn2) {
     const immobilized = monster.mcanmove === 0 || monster.mcanmove === false;
     const speciesCanMove = (MONSTER_MOVE[monster.mnum]
@@ -139,7 +148,8 @@ export function prepareHeroThrownTarget(monster, random = rn2) {
         monster.mfrozen = 0;
     }
 }
-// Both throwit_mon_hit() and the floor tail own a free thrown object.
+// Part of C apply.c:snuff_candle(): extinguish a free thrown candle or candelabrum.
+// Both throwit_mon_hit and the floor tail own a free thrown object.
 export async function snuffThrownCandle(object, state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
     // C snuff_candle(): the thrown object is free, so Shk_Your is "The ".
@@ -163,6 +173,7 @@ export async function announceThrownObjectLiquidImpact(object, x, y, { state = g
         await publish(objectWeight(object) > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
     }
 }
+// Part of C dothrow.c:throwit(): resolve floor impact, shop interception and final placement.
 export async function finishHeroThrownObjectLanding({ state = game, object, x, y, contactedMonster = null, publish = plineWithContinuation, random = rn2, }) {
     requireLiveGame(state);
     const attachedBall = state.uball || state.u?.uball;
@@ -240,6 +251,7 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
         state.vision_full_recalc = 1;
     return landed;
 }
+// Part of C zap.c:bhit(): trace a thrown or kicked physical projectile and its display.
 async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, startY, kicked = false, publish = plineWithContinuation, random = rn2, display, }) {
     let x = startX;
     let y = startY;
@@ -446,10 +458,12 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     }
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
+// Part of C zap.c:bhit(): let skipping rocks pass over swimming or eel-like monsters.
 function rockSkipsOverMonster(monster) {
     return MONSTER_SYMBOL[monster.mnum] === 57
         || (cant_drown(monster.mnum));
 }
+// Port only: start shared physical flight at the hero's square.
 export function flyHeroThrownObject(options) {
     const state = options.state ?? game;
     return flyPhysicalObject({
@@ -459,6 +473,7 @@ export function flyHeroThrownObject(options) {
         startY: state.u?.uy ?? 0,
     });
 }
+// Port only: start shared physical flight at the kicked object's square.
 export function flyKickedObject(options) {
     return flyPhysicalObject({
         ...options,
@@ -467,9 +482,10 @@ export function flyKickedObject(options) {
         kicked: true,
     });
 }
+// Part of C dothrow.c:throw_obj(): split and detach one selected projectile before throwing.
 // The caller must establish eligibility before crossing this boundary.  A
 // stack allocates the source child identity before mutating the parent; a
-// singleton detaches the exact carried identity.  Both leave throwit() with a
+// singleton detaches the exact carried identity.  Both leave throwit with a
 // free object whose loss provenance is LOST_THROWN.
 export async function detachThrownUnit(state, item, selectedQuantity, splitObjectId = null, publish = plineWithContinuation) {
     let thrown = item;
@@ -495,6 +511,7 @@ export async function detachThrownUnit(state, item, selectedQuantity, splitObjec
     state._thrownObject = thrown;
     return thrown;
 }
+// Port only: render a supplied projectile path through the terminal frame boundary.
 export async function captureThrownObjectFlight(object, flightPath, state = game, glyph = transientObjectGlyph(object), retainGlyph = false) {
     let transientCell = null;
     let transientCursor = null;

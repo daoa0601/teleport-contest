@@ -14,6 +14,7 @@ export function initTrack(state = game) {
     state._heroTrack = [];
 }
 
+// C track.c:settrack()
 export function setTrack(state = game) {
     if (!state?.u) return;
     if (state.uleft?.otyp === RIN_STEALTH || state.uright?.otyp === RIN_STEALTH)
@@ -23,10 +24,12 @@ export function setTrack(state = game) {
     if (track.length > HERO_TRACK_SIZE) track.shift();
 }
 
+// C track.c:hastrack()
 export function hasTrack(x: number, y: number, state = game) {
     return (state._heroTrack || []).some(point => point.x === x && point.y === y);
 }
 
+// C track.c:gettrack()
 // Search newest-first.  C deliberately returns null immediately when the
 // newest nearby track is the monster's own square rather than falling back to
 // an older adjacent entry.

@@ -67,6 +67,7 @@ import { PanicTermination } from './panic_termination.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 import { swapDirectionBits } from './hacklib.js';
+// Part of C sp_lev.c:fill_special_room(): fill vault squares with depth-scaled gold.
 export async function fillVault(room) {
     if (!room)
         return;
@@ -77,6 +78,7 @@ export async function fillVault(room) {
         }
     }
 }
+// Port only: adapt random special-level coordinates to an optional position.
 async function specialRandomLocation(context, acceptable) {
     const point = await get_location_coord(context, null, DRY, acceptable);
     return point.x === -1 && point.y === -1 ? null : point;
@@ -329,6 +331,8 @@ function rnddoor() {
         throw new Error('Missing random door state');
     return mask;
 }
+// Part of C sp_lev.c:flip_level(): compute and clamp the area to flip.
+// The extent scan duplicates get_level_extends in mkmaze.ts.
 function getSpecialLevelExtents() {
     const map = requireGameLevel();
     const findColumn = (start, step) => {
@@ -730,6 +734,7 @@ export async function flip_level_rnd(allowed, extras = false) {
         flp |= 2;
     await flip_level(flp, extras);
 }
+// Port only: create an object and transfer it to a special-level monster.
 export async function giveSpecialMonsterObject(context, monster, otyp, spe) {
     const point = await specialRandomLocation(context);
     if (!point || !monster)
@@ -740,6 +745,7 @@ export async function giveSpecialMonsterObject(context, monster, otyp, spe) {
     remove_object(object, game);
     return await addObjectToMonsterInventory(monster, object, game, { atFront: true });
 }
+// Part of C mklev.c:mktrap(): finish trap residents, destinations and predecessor victims.
 export async function finishLevelTrapConstruction(trap, { spiderOnWeb = true, seen = false, victim = true } = {}) {
     if (!trap)
         return null;
@@ -859,8 +865,9 @@ export async function get_location_coord(context, coordinate, humidity, filter) 
         return await get_location(context, point, humidity, filter);
     return point;
 }
+// Port only: decode a packed special-level coordinate without the random sentinel.
 // Shared packed-coordinate form: sp_lev.h SP_COORD_PACK/SP_COORD_X/SP_COORD_Y.
-// Unlike get_location_coord(), it never recognizes the random sentinel.
+// Unlike get_location_coord, it never recognizes the random sentinel.
 export async function getPackedLocationCoord(context, coordinate, humidity, filter) {
     return await get_location(context, { x: coordinate.x & 0xff, y: coordinate.y & 0xff }, humidity, filter);
 }
@@ -905,6 +912,7 @@ async function create_trap(context, typ, options, coordinate) {
         return null;
     return await mktrap(typ, options, null, point);
 }
+// Port only: construct the Lua placement context for an existing room.
 export function specialRoomContext(room) {
     const context = {
         xstart: room.lx,
@@ -1367,11 +1375,12 @@ function noncoalignment() {
         return choice ? A_CHAOTIC : A_LAWFUL;
     return choice ? -original : A_NEUTRAL;
 }
-// align.h:Align2amask(): the macro argument is a ternary
-// macro that re-evaluates noncoalignment() for every comparison. Its first
-// comparison tests against A_NONE (-128), which noncoalignment() never
+// Part of C sp_lev.c:sp_amask_to_amask(): evaluate the repeated noncoalignment macro argument.
+// align.h:Align2amask: the macro argument is a ternary
+// macro that re-evaluates noncoalignment for every comparison. Its first
+// comparison tests against A_NONE (-128), which noncoalignment never
 // returns, so resolution always continues: a lawful second draw stops after
-// two rn2(2) draws, anything else forces a third and can store the shifted
+// two rn2 draws with bound 2; anything else forces a third and can store the shifted
 // (alignment + 2) mask.
 function noncoalignedSpecialAmask() {
     const first = noncoalignment();
@@ -2447,6 +2456,7 @@ export async function map_cleanup(state = game) {
         }
     }
 }
+// Part of C sp_lev.c:flip_level(): flip saved Lua region rectangles.
 export function flipLuaRegions(active) {
     for (const field of [
         'upTeleportRegion', 'upTeleportExclude',
@@ -2481,6 +2491,7 @@ function floodfillchk_match_accessible(x, y) {
     const type = level.at(x, y)?.typ;
     return type !== undefined && (ACCESSIBLE(type) || type === SDOOR || type === SCORR);
 }
+// Port only: adapt selection flood fill to the accessible-terrain predicate.
 function floodAccessibleArea(selection, x, y) {
     selection.floodFill(x, y, true, floodfillchk_match_accessible);
 }
@@ -2562,23 +2573,27 @@ export async function ensure_way_out() {
         floodAccessibleArea(reachable, unreachable.x, unreachable.y);
     }
 }
+// Port only: detach a generated object if it is on the floor.
 export function removeFloorObject(object) {
     if (object?.where === 'floor')
         remove_object(object, game);
 }
+// Port only: transfer an optional generated object into its container.
 export async function addToContainer(container, object) {
     if (!container || !object)
         return object;
     removeFloorObject(object);
     return await addCreatedObjectToContainer(container, object, game);
 }
+// Part of C sp_lev.c:create_object(): reject stone-resistant Medusa statue species.
 export function medusaPetrifiable(mndx) {
     const resistance = mndx == null ? 0 : MONSTER_RESISTS[mndx] || 0;
     const stoneResistant = !!(resistance & 0x80);
     const changesToStoneGolem = mndx != null && monsterIsGolem(mndx) && mndx !== 257;
     return !stoneResistant && !changesToStoneGolem;
 }
-// C mk_trap_statue() and create_object(): direct extraction, not unwear_mon_obj.
+// Part of C trap.c:mk_trap_statue(), sp_lev.c:create_object(): transfer generated monster gear into a statue.
+// C mk_trap_statue and create_object: direct extraction, not unwear_mon_obj.
 export async function putGeneratedMonsterInventoryInStatue(monster, statue) {
     while (monster.minvent?.length) {
         const object = monster.minvent[0];
@@ -2680,6 +2695,7 @@ function lvlfill_swamp(fg = ROOM, bg = MOAT, lit = false) {
         }
     }
 }
+// Part of C sp_lev.c:flip_level(): mirror one region and its exclusion rectangle.
 function flipSpecialRegion(region) {
     const flip = requireGameLevel()._flip;
     if (!region || !flip)
@@ -2758,11 +2774,13 @@ export async function fill_special_room(croom) {
     else if (croom.rtype === SWAMP)
         level.flags.has_swamp = true;
 }
+// Port only: collect coordinates in Lua selection iteration order.
 export function luaSelectionCoordinates(selection) {
     const coordinates = [];
     selection.forEachLua((x, y) => coordinates.push({ x, y }));
     return coordinates;
 }
+// C sp_lev.c:check_room()
 export function check_room(lowx, ddx, lowy, ddy, vault) {
     const map = requireGameLevel();
     let hix = lowx.v + ddx.v, hiy = lowy.v + ddy.v;
@@ -2954,6 +2972,7 @@ export function create_room(x, y, w, h, xal, yal, rtype, rlit) {
     }
     return true;
 }
+// C sp_lev.c:create_subroom()
 function create_subroom(proom, x, y, w, h, rtype, rlit) {
     const width = proom.hx - proom.lx + 1;
     const height = proom.hy - proom.ly + 1;
@@ -3799,6 +3818,7 @@ export async function load_special(active) {
 }
 const themedLuaSessions = new WeakMap();
 const activeThemes = new WeakMap();
+// Part of C mklev.c:makerooms(): open the dungeon's theme state and run its pre-generation hook.
 export async function beginLuaThemerooms() {
     const lifecycle = currentLuaLifecycle();
     const dungeonNumber = game.u?.uz?.dnum ?? 0;
@@ -3858,12 +3878,14 @@ export async function beginLuaThemerooms() {
     await state.callValueAsync(state.getGlobal('pre_themerooms_generate'), []);
     return true;
 }
+// Port only: call a named function in the active themed-room Lua state.
 export async function callLuaThemerooms(name, args = []) {
     const state = activeThemes.get(game)?.state;
     if (!state)
         throw new Error('themed rooms are not active');
     return state.callValueAsync(state.getGlobal(name), args);
 }
+// Part of C mklev.c:makerooms(): run the themed-room generator and detect room creation.
 export async function themerooms_generate() {
     const level = requireGameLevel();
     const session = activeThemes.get(game)?.session;

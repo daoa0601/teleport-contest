@@ -102,10 +102,12 @@ interface PhysicalFlightOptions extends ProjectileFlightOptions {
 }
 
 
+// Port only: read an object's runtime class with a metadata fallback.
 function objectClass(object: GameObject): number {
     return object?.oclass || objectClassForType(object?.otyp);
 }
 
+// Port only: resolve a living mapped monster at a projectile square.
 function liveMonsterAt(state: GameState, x: number, y: number): Monster | null {
     if (!state.level) return null;
     const monster = monsterAtPosition(state.level, x, y);
@@ -113,6 +115,7 @@ function liveMonsterAt(state: GameState, x: number, y: number): Monster | null {
         && !monster.dead && monster.mhp > 0 ? monster : null;
 }
 
+// Port only: find a web in the runtime trap array.
 function webAt(state: GameState, x: number, y: number): Trap | null {
     return (state.level?.traps || []).find(trap =>
         trap?.ttyp === WEB
@@ -120,6 +123,7 @@ function webAt(state: GameState, x: number, y: number): Trap | null {
         && trap.ty === y) || null;
 }
 
+// Part of C zap.c:bhit(): exclude shades and unrevealed object mimics from projectile contact.
 function projectileMonsterAt(state: GameState, object: GameObject, x: number, y: number): Monster | null {
     const monster = liveMonsterAt(state, x, y);
     if (!monster) return null;
@@ -137,6 +141,8 @@ function projectileMonsterAt(state: GameState, object: GameObject, x: number, y:
     return monster;
 }
 
+// Port only: duplicate the strength conversion for projectile range.
+// The full native port is currentStrength in attrib.ts.
 function heroThrowStrength(state: GameState): number {
     let strength = currentAttribute(A_STR, state);
     if (strength <= 18) strength = Math.max(strength, 3);
@@ -145,8 +151,9 @@ function heroThrowStrength(state: GameState): number {
     return strength;
 }
 
-// C throw_gold(): the whole purse uses the thrown-object formula without
-// throwit()'s minimum of one, so a heavy purse can fail to leave the hero.
+// Part of C dothrow.c:throw_gold(): compute the whole purse's range.
+// C throw_gold: the whole purse uses the thrown-object formula without
+// throwit's minimum of one, so a heavy purse can fail to leave the hero.
 export function heroDirectGoldThrowRange(
     object: GameObject, state: GameState = game,
 ): number {
@@ -154,6 +161,7 @@ export function heroDirectGoldThrowRange(
         - Math.trunc((object.owt ?? 1) / 40);
 }
 
+// Part of C dothrow.c:throwit(): compute projectile range, special limits and recoil.
 export function heroThrowTrajectory(
     object: GameObject, state: GameState = game, launcher: GameObject | null | undefined = null,
 ): ThrowTrajectory {
@@ -197,6 +205,7 @@ export function heroThrowTrajectory(
     return { range, recoil };
 }
 
+// Part of C dothrow.c:omon_adj(): give an immobilized defender a chance to move again.
 export function prepareHeroThrownTarget(monster: Monster, random: typeof rn2 = rn2): void {
     const immobilized = monster.mcanmove === 0 || monster.mcanmove === false;
     const speciesCanMove = (MONSTER_MOVE[monster.mnum]
@@ -207,7 +216,8 @@ export function prepareHeroThrownTarget(monster: Monster, random: typeof rn2 = r
     }
 }
 
-// Both throwit_mon_hit() and the floor tail own a free thrown object.
+// Part of C apply.c:snuff_candle(): extinguish a free thrown candle or candelabrum.
+// Both throwit_mon_hit and the floor tail own a free thrown object.
 export async function snuffThrownCandle(object: GameObject, state: GameState = game,
     publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {
@@ -241,6 +251,7 @@ export async function announceThrownObjectLiquidImpact(
     }
 }
 
+// Part of C dothrow.c:throwit(): resolve floor impact, shop interception and final placement.
 export async function finishHeroThrownObjectLanding({
     state = game,
     object,
@@ -327,6 +338,7 @@ export async function finishHeroThrownObjectLanding({
     return landed;
 }
 
+// Part of C zap.c:bhit(): trace a thrown or kicked physical projectile and its display.
 async function flyPhysicalObject({
     state = game,
     object,
@@ -557,11 +569,13 @@ async function flyPhysicalObject({
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
 
+// Part of C zap.c:bhit(): let skipping rocks pass over swimming or eel-like monsters.
 function rockSkipsOverMonster(monster: Monster): boolean {
     return MONSTER_SYMBOL[monster.mnum] === 57
         || (cant_drown(monster.mnum));
 }
 
+// Port only: start shared physical flight at the hero's square.
 export function flyHeroThrownObject(options: ProjectileFlightOptions): Promise<ProjectileFlight> {
     const state = options.state ?? game;
     return flyPhysicalObject({
@@ -572,6 +586,7 @@ export function flyHeroThrownObject(options: ProjectileFlightOptions): Promise<P
     });
 }
 
+// Port only: start shared physical flight at the kicked object's square.
 export function flyKickedObject(options: ProjectileFlightOptions): Promise<ProjectileFlight> {
     return flyPhysicalObject({
         ...options,
@@ -581,9 +596,10 @@ export function flyKickedObject(options: ProjectileFlightOptions): Promise<Proje
     });
 }
 
+// Part of C dothrow.c:throw_obj(): split and detach one selected projectile before throwing.
 // The caller must establish eligibility before crossing this boundary.  A
 // stack allocates the source child identity before mutating the parent; a
-// singleton detaches the exact carried identity.  Both leave throwit() with a
+// singleton detaches the exact carried identity.  Both leave throwit with a
 // free object whose loss provenance is LOST_THROWN.
 export async function detachThrownUnit(
     state: GameState, item: GameObject, selectedQuantity: number, splitObjectId: number | null = null,
@@ -609,6 +625,7 @@ export async function detachThrownUnit(
     return thrown;
 }
 
+// Port only: render a supplied projectile path through the terminal frame boundary.
 export async function captureThrownObjectFlight(
     object: GameObject, flightPath: readonly Position[], state: GameState = game,
     glyph = transientObjectGlyph(object),

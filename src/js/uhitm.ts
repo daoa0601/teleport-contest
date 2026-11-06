@@ -180,7 +180,8 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { WAN_LIGHT } from './object_data.js';
 import { visibleRegionAt } from './region.js';
 import { angerMonster } from './mon.js';
-// C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
+// C mondata.h:completelyburns()
+// Fire destroys these bodies outright.
 function completelyBurns(monster: Pick<Monster, 'mnum'>): boolean {
     const species = MONSTER_NAME[monster.mnum];
     return species === 'paper golem' || species === 'straw golem';
@@ -223,6 +224,7 @@ export interface MhitmAdFireResult {
     heroAtZeroHitPoints?: boolean;
 }
 
+// Port only: construct a continuing fire-contact result.
 function continueResult(damage: number): MhitmAdFireResult {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
@@ -248,10 +250,12 @@ const DISGUISE_TYPES = new Set([
     M_AP_OBJECT, M_AP_FURNITURE, M_AP_MONSTER,
 ]);
 
+// Port only: read the hero's runtime blindness flags and timeout.
 function heroIsBlindFromState(state: GameState) {
     return !!(state.blind || state.u?.blind || (state.u?.blindTurns ?? 0) > 0);
 }
 
+// Part of C uhitm.c:attack_checks(): combine confusion, hallucination and stun for attack confirmation.
 function heroIsImpaired(state: GameState) {
     const hero = state.u;
     return !!(hero?.confused || (hero?.confusionTurns ?? 0) > 0
@@ -259,11 +263,13 @@ function heroIsImpaired(state: GameState) {
         || hero?.stunned || (hero?.stunnedTurns ?? 0) > 0);
 }
 
+// Port only: read the runtime shapechanger-protection aliases.
 function shapechangerProtection(state: GameState) {
     return !!(state.u?.protectionFromShapeChangers
         || state.protectionFromShapeChangers);
 }
 
+// Part of C uhitm.c:attack_checks(): inspect warning and invisible markers at the struck square.
 function targetGlyphState(at: Position, state: GameState) {
     const glyph = glyphAt(at.x, at.y, state);
     return {
@@ -272,32 +278,38 @@ function targetGlyphState(at: Position, state: GameState) {
     };
 }
 
+// Part of C uhitm.c:attack_checks(): test an appearance not blocked by shapechanger protection.
 function hasUnrevealedAppearance(monster: Monster, state: GameState) {
     return DISGUISE_TYPES.has(M_AP_TYPE(monster))
         && !shapechangerProtection(state);
 }
 
+// Port only: adapt the shared hiding-under predicate to a monster record.
 function hidesUnder(monster: Monster) {
     return monsterHidesUnder(monster?.mnum);
 }
 
+// Port only: adapt the shared eel predicate to a monster record.
 function isEel(monster: Monster) {
     return monsterIsEel(monster?.mnum);
 }
 
+// Part of C uhitm.c:attack_checks(): find an adhering attack for unseen mimic contact.
 // C dmgtype(mtmp->data, AD_STCK): any attack of the species adheres.
 function hasStickyAttack(monster: Monster) {
     return requireMonsterData(MONSTER_ATTACKS, monster.mnum)
         .some(attack => attack[1] === AD_STCK);
 }
 
-// C m_next2u(m): the squared euclidean distance to the hero is at most 2.
+// C you.h:m_next2u()
+// The squared Euclidean distance to the hero is at most 2.
 function isAdjacentToHero(monster: Monster, state: GameState) {
     const dx = monster.mx - (state.u?.ux ?? monster.mx);
     const dy = monster.my - (state.u?.uy ?? monster.my);
     return dx * dx + dy * dy <= 2;
 }
 
+// Part of C uhitm.c:attack_checks(): observe and name a hidden monster's floor cover.
 async function floorObjectName(x: number, y: number, state: GameState) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object) return null;
@@ -305,6 +317,7 @@ async function floorObjectName(x: number, y: number, state: GameState) {
     return await floorObjectDescription(object);
 }
 
+// Part of C uhitm.c:attack_checks(): announce a revealed hider or eel.
 async function publishHiddenMonster(monster: Monster, state: GameState) {
     const blind = heroIsBlindFromState(state);
     const hallucinating = heroIsHallucinating(state);
@@ -334,10 +347,12 @@ async function publishHiddenMonster(monster: Monster, state: GameState) {
     }
 }
 
+// Part of C uhitm.c:attack_checks(): let Stormbringer override peaceful-attack confirmation.
 function stormbringerOverridesConfirmation(weapon: GameObject | null, state: GameState) {
     return artifactById(weapon?.oartifact, state)?.name === 'Stormbringer';
 }
 
+// C uhitm.c:attack_checks()
 export async function prepareAppliedWeaponAttack(
     monster: Monster, weapon: GameObject | null,
     { state = game, struckAt }: AppliedWeaponAttackOptions = {},
@@ -448,6 +463,7 @@ export function recordFirstHeroWeaponHit(weapon: GameObject, state: GameState = 
     recordGameLogEvent(`hit with a wielded weapon (${name}) for the first time`, { state, flags: LL_CONDUCT });
 }
 
+// C uhitm.c:check_caitiff()
 export async function applyCaitiffPenalty(monster: Monster, state: GameState = game): Promise<boolean> {
     const alignment = state.u.ualign;
     if (!alignment || alignment.record <= -10) return false;
@@ -469,6 +485,7 @@ export async function applyCaitiffPenalty(monster: Monster, state: GameState = g
 
 // Native uhitm.c:find_roll_to_hit(), mon_maybe_unparalyze(), and missum().
 
+// C uhitm.c:find_roll_to_hit()
 export async function findHeroMeleeHitThreshold(
     monster: Monster, method: AttackMethod, weapon: GameObject | null,
     { firstAttack, state = game }: { firstAttack: boolean; state?: GameState },
@@ -516,6 +533,7 @@ export async function findHeroMeleeHitThreshold(
     }
     return { threshold, armorPenalty };
 }
+// C uhitm.c:mon_maybe_unparalyze()
 export function maybeUnparalyzeMeleeDefender(monster: Monster, random: RandomBelow = rn2): void {
     if (!monster.mcanmove && random(10) === 0) {
         monster.mcanmove = 1;
@@ -523,6 +541,7 @@ export function maybeUnparalyzeMeleeDefender(monster: Monster, random: RandomBel
     }
 }
 
+// C uhitm.c:missum()
 export async function showHeroMeleeMiss(
     monster: Monster, attack: AttackTuple, wouldHaveHit: boolean,
     { state = game, publish = plineWithContinuation }: {
@@ -545,7 +564,8 @@ export async function showHeroMeleeMiss(
 // weapon.c's abon() lives in weapon.js (heroAttackBonus); its monster-form
 // level reading is shared with dig.c.
 
-// Await monmove.c m_move(), its post-move effects and messages as one call.
+// Part of C uhitm.c:do_attack(): await the defender's move before checking its new position.
+// Await monmove.c m_move, its post-move effects and messages as one call.
 // Resolve that movement transaction before the hero tests its new position;
 // no movement ration, dochug prelude, or dochug attack tail belongs here.
 export async function moveMonsterForHeroAttack(
@@ -699,6 +719,7 @@ export async function do_attack(monster: Monster, x: number, y: number, {
     return true;
 }
 
+// C uhitm.c:hitum()
 async function attackWithHumanForm(monster: Monster, x: number, y: number, attack: AttackTuple, confirmationOverridden: boolean): Promise<void> {
     requirePlayingGame(game);
     const weaponBefore = primaryWeapon();
@@ -744,6 +765,7 @@ async function attackWithHumanForm(monster: Monster, x: number, y: number, attac
     });
 }
 
+// C uhitm.c:hitum_cleave()
 async function cleaveAroundTarget(targetX: number, targetY: number, attack: AttackTuple): Promise<void> {
     requirePlayingGame(game);
     const originX = game.u.ux;
@@ -781,15 +803,18 @@ async function cleaveAroundTarget(targetX: number, targetY: number, attack: Atta
     game._cleaveClockwise = !clockwise;
 }
 
+// Part of C uhitm.c:hitum(), uhitm.c:hitum_cleave(): stop follow-up attacks after helplessness or life saving.
 function heroAttackInterrupted(mortality: number): boolean {
     return !!game.program_state.gameover || (game.multi ?? 0) < 0
         || (game._helplessTurns ?? 0) > 0 || (game.u.umortality ?? 0) > mortality;
 }
 
+// Port only: read the runtime primary-weapon aliases.
 function primaryWeapon(): GameObject | null {
     return game.uwep || game.u.uwep || null;
 }
 
+// Port only: read the runtime secondary-weapon aliases.
 function secondaryWeapon(): GameObject | null {
     return game.uswapwep || game.u.uswapwep || null;
 }
@@ -814,6 +839,7 @@ export interface HeroWeaponHitResult {
     heroDied: boolean;
 }
 
+// C uhitm.c:known_hitum()
 export async function resolveHeroWeaponHit(
     monster: Monster, x: number, y: number, weapon: GameObject | null,
     { attack, hit, threshold, armorPenalty, dieRoll, twoHits, confirmationOverridden = false }: HeroWeaponHitOptions,
@@ -871,21 +897,25 @@ interface BarehandMessageOptions {
     state?: GameState;
 }
 
+// Port only: require an initialized combat skill entry.
 function requiredHeroSkill(state: GameState, skill: number): HeroSkill {
     const entry = ensureHeroSkills(state)?.[skill];
     if (!entry) throw new Error(`Hero combat requires initialized skill ${skill}.`);
     return entry;
 }
 
+// Port only: read the hero's current bare-handed combat skill.
 export function barehandSkill(state: GameState = game): number {
     return requiredHeroSkill(state, P_BARE_HANDED_COMBAT).skill;
 }
 
+// C skills.h:martial_bonus()
 export function heroUsesMartialArts(state: GameState = game): boolean {
     if (!state.urole) throw new Error('Hero combat requires a selected role.');
     return state.urole.key === 'monk' || state.urole.key === 'samurai';
 }
 
+// C uhitm.c:double_punch()
 export function doublePunch(state: GameState = game): boolean {
     const skill = barehandSkill(state);
     if (state.uwep || state.u.uwep || state.uarms || state.u.uarms || skill <= P_BASIC)
@@ -893,6 +923,7 @@ export function doublePunch(state: GameState = game): boolean {
     return skill - P_BASIC > rn2(5);
 }
 
+// C uhitm.c:hmon_hitmon_barehands()
 // twoHits is native hmd.twohits: 0 for a single attempt, otherwise its
 // one-based position. Only the first two attempts can use exposed rings.
 // C uhitm.c:hmon_hitmon_barehands().
@@ -913,6 +944,7 @@ export function prepareHeroBarehandContact(
     };
 }
 
+// Part of C uhitm.c:hmon_hitmon_msg_silver(): publish silver-ring contact without identifying the ring.
 // hmon's silver feedback names the contact material without identifying rings.
 export async function showBarehandSilverHit(
     monster: Monster, hit: Pick<BarehandContact, 'silverRings'> | null, { state = game }: BarehandMessageOptions = {},
@@ -927,6 +959,7 @@ export async function showBarehandSilverHit(
         ? `Your silver ring sears ${target}!` : `${target} is seared!`);
 }
 
+// Port only: form a possessive noun or pronoun for contact messages.
 function possessive(noun: string): string {
     if (noun.toLowerCase() === 'it') return `${noun}s`;
     return noun.endsWith('s') ? `${noun}'` : `${noun}'s`;
@@ -1009,6 +1042,7 @@ export async function prepareHeroWeaponContact(
     return result;
 }
 
+// Part of C uhitm.c:hmon_hitmon_weapon(): select the improvised-use damage branch.
 function isImprovisedContact(weapon: GameObject, mode: HeroPhysicalAttackMode, state: PlayingGameState): boolean {
     const skill = objectSkill(weapon.otyp) ?? P_NONE;
     const launcher = is_launcher(weapon);
@@ -1053,6 +1087,7 @@ function canBackstab(monster: Monster): boolean {
         && canSeeMonster(monster) && (!!monster.mflee || monsterIsHelpless(monster));
 }
 
+// Part of C uhitm.c:hmon_hitmon_weapon_melee(): select an eligible defender weapon to shatter.
 function shatterCandidate(
     monster: Monster, weapon: GameObject, dieRoll: number, state: PlayingGameState,
 ): GameObject | null {
@@ -1070,6 +1105,8 @@ function shatterCandidate(
     return defenderWeapon && !isFlimsyObject(defenderWeapon, state) ? defenderWeapon : null;
 }
 
+// Port only: duplicate the worst-erosion lookup for weapon contact.
+// The full macro port is greatestErosion in object_properties.ts.
 function greatestErosion(weapon: GameObject): number {
     return Math.max(weapon.oeroded ?? 0, weapon.oeroded2 ?? 0);
 }
@@ -1254,10 +1291,12 @@ export function objectCanTouchShade(object: GameObject | null | undefined, state
     return !!object && (SHADE_AWARE_OBJECTS.has(object.otyp) || objectMaterial(object, state) === SILVER);
 }
 
+// Port only: recognize consumed runtime object identities.
 function consumedIdentity(object: GameObject): boolean {
     return object.where === 'gone' || object.where === 'onbill';
 }
 
+// Port only: compose a minimally named contact object with its owner.
 function ownedSimpleName(object: GameObject, state: GameState): string {
     const owner = carriedObjectOwner(object, state);
     const name = objectName(object, state, { minimal: true });
@@ -1265,6 +1304,7 @@ function ownedSimpleName(object: GameObject, state: GameState): string {
         ? name : pluralizeObjectNoun(object, name)}`;
 }
 
+// Port only: consume a contact object through its current runtime ownership boundary.
 async function consumeContactObject(object: GameObject, state: GameState, all: boolean): Promise<void> {
     if (all) {
         await deleteObject(object, state);
@@ -1276,6 +1316,7 @@ async function consumeContactObject(object: GameObject, state: GameState, all: b
     } else await deleteObject(object, state);
 }
 
+// Part of C uhitm.c:hmon_hitmon_potion(): split or unwield and detach the contact potion.
 async function detachContactPotion(object: GameObject, state: GameState): Promise<GameObject> {
     let potion = object;
     if (objectQuantity(object) > 1) {
@@ -1304,6 +1345,7 @@ interface HeroPhysicalDamageOptions {
     state?: GameState;
 }
 
+// C uhitm.c:hmon_hitmon_dmg_recalc()
 // The hmon caller enters this stage only after positive contact damage.
 // Zero-damage shade contacts keep their separate admission and message rules.
 export async function recalculateHeroPhysicalDamage(
@@ -1361,6 +1403,7 @@ export interface HeroWeaponPoisonResult {
     woreOff: boolean;
 }
 
+// Part of C uhitm.c:hmon_hitmon_weapon_melee(): admit poisoned missiles and permanently poisoned weapons.
 function hitUsesPoison(
     weapon: GameObject, mode: HeroWeaponPoisonOptions['mode'], dieRoll: number,
 ) {
@@ -1419,6 +1462,7 @@ export async function resolveHeroWeaponPoison(monster: Monster, weapon: GameObje
 const PM_BLACK_PUDDING = MONSTER_NAME.indexOf('black pudding');
 const PM_BROWN_PUDDING = MONSTER_NAME.indexOf('brown pudding');
 
+// C uhitm.c:joust()
 // The contact owner admits only mounted, positive-damage melee lance hits
 // against an unheld target. These are the remaining native joust() checks.
 export function rollHeroJoust(
@@ -1635,6 +1679,7 @@ interface ShadeMissOptions extends PhysicalMessageOptions {
     rollDice?: typeof d;
 }
 
+// Part of C uhitm.c:hmon_hitmon_do_hit(): save the object's name, including a lit artifact's name.
 export function captureHeroPhysicalObjectName(object: GameObject, state: GameState = game): string {
     if (artifactEmitsLight(object) && object.lamplit && object.oartifact) {
         const artifact = artifactById(object.oartifact, state);
@@ -1644,11 +1689,13 @@ export function captureHeroPhysicalObjectName(object: GameObject, state: GameSta
     return objectCombatName(object, { state });
 }
 
+// Part of C uhitm.c:hmon_hitmon(): retain the unpoisoned weapon name before later ownership changes.
 // Capture after clearing poison and before a death can merge/delete the object.
 export function captureUnpoisonedPhysicalObjectName(object: GameObject, state: GameState = game): string {
     return objectCombatName(object, { state });
 }
 
+// Part of C objnam.c:mshot_xname(): describe a projectile's position in a volley.
 export function captureHeroProjectileName(
     object: GameObject, state: GameState = game, volley?: HeroProjectileVolley,
 ): string {
@@ -1682,6 +1729,7 @@ export async function showHeroPhysicalHit(monster: Monster, object: GameObject |
     return true;
 }
 
+// Part of C uhitm.c:hmon_hitmon_msg_hit(): publish harmless sling-stone contact.
 export async function showHeroHarmlessStoneHit(monster: Monster, object: GameObject, {
     state = game, publish = plineWithContinuation, volley,
     target = { x: monster.mx, y: monster.my },
@@ -1718,12 +1766,14 @@ export async function showHeroPhysicalLight(monster: Monster, {
     else await publish(`The light sears ${whom}!`);
 }
 
+// Part of C uhitm.c:hmon_hitmon(): announce exhausted weapon poison.
 export async function showHeroPhysicalPoisonWoreOff(savedName: string, {
     publish = plineWithContinuation,
 }: PhysicalMessageOptions = {}): Promise<void> {
     await publish(`Your ${savedName} ${verbForSubject(savedName, 'are')} no longer poisoned.`);
 }
 
+// Part of C uhitm.c:shade_miss(): publish a hero attack passing through a shade.
 export async function showHeroShadeMiss(monster: Monster, object: GameObject | null, {
     state = game, publish = plineWithContinuation, thrown = false, verbose = true, rollOne = rnd, rollDice = d,
 }: ShadeMissOptions = {}): Promise<boolean> {
@@ -1741,6 +1791,7 @@ export async function showHeroShadeMiss(monster: Monster, object: GameObject | n
     return true;
 }
 
+// Part of C uhitm.c:hmon_hitmon_msg_silver(): choose flesh or whole-body silver feedback.
 function searedTarget(monster: Monster, originalSpecies: number, state: GameState): string {
     const name = monsterName(monster, { state });
     const original = { mnum: originalSpecies };
@@ -1748,6 +1799,8 @@ function searedTarget(monster: Monster, originalSpecies: number, state: GameStat
         ? name : `${possessiveName(name)} flesh`;
 }
 
+// Port only: duplicate damage punctuation for physical contact messages.
+// The full native port is exclam in zap.ts.
 function damagePunctuation(damage: number): string {
     return damage < 0 ? '?' : damage <= 4 ? '.' : '!';
 }
@@ -1756,12 +1809,14 @@ function damagePunctuation(damage: number): string {
 
 // C uhitm.c:hmon(): reactions after the hit and any resulting monster death.
 
+// Part of C uhitm.c:hmon(): retain the peaceful civic target's pre-hit identity.
 // Capture before damage or wakeup changes peacefulness, species, or residency.
 export function shouldAngerGuardsAfterHeroHit(monster: Monster): boolean {
     return !!monster.mpeaceful
         && !!(monster.ispriest || monster.isshk || isWatch(monster));
 }
 
+// Part of C uhitm.c:hmon(): invoke priest retaliation and anger watch guards.
 export async function finishHeroHitAftermath(monster: Monster, {
     angerGuards, state = game, publish = plineWithContinuation, random = rn2,
 }: {
@@ -1820,6 +1875,7 @@ type PreparedContact = { kind: 'strike'; strike: PhysicalStrike }
 const GEMSTONE = 20;
 const MINERAL = 21;
 
+// C uhitm.c:hmon()
 export async function hitMonsterWithHeroObject(
     monster: Monster, object: GameObject | null, options: HeroPhysicalHitOptions,
 ): Promise<HeroPhysicalHitResult> {
@@ -2049,6 +2105,7 @@ async function preparePhysicalContact(
     return { kind: 'strike', strike };
 }
 
+// Part of C uhitm.c:hmon_hitmon(): identify the first effective wielded-weapon hit for conduct logging.
 function shouldLogWeaponHit(strike: PhysicalStrike, { state, mode }: ActivePhysicalHit): strike is PhysicalStrike & { object: GameObject } {
     const object = strike.object;
     return !!object && (object === (state.uwep || state.u.uwep)
@@ -2229,6 +2286,7 @@ export interface MhitmAdElementResult {
     heroAtZeroHitPoints?: boolean;
 }
 
+// Port only: construct a continuing elemental-contact result.
 function elementContinueResult(damage: number): MhitmAdElementResult {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
@@ -2468,11 +2526,13 @@ export interface MhitmAdStatusResult {
     heroDied: boolean;
 }
 
+// Port only: construct a continuing status-contact result.
 function statusContinueResult(damage: number): MhitmAdStatusResult {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
 
-// damageum()'s call to mhitm_adtyping() consumes mhm->damage and mhm->done;
+// Port only: construct a continuing hero natural-contact result.
+// damageum's call to mhitm_adtyping consumes mhm->damage and mhm->done;
 // the hero-attacker arms of the ports below report this normalized continue
 // result, like the C arms that only adjust mhm->damage and leave hitflags at
 // M_ATTK_MISS and done at FALSE.
@@ -3012,11 +3072,13 @@ export interface KnockbackOutcome {
     defenderLeftLevel?: boolean;
 }
 
+// Port only: narrow a shared combat actor to the runtime hero.
 // Shared actor comparison with &gy.youmonst in the uhitm.c effect functions.
 function isHeroActor(actor: PhysicalActor, state: GameState): actor is Hero {
     return actor === state.u;
 }
 
+// Port only: read the species of a shared hero or monster combat actor.
 // Shared actor->data lookup; the hero uses u.umonnum (monst.h and you.h).
 function species(actor: PhysicalActor, state: GameState): number {
     if (!isHeroActor(actor, state)) return actor.mnum;
@@ -3024,7 +3086,8 @@ function species(actor: PhysicalActor, state: GameState): number {
     return actor.umonnum;
 }
 
-// Shared uwep/MON_WEP() expression (decl.h and monst.h:MON_WEP).
+// Port only: read the weapon of a shared hero or monster combat actor.
+// Shared uwep/MON_WEP expression (decl.h and monst.h:MON_WEP).
 function wieldedWeapon(actor: PhysicalActor, state: GameState): GameObject | null | undefined {
     return isHeroActor(actor, state) ? state.uwep : monsterWieldedWeapon(actor);
 }
@@ -3261,6 +3324,7 @@ export async function mhitmAdAcid(call: MhitmAdAcidCall): Promise<MhitmAdStatusR
     }
 }
 
+// Part of C uhitm.c:mhitm_ad_rust(), uhitm.c:mhitm_ad_dcay(): finish a golem's material-specific destruction.
 async function killGolem(
     type: typeof AD_RUST | typeof AD_DCAY, context: MonsterCombatEffectContext,
 ): Promise<MonsterCombatEffectResult> {
@@ -3268,6 +3332,7 @@ async function killGolem(
     return { damage: context.damage, nativeResult: death.nativeResult, done: true, heroDied: death.heroDied };
 }
 
+// Port only: construct a continuing monster-contact result.
 function damageResult(damage: number): MonsterCombatEffectResult {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
@@ -3333,7 +3398,8 @@ export async function mhitmAdSgld(call: MhitmAdSgldCall): Promise<HeroNaturalEff
         return escapeAfterTheft(attacker, thiefName, context);
     }
 }
-// Shared teleport-and-disappear tail of mhitm_ad_sgld() and mhitm_ad_sedu().
+// Part of C uhitm.c:mhitm_ad_sgld(), uhitm.c:mhitm_ad_sedu(): relocate the thief and announce disappearance.
+// Shared teleport-and-disappear tail of mhitm_ad_sgld and mhitm_ad_sedu.
 async function escapeAfterTheft(
     attacker: Monster, before: string, { state, publish, visible, random, rollOne }: MonsterCombatEffectContext,
 ): Promise<MonsterCombatEffectResult> {
@@ -3363,8 +3429,9 @@ export interface HeroDefenderErosionContext {
     publish: MessagePublisher;
 }
 
-// C mhitm_ad_rust()/mhitm_ad_dcay() mhitu branches: the "You rust!"/"You
-// rot!" line and rehumanize() (mhitu.c).  KMH -- this is okay with unchanging.
+// Part of C uhitm.c:mhitm_ad_rust(), uhitm.c:mhitm_ad_dcay(): announce and revert the hero's destroyed golem form.
+// C mhitm_ad_rust/mhitm_ad_dcay mhitu branches: the "You rust!"/"You
+// rot!" line and rehumanize (mhitu.c).  KMH -- this is okay with unchanging.
 async function rehumanizeErosionForm(
     effectMessage: string, state: PlayingGameState, publish: MessagePublisher,
 ): Promise<boolean> {
@@ -3537,7 +3604,8 @@ export async function mhitmAdDren(call: MhitmAdDrenCall): Promise<MhitmAdStatusR
     }
 }
 
-// The mhitm branch of C uhitm.c:mhitm_ad_dren().
+// Part of C uhitm.c:mhitm_ad_dren(): drain a monster defender's spell energy.
+// The mhitm branch of C uhitm.c:mhitm_ad_dren.
 async function drainEnergy(
     attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
 ): Promise<void> {
@@ -4081,12 +4149,14 @@ export async function mhitmAdPoly(call: MhitmAdPolyCall): Promise<HeroNaturalEff
     }
 }
 
+// Part of C mhitm.c:mon_poly(): display a monster's resistance shield and message.
 async function showPolymorphResistance(defender: Monster, { state, publish }: MonsterCombatEffectContext): Promise<void> {
     await shieldeff(defender.mx, defender.my, state);
     if (cansee(defender.mx, defender.my))
         await publish(`${monsterName(defender, { state, capitalized: true })} resists!`);
 }
 
+// Part of C mhitm.c:mon_poly(): describe the defender's transformation or disappearance.
 async function announcePolymorph(defender: Monster, before: string, { state, publish }: MonsterCombatEffectContext): Promise<void> {
     const wasSeen = before.toLowerCase() !== 'it';
     if (canSpotMonster(defender)) {
@@ -4100,12 +4170,14 @@ async function announcePolymorph(defender: Monster, before: string, { state, pub
     }
 }
 
+// Port only: construct a continuing polymorph-contact result.
 function transformationResult(damage: number): MonsterCombatEffectResult {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
 
-// Poison delivered by monster attacks. C uhitm.c:mhitm_really_poison() and
-// mhitm_ad_drst()'s hero branch; mhitu.c:mpoisons_subj() composes the reason.
+// Part of C uhitm.c:mhitm_ad_drst(): choose the attribute attacked by venom.
+// Poison delivered by monster attacks. C uhitm.c:mhitm_really_poison and
+// mhitm_ad_drst's hero branch; mhitu.c:mpoisons_subj composes the reason.
 export function poisonAttackAttribute(damageType: DamageType): typeof A_STR | typeof A_DEX | typeof A_CON | null {
     if (damageType === AD_DRST) return A_STR;
     if (damageType === AD_DRDX) return A_DEX;
@@ -4113,6 +4185,7 @@ export function poisonAttackAttribute(damageType: DamageType): typeof A_STR | ty
     return null;
 }
 
+// Part of C uhitm.c:mhitm_ad_drst(): compose and apply monster venom to the hero.
 export async function poisonHeroFromMonster(monster: Monster, attackType: AttackMethod, {
     attribute = A_STR, fatal = 30, chance = 1,
     state = game, random = rn2, publish = plineWithContinuation, ...options
@@ -4476,6 +4549,7 @@ interface HeroGripSlipContext {
     random: typeof rn2;
 }
 
+// C uhitm.c:m_slips_free()
 // C m_slips_free(): head attacks inspect only the helmet; body grabs inspect
 // the outermost clothing. A covered greased item offers no protection.
 export async function monsterSlipsFromHeroGrip(
@@ -4499,6 +4573,7 @@ export async function monsterSlipsFromHeroGrip(
 const S_NAGA = 40;
 const S_SNAKE = 45;
 
+// Part of C uhitm.c:mhitm_ad_wrap(): check underwater survival while being held.
 function heroSurvivesWrappingUnderwater(state: PlayingGameState): boolean {
     return !!(state.u.swimming || state.u.amphibious || state.u.breathless || state.u.magicalBreathing
         || (monsterIsAmphibious(heroSpecies(state)) || monsterIsBreathless(heroSpecies(state)))
@@ -4910,6 +4985,7 @@ interface MonsterCombatBlindnessOptions {
     rollDice?: typeof d;
 }
 
+// Part of C uhitm.c:mhitm_ad_blnd(): apply monster-versus-monster blindness and feedback.
 export async function applyMonsterCombatBlindness(
     attacker: Monster, defender: Monster, attack: AttackTuple,
     { state = game, visible, publish = plineWithContinuation, rollDice = d }: MonsterCombatBlindnessOptions,
@@ -4927,14 +5003,17 @@ export async function applyMonsterCombatBlindness(
     clearWaiting(defender);
 }
 
+// Port only: adapt the shared eye predicate to a monster record.
 function hasEyes(monster: Monster): boolean {
     return monsterHasEyes(monster.mnum);
 }
 
+// Port only: clear the runtime monster's waiting-for-hero strategy bit.
 function clearWaiting(monster: Monster): void {
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
 }
 
+// Part of C mhitm.c:sleep_monst(): apply sleep after species and equipment resistance.
 async function sleepContact(defender: Monster, duration: number, context: MonsterCombatEffectContext): Promise<boolean> {
     if (monsterResistsSleep(defender) || monsterCombatDefense(defender, AD_SLEE, context.state)) {
         await shieldeff(defender.mx, defender.my, context.state);
@@ -4957,6 +5036,7 @@ interface MonsterShadeContactOptions {
     thrown?: boolean;
 }
 
+// Part of C uhitm.c:shade_miss(): publish monster or thrown attacks passing through a shade.
 export async function rejectMonsterShadeContact(
     aggressor: Monster, defender: Monster, weapon: GameObject | null,
     { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d, thrown = false }: MonsterShadeContactOptions,
@@ -5268,7 +5348,8 @@ export async function mhitmAdSton(call: MhitmAdStonCall): Promise<MhitmAdStatusR
     }
 }
 
-// The nurse contact-mode check inside C uhitm.c:mhitm_ad_heal()'s mhitu
+// Part of C uhitm.c:mhitm_ad_heal(): choose nurse healing, cooperation or ordinary damage.
+// The nurse contact-mode check inside C uhitm.c:mhitm_ad_heal's mhitu
 // branch: a cancelled nurse is just an ordinary monster, and nurses don't
 // heal those that cause petrification.
 export function nurseContactMode(monster: Monster, state: PlayingGameState): 'hit' | 'heal' | 'cooperate' {
@@ -5367,6 +5448,7 @@ export type MhitmAdDgstCall =
 const PM_FAMINE = MONSTER_NAME.indexOf('Famine');
 const PM_PESTILENCE = MONSTER_NAME.indexOf('Pestilence');
 
+// C uhitm.c:mhitm_ad_dgst()
 export async function mhitmAdDgst(call: MhitmAdDgstCall): Promise<MhitmAdStatusResult> {
     if ('magr' in call) {
         /* uhitm: the hero's digestion attack deals no damage of its own */
@@ -5494,6 +5576,7 @@ export type HeroDeferredContactDamageType = typeof AD_WERE | typeof AD_SLEE
     | typeof AD_DETH | typeof AD_SAMU | typeof AD_FAMN | typeof AD_CONF
     | typeof AD_DRIN;
 
+// Port only: narrow damage types supported by deferred hero-contact resolution.
 export function isHeroDeferredContactDamageType(
     damageType: DamageType,
 ): damageType is HeroDeferredContactDamageType {
@@ -5633,6 +5716,7 @@ export async function mhitm_adtyping(call: MhitmAdtypingCall): Promise<MhitmAdty
     }
 }
 
+// Port only: construct a shared combat-effect result.
 export function effectResult(damage: number, nativeResult = M_ATTK_MISS, heroDied = false): MonsterCombatEffectResult {
     return { damage, nativeResult, heroDied, done: false };
 }
@@ -5659,6 +5743,7 @@ interface HeroNaturalDamageOptions {
     target?: Position;
 }
 
+// C uhitm.c:damageum()
 export async function resolveHeroNaturalDamage(
     monster: Monster, attack: AttackTuple, specialDamage: number,
     {
@@ -5718,19 +5803,23 @@ async function summonDemonPet(context: HeroNaturalEffectContext): Promise<boolea
     return true;
 }
 
+// Port only: combine a dragon species check with worn scales or scale mail.
 function wearsDragonDefense(monster: Monster, species: string, scales: number, mail: number): boolean {
     return speciesIs(monster, species) || (monster.minvent ?? []).some(object =>
         ((object.owornmask ?? 0) & W_ARM) && (object.otyp === scales || object.otyp === mail));
 }
 
+// Port only: compare a monster's species name with metadata.
 function speciesIs(monster: Monster, species: string): boolean {
     return MONSTER_NAME[monster.mnum] === species;
 }
 
+// Port only: format the natural-attack defender's sentence subject.
 function subject(monster: Monster, { state }: HeroNaturalEffectContext): string {
     return monsterName(monster, { state, capitalized: true });
 }
 
+// Port only: route natural-contact death through the shared hero kill boundary.
 async function killNaturalTarget(monster: Monster, context: HeroNaturalEffectContext, options: HeroMonsterKillOptions = {}): Promise<void> {
     await finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
         ...options, showKillMessage: false, publish: context.publish,
@@ -5754,6 +5843,7 @@ export interface HeroCombatExplosionResult {
     heroDied: boolean;
 }
 
+// C uhitm.c:explum()
 export async function resolveHeroCombatExplosion(
     defender: Monster | null, attack: AttackTuple,
     { state = game, publish = plineWithContinuation, random = rn2, rollDice = d }: HeroCombatExplosionOptions = {},
@@ -5892,6 +5982,7 @@ export async function resolveHeroCombatEngulf(defender: Monster, attack: AttackT
     return { nativeResult: M_ATTK_MISS, heroDied: false };
 }
 
+// Part of C mhitm.c:engulf_target(): check hero engulf size, restraint and obstructed squares.
 function heroCanEngulf(defender: Monster, state: PlayingGameState): boolean {
     const hero = heroSpecies(state);
     const size = requireMonsterData(MONSTER_SIZE, defender.mnum);
@@ -5903,12 +5994,14 @@ function heroCanEngulf(defender: Monster, state: PlayingGameState): boolean {
         || !engulfSquareBlocked(state.level.at(state.u.ux, state.u.uy), defender.mnum);
 }
 
+// Part of C mhitm.c:engulf_target(): test terrain that prevents engulfing either participant.
 function engulfSquareBlocked(square: MapLocation | null, otherSpecies: number): boolean {
     return !square || IS_OBSTRUCTED(square.typ) || IS_TREE(square.typ)
         || (square.typ === DOOR && !!(square.doormask & (D_CLOSED | D_LOCKED)))
         || (square.typ === IRONBARS && !monsterIsWhirly({ mnum: otherSpecies }));
 }
 
+// Part of C uhitm.c:gulpum(): digest the defender and apply nutrition, delay and slime.
 async function digestDefender(defender: Monster, species: number, state: PlayingGameState, {
     publish, random, rollDice,
 }: Required<Pick<HeroCombatEngulfOptions, 'publish' | 'random' | 'rollDice'>>): Promise<HeroCombatEngulfResult> {
@@ -5951,6 +6044,7 @@ async function digestDefender(defender: Monster, species: number, state: Playing
     }
 }
 
+// Part of C uhitm.c:gulpum(): apply the engulf attack's damage type.
 async function engulfDamage(defender: Monster, type: AttackTuple[1], damage: number, state: PlayingGameState, {
     publish, random, rollDice,
 }: Required<Pick<HeroCombatEngulfOptions, 'publish' | 'random' | 'rollDice'>>): Promise<number> {
@@ -6118,7 +6212,8 @@ async function steal_it(monster: Monster, context: HeroNaturalEffectContext): Pr
     if (gold) await addObjectToMonsterInventory(monster, gold, state);
 }
 
-// Shared coin lookup for steal_it() and the hero gold-theft effect.
+// Port only: find the coin stack in a monster's runtime inventory.
+// Shared coin lookup for steal_it and the hero gold-theft effect.
 function monsterGold(monster: Monster): GameObject | null {
     return (monster.minvent || monster.inventory || []).find(object => object.oclass === COIN_CLASS) ?? null;
 }
@@ -6229,6 +6324,7 @@ export async function attackHeroInMonsterForm(monster: Monster, x: number, y: nu
     }
 }
 
+// Part of C uhitm.c:hmonas(): dispatch the hero form's attack method.
 async function performFormAttack(sequence: FormAttackSequence, attack: AttackTuple, index: number): Promise<FormStrike> {
     const { state, monster } = sequence;
     const method = attack[0];
@@ -6267,6 +6363,7 @@ async function performFormAttack(sequence: FormAttackSequence, attack: AttackTup
     }
 }
 
+// Part of C uhitm.c:hmonas(): resolve weapon-capable slots and alternating weapons.
 async function performFormWeaponAttack(sequence: FormAttackSequence, attack: AttackTuple, index: number): Promise<FormStrike> {
     const { state, monster, target } = sequence;
     sequence.oddClaw = !sequence.oddClaw;
@@ -6301,6 +6398,7 @@ async function performFormWeaponAttack(sequence: FormAttackSequence, attack: Att
     return { kind: 'processed', result: strike.hit ? M_ATTK_HIT : M_ATTK_MISS, weapon: passiveWeapon, heroDied: false };
 }
 
+// Part of C uhitm.c:hmonas(): admit a secondary weapon for the hero form's next strike.
 function canAlternateFormWeapon(primary: GameObject | null | undefined, secondary: GameObject | null | undefined, state: PlayingGameState): boolean {
     return !!(primary && secondary && (primary.oclass === WEAPON_CLASS || isWeaponTool(primary))
         && !isBimanualObject(primary) && !(state.uarms || state.u.uarms)
@@ -6308,6 +6406,7 @@ function canAlternateFormWeapon(primary: GameObject | null | undefined, secondar
         && !(objectMaterial(secondary, state) === 14 && monsterSpeciesHatesSilver(heroSpecies(state))));
 }
 
+// Part of C uhitm.c:hmonas(): resolve natural strikes, seduction and contact feedback.
 async function performNaturalContact(sequence: FormAttackSequence, attack: AttackTuple): Promise<FormStrike> {
     const { state, monster, target } = sequence;
     const chance = await findHeroMeleeHitThreshold(monster, attack[0], null, { firstAttack: sequence.attempts++ === 0, state });
@@ -6341,6 +6440,7 @@ async function performNaturalContact(sequence: FormAttackSequence, attack: Attac
     return { kind: 'processed', result: M_ATTK_MISS, weapon: null, heroDied: false };
 }
 
+// Part of C uhitm.c:hmonas(): choose equipment and ring contact masks.
 function naturalContactDamage(sequence: FormAttackSequence, attack: AttackTuple) {
     let mask = 0;
     if (attack[0] === AT_CLAW || attack[0] === AT_TUCH) {
@@ -6353,6 +6453,7 @@ function naturalContactDamage(sequence: FormAttackSequence, attack: AttackTuple)
         : { damage: 0, silverMask: 0 };
 }
 
+// Part of C uhitm.c:hmonas(): choose the natural attack's message verb.
 function naturalContactVerb(method: AttackTuple[0]): string {
     switch (method) {
     case AT_CLAW: return 'claws';
@@ -6368,6 +6469,7 @@ function naturalContactVerb(method: AttackTuple[0]): string {
     }
 }
 
+// Part of C uhitm.c:hmonas(): acquire a hold and resolve hugs or throttling.
 async function performHeroHug(sequence: FormAttackSequence, originalAttack: AttackTuple, index: number): Promise<FormStrike> {
     const { state, monster, target } = sequence;
     const byHand = heroSpecies(state) === PM_ROPE_GOLEM;
@@ -6416,6 +6518,7 @@ async function performHeroHug(sequence: FormAttackSequence, originalAttack: Atta
     return { kind: 'processed', result: M_ATTK_MISS, weapon: null, heroDied: false };
 }
 
+// Part of C uhitm.c:hmonas(): resolve an engulf attempt and sickness from undead digestion.
 async function performHeroEngulf(sequence: FormAttackSequence, attack: AttackTuple, index: number): Promise<FormStrike> {
     const { state, monster, target } = sequence;
     const chance = await findHeroMeleeHitThreshold(monster, attack[0], null, { firstAttack: sequence.attempts++ === 0, state });
@@ -6442,6 +6545,7 @@ async function performHeroEngulf(sequence: FormAttackSequence, attack: AttackTup
     return { kind: 'processed', result: effect.nativeResult, weapon: null, heroDied: effect.heroDied };
 }
 
+// Part of C uhitm.c:hmonas(): apply a successful natural strike and retain brain-drain state.
 async function applyNaturalDamage(sequence: FormAttackSequence, attack: AttackTuple, specialDamage: number, weapon: GameObject | null = null): Promise<FormStrike> {
     const effect = await resolveHeroNaturalDamage(sequence.monster, attack, specialDamage, {
         state: sequence.state, target: sequence.target,
@@ -6450,6 +6554,7 @@ async function applyNaturalDamage(sequence: FormAttackSequence, attack: AttackTu
     return { kind: 'processed', result: effect.nativeResult, weapon, heroDied: effect.heroDied };
 }
 
+// Part of C uhitm.c:hmonas(): drop a cursed secondary weapon after a form strike.
 async function dropCursedFormWeapon(weapon: GameObject | null, state: PlayingGameState): Promise<boolean> {
     if (!weapon || !weapon.cursed || weapon !== (state.uswapwep || state.u.uswapwep)) return false;
     await dropSecondaryWeapon(state);
@@ -6480,6 +6585,7 @@ const MR_STONE = 0x80;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const PM_STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');
 
+// C uhitm.c:passive()
 export async function applyHeroContactPassive(monster: Monster, {
     hit,
     defenderSurvived = !monster.dead && monster.mhp > 0,
@@ -6532,6 +6638,7 @@ export async function applyHeroContactPassive(monster: Monster, {
     };
 }
 
+// Part of C uhitm.c:passive(): dispatch effects that also survive the defender's death.
 async function applyImmediatePassive(context: PassiveContext): Promise<PassiveEffect> {
     if (context.damageType === AD_ACID)
         return applyAcidPassive(context);
@@ -6546,6 +6653,7 @@ async function applyImmediatePassive(context: PassiveContext): Promise<PassiveEf
     return { heroDied: false };
 }
 
+// Part of C uhitm.c:passive(): resolve acid splash and contact equipment corrosion.
 async function applyAcidPassive({
     monster, damage, hit, attackType, weapon, state, publish, random, die,
 }: PassiveContext): Promise<PassiveEffect> {
@@ -6595,6 +6703,7 @@ async function applyAcidPassive({
     return { splashed, appliedDamage, heroDied };
 }
 
+// Part of C uhitm.c:passive(): expose contacting equipment to the defender's passive effect.
 async function applyEquipmentPassive(context: PassiveContext): Promise<PassiveEffect> {
     const {
         monster, hit, attackType, weapon, state,
@@ -6610,6 +6719,7 @@ async function applyEquipmentPassive(context: PassiveContext): Promise<PassiveEf
     return { heroDied: false };
 }
 
+// Part of C uhitm.c:passive(): test contact protection and resolve hero petrification.
 async function applyStonePassive({
     monster, hit, attackType, weaponWasDestroyed, state, publish, die,
 }: PassiveContext): Promise<PassiveEffect> {
@@ -6643,6 +6753,7 @@ async function applyStonePassive({
     };
 }
 
+// Part of C uhitm.c:passive(): resolve passive magic missiles and observed resistance.
 async function applyMagicMissilePassive({
     monster, damage, state, publish, die,
 }: PassiveContext): Promise<PassiveEffect> {
@@ -6661,6 +6772,7 @@ async function applyMagicMissilePassive({
     return { resisted: false, appliedDamage: damage, heroDied };
 }
 
+// Part of C uhitm.c:passive(): choose contacting equipment for disenchantment.
 async function applyEnchantmentPassive({
     monster, hit, attackType, weapon, state, random,
 }: PassiveContext): Promise<PassiveEffect> {
@@ -6678,6 +6790,7 @@ async function applyEnchantmentPassive({
     return { heroDied: false };
 }
 
+// Part of C uhitm.c:passive(): dispatch uncancelled living-defender effects.
 async function applySurvivingMonsterPassive(context: PassiveContext): Promise<PassiveEffect> {
     if (context.damageType === AD_PLYS)
         return applyParalysisPassive(context);
@@ -6692,6 +6805,7 @@ async function applySurvivingMonsterPassive(context: PassiveContext): Promise<Pa
     return { heroDied: false };
 }
 
+// Part of C uhitm.c:passive(): resolve floating-eye gaze or gelatinous-cube paralysis.
 async function applyParalysisPassive({
     monster, damage, state, publish, random,
 }: PassiveContext): Promise<PassiveEffect> {
@@ -6751,6 +6865,7 @@ async function applyParalysisPassive({
     return { heroDied: false };
 }
 
+// Part of C uhitm.c:passive(): apply cold damage and heal or split the cold monster.
 async function applyColdPassive(context: PassiveContext): Promise<PassiveEffect> {
     const {
         monster, damage, state, publish, random, die,
@@ -6777,6 +6892,7 @@ async function applyColdPassive(context: PassiveContext): Promise<PassiveEffect>
     return { appliedDamage: damage, heroDied: false };
 }
 
+// Part of C uhitm.c:passive(): apply the passive stun timeout.
 async function applyStunPassive({ damage, state, publish }: PassiveContext): Promise<PassiveEffect> {
     const hero = state.u;
     if (hero.stunned || (hero.stunnedTurns ?? 0) > 0 || damage <= 0)
@@ -6785,6 +6901,7 @@ async function applyStunPassive({ damage, state, publish }: PassiveContext): Pro
     return { heroDied: false };
 }
 
+// Part of C uhitm.c:passive(): apply adjacent fire damage and resistance feedback.
 async function applyFirePassive({ monster, damage, state, publish, die }: PassiveContext): Promise<PassiveEffect> {
     if (!monsterNearHero(monster, state)) return { heroDied: false };
     if (heroResists(state, 'fireResistance', MR_FIRE)) {
@@ -6803,6 +6920,7 @@ async function applyFirePassive({ monster, damage, state, publish, die }: Passiv
     return { appliedDamage: damage, heroDied };
 }
 
+// Part of C uhitm.c:passive(): apply electric damage and resistance feedback.
 async function applyElectricPassive({ monster, damage, state, publish, die }: PassiveContext): Promise<PassiveEffect> {
     if (heroResists(state, 'shockResistance', MR_ELEC)) {
         await shieldeff(state.u.ux, state.u.uy, state);
@@ -6820,6 +6938,7 @@ async function applyElectricPassive({ monster, damage, state, publish, die }: Pa
     return { appliedDamage: damage, heroDied };
 }
 
+// Port only: route passive damage through the shared monster-damage boundary.
 async function damageHero(monster: Monster, amount: number, { state, publish, die }: Pick<PassiveContext, 'state' | 'publish' | 'die'>): Promise<boolean> {
     if (!die) return mdamageu(monster, amount, { state, publish });
     return mdamageu(monster, amount, {
@@ -6827,6 +6946,7 @@ async function damageHero(monster: Monster, amount: number, { state, publish, di
     });
 }
 
+// Port only: combine runtime hero, equipment and form elemental resistance.
 function heroResists(state: GameState, property: 'acidResistance' | 'coldResistance' | 'fireResistance' | 'shockResistance' | 'stoneResistance', mask: number): boolean {
     const hero = state.u;
     if (hero[property] || hasWornProperty(property, state)) return true;
@@ -6834,10 +6954,12 @@ function heroResists(state: GameState, property: 'acidResistance' | 'coldResista
     return form != null && ((MONSTER_RESISTS[form] ?? 0) & mask) !== 0;
 }
 
+// Port only: query combined hero acid resistance.
 function heroResistsAcid(state: GameState): boolean {
     return heroResists(state, 'acidResistance', MR_ACID);
 }
 
+// Port only: combine runtime hero, equipment and form magic resistance.
 function heroResistsMagic(state: GameState): boolean {
     const hero = state.u;
     if (hero.antimagic
@@ -6851,6 +6973,7 @@ function heroResistsMagic(state: GameState): boolean {
         );
 }
 
+// Part of C uhitm.c:passive(): select the weapon or boots exposed by contact.
 function objectTouchedByAttack(state: GameState, attackType: AttackMethod, weapon: GameObject | null): GameObject | null {
     if (attackType === AT_KICK)
         return weapon || state.uarmf || state.u?.uarmf || null;
@@ -6858,6 +6981,7 @@ function objectTouchedByAttack(state: GameState, attackType: AttackMethod, weapo
         ? weapon : null;
 }
 
+// Part of C uhitm.c:passive_obj(): choose the secondary weapon, primary weapon or gloves.
 function objectTouchedByEnchantment(
     state: GameState, attackType: AttackMethod, weapon: GameObject | null,
     random: typeof rn2 = rn2,
@@ -6873,8 +6997,9 @@ function objectTouchedByEnchantment(
     return state.uwep || state.u?.uwep || state.uarmg || state.u?.uarmg || null;
 }
 
-// C uhitm.c:passive() sets nomovemsg to You_can_move_again for the cube and
-// clears it for the floating eye, which unmul() also turns into that message.
+// Part of C uhitm.c:passive(): freeze the hero after passive paralysis.
+// Sets nomovemsg to You_can_move_again for the cube and
+// clears it for the floating eye, which unmul also turns into that message.
 function freezeHero(state: GameState, turns: number, reason: MonsterHelplessnessReason): void {
     state._occupation = null;
     nomul(-Math.max(0, turns), state);
@@ -6882,6 +7007,7 @@ function freezeHero(state: GameState, turns: number, reason: MonsterHelplessness
     state._helplessDoneMessage = 'You can move again.';
 }
 
+// Part of C uhitm.c:passive(): limit cold and fire retaliation to nearby defenders.
 function monsterNearHero(monster: Monster, state: GameState): boolean {
     return Math.max(
         Math.abs((monster.mx ?? 0) - (state.u?.ux ?? 0)),
@@ -6889,6 +7015,7 @@ function monsterNearHero(monster: Monster, state: GameState): boolean {
     ) <= 1;
 }
 
+// Part of C uhitm.c:passive(): find the species' passive attack slot.
 export function passiveAttack(monster: Pick<Monster, 'mnum'> | null | undefined): MonsterAttack | null {
     if (!monster) return null;
     return (MONSTER_ATTACKS[monster.mnum] || []).find(
@@ -6896,6 +7023,7 @@ export function passiveAttack(monster: Pick<Monster, 'mnum'> | null | undefined)
     ) || null;
 }
 
+// Part of C uhitm.c:passive(): roll damage from the passive attack and monster level.
 export function passiveDamage(level: number, attack: MonsterAttack, rollDice: (count: number, sides: number) => number): number {
     const [, , dice, sides] = attack;
     if (dice > 0) return rollDice(dice, sides);
@@ -6903,12 +7031,14 @@ export function passiveDamage(level: number, attack: MonsterAttack, rollDice: (c
     return 0;
 }
 
-// Renamed from monsterName() when passive() moved here: uhitm.ts already
+// Port only: name a passive attacker for an injected death handler.
+// Renamed from monsterName when passive moved here: uhitm.ts already
 // imports the shared monster namer under that name.
 function passiveMonsterName(monster: Monster): string {
     return monster.name || monsterTypeName(monster.mnum, !!monster.female);
 }
 
+// Part of C uhitm.c:dynamic_multi_reason(): retain an unhallucinated paralysis cause.
 function passiveParalysisReason(monster: Monster, state: GameState, gaze: boolean): MonsterHelplessnessReason {
     const species = namelessMonsterName(monster, {
         state, article: 'a', suppressIt: true, suppressInvisible: true,
@@ -6917,6 +7047,7 @@ function passiveParalysisReason(monster: Monster, state: GameState, gaze: boolea
     return { monsterId: monster.m_id, text: `frozen by ${gaze ? `${possessiveName(species)} gaze` : species}` };
 }
 
+// C uhitm.c:passive_obj()
 // passive_obj() also applies to the hero's current body after a missile hits.
 // The caller still owns the object's eventual inventory or floor location.
 export async function applyMonsterPassiveToObject(
@@ -6987,6 +7118,7 @@ export async function startHeroPetrificationFromMonster(monster: Monster, state:
     });
 }
 
+// Part of C mhitm.c:mon_poly(): publish resistance to a hero polymorph contact.
 async function showHeroPolymorphResistance(monster: Monster, context: HeroNaturalEffectContext): Promise<void> {
     await shieldeff(monster.mx, monster.my, context.state);
     if (cansee(monster.mx, monster.my))
@@ -7026,6 +7158,7 @@ const CLOSED_DOOR_APPEARANCES = new Set([
     S_HORIZONTAL_CLOSED_DOOR,
 ]);
 
+// C uhitm.c:that_is_a_mimic()
 // C that_is_a_mimic(): revelation alone neither wakes nor creates a hold.
 export async function revealMimicIdentity(monster: Monster, {
     state = game, omitWait = false, publish = plineWithContinuation,
@@ -7068,6 +7201,7 @@ export async function revealMimicIdentity(monster: Monster, {
     await revealMonsterAppearance(monster);
 }
 
+// C uhitm.c:disguised_as_non_mon()
 export function isObjectOrFurnitureMimic(monster: Monster | null | undefined, state: GameState = game): monster is Monster {
     return !!monster
         && [M_AP_OBJECT, M_AP_FURNITURE].includes(M_AP_TYPE(monster))
@@ -7077,17 +7211,20 @@ export function isObjectOrFurnitureMimic(monster: Monster | null | undefined, st
         && glyphAt(monster.mx, monster.my, state)?.kind !== 'warning';
 }
 
+// Port only: combine an unrevealed mimic check with a closed-door appearance.
 export function isDoorMimic(monster: Monster | null | undefined, state: GameState = game): boolean {
     return isObjectOrFurnitureMimic(monster, state)
         && hasDoorAppearance(monster);
 }
 
+// C monst.h:is_door_mappear()
 // C is_door_mappear() tests only the disguise, regardless of perception.
 export function hasDoorAppearance(monster: Monster | null | undefined): monster is Monster {
     return !!monster && M_AP_TYPE(monster) === M_AP_FURNITURE
         && monster.mappearance !== undefined && CLOSED_DOOR_APPEARANCES.has(monster.mappearance);
 }
 
+// Port only: reveal and contact an optional unrevealed mimic through the shared owner.
 export async function revealMimic(
     monster: Monster | null | undefined,
     state: GameState = game,
@@ -7099,6 +7236,7 @@ export async function revealMimic(
     return true;
 }
 
+// C uhitm.c:stumble_onto_mimic()
 // C stumble_onto_mimic(): callers establish the unrevealed appearance.
 export async function stumbleOntoMimic(
     monster: Monster, state: GameState = game, publish: MessagePublisher = plineWithContinuation,

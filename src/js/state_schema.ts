@@ -208,35 +208,39 @@ const transientFields = {
 const persistentStateKeys = new Set<PersistentStateKey>(persistentNames);
 const persistentKeyNames: ReadonlySet<string> = persistentStateKeys;
 
+// Port only: narrow saved-state keys against the persistence schema.
 function isPersistentStateKey(key: string): key is PersistentStateKey {
     return persistentKeyNames.has(key);
 }
 
+// Port only: copy one declared persistent field into a snapshot.
 function copyStateKey<Key extends PersistentStateKey>(
     snapshot: PersistentState, state: GameState, key: Key,
 ): void {
     snapshot[key] = state[key];
 }
 
-// TS saved-state restore; also inlines C artifact.c:restore_artifacts()
-// through the persistent artifact existence, provenance, discovery and
-// runtime fields.  Install only fields admitted by the saved-state
-// schema. Keep the live state object and the decoded graph references;
+// Port only: restore the validated persistent state graph.
+// Also C artifact.c:restore_artifacts(): restore persistent artifact existence,
+// provenance, discovery and runtime fields.
+// Install only fields admitted by the saved-state schema. Keep the live state
+// object and the decoded graph references;
 // process-only fields stay in place.
 export function restorePersistentState(state: GameState, snapshot: PersistentState): void {
     // An absent optional field must clear its previous live value too.
     for (const key of persistentStateKeys) restoreStateKey(state, snapshot, key);
 }
 
+// Port only: restore one declared persistent field.
 function restoreStateKey<Key extends PersistentStateKey>(
     state: PersistentState, snapshot: PersistentState, key: Key,
 ): void {
     state[key] = snapshot[key];
 }
 
-// TS saved-state snapshot; also inlines C artifact.c:save_artifacts()
-// through the persistent artifact existence, provenance, discovery and
-// runtime fields.
+// Port only: build a snapshot and reject unclassified runtime fields.
+// Also C artifact.c:save_artifacts(): snapshot persistent artifact existence,
+// provenance, discovery and runtime fields.
 export function copyPersistentState(state: GameState): PersistentState {
     const snapshot: PersistentState = {
         u: state.u, urole: state.urole, urace: state.urace,
@@ -266,6 +270,7 @@ export function copyPersistentState(state: GameState): PersistentState {
     return snapshot;
 }
 
+// Port only: omit transient context fields from a saved snapshot.
 function copyPersistentContext(context: GameContext): PersistentGameContext {
     const snapshot = { ...context };
     delete snapshot.botl;

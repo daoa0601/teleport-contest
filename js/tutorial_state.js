@@ -18,6 +18,7 @@ const WORN_SLOTS = [
     ['uswapwep', W_SWAPWEP], ['uquiver', W_QUIVER], ['uamul', W_AMUL],
     ['ublindf', W_TOOL], ['uball', W_BALL], ['uchain', W_CHAIN],
 ];
+// C nhlua.c:nhl_gamestate()
 export async function changeTutorialState(state = game, restoring = false) {
     if (restoring) {
         if (!state._tutorialState) {
@@ -32,6 +33,7 @@ export async function changeTutorialState(state = game, restoring = false) {
     }
     return storeTutorialState(state);
 }
+// Part of C nhlua.c:nhl_gamestate(): sequester the hero's state before the tutorial.
 async function storeTutorialState(state) {
     const inventory = [...(state.inventory || [])];
     for (const object of inventory) {
@@ -73,6 +75,7 @@ async function storeTutorialState(state) {
     };
     state.spells = [];
 }
+// Part of C nhlua.c:nhl_gamestate(): restore the hero's state on tutorial exit.
 async function restoreTutorialState(state) {
     const saved = state._tutorialState;
     if (!saved)
@@ -133,6 +136,7 @@ async function restoreTutorialState(state) {
     findArmorClass(state);
     delete state._tutorialState;
 }
+// Part of C worn.c:setworn(): restore equipment aliases from the saved worn mask.
 function restoreWornItem(object, state) {
     const mask = object.owornmask || 0;
     if ((mask & (W_ARM | I_SPECIAL)) === (W_ARM | I_SPECIAL)) {
@@ -158,6 +162,7 @@ function restoreWornItem(object, state) {
     object.ready = !!(mask & W_QUIVER);
     object.worn = !!(mask & (W_ARMOR | W_RINGL | W_RINGR | W_AMUL | W_TOOL));
 }
+// C nhlua.c:free_tutorial()
 export async function discardTutorialState(state = game) {
     const saved = state._tutorialState;
     if (!saved)
