@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { OIL_LAMP } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { cleanupTransientLight, showTransientLight } from '../js/transient_light.js';
+import { cleanupTransientLight, showTransientLight } from '../js/light.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

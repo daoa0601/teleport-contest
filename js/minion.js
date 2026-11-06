@@ -6,7 +6,7 @@ import { deityName } from './pray.js';
 import { A_CHA, A_NONE, FAINTED, In_endgame, In_hell, LL_UMONST, MM_ADJACENTOK, MM_EMIN, MM_NOMSG, NON_PM, RLOC_MSG, STRAT_APPEARMSG, W_ARMS } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
-import { cleanupTransientLight, showTransientLight } from './transient_light.js';
+import { cleanupTransientLight, showTransientLight } from './light.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { currentAttribute } from './attrib.js';
