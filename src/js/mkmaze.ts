@@ -36,7 +36,7 @@ import { occupied } from './mkroom.js';
 import { objectProb } from './o_init.js';
 import { upstart } from './hacklib.js';
 import { addFruit } from './options.js';
-import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { nameOrc, randomOrcName, setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { randomTypeByDescription } from './objnam.js';
@@ -684,7 +684,6 @@ const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
 
 const M2_ORC = 0x80;
-const DELIVER_SPECIES = 0x21fe; // undead, were, human, elf, dwarf, gnome, orc, demon, giant
 const PM_ORC = MONSTER_NAME.indexOf('orc');
 const PM_ORC_SHAMAN = MONSTER_NAME.indexOf('orc shaman');
 const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
@@ -801,36 +800,6 @@ export async function stolen_booty(): Promise<void> {
         if (!monster) continue;
         await shiny_orc_stuff(monster, state);
         await migrate_orc(monster, false, state);
-    }
-}
-
-// C dokick.c:deliver_obj_to_mon()
-// Migrated MIGR_TO_SPECIES booty from dog.c is
-// handed to the first matching monster that is created or arrives.  The
-// species flags ride the object's overloaded owornmask/corpsenm fields,
-// which is why the food filters above exclude them.
-export async function deliverOrcRaidLoot(monster: Monster, state: GameState, all = false): Promise<void> {
-    for (const object of [...(state.migratingObjects ?? [])]) {
-        const migration = object.migration;
-        if (!migration || !(migration.arrival & MIGR_TO_SPECIES)
-            || migration.speciesFlags === undefined || migration.speciesFlags === NON_PM
-            || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & DELIVER_SPECIES) !== migration.speciesFlags) continue;
-        const index = state.migratingObjects?.indexOf(object) ?? -1;
-        if (index >= 0) state.migratingObjects?.splice(index, 1);
-        object.where = 'free';
-        object.owornmask = 0;
-        object.ox = object.oy = 0;
-        if ((migration.speciesFlags & M2_ORC) && object.oextra?.oname) {
-            if (!monster.name) {
-                const inMines = state.u.uz?.dnum === state.mines_dnum;
-                if (inMines || rn2(2) === 0) nameOrc(monster, inMines ? object.oextra.oname : null, ' the Fence');
-            }
-            delete object.oextra.oname;
-        }
-        object.corpsenm = NON_PM;
-        delete object.migration;
-        await addObjectToMonsterInventory(monster, object, state);
-        if (!all) break;
     }
 }
 
