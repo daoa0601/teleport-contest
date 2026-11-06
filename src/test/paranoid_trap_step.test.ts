@@ -6,7 +6,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
-import { parseNethackrc } from '../js/options.js';
+import { parseNethackrc } from '../js/cfgfiles.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { initRng } from '../js/rng.js';

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { displayConfigurationErrors } from '../js/config_errors.js';
+import { displayConfigurationErrors } from '../js/cfgfiles.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { parseNethackrc } from '../js/options.js';
+import { parseNethackrc } from '../js/cfgfiles.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 for (const statement of ['BIND=;:menu_search', 'OPTIONS=menu_search:;']) {

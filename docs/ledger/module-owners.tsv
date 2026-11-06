@@ -7,6 +7,7 @@ src/js/ball.ts	ball.c
 src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
+src/js/cfgfiles.ts	cfgfiles.c
 src/js/color_query.ts	coloratt.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
@@ -95,7 +96,7 @@ src/js/track.ts	track.c
 src/js/trap.ts	trap.c
 src/js/uhitm.ts	uhitm.c
 src/js/vault.ts	vault.c
-src/js/warning_symbols.ts	cfgfiles.c
+src/js/warning_symbols.ts	options.c
 src/js/weapon.ts	weapon.c
 src/js/were.ts	were.c
 src/js/wield.ts	wield.c

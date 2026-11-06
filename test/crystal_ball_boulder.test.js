@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { glyphAt } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { BOULDER, CRYSTAL_BALL } from '../js/object_data.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

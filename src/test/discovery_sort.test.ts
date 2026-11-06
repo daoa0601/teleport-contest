@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { HELMET, LEATHER_GLOVES, POT_BOOZE, POT_HEALING, SPEED_BOOTS, WAN_FIRE } from '../js/object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge } from '../js/o_init.js';
 
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

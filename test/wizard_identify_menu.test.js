@@ -5,7 +5,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { objectNeedsFullIdentification } from '../js/objnam.js';
 import { POT_EXTRA_HEALING, POT_HEALING, SCR_IDENTIFY } from '../js/object_data.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { ATR_BOLD, CLR_RED } from '../js/terminal.js';
 import { C_ATR_BOLD } from '../js/color_attr.js';
 import { runExtendedCommand } from './support/commands.js';

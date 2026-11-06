@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyNethackrc, parseNethackrc } from '../js/options.js';
+import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 // options.c:optfn_roguesymset() stores the name, loads it from the symbols

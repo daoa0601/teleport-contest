@@ -2,7 +2,7 @@ import { COLNO, ROWNO } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
 import { commandKeyDescription } from '../cmd.js';
 import { impossible } from '../diagnostics.js';
-import { applyNethackrc } from '../options.js';
+import { applyNethackrc } from '../cfgfiles.js';
 import { rn2 } from '../rng.js';
 import { changeTutorialState } from '../tutorial_state.js';
 import { luaPline, luaText } from './messages.js';

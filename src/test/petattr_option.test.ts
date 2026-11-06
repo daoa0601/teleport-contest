@@ -5,7 +5,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mapDetectedMonster } from '../js/detect.js';
-import { applyNethackrc, parseNethackrc } from '../js/options.js';
+import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
 import { ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from '../js/terminal.js';
 import { ATR_BLINK } from '../js/terminal_attributes.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -8,7 +8,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenRow } from './support/screen.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { DAGGER } from '../js/object_data.js';
 // A command has settled once nothing further will elapse on its behalf.
 function settled() {

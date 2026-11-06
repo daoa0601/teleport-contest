@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { DART } from '../js/object_data.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';

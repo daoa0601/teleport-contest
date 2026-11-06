@@ -7,7 +7,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';
-import { applyNethackrc, parseNethackrc } from '../js/options.js';
+import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';

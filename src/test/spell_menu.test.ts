@@ -15,7 +15,8 @@ import {
     OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_DIG, SPE_FIREBALL, SPE_FORCE_BOLT,
     SPE_HEALING, SPE_SLEEP, SPE_TURN_UNDEAD,
 } from '../js/object_data.js';
-import { applyNethackrc, doOptions } from '../js/options.js';
+import { doOptions } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { ensureHeroSkills } from '../js/weapon.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { selectSpellToCast, viewKnownSpells } from '../js/spell.js';

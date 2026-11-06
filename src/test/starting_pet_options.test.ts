@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { runSegment } from '../js/jsmain.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/do_name.js';
-import { applyNethackrc, parseNethackrc } from '../js/options.js';
+import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
 import type { RoleKey } from '../js/role.js';
 import { makedog } from '../js/u_init.js';
 import { freshObjectRoom } from './support/object-room.js';

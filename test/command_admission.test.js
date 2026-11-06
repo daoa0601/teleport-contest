@@ -5,7 +5,7 @@ import { SCORR, CORR } from '../js/const.js';
 import { startLuaCore } from './support/lua-game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 // cmd.c extcmds_match() skips wizard-mode commands outside wizard mode, so a
 // typed #wizmap is unknown to the tty prompt; bound keys reach the command.

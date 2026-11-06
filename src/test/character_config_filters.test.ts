@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Engine, runSegment } from '../js/jsmain.js';
-import { parseNethackrc } from '../js/options.js';
+import { parseNethackrc } from '../js/cfgfiles.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 async function selection(options: string, moves = 'n') {

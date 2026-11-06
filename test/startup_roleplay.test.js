@@ -11,7 +11,7 @@ import { game } from '../js/gstate.js';
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import { FLINT, FOOD_RATION, POT_WATER, SACK, SPE_FORCE_BOLT, SPE_HEALING, SPE_PROTECTION, TOUCHSTONE, WAN_WISHING, } from '../js/object_data.js';
-import { parseNethackrc } from '../js/options.js';
+import { parseNethackrc } from '../js/cfgfiles.js';
 import { roles } from '../js/role.js';
 import { makedog } from '../js/u_init.js';
 import { completeHeroStartup, prepareHeroStartup, } from './support/startup.js';
