@@ -2789,7 +2789,9 @@ export async function useWhip(whip, { state = game } = {}) {
 function poleableGlyph(glyph) {
     return glyph?.kind === 'monster' || glyph?.kind === 'invisible' || statueGlyph(glyph);
 }
-// C display.h:glyph_is_statue()
+// Part of C display.h:glyph_is_statue(): the screen-memory form use_pole()
+// and find_poleable_mon() test (a remembered GlyphMetadata flag, not a
+// glyph number; glyph_numbers.ts glyphIsStatue() is the numeric macro).
 function statueGlyph(glyph) {
     return glyph?.kind === 'object' && !!glyph.statueGlyph;
 }

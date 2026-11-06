@@ -1360,7 +1360,8 @@ export function shieldGlyph(character: string): DisplayGlyph {
         glyph: cmapToGlyph(82 + index) };
 }
 
-// C display.h:obj_to_glyph(), for tmp_at() callers.  A projectile has already
+// Part of C display.h:obj_to_glyph(): the tmp_at() callers' adapter (display.ts
+// objectGlyph() is the macro port).  A projectile has already
 // been extracted from the floor chain, so this deliberately derives only its
 // transient glyph and does not mutate hero memory or object discovery state.
 // Hallucination consumes the display RNG once when the flight starts; callers
