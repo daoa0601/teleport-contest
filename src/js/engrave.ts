@@ -24,7 +24,7 @@ import { AT_HUGS } from './monster_attack_types.js';
 import {
     P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS,
     ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN,
-    NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT,
+    NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS,
 } from './const.js';
 import type { Monster } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -66,7 +66,7 @@ import {
 } from './objnam.js';
 import { addExperience } from './exper.js';
 import { altarWrath } from './pray.js';
-import { getRandomTextLine, getRumor } from './mklev.js';
+import { getRndLine, getRumor } from './rumors.js';
 import { monsterName } from './do_name.js';
 import { makemonAt } from './makemon.js';
 import { unlinkObject, splitObjectStack } from './mkobj.js';
@@ -232,7 +232,7 @@ export function make_grave(x: number, y: number, text: string | null): void {
     const trapped = game.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
     if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapped) return;
     if (!setLevelTerrainType(x, y, GRAVE)) return;
-    const epitaph = text ?? getRandomTextLine(RANDOM_EPITAPHS);
+    const epitaph = text ?? getRndLine(RANDOM_EPITAPHS, MD_PAD_RUMORS, rn2);
     make_engr_at(x, y, epitaph, null, 0, HEADSTONE);
 }
 
@@ -277,8 +277,8 @@ export function wipeoutText(text: string, count: number, seed = 0): string {
 // C engrave.c:random_engraving().
 export function randomEngraving(): { pristine: string; text: string } {
     let pristine;
-    if (!rn2(4)) pristine = getRandomTextLine(RANDOM_ENGRAVINGS);
-    else pristine = getRumor(true) || getRandomTextLine(RANDOM_ENGRAVINGS);
+    if (!rn2(4)) pristine = getRndLine(RANDOM_ENGRAVINGS, MD_PAD_RUMORS, rn2);
+    else pristine = getRumor(true) || getRndLine(RANDOM_ENGRAVINGS, MD_PAD_RUMORS, rn2);
     return {
         pristine,
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),

@@ -37,7 +37,9 @@ import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, 
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
-import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE } from './random_text_data.js';
+import { getRndLine } from './rumors.js';
+import { BOGUS_MONSTERS } from './random_text_data.js';
+import { MD_PAD_BOGONS } from './const.js';
 import { recordObjectEncounter, objectTypeColor } from './o_init.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasWornProperty, propertyIsActive, refreshProperty } from './properties.js';
 import type { GameState } from './game_state.js';
@@ -93,8 +95,8 @@ interface MimicAppearance {
     mcorpsenm?: number;
 }
 interface MonsterProjection { wormTail: boolean; showAppearance: boolean; detected: boolean }
-export interface MonsterIdentity { name: string; personal: boolean }
 interface RedrawOptions { beforeGlow?: (() => void | Promise<void>) | null }
+export interface MonsterIdentity { name: string; personal: boolean }
 
 // C drawing.c:def_r_oc_syms.  Rogue deliberately resembles the older game:
 // armor uses ']', amulets ',', food ':', and coins share gems' '*'.
@@ -2357,40 +2359,26 @@ export async function curs_on_u(): Promise<void> {
     await flush_screen(1);
 }
 
-// C rumors.c:get_rnd_line(..., MD_PAD_BOGONS).  The random offset lands in a
-// padded data-file line; the following line is the selected name.  Long lines
-// retry unless the offset falls within their final 20 characters.
-// Also C do_name.c:bogon_is_pname(): inlined here as the personal-name
-// test on the selected bogus-name prefix.
+// C do_name.c:bogusmon(). The random line selection is C rumors.c:
+// get_rnd_line() (getRndLine in rumors.ts) with MD_PAD_BOGONS padding and
+// the display RNG; a leading code character is then stripped and reported,
+// and C do_name.c:bogon_is_pname() (inlined) decides the personal-name
+// flag. Lives here rather than do_name.ts because rumors.ts imports
+// do_name.ts for mon_nam(); C's do_name.c and rumors.c call each other
+// the same way.
 export function randomBogusMonsterIdentity(): MonsterIdentity {
-    let landed = 0;
-    for (let tries = 0; tries < 10; tries++) {
-        const offset = rn2Display(BOGUS_MONSTER_FILE_SIZE);
-        let start = 0;
-        for (let index = 0; index < BOGUS_MONSTERS.length; index++) {
-            const width = Math.max(19, (BOGUS_MONSTERS[index] ?? '').length) + 1;
-            if (offset < start + width) {
-                landed = index;
-                const remaining = start + width - offset;
-                if (remaining <= 21) tries = 10;
-                break;
-            }
-            start += width;
-        }
-        if (tries === 10) break;
-    }
-    const selected = BOGUS_MONSTERS[(landed + 1) % BOGUS_MONSTERS.length]
-        || 'bogon';
+    const selected = getRndLine(BOGUS_MONSTERS, MD_PAD_BOGONS, rn2Display) || 'bogon';
     const first = selected.charAt(0);
     const code = '-_+|='.includes(first) ? first : '';
     return {
         name: code ? selected.slice(1) : selected,
-        // C bogon_is_pname(): '-', '+', and '=' suppress ARTICLE_THE.
-        // Empty strings are considered substrings in JavaScript, so retain
-        // the source's explicit "has a control prefix" gate.
+        // bogon_is_pname(): '-', '+', and '=' suppress ARTICLE_THE. Empty
+        // strings are considered substrings in JavaScript, so retain the
+        // source's explicit "has a control prefix" gate.
         personal: !!code && '-+='.includes(code),
     };
 }
+
 
 let lastSwallowedX = 0;
 let lastSwallowedY = 0;

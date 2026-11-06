@@ -13,7 +13,7 @@ import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm, hero
 import { heroTeetersAtPit, heroEscapedShaft } from './trap.js';
 import { MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
-import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, } from './const.js';
+import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS, } from './const.js';
 import { rn2, rnd } from './rng.js';
 import { newsym } from './display.js';
 import { surfaceName, ceilingName } from './dungeon.js';
@@ -39,7 +39,7 @@ import { holdAnotherObject } from './invent.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, } from './objnam.js';
 import { addExperience } from './exper.js';
 import { altarWrath } from './pray.js';
-import { getRandomTextLine, getRumor } from './mklev.js';
+import { getRndLine, getRumor } from './rumors.js';
 import { monsterName } from './do_name.js';
 import { makemonAt } from './makemon.js';
 import { unlinkObject, splitObjectStack } from './mkobj.js';
@@ -168,7 +168,7 @@ export function make_grave(x, y, text) {
         return;
     if (!setLevelTerrainType(x, y, GRAVE))
         return;
-    const epitaph = text ?? getRandomTextLine(RANDOM_EPITAPHS);
+    const epitaph = text ?? getRndLine(RANDOM_EPITAPHS, MD_PAD_RUMORS, rn2);
     make_engr_at(x, y, epitaph, null, 0, HEADSTONE);
 }
 // C engrave.c:wipeout_text()
@@ -216,9 +216,9 @@ export function wipeoutText(text, count, seed = 0) {
 export function randomEngraving() {
     let pristine;
     if (!rn2(4))
-        pristine = getRandomTextLine(RANDOM_ENGRAVINGS);
+        pristine = getRndLine(RANDOM_ENGRAVINGS, MD_PAD_RUMORS, rn2);
     else
-        pristine = getRumor(true) || getRandomTextLine(RANDOM_ENGRAVINGS);
+        pristine = getRumor(true) || getRndLine(RANDOM_ENGRAVINGS, MD_PAD_RUMORS, rn2);
     return {
         pristine,
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
