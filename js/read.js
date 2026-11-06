@@ -1773,7 +1773,8 @@ function canBeHit(monster) {
     return !monsterIsAmorphous(monster) && !monsterIsNoncorporeal(monster)
         && !monsterIsUnsolid(monster) && !monsterPassesWalls(monster.mnum);
 }
-// Part of C read.c:seffect_earth(): the falling rock/boulder creation.
+// Part of C read.c:drop_boulder_on_player(), drop_boulder_on_monster(): the
+// falling rock/boulder creation.
 async function fallingRock(confused) {
     const object = await mksobj(confused ? ROCK : BOULDER, false, false);
     object.quan = confused ? rn1(5, 2) : 1;
@@ -1788,12 +1789,13 @@ async function fallingRockName(object, state) {
     observeObjectForNaming(object, { state });
     return await inventoryItemDescription(object);
 }
-// Part of C read.c:seffect_earth(): landing the object on the floor.
+// Part of C read.c:drop_boulder_on_player(), drop_boulder_on_monster():
+// landing the object on the floor.
 async function landFallingRock(object, x, y, state) {
     await landFloorObject(object, x, y, { state, verb: 'fall' });
     await newsym(x, y);
 }
-// Part of C read.c:seffect_earth(): the You_hear result lines.
+// Part of C read.c:drop_boulder_on_monster(): the You_hear result lines.
 async function hear(message, state) {
     const heard = formatHeardMessage(message, state);
     if (heard)

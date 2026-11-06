@@ -1358,6 +1358,7 @@ drop_boulder_on_player	losehp
 drop_boulder_on_player	newsym
 drop_boulder_on_player	rn2
 drop_boulder_on_player	wake_nearto
+drop_boulder_on_player	weight
 drop_throw	ship_object
 drop_throw	should_mulch_missile
 drop_to	stairway_at
@@ -3867,7 +3868,6 @@ seffect_destroy_armor	getobj
 seffect_destroy_armor	make_stunned
 seffect_destroy_armor	rn2
 seffect_destroy_armor	strange_feeling
-seffect_earth	closed_door
 seffect_earth	drop_boulder_on_monster
 seffect_earth	drop_boulder_on_player
 seffect_earth	isok
