@@ -342,35 +342,6 @@ function serializeDisclosureSlots(slots) {
     }
     return parts.length ? parts.join(' ') : undefined;
 }
-// C options.c:parseoptions()'s match loop: option names in table order at
-// their minimum length, then aliases at full length.  Returns null when no
-// entry matches, which parseoptions() reports as "Unknown option".
-function matchOptionElement(element) {
-    const nameLength = lengthWithoutValue(element);
-    for (const entry of OPTION_ENTRIES) {
-        if (entry.pfx) {
-            // str_start_is() on the whole element; a hit wins immediately.
-            if (entry.name.length <= element.length
-                && asciiNameEqual(entry.name, element, entry.name.length)) {
-                return { ...entry, viaAlias: false };
-            }
-        }
-        // match_optname() at the entry's minimum length also serves the
-        // prefix entries, so "cond" reaches pfxfn_cond_ like "cond_x".
-        if (nameLength >= entry.minmatch
-            && asciiNameEqual(entry.name, element, nameLength)) {
-            return { ...entry, viaAlias: false };
-        }
-    }
-    for (const entry of OPTION_ENTRIES) {
-        const { alias } = entry;
-        if (alias !== null && nameLength === alias.length
-            && asciiNameEqual(alias, element, nameLength)) {
-            return { ...entry, viaAlias: true };
-        }
-    }
-    return null;
-}
 // options.c:default_menu_cmd_info[] — the menu_* names that bind a key to
 // a menu paging command rather than configuring a compound option.
 export const MENU_KEY_OPTIONS = {
@@ -758,11 +729,40 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
             negated = !negated;
         }
         // parseoptions() matches each element against the option table
-        // before any handler runs; an element matching nothing is an
-        // unknown option, apart from the S_name:c symbol forms that
-        // parsesymbols() accepts (the symbol tables are not ported, so
-        // they are accepted without validation).
-        const optionMatch = matchOptionElement(stripped);
+        // before any handler runs: option names in table order at their
+        // minimum length (str_start_is() for the prefix entries, where a
+        // hit wins immediately, and match_optname() at the entry's minimum
+        // length, which also serves the prefix entries so "cond" reaches
+        // pfxfn_cond_ like "cond_x"), then aliases at full length. An
+        // element matching nothing is an unknown option, apart from the
+        // S_name:c symbol forms that parsesymbols() accepts (the symbol
+        // tables are not ported, so they are accepted without validation).
+        const nameLength = lengthWithoutValue(stripped);
+        let optionMatch = null;
+        for (const entry of OPTION_ENTRIES) {
+            if (entry.pfx) {
+                if (entry.name.length <= stripped.length
+                    && asciiNameEqual(entry.name, stripped, entry.name.length)) {
+                    optionMatch = { ...entry, viaAlias: false };
+                    break;
+                }
+            }
+            if (nameLength >= entry.minmatch
+                && asciiNameEqual(entry.name, stripped, nameLength)) {
+                optionMatch = { ...entry, viaAlias: false };
+                break;
+            }
+        }
+        if (!optionMatch) {
+            for (const entry of OPTION_ENTRIES) {
+                const { alias } = entry;
+                if (alias !== null && nameLength === alias.length
+                    && asciiNameEqual(alias, stripped, nameLength)) {
+                    optionMatch = { ...entry, viaAlias: true };
+                    break;
+                }
+            }
+        }
         if (!optionMatch) {
             if (!stripped.startsWith('S_'))
                 addError(`Unknown option '${stripped}'`);
@@ -2910,9 +2910,10 @@ async function editSortLoot() {
     if (isLootSortMode(mode))
         game.flags.sortloot = mode;
 }
-// C options.c:optfn_fruit(): the goodfruit normalization — mungspaces, the
-// PL_FSIZ copy (nmcpy), sanitize_name (sanitizeName in bones_name.ts), and
-// the "slime mold" fallback.
+// Part of C options.c:optfn_fruit(): the goodfruit normalization — mungspaces,
+// the PL_FSIZ copy (nmcpy), sanitize_name (sanitizeName in bones_name.ts), and
+// the "slime mold" fallback — shared with the config-parse and initoptions
+// paths; changePreferredFruit() below is the optfn_fruit() port.
 export function normalizePreferredFruitName(name, state = game) {
     const firstLine = String(name).split('\n', 1)[0] ?? '';
     const spaced = firstLine.replace(/\t/g, ' ')
@@ -2921,9 +2922,9 @@ export function normalizePreferredFruitName(name, state = game) {
     // before sanitize_name() runs.
     return sanitizeFruitCopy(spaced.split(',', 1)[0] ?? '', state.iflags) || 'slime mold';
 }
-// C options.c:optfn_fruit(). Runtime option changes can rename an unused
-// current entry. Once an object or mimic represents it, its existing identity
-// remains part of the history.
+// C options.c:optfn_fruit(): the do_set path outside opt_initial. Runtime
+// option changes can rename an unused current entry. Once an object or mimic
+// represents it, its existing identity remains part of the history.
 export function changePreferredFruit(name, state = game) {
     const value = (String(name).split('\n', 1)[0] ?? '').replace(/\t/g, ' ')
         .replace(/ +/g, ' ').replace(/^ | $/g, '');
