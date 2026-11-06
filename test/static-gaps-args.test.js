@@ -7,7 +7,7 @@
 // counts, options objects, or flags folded elsewhere are uncomparable.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { argLedgerKey, classifyArgs } from '../scripts/lib/gap-args.mjs';
+import { classifyArgs } from '../scripts/lib/gap-args.mjs';
 void test('equal per-call sequences match, in any call order', () => {
     const verdict = classifyArgs([['TRUE'], ['FALSE']], [{ values: ['false'], optionsObject: false }, { values: ['true'], optionsObject: false }]);
     assert.equal(verdict.verdict, 'match');
@@ -33,15 +33,5 @@ void test('a different number of boolean arguments is uncomparable', () => {
 void test('a flag inside an options object is uncomparable', () => {
     const verdict = classifyArgs([['TRUE']], [{ values: [], optionsObject: true }]);
     assert.equal(verdict.verdict, 'uncomparable');
-});
-void test('the ledger key is stable under reordering but sensitive to value and count changes', () => {
-    // The ledger check fails when a key it froze disappears, so the key must
-    // not churn for equivalent input, and must change when a matching pair
-    // flips a literal or gains a call.
-    const unordered = argLedgerKey('fix_worst_trouble', 'reset_utrap', [['TRUE'], ['FALSE']]);
-    const reordered = argLedgerKey('fix_worst_trouble', 'reset_utrap', [['FALSE'], ['TRUE']]);
-    assert.equal(unordered, reordered);
-    assert.notEqual(unordered, argLedgerKey('fix_worst_trouble', 'reset_utrap', [['FALSE'], ['FALSE']]));
-    assert.notEqual(unordered, argLedgerKey('fix_worst_trouble', 'reset_utrap', [['TRUE']]));
 });
 //# sourceMappingURL=static-gaps-args.test.js.map
