@@ -242,25 +242,29 @@ async function triggerFountainTrap(monster: Monster) {
     return { heroDied: !!state.program_state.gameover };
 }
 
-// C fountain.c:dowaternymph().
-async function summonFountainNymph() {
+// C fountain.c:dowaternymph(). The naming lines run only for a sighted
+// hero, so a blind hero never draws the nymph's (hallucinated) name.
+export async function summonFountainNymph() {
     if (fountainActorGone(PM_WATER_NYMPH)) {
-        await announceFountainHeard('A large bubble rises to the surface and pops.', 'a loud pop.');
+        await announceFountainPop();
         return;
     }
     const nymph = await makemonNear(PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG);
     if (!nymph) {
-        await announceFountainHeard('A large bubble rises to the surface and pops.', 'a loud pop.');
+        await announceFountainPop();
         return;
     }
     await newsym(nymph.mx, nymph.my);
-    await announceFountainHeard(`You attract ${fountainActorIndefiniteName(nymph)}!`, 'a seductive voice.');
+    if (!heroIsBlind())
+        await plineWithContinuation(`You attract ${fountainActorIndefiniteName(nymph)}!`);
+    else
+        await announceFountainHeard('a seductive voice.');
     nymph.msleeping = 0;
     if (fountainTrapAt(nymph)) await triggerFountainTrap(nymph);
 }
 
 // C fountain.c:dowaterdemon().
-async function summonFountainDemon() {
+export async function summonFountainDemon() {
     if (fountainActorGone(PM_WATER_DEMON)) {
         await plineWithContinuation(FURIOUS_BUBBLING_MESSAGE);
         return;
@@ -283,7 +287,7 @@ async function summonFountainDemon() {
 }
 
 // C fountain.c:dowatersnakes().
-async function summonFountainSnakes() {
+export async function summonFountainSnakes() {
     // rn1(5, 2) is paid before the G_GONE check, as in C.  dowatersnakes()
     // owns the first ordinary pline; only a later dryup line enters the
     // branch-scoped continuation path.
@@ -292,9 +296,12 @@ async function summonFountainSnakes() {
         await pline(FURIOUS_BUBBLING_MESSAGE);
         return;
     }
-    const stream = heroIsHallucinating()
-        ? makePlural(randomDisplayMonsterName()) : 'snakes';
-    await announceSnakeStream(stream);
+    if (!heroIsBlind())
+        await pline(`An endless stream of ${
+            heroIsHallucinating() ? makePlural(randomDisplayMonsterName()) : 'snakes'
+        } pours forth!`);
+    else
+        await announceFountainHeard('something hissing!', pline);
     for (let index = 0; index < requested; index++) {
         const snake = await makemonNear(PM_WATER_MOCCASIN, game.u.ux, game.u.uy, MM_NOMSG);
         if (!snake) continue;
@@ -700,17 +707,19 @@ export async function applyFountainGemDiscovery({
 const FURIOUS_BUBBLING_MESSAGE
     = 'The fountain bubbles furiously for a moment, then calms.';
 
-// A blind hero hears the actor only when You_hear() itself would speak; the
-// sighted line always publishes.
-async function announceFountainHeard(sighted: string, heard: string): Promise<void> {
-    const message = heroIsBlind() ? formatHeardMessage(heard) : sighted;
-    if (message) await plineWithContinuation(message);
+// A blind hero hears the actor only when You_hear() itself would speak.
+// dowatersnakes() passes the ordinary pline; the other actors continue.
+async function announceFountainHeard(heard: string, publish: MessagePublisher = plineWithContinuation): Promise<void> {
+    const message = formatHeardMessage(heard);
+    if (message) await publish(message);
 }
 
-// dowatersnakes() publishes through the ordinary pline.
-async function announceSnakeStream(stream: string): Promise<void> {
-    const message = heroIsBlind() ? formatHeardMessage('something hissing!') : `An endless stream of ${stream} pours forth!`;
-    if (message) await pline(message);
+// The failed-summon fallback pop: C fountain.c:108-115.
+async function announceFountainPop(): Promise<void> {
+    if (!heroIsBlind())
+        await plineWithContinuation('A large bubble rises to the surface and pops.');
+    else
+        await announceFountainHeard('a loud pop.');
 }
 
 // ---------------------------------------------------------------------------
