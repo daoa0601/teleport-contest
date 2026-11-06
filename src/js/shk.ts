@@ -104,6 +104,7 @@ import { monsterAtPosition } from './steed.js';
 import { deleteTrap, trapAt, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
+import { isQuantumBox } from './quantum_cat.js';
 import { bookDisappears } from './spell.js';
 import {
     checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex,
@@ -1009,7 +1010,7 @@ async function addOneToBill(object: GameObject, resident: BilledShopkeeper,
 // Schroedinger box keeps its mystery and its contents unbilled.
 async function billBoxContent(container: GameObject, resident: BilledShopkeeper,
     publish: MessagePublisher, state: GameState): Promise<void> {
-    if (isSchroedingersBox(container)) return;
+    if (isQuantumBox(container)) return;
     for (const content of container.contents || []) {
         if (content.oclass === COIN_CLASS) continue;
         if (!content.no_charge) await addOneToBill(content, resident, publish, state);
@@ -1017,11 +1018,6 @@ async function billBoxContent(container: GameObject, resident: BilledShopkeeper,
             await billBoxContent(content, resident, publish, state);
         }
     }
-}
-
-// C obj.h:SchroedingersBox(): only a large box can hold the cat.
-function isSchroedingersBox(object: GameObject): boolean {
-    return object.otyp === LARGE_BOX && object.spe === 1;
 }
 
 // C shk.c:566 costly_adjacent(): a shop wall spot (edge flag, door

@@ -179,6 +179,7 @@ import { BAG_OF_HOLDING } from './object_data.js';
 import { enexto } from './teleport.js';
 import { markQuestLeaderAlive } from './quest.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement } from './read.js';
+import { isQuantumBox } from './quantum_cat.js';
 import { monsterIsEel } from './mondata.js';
 import { requireInitializedHero } from './hero_types.js';
 const NODIR = 1, IMMEDIATE = 2;
@@ -870,18 +871,12 @@ export function probeObjectChain(inventory, { state = game } = {}) {
         observeObject(object, state);
         if (isContainer(object) || object.otyp === STATUE) {
             object.lknown = true;
-            if (!schroedingersBox(object))
+            if (!isQuantumBox(object))
                 object.cknown = true;
         }
         else if (object.otyp === TIN)
             object.known = true;
     }
-}
-// C obj.h:SchroedingersBox()
-// Probing reveals object descriptions and immediate container contents.
-// C refs: zap.c probe_objchain, probe_monster, and the WAN_PROBING branch of bhito.
-function schroedingersBox(object) {
-    return object.otyp === LARGE_BOX && object.spe === 1;
 }
 // C zap.c:probe_monster().
 export async function probeMonster(monster, { state = game, onHead = true, x = monster.mx, y = monster.my, publish = plineWithContinuation, } = {}) {
@@ -2210,7 +2205,7 @@ export async function probeObject(object, { state = game } = {}) {
         }
         if (!object.contents?.length)
             await plineWithContinuation(`${definiteObjectAction(object, 'are', state)} empty.`);
-        else if (schroedingersBox(object)) {
+        else if (isQuantumBox(object)) {
             const cat = heroIsHallucinating(state) ? randomDisplayMonsterName() : 'cat';
             await plineWithContinuation(`You aren't sure whether ${name} has ${withIndefiniteArticle(cat)} or its corpse inside.`);
             object.cknown = false;

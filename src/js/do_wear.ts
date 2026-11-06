@@ -42,7 +42,7 @@ import {
     P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL,
     SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC,
 } from './const.js';
-import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,  isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
+import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,  isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
 
 import type { GameState } from './game_state.js';
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part } from './polyself.js';
@@ -1715,13 +1715,6 @@ function objectEnchantment(object: ArmorBonusSource | null | undefined): number 
     if (object && Number.isInteger(object.spe) && object.spe !== undefined) return object.spe;
     if (object && Number.isInteger(object.enchantment) && object.enchantment !== undefined) return object.enchantment;
     return 0;
-}
-
-// C obj.h:greatest_erosion().
-function greatestErosion(object: ArmorBonusSource) {
-    return Math.max(0,
-        object?.oeroded || 0,
-        object?.oeroded2 || 0);
 }
 
 // C hack.h:ARM_BONUS().
