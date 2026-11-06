@@ -1995,8 +1995,8 @@ src/js/pray.ts	altarWrath	rn2	"[""4""]"	constant
 src/js/pray.ts	altarWrath	rn2	"[""luck + 6""]"	guarded
 src/js/pray.ts	finishPrayerOccupation	rnd	"[""20""]"	constant
 src/js/pray.ts	finishPrayerOccupation	rnl	"[""state.u.ualign.record""]"	guarded
-src/js/pray.ts	pleaseGod	rn1	"[""Math.max(luck(), -1) + (altar ? 3 + Number(!!(altar.flags & AM_SHRINE)) : 2)"", ""1""]"	constant
-src/js/pray.ts	pleaseGod	rn2	"[""(luck() + 6) >> 1""]"	unproved
+src/js/pray.ts	pleaseGod	rn1	"[""Math.max(Luck(game.u), -1) + (altar ? 3 + Number(!!(altar.flags & AM_SHRINE)) : 2)"", ""1""]"	constant
+src/js/pray.ts	pleaseGod	rn2	"[""(Luck(game.u) + 6) >> 1""]"	unproved
 src/js/pray.ts	pleaseGod	rnl	"[""2""]"	constant
 src/js/pray.ts	pleaseGod	rnz	"[""1000""]"	constant
 src/js/pray.ts	pleaseGod	rnz	"[""350""]"	constant
