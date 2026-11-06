@@ -97,13 +97,13 @@ import type { GameMap } from './game.js';
 import { ingSuffix, upstart } from './hacklib.js';
 
 import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
-import { leaveMovementCloud, updateHeroRegions, visibleRegionAt } from './region.js';
+import { updateHeroRegions, visibleRegionAt } from './region.js';
 import { requireShopGame } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
 
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 
-import { makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
+import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 

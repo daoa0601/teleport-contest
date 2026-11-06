@@ -126,7 +126,7 @@ import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap,
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween } from './worm.js';
 
 import { moveVaultGuard } from './vault.js';
-import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './region.js';
+import { createPoisonGasCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './region.js';
 
 import { demandDemonBribe } from './minion.js';
 import { setMonsterMalign } from './makemon.js';
@@ -972,6 +972,20 @@ export async function heroEveryturnEffect(
 ) {
     if ((state.u?.mtimedone ?? 0) <= 0 || state.u?.umonnum !== PM_FOG_CLOUD) return null;
     return await createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
+}
+
+const PM_STEAM_VORTEX = 110;
+const PM_HEZROU = 296;
+
+// C monmove.c:m_postmove_effect(), shared by monsters and the polymorphed
+// hero: the cloud is left on the square the mover has just departed.
+export async function leaveMovementCloud(
+    state: GameState, species: number, cancelled: boolean, x: number, y: number,
+    random = rn2,
+): Promise<void> {
+    if (species === PM_HEZROU) await createPoisonGasCloud(state, x, y, 1, 8, random);
+    else if (species === PM_STEAM_VORTEX && !cancelled)
+        await createPoisonGasCloud(state, x, y, 1, 0, random);
 }
 
 // C ref: monmove.c:m_avoid_kicked_loc().  dokick() retains its directed

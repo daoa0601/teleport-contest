@@ -222,17 +222,6 @@ export async function createSteamCloud(
     return await createPoisonGasCloud(state, x, y, cloudSize, 0, random);
 }
 
-// C monmove.c:m_postmove_effect(), shared by monsters and the polymorphed
-// hero: the cloud is left on the square the mover has just departed.
-export async function leaveMovementCloud(
-    state: GameState, species: number, cancelled: boolean, x: number, y: number,
-    random = rn2,
-): Promise<void> {
-    if (species === PM_HEZROU) await createPoisonGasCloud(state, x, y, 1, 8, random);
-    else if (species === PM_STEAM_VORTEX && !cancelled)
-        await createPoisonGasCloud(state, x, y, 1, 0, random);
-}
-
 export async function createPoisonGasCloud(
     state: GameState | null | undefined,
     x: number, y: number, cloudSize: number, damage: number,
