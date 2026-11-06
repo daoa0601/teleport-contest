@@ -39,6 +39,7 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { mungSpaces } from './hacklib.js';
 import { sanitizeName } from './bones_name.js';
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
@@ -1630,26 +1631,6 @@ function configurationOptions(bytes) {
         start = index + 1;
     }
     return options.reverse();
-}
-// C hacklib.c:mungspaces(): tabs become spaces, runs of spaces collapse to
-// one, and leading/trailing spaces vanish. The statement parser in
-// cfgfiles.ts and the interactive autopickup-exception reader share it;
-// line framing already trimmed the statement, so an all-space result
-// cannot reach the statement path.
-export function mungSpaces(bytes) {
-    const out = [];
-    let pendingSpace = false;
-    for (const byte of bytes) {
-        if (byte === 32 || byte === 9) {
-            pendingSpace = out.length > 0;
-            continue;
-        }
-        if (pendingSpace && out.length)
-            out.push(32);
-        pendingSpace = false;
-        out.push(byte);
-    }
-    return new Uint8Array(out);
 }
 function trimConfigurationOption(bytes) {
     // C parseoptions() uses isspace() on individual bytes before parsing.
