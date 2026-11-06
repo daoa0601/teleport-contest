@@ -1235,7 +1235,8 @@ const MS_HUMANOID = 25;
 // C include/mextra.h.
 export const REPAIR_DELAY = 5;
 const ANGRY_TEXTS = ['quite upset', 'ticked off', 'furious'];
-// C rm.h:m_at(): the monster at a square.
+// Part of C rm.h:m_at(): the monster at a square (steed.ts
+// monsterAtPosition() resolves the occupant).
 function monsterAt(state, x, y) {
     return monsterAtPosition(state.level, x, y);
 }

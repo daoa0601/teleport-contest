@@ -2801,7 +2801,8 @@ function floorHasObject(otyp, x, y, state) {
     // C sobj_at(): any matching object in the pile, not just the drawn top.
     return (state.level?.objects?.[x]?.[y] || []).some((object) => object.otyp === otyp);
 }
-// C rm.h:m_at()
+// Part of C rm.h:m_at(): the polearm targeting read, guarding a level that
+// may not exist yet (steed.ts monsterAtPosition() resolves the occupant).
 function monsterAt(x, y, state) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }

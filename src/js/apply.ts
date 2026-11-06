@@ -2850,7 +2850,8 @@ function floorHasObject(otyp: number, x: number, y: number, state: GameState) {
     return (state.level?.objects?.[x]?.[y] || []).some((object) => object.otyp === otyp);
 }
 
-// C rm.h:m_at()
+// Part of C rm.h:m_at(): the polearm targeting read, guarding a level that
+// may not exist yet (steed.ts monsterAtPosition() resolves the occupant).
 function monsterAt(x: number, y: number, state: GameState) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
