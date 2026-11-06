@@ -429,7 +429,8 @@ export function hasIntrinsicProperty(
         ? Object.keys(intrinsic).length > 0 : !!intrinsic[origin];
 }
 
-// C prop.h:INTRINSIC(): permanent intrinsic origins.
+// Part of C prop.h:INTRINSIC(): the property-record form of the mask test
+// (const.ts INTRINSIC is the mask constant).
 // C INTRINSIC excludes abilities supplied only by the current monster form.
 export function hasPermanentIntrinsicProperty(property: PropertyName, state: PropertyState = game) {
     const intrinsic = existingPropertyRecord(property, state)?.intrinsic || {};
