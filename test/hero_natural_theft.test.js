@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { NO_MINVENT, W_ARM, W_ARMG, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroNaturalTheft } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import { setHeroSpecies } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
 import { nameToMonster } from '../js/mondata.js';
@@ -41,7 +41,7 @@ void test('gold theft merges an entire purse even with all lettered inventory sl
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const gold = await knownObject(GOLD_PIECE, { quan: 73 });
     await addObjectToMonsterInventory(monster, gold);
-    const result = await applyHeroNaturalTheft(monster, context);
+    const result = await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
     assert.equal(purse.quan, 83);
     assert.equal(monster.minvent.length, 0);
     assert.equal(result.damage, 0);
@@ -54,7 +54,7 @@ void test('gold theft drops the purse when no stack or lettered inventory slot i
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const gold = await knownObject(GOLD_PIECE, { quan: 73 });
     await addObjectToMonsterInventory(monster, gold);
-    await applyHeroNaturalTheft(monster, context);
+    await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
     assert.ok(floorObjectsAt(level, game.u.ux, game.u.uy).includes(gold));
     assert.equal(gold.quan, 73);
     assert.equal(monster.minvent.length, 0);
@@ -68,7 +68,7 @@ void test('item theft takes one possession and leaves gold with an unarmored vic
     const gold = await knownObject(GOLD_PIECE, { quan: 30 });
     for (const object of [apple, dagger, gold])
         await addObjectToMonsterInventory(monster, object);
-    await applyHeroNaturalTheft(monster, context);
+    await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
     assert.ok(game.inventory.includes(dagger));
     assert.ok(monster.minvent.includes(apple));
     assert.ok(monster.minvent.includes(gold));
@@ -85,7 +85,7 @@ for (const damageType of seductionDamageTypes) {
         await addObjectToMonsterInventory(monster, apple);
         const suit = await equipMonsterObject(monster, await knownObject(LEATHER_ARMOR), W_ARM);
         await addObjectToMonsterInventory(monster, gold);
-        await applyHeroNaturalTheft(monster, context);
+        await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
         assert.ok(game.inventory.includes(apple));
         assert.ok(game.inventory.includes(suit));
         assert.deepEqual(monster.minvent, [gold]);
@@ -103,7 +103,7 @@ void test('a nymph charms a victim of the same gender into giving up possessions
     monster.female = true;
     await equipMonsterObject(monster, await knownObject(LEATHER_ARMOR), W_ARM);
     await addObjectToMonsterInventory(monster, await knownObject(GOLD_PIECE));
-    await applyHeroNaturalTheft(monster, context);
+    await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
     assert.ok(messages.includes('You charm the soldier.  She gladly hands over most of her possessions.'));
 });
 for (const immobile of [false, true]) {
@@ -115,7 +115,7 @@ for (const immobile of [false, true]) {
         const suit = await equipMonsterObject(monster, await knownObject(LEATHER_ARMOR), W_ARM);
         const apple = await knownObject(APPLE);
         await addObjectToMonsterInventory(monster, apple);
-        await applyHeroNaturalTheft(monster, context);
+        await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
         assert.ok(game.inventory.includes(apple));
         assert.ok(monster.minvent.includes(suit));
         assert.equal(suit.owornmask, W_ARM);
@@ -126,7 +126,7 @@ void test('theft removes a cursed wielded weapon without leaving a monster owner
     const { context } = await theftRoom('monkey', AD_SITM);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const dagger = await equipMonsterObject(monster, await knownObject(DAGGER, { cursed: true }), W_WEP);
-    await applyHeroNaturalTheft(monster, context);
+    await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
     assert.ok(game.inventory.includes(dagger));
     assert.equal(monster.mw, null);
     assert.equal(dagger.where, 'inventory');
@@ -141,7 +141,7 @@ void test('an overloaded theft drops the object before continuing to an item the
     const boulder = await knownObject(BOULDER);
     await addObjectToMonsterInventory(monster, apple);
     await addObjectToMonsterInventory(monster, boulder);
-    await applyHeroNaturalTheft(monster, context);
+    await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
     assert.ok(floorObjectsAt(level, game.u.ux, game.u.uy).includes(boulder));
     assert.ok(game.inventory.includes(apple));
     assert.equal(monster.minvent.length, 0);
@@ -155,7 +155,7 @@ void test('stealing gloves petrifies a corpse-wielding victim and preserves thei
     const gloves = await equipMonsterObject(monster, await knownObject(LEATHER_GLOVES), W_ARMG);
     const gold = await knownObject(GOLD_PIECE, { quan: 39 });
     await addObjectToMonsterInventory(monster, gold);
-    const result = await applyHeroNaturalTheft(monster, context);
+    const result = await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
     assert.equal(result.damage, 0);
     assert.equal(monster.dead, true);
     assert.ok(game.inventory.includes(gloves));
@@ -179,7 +179,7 @@ void test('touching a stolen petrifying corpse stops seduction even when life sa
         expected: /life saving|But wait|medallion|feel much better|crumbles|back to life/,
         limit: 10,
     });
-    const result = await applyHeroNaturalTheft(monster, context);
+    const result = await mhitm_adtyping({ adtyp: context.attack[1], magr: 'youmonst', defender: monster, context });
     assert.equal(result.heroDied, false);
     assert.equal(amulet.where, 'gone');
     assert.equal(game.u.umortality, 1);

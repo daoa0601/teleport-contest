@@ -73,10 +73,8 @@ import { getmattk } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { trapAt, mintrap, damageObjectWithAcid, erodeObject } from './trap.js';
 import {
-    applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect,
-    applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli,
-    mhitmAdEnch, mhitmAdLegs, mhitmAdStun, passiveAttack, passiveDamage, petrifyMonsterDefender,
-    poisonMonsterFromAttack, rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback, applyMonsterCombatEffect,
+    applyMonsterCombatBlindness, mhitm_adtyping, passiveAttack, passiveDamage,
+    rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback,
     effectResult, erodeArmor,
 } from './uhitm.js';
 import { mon_reflects } from './muse.js';
@@ -1147,7 +1145,7 @@ export async function resolveMonsterCombatDamage(
         return result(effectResult(0, stone.survived ? M_ATTK_HIT : M_ATTK_AGR_DIED));
     }
 
-    const effect = await applyMonsterCombatEffect(attacker, defender, context);
+    const effect = await mhitm_adtyping({ adtyp: attack[1], attacker, defender, context });
     if (effect.heroDied) return result(effect);
     // Even an effect that set done or zero damage reaches native knockback.
     const knockback = await mhitm_knockback(attacker, defender,

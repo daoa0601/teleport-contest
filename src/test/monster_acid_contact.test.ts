@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_ACID, AT_TUCH } from '../js/monster_attack_types.js';
-import { resolveMonsterContactEffect } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import type { HeroContactAttack } from '../js/monster_action_types.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -20,9 +20,10 @@ for (const situation of ['burns', 'resisted', 'cancelled', 'no splash'] as const
         const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_TUCH,
             damageType: AD_ACID, hit: true, damage: 6 };
 
-        await resolveMonsterContactEffect(jelly, attack, { state: game,
+        await mhitm_adtyping({ adtyp: AD_ACID, mdef: 'youmonst', context: {
+            state: game, attacker: jelly, attack,
             publish: async message => { messages.push(message); },
-            random: () => situation === 'no splash' ? 1 : 0 });
+            random: () => situation === 'no splash' ? 1 : 0 } });
 
         assert.equal(attack.damage, situation === 'burns' ? 6 : 0);
         if (situation === 'burns') assert.match(messages.join('\n'), /covered in acid!  It burns!/);

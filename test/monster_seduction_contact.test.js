@@ -5,7 +5,7 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
-import { resolveMonsterContactEffect } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import { monsterName } from '../js/do_name.js';
 import { GAUNTLETS_OF_POWER, LEATHER_ARMOR, LEATHER_GLOVES, OBJECT_NAMES } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
@@ -45,8 +45,10 @@ for (const { description, callName, personalName, expected } of [
             damageType: AD_SSEX, hit: true, damage: 0 };
         const input = resetInputState();
         const promptName = expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        await answerPrompts(resolveMonsterContactEffect(incubus, attack, { state: game,
-            publish: async () => { }, random: () => 0 }), input, [
+        await answerPrompts(mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+                state: game, attacker: incubus, attack,
+                publish: async () => { }, random: () => 0
+            } }), input, [
             { prompt: new RegExp(`"That ${promptName} looks pretty`), keys: 'n' },
             { prompt: /Shall I remove your suit, lover/, keys: 'n' },
         ]);
@@ -72,8 +74,10 @@ for (const blind of [false, true]) {
         const attack = { kind: 'hero-attack', attackType: AT_BITE,
             damageType: AD_SSEX, hit: true, damage: 0 };
         const input = resetInputState();
-        await answerPrompts(resolveMonsterContactEffect(incubus, attack, { state: game,
-            publish: async () => { }, random: () => 0 }), input, [
+        await answerPrompts(mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+                state: game, attacker: incubus, attack,
+                publish: async () => { }, random: () => 0
+            } }), input, [
             { prompt: blind ? /"That ring looks pretty/ : /"That jade ring looks pretty/, keys: 'n' },
             { prompt: /Shall I remove your suit, lover/, keys: 'n' },
         ]);
@@ -100,8 +104,10 @@ void test('a leap-day demand reveals a blind priest\'s carried gloves and their 
         damageType: AD_SSEX, hit: true, damage: 0 };
     const messages = [];
     const input = resetInputState();
-    await answerPrompts(resolveMonsterContactEffect(succubus, attack, { state: game,
-        publish: async (message) => { messages.push(message); }, random: () => 0 }), input, [
+    await answerPrompts(mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: succubus, attack,
+            publish: async (message) => { messages.push(message); }, random: () => 0
+        } }), input, [
         { prompt: /Shall I remove your suit, lover/, keys: 'n' },
     ]);
     assert.equal(gloves.dknown, true);
@@ -125,8 +131,10 @@ void test('a leap-day demand names worn gloves before other carried gloves', asy
         damageType: AD_SSEX, hit: true, damage: 0 };
     const messages = [];
     const input = resetInputState();
-    await answerPrompts(resolveMonsterContactEffect(succubus, attack, { state: game,
-        publish: async (message) => { messages.push(message); }, random: () => 0 }), input, [
+    await answerPrompts(mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: succubus, attack,
+            publish: async (message) => { messages.push(message); }, random: () => 0
+        } }), input, [
         { prompt: /Shall I remove your suit, lover/, keys: 'n' },
         { prompt: /Shall I remove your gloves, lover/, keys: 'n' },
     ]);
@@ -147,10 +155,12 @@ for (const female of [false, true]) {
             const attack = { kind: 'hero-attack', attackType: AT_BITE,
                 damageType: AD_SSEX, hit: true, damage: 0 };
             const messages = [];
-            await resolveMonsterContactEffect(demon, attack, { state: game,
-                publish: async (message) => { messages.push(message); },
-                random: range => range === 35 ? (goodOutcome ? 0 : 34) : 2,
-                rollOne: () => 4 });
+            await mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+                    state: game, attacker: demon, attack,
+                    publish: async (message) => { messages.push(message); },
+                    random: range => range === 35 ? (goodOutcome ? 0 : 34) : 2,
+                    rollOne: () => 4
+                } });
             assert.ok(messages.includes(`Time stands still while you and your ${species} lie in each other's arms...`), messages.join('\n'));
             if (goodOutcome) {
                 assert.ok(messages.includes(`You seem to have enjoyed it more than your ${species}...`), messages.join('\n'));
@@ -177,9 +187,11 @@ void test('a bad seduction outcome displays the next hallucinated demon identity
     const satisfiedDemon = monsterName(incubus, { suppressIt: true, capitalized: true });
     initRng(2n);
     const messages = [];
-    await resolveMonsterContactEffect(incubus, attack, { state: game,
-        publish: async (message) => { messages.push(message); },
-        random: range => range === 35 ? 34 : 1 });
+    await mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: incubus, attack,
+            publish: async (message) => { messages.push(message); },
+            random: range => range === 35 ? 34 : 1
+        } });
     assert.ok(messages.includes(`Time stands still while you and ${partner} lie in each other's arms...`), messages.join('\n'));
     assert.ok(messages.includes(`${satisfiedDemon} seems to have enjoyed it more than you...`), messages.join('\n'));
 });
@@ -195,8 +207,10 @@ void test('declining an incubus armor-removal prompt keeps the suit and ends sed
         damageType: AD_SSEX, hit: true, damage: 0 };
     const input = resetInputState();
     const messages = [];
-    await answerPrompts(resolveMonsterContactEffect(incubus, attack, { state: game,
-        publish: async (message) => { messages.push(message); }, random: () => 0 }), input, [
+    await answerPrompts(mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: incubus, attack,
+            publish: async (message) => { messages.push(message); }, random: () => 0
+        } }), input, [
         { prompt: /Shall I remove your suit, lover/, keys: 'n' },
     ]);
     assert.equal(game.uarm, suit);
@@ -212,8 +226,10 @@ void test('successful seduction raises energy, tires the demon, and ends its att
     incubus.female = false;
     const attack = { kind: 'hero-attack', attackType: AT_BITE,
         damageType: AD_SSEX, hit: true, damage: 0 };
-    await resolveMonsterContactEffect(incubus, attack, { state: game,
-        publish: async () => { }, random: () => 0, rollOne: () => 4 });
+    await mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: incubus, attack,
+            publish: async () => { }, random: () => 0, rollOne: () => 4
+        } });
     assert.equal(game.u.uen, 14);
     assert.equal(game.u.uenmax, 14);
     assert.equal(game.u.uenpeak, 14);
@@ -228,8 +244,10 @@ void test('a same-sex incubus contact leaves the hero alone and keeps later claw
     const attack = { kind: 'hero-attack', attackType: AT_BITE,
         damageType: AD_SSEX, hit: true, damage: 0 };
     const messages = [];
-    await resolveMonsterContactEffect(incubus, attack, { state: game,
-        publish: async (message) => { messages.push(message); } });
+    await mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: incubus, attack,
+            publish: async (message) => { messages.push(message); }
+        } });
     assert.equal(attack.attackerDone, undefined);
     assert.equal(attack.damage, 0);
     assert.equal(messages.length, 0);
@@ -244,8 +262,10 @@ void test('a deaf hero loses an adornment ring to a succubus without a confirmat
     succubus.female = true;
     const attack = { kind: 'hero-attack', attackType: AT_BITE,
         damageType: AD_SSEX, hit: true, damage: 0 };
-    await resolveMonsterContactEffect(succubus, attack, { state: game,
-        publish: async () => { }, random: () => 0, rollOne: () => 4 });
+    await mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: succubus, attack,
+            publish: async () => { }, random: () => 0, rollOne: () => 4
+        } });
     assert.equal(game.inventory.includes(ring), false);
     assert.equal(succubus.minvent.includes(ring), true);
     assert.equal(ring.ocarry, succubus);
@@ -269,8 +289,10 @@ void test('a fatally exhausting seduction is recorded without an article', async
     const input = resetInputState();
     installPagerInput(input, { expected: /exhausted|die|points|Goodbye/i, limit: 10 });
     // The demon enjoys it more, and the hero is left exhausted.
-    await resolveMonsterContactEffect(incubus, attack, { state: game, publish: async () => { },
-        random: sides => (sides === 35 ? 34 : sides === 5 ? 4 : 0), rollOne: () => 4 });
+    await mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+            state: game, attacker: incubus, attack, publish: async () => { },
+            random: sides => (sides === 35 ? 34 : sides === 5 ? 4 : 0), rollOne: () => 4
+        } });
     assert.equal(game.program_state.gameover, true);
     assert.equal(loadScoreRecords()[0]?.death, 'killed by exhaustion');
 });

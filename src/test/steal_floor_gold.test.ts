@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import {mksobj, placeObject} from '../js/mkobj.js';
 import { AD_SGLD, AT_CLAW } from '../js/monster_attack_types.js';
-import { resolveMonsterContactEffect } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -28,8 +28,9 @@ void test('a leprechaun snatching floor gold over a smaller purse stays for more
     const messages: string[] = [];
     installPagerInput(resetInputState(), { expected: /leprechaun|snatches/, limit: 4 });
 
-    await resolveMonsterContactEffect(leprechaun, attack, { state: game,
-        publish: async message => { messages.push(message); }, random: () => 4 });
+    await mhitm_adtyping({ adtyp: AD_SGLD, mdef: 'youmonst', context: {
+        state: game, attacker: leprechaun, attack,
+        publish: async message => { messages.push(message); }, random: () => 4 } });
 
     assert.equal(leprechaun.minvent.find(object => object.otyp === GOLD_PIECE)?.quan, 100,
         'the larger floor pile wins without a random roll');
@@ -55,8 +56,9 @@ void test('a leprechaun snatching floor gold from a penniless hero flees', async
     const messages: string[] = [];
     installPagerInput(resetInputState(), { expected: /leprechaun|snatches|spot/, limit: 6 });
 
-    await resolveMonsterContactEffect(leprechaun, attack, { state: game,
-        publish: async message => { messages.push(message); }, random: () => 4 });
+    await mhitm_adtyping({ adtyp: AD_SGLD, mdef: 'youmonst', context: {
+        state: game, attacker: leprechaun, attack,
+        publish: async message => { messages.push(message); }, random: () => 4 } });
 
     assert.equal(leprechaun.minvent.find(object => object.otyp === GOLD_PIECE)?.quan, 100);
     assert.match(messages.join('\n'),

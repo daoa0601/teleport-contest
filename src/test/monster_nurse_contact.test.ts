@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, SICK_ALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resolveMonsterContactEffect } from '../js/uhitm.js';
+import { mhitm_adtyping } from '../js/uhitm.js';
 import { AD_HEAL, AT_CLAW } from '../js/monster_attack_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -15,8 +15,9 @@ void test('nurse treatment silently cures food poisoning and terminal illness', 
     const attack = { kind: 'hero-attack', attackType: AT_CLAW, damageType: AD_HEAL,
         hit: true, damage: 9 } as const;
 
-    await resolveMonsterContactEffect(nurse, attack, { state: game,
-        publish: async () => {}, random: () => 1, rollOne: () => 4 });
+    await mhitm_adtyping({ adtyp: AD_HEAL, mdef: 'youmonst', context: {
+        state: game, attacker: nurse, attack,
+        publish: async () => {}, random: () => 1, rollOne: () => 4 } });
 
     assert.equal(game.u.sick, false);
     assert.equal(game.u.sickTurns, 0);
@@ -34,9 +35,10 @@ void test('an unarmed, unarmored hero receives nurse healing and a lasting maxim
     const attack = { kind: 'hero-attack', attackType: AT_CLAW, damageType: AD_HEAL,
         hit: true, damage: 9 } as const;
 
-    await resolveMonsterContactEffect(nurse, attack, { state: game,
+    await mhitm_adtyping({ adtyp: AD_HEAL, mdef: 'youmonst', context: {
+        state: game, attacker: nurse, attack,
         publish: async message => { messages.push(message); },
-        random: range => range === 7 ? 0 : 1, rollOne: () => 4 });
+        random: range => range === 7 ? 0 : 1, rollOne: () => 4 } });
 
     assert.equal(game.u.uhp, 34);
     assert.equal(game.u.uhpmax, 41);
