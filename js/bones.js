@@ -29,7 +29,7 @@ import { hideMonsterOnRestore, hideMonsterUnder, monsterCanCarryObject, purgeDea
 import { repairBonesConnections, restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies, } from './restore.js';
 import { restoreLevelPetHistory } from './save.js';
 import { endObjectBurn, restoreLevelTimers } from './timeout.js';
-import { restoreLevelRegions } from './region.js';
+import { restoreLevelRegions, resetRegionMonsterIds } from './region.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { addFruit } from './options.js';
@@ -747,8 +747,8 @@ function repairMonsterExtensions(monster) {
     if (monster.mextra?.ebones)
         monster.mextra.ebones.parentmid = monster.m_id;
 }
-// C region.c:reset_region_mids(): bones region membership is remapped to
-// the renewed monster ids; a missing id drops out by slot swap.
+// Part of C restore.c:getlev(): the bones identity renewal, ending in
+// region.c:reset_region_mids() for each restored region.
 async function renewBonesIdentities(level, fruits) {
     // restmonchn() assigns every monster a fresh id; each monster inventory
     // is restored immediately afterward. getlev() then restores floor and
@@ -793,23 +793,10 @@ async function renewBonesIdentities(level, fruits) {
     }
     eachObjectInBonesGraph(level, object => repairObjectMonsterIds(object, monsterIds));
     eachTopLevelBonesObject(level, repairContainedObjects);
-    // C region.c:reset_region_mids(). Missing identities are removed by
-    // replacing their slot with the last member, as during region turns.
     for (const region of level.regions) {
         region.heroFault = false;
         region.heroInside = false;
-        let index = 0;
-        while (index < region.monsterIds.length) {
-            const mapped = remappedMonsterId(region.monsterIds[index], monsterIds);
-            if (mapped !== undefined) {
-                region.monsterIds[index++] = mapped;
-            }
-            else {
-                const last = region.monsterIds.pop();
-                if (last !== undefined && index < region.monsterIds.length)
-                    region.monsterIds[index] = last;
-            }
-        }
+        resetRegionMonsterIds(region, monsterIds);
     }
 }
 function restoreBonesFloorOrder(level) {

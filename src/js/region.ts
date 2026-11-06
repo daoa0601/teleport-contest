@@ -281,6 +281,26 @@ function removeRegionMonster(region: GasCloud, index: number): void {
         region.monsterIds[index] = lastId;
 }
 
+// C region.c:reset_region_mids(): bones region membership is remapped to
+// the renewed monster ids; a missing id drops out by slot swap.
+export function resetRegionMonsterIds(
+    region: GasCloud, monsterIds: ReadonlyMap<number, number>,
+): void {
+    let index = 0;
+    while (index < region.monsterIds.length) {
+        const oldId = region.monsterIds[index];
+        const mapped = oldId !== undefined && Number.isInteger(oldId)
+            ? monsterIds.get(oldId) : undefined;
+        if (mapped !== undefined) {
+            region.monsterIds[index++] = mapped;
+        } else {
+            const last = region.monsterIds.pop();
+            if (last !== undefined && index < region.monsterIds.length)
+                region.monsterIds[index] = last;
+        }
+    }
+}
+
 export function visibleRegionAt(state: GameState, x: number, y: number): GasCloud | null {
     return requireGameLevel(state).regions.find(region => region.visible
         && region.ttl !== -2 && regionContains(region, x, y)) || null;
