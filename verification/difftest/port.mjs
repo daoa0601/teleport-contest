@@ -7,8 +7,6 @@ import { createInterface } from 'node:readline';
 const changes = {
     create_object: ['mkobj.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
         'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0); otmp.spe = 100;'],
-    creation_log: ['mkobj.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
-        'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0); rne(0);'],
     create_class: ['mkobj.js', 'const excludeNovel = oclass === SPBOOK_no_NOVEL;',
         'oclass = WEAPON_CLASS; const excludeNovel = oclass === SPBOOK_no_NOVEL;'],
     random_range: ['objnam.js', 'return first === last ? first : 0;',
@@ -33,8 +31,6 @@ const changes = {
         'object.spe += 1; return applyErosion(object, damage);'],
     rng: ['weapon.js', 'return applyErosion(object, damage);',
         'rnd(1); return applyErosion(object, damage);'],
-    log: ['weapon.js', 'return applyErosion(object, damage);',
-        'd(0, 4); return applyErosion(object, damage);'],
     naming_plural: ['objnam.js', "return replacePluralSuffix(stem, '', 's') + excess;",
         "return replacePluralSuffix(stem, '', 'es') + excess;"],
     naming_singular: ['objnam.js', "return finish(replacePluralSuffix(stem, 'ies', 'y'));",

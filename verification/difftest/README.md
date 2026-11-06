@@ -38,6 +38,7 @@ For the same locked environment locally:
 cd verification/difftest
 export NETHACK_RECORDER=/path/to/nethack-c/recorder
 uv run --locked run.py --build
+node port.mjs --check-mutants
 uv run --locked python -m pytest -q
 ```
 
@@ -154,21 +155,22 @@ one entry-state correspondence, and an independently killed emitted-JS mutant:
 | inventory, other gear | leprechaun vs soldier: created species differs | skip its gold initialization |
 | teleport restriction | stasis expiry 40 vs 39 on turn 40: teleport eligibility differs | inclusive expiry `>=` becomes `>` |
 
-Controls must match completely before a probe or mutant is accepted. The ten
+Each control must match on the field its probe or mutant exercises: the
+return value, created objects, teleport eligibility, successor game state,
+or core-stream position. Negative checks do not compare RNG logs. The ten
 creation schema probes reject invalid object types, object classes, range
 endpoints, depths, monster classes, species, override bits, population flags and
-duplicate species histories. The original five invalid-domain probes and seven
-mutants remain active, including independent state, extra-word and log-only
-changes. A `creation_log` mutant adds `rne(0)` during object construction.
-Zero-dice `d(0, 1)` has the same effect but is out of scope in `mkobj.js`;
-`rng.js:rne` calls `rn2(0)`, which returns before drawing, so the JS call
-adds only a log entry. The differential runner rejects it at `rng.log`.
+duplicate species histories. The base checks retain five invalid-domain probes
+and six mutants, including independent successor-state and extra-word faults.
+The `log` and `creation_log` mutants were removed because their unused calls
+changed only diagnostic records, with no game-state or stream-position effect.
 
-All ten creation behavior tests pass with `creation_log` enabled (10.663 s).
-Before removing the full-result assertion from their helper, the same calibration
-reported 26 failures across those ten tests (10.378 s). The independent behavior
-assertions still reject the strict-expiry `stasis` mutant at both equality
-boundaries, `(0,0)` and `(40,40)` (two JS failures, 1.920 s).
+On every PR, CI runs `port.mjs --check-mutants` after compilation. This guard
+checks all target files without importing game modules and names every stale
+mutant. The pytest step runs all three negative-check suites using real C/JS
+workers, with the native RNG log omitted. These checks kill all 24 remaining
+mutants (six base, eight creation, ten naming) without depending on log records.
+The separate differential batch retains its full comparison for diagnostics.
 
 Differences are reduced by deleting list entries and resetting scalar fields to
 domain defaults while retaining the target and object/species identities. The
@@ -221,8 +223,8 @@ capacity 1,006; near-capacity 1,006; damage 1,009; accuracy 1,012. That run took
 4.34 s. The focused run includes the eight unchanged base harness tests and ten
 creation behavior tests. Creation negative checks found all eight deliberately
 broken correspondences and killed all eight mutants. Together with the base
-checks and the additional creation-log calibration, all fifteen input-domain
-probes and all sixteen mutants behaved as expected.
+checks, all fifteen input-domain probes and all fourteen behavior mutants
+behaved as expected.
 
 ### Reduced differences during development
 

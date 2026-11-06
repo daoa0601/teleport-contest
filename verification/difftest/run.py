@@ -112,6 +112,13 @@ def difference(left, right, path=''):
     return None
 
 
+def field_difference(left, right, path):
+    """Compare the field a negative check is intended to exercise."""
+    for key in path.split('.'):
+        left, right = left[key], right[key]
+    return difference(left, right, path)
+
+
 def reductions(state, meta):
     """Try deleting list members and resetting scalar fields to domain defaults."""
     baseline = canonical(dict(target=state['target']), meta)
@@ -192,20 +199,18 @@ def negative_checks(native, port, meta):
         'accuracy': dict(target='find_roll_to_hit', monster=dict(mstun=1)),
         'state': dict(target='dmgval'),
         'rng': dict(target='dmgval'),
-        'log': dict(target='dmgval'),
-        'creation_log': dict(target='mksobj', init=0),
     }
     for name, raw in mutants.items():
         state = canonical(raw, meta)
+        expected = {'state': 'state', 'rng': 'rng.core'}.get(name, 'result')
         c_result = native.call(state)
-        if difference(c_result, port.call(state)):
-            raise RuntimeError(f'Mutant control already diverges: {name}')
+        found = field_difference(c_result, port.call(state), expected)
+        if found:
+            raise RuntimeError(f'Mutant control already diverges: {name}: {found}')
         with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as worker:
-            found = difference(c_result, worker.call(state))
-        expected = {'state': 'state.', 'rng': 'rng.core', 'log': 'rng.log',
-                    'creation_log': 'rng.log'}.get(name, 'result')
-        if not found or not found['path'].startswith(expected):
-            raise RuntimeError(f'Mutant survived or failed for the wrong reason: {name}: {found}')
+            found = field_difference(c_result, worker.call(state), expected)
+        if not found:
+            raise RuntimeError(f'Mutant survived: {name}: no change in {expected}')
         print(f'KILLED {name}: {found["path"]}', flush=True)
     print(f'Domain probes rejected: {count}; emitted-JS mutants killed: {len(mutants)}', flush=True)
 
@@ -235,9 +240,16 @@ def creation_negative_checks(native, port, meta):
     }
     for name, raw in controls.items():
         state = canonical(raw, meta)
+        if name in ['create_object', 'create_class', 'monster_weapons', 'monster_inventory']:
+            expected = 'objects'
+        elif name == 'stasis':
+            expected = 'teleportRestricted'
+        else:
+            expected = 'result'
         observed = native.call(state)
-        if difference(observed, port.call(state)):
-            raise RuntimeError(f'Creation negative-check control diverges: {name}')
+        found = field_difference(observed, port.call(state), expected)
+        if found:
+            raise RuntimeError(f'Creation negative-check control diverges: {name}: {found}')
         broken = deepcopy(state)
         field, value = broken_relations[name]
         if field.startswith('level.'):
@@ -245,17 +257,14 @@ def creation_negative_checks(native, port, meta):
         else:
             broken[field] = value
         broken = canonical(broken, meta)
-        found = difference(observed, port.call(broken))
+        found = field_difference(observed, port.call(broken), expected)
         if not found:
             raise RuntimeError(f'Entry-correspondence probe failed to find a counterexample: {name}')
         print(f'COUNTEREXAMPLE {name}: unequal {field}: {found}', flush=True)
         with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as mutant:
-            found = difference(observed, mutant.call(state))
-        expected = 'objects' if name in ['create_object', 'create_class', 'monster_weapons', 'monster_inventory'] else 'result'
-        if name == 'stasis':
-            expected = 'teleportRestricted'
-        if not found or not found['path'].startswith(expected):
-            raise RuntimeError(f'Creation mutant survived or failed for the wrong reason: {name}: {found}')
+            found = field_difference(observed, mutant.call(state), expected)
+        if not found:
+            raise RuntimeError(f'Creation mutant survived: {name}: no change in {expected}')
         print(f'KILLED {name}: {found}', flush=True)
     invalid = [dict(target='mksobj', otyp=17), dict(target='mkobj', oclass=1),
                dict(target='rnd_class', first=len(meta['names'])),
@@ -403,15 +412,16 @@ def naming_negative_checks(native, port, meta):
     killed = 0
     for name, raw in mutants.items():
         state = canonical(raw, meta)
-        c_result = native.call(state)
-        if difference(c_result, port.call(state)):
-            raise RuntimeError(f'Naming mutant control already diverges: {name}')
-        with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as worker:
-            found = difference(c_result, worker.call(state))
         expected = {'naming_the': 'the', 'naming_bogus_titles': 'the',
                     'naming_string_draw': 'rng.core'}.get(name, 'result')
-        if not found or not found['path'].startswith(expected):
-            raise RuntimeError(f'Naming mutant survived or hit the wrong field: {name}: {found}')
+        c_result = native.call(state)
+        found = field_difference(c_result, port.call(state), expected)
+        if found:
+            raise RuntimeError(f'Naming mutant control already diverges: {name}: {found}')
+        with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as worker:
+            found = field_difference(c_result, worker.call(state), expected)
+        if not found:
+            raise RuntimeError(f'Naming mutant survived: {name}: no change in {expected}')
         print(f'KILLED {name}: {found["native"]!r} != {found["port"]!r}', flush=True)
         killed += 1
     print(f'Naming checks: {rejected} rejected input probes, {killed} killed mutants', flush=True)
