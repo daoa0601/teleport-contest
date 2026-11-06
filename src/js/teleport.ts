@@ -655,6 +655,25 @@ function heroIsStunned(state: GameState) {
     return !!(state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0);
 }
 
+// C teleport.c:teleport_pet(mtmp, FALSE).  A steed never follows; a cursed
+// leash yelps and holds the pet; any other leash goes slack and releases it.
+export async function teleportPetVictim(monster: Monster, state: GameState): Promise<boolean> {
+    if (monster === state.u?.usteed) return false;
+    if (!monster.mleashed) return true;
+    const leash = leashAttachedToMonster(monster, state);
+    if (!leash) {
+        await releaseMonsterLeash(monster, false, { state });
+        return true;
+    }
+    if (leash.cursed) {
+        await publishMonsterYelp(monster);
+        return false;
+    }
+    await plineWithContinuation('Your leash goes slack.');
+    await releaseMonsterLeash(monster, false, { state });
+    return true;
+}
+
 // C teleport.c:dotele(). The command and drowning escape use the same
 // trap admission, spell fallback, follower checks, and nutrition costs.
 export function teleportHeroAtWill<Arrival extends ArrivalResult>(

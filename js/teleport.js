@@ -514,6 +514,26 @@ export async function teleportHero({ chooseDestination, source = null, discover 
 function heroIsStunned(state) {
     return !!(state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0);
 }
+// C teleport.c:teleport_pet(mtmp, FALSE).  A steed never follows; a cursed
+// leash yelps and holds the pet; any other leash goes slack and releases it.
+export async function teleportPetVictim(monster, state) {
+    if (monster === state.u?.usteed)
+        return false;
+    if (!monster.mleashed)
+        return true;
+    const leash = leashAttachedToMonster(monster, state);
+    if (!leash) {
+        await releaseMonsterLeash(monster, false, { state });
+        return true;
+    }
+    if (leash.cursed) {
+        await publishMonsterYelp(monster);
+        return false;
+    }
+    await plineWithContinuation('Your leash goes slack.');
+    await releaseMonsterLeash(monster, false, { state });
+    return true;
+}
 // C teleport.c:teleport()
 // Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
 export async function teleportHeroAtWill({ state = game, random = rn2, rollOne = rnd, chooseDestination = null, finishArrival = finishTeleportArrival, publish = plineWithContinuation, ignoreRestrictions = false, } = {}) {

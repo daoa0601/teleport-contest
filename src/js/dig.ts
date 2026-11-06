@@ -65,7 +65,7 @@ import { addShopDamage, costlySpot, deleteObject, makeAngryShopkeeper, payForSho
 import { shopkeeperName } from './shknam.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { monsterHasMapPosition } from './steed.js';
-import { randomMonsterRelocation } from './teleport.js';
+import { randomMonsterRelocation, teleportPetVictim } from './teleport.js';
 import { Is_botlevel, ceilingName, depth, levelHasCeiling, levelAtDepth, surfaceName } from './dungeon.js';
 import { CLR_WHITE } from './terminal.js';
 import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
@@ -1211,25 +1211,6 @@ export async function digActualHole(
             }
         }
     }
-}
-
-// C teleport.c:teleport_pet(mtmp, FALSE).  A steed never follows; a cursed
-// leash yelps and holds the pet; any other leash goes slack and releases it.
-async function teleportPetVictim(monster: Monster, state: GameState): Promise<boolean> {
-    if (monster === state.u?.usteed) return false;
-    if (!monster.mleashed) return true;
-    const leash = leashAttachedToMonster(monster, state);
-    if (!leash) {
-        await releaseMonsterLeash(monster, false, { state });
-        return true;
-    }
-    if (leash.cursed) {
-        await publishMonsterYelp(monster);
-        return false;
-    }
-    await plineWithContinuation('Your leash goes slack.');
-    await releaseMonsterLeash(monster, false, { state });
-    return true;
 }
 
 // C dig.c:liquid_flow().  The caller has already changed the terrain type.
