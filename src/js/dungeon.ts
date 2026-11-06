@@ -755,6 +755,19 @@ export function sameDungeonLevel(
     return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
 
+// C dungeon.c:Is_branchlev(). A hero whose level is not yet placed matches
+// no branch, rather than the dungeon origin.
+export function is_branchlev(
+    lev: DungeonLocation | null | undefined, state: Pick<GameState, 'branches'> = game,
+): DungeonBranch | null {
+    if (!lev) return null;
+    for (const branch of state.branches) {
+        if (sameDungeonLevel(lev, branch.end1) || sameDungeonLevel(lev, branch.end2))
+            return branch;
+    }
+    return null;
+}
+
 // Part of C dungeon.c:recalc_mapseen(): the per-level flags.
 function currentOverviewFlags(prior: OverviewRecord | undefined, state: GameState): OverviewFlags {
     const here = currentDungeonLocation(state);

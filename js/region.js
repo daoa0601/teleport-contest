@@ -9,6 +9,7 @@ import { formatFeltMessage, formatSeenMessage, plineWithContinuation } from './p
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './steed.js';
+import { sameDungeonLevel } from './dungeon.js';
 import { heroIsBreathless, body_part } from './polyself.js';
 import { makePlural } from './objnam.js';
 import { refreshProperty } from './properties.js';
@@ -286,12 +287,6 @@ export async function rescueHeroFromRegion(state = game) {
         await makeBlinded(0, { state });
     }
 }
-// C dungeon.c:on_level(): compares two dungeon locations.
-function sameLevel(left, right) {
-    return !!left && !!right
-        && left.dnum === right.dnum
-        && left.dlevel === right.dlevel;
-}
 // Part of C mon.c:m_poisongas_ok(): the poison-gas breath exclusion.
 function poisonBreather(mnum) {
     return (MONSTER_ATTACKS[mnum] || []).some(([type, damage]) => type === AT_BREA && (damage === AD_DRST || damage === AD_RBRE));
@@ -306,7 +301,7 @@ function poisonGasImmuneSpecies(mnum, state, x, y) {
         || mnum === PM_VROCK || mnum === PM_HEZROU
         || poisonBreather(mnum))
         return true;
-    const waterLevel = sameLevel(state.u?.uz, state.water_level);
+    const waterLevel = sameDungeonLevel(state.u?.uz, state.water_level);
     return (monsterIsEel(mnum) || waterLevel)
         && isPoolAt(x, y, state);
 }

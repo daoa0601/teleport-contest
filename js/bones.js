@@ -49,7 +49,7 @@ import { setMonsterGivenName } from './do_name.js';
 import { MONSTER_ALIGNMENT, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM } from './monster_data.js';
 import { objectNoLongerHeldSynchronously } from './do.js';
 import { unpunishHero } from './read.js';
-import { depth, ledgerNo, maxLedgerNo } from './dungeon.js';
+import { depth, is_branchlev, ledgerNo, maxLedgerNo } from './dungeon.js';
 import { isRoom } from './map_types.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './role.js';
@@ -67,7 +67,7 @@ export function canMakeBones(state = game, random = rn2) {
     const ledger = ledgerNo(location, state);
     if (ledger <= 0 || ledger > maxLedgerNo(state))
         return false;
-    const branchLevel = isBranchLevel(location, state);
+    const branchLevel = !!is_branchlev(location, state);
     if (!levelAllowsBones(location, state))
         return false;
     if (state.u.uswallow)
@@ -91,15 +91,9 @@ export function levelAllowsBones(location, state = game) {
         return false;
     if (location.dlevel === dungeon.num_dunlevs)
         return false;
-    if (isBranchLevel(location, state) && location.dlevel > 1)
+    if (!!is_branchlev(location, state) && location.dlevel > 1)
         return false;
     return !Invocation_lev(location, state);
-}
-// C dungeon.c:Is_branchlev()
-function isBranchLevel(location, state) {
-    const here = (end) => end.dnum === location.dnum
-        && end.dlevel === location.dlevel;
-    return state.branches.some(branch => here(branch.end1) || here(branch.end2));
 }
 // C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
 const PM_HUMAN = 260;

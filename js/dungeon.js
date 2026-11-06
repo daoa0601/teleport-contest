@@ -696,6 +696,17 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
 export function sameDungeonLevel(left, right) {
     return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
+// C dungeon.c:Is_branchlev(). A hero whose level is not yet placed matches
+// no branch, rather than the dungeon origin.
+export function is_branchlev(lev, state = game) {
+    if (!lev)
+        return null;
+    for (const branch of state.branches) {
+        if (sameDungeonLevel(lev, branch.end1) || sameDungeonLevel(lev, branch.end2))
+            return branch;
+    }
+    return null;
+}
 // Part of C dungeon.c:recalc_mapseen(): the per-level flags.
 function currentOverviewFlags(prior, state) {
     const here = currentDungeonLocation(state);

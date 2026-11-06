@@ -41,10 +41,10 @@ import { randomTypeByDescription } from './objnam.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { is_orc } from './mondata.js';
 import { premap_detect } from './detect.js';
-import { placeHeroOnLevel, specialLevelAt } from './dungeon.js';
+import { is_branchlev, placeHeroOnLevel, specialLevelAt } from './dungeon.js';
 import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt } from './mklev.js';
+import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, mkstairs, mktrap, place_branch, placeBranchAt } from './mklev.js';
 import { stairway_find_dir } from './stairs.js';
 import { isRoom } from './map_types.js';
 import { sendMonsterToLimbo, mnearto, dealWithMonsterOvercrowding, moveMonsterNextToHero } from './mon.js';
@@ -248,7 +248,7 @@ function bad_location(x, y, nlx, nly, nhx, nhy) {
 export async function place_lregion(lx, ly, hx, hy, nlx, nly, nhx, nhy, rtype, destination) {
     if (!lx) {
         if (rtype === LR_BRANCH && (game.level?.nroom ?? 0) > 0) {
-            await place_branch(is_branchlev());
+            await place_branch(is_branchlev(game.u.uz));
             return;
         }
         lx = 1;
@@ -317,7 +317,7 @@ async function putLregionHere(x, y, nlx, nly, nhx, nhy, type, oneshot, destinati
         await mkportal(x, y, destination.dnum, destination.dlevel);
     }
     else if (type === LR_BRANCH) {
-        await placeBranchAt(is_branchlev(), x, y);
+        await placeBranchAt(is_branchlev(game.u.uz), x, y);
     }
     else if (type === LR_DOWNSTAIR || type === LR_UPSTAIR) {
         await mkstairs(x, y, type === LR_UPSTAIR, null);
@@ -610,7 +610,7 @@ async function fixupSpecialRegions(active) {
         }
         await place_lregion(area.lx, area.ly, area.hx, area.hy, exclude.lx, exclude.ly, exclude.hx, exclude.hy, type, destination);
     }
-    if (!branchDeclared && is_branchlev())
+    if (!branchDeclared && is_branchlev(game.u.uz))
         await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_BRANCH, null);
 }
 // Part of C sp_lev.c:load_special(): runs the fixup_special tail after the
@@ -959,7 +959,7 @@ export async function generateRandomMaze() {
         const down = mazeFloorPoint();
         await mkstairs(down.x, down.y, false, null);
     }
-    await place_branch(is_branchlev());
+    await place_branch(is_branchlev(game.u.uz));
     await populateRandomMaze();
 }
 // C mkmaze.c:walkfrom() (recursive form).  C resumes at the recursive child's

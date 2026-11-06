@@ -36,7 +36,7 @@ import { verbForSubject, withIndefiniteArticle, rndClass } from './objnam.js';
 import { visibleRegionAt } from './region.js';
 import { monsterEmitsLight, block_point, visionCellBlocksLight } from './vision.js';
 import { objectAtMonsterDescription } from './pager.js';
-import { depth as depth_of_level, level_difficulty, specialLevelAt } from './dungeon.js';
+import { depth as depth_of_level, level_difficulty, sameDungeonLevel, specialLevelAt } from './dungeon.js';
 import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth, removeMonsterFromGame } from './mon.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { beginObjectBurn, stopObjectTimer } from './timeout.js';
@@ -59,7 +59,6 @@ import {
     is_lord, extra_nasty, strongmonst, is_dwarf, likes_gold, likes_gems, monsterIsDemon, monsterIsGiant,
 } from './mondata.js';
 import type { GameState } from './game_state.js';
-import type { DungeonLocation } from './dungeon_types.js';
 import type { MonsterPopulationState, MonsterVital, Monster, MonsterBirthState, PetData } from './monster_types.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { setMonsterPermanentInvisibility } from './worn.js';
@@ -1805,10 +1804,10 @@ export function isHomeElemental(mnum: number, state: GameState = game): boolean 
     const name = MONSTER_NAME[mnum];
     if (name === undefined) return false;
     switch (name) {
-    case 'air elemental': return sameLevel(state.u?.uz, state.air_level);
-    case 'earth elemental': return sameLevel(state.u?.uz, state.earth_level);
-    case 'fire elemental': return sameLevel(state.u?.uz, state.fire_level);
-    case 'water elemental': return sameLevel(state.u?.uz, state.water_level);
+    case 'air elemental': return sameDungeonLevel(state.u?.uz, state.air_level);
+    case 'earth elemental': return sameDungeonLevel(state.u?.uz, state.earth_level);
+    case 'fire elemental': return sameDungeonLevel(state.u?.uz, state.fire_level);
+    case 'water elemental': return sameDungeonLevel(state.u?.uz, state.water_level);
     default: return false;
     }
 }
@@ -2034,13 +2033,6 @@ export interface MonsterGrowthOptions {
 
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
-
-// C dungeon.c:on_level():
-function sameLevel(left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined): boolean {
-    return !!left && !!right
-        && left.dnum === right.dnum
-        && left.dlevel === right.dlevel;
-}
 
 // Part of C makemon.c:grow_up(): choosing the adult form.
 function targetSpecies(mnum: number, killedMonster: Monster | null): number {

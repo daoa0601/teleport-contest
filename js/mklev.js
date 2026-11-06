@@ -43,7 +43,7 @@ import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
 import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { init_rect, rnd_rect } from './rect.js';
-import { Is_botlevel, depth as depth_of_level, dungeonDepth, inducedAlignment, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot } from './dungeon.js';
+import { Is_botlevel, depth as depth_of_level, dungeonDepth, inducedAlignment, is_branchlev, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot } from './dungeon.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, oc_level } from './object_data.js';
 import { MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { nhgetch } from './input.js';
@@ -628,7 +628,7 @@ async function makelevel() {
             return;
         sort_rooms();
         await generate_stairs();
-        const branchp = is_branchlev();
+        const branchp = is_branchlev(game.u.uz);
         await placeRoomLevelBranch(branchp);
         // C ref: mklev.c makelevel() skip0 tail.  C still counts
         // ROOM_IS_FILLABLE rooms and draws the bonus-room selection here,
@@ -653,7 +653,7 @@ async function makelevel() {
     sort_rooms();
     await generate_stairs();
     // Branch check
-    const branchp = is_branchlev();
+    const branchp = is_branchlev(game.u.uz);
     let roomThreshold = branchp ? 4 : 3;
     await makecorridors();
     await make_niches();
@@ -746,7 +746,7 @@ async function maybePlaceKnoxPortal(x, y) {
         && branch.end1?.dnum === game.knox_level.dnum
         && branch.end1?.dlevel === game.knox_level.dlevel;
     const source = onKnoxSourceEnd ? branch.end2 : branch.end1;
-    if (!onKnoxSourceEnd && is_branchlev())
+    if (!onKnoxSourceEnd && is_branchlev(game.u.uz))
         return false;
     if ((source?.dnum ?? -1) < dungeons.length)
         return false;
@@ -1594,19 +1594,6 @@ async function make_niches() {
 // ============================================================
 // Branch placement
 // ============================================================
-// C dungeon.c:Is_branchlev():
-export function is_branchlev() {
-    const g = game;
-    if (!g.branches)
-        return null;
-    for (const br of g.branches) {
-        if (br?.end1?.dnum === (g.u?.uz?.dnum ?? 0) && br?.end1?.dlevel === (g.u?.uz?.dlevel ?? 1))
-            return br;
-        if (br?.end2?.dnum === (g.u?.uz?.dnum ?? 0) && br?.end2?.dlevel === (g.u?.uz?.dlevel ?? 1))
-            return br;
-    }
-    return null;
-}
 // C mklev.c:find_branch_room():
 function find_branch_room(mp) {
     if (!requireGameLevel().nroom) {
@@ -2145,7 +2132,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
     // Bonus items
     let skip_chests = false;
     if (bonus_items && somexyspace(croom, pos)) {
-        const branchp = is_branchlev();
+        const branchp = is_branchlev(game.u.uz);
         const oracle_dlevel = g.oracle_level?.dlevel ?? 5;
         const minesDnum = g.dungeons?.findIndex(dungeon => dungeon?.dname === 'The Gnomish Mines') ?? -1;
         const entersMines = branchp && (g.u?.uz?.dnum ?? 0) !== minesDnum

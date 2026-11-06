@@ -26,7 +26,6 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster, ShopBillEntry, MonsterFlag } from './monster_types.js';
-import type { DungeonLocation } from './dungeon_types.js';
 import { isRoom } from './map_types.js';
 import type { Room, Position, Trap, ShopDamage, MapLocation } from './map_types.js';
 import {
@@ -41,7 +40,7 @@ import { MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_S
 import { heroSpecies, heroPolyGender, heroPassesWalls, body_part, mbodypart } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
-import { depth } from './dungeon.js';
+import { depth, sameDungeonLevel } from './dungeon.js';
 import {
     monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes,
     monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire,
@@ -117,12 +116,6 @@ const G_UNIQ = 0x1000;
 
 const FIRST_REAL_GEM = OBJECT_NAMES.indexOf('dilithium crystal');
 
-// C dungeon.c:on_level(): compares two dungeon locations.
-function sameLevel(a: DungeonLocation | null | undefined, b: DungeonLocation | null | undefined): boolean {
-    return (a?.dnum ?? 0) === (b?.dnum ?? 0)
-        && (a?.dlevel ?? 1) === (b?.dlevel ?? 1);
-}
-
 // Part of C shk.c:inside_shop(): a room boundary is not merchandise floor
 // space.
 export function insideShopRoomAt(state: GameState, x: number, y: number): ShopRoom | null {
@@ -151,7 +144,7 @@ export function shopkeeperInOwnShop(
     monster: Monster | null | undefined, state: GameState = game,
 ): boolean {
     if (!monster?.isshk || !monster?.eshk) return false;
-    if (!sameLevel(monster.eshk.shoplevel, state?.u?.uz)) return false;
+    if (!sameDungeonLevel(monster.eshk.shoplevel, state?.u?.uz)) return false;
     return roomsAt(state.level, monster.mx, monster.my, SHOPBASE)
         .includes(monster.eshk.shoproom);
 }
@@ -4763,16 +4756,9 @@ export async function moveShopkeeper(
 // the room's resident pointer; arriving on it restores the pointer.
 export function setShopResidency(monster: Monster, zeroOut: boolean, state: GameState): void {
     if (!monster.isshk || !monster.eshk) return;
-    if (!sameShopLevel(monster.eshk.shoplevel, state.u?.uz)) return;
+    if (!sameDungeonLevel(monster.eshk.shoplevel, state.u?.uz)) return;
     const room = roomForRoomno(state.level, monster.eshk.shoproom);
     if (room) room.resident = zeroOut ? null : monster;
-}
-
-// C dungeon.c:on_level(): compares two shop levels.
-function sameShopLevel(first: { dnum: number; dlevel: number } | null | undefined, second: { dnum: number; dlevel: number } | null | undefined): boolean {
-    return !!first && !!second
-        && first.dnum === second.dnum
-        && first.dlevel === second.dlevel;
 }
 
 // C shk.c:pick_pick().
