@@ -16,7 +16,7 @@ import { heroCanReachFloor } from './engrave.js';
 import { burnAwayHeroSlime, heroGoldAmount, loseHeroHp } from './hack.js';
 import { dropObjectAtHero } from './do.js';
 import { useUpFloorObject } from './invent.js';
-import { removeWornHeroItem } from './hero_equipment.js';
+import { removeWornHeroItem } from './steal.js';
 import { markJustPicked } from './pickup.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { mksobj, set_corpsenm, objectWeight, splitObjectStack, unlinkObject, createObjectBase, nextIdent } from './mkobj.js';

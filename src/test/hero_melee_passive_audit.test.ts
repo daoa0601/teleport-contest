@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { finishHeroHelplessness } from '../js/allmain.js';
+import { finishHeroHelplessness } from '../js/hack.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import { rhack } from '../js/cmd.js';

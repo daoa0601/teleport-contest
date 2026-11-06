@@ -21,7 +21,7 @@ import { finishMonsterKilled,
 } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
-import { addObjectToMonsterInventory } from './steal.js';
+import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { releaseMonsterLeash } from './apply.js';
 import { BOULDER, SADDLE, } from './object_data.js';
 import { mksobj } from './mkobj.js';
@@ -43,7 +43,6 @@ import { heroPassesWalls, heroSpecies, body_part } from './polyself.js';
 import { wormCrossesBetween } from './worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './do_wear.js';
-import { removeWornHeroItem } from './hero_equipment.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './weapon.js';
 import { teleds, randomMonsterRelocation, relocateMonsterTo, enexto } from './teleport.js';

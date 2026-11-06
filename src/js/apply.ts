@@ -71,7 +71,6 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
-import { removeWornHeroItem } from './hero_equipment.js';
 import {
     setHeroGrip, paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
     moveMonsterNextToHero,
@@ -152,7 +151,7 @@ import {
     unwieldMonsterWeapon,
 } from './weapon.js';
 import { castSpell, knownSpell } from './spell.js';
-import { addObjectToMonsterInventory } from './steal.js';
+import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle, strikeSteed } from './steed.js';
 import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { ceilingName, surfaceName } from './dungeon.js';

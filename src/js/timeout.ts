@@ -58,7 +58,7 @@ import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel } from './do.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
@@ -71,7 +71,7 @@ import type { MessagePublisher } from './pline.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind, LevelTimer } from './object_types.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
 import { eating_dangerous_corpse, Popeye, morehungry, vomit } from './eat.js';
-import { removeWornHeroItem } from './hero_equipment.js';
+import { removeWornHeroItem } from './steal.js';
 import {
     captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification,
 } from './trap.js';

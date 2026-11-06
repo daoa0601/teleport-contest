@@ -16,7 +16,6 @@ import assert from 'node:assert/strict';
 // "You can move again." — four blank columns after the knockback text,
 // with no --More-- anywhere in the sequence.
 import { races } from '../js/role.js';
-import { stopHeroOccupation } from '../js/occupation.js';
 import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
@@ -24,7 +23,8 @@ import { resetInputState } from '../js/input.js';
 import { NOT_HUNGRY, NO_MINVENT } from '../js/const.js';
 import { LEMBAS_WAFER } from '../js/object_data.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { finishHeroHelplessness } from '../js/allmain.js';
+import { stopHeroOccupation } from '../js/allmain.js';
+import { finishHeroHelplessness } from '../js/hack.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

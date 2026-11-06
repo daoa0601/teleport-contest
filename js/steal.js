@@ -1,13 +1,13 @@
 // Hero item theft by monsters, and monster inventory acquisition and release.
-// C ref: steal.c — steal(), stealarm(), worn_item_removal(), mpickobj(),
-// stealamulet(), maybe_absorb_item(), mdrop_obj(), mdrop_special_objs(),
-// relobj().
+// C ref: steal.c — steal(), stealarm(), remove_worn_item(),
+// worn_item_removal(), mpickobj(), stealamulet(), maybe_absorb_item(),
+// mdrop_obj(), mdrop_special_objs(), relobj().
 import { COIN_CLASS, ROCK_CLASS } from './objclass.js';
 import { objectDelay, BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
 import { plineWithContinuation } from './pline.js';
-import { LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM, TT_BURIEDBALL, W_ACCESSORY, W_ARMG, W_ARMOR, W_WEAPONS, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN, RLOC_MSG, SHOPBASE, W_SADDLE, FOOT, HAND } from './const.js';
+import { LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM, TT_BURIEDBALL, W_ACCESSORY, W_ARMG, W_ARMOR, W_BALL, W_CHAIN, W_WEAPONS, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN, RLOC_MSG, SHOPBASE, W_SADDLE, FOOT, HAND } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
@@ -25,15 +25,15 @@ import { heroSpecies, body_part, mbodypart } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { randomMonsterRelocation, relocateObjectRandomly, reportMonsterTeleportRestriction } from './teleport.js';
 import { openHoldingTrap, petrifyMonsterImmediately } from './trap.js';
-import { armorSimpleName, stopDonning, isBeingTakenOff, pendingArmorAction } from './do_wear.js';
-import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
+import { armorSimpleName, armorSlotFor, stopDonning, isBeingTakenOff, pendingArmorAction, removeHeroArmor, removeHeroAccessory, removeEyewear } from './do_wear.js';
 import { detachHeroGold } from './sit.js';
-import { isWeldedPrimary } from './wield.js';
+import { isWeldedPrimary, uwepgone, uswapwepgone, uqwepgone } from './wield.js';
+import { unpunishHero } from './read.js';
 import { monsterCanCarryObject, finishHeroMonsterKill, } from './mon.js';
 import { releaseObjectLeash } from './apply.js';
 import { assertCreatedObject } from './do.js';
 import { forgetObjectKnowledge, linkCreatedObjectToMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject, unlinkObject } from './mkobj.js';
-import { removeObjectFromMonsterInventory, updateMonsterEquipment } from './worn.js';
+import { removeObjectFromMonsterInventory, updateMonsterEquipment, removeHeroEquipment } from './worn.js';
 import { landFloorObject } from './floor_effects.js';
 import { cansee } from './vision.js';
 import { petDroppableObject } from './dog.js';
@@ -42,7 +42,7 @@ import { objectResistsDestruction } from './zap.js';
 import { costlySpot, removeObjectAndContentsFromBill, currentShopResident, deleteObject } from './shk.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { nomul, heroGoldAmount, roomsAt } from './hack.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { encumber_msg } from './pickup.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, touchPetrifies, } from './mondata.js';
@@ -374,6 +374,54 @@ export async function finishDelayedArmorTheft(thief, object, state) {
     await makeMonsterFlee(thief, { state, announce: false });
     if (!await reportMonsterTeleportRestriction(thief, { state }))
         await randomMonsterRelocation(thief, { state, flags: RLOC_MSG });
+}
+// C steal.c:remove_worn_item(). An object the hero is wearing has been
+// taken off by a monster (theft or seduction), or transforms (stone to
+// flesh); landing can otherwise disrobe or burn the very item whose
+// removal is still in progress.
+// Armor routes through the do_wear.c *_off() owners inside
+// removeHeroArmor()/clearHeroArmor(): Cloak_off(), Armor_off(),
+// Helmet_off(), Gloves_off(), Boots_off(), Shield_off(), Shirt_off().
+export async function removeWornHeroItem(object, state = game, { unchainBall = true, ...armorOptions } = {}) {
+    const wasInUse = object.in_use;
+    // C steal.c:remove_worn_item() branches on the ball/chain bits on
+    // entry: those items take the unpunish branch and skip the
+    // setnotworn() catchall, which clears them.
+    const wasBallOrChain = ((object.owornmask ?? 0) & (W_BALL | W_CHAIN)) !== 0;
+    object.in_use = true;
+    try {
+        const slot = armorSlotFor(object.otyp);
+        if (slot && (state[slot] === object || state.u?.[slot] === object)) {
+            // Native *_off() clears worn sources; the command loop owns find_ac().
+            await removeHeroArmor(object, state, armorOptions);
+        }
+        await removeHeroAccessory(object, state);
+        if (state.ublindf === object || state.u?.ublindf === object) {
+            await removeEyewear(object, { state });
+            if (state.program_state?.gameover)
+                return;
+        }
+        // C steal.c:remove_worn_item() W_WEAPONS branch.
+        if (state.uwep === object || state.u?.uwep === object)
+            await uwepgone(state);
+        if (state.uswapwep === object || state.u?.uswapwep === object)
+            await uswapwepgone(state);
+        if (state.uquiver === object || state.u?.uquiver === object)
+            await uqwepgone(state);
+        if (wasBallOrChain) {
+            if (unchainBall)
+                await unpunishHero(state);
+        }
+        else {
+            await removeHeroEquipment(object, state);
+        }
+    }
+    finally {
+        if (wasInUse === undefined)
+            delete object.in_use;
+        else
+            object.in_use = wasInUse;
+    }
 }
 // C steal.c:stealgold() and somegold(); called from uhitm.c:mhitm_ad_sgld()'s
 // hero branch.

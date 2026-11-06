@@ -143,7 +143,7 @@ import { coordinateDescription } from './pager.js';
 import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
 import { createPhysicalMonsterExplosion } from './explode.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { resolveMonsterGaze,
     expelHero,
 } from './mhitu.js';

@@ -61,7 +61,6 @@ import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMon
 import type { MonsterDeathOptions, MonsterLiquidDeathContext, HeroMonsterKillOptions, ReleaseHeroOptions } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
-import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
 import type { MonsterAttackDeathOptions, DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { adjustAttribute, adjustHeroAlignment, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
@@ -72,7 +71,7 @@ import { d, rn2, rnd } from './rng.js';
 import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMonsterPostMove, requirePerceivedHero, setMonsterApparentHeroPosition } from './monmove.js';
 import { attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero } from './mthrowu.js';
 import { castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay } from './mcastu.js';
-import { addObjectToMonsterInventory } from './steal.js';
+import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { bot } from './botl.js';
 import {
     burnArmorByFire, trapAt, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately,
@@ -80,7 +79,7 @@ import {
 } from './trap.js';
 import { getmattk } from './attack_selection.js';
 import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
-import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects } from './hack.js';
+import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
 import {
     attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker, contactIsProtected,
 } from './mhitm.js';
@@ -101,7 +100,6 @@ import { unplaceBallAndChain, moveSwallowedBallAndChain, placeBallAndChain } fro
 import { currency } from './invent.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects } from './muse.js';
-import { removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold, heroGoldObject } from './sit.js';
 import { heroIsUnaware } from './senses.js';
 import { inventoryItemDescription } from './invent.js';
@@ -121,7 +119,7 @@ import type { MapLocation } from './map_types.js';
 import { dismountHero } from './steed.js';
 import { encumber_msg } from './pickup.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { stopHeroOccupation } from './allmain.js';
 
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).

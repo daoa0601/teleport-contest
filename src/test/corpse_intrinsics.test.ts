@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { gainHeroStrength } from '../js/attrib.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { moveloop_core } from '../js/allmain.js';
+import { moveloop_core, stopHeroOccupation } from '../js/allmain.js';
 import { A_STR, TIMEOUT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { nhTimeout, putHeroToSleep } from '../js/timeout.js';
@@ -21,7 +21,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, GAUNTLETS_OF_POWER } from '../js/object_data.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 
-import { stopHeroOccupation } from '../js/occupation.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, refreshProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { setPrimaryWeapon } from '../js/wield.js';

@@ -42,7 +42,7 @@ import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
 import { greatestErosion, isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation } from './pline.js';
 import { heroIsFlying, body_part, mbodypart } from './polyself.js';
 import { altarWrath, desecrateAltar } from './pray.js';

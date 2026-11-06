@@ -36,7 +36,7 @@ import { inventoryReport } from './invent.js';
 import { isContainer, unlinkObject, deallocateObject } from './mkobj.js';
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import { extFuncTabFromFunc } from './command_bindings.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';

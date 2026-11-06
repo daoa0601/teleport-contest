@@ -692,12 +692,12 @@ rows are exactly the native FIRE_RES rows, checked concretely).
 The migrated call sites are the C callers that name the macro: trap.c
 `erode_obj` (trap.js `objectIsVulnerableToErosion` now dispatches each
 erosion kind to its owner and the local `objectCanBurn` duplicate is
-deleted, as is food_selection.js's private `objectIsFlammable`),
+deleted, as is the folded food-selection module's private `objectIsFlammable`),
 `lava_effects`' organic screening, hack.js's lava boots and rust-trap
 immunity (trap.c `immune_to_trap`), dig.c rot-on-burial, mon.c
 `meatmetal`/`meatobj`, monmove.c `gelcube_digests`, eat.c `rottenfood`
 and the rust-monster smell/admission branches, dog.c `dogfood`
-(pet_food.js), eat.c `edible` (food_selection.js), do_wear.c
+(pet_food.js), eat.c `edible` (eat.js), do_wear.c
 `hard_helmet` and `obj_erode_type`, dothrow.c `breakobj`'s crack branch,
 insight.c's spell-casting suit, spell.c's per-slot `metallic()` helper
 (deleted), steed.c's stiff armor, zap.c's ring-shock gloves, mthrowu.c's

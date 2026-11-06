@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import type { Engine } from '../js/jsmain.js';
 import { runSegment } from '../js/jsmain.js';
-import { fixedCalendar } from '../js/allmain.js';
+import { fixedCalendar } from '../js/calendar.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 function visibleScreen(engine: Engine): string {

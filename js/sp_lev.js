@@ -66,6 +66,7 @@ import { roomForIndex, roomsAt } from './hack.js';
 import { PanicTermination } from './panic_termination.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
+import { swapDirectionBits } from './hacklib.js';
 export async function fillVault(room) {
     if (!room)
         return;
@@ -677,12 +678,6 @@ function flip_dbridge_vertical(location) {
         return;
     location.flags = location.drawbridgemask = (mask & ~DB_DIR)
         | (direction === first ? second : first);
-}
-// C hacklib.c:swapbits()
-// Swap a pair of bits.
-function swapDirectionBits(value, first, second) {
-    const different = ((value >> first) ^ (value >> second)) & 1;
-    return value ^ ((different << first) | (different << second));
 }
 // C sp_lev.c:flip_encoded_dir_bits().
 function flip_encoded_dir_bits(flp, value) {

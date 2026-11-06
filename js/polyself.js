@@ -28,8 +28,7 @@ import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware, heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js';
 import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName, isBeingTakenOff, removeEyewear } from './do_wear.js';
-import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv } from './hack.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv, finishHeroHelplessness } from './hack.js';
 import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { newuhs } from './eat.js';
@@ -61,7 +60,7 @@ import { nameToMonster, resolveMonsterClass, heroCanBeStrangled, your_race, mons
 import { getLine, promptYesNo } from './query.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { retouchEquipment } from './artifact.js';
-import { removeWornHeroItem } from './hero_equipment.js';
+import { removeWornHeroItem } from './steal.js';
 import { dropInventoryObjectAtHero } from './do.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './read.js';

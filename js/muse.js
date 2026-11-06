@@ -47,9 +47,8 @@ import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon
 import { makePlural, verbForSubject, withIndefiniteArticle, definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile } from './mkobj.js';
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel, ceilingName, surfaceName } from './dungeon.js';
-import { removeWornHeroItem } from './hero_equipment.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './worn.js';
-import { addObjectToMonsterInventory } from './steal.js';
+import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './read.js';
 import { beginObjectBurn } from './timeout.js';
@@ -59,7 +58,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './s
 import { makeBlinded } from './potion.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { changeDoorByMagic } from './lock.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { propertyIsActive } from './properties.js';
 import { rayHitMessage, rayMissMessage } from './zap.js';
 import { heroHasHalfSpellDamage, monsterResistsEffect, learnWand } from './zap.js';

@@ -15,7 +15,6 @@ import { hitFloorWithObject, rangedTargetHitBonus } from './dothrow.js';
 import { exerciseAttribute } from './attrib.js';
 import { objectIsHardHelmet } from './do_wear.js';
 
-import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo } from './do.js';
 import { finishInventoryRemoval } from './invent.js';
 import {unlinkObject, placeObjectSynchronously, remove_object} from './mkobj.js';
@@ -29,7 +28,7 @@ import { woundHeroLegs } from './do.js';
 import { fillPitWithBoulderAt, resetUtrap } from './trap.js';
 import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp, nearCapacity, SLT_ENCUMBER, weightCapacity } from './hack.js';
 import { hitMonsterWithHeroObject } from './uhitm.js';
-import { findMonsterArmorClass } from './worn.js';
+import { findMonsterArmorClass, removeHeroEquipment } from './worn.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './zap.js';
 import type { GameState } from './game_state.js';

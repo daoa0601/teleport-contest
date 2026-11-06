@@ -66,7 +66,7 @@ import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterN
 import { possessiveName, mungSpaces } from './hacklib.js';
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor, isEyewear, wearEyewear } from './do_wear.js';
-import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
+import { removeWornHeroItem } from './steal.js';
 import { rechargeRing, unpunishHero } from './read.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
@@ -92,7 +92,7 @@ import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands, heroFormHidesUnderObjects, body_part } from './polyself.js';
 import { createPoisonGasCloud } from './region.js';
 import { dryFountainAt } from './fountain.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './cmd.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
@@ -117,7 +117,7 @@ import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, 
 import {
     setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed,
     monsterSpeedMessage, destroyObjectFromMonsterInventory, findMonsterArmorClass,
-    removeObjectFromMonsterInventory,
+    removeObjectFromMonsterInventory, removeHeroEquipment,
 } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { monsterHasMagicResistance } from './trap.js';

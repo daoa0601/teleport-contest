@@ -4,6 +4,10 @@
 // cfgfiles.ts (C cfgfiles.c).
 // C options.c:optfn_fruit()/initoptions()/fruitadd(): the named-fruit
 // option and registry live here, beside the rest of the option handlers.
+// C options.c:warning_opts()/assign_warnings(): the warnings option and its
+// symbol table live here.
+// C options.c:ask_do_tutorial(): the tutorial query lives here as
+// askTutorial().
 import { ILLOBJ_CLASS, COIN_CLASS, FOOD_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import { clearrolefilter, createCharacterFilters, setrolefilter } from './role.js';
@@ -13,7 +17,6 @@ import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAu
 import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
-import { setWarningSymbols } from './warning_symbols.js';
 import { PosixRegex } from './posix_regex.js';
 import { rn2, rnd } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion, parseBoulderSymbolValue } from './option_values.js';
@@ -39,12 +42,12 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { mungSpaces } from './hacklib.js';
+import { mungSpaces, fuzzyMatch } from './hacklib.js';
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
-import { attributeName, colorAttrToString, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName, matchColorName, parseColorAttr, parseMenuColoring, queryAttributeMenu, queryColorMenu } from './coloratt.js';
-import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, STONE, } from './const.js';
+import { attributeName, colorAttrToString, colorName, cutConfigBytes, matchAttributeName, matchColorName, parseColorAttr, parseMenuColoring, queryAttributeMenu, queryColorMenu } from './coloratt.js';
+import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms, STONE, } from './const.js';
 // C include/optlist.h, recorder build: every option table entry in file
 // order — [name, alias, isBool, negateok, valok, dupeok, prefix].  The
 // flags drive parseoptions()'s generic checks; options the port does not
@@ -625,6 +628,27 @@ export function parseAutopickupException(value, addError) {
         return compile(plain.text, false);
     addError('syntax error in AUTOPICKUP_EXCEPTION');
     return null;
+}
+// C options.c:ask_do_tutorial(). Empty acceptance rebuilds the menu with
+// an explanation; a selected answer or Escape ends the question.
+export async function askTutorial() {
+    let pass = 0;
+    for (;;) {
+        const items = [
+            { key: 'y', text: 'Yes, do a tutorial' },
+            { key: 'n', text: 'No, just start play' },
+            { text: '' },
+            { text: 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.' },
+        ];
+        if (pass++)
+            items.push({ text: "(Please choose 'y' or 'n'.)" });
+        const answer = await showInventoryWindow([{ items }], {
+            title: 'Do you want a tutorial?', pickMode: PICK_ONE,
+        });
+        if (answer.key === 0)
+            continue;
+        return answer.key === 'y'.charCodeAt(0);
+    }
 }
 // C options.c:parseoptions(): parse one OPTIONS= value list (or the whole
 // NETHACKOPTIONS string, from rcfile()'s environment call) element by
@@ -3145,5 +3169,22 @@ export function planInventoryOrder(symbols, state = game) {
         }
     }
     return { order: [...order, ...previous.filter(oclass => !order.includes(oclass))], errors };
+}
+// ---------------------------------------------------------------------------
+// C options.c:warning_opts()/assign_warnings().
+// ---------------------------------------------------------------------------
+// C options.c:warning_opts()/assign_warnings(): the string-valued warnings
+// option; the numeric WARNINGS= statement lives in cfgfiles.ts.
+// Also C drawing.c:def_warnsyms: the fallback symbol table.
+export function setWarningSymbols(value, flags) {
+    const decoded = decodeOptionEscapes(value).split('\0', 1)[0] ?? '';
+    const previous = flags.warningSymbols;
+    flags.warningSymbols = def_warnsyms.map((warning, index) => decoded.charAt(index)
+        || previous?.charAt(index) || warning.ch).join('');
+}
+export function warningSymbols() {
+    return def_warnsyms.map((warning, index) => ({ ...warning,
+        ch: game.iflags.warningSymbols?.charAt(index) || warning.ch,
+    }));
 }
 //# sourceMappingURL=options.js.map

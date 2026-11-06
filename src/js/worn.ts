@@ -6,6 +6,9 @@
 // (update_mon_extrinsics(), find_mac(), m_dowear(), m_dowear_type(),
 // which_armor(), m_lose_armor(), mon_break_armor(), extra_pref(),
 // extract_from_minvent()).
+// C worn.c:setnotworn() call sites (steal.c:mpickgold(), ball.c:litter(),
+// invent.c merging, shk.c, trap.c, zap.c, nhlua.c) clear every worn slot
+// at once; that expansion is removeHeroEquipment() below.
 import { WEAPON_CLASS } from './objclass.js';
 import { MFAST, MSLOW, NON_PM } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -30,7 +33,8 @@ import {
     monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor,
     monsterWrappingAllowed, touchPetrifies,
 } from './mondata.js';
-import { armorBonus, armorSimpleName, armorSlotFor, cancelSlotTakeoff } from './do_wear.js';
+import { armorBonus, armorSimpleName, armorSlotFor, cancelSlotTakeoff, clearHeroArmor, clearHeroAccessory } from './do_wear.js';
+import { syncBlindness } from './senses.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { artifactEmitsLight, setWieldedArtifactProperties, setWornArtifactProperties } from './artifact.js';
 import { isBimanualObject, isWeaponTool } from './object_properties.js';
@@ -270,6 +274,35 @@ export async function setnotworn(object: GameObject, state: GameState = game): P
         state.context.botl = true;
     // update_inventory(): the tty inventory view is rebuilt from state.
     recalculateTelepathyRange(state);
+}
+
+// Clear every equipment slot an item still occupies when it leaves the hero
+// or changes type (C worn.c:setnotworn(), steal.c:remove_worn_item()).
+// Command messages belong to the caller.
+export async function removeHeroEquipment(object: GameObject, state: GameState = game, {
+    deferArmorClass = false,
+}: { deferArmorClass?: boolean } = {}): Promise<void> {
+    const armorSlot = armorSlotFor(object.otyp);
+    if (state.uskin === object) {
+        state.uskin = null;
+        object.owornmask = (object.owornmask ?? 0) & ~I_SPECIAL;
+        await clearHeroArmor(object, state, { embeddedSkin: true });
+    }
+    if (armorSlot && (state[armorSlot] === object
+        || state.u?.[armorSlot] === object)) {
+        await clearHeroArmor(object, state);
+    }
+    await clearHeroAccessory(object, state, { deferArmorClass });
+    if (state.ublindf === object || state.u?.ublindf === object) {
+        // C do_wear.c:Blindf_off() clears the slot with
+        // setworn(0, otmp->owornmask); setnotworn() runs below.
+        await setworn(null, W_TOOL, state);
+        syncBlindness(state);
+    }
+    // C worn.c:setnotworn(): destroyed/used-up wielded items do not arm the
+    // "begin bashing with your bare hands" notice (zap.c:maybe_destroy_item,
+    // invent.c:useupall, apply.c:use_cream_pie all route through setnotworn).
+    await setnotworn(object, state);
 }
 
 // C worn.c:mon_set_minvis(). The map refresh and worm-tail reveal that the

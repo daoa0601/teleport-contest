@@ -62,7 +62,7 @@ import { munslime, munstone } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
 import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
 import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle, } from './objnam.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './pet_eating.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';

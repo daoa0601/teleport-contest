@@ -93,7 +93,7 @@ import { monsterHasMapPosition , monsterOccupiesPosition, monsterAtPosition } fr
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, glyphAt, map_invisible, transientObjectGlyph } from './display.js';
 import { goodPosition, randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
 import { mintrap, petrifyMonsterImmediately, erodeObject, resolveImmediatePetrification , petrifyMonsterFromContact, trapName, dotrap } from './trap.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd, d, rnl } from './rng.js';
 import { updateMonsterRegions , updateHeroRegions } from './region.js';

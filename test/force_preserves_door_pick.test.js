@@ -6,7 +6,7 @@ import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CLUB, CREDIT_CARD } from '../js/object_data.js';
-import { stopHeroOccupation } from '../js/occupation.js';
+import { stopHeroOccupation } from '../js/allmain.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

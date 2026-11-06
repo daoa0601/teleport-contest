@@ -4,7 +4,7 @@ import { findArmorClass, removeHeroArmor, stopDonning, wearHeroArmor } from '../
 
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { moveloop_core } from '../js/allmain.js';
+import { moveloop_core, stopHeroOccupation } from '../js/allmain.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, PIT, POOL, ROOM, TT_BEARTRAP, TT_PIT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
@@ -17,7 +17,6 @@ import {
     DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION,
     RING_MAIL, SMALL_SHIELD, TOWEL, TWO_HANDED_SWORD, WATER_WALKING_BOOTS,
 } from '../js/object_data.js';
-import { stopHeroOccupation } from '../js/occupation.js';
 import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { objectTypeKnown } from '../js/o_init.js';

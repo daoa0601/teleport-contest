@@ -32,7 +32,7 @@ import {
     pair_of, isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo,
     isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition,
 } from './object_properties.js';
-import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn } from './worn.js';
+import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn, removeHeroEquipment } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
@@ -57,24 +57,22 @@ import { showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMulti
 import type { InventoryMenuItem, InventorySection, InventorySelection, MenuLabel, MultiSelectSection, PageLocalMultiSelectSection } from './windows.js';
 import { nhgetch } from './input.js';
 import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, getCount, GC_SAVEHIST, GC_ECHOFIRST, GC_CONDHIST, ynSingleKey, yn_function } from './cmd.js';
-import { ingSuffix, possessiveName } from './hacklib.js';
+import { recorderSort, ingSuffix, possessiveName } from './hacklib.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME, HAND, FINGER, STOMACH } from './const.js';
 import type { GameFlags } from './flags.js';
 import { MONSTER_NAME } from './monster_data.js';
 import type { SpellCategory } from './data_types.js';
-import { removeHeroEquipment } from './hero_equipment.js';
 import { levelPrizeKind } from './level_prize.js';
 import { recordLiteracy } from './literacy.js';
 import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';
-import { recorderSort } from './recorder_sort.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isTwoWeaponObject, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
 import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifact.js';
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { recordAchievement } from './insight.js';
-import { isEdibleFood } from './food_selection.js';
+import { isEdibleFood } from './eat.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroCanReachFloor, readEngravingAt } from './engrave.js';

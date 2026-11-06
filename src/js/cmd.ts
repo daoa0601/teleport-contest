@@ -46,7 +46,7 @@ import { isContainer, unlinkObject, deallocateObject } from './mkobj.js';
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import type { CommandDefinition } from './command_data.js';
 import { extFuncTabFromFunc, type CommandBindings } from './command_bindings.js';
-import { stopHeroOccupation } from './occupation.js';
+import { stopHeroOccupation } from './allmain.js';
 import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 

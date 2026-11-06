@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { finishHeroHelplessness } from '../js/allmain.js';
+import { finishHeroHelplessness } from '../js/hack.js';
 import { game } from '../js/gstate.js';
 import { heroGazeAttack, useHeroGaze } from '../js/polyself.js';
 import { runMonsterAbilityCommand } from './support/commands.js';

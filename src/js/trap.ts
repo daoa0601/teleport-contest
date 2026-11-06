@@ -57,7 +57,6 @@ import { LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
 import type { IgniteItemsOptions } from './light.js';
 import { iceDescriptionAt, waterbodyName } from './pager.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
-import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE,
     MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, MONSTER_SOUND,
@@ -140,7 +139,7 @@ import {
     monsterName as perceivedMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName,
 } from './do_name.js';
 import { munstone } from './muse.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
+import { adjustMonsterSpeed, monsterSpeedMessage, removeHeroEquipment } from './worn.js';
 import {
     recordHeroKillConduct, finishHeroDeath, beginHeroLifeSaving, completeHeroLifeSaving, identifyLifeSavingAmulet,
 } from './end.js';
@@ -170,7 +169,7 @@ import {
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
     applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim,
     moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense,
-    UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks,
+    UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness,
 } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 
@@ -198,18 +197,17 @@ import type { LevitationState, PropertyState } from './property_types.js';
 import { autopickupAtHero, encumber_msg } from './pickup.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
-import { addObjectToMonsterInventory } from './steal.js';
+import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
-import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
 import { createPoisonGasCloud } from './region.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { stopHeroOccupation } from './allmain.js';
 import { reset_faint } from './eat.js';
 import type { GameMap } from './game.js';
 import { holdingMonsterName, holdingMonsterSubject } from './mhitu.js';
