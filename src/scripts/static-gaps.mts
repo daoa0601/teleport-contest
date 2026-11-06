@@ -3,7 +3,7 @@
 //   node scripts/static-gaps.mjs messages [--coverage C-COVERAGE.json] [--reviewed-ledger R.tsv] [--verbose] [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs edges [--function NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
-//   node scripts/static-gaps.mjs owners [--check-ledger L.tsv] [--write-ledger L.tsv]
+//   node scripts/static-gaps.mjs args [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs screens RUN_DIR
 //
 // `messages` lists every C string literal (outside debugging calls) whose
@@ -21,6 +21,11 @@
 //
 // `edges` compares each C function's static callees with what its port
 // counterpart reaches (see lib/gap-edges.mts).
+//
+// `args` records every TRUE/FALSE literal a C call spells and compares the
+// sequences with the bare true/false literals of the counterpart calls
+// (see lib/gap-args.mts); a pair with the same counts but different values
+// is a lead the edges map cannot express.
 //
 // `screens` reads a finished triage run and charges each screen-only first
 // difference to the C function whose literal appears on the differing row,
@@ -41,6 +46,9 @@ import {
 } from './lib/c-sources.mjs';
 import type { CSourceTree } from './lib/c-sources.mjs';
 import { checkConstants } from './lib/gap-constants.mjs';
+import { compareArgs } from './lib/gap-args.mjs';
+import { argRowKey } from './lib/gap-args.mjs';
+import type { ArgRow } from './lib/gap-args.mjs';
 import { compareEdges } from './lib/gap-edges.mjs';
 import type { EdgeRow } from './lib/gap-edges.mjs';
 import { checkMessageReviews, messageLedgerKey } from './lib/gap-message-reviews.mjs';
@@ -461,6 +469,36 @@ async function edges(args: string[]): Promise<void> {
         'caller\tcallee — C call edges the port counterpart reaches (static-gaps.mjs edges)');
 }
 
+// ── args ──
+
+async function argumentGaps(rest: string[]): Promise<void> {
+    const option = optionReader(rest);
+    const tree = resolveCSourceTree(ROOT, CACHE);
+    process.stderr.write(`C sources: ${relative(ROOT, tree.dir)} (${tree.files.length} files)\n`);
+    const report = await compareArgs(ROOT, tree, CACHE);
+    writeFileSync(join(CACHE, 'args.json'), JSON.stringify(report, null, 1) + '\n');
+    const gameplay = report.rows.filter(row => !row.infrastructure);
+    const line = (list: readonly ArgRow[]): string => {
+        const inList = (verdict: ArgRow['verdict']): number => list.filter(row => row.verdict === verdict).length;
+        return `${inList('match')} match, ${inList('mismatch')} mismatch, ${inList('uncomparable')} uncomparable`;
+    };
+    console.log('# TRUE/FALSE call arguments at mapped call sites\n');
+    console.log(`${report.comparedCalls} C call sites with a TRUE/FALSE literal whose caller and callee `
+        + `both map: ${report.rows.length} pairs — ${line(report.rows)}`);
+    console.log(`gameplay files: ${line(gameplay)} over ${gameplay.length} pairs`);
+    console.log('\n## Mismatches: the same calls and counts, different values\n');
+    for (const row of report.rows.filter(entry => entry.verdict === 'mismatch')
+        .sort((a, b) => a.file.localeCompare(b.file) || a.caller.localeCompare(b.caller))) {
+        const sequence = (values: readonly string[]): string => values.join('+') || '(no boolean literal)';
+        console.log(`${row.file} ${row.caller} → ${row.callee} (port ${row.port.join(', ')})`);
+        console.log(`  C ${row.cCalls.map(call => sequence(call.args.map(arg => arg.value))).join('; ')}`);
+        console.log(`  port ${row.portCalls.map(call => `${sequence(call.values)} (${call.fn.split(':')[0]}:${call.line})`).join('; ')}`);
+    }
+    console.log(`\nFull rows: ${relative(ROOT, join(CACHE, 'args.json'))}`);
+    applyLedger(option, report.rows.filter(row => row.verdict === 'match').map(argRowKey), 'argument rows',
+        'caller\tcallee\tsequences — C TRUE/FALSE argument sequences the port spells identically (static-gaps.mjs args)');
+}
+
 // ── owners ──
 
 // Folds the edges mapping by module: which C file each port module ports,
@@ -568,13 +606,14 @@ async function screens(args: string[]): Promise<void> {
 }
 
 const USAGE = 'usage: static-gaps.mjs {messages [--coverage C-COVERAGE.json] [--reviewed-ledger R.tsv] [--verbose] '
-    + '| constants | edges [--function NAME] | owners | screens RUN_DIR} '
+    + '| constants | edges [--function NAME] | args | owners | screens RUN_DIR} '
     + '[--check-ledger L.tsv] [--write-ledger L.tsv]';
 const [command, ...rest] = process.argv.slice(2);
 try {
     if (command === 'messages') await messages(rest);
     else if (command === 'constants') await constants(rest);
     else if (command === 'edges') await edges(rest);
+    else if (command === 'args') await argumentGaps(rest);
     else if (command === 'owners') await ownership(rest);
     else if (command === 'screens') await screens(rest);
     else {

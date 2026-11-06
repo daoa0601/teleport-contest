@@ -17,7 +17,7 @@ import { INFRASTRUCTURE_FILES, baseName } from './c-sources.mjs';
 import { isPortSource, portProgram } from './port-program.mjs';
 import { arrayValue, objectValue, stringValue } from './session-types.mjs';
 const EXTRACTOR_VERSION = 'edges-1';
-const REACH_DEPTH = 2;
+export const REACH_DEPTH = 2;
 // Callees whose job the port does through its own message and naming layer;
 // the message map (`static-gaps messages`) covers what they print.
 const HELPER_CALLEES = new Set([
@@ -150,7 +150,7 @@ function leadingComments(fn) {
     return (ts.getLeadingCommentRanges(source.text, anchor.getFullStart()) ?? [])
         .map(range => source.text.slice(range.pos, range.end));
 }
-function portIndex(root) {
+export function portIndex(root) {
     const program = portProgram(root);
     const checker = program.getTypeChecker();
     const byName = new Map();
@@ -208,6 +208,7 @@ function portIndex(root) {
         const names = new Set();
         const raw = new Set();
         const callees = new Set();
+        const calls = [];
         const visit = (node) => {
             if (ts.isIdentifier(node)) {
                 names.add(normalizedName(node.text));
@@ -220,8 +221,10 @@ function portIndex(root) {
                     symbol = checker.getAliasedSymbol(symbol);
                 for (const declaration of symbol?.declarations ?? []) {
                     const callee = asPortFunction(declaration);
-                    if (callee && callee !== fn)
+                    if (callee && callee !== fn) {
                         callees.add(callee);
+                        calls.push({ node, callee });
+                    }
                 }
             }
             ts.forEachChild(node, visit);
@@ -233,7 +236,7 @@ function portIndex(root) {
         if (fn.body)
             visit(fn.body);
         const cited = citations([...leadingComments(fn), ...commentsIn(fn.body?.getFullText() ?? '')]);
-        const entry = { names, raw, cited, callees };
+        const entry = { names, raw, cited, callees, calls };
         direct.set(fn, entry);
         return entry;
     };
@@ -266,9 +269,11 @@ function portIndex(root) {
         const source = fn.getSourceFile();
         return `${relative(root, source.fileName)}:${source.getLineAndCharacterOfPosition(fn.getStart(source)).line + 1}`;
     };
-    return { byName, byCitation, byOrigin, reach, locate };
+    const callsOf = (fn) => directOf(fn).calls;
+    const calleesOf = (fn) => [...directOf(fn).callees];
+    return { byName, byCitation, byOrigin, reach, callsOf, calleesOf, locate };
 }
-function readAliases(path) {
+export function readAliases(path) {
     const aliases = new Map();
     if (!existsSync(path))
         return aliases;
@@ -299,6 +304,33 @@ function readJustified(path) {
     });
     return justified;
 }
+// The port functions that counterpart a C function: the same name ignoring
+// case and underscores (with the origin-citation file disambiguating C files
+// that define names that normalize alike), the c-ts-aliases.tsv entries, or
+// — only when no same-named port function exists — a leading-comment
+// citation of the C name. `ownOriginOnly` reads only a comment block that
+// opens with the port's own `C file.c:name()` citation (the owners view).
+export function counterpartsOf(index, aliases, caller, file, ownOriginOnly = false) {
+    // Two C files can define names that normalize alike: a port function
+    // whose comment block opens with muse.c's `mbhit()` is not
+    // artifact.c's `Mb_hit()`.
+    const portsCaller = (fn) => {
+        const first = leadingComments(fn)[0];
+        const origin = originCitation(first);
+        const originFile = first === undefined ? undefined : /^\/\/\s*(?:C\s+)?([A-Za-z0-9_]+\.[ch]):/.exec(first)?.[1];
+        return !origin || origin === caller || normalizedName(origin) !== normalizedName(caller) || originFile === file;
+    };
+    const ownName = (index.byName.get(normalizedName(caller)) ?? []).filter(portsCaller);
+    const byName = [...new Set([...ownName,
+            ...(aliases.get(caller) ?? []).flatMap(name => index.byName.get(normalizedName(name)) ?? [])])];
+    const portNames = (cName) => [cName, ...(aliases.get(cName) ?? [])].map(normalizedName);
+    const citationIndex = ownOriginOnly ? index.byOrigin : index.byCitation;
+    // A citation counts when the C name itself has no same-named port
+    // function; an alias adds counterparts but never hides a citation.
+    const fns = [...new Set([...byName,
+            ...(ownName.length ? [] : portNames(caller).flatMap(name => citationIndex.get(name) ?? []).filter(portsCaller))])];
+    return { fns, mapping: byName.length ? 'name' : 'citation' };
+}
 export async function compareEdges(root, tree, cacheDir, definedIn, ownOriginOnly = false) {
     const graph = await cCallGraph(tree, cacheDir, definedIn);
     const index = portIndex(root);
@@ -310,31 +342,13 @@ export async function compareEdges(root, tree, cacheDir, definedIn, ownOriginOnl
     const unmapped = [];
     for (const [caller, callees] of [...graph.calls].sort((a, b) => a[0].localeCompare(b[0]))) {
         const file = graph.fileOf.get(caller) ?? '?';
-        // Two C files can define names that normalize alike: a port function
-        // whose comment block opens with muse.c's `mbhit()` is not
-        // artifact.c's `Mb_hit()`.
-        const portsCaller = (fn) => {
-            const first = leadingComments(fn)[0];
-            const origin = originCitation(first);
-            const originFile = first === undefined ? undefined : /^\/\/\s*(?:C\s+)?([A-Za-z0-9_]+\.[ch]):/.exec(first)?.[1];
-            return !origin || origin === caller || normalizedName(origin) !== normalizedName(caller) || originFile === file;
-        };
-        const ownName = (index.byName.get(normalizedName(caller)) ?? []).filter(portsCaller);
-        const byName = [...new Set([...ownName,
-                ...(aliases.get(caller) ?? []).flatMap(name => index.byName.get(normalizedName(name)) ?? [])])];
-        // A citation counts when the C name itself has no same-named port
-        // function; an alias adds counterparts but never hides a citation.
-        // `ownOriginOnly` (the owners view) reads only a comment block that
-        // opens with the port's own `C file.c:name()` citation, so prose
-        // mentions of other C functions cannot claim ownership.
-        const counterparts = [...new Set([...byName,
-                ...(ownName.length ? [] : portNames(caller).flatMap(name => citationIndex.get(name) ?? []).filter(portsCaller))])];
-        if (!counterparts.length) {
+        const counterparts = counterpartsOf(index, aliases, caller, file, ownOriginOnly);
+        if (!counterparts.fns.length) {
             unmapped.push({ file, function: caller });
             continue;
         }
         const reached = new Set(), cited = new Set(), rawWords = [];
-        for (const fn of counterparts) {
+        for (const fn of counterparts.fns) {
             const reach = index.reach(fn);
             for (const name of reach.names)
                 reached.add(name);
@@ -343,8 +357,8 @@ export async function compareEdges(root, tree, cacheDir, definedIn, ownOriginOnl
             for (const name of reach.raw)
                 rawWords.push(words(name));
         }
-        const row = { file, function: caller, mapping: byName.length ? 'name' : 'citation',
-            port: counterparts.map(index.locate), present: [], cited: [], justified: [], missing: [], infrastructure: INFRASTRUCTURE_FILES.has(file) };
+        const row = { file, function: caller, mapping: counterparts.mapping,
+            port: counterparts.fns.map(index.locate), present: [], cited: [], justified: [], missing: [], infrastructure: INFRASTRUCTURE_FILES.has(file) };
         for (const callee of [...callees].sort()) {
             if (HELPER_CALLEES.has(callee))
                 continue;
