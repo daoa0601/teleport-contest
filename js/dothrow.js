@@ -330,12 +330,15 @@ export async function dofire() {
 // through endmultishot(FALSE) without the announcement; the throw loop
 // registers the shared volley object here by reference.
 let activeVolley = null;
+// Port only: register the in-flight volley (C's gm.m_shot global).
 function beginHeroVolley(volley) {
     activeVolley = volley;
 }
+// Port only: clear the in-flight volley (C's gm.m_shot global).
 function finishHeroVolley() {
     activeVolley = null;
 }
+// C dothrow.c:endmultishot().
 export async function endmultishot(verbose, volley = activeVolley, state = game) {
     if (!volley || volley.index >= volley.count)
         return;
@@ -353,6 +356,7 @@ export async function endmultishot(verbose, volley = activeVolley, state = game)
     // Keep the count live so remaining contact messages see the limit.
     volley.count = volley.index;
 }
+// Port only: death-context adapter for throwit()'s swallowed-projectile kill.
 async function finishOrdinarySwallowedThrowKill(monster, projectile, options = {}) {
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
         ...options,
@@ -362,6 +366,7 @@ async function finishOrdinarySwallowedThrowKill(monster, projectile, options = {
         },
     });
 }
+// Port only: death-context adapter for the swallowed egg/venom/potion kill.
 async function finishOrdinarySwallowedConsumedKill(monster, kind, death = {}) {
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
         ...death,
@@ -370,6 +375,7 @@ async function finishOrdinarySwallowedConsumedKill(monster, kind, death = {}) {
         },
     });
 }
+// Port only: death-context adapter for the map-potion kill.
 async function finishOrdinaryMapPotionKill(monster, death = {}) {
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, death);
 }
@@ -586,6 +592,8 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
     }
     game.context.move = 1;
 }
+// Part of C dothrow.c:throwit(): one missile of a volley (throw_obj()'s
+// handoff).
 // throw_obj() hands off one missile at a time. An engulfer can die during a
 // volley, so every remaining missile must choose its current destination.
 async function throwSelectedUnit(item, dx, dy, volley) {
@@ -684,6 +692,7 @@ export async function reportHeroThrownMiss(monster, object, { state = game, publ
     else
         await publish(rayMissMessage(name, monster, { ...target, state }));
 }
+// Port only: admission checks for the map-selected potion throw.
 function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, dx, dy, }) {
     if (state.u?.uswallow || objectClass !== POTION_CLASS
         || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
@@ -692,9 +701,12 @@ function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, 
         return false;
     return true;
 }
+// Port only: dist2() from the hero.
 function distanceFromHero(state, x, y) {
     return dist2(state.u.ux, state.u.uy, x, y);
 }
+// Port only: adapter passing distance and visibility into the shared potion
+// hit.
 function hitMonsterWithThrownPotion({ state, monster, potion, wakeMonster, wakeNearby, finishKill, publish, }) {
     return hitMonsterWithSupportedPotion({
         state,
@@ -709,6 +721,8 @@ function hitMonsterWithThrownPotion({ state, monster, potion, wakeMonster, wakeN
         distance: distanceFromHero(state, monster.mx, monster.my),
     });
 }
+// Part of C dothrow.c:throwit(): the potion-at-a-monster throw selected on
+// the map.
 export async function resolveMapPotionThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, dx, dy, wakeMonster = null, wakeNearby = null, finishKill = null, publish = plineWithContinuation, }) {
     if (!canResolveMapPotionThrow({
         state, item, objectClass, selectedQuantity, dx, dy,
@@ -826,12 +840,14 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
 const S_EYE = 5;
 const S_LIGHT = 25;
 const PM_GRID_BUG = 116;
+// Port only: m_at() lookup excluding one monster.
 function monsterAt(state, x, y, ignoredMonster) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         monster !== ignoredMonster && !monster.dead
         && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
 }
+// C mondata.c:stagger().
 export function staggerVerb(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === S_EYE || symbol === S_LIGHT)
@@ -849,6 +865,8 @@ export function staggerVerb(mnum) {
         return 'falters';
     return 'staggers';
 }
+// Part of C dothrow.c:mhurtle_step(): the silent stoning finisher
+// (minstapetrify(TRUE)).
 // Both hurtle collision paths supply a silent death handler after the trap
 // owner has credited the kill, matching minstapetrify(mon, TRUE).
 function silentHeroStoning(finishMonsterDeath) {
@@ -856,6 +874,7 @@ function silentHeroStoning(finishMonsterDeath) {
         ...death, showKillMessage: false, recordConduct: false,
     });
 }
+// Part of C dothrow.c:mhurtle_step(): one square of monster hurtle.
 async function hurtleOneSquare(monster, dx, dy, { state, announce, nameMonster, finishMonsterDeath, monsterMoving, random, }) {
     const oldX = monster.mx;
     const oldY = monster.my;
@@ -1113,6 +1132,7 @@ export function rangedTargetHitBonus(object, defender, { state = game, defenderN
 function heroIsPolymorphed(state) {
     return Upolyd(state.u);
 }
+// Part of C dothrow.c:thitmonst(): the your_race() check for the bow bonus.
 function heroStillHasTheirRace(state) {
     if (!heroIsPolymorphed(state))
         return true;
@@ -1120,6 +1140,7 @@ function heroStillHasTheirRace(state) {
     return !!raceFlag
         && !!(your_race(state.u.umonnum, state));
 }
+// Part of C dothrow.c:thitmonst(): the bow gauntlets penalty.
 function bowGlovePenalty(state) {
     if (!state.uwep || objectSkill(state.uwep.otyp) !== P_BOW)
         return 0;
@@ -1130,6 +1151,7 @@ function bowGlovePenalty(state) {
         return -3;
     return 0;
 }
+// Part of C dothrow.c:thitmonst(): the elf/samurai bow bonus.
 function bowTrainingHitBonus(state, launcher) {
     if (objectSkill(launcher?.otyp) !== P_BOW
         || !heroStillHasTheirRace(state))
@@ -1142,6 +1164,7 @@ function bowTrainingHitBonus(state, launcher) {
         || (samurai && launcher.otyp === YUMI);
     return ownBow ? 2 : 1;
 }
+// Part of C dothrow.c:thitmonst(): the Dexterity hit bonus table.
 function dexterityHitBonus(state) {
     const dexterity = currentAttribute(A_DEX, state);
     if (dexterity < 4)
@@ -1152,6 +1175,8 @@ function dexterityHitBonus(state) {
         return -1;
     return dexterity >= 14 ? dexterity - 14 : 0;
 }
+// Part of C dothrow.c:thitmonst(): the base hit threshold (Luck, AC, level,
+// distance).
 function baseRangedHitThreshold(monster, weapon, state, random) {
     const distance = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy));
     const polymorphed = heroIsPolymorphed(state);
@@ -1174,6 +1199,7 @@ function baseRangedHitThreshold(monster, weapon, state, random) {
         : state.urace.name === 'elf';
     return threshold + (targetIsOrc && heroIsElf ? 1 : 0);
 }
+// Part of C dothrow.c:thitmonst(): the launcher and weapon bonus.
 function throwingHitBonus(monster, weapon, state) {
     if (isLauncherAmmunition(weapon)) {
         const launcher = state.uwep;
@@ -1189,6 +1215,7 @@ function throwingHitBonus(monster, weapon, state) {
         : isThrowingWeapon(weapon) ? 2 : -2;
     return bonus + weaponSkillHitBonus(weapon, state);
 }
+// Part of C dothrow.c:thitmonst(): the weapon-hit class test.
 function rangedObjectUsesWeaponHit(object) {
     const objectClass = object.oclass ?? objectClassForType(object.otyp);
     const skill = objectSkill(object.otyp);
@@ -1212,6 +1239,7 @@ async function missRangedObject(monster, object, state, target, applied, volley,
     return { hit: false, consumed: false };
 }
 const EGG_PIE_AND_VENOM_TYPES = new Set([EGG, CREAM_PIE, BLINDING_VENOM, ACID_VENOM]);
+// Part of C dothrow.c:thitmonst(): the egg/pie/venom admission.
 function isHeroThrownEggPieOrVenom(object) {
     return !!object && EGG_PIE_AND_VENOM_TYPES.has(object.otyp);
 }
@@ -1383,14 +1411,17 @@ export async function offerThrownFood(monster, object, state) {
     }
     return { heroDied: false, handled };
 }
+// Part of C dothrow.c:thitmonst(): the applied (use_pole()) arm.
 export async function hitMonsterWithAppliedWeapon(monster, weapon, { state = game, checkCaitiff = true, target } = {}) {
     requirePlayingGame(state);
     return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { checkCaitiff, ...(target ? { target } : {}) });
 }
+// Part of C dothrow.c:thitmonst(): the kicked (dokick.c kick()) arm.
 export async function hitMonsterWithKickedObject(monster, object, { state = game, target = { x: monster.mx, y: monster.my } } = {}) {
     requirePlayingGame(state);
     return hitMonsterWithRangedObject(monster, object, state, 'kicked', { target });
 }
+// Part of C dothrow.c:thitmonst(): the thrown (throwit_mon_hit()) arm.
 export function hitMonsterWithThrownObject(monster, object, { state = game, ...options } = {}) {
     requirePlayingGame(state);
     return hitMonsterWithRangedObject(monster, object, state, 'thrown', options);
@@ -1448,6 +1479,7 @@ async function publishBreakMessage(object, visible, publish, state) {
     const subject = description.charAt(0).toUpperCase() + description.slice(1);
     await publish(`${subject} ${quantity === 1 ? 'shatters' : 'shatter'}${intoPieces}!`);
 }
+// Part of C dothrow.c:breakobj(): the glass-armor crack.
 async function crackGlassArmor(object, x, y, publish, luckRandom, state) {
     const result = await erodeObject(object, 'crack', {
         state, publish, luckRandom, destroy: true, grease: false, verbose: true,
@@ -1455,6 +1487,7 @@ async function crackGlassArmor(object, x, y, publish, luckRandom, state) {
     });
     return result === 'destroyed';
 }
+// Part of C dothrow.c:breakobj(): the hero's potion vapor exposure.
 async function applyPotionBreakEffect(object, x, y, state, publish) {
     if (object.otyp === POT_OIL && object.lamplit)
         return false;
@@ -1476,6 +1509,7 @@ async function applyPotionBreakEffect(object, x, y, state, publish) {
     await applySupportedPotionVapor({ state, potion: object, publish });
     return true;
 }
+// Part of C dothrow.c:check_shop_obj(): billing a broken thrown object.
 async function settleBrokenShopObject(object, x, y, fromInventory, state, publish) {
     if (fromInventory || object.unpaid) {
         if ((state.u.ushops?.length ?? 0) || object.unpaid)
@@ -1574,6 +1608,7 @@ export async function breakObjectAtLocation(object, { x = object.ox, y = object.
         cameraDemon,
     };
 }
+// C dothrow.c:hitfloor().
 export async function hitFloorWithObject(object, { verbose = true, state = game, publish = plineWithContinuation } = {}) {
     requireLiveGame(state);
     const hero = state.u;
@@ -1656,6 +1691,7 @@ export function walkPathCells(fromX, fromY, toX, toY) {
 // C dothrow.c:release_camera_demon().
 const PM_HOMUNCULUS = 51;
 const PM_IMP = 52;
+// C dothrow.c:release_camera_demon().
 export async function releaseCameraDemon(object, x, y, { state = game, publish = plineWithContinuation, random = rn2, summonMonster = makemonAt, } = {}) {
     if (random(3) !== 0)
         return null;
@@ -1709,19 +1745,23 @@ export async function settleThrownShopObject(object, x, y, state = game, publish
     }
     return true;
 }
+// Port only: the hero's polymorphed species or null.
 function heroForm() {
     requirePlayingGame(game);
     return Upolyd(game.u) ? game.u.umonnum : null;
 }
+// Part of C dothrow.c:hurtle_step(): the sobj_at(BOULDER) check.
 function floorBoulder(x, y) {
     return (game.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === BOULDER) || null;
 }
+// Part of C dothrow.c:hurtle_step(): the m_at() lookup including worm tails.
 // C m_at() also finds a long worm by any of its tail segments.
 function heroHurtleMonsterAt(x, y) {
     return game.level?.monsters?.find(monster => monsterHasMapPosition(monster) && !monster.dead && (monster.mhp ?? 1) > 0
         && monsterOccupiesPosition(monster, x, y)) || null;
 }
+// Part of C dothrow.c:hurtle_step(): the Passes_walls/W_NONPASSWALL test.
 function wallPassage(location) {
     const hasAbility = !!(game.u.passesWalls
         || monsterPassesWalls(heroMonsterForm() ?? -1));
@@ -1731,6 +1771,7 @@ function wallPassage(location) {
             && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL)),
     };
 }
+// Part of C dothrow.c:hurtle_step(): the bumping killer reasons.
 function obstacleReason(location, openDoorFrame) {
     if (location.typ === TREE)
         return 'bumping into a tree';
@@ -1747,6 +1788,8 @@ async function loseImpactHitPoints(amount, killer) {
         amount = Math.trunc((amount + 1) / 2);
     return loseHeroHp(amount, killer, { killerFormat: KILLED_BY });
 }
+// Part of C dothrow.c:hurtle_step(): the obstacle classification (door
+// frame, bars, crevice).
 function obstacleAt(x, y) {
     const hero = game.u;
     const location = game.level?.at?.(x, y);
@@ -1801,6 +1844,8 @@ function obstacleAt(x, y) {
     }
     return null;
 }
+// Part of C dothrow.c:hurtle_step(): the Ouch! impact with losehp() and
+// wake_nearto().
 async function hitObstacle(obstacle, x, y, remaining) {
     await plineWithContinuation(obstacle.message);
     if (obstacle.followup)
@@ -1809,10 +1854,13 @@ async function hitObstacle(obstacle, x, y, remaining) {
         return;
     await wakeMonstersNearWithMessages(x, y, 10);
 }
+// Part of C dothrow.c:hurtle_step(): the torso-armor check before
+// instapetrify().
 function heroWearsTorsoArmor() {
     return !!(game.uarmu || game.uarm || game.uarmc
         || game.u?.uarmu || game.u?.uarm || game.u?.uarmc);
 }
+// Part of C dothrow.c:hurtle_step(): the bump-into-monster collision.
 async function collideWithMonster(monster, x, y, options) {
     const glyph = glyphAt(x, y);
     monster.mundetected = 0;
@@ -1841,6 +1889,7 @@ async function collideWithMonster(monster, x, y, options) {
     }
     await wakeMonstersNearWithMessages(x, y, 10);
 }
+// Part of C dothrow.c:hurtle(): the "anchored by" message.
 function anchoredMessage() {
     const type = game.u?.utraptype;
     if (type === TT_WEB)
@@ -1853,9 +1902,12 @@ function anchoredMessage() {
         return 'You are anchored by the buried ball.';
     return 'You are anchored by the trap.';
 }
+// Part of C dothrow.c:hurtle(): the nomul(0) stop.
 function stopHurtle() {
     nomul(0);
 }
+// Part of C dothrow.c:hurtle_step(): the landing trap (dotrap() or pass
+// over).
 async function triggerLandingTrap(trap, options, remaining) {
     requirePlayingGame(game);
     if (!trap)
@@ -1888,6 +1940,7 @@ async function triggerLandingTrap(trap, options, remaining) {
     return game.level !== before.level
         || game.u.ux !== before.x || game.u.uy !== before.y;
 }
+// Port only: forwards the hurtle owner's teleport callbacks to dotrap().
 // drown() relocates a hero who crawls out or is rescued through teleds(),
 // whose spoteffects() covers the room, trap, and look-here at the landing.
 function hurtleTrapOptions(options) {
@@ -1898,6 +1951,7 @@ function hurtleTrapOptions(options) {
         trapOptions.gotoLevel = options.gotoLevel;
     return trapOptions;
 }
+// Part of C dothrow.c:hurtle_step(): the lava/pool pass-over and drown().
 async function settleLiquid(options, remaining) {
     requirePlayingGame(game);
     const { ux: x, uy: y } = game.u;
@@ -1937,8 +1991,9 @@ async function settleLiquid(options, remaining) {
     });
     return true;
 }
-// C dothrow.c:hurtle_step().  A single step for the hero flying through
-// the air from jumping, flying, etc.; the range pointer stops the walk.
+// C dothrow.c:hurtle_step().
+// A single step for the hero flying through the air from jumping, flying,
+// etc.; the range pointer stops the walk.
 async function moveOneSquare(x, y, options, remaining) {
     requirePlayingGame(game);
     if (!isok(x, y)) {
@@ -2015,6 +2070,7 @@ export async function hurtleJumpTo(x, y, options = {}) {
 }
 // C dothrow.c:hurtle().  The hero moves through the air for a few squares
 // as a result of throwing or kicking something; also hurtle_step() below.
+// C dothrow.c:hurtle().
 export async function hurtleHero(dx, dy, range, { verbose = false, finishTeleport = null, gotoLevel = null, chooseTeleportDestination = null, finishMonsterDeath = null, volley, } = {}) {
     requirePlayingGame(game);
     const ball = game.uball || game.u.uball;
@@ -2081,6 +2137,8 @@ export function harmlessMissile(object, state = game) {
             return object.oclass === SCROLL_CLASS || objectMaterial(object, state) === CLOTH;
     }
 }
+// Part of C dothrow.c:should_mulch_missile(): the is_ammo()/is_missile()
+// split.
 export function projectileKind(object) {
     // C should_mulch_missile() tests is_ammo(obj) || is_missile(obj); the
     // kind label is the port's own classification of the two branches.
@@ -2090,6 +2148,7 @@ export function projectileKind(object) {
         return 'missile';
     return null;
 }
+// Port only: removes a mulched projectile from every object list.
 // C frees a mulched projectile. Remove it from every JavaScript object list.
 export function destroyMulchedProjectile(object) {
     if (!object)
@@ -2099,6 +2158,7 @@ export function destroyMulchedProjectile(object) {
     object.ocarry = null;
     delete object.carrierMid;
 }
+// C dothrow.c:should_mulch_missile().
 export function shouldMulchMissile(object, { monsterMoving = false } = {}) {
     if (!object || !projectileKind(object)
         || OBJ_NAME(object.otyp) === 'boomerang'
@@ -2236,11 +2296,13 @@ export async function tossObjectUp(object, { state = game, publish = plineWithCo
         await loseHeroHp(damage, 'falling object', { state, publish });
     return landed;
 }
+// Part of C dothrow.c:toss_up(): the falling object's name.
 async function fallingObjectSubject(object, state) {
     observeObjectForNaming(object, { state });
     const name = await objectDescription(object, { state });
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
+// Part of C dothrow.c:toss_up(): the falling stoning ("elementary physics").
 async function petrifyFromFallingObject(object, helmet, state, publish) {
     if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
         const result = await polymonHero(MONSTER_NAME.indexOf('stone golem'));
@@ -2362,6 +2424,7 @@ async function showReturnFlight(object, impact, state) {
     await captureThrownObjectFlight(object, path, state, glyph);
 }
 const PM_AIR_ELEMENTAL = 154;
+// Port only: s_suffix()-style possessive.
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
@@ -2373,6 +2436,7 @@ async function swallowit(engulfer, object, state, attachedBall) {
         return;
     await addObjectToMonsterInventory(engulfer, object, state, { atFront: true });
 }
+// Part of C dothrow.c:throwit(): the swallowed weapon-like admission.
 function swallowedWeaponTarget(state, item, objectClass) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer)
@@ -2389,6 +2453,7 @@ function swallowedWeaponTarget(state, item, objectClass) {
     }
     return engulfer;
 }
+// Part of C dothrow.c:throwit(): the swallowed generic-object admission.
 function genericSwallowedEligibility(state, item, objectClass) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer)
@@ -2410,6 +2475,7 @@ function genericSwallowedEligibility(state, item, objectClass) {
         return null; // is_weptool()
     return engulfer;
 }
+// Part of C dothrow.c:throwit(): the swallowed potion admission.
 function swallowedPotionEligibility(state, item, objectClass, selectedQuantity) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer || objectClass !== POTION_CLASS
@@ -2860,6 +2926,7 @@ async function returnThrowToInventory(object, weaponMask, twoWeapons, oldSlot, s
     await encumber_msg(state);
     return returned;
 }
+// Part of C dothrow.c:throw_gold(): the landing with sellobj() and stack.
 async function settleGoldOnFloor(state, gold, x, y, dz = 0) {
     const floor = await applyFloorEffects(gold, x, y, { state, verb: 'fall' });
     if (state.program_state?.gameover || floor.finished)
@@ -2874,6 +2941,8 @@ async function settleGoldOnFloor(state, gold, x, y, dz = 0) {
     await newsym(x, y);
     return survivor;
 }
+// Part of C dothrow.c:throw_gold(): the purse's monster contact (food
+// catch, swallowed, miss).
 async function resolveQuiveredGoldMonsterContact({ state, monster, gold, swallowed = false, wakeMonster = null, }) {
     // dothrow.c:omon_adj() can thaw a mobile species before thitmonst()
     // consumes its ordinary d20 targeting roll. Coins skip the damaging
@@ -2903,6 +2972,7 @@ async function resolveQuiveredGoldMonsterContact({ state, monster, gold, swallow
         await wakeMonster?.(monster);
     return false;
 }
+// C dothrow.c:throw_gold().
 export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, wakeMonster = null, angerMonster = null, }) {
     if (!gold || gold.oclass !== COIN_CLASS || !state.inventory.includes(gold))
         return false;
@@ -2962,6 +3032,7 @@ export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz =
     await settleGoldOnFloor(state, gold, x, y);
     return true;
 }
+// Part of C dothrow.c:throwit(): the coin dispatch to throw_gold().
 export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, wakeMonster = null, }) {
     if (!gold || gold !== heroGoldObject(state) || gold !== state.uquiver)
         return false;

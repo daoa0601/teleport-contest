@@ -91,6 +91,7 @@ async function kickOuch(x, y, objectName = '') {
     if (!died && kickCausesRecoil())
         await recoilFromKick(4 + rn2(2));
 }
+// Part of C dokick.c:kick_ouch(): the Is_airlevel()||Levitation recoil gate.
 function kickCausesRecoil() {
     return Is_airlevel(game.u?.uz) || game.u?.levitating
         || game.u?.levitation || game.levitating;
@@ -130,6 +131,8 @@ function kickDeathReason(x, y) {
         return 'kicking an iron bar';
     return 'kicking something weird';
 }
+// Part of C dokick.c:kick_ouch(): the losehp(Maybe_Half_Phys) with
+// kickstr().
 async function damageHeroFromKick(amount, x, y, objectName) {
     const killer = objectName ? `kicking ${objectName}` : kickDeathReason(x, y);
     return loseHeroHp(amount, killer, { deathCause: `killed by ${killer}` });
@@ -137,17 +140,20 @@ async function damageHeroFromKick(amount, x, y, objectName) {
 // C dokick.c:1425-1436 kick recoil: range = (3 * mdat->cwt)
 // / (youmonst.data->cwt + (weight_cap() + inv_weight())), floored at 1.
 const HUMAN_WEIGHT = 1450;
+// Part of C dokick.c:dokick(): the youmonst.data->cwt factor.
 function heroBodyWeight(state = game) {
     const form = Upolyd(state.u)
         ? state.u.umonnum
         : state.urace?.mnum;
     return form === undefined ? HUMAN_WEIGHT : MONSTER_BODY_META[form]?.[0] ?? HUMAN_WEIGHT;
 }
+// Part of C dokick.c:dokick(): the 3*cwt recoil range.
 export function kickRecoilRange(monsterMnum, state = game) {
     const targetWeight = MONSTER_BODY_META[monsterMnum]?.[0] ?? 0;
     const movingWeight = Math.max(1, heroBodyWeight(state) + inventoryWeight(state));
     return Math.max(1, Math.trunc(3 * targetWeight / movingWeight));
 }
+// Part of C dokick.c:kick_ouch(), dokick.c:dokick(): the hurtle() recoil.
 async function recoilFromKick(range) {
     const { dx, dy } = game.u;
     if (dx === undefined || dy === undefined)
@@ -160,6 +166,8 @@ async function recoilFromKick(range) {
         finishMonsterDeath: finishHurtleMonsterDeath,
     });
 }
+// Part of C dokick.c:kick_monster(): the passive(mon, uarmf) counterattack
+// calls.
 function applyKickPassive(monster, hit) {
     return applyHeroContactPassive(monster, {
         hit,
@@ -301,15 +309,18 @@ const MERCENARY_BASE_BRIBE = new Map([
     [PM_LIEUTENANT, 500],
     [PM_CAPTAIN, 750],
 ]);
+// Port only: gold object quan accessor.
 function goldQuantity(object) {
     return Math.max(0, Math.trunc(object?.quan ?? object?.quantity ?? 0));
 }
+// Part of C dokick.c:ghitm(): the miss() message.
 async function missGold(monster, gold, state) {
     const name = objectCombatName(gold, { state });
     const spotted = cansee(monster.mx, monster.my) || canSpotMonster(monster);
     const target = state.flags.verbose !== false && spotted ? monsterName(monster, { state }) : 'it';
     await pline(`The ${name} ${goldQuantity(gold) === 1 ? 'misses' : 'miss'} ${target}.`);
 }
+// Part of C dokick.c:ghitm(): the shopkeeper credit/robbed branch.
 async function finishShopkeeperCatch(monster, value, state) {
     if (!hasShopkeeperData(monster))
         throw new Error('Shopkeeper gold payment requires shopkeeper data.');
@@ -332,6 +343,7 @@ async function finishShopkeeperCatch(monster, value, state) {
         await pline('"Thanks, scum!"');
     }
 }
+// Part of C dokick.c:ghitm(): the watchman gold branch.
 async function finishGuardCatch(monster, state) {
     const visible = heroGoldAmount(state);
     const hidden = hiddenGold(state, true);
@@ -343,6 +355,7 @@ async function finishGuardCatch(monster, state) {
     // dokick.c ghitm verbalizes guard speech unconditionally.
     await pline(`"${speech}"`);
 }
+// Part of C dokick.c:ghitm(): the mercenary bribe branch.
 async function finishMercenaryCatch(monster, value, state) {
     const wasAngry = !monster.mpeaceful;
     let required = MERCENARY_BASE_BRIBE.get(monster.mnum) ?? 0;
@@ -366,6 +379,7 @@ async function finishMercenaryCatch(monster, value, state) {
         await pline(`"Thanks for the tip, ${state.flags?.female ? 'lady' : 'buddy'}."`);
     }
 }
+// C dokick.c:ghitm(). A thrown or kicked purse a greedy monster catches.
 export async function resolveGoldMonsterContact({ state, monster, gold, wakeMonster, angerMonster, }) {
     const greedy = likes_gold(monster?.mnum);
     const mercenary = is_mercenary(monster?.mnum);
@@ -576,6 +590,7 @@ async function kickDumb(x, y) {
     if (kickCausesRecoil() && rn2(2) !== 0)
         await recoilFromKick(1);
 }
+// C dokick.c:kick_door().
 export async function kickDoor(x, y, average, responses) {
     requirePlayingGame(game);
     const door = game.level.requireAt(x, y);
@@ -652,6 +667,8 @@ async function witnessDoorKick(x, y, broken) {
         door.looted = (door.looted ?? 0) | D_WARNED;
     }
 }
+// Part of C dokick.c:watchman_thief_arrest(), dokick.c:watchman_door_damage():
+// the watchman's yell (verbalize()).
 async function watchmanYells(monster, shout) {
     const name = monsterName(monster, { article: 'a', capitalized: true });
     if (heroIsDeaf()) {
@@ -665,6 +682,7 @@ async function watchmanYells(monster, shout) {
         await publishHeardMessage('someone yell:', plineWithContinuation);
     await plineWithContinuation(`"${shout}"`);
 }
+// C dokick.c:kick_nondoor().
 export async function kickNonDoorTerrain(x, y, average, responses) {
     requirePlayingGame(game);
     const location = game.level.requireAt(x, y);
@@ -702,6 +720,7 @@ export async function kickNonDoorTerrain(x, y, average, responses) {
     game.context.move = 1;
     return true;
 }
+// Part of C dokick.c:kick_nondoor(): the throne cases.
 async function kickThrone(x, y, location, responses) {
     requirePlayingGame(game);
     if (game.u.levitating) {
@@ -739,6 +758,7 @@ async function kickThrone(x, y, location, responses) {
     }
     await responses.ouch(x, y);
 }
+// Part of C dokick.c:kick_nondoor(): the altar and fountain cases.
 async function kickAltarOrFountain(x, y, location, responses) {
     if (game.u.levitating) {
         await responses.dumb(x, y);
@@ -758,9 +778,11 @@ async function kickAltarOrFountain(x, y, location, responses) {
     }
     await exerciseAttribute(A_DEX, true);
 }
+// Part of C dokick.c:kick_nondoor(): the G_GONE species check.
 function speciesGone(species) {
     return !!((game.mvitals?.[species]?.mvflags ?? 0) & G_GONE);
 }
+// Part of C dokick.c:kick_nondoor(): the tree case (fruit, bees).
 async function kickTree(x, y, location, responses) {
     const bee = MONSTER_NAME.indexOf('killer bee');
     if (rn2(3) !== 0) {
@@ -810,6 +832,7 @@ async function kickTree(x, y, location, responses) {
     }
     await responses.ouch(x, y);
 }
+// Part of C dokick.c:kick_nondoor(): the sink cases.
 async function kickSink(x, y, location, responses) {
     const gender = heroPolyGender();
     if (game.u.levitating) {
@@ -849,6 +872,8 @@ const S_EYE = 5;
 const S_LIGHT = 25;
 const S_EEL = 57;
 const PM_SHADE = 288;
+// Part of C dokick.c:kick_monster(): the teleports/floats/swoops/slides/
+// jumps evasion verb chain.
 function evasionVerb(monster, state) {
     const symbol = MONSTER_SYMBOL[monster.mnum];
     if (monsterCanTeleport(monster.mnum) && !monsterTeleportRestricted(monster, state))
@@ -861,6 +886,7 @@ function evasionVerb(monster, state) {
         return 'slides';
     return 'jumps';
 }
+// Part of C dokick.c:kickdmg(): the pet abuse and flee.
 export async function abuseKickedPet(monster, potentialDamage, { state = game, } = {}) {
     if (!await abusePet(monster, state))
         return { heroDied: false };
@@ -871,6 +897,8 @@ export async function abuseKickedPet(monster, potentialDamage, { state = game, }
     const turns = potentialDamage > 0 ? rnd(potentialDamage) : 1;
     return makeMonsterFlee(monster, { state, turns, announce: false });
 }
+// Part of C dokick.c:kick_monster(): the clumsy-kick encumbrance and armor
+// checks.
 export async function prepareKick({ martial = false, state = game, announce = async () => { }, } = {}) {
     let clumsy = false;
     const capacity = weightCapacity(state);
@@ -906,6 +934,8 @@ export async function prepareKick({ martial = false, state = game, announce = as
     }
     return { stopped: false, clumsy };
 }
+// Part of C dokick.c:kick_monster(): the "Floating in the air, you miss
+// wildly!" check.
 export async function levitatingKickMisses(monster, state = game) {
     const levitating = !!(state.u?.levitating || state.u?.levitation
         || state.levitating);
@@ -916,6 +946,7 @@ export async function levitatingKickMisses(monster, state = game) {
         return false;
     return true;
 }
+// Part of C dokick.c:kick_monster(): the block-or-evade branch.
 export async function tryKickEvasion(monster, { clumsy = false, martial = false, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     if (rn2(clumsy ? 3 : 4) !== 0)
         return false;
@@ -939,6 +970,8 @@ export async function tryKickEvasion(monster, { clumsy = false, martial = false,
     await announce(`${nameMonster(monster)} ${evasionVerb(monster, state)}, ${clumsy ? 'easily' : 'nimbly'} evading your ${clumsy ? 'clumsy ' : ''}kick.`);
     return true;
 }
+// Part of C dokick.c:kickdmg(): base damage, shade, and special_dmgval()
+// setup.
 export function prepareKickDamage(monster, { clumsy = false, state = game, } = {}) {
     const boots = state.uarmf || state.u?.uarmf;
     let damage = Math.trunc((currentStrength(state) + currentAttribute(A_DEX, state)
@@ -960,6 +993,8 @@ export function prepareKickDamage(monster, { clumsy = false, state = game, } = {
     }
     return { potentialDamage: damage, specialDamage, passesThroughShade: false };
 }
+// Part of C dokick.c:kickdmg(): the rnd(dmg) roll with martial and boot
+// bonuses.
 export async function rollKickDamage(prepared, { martial = false, state = game, } = {}) {
     const boots = state.uarmf || state.u?.uarmf;
     let damage = prepared.potentialDamage;
@@ -976,6 +1011,7 @@ export async function rollKickDamage(prepared, { martial = false, state = game, 
         + (state.u?.udaminc ?? state.udaminc ?? 0);
     return { damage: Math.max(0, damage), trainSkill };
 }
+// Part of C dokick.c:kickdmg(): the martial reel (knock-back) with mintrap().
 export async function tryKickReel(monster, dx, dy, { martial = false, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     requirePlayingGame(state);
     if ((monster.mhp ?? 1) <= 0 || !martial
@@ -1046,6 +1082,7 @@ export async function settleDestroyedShopCharges({ loss, x, y, publish = plineWi
     }
     return { loss, settled: true };
 }
+// C dokick.c:container_impact_dmg().
 export async function containerImpactDamage(container, x, y, { state = game, publish = plineWithContinuation, random = rn2, fromInventory = true, } = {}) {
     // Contents breakage mutates live floor state, shop billing, and the
     // topline.
@@ -1103,9 +1140,11 @@ export async function containerImpactDamage(container, x, y, { state = game, pub
         container.owt = objectWeight(container);
     await settleDestroyedShopCharges({ loss, x, y, publish, state });
 }
+// Port only: object quan accessor.
 function quantity(object) {
     return object.quan ?? object.quantity ?? 1;
 }
+// Port only: per-unit weight of a stacked object.
 function unitWeight(object) {
     if (quantity(object) === 1)
         return objectWeight(object);
@@ -1355,26 +1394,32 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
             state._kickedObject = null;
     }
 }
+// Part of C dungeon.c:on_level(): local d_level comparison (full port in
+// dungeon.ts).
 function sameLevel(first, second) {
     return !!first && !!second
         && first.dnum === second.dnum
         && first.dlevel === second.dlevel;
 }
+// Part of C dokick.c:drop_to(): the next-level-down destination.
 function levelBelow(state) {
     const current = state.u?.uz || { dnum: 0, dlevel: 1 };
     return { ...current, dlevel: (current.dlevel ?? 1) + 1 };
 }
+// Part of C dokick.c:drop_to(): the bottom-level check.
 function onBottomLevel(state) {
     const current = state.u?.uz;
     const dungeon = state.dungeons?.[current?.dnum];
     return !!current && !!dungeon
         && current.dlevel === dungeon.num_dunlevs;
 }
+// Part of C dokick.c:drop_to(): the In_endgame() check.
 function inEndgame(state) {
     const current = state.u?.uz;
     return !!current && !!state.astral_level
         && current.dnum === state.astral_level.dnum;
 }
+// Part of C dokick.c:drop_to(): the Is_stronghold() check.
 function onStronghold(state) {
     return sameLevel(state.u?.uz, state.stronghold_level);
 }
@@ -1423,11 +1468,13 @@ function downwardGate(state, x, y) {
             ? 'through the trap door' : 'through the hole',
     };
 }
+// Part of C dokick.c:otransit_msg(): the subject name (the(xname())).
 function transitSubject(object, state) {
     const subject = object.otyp === CORPSE ? corpseName(object, { definite: true })
         : `the ${objectCombatName(object, { state })}`;
     return subject.charAt(0).toUpperCase() + subject.slice(1);
 }
+// Part of C dokick.c:impact_drop(): the cansee() test.
 // C cansee() reads only the vision array.  A hero blinded by polymorph keeps
 // the old sight until the next vision_recalc(), so the shed equipment's
 // transit messages still show.
@@ -1436,9 +1483,12 @@ function squareIsVisible(state, x, y) {
         return cansee(x, y);
     return !state.viz_array || !!((state.viz_array[y]?.[x] ?? 0) & 0x2);
 }
+// Part of C dokick.c:impact_drop(): the level.objects[x][y] pile access.
 function pileAt(state, x, y) {
     return state.level?.objects?.[x]?.[y] || [];
 }
+// Part of C dokick.c:impact_drop(): the pile scan for the chain and the
+// object count.
 function pileImpact(state, object, x, y) {
     let count = 0;
     let chainThere = false;
@@ -1452,6 +1502,8 @@ function pileImpact(state, object, x, y) {
     }
     return { count, chainThere };
 }
+// C mkobj.c:add_to_migration(). The destination codes are dokick.c's
+// drop_to() overloads.
 function addToMigration(object, gate, state) {
     object.no_charge = false;
     if (isContainer(object))
@@ -1484,6 +1536,8 @@ async function publishTransitMessage(object, gate, stays, impact, publish, state
         : ` and ${plural ? 'fall' : 'falls'} ${gate.text}.`;
     await publish(`${transitSubject(object, state)} ${verb} ${target}${fall}`);
 }
+// Part of C dokick.c:impact_drop(): breakage with the luck loss and the
+// muffled crash/splat.
 async function breaksInTransit(object, state, publish, random) {
     const { objectBreaksOnImpact } = await import('./dothrow.js');
     if (!objectBreaksOnImpact(object, random))
@@ -1500,6 +1554,7 @@ async function breaksInTransit(object, state, publish, random) {
     await deleteObject(object, state);
     return true;
 }
+// C dokick.c:impact_drop().
 export async function impactDrop(missile, x, y, { state = requireInitializedGame(), publish = async () => { }, random = rn2, destinationLevel = 0, } = {}) {
     const gate = downwardGate(state, x, y);
     if (!gate)
@@ -1578,6 +1633,7 @@ export async function impactDrop(missile, x, y, { state = requireInitializedGame
     }
     return fallen;
 }
+// C dokick.c:ship_object().
 export async function shipObject(object, x, y, { state = requireInitializedGame(), publish = async () => { }, random = rn2, shopFloorObject = false, } = {}) {
     if (!object)
         return false;
@@ -1644,6 +1700,7 @@ export async function shipObject(object, x, y, { state = requireInitializedGame(
     }
     return true;
 }
+// Part of C dokick.c:obj_delivery(): the arrival breakage check.
 async function breaksOnArrival(object, state, x, y, random, noBreak, withHero, publish) {
     const location = state.level.at(x, y);
     if (noBreak || (location !== null && IS_SOFT(location.typ)))
@@ -1658,6 +1715,7 @@ async function breaksOnArrival(object, state, x, y, random, noBreak, withHero, p
     await delobj(object, state);
     return true;
 }
+// Part of C dokick.c:obj_delivery(): the random-position arrival (rloco()).
 async function deliverAtRandomPosition(object, state, random, publish, noBreak) {
     object.ox = object.oy = 0;
     if (!await relocateObjectRandomly(object, { state, random, publish })
@@ -1667,6 +1725,8 @@ async function deliverAtRandomPosition(object, state, random, publish, noBreak) 
     if (objectBreaksOnImpact(object, random))
         await delobj(object, state);
 }
+// Part of C dokick.c:obj_delivery(): the passage arrival with stack_object()
+// and scatter().
 async function deliverAtPassage(object, migration, state, position, publish, random, rollOne, noBreak) {
     const arrival = migration.arrival & ~(MIGR_NOBREAK | MIGR_NOSCATTER);
     await placeObject(object, position.x, position.y, state);

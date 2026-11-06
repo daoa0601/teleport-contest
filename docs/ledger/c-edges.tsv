@@ -6,6 +6,7 @@ Amulet_off	setworn
 Amulet_off	spoteffects
 Amulet_on	newsym
 Amulet_on	rnd
+Amulet_on	setworn
 Armor_off	setworn
 Blindf_off	gulp_blnd_check
 Blindf_off	setworn
@@ -58,6 +59,7 @@ able_to_loot	hliquid
 able_to_loot	is_pool
 abon	acurr
 accessible	closed_door
+accessory_or_armor_on	nomul
 accessory_or_armor_on	setworn
 accessory_or_armor_on	yn_function
 act_on_act	cmdq_add_dir
@@ -2075,6 +2077,7 @@ kick_monster	newsym
 kick_monster	rn2
 kick_monster	rnd
 kick_monster	unmap_invisible
+kick_nondoor	adjalign
 kick_nondoor	altar_wrath
 kick_nondoor	exercise
 kick_nondoor	fall_through
@@ -2089,6 +2092,7 @@ kick_nondoor	rnl
 kick_nondoor	scatter
 kick_nondoor	sink_backs_up
 kick_nondoor	water_damage
+kick_nondoor	weight
 kick_ouch	acurr
 kick_ouch	exercise
 kick_ouch	feel_location
@@ -3513,6 +3517,8 @@ print_dungeon	chr_u_on_lvl
 print_dungeon	unplaced_floater
 print_dungeon	unreachable_level
 print_level_annotation	get_annotation
+print_mapseen	align_gname
+print_mapseen	endgamelevelname
 prisoner_speaks	adjalign
 prisoner_speaks	angry_guards
 process_menu_window	dmore
@@ -4255,6 +4261,7 @@ throne_sit_effect	rndcurse
 throne_sit_effect	special_throne_effect
 throne_sit_effect	tele
 throne_sit_effect	yn_function
+throw_gold	ceiling
 throw_gold	closed_door
 throw_gold	isok
 throw_gold	newsym

@@ -48,6 +48,7 @@ const LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 const WORM_TAIL_CLASS = MONSTER_SYMBOL[LONG_WORM_TAIL];
 // C detect.c:do_mapping(), do_vicinity_map().
 const MAP_MODE = TER_DETECT | TER_MAP | TER_TRP | TER_OBJ;
+// C detect.c:unconstrain_map().
 export function unconstrainMap(state = game) {
     const saved = { uinwater: state.u.uinwater, uburied: state.u.uburied,
         uswallow: state.u.uswallow, underwater: state.underwater };
@@ -57,6 +58,7 @@ export function unconstrainMap(state = game) {
     return { saved, changed: !!(saved.uinwater || saved.underwater
             || saved.uburied || saved.uswallow) };
 }
+// C detect.c:reconstrain_map().
 export function reconstrainMap({ saved }, state = game) {
     state.iflags.save_uswallow = false;
     if (saved.uinwater === undefined)
@@ -95,6 +97,7 @@ export async function redisplayDetectionMap(constraints, state = game) {
     // the suppressing run flag (travel leaves context.run at 8) blocks the
     // time update that would otherwise re-flag it.
 }
+// C detect.c:browse_map().
 export async function browseDetectionMap(terrainMode, goal, { state = game, } = {}) {
     const hadTip = await showGetposTip(state);
     const savedAutoDescribe = state.iflags.autodescribe;
@@ -195,6 +198,7 @@ function objectOfMaterial(object, material, state) {
     }
     return null;
 }
+// C detect.c:observe_recursively().
 function observeRecursively(object, state) {
     observeObject(object, state);
     for (const child of object.contents || [])
@@ -313,6 +317,8 @@ export async function detectGold(source, { state = game } = {}) {
     }
     return effectResult(0, known);
 }
+// Part of C detect.c:gold_detect(): the blessed o_material(GOLD) /
+// o_in(COIN_CLASS) match.
 function goldIn(object, blessed, state) {
     return blessed && objectOfMaterial(object, GOLD, state)
         || objectOfClass(object, COIN_CLASS);
@@ -381,6 +387,7 @@ export async function detectFood(source, { state = game } = {}) {
     }
     return effectResult(0, true);
 }
+// Part of C detect.c:food_detect(): the blessed uedibility grant.
 async function grantEdibility(source, state) {
     if (!source?.blessed)
         return;
@@ -510,14 +517,17 @@ export async function detectObjects(source, { state = game, objectClass = RANDOM
     }
     return effectResult(0, false);
 }
+// Part of C detect.c:object_detect(): the cursed mimic-appearance match.
 function misleadingMimic(monster, source, objectClass) {
     return source?.cursed && M_AP_TYPE(monster) === M_AP_OBJECT
         && (!objectClass || objectClassForType(monster.mappearance ?? -1) === objectClass);
 }
+// Part of C detect.c:gold_detect(): the findgold()/gold-golem monster test.
 function monsterGold(monster, objectClass) {
     return (!objectClass || objectClass === COIN_CLASS)
         && monsterObjects(monster).some(object => object.otyp === GOLD_PIECE);
 }
+// C detect.c:monster_detect().
 export async function detectMonsters(source, { state = game, monsterClass = 0 } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -566,6 +576,7 @@ export async function detectMonsters(source, { state = game, monsterClass = 0 } 
     }
     return effectResult(0, true);
 }
+// C detect.c:sense_trap().
 async function senseTrap(trap, shown, cursed, state) {
     const hallucinating = heroIsHallucinating(state);
     if (!hallucinating && !cursed) {
@@ -583,8 +594,10 @@ async function senseTrap(trap, shown, cursed, state) {
     await map_object(object, true);
     shown.set(`${trap.tx},${trap.ty}`, object);
 }
-// C detect.c:sense_trap(). A hallucinating hero remembers a fabricated
-// object glyph, while the real trap remains discovered and unchanged.
+// Part of C detect.c:sense_trap(): the findone() flash path; the full port
+// is senseTrap() above.
+// A hallucinating hero remembers a fabricated object glyph, while the real
+// trap remains discovered and unchanged.
 async function senseDetectedTrap(trap) {
     if (!heroIsHallucinating(game)) {
         await map_trap(trap, true);
@@ -637,6 +650,7 @@ async function detectContainerTraps(objects, shown, cursed, state, ft) {
     }
     return result;
 }
+// C detect.c:display_trap_map().
 async function displayTrapMap(cursed, state) {
     await clearDetectionMap(state);
     const constraints = unconstrainMap(state);
@@ -970,9 +984,10 @@ export async function showMapSpot(x, y, { state = game, confused = false, reveal
     if (!confused && loc.roomno >= ROOMOFFSET)
         recordDiscoveredRoom(loc.roomno - ROOMOFFSET, { state });
 }
-// C detect.c:do_mapping() and show_map_spot().  Mapping reveals terrain and
-// secret corridors.  It preserves secret doors, unknown traps, and objects
-// the hero had not already seen.
+// Part of C detect.c:do_mapping(), detect.c:show_map_spot(): the per-square
+// show_map_spot() loop.
+// Mapping reveals terrain and secret corridors.  It preserves secret doors,
+// unknown traps, and objects the hero had not already seen.
 export async function mapLevel({ confused = (game.u?.confusionTurns ?? 0) > 0, revealAllTraps = false, exercise = true, } = {}) {
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
@@ -983,6 +998,7 @@ export async function mapLevel({ confused = (game.u?.confusionTurns ?? 0) > 0, r
     if (exercise)
         exerciseWisdom();
 }
+// C detect.c:do_mapping().
 export async function mapMagicLevel({ state = game, confused = (state.u.confusionTurns ?? 0) > 0, revealAllTraps = false } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1000,6 +1016,7 @@ export async function mapMagicLevel({ state = game, confused = (state.u.confusio
     }
     exerciseWisdom(true, state);
 }
+// C detect.c:do_vicinity_map().
 export async function mapVicinity(source, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1086,6 +1103,7 @@ export async function mapVicinity(source, { state = game } = {}) {
     if (refresh)
         await docrt();
 }
+// Part of C detect.c:do_vicinity_map(): the before/after glyph comparison.
 // Native compares glyph identities, which include species and object type;
 // colors and tty highlighting do not make a different remembered glyph.
 function glyphChanged(before, after) {
@@ -1101,6 +1119,8 @@ function glyphChanged(before, after) {
         return before.trapType !== after.trapType;
     return false;
 }
+// Part of C detect.c:do_vicinity_map(): remembered-symbol half of the glyph
+// comparison.
 function glyphCharacter(glyph) {
     return glyph && 'ch' in glyph && typeof glyph.ch === 'string' ? glyph.ch : undefined;
 }
@@ -1117,6 +1137,8 @@ export function convertSecretDoor(location, state = game) {
     location.arboreal_sdoor = 0;
     location.candig = false;
 }
+// Part of C detect.c:do_vicinity_map(), detect.c:findit(): revealing a
+// secret door via cvt_sdoor_to_door().
 export function revealSecretDoor(x, y) {
     const loc = game.level?.at(x, y);
     if (loc?.typ !== SDOOR)
@@ -1126,6 +1148,8 @@ export function revealSecretDoor(x, y) {
     game.vision_full_recalc = 1;
     return true;
 }
+// Part of C detect.c:do_vicinity_map(), detect.c:findit(): revealing a
+// secret corridor.
 export function revealSecretCorridor(x, y) {
     const loc = game.level?.at(x, y);
     if (loc?.typ !== SCORR)
@@ -1150,9 +1174,11 @@ async function showFoundFeature(x, y, glyph) {
     await newsym(x, y);
     vision[x] = previousVision;
 }
+// Part of C detect.c:find_trap(): the "You find <an> <trap>." message.
 function foundTrapMessage(trap) {
     return `You find ${withIndefiniteArticle(trapName(trap.ttyp))}.`;
 }
+// Part of C detect.c:findit(): the " and " / ", and " list joins.
 function joinFindings(parts) {
     if (parts.length < 2)
         return parts[0] || '';
@@ -1160,6 +1186,7 @@ function joinFindings(parts) {
         return `${parts[0]} and ${parts[1]}`;
     return `${parts.slice(0, -1).join(', ')}, and ${parts.at(-1)}`;
 }
+// Part of C detect.c:findit(): the "a trap"/"%d traps" counts.
 function countDescription(count, singular, plural) {
     return count === 1 ? singular : `${count} ${plural}`;
 }
@@ -1536,6 +1563,7 @@ async function searchAdjacentSecrets(automatic = false) {
     }
     return found;
 }
+// Part of C allmain.c:moveloop_core(): the automatic dosearch0(1) each turn.
 // Intrinsic searching uses the same rolls and messages as an explicit
 // search, but leaves concealed monsters alone.
 export async function automaticSearch() {
@@ -1543,6 +1571,8 @@ export async function automaticSearch() {
         return false;
     return searchAdjacentSecrets(true);
 }
+// Part of C do.c:cmd_safety_prevention(): the Searching/another-search
+// prompt.
 async function preventUnsafeSearch(force = false) {
     return commandSafetyPrevention({
         force,
@@ -1553,6 +1583,7 @@ async function preventUnsafeSearch(force = false) {
         counterKey: '_alreadyFoundFlag',
     });
 }
+// C detect.c:dosearch().
 // An ordinary unsuccessful search still consumes time. Counted searches
 // repeat this same owner across complete scheduler turns rather than changing
 // behavior for a role, coordinate, or command transcript.
@@ -1752,9 +1783,12 @@ export async function revealTerrain(subset) {
         await flush_screen(1);
     }
 }
+// Port only: DetectionResult constructor.
 function effectResult(result, known, strangeFeeling = false) {
     return { result, known, strangeFeeling };
 }
+// Part of C detect.c:food_detect(), object_detect(), trap_detect(): place
+// the steed under the hero before scanning minvent.
 function alignSteed(state) {
     const steed = state.u.usteed;
     if (steed) {
@@ -1762,19 +1796,26 @@ function alignSteed(state) {
         steed.my = state.u.uy;
     }
 }
+// Port only: minvent accessor.
 function monsterObjects(monster) { return monster.minvent || []; }
+// Part of C detect.c:gold_detect(), food_detect(), object_detect(): ox/oy
+// placement and map_object() of the found object.
 async function showObjectAt(object, x, y, shown) {
     object.ox = x;
     object.oy = y;
     await map_object(object, true);
     shown.set(`${x},${y}`, object);
 }
+// Part of C detect.c:gold_detect(): the detected-coins object built from
+// cg.zeroobj.
 // C's detected-coins object is also built from cg.zeroobj; only otyp, quan,
 // and the coordinates are assigned, so it keeps a zero oc_class too.
 function detectedCoins() {
     const quantity = rnd(10);
     return { otyp: GOLD_PIECE, oclass: RANDOM_CLASS, quan: quantity, quantity, ox: 0, oy: 0 };
 }
+// Part of C detect.c:display_trap_map(): redisplay the hero unless something
+// showed at <ux,uy>.
 async function showHeroUnlessCovered(shown, state) {
     let mode = TER_DETECT | TER_OBJ;
     if (!shown.has(`${state.u.ux},${state.u.uy}`)) {
@@ -1783,19 +1824,28 @@ async function showHeroUnlessCovered(shown, state) {
     }
     return mode;
 }
+// Part of C detect.c:display_trap_map(), detect.c:trap_detect(): the cls()
+// clear.
 export async function clearDetectionMap(_state = game) {
     await cls();
 }
+// Port only: u_at(x, y) test.
 function atHero(x, y, state) { return x === state.u.ux && y === state.u.uy; }
+// Part of C detect.c:display_trap_map(): the ftrap walk.
 function floorTraps(state) { return [...(state.level.traps || [])].reverse(); }
+// Part of C detect.c:gold_detect(), food_detect(), object_detect(): the
+// fobj walk, newest first.
 function floorObjects(state) {
     return state.level.objects.flatMap(column => column?.flatMap(pile => pile || []) || [])
         .sort((a, b) => (b._fobjOrder || 0) - (a._fobjOrder || 0));
 }
+// Part of C detect.c:gold_detect(), monster_detect(), food_detect(): the
+// fmon walk with DEADMONSTER()/isgd checks.
 function liveMonsters(state) {
     const monsters = [...(state.level.monsters || [])];
     return monsters.reverse().filter(monster => !monster.dead && monster.mhp > 0 && !(monster.isgd && !monster.mx));
 }
+// Part of C detect.c:display_trap_map(): the doors[] walk for trapped doors.
 function trappedDoors(state) {
     return (state.level.doors || []).slice(0, state.level.doorindex).filter(({ x, y }) => {
         const location = state.level.at(x, y);

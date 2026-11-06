@@ -21,12 +21,15 @@ import { monsterName } from './do_name.js';
 import { convertSecretDoor } from './detect.js';
 import { addShopDamage } from './shk.js';
 import { monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterSpeciesHidesOnCeiling } from './mondata.js';
+// Part of C music.c:do_pit(), music.c:do_earthquake(): m_at() lookup.
 function monsterAt(x, y) {
     return game.level ? monsterAtPosition(game.level, x, y) : null;
 }
+// Part of C music.c:do_pit(): sobj_at(BOULDER, x, y) lookup.
 function boulderAt(x, y) {
     return game.level?.objects?.[x]?.[y]?.find(object => object.otyp === BOULDER) || null;
 }
+// Part of C music.c:do_pit(): KADOOM branch, boulder fills the new chasm.
 async function fillChasmWithBoulder(x, y, boulder, monster) {
     if (cansee(x, y)) {
         await plineWithContinuation(`KADOOM!  The boulder falls into a chasm${game.u?.ux === x && game.u?.uy === y ? ' below you' : ''}!`);
@@ -36,6 +39,7 @@ async function fillChasmWithBoulder(x, y, boulder, monster) {
     remove_object(boulder);
     await applyFloorEffects(boulder, x, y);
 }
+// Part of C dig.c:liquid_flow(): the water_damage_chain() branch.
 async function damageFloorObjectsWithWater(x, y) {
     const pile = game.level?.objects?.[x]?.[y] || [];
     const messages = [];
@@ -45,6 +49,7 @@ async function damageFloorObjectsWithWater(x, y) {
             await plineWithContinuation(message);
     }
 }
+// Part of C dig.c:liquid_flow(): earthquake caller; terrain type set here.
 async function flowLiquidIntoChasm(x, y, trap, liquid, monster) {
     const location = requireGameLevel(game).at(x, y);
     if (!location)
@@ -83,30 +88,36 @@ async function flowLiquidIntoChasm(x, y, trap, liquid, monster) {
     }
     await newsym(x, y);
 }
+// Port only: death-finisher hook for the minliquid() call in liquid_flow().
 function finishEarthquakeLiquidDeath(monster, options) {
     if (options.cause === 'drowning' || options.cause === 'lava-burning') {
         return finishHeroLiquidMonsterDeath(monster, options);
     }
     return finishMonsterLiquidDeath(monster, options);
 }
+// Part of C music.c:do_pit(): is_clinger(youmonst.data) test.
 function heroClingsToCeiling() {
     if (!heroIsPolymorphed(game))
         return false;
     return monsterIsClinger(game.u.umonnum ?? -1);
 }
+// Part of C music.c:do_pit(): Levitation || Flying || clinger test.
 function heroIsAirborne() {
     const hero = game.u;
     return !!(hero.levitating || hero.levitation || game.levitating
         || hero.flying || game.flying
         || heroClingsToCeiling());
 }
+// Part of C music.c:do_pit(): set_utrap(rn1(6, 2), TT_PIT).
 function trapHeroInChasm() {
     setHeroTrap(rn2(6) + 2, TT_PIT);
 }
+// Part of C music.c:do_pit(): Maybe_Half_Phys() halving of the fall damage.
 function physicalDamage(amount) {
     const halfDamage = game.u.halfPhysicalDamage;
     return halfDamage ? Math.trunc((amount + 1) / 2) : amount;
 }
+// Part of C music.c:do_pit(): hero branch — chain break, airborne, fall, jostled.
 async function dropHeroIntoChasm(hadPitBeforeEarthquake) {
     if (game.u?.utrap && game.u.utraptype === TT_BURIEDBALL) {
         await plineWithContinuation('Your chain breaks!');
@@ -155,6 +166,7 @@ async function dropHeroIntoChasm(hadPitBeforeEarthquake) {
         });
     }
 }
+// Part of C music.c:do_pit(): xkilled(XKILL_NOMSG) finisher for a mselftouch death.
 function finishEarthquakeStoning(monster, options = {}) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
         ...options,
@@ -162,11 +174,13 @@ function finishEarthquakeStoning(monster, options = {}) {
         recordConduct: false,
     });
 }
+// Part of C music.c:do_pit(): the "poor <pet>" x_monnam() form in the destroy message.
 function earthquakeMonsterName(monster) {
     return monster.mtame
         ? monsterName(monster, { adjective: 'poor', suppressSaddle: !!MGIVENNAME(monster) })
         : monsterName(monster);
 }
+// Part of C music.c:do_pit(): monster branch — trap, fall, and destroy messages.
 async function dropMonsterIntoChasm(monster, x, y) {
     if ((monsterIsFlyer(monster.mnum) || monsterIsClinger(monster.mnum)))
         return;
@@ -225,6 +239,7 @@ async function openChasm(x, y, hadPitBeforeEarthquake) {
         await newsym(x, y);
     return true;
 }
+// Part of C music.c:do_earthquake(): wakeup plus the shaken-loose-from-ceiling branch.
 async function wakeMonsterForEarthquake(monster) {
     if (!monster)
         return false;
@@ -244,11 +259,14 @@ async function wakeMonsterForEarthquake(monster) {
     }
     return false;
 }
+// Part of C music.c:do_earthquake(): align_str(Amask2align()) for the altar case.
 function altarName(location) {
     const alignment = Amask2align(location.flags & AM_MASK);
     return alignment > 0 ? 'lawful'
         : alignment < 0 ? 'chaotic' : alignment === 0 ? 'neutral' : 'unaligned';
 }
+// Part of C music.c:do_earthquake(): the terrain switch (fountain, sink,
+// altar, grave, throne, doors) around the do_pit() calls.
 async function shakeTerrain(x, y, hadPitBeforeEarthquake) {
     const location = requireGameLevel(game).at(x, y);
     if (!location)

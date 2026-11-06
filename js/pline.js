@@ -251,7 +251,8 @@ function writeRawText(text) {
     }
     display.flush();
 }
-// C end.c:panic(), with win/tty/wintty.c:getret() before the window exit.
+// Part of C end.c:panic(): "Oops..." window-exit preamble, with
+// win/tty/wintty.c:getret(); the full port is diagnostics.ts:panic().
 // The browser has no host tty to restore after exit_nhwindows(). Keep the
 // terminal diagnostic separate from map/status output, with Native's getret.
 export async function beginPanicOutput() {

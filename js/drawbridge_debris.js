@@ -6,6 +6,8 @@ import { mksobj, placeCreatedObject } from './mkobj.js';
 import { IRON_CHAIN } from './object_data.js';
 import { rn2 } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
+// Part of C dbridge.c:destroy_drawbridge(): the iron-chain debris loop
+// around explode.c:scatter().
 export async function scatterDrawbridgeDebris(bridge, wall, state, options = {}) {
     const heroCaused = !state.context.mon_moving;
     const finishMonsterKill = options.finishMonsterKill || finishHeroMonsterKill;
