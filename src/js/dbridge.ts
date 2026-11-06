@@ -65,6 +65,7 @@ export function isMoatAt(x: number, y: number, state = game) {
             && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_MOAT));
 }
 
+// C dbridge.c:is_lava().
 export function isLavaAt(x: number, y: number, state = game) {
     if (!isok(x, y)) return false;
     const location = state.level?.at?.(x, y);
@@ -99,6 +100,7 @@ export function isIceAt(x: number, y: number, state: Pick<GameState, 'level'> = 
     return location.typ === ICE || (location.typ === DRAWBRIDGE_UP
         && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_ICE);
 }
+// C dbridge.c:get_wall_for_db().
 // C get_wall_for_db() reads the current mask, even after collapse clears it.
 export function drawbridgeWallPosition({ x, y, location }: DrawbridgeSquare): Position {
     const direction = (location.drawbridgemask || 0) & DB_DIR;
@@ -108,6 +110,7 @@ export function drawbridgeWallPosition({ x, y, location }: DrawbridgeSquare): Po
     return { x: x - 1, y };
 }
 
+// Port only: pairs a drawbridge square with its get_wall_for_db() wall.
 export function drawbridgeWallAt(x: number, y: number, state = game): DrawbridgeSquare | null {
     const level = state.level;
     if (!level) return null;
@@ -119,6 +122,8 @@ export function drawbridgeWallAt(x: number, y: number, state = game): Drawbridge
     return location ? { x: wallX, y: wallY, location } : null;
 }
 
+// Part of C dbridge.c:find_drawbridge(): the neighboring-bridge search from
+// a wall square.
 function bridgeBesideWall(x: number, y: number, state = game): Position | null {
     const level = state.level;
     if (!level) return null;
@@ -138,6 +143,7 @@ function bridgeBesideWall(x: number, y: number, state = game): Position | null {
     }) || null;
 }
 
+// C dbridge.c:find_drawbridge().
 export function findDrawbridgeAt(x: number, y: number, state = game): DrawbridgeSquare | null {
     if (!isok(x, y) || !state.level) return null;
     const location = state.level.at(x, y);
@@ -161,12 +167,16 @@ async function destroyObjectsAt(x: number, y: number, state: GameState): Promise
     }
 }
 
+// Part of C dbridge.c:open_drawbridge(), close_drawbridge(),
+// destroy_drawbridge(): the t_at()/deltrap() removal.
 function removeTrapAt(x: number, y: number, state = game): void {
     const trap = state.level?.traps.find(candidate =>
         candidate.tx === x && candidate.ty === y);
     if (trap) deleteTrap(trap, state);
 }
 
+// Part of C dbridge.c:open_drawbridge(), close_drawbridge(),
+// destroy_drawbridge(): the del_engr_at() removal.
 function removeEngravingAt(x: number, y: number, state = game): void {
     const level = requireGameLevel(state);
     level.engravings = (level.engravings || []).filter(
@@ -174,6 +184,8 @@ function removeEngravingAt(x: number, y: number, state = game): void {
     );
 }
 
+// Part of C dbridge.c:open_drawbridge(), close_drawbridge(): the
+// revive_nasty()/delallobj()/deltrap()/del_engr_at() cleanup.
 async function clearDrawbridgeSquares(
     bridge: DrawbridgeSquare,
     wall: DrawbridgeSquare,
@@ -190,12 +202,16 @@ async function clearDrawbridgeSquares(
     removeEngravingAt(wall.x, wall.y, state);
 }
 
+// Part of C dbridge.c:open_drawbridge(), close_drawbridge(): the distu()
+// comparison.
 function squaredHeroDistance(point: Position, state: GameState): number {
     const hero = state.u || {};
     return (point.x - (hero.ux || 0)) ** 2
         + (point.y - (hero.uy || 0)) ** 2;
 }
 
+// Part of C dbridge.c:open_drawbridge(), close_drawbridge(): the
+// coming/going up/down messages.
 async function announceBridgeMovement(bridge: DrawbridgeSquare, wall: DrawbridgeSquare, opening: boolean, state: GameState): Promise<void> {
     if (cansee(bridge.x, bridge.y) || cansee(wall.x, wall.y)) {
         const bridgeDistance = squaredHeroDistance(bridge, state);
@@ -216,10 +232,12 @@ async function announceBridgeMovement(bridge: DrawbridgeSquare, wall: Drawbridge
         : 'chains rattling and gears turning.', plineWithContinuation, state);
 }
 
+// Port only: u_at() position test.
 function heroAt(point: Position, state: GameState): boolean {
     return state.u?.ux === point.x && state.u?.uy === point.y;
 }
 
+// Part of C dbridge.c:destroy_drawbridge(): the splash/crash messages.
 async function announceBridgeDestruction(bridge: DrawbridgeSquare, wall: DrawbridgeSquare, under: number, state: GameState): Promise<void> {
     const overLava = under === DB_LAVA;
     if (under === DB_MOAT || overLava) {
@@ -243,6 +261,7 @@ async function announceBridgeDestruction(bridge: DrawbridgeSquare, wall: Drawbri
         await publishHeardMessage('a loud *CRASH*!', plineWithContinuation, state);
 }
 
+// C dbridge.c:open_drawbridge().
 export async function openDrawbridge(x: number, y: number, state = game, options: DrawbridgeOptions = {}): Promise<boolean> {
     const bridgeLocation = state.level?.at(x, y);
     if (bridgeLocation?.typ !== DRAWBRIDGE_UP) return false;
@@ -267,6 +286,7 @@ export async function openDrawbridge(x: number, y: number, state = game, options
     return true;
 }
 
+// C dbridge.c:close_drawbridge().
 export async function closeDrawbridge(x: number, y: number, state = game, options: DrawbridgeOptions = {}): Promise<boolean> {
     const bridgeLocation = state.level?.at(x, y);
     if (bridgeLocation?.typ !== DRAWBRIDGE_DOWN) return false;
@@ -292,6 +312,7 @@ export async function closeDrawbridge(x: number, y: number, state = game, option
     return true;
 }
 
+// C dbridge.c:destroy_drawbridge().
 export async function destroyDrawbridge(x: number, y: number, state = game, options: DrawbridgeOptions = {}): Promise<boolean> {
     const bridgeLocation = state.level?.at(x, y);
     if (!bridgeLocation || !IS_DRAWBRIDGE(bridgeLocation.typ)) return false;
@@ -342,6 +363,7 @@ export async function destroyDrawbridge(x: number, y: number, state = game, opti
     return true;
 }
 
+// Port only: dispatch between open_drawbridge() and close_drawbridge().
 export async function toggleDrawbridge(x: number, y: number, state = game, options: DrawbridgeOptions = {}): Promise<boolean> {
     const location = state.level?.at(x, y);
     if (location?.typ === DRAWBRIDGE_UP)
@@ -426,6 +448,7 @@ function entityAt(x: number, y: number, state: GameState): DrawbridgeEntity | nu
         species: tail ? MONSTER_NAME.indexOf('long worm tail') : monster.mnum };
 }
 
+// Port only: edata symbol accessor for the entity.
 function entitySymbol(entity: DrawbridgeEntity): number | null {
     return MONSTER_SYMBOL[entity.species] ?? null;
 }
@@ -436,47 +459,57 @@ function entityName(entity: DrawbridgeEntity, state: GameState, capitalized = fa
     return monsterName(entity.actor, { state, capitalized });
 }
 
+// Part of C dbridge.c:e_canseemon(): is_u() || canseemon() visibility.
 function entityIsVisible(entity: DrawbridgeEntity): boolean {
     return entity.hero || canSeeMonster(entity.actor);
 }
 
+// Part of C dbridge.c:automiss(), e_survives_at(): the Passes_walls entity
+// test.
 function entityPassesWalls(entity: DrawbridgeEntity, state: GameState): boolean {
     if (entity.hero
         && state.u.passesWalls) return true;
     return monsterPassesWalls(entity.species);
 }
 
+// Part of C dbridge.c:automiss(), e_survives_at(): the noncorporeal() test.
 function entityIsNoncorporeal(entity: DrawbridgeEntity): boolean {
     return entitySymbol(entity) === S_GHOST;
 }
 
+// Part of C dbridge.c:e_missed(), e_survives_at(): the is_flyer() test.
 function entityIsFlying(entity: DrawbridgeEntity): boolean {
     return monsterIsFlyer(entity.species);
 }
 
+// Part of C dbridge.c:e_missed(), e_survives_at(): the is_floater() test.
 function entityIsFloating(entity: DrawbridgeEntity): boolean {
     const symbol = entitySymbol(entity);
     return symbol === S_EYE || symbol === S_LIGHT;
 }
 
+// Part of C dbridge.c:e_missed(), e_jumps(): the helpless() test.
 function entityIsHelpless(entity: DrawbridgeEntity): boolean {
     if (entity.hero) return false;
     const monster = entity.actor;
     return !monster.mcanmove || !!monster.msleeping;
 }
 
+// Part of C dbridge.c:e_jumps(): the Confusion/mconf test.
 function entityIsConfused(entity: DrawbridgeEntity, state: GameState): boolean {
     return entity.hero
         ? !!(state.u?.confused || (state.u?.confusionTurns ?? 0) > 0)
         : !!entity.actor.mconf;
 }
 
+// Part of C dbridge.c:e_jumps(): the Stunned/mstun test.
 function entityIsStunned(entity: DrawbridgeEntity, state: GameState): boolean {
     return entity.hero
         ? !!(state.u?.stunned || (state.u?.stunnedTurns ?? 0) > 0)
         : !!entity.actor.mstun;
 }
 
+// Port only: bounds-checked levl[] access for an occupant.
 function occupiedLocation(entity: DrawbridgeEntity, state: GameState): MapLocation {
     const location = state.level?.at(entity.x, entity.y);
     if (!location)
@@ -484,6 +517,7 @@ function occupiedLocation(entity: DrawbridgeEntity, state: GameState): MapLocati
     return location;
 }
 
+// Part of C dbridge.c:e_survives_at(): the hero's pool-survival extrinsics.
 function heroSurvivesPool(state: GameState): boolean {
     const hero = state.u;
     return heroHasWaterWalking(state) || heroIsAmphibious(state)
@@ -491,6 +525,8 @@ function heroSurvivesPool(state: GameState): boolean {
             || hero.levitating || hero.levitation);
 }
 
+// Part of C dbridge.c:e_survives_at(): the swimmer/flyer/floater pool
+// survival.
 function speciesSurvivesPool(entity: DrawbridgeEntity): boolean {
     return (monsterIsSwimmer(entity.species) || monsterIsFlyer(entity.species))
         || entityIsFloating(entity);
@@ -511,6 +547,7 @@ function entitySurvivesAt(entity: DrawbridgeEntity, state: GameState): boolean {
     return true;
 }
 
+// C dbridge.c:automiss().
 function entityAutomaticallyMissed(entity: DrawbridgeEntity, state: GameState): boolean {
     return entityPassesWalls(entity, state)
         || entityIsNoncorporeal(entity);
@@ -549,6 +586,7 @@ function entityJumps(entity: DrawbridgeEntity, state: GameState): boolean {
     return chances >= rnd(10);
 }
 
+// Part of C dbridge.c:do_entity(): relocating the entity to the new square.
 async function moveEntity(entity: DrawbridgeEntity, destination: Position, state: GameState): Promise<void> {
     if (entity.hero) {
         state.u.ux = destination.x;
@@ -561,6 +599,8 @@ async function moveEntity(entity: DrawbridgeEntity, destination: Position, state
     entity.y = destination.y;
 }
 
+// Part of C dbridge.c:e_died(): the surviving hero's enexto()/teleds()
+// escape.
 async function moveSurvivingHeroAway(entity: DrawbridgeEntity, state: GameState): Promise<void> {
     if (entitySurvivesAt(entity, state)) return;
     const destination = enexto(entity.species, entity.x, entity.y, { state });
@@ -571,6 +611,8 @@ async function moveSurvivingHeroAway(entity: DrawbridgeEntity, state: GameState)
     entity.y = state.u.uy;
 }
 
+// Part of C dbridge.c:e_died(): the monster kill, its retry, and the
+// "still crushed" message.
 async function finishCrushedMonster(
     monster: Monster, entity: DrawbridgeEntity, state: GameState,
     options: DrawbridgeOptions, death: DrawbridgeDeath, recordConduct: boolean,
@@ -592,6 +634,7 @@ async function finishCrushedMonster(
     return !outcome.survived;
 }
 
+// Part of C dbridge.c:e_died(): the hero death and post-survival handling.
 async function crushEntity(
     entity: DrawbridgeEntity, bridge: DrawbridgeSquare, state: GameState,
     options: DrawbridgeOptions, killer: string, death: DrawbridgeDeath,
@@ -636,6 +679,8 @@ function entityPhrase(entity: DrawbridgeEntity, verb: string, state: GameState):
     return `${entityName(entity, state, true)} ${entity.hero ? verb : verbForSubject(null, verb)}`;
 }
 
+// Part of C dbridge.c:do_entity(): the spoteffects(FALSE) after passing
+// through.
 async function heroSpotEffects(state: GameState): Promise<void> {
     await finishDestinationSpotEffects({
         oldx: state.u.ux0, oldy: state.u.uy0, newx: state.u.ux, newy: state.u.uy, pick: false,
@@ -776,6 +821,8 @@ async function handleEntity(
         'fell from a drawbridge', { showKillMessage: visibleAfterMove, noCorpse: true });
 }
 
+// Part of C dbridge.c:open_drawbridge(), close_drawbridge(): the
+// set_entity()/do_entity() occupant passes.
 export async function moveDrawbridgeOccupants(
     bridge: DrawbridgeSquare,
     wall: DrawbridgeSquare,
@@ -789,6 +836,8 @@ export async function moveDrawbridgeOccupants(
     await handleEntity(occupants[1], bridge, state, options, occupants);
 }
 
+// Part of C dbridge.c:destroy_drawbridge(): the missed occupant falls in
+// (spoteffects()/minliquid()).
 async function settleEntityAfterCollapse(entity: DrawbridgeEntity, state: GameState): Promise<void> {
     if (entity.hero) {
         await heroSpotEffects(state);
@@ -801,6 +850,8 @@ async function settleEntityAfterCollapse(entity: DrawbridgeEntity, state: GameSt
     });
 }
 
+// Part of C dbridge.c:destroy_drawbridge(): the debris-kill messages and
+// e_died() call.
 async function killCollapseVictim(
     entity: DrawbridgeEntity, bridge: DrawbridgeSquare, state: GameState,
     options: DrawbridgeOptions, occupants: Occupants,
@@ -823,6 +874,8 @@ async function killCollapseVictim(
     });
 }
 
+// Part of C dbridge.c:destroy_drawbridge(): the occupant epilogue (wall,
+// then span).
 export async function destroyDrawbridgeOccupants(
     bridge: DrawbridgeSquare,
     wall: DrawbridgeSquare,

@@ -114,6 +114,7 @@ export function petDroppableObject(monster) {
     }
     return null;
 }
+// Port only: type guard for the floor-chain order field.
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
@@ -139,20 +140,28 @@ export function bestPetRangedTarget(pet, state, { forced = false, random = rn2, 
     }
     return !forced && bestScore < 0 ? null : bestTarget;
 }
+// C mondata.h:can_breathe(): the attacktype(ptr, AT_BREA) lookup, returning
+// the attack tuple.
 export function monsterBreathAttack(monster) {
     return MONSTER_ATTACKS[monster.mnum]?.find(([attackType]) => attackType === AT_BREA) ?? null;
 }
+// Port only: narrows the target to the hero (C compares &youmonst inline).
 function isHeroTarget(target, state) {
     return target === state.u;
 }
+// Port only: position of the Hero|Monster target (C reads mtarg->mx/my).
 function targetPosition(target, state) {
     return isHeroTarget(target, state)
         ? { x: state.u.ux, y: state.u.uy }
         : { x: target.mx, y: target.my };
 }
+// Part of C dogmove.c:find_targ(), dogmove.c:find_friends(): the
+// perceives() test.
 function petSeesInvisible(pet) {
     return monsterPerceives(pet.mnum);
 }
+// Part of C dogmove.c:find_targ(), dogmove.c:find_friends(): the
+// m_cansee() test.
 function petCanSee(pet, x, y) {
     return clearPath(pet.mx, pet.my, x, y);
 }
@@ -176,6 +185,7 @@ function findTarget(pet, dx, dy, state) {
     }
     return null;
 }
+// C dogmove.c:find_friends().
 function targetHasFriendBehind(pet, target, state) {
     const targetPos = targetPosition(target, state);
     const dx = Math.sign(targetPos.x - pet.mx);
@@ -204,6 +214,8 @@ function targetHasFriendBehind(pet, target, state) {
     }
     return false;
 }
+// Part of C dogmove.c:score_targ(): the faith/align extraction for minions
+// and priests.
 function holyAlignment(monster) {
     if (!('mnum' in monster))
         return { faithful: false, alignment: null };
@@ -221,6 +233,7 @@ function holyAlignment(monster) {
     }
     return { faithful: false, alignment: null };
 }
+// Part of C dogmove.c:score_targ(): the Is_qstart() test.
 function onQuestStartLevel(state) {
     return state._activeSpecialLevel?.prototype?.endsWith('-strt') || false;
 }
@@ -276,6 +289,8 @@ function scoreTarget(pet, target, state, random, rollOne) {
         score -= 1000;
     return score;
 }
+// Part of C dogmove.c:dog_goal(): the SQSRCHRADIUS floor-object scan,
+// newest first.
 function nearbyFloorObjects(monster, state) {
     const objects = [];
     let scanOrder = 0;
@@ -342,6 +357,8 @@ function petCanReachLocation(monster, mx, my, fx, fy, state) {
     }
     return false;
 }
+// Part of C dogmove.c:dog_goal(): the could_reach_item() +
+// can_reach_location() reachability test.
 function petCanReachObject(monster, object, state) {
     const targetX = object?.ox;
     const targetY = object?.oy;
@@ -728,9 +745,13 @@ export async function performPetRangedAttack(pet, state, { forced = false, rando
     }
     return result;
 }
+// Part of C dogmove.c:dog_move(): the ALLOW_M mattackm() attack, including
+// the defender's return attack.
 async function petAttacksMonster(pet, target, state, random, rollDice, rollOne, calls, selected) {
     return await beginMonsterMeleeAttack(pet, target, state, random, rollDice, rollOne, calls, 'pet', selected);
 }
+// Part of C dogmove.c:dog_move(): the leash pull when the pet stayed put
+// (distu > 4) with dirtocoord() fallback probes.
 // C dog_move() keeps a leashed pet close even after an action which left it
 // in place. Its fallback probes use dirtocoord's map coordinates as written.
 async function pullLeashedPetCloser(monster, state, random, calls) {
@@ -1129,10 +1150,13 @@ export async function movePet(monster, state, random, rollDice, rollOne, calls) 
     }
     return newdogpos(nix, niy, selectedInfo, reluctant, null);
 }
+// Part of C dogmove.c:dog_move(), dogmove.c:dog_invent(): the
+// distant_name(o, doname) description.
 async function distantMonsterObjectName(object) {
     observeDistantObjectForNaming(object);
     return await inventoryItemDescription(object);
 }
+// Part of C dogmove.c:dog_move(): the cursemsg reluctant-move message.
 async function reluctantPetMessage(monster, square) {
     const game = requireInitializedGame();
     const pile = game.level?.objects?.[square.x]?.[square.y] || [];
@@ -1149,6 +1173,7 @@ async function reluctantPetMessage(monster, square) {
 // the objects beneath its water or lava reachable.
 const PM_FIRE_ELEMENTAL_REACH = MONSTER_NAME.indexOf('fire elemental');
 const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
+// C dogmove.c:could_reach_item().
 export function monsterCouldReachItem(monster, x, y, state) {
     if (isPoolAt(x, y, state) && !monsterIsSwimmer(monster.mnum))
         return false;
@@ -1161,6 +1186,7 @@ export function monsterCouldReachItem(monster, x, y, state) {
 // C dogmove.c:finish_meating(). Unlike seemimic(), this does not remove
 // corpse disguise metadata or change light blocking.
 const S_MIMIC = 13;
+// C dogmove.c:finish_meating().
 export async function finishMonsterEating(monster, state = game) {
     requireLiveGame(state);
     monster.meating = 0;
@@ -1221,10 +1247,12 @@ export async function beginMonsterMealMimicry(monster, state = game) {
     }
     await displayMessageWindow();
 }
+// Part of C dogmove.c:quickmimic(): the qm[] table entries.
 function mealDisguise(species, appearance) {
     return { species: MONSTER_NAME.indexOf(species),
         type: M_AP_MONSTER, appearance: MONSTER_NAME.indexOf(appearance) };
 }
+// Part of C dogmove.c:quickmimic(): the qm[idx] selection loop.
 function chooseMealDisguise(monster) {
     for (let tries = 0; tries < 5; tries++) {
         const choice = DISGUISES[rn2(DISGUISES.length)];
@@ -1237,6 +1265,7 @@ function chooseMealDisguise(monster) {
     }
     return FOOD_DISGUISE;
 }
+// Part of C dogmove.c:quickmimic(): the appearance description chain.
 function disguiseDescription(disguise, female) {
     if (disguise.type === M_AP_MONSTER)
         return monsterTypeName(disguise.appearance, female);
@@ -1249,6 +1278,7 @@ function disguiseDescription(disguise, female) {
     return OBJ_DESCR(disguise.appearance)
         || OBJ_NAME(disguise.appearance) || 'something';
 }
+// Part of C dogmove.c:quickmimic(): the glyph_at() != prev_glyph comparison.
 // Native glyph identity distinguishes two species even when both use 'f'.
 function samePerceivedGlyph(left, right) {
     if (left === right)

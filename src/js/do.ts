@@ -188,6 +188,7 @@ interface BoulderLiquidOptions {
     random?: (limit: number) => number;
 }
 
+// C do.c:boulder_hits_pool().
 export async function dropBoulderIntoLiquid(boulder: GameObject | null, x: number, y: number, state: GameState = game, {
     publish = plineWithContinuation, random = rn2, pushing = false,
 }: BoulderLiquidOptions = {}): Promise<boolean> {
@@ -299,12 +300,14 @@ export async function tryCallObjectType(
 
 const FRUIT_DEFAULT = 'slime mold';
 
+// Part of C do.c:polymorph_sink(): the In_hell() altar-alignment test.
 // C turn_undead/other precedent: Gehennom by dungeon name.
 function inGehennom(state: GameState): boolean {
     const dnum = state.u?.uz?.dnum ?? -1;
     return state.dungeons?.[dnum]?.dname === 'Gehennom';
 }
 
+// Part of C do.c:dosinkring(): the makeplural(pl_fruit) smell message.
 function fruitNamePlural(state: GameState): string {
     return makePlural(state.fruitName || FRUIT_DEFAULT);
 }
@@ -396,6 +399,7 @@ async function teleportSink(state: GameState): Promise<boolean> {
     return false;
 }
 
+// C do.c:dosinkring().
 export async function dropRingIntoSink(
     object: GameObject,
     { state = game, publish = plineWithContinuation }: {
@@ -758,6 +762,7 @@ export interface DropObjectOptions {
     publish?: MessagePublisher;
 }
 
+// C do.c:dropz().
 export async function dropObjectAtHero(
     object: GameObject,
     { impact = false, state = game, publish = plineWithContinuation }: DropObjectOptions = {},
@@ -849,6 +854,7 @@ function isPolymorphFood(object: GameObject) {
                 ([, damageType]) => damageType === AD_POLY));
 }
 
+// C do.c:engulfer_digests_food().
 async function engulferDigestsFood(object: GameObject, { state, publish }: { state: GameState; publish: MessagePublisher }) {
     const swallower = state.u.ustuck;
     if (!swallower || !monsterDigests(swallower)
@@ -931,6 +937,7 @@ function* crysknifeReversions(object: GameObject): Generator<GameObject, void> {
             && (!member.oerodeproof || rn2(10) === 0)) yield member;
     }
 }
+// Part of C do.c:obj_no_longer_held(): the CRYSKNIFE revert to worm tooth.
 function revertCrysknife(object: GameObject): void {
     object.otyp = WORM_TOOTH;
     object.oerodeproof = false;
@@ -940,6 +947,7 @@ function revertCrysknife(object: GameObject): void {
     if (object.name !== undefined) object.name = name;
     if (object.plural !== undefined) object.plural = makePlural(name);
 }
+// Port only: created objects must be free and unbilled.
 export function assertCreatedObject(
     object: GameObject, state: GameState = game,
 ): void {
@@ -950,6 +958,7 @@ export function assertCreatedObject(
             throw new Error('created object must be unbilled');
     }
 }
+// Part of C do.c:obj_no_longer_held(): synchronous form for created graphs.
 // Valid only for immediate constructor graphs. An unbilled free root cannot
 // be charged; contained descendants have no costly_alteration mutation case.
 export function createdObjectNoLongerHeld(
@@ -958,6 +967,8 @@ export function createdObjectNoLongerHeld(
     assertCreatedObject(object, state);
     for (const member of crysknifeReversions(object)) revertCrysknife(member);
 }
+// Part of C do.c:obj_no_longer_held(): synchronous variant with an
+// await-safety check.
 export function objectNoLongerHeldSynchronously(
     object: GameObject | null | undefined, state: GameState = game,
 ): void {
@@ -1059,6 +1070,7 @@ export async function dropMultipleObjects(): Promise<number> {
     }
 }
 
+// Part of C do.c:menu_drop(): the query_category() category prompt.
 async function dropCategories() {
     // The multi-select window's own dismissal restores the screen: C's
     // select_menu() runs the whole windowport call with bot_disabled, so
@@ -1067,6 +1079,7 @@ async function dropCategories() {
     return await chooseObjectCategories('Drop what type of items?', game.inventory);
 }
 
+// Part of C do.c:menu_drop(): the query_objlist() inventory pick.
 async function chooseDroppedObjects(objects: readonly GameObject[]) {
     if (!objects.length) return [];
     const sorted = sortObjects(objects, { mode: lootSortMode({ inventoryLetters: true }) });
@@ -1092,6 +1105,7 @@ async function chooseDroppedObjects(objects: readonly GameObject[]) {
     });
 }
 
+// Part of C do.c:menu_drop(): the bypass-rescan drop loop.
 async function dropAllMatching(matches: (object: GameObject) => boolean): Promise<boolean> {
     let dropped = false;
     bypassObjectList(game.inventory, false);
@@ -1107,6 +1121,8 @@ async function dropAllMatching(matches: (object: GameObject) => boolean): Promis
     return dropped;
 }
 
+// Part of C do.c:menu_drop(): the per-item count split; LOADSTONE keeps its
+// curse count in corpsenm.
 async function dropCount(object: GameObject, count: number): Promise<boolean> {
     if (count > 0 && count < objectQuantity(object) && !isWeldedPrimary(object)) {
         if (object.otyp === LOADSTONE && object.cursed) object.corpsenm = count;
@@ -1119,16 +1135,20 @@ async function dropCount(object: GameObject, count: number): Promise<boolean> {
     return await dropHeroObject(object);
 }
 
+// Part of C pickup.c:allow_category(): the BUC-state categorization.
 function bucCategory(object: GameObject): BucCategory {
     if (object.oclass === COIN_CLASS) return game.flags.goldX ? 'X' : 'U';
     if (game.urole?.key === 'priest') object.bknown = true;
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 
+// Part of C pickup.c:allow_category(): the unpaid filter including
+// contained objects.
 function hasUnpaid(object: GameObject): boolean {
     return !!object.unpaid || !!object.contents?.some(hasUnpaid);
 }
 
+// C pickup.c:allow_category().
 function matchesCategories(object: GameObject, categories: readonly DropCategory[]): boolean {
     const classes = categories.filter((category): category is number => typeof category === 'number');
     if (object.oclass === COIN_CLASS && classes.length) return classes.includes(COIN_CLASS);
@@ -1140,6 +1160,8 @@ function matchesCategories(object: GameObject, categories: readonly DropCategory
         && (!categories.includes('P') || !!object.pickup_prev);
 }
 
+// Part of C invent.c:query_category(): the traditional/combination
+// "kinds of thing" drop prompt (with pickup.c's ggetobj() letters).
 async function traditionalDropCategories(combo: boolean): Promise<TraditionalDropSelection | null> {
     const classes = [...new Set(game.inventory.map(object => object.oclass))];
     const statuses = new Set(game.inventory.map(bucCategory));
@@ -2121,6 +2143,8 @@ export function scheduleLevelChange(
         | (arrival === 'portal' ? UTOTYPE_PORTAL : 0);
 }
 
+// Port only: rebuilds schedule_goto()'s deferred change from saved
+// utolev/utotype.
 // C saves u.utolev/utotype, but neither callback pointers nor deferred
 // messages. Rebuild the pending arrival so the normal turn loop completes it.
 export function restoreScheduledLevelChange(): void {
@@ -2160,17 +2184,20 @@ export async function finishScheduledLevelChange(): Promise<void> {
     game.u.utotype = 0;
 }
 
+// Port only: decodes the saved utotype arrival flags.
 function restoredLevelArrival(type: number): LevelArrival {
     if (type & UTOTYPE_PORTAL) return 'portal';
     if (type & UTOTYPE_FALLING) return 'falling';
     return type & UTOTYPE_ATSTAIRS ? 'stairs' : 'random';
 }
 
+// Port only: cache key for the port's savelev()/getlev() level files.
 // The port's level files: savelev()/getlev() keyed by ledger number.
 function levelCacheKey(depth: DungeonLocation): string {
     return `${depth?.dnum ?? 0}:${depth?.dlevel ?? 1}`;
 }
 
+// Port only: copies the hero's track for level save/restore.
 function cloneHeroTrack(track: readonly Position[] | undefined = game._heroTrack): Position[] {
     return (track || []).map(point => ({ x: point.x, y: point.y }));
 }
@@ -2290,6 +2317,7 @@ export async function dowipe(state: GameState = game): Promise<void> {
     state.context.move = 1;
 }
 
+// C do.c:set_wounded_legs().
 export async function woundHeroLegs(side: 'left' | 'right' | 'both', turns: number, state = game, {
     publish = plineWithContinuation,
 }: { publish?: MessagePublisher } = {}) {
@@ -2303,6 +2331,7 @@ export async function woundHeroLegs(side: 'left' | 'right' | 'both', turns: numb
     await encumber_msg(state, publish);
 }
 
+// C do.c:heal_legs().
 export async function healHeroLegs(state = game, {
     cause = 'healing', publish = plineWithContinuation,
 }: { cause?: 'healing' | 'petrification' | 'dismounting'; publish?: MessagePublisher } = {}) {
@@ -2324,8 +2353,8 @@ export async function healHeroLegs(state = game, {
     return true;
 }
 
+// Part of C do.c:flooreffects(): the boulder-in-pit branch.
 // ── moved from src/js/trap.ts ──
-
 export async function applyBoulderPitEffects(boulder: GameObject, trap: Trap, x: number, y: number, {
     state = game, publish = plineWithContinuation, verb = '',
 }: { state?: GameState; publish?: MessagePublisher; verb?: string } = {}): Promise<FloorEffectResult> {
@@ -2406,6 +2435,8 @@ export async function hitMonsterWithSettlingBoulder(monster: Monster, boulder: G
     return { heroDied: hit.heroDied };
 }
 
+// Part of C do.c:flooreffects(): the passes_walls()/throws_rocks() exemption
+// from the falling boulder.
 function ignoresFallingBoulder(mnum: number): boolean {
     return monsterPassesWalls(mnum) || monsterThrowsRocks(mnum);
 }
@@ -2514,6 +2545,7 @@ export async function reviveCorpseImmediately(corpse: GameObject | null | undefi
 }
 
 
+// Port only: dispatches a claimed object timer to revive_mon()/zombify_mon().
 // Claimed timers have already been removed from the object timer chain.
 export async function runClaimedCorpseRevivalTimer(
     claimed: DueObjectTimer | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
@@ -2597,6 +2629,7 @@ async function zombifyMon(corpse: CorpseObject, state: GameState, currentTurn: n
     return reviveMon(corpse, state, currentTurn);
 }
 
+// Part of C do.c:revive_corpse(): the buried-corpse pit (OBJ_BURIED case).
 export async function finishBuriedRevival(event: CorpseRevivalResult, state: GameState): Promise<void> {
     if (event.kind === 'revived' && event.buried)
         event.trap = await maketrap(event.monster.mx, event.monster.my, PIT);

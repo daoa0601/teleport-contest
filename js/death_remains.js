@@ -14,10 +14,12 @@ const PM_GREEN_SLIME = 208;
 const S_MUMMY = 39;
 const S_VAMPIRE = 48;
 const S_WRAITH = 49;
+// Part of C end.c:savelife(): resets ugrave_arise after a life save.
 export function clearHeroRemains(state = game) {
     state.u.ugrave_arise = NON_PM;
     return NON_PM;
 }
+// Part of C end.c:really_done(): death-type branch of the ugrave_arise choice.
 export function setHeroRemainsFromDeath(deathType, state = game) {
     if (deathType === PANICKED) {
         state.u.ugrave_arise = NON_PM - 3;
@@ -34,6 +36,7 @@ export function setHeroRemainsFromDeath(deathType, state = game) {
     }
     return state.u.ugrave_arise ?? NON_PM;
 }
+// Part of C end.c:done_in_by(): undead the hero rises as, from the killer's type.
 export function setHeroRemainsFromMonster(monster, state = game) {
     const symbol = MONSTER_SYMBOL[monster?.mnum];
     let arise = NON_PM;

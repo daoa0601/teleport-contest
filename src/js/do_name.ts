@@ -187,6 +187,7 @@ const GHOST_NAMES = [
     'Stephan', 'Lance Braccus', 'Shadowhawk', 'Murphy',
 ];
 
+// C do_name.c:rndghostname().
 export function randomGhostName(state: GameState = game): string {
     if (!rn2(7)) return state.plname;
     const name = GHOST_NAMES[rn2(GHOST_NAMES.length)];
@@ -229,6 +230,7 @@ export function randomBogusMonsterIdentity(): MonsterIdentity {
     };
 }
 
+// Part of C do_name.c:bogusmon(): name-only callers (C passes a null code).
 // Name-only view of bogusmon() above for descriptions that require a
 // fictitious species.
 export function randomBogusMonsterName(): string {
@@ -251,6 +253,7 @@ export function randomDisplayMonsterIdentity(): MonsterIdentity {
     return { name, personal: false };
 }
 
+// Part of C do_name.c:rndmonnam(): name-only view of the identity pair.
 export function randomDisplayMonsterName() {
     return randomDisplayMonsterIdentity().name;
 }
@@ -786,6 +789,8 @@ export async function nameIndividualObject(object: GameObject): Promise<void> {
     });
 }
 
+// Part of C objnam.c:safe_qbuf(): the do_oname() prompt's shortening ladder
+// (xname, short_oname, simpleonames, "item").
 // C safe_qbuf()/short_oname(xname, simpleonames): keep as much of each
 // existing name as fits, without changing the names the player can edit.
 function individualNamingDescription(object: GameObject, limit: number): string {
@@ -831,6 +836,7 @@ function individualNamingDescription(object: GameObject, limit: number): string 
     return name.length <= limit ? name : 'item';
 }
 
+// Part of C artifact.c:restrict_name(): canonical spelling is artifact.ts.
 function restrictedArtifactName(object: GameObject, artifact: Artifact): boolean {
     if (!(artifact.restricted || artifact.noGeneration || object.quan > 1)) return false;
     if (object.otyp === artifact.baseType) return true;
@@ -886,7 +892,7 @@ export function objectTypeIsCallable(object: Pick<GameObject, 'otyp' | 'oclass'>
         && !!OBJ_DESCR(object.otyp);
 }
 
-// C docall() stores the call name on the shared type.
+// Part of C do_name.c:docall(): stores the call name on the shared type.
 export function recordObjectCall(otyp: number, name: string, state: GameState = game): void {
     if (!Number.isInteger(otyp) || otyp < 1 || !name) return;
     rememberType(otyp, state);
@@ -981,6 +987,8 @@ export async function nameFloorObject(): Promise<void> {
     }
 }
 
+// Part of C do_name.c:namefloorobj(): the hallucination / callable / dknown
+// dispatch after the object is selected.
 async function nameFloorType(object: GameObject): Promise<void> {
     const name = object.otyp === 0 ? 'strange object' : simpleObjectName(object);
     const plural = object.quan > 1;

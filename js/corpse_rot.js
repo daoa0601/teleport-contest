@@ -12,6 +12,7 @@ import { corpseName } from './objnam.js';
 import { deleteObject } from './shk.js';
 import { stopHeroOccupation } from './allmain.js';
 import { monsterHidesUnder } from './mondata.js';
+// C dig.c:rot_corpse().
 export async function rotCorpse(corpse, state = game) {
     requireLiveGame(state);
     const { where, ox: x, oy: y } = corpse;

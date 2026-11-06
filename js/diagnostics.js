@@ -8,13 +8,17 @@ import { PanicTermination } from './panic_termination.js';
 export const FUZZER_OFF = 0;
 export const FUZZER_IMPOSSIBLE_PANIC = 1;
 export const FUZZER_IMPOSSIBLE_CONTINUE = 2;
+// Port only: typed access to flags.debug_fuzzer, which C reads inline.
 function fuzzerMode(state) {
     return Number(state.flags?.debug_fuzzer ?? FUZZER_OFF);
 }
+// Part of C pline.c:impossible(), end.c:panic(): NUL-terminate and truncate
+// the reason to BUFSZ-1 like the C char buffers.
 function diagnosticReason(reason) {
     const bytes = new TextEncoder().encode(reason.split('\0', 1)[0] ?? '');
     return new TextDecoder().decode(bytes.subarray(0, BUFSZ - 1));
 }
+// Part of C files.c:paniclog(): yyyymmdd+hhmmss timestamp (calendar.c) of the record.
 function diagnosticDateTime(state) {
     if (state.datetime)
         return state.datetime;
@@ -23,6 +27,7 @@ function diagnosticDateTime(state) {
         now.getHours(), now.getMinutes(), now.getSeconds()]
         .map((value, index) => String(value).padStart(index ? 2 : 4, '0')).join('');
 }
+// C files.c:paniclog(): Web Storage record in place of the paniclog append.
 // Web Storage retains semantic records. Native's Unix uid and paniclog header
 // are not available in a browser; do not fabricate a native header.
 export function paniclog(type, reason, state = game) {
@@ -49,6 +54,7 @@ export function paniclog(type, reason, state = game) {
     }
     state.program_state.in_paniclog = false;
 }
+// C pline.c:impossible().
 export async function impossible(reason, { state = game } = {}) {
     requireLiveGame(state);
     reason = diagnosticReason(reason);
@@ -67,6 +73,7 @@ export async function impossible(reason, { state = game } = {}) {
     }
     state.program_state.in_impossible = false;
 }
+// C end.c:panic(): full body; the window-exit preamble lives in beginPanicOutput().
 export async function panic(reason, { state = game } = {}) {
     requireLiveGame(state);
     reason = diagnosticReason(reason);

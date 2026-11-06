@@ -9,6 +9,7 @@ src/js/calendar.ts	calendar.c
 src/js/cfgfiles.ts	cfgfiles.c
 src/js/coloratt.ts	coloratt.c
 src/js/detect.ts	detect.c
+src/js/display.ts	display.c
 src/js/do.ts	do.c
 src/js/do_name.ts	do_name.c
 src/js/do_wear.ts	do_wear.c

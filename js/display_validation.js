@@ -1,12 +1,15 @@
 import { GlyphOffset } from './glyph_numbers.js';
 import { ismnum } from './const.js';
+// Port only: type guard for decoded JSON records.
 function isRecord(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
+// Port only: type guard for integer fields of decoded records.
 function isInteger(value) {
     return typeof value === 'number' && Number.isInteger(value);
 }
 /** Save memory carries category-specific payloads, not only a printable symbol. */
+// Port only: validates glyph metadata decoded from saved state.
 export function validSavedGlyphMetadata(value) {
     if (!isRecord(value))
         return false;
@@ -37,6 +40,7 @@ export function validSavedGlyphMetadata(value) {
             return false;
     }
 }
+// Port only: validates a saved display glyph at the storage boundary.
 export function validSavedGlyph(value) {
     return isRecord(value)
         && typeof value.ch === 'string'
