@@ -91,7 +91,7 @@ import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } f
 import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
-import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, pickFormFromClass, body_part } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, pickFormFromClass, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
@@ -5030,14 +5030,6 @@ function pickVampireShape(monster: Monster): number {
     return targetMnum;
 }
 
-// C youprop.h:Protection_from_shape_changers():
-function shapechangerProtectionActive() {
-    return !!(
-        game.u?.protectionFromShapeChangers
-        || game.protectionFromShapeChangers
-    );
-}
-
 // Part of C mondata.h:is_shapeshifter(): the cham test; the macro's port is
 // is_shapeshifter in mondata.ts.
 function naturalShapechanger(mnum: number): boolean {
@@ -5327,7 +5319,7 @@ async function initialShapechangedMonster<T extends Monster>(monster: T, targetM
 // Part of C makemon.c:makemon(): birthing a shapechanger through newcham.
 export async function initialShapechangedBirth<T extends Monster>(monster: T): Promise<T | null> {
     const baseMnum = monster?.mnum;
-    if (!naturalShapechanger(baseMnum) || shapechangerProtectionActive())
+    if (!naturalShapechanger(baseMnum) || heroHasProtectionFromShapeChangers())
         return null;
     monster.cham = baseMnum;
     // makemon() keeps Vlad in his natural body to carry the Candelabrum.
@@ -5384,7 +5376,7 @@ export async function changeMonsterForm(
         return null;
     if (baseMnum < 0 && monster?.mcan
         && naturalShapechanger(monster.mnum)
-        && !shapechangerProtectionActive()) {
+        && !heroHasProtectionFromShapeChangers(state)) {
         baseMnum = monster.mnum;
         monster.cham = baseMnum;
         monster.mcan = 0;
@@ -5521,7 +5513,7 @@ export async function changeMonsterForm(
     }
     if (baseMnum < 0 && MONSTER_SYMBOL[targetMnum] === S_VAMPIRE
         && naturalShapechanger(targetMnum)
-        && !shapechangerProtectionActive()) {
+        && !heroHasProtectionFromShapeChangers(state)) {
         monster.cham = targetMnum;
     }
     const droppedWeapon = await updateMonsterWeaponAfterPolymorph(monster, state, { publish, polyspot });

@@ -44,7 +44,8 @@ function intrinsicBlindnessWithTimeout(state, turns) {
     return permanentBlind(state) || turns > 0
         || hasIntrinsicProperty('blinded', null, state);
 }
-// C youprop.h:Blind(): with a caller-supplied timed-blindness value.
+// Part of C youprop.h:Blind(): with a caller-supplied timed-blindness value
+// (senses.ts heroIsBlind() is the macro port).
 export function heroWouldBeBlindWithTimeout(state, turns) {
     return !blindnessBlocked(state)
         && (intrinsicBlindnessWithTimeout(state, turns) || blindfolded(state));
