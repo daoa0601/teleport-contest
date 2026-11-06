@@ -86,10 +86,11 @@ import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
 import {
     angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled,
-    finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject, paralyzeMonster,
+    finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject,
     removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone,
     wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages,
 } from './mon.js';
+import { paralyzeMonster } from './mhitm.js';
 import type { MonsterDeathHandler, MonsterDefenderPetrificationResult, PetrificationOptions } from './mon.js';
 import {
     is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance,

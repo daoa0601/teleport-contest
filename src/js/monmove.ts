@@ -104,7 +104,8 @@ import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fig
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { swingMonsterWeapon, advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero } from './mhitu.js';
+import { advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero } from './mhitu.js';
+import { swingMonsterWeapon } from './mhitm.js';
 import type { ExpelHeroOptions } from './mhitu.js';
 import { isPick, isPolearm, is_cloak, is_gloves, is_shirt, is_launcher, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';

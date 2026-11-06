@@ -113,13 +113,6 @@ const PM_SHRIEKER = 163;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const S_EEL = 57;
-// C mhitm.c:paralyze_monst(). Paralysis also interrupts eating and waiting.
-export function paralyzeMonster(monster, turns) {
-    monster.mcanmove = 0;
-    monster.mfrozen = Math.min(127, turns);
-    monster.meating = 0;
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
-}
 // C healmon(). Overhealing can increase the monster's maximum health.
 export function healMonster(monster, amount, overheal = 0) {
     const before = monster.mhp;

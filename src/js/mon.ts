@@ -220,14 +220,6 @@ interface GenocideRemovalResult {
     heroDied?: boolean;
 }
 
-// C mhitm.c:paralyze_monst(). Paralysis also interrupts eating and waiting.
-export function paralyzeMonster(monster: Monster, turns: number): void {
-    monster.mcanmove = 0;
-    monster.mfrozen = Math.min(127, turns);
-    monster.meating = 0;
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
-}
-
 // C healmon(). Overhealing can increase the monster's maximum health.
 export function healMonster(monster: Monster, amount: number, overheal = 0): number {
     const before = monster.mhp;

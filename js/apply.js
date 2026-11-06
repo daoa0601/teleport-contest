@@ -24,6 +24,7 @@ import { displayColorName, displayLiquidName, monsterLeashName, monsterName, mon
 import { attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTimers, stopLevelTimer, stopObjectTimer, } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
+import { paralyzeMonster } from './mhitm.js';
 import { explode } from './explode.js';
 import { makeFamiliar } from './dog.js';
 import { figurinePlacementFailure } from './figurine.js';
@@ -34,7 +35,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
-import { setHeroGrip, paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, isRider, } from './mon.js';
+import { setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, isRider, } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting, heroIsSick, heroIsSliming, } from './potion.js';
 import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';

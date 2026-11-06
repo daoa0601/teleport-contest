@@ -55,6 +55,7 @@ import {
 } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
+import { paralyzeMonster } from './mhitm.js';
 import { explode } from './explode.js';
 import { makeFamiliar } from './dog.js';
 import { figurinePlacementFailure } from './figurine.js';
@@ -75,7 +76,7 @@ import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposT
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import {
-    setHeroGrip, paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
+    setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
     moveMonsterNextToHero,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
     isRider,
