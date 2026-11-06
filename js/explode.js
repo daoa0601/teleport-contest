@@ -294,7 +294,9 @@ function occupant(x, y, state) {
 function ignoresDeathField(mnum) {
     return monsterIsNonliving(mnum) || monsterIsDemon(mnum);
 }
-// C explode.c:explosionmask(): hero resistance branch.
+// Part of C explode.c:explosionmask(): the hero branch. C takes one monster
+// pointer that may be &gy.youmonst; the hero port is not a Monster, so the
+// hero and monster resistance branches stay separate functions.
 function heroResists(damageType, objectClass, state) {
     if (damageType === AD_DISN && objectClass === WAND_CLASS)
         return ignoresDeathField(heroSpecies(state));
@@ -304,7 +306,7 @@ function heroResists(damageType, objectClass, state) {
     return !!kind.property && (state.u[kind.property] || propertyIsActive(kind.property, state))
         || !!kind.defense && heroHasArtifactDefense(kind.defense, state);
 }
-// C explode.c:explosionmask(): monster resistance branch.
+// Part of C explode.c:explosionmask(): the monster branch of the shield test.
 function monsterResists(monster, damageType, objectClass) {
     if (damageType === AD_DISN && objectClass === WAND_CLASS)
         return ignoresDeathField(monster.mnum) || monsterIsVampireShifter(monster);
