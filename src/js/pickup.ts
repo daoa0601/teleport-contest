@@ -70,7 +70,7 @@ import { holdAnotherObject } from './invent.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
 import { rn2, rnd, d } from './rng.js';
 
-import { tipWornHelmet } from './tip_hat.js';
+import { tipWornHelmet } from './sounds.js';
 import { reviveCorpseImmediately } from './do.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsUnaware } from './senses.js';

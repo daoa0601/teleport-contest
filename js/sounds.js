@@ -1,29 +1,34 @@
-// Level ambience, its resident checks, the #chat command, and monster
-// noises and speech. C ref: sounds.c:dosounds(), dochat(), domonnoise(),
-// growl(), yelp(), whimper(), beg(), growl_sound().
+// Level ambience, its resident checks, the #chat command, helmet tipping,
+// and monster noises and speech. C ref: sounds.c:dosounds(), dochat(),
+// responsive_mon_at(), tipherat(), domonnoise(), growl(), yelp(), whimper(),
+// beg(), growl_sound().
 import { WEAPON_CLASS } from './objclass.js';
 import { hallucinatedDeityName } from './pray.js';
-import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd, NECK, HEAD, HAIR, BLOOD } from './const.js';
+import { ANY_SHOP, BARRACKS, BEEHIVE, BOLT_LIM, COURT, IRONBARS, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, W_ARMH, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd, NECK, HEAD, HAIR, BLOOD } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { canSeeMonster, canSpotMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline, publishHeardMessage } from './pline.js';
-import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { nomul, heroGoldAmount, roomForRoomno, stopRun } from './hack.js';
 import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
 import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { monsterName, novelTitle, randomDisplayMonsterName } from './do_name.js';
-import { monsterPossessive, sameMonsterRace, carnivorous, herbivorous, is_dwarf, is_elf, is_gnome, is_lord, is_mercenary, is_minion, is_prince, likes_magic, monsterIsAnimal, monsterIsFlyer, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, } from './mondata.js';
+import { monsterPossessive, sameMonsterRace, carnivorous, herbivorous, is_dwarf, is_elf, is_gnome, is_lord, is_mercenary, is_minion, is_prince, likes_magic, monsterHasEyes, monsterIsAnimal, monsterIsFlyer, monsterIsHelpless, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, monsterPerceives, } from './mondata.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { STATUE, SPE_NOVEL, GOLD_PIECE } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
 import { monsterAtPosition } from './steed.js';
+import { armorSimpleName } from './do_wear.js';
+import { heroIsInvisible } from './hero_invisibility.js';
+import { isAccessibleAt } from './monmove.js';
+import { couldsee } from './vision.js';
 import { searchSpecial } from './mkroom.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { priestIsInOwnTemple, monsterAlignmentType } from './priest.js';
 import { findVaultGuard } from './vault.js';
-import { rn2, rnd } from './rng.js';
+import { rn1, rn2, rnd } from './rng.js';
 import { recorderLocalHour } from './calendar.js';
 import { currency } from './invent.js';
 import { roles } from './role.js';
@@ -344,6 +349,112 @@ export async function dochat() {
         return;
     }
     game.context.move = Number(await publishMonsterNoise(monster, game));
+}
+// C sounds.c:tiphat().
+// C sounds.c:responsive_mon_at().
+export async function tipWornHelmet(helmet) {
+    const discovery = !helmet.bknown;
+    if (helmet.cursed) {
+        await pline(`You can't.  ${helmet.quan > 1 ? 'They are' : 'It is'} cursed.`);
+        helmet.bknown = true;
+        return discovery;
+    }
+    const direction = await promptDirection('At whom? (in what direction) ');
+    if (!direction)
+        return discovery;
+    await pline(`You briefly doff your ${armorSimpleName(helmet)}.`);
+    if (!direction.dx && !direction.dy) {
+        const steed = game.u.usteed;
+        if (steed && direction.dz > 0) {
+            if (monsterIsHelpless(steed))
+                await pline(`${monsterName(steed, { capitalized: true })} doesn't notice.`);
+            else
+                await publishMonsterNoise(steed);
+        }
+        else if (direction.dz)
+            await pline(`There's no one ${direction.dz < 0 ? 'up' : 'down'} there.`);
+        else
+            await pline("The lout here doesn't acknowledge you...");
+        return true;
+    }
+    await acknowledgeHelmetTip(findTipRecipient(direction.dx, direction.dy));
+    return true;
+}
+function findTipRecipient(dx, dy) {
+    const level = requireGameLevel();
+    let target = { monster: null, visible: false, unseen: false,
+        statue: false, x: game.u.ux, y: game.u.uy };
+    for (let range = 1; range <= BOLT_LIM + 1; range++) {
+        const x = target.x + dx, y = target.y + dy;
+        if (!isok(x, y) || range > 1 && !couldsee(x, y))
+            break;
+        let monster = monsterAtPosition(level, x, y);
+        let visible = !!monster && canSeeMonster(monster);
+        const glyph = glyphAt(x, y);
+        const unseen = glyph?.kind === 'invisible';
+        const statue = glyph?.kind === 'object' && !!glyph.statueGlyph
+            || !visible && !unseen && level.objects[x]?.[y]?.[0]?.otyp === STATUE;
+        if (visible && monster && [M_AP_FURNITURE, M_AP_OBJECT].includes(M_AP_TYPE(monster))) {
+            visible = false;
+            monster = null;
+        }
+        target = { monster, visible, unseen, statue, x, y };
+        if (visible || unseen || statue && heroIsHallucinating()
+            || range === 1 && monster && canAcknowledgeTip(monster, x, y)
+                && (MONSTER_SOUND[monster.mnum] ?? 0) !== 0
+            || !(isAccessibleAt(x, y) || level.at(x, y)?.typ === IRONBARS))
+            break;
+    }
+    return target;
+}
+async function acknowledgeHelmetTip({ monster, visible, unseen, statue, x, y }) {
+    if (unseen || statue && heroIsHallucinating()) {
+        await pline(`That ${unseen ? 'unseen ' : ''}creature is ignoring you!`);
+        return;
+    }
+    if (!monster || !canAcknowledgeTip(monster, x, y)) {
+        await pline(visible && monster
+            ? `${monsterName(monster, { capitalized: true })} seems not to notice you.`
+            : 'Nothing happens.');
+        return;
+    }
+    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+    if (visible && monsterIsHumanoid(monster.mnum)) {
+        if (monster.mpeaceful && !propertyIsActive('conflict', game)) {
+            const helmet = (monster.minvent ?? monster.inventory ?? [])
+                .find(object => (object.owornmask ?? 0) & W_ARMH);
+            const name = monsterName(monster, { capitalized: true });
+            if (!helmet)
+                await pline(`${name} waves.`);
+            else if (helmet.cursed) {
+                await pline(`${name} grasps ${monsterPossessive(monster)} ${armorSimpleName(helmet)} but can't remove it.`);
+                helmet.bknown = true;
+            }
+            else
+                await pline(`${name} tips ${monsterPossessive(monster)} ${armorSimpleName(helmet)} in response.`);
+        }
+        else {
+            const reactions = ['curses', 'gestures rudely', 'gestures offensively'];
+            const deaf = heroIsDeaf();
+            const which = deaf ? rn1(2, 1) : rn2(3);
+            const twice = deaf || which > 0 || rn2(3) ? 0 : rn1(2, 1);
+            await pline(`${monsterName(monster, { capitalized: true })} ${reactions[which]}${twice ? ` and ${reactions[twice]}` : ''} at you...`);
+        }
+        return;
+    }
+    if (Math.abs(x - game.u.ux) <= 1 && Math.abs(y - game.u.uy) <= 1
+        && !heroIsDeaf() && await publishMonsterNoise(monster)) {
+        if (!visible)
+            await map_invisible(x, y);
+    }
+    else
+        await pline(visible ? `${monsterName(monster, { capitalized: true })} doesn't respond.`
+            : 'Nothing happens.');
+}
+function canAcknowledgeTip(monster, x, y) {
+    return !monsterIsHelpless(monster) && !!monster.mcansee && monsterHasEyes(monster.mnum)
+        && (!heroIsInvisible(game) || monsterPerceives(monster.mnum))
+        && monster.mx === x && monster.my === y;
 }
 // ---------------------------------------------------------------------------
 // C sounds.c:domonnoise(), growl(), yelp(), whimper(), beg(), growl_sound().

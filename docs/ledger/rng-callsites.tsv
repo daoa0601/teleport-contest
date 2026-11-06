@@ -2287,10 +2287,6 @@ src/js/eat.ts	start_tin	rn2	"[""2""]"	constant
 src/js/eat.ts	start_tin	rn2	"[""weapon.cursed ? 3 : weapon.blessed ? 1 : 2""]"	constant
 src/js/eat.ts	tin_variety	rn2	"[""7""]"	constant
 src/js/eat.ts	tin_variety	rn2	"[""preparations.length - 1""]"	constant
-src/js/tip_hat.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
-src/js/tip_hat.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
-src/js/tip_hat.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
-src/js/tip_hat.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
 src/js/topten.ts	randomToptenEntry	rollOne	"[""TOP_NAME_RANK""]"	constant
 src/js/topten.ts	toptenMonsterForm	random	"[""13""]"	constant
 src/js/topten.ts	toptenMonsterForm	random	"[""LAST_PLAYER_MONSTER - FIRST_PLAYER_MONSTER + 1""]"	constant
