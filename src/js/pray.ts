@@ -108,6 +108,7 @@ import { freeHeroFromBuriedBall } from './dig.js';
 const POT_WATER = OBJECT_NAMES.indexOf('water');
 
 const STRIDENT = 4;
+// C pray.c:altar_wrath().
 export async function altarWrath(x: number, y: number, state: GameState = game) {
     requirePlayingGame(state);
     const altarAlignment = Amask2align(state.level?.at(x, y)?.flags ?? 0);
@@ -135,6 +136,7 @@ export async function altarWrath(x: number, y: number, state: GameState = game) 
         state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - (rn2(20) ? 1 : 2));
 }
 
+// C pray.c:dopray().
 export async function dopray() {
     const game = requireInitializedGame();
     game.context.move = 0;
@@ -185,6 +187,7 @@ export async function dopray() {
     game.context.move = 1;
 }
 
+// C pray.c:can_pray(): the silent praying=FALSE decision.
 // C can_pray(FALSE) uses the same trouble, timeout, and deity decision as #pray.
 export function canPraySafely(): boolean {
     const game = requireInitializedGame();
@@ -195,11 +198,13 @@ export function canPraySafely(): boolean {
     return prayerOutcome(alignment, trouble) === 'pleased' && !inHell();
 }
 
+// Part of C pray.c:can_pray(): the demon repugnance test.
 function demonRejectsPrayer(alignment: number): boolean {
     const game = requireInitializedGame();
     return monsterIsDemon(game.u.umonnum) && alignment !== 0;
 }
 
+// Part of C pray.c:can_pray(): the p_type outcome computation.
 function prayerOutcome(alignment: number, trouble: PrayerTrouble): PrayerOutcome {
     const game = requireInitializedGame();
     const hero = game.u;
@@ -273,6 +278,8 @@ export async function finishPrayerOccupation(state: GameState = game) {
     }
 }
 
+// Part of C pray.c:prayer_done(): the too-soon punishment (blesscnt,
+// luck, gods_upset).
 async function punishEarlyPrayer() {
     const game = requireInitializedGame();
     game.u.ublesscnt = (game.u.ublesscnt || 0) + rnz(250);
@@ -363,12 +370,14 @@ async function reviveAltarPet() {
     else await animateStatue(object, hero.ux, hero.uy, { magic: true });
 }
 
+// C pray.c:on_altar().
 function currentAltar() {
     const game = requireInitializedGame();
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     return location.typ === ALTAR ? location : null;
 }
 
+// C dungeon.h:In_hell().
 function inHell(state: GameState = game) {
     const dnum = state.u?.uz?.dnum ?? -1;
     return !!state.dungeons?.[dnum]?.flags?.hellish;
@@ -653,6 +662,7 @@ export function worstPrayerTrouble(state: GameState = game): PrayerTrouble {
     return 0;
 }
 
+// C pray.c:critically_low_hp().
 export function criticallyLowHp(onlyIfInjured = false, state: GameState = game) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -665,6 +675,7 @@ export function criticallyLowHp(onlyIfInjured = false, state: GameState = game) 
     return hp <= 5 || hp * divisor <= maximum;
 }
 
+// C pray.c:worst_cursed_item().
 export function worstCursedItem(state: GameState = game): GameObject | null {
     requirePlayingGame(state);
     if (nearCapacity(state) >= HVY_ENCUMBER) {
@@ -720,10 +731,12 @@ function blockedByBoulders(dx: number, dy: number, state: PlayingGameState) {
     return type === null || IS_OBSTRUCTED(type) || bouldersAt(x, y) > 0;
 }
 
+// Part of C pray.c:worst_cursed_item(): the cursed-type test.
 function cursedType(object: GameObject | null | undefined, type: number): boolean {
     return object?.otyp === type && !!object.cursed;
 }
 
+// Part of C pray.c:in_trouble(): the cursed saddle read.
 function saddle(state: GameState) {
     return state.u.usteed?.minvent?.find(object => (object.owornmask ?? 0) & W_SADDLE);
 }
@@ -904,11 +917,13 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
     }
 }
 
+// Part of C pray.c:fix_curse_trouble(): the left/right ring glow lines.
 function ringGlow(object: GameObject | null | undefined, state: GameState) {
     return object === state.uleft ? 'Your left ring softly glows'
         : object === state.uright ? 'Your right ring softly glows' : null;
 }
 
+// Port only: asserts a prayer trouble selected an affected object.
 function requirePrayerObject(object: GameObject | null | undefined): GameObject {
     if (!object) throw new Error('Prayer selected an item trouble without an affected object');
     return object;
@@ -924,6 +939,7 @@ const DISINTEGRATION_ARMOR: readonly ('uarms' | 'uarmc' | 'uarm' | 'uarmu')[] = 
     'uarms', 'uarmc', 'uarm', 'uarmu',
 ];
 
+// C pray.c:godvoice().
 export async function godVoice(
     alignment: number, words: string | null = null, state: GameState = game,
 ): Promise<void> {
@@ -941,6 +957,7 @@ export interface DivineAnger {
     luck?: number;
 }
 
+// Part of C pray.c:angrygods(): the maxanger computation and clamp.
 export function angryGodMaximum({
     responseAlignment, heroAlignment, alignmentRecord = 0, anger = 0, luck = 0,
 }: DivineAnger): number {
@@ -955,6 +972,7 @@ export function angryGodMaximum({
     return Math.max(1, Math.min(15, maximum));
 }
 
+// C pray.c:gods_upset().
 export async function godsUpset(alignment: number, state: GameState = game): Promise<void> {
     requirePlayingGame(state);
     const anger = state.u.ugangr ?? 0;
@@ -964,6 +982,7 @@ export async function godsUpset(alignment: number, state: GameState = game): Pro
     await angryGods(alignment, state);
 }
 
+// C pray.c:desecrate_altar().
 export async function desecrateAltar(
     highAltar: boolean, alignment: number, state: GameState = game,
 ): Promise<void> {
@@ -1058,6 +1077,7 @@ async function curseHero(alignment: number, state: PlayingGameState): Promise<vo
     if (rn2(2) || !await attrcurse()) await rndcurse();
 }
 
+// C pray.c:fry_by_god().
 export async function fryByGod(
     alignment: number, disintegration = false, state: GameState = game,
 ): Promise<boolean> {
@@ -1069,6 +1089,7 @@ export async function fryByGod(
     });
 }
 
+// C pray.c:god_zaps_you().
 export async function godZapsHero(alignment: number, state: GameState = game): Promise<void> {
     requirePlayingGame(state);
     const hero = state.u;
@@ -1135,6 +1156,8 @@ export async function godZapsHero(alignment: number, state: GameState = game): P
     }
 }
 
+// Part of C pray.c:god_zaps_you(): the swallowed-hero strikes on the
+// swallower.
 async function strikeSwallower(disintegration: boolean, state: PlayingGameState): Promise<void> {
     const monster = state.u.ustuck;
     if (!monster) throw new Error('Divine lightning requires the swallowing monster');
@@ -1167,6 +1190,7 @@ const CROWNING_PROPERTIES: readonly PropertyName[] = [
     'sleepResistance', 'poisonResistance',
 ];
 
+// Part of C pray.c:pleased(): the gratuitous-favor dispatch.
 export async function grantPrayerFavor(choice: number, alignment: number): Promise<void> {
     requirePlayingGame(game);
     switch (choice) {
@@ -1192,6 +1216,7 @@ export async function grantPrayerFavor(choice: number, alignment: number): Promi
     }
 }
 
+// Part of C pray.c:pleased(): the bless-wielded-weapon favor.
 async function blessWieldedWeapon(): Promise<void> {
     requirePlayingGame(game);
     const weapon = game.uwep;
@@ -1225,6 +1250,7 @@ async function blessWieldedWeapon(): Promise<void> {
     }
 }
 
+// Part of C pray.c:pleased(): the full-healing favor.
 async function restoreHeroVigor(): Promise<void> {
     requirePlayingGame(game);
     const hero = game.u;
@@ -1255,6 +1281,7 @@ async function restoreHeroVigor(): Promise<void> {
     game.context.botl = true;
 }
 
+// Part of C pray.c:pleased(): the castle-tune favor.
 async function revealCastleTune(alignment: number): Promise<boolean> {
     requirePlayingGame(game);
     const event = game.u.uevent ||= {};
@@ -1272,6 +1299,7 @@ async function revealCastleTune(alignment: number): Promise<boolean> {
     return true;
 }
 
+// Part of C pray.c:pleased(): the uncurse-inventory favor.
 async function uncurseInventory(): Promise<void> {
     requirePlayingGame(game);
     const blind = heroIsBlind(game);
@@ -1293,6 +1321,7 @@ async function uncurseInventory(): Promise<void> {
     }
 }
 
+// Part of C pray.c:pleased(): the intrinsic-gift favor.
 async function grantDivineProperty(): Promise<void> {
     requirePlayingGame(game);
     await godVoice(game.u.ualign.type, 'Thou hast pleased me with thy progress,');
@@ -1331,6 +1360,7 @@ export async function announceDivineGift(description: string): Promise<void> {
     }
 }
 
+// Part of C pray.c:gcrownu(): the at-your-feet gift placement.
 async function dropGift(object: GameObject, description: string): Promise<void> {
     await announceDivineGift(description);
     if (game.u.uswallow) {
@@ -1340,6 +1370,7 @@ async function dropGift(object: GameObject, description: string): Promise<void> 
     } else await landFloorObject(object, game.u.ux, game.u.uy);
 }
 
+// C pray.c:give_spell().
 async function giveSpell(): Promise<void> {
     requirePlayingGame(game);
     const book = await mkobj(-SPBOOK_CLASS, true);
@@ -1464,6 +1495,7 @@ async function crownHero(): Promise<void> {
     await addHeroWeaponSkillSlots(1);
 }
 
+// Part of C pray.c:pleased(), gcrownu(): the weapon-or-weptool test.
 function isWeapon(object: GameObject | null | undefined): object is GameObject {
     return !!object && (object.oclass === WEAPON_CLASS
         || isWeaponTool(object));
@@ -1482,11 +1514,13 @@ interface CorpseOffering extends GameObject {
     age: number;
 }
 
+// Port only: asserts a corpse offering carries its species and age.
 function requireCorpseOffering(object: GameObject): asserts object is CorpseOffering {
     if (object.otyp !== CORPSE || object.corpsenm === undefined || object.age === undefined)
         throw new Error('A corpse offering requires its species and creation time.');
 }
 
+// C pray.c:dosacrifice().
 export async function dosacrifice(): Promise<void> {
     const game = requireInitializedGame();
     game.context.move = 0;
@@ -1560,6 +1594,7 @@ async function chooseOffering(): Promise<GameObject | null> {
     return object;
 }
 
+// C pray.c:offer_corpse().
 async function offerCorpse(corpse: GameObject, highAltar: boolean, alignment: number): Promise<void> {
     const game = requireInitializedGame();
     requireCorpseOffering(corpse);
@@ -1647,6 +1682,7 @@ async function offeringValue(corpse: CorpseOffering, alignment: number): Promise
     return value;
 }
 
+// C pray.c:consume_offering().
 async function consumeOffering(object: GameObject): Promise<void> {
     const game = requireInitializedGame();
     if (heroIsHallucinating(game)) {
@@ -1683,12 +1719,14 @@ async function useOffering(object: GameObject): Promise<void> {
     }
 }
 
+// C pray.c:offer_negative_valued().
 async function rejectOffering(highAltar: boolean, alignment: number): Promise<void> {
     const game = requireInitializedGame();
     if (highAltar && alignment !== game.u.ualign.type) await desecrateAltar(true, alignment);
     else await godsUpset(alignment);
 }
 
+// C pray.c:offer_different_alignment_altar().
 async function offerToAnotherGod(corpse: CorpseOffering, alignment: number): Promise<void> {
     const game = requireInitializedGame();
     const hero = game.u;
@@ -1743,6 +1781,7 @@ async function offerToAnotherGod(corpse: CorpseOffering, alignment: number): Pro
     }
 }
 
+// C pray.c:sacrifice_your_race().
 async function offerOwnRace(corpse: CorpseOffering, highAltar: boolean, alignment: number): Promise<void> {
     const game = requireInitializedGame();
     const hero = game.u;
@@ -1802,6 +1841,7 @@ async function offerOwnRace(corpse: CorpseOffering, highAltar: boolean, alignmen
     await useOffering(corpse);
 }
 
+// Part of C pray.c:offer_corpse(): the offering-value reward dispatch.
 async function rewardOffering(value: number): Promise<void> {
     const game = requireInitializedGame();
     const hero = game.u;
@@ -1851,6 +1891,7 @@ async function rewardOffering(value: number): Promise<void> {
     }
 }
 
+// C pray.c:bestow_artifact().
 async function bestowArtifact(value: number): Promise<boolean> {
     const game = requireInitializedGame();
     const hero = game.u;
@@ -1901,6 +1942,7 @@ async function offerAmuletTooSoon(alignment: number): Promise<void> {
         : alignment === game.u.ualign.type ? 'an urge to return to the surface' : 'ashamed'}.`));
 }
 
+// C pray.c:offer_fake_amulet().
 async function offerFakeAmulet(amulet: GameObject, highAltar: boolean, alignment: number): Promise<void> {
     const game = requireInitializedGame();
     if (!highAltar && !amulet.known) {
@@ -1959,6 +2001,7 @@ async function offerAmulet(amulet: GameObject, alignment: number): Promise<void>
     }
 }
 
+// C align.h:ALIGNLIM().
 function alignmentLimit() {
     return 10 + Math.trunc(game.moves / 200);
 }
