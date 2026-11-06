@@ -1139,7 +1139,7 @@ async function teleportPetVictim(monster, state) {
         return true;
     const leash = leashAttachedToMonster(monster, state);
     if (!leash) {
-        releaseMonsterLeash(monster, state);
+        await releaseMonsterLeash(monster, false, { state });
         return true;
     }
     if (leash.cursed) {
@@ -1147,7 +1147,7 @@ async function teleportPetVictim(monster, state) {
         return false;
     }
     await plineWithContinuation('Your leash goes slack.');
-    releaseMonsterLeash(monster, state);
+    await releaseMonsterLeash(monster, false, { state });
     return true;
 }
 // C dig.c:liquid_flow().  The caller has already changed the terrain type.

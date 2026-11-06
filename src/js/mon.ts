@@ -148,7 +148,7 @@ import { resolveMonsterGaze,
     expelHero,
 } from './mhitu.js';
 import type { MonsterGazeOptions } from './mhitu.js';
-import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
+import { monsterCanBeLeashed, releaseMonsterLeash } from './apply.js';
 import { wormKnown } from './display.js';
 import { controlMonsterTeleport, requireLevel } from './teleport.js';
 import { heroIsUnaware } from './senses.js';
@@ -2632,7 +2632,7 @@ export async function removeMonsterFromGame(monster: Monster | null | undefined)
     await releaseHeroFromMonster(monster);
     const dropped = await dropSpecialMonsterObjects(monster);
     const discarded = await discardMonsterInventory(monster, false);
-    if (monster.mleashed) releaseMonsterLeash(monster);
+    if (monster.mleashed) await releaseMonsterLeash(monster, false);
     if (x > 0 && monsterEmitsLight(monster.mnum)) game.vision_full_recalc = 1;
     await detachMonsterFromLevel(monster);
     // End-game settlement starts removals after gameover is already set.
@@ -3535,7 +3535,7 @@ export async function detachDeadMonster(
     await returnDeadKop(monster, state, rollOne);
     logDeadMonster(monster, state);
     if (state === game) await unmap_invisible(x, y, false);
-    if (monster.mleashed) releaseMonsterLeash(monster, state);
+    if (monster.mleashed) await releaseMonsterLeash(monster, false, { state });
     // m_detach removes the light of the form which died, before its true
     // species and empty map square are projected by mon_leaving_level.
     monster.lightRemoved = true;
@@ -5301,7 +5301,7 @@ export async function changeMonsterForm(
     let leashReleaseVisible = false;
     if (monster.mleashed && !monsterCanBeLeashed(monster)) {
         leashReleaseVisible = canSeeMonster(monster);
-        await releaseMonsterLeashWithFeedback(monster, { state, publish });
+        await releaseMonsterLeash(monster, true, { state, publish });
         leashReleased = true;
     }
     if (monsterEmitsLight(oldMnum) !== monsterEmitsLight(targetMnum))

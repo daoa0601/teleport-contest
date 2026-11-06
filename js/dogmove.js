@@ -689,7 +689,7 @@ async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne
                     : 'his';
             const subject = canSpotMonster(monster) ? monsterSentenceSubject(monster) : 'It';
             await plineWithContinuation(`${subject} breaks loose of ${pronoun} leash!`);
-            releaseMonsterLeash(monster, state);
+            await releaseMonsterLeash(monster, false, { state });
         }
         // C dog_move() runs mattacku() to completion here.  The hero-contact
         // messages are presented with the turn driver's contact deferral
@@ -1178,7 +1178,7 @@ export async function beginMonsterMealMimicry(monster, state = game) {
     // All animal disguises in qm[] are leashable. Furniture and food are not.
     if (wasLeashed && disguise.type !== M_AP_MONSTER) {
         await plineWithContinuation('Your leash goes slack.');
-        releaseMonsterLeash(monster, state);
+        await releaseMonsterLeash(monster, false, { state });
     }
     if (samePerceivedGlyph(previousGlyph, glyphAt(monster.mx, monster.my, state))) {
         await plineWithContinuation(`You sense that ${name} feels rather ${description}-ish.`);

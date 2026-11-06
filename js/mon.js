@@ -84,7 +84,7 @@ import { recordHeroKillConduct } from './end.js';
 import { createPhysicalMonsterExplosion } from './explode.js';
 import { stopHeroOccupation } from './occupation.js';
 import { resolveMonsterGaze, expelHero, } from './mhitu.js';
-import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
+import { monsterCanBeLeashed, releaseMonsterLeash } from './apply.js';
 import { wormKnown } from './display.js';
 import { controlMonsterTeleport, requireLevel } from './teleport.js';
 import { heroIsUnaware } from './senses.js';
@@ -2328,7 +2328,7 @@ export async function removeMonsterFromGame(monster) {
     const dropped = await dropSpecialMonsterObjects(monster);
     const discarded = await discardMonsterInventory(monster, false);
     if (monster.mleashed)
-        releaseMonsterLeash(monster);
+        await releaseMonsterLeash(monster, false);
     if (x > 0 && monsterEmitsLight(monster.mnum))
         game.vision_full_recalc = 1;
     await detachMonsterFromLevel(monster);
@@ -3026,7 +3026,7 @@ export async function detachDeadMonster(monster, state, random, publish, rollOne
     if (state === game)
         await unmap_invisible(x, y, false);
     if (monster.mleashed)
-        releaseMonsterLeash(monster, state);
+        await releaseMonsterLeash(monster, false, { state });
     // m_detach removes the light of the form which died, before its true
     // species and empty map square are projected by mon_leaving_level.
     monster.lightRemoved = true;
@@ -4541,7 +4541,7 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
     let leashReleaseVisible = false;
     if (monster.mleashed && !monsterCanBeLeashed(monster)) {
         leashReleaseVisible = canSeeMonster(monster);
-        await releaseMonsterLeashWithFeedback(monster, { state, publish });
+        await releaseMonsterLeash(monster, true, { state, publish });
         leashReleased = true;
     }
     if (monsterEmitsLight(oldMnum) !== monsterEmitsLight(targetMnum))

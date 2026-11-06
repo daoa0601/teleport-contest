@@ -1227,7 +1227,7 @@ async function teleportPetVictim(monster: Monster, state: GameState): Promise<bo
     if (!monster.mleashed) return true;
     const leash = leashAttachedToMonster(monster, state);
     if (!leash) {
-        releaseMonsterLeash(monster, state);
+        await releaseMonsterLeash(monster, false, { state });
         return true;
     }
     if (leash.cursed) {
@@ -1235,7 +1235,7 @@ async function teleportPetVictim(monster: Monster, state: GameState): Promise<bo
         return false;
     }
     await plineWithContinuation('Your leash goes slack.');
-    releaseMonsterLeash(monster, state);
+    await releaseMonsterLeash(monster, false, { state });
     return true;
 }
 

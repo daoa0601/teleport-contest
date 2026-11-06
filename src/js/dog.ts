@@ -18,7 +18,7 @@ import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './g
 import { withIndefiniteArticle, corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { publishMonsterYelp, publishMonsterGrowl, sessionIsNight } from './sounds.js';
-import { releaseMonsterLeashWithFeedback, releaseMonsterLeash } from './apply.js';
+import { releaseMonsterLeash } from './apply.js';
 import { finishMonsterEating } from './dogmove.js';
 import { monsterName } from './do_name.js';
 import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';
@@ -140,7 +140,7 @@ export async function abusePet(monster: Monster, state: GameState = game): Promi
         pet.abuse++;
     }
     if (!monster.mtame && monster.mleashed)
-        await releaseMonsterLeashWithFeedback(monster, { state });
+        await releaseMonsterLeash(monster, true, { state });
 
     if (monster.mx !== 0) {
         if (monster.mtame > 0 && rn2(monster.mtame) !== 0) {
@@ -243,7 +243,7 @@ export async function makePetWary(
             await publish(`${subject} ${monster.mpeaceful ? 'is no longer tame' : 'has become feral'}.`);
         }
         await repaint(monster.mx, monster.my);
-        if (monster.mleashed) await releaseMonsterLeashWithFeedback(monster, { state, publish });
+        if (monster.mleashed) await releaseMonsterLeash(monster, true, { state, publish });
         if (state.u.usteed === monster) await dismountHero(DISMOUNT_THROWN, { state, announce: publish });
         return;
     }
@@ -531,7 +531,7 @@ export async function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
     if (monster.mleashed) {
         monster.mtame = (monster.mtame ?? 0) - 1;
         monster.pet = monster.mtame > 0;
-        await releaseMonsterLeashWithFeedback(monster, { state });
+        await releaseMonsterLeash(monster, true, { state });
     }
 
     await prepareMonsterDeparture(monster, state);
@@ -620,7 +620,7 @@ export async function catchUpMonster(monster: Monster, moves: number, state: Gam
 
     monster.pet = (monster.mtame ?? 0) > 0;
     if (!monster.mtame && monster.mleashed)
-        releaseMonsterLeash(monster, state);
+        await releaseMonsterLeash(monster, false, { state });
 
     const healing = regenerates(monster.mnum)
         ? imv : Math.trunc(imv / 20);
@@ -909,7 +909,7 @@ export async function collectLevelFollowers(state: GameState = game, petsOnly = 
         } else if (monster.mleashed) {
             const name = monsterName(monster, { capitalized: true, state });
             await plineWithContinuation(`${possessiveName(name)} leash goes slack.`);
-            releaseMonsterLeash(monster, state);
+            await releaseMonsterLeash(monster, false, { state });
         }
     }
     return followers;
@@ -941,7 +941,7 @@ async function staysBehind(monster: Monster, state: GameState): Promise<boolean>
         const whose = monsterIsHumanoid(monster.mnum)
             ? monster.female ? 'Her' : 'His' : 'Its';
         await plineWithContinuation(`${whose} leash suddenly comes loose.`);
-        releaseMonsterLeash(monster, state);
+        await releaseMonsterLeash(monster, false, { state });
     }
     return true;
 }

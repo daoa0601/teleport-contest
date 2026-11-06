@@ -1100,7 +1100,7 @@ async function teleportMonsterPet(
     } else {
         await publish('Your leash goes slack.');
     }
-    releaseMonsterLeash(monster, state);
+    await releaseMonsterLeash(monster, false, { state });
     return true;
 }
 

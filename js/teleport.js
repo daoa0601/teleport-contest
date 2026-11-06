@@ -950,7 +950,7 @@ async function teleportMonsterPet(monster, state, force, publish) {
     else {
         await publish('Your leash goes slack.');
     }
-    releaseMonsterLeash(monster, state);
+    await releaseMonsterLeash(monster, false, { state });
     return true;
 }
 // C teleport.c:mtele_trap().
