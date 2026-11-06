@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { showFinalAttributes } from '../js/insight.js';
+import { enlightenment } from '../js/insight.js';
 import { resetInputState } from '../js/input.js';
 import { finishOrdinaryQuit } from '../js/end.js';
 import { advanceHeroPetrification } from '../js/timeout.js';
@@ -12,8 +12,8 @@ import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/
 import { ensureHeroSkills } from '../js/weapon.js';
 import { DAGGER, GOLD_PIECE, LONG_SWORD, LUCKSTONE } from '../js/object_data.js';
 import {
-    ENL_GAMEOVERDEAD, M_AP_OBJECT, P_BASIC, POOL, P_DAGGER, P_LONG_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
-    SICK_NONVOMITABLE,
+    ENL_GAMEOVERDEAD, BASICENLIGHTENMENT, MAGICENLIGHTENMENT, M_AP_OBJECT, P_BASIC, POOL, P_DAGGER,
+    P_LONG_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE,
 } from '../js/const.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -24,7 +24,7 @@ import { createMonsterAt } from './support/monsters.js';
 // Page through end-of-game attribute disclosure for a hero who has died.
 async function deadHeroAttributes(killer = ''): Promise<string[]> {
     const input = resetInputState();
-    const report = showFinalAttributes({ final: ENL_GAMEOVERDEAD, killer });
+    const report = enlightenment(BASICENLIGHTENMENT | MAGICENLIGHTENMENT, ENL_GAMEOVERDEAD, killer);
     const lines: string[] = [];
     try {
         for (let pages = 0; ; pages++) {

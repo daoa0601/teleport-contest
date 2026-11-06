@@ -3,10 +3,10 @@ import test from 'node:test';
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { showEnlightenment } from '../js/insight.js';
+import { enlightenment } from '../js/insight.js';
 import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_MAGIC_RESISTANCE, LONG_SWORD, SHORT_SWORD } from '../js/object_data.js';
-import { P_BASIC, P_LONG_SWORD, P_SHORT_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TERMINAL_COLS } from '../js/const.js';
+import { P_BASIC, P_LONG_SWORD, P_SHORT_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TERMINAL_COLS, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, MAGICENLIGHTENMENT } from '../js/const.js';
 import { ensureHeroSkills } from '../js/weapon.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
@@ -19,7 +19,7 @@ void test('enlightenment reports worn magic protection once, among resistances',
     freshGameplayRoom({ role: 'wizard', flags: { debug: true } });
     await wearHeroArmor(await addInventoryObject(CLOAK_OF_MAGIC_RESISTANCE));
     const input = resetInputState();
-    const report = showEnlightenment({ basic: false, magic: true });
+    const report = enlightenment(MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
     let protectionLines = 0;
     try {
         for (;;) {
@@ -83,7 +83,7 @@ void test('a one-page enlightenment report ends with (end), a longer one numbers
     for (const magic of [false, true]) {
         freshGameplayRoom({ role: 'valkyrie', flags: { debug: magic } });
         const input = resetInputState();
-        const report = showEnlightenment({ basic: magic, magic });
+        const report = enlightenment((magic ? BASICENLIGHTENMENT : 0) | MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
         const footers: string[] = [];
         try {
             for (;;) {
@@ -130,7 +130,7 @@ void test('enlightenment clips a full-width two-weapon skill line like the tty m
     game.u.twoweap = true;
 
     const input = resetInputState();
-    const report = showEnlightenment({ basic: false, magic: true });
+    const report = enlightenment(MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
     let row = '';
     let lastColumn = '';
     try {

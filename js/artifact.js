@@ -7,7 +7,7 @@ import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, WAND_CLASS } from './objclass.js'
 import { OBJ_DESCR } from './o_init.js';
 import { OBJ_NAME, objectClassForType, objectSkill, objectUnique, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL, BELL_OF_OPENING, LEASH, } from './object_data.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
-import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP, NECK, LL_ARTIFACT, } from './const.js';
+import { ENL_GAMEINPROGRESS, MAGICENLIGHTENMENT, P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP, NECK, LL_ARTIFACT, } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm, mbodypart } from './polyself.js';
 import { heroHasDrainResistance, removeEyewear } from './do_wear.js';
@@ -45,7 +45,7 @@ import { recalculateTelepathyRange, bypassObject, clearBypasses, nextUnbypassedO
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, makeBlinded, makeHallucinated, makeConfused, makeStunned } from './potion.js';
-import { showEnlightenment } from './insight.js';
+import { enlightenment } from './insight.js';
 import { chooseInventoryObject, freeInventoryObject } from './invent.js';
 import { useCrystalBall } from './detect.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
@@ -1950,7 +1950,7 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
             await invokeEnergyBoost(object, state, publish);
             break;
         case 'enlightening':
-            await showEnlightenment({ basic: false, magic: true });
+            await enlightenment(MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
             break;
         case 'create-ammo':
             await invokeCreateAmmo(object, rollOne, state, publish);

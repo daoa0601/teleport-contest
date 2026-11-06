@@ -7,7 +7,7 @@ import { distmin } from './hacklib.js';
 import { fingersOrGloves } from './do_wear.js';
 import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactProperties } from './artifact.js';
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHeroStrengthAndHp } from './attrib.js';
-import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING, ARM, HAND, FACE, HEAD, LL_ARTIFACT, } from './const.js';
+import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, ENL_GAMEINPROGRESS, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MAGICENLIGHTENMENT, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING, ARM, HAND, FACE, HEAD, LL_ARTIFACT, } from './const.js';
 import { monsterHasMapPosition } from './steed.js';
 import { canSpotMonster, glyphAt, newsym } from './display.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
@@ -33,7 +33,7 @@ import { cansee, clearAreaCells, couldsee } from './vision.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { floatingAbove } from './levitation_commands.js';
 import { morehungry, newuhs, vomit } from './eat.js';
-import { showEnlightenment } from './insight.js';
+import { enlightenment } from './insight.js';
 import { detectMonsters } from './detect.js';
 import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from './properties.js';
 import { encumber_msg } from './pickup.js';
@@ -340,7 +340,7 @@ export async function drinkFountain(loc) {
     else if (fate === 19) {
         await plineWithContinuation(formatFeltMessage('self-knowledgeable...'));
         await flushPendingTopline();
-        await showEnlightenment({ basic: false, magic: true });
+        await enlightenment(MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
         await exerciseAttribute(A_WIS, true);
         await plineWithContinuation('The feeling subsides.');
     }

@@ -1057,7 +1057,7 @@ enlightenment	attributes_enlightenment	inlined	attributeEnlightenmentLines secti
 enlightenment	characteristics_enlightenment	inlined	characteristicEnlightenmentLines section (insight.ts)
 enlightenment	enlght_line	inlined	section line arrays (insight.ts)
 enlightenment	enlght_out	inlined	showTextMenuOverlay/showTextPages render the sections (insight.ts)
-enlightenment	fmt_elapsed_time	inlined	recorder's fixed clock keeps realtime none (insight.ts miscellaneousLines)
+enlightenment	fmt_elapsed_time	inlined	recorder's fixed clock keeps realtime none (insight.ts enlightenment)
 lookaround	avoid_moving_on_liquid	inlined	runLiquidIsDangerous + announceRunLiquid (cmd.ts lookaroundRun, run_hazards.ts)
 lookaround	avoid_moving_on_trap	inlined	knownRunTrap + announceRunTrap (cmd.ts lookaroundRun, run_hazards.ts)
 lookaround	dist2	inlined	corridor turn/adjacency checks in lookaroundRun (cmd.ts)
