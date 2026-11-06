@@ -11,7 +11,7 @@ const doubleSymbols = new Set([
 function isNameStart(char) {
     return /[A-Za-z_]/u.test(char || '');
 }
-// C lctype.h:lislalpha()/lisalnum(): identifier continuation.
+// C lctype.h:lislalnum(): identifier continuation (letter, digit, or '_').
 function isNamePart(char) {
     return /[A-Za-z0-9_]/u.test(char || '');
 }
