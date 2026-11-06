@@ -21,6 +21,7 @@ import { setBallAndChainFelt } from './ball.js';
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, poisonAttributeMessage, requireAttributeIndex } from './attrib.js';
 import { commandResultCancelled, commandResultFailed, setMulti, cmdq_peek } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
+import { restorationLeavesTrouble } from './apply.js';
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, ENL_GAMEINPROGRESS, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MAGICENLIGHTENMENT, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT, FACE, HEAD, HAND, LEG, LL_CONDUCT, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
@@ -578,17 +579,6 @@ async function restoreAbility(source, state) {
                 break;
         }
     }
-}
-// C apply.c:unfixable_trouble_count(FALSE). Restoration does not treat these
-// ailments or temporary attribute penalties; they only change its feedback.
-function restorationLeavesTrouble(state) {
-    const hero = state.u;
-    return heroIsPetrifying(state) || heroIsSliming(state) || heroIsStrangled(state)
-        || hero.atemp.a[A_DEX] < 0 && (hero._woundedLegTurns ?? 0) > 0
-        || hero.atemp.a[A_STR] < 0 && hero.uhs >= WEAK
-        || heroIsSick(state) || propertyIsActive('stunned', state)
-        || (hero.confusionTurns ?? 0) > 0 || heroIsHallucinating(state)
-        || heroIsVomiting(state) || heroIsDeaf(state);
 }
 // C potion.c:peffect_hallucination().
 async function hallucinationEffect(source, state) {

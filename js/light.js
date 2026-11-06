@@ -22,6 +22,7 @@ import { carriedObjectOwner } from './shk.js';
 import { getObjectLocation } from './zap.js';
 import { placeObjectSynchronously, remove_object } from './mkobj.js';
 import { roomForRoomno } from './hack.js';
+import { snuffLitObject } from './apply.js';
 import { monsterDigests, monsterIsWhirly } from './mondata.js';
 export const CANDLE_TYPES = new Set([
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
@@ -194,31 +195,10 @@ async function affectCarriedLights(worsen) {
     }
     return stillLit;
 }
-// C apply.c:snuff_lit()/snuff_candle(). Callers keep the object in its
-// native ownership phase: in_container() has already removed it from inventory.
-export async function snuffLitObject(object, state = game, publish = plineWithContinuation) {
-    if (!object.lamplit || !LIGHT_TYPES.has(object.otyp))
-        return false;
-    const location = getObjectLocation(object, state);
-    const visible = object.where === 'minvent'
-        ? !!location && cansee(location.x, location.y) : !heroIsBlind(state);
-    if (visible) {
-        if (CANDLE_TYPES.has(object.otyp)) {
-            const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
-            const many = candelabrum ? object.spe > 1 : object.quan > 1;
-            await publish(`${carriedObjectOwner(object, state)} ${candelabrum ? "candelabrum's " : ''}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
-        }
-        else {
-            await publish(`${ownedObjectName(object, state)} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out!`);
-        }
-    }
-    endObjectBurn(object, state);
-    return true;
-}
 // Part of C mhitm.c:gulpmm(): the engulfed inventory light pass, shared with uhitm.c:gulpum().
 // The engulf loops at mhitm.c:868 and uhitm.c:4985 inline this pass: every
 // light a swallowed actor carries is snuffed with apply.c:snuff_lit()
-// semantics (snuffLitObject above is its port), the carrier's square
+// semantics (apply.ts:snuffLitObject is its port), the carrier's square
 // deciding visibility.
 export async function snuffMonsterInventoryLights(defender, state, publish) {
     for (const object of defender.minvent || defender.inventory || []) {
