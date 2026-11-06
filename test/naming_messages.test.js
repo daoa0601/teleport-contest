@@ -13,7 +13,7 @@ import { fireDamageObject } from '../js/trap.js';
 import { landFloorObject } from '../js/floor_effects.js';
 import { announceGlobMerge } from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { restartAmuletStrangulation } from '../js/polyself.js';
+import { checkStrangling } from '../js/polyself.js';
 import { pushKeys } from '../js/input.js';
 import { liftObject } from '../js/pickup.js';
 import { lightRoom, lightWieldedArtifact } from '../js/light.js';
@@ -150,7 +150,7 @@ void test('a strangling amulet uses its simple type name without a personal name
     });
     game.uamul = game.u.uamul = amulet;
     const messages = [];
-    await restartAmuletStrangulation(game, text => { messages.push(text); });
+    await checkStrangling(true, game, text => { messages.push(text); });
     assert.equal(messages[0], 'Your amulet of strangulation begins constricting your neck!');
 });
 void test('a chest gas trap retains the chest personal name', async () => {

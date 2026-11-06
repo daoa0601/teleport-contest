@@ -5,7 +5,7 @@ import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import { pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent } from './pline.js';
 import { doStorms } from './timeout.js';
 import { rewindEngravingsForSave, engravingAt, wipeEngravingAt, readEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, allocateMonsterMovement, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './mon.js';
+import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './mon.js';
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
@@ -752,6 +752,17 @@ async function beginInitialTurnMaintenance() {
         });
     }
     return finishInitialTurnMaintenanceAfterMonsterDistress(capacity);
+}
+// Part of C allmain.c:moveloop_core(): the new-turn loop that reallocates
+// every monster's movement ration with mcalcmove() after mcalcdistress(),
+// before any of them acts. C iterates fmon in creation order; JS stores
+// monsters newest-first, so this traverses the reverse of creation order
+// like the rest of the scheduler.
+export function allocateMonsterMovement(monsters = [], random = rn2, state = requireInitializedGame()) {
+    for (const monster of monstersInFmonOrder(monsters)) {
+        const amount = mcalcmove(monster, true, random, state);
+        monster.movement = (monster.movement ?? 0) + amount;
+    }
 }
 // C allmain.c:maybe_generate_rnd_mon().
 async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity) {
