@@ -48,7 +48,7 @@ import { monsterAtPosition } from './steed.js';
 import { heroIsPolymorphed, heroFormSticks, heroSpecies } from './polyself.js';
 import { selectInventoryObject } from './invent.js';
 import { typedSymbolDescription } from './look_symbols.js';
-import { warningSymbols } from './warning_symbols.js';
+import { warningSymbols } from './options.js';
 import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { CmapSymbol, cmapToGlyph, glyphIsCmapC, glyphIsCmapZap, glyphToWarning } from './glyph_numbers.js';

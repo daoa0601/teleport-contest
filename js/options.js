@@ -4,6 +4,8 @@
 // cfgfiles.ts (C cfgfiles.c).
 // C options.c:optfn_fruit()/initoptions()/fruitadd(): the named-fruit
 // option and registry live here, beside the rest of the option handlers.
+// C options.c:warning_opts()/assign_warnings(): the warnings option and its
+// symbol table live here.
 import { ILLOBJ_CLASS, COIN_CLASS, FOOD_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import { clearrolefilter, createCharacterFilters, setrolefilter } from './role.js';
@@ -13,7 +15,6 @@ import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAu
 import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
-import { setWarningSymbols } from './warning_symbols.js';
 import { PosixRegex } from './posix_regex.js';
 import { rn2, rnd } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion, parseBoulderSymbolValue } from './option_values.js';
@@ -44,7 +45,7 @@ import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorAttrToString, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName, matchColorName, parseColorAttr, parseMenuColoring, queryAttributeMenu, queryColorMenu } from './coloratt.js';
-import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, STONE, } from './const.js';
+import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms, STONE, } from './const.js';
 // C include/optlist.h, recorder build: every option table entry in file
 // order — [name, alias, isBool, negateok, valok, dupeok, prefix].  The
 // flags drive parseoptions()'s generic checks; options the port does not
@@ -3145,5 +3146,22 @@ export function planInventoryOrder(symbols, state = game) {
         }
     }
     return { order: [...order, ...previous.filter(oclass => !order.includes(oclass))], errors };
+}
+// ---------------------------------------------------------------------------
+// C options.c:warning_opts()/assign_warnings().
+// ---------------------------------------------------------------------------
+// C options.c:warning_opts()/assign_warnings(): the string-valued warnings
+// option; the numeric WARNINGS= statement lives in cfgfiles.ts.
+// Also C drawing.c:def_warnsyms: the fallback symbol table.
+export function setWarningSymbols(value, flags) {
+    const decoded = decodeOptionEscapes(value).split('\0', 1)[0] ?? '';
+    const previous = flags.warningSymbols;
+    flags.warningSymbols = def_warnsyms.map((warning, index) => decoded.charAt(index)
+        || previous?.charAt(index) || warning.ch).join('');
+}
+export function warningSymbols() {
+    return def_warnsyms.map((warning, index) => ({ ...warning,
+        ch: game.iflags.warningSymbols?.charAt(index) || warning.ch,
+    }));
 }
 //# sourceMappingURL=options.js.map

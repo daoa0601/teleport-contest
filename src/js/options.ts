@@ -4,6 +4,8 @@
 // cfgfiles.ts (C cfgfiles.c).
 // C options.c:optfn_fruit()/initoptions()/fruitadd(): the named-fruit
 // option and registry live here, beside the rest of the option handlers.
+// C options.c:warning_opts()/assign_warnings(): the warnings option and its
+// symbol table live here.
 
 import { ILLOBJ_CLASS, COIN_CLASS, FOOD_CLASS } from './objclass.js';
 import { game } from './gstate.js';
@@ -19,7 +21,6 @@ import type { ConfigurationErrorReport } from './cfgfiles.js';
 import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
-import { setWarningSymbols } from './warning_symbols.js';
 import { PosixRegex } from './posix_regex.js';
 import { rn2, rnd } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion, parseBoulderSymbolValue } from './option_values.js';
@@ -65,8 +66,8 @@ import {
     PICK_NONE, PICK_ONE, PL_PSIZ,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
-    PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
-    PARANOID_WERECHANGE, STONE,
+    PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms,
+    STONE,
 } from './const.js';
 
 type PetPreference = '' | 'c' | 'd' | 'h' | 'n';
@@ -3113,4 +3114,24 @@ export function planInventoryOrder(symbols: string, state: InventoryOrderState =
         }
     }
     return { order: [...order, ...previous.filter(oclass => !order.includes(oclass))], errors };
+}
+
+// ---------------------------------------------------------------------------
+// C options.c:warning_opts()/assign_warnings().
+// ---------------------------------------------------------------------------
+
+// C options.c:warning_opts()/assign_warnings(): the string-valued warnings
+// option; the numeric WARNINGS= statement lives in cfgfiles.ts.
+// Also C drawing.c:def_warnsyms: the fallback symbol table.
+export function setWarningSymbols(value: string, flags: InterfaceFlags): void {
+    const decoded = decodeOptionEscapes(value).split('\0', 1)[0] ?? '';
+    const previous = flags.warningSymbols;
+    flags.warningSymbols = def_warnsyms.map((warning, index) => decoded.charAt(index)
+        || previous?.charAt(index) || warning.ch).join('');
+}
+
+export function warningSymbols() {
+    return def_warnsyms.map((warning, index) => ({ ...warning,
+        ch: game.iflags.warningSymbols?.charAt(index) || warning.ch,
+    }));
 }
