@@ -2465,6 +2465,15 @@ export function flipLuaRegions(active) {
             region.exclude = flipSpecialRegion(region.exclude) ?? region.exclude;
     }
 }
+// C sp_lev.c:floodfillchk_match_under(). The terrain travels with the
+// predicate instead of global state.
+export function floodfillchk_match_under(x, y, terrain) {
+    return game.level?.at?.(x, y)?.typ === terrain;
+}
+// C sp_lev.c:set_floodfillchk_match_under().
+export function set_floodfillchk_match_under(terrain) {
+    return (x, y) => floodfillchk_match_under(x, y, terrain);
+}
 // C sp_lev.c:floodfillchk_match_accessible(): ACCESSIBLE terrain plus
 // secret corridors and doors.
 function floodfillchk_match_accessible(x, y) {
