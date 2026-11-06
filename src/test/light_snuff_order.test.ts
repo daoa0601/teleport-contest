@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { beginObjectBurn } from '../js/timeout.js';
-import { lightRoom } from '../js/light.js';
+import { lightRoom } from '../js/read.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

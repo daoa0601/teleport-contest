@@ -57,7 +57,7 @@ import type { DeathHandler } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, heroIsOnStairs, isInvocationPosition, nomul } from './hack.js';
 import { lightDamage } from './zap.js';
-import { lightRoom } from './light.js';
+import { lightRoom } from './read.js';
 import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel, setHeroGrip,
     finishHeroMonsterKillOutcome,
 } from './mon.js';

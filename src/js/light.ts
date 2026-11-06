@@ -38,14 +38,8 @@ import { monsterDigests, monsterIsWhirly } from './mondata.js';
 type Publish = (message: string) => unknown;
 type RandomBelow = (limit: number) => number;
 type LightDeathOutcome = MonsterDeathResult | HeroMonsterKillOutcome;
-type FinishMonsterKill = (monster: Monster, x: number, y: number) =>
+export type FinishMonsterKill = (monster: Monster, x: number, y: number) =>
     boolean | LightDeathOutcome | void | Promise<boolean | LightDeathOutcome | void>;
-
-export interface RoomLightOptions {
-    radius?: number;
-    source?: GameObject;
-    finishMonsterKill?: FinishMonsterKill;
-}
 
 export interface IgniteItemsOptions {
     state?: GameState;
@@ -61,7 +55,6 @@ export const TIMED_LIGHT_TYPES = new Set([
     BRASS_LANTERN, OIL_LAMP, POT_OIL, ...CANDLE_TYPES,
 ]);
 export const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
-const PM_GREMLIN = 40;
 
 export function objectShedsLight(object: GameObject | null | undefined) {
     return !!object?.lamplit
@@ -106,36 +99,6 @@ export async function lightWieldedArtifact(
     beginObjectBurn(object, state);
     if (!heroIsBlind(state))
         await publish(equipmentLightMessage(object, true, state));
-}
-
-function swallowedLightMessage() {
-    const swallower = game.u?.ustuck;
-    if (!swallower) return null;
-    const subject = monsterName(swallower, { capitalized: true });
-    if (monsterDigests(swallower)) return `${possessiveName(subject)} stomach is lit.`;
-    return monsterIsWhirly(swallower)
-        ? `${subject} shines briefly.`
-        : `${subject} glistens.`;
-}
-
-async function roomEffectCells(radius: number, lit: boolean): Promise<Position[]> {
-    if (!Is_rogue_level(game.u?.uz)) {
-        // Sunsword illuminates the hero's spot directly; do_clear_area
-        // rejects radius zero in both the native source and the port.
-        if (radius === 0) return [{ x: game.u.ux, y: game.u.uy }];
-        return await clearAreaCells(game.u.ux, game.u.uy, radius);
-    }
-
-    const roomno = game.level?.at?.(game.u.ux, game.u.uy)?.roomno;
-    const room = roomForRoomno(game.level, roomno ?? 0);
-    if (!room) return [];
-    const cells = [];
-    for (let x = room.lx - 1; x <= room.hx + 1; x++) {
-        for (let y = room.ly - 1; y <= room.hy + 1; y++)
-            cells.push({ x, y });
-    }
-    room.rlit = lit ? 1 : 0;
-    return cells;
 }
 
 function snuffOrdinaryLight(object: GameObject | null | undefined) {
@@ -210,16 +173,6 @@ export function restoreSavedLightSources(state: GameState = game): void {
     restoreLevelLightSources(state);
 }
 
-async function affectCarriedLights(worsen: boolean) {
-    let stillLit = 0;
-    for (const object of [...game.inventory]) {
-        if (!object.lamplit) continue;
-        if (artifactEmitsLight(object)) await impactArtifactLight(object, worsen);
-        else if (worsen) await snuffLitObject(object);
-        if (object.lamplit) stillLit++;
-    }
-    return stillLit;
-}
 
 // Part of C mhitm.c:gulpmm(): the engulfed inventory light pass, shared with uhitm.c:gulpum().
 // The engulf loops at mhitm.c:868 and uhitm.c:4985 inline this pass: every
@@ -277,77 +230,6 @@ export async function lightHitsGremlin(
         && !canSpotMonster(monster)) {
         await map_invisible(monster.mx, monster.my);
     }
-}
-
-// C read.c:litroom()
-// Also C read.c:set_lit(): inlined as the per-cell lit flag write and the
-// gremlin collection below.
-export async function lightRoom(
-    lit: boolean, { radius = 5, source, finishMonsterKill }: RoomLightOptions = {},
-): Promise<boolean> {
-    const blind = heroIsBlind();
-    const swallowed = !!game.u?.uswallow;
-    const noEffect = swallowed || game.underwater || game.u?.uinwater
-        || Is_waterlevel(game.u?.uz);
-
-    if (!lit) {
-        const stillLit = await affectCarriedLights(true);
-        if (!blind) {
-            const message = stillLit
-                ? 'The ambient light seems dimmer.'
-                : swallowed
-                    ? 'It seems even darker in here than before.'
-                    : 'You are surrounded by darkness!';
-            await plineWithContinuation(message);
-        }
-    } else {
-        if (source?.oclass === SCROLL_CLASS && source.blessed)
-            await affectCarriedLights(false);
-        if (swallowed) {
-            const message = swallowedLightMessage();
-            if (!blind && message) await plineWithContinuation(message);
-        } else if (!blind && (!Is_rogue_level(game.u?.uz)
-            || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
-            await plineWithContinuation(
-                `A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`,
-            );
-        }
-    }
-    if (noEffect) return false;
-
-    const ballAndChain = !lit && !blind ? await beginBallAndChainRedraw() : null;
-
-    const gremlins = [];
-    for (const { x, y } of await roomEffectCells(radius, lit)) {
-        const location = game.level?.at?.(x, y);
-        if (!location) continue;
-        location.lit = !!lit;
-        if (!lit) {
-            snuffLightSource(x, y);
-            continue;
-        }
-        const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-            candidate.mx === x && candidate.my === y
-            && candidate.mnum === PM_GREMLIN
-            && !candidate.dead && (candidate.mhp ?? 1) > 0);
-        if (monster) gremlins.push(monster);
-    }
-    if (!blind) {
-        await vision_recalc(2);
-        await finishBallAndChainMove(ballAndChain);
-    }
-    game.vision_full_recalc = 1;
-    if (lit && gremlins.length) {
-        await vision_recalc(0);
-        for (const gremlin of gremlins.reverse()) {
-            if (!finishMonsterKill)
-                throw new TypeError('lightRoom needs a monster death handler');
-            await lightHitsGremlin(
-                gremlin, rnd(5), finishMonsterKill,
-            );
-        }
-    }
-    return true;
 }
 
 // C light.c:show_transient_light(). A thrown or kicked lit object lights its
