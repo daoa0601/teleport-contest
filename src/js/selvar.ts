@@ -38,6 +38,7 @@ type Point = [x: number, y: number];
 export const SEL_GRADIENT_RADIAL = 0;
 export const SEL_GRADIENT_SQUARE = 1;
 
+// C selvar.c:selection_new().
 export function selection_new(): Selection {
     return {
         wid: COLNO,
@@ -48,6 +49,7 @@ export function selection_new(): Selection {
     };
 }
 
+// C selvar.c:selection_clear().
 export function selection_clear(selection: Selection, value: number) {
     selection.map.fill(1 + value);
     selection.bounds = value
@@ -56,6 +58,7 @@ export function selection_clear(selection: Selection, value: number) {
     selection.bounds_dirty = false;
 }
 
+// C selvar.c:selection_clone().
 export function selection_clone(selection: Selection): Selection {
     return {
         wid: selection.wid,
@@ -66,6 +69,7 @@ export function selection_clone(selection: Selection): Selection {
     };
 }
 
+// C selvar.c:selection_getpoint().
 export function selection_getpoint(x: number, y: number, selection: Selection | null | undefined): number {
     if (!selection?.map || x < 0 || y < 0
         || x >= selection.wid || y >= selection.hei) return 0;
@@ -75,6 +79,7 @@ export function selection_getpoint(x: number, y: number, selection: Selection | 
     return encoded - 1;
 }
 
+// C selvar.c:selection_setpoint().
 export function selection_setpoint(x: number, y: number, selection: Selection | null | undefined, value: number) {
     if (!selection?.map || x < 0 || y < 0
         || x >= selection.wid || y >= selection.hei) return;
@@ -92,6 +97,7 @@ export function selection_setpoint(x: number, y: number, selection: Selection | 
     selection.map[index] = value + 1;
 }
 
+// C selvar.c:selection_recalc_bounds().
 export function selection_recalc_bounds(selection: Selection) {
     if (!selection.bounds_dirty) return;
 
@@ -135,6 +141,7 @@ export function selection_recalc_bounds(selection: Selection) {
     selection.bounds_dirty = false;
 }
 
+// C selvar.c:selection_getbounds().
 export function selection_getbounds(selection: Selection): SelectionBounds {
     selection_recalc_bounds(selection);
     return selection.bounds.lx >= selection.wid
@@ -142,6 +149,7 @@ export function selection_getbounds(selection: Selection): SelectionBounds {
         : { ...selection.bounds };
 }
 
+// C selvar.c:selection_not().
 export function selection_not(selection: Selection): Selection {
     for (let x = 0; x < selection.wid; x++)
         for (let y = 0; y < selection.hei; y++)
@@ -153,9 +161,13 @@ export function selection_not(selection: Selection): Selection {
     return selection;
 }
 
+// C selvar.c:selection_filter_percent().
 export function selection_filter_percent(selection: Selection, percent: number): Selection;
+// C selvar.c:selection_filter_percent().
 export function selection_filter_percent(selection: null, percent: number): null;
+// C selvar.c:selection_filter_percent().
 export function selection_filter_percent(selection: Selection | null, percent: number): Selection | null;
+// C selvar.c:selection_filter_percent().
 export function selection_filter_percent(selection: Selection | null, percent: number): Selection | null {
     if (!selection) return null;
     const result = selection_new();
@@ -168,6 +180,7 @@ export function selection_filter_percent(selection: Selection | null, percent: n
     return result;
 }
 
+// C selvar.c:selection_numpoints().
 export function selection_numpoints(selection: Selection): number {
     let count = 0;
     const bounds = selection_getbounds(selection);
@@ -177,6 +190,8 @@ export function selection_numpoints(selection: Selection): number {
     return count;
 }
 
+// Part of C nhlsel.c:l_selection_and(), l_selection_or(),
+// l_selection_xor(), l_selection_sub(): the shared bounds-union cell loop.
 function selection_binary(left: Selection, right: Selection, operation: (left: number, right: number) => number): Selection {
     selection_recalc_bounds(left);
     selection_recalc_bounds(right);
@@ -196,37 +211,46 @@ function selection_binary(left: Selection, right: Selection, operation: (left: n
     return result;
 }
 
+// C nhlsel.c:l_selection_and().
 export function selection_and(left: Selection, right: Selection) {
     return selection_binary(left, right, (a, b) => a & b);
 }
 
+// C nhlsel.c:l_selection_or().
 export function selection_or(left: Selection, right: Selection) {
     const result = selection_binary(left, right, (a, b) => a | b);
     selection_recalc_bounds(result);
     return result;
 }
 
+// C nhlsel.c:l_selection_xor().
 export function selection_xor(left: Selection, right: Selection) {
     const result = selection_binary(left, right, (a, b) => a ^ b);
     selection_recalc_bounds(result);
     return result;
 }
 
+// C nhlsel.c:l_selection_sub().
 export function selection_sub(left: Selection, right: Selection) {
     const result = selection_binary(left, right, (a, b) => (a ^ b) & a);
     selection_recalc_bounds(result);
     return result;
 }
 
+// C sp_lev.c:match_maptyps().
 export function match_maptyps(expected: number, actual: number): boolean {
     if (expected === MATCH_WALL && !IS_STWALL(actual)) return false;
     if (expected < MAX_TYPE && expected !== actual) return false;
     return true;
 }
 
+// C selvar.c:selection_filter_mapchar().
 export function selection_filter_mapchar(selection: Selection, typ: number, lit?: number): Selection;
+// C selvar.c:selection_filter_mapchar().
 export function selection_filter_mapchar(selection: null, typ: number, lit?: number): null;
+// C selvar.c:selection_filter_mapchar().
 export function selection_filter_mapchar(selection: Selection | null, typ: number, lit?: number): Selection | null;
+// C selvar.c:selection_filter_mapchar().
 export function selection_filter_mapchar(selection: Selection | null, typ: number, lit = -2): Selection | null {
     if (!selection) return null;
     const result = selection_new();
@@ -253,6 +277,7 @@ export function selection_filter_mapchar(selection: Selection | null, typ: numbe
     return result;
 }
 
+// C selvar.c:selection_rndcoord().
 export function selection_rndcoord(selection: Selection, remove = false): Coordinate | null {
     const bounds = selection_getbounds(selection);
     let count = 0;
@@ -274,6 +299,7 @@ export function selection_rndcoord(selection: Selection, remove = false): Coordi
     return null;
 }
 
+// C sp_lev.c:random_wdir().
 function random_wdir() {
     switch (rn2(4)) {
     case 0: return W_NORTH;
@@ -284,6 +310,7 @@ function random_wdir() {
     }
 }
 
+// C selvar.c:selection_do_grow().
 export function selection_do_grow(selection: Selection | null, direction: number) {
     if (!selection) return;
     if (direction === W_RANDOM) direction = random_wdir();
@@ -324,6 +351,7 @@ export function selection_do_grow(selection: Selection | null, direction: number
                 selection_setpoint(x, y, selection, 1);
 }
 
+// C selvar.c:selection_floodfill().
 export function selection_floodfill(
     selection: Selection, startX: number, startY: number, diagonals: boolean,
     accepts: SelectionFloodMatch | null,
@@ -355,6 +383,7 @@ export function selection_floodfill(
     }
 }
 
+// C selvar.c:selection_do_ellipse().
 export function selection_do_ellipse(
     selection: Selection, centerX: number, centerY: number,
     radiusX: number, radiusY: number, outline: boolean,
@@ -423,6 +452,7 @@ export function selection_do_ellipse(
     }
 }
 
+// C selvar.c:line_dist_coord().
 function line_dist_coord(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): number {
     const px = x2 - x1, py = y2 - y1;
     const squared = px * px + py * py;
@@ -436,6 +466,7 @@ function line_dist_coord(x1: number, y1: number, x2: number, y2: number, x3: num
     return (x - x3) ** 2 + (y - y3) ** 2;
 }
 
+// C selvar.c:selection_do_gradient().
 export async function selection_do_gradient(
     selection: Selection, x1: number, y1: number, x2: number, y2: number,
     type: number, minDistance: number, maxDistance: number,
@@ -470,6 +501,7 @@ export async function selection_do_gradient(
     }
 }
 
+// C selvar.c:selection_do_line().
 export function selection_do_line(x1: number, y1: number, x2: number, y2: number, selection: Selection) {
     const xStep = x1 < x2 ? 1 : -1;
     const yStep = y1 < y2 ? 1 : -1;
@@ -506,6 +538,7 @@ export function selection_do_line(x1: number, y1: number, x2: number, y2: number
     }
 }
 
+// C selvar.c:selection_do_randline().
 export function selection_do_randline(
     x1: number, y1: number, x2: number, y2: number,
     roughness: number, recursion: number, selection: Selection,
@@ -540,6 +573,7 @@ export function selection_do_randline(
     selection_setpoint(x2, y2, selection, 1);
 }
 
+// C selvar.c:selection_iterate().
 export function selection_iterate(selection: Selection | null, callback: SelectionVisitor) {
     if (!selection) return;
     const bounds = selection_getbounds(selection);
@@ -549,6 +583,7 @@ export function selection_iterate(selection: Selection | null, callback: Selecti
                 callback(x, y);
 }
 
+// C selvar.c:selection_is_irregular().
 export function selection_is_irregular(selection: Selection): boolean {
     const bounds = selection_getbounds(selection);
     for (let x = bounds.lx; x <= bounds.hx; x++)
@@ -558,6 +593,7 @@ export function selection_is_irregular(selection: Selection): boolean {
     return false;
 }
 
+// C selvar.c:selection_size_description().
 export function selection_size_description(selection: Selection): string {
     const bounds = selection_getbounds(selection);
     const width = bounds.hx - bounds.lx + 1;
@@ -567,6 +603,7 @@ export function selection_size_description(selection: Selection): string {
     return `${shape} ${width} by ${height}`;
 }
 
+// C selvar.c:selection_from_mkroom().
 export function selection_from_mkroom(room: Room | null = null): Selection {
     const selection = selection_new();
     if (!room) return selection;
@@ -584,6 +621,7 @@ export function selection_from_mkroom(room: Room | null = null): Selection {
     return selection;
 }
 
+// C selvar.c:selection_force_newsyms().
 export async function selection_force_newsyms(selection: Selection) {
     for (let x = 1; x < selection.wid; x++)
         for (let y = 0; y < selection.hei; y++)
@@ -706,6 +744,8 @@ export class SpecialSelection {
     }
 }
 
+// Part of C sp_lev.c:get_location_coord(): the relative-to-absolute
+// adjustment for selection coordinates.
 function absolute(context: SelectionArea, x: number, y: number): Coordinate {
     return {
         x: (context._room?.lx ?? context.xstart) + (x & 0xff),
@@ -713,6 +753,7 @@ function absolute(context: SelectionArea, x: number, y: number): Coordinate {
     };
 }
 
+// C nhlsel.c:l_selection_fillrect(): with get_location_coord resolution.
 export function specialSelectionFillRect(context: SelectionArea, x1: number, y1: number, x2: number, y2: number) {
     const selection = selection_new();
     const start = absolute(context, x1, y1);
@@ -727,6 +768,7 @@ export function specialSelectionFillRect(context: SelectionArea, x1: number, y1:
     return new SpecialSelection(selection);
 }
 
+// C nhlsel.c:l_selection_line(): with get_location_coord resolution.
 export function specialSelectionLine(context: SelectionArea, x1: number, y1: number, x2: number, y2: number) {
     const selection = selection_new();
     const start = absolute(context, x1, y1);
@@ -735,6 +777,7 @@ export function specialSelectionLine(context: SelectionArea, x1: number, y1: num
     return new SpecialSelection(selection);
 }
 
+// C nhlsel.c:l_selection_rect(): with get_location_coord resolution.
 export function specialSelectionRect(context: SelectionArea, x1: number, y1: number, x2: number, y2: number) {
     const selection = selection_new();
     const start = absolute(context, x1, y1);
@@ -746,6 +789,8 @@ export function specialSelectionRect(context: SelectionArea, x1: number, y1: num
     return new SpecialSelection(selection);
 }
 
+// Port only: unclear origin, selects the context area squares of one
+// terrain type.
 export function specialSelectionOfTerrain(context: SelectionArea, typ: number) {
     const selection = selection_new();
     for (let x = 0; x < context.width; x++)
@@ -759,6 +804,7 @@ export function specialSelectionOfTerrain(context: SelectionArea, typ: number) {
     return new SpecialSelection(selection);
 }
 
+// C nhlsel.c:l_selection_flood(): with get_location_coord resolution.
 // The Lua flood operation matches the starting square's terrain.
 export function specialSelectionFloodFill(context: SelectionArea, x: number, y: number, diagonals = false) {
     const start = absolute(context, x, y);
@@ -797,6 +843,7 @@ const MAP_CHAR_TYPES: Readonly<Record<string, number>> = {
     w: MATCH_WALL,
 };
 
+// Part of C nhlua.c:splev_chr2typ(): the map character type table.
 export function mapCharacterType(character: string | undefined): number | undefined {
     return character === undefined ? undefined : MAP_CHAR_TYPES[character];
 }
@@ -846,6 +893,7 @@ export function specialSelectionMatch(fragment: string) {
     return new SpecialSelection(selection);
 }
 
+// C nhlsel.c:l_selection_randline().
 export function specialSelectionRandLine(
     x1: number, y1: number, x2: number, y2: number, roughness: number, recursion = 12,
     result = new SpecialSelection(),
