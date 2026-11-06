@@ -149,7 +149,7 @@ import { resolveMonsterGaze,
 } from './mhitu.js';
 import type { MonsterGazeOptions } from './mhitu.js';
 import { monsterCanBeLeashed, releaseMonsterLeash } from './apply.js';
-import { wormKnown } from './display.js';
+import { wormKnown } from './worm.js';
 import { controlMonsterTeleport, requireLevel } from './teleport.js';
 import { heroIsUnaware } from './senses.js';
 import { A_WIS, A_CHAOTIC, A_NONE, D_NODOOR, D_TRAPPED, W_AMUL, I_SPECIAL } from './const.js';

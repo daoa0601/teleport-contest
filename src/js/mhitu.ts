@@ -108,7 +108,7 @@ import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
 import { promptYesNo } from './query.js';
 import { could_seduce } from './seduction_compatibility.js';
 import { randomMonsterRelocation, reportMonsterTeleportRestriction, teleds, enexto } from './teleport.js';
-import { advanceMonsterWormBody } from './worm.js';
+import { advanceMonsterWormBody, performWormTailAttacks } from './worm.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './worn.js';
 import { ceilingName } from './dungeon.js';
@@ -1042,26 +1042,6 @@ export async function performMonsterHeroAttack(
         heroDied: effects.heroDied || !!state.program_state.gameover,
     };
 }
-// C worm.c:wormhitu(). Visible segments are stored head-outward; native
-// wtails walks toward the head and excludes its hidden dummy segment.
-async function performWormTailAttacks(
-    worm: Monster, state: PlayingGameState,
-    options: { random: RandomBelow; rollDice: RollDice; rollOne: RollOne; calls: MonsterCallLog },
-): Promise<{ nativeResult: 0 | 1; heroDied: boolean }> {
-    const segments = worm.wormSegments;
-    if (!segments) throw new Error(`Worm ${worm.m_id} has no tail list.`);
-    for (let index = segments.length - 1; index >= 0; index--) {
-        const segment = segments[index];
-        if (!segment) throw new Error(`Worm ${worm.m_id} has no tail segment ${index}.`);
-        if (dist2(segment.x, segment.y, state.u.ux, state.u.uy) >= 3) continue;
-        // Keep the real head position: mattacku() still uses its range and
-        // apparent hero position, including after knockback or a passive.
-        const result = await performMonsterHeroAttack(worm, state, options);
-        if (result.nativeResult === 1 || result.heroDied) return result;
-    }
-    return { nativeResult: 0, heroDied: false };
-}
-
 // C hack.h:AC_VALUE().  Hero AC below zero is deliberately randomized each
 // time an attack transaction evaluates it; callers must retain the returned
 // threshold across later slots of that same mattacku() invocation.

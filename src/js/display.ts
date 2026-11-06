@@ -21,7 +21,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { known_branch_stairs, stairwayAt } from './stairs.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { monsterAtPosition } from './steed.js';
-import { redrawMonsterWormSegments } from './worm.js';
+import { redrawMonsterWormSegments, wormKnown } from './worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph, detectedMonnumToGlyph, explosionToGlyph, glyphIsCmapA, glyphIsCmapAltar, glyphIsCmapB, glyphIsCmapMain, glyphIsCmapSokoban, glyphIsExplosion, glyphIsMonster, glyphIsNormalMaleMonster, monnumToGlyph, objnumToGlyph, petnumToGlyph, riddenMonnumToGlyph, warningToGlyph } from './glyph_numbers.js';
 
@@ -187,14 +187,6 @@ export function seeMonsterWithInfrared(monster: Monster) {
 
 function canPhysicallyProjectMonster(monster: Monster, x: number, y: number) {
     return monsterVisible(monster) && (cansee(x, y) || seeMonsterWithInfrared(monster));
-}
-
-// C worm.c:worm_known(). A head-only relocation leaves the hidden segment
-// behind until worm_move() or place_wsegs() updates it.
-export function wormKnown(monster: Monster) {
-    const head = monster.wormHead;
-    return !!head && cansee(head.x, head.y)
-        || (monster.wormSegments ?? []).some(segment => segment.x && cansee(segment.x, segment.y));
 }
 
 // C display.h:canseemon(), an actor-level optical sight query.

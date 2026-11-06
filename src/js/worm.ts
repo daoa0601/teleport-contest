@@ -14,8 +14,12 @@ import { monsterName } from './do_name.js';
 import { d, rn2, rnd } from './rng.js';
 import { goodPosition } from './teleport.js';
 import type { Monster, WormSegment } from './monster_types.js';
-import type { GameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';
+import type { MonsterCallLog, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
+import { cansee } from './vision.js';
+import { dist2 } from './hacklib.js';
+import { performMonsterHeroAttack } from './mhitu.js';
 
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 
@@ -216,6 +220,26 @@ export async function removeMonsterWormBody(monster: Monster) {
     }
 }
 
+// C worm.c:wormhitu(). Visible segments are stored head-outward; native
+// wtails walks toward the head and excludes its hidden dummy segment.
+export async function performWormTailAttacks(
+    worm: Monster, state: PlayingGameState,
+    options: { random: RandomBelow; rollDice: RollDice; rollOne: RollOne; calls: MonsterCallLog },
+): Promise<{ nativeResult: 0 | 1; heroDied: boolean }> {
+    const segments = worm.wormSegments;
+    if (!segments) throw new Error(`Worm ${worm.m_id} has no tail list.`);
+    for (let index = segments.length - 1; index >= 0; index--) {
+        const segment = segments[index];
+        if (!segment) throw new Error(`Worm ${worm.m_id} has no tail segment ${index}.`);
+        if (dist2(segment.x, segment.y, state.u.ux, state.u.uy) >= 3) continue;
+        // Keep the real head position: mattacku() still uses its range and
+        // apparent hero position, including after knockback or a passive.
+        const result = await performMonsterHeroAttack(worm, state, options);
+        if (result.nativeResult === 1 || result.heroDied) return result;
+    }
+    return { nativeResult: 0, heroDied: false };
+}
+
 // Part of C worm.c:initworm(): the body allocation before arrival places any segments.
 // C get_wormno() + initworm(): reserve the body before arrival can restore a
 // shapechanger. Tail segments have no map occupancy until rloc places them.
@@ -291,6 +315,14 @@ export async function placeMonsterWormTailRandomly(monster: Monster, requestedSe
         oldX = next.x;
         oldY = next.y;
     }
+}
+
+// C worm.c:worm_known(). A head-only relocation leaves the hidden segment
+// behind until worm_move() or place_wsegs() updates it.
+export function wormKnown(monster: Monster) {
+    const head = monster.wormHead;
+    return !!head && cansee(head.x, head.y)
+        || (monster.wormSegments ?? []).some(segment => segment.x && cansee(segment.x, segment.y));
 }
 
 // C worm.c:redraw_worm()
