@@ -12,7 +12,6 @@ import {
     IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_NAMES, TOWEL, YA, YUMI,
 } from './object_data.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
-import { OBJ_DESCR } from './o_init.js';
 import { monsterSentenceSubject, sessionIsNight } from './sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
 import {
@@ -21,7 +20,7 @@ import {
 } from './artifact.js';
 import { getmattk } from './attack_selection.js';
 import { heroIsPunished } from './ball.js';
-import { applyMonsterBlindness, heroBlindingObjectHitMessage, heroCanBeBlindedByContact, monsterCanBeBlindedByObject, monsterResistsBlindingLight } from './blinding_attack.js';
+import { applyMonsterBlindness, heroBlindingObjectHitMessage } from './blinding_attack.js';
 
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import {
@@ -105,7 +104,7 @@ import {
     monsterIsBig, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
     monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver,
     monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies,
-    isHeroDefender,
+    isHeroDefender, canBlnd, resistsBlnd,
 } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
@@ -1197,12 +1196,9 @@ export async function resolveHeroObjectContact(
     case CREAM_PIE: case BLINDING_VENOM: {
         monster.msleeping = 0;
         // C uhitm.c passes &gy.youmonst as magr: a raven hero cannot blind
-        // another raven.
-        const canBlind = monsterCanBeBlindedByObject(monster, object.otyp, {
-            state,
-            attackerSpecies: heroSpecies(state),
-            heroInsideTarget: !!state.u.uswallow,
-        });
+        // another raven, and cannot affect its eyes while inside a monster.
+        const canBlind = canBlnd({ youmonst: true }, { monster },
+            object.otyp === BLINDING_VENOM ? AT_SPIT : AT_WEAP, object, state);
         await publish(heroBlindingObjectHitMessage(monster, object, {
             canBlind, state, thrown: mode !== 'melee',
             describeTarget: () => monsterName(monster, { state }),
@@ -2423,27 +2419,7 @@ export async function mhitmAdElec(call: MhitmAdElecCall): Promise<MhitmAdElement
 }
 
 // Local copies of the C mondata.h flags the status owners read.
-const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const LOW_BOOTS = 163;
-
-// C mondata.c:can_blnd() for the hero's own contact attack; the monster
-// defender twin lives with mhitm_ad_blnd's monster-versus-monster branch.
-function naturalAttackCanBlind(
-    monster: Monster, { state, attack }: HeroNaturalEffectContext,
-): boolean {
-    if (!monsterHasEyes(monster.mnum) || !monster.mcansee && !monster.mblinded)
-        return false;
-    if (heroSpecies(state) === PM_RAVEN && monster.mnum === PM_RAVEN) return false;
-    const method = attack[0];
-    if ([AT_EXPL, AT_BOOM, AT_GAZE, AT_MAGC, AT_BREA].includes(method))
-        return !monsterResistsBlindingLight(monster, state);
-    if ([AT_WEAP, AT_SPIT, AT_NONE].includes(method)) return false;
-    if (method === AT_ENGL) return !monster.msleeping;
-    if (method !== AT_CLAW) return true;
-    if (state.u.uswallow) return false;
-    return !(monster.minvent ?? []).some(object => (object.owornmask ?? 0) & W_ARMH
-        && (OBJ_DESCR(object.otyp, state)) === 'visored helmet');
-}
 
 // mhitu-branch call context shared by the stun and enchantment owners.
 export interface HeroDefenderStatusContext {
@@ -2623,7 +2599,8 @@ export async function mhitmAdBlnd(call: MhitmAdBlndCall): Promise<MhitmAdStatusR
         /* uhitm: the hero attacks a monster with blinding contact */
         const mdef = call.defender;
         const { state, publish } = call.context;
-        if (naturalAttackCanBlind(mdef, call.context)) {
+        if (canBlnd({ youmonst: true }, { monster: mdef },
+            call.context.attack[0], null, state)) {
             if (!heroIsBlind(state) && mdef.mcansee)
                 await publish(`${monsterName(mdef, { state, capitalized: true })} is blinded.`);
             mdef.mcansee = 0;
@@ -2636,7 +2613,7 @@ export async function mhitmAdBlnd(call: MhitmAdBlndCall): Promise<MhitmAdStatusR
     } else if ('mdef' in call) {
         /* mhitu: a monster attacks the hero with blinding contact */
         const { state, attacker, attackType, publish, random, calls } = call.context;
-        if (heroCanBeBlindedByContact(attacker, attackType, state)) {
+        if (canBlnd({ monster: attacker }, { youmonst: true }, attackType, null, state)) {
             if (!(!!state.blind || (state.u.blindTurns ?? 0) > 0))
                 await publish(`${monsterName(attacker, { capitalized: true })} blinds you!`);
             // mhitm_ad_blnd() passes the full declared damage to
@@ -4936,7 +4913,8 @@ export async function applyMonsterCombatBlindness(
     attacker: Monster, defender: Monster, attack: AttackTuple,
     { state = game, visible, publish = plineWithContinuation, rollDice = d }: MonsterCombatBlindnessOptions,
 ): Promise<void> {
-    if (!canBlindThroughContact(attacker, defender, attack, state)) return;
+    if (!canBlnd({ monster: attacker }, { monster: defender }, attack[0], null, state))
+        return;
     if (visible && defender.mcansee && canSpotMonster(defender)) {
         let message = `${monsterName(defender, { state, capitalized: true })} is blinded`;
         if (defender.mnum === PM_ARCHON && canSeeMonster(defender))
@@ -4946,29 +4924,6 @@ export async function applyMonsterCombatBlindness(
     defender.mblinded = Math.min(127, (defender.mblinded ?? 0) + rollDice(attack[2], attack[3]));
     defender.mcansee = 0;
     clearWaiting(defender);
-}
-
-// C can_blnd() with no object: claws can extend temporary blindness, while
-// light attacks are resisted by a defender which is already blind.
-function canBlindThroughContact(attacker: Monster, defender: Monster, attack: AttackTuple, state: GameState): boolean {
-    if (!hasEyes(defender) || (!defender.mcansee && !defender.mblinded)) return false;
-    if (attacker.mnum === PM_RAVEN && defender.mnum === PM_RAVEN) return false;
-    switch (attack[0]) {
-    case AT_EXPL: case AT_BOOM: case AT_GAZE: case AT_MAGC: case AT_BREA:
-        return !attacker.mcan && !monsterResistsBlindingLight(defender, state);
-    case AT_WEAP: case AT_SPIT: case AT_NONE:
-        return false;
-    case AT_ENGL:
-        return !defender.msleeping;
-    case AT_CLAW:
-        return !(defender.minvent ?? []).some(object =>
-            ((object.owornmask ?? 0) & W_ARMH)
-            && (OBJ_DESCR(object.otyp, state)) === 'visored helmet');
-    case AT_TUCH: case AT_STNG:
-        return !attacker.mcan;
-    case AT_BITE: case AT_KICK: case AT_BUTT: case AT_HUGS: case AT_TENT:
-        return true;
-    }
 }
 
 function hasEyes(monster: Monster): boolean {
@@ -5808,7 +5763,7 @@ export async function resolveHeroCombatExplosion(
     const damage = rollDice(dice, sides);
 
     if (damageType === AD_BLND) {
-        if (defender && !monsterResistsBlindingLight(defender, state)) {
+        if (defender && !resistsBlnd({ monster: defender }, state)) {
             await publish(`${monsterName(defender, { state, capitalized: true })} is blinded by your flash of light!`);
             defender.mblinded = Math.min((defender.mblinded ?? 0) + damage, 127);
             defender.mcansee = 0;
@@ -6025,8 +5980,9 @@ async function engulfDamage(defender: Monster, type: AttackTuple[1], damage: num
         }
         break;
     case AD_BLND:
-        if (monsterHasEyes(defender.mnum)
-            && (defender.mcansee || defender.mblinded) && !defender.msleeping) {
+        // C uhitm.c gulpum() passes &gy.youmonst as magr with the engulf
+        // slot's attack type.
+        if (canBlnd({ youmonst: true }, { monster: defender }, AT_ENGL, null, state)) {
             if (defender.mcansee) await publish(`${name()} can't see in there!`);
             defender.mcansee = 0;
             defender.mblinded = Math.min(127, damage + (defender.mblinded ?? 0));
@@ -7230,7 +7186,7 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
         }
     }
     else if (MONSTER_SYMBOL[monster.mnum] !== S_LIGHT) {
-        if (!monsterResistsBlindingLight(monster, state)) {
+        if (!resistsBlnd({ monster }, state)) {
             const distance = (object.ox - monster.mx) ** 2 + (object.oy - monster.my) ** 2;
             if (visible) {
                 await plineWithContinuation(`${name()} is blinded by the flash!`);

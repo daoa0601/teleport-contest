@@ -56,7 +56,7 @@ import { formatDraftMessage } from './draft_message.js';
 import { waterbodyName } from './pager.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount } from './mondata.js';
+import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount, resistsBlnd } from './mondata.js';
 import {
     setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap,
     openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap,
@@ -147,7 +147,6 @@ import { shopkeeperName } from './shknam.js';
 import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
 import { setArtifactOrigin } from './artifact.js';
 import { heroIsPunished } from './ball.js';
-import { heroResistsBlindingLight, monsterResistsBlindingLight } from './blinding_attack.js';
 
 import { dropBoulderIntoLiquid } from './do.js';
 import { xyToDirection } from './cmd.js';
@@ -3231,7 +3230,7 @@ export async function flashBurn(duration: number, viaLightning = false, {
     state = game, publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}) {
     requireLiveGame(state);
-    if (!heroResistsBlindingLight(state)) {
+    if (!resistsBlnd({ youmonst: true }, state)) {
         await publish('You are blinded by the flash!');
         await makeBlinded(duration, { state, talk: false, publish });
         if (!heroIsBlind(state)) await publish('Your vision clears.');
@@ -4027,7 +4026,7 @@ async function damageRayMonster(monster: Monster, nativeType: number, dice: numb
         sourceDamage = spellDamage(rollDice(dice, 6));
         hit.resisted = monsterHasShockResistance(monster);
         hit.damage = hit.resisted ? 0 : sourceDamage;
-        if (!inside && dice > 2 && !monsterResistsBlindingLight(monster, state)) {
+        if (!inside && dice > 2 && !resistsBlnd({ monster }, state)) {
             monster.mcansee = 0;
             monster.mblinded = Math.min(127, (monster.mblinded ?? 0) + rollOne(50));
         }

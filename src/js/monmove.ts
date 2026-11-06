@@ -30,7 +30,7 @@ import {
     finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder,
     initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor,
     monsterCanUnlockDoor, monsterDisplacementFlags, monstersInFmonOrder, naturalMonsterSpeed,
-    pickUpMonsterFloorObject, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir,
+    pickUpMonsterFloorObject, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir,
     monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake, releaseHeroFromMonster,
     isZombieMaker, zombieForm,
 } from './mon.js';
@@ -71,7 +71,7 @@ import {
     monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned,
     monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall,
     monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses, monsterHasNoAttacks,
-    touchPetrifies,
+    touchPetrifies, resistConflict,
 } from './mondata.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './zap.js';

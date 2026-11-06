@@ -64,7 +64,7 @@ import { objectResistsDestruction } from './zap.js';
 import { costlySpot, stolenValue, makeAngryShopkeeper, insideShopRoomAt, containedGold, donateGold, objectIsUnpaid, removeObjectAndContentsFromBill, sellHeroDroppedObject, shopResident, chargeUnpaidObjectAsDebt, } from './shk.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt, } from './hack.js';
-import { heroCanBeBlindedByObject } from './blinding_attack.js';
+import { AT_WEAP } from './monster_attack_types.js';
 import { propertyIsActive } from './properties.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { finishHeroDeath } from './end.js';
@@ -72,7 +72,7 @@ import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
-import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, } from './mondata.js';
+import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, canBlnd, } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
@@ -2147,7 +2147,9 @@ export async function tossObjectUp(object, { state = game, publish = plineWithCo
     const helmet = state.uarmh || hero.uarmh || null;
     if (objectBreaksOnImpact(object, random)) {
         // C dothrow.c passes &gy.youmonst as both magr and mdef here.
-        const blindIncrement = heroCanBeBlindedByObject(object.otyp, state, { thrownByHero: true }) ? rollOne(25) : 0;
+        const blindIncrement = (object.otyp === CREAM_PIE || object.otyp === BLINDING_VENOM)
+            && canBlnd({ youmonst: true }, { youmonst: true }, AT_WEAP, object, state)
+            ? rollOne(25) : 0;
         const broken = await breakObject();
         if (state.program_state.gameover)
             return null;

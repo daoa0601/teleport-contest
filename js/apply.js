@@ -41,7 +41,7 @@ import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } 
 import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
 import { heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout, } from './senses.js';
-import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
+import { heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
 import { heroStatusLine, monsterStatusLine } from './insight.js';
 import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification, resetUtrap, maketrap, activateStatueTrapAt, fireDamageObject, } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -54,10 +54,10 @@ import { makemonAt, mkclassAligned } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { canDigDown } from './mklev.js';
 import { mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object, } from './mkobj.js';
-import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, } from './mondata.js';
+import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow, } from './mondata.js';
 import { wakeAttackedMonster } from './mon.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
-import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
+import { AD_BLND, AT_ENGL, AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject, } from './object_properties.js';
@@ -3030,7 +3030,7 @@ export async function useCreamPie(stack) {
         const target = several ? `one of ${makePlural(name)}` : name;
         await syncPline(`You immerse your ${body_part(FACE)} in ${target}.`);
     }
-    if (monsterHasEyes(heroSpecies(game)) && !blindfolded(game)) {
+    if (canBlnd(null, { youmonst: true }, AT_WEAP, pie, game)) {
         const blindIncrement = rnd(25);
         game.u.ucreamed = (game.u.ucreamed ?? 0) + blindIncrement;
         await makeBlinded((game.u.blindTurns ?? 0) + blindIncrement, { talk: false });

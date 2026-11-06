@@ -30,7 +30,6 @@ import { getLine, promptYesNoQuit } from './query.js';
 import { getobj, inventoryItemDescription, useUpInventoryStack } from './invent.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './potion.js';
-import { heroResistsBlindingLight } from './blinding_attack.js';
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './read.js';
 import { chargeUnpaidUsage } from './shk.js';
@@ -48,7 +47,7 @@ import { impossible } from './diagnostics.js';
 import { exceedsActionCapacity } from './hack.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';
-import { monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, } from './mondata.js';
+import { monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, resistsBlnd, } from './mondata.js';
 const RUBOUTS = new Map([
     ['A', '^'],
     ['B', 'Pb['],
@@ -1136,7 +1135,7 @@ export async function doengrave(state = game) {
     };
     if (postEngrText)
         await pline(postEngrText);
-    if (setup.doblind && !heroResistsBlindingLight(state)) {
+    if (setup.doblind && !resistsBlnd({ youmonst: true }, state)) {
         await pline('You are blinded by the flash!');
         await makeBlinded(rnd(50), { state, talk: false });
         if (!heroIsBlind(state))

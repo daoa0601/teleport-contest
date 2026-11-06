@@ -54,7 +54,6 @@ import { getobj, inventoryItemDescription, useUpInventoryStack } from './invent.
 import type { InventoryClassification } from './invent.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './potion.js';
-import { heroResistsBlindingLight } from './blinding_attack.js';
 
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './read.js';
@@ -76,7 +75,7 @@ import { exceedsActionCapacity } from './hack.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';
 import {
-    monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield,
+    monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, resistsBlnd,
 } from './mondata.js';
 
 type EngravingStore = Pick<GameMap, 'engravings'>;
@@ -1268,7 +1267,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
     };
 
     if (postEngrText) await pline(postEngrText);
-    if (setup.doblind && !heroResistsBlindingLight(state)) {
+    if (setup.doblind && !resistsBlnd({ youmonst: true }, state)) {
         await pline('You are blinded by the flash!');
         await makeBlinded(rnd(50), { state, talk: false });
         if (!heroIsBlind(state)) await pline('Your vision clears.');

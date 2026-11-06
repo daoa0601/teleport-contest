@@ -9,7 +9,7 @@ import { OBJ_NAME } from './object_data.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CORPSE, CREAM_PIE, CREDIT_CARD, EGG, ELVEN_ARROW, ELVEN_BOW, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, WAN_STRIKING, } from './object_data.js';
 import { currentAttribute, currentStrength, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifact.js';
-import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
+import { applyMonsterBlindness, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn, calcCapacity } from './hack.js';
 import { isPolearm, isLauncherAmmunition, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
@@ -35,14 +35,14 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
 import { objectShedsLight } from './light.js';
 import { revealMonsterAppearance, wakeMonstersNearWithMessages, angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled, finishHeroMonsterKillOutcome, } from './mon.js';
-import { AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2 } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
 import { finishHeroDeathAfterMonsterMessage } from './end.js';
 import { recordRandom } from './monster_action_types.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import { MONSTER_NAME, MONSTER_SIZE, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
-import { monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc, is_prince, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks, touchPetrifies, } from './mondata.js';
+import { monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc, is_prince, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks, touchPetrifies, canBlnd, } from './mondata.js';
 import { monsterSentenceSubject } from './sounds.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
@@ -417,7 +417,7 @@ async function hitMonsterWithProjectile(defender, shot, remaining, context) {
         }
     }
     shot.targetDied = defender.mhp <= 0;
-    if (!shot.targetDied && monsterCanBeBlindedByObject(defender, object.otyp, { state })) {
+    if (!shot.targetDied && canBlnd(null, { monster: defender }, object.otyp === BLINDING_VENOM ? AT_SPIT : AT_WEAP, object, state)) {
         if (visible && defender.mcansee) {
             const cause = object.oclass === VENOM_CLASS ? 'venom' : object.otyp === CREAM_PIE ? 'pie' : objectCombatName(object, { state });
             await publish(`${monsterName(defender, { state, capitalized: true })} is blinded by the ${cause}.`);

@@ -141,7 +141,6 @@ src/js/ball.ts	scatterCarriedItems	rnd	"[""capacity""]"	guarded
 src/js/uhitm.ts	doublePunch	rn2	"[""5""]"	constant
 src/js/uhitm.ts	prepareHeroBarehandContact	rnd	"[""heroUsesMartialArts(state) ? 4 : 2""]"	constant
 src/js/trap.ts	finishMonsterBearTrap	rollDice	"[""2"", ""4""]"	constant
-src/js/blinding_attack.ts	blindMonsterWithThrownObject	rollOne	"[""25""]"	constant
 src/js/blinding_attack.ts	prepareHeroThrownBlindness	rollOne	"[""25""]"	constant
 src/js/bones.ts	canMakeBones	random	"[""1 + (dungeonDepth >> 2)""]"	unproved
 src/js/bones.ts	dropHeroInventoryForBones	rn2	"[""5""]"	constant

@@ -68,7 +68,7 @@ import {
     monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn,
     monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly,
     monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm,
-    speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies,
+    speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, resistConflict, heroHasOlfaction,
 } from './mondata.js';
 import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
@@ -91,7 +91,7 @@ import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } f
 import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
-import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroHasOlfaction, heroMonsterForm, pickFormFromClass, body_part } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, pickFormFromClass, body_part } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
@@ -799,24 +799,6 @@ function monsterAggressionFlags(attacker: Monster, defender: Monster, state: Pla
         zombiePairIsAggressive(defender, attacker, state)
         ? ALLOW_M | ALLOW_TM
         : 0;
-}
-
-// C mondata.c:resist_conflict(). High-charisma heroes convince monsters
-// bound by the ring of conflict's charm more easily; there is always a
-// small chance at 19.
-export function resistConflict(
-    monster: Monster,
-    state: PlayingGameState,
-    rollOne: RollOne,
-    calls: MonsterCallLog,
-) {
-    const charisma = currentAttribute(A_CHA, state);
-    const monsterLevel = monster?.m_lev ?? MONSTER_LEVEL[monster?.mnum] ?? 0;
-    const heroLevel = state?.u?.ulevel ?? 1;
-    const resistChance = Math.min(19, charisma - monsterLevel + heroLevel);
-    const roll = rollOne(20);
-    calls.push('rnd(20)');
-    return roll > resistChance;
 }
 
 // Native mon.c:mon_allowflags(). Conflict resistance belongs to the moving

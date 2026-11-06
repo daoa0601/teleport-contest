@@ -96,7 +96,7 @@ import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { adjustObjectLightAfterBlessing as adjustObjectLight, objectLightRadius } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
 import {
-    nameToMonster, resolveMonsterClass, speciesCanBlow, your_race, monsterIsMindless, infravision, is_dwarf,
+    nameToMonster, resolveMonsterClass, heroCanBeStrangled, your_race, monsterIsMindless, infravision, is_dwarf,
     is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, monsterBreaksArmor, monsterCanTeleport,
     monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasNoLimbs,
     monsterHasProperName, monsterHidesUnder, monsterHornCount, monsterIsAmorphous, monsterIsAmphibious,
@@ -144,17 +144,6 @@ const PM_VAMPIRE_LEADER = MONSTER_NAME.indexOf('vampire leader');
 const S_LICH = MONSTER_SYMBOL[MONSTER_NAME.indexOf('lich')];
 const PLACEHOLDER_MONSTERS = new Set(['orc', 'giant', 'elf', 'human']
     .map(name => MONSTER_NAME.indexOf(name)));
-const OLFACTIONLESS_SYMBOLS = new Set([
-    2,  // S_BLOB
-    5,  // S_EYE
-    10, // S_JELLY
-    22, // S_VORTEX
-    25, // S_LIGHT
-    31, // S_ELEMENTAL
-    32, // S_FUNGUS
-    42, // S_PUDDING
-    55, // S_GOLEM
-]);
 
 function wornPropertyObject(
     state: GameState, otyp: number,
@@ -265,25 +254,6 @@ export function heroHasNoLimbs(state = game) {
 export function heroIsVerySmall(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && monsterIsVerySmall(form);
-}
-
-// C mondata.c:olfaction().  This is a current-form sensory capability, not
-// a blindness check: molds and several other body classes can sense smoke
-// but cannot smell it, while an ordinary blind humanoid still has olfaction.
-export function heroHasOlfaction(state = game) {
-    const form = heroMonsterForm(state);
-    if (form === null) return true;
-    const symbol = MONSTER_SYMBOL[form];
-    return symbol === undefined || !OLFACTIONLESS_SYMBOLS.has(symbol);
-}
-
-const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
-const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
-// C mondata.c:can_blow(). Silent or buzzing bodies need enough size, a
-// head, and breath; bodies which can make other sounds can blow too.
-export function heroCanBlow(state: GameState = game) {
-    if (state.u.strangled || (state.u.strangledTurns ?? 0) > 0) return false;
-    return speciesCanBlow(heroSpecies(state));
 }
 
 const RESISTANCE_BITS: ReadonlyArray<readonly [PropertyName, number]> = [
@@ -459,6 +429,9 @@ export function heroPassesWalls(state: GameState = game) {
     return !!state.u.passesWalls || monsterPassesWalls(heroSpecies(state));
 }
 
+const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
+const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
+
 export function heroLikesLava(state: GameState = game) {
     const hero = state.u;
     if (!Upolyd(hero)) return false;
@@ -486,16 +459,6 @@ export function heroIsSlimeproof(state: GameState = game): boolean {
     return heroIsGreenSlime(state)
         || heroIsFlaming(state)
         || heroIsNoncorporeal(state);
-}
-
-// C mondata.c:can_be_strangled(): headless bodies have no neck to squeeze,
-// and a mindless body that does not breathe is not strangled by pressure.
-export function heroCanBeStrangled(state = game) {
-    if (heroHasNoHead(state)) return false;
-    const form = state.u.umonnum;
-
-    const mindless = monsterIsMindless(form ?? -1);
-    return !mindless || !heroIsBreathless(state);
 }
 
 // C polyself.c:check_strangling(), turning the amulet's grip off and on.
