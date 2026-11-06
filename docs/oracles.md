@@ -169,8 +169,10 @@ inside another macro's argument list, which clang versions position
 differently — are uncomparable. Mismatches are
 audit leads — a signature that renames or inverts the flag reads as one
 until classified.
-`docs/ledger/c-args.tsv` freezes the matching `caller\tcallee\tsequences`
-rows, so a later change that flips a matching literal fails the check.
+`docs/ledger/c-args.tsv` freezes the matching `file\tcaller\tcallee\tsequences`
+rows, so a later change that flips a matching literal fails the check. The
+caller's C file keeps same-named static functions separate; moving a port
+function between TypeScript modules does not change its ledger row.
 
 `owners` folds the same counterpart mapping by port module: which C file each
 `src/js` module's mapped functions come from, its dominant C file, the

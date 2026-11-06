@@ -482,7 +482,7 @@ async function argumentGaps(rest) {
         console.log(`  port ${row.portCalls.map(call => `${sequence(call.values)} (${call.fn.split(':')[0]}:${call.line})`).join('; ')}`);
     }
     console.log(`\nFull rows: ${relative(ROOT, join(CACHE, 'args.json'))}`);
-    applyLedger(option, report.rows.filter(row => row.verdict === 'match').map(argRowKey), 'argument rows', 'caller\tcallee\tsequences — C TRUE/FALSE argument sequences the port spells identically (static-gaps.mjs args)');
+    applyLedger(option, report.rows.filter(row => row.verdict === 'match').map(argRowKey), 'argument rows', 'file\tcaller\tcallee\tsequences — C TRUE/FALSE argument sequences the port spells identically (static-gaps.mjs args)');
 }
 // ── owners ──
 // Folds the edges mapping by module: which C file each port module ports,

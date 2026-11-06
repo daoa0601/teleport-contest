@@ -497,7 +497,7 @@ async function argumentGaps(rest: string[]): Promise<void> {
     }
     console.log(`\nFull rows: ${relative(ROOT, join(CACHE, 'args.json'))}`);
     applyLedger(option, report.rows.filter(row => row.verdict === 'match').map(argRowKey), 'argument rows',
-        'caller\tcallee\tsequences — C TRUE/FALSE argument sequences the port spells identically (static-gaps.mjs args)');
+        'file\tcaller\tcallee\tsequences — C TRUE/FALSE argument sequences the port spells identically (static-gaps.mjs args)');
 }
 
 // ── owners ──

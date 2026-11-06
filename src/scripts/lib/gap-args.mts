@@ -396,15 +396,15 @@ export function classifyArgs(cSequences: readonly (readonly CBool[])[],
     return { verdict: 'mismatch', reason: 'the same calls with the same argument counts spell different values' };
 }
 
-// The ledger key of a matching pair: C names plus the canonical multiset,
-// so flipping one literal, or adding or dropping a call, changes the key.
-export function argLedgerKey(caller: string, callee: string, cSequences: readonly (readonly CBool[])[]): string {
+// Include the caller's C file so a same-named static function in another
+// file cannot cover a lost match. Port module moves do not change the key.
+export function argLedgerKey(file: string, caller: string, callee: string, cSequences: readonly (readonly CBool[])[]): string {
     const canonical = cSequences.map(sequence => sequence.map(value => value.toLowerCase()).join('+')).sort().join(';');
-    return `${caller}\t${callee}\t${canonical}`;
+    return `${file}\t${caller}\t${callee}\t${canonical}`;
 }
 
 export function argRowKey(row: ArgRow): string {
-    return argLedgerKey(row.caller, row.callee, row.cCalls.map(call => call.args.map(arg => arg.value)));
+    return argLedgerKey(row.file, row.caller, row.callee, row.cCalls.map(call => call.args.map(arg => arg.value)));
 }
 
 function portCallArgs(node: ts.CallExpression): { values: PortBool[]; optionsObject: boolean } {

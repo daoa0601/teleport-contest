@@ -353,14 +353,14 @@ export function classifyArgs(cSequences, portCalls) {
     }
     return { verdict: 'mismatch', reason: 'the same calls with the same argument counts spell different values' };
 }
-// The ledger key of a matching pair: C names plus the canonical multiset,
-// so flipping one literal, or adding or dropping a call, changes the key.
-export function argLedgerKey(caller, callee, cSequences) {
+// Include the caller's C file so a same-named static function in another
+// file cannot cover a lost match. Port module moves do not change the key.
+export function argLedgerKey(file, caller, callee, cSequences) {
     const canonical = cSequences.map(sequence => sequence.map(value => value.toLowerCase()).join('+')).sort().join(';');
-    return `${caller}\t${callee}\t${canonical}`;
+    return `${file}\t${caller}\t${callee}\t${canonical}`;
 }
 export function argRowKey(row) {
-    return argLedgerKey(row.caller, row.callee, row.cCalls.map(call => call.args.map(arg => arg.value)));
+    return argLedgerKey(row.file, row.caller, row.callee, row.cCalls.map(call => call.args.map(arg => arg.value)));
 }
 function portCallArgs(node) {
     const values = [];
