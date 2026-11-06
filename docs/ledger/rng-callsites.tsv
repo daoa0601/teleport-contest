@@ -12,6 +12,9 @@ src/js/allmain.ts	u_calc_moveamt	rn2	"[""3""]"	constant
 src/js/allmain.ts	u_calc_moveamt	rn2	"[""3""]"	constant
 src/js/allmain.ts	maybe_generate_rnd_mon	rn2	"[""generationRate""]"	constant
 src/js/allmain.ts	regen_pw	rn2	"[""upper""]"	invariant
+src/js/allmain.ts	regenerateHeroHp	rn2	"[""100""]"	constant
+src/js/allmain.ts	regenerateHeroHp	rn2	"[""8""]"	constant
+src/js/allmain.ts	regenerateHeroHp	rn2	"[""hero.mh""]"	guarded
 src/js/allmain.ts	moveloop_core	rn2	"[""40 + currentAttribute(A_DEX) * 3""]"	invariant
 src/js/allmain.ts	moveloop_core	rnd	"[""3""]"	constant
 src/js/allmain.ts	moveloopPreamble	rnd	"[""30""]"	constant
@@ -285,6 +288,9 @@ src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""9""]"	constant
 src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.length""]"	constant
 src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
 src/js/dog.ts	abusePet	rn2	"[""monster.mtame""]"	guarded
+src/js/dog.ts	familiarSpecies	rn2	"[""2""]"	constant
+src/js/dog.ts	familiarSpecies	rn2	"[""3""]"	constant
+src/js/dog.ts	makeFamiliar	rn2	"[""10""]"	constant
 src/js/uhitm.ts	abusePetAfterHeroHit	rnd	"[""damage""]"	guarded
 src/js/dog.ts	makePetWary	random	"[""(dog.abuse ?? 0) + 1""]"	unproved
 src/js/dog.ts	makePetWary	random	"[""2""]"	constant
@@ -1632,6 +1638,10 @@ src/js/mhitu.ts	resolveMonsterSelfExplosion	d	"[""dice"", ""sides""]"	unproved
 src/js/mhitu.ts	resolveMonsterSelfExplosion	d	"[""dice"", ""sides""]"	unproved
 src/js/mhitu.ts	resolveMonsterSelfExplosion	rnd	"[""damage""]"	unproved
 src/js/sounds.ts	publishMonsterNoise	rn2	"[""2""]"	constant
+src/js/sounds.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
+src/js/sounds.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
+src/js/sounds.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
+src/js/sounds.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
 src/js/mon.ts	mcalcmove	random	"[""2""]"	constant
 src/js/mon.ts	mcalcmove	random	"[""NORMAL_SPEED""]"	constant
 src/js/mcastu.ts	summonMonsterInsects	rnd	"[""Math.trunc(level / 2)""]"	guarded
@@ -1640,6 +1650,8 @@ src/js/mon.ts	createStoneRemains	rn2	"[""2 + Number(frequency > 2)""]"	constant
 src/js/muse.ts	mon_consume_unstone	rollOne	"[""15""]"	constant
 src/js/dog.ts	tameMonster	rn2	"[""6""]"	constant
 src/js/dog.ts	tameMonster	rnd	"[""10""]"	constant
+src/js/makemon.ts	useBagOfTricks	rn2	"[""23""]"	constant
+src/js/makemon.ts	useBagOfTricks	rnd	"[""7""]"	constant
 src/js/zap.ts	restoreMonsterTraits	rollOne	"[""speciesLevel + 1""]"	invariant
 src/js/trap.ts	mintrap	random	"[""2""]"	constant
 src/js/trap.ts	mintrap	random	"[""40""]"	constant
@@ -2227,6 +2239,13 @@ src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	mlevel_tele_trap	random	"[""7""]"	constant
 src/js/teleport.ts	goodPosition	random	"[""13""]"	constant
+src/js/teleport.ts	levelTeleport	rn2	"[""dungeonAt(state, dnum).num_dunlevs""]"	unproved
+src/js/teleport.ts	levelTeleport	rn2	"[""state.dungeons.length""]"	unproved
+src/js/teleport.ts	randomTeleportDepth	random	"[""5""]"	constant
+src/js/teleport.ts	randomTeleportDepth	random	"[""current + 3 - minimum""]"	unproved
+src/js/teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
+src/js/teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
+src/js/teleport.ts	readLevelRequest	rnl	"[""5""]"	constant
 src/js/trap.ts	floatHeroDown	rnd	"[""2""]"	constant
 src/js/throne.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	unproved
 src/js/throne.ts	normalThroneEffect	rn1	"[""100"", ""250""]"	constant
