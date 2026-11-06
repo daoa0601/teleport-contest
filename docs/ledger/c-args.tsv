@@ -32,6 +32,7 @@ cnv_trap_obj	mksobj	true+false
 cnv_trap_obj	reset_utrap	true
 consume_offering	exercise	true
 container_contents	container_contents	true
+costly_alteration	billable	false
 cprefx	exercise	false
 create_corridor	dig_corridor	false
 create_monster	discard_minvent	true
@@ -282,6 +283,7 @@ offer_real_amulet	fry_by_god	true
 openholdingtrap	reset_utrap	true
 overexert_hp	exercise	false
 paranoid_query	paranoid_ynq	false
+pay_for_damage	cad	true
 pay_for_damage	pacify_shk	false
 peffect_booze	exercise	false
 peffect_booze	newuhs	false
@@ -300,6 +302,8 @@ place_branch	stairway_add	false
 place_lregion	put_lregion_here	true
 place_monster	minimal_monnam	false;true;true
 poisoned	setuhpmax	true
+poly_obj	mksobj	false+false
+poly_obj	set_twoweap	true;true
 polyman	check_strangling	true
 polymon	check_strangling	false;true
 polymon	exercise	false;true;true
@@ -343,6 +347,7 @@ seffect_light	lightdamage	true
 seffects	exercise	true
 sellobj	contained_gold	true
 set_cost	getprice	true
+set_mimic_sym	mkobj	false
 set_moreluck	stone_luck	true
 setnotworn	set_twoweap	false
 setworn	set_twoweap	false

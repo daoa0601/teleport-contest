@@ -47,7 +47,7 @@ import { REACH_DEPTH, counterpartsOf, portIndex, readAliases } from './gap-edges
 import type { PortFunction } from './gap-edges.mjs';
 import { arrayValue, numberValue, objectValue, stringValue } from './session-types.mjs';
 
-const EXTRACTOR_VERSION = 'args-4';
+const EXTRACTOR_VERSION = 'args-6';
 
 export type CBool = 'TRUE' | 'FALSE';
 export type PortBool = 'true' | 'false';
@@ -238,21 +238,30 @@ async function extractArgFacts(tree: CSourceTree, file: string): Promise<FileArg
         return linesOf.get(path) ?? null;
     };
     await forEachTopLevelDecl(tree, file, (decl, tracker) => {
-        const kind = decl['kind'];
+        // Every chunk is walked, not only functions: the tracker must see
+        // the locations of the declarations in between too, or its file and
+        // line go stale and the next function resolves its own location
+        // against them (Linux dropped random_engraving to a header this
+        // way). Only a FunctionDecl collects calls.
         const name = decl['name'];
-        if (kind !== 'FunctionDecl' || typeof name !== 'string') return;
+        const collect = decl['kind'] === 'FunctionDecl' && typeof name === 'string';
         const pending: CArgCall[] = [];
-        // The file at the body's opening brace, not at the end of the decl:
-        // a trailing reference to something declared in a header (floorfood
-        // ends with one) leaves the tracker on the header, which would drop
-        // a function defined right here. The first CompoundStmt in emission
-        // order is the body; header declarations have none.
-        let bodyFile: string | null = null;
+        // The file of the declaration's own location: `loc`/`range` print
+        // before previousDecl and inner, so the first location in the chunk
+        // resolves — through the tracker, which has seen everything printed
+        // before it — to the file this declaration is spelled in. Neither
+        // end of the decl works instead: a trailing reference can leave the
+        // tracker in a header, and on clang 14 the definition's previousDecl
+        // and parameter-type locations (headers again) print before the
+        // body, which dropped Linux's random_engraving into savefile.h.
+        let declFile: string | null = null;
+        let hasBody = false;
         let depth = 0;
         walkJson(decl, tracker, node => {
             depth++;
-            if (bodyFile === null && node['kind'] === 'CompoundStmt') bodyFile = tracker.current;
-            if (node['kind'] !== 'CallExpr') return;
+            if (declFile === null && typeof node['offset'] === 'number') declFile = tracker.current;
+            if (node['kind'] === 'CompoundStmt') hasBody = true;
+            if (!collect || node['kind'] !== 'CallExpr') return;
             const callee = calleeName(node);
             if (callee === null) return;
             const inner = node['inner'];
@@ -272,7 +281,7 @@ async function extractArgFacts(tree: CSourceTree, file: string): Promise<FileArg
             // a recursive call's referencedDecl reuses the declaration's
             // id, and a leave in mid-walk would append the calls collected
             // so far a second time (mkobj.c obj_nexto_xy doubled its calls).
-            if (depth === 0 && bodyFile === file) {
+            if (collect && depth === 0 && hasBody && declFile === file) {
                 functions.push(name);
                 calls.push(...pending);
             }
@@ -309,20 +318,29 @@ function decodeArgFacts(value: unknown, label: string): FileArgFacts {
 // Per-file results cached by content, extractor version and clang arguments,
 // like the c-facts cache the messages mode uses.
 export async function cArgFacts(tree: CSourceTree, cacheDir: string): Promise<{ calls: CArgCall[]; definedIn: Map<string, string> }> {
+    // The macOS SDK replaces the libc string functions with
+    // __builtin___*_chk macros, which turns every TRUE/FALSE written in
+    // their arguments (Sprintf is an object-like macro, so its arguments
+    // are plain tokens on glibc) into a macro-argument token pointing at
+    // the outer invocation — invisible here. _FORTIFY_SOURCE=0 keeps both
+    // platforms on the plain functions (verified: -U alone does not
+    // disable Apple's), so the same spellings are extracted. Only this
+    // extraction gets the flag; the shared tree feeds the other modes.
+    const plainLibc: CSourceTree = { dir: tree.dir, files: tree.files, clangArgs: [...tree.clangArgs, '-D_FORTIFY_SOURCE=0'] };
     const dir = join(cacheDir, 'c-args');
     mkdirSync(dir, { recursive: true });
-    const pending = [...tree.files];
+    const pending = [...plainLibc.files];
     const results = new Map<string, FileArgFacts>();
     const worker = async (): Promise<void> => {
         for (let file = pending.shift(); file !== undefined; file = pending.shift()) {
-            const key = createHash('sha256').update(EXTRACTOR_VERSION).update('\0').update(tree.clangArgs.join(' '))
-                .update('\0').update(readFileSync(join(tree.dir, file))).digest('hex').slice(0, 16);
+            const key = createHash('sha256').update(EXTRACTOR_VERSION).update('\0').update(plainLibc.clangArgs.join(' '))
+                .update('\0').update(readFileSync(join(plainLibc.dir, file))).digest('hex').slice(0, 16);
             const cached = join(dir, `${baseName(file)}.${key}.json`);
             if (existsSync(cached)) {
                 results.set(file, decodeArgFacts(JSON.parse(readFileSync(cached, 'utf8')), cached));
                 continue;
             }
-            const facts = await extractArgFacts(tree, file);
+            const facts = await extractArgFacts(plainLibc, file);
             writeFileSync(cached, JSON.stringify(facts) + '\n');
             results.set(file, facts);
             process.stderr.write(`  ${file}: ${facts.calls.length} boolean-literal calls, ${facts.functions.length} functions\n`);
