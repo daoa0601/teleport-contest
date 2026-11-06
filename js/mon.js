@@ -113,6 +113,7 @@ const PM_SHRIEKER = 163;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const S_EEL = 57;
+// C mon.c:healmon():
 // C healmon(). Overhealing can increase the monster's maximum health.
 export function healMonster(monster, amount, overheal = 0) {
     const before = monster.mhp;
@@ -120,6 +121,7 @@ export function healMonster(monster, amount, overheal = 0) {
     monster.mhpmax = Math.max(monster.mhpmax, monster.mhp);
     return monster.mhp - before;
 }
+// C mon.c:golemeffects():
 export async function applyMonsterGolemEffects(monster, damageType, damage, { state = game, publish = plineWithContinuation, } = {}) {
     const species = MONSTER_NAME[monster.mnum];
     let healing = 0;
@@ -148,9 +150,11 @@ export async function applyMonsterGolemEffects(monster, damageType, damage, { st
     if (healing && healMonster(monster, healing) && cansee(monster.mx, monster.my))
         await publish(`${monsterSentenceSubject(monster)} seems healthier.`);
 }
+// Part of C mon.c:dead_species(): the mvitals test.
 export function speciesWasGenocided(mnum, state) {
     return !!((state.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD);
 }
+// Part of C mon.c:dead_species(): the egg test covering the grown form.
 function eggSpeciesWasGenocided(egg, state) {
     const mnum = egg?.corpsenm;
     if (mnum === undefined || !Number.isInteger(mnum) || mnum < 0)
@@ -158,6 +162,7 @@ function eggSpeciesWasGenocided(egg, state) {
     return speciesWasGenocided(mnum, state)
         || speciesWasGenocided(monsterYoungerForm(mnum), state);
 }
+// Part of C mon.c:kill_genocided_monsters(): one monster's no-corpse death.
 export function killGenocidedMonster(monster, state) {
     return finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true });
 }
@@ -204,15 +209,19 @@ export async function killGenocidedMonsters(state = game) {
     }
     return { killed, reshaped, sterileEggs };
 }
+// Part of C mon.c:minliquid_core(): the survival test.
 export function monsterSurvivesPool(monster, { waterWall = false } = {}) {
     return cant_drown(monster.mnum) || (!waterWall && monsterIsClinger(monster.mnum));
 }
+// Part of C mon.c:minliquid_core(): the flying-steed exception.
 function heroKeepsSteedAboveLiquid(monster, state, waterWall) {
     if (waterWall || state.u?.usteed !== monster)
         return false;
     return !!(state.u?.flying || state.flying
         || state.u?.levitating || state.u?.levitation || state.levitating);
 }
+// Part of C mon.c:minliquid_core(): the pool rust roll and the drowning
+// gate.
 export function rollMonsterPoolReaction(monster, state = game, { random = rn2, rollDice = d } = {}) {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     const waterWall = location?.typ === WATER;
@@ -236,10 +245,12 @@ export function rollMonsterPoolReaction(monster, state = game, { random = rn2, r
         return { kind: 'safe' };
     return { kind: 'drown' };
 }
+// C mondata.h:likes_lava():
 function monsterLikesLava(monster) {
     return monster?.mnum === PM_FIRE_ELEMENTAL
         || monster?.mnum === PM_SALAMANDER;
 }
+// Part of C mon.c:minliquid_core(): the lava reaction branch.
 export function monsterLavaReaction(monster, state = game) {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     if (!location || !isLavaAt(monster.mx, monster.my, state))
@@ -250,6 +261,8 @@ export function monsterLavaReaction(monster, state = game) {
     const fireResistant = monsterHasFireResistance(monster);
     return { kind: fireResistant ? 'scorch' : 'burn' };
 }
+// C mon.c:minliquid_core():
+// Also C mon.c:minliquid(): the caller wrapper that owns the entry checks.
 export async function resolveMonsterLiquid(monster, state = game, { announce = async () => { }, finishDeath, monsterMoving = true, random = rn2, rollDice = d, rollOne = rnd, } = {}) {
     if (!monster)
         return null;
@@ -420,6 +433,8 @@ export function finishLiquidDeathForCurrentMover(monster, options) {
         ? finishMonsterLiquidDeath(monster, options)
         : finishHeroLiquidMonsterDeath(monster, options);
 }
+// Part of C mon.c:minliquid_core(): the xkilled-versus-mondead choice for
+// hero-caused deaths.
 // Drowning caused by the hero uses xkilled() without a second kill line.
 // Rust and fire-resistant scorching retain mon.c's environmental death owner.
 export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), cause, sadFeeling = false, publish = plineWithContinuation, } = {}) {
@@ -487,11 +502,13 @@ export function zombieForm(mnum) {
         default: return null;
     }
 }
+// C mondata.h:is_rider():
 // C include/mondata.h:is_rider(). Death, Pestilence and Famine never leave
 // a revivable corpse behind for long.
 export function isRider(mnum) {
     return mnum !== undefined && mnum >= 311 && mnum <= 313;
 }
+// C mondata.h:is_reviver():
 // C include/mondata.h:is_reviver(). Riders and trolls rise from their
 // corpses unless the corpse is timed or eaten first.
 export function isReviver(mnum) {
@@ -528,9 +545,11 @@ export function undeadToCorpse(mndx) {
 // C mon.c:movemon()/mcalcdistress()/mon_allowflags()/mfndpos() and the
 // mon.c parts of monster scheduling those functions share.
 // ---------------------------------------------------------------------------
+// Port only: number sanity for restored HP fields.
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
+// Port only: iteration in fmon order; JS appends while C prepends to fmon.
 // JS stores monsters in creation order by appending to level.monsters.
 // C's makemon() prepends to fmon, so all scheduler traversals are reversed.
 export function monstersInFmonOrder(monsters = []) {
@@ -595,6 +614,7 @@ export async function* monsterDistressEvents(monsters = [], state = requireIniti
             monster.mflee = 0;
     }
 }
+// Part of C mon.c:mm_2way_aggression(): the unique-species test.
 function speciesIsUnique(mnum) {
     return !!((MONSTER_GENO[mnum] ?? 0) & 0x1000);
 }
@@ -629,6 +649,7 @@ function monsterAggressionFlags(attacker, defender, state) {
 const S_GHOST = 54;
 const MZ_LARGE = 3;
 const PM_MINOTAUR = MONSTER_NAME.indexOf('minotaur');
+// Part of C mon.c:mon_allowflags(): the body-based movement bits.
 export function monsterMovementBaseFlags(monster, state = game) {
     let flags = monster.mtame
         ? ALLOW_M | ALLOW_TRAPS | ALLOW_SANCT | ALLOW_SSM
@@ -663,13 +684,16 @@ export function monsterMovementBaseFlags(monster, state = game) {
         flags |= NOGARLIC;
     return flags;
 }
+// Part of C mon.c:mon_allowflags(): the can_open local.
 export function monsterCanOpenDoor(monster) {
     return !monsterHasNoHands(monster.mnum) && !monsterIsVerySmall(monster.mnum);
 }
+// Part of C mon.c:mon_allowflags(): the can_unlock local.
 export function monsterCanUnlockDoor(monster) {
     return monsterCanOpenDoor(monster) && monsterHasKey(monster, true)
         || !!monster.iswiz || monsterIsRider(monster);
 }
+// Part of C mon.c:mon_allowflags(): the can_tunnel gate.
 export function monsterCanTunnel(monster, state = game) {
     if (!tunnels(monster.mnum) || Is_rogue_level(state.u.uz, state))
         return false;
@@ -680,6 +704,8 @@ export function monsterCanTunnel(monster, state = game) {
         throw new Error('A tunneling monster needs its perceived hero position.');
     return dist2(monster.mx, monster.my, targetX, targetY) > 8;
 }
+// Part of C mon.c:mon_allowflags(): the ustuck hero exception for
+// ALLOW_BARS.
 function carriedHeroPassesBars(state) {
     const species = heroSpecies(state);
     return monsterIsUnsolid({ mnum: species }) || monsterIsVerySmall(species);
@@ -692,6 +718,7 @@ const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
 const PM_NURSE = MONSTER_NAME.indexOf('nurse');
 const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
 const MIMIC_SPECIES = new Set(['small mimic', 'large mimic', 'giant mimic'].map(name => MONSTER_NAME.indexOf(name)));
+// C obj.h:polyfood():
 function polymorphFood(object) {
     if (![CORPSE, EGG, TIN].includes(object.otyp)
         || object.corpsenm === undefined || object.corpsenm < 0)
@@ -699,6 +726,7 @@ function polymorphFood(object) {
     return is_shapeshifter(object.corpsenm)
         || !!MONSTER_ATTACKS[object.corpsenm]?.some(([, damage]) => damage === AD_POLY);
 }
+// C mon.c:meatbox():
 async function emptyEatenContainer(monster, object, state, publish, random) {
     const x = monster.mx, y = monster.my;
     if (!object.contents?.length || !isok(x, y))
@@ -726,6 +754,7 @@ async function emptyEatenContainer(monster, object, state, publish, random) {
             return;
     }
 }
+// Part of C mon.c:m_consume_obj(): the grow_up tail.
 export async function growAfterFood(monster, state, { publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
     const growth = growMonster(monster, { state, random, rollOne });
     if (!growth.changedSpecies)
@@ -737,11 +766,13 @@ export async function growAfterFood(monster, state, { publish = plineWithContinu
     if (growth.genocided)
         await finishEnvironmentalMonsterDeath(monster, state, { publish, random });
 }
+// C obj.h:ofood(): the food-with-species test.
 function foodSpecies(object) {
     return [CORPSE, EGG, TIN].includes(object.otyp)
         && object.corpsenm !== undefined && object.corpsenm >= 0
         ? object.corpsenm : null;
 }
+// C mon.c:m_consume_obj():
 export async function consumeMonsterObject(monster, object, state = game, { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d } = {}) {
     const level = state.level;
     const isPet = !!monster.mtame;
@@ -818,6 +849,7 @@ export function monAllowFlags(monster, state, rollOne = rnd, calls = DISCARDED_C
     return heroHasConflict(state) && !resistConflict(monster, state, rollOne, calls)
         ? flags | ALLOW_U : flags;
 }
+// Part of C mon.c:mfndpos(): the wielded-tool rock and tree tests.
 function monsterDigCapabilities(monster, flags) {
     let rockOk = false;
     let treeOk = false;
@@ -845,6 +877,7 @@ const MZ_HUMAN = 2;
 const SILVER = 14;
 const RIDERS = new Set(['Death', 'Pestilence', 'Famine']
     .map(name => MONSTER_NAME.indexOf(name)));
+// C mon.c:can_touch_safely():
 export function monsterCanTouchObject(monster, object, state = game) {
     if (object.otyp === CORPSE && object.corpsenm !== undefined) {
         if (touchPetrifies(object.corpsenm)
@@ -859,6 +892,7 @@ export function monsterCanTouchObject(monster, object, state = game) {
         return false;
     return monsterCanTouchArtifact(monster, object, state);
 }
+// C mon.c:curr_mon_load():
 export function currentMonsterLoad(monster) {
     return (monster.minvent ?? []).reduce((total, object) => {
         if (object.otyp === BOULDER && monsterThrowsRocks(monster.mnum))
@@ -866,6 +900,7 @@ export function currentMonsterLoad(monster) {
         return total + object.owt;
     }, 0);
 }
+// C mon.c:max_mon_load():
 export function maxMonsterLoad(monster) {
     const bodyWeight = MONSTER_BODY_META[monster?.mnum]?.[0] ?? 0;
     const size = MONSTER_SIZE[monster?.mnum] ?? 0;
@@ -881,6 +916,7 @@ export function maxMonsterLoad(monster) {
         capacity = Math.trunc(capacity / 2);
     return Math.max(1, capacity);
 }
+// C mon.c:can_carry():
 export function monsterCarryAmount(monster, object, state = game, random = rn2) {
     if (!monster || !object)
         return 0;
@@ -909,9 +945,11 @@ export function monsterCarryAmount(monster, object, state = game, random = rn2) 
     return currentMonsterLoad(monster) + object.owt
         <= maxMonsterLoad(monster) ? quantity : 0;
 }
+// Part of C mon.c:can_carry(): the boolean form.
 export function monsterCanCarryObject(monster, object, state = game, random = rn2) {
     return monsterCarryAmount(monster, object, state, random) > 0;
 }
+// C hack.c:cant_squeeze_thru():
 function monsterCannotSqueezeThrough(monster, state) {
     if (monsterPassesWalls(monster.mnum))
         return false;
@@ -1142,6 +1180,7 @@ export async function attemptMonsterRestrap(monster, state = game, { random = rn
     monster.mundetected = 1;
     return true;
 }
+// Part of C mon.c:hideunder(): the capture-and-conceal half.
 // Capture names while the creature is visible, then change its hidden state.
 // The caller publishes this message before repainting, so a pending More keeps
 // the pre-concealment screen until the player acknowledges the earlier line.
@@ -1166,6 +1205,7 @@ export function beginMonsterHideUnder(monster, state = game) {
     monster.mundetected = place.undetected ? 1 : 0;
     return { undetected: place.undetected, oldUndetected, message };
 }
+// Part of C mon.c:hideunder(): the message and newsym half.
 export async function finishMonsterHideUnder(monster, concealment, state = game) {
     if (concealment.message) {
         await plineWithContinuation(concealment.message);
@@ -1175,6 +1215,7 @@ export async function finishMonsterHideUnder(monster, concealment, state = game)
     if (concealment.undetected !== concealment.oldUndetected)
         await newsym(monster.mx, monster.my);
 }
+// C mon.c:hideunder():
 export async function hideMonsterUnder(monster, state = game) {
     const concealment = beginMonsterHideUnder(monster, state);
     await finishMonsterHideUnder(monster, concealment, state);
@@ -1218,6 +1259,7 @@ export async function hideMonsterOnRestore(monster, state = game) {
     if (hiderUnder)
         await hideMonsterUnder(monster, state);
 }
+// C mon.c:maybe_unhide_at():
 export async function maybeUnhideAt(x, y, state = game) {
     const monster = state.level?.monsters.find(candidate => monsterHasMapPosition(candidate, state)
         && !candidate.dead && candidate.mx === x && candidate.my === y);
@@ -1241,6 +1283,7 @@ export async function maybeUnhideAt(x, y, state = game) {
     if (!hidden)
         await newsym(x, y);
 }
+// Port only: hero-shaped adapter for the shared hiding-place test.
 function heroHidingActor(state) {
     return {
         species: heroSpecies(state), x: state.u.ux, y: state.u.uy,
@@ -1248,6 +1291,7 @@ function heroHidingActor(state) {
         stoneResistant: heroResistsStoning(state),
     };
 }
+// Port only: monster adapter for the shared hiding-place test.
 function monsterHidingActor(monster, state) {
     return {
         species: monster.mnum, x: monster.mx, y: monster.my,
@@ -1255,6 +1299,8 @@ function monsterHidingActor(monster, state) {
         tame: !!monster.mtame, stoneResistant: monsterHasStoneResistance(monster),
     };
 }
+// Part of C mon.c:hideunder(), mon.c:maybe_unhide_at(): the shared cover
+// test.
 // Also C dogmove.c:cursed_object_at(): inlined here for tame hiders.
 function hidingPlace(actor, state) {
     const { x, y } = actor;
@@ -1283,6 +1329,7 @@ function hidingPlace(actor, state) {
         && pile.every(object => object.otyp === CORPSE && touchPetrifies(object.corpsenm));
     return { undetected: !petrifyingOnly, cover: pile[0] ?? null, water: false };
 }
+// Port only: applies and presents a deferred grow_up result.
 export async function presentMonsterGrowth(monster, growth) {
     const game = requireInitializedGame();
     if (!growth?.changedSpecies || growth.applied)
@@ -1294,6 +1341,8 @@ export async function presentMonsterGrowth(monster, growth) {
     if (growth.genocided)
         await finishEnvironmentalMonsterDeath(monster, game);
 }
+// Part of C mon.c:movemon_singlemon(): the lost-gear re-equip attempt at
+// the start of a move.
 export async function reassessMonsterArmor(monster, state = game, { publish = plineWithContinuation, } = {}) {
     if (!monster || !((monster.misc_worn_check ?? 0) & I_SPECIAL))
         return null;
@@ -1315,6 +1364,7 @@ export async function reassessMonsterArmor(monster, state = game, { publish = pl
             || monster.mcanmove === 0,
     };
 }
+// C mon.c:check_gear_next_turn():
 // Setting misc_worn_check's I_SPECIAL bit flags a monster to reassess and
 // potentially re-equip gear at the start of its next move.
 // C mon.c:check_gear_next_turn().
@@ -1323,6 +1373,8 @@ export function checkMonsterGearNextTurn(monster) {
         return;
     monster.misc_worn_check = (monster.misc_worn_check ?? 0) | I_SPECIAL;
 }
+// Part of C mon.c:movemon(): the iter_mons_safe loop over
+// movemon_singlemon.
 // Also C mon.c:iter_mons_safe(): the actor loop uses an identity snapshot.
 async function executeMonsterTurns() {
     const game = requireInitializedGame();
@@ -1458,6 +1510,7 @@ export async function moveMonsters() {
 export function copyPetData(value) {
     return { ...value, ogoal: { ...value.ogoal } };
 }
+// Part of C mon.c:copy_mextra(): the shopkeeper bill copy.
 export function copyShopkeeperData(value) {
     const copy = { ...value };
     if (value.bill)
@@ -1467,6 +1520,7 @@ export function copyShopkeeperData(value) {
 // C mon.c:KEEPTRAITS(). Corpses keep their monster's traits when it was a
 // shopkeeper or pet, a unique or reviver, the quest leader, or a seducer.
 const G_UNIQ = 0x1000;
+// C mon.c:KEEPTRAITS():
 export function corpseKeepsMonsterTraits(monster, questLeaderId = 0) {
     if (!monster)
         return false;
@@ -1514,9 +1568,11 @@ const HUMANOID_GASP_EXCLAMATIONS = [
     'Gasp!', 'Uh-oh.', 'Oh my!', 'What?', 'Why?',
 ];
 const WATCH_NAMES = new Set(['watchman', 'watch captain']);
+// Part of C mon.c:peacefuls_respond(): the watch-member test.
 export function isWatch(monster) {
     return WATCH_NAMES.has(MONSTER_NAME[monster?.mnum] || '');
 }
+// Part of C mon.c:peacefuls_respond(): the humanoid gasp and exclamation.
 function maybeHumanoidGasp(observer) {
     requirePlayingGame(game);
     let sound = questMonsterSound(observer.mnum);
@@ -1541,6 +1597,7 @@ function maybeHumanoidGasp(observer) {
         ? { text: `${name} gasps`, needsPeriod: true }
         : { text: `${name} exclaims "${exclamation}"`, needsPeriod: false };
 }
+// C mon.c:peacefuls_respond():
 async function reactHumanoidBystander(observer, attackedSpecies) {
     requirePlayingGame(game);
     if (isWatch(observer)) {
@@ -1746,6 +1803,7 @@ export async function angerMonster(monster, { attacked = false } = {}) {
     await angerQuestGuardiansAfterAttack(monster);
     await reactPeacefulBystanders(monster);
 }
+// Part of C mon.c:setmangry(): the attacked form.
 export function angerAttackedMonster(monster) {
     return angerMonster(monster, { attacked: true });
 }
@@ -1753,6 +1811,7 @@ export function angerAttackedMonster(monster) {
 // C mon.c:seemimic(). Reveal a monster that is imitating another monster,
 // furniture, or an object.
 // ---------------------------------------------------------------------------
+// C monst.h:is_lightblocker_mappear():
 function appearanceBlocksLight(type, appearance) {
     if (type === M_AP_OBJECT)
         return appearance === BOULDER;
@@ -1763,6 +1822,7 @@ function appearanceBlocksLight(type, appearance) {
         || appearance === TREE || appearance === SDOOR
         || appearance === DOOR || IS_WALL(appearance);
 }
+// C mon.c:seemimic():
 export async function revealMonsterAppearance(monster, { includeMonsterDisguise = true, } = {}) {
     const type = M_AP_TYPE(monster);
     const appearance = monster?.mappearance ?? 0;
@@ -1791,6 +1851,7 @@ export async function revealMonsterAppearance(monster, { includeMonsterDisguise 
 // disturbance.
 // ---------------------------------------------------------------------------
 const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
+// Part of C mon.c:wake_nearto_core(): the distance filter.
 function monstersNear(x, y, distance, state) {
     return (state.level?.monsters || []).slice().reverse().filter(monster => {
         if (!monster || (monster.mhp ?? 1) <= 0)
@@ -1800,12 +1861,14 @@ function monstersNear(x, y, distance, state) {
         return !distance || dx * dx + dy * dy < distance;
     });
 }
+// Part of C mon.c:wake_nearto_core(): the per-monster wake half.
 // wake_nearto_core() wakes each sleeper inline; this is that per-monster half.
 function wakeIndeterminateSleep(monster) {
     monster.msleeping = 0;
     if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ))
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
 }
+// C mon.c:wake_msg():
 export async function publishMonsterWake(monster, interesting = false, state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
     if (!monster.msleeping || !canSeeMonster(monster))
@@ -1822,6 +1885,7 @@ export async function publishMonsterWake(monster, interesting = false, state = g
 export async function wakeNearby(state) {
     await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
 }
+// C mon.c:wake_nearto_core():
 export async function wakeMonstersNearWithMessages(x, y, distance, state = game, publish = plineWithContinuation, { petCall = false } = {}) {
     requireLiveGame(state);
     for (const monster of monstersNear(x, y, distance, state)) {
@@ -1873,6 +1937,7 @@ export async function wakeMonster(monster, { attacked = false } = {}) {
         hotPursuitShopkeeper(monster);
     return { heroDied: false };
 }
+// Part of C mon.c:wakeup(): the attacked form.
 export function wakeAttackedMonster(monster) {
     return wakeMonster(monster, { attacked: true });
 }
@@ -1892,6 +1957,7 @@ export async function migrateMonsterToLevel(monster, destination, state = game, 
     }
     return await migrateMonsterOffLevel(monster, state, { dst: destination }, { kind, mode });
 }
+// C mon.c:mcalcmove():
 // ── C mon.c:mcalcmove(). Monster movement rates. moving=false leaves the
 // adjusted speed unrounded.
 export function mcalcmove(monster, moving = true, random = rn2, state = game) {
@@ -1919,10 +1985,12 @@ export function mcalcmove(monster, moving = true, random = rn2, state = game) {
     }
     return mmove;
 }
+// Part of C mon.c:mcalcmove(): reading the monster's natural rate.
 export function naturalMonsterSpeed(monster) {
     return monster.mmove !== undefined && Number.isFinite(monster.mmove)
         ? monster.mmove : MONSTER_MOVE[monster.mnum] ?? 0;
 }
+// Port only: initializes the movement fields the C struct zero-initializes.
 export function initializeMonsterMovement(monster) {
     if (!monster)
         return monster;
@@ -1937,6 +2005,8 @@ export function initializeMonsterMovement(monster) {
 // ── C mon.c:meatmetal(), meatobj(), and meatcorpse(). Non-pet meals
 // during post-move item handling.
 const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
+// Part of C monmove.c:postmov(): the post-move meal dispatch over
+// meatmetal, meatobj and meatcorpse.
 export async function consumeMonsterFloorObjects(monster, state, { originalSpecies, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
     requireLiveGame(state);
     const context = { state, level: requireGameLevel(state), random, rollOne, rollDice, publish };
@@ -1956,13 +2026,16 @@ export async function consumeMonsterFloorObjects(monster, state, { originalSpeci
         died, leftLevel, heroDied: !!state.program_state.gameover,
     };
 }
+// Port only: the meal-interrupt level test; C returns between the calls.
 function leftMealLevel(monster, { state, level }) {
     return !!monster.migrating || state.level !== level || !level.monsters.includes(monster);
 }
+// Port only: the shared meal-interrupt test (dead, game over, or gone).
 function mealInterrupted(monster, context) {
     return !!context.state.program_state.gameover || !!monster.dead || monster.mhp <= 0
         || leftMealLevel(monster, context);
 }
+// C mon.c:meatmetal():
 async function eatMetal(monster, context) {
     const { state, level, random, rollOne, publish } = context;
     const visible = canSeeMonster(monster);
@@ -2001,6 +2074,7 @@ async function eatMetal(monster, context) {
     }
     return 0;
 }
+// C mon.c:meatobj():
 async function eatOrEngulfPile(monster, context) {
     const { state, level, random, publish } = context;
     const originalSpecies = monster.mnum;
@@ -2086,6 +2160,7 @@ async function meatcorpse(monster, context) {
     }
     return 0;
 }
+// Part of C mon.c:meatcorpse(): splitting one meal from the stack.
 function splitCorpseMeal(corpse, state) {
     if (corpse.quan <= 1)
         return corpse;
@@ -2094,6 +2169,8 @@ function splitCorpseMeal(corpse, state) {
         throw new Error(`Corpse ${corpse.o_id} could not split one meal`);
     return meal;
 }
+// Part of C mon.c:meatobj(), mon.c:meatcorpse(): reviving a Rider corpse
+// instead of eating it.
 async function reviveMeal(object, { state, publish }) {
     const x = object.ox, y = object.oy;
     const revival = await reviveCorpseImmediately(object, state);
@@ -2103,26 +2180,33 @@ async function reviveMeal(object, { state, publish }) {
     await newsym(x, y);
     return !!revival?.monster;
 }
+// Part of C mon.c:meatmetal(), mon.c:meatobj(): the choking-object test.
 function chokingObject(object) {
     return object.otyp === AMULET_OF_STRANGULATION || object.otyp === RIN_SLOW_DIGESTION;
 }
+// Part of C mon.c:meatmetal(), mon.c:meatobj(): the poisoned-object test.
 function poisonousObject(object, monster) {
     // Native stores trapped-container and poisoned-weapon state in one bit.
     return !!(object.opoisoned || object.otrapped) && !monsterHasPoisonResistance(monster);
 }
+// Part of C mon.c:meatobj(): the petrifying-food test.
 function petrifyingFood(object) {
     return [CORPSE, EGG, TIN].includes(object.otyp) && fleshPetrifies(object.corpsenm);
 }
+// Part of C mon.c:meatmetal(), mon.c:meatobj(): the distant object naming.
 async function distantMealName(object, state) {
     observeDistantObjectForNaming(object, state);
     return await inventoryItemDescription(object);
 }
+// Part of C mon.c:meatmetal(), mon.c:meatobj(), mon.c:meatcorpse(): the
+// eating line.
 async function describeEating(monster, object, { state, publish }) {
     // Naming can identify an object even when verbose prose is disabled.
     const name = await distantMealName(object, state);
     if (state.flags.verbose)
         await publish(`${monsterName(monster, { state, capitalized: true })} eats ${name}!`);
 }
+// Part of C mon.c:meatmetal(), mon.c:meatobj(): the heard meal sound.
 async function describeSound(sound, { state, publish }) {
     if (!state.flags.verbose)
         return;
@@ -2133,6 +2217,8 @@ async function describeSound(sound, { state, publish }) {
 // ── C mon.c:mon_give_prop() and mon_givit(). Properties conveyed to
 // monsters by corpses; monsters retain only the six resistance bits.
 const STALKER = MONSTER_NAME.indexOf('stalker');
+// Part of C mon.c:mon_givit(): the stalker invisibility and the chance
+// gate.
 export async function grantMonsterCorpseIntrinsic(monster, species, state = game) {
     requireLiveGame(state);
     const property = corpse_intrinsic(species);
@@ -2174,6 +2260,7 @@ export async function grantMonsterIntrinsic(monster, property, state = game, pub
     if (canSeeMonster(monster) && !alreadyInnate)
         await publish(`${monsterName(monster, { state, capitalized: true })} ${effect.message}`);
 }
+// Part of C mon.c:mon_give_prop(): the six retained resistance bits.
 function monsterIntrinsic(property) {
     if (property !== 'fireResistance' && property !== 'coldResistance'
         && property !== 'sleepResistance' && property !== 'disintegrationResistance'
@@ -2192,6 +2279,7 @@ function monsterIntrinsic(property) {
 // action.
 const S_NYMPH = 14;
 const PM_LIZARD = MONSTER_NAME.indexOf('lizard');
+// C mon.c:mpickstuff():
 export async function pickUpMonsterFloorObject(monster, state, random = rn2) {
     if (shopkeeperInOwnShop(monster, state))
         return false;
@@ -2227,6 +2315,7 @@ export async function pickUpMonsterFloorObject(monster, state, random = rn2) {
     }
     return false;
 }
+// Part of C mon.c:mpickstuff(): the ordinary-corpse rejection.
 function rejectsOrdinaryCorpse(monster, object) {
     if (object.otyp !== CORPSE || MONSTER_SYMBOL[monster.mnum] === S_NYMPH)
         return false;
@@ -2234,6 +2323,7 @@ function rejectsOrdinaryCorpse(monster, object) {
     return !touchPetrifies(species) && species !== PM_LIZARD
         && !acidic(species);
 }
+// C mon.c:mm_displacement():
 // ── C mon.c:mm_displacement().
 export function monsterDisplacementFlags(aggressor, defender) {
     if (!monsterIsDisplacer(aggressor.mnum)
@@ -2250,6 +2340,7 @@ export function monsterDisplacementFlags(aggressor, defender) {
     }
     return ALLOW_MDISP;
 }
+// C mon.c:relmon():
 // ── C mon.c:relmon(), mon_leaving_level(), and dmonsfree(). Departures
 // retain their coordinates; death removes map occupancy before unlinking
 // the chain.
@@ -2288,6 +2379,7 @@ export async function detachMonsterFromLevel(monster, state = game, { dueToDeath
     if (state.context.polearm?.hitmonId === monster.m_id)
         state.context.polearm.hitmonId = null;
 }
+// C mon.c:mnearto():
 // C mon.c mnearto(): bring the monster to <x,y>; shove any resident of the
 // destination aside when moveOther is set. A resident without room uses
 // the endgame's overcrowding rules or waits in limbo elsewhere.
@@ -2333,6 +2425,7 @@ export async function mnearto(monster, x, y, state, { moveOther = false, flags =
 export function purgeDeadMonsters(level) {
     level.monsters = level.monsters.filter(monster => monster.mhp > 0 || !!monster.isgd);
 }
+// C mon.c:mongone():
 export async function removeMonsterFromGame(monster) {
     requireLiveGame(game);
     if (!monster) {
@@ -2370,9 +2463,11 @@ export async function removeMonsterFromGame(monster) {
         await dismountHero(DISMOUNT_GENERIC);
     return { removed: true, dropped, discarded, x, y };
 }
+// Port only: entry for a monster removed after granting a wish.
 export async function removeWishGrantingMonster(monster) {
     return await removeMonsterFromGame(monster);
 }
+// Part of C mon.c:corpse_chance(): rolling the AT_BOOM damage.
 // ── C mon.c:corpse_chance() AT_BOOM checks and the contained
 // explosion; the map blast itself is explode.c:mon_explodes().
 function rollAttackDamage(monster, attack, rollDice) {
@@ -2387,16 +2482,19 @@ function rollAttackDamage(monster, attack, rollDice) {
     }
     return 0;
 }
+// Part of C mon.c:corpse_chance(): the AT_BOOM test.
 export function monsterHasDeathExplosion(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(attack => attack[0] === AT_BOOM);
 }
+// Part of C mon.c:corpse_chance(): the swallowed-by-engulfer test.
 export function monsterDeathSwallower(state = game) {
     const swallower = state._monsterSwallower;
     if (swallower && 'kind' in swallower)
         return swallower;
     return swallower && monsterCanEngulf(swallower) ? swallower : null;
 }
+// Part of C mon.c:corpse_chance(): rolling the death explosion.
 export function rollMonsterDeathExplosion(monster, { state = game, rollDice = d, } = {}) {
     const attack = (MONSTER_ATTACKS[monster.mnum] || [])
         .find(candidate => candidate[0] === AT_BOOM);
@@ -2409,6 +2507,7 @@ export function rollMonsterDeathExplosion(monster, { state = game, rollDice = d,
     return { swallower, damage: swallower
             ? damage : rollAttackDamage(monster, attack, rollDice) };
 }
+// Part of C mon.c:corpse_chance(): the swallowed explosion branch.
 export async function resolveMonsterDeathExplosion(monster, x, y, explosion, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, heroCaused = !state.context.mon_moving, } = {}) {
     const { swallower, damage } = explosion;
     if (!swallower) {
@@ -2471,6 +2570,8 @@ const SPECIAL_GOLEM_REMAINS = new Set([
     PM_WOOD_GOLEM, PM_CLAY_GOLEM, PM_STONE_GOLEM, PM_GLASS_GOLEM,
     PM_IRON_GOLEM,
 ]);
+// C mon.c:LEVEL_SPECIFIC_NOCORPSE(): the rogue-level / no-deathdrops /
+// graveyard gate its expansions inside corpse_chance and xkilled evaluate.
 export function levelAllowsMonsterDeathDrops(monster, state = game, random = rn2) {
     if (Is_rogue_level(state.u?.uz)
         || state.level?.flags?.deathdrops === false)
@@ -2478,17 +2579,22 @@ export function levelAllowsMonsterDeathDrops(monster, state = game, random = rn2
     const undead = monsterIsUndead(monster.mnum);
     return !(state.level?.flags?.graveyard && undead && random(3));
 }
+// Part of C mon.c:mondied(), mon.c:xkilled(): the accessible-or-pool square
+// test that guards the make_corpse call.
 export function monsterDeathSquareAllowsObjects(x, y, state = game) {
     return isAccessibleAt(x, y, state) || isPoolAt(x, y, state);
 }
+// Part of C mon.c:corpse_chance(): the crumbles test.
 export function monsterBodyCrumbles(monster) {
     return monster.mnum === PM_VLAD_THE_IMPALER
         || MONSTER_SYMBOL[monster.mnum] === S_LICH;
 }
+// Part of C mon.c:corpse_chance(): the crumbles message.
 export function monsterBodyCrumblesMessage(monster, state = game) {
     const name = monsterName(monster, { state, capitalized: true });
     return `${possessiveName(name)} body crumbles into dust.`;
 }
+// Part of C mon.c:corpse_chance(): the corpse-chance roll.
 export function monsterLeavesCorpse(monster, random = rn2) {
     if (monsterBodyCrumbles(monster)
         || monsterHasDeathExplosion(monster))
@@ -2507,6 +2613,7 @@ export function monsterLeavesCorpse(monster, random = rn2) {
         + Number((MONSTER_SIZE[mnum] ?? 0) === 0);
     return random(corpseDenominator) === 0;
 }
+// Part of C mon.c:corpse_chance(): the decision sequence.
 function ordinaryMonsterDeathResult(monster, state, random, rollDice) {
     if (monsterBodyCrumbles(monster)) {
         return { crumbles: true, explosion: null, leavesRemains: false };
@@ -2518,6 +2625,7 @@ function ordinaryMonsterDeathResult(monster, state, random, rollDice) {
     const leavesRemains = levelAllowsMonsterDeathDrops(monster, state, random) && monsterLeavesCorpse(monster, random);
     return { crumbles: false, explosion: null, leavesRemains };
 }
+// C mon.c:corpse_chance():
 // C corpse_chance(): effects and eligibility are separate from placing a body.
 // Digestion uses this after xkilled, including an explosion inside the eater.
 export async function resolveMonsterCorpseChance(monster, { state = game, random = rn2, rollDice = d, publish = plineWithContinuation, } = {}) {
@@ -2533,6 +2641,7 @@ export async function resolveMonsterCorpseChance(monster, { state = game, random
     }
     return { leavesRemains: death.leavesRemains, heroDied: false };
 }
+// Part of C mon.c:make_corpse(): the corpse-stat flags.
 function corpseFlags(monster, initialize = true) {
     let flags = initialize ? CORPSTAT_INIT : 0;
     if (monster.female)
@@ -2541,6 +2650,7 @@ function corpseFlags(monster, initialize = true) {
         flags |= CORPSTAT_MALE;
     return flags;
 }
+// Part of C mon.c:make_corpse(): the wood golem's material picks.
 function woodGolemMaterial() {
     if (rn2(2))
         return QUARTERSTAFF;
@@ -2552,16 +2662,19 @@ function woodGolemMaterial() {
         return ELVEN_SPEAR;
     return BOOMERANG;
 }
+// Part of C mon.c:make_corpse(): the rope golem's material picks.
 function ropeGolemMaterial() {
     if (rn2(2))
         return LEASH;
     return rn2(3) ? BULLWHIP : GRAPPLING_HOOK;
 }
+// Part of C mon.c:make_corpse(): the leather golem's material picks.
 function leatherGolemMaterial() {
     if (rn2(4))
         return LEATHER_ARMOR;
     return rn2(3) ? LEATHER_CLOAK : SADDLE;
 }
+// Part of C mon.c:make_corpse(): the golem-remains switch.
 async function createGolemRemains(monster, state) {
     const x = monster.mx;
     const y = monster.my;
@@ -2619,11 +2732,14 @@ async function createGolemRemains(monster, state) {
         setMonsterGivenName(monster, null);
     return remains;
 }
+// Part of C mon.c:make_corpse(): placing one mksobj part.
 async function placeMonsterPart(type, monster, state, initialize = true) {
     const part = await mksobj(type, initialize, false);
     placeCreatedObject(part, monster.mx, monster.my, state);
     return part;
 }
+// Part of C mon.c:make_corpse(): the dragon-scale, unicorn-horn and
+// worm-tooth parts.
 async function createMonsterPart(monster, state, seen, publish) {
     const mnum = monster.mnum;
     if (mnum >= PM_GRAY_DRAGON && mnum <= PM_YELLOW_DRAGON) {
@@ -2654,6 +2770,7 @@ async function createMonsterPart(monster, state, seen, publish) {
         return await placeMonsterPart(WORM_TOOTH, monster, state);
     return null;
 }
+// Part of C mon.c:make_corpse(): the pudding glob and its meld.
 async function createPuddingGlob(monster, state, publish) {
     if (monster.mnum < PM_GRAY_OOZE
         || monster.mnum > PM_BLACK_PUDDING)
@@ -2664,6 +2781,7 @@ async function createPuddingGlob(monster, state, publish) {
     await newsym(monster.mx, monster.my);
     return remains;
 }
+// Part of C mon.c:make_corpse(): the remains dispatch.
 export async function createMonsterRemains(monster, state = game, { buried = false, zombify = false, noRevive = false, seen = false, publish = plineWithContinuation, } = {}) {
     const x = monster.mx;
     const y = monster.my;
@@ -2700,6 +2818,8 @@ export async function createMonsterRemains(monster, state = game, { buried = fal
     }
     return await finishMonsterRemains(corpse, monster, state);
 }
+// Part of C mon.c:make_corpse(): the shared remains tail — stacking, naming
+// and newsym.
 // Special golem objects share make_corpse's tail with ordinary corpses.
 // In particular, the beam which killed a monster must skip its new remains.
 async function finishMonsterRemains(remains, monster, state) {
@@ -2960,9 +3080,11 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
         completedDeath: doorDeath,
     };
 }
+// Port only: reads the mvitals died counter.
 export function monsterDeathCount(mnum, state = game) {
     return state.mvitals?.[mnum]?.died ?? 0;
 }
+// Part of C mon.c:mondead(): the mvitals died tally.
 export function recordMonsterDeath(monster, state = game) {
     if (!Array.isArray(state.mvitals))
         state.mvitals = [];
@@ -2974,16 +3096,20 @@ export function recordMonsterDeath(monster, state = game) {
         vital.mvflags = (vital.mvflags ?? 0) | G_GENOD;
     return vital.died;
 }
+// Port only: whether any deaths were tallied (bones bookkeeping).
 export function hasRecordedMonsterDeaths(state = game) {
     return (state.mvitals || []).some(vital => (vital?.died ?? 0) > 0);
 }
 // C mondead(): a dying steam vortex leaves a cloud of steam behind.
 const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');
+// Part of C mon.c:mondead(): the dying steam vortex's cloud of steam.
 export async function createSteamVortexDeathCloud(monster, state = game, random = rn2, publish = plineWithContinuation) {
     if (monster.mnum !== PM_STEAM_VORTEX)
         return null;
     return await createPoisonGasCloud(state, monster.mx, monster.my, random(10) + 5, 0, random, publish);
 }
+// Part of C mon.c:mondead(): finding the down staircase for the returning
+// Kop.
 // C mondead(): dead Keystone Kops may be replaced.
 function downstairs(state) {
     for (let stair = state.stairs; stair; stair = stair.next) {
@@ -2992,6 +3118,7 @@ function downstairs(state) {
     }
     return null;
 }
+// Part of C mon.c:mondead(): the dead Keystone Kop replacement.
 export async function returnDeadKop(monster, state = game, rollOne = rnd) {
     if (!monsterIsKop(monster.mnum))
         return null;
@@ -3067,6 +3194,7 @@ export async function detachDeadMonster(monster, state, random, publish, rollOne
     }
     return false;
 }
+// C mon.c:logdeadmon():
 // mon.c:logdeadmon().  Chronicle line for the death of a unique monster
 // (first death of a High Cleric, first death of each shopkeeper), plus the
 // Medusa achievement.  Called after mvitals.died was incremented.
@@ -3116,6 +3244,8 @@ function logDeadMonster(monster, state) {
     recordGameLogEvent(herodidit ? `${mkilled} ${name}${shkdetail}${xtra}`
         : `${name}${shkdetail} has been ${mkilled}${xtra}`, { state, flags });
 }
+// Part of C mon.c:mondied(): mondead's full flow for a monster dying in
+// liquid on its own move.
 export async function finishMonsterLiquidDeath(monster, { state = game, random = rn2, rollOne = rnd, rollDice = d, leaveCorpse = false, sadFeeling = false, publish = plineWithContinuation, } = {}) {
     const x = monster.mx;
     const y = monster.my;
@@ -3169,6 +3299,7 @@ export async function finishMonsterLiquidDeath(monster, { state = game, random =
 export function monsterKillLineVisible(monster) {
     return monster.wormno ? wormKnown(monster) : cansee(monster.mx, monster.my);
 }
+// C mon.c:monkilled():
 // C monkilled(): the death line precedes recovery, but pet grief follows it.
 // A null cause suppresses the line even when the monster's square is visible.
 export async function finishMonsterKilled(monster, state, { damageType, cause = '', publish = plineWithContinuation, ...options }) {
@@ -3196,9 +3327,11 @@ export async function finishMonsterKilled(monster, state, { damageType, cause = 
     }
     return death;
 }
+// Part of C mon.c:mondead(): the entry environmental deaths use.
 export function finishEnvironmentalMonsterDeath(monster, state, options = {}) {
     return resolveMonsterDeath(monster, state, options);
 }
+// Part of C mon.c:mondead(): the death sequence driver.
 async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFeeling = false, noCorpse = false, noRevive = false, zombifyCorpse = false, stoneRemains = null, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }, { disintegrated = false } = {}) {
     requireLiveGame(state);
     const wasInside = !!state.u.uswallow && state.u.ustuck === monster;
@@ -3239,12 +3372,16 @@ async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFee
 }
 const VAMPIRE_FORMS = new Set([226, 227, 228]);
 const TORSO_ARMOR = W_ARM | W_ARMC | W_ARMU;
+// Port only: capitalized name subject for the petrification messages.
 export function monsterSubject(monster) {
     return monsterName(monster, { capitalized: true });
 }
+// Part of C dothrow.c:hurtle_step(), dothrow.c:mhurtle_step(): the
+// torso-armor petrification guard.
 export function monsterWearsTorsoArmor(monster) {
     return (monster?.minvent || monster?.inventory || []).some(object => ((object.owornmask ?? 0) & TORSO_ARMOR) !== 0);
 }
+// Part of C trap.c:mselftouch(): the polymorph self-touch newcham requests.
 export async function monsterSelfTouchAfterPolymorph(monster, options = {}) {
     if (monsterWearsGloves(monster))
         return { touched: false, survived: true };
@@ -3254,11 +3391,14 @@ export async function monsterSelfTouchAfterPolymorph(monster, options = {}) {
     });
 }
 const M2_COLLECT = 0x40000000;
+// Part of C mon.c:xkilled(): the boolean outcome form.
 // The boolean records the monster's fate, not the hero's.
 export async function finishHeroMonsterKill(monster, x, y, options = {}) {
     const outcome = await finishHeroMonsterKillOutcome(monster, x, y, options);
     return outcome.killed;
 }
+// Part of C mon.c:xkilled(): the shared entry for hurtle, telekinesis and
+// polearm recoil deaths.
 // A monster the hero hurtled into dies without a kill message, corpse, or
 // conduct record; kick recoil, #wiztelekinesis, and polearm pushes share it.
 export function finishHurtleMonsterDeath(monster, { noCorpse = true } = {}) {
@@ -3530,6 +3670,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     adjustHeroAlignment(monster.malign);
     return { killed: true, heroDied: false };
 }
+// C mon.c:mon_to_stone():
 export async function turnGolemToStone(monster, publish) {
     if (!monsterPolymorphsWhenStoned(monster))
         return null;
@@ -3626,6 +3767,8 @@ function restoreRevertedMonsterHealth(monster) {
     monster.mhpmax = Math.max(monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10);
     monster.mhp = monster.mhpmax;
 }
+// Part of C mon.c:monstone(): clearing a carried object's worn and wielded
+// links.
 // Clears the worn, wielded and carried links of an object taken from a
 // monster's inventory, e.g. when stoning moves it into a statue.
 function clearMonsterCarriedObjectState(object, state = game) {
@@ -3642,6 +3785,7 @@ function clearMonsterCarriedObjectState(object, state = game) {
     object.ocarry = null;
     delete object.carrierMid;
 }
+// Part of C mon.c:monstone(): moving an inventory object into the statue.
 async function putInStatue(statue, object) {
     clearMonsterCarriedObjectState(object);
     endObjectBurn(object);
@@ -3650,10 +3794,12 @@ async function putInStatue(statue, object) {
     // charge during the transfer into the statue).
     await addObjectToContainer(statue, object);
 }
+// Part of C mon.c:monstone(): dropping an object beside the statue.
 async function dropBesideStatue(object, x, y, publish) {
     clearMonsterCarriedObjectState(object);
     return landFloorObject(object, x, y, { state: game, publish });
 }
+// Part of C mon.c:monstone(): the statue's corpstat and historic flags.
 function statueFlags(monster) {
     let flags = 0;
     if (monster.female)
@@ -3664,6 +3810,7 @@ function statueFlags(monster) {
         flags |= CORPSTAT_HISTORIC;
     return flags;
 }
+// Part of C mon.c:monstone(): the statue-or-rock remains.
 async function createStoneRemains(monster, publish) {
     const x = monster.mx;
     const y = monster.my;
@@ -3731,6 +3878,8 @@ export async function prepareMonsterPetrification(monster, { publish = plineWith
         await newsym(monster.mx, monster.my);
     return { changed: true, survived: false, remains };
 }
+// Part of C mon.c:monstone(): the petrification entry with its death
+// finisher.
 export async function finishMonsterPetrification(monster, { finishDeath, publish = plineWithContinuation, } = {}) {
     const result = await prepareMonsterPetrification(monster, { publish });
     if (result.heroDied || result.survived)
@@ -3742,6 +3891,7 @@ export async function finishMonsterPetrification(monster, { finishDeath, publish
         return { heroDied: true };
     return result;
 }
+// Part of C mon.c:monstone(): the engulfer's escape line.
 // monstone() describes escape after mondead() has released the hero, using
 // the monster's final species and the statue or rock it actually left.
 export async function describeStoneEngulferEscape(monster, remains, state, publish) {
@@ -3904,6 +4054,7 @@ export async function respondMedusa(monster, options = {}) {
     const gaze = (MONSTER_ATTACKS[monster.mnum] || []).find(([method]) => method === AT_GAZE);
     return gaze ? resolveMonsterGaze(monster, gaze, options) : undefined;
 }
+// C mon.c:m_respond():
 // ── C mon.c:m_respond(), shared by dochug() and immediate monster magic.
 // C mon.c:m_respond(), shared by dochug() and immediate monster magic.
 // C mon.c:m_respond_shrieker(): a non-deaf hero next to the fungus hears
@@ -3959,12 +4110,14 @@ const POLYMORPH_IMMUNE_MONSTERS = new Set([
 const PLACEHOLDER_MONSTERS = new Set([
     'orc', 'giant', 'elf', 'human',
 ].map(monsterIndexByName));
+// Port only: resolves a species name to its index; C uses PM_ constants.
 export function monsterIndexByName(name) {
     const mnum = MONSTER_NAME.indexOf(name);
     if (mnum < 0)
         throw new Error(`Unknown monster identity: ${name}`);
     return mnum;
 }
+// C mon.c:accept_newcham_form():
 function acceptsShapechangerForm(baseMnum, targetMnum) {
     if (!Number.isInteger(targetMnum) || targetMnum < 0
         || speciesWasGenocided(targetMnum, game) || PLACEHOLDER_MONSTERS.has(targetMnum))
@@ -3973,6 +4126,7 @@ function acceptsShapechangerForm(baseMnum, targetMnum) {
         return true;
     return polyok(targetMnum);
 }
+// Part of C mon.c:select_newcham_form(): the fifty-attempt random fallback.
 // C select_newcham_form()'s fifty-attempt fallback draws with validspecmon():
 // accept_newcham_form() plus the notake/nohead restriction that keeps
 // shopkeepers, priests, vault guards, and the quest leader in bodies that
@@ -3991,10 +4145,13 @@ function randomShape(monster, baseMnum) {
         && !/^[A-Z]$/.test(monsterClassSymbol(targetMnum)));
     return targetMnum;
 }
+// Part of C mon.c:select_newcham_form(): the worn-dragon-scale form.
 function dragonArmorForm(monster) {
     const armor = (monster?.minvent || monster?.inventory || []).find(object => ((object.owornmask ?? 0) & W_ARM) !== 0);
     return dragonFormForArmor(armor);
 }
+// Part of C mon.c:select_newcham_form(): the ordinary twenty-attempt
+// selection.
 function selectOrdinaryPolymorphForm(monster) {
     const armorForm = dragonArmorForm(monster);
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
@@ -4008,6 +4165,7 @@ function selectOrdinaryPolymorphForm(monster) {
     }
     return null;
 }
+// Part of C mon.c:select_newcham_form(): the doppelganger case.
 // C select_newcham_form()'s doppelganger case alone; -1 falls through to
 // the shared random pick like native NON_PM.
 async function pickDoppelgangerChamForm(monster) {
@@ -4036,10 +4194,14 @@ async function pickDoppelgangerChamForm(monster) {
     }
     return targetMnum;
 }
+// Part of C mon.c:select_newcham_form(): one doppelganger attempt with the
+// random fallback.
 async function selectDoppelgangerFormOnce(monster) {
     const targetMnum = await pickDoppelgangerChamForm(monster);
     return targetMnum < 0 ? randomShape(monster, PM_DOPPELGANGER) : targetMnum;
 }
+// Part of C mon.c:select_newcham_form(): the doppelganger twenty-attempt
+// loop.
 async function selectDoppelgangerForm(monster) {
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = await selectDoppelgangerFormOnce(monster);
@@ -4050,6 +4212,7 @@ async function selectDoppelgangerForm(monster) {
     }
     return null;
 }
+// Part of C mon.c:select_newcham_form(): the chameleon branch.
 function selectChameleonForm(monster) {
     const animals = chameleonAnimals();
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
@@ -4069,6 +4232,7 @@ function chameleonAnimals() {
     return Array.from({ length: SPECIAL_PM }, (_, mnum) => mnum)
         .filter(mnum => monsterIsAnimal({ mnum }));
 }
+// C mon.c:pick_animal():
 // C pick_animal() gives the Rogue level one extra animal draw. newcham()
 // then applies its usual first-five-attempt uppercase preference.
 function pickAnimalShape(animals) {
@@ -4081,6 +4245,7 @@ function pickAnimalShape(animals) {
         throw new RangeError('Chameleon selection is outside its animal list');
     return species;
 }
+// Part of C mon.c:select_newcham_form(): the sandestin branch.
 function selectSandestinForm(monster) {
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = rn2(7)
@@ -4093,6 +4258,7 @@ function selectSandestinForm(monster) {
     }
     return null;
 }
+// Part of C mon.c:newcham(): the new form's gender.
 export function shapechangerGender(baseMnum, targetMnum, female) {
     if (is_male(targetMnum))
         return false;
@@ -4138,10 +4304,13 @@ function pickVampireShape(monster) {
         return baseMnum;
     return targetMnum;
 }
+// C youprop.h:Protection_from_shape_changers():
 function shapechangerProtectionActive() {
     return !!(game.u?.protectionFromShapeChangers
         || game.protectionFromShapeChangers);
 }
+// Part of C mondata.h:is_shapeshifter(): the cham test; the macro's port is
+// is_shapeshifter in mondata.ts.
 function naturalShapechanger(mnum) {
     return is_shapeshifter(mnum);
 }
@@ -4254,6 +4423,8 @@ async function wizForceChamForm(monster, state) {
     }
     return mnum;
 }
+// Part of C mon.c:select_newcham_form(): the cham-specific draws under
+// monpolycontrol.
 // C select_newcham_form()'s switch under monpolycontrol: the cham-specific
 // draw still consumes its random calls, then the wizard answer overrides it.
 async function drawChamFormForControl(monster, baseMnum) {
@@ -4276,6 +4447,7 @@ async function drawChamFormForControl(monster, baseMnum) {
         dragonArmorForm(monster);
     }
 }
+// Part of C mon.c:newcham(): the controlled-form accept loop.
 // C newcham()'s twenty-attempt accept loop around select_newcham_form(),
 // taken when the player runs monpolycontrol. A rejected answer re-prompts.
 async function selectControlledForm(monster, baseMnum, state) {
@@ -4367,6 +4539,7 @@ export async function restartMonsterShapechanging(state = game) {
         }
     }
 }
+// Part of C mon.c:newcham(): dropping boulders the new form cannot carry.
 async function dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publish) {
     if (monsterThrowsRocks(monster.mnum))
         return [];
@@ -4386,6 +4559,7 @@ async function dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publi
     }
     return dropped;
 }
+// Part of C mon.c:newcham(): assigning the new body's stats and identity.
 async function initialShapechangedMonster(monster, targetMnum) {
     const baseMnum = monster.mnum;
     const female = shapechangerGender(baseMnum, targetMnum, !!monster.female);
@@ -4422,6 +4596,7 @@ async function initialShapechangedMonster(monster, targetMnum) {
         await initializeMonsterWormBody(monster);
     return monster;
 }
+// Part of C makemon.c:makemon(): birthing a shapechanger through newcham.
 export async function initialShapechangedBirth(monster) {
     const baseMnum = monster?.mnum;
     if (!naturalShapechanger(baseMnum) || shapechangerProtectionActive())
@@ -4673,12 +4848,15 @@ async function refreshNewMonsterFormPerception(monster, state, publish) {
             state, turns: rn1(9, 2), first: true, announce: true, publish,
         });
 }
+// Part of C mon.c:decide_to_shapeshift(): the out-of-sight test for
+// shifting.
 function vampireMayShiftOutOfSight(monster, state) {
     const visible = canSeeMonster(monster);
     const dx = monster.mx - (state.u?.ux ?? monster.mx);
     const dy = monster.my - (state.u?.uy ?? monster.my);
     return !visible || dx * dx + dy * dy > BOLT_LIM * BOLT_LIM;
 }
+// C mon.c:decide_to_shapeshift():
 export async function decideMonsterShapeChange(monster, state = game, random = rn2, { publish = plineWithContinuation } = {}) {
     const baseMnum = monster.cham !== undefined
         && Number.isInteger(monster.cham) && monster.cham >= 0
@@ -4780,6 +4958,7 @@ const UNSCENTED_SPECIES = new Set([
     103, // black unicorn
     316, // jellyfish
 ]);
+// Part of C mon.c:usmellmon(): the orc-attraction test.
 // C maybe_polyd(is_orc(gy.youmonst.data), Race_if(PM_ORC)): a polymorphed
 // hero smells like the current form, an unpolymorphed one like the race.
 function heroSmellsAttractiveToOrcs(state) {
@@ -4863,6 +5042,7 @@ export async function seeNearbyMonsters(state = game) {
         }
     }
 }
+// C mon.c:see_monster_closeup():
 export async function seeMonsterCloseup(monster, { photo = false, onHead = true, state = game } = {}) {
     requireLiveGame(state);
     if (heroIsHallucinating(state) || heroIsBlind(state) && !state.u.telepathy)
@@ -4899,6 +5079,7 @@ export async function seeMonsterCloseup(monster, { photo = false, onHead = true,
         await checkExperienceLevel();
     }
 }
+// Port only: resolves a species' mvitals record.
 function speciesVitals(state, species) {
     const vitals = state.mvitals || (state.mvitals = []);
     return vitals[species] ?? (vitals[species] = { mvflags: 0, born: 0, died: 0 });
@@ -4912,6 +5093,8 @@ const HUMAN_WERE_SPECIES = new Map([
     [21, 263], // werewolf, human werewolf
     [91, 261], // wererat, human wererat
 ]);
+// Part of C mon.c:mondead(): restoring a shapechanger's or were-creature's
+// true species.
 export function restoreMonsterTrueSpecies(monster) {
     const storedSpecies = monster.cham !== undefined
         && Number.isInteger(monster.cham) && monster.cham >= 0
@@ -4928,11 +5111,13 @@ export function restoreMonsterTrueSpecies(monster) {
 }
 // C mon.c:m_in_air(): is_flyer() || is_floater() || (is_clinger()
 // && has_ceiling() && mundetected).
+// Part of C mon.c:m_in_air(): the flyer-or-floater test.
 export function monsterFliesOrFloats(monster) {
     if (!monster)
         return false;
     return monsterIsFlyer(monster.mnum) || monsterIsFloater(monster.mnum);
 }
+// C mon.c:m_in_air():
 export function monsterInAir(monster, state = game) {
     if (!monster)
         return false;
@@ -4993,6 +5178,7 @@ export function eggTypeFromParent(parent) {
         return PM_GARGOYLE;
     return parent;
 }
+// C mon.c:valid_vampshiftform():
 // C ref: mon.c:valid_vampshiftform().
 export function validVampireShiftForm(base, form) {
     return monsterIsVampire(base)

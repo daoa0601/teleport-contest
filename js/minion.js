@@ -44,6 +44,8 @@ const PM_ORCUS = MONSTER_NAME.indexOf('Orcus');
 const PM_DEMOGORGON = MONSTER_NAME.indexOf('Demogorgon');
 const ELEMENTALS = ['air elemental', 'fire elemental', 'earth elemental', 'water elemental'].map((name) => MONSTER_NAME.indexOf(name));
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+// Part of C minion.c:summon_minion(): the ROLL_FROM elementals pick for a
+// neutral summons.
 function summonedElemental() {
     const mnum = ELEMENTALS[rn2(ELEMENTALS.length)];
     if (mnum === undefined)
@@ -158,18 +160,24 @@ export async function demandDemonBribe(monster, state, random = rn2, rollOne = r
     await removeMonsterFromGame(monster);
     return true;
 }
+// Part of C minion.c:dprince(), minion.c:dlord(): the genocided-or-extinct
+// candidate test.
 function monsterIsGone(mnum) {
     return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);
 }
+// Part of C minion.c:dprince(), minion.c:dlord(): the alignment candidate
+// test.
 function matchesAlignment(mnum, alignment) {
     return alignment === A_NONE || Math.sign(MONSTER_ALIGNMENT[mnum] ?? 0) === Math.sign(alignment);
 }
+// C minion.c:ndemon():
 export function normalDemon(alignment) {
     const mnum = mkclassAligned(S_DEMON, 0, alignment);
     if (mnum == null)
         return null;
     return is_ndemon(mnum) ? mnum : null;
 }
+// C minion.c:dlord():
 export function demonLord(alignment) {
     const attempts = In_endgame(game.u?.uz) ? 0 : 20;
     for (let left = attempts; left > 0; left--) {
@@ -179,6 +187,7 @@ export function demonLord(alignment) {
     }
     return normalDemon(alignment);
 }
+// C minion.c:dprince():
 function demonPrince(alignment) {
     const attempts = In_endgame(game.u?.uz) ? 0 : 20;
     for (let left = attempts; left > 0; left--) {
@@ -188,6 +197,7 @@ function demonPrince(alignment) {
     }
     return demonLord(alignment);
 }
+// C minion.c:lminion():
 function lawfulMinion() {
     for (let attempts = 20; attempts > 0; attempts--) {
         const mnum = mkclassAligned(27, 0, A_NONE);
@@ -196,9 +206,11 @@ function lawfulMinion() {
     }
     return null;
 }
+// C minion.c:llord():
 function lawfulLord() {
     return monsterIsGone(PM_ARCHON) ? lawfulMinion() : PM_ARCHON;
 }
+// Part of C minion.c:msummon(): the summoner's alignment.
 function summonerAlignment(monster) {
     if (monster?.ispriest)
         return monster.epri?.shralign ?? monster.mextra?.epri?.shralign ?? A_NONE;
@@ -207,6 +219,7 @@ function summonerAlignment(monster) {
     const alignment = MONSTER_ALIGNMENT[monster?.mnum ?? PM_WIZARD_OF_YENDOR] ?? A_NONE;
     return alignment === A_NONE ? A_NONE : Math.sign(alignment);
 }
+// Part of C minion.c:msummon(): the summoned-type selection chain.
 function summonedType(monster, alignment) {
     const mnum = monster?.mnum ?? PM_WIZARD_OF_YENDOR;
     if ((is_dprince(mnum)) || mnum === PM_WIZARD_OF_YENDOR) {
@@ -253,6 +266,8 @@ function summonedType(monster, alignment) {
     }
     return { mnum: null, double: null };
 }
+// C mondata.c:msummon_environ(): the "appears in a <cloud> of <what>"
+// description.
 function summonEnvironment(monster) {
     if (MONSTER_SYMBOL[monster.mnum] === 27 || MONSTER_SYMBOL[monster.mnum] === 25)
         return 'flash of light';
@@ -280,11 +295,13 @@ function summonEnvironment(monster) {
             return 'cloud of smoke';
     }
 }
+// C minion.c:monster_census():
 export function monsterCensus(spotted = false) {
     return requireGameLevel().monsters.filter(monster => monster.mhp > 0
         && !(monster.isgd && monster.mx === 0)
         && (!spotted || canSpotMonster(monster))).length;
 }
+// C minion.c:msummon():
 export async function msummon(monster = null) {
     const weapon = game.uwep || game.u?.uwep;
     if (monster &&
@@ -450,6 +467,8 @@ export async function gainGuardianAngel(state = requireInitializedGame()) {
         await initializeMonsterArmor(angel, state);
     }
 }
+// Part of C minion.c:gain_guardian_angel(), minion.c:lose_guardian_angel():
+// creating the angel through enexto and mk_roamer.
 async function createGuardianAngel(peaceful, state) {
     const position = enexto(PM_ANGEL, state.u.ux, state.u.uy, { state });
     if (!position)

@@ -39,6 +39,7 @@ export const PM_SOLDIER = 277;
 const PM_SERGEANT = 278;
 const PM_LIEUTENANT = 280;
 const PM_CAPTAIN = 281;
+// C mkroom.c:search_special():
 // C search_special(): search ordinary rooms first, then their subrooms.
 export function searchSpecial(type, state = game) {
     for (const rooms of [state.level?.rooms ?? [], state.level?.subrooms ?? []]) {
@@ -103,12 +104,15 @@ export function cmapToType(symbol) {
         default: return STONE;
     }
 }
+// C mkroom.c:somex():
 export function somex(room) {
     return rn1(room.hx - room.lx + 1, room.lx);
 }
+// C mkroom.c:somey():
 export function somey(room) {
     return rn1(room.hy - room.ly + 1, room.ly);
 }
+// C mklev.c:occupied():
 export function occupied(x, y, state = game) {
     const location = state.level?.at?.(x, y);
     if (!location)
@@ -117,6 +121,7 @@ export function occupied(x, y, state = game) {
     return !!(trapped || IS_FURNITURE(location.typ)
         || isPoolOrLavaAt(x, y, state));
 }
+// C mkroom.c:somexy():
 export function somexy(room, coordinate, state = game) {
     if (room.irregular) {
         const roomNumber = (room.roomnoidx ?? -1) + ROOMOFFSET;
@@ -157,6 +162,7 @@ export function somexy(room, coordinate, state = game) {
     }
     return false;
 }
+// C mkroom.c:somexyspace():
 export function somexyspace(room, coordinate, state = game) {
     let attempts = 0;
     let valid;
@@ -171,6 +177,8 @@ export function somexyspace(room, coordinate, state = game) {
     } while (attempts++ < 100 && !valid);
     return !!valid;
 }
+// C mkroom.c:has_upstairs():
+// Also C mkroom.c:has_dnstairs(): merged into one direction parameter.
 export function roomHasStair(croom, up) {
     for (let stair = game.stairs; stair; stair = stair.next) {
         if (!!stair.up !== !!up)
@@ -332,6 +340,8 @@ async function makeRandomTemple(room) {
     level.flags.has_temple = true;
     return true;
 }
+// Part of C mkroom.c:do_mkroom(), mkroom.c:mkzoo(): the special-room type
+// dispatch and the rtype-with-needfill marking.
 export async function markRandomSpecialRoom(roomType) {
     if (roomType === SWAMP)
         return makeSwamps();
@@ -386,6 +396,7 @@ async function makeSwamps() {
     }
     return madeSwamp;
 }
+// C mkroom.c:nexttodoor():
 function swampSquareBordersDoor(x, y) {
     const level = requireGameLevel();
     for (let dx = -1; dx <= 1; dx++) {
@@ -399,6 +410,7 @@ function swampSquareBordersDoor(x, y) {
     }
     return false;
 }
+// C mkroom.c:fill_zoo():
 export async function fillZooRoom(room) {
     const level = requireGameLevel();
     // C ref: mkroom.c fill_zoo(), ZOO branch.  Irregular-room membership and
@@ -478,6 +490,7 @@ export function antholeMonsterType() {
     }
     return null;
 }
+// C mkroom.c:courtmon():
 export function courtMonsterType() {
     const roll = rn2(60) + rn2(3 * level_difficulty());
     if (roll > 100)
@@ -591,6 +604,7 @@ export async function fillCourtRoom(room) {
     chest.spe = 2;
     level.flags.has_court = true;
 }
+// C mkroom.c:mkundead():
 export async function makeUndeadNear(x, y, { state = game, reviveCorpses = false, flags = 0 } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -632,6 +646,7 @@ export function morgueMonsterType() {
         return 230; // PM_WRAITH
     return mkclass(52, 0); // S_ZOMBIE
 }
+// Part of C mkroom.c:fill_zoo(): the MORGUE branch.
 export async function fillMorgueRoom(room) {
     const level = requireGameLevel();
     const entrance = room.doorct ? level.doors[room.fdoor] : null;
@@ -693,6 +708,7 @@ function barracksMonsterType() {
     return ((game.mvitals?.[mndx]?.mvflags ?? 0) & 0x03)
         ? null : mndx;
 }
+// Part of C mkroom.c:fill_zoo(): the BARRACKS branch.
 export async function fillBarracksRoom(room) {
     const level = requireGameLevel();
     const entrance = room.doorct ? level.doors?.[room.fdoor] : null;

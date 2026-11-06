@@ -44,6 +44,8 @@ export async function objectAtMapDescription(
     }, state) ?? 'something';
 }
 
+// C pager.c:object_from_map(): lends the caller the real object or a
+// temporary sample, freeing only the sample.
 // object_from_map lends the caller either a real object or a temporary
 // sample. Only the sample is freed after the caller finishes using it.
 export async function withMapObject<T>(
@@ -104,6 +106,8 @@ export async function withMapObject<T>(
     }
 }
 
+// Part of C pager.c:look_at_object(): the placement-suffix tail — buried,
+// tree, stone, wall, door, water, lava.
 function placementSuffix(object: GameObject | null, x: number, y: number, state: GameState): string {
     const level = requireGameLevel(state);
     const location = level.requireAt(x, y);

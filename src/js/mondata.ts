@@ -95,6 +95,7 @@ const MONSTER_CLASS_NAMES: readonly string[] = [
     'lizard', 'long worm tail', 'mimic',
 ];
 
+// Part of C mondata.c:name_to_monplus(): resolving a canonical species name.
 function canonicalMonsterNumber(name: string) {
     return MONSTER_NAME.findIndex(candidate =>
         candidate?.toLowerCase() === name.toLowerCase());
@@ -163,10 +164,12 @@ const MONSTER_NAME_ALIASES = new Map<string, MonsterNameMatch>(MONSTER_NAME_ALIA
     { mnum: typeof target === 'number' ? target : canonicalMonsterNumber(target), gender },
 ]));
 
+// Part of C mondata.c:name_to_monplus(): stripping the leading article.
 function withoutMonsterArticle(value: string) {
     return value.replace(/^(?:a|an|the) /, '');
 }
 
+// Part of C mondata.c:name_to_monplus(): the plural-to-singular folding.
 function normalizeMonsterName(value: string) {
     let name = withoutMonsterArticle(value).toLowerCase();
     const vortices = name.indexOf('vortices');
@@ -177,11 +180,13 @@ function normalizeMonsterName(value: string) {
     return name;
 }
 
+// Part of C mondata.c:name_to_monplus(): the trailing-suffix acceptance.
 function acceptedNameRemainder(remainder: string) {
     return !remainder || remainder.startsWith(' ')
         || /^(?:s|es|'|'s)(?: |$)/.test(remainder);
 }
 
+// Part of C mondata.c:name_to_monplus(): the per-species name candidates.
 function monsterNames(mnum: number) {
     const neutral = MONSTER_NAME[mnum]?.toLowerCase() ?? '';
     const male = monsterTypeName(mnum, false).toLowerCase();
@@ -195,15 +200,18 @@ function monsterNames(mnum: number) {
     return names.filter(candidate => candidate.name.length > 0);
 }
 
+// C mondata.c:name_to_mon():
 export function nameToMonster(value: string) {
     return resolveMonsterName(value)?.mnum ?? -1;
 }
 
+// Part of C mondata.c:name_to_monplus(): the mnum-and-gender pair result.
 export function resolveMonsterName(value: string): MonsterNameMatch | null {
     const match = resolveMonsterNamePrefix(value);
     return match ? { mnum: match.mnum, gender: match.gender } : null;
 }
 
+// C mondata.c:name_to_monplus():
 // name_to_monplus() lets wishes retain the object noun after a monster name.
 export function resolveMonsterNamePrefix(value: string): MonsterNamePrefix | null {
     const requested = normalizeMonsterName(value);
@@ -239,6 +247,7 @@ export function resolveMonsterNamePrefix(value: string): MonsterNamePrefix | nul
     } : null;
 }
 
+// Part of C mondata.c:name_to_monclass(): the class-description word match.
 function classDescriptionMatches(description: string, wanted: string) {
     const start = description.toLowerCase().indexOf(wanted);
     if (start < 0 || (start > 0 && description[start - 1] !== ' '))
@@ -247,10 +256,12 @@ function classDescriptionMatches(description: string, wanted: string) {
     return end === description.length || description[end] === ' ';
 }
 
+// C mondata.c:name_to_monclass():
 export function nameToMonsterClass(value: string) {
     return resolveMonsterClass(value).monsterClass;
 }
 
+// C mondata.c:name_to_monclass():
 // name_to_monclass() can identify one species as well as its class.
 export function resolveMonsterClass(value: string): MonsterClassMatch {
     const raw = value;
@@ -310,6 +321,7 @@ const DRAGON_DEFENSE: Partial<Record<DamageType, number>> = {
 const FIRST_DRAGON = MONSTER_NAME.indexOf('gray dragon');
 const LAST_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
 
+// Part of C mondata.c:defended(): the damage-type form.
 export function monsterCombatDefense(
     monster: Monster, damageType: DamageType, state: GameState = game,
 ): boolean {
@@ -335,6 +347,7 @@ const SCALE_DEFENDING_DRAGON: Partial<Record<NonNullable<ArtifactDefenseQuery>, 
     hallucination: 'gold dragon',
 };
 
+// C mondata.c:defended(): the artifact-defense-query form.
 export function monsterWieldsOrWearsDefense(
     monster: ArtifactDefender | null | undefined,
     damageType: ArtifactDefenseQuery,
@@ -504,6 +517,7 @@ export function monsterPassesBars(monster: Pick<Monster, 'mnum'>): boolean {
         || metallivorous(mnum) || (monsterIsSlithy(mnum) && !monsterIsBig(mnum));
 }
 
+// Part of C mondata.c:passes_bars(): the rust-and-corrode bars test.
 export function monsterCorrodesBars(monster: Pick<Monster, 'mnum'>): boolean {
     return (MONSTER_ATTACKS[monster.mnum] ?? []).some(([, damage]) => damage === AD_RUST || damage === AD_CORR);
 }
@@ -512,6 +526,7 @@ export function monsterCorrodesBars(monster: Pick<Monster, 'mnum'>): boolean {
 const M1_BREATHLESS = 0x400, M1_NOHEAD = 0x8000;
 const MS_SILENT = 0, MS_BUZZ = 10, MS_BURBLE = 16, MZ_SMALL = 1, S_EEL = 57;
 
+// Part of C mondata.c:can_blow(): the species half.
 export function speciesCanBlow(mnum: number): boolean {
     const sound = requireMonsterData(MONSTER_SOUND, mnum);
     if (sound !== MS_SILENT && sound !== MS_BUZZ) return true;
@@ -565,6 +580,7 @@ function species(name: string) {
     return MONSTER_NAME.indexOf(name);
 }
 
+// Port only: resolves a species' class symbol for the same_race tables.
 function symbol(name: string) {
     return requireMonsterData(MONSTER_SYMBOL, species(name));
 }
@@ -583,6 +599,7 @@ const longWorms = new Set([species('baby long worm'), species('long worm'),
     species('long worm tail')]);
 const TENGU = species('tengu');
 
+// C mondata.c:same_race():
 export function sameMonsterRace(left: number, right: number): boolean {
     if (left === right) return true;
     const leftClass = requireMonsterData(MONSTER_SYMBOL, left);
@@ -636,6 +653,7 @@ export function sameMonsterRace(left: number, right: number): boolean {
 // when its name is hidden or hallucinated.
 const M1_NOLIMBS = 0x00006000;
 
+// C mondata.c:locomotion():
 export function monsterLocomotion(mnum: number, fallback: string): string {
     let verb = fallback;
     if (monsterIsFloater(mnum)) verb = 'float';
@@ -694,6 +712,7 @@ const OLFACTIONLESS_SYMBOLS = new Set([
     55, // S_GOLEM
 ]);
 
+// C mondata.c:olfaction():
 export function heroHasOlfaction(state = game) {
     const form = heroMonsterForm(state);
     if (form === null) return true;
@@ -725,6 +744,8 @@ export function seenResistanceForProperty(property: PropertyName): number {
     return M_SEEN_BY_PROPERTY[property] ?? M_SEEN_NOTHING;
 }
 
+// Part of C mondata.c:monstseesu(), mondata.c:monstunseesu(): the shared
+// m_canseeu loop.
 // monstseesu() and monstunseesu() share this loop: every living monster
 // which could see the hero (m_canseeu) gets the resistance update.
 function monstersThatCanSeeHero(state: GameState, canSeeHero: ((monster: Monster) => boolean) | null): Monster[] {
@@ -818,58 +839,69 @@ const ARTIFACT_BY_ID = new Map(
     ARTIFACT_DATA.map(artifact => [artifact.id, artifact]),
 );
 
+// Port only: resolves an artifact by its id; C indexes artilist.
 function artifactForObject(object: GameObject | null | undefined) {
     return object?.oartifact === undefined ? null : ARTIFACT_BY_ID.get(object.oartifact) || null;
 }
 
+// Port only: the minvent accessor.
 function monsterInventory(monster: ResistantMonster | null | undefined): GameObject[] {
     return monster?.minvent || monster?.inventory || [];
 }
 
+// Port only: the wielded-weapon accessor; C uses MON_WEP.
 function monsterWeapon(monster: ResistantMonster | null | undefined): GameObject | undefined {
     return monster?.mw || monsterInventory(monster).find(object =>
         object?.wielded || ((object?.owornmask ?? 0) & W_WEP));
 }
 
+// Port only: the worn-type test the resistance checks share.
 function monsterWearsOneOf(monster: ResistantMonster | null | undefined, objectTypes: readonly number[], mask: number): boolean {
     return (monster?.minvent || monster?.inventory || []).some(object =>
         objectTypes.includes(object?.otyp)
         && !!((object?.owornmask ?? 0) & mask));
 }
 
+// Part of C mondata.c:Resists_Elem(): the combined resistance bits.
 export function monsterResistanceBits(monster: ResistantMonster | null | undefined): number {
     if (!monster) return 0;
     return (MONSTER_RESISTS[monster.mnum] ?? 0)
         | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
 }
 
+// Part of C mondata.c:Resists_Elem(): the artifact defense halves.
 function monsterArtifactDefends(monster: ResistantMonster | null | undefined, element: 'fire' | 'cold' | 'shock' | 'poison'): boolean {
     return artifactForObject(monsterWeapon(monster))?.defense === element
         || monsterInventory(monster).some(object =>
             artifactForObject(object)?.carriedDefense === element);
 }
 
+// C monst.h:resists_fire():
 export function monsterHasFireResistance(monster: ResistantMonster | null | undefined): boolean {
     return !!(monsterResistanceBits(monster) & MR_FIRE)
         || monsterArtifactDefends(monster, 'fire');
 }
 
+// C monst.h:resists_cold():
 export function monsterHasColdResistance(monster: ResistantMonster | null | undefined): boolean {
     return !!(monsterResistanceBits(monster) & MR_COLD)
         || monsterArtifactDefends(monster, 'cold');
 }
 
+// C monst.h:resists_elec():
 export function monsterHasShockResistance(monster: ResistantMonster | null | undefined): boolean {
     return !!(monsterResistanceBits(monster) & MR_ELECTRIC)
         || monsterArtifactDefends(monster, 'shock');
 }
 
+// C monst.h:resists_disint():
 export function monsterHasDisintegrationResistance(monster: ResistantMonster | null | undefined): boolean {
     return !!(monsterResistanceBits(monster) & MR_DISINTEGRATION)
         || monsterWearsOneOf(monster,
             [BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES], W_ARM);
 }
 
+// C mondata.c:resists_drli():
 export function monsterHasDrainResistance(monster: ResistantMonster | null | undefined): boolean {
     if (!monster) return false;
     return (monsterIsUndead(monster.mnum) || is_were(monster.mnum) || monsterIsDemon(monster.mnum))
@@ -883,6 +915,7 @@ export function monsterHasDrainResistance(monster: ResistantMonster | null | und
             ], W_ARM));
 }
 
+// Part of C mondata.c:resists_drli(): the youmonst form.
 // C resists_drli(&youmonst), not the broader Drain_resistance property.
 // Direct divine level loss does not accept a shield or generic intrinsic.
 export function heroResistsLifeDrain(state: GameState = game): boolean {
@@ -900,19 +933,23 @@ export function heroResistsLifeDrain(state: GameState = game): boolean {
         || artifactForObject(weapon)?.defense === 'life-drain';
 }
 
+// C monst.h:resists_acid():
 export function monsterHasAcidResistance(monster: ResistantMonster | null | undefined): boolean {
     return !!(monsterResistanceBits(monster) & MR_ACID);
 }
 
+// C monst.h:resists_poison():
 export function monsterHasPoisonResistance(monster: ResistantMonster | null | undefined): boolean {
     return !!(monsterResistanceBits(monster) & MR_POISON)
         || monsterArtifactDefends(monster, 'poison');
 }
 
+// C monst.h:resists_ston():
 export function monsterHasStoneResistance(monster: ResistantMonster | null | undefined): boolean {
     return !!(monsterResistanceBits(monster) & MR_STONE);
 }
 
+// C monst.h:resists_sleep():
 // C include/monst.h:274 resists_sleep() over mondata.c Resists_Elem(),
 // with the mondata.c:91 defended(mon, AD_SLEE) half of the caller checks.
 export function monsterResistsSleep(monster: Monster): boolean {
@@ -920,6 +957,7 @@ export function monsterResistsSleep(monster: Monster): boolean {
         || !!monster?.defendedSleep;
 }
 
+// C monst.h:helpless():
 // C include/monst.h:251 helpless().
 export function monsterIsHelpless(monster: Monster): boolean {
     return !!(monster.msleeping
@@ -937,6 +975,7 @@ export function levelFollower(monster: Monster, state: GameState): boolean {
         && (!monster.mflee || !!state.u.uhave?.amulet);
 }
 
+// C mondata.c:poly_when_stoned():
 export function monsterPolymorphsWhenStoned(monster: Pick<Monster, 'mnum'>): boolean {
     return formCanBecomeStoneGolem(monster.mnum, game);
 }
@@ -959,15 +998,18 @@ export function monsterPossessive(monster: Monster, { state = game, random = rn2
     return POSSESSIVE_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
 }
 
+// Part of C you.h:mhe(): the subject pronoun through pronoun_gender.
 export function monsterSubjectPronoun(monster: Monster, { state = game, noIt = false }: Pick<PronounOptions, 'state' | 'noIt'> = {}): string {
     return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state, noIt })];
 }
 
+// Part of C you.h:mhim(): the object pronoun through pronoun_gender.
 // The same perceived gender, in the object case.
 export function monsterObjectPronoun(monster: Monster, { state = game, random = rn2, noIt = false }: PronounOptions = {}): string {
     return OBJECT_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
 }
 
+// C mondata.c:pronoun_gender():
 export function monsterPronounGender(monster: Monster, { state = game, random = rn2, noIt = false }: PronounOptions = {}): PronounGender {
     requireLiveGame(state);
     if (heroIsHallucinating(state)) {
@@ -1006,6 +1048,7 @@ const M1_NOEYES = 0x00001000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
 
+// C mondata.c:mon_knows_traps():
 export function monsterKnowsTrap(
     monster: Pick<Monster, 'mtrapseen'>, trap: Pick<Trap, 'ttyp'>,
 ): boolean {
@@ -1015,6 +1058,7 @@ export function monsterKnowsTrap(
     return (known & (1 << (trap.ttyp - 1))) !== 0;
 }
 
+// C mondata.c:mon_learns_traps():
 export function monsterLearnsTrap(monster: Pick<Monster, 'mtrapseen'>, trap: Pick<Trap, 'ttyp'> | null | undefined): void {
     if (!trap) return;
     if (trap.ttyp === -1) monster.mtrapseen = -1;
@@ -1059,6 +1103,7 @@ export function speciesCannotVomit(mnum: number): boolean {
     return mnum === PM_PONY || mnum === PM_HORSE || mnum === PM_WARHORSE;
 }
 
+// Part of C mondata.c:cantvomit(): the youmonst form.
 // mondata.c:cantvomit(gy.youmonst.data) for the hero's current form.
 export function heroCannotVomit(state: GameState) {
     const form = heroMonsterForm(state);
@@ -1285,14 +1330,17 @@ export function monsterIsCovetous(monster: SpeciesReference, state: GameState = 
     return !!(questMonsterFlags3(monster.mnum, state) & 0x001f);
 }
 
+// Port only: the plain-human species test; C compares mons[PM_HUMAN] inline.
 export function monsterIsPlainHuman(mnum: number) {
     return mnum === PM_HUMAN;
 }
 
+// Port only: the MS_NEMESIS test C callers apply inline.
 export function monsterIsQuestNemesis(mnum: number) {
     return questMonsterSound(mnum) === MS_NEMESIS;
 }
 
+// Port only: the MS_GUARDIAN test C callers apply inline.
 export function monsterIsQuestGuardian(mnum: number) {
     return MONSTER_SOUND[mnum] === MS_GUARDIAN;
 }
@@ -1432,14 +1480,17 @@ export function monsterIsSlithy(mnum: number) {
     return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY);
 }
 
+// Port only: the S_CENTAUR test C callers apply inline.
 export function monsterIsCentaur(mnum: number) {
     return MONSTER_SYMBOL[mnum] === S_CENTAUR;
 }
 
+// Port only: the S_KOP test C callers apply inline.
 export function monsterIsKop(mnum: number) {
     return MONSTER_SYMBOL[mnum] === S_KOP;
 }
 
+// Port only: the S_EEL test C callers apply inline.
 export function monsterIsEel(mnum: number) {
     return MONSTER_SYMBOL[mnum] === S_EEL;
 }
@@ -1529,6 +1580,7 @@ export function monsterIsHumanoid(mnum: number) {
     return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID);
 }
 
+// C obj.h:WrappingAllowed():
 export function monsterWrappingAllowed(mnum: number) {
     const size = MONSTER_SIZE[mnum] ?? 0;
     return monsterIsHumanoid(mnum)
@@ -1589,12 +1641,14 @@ export function monsterSpeciesSticks(mnum: number) {
         || attacks.some(([attackType]) => attackType === AT_HUGS);
 }
 
+// Part of C mondata.c:attacktype(): the AT_ENGL test.
 export function monsterCanEngulf(monster: SpeciesReference | null | undefined) {
     return (MONSTER_ATTACKS[monster?.mnum ?? -1] || []).some(
         ([attackType]) => attackType === AT_ENGL,
     );
 }
 
+// C monst.h:is_vampshifter():
 export function monsterIsVampireShifter(monster: ShifterReference | null | undefined) {
     return monsterIsVampire(monster?.cham ?? -1);
 }
@@ -1639,6 +1693,7 @@ export function monsterIsRider(monster: SpeciesReference) {
     return RIDER_SPECIES.has(monster.mnum);
 }
 
+// Port only: the PM_SHADE test C callers apply inline.
 export function monsterIsShade(monster: SpeciesReference | null | undefined) {
     return monster?.mnum === PM_SHADE;
 }
@@ -2038,14 +2093,17 @@ const PM_MEDUSA = 284;
 
 export const PM_STONE_GOLEM = 257;
 
+// C mondata.h:touch_petrifies():
 export function touchPetrifies(mnum: number | undefined): mnum is typeof PM_CHICKATRICE | typeof PM_COCKATRICE {
     return mnum === PM_CHICKATRICE || mnum === PM_COCKATRICE;
 }
 
+// C mondata.h:flesh_petrifies():
 export function fleshPetrifies(mnum: number | undefined): mnum is typeof PM_CHICKATRICE | typeof PM_COCKATRICE | typeof PM_MEDUSA {
     return touchPetrifies(mnum) || mnum === PM_MEDUSA;
 }
 
+// C youprop.h:Stone_resistance():
 export function heroResistsStoning(state: GameState = game): boolean {
     return !!state.u?.stoneResistance;
 }
@@ -2059,12 +2117,14 @@ export function formCanBecomeStoneGolem(mnum: number | undefined, state: GameSta
         && !stoneGolemGenocided;
 }
 
+// Part of C eat.c:cprefx(): the petrifying-meal gate for the hero.
 export function heroWouldPetrifyFromFlesh(mnum: number | undefined, state: GameState = game): boolean {
     return fleshPetrifies(mnum)
         && !heroResistsStoning(state)
         && !(heroIsPolymorphed(state) && formCanBecomeStoneGolem(state.u?.umonnum, state));
 }
 
+// Port only: hero-versus-monster discriminator for shared combat code.
 export function isHeroDefender(defender: Hero | Monster, state: GameState): defender is Hero {
     return defender === state.u;
 }

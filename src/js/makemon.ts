@@ -202,7 +202,8 @@ function monsterGenerationOrder(): readonly number[] {
     return game._monsterGenerationOrder;
 }
 
-// C makemon.c:mk_gen_ok().
+// C makemon.c:mkclass_aligned(): the weighted class walk.
+// Also C makemon.c:mk_gen_ok(): the candidate screen is inlined here.
 export function mkclassAligned(monsterClass: number, spc = 0, atyp = A_NONE): number | null {
     const G_FREQ = 0x0007;
     const G_HELL = 0x0400;
@@ -272,6 +273,7 @@ export function mkclassAligned(monsterClass: number, spc = 0, atyp = A_NONE): nu
     return null;
 }
 
+// C makemon.c:mkclass(): thin wrapper delegating to mkclass_aligned.
 export function mkclass(monsterClass: number, spc = 0): number | null {
     return mkclassAligned(monsterClass, spc, A_NONE);
 }
@@ -294,8 +296,9 @@ function rndmonstAlignment(): number | null {
         : game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.alignment ?? null;
 }
 
-// C makemon.c:uncommon().
-// C makemon.c:temperature_shift().
+// Part of C makemon.c:rndmonst_adj(): the weighted reservoir sampling loop.
+// Also C makemon.c:uncommon(): inlined here.
+// Also C makemon.c:temperature_shift(): inlined here.
 function rndmonstReservoir(minAdjustment = 0, maxAdjustment = 0): number | null {
     const zlevel = level_difficulty();
     const heroLevel = game.u?.ulevel || 1;
@@ -368,6 +371,8 @@ function wrongElementalPlaneSpecies(mndx: number): boolean {
     return false;
 }
 
+// C makemon.c:rndmonst_adj(): the quest-monster shortcut branch; the
+// reservoir loop is rndmonstReservoir below.
 export function rndmonstAdj(minAdjustment = 0, maxAdjustment = 0): number | null {
     const dnum = game.u?.uz?.dnum ?? 0;
     if (game.dungeons?.[dnum]?.dname === 'The Quest' && rn2(7)) {
@@ -469,16 +474,20 @@ const M_INITWEAP_SWITCH_CLASSES = new Set([
     56, // S_DEMON
 ]);
 
+// C makemon.c:quest_mon_represents_role(): the file-top macro.
 function questMonsterRepresentsRole(mndx: number, role: 'priest' | 'monk'): boolean {
     return MONSTER_SYMBOL[mndx] === 53 && game.urole?.key === role
         && (MONSTER_SOUND[mndx] === 36 || MONSTER_SOUND[mndx] === 37);
 }
 
+// Part of C makemon.c:m_initweap(), makemon.c:m_initinv(): the shared
+// MS_PRIEST-or-cleric condition for the mace-and-robe equipment.
 function receivesClericEquipment(mndx: number): boolean {
     return MONSTER_SYMBOL[mndx] === 53
         && (MONSTER_SOUND[mndx] === 41 || questMonsterRepresentsRole(mndx, 'priest'));
 }
 
+// C rm.h:MON_AT(): positional occupancy test.
 function levelMonsterAt(x: number, y: number, ignore: Monster | null = null): Monster | undefined {
     // C MON_AT(x, y) is purely positional: a dying monster keeps its square
     // until m_detach, so mhp does not filter occupancy here.
@@ -580,6 +589,8 @@ export async function setMimicAppearance(monster: Monster): Promise<void> {
         block_point(monster.mx, monster.my);
 }
 
+// Part of C makemon.c:set_mimic_sym(): choosing the disguise before
+// assigning m_ap_type and mappearance.
 async function chooseMimicAppearance(x: number, y: number): Promise<{ type: number; appearance: number }> {
     const level = requireGameLevel();
     const object = (appearance: number) => ({ type: M_AP_OBJECT, appearance });
@@ -646,6 +657,7 @@ async function chooseMimicAppearance(x: number, y: number): Promise<{ type: numb
 // C makemon.c:set_malign(). Alignment value assigned to a live monster.
 const MS_LEADER = 36;
 
+// C makemon.c:set_malign():
 export function setMonsterMalign(monster: Monster, state: GameState = game): void {
     let alignment = monsterAlignmentValue(monster, state);
     if ((monster.ispriest || monster.isminion) && alignment !== A_NONE)
@@ -1687,6 +1699,8 @@ export async function makemon(
     return finishMonsterBirth(monster, mmflags);
 }
 
+// Port only: direct-coordinate entry point; C callers pass explicit x and y
+// to makemon itself.
 // Direct-coordinate creation for source callers which deliberately bypass
 // enexto(), such as savebones() creating the dead hero's ghost on u.ux/u.uy.
 export async function makemonAt(
@@ -1852,6 +1866,7 @@ export function newMonsterHitPoints(mnum: number): { level: number; hp: number }
     return { level, hp };
 }
 
+// C makemon.c:monhp_per_lvl(): HP gained or lost per level drain.
 export function monsterHitPointsPerLevel(monster: Pick<Monster, 'mnum' | 'm_lev'>, {
     rollOne = rnd,
     randomBelow = rn2,
@@ -1879,6 +1894,7 @@ const G_UNIQ_POPULATION = 0x1000;
 const MAXMONNO = 120;
 const PM_NAZGUL = MONSTER_NAME.indexOf('Nazgul');
 
+// C makemon.c:propagate():
 // Admission uses the previous count and flags. Ordinary makemon() ignores
 // the result and can explicitly create extinct species; ghostly restoration
 // rejects them and must not tally a rejected actor.
@@ -1894,6 +1910,8 @@ export function propagateMonsterSpecies(
     return next.admitted;
 }
 
+// Part of C makemon.c:propagate(): the pure birth-limit and extinction
+// computation, split out so ghostly restoration can reject without tallying.
 function speciesAfterBirth(
     species: number, vital: MonsterVital, tally: boolean, ghostly: boolean,
 ): { admitted: boolean; born: number; mvflags: number } {
@@ -1957,6 +1975,7 @@ export async function giveMonsterStartingObject(monster: Monster, type: number):
     return object.where === 'gone' ? null : object;
 }
 
+// C makemon.c:mkmonmoney():
 export async function giveMonsterStartingGold(monster: Monster, amount: number): Promise<void> {
     if (amount <= 0) return;
     const gold = await mksobj(GOLD_PIECE, false, false);
@@ -2016,23 +2035,27 @@ export interface MonsterGrowthOptions {
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
 
+// C dungeon.c:on_level():
 function sameLevel(left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined): boolean {
     return !!left && !!right
         && left.dnum === right.dnum
         && left.dlevel === right.dlevel;
 }
 
+// Part of C makemon.c:grow_up(): choosing the adult form.
 function targetSpecies(mnum: number, killedMonster: Monster | null): number {
     if (!killedMonster && mnum === PM_KILLER_BEE) return PM_QUEEN_BEE;
     return monsterOlderForm(mnum);
 }
 
+// Part of C makemon.c:grow_up(): the adult form's forced gender.
 function resultingGender(monster: Monster, newType: number): boolean {
     if (is_male(newType)) return false;
     if (monsterIsFemale(newType)) return true;
     return !!monster.female;
 }
 
+// Part of C makemon.c:grow_up(): the species-change announcement.
 function growthMessage(
     monster: Monster, newType: number, oldFemale: boolean, newFemale: boolean, state: GrowthState,
 ): string {
@@ -2049,6 +2072,7 @@ function growthMessage(
     return `${subject} ${verb} ${withIndefiniteArticle(newName)}.`;
 }
 
+// Part of C makemon.c:grow_up(): the genocided adult form's death message.
 function genocidedGrowthMessage(monster: Monster, newType: number, state: GrowthState): string {
     const subject = monsterName(monster, { state });
     // grow_up announces death before changing species or gender.
@@ -2058,10 +2082,12 @@ function genocidedGrowthMessage(monster: Monster, newType: number, state: Growth
     return `As ${subject} grows up into ${withIndefiniteArticle(newName)}, ${pronoun} ${fate}!`;
 }
 
+// Port only: records each growth roll for the test harness.
 function recordRoll(calls: RollLog | null, text: string): void {
     if (calls) calls.push(text);
 }
 
+// Part of C makemon.c:grow_up(): the killed-a-victim growth branch.
 function growthFromKill(monster: Monster, victim: Monster, state: GrowthState, rollOne: Roll, random: Roll, calls: RollLog | null): GrowthIncrease {
     const level = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
     let hpThreshold = level ? level * 8 : 4;
@@ -2089,12 +2115,15 @@ function growthFromKill(monster: Monster, victim: Monster, state: GrowthState, r
     return { maximum, current, hpThreshold };
 }
 
+// Part of C makemon.c:grow_up(): the potion or wraith-corpse branch.
 function growthWithoutKill(rollOne: Roll, calls: RollLog | null): GrowthIncrease {
     const increase = rollOne(8);
     recordRoll(calls, 'rnd(8)');
     return { maximum: increase, current: increase, hpThreshold: 0 };
 }
 
+// C makemon.c:grow_up(): the growth driver; the branches live in the
+// growthFromKill and growthWithoutKill helpers above.
 export function growMonster(
     monster: Monster | null | undefined,
     {
@@ -2198,6 +2227,8 @@ export function growMonster(
     };
 }
 
+// Part of C makemon.c:grow_up(): the deferred set_mon_data, cham and gender
+// tail, applied by the caller after display.
 export function finishMonsterGrowth(monster: Monster, growth: MonsterGrowth | null | undefined): boolean {
     if (!growth?.changedSpecies || growth.applied) return false;
     setMonsterSpecies(monster, growth.newType);
@@ -2213,11 +2244,12 @@ export function finishMonsterGrowth(monster: Monster, growth: MonsterGrowth | nu
 }
 
 
+// Part of C makemon.c:makemon(): the !in_mklev tail: newsym, the appear
+// message and the occupation interrupt.
 // ---------------------------------------------------------------------------
 // Runtime completion of a monster birth.
 // C refs: makemon.c:makemon(), pager.c:mhidden_description(), dochugw(FALSE).
 // ---------------------------------------------------------------------------
-
 export async function finishMonsterBirth<T extends Monster>(monster: T, flags = 0, state: GameState = game): Promise<T> {
     requireLiveGame(state);
     if (monsterEmitsLight(monster.mnum)) state.vision_full_recalc = 1;
@@ -2251,6 +2283,8 @@ export async function finishMonsterBirth<T extends Monster>(monster: T, flags = 
     return monster;
 }
 
+// Part of C makemon.c:makemon(): the disguised-monster branch of the appear
+// message, built from pager.c mhidden_description and upstart.
 async function disguisedBirthName(monster: Monster, state: GameState): Promise<string> {
     const appearance = M_AP_TYPE(monster);
     let name;
@@ -2282,6 +2316,8 @@ export interface CloneOptions {
     position?: Position;
 }
 
+// Part of C makemon.c:clone_mon(): copying the pet's edog record into the
+// tame clone.
 function copyPetState(monster: Monster, clone: Monster): void {
     const source = monster.edog || monster.mextra?.edog;
     if (!source) return;
@@ -2293,6 +2329,7 @@ function copyPetState(monster: Monster, clone: Monster): void {
     clone.mextra = { ...(clone.mextra || {}), edog };
 }
 
+// C makemon.c:clone_mon():
 export async function cloneMonster(
     monster: Monster | null | undefined,
     state: GameState = game,

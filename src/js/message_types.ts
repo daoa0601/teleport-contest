@@ -17,6 +17,7 @@ const MESSAGE_TYPES: ReadonlyArray<readonly [string, MessageType]> = [
     ['stop', MSGTYP_STOP], ['more', MSGTYP_STOP], ['norep', MSGTYP_NOREP],
 ];
 
+// C options.c:msgtype_parse_add():
 export function addMessageTypeRule(value: string, rules: MessageTypeRule[]): string | null {
     // sscanf() accepts a ten-character type and up to 255 pattern characters;
     // the closing quote and trailing input do not affect its two conversions.
@@ -34,6 +35,7 @@ export function addMessageTypeRule(value: string, rules: MessageTypeRule[]): str
     return null;
 }
 
+// C options.c:msgtype_type():
 export function messageTypeFor(
     text: string, noRepeat: boolean, rules: readonly MessageTypeRule[] = [],
 ): MessageType {
@@ -43,6 +45,7 @@ export function messageTypeFor(
     return rule.disabled ? MSGTYP_NORMAL : rule.type;
 }
 
+// C options.c:hide_unhide_msgtypes():
 export function hideUnhideMessageTypes(
     hide: boolean, mask: number, rules: readonly MessageTypeRule[] = [],
 ): void {

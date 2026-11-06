@@ -23,9 +23,11 @@ export interface MapEntityChecks {
     failure?: string;
 }
 
+// Port only: saved-state type guard for a MapBit (boolean or 0/1).
 const mapBit = (value: unknown): value is MapBit =>
     typeof value === 'boolean' || value === 0 || value === 1;
 
+// Port only: saved-state type guard for a bones cemetery record.
 export function validSavedCemeteryEntry(value: unknown): value is CemeteryEntry {
     return fieldsMatch<CemeteryEntry>(value, {
         who: string, how: string,
@@ -36,20 +38,24 @@ export function validSavedCemeteryEntry(value: unknown): value is CemeteryEntry 
     });
 }
 
+// Port only: saved-state type guard for an x/y position.
 export function validSavedPosition(value: unknown): value is Position {
     return fieldsMatch<Position>(value, { x: integer, y: integer });
 }
 
+// Port only: saved-state type guard for a dnum/dlevel location.
 export function validSavedDungeonLocation(value: unknown): value is DungeonLocation {
     return fieldsMatch<DungeonLocation>(value, { dnum: integer, dlevel: integer });
 }
 
+// Port only: saved-state type guard for an lx/ly/hx/hy rectangle.
 function validRectangle(value: unknown): value is Rectangle {
     return fieldsMatch<Rectangle>(value, {
         lx: integer, ly: integer, hx: integer, hy: integer,
     });
 }
 
+// Port only: saved-state type guard for one map cell's declared fields.
 export function validSavedMapLocation(value: unknown): value is MapLocation {
     return fieldsMatch<MapLocation>(value, {
         typ: integer, roomno: integer, lit: boolean, waslit: boolean,
@@ -68,12 +74,14 @@ export function validSavedMapLocation(value: unknown): value is MapLocation {
     });
 }
 
+// Port only: saved-state type guard for the fixed COLNO by ROWNO cell grid.
 function validSavedLocations(value: unknown): value is MapLocation[][] {
     return arrayOf(arrayOf(validSavedMapLocation))(value)
         && value.length === COLNO
         && value.every(column => column.length === ROWNO);
 }
 
+// Port only: saved-state type guard for one trap record.
 export function validSavedTrap(value: unknown): value is Trap {
     return fieldsMatch<Trap>(value, {
         ttyp: integer, tx: integer, ty: integer, tseen: mapBit, once: mapBit,
@@ -83,6 +91,7 @@ export function validSavedTrap(value: unknown): value is Trap {
     });
 }
 
+// Port only: saved-state type guard for the level flags record.
 function validFlags(value: unknown): value is LevelFlags {
     return fieldsMatch<LevelFlags>(value, {
         nfountains: integer, nsinks: integer, hero_memory: boolean,
@@ -106,6 +115,7 @@ function validFlags(value: unknown): value is LevelFlags {
     });
 }
 
+// Port only: saved-state type guard for a gas-cloud region.
 function validGasCloud(value: unknown): value is GasCloud {
     return fieldsMatch<GasCloud>(value, {
         kind: (kind): kind is 'gas-cloud' => kind === 'gas-cloud',
@@ -117,6 +127,7 @@ function validGasCloud(value: unknown): value is GasCloud {
     });
 }
 
+// Port only: saved-state type guard for a level timer.
 function validTimer(value: unknown): value is LevelTimer {
     return fieldsMatch<LevelTimer>(value, {
         kind: (kind): kind is 'melt-ice-away' => kind === 'melt-ice-away',
@@ -124,6 +135,7 @@ function validTimer(value: unknown): value is LevelTimer {
     });
 }
 
+// Port only: saved-state type guard for an exclusion zone.
 function validExclusion(value: unknown): value is ExclusionZone {
     return fieldsMatch<ExclusionZone>(value, {
         type: (type): type is ExclusionZone['type'] => type === 'teleport'
@@ -133,6 +145,7 @@ function validExclusion(value: unknown): value is ExclusionZone {
     });
 }
 
+// Port only: saved-state type guard for a stair arrival region.
 function validArrivalRegion(value: unknown): value is ArrivalRegion {
     return fieldsMatch<ArrivalRegion>(value, {
         lx: integer, ly: integer, hx: integer, hy: integer,
@@ -140,6 +153,7 @@ function validArrivalRegion(value: unknown): value is ArrivalRegion {
     });
 }
 
+// Port only: saved-state type guard for one engraving record.
 function validEngraving(value: unknown): value is Engraving {
     return fieldsMatch<Engraving>(value, {
         x: integer, y: integer, text: string, pristine: string,
@@ -150,6 +164,7 @@ function validEngraving(value: unknown): value is Engraving {
     });
 }
 
+// Port only: saved-state type guard for one shop-damage record.
 function validDamage(value: unknown): value is ShopDamage {
     return fieldsMatch<ShopDamage>(value, {
         when: integer, place: validSavedPosition, cost: integer,
@@ -157,6 +172,7 @@ function validDamage(value: unknown): value is ShopDamage {
     });
 }
 
+// Port only: saved-state type guard for the elemental-plane bubble bounds.
 function validElementalBounds(value: unknown): value is ElementalBounds {
     return fieldsMatch<ElementalBounds>(value, {
         xmin: integer, ymin: integer, xmax: integer, ymax: integer,
@@ -167,6 +183,8 @@ function validElementalBounds(value: unknown): value is ElementalBounds {
 
 type SavedMapData = Omit<GameMap, 'at' | 'requireAt' | 'requireColumn'>;
 
+// Port only: saved-state type guard for a room, sharing subroom entity
+// identity with the room table.
 export function validSavedRoom(value: unknown, context: SavedEntityContext): value is Room {
     return validateSavedEntity<Room>(value, 'room', context, {
         lx: integer, ly: integer, hx: integer, hy: integer, rtype: integer,
@@ -179,6 +197,8 @@ export function validSavedRoom(value: unknown, context: SavedEntityContext): val
     });
 }
 
+// Port only: validates the whole saved level, reinstalls its methods, and
+// rebuilds the subroom pointers C restores via memory layout.
 // This validates the full map shape before installing its methods. Merely
 // setting the prototype would not establish a typed map or its nested cells.
 export function restoreSavedMap(value: unknown, entities: MapEntityChecks): GameMap {
@@ -271,6 +291,7 @@ export function restoreSavedMap(value: unknown, entities: MapEntityChecks): Game
     return value;
 }
 
+// Port only: saved-state type guard for the linked stairway list.
 export function validSavedStairways(value: unknown): value is Stairway | null {
     const seen = new WeakSet<object>();
     function stairway(stair: unknown): stair is Stairway | null {

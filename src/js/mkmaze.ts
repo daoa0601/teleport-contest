@@ -87,6 +87,7 @@ export function setLevelTerrainType(x: number, y: number, typ: number): boolean 
     return true;
 }
 
+// C mkmaze.c:set_levltyp_lit():
 export function setLevelTerrainLit(x: number, y: number, typ: number, lit: number | boolean = -2): boolean {
     const level = requireGameLevel();
     if (!setLevelTerrainType(x, y, typ)) return false;
@@ -121,6 +122,7 @@ function isWallTile(x: number, y: number): 0 | 1 {
 type WallNeighbors = [[number, number, number], [number, number, number], [number, number, number]];
 interface WallArea { x1: number; y1: number; x2: number; y2: number }
 
+// C mkmaze.c:extend_spine():
 function extend_spine(locale: WallNeighbors, wall_there: 0 | 1, dx: -1 | 0 | 1, dy: -1 | 0 | 1): 0 | 1 {
     const nx = 1 + dx, ny = 1 + dy;
     if (!wall_there) return 0;
@@ -133,11 +135,14 @@ function extend_spine(locale: WallNeighbors, wall_there: 0 | 1, dx: -1 | 0 | 1, 
     if (locale[0][1] && locale[2][1] && locale[0][ny] && locale[2][ny]) return 0;
     return 1;
 }
+// Port only: bounds test for the port's protected-area restriction of the
+// wall_cleanup and fix_wall_spines walks.
 function withinArea(x: number, y: number, area: WallArea | null): boolean {
     return !!area && x >= area.x1 && x <= area.x2
         && y >= area.y1 && y <= area.y2;
 }
 
+// C mkmaze.c:wall_cleanup():
 function wall_cleanup(x1: number, y1: number, x2: number, y2: number, protectedArea: WallArea | null = null): void {
     const map = game.level;
     if (!map) return;
@@ -154,6 +159,7 @@ function wall_cleanup(x1: number, y1: number, x2: number, y2: number, protectedA
                 loc.typ = STONE;
         }
 }
+// C mkmaze.c:fix_wall_spines():
 export function fix_wall_spines(x1: number, y1: number, x2: number, y2: number, wallOnlyArea: WallArea | null = null): void {
     const spineArray = [VWALL, HWALL, HWALL, HWALL,
         VWALL, TRCORNER, TLCORNER, TDWALL,
@@ -185,6 +191,7 @@ export function fix_wall_spines(x1: number, y1: number, x2: number, y2: number, 
             }
         }
 }
+// C mkmaze.c:wallification():
 export function wallification(x1: number, y1: number, x2: number, y2: number, protectedArea: WallArea | null = null): void {
     wall_cleanup(x1, y1, x2, y2, protectedArea);
     fix_wall_spines(x1, y1, x2, y2, protectedArea);
@@ -271,6 +278,7 @@ function excludedLregion(type: number, x: number, y: number): boolean {
             && x >= zone.lx && x <= zone.hx && y >= zone.ly && y <= zone.hy);
 }
 
+// C mkmaze.c:put_lregion_here():
 async function putLregionHere(
     x: number, y: number, nlx: number, nly: number, nhx: number, nhy: number,
     type: number, oneshot: boolean, destination: DungeonLocation | null,
@@ -316,11 +324,13 @@ export async function mkportal(x: number, y: number, dnum: number, dlevel: numbe
     portal.dst = { dnum, dlevel };
 }
 
+// Part of C mkmaze.c:makemaz(): the minefill.lua filler branch.
 async function generateMineFiller(active: ActiveSpecialLevel): Promise<void> {
     active.file = 'minefill.lua';
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:makemaz(): the tower[1-3] prototype selection.
 export async function generateVladsTowerLevel(active: ActiveSpecialLevel): Promise<void> {
     if (!/^tower[1-3]$/.test(active?.prototype))
         throw new RangeError(`unknown Vlad tower level ${active?.prototype}`);
@@ -328,6 +338,7 @@ export async function generateVladsTowerLevel(active: ActiveSpecialLevel): Promi
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:makemaz(): the minend variant selection.
 export async function generateMinesEnd(active: ActiveSpecialLevel): Promise<void> {
     if (active.variant === undefined || active.variant < 1 || active.variant > 3) {
         throw new RangeError(`unknown Mines' End layout ${active?.variant}`);
@@ -336,6 +347,7 @@ export async function generateMinesEnd(active: ActiveSpecialLevel): Promise<void
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:makemaz(): the minetn variant selection and room fill.
 export async function generateMinetown(active: ActiveSpecialLevel): Promise<void> {
     const level = requireGameLevel();
     if (active.variant === undefined || active.variant < 1 || active.variant > 7) {
@@ -347,10 +359,14 @@ export async function generateMinetown(active: ActiveSpecialLevel): Promise<void
         if (isRoom(room)) await fill_special_room(room);
 }
 
+// Part of C mklev.c:makelevel(): recognizing the quest fill-level prototype
+// names built from the role's filecode.
 export function isLuaQuestPrototype(prototype: string): boolean {
     return /^[A-Z][a-z]{2}-(strt|loca|goal|fila|filb)$/.test(prototype);
 }
 
+// Part of C mkmaze.c:makemaz(): the quest prototype branch, with the room
+// fill makelevel requests for quest levels.
 export async function generateLuaQuestLevel(active: ActiveSpecialLevel): Promise<void> {
     if (!isLuaQuestPrototype(active?.prototype))
         throw new RangeError(`unknown quest level ${active?.prototype}`);
@@ -360,6 +376,7 @@ export async function generateLuaQuestLevel(active: ActiveSpecialLevel): Promise
         if (isRoom(room)) await fill_special_room(room);
 }
 
+// Part of C mkmaze.c:makemaz(): the oracle.lua branch.
 export async function generateOracleLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'oracle')
         throw new RangeError(`unknown Oracle level ${active?.prototype}`);
@@ -367,12 +384,15 @@ export async function generateOracleLevel(active: ActiveSpecialLevel): Promise<v
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:makemaz(): the bigrm variant selection.
 export async function generateBigRoom(active: ActiveSpecialLevel): Promise<void> {
     if (active.variant === undefined || active.variant < 1 || active.variant > 13)
         throw new RangeError(`unknown Big Room variant ${active?.variant}`);
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:makemaz(): the elemental plane branches; water and air
+// also set up their bubbles.
 export async function generateElementalPlane(active: ActiveSpecialLevel): Promise<void> {
     active.file = `${active.prototype}.lua`;
     if (active.prototype === 'air' || active.prototype === 'water')
@@ -381,18 +401,21 @@ export async function generateElementalPlane(active: ActiveSpecialLevel): Promis
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:makemaz(): the earth plane branch.
 export async function generateEarthLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'earth')
         throw new RangeError(`unknown earth level ${active?.prototype}`);
     await generateElementalPlane(active);
 }
 
+// Part of C mkmaze.c:makemaz(): the water plane branch.
 export async function generateWaterLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'water')
         throw new RangeError(`unknown water level ${active?.prototype}`);
     await generateElementalPlane(active);
 }
 
+// Part of C mkmaze.c:makemaz(): the astral.lua branch.
 export async function generateAstralLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'astral')
         throw new RangeError(`unknown Astral level ${active?.prototype}`);
@@ -400,6 +423,8 @@ export async function generateAstralLevel(active: ActiveSpecialLevel): Promise<v
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:makemaz(): the wizard tower branches, with their room
+// fill.
 export async function generateWizardLevel(active: ActiveSpecialLevel): Promise<void> {
     const level = requireGameLevel();
     active.file = `${active.prototype}.lua`;
@@ -408,12 +433,14 @@ export async function generateWizardLevel(active: ActiveSpecialLevel): Promise<v
         if (isRoom(room)) await fill_special_room(room);
 }
 
+// Part of C mkmaze.c:makemaz(): the wizard3 branch.
 export async function generateWizard3Level(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'wizard3')
         throw new RangeError(`unknown Wizard level ${active?.prototype}`);
     await generateWizardLevel(active);
 }
 
+// Part of C mkmaze.c:makemaz(): the fakewiz1 and fakewiz2 branches.
 export async function generateFakeWizardLevel(active: ActiveSpecialLevel): Promise<void> {
     if (!['fakewiz1', 'fakewiz2'].includes(active?.prototype)) {
         throw new RangeError(`unknown false Wizard level ${active?.prototype}`);
@@ -422,6 +449,7 @@ export async function generateFakeWizardLevel(active: ActiveSpecialLevel): Promi
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:makemaz(): the hellfill.lua branch, with its room fill.
 export async function generateHellFillerLevel(active: ActiveSpecialLevel): Promise<void> {
     const level = requireGameLevel();
     if (active?.prototype !== 'hellfill')
@@ -432,6 +460,7 @@ export async function generateHellFillerLevel(active: ActiveSpecialLevel): Promi
         if (isRoom(room)) await fill_special_room(room);
 }
 
+// Part of C mkmaze.c:makemaz(): the medusa variant selection.
 export async function generateMedusaLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active.variant === undefined || active.variant < 1 || active.variant > 4) {
         throw new RangeError(`unknown Medusa variant ${active?.variant}`);
@@ -439,6 +468,8 @@ export async function generateMedusaLevel(active: ActiveSpecialLevel): Promise<v
     await generateSpecialAndFixup(load_special, active);
 }
 
+// Part of C mkmaze.c:fixup_special(): a random point in the medusa level's
+// first room.
 function medusaRoomPoint(room: Room): Position {
     return {
         x: room.lx + rn2(room.hx - room.lx + 1),
@@ -446,6 +477,7 @@ function medusaRoomPoint(room: Room): Position {
     };
 }
 
+// Part of C mkmaze.c:fixup_special(): the medusa-level statue branch.
 async function fixupMedusa(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'medusa') return;
     const level = requireGameLevel();
@@ -560,6 +592,8 @@ async function fixupBaalz(active: ActiveSpecialLevel): Promise<void> {
     );
 }
 
+// Part of C mkmaze.c:fixup_special(): the lregion pass over the declared
+// regions.
 // fixup_special()'s region pass: regions are processed in Lua declaration
 // order; this helper owns that loop for the port below.
 async function fixupSpecialRegions(active: ActiveSpecialLevel): Promise<void> {
@@ -589,6 +623,8 @@ async function fixupSpecialRegions(active: ActiveSpecialLevel): Promise<void> {
         await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_BRANCH, null);
 }
 
+// Part of C sp_lev.c:load_special(): runs the fixup_special tail after the
+// level description has executed.
 export async function generateSpecialAndFixup(
     generator: (active: ActiveSpecialLevel) => Promise<void>, active: ActiveSpecialLevel,
 ): Promise<void> {
@@ -643,6 +679,7 @@ export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
     await fixupMedusa(active);
 }
 
+// Part of C mkmaze.c:makemaz(): the sokoban variant selection and room fill.
 export async function generateSokobanLevel(active: ActiveSpecialLevel): Promise<void> {
     if (!/^soko[1-4]$/.test(active?.prototype)
         || active.variant === undefined || active.variant < 1 || active.variant > 2) {
@@ -657,6 +694,7 @@ export async function generateSokobanLevel(active: ActiveSpecialLevel): Promise<
         if (isRoom(room)) await fill_special_room(room);
 }
 
+// Part of C mkmaze.c:makemaz(): the soko2 branch.
 export async function generateSokobanLevel2(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'soko2') {
         throw new RangeError(`unknown Sokoban level 2 ${active?.prototype}`);
@@ -666,6 +704,7 @@ export async function generateSokobanLevel2(active: ActiveSpecialLevel): Promise
 
 
 
+// Part of C mkmaze.c:makemaz(): the knox.lua branch, with its room fill.
 export async function generateKnoxLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'knox')
         throw new RangeError(`unknown Knox level ${active?.prototype}`);
@@ -977,6 +1016,7 @@ export function walkfrom(
     }
 }
 
+// C mkmaze.c:mazexy():
 // C mazexy(): generated maze cargo uses ROOM or CORR of the selected
 // style, rather than any accessible terrain or the former odd-cell grid.
 export function mazeFloorPoint(): Position {
@@ -997,6 +1037,7 @@ export function mazeFloorPoint(): Position {
     throw new Error('mazexy: no generated maze passage is available');
 }
 
+// C mkmaze.c:pick_vibrasquare_location():
 export function vibratingSquarePoint(): Position {
     const level = requireGameLevel();
     const minimum = 2, xMargin = 4, yMargin = 3;
@@ -1048,6 +1089,8 @@ async function populateRandomMaze(): Promise<void> {
         await mktrap(NO_TRAP, {}, null, null);
 }
 
+// Part of C mkmaze.c:makemaz(): protofile load with the fallback to a
+// generated maze.
 export async function generateDungeonMazeFile(prototype: string): Promise<void> {
     const active: ActiveSpecialLevel = { prototype, file: `${prototype}.lua` };
     if (!LUA_SOURCES[active.file]) {
@@ -1067,6 +1110,7 @@ export async function generateDungeonMazeFile(prototype: string): Promise<void> 
     }
 }
 
+// C mkmaze.c:get_level_extends():
 function get_level_extends(): { xmin: number; xmax: number; ymin: number; ymax: number } {
     const map = requireGameLevel();
     let xmin = 0, xmax = COLNO - 1, ymin = 0, ymax = ROWNO - 1;
@@ -1107,6 +1151,7 @@ function get_level_extends(): { xmin: number; xmax: number; ymin: number; ymax: 
     return { xmin, xmax, ymin, ymax };
 }
 
+// C mkmaze.c:bound_digging():
 export function bound_digging(): void {
     if (Is_earthlevel(game.u.uz)) return;
     const map = requireGameLevel();
@@ -1387,6 +1432,8 @@ export function maybe_adjust_hero_bubble(): void {
     }
 }
 
+// Part of C mkmaze.c:movebubbles(): the whole-cell replacement both it and
+// mv_bubble perform.
 // The levl[x][y] = water_pos / air_pos assignments of C movebubbles() and
 // mv_bubble(): the whole rm record is replaced, so every JS terrain alias is
 // reset, and the remembered glyph resolves the cmap symbol through the
@@ -1425,6 +1472,8 @@ function setElementalCell(loc: MapLocation | null, typ: number, lit: boolean): v
     };
 }
 
+// Part of C mkmaze.c:movebubbles(): the bubble bit-mask walk shared with
+// mv_bubble.
 // The b->bm bit-mask walk of C movebubbles()/mv_bubble(), which both inline;
 // shared here by the collection loop and the bubble painter.
 function bubbleCells(bubble: ElementalBubble): Position[] {
@@ -1438,6 +1487,7 @@ function bubbleCells(bubble: ElementalBubble): Position[] {
     return cells;
 }
 
+// Part of C mkmaze.c:mv_bubble(): the border clamp and move core.
 // The movement core of C mv_bubble(): clouds move only one time in six —
 // the roll belongs even to the initial zero-distance draw that paints a
 // newly allocated cloud — and the border clamps and bounces precede it.
@@ -1480,6 +1530,7 @@ function moveBubblePosition(bubble: ElementalBubble, requestedDx: number, reques
     return { dx, dy, collision };
 }
 
+// Part of C mkmaze.c:mv_bubble(): the heading-flip tail.
 // The "boing?" tail of C mv_bubble(): border collisions flip the heading,
 // and a stationary bubble sometimes alters direction for fun anyway.
 function changeBubbleDirection(bubble: ElementalBubble, collision: number, initial: boolean): void {
@@ -1492,6 +1543,7 @@ function changeBubbleDirection(bubble: ElementalBubble, collision: number, initi
     }
 }
 
+// Part of C mkmaze.c:mv_bubble(): the drawing half.
 // The drawing half of C mv_bubble(): a water bubble paints AIR cells and
 // unblocks them, an air bubble paints CLOUD cells and blocks them.
 function drawBubble(bubble: ElementalBubble): void {

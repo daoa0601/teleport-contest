@@ -458,6 +458,8 @@ export async function attackMonsterWithMonster(
     return report(struck ? M_ATTK_HIT : M_ATTK_MISS);
 }
 
+// Part of C mhitm.c:mattackm(): classifying which attack tuples are melee
+// slots.
 function monsterMeleeAttackSlot(attack: AttackTuple, attackIndex: number): MonsterMeleeAttack | null {
     const attackNames: Partial<Record<AttackTuple[0], MonsterMeleeAttack['type']>> = {
         1: 'claw',
@@ -489,6 +491,8 @@ export interface MonsterPuddingSplitResult {
     aggressorDied: boolean;
 }
 
+// Part of C mhitm.c:mattackm(): the black-pudding division after a landed
+// iron or metal weapon hit.
 // Contact can finish with a native MISS (for example, after life saving).
 // Unlike hero hits, this rule does not exclude missiles or require the
 // weapon to remain wielded. The caller supplies the contact's saved weapon.
@@ -564,6 +568,7 @@ export async function prepareMonsterCombatContact(
     return 'contact';
 }
 
+// Part of C mhitm.c:hitmm(): the attack-verb switch.
 function contactAction(aggressor: Monster, attack: AttackTuple, artifact: boolean, subject: string, state: GameState): string {
     switch (attack[0]) {
     case AT_BITE: return `${subject} bites`;
@@ -580,6 +585,8 @@ function contactAction(aggressor: Monster, attack: AttackTuple, artifact: boolea
     }
 }
 
+// Part of C mhitm.c:hitmm(): the target name, with mon_nam_too's reflexive
+// self case.
 function combatTargetName(defender: Monster, aggressor: Monster, state: GameState): string {
     if (defender !== aggressor) return monsterName(defender, { state });
     switch (monsterObjectPronoun(defender, { state })) {
@@ -590,6 +597,7 @@ function combatTargetName(defender: Monster, aggressor: Monster, state: GameStat
     }
 }
 
+// Part of C mhitm.c:hitmm(): the silver sear message.
 async function showSilverContact(
     aggressor: Monster, defender: Monster, weapon: GameObject, subject: string,
     state: GameState, publish: MessagePublisher,
@@ -606,6 +614,7 @@ async function showSilverContact(
     await publish(`${possessiveName(subject)} ${simpleName} sears ${target}!`);
 }
 
+// Part of C mhitm.c:hitmm(): the default no-artifact "hits" verb.
 export async function showMonsterArtifactFallbackHit(
     aggressor: Monster, defender: Monster,
     { state = game, visible, publish = plineWithContinuation }: MonsterCombatMessageOptions,
@@ -626,6 +635,7 @@ interface MonsterCombatGazeOptions {
     resolveDamage: ResolveMonsterCombatDamage;
 }
 
+// C mhitm.c:gazemm():
 export async function resolveMonsterCombatGaze(
     attacker: Monster, defender: Monster, attack: AttackTuple, {
         state = game, visible, random = rn2, rollDice = d,
@@ -687,14 +697,19 @@ export async function resolveMonsterCombatGaze(
     return resolveDamage(attacker, defender, attack);
 }
 
+// Port only: packs a gazemm native result code.
 function gazeResult(nativeResult: number, heroDied = false): MonsterCombatDamageResult {
     return { damage: 0, nativeResult, heroDied, skipBrainDrain: false };
 }
 
+// Part of C mhitm.c:gazemm(): the perceives-invisible guard; the perceives
+// macro port is monsterPerceives in mondata.ts.
 function perceivesInvisible(monster: Monster): boolean {
     return monsterPerceives(monster.mnum);
 }
 
+// Part of C mhitm.c:gazemm(): the reflected-gaze message through
+// mon_reflects.
 // Native mon_reflects only identifies a worn shield or amulet when its
 // reflection is optically visible. Detection alone does not reveal the item.
 async function showGazeReflection(monster: Monster, state: PlayingGameState, publish: MessagePublisher): Promise<void> {
@@ -723,6 +738,8 @@ export function monsterCanEngulfMonster(
         || !engulfSquareBlocked(state.level.at(attacker.mx, attacker.my), defender);
 }
 
+// Part of C mhitm.c:engulf_target(): the obstructed-terrain test for one
+// side of the swap.
 function engulfSquareBlocked(square: MapLocation | null, other: Monster): boolean {
     return !square || IS_OBSTRUCTED(square.typ) || IS_TREE(square.typ)
         || (square.typ === DOOR && !!(square.doormask & (D_CLOSED | D_LOCKED)))
@@ -741,6 +758,7 @@ interface MonsterCombatEngulfOptions {
     rollDice?: typeof d;
 }
 
+// C mhitm.c:gulpmm():
 export async function resolveMonsterCombatEngulf(
     attacker: Monster, defender: Monster, attack: AttackTuple, {
         state = game, visible, resolveDamage, publish = plineWithContinuation,
@@ -844,6 +862,7 @@ export async function resolveMonsterCombatEngulf(
     }
 }
 
+// Part of C dogmove.c:dog_move(): the pet's return-attack gate.
 function defenderCanAnswerPetAttack(
     aggressor: Monster,
     defender: Monster,
@@ -859,6 +878,8 @@ function defenderCanAnswerPetAttack(
     );
 }
 
+// Part of C mhitm.c:fightm(): the movement gate for the defender's return
+// attack.
 function defenderCanAnswerMovementAttack(
     defender: Monster,
     random: RandomBelow,
@@ -871,6 +892,8 @@ function defenderCanAnswerMovementAttack(
     return true;
 }
 
+// Part of C mhitm.c:fightm(), dogmove.c:dog_move(): the shared return-attack
+// dispatch.
 function defenderCanCounterattack(
     attack: MonsterCombatAttack,
     state: PlayingGameState,
@@ -888,6 +911,8 @@ function defenderCanCounterattack(
     );
 }
 
+// Part of C mhitm.c:fightm(): the M_ATTK_AGR_DIED stopping test the callers
+// of a melee attack apply inline.
 export function monsterAttackStopsAggressor(attack: MonsterCombatResult): boolean {
     // Native explosion and passive results can stop an attacker which was
     // life-saved. Preserve that result independently of its current health.
@@ -895,6 +920,9 @@ export function monsterAttackStopsAggressor(attack: MonsterCombatResult): boolea
         || (attack.kind === 'monster-attack' && ((attack.nativeResult ?? 0) & M_ATTK_AGR_DIED)));
 }
 
+// Part of C mhitm.c:fightm(), dogmove.c:dog_move(): the mattackm invocation
+// with its return-attack tail; plain C callers use the mattackm port
+// directly.
 export async function beginMonsterMeleeAttack(
     aggressor: Monster,
     defender: Monster,
@@ -992,6 +1020,7 @@ export interface MonsterCombatExplosionResult {
     damage: number;
 }
 
+// C mhitm.c:explmm():
 export async function resolveMonsterCombatExplosion(
     attacker: Monster, defender: Monster, attack: AttackTuple,
     { state = game, visible, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd,
@@ -1065,6 +1094,7 @@ interface MonsterCombatDamageOptions {
     calls?: MonsterCallLog;
 }
 
+// C mhitm.c:mdamagem():
 export async function resolveMonsterCombatDamage(
     attacker: Monster, defender: Monster, attack: AttackTuple, {
         state = game, visible, weapon = null, dieRoll = 0,
@@ -1207,6 +1237,8 @@ const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
 const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
 const PM_NURSE = MONSTER_NAME.indexOf('nurse');
 
+// Part of C mhitm.c:mdamagem(): the AD_DGST tail that runs after monkilled
+// confirms the meal died.
 // Called only after monkilled() confirms that the meal died. Wraith growth
 // replaces ordinary victim growth; every other meal permits it afterwards.
 export async function finishMonsterDigestion(attacker: Monster, {
@@ -1250,6 +1282,7 @@ interface ContactOptions {
     publish?: MessagePublisher;
 }
 
+// C mhitm.c:passivemm():
 export async function applyMonsterContactPassive(attacker: Monster, defender: Monster, {
     hit, weapon = null, state = game, random = rn2, rollDice = d,
     publish = plineWithContinuation,
@@ -1335,6 +1368,7 @@ export async function applyMonsterContactPassive(attacker: Monster, defender: Mo
         ...(death.heroDied ? { heroDied: true } : {}) };
 }
 
+// C mhitm.c:paralyze_monst():
 async function paralyzeAttacker(attacker: Monster, defender: Monster, duration: number, {
     state, random, publish, visible, hit,
 }: {
@@ -1455,6 +1489,7 @@ export async function displaceMonster(
     return M_ATTK_HIT;
 }
 
+// Part of C mhitm.c:mdisplacem(): the swap message.
 function displacementMessage(
     aggressor: Monster, defender: Monster, trying: boolean, state: GameState,
     random: (limit: number) => number,

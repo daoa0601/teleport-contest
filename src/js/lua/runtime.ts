@@ -185,15 +185,22 @@ class LuaFunction {
     }
 }
 
+// Port only: picks the first result of a Lua multi-value; the C stack yields
+// that value implicitly.
 function first(value: LuaResult): LuaValue {
     return value instanceof LuaValues ? value.values[0] ?? null : value ?? null;
 }
 
+// C lapi.c:lua_toboolean(): false only for nil and false.
 function truthy(value: LuaResult): boolean {
     value = first(value);
     return value !== null && value !== false;
 }
 
+// C lapi.c:lua_type(): classifies a value; the name strings come from
+// ltm.c's ttypename table.
+// Also C lapi.c:lua_typename(): merged here because the port returns the
+// type name directly.
 export function luaType(value: LuaResult): string {
     value = first(value);
     if (value === null || value === undefined) return 'nil';
@@ -206,6 +213,7 @@ export function luaType(value: LuaResult): string {
     return 'userdata';
 }
 
+// C lauxlib.c:luaL_checklstring():
 // luaL_checkstring() converts numbers and raises lauxlib's bad-argument
 // error, carrying the caller's stack index, for every other value.
 export function luaCheckString(argument: number, value: LuaValue | undefined): string {
@@ -215,6 +223,7 @@ export function luaCheckString(argument: number, value: LuaValue | undefined): s
         `string expected, got ${value === undefined ? 'no value' : luaType(value)}`);
 }
 
+// C lauxlib.c:luaL_checkinteger():
 // luaL_checkinteger() converts integral numbers and numeric strings and
 // raises lauxlib's bad-argument error for anything else. intererror()
 // distinguishes values that are numbers but lack an integer
@@ -229,6 +238,9 @@ export function luaCheckInteger(argument: number, value: LuaValue | undefined): 
     return converted;
 }
 
+// C lauxlib.c:luaL_tolstring(): value-to-string conversion honouring the
+// __tostring metamethod.
+// Also C lbaselib.c:luaB_tostring(): the global tostring entry point.
 function luaString(value: LuaResult): string {
     value = first(value);
     if (value === null || value === undefined) return 'nil';
@@ -241,6 +253,8 @@ function luaString(value: LuaResult): string {
     return String(value);
 }
 
+// C lvm.c:luaV_finishget(): table/userdata/global indexing, metamethods and
+// the nil-index error.
 function getIndex(targetResult: LuaResult, keyResult: LuaResult): LuaResult {
     let target = targetResult;
     let key = keyResult;
@@ -263,6 +277,7 @@ function getIndex(targetResult: LuaResult, keyResult: LuaResult): LuaResult {
     return null;
 }
 
+// C lvm.c:luaV_finishset(): table/userdata/global assignment slow path.
 function setIndex(targetResult: LuaResult, keyResult: LuaResult, valueResult: LuaResult): void {
     let target = targetResult;
     let key = keyResult;
@@ -295,6 +310,8 @@ function setIndex(targetResult: LuaResult, keyResult: LuaResult, valueResult: Lu
     throw new TypeError(`attempt to index a ${luaType(target)} value`);
 }
 
+// C lstrlib.c:str_format(): the %s/%d/%i/%f/%% directives the level scripts
+// use.
 function formatLuaString(format: LuaValue | undefined, args: LuaValue[]): string {
     let index = 0;
     return String(format).replace(/%%|%[sdif]/gu, token => {
@@ -306,6 +323,8 @@ function formatLuaString(format: LuaValue | undefined, args: LuaValue[]): string
     });
 }
 
+// Part of C lstrlib.c:str_match(): translates Lua patterns into JavaScript
+// regular expressions, replacing C's pattern-matching engine.
 function luaPatternSource(pattern: LuaValue | undefined): string {
     const classes: Readonly<Record<string, string>> = {
         a: 'A-Za-z', d: '0-9', l: 'a-z', u: 'A-Z', w: 'A-Za-z0-9_',
@@ -338,6 +357,8 @@ function luaPatternSource(pattern: LuaValue | undefined): string {
     return source;
 }
 
+// C lstrlib.c:str_match(): returns the whole match, the single capture, or
+// all captures.
 function luaStringMatch(value: LuaValue | undefined, pattern: LuaValue | undefined): LuaResult {
     const match = new RegExp(luaPatternSource(pattern), 'u').exec(String(value));
     if (!match) return null;
@@ -346,6 +367,8 @@ function luaStringMatch(value: LuaValue | undefined, pattern: LuaValue | undefin
     return new LuaValues(match.slice(1));
 }
 
+// Part of C lvm.c:luaV_execute(): the OP_UNM, OP_BNOT, OP_NOT and OP_LEN
+// opcode cases with their metamethod dispatch.
 function unaryValue(operator: UnaryOperator, value: LuaValue): LuaResult {
     if (operator === 'not') return !truthy(value);
     if (value instanceof LuaUserdata) {
@@ -365,6 +388,9 @@ function unaryValue(operator: UnaryOperator, value: LuaValue): LuaResult {
     throw new Error(`Unsupported Lua unary operator ${operator}`);
 }
 
+// Part of C lvm.c:luaV_execute(): the arithmetic, bitwise and relational
+// opcode cases; metamethod dispatch follows luaV_arith and object equality
+// luaV_equalobj.
 function binaryValue(
     operator: Exclude<BinaryOperator, 'and' | 'or'>, left: LuaValue, right: LuaValue,
 ): LuaResult {
@@ -1099,6 +1125,8 @@ export class LuaState {
     }
 }
 
+// Port only: converts a sequential Lua table to a JS array for host bindings
+// (C host functions read the lua_State stack directly).
 export function luaTableToArray(table: LuaResult): LuaValue[] {
     if (!(table instanceof LuaTable)) return [];
     const values = [];
@@ -1107,6 +1135,7 @@ export function luaTableToArray(table: LuaResult): LuaValue[] {
     return values;
 }
 
+// Port only: converts a Lua value to plain JavaScript for host bindings.
 export function luaValueToJs(value: LuaResult): unknown {
     if (!(value instanceof LuaTable)) return value;
     const entries = [...value.entries()];
@@ -1120,6 +1149,7 @@ export function luaValueToJs(value: LuaResult): unknown {
     ]));
 }
 
+// Port only: converts a Lua table to a plain JS record for host bindings.
 export function luaTableToObject(table: LuaResult): Record<string, unknown> {
     if (!(table instanceof LuaTable)) return {};
     return Object.fromEntries([...table.entries()].map(([key, value]) => [
@@ -1127,6 +1157,7 @@ export function luaTableToObject(table: LuaResult): Record<string, unknown> {
     ]));
 }
 
+// Port only: wraps a host object as a fresh Lua table for bindings.
 export function objectToLuaTable(object: LuaHostObject | null | undefined): LuaTable {
     const table = new LuaTable();
     if (object === null || object === undefined) return table;
@@ -1134,6 +1165,7 @@ export function objectToLuaTable(object: LuaHostObject | null | undefined): LuaT
     return table;
 }
 
+// Port only: rejects asynchronous binding results in synchronous evaluation.
 function syncResult(result: LuaResult | void | Promise<LuaResult | void>): LuaResult {
     if (result instanceof Promise)
         throw new TypeError('asynchronous Lua binding requires asynchronous execution');
@@ -1141,16 +1173,20 @@ function syncResult(result: LuaResult | void | Promise<LuaResult | void>): LuaRe
     return result ?? undefined;
 }
 
+// Port only: restricts host-object field names to strings and numbers.
 function propertyKey(value: LuaValue): string {
     if (typeof value === 'string' || typeof value === 'number') return String(value);
     throw new TypeError('host object field must be a string or number');
 }
 
+// Port only: type guard for plain host objects exposed to Lua.
 function isHostObject(value: LuaValue): value is LuaHostObject {
     return typeof value === 'object' && value !== null
         && Object.getPrototypeOf(value) === Object.prototype;
 }
 
+// Part of C lvm.c:luaV_execute(): the relational opcode comparison itself,
+// for numbers and strings.
 function orderedComparison(
     operator: '<' | '>' | '<=' | '>=', left: number | string, right: number | string,
 ): boolean {
@@ -1162,11 +1198,14 @@ function orderedComparison(
     }
 }
 
+// Port only: maps undefined host values to Lua nil and host objects to tables.
 function fromHostValue(value: LuaValue | undefined): LuaValue {
     if (value === undefined) return null;
     return isHostObject(value) ? objectToLuaTable(value) : value;
 }
 
+// Port only: serializes Lua variables for the saved game; the C game keeps
+// the interpreter state instead.
 export function luaVariablesFromTable(table: LuaResult): LuaVariables {
     if (!(table instanceof LuaTable)) return {};
     const variables: LuaVariables = {};
@@ -1175,6 +1214,7 @@ export function luaVariablesFromTable(table: LuaResult): LuaVariables {
     return variables;
 }
 
+// Port only: one value of the saved-variable serialization above.
 function serializedValue(value: LuaValue): LuaSerializedValue {
     if (value === null || typeof value === 'boolean'
         || typeof value === 'number' || typeof value === 'string') return value;
@@ -1183,6 +1223,7 @@ function serializedValue(value: LuaValue): LuaSerializedValue {
     throw new TypeError(`cannot save a Lua ${luaType(value)} value`);
 }
 
+// Port only: exhaustive-switch guard for unsupported syntax nodes.
 function unreachable(value: never): never {
     throw new TypeError(`unsupported Lua syntax node: ${String(value)}`);
 }

@@ -157,12 +157,15 @@ export const VIBRATING_SQUARE = 23;
 const TRAPPED_DOOR = 24;
 const TRAPPED_CHEST = 25;
 
+// C trap.h:is_hole():
 export function is_hole(t: number): boolean { return t === HOLE || t === TRAPDOOR; }
+// C trap.h:is_pit():
 export function is_pit(t: number): boolean { return t === PIT || t === SPIKED_PIT; }
 
 // C dungeon.c:Can_dig_down()
 // ── Hero digging/falling predicates (C ref: dungeon.c) ──
 
+// C dungeon.c:Can_dig_down():
 // C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
 // flag is only one of the gates: bottom levels and the invocation level also
 // reject holes, while the Castle is an explicit exception because its
@@ -176,6 +179,7 @@ export function canDigDown(uz: DungeonLocation | undefined = game.u.uz): boolean
         && !Invocation_lev(uz);
 }
 
+// C dungeon.c:Can_fall_thru():
 export function canFallThrough(uz: DungeonLocation | undefined = game.u.uz): boolean {
     return canDigDown(uz) || (uz !== undefined && Is_stronghold(uz));
 }
@@ -280,6 +284,8 @@ interface BuriedZombieEvent {
     buriedFloorObjects?: GameObject[];
 }
 
+// Part of C do.c:revive_corpse(): the deferred fill_pit tail after the
+// revived zombie's presentation.
 export async function finishBuriedZombieTimer<Event extends BuriedZombieEvent | null | undefined>(
     event: Event, state: GameState = game,
 ): Promise<Event> {
@@ -294,6 +300,9 @@ export async function finishBuriedZombieTimer<Event extends BuriedZombieEvent | 
     return event;
 }
 
+// C dig.c:rot_organic(): the timer callback, burying a container's
+// contents before the object rots away.
+// Also C dig.c:rot_corpse(): the corpse-rot half runs here too.
 export async function runClaimedObjectRotTimer(claimed: DueObjectTimer | null | undefined, state: GameState = game): Promise<{
     kind: 'blocked-organic-rot'; object: GameObject;
 } | {
@@ -343,6 +352,7 @@ export async function mklev(): Promise<void> {
     vision_reset_new_level();
 }
 
+// C mklev.c:count_level_features():
 export function countLevelFeatures(state: GameState = game): void {
     const lvl = state.level;
     if (!lvl?.flags) return;
@@ -915,6 +925,7 @@ export function add_subroom(
     return croom;
 }
 
+// C mklev.c:create_vault():
 function create_vault(): boolean {
     return create_room(-1, -1, 2, 2, -1, -1, VAULT, true);
 }
@@ -1060,6 +1071,7 @@ export function topologize(croom: Room | null | undefined): void {
 // Corridors
 // ============================================================
 
+// C mklev.c:good_rm_wall_doorpos():
 function good_rm_wall_doorpos(x: number, y: number, dir: number, room: Room): boolean {
     const map = requireGameLevel();
     const rmno = map.rooms.indexOf(room) + ROOMOFFSET;
@@ -1079,6 +1091,7 @@ function good_rm_wall_doorpos(x: number, y: number, dir: number, room: Room): bo
     return true;
 }
 
+// C mklev.c:finddpos_shift():
 function finddpos_shift(xp: MutableNumber, yp: MutableNumber, dir: number, aroom: Room): boolean {
     const level = requireGameLevel();
     const rdir = DIR_180(dir);
@@ -1145,6 +1158,7 @@ function finddpos(cc: Position, dir: number, aroom: Room): boolean {
     return false;
 }
 
+// C mklev.c:maybe_sdoor():
 export function maybe_sdoor(chance: number): boolean {
     const d = depth_of_level(game.u?.uz);
     return (d > 2) && !rn2(Math.max(2, chance));
@@ -1191,10 +1205,12 @@ async function dosdoor(x: number, y: number, aroom: Room, type: number): Promise
     add_door(x, y, aroom);
 }
 
+// C mklev.c:dodoor():
 export async function dodoor(x: number, y: number, aroom: Room): Promise<void> {
     await dosdoor(x, y, aroom, maybe_sdoor(8) ? SDOOR : DOOR);
 }
 
+// C mklev.c:add_door():
 export function add_door(x: number, y: number, aroom: Room): void {
     const level = requireGameLevel();
     for (let i = 0; i < aroom.doorct; i++) {
@@ -1220,6 +1236,7 @@ export function add_door(x: number, y: number, aroom: Room): void {
     level.doorindex++;
 }
 
+// C mklev.c:bydoor():
 function bydoor(x: number, y: number): boolean {
     const map = requireGameLevel();
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
@@ -1230,6 +1247,7 @@ function bydoor(x: number, y: number): boolean {
     return false;
 }
 
+// C mklev.c:okdoor():
 export function okdoor(x: number, y: number): boolean {
     const map = requireGameLevel();
     const loc = map.at(x, y);
@@ -1329,6 +1347,7 @@ export async function makecorridors(): Promise<void> {
 // Stairs
 // ============================================================
 
+// C mklev.c:generate_stairs_room_good():
 function generate_stairs_room_good(croom: Room | null | undefined, phase: number): boolean {
     if (!croom || croom.hx < 0) return false;
     if (!croom.needjoining && phase >= 0) return false;
@@ -1337,6 +1356,7 @@ function generate_stairs_room_good(croom: Room | null | undefined, phase: number
     return true;
 }
 
+// C mklev.c:generate_stairs_find_room():
 function generate_stairs_find_room(): Room | null {
     const level = requireGameLevel();
     if (!level.nroom) return null;
@@ -1355,6 +1375,7 @@ function generate_stairs_find_room(): Room | null {
     return isRoom(selected) ? selected : null;
 }
 
+// C mklev.c:mkstairs():
 export async function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom: Room | null, force = false): Promise<void> {
     const g = game;
     const level = requireGameLevel();
@@ -1389,6 +1410,7 @@ export async function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom:
     else level.dnstair = { x, y };
 }
 
+// C mklev.c:generate_stairs():
 async function generate_stairs(): Promise<void> {
     const g = game;
     const pos = { x: 0, y: 0 };
@@ -1420,6 +1442,7 @@ async function generate_stairs(): Promise<void> {
 // Niches
 // ============================================================
 
+// C mklev.c:cardinal_nextto_room():
 function cardinal_nextto_room(aroom: Room, x: number, y: number): boolean {
     const map = requireGameLevel();
     const rmno = map.rooms.indexOf(aroom) + ROOMOFFSET;
@@ -1431,6 +1454,7 @@ function cardinal_nextto_room(aroom: Room, x: number, y: number): boolean {
     return false;
 }
 
+// C mklev.c:place_niche():
 function place_niche(aroom: Room): { dy: number; xx: number; yy: number } | null {
     const level = requireGameLevel();
     let dy;
@@ -1451,6 +1475,7 @@ function place_niche(aroom: Room): { dy: number; xx: number; yy: number } | null
     return { dy, xx, yy };
 }
 
+// C mklev.c:makeniche():
 async function makeniche(trap_type: number): Promise<void> {
     const g = game;
     const level = requireGameLevel();
@@ -1509,6 +1534,7 @@ async function makeniche(trap_type: number): Promise<void> {
     }
 }
 
+// C mklev.c:make_niches():
 async function make_niches(): Promise<void> {
     const level = requireGameLevel();
     let ct = rnd(Math.trunc(level.nroom / 2) + 1);
@@ -1532,6 +1558,7 @@ async function make_niches(): Promise<void> {
 // Branch placement
 // ============================================================
 
+// C dungeon.c:Is_branchlev():
 export function is_branchlev(): DungeonBranch | null {
     const g = game;
     if (!g.branches) return null;
@@ -1542,6 +1569,7 @@ export function is_branchlev(): DungeonBranch | null {
     return null;
 }
 
+// C mklev.c:find_branch_room():
 function find_branch_room(mp: Position): Room | null {
     if (!requireGameLevel().nroom) {
         const point = mazeFloorPoint();
@@ -1554,6 +1582,7 @@ function find_branch_room(mp: Position): Room | null {
     return croom;
 }
 
+// C mklev.c:place_branch(): placement at known coordinates.
 export async function placeBranchAt(branchp: DungeonBranch | null, x: number, y: number): Promise<void> {
     const g = game;
     if (!branchp || g.made_branch) return;
@@ -1575,6 +1604,7 @@ export async function placeBranchAt(branchp: DungeonBranch | null, x: number, y:
     g.made_branch = true;
 }
 
+// C mklev.c:place_branch(): the random-coordinate form via find_branch_room.
 export async function place_branch(branchp: DungeonBranch | null): Promise<void> {
     const g = game;
     if (!branchp || g.made_branch) return;
@@ -1601,6 +1631,7 @@ async function placeRoomLevelBranch(branch: DungeonBranch | null): Promise<void>
 // Fill ordinary room
 // ============================================================
 
+// C mklev.c:traptype_rnd():
 function traptype_rnd({ spiderOnWeb = true }: SpecialTrapOptions): number {
     const lvl = level_difficulty();
     let kind = rnd(TRAPNUM - 1);
@@ -1632,6 +1663,7 @@ function traptype_rnd({ spiderOnWeb = true }: SpecialTrapOptions): number {
     return kind;
 }
 
+// C mklev.c:find_okay_roompos():
 function find_okay_roompos(croom: Room, crd: Position): boolean {
     let tryct = 0;
     do {
@@ -1641,6 +1673,7 @@ function find_okay_roompos(croom: Room, crd: Position): boolean {
     return true;
 }
 
+// C mklev.c:mktrap_victim():
 export async function mktrap_victim(trap: Trap): Promise<void> {
     const lvl = level_difficulty();
     const kind = trap.ttyp;
@@ -1775,6 +1808,7 @@ export async function mktrap(
     return await finishLevelTrapConstruction(trap, options);
 }
 
+// C mklev.c:mkfount():
 function mkfount(croom: Room): void {
     const level = requireGameLevel();
     const pos = { x: 0, y: 0 };
@@ -1787,6 +1821,7 @@ function mkfount(croom: Room): void {
     }
 }
 
+// C mklev.c:mkaltar():
 function mkaltar(croom: Room | null): void {
     if (!croom || croom.rtype !== OROOM) return;
     const pos = { x: 0, y: 0 };
@@ -1798,6 +1833,7 @@ function mkaltar(croom: Room | null): void {
     loc.flags = Align2amask(al);
 }
 
+// C mklev.c:mkgrave():
 async function mkgrave_room(croom: Room): Promise<void> {
     const dobell = !rn2(10);
     if (croom.rtype !== OROOM) return;
@@ -1821,6 +1857,7 @@ async function mkgrave_room(croom: Room): Promise<void> {
     if (dobell) await mksobj_at(BELL, pos.x, pos.y, true, false);
 }
 
+// Part of C mklev.c:mkinvokearea(): the concentric ring walk.
 // The rings are deliberately visited in native order: actors encounter the
 // changed terrain before the next ring.
 function invocationRings(x: number, y: number): Position[][] {
@@ -1918,6 +1955,8 @@ async function changeInvocationSquare({ x, y }: Position, distance: number, stat
     await newsym(x, y);
 }
 
+// Part of C mklev.c:mkinvpos(): the liquid-death finisher for a monster
+// standing in a changed square.
 function finishInvocationLiquidDeath(
     monster: Monster, options: MonsterLiquidDeathContext,
 ): Promise<MonsterLiquidDeathResult | HeroLiquidMonsterDeathOutcome> {
@@ -1926,6 +1965,8 @@ function finishInvocationLiquidDeath(
     return finishMonsterLiquidDeath(monster, options);
 }
 
+// Part of C mklev.c:fill_ordinary_room(): the skip_nonrogue random-object
+// tail.
 async function fillRandomRoomObjects(croom: Room, pos: Position): Promise<void> {
     if (!rn2(3) && somexyspace(croom, pos)) {
         await mkobj_at(RANDOM_CLASS, pos.x, pos.y, true);
@@ -2082,6 +2123,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
 // Mineralize
 // ============================================================
 
+// C mklev.c:water_has_kelp():
 function water_has_kelp(x: number, y: number, kelp_pool: number, kelp_moat: number): boolean {
     const loc = requireGameLevel().at(x, y);
     if (!loc) return false;
@@ -2092,6 +2134,7 @@ function water_has_kelp(x: number, y: number, kelp_pool: number, kelp_moat: numb
     return false;
 }
 
+// Part of C mklev.c:mineralize(): the kelp-placement loop.
 async function mineralize_kelp(kelp_pool: number, kelp_moat: number): Promise<void> {
     if (kelp_pool < 0) kelp_pool = 10;
     if (kelp_moat < 0) kelp_moat = 30;
@@ -2101,6 +2144,7 @@ async function mineralize_kelp(kelp_pool: number, kelp_moat: number): Promise<vo
                 await mksobj_at(KELP_FROND, x, y, true, false);
 }
 
+// C mklev.c:mineralize():
 export async function mineralize(
     kelp_pool: number, kelp_moat: number, goldprob: number, gemprob: number, skip_lvl_checks: boolean,
 ): Promise<void> {
@@ -2176,6 +2220,7 @@ export async function mineralize(
 // Level finalize topology
 // ============================================================
 
+// C mklev.c:level_finalize_topology():
 async function level_finalize_topology(): Promise<void> {
     const level = requireGameLevel();
     bound_digging();

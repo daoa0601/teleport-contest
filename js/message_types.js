@@ -5,6 +5,7 @@ const MESSAGE_TYPES = [
     ['show', MSGTYP_NORMAL], ['hide', MSGTYP_NOSHOW], ['noshow', MSGTYP_NOSHOW],
     ['stop', MSGTYP_STOP], ['more', MSGTYP_STOP], ['norep', MSGTYP_NOREP],
 ];
+// C options.c:msgtype_parse_add():
 export function addMessageTypeRule(value, rules) {
     // sscanf() accepts a ten-character type and up to 255 pattern characters;
     // the closing quote and trailing input do not affect its two conversions.
@@ -25,6 +26,7 @@ export function addMessageTypeRule(value, rules) {
     }
     return null;
 }
+// C options.c:msgtype_type():
 export function messageTypeFor(text, noRepeat, rules = []) {
     const rule = rules.find(entry => entry.pattern.test(text));
     if (!rule)
@@ -32,6 +34,7 @@ export function messageTypeFor(text, noRepeat, rules = []) {
     // A disabled matching rule still wins over older rules and Norep().
     return rule.disabled ? MSGTYP_NORMAL : rule.type;
 }
+// C options.c:hide_unhide_msgtypes():
 export function hideUnhideMessageTypes(hide, mask, rules = []) {
     for (const rule of rules) {
         if (rule.type !== MSGTYP_NORMAL && ((1 << rule.type) & mask))

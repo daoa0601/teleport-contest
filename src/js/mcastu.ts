@@ -184,6 +184,8 @@ export async function castmuSpellEffect(
     return outcome.died || !!state.program_state.gameover;
 }
 
+// Part of C mcastu.c:castmu(): the mdamageu-and-rehumanize tail after
+// mcast_spell returns its damage.
 // castmu() reaches mdamageu() here after mcast_spell(): raw HP is kept for
 // tty's -1 sentinel, so rehumanization and the fatal input stay with the
 // presenter hooks.  An escaped pager (dismissal 27) has the
@@ -290,6 +292,8 @@ export async function mcastSpell(
     }
 }
 
+// Port only: builds the context for the castmu(FALSE, FALSE) movement cast:
+// publishers, RNG and the standard monster-message death handlers.
 // The context for castmu(FALSE,FALSE) from dochug(): zero damage and
 // undirected spells only, so the finishers below stay out of reach (the
 // damaging spells are all directed); they carry the standard
@@ -660,6 +664,9 @@ async function mcastConfuseYou(monster: Monster, ctx: McastuSpellContext): Promi
     monstersForgetHeroResistance(M_SEEN_MAGR, state);
 }
 
+// Part of C mhitu.c:mdamageu(): the raw synchronous HP subtraction, with
+// rehumanize and death deferred to the castmu presenter (mhitu.ts owns the
+// full async port).
 // mdamageu() subtracts from the active body. Keep raw HP for tty's -1
 // sentinel; the presenter owns rehumanization and fatal input afterward.
 export function applyHeroSpellDamage(
@@ -677,10 +684,12 @@ export function applyHeroSpellDamage(
     attack.heroDied = hpKey === 'uhp' && state.u.uhp < 1;
 }
 
+// C youprop.h:See_invisible(): intrinsic or extrinsic seeing of invisible.
 export function heroCanSeeInvisible(state: GameState) {
     return !!(state?.u?.seeInvisible || (state?.u?.seeInvisibleTurns ?? 0) > 0);
 }
 
+// C mcastu.c:spell_would_be_useless():
 export function monsterSpellUseless(
     monster: Monster,
     spell: MonsterSpell,
@@ -831,6 +840,8 @@ export async function movementSpellSelections(
     return null;
 }
 
+// C mcastu.c:mcast_summon_mons(): the summons and the "Destroy the thief" /
+// "Monsters appear" messages.
 async function monsterSummonSpellEffect(
     monster: Monster,
     state: PlayingGameState,
@@ -897,6 +908,7 @@ const DEATH_G_UNIQ = 0x1000;
 const DEATH_PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const DEATH_PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
 
+// C mcastu.c:death_inflicted_by():
 export function monsterSpellDeathReason(monster: Monster, reason: string): string {
     const current = monster.mnum;
     const base = ismnum(monster.cham) ? monster.cham : current;
@@ -921,6 +933,8 @@ export function monsterSpellDeathReason(monster: Monster, reason: string): strin
 
 const STRANGE_OBJECT = 0;
 
+// C mcastu.c:cursetxt(): the points-and-curses message and the mumbled
+// curse heard when the caster is unseen.
 async function curseDirectedSpell(monster: Monster, state: GameState, publish: MessagePublisher, random: typeof rn2) {
     if (canSeeMonster(monster)
         && couldsee(monster.mx, monster.my)) {
@@ -951,6 +965,7 @@ export interface MonsterMagicRayOptions {
     die?: DeathHandler;
 }
 
+// C mcastu.c:buzzmu(): the ranged magic-ray attack slot.
 export async function resolveMonsterMagicRay(monster: Monster, attack: MonsterAttack, {
     state = game, publish = plineWithContinuation,
     random = rn2, rollDice = d, rollOne = rnd, calls = [], die = finishHeroDeath,
@@ -987,6 +1002,7 @@ export async function resolveMonsterMagicRay(monster: Monster, attack: MonsterAt
 const S_ANT = 1;
 const S_SNAKE = 45;
 
+// C mcastu.c:mcast_insects():
 export async function summonMonsterInsects(caster: Monster, state: PlayingGameState): Promise<MonsterSpellEffect> {
     const monsterClass = mkclassAligned(S_ANT, 0) === null ? S_SNAKE : S_ANT;
     const oldSeen = spottedMonsterCount(state);
@@ -1040,6 +1056,7 @@ export async function summonMonsterInsects(caster: Monster, state: PlayingGameSt
     return { count: created.length, created, message };
 }
 
+// C minion.c:monster_census(): the spotted count, monster_census(TRUE).
 function spottedMonsterCount(state: PlayingGameState): number {
     return state.level.monsters.filter(monster => !monster.dead && monster.mhp > 0
         && !(monster.isgd && monster.mx === 0) && canSpotMonster(monster)).length;

@@ -281,6 +281,7 @@ export function flood_fill_rm(
     return result;
 }
 
+// C mkmap.c:litstate_rnd():
 export function litstate_rnd(litstate: number | boolean): boolean {
     if (typeof litstate === 'number' && litstate < 0)
         return rnd(1 + Math.abs(depth(game.u.uz))) < 11 && rn2(77) !== 0;

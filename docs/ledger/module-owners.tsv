@@ -43,12 +43,12 @@ src/js/lua/nhlobj.ts	nhlobj.c
 src/js/makemon.ts	makemon.c
 src/js/map_object_description.ts	pager.c
 src/js/mcastu.ts	mcastu.c
+src/js/message_types.ts	options.c
 src/js/mhitm.ts	mhitm.c
 src/js/mhitu.ts	mhitu.c
 src/js/minion.ts	minion.c
 src/js/mkmap.ts	mkmap.c
 src/js/mkmaze.ts	mkmaze.c
-src/js/mkobj.ts	mkobj.c
 src/js/mon.ts	mon.c
 src/js/mondata.ts	mondata.c
 src/js/monmove.ts	monmove.c
