@@ -45,6 +45,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MapLocation, Position, Trap, Engraving } from './map_types.js';
 import { infravisible, monsterIsMindless } from './mondata.js';
+import { updateLastSeenTerrain } from './dungeon.js';
 
 export interface GlyphAppearance {
     ch: string;
@@ -1349,7 +1350,7 @@ export function consumeHallucinatedMenuObjectGlyph(object: ObjectGlyphSource | n
     return objectGlyph(object);
 }
 
-function mimicAppearance(monster: MimicAppearance): number {
+export function mimicAppearance(monster: MimicAppearance): number {
     if (monster.mappearance === undefined)
         throw new Error('A disguised creature has no appearance');
     return monster.mappearance;
@@ -1505,20 +1506,6 @@ function monsterAtMapCell(x: number, y: number) {
     // Native m_at() retains a dying actor until remove_monster(), including
     // a vision refresh while its death announcement awaits acknowledgment.
     return game.level ? monsterAtPosition(game.level, x, y) : null;
-}
-
-// C dungeon.c:update_lastseentyp(). Terrain memory is independent of the
-// remembered glyph: an object can hide the terrain, and a mimic can fake it.
-export function updateLastSeenTerrain(x: number, y: number) {
-    const location = requireDisplayLocation(x, y);
-    let typ = location.typ === DRAWBRIDGE_UP
-        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
-    const monster = monsterAtMapCell(x, y);
-    if (monster && M_AP_TYPE(monster) === M_AP_FURNITURE
-        && canSeeMonster(monster)) {
-        typ = cmapToType(mimicAppearance(monster));
-    }
-    location.lastseentyp = typ;
 }
 
 // C display.c:_map_location(). This direct mapper intentionally bypasses

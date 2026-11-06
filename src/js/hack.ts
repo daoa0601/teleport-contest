@@ -22,7 +22,7 @@ import {
     paranoidQuery,
 } from './cmd.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain, beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
-import { docrt, feel_newsym, newsym, under_water, updateLastSeenTerrain, feel_location, back_to_glyph, glyphAt, canSpotMonster, canSenseMonster, canSeeMonster, monsterVisible, unmap_invisible, map_object, unmapObject, map_invisible, flush_screen, TemporaryMapEffect } from './display.js';
+import { docrt, feel_newsym, newsym, under_water, feel_location, back_to_glyph, glyphAt, canSpotMonster, canSenseMonster, canSeeMonster, monsterVisible, unmap_invisible, map_object, unmapObject, map_invisible, flush_screen, TemporaryMapEffect } from './display.js';
 import { impossible } from './diagnostics.js';
 import { bot } from './botl.js';
 import {
@@ -82,7 +82,7 @@ import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
 import {
     depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel,
-    surfaceName, ceilingName, placeHeroOnLevel,
+    surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain,
 } from './dungeon.js';
 
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';

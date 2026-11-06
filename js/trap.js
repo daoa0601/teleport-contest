@@ -22,12 +22,12 @@ import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MO
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
-import { levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel, levelAtDepth, depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel, } from './dungeon.js';
+import { levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel, levelAtDepth, depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain, } from './dungeon.js';
 import { monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance, setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape, finishHeroMonsterKill, finishHeroMonsterKillOutcome, } from './mon.js';
 import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig, billDummyObject, chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt, makeAngryShopkeeper, deleteObjectContents, } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
-import { canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor, show_glyph_cell, canOverwriteTerrain, updateLastSeenTerrain, transientObjectGlyph, feel_newsym, map_invisible, under_water, } from './display.js';
+import { canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor, show_glyph_cell, canOverwriteTerrain, transientObjectGlyph, feel_newsym, map_invisible, under_water, } from './display.js';
 import { objectResistsDestruction, getObjectLocation, blankNovel, burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory, heroHasHalfSpellDamage, meltIce, monsterResistsEffect, poly_obj, restoreMonsterTraits, destroyElectricInventory, fractureRock, } from './zap.js';
 import { impossible } from './diagnostics.js';
 import { d, rnl, rn2, rnd, rn2Display, rn1 } from './rng.js';

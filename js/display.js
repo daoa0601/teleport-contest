@@ -30,6 +30,7 @@ import { rn2Display } from './rng.js';
 import { recordObjectEncounter, objectTypeColor } from './o_init.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasWornProperty, propertyIsActive, refreshProperty } from './properties.js';
 import { infravisible, monsterIsMindless } from './mondata.js';
+import { updateLastSeenTerrain } from './dungeon.js';
 // C drawing.c:def_r_oc_syms.  Rogue deliberately resembles the older game:
 // armor uses ']', amulets ',', food ':', and coins share gems' '*'.
 const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
@@ -1244,7 +1245,7 @@ export function consumeHallucinatedMenuObjectGlyph(object) {
         return null;
     return objectGlyph(object);
 }
-function mimicAppearance(monster) {
+export function mimicAppearance(monster) {
     if (monster.mappearance === undefined)
         throw new Error('A disguised creature has no appearance');
     return monster.mappearance;
@@ -1397,19 +1398,6 @@ function monsterAtMapCell(x, y) {
     // Native m_at() retains a dying actor until remove_monster(), including
     // a vision refresh while its death announcement awaits acknowledgment.
     return game.level ? monsterAtPosition(game.level, x, y) : null;
-}
-// C dungeon.c:update_lastseentyp(). Terrain memory is independent of the
-// remembered glyph: an object can hide the terrain, and a mimic can fake it.
-export function updateLastSeenTerrain(x, y) {
-    const location = requireDisplayLocation(x, y);
-    let typ = location.typ === DRAWBRIDGE_UP
-        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
-    const monster = monsterAtMapCell(x, y);
-    if (monster && M_AP_TYPE(monster) === M_AP_FURNITURE
-        && canSeeMonster(monster)) {
-        typ = cmapToType(mimicAppearance(monster));
-    }
-    location.lastseentyp = typ;
 }
 // C display.c:_map_location(). This direct mapper intentionally bypasses
 // line of sight, but object observation and cloud visibility keep their gates.

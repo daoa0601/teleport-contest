@@ -66,7 +66,7 @@ import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormStic
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import {
     levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel, levelAtDepth,
-    depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel,
+    depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain,
 } from './dungeon.js';
 import {
     monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt,
@@ -89,7 +89,7 @@ import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhy
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import {
     canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor, show_glyph_cell,
-    canOverwriteTerrain, updateLastSeenTerrain, transientObjectGlyph, feel_newsym, map_invisible, under_water,
+    canOverwriteTerrain, transientObjectGlyph, feel_newsym, map_invisible, under_water,
 } from './display.js';
 import type { DisplayGlyph } from './display.js';
 import {

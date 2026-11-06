@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FOUNTAIN, STAIRS, THEMEROOM } from '../js/const.js';
-import { flush_screen, newsym, updateLastSeenTerrain } from '../js/display.js';
-import { init_dungeons } from '../js/dungeon.js';
+import { flush_screen, newsym } from '../js/display.js';
+import { init_dungeons, updateLastSeenTerrain } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
