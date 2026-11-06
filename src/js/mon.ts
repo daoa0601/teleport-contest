@@ -2939,7 +2939,8 @@ const SPECIAL_GOLEM_REMAINS = new Set([
     PM_IRON_GOLEM,
 ]);
 
-// Part of C mon.c:make_corpse(): the deathdrop and graveyard check.
+// C mon.c:LEVEL_SPECIFIC_NOCORPSE(): the rogue-level / no-deathdrops /
+// graveyard gate its expansions inside corpse_chance and xkilled evaluate.
 export function levelAllowsMonsterDeathDrops(
     monster: Monster, state: GameState = game, random = rn2,
 ): boolean {
@@ -2949,7 +2950,8 @@ export function levelAllowsMonsterDeathDrops(
     return !(state.level?.flags?.graveyard && undead && random(3));
 }
 
-// Part of C mon.c:make_corpse(): the square test for remains.
+// Part of C mon.c:mondied(), mon.c:xkilled(): the accessible-or-pool square
+// test that guards the make_corpse call.
 export function monsterDeathSquareAllowsObjects(x: number, y: number, state: GameState = game): boolean {
     return isAccessibleAt(x, y, state) || isPoolAt(x, y, state);
 }
