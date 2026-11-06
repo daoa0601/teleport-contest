@@ -7,7 +7,7 @@ import { A_STR, BEAR_TRAP, IRONBARS, GD_EATGOLD, ROOMOFFSET, VAULT, W_ARM } from
 import { eataccessory, doeat } from '../js/eat.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/topl.js';
-import { isEdibleFood, selectFoodToEat } from '../js/food_selection.js';
+import { isEdibleFood, selectFoodToEat } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import {

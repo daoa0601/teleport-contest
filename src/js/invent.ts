@@ -74,7 +74,7 @@ import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects
 import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifact.js';
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { recordAchievement } from './insight.js';
-import { isEdibleFood } from './food_selection.js';
+import { isEdibleFood } from './eat.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroCanReachFloor, readEngravingAt } from './engrave.js';
