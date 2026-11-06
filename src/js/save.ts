@@ -58,6 +58,7 @@ function saveKey(name: string | null | undefined, prefix = SAVE_PREFIX): string 
     return `${prefix}${String(name || 'player').toLowerCase()}`;
 }
 
+// Port only: snapshots the persistent state for serialization.
 // Snapshot persistent state, including the message window's recall history.
 // Also C save.c:save_msghistory(): inlined here with the rest of the saved state.
 // Also C topl.c:msghistory_snapshot(): inlined here before serializing the oldest-first history.

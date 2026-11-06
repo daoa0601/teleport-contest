@@ -764,6 +764,7 @@ const CHARACTER_ROLE_ORDER: readonly RoleKey[] = [
     'priest', 'rogue', 'ranger', 'samurai', 'tourist', 'valkyrie', 'wizard',
 ];
 
+// Port only: the roles[] table in native order for random selection.
 export function nativeRoleChoices(): Role[] {
     return CHARACTER_ROLE_ORDER.flatMap(key => {
         const role = roles.find(candidate => candidate.key === key);

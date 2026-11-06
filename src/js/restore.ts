@@ -465,6 +465,7 @@ export function repairBonesConnections(level: GameMap, location: DungeonLocation
  * the current topline in turn, and the final empty call puts the session's
  * messages back on top of the restored ones.
  */
+// C restore.c:restore_msghistory().
 export function restoreMessageHistory(saved: readonly string[]): void {
     if (!saved.length) return;
     rememberToplines();

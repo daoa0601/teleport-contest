@@ -358,8 +358,8 @@ async function questPurity(talk: boolean, g: GameState = game): Promise<-1 | 0 |
     return currentBaseAlignment(g) !== original ? -1 : 0;
 }
 
-// C Is_qstart(&u.uz): the quest home is identified by dungeon position.
 // C dungeon.h:Is_qstart().
+// C Is_qstart(&u.uz): the quest home is identified by dungeon position.
 export function onQuestStart(g: GameState = game) {
     return sameDungeonLevel(g.u?.uz, g.specialLevels?.get('x-strt'));
 }
