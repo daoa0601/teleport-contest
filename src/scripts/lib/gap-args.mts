@@ -26,10 +26,11 @@
 //
 // Comparison per pair: each side contributes one sequence per call site
 // that spells at least one boolean literal (other arguments ignored) — a
-// port call whose flags all hide in defaults, variables or an options
-// object is not an occurrence, so a pair that also passes a non-literal
-// flag still compares. Equal multisets match; the same number of calls and
-// per-call boolean counts with different values is a mismatch; anything
+// port call whose flags all hide in defaults or variables is not an
+// occurrence, so a pair that also passes a non-literal flag still
+// compares, while a call whose flag hides in an options object stays one
+// and makes the pair uncomparable. Equal multisets match; the same number
+// of calls and per-call boolean counts with different values is a mismatch;
 // else — different call counts, per-call counts split differently across
 // the calls, or a flag moved into an options object such as
 // `{ silent: true }` — is uncomparable. A mismatch is an audit lead, not a
@@ -479,12 +480,16 @@ export async function compareArgs(root: string, tree: CSourceTree, cacheDir: str
                         attributed.add(call.node);
                         const args = portCallArgs(call.node);
                         // An occurrence spells at least one bare literal, the
-                        // same rule the C side applies; a call whose flags all
-                        // hide in defaults, variables or an options object is
-                        // not one, so the reset_utrap(TRUE)-vs-false class
-                        // still compares when the pair also passes a
-                        // non-literal flag elsewhere.
-                        if (!args.values.length) continue;
+                        // same rule the C side applies, so the
+                        // reset_utrap(TRUE)-vs-false class still compares when
+                        // the pair also passes a non-literal flag (a default or
+                        // a variable) elsewhere. A call whose flag hides in an
+                        // options object stays an occurrence: dropping it
+                        // would let a lone matching literal call freeze the
+                        // pair as a match — C foo(x, TRUE) + foo(y, var)
+                        // against port foo(x, { silent: false }) + foo(y,
+                        // true) — where nothing can align the object's flag.
+                        if (!args.values.length && !args.optionsObject) continue;
                         const source = call.node.getSourceFile();
                         portCalls.push({ fn: index.locate(fn),
                             line: source.getLineAndCharacterOfPosition(call.node.getStart(source)).line + 1,

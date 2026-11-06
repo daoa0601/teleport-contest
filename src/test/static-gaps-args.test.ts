@@ -114,13 +114,21 @@ void test('a different number of calls is uncomparable', () => {
 });
 
 void test('a different number of boolean arguments is uncomparable', () => {
-    // The port moved the flag into a default parameter or a variable.
-    assert.equal(classifyArgs([['TRUE']], [{ values: [], optionsObject: false }]).verdict, 'uncomparable');
+    // The port split the pair's booleans differently across its calls; the
+    // port's non-literal calls (defaults, variables) are not occurrences.
     assert.equal(classifyArgs([['TRUE']], [{ values: ['true', 'false'], optionsObject: false }]).verdict, 'uncomparable');
+    assert.equal(classifyArgs([['TRUE'], ['FALSE']], [{ values: ['true'], optionsObject: false }]).verdict, 'uncomparable');
 });
 
-void test('a flag inside an options object is uncomparable', () => {
-    const verdict = classifyArgs([['TRUE']], [{ values: [], optionsObject: true }]);
+void test('a flag inside an options object makes the pair uncomparable even when a literal call matches', () => {
+    // C spells one boolean site and passes a variable elsewhere; the port
+    // moves the boolean site's flag into an options object and spells the
+    // variable site as a literal. The literal call alone would match, but
+    // nothing can align the object's flag, so the pair is uncomparable —
+    // not a match the ledger freezes.
+    const verdict = classifyArgs([['TRUE']],
+        [{ values: [], optionsObject: true }, { values: ['true'], optionsObject: false }]);
     assert.equal(verdict.verdict, 'uncomparable');
+    assert.equal(classifyArgs([['TRUE']], [{ values: [], optionsObject: true }]).verdict, 'uncomparable');
 });
 

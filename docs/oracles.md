@@ -156,7 +156,9 @@ walked through (they are compared in that function's own pair); only
 helpers without a C counterpart — code the port moved out of the caller —
 are transparent.
 Each side contributes the call sites that spell at least one boolean
-literal, so a pair that also passes a non-literal flag still compares.
+literal, so a pair that also passes a non-literal flag still compares; a
+port call whose flag hides in an options object stays an occurrence and
+makes the pair uncomparable.
 Equal multisets of per-call sequences match; equal call counts and
 per-call boolean counts with different values are mismatches, the class of
 bug an edge check cannot see (`reset_utrap(TRUE)` called as
