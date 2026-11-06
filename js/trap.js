@@ -52,7 +52,7 @@ import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existin
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
-import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, } from './hack.js';
+import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { displayMessageWindow } from './topl.js';
 import { abusePet, tameMonster, makePetWary } from './dog.js';
@@ -6140,8 +6140,8 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
     // test_move(): bad rock in both orthogonal squares plus overencumbrance
     // or a big form.  cant_squeeze_thru()'s extra exemptions do not apply.
     const tooTight = !!(dx && dy
-        && heroBadRock(state, state.u.ux, trap.ty)
-        && heroBadRock(state, trap.tx, state.u.uy)
+        && badRock(heroSpecies(state), state.u.ux, trap.ty, state)
+        && badRock(heroSpecies(state), trap.tx, state.u.uy, state)
         && (((state.inventory || []).length > 0
             && inventoryWeight(state) > WT_TOOMUCH_DIAGONAL)
             || monsterIsBig(heroSpecies(state))));

@@ -1288,10 +1288,6 @@ function shopKeeper(state, roomno) {
     return hasShopkeeperData(resident) && resident.isshk && !resident.dead
         && (resident.mhp ?? 1) > 0 ? resident : null;
 }
-// C hack.c:in_rooms(): the SHOPBASE membership list.
-function shopRoomnosAt(state, x, y) {
-    return roomsAt(state.level, x, y, SHOPBASE);
-}
 // C shk.c:inside_shop()
 // Strictly inside shop walls, boundary excluded.
 function insideShop(state, x, y) {
@@ -1634,7 +1630,7 @@ export function addShopDamage(x, y, cost, state = game) {
     if (IS_DOOR(location.typ)) {
         // Only a real shop entrance is worth repairing.
         let entrance = false;
-        for (const roomno of shopRoomnosAt(state, x, y)) {
+        for (const roomno of roomsAt(state.level, x, y, SHOPBASE)) {
             const keeper = shopKeeper(state, roomno);
             if (keeper && x === keeper.eshk.shd?.x
                 && y === keeper.eshk.shd?.y) {
@@ -1721,7 +1717,7 @@ export function repairableShopDamage(record, keeper, state = game) {
             return false;
     }
     // Does it belong to this keeper?
-    if (!shopRoomnosAt(state, x, y).includes(keeper.eshk.shoproom))
+    if (!roomsAt(state.level, x, y, SHOPBASE).includes(keeper.eshk.shoproom))
         return false;
     return true;
 }
@@ -1746,7 +1742,7 @@ function discardDamageRecord(record, state) {
 export function discardDamageOwnedByShopkeeper(keeper, state = game) {
     requireShopGame(state);
     const records = damageRecords(state);
-    state.level.damagelist = records.filter(record => !shopRoomnosAt(state, record.place.x, record.place.y)
+    state.level.damagelist = records.filter(record => !roomsAt(state.level, record.place.x, record.place.y, SHOPBASE)
         .includes(keeper.eshk.shoproom));
 }
 // C shk.c:shkgone(). This is not migration's temporary loss of residency.
@@ -1837,7 +1833,7 @@ export async function payForShopDamage(verb, { cantMollify = false, state = game
         if (record.when !== (state.moves ?? 0) || !record.cost)
             continue;
         costOfDamage += record.cost;
-        for (const roomno of shopRoomnosAt(state, record.place.x, record.place.y)) {
+        for (const roomno of roomsAt(state.level, record.place.x, record.place.y, SHOPBASE)) {
             const candidate = shopKeeper(state, roomno);
             if (!candidate)
                 continue;
@@ -1881,7 +1877,7 @@ export async function payForShopDamage(verb, { cantMollify = false, state = game
         return;
     }
     // If the keeper is not in any shop...
-    if (shopRoomnosAt(state, keeper.mx, keeper.my).length === 0) {
+    if (roomsAt(state.level, keeper.mx, keeper.my, SHOPBASE).length === 0) {
         if (!cansee(keeper.mx, keeper.my))
             return;
         pursue = true;

@@ -166,7 +166,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import {
-    burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt,
+    burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
     applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim,
     moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense,
@@ -7382,8 +7382,8 @@ async function tryDisarm(trap: Trap, {
     // test_move(): bad rock in both orthogonal squares plus overencumbrance
     // or a big form.  cant_squeeze_thru()'s extra exemptions do not apply.
     const tooTight = !!(dx && dy
-        && heroBadRock(state, state.u.ux, trap.ty)
-        && heroBadRock(state, trap.tx, state.u.uy)
+        && badRock(heroSpecies(state), state.u.ux, trap.ty, state)
+        && badRock(heroSpecies(state), trap.tx, state.u.uy, state)
         && (((state.inventory || []).length > 0
             && inventoryWeight(state) > WT_TOOMUCH_DIAGONAL)
             || monsterIsBig(heroSpecies(state))));

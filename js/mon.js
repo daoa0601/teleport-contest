@@ -54,7 +54,7 @@ import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
-import { badRockForMonster, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects } from './hack.js';
+import { badRock, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects } from './hack.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
@@ -1111,8 +1111,8 @@ export async function mfndpos(monster, state, flags = monAllowFlags(monster, sta
                     info |= NOTONL;
                 }
                 if (diagonal &&
-                    badRockForMonster(monster, state, x, ny) &&
-                    badRockForMonster(monster, state, nx, y) &&
+                    badRock(monster.mnum, x, ny, state) &&
+                    badRock(monster.mnum, nx, y, state) &&
                     monsterCannotSqueezeThrough(monster, state))
                     continue;
                 const trap = trapAt(state, nx, ny);
