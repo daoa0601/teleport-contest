@@ -414,7 +414,7 @@ src/js/uhitm.ts	flashHitsMonster	rnd	"[""Math.min(monster.mhp, 4)""]"	unproved
 src/js/do_name.ts	nameFloorType	rn2Display	"[""30""]"	constant
 src/js/do_name.ts	nameFloorType	rn2Display	"[""choices.length""]"	constant
 src/js/zap.ts	hitMonsterWithWand	d	"[""2"", ""12""]"	constant
-src/js/fountain.ts	blessedFountainDraught	rn2	"[""A_MAX""]"	constant
+src/js/fountain.ts	drinkFountain	rn2	"[""A_MAX""]"	constant
 src/js/fountain.ts	dipFountain	rn2	"[""2""]"	constant
 src/js/fountain.ts	dipFountain	rnd	"[""30""]"	constant
 src/js/fountain.ts	drinkFountain	rn2	"[""20""]"	constant
@@ -427,8 +427,8 @@ src/js/fountain.ts	drinkFountain	rnd	"[""30""]"	constant
 src/js/fountain.ts	drinkFountain	rnd	"[""4""]"	constant
 src/js/fountain.ts	dryFountainAt	random	"[""3""]"	constant
 src/js/fountain.ts	gushForthFromFountain	rn2	"[""1 + distmin(ux, uy, x, y)""]"	guarded
-src/js/fountain.ts	applyFountainDemonActor	random	"[""100""]"	constant
-src/js/fountain.ts	applyFountainSnakeActors	random	"[""5""]"	constant
+src/js/fountain.ts	summonFountainDemon	rnd	"[""100""]"	constant
+src/js/fountain.ts	summonFountainSnakes	rn2	"[""5""]"	constant
 src/js/fountain.ts	resolveDippedCoinFate	random	"[""amountRange""]"	unproved
 src/js/fountain.ts	dipFountainSword	rn2	"[""3""]"	constant
 src/js/fountain.ts	dipFountainSword	rn2	"[""game.urole.key === 'knight' ? 6 : 30""]"	constant

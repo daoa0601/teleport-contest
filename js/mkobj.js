@@ -6,7 +6,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { novelTitle } from './do_name.js';
 import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
-import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
+import { objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse, isReviver, isRider, zombieForm, } from './mon.js';
 import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
 import { isIceAt } from './dbridge.js';
@@ -25,7 +25,7 @@ import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './
 import { rndmonstAdj } from './makemon.js';
 import { learnObjectType, objectMaterial, objectProb } from './o_init.js';
 import { nameObjectFromTopten } from './topten.js';
-import { makePlural, objectName, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass } from './objnam.js';
+import { makePlural, objectName, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass, erosionMatters } from './objnam.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { assignCandyWrapper } from './read.js';
 import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks, confersLuck } from './invent.js';

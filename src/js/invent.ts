@@ -40,7 +40,7 @@ import {
     killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural,
     withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName,
     objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, objectNeedsFullIdentification,
-    observeObjectForNaming, simpleObjectName, singularObjectName,
+    observeObjectForNaming, simpleObjectName, singularObjectName, erosionMatters,
 } from './objnam.js';
 import {
     rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, placeObject,
@@ -84,7 +84,7 @@ import { deityName } from './pray.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';
 import { visibleRegionAt } from './region.js';
-import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion, erosionMatters } from './trap.js';
+import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion } from './trap.js';
 import {
     heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem,
 } from './mondata.js';

@@ -214,67 +214,64 @@ async function triggerFountainTrap(monster) {
 }
 // C fountain.c:dowaternymph().
 async function summonFountainNymph() {
-    if (fountainActorGone(PM_WATER_NYMPH)) {
-        await announceFountainHeard('A large bubble rises to the surface and pops.', 'a loud pop.');
-        return;
-    }
-    const nymph = await makemonNear(PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG);
-    if (!nymph) {
-        await announceFountainHeard('A large bubble rises to the surface and pops.', 'a loud pop.');
-        return;
-    }
-    await newsym(nymph.mx, nymph.my);
-    await announceFountainHeard(`You attract ${fountainActorIndefiniteName(nymph)}!`, 'a seductive voice.');
-    nymph.msleeping = 0;
-    if (fountainTrapAt(nymph))
-        await triggerFountainTrap(nymph);
+    return applyFountainNymphActor({
+        gone: fountainActorGone(PM_WATER_NYMPH),
+        blind: heroIsBlind(),
+        createMonster: async () => {
+            const nymph = await makemonNear(PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG);
+            if (nymph)
+                await newsym(nymph.mx, nymph.my);
+            return nymph;
+        },
+        announce: plineWithContinuation,
+        nymphDescription: fountainActorIndefiniteName,
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
+    });
 }
 // C fountain.c:dowaterdemon().
 async function summonFountainDemon() {
-    if (fountainActorGone(PM_WATER_DEMON)) {
-        await plineWithContinuation(FURIOUS_BUBBLING_MESSAGE);
-        return;
-    }
-    const demon = await makemonNear(PM_WATER_DEMON, game.u.ux, game.u.uy, MM_NOMSG);
-    if (!demon)
-        return;
-    await newsym(demon.mx, demon.my);
-    if (!heroIsBlind())
-        await plineWithContinuation(`You unleash ${fountainActorIndefiniteName(demon)}!`);
-    else
-        await plineWithContinuation(formatFeltMessage('the presence of evil.'));
-    // Give those on low levels a (slightly) better chance of survival.
-    if (rnd(100) > 80 + level_difficulty()) {
-        await plineWithContinuation(`Grateful for ${monsterPossessive(demon)} release, ${monsterSubjectPronoun(demon)} grants you a wish!`);
-        // give a wish and discard the monster (mongrantswish)
-        await grantMonsterWish(demon);
-    }
-    else if (fountainTrapAt(demon)) {
-        await triggerFountainTrap(demon);
-    }
+    return applyFountainDemonActor({
+        gone: fountainActorGone(PM_WATER_DEMON),
+        blind: heroIsBlind(),
+        difficulty: level_difficulty(),
+        createMonster: async () => {
+            const demon = await makemonNear(PM_WATER_DEMON, game.u.ux, game.u.uy, MM_NOMSG);
+            if (demon)
+                await newsym(demon.mx, demon.my);
+            return demon;
+        },
+        announce: plineWithContinuation,
+        demonIndefiniteName: fountainActorIndefiniteName,
+        demonPronouns: monster => ({
+            possessive: monsterPossessive(monster),
+            pronoun: monsterSubjectPronoun(monster),
+        }),
+        grantWish: (demon) => grantMonsterWish(demon),
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
+    });
 }
 // C fountain.c:dowatersnakes().
 async function summonFountainSnakes() {
-    // rn1(5, 2) is paid before the G_GONE check, as in C.  dowatersnakes()
-    // owns the first ordinary pline; only a later dryup line enters the
-    // branch-scoped continuation path.
-    const requested = 2 + rn2(5);
-    if (fountainActorGone(PM_WATER_MOCCASIN)) {
-        await pline(FURIOUS_BUBBLING_MESSAGE);
-        return;
-    }
-    const stream = heroIsHallucinating()
-        ? makePlural(randomDisplayMonsterName()) : 'snakes';
-    await announceSnakeStream(stream);
-    for (let index = 0; index < requested; index++) {
-        const snake = await makemonNear(PM_WATER_MOCCASIN, game.u.ux, game.u.uy, MM_NOMSG);
-        if (!snake)
-            continue;
-        await newsym(snake.mx, snake.my);
-        const trap = fountainTrapAt(snake) ? await triggerFountainTrap(snake) : null;
-        if (trap?.heroDied)
-            break;
-    }
+    return applyFountainSnakeActors({
+        gone: fountainActorGone(PM_WATER_MOCCASIN),
+        blind: heroIsBlind(),
+        hallucinating: heroIsHallucinating(),
+        random: rn2,
+        hallucinatedPlural: () => makePlural(randomDisplayMonsterName()),
+        // dowatersnakes() owns the first ordinary pline; only a later dryup
+        // line enters the branch-scoped continuation path below.
+        announce: pline,
+        createMonster: async () => {
+            const snake = await makemonNear(PM_WATER_MOCCASIN, game.u.ux, game.u.uy, MM_NOMSG);
+            if (snake)
+                await newsym(snake.mx, snake.my);
+            return snake;
+        },
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
+    });
 }
 // C fountain.c:drinkfountain().
 export async function drinkFountain(loc) {
@@ -286,38 +283,7 @@ export async function drinkFountain(loc) {
         return false;
     }
     if (blessed && (game.u.uluck ?? 0) >= 0 && fate >= 10) {
-        // The magic fountain: blessed restore ability, then one gained
-        // attribute, blessed when "natural" luck is high.
-        requirePlayingGame(game);
-        const hero = game.u;
-        await plineWithContinuation('Wow!  This makes you feel great!');
-        for (const attribute of ATTRIBUTE_DISPLAY_ORDER) {
-            if (hero.acurr.a[attribute] < hero.amax.a[attribute]) {
-                hero.acurr.a[attribute] = hero.amax.a[attribute];
-                game.context.botl = true;
-            }
-        }
-        const littleLuck = (hero.uluck ?? 0) < 4;
-        const start = rn2(A_MAX);
-        for (let offset = 0; offset < A_MAX; offset++) {
-            const attribute = (start + offset) % A_MAX;
-            const change = adjustAttribute(attribute, 1, game);
-            if (change.changed || !littleLuck
-                && (change.blockedByDunceCap || game.flags.verbose !== false)) {
-                const message = attributeChangeMessage(attribute, change, game);
-                if (message)
-                    await plineWithContinuation(message);
-            }
-            if (change.changed && game._moveloopStarted
-                && (attribute === A_STR || attribute === A_CON))
-                await encumber_msg(game);
-            if (change.changed && littleLuck)
-                break;
-        }
-        await displayMessageWindow();
-        await plineWithContinuation('A wisp of vapor escapes the fountain...');
-        await exerciseAttribute(A_WIS, true);
-        loc.blessedftn = 0;
+        await blessedFountainDraught(loc);
         return false;
     }
     if (fate < 10) {
@@ -437,6 +403,40 @@ export async function drinkFountain(loc) {
         await plineWithContinuation(fountainMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
     return false;
+}
+// C fountain.c:drinkfountain(): the blessed fountain draught.
+async function blessedFountainDraught(loc) {
+    requirePlayingGame(game);
+    const state = game;
+    const hero = state.u;
+    await plineWithContinuation('Wow!  This makes you feel great!');
+    for (const attribute of ATTRIBUTE_DISPLAY_ORDER) {
+        if (hero.acurr.a[attribute] < hero.amax.a[attribute]) {
+            hero.acurr.a[attribute] = hero.amax.a[attribute];
+            state.context.botl = true;
+        }
+    }
+    const littleLuck = (hero.uluck ?? 0) < 4;
+    const start = rn2(A_MAX);
+    for (let offset = 0; offset < A_MAX; offset++) {
+        const attribute = (start + offset) % A_MAX;
+        const change = adjustAttribute(attribute, 1, state);
+        if (change.changed || !littleLuck
+            && (change.blockedByDunceCap || state.flags.verbose !== false)) {
+            const message = attributeChangeMessage(attribute, change, state);
+            if (message)
+                await plineWithContinuation(message);
+        }
+        if (change.changed && state._moveloopStarted
+            && (attribute === A_STR || attribute === A_CON))
+            await encumber_msg(state);
+        if (change.changed && littleLuck)
+            break;
+    }
+    await displayMessageWindow();
+    await plineWithContinuation('A wisp of vapor escapes the fountain...');
+    await exerciseAttribute(A_WIS, true);
+    loc.blessedftn = 0;
 }
 // C fountain.c:dipfountain().
 export async function dipFountain(object, loc) {
@@ -634,18 +634,111 @@ export async function applyFountainGemDiscovery({ loc, blind = false, announce =
     return { discovered: true, message, gemType, gem };
 }
 const FURIOUS_BUBBLING_MESSAGE = 'The fountain bubbles furiously for a moment, then calms.';
-// A blind hero hears the actor only when You_hear() itself would speak; the
-// sighted line always publishes.
-async function announceFountainHeard(sighted, heard) {
-    const message = heroIsBlind() ? formatHeardMessage(heard) : sighted;
+async function announceFountainActor(message, announce) {
     if (message)
-        await plineWithContinuation(message);
+        await announce(message);
+    return message;
 }
-// dowatersnakes() publishes through the ordinary pline.
-async function announceSnakeStream(stream) {
-    const message = heroIsBlind() ? formatHeardMessage('something hissing!') : `An endless stream of ${stream} pours forth!`;
-    if (message)
-        await pline(message);
+async function triggerFountainActorTrap(monster, trapAt, triggerTrap) {
+    if (!monster || !trapAt(monster))
+        return null;
+    return triggerTrap(monster);
+}
+// C fountain.c:dowaternymph()
+// Placement, trap effects, and presentation stay injected subsystem
+// owners; this reducer owns only their source ordering.
+export async function applyFountainNymphActor({ gone = false, blind = false, createMonster = async () => null, announce = async () => { }, nymphDescription = () => 'a water nymph', wakeMonster = monster => { monster.msleeping = 0; }, trapAt = () => false, triggerTrap = async () => null, }) {
+    const monster = gone ? null : await createMonster();
+    if (!monster) {
+        const message = blind
+            ? formatHeardMessage('a loud pop.')
+            : 'A large bubble rises to the surface and pops.';
+        await announceFountainActor(message, announce);
+        return {
+            created: false, monster: null, message,
+            trap: null, fallback: true,
+        };
+    }
+    const message = blind
+        ? formatHeardMessage('a seductive voice.')
+        : `You attract ${nymphDescription(monster)}!`;
+    await announceFountainActor(message, announce);
+    wakeMonster(monster);
+    const trap = await triggerFountainActorTrap(monster, trapAt, triggerTrap);
+    return { created: true, monster, message, trap, fallback: false };
+}
+// C fountain.c:dowaterdemon()
+// The wish roll is eligible only after a successful construction and its
+// release message; a winning grant replaces immediate trap entry because
+// mongrantswish() removes the actor first.
+export async function applyFountainDemonActor({ gone = false, blind = false, difficulty = 1, createMonster = async () => null, announce = async () => { }, random = rnd, demonIndefiniteName = () => 'a water demon', demonPronouns = () => ({ possessive: 'his', pronoun: 'he' }), grantWish = async () => { }, trapAt = () => false, triggerTrap = async () => null, }) {
+    if (gone) {
+        await announceFountainActor(FURIOUS_BUBBLING_MESSAGE, announce);
+        return {
+            created: false, monster: null,
+            message: FURIOUS_BUBBLING_MESSAGE,
+            wishRoll: null, grantedWish: false, trap: null, fallback: true,
+        };
+    }
+    const monster = await createMonster();
+    if (!monster) {
+        return {
+            created: false, monster: null, message: '',
+            wishRoll: null, grantedWish: false, trap: null, fallback: false,
+        };
+    }
+    const message = blind
+        ? formatFeltMessage('the presence of evil.')
+        : `You unleash ${demonIndefiniteName(monster)}!`;
+    await announceFountainActor(message, announce);
+    const wishRoll = random(100);
+    if (wishRoll > 80 + difficulty) {
+        const description = demonPronouns(monster);
+        const wishMessage = `Grateful for ${description.possessive} release, ${description.pronoun} grants you a wish!`;
+        await announceFountainActor(wishMessage, announce);
+        await grantWish(monster);
+        return {
+            created: true, monster, message, wishMessage,
+            wishRoll, grantedWish: true, trap: null, fallback: false,
+        };
+    }
+    const trap = await triggerFountainActorTrap(monster, trapAt, triggerTrap);
+    return {
+        created: true, monster, message, wishRoll,
+        grantedWish: false, trap, fallback: false,
+    };
+}
+// C fountain.c:dowatersnakes()
+// Unlike the other helpers, rn1(5,2) is paid before G_GONE.  Each
+// requested actor independently constructs and enters a trap before the
+// next request begins.
+export async function applyFountainSnakeActors({ gone = false, blind = false, hallucinating = false, random = rn2, hallucinatedPlural = () => 'snakes', announce = async () => { }, createMonster = async () => null, trapAt = () => false, triggerTrap = async () => null, }) {
+    const requested = 2 + random(5);
+    if (gone) {
+        await announceFountainActor(FURIOUS_BUBBLING_MESSAGE, announce);
+        return {
+            requested, created: [], message: FURIOUS_BUBBLING_MESSAGE,
+            traps: [], fallback: true,
+        };
+    }
+    const message = blind
+        ? formatHeardMessage('something hissing!')
+        : `An endless stream of ${hallucinating ? hallucinatedPlural() : 'snakes'} pours forth!`;
+    await announceFountainActor(message, announce);
+    const created = [];
+    const traps = [];
+    for (let index = 0; index < requested; index++) {
+        const monster = await createMonster(index);
+        if (!monster)
+            continue;
+        created.push(monster);
+        const trap = await triggerFountainActorTrap(monster, trapAt, triggerTrap);
+        if (trap != null)
+            traps.push({ monster, trap });
+        if (trap?.heroDied)
+            break;
+    }
+    return { requested, created, message, traps, fallback: false };
 }
 // ---------------------------------------------------------------------------
 // The Lady of the Lake judges a long sword (fountain_sword)

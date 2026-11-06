@@ -23,7 +23,7 @@ import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
-import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName } from './objnam.js';
+import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName, erosionMatters } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
@@ -39,7 +39,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, isEyesOfTheOverw
 import { makeHallucinated, setSlipperyHands, showInvisibilityMessage, toggleBlindness } from './potion.js';
 import { newsym, see_monsters, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, refreshInvisibleMonsters } from './display.js';
 import { objectResistsDestruction } from './zap.js';
-import { erodeObject, erosionMatters, objectIsVulnerableToErosion, resolveImmediatePetrification, captureLevitationState, floatHeroUp, floatHeroDown, selfTouchPetrifyingWeapons, } from './trap.js';
+import { erodeObject, objectIsVulnerableToErosion, resolveImmediatePetrification, captureLevitationState, floatHeroUp, floatHeroDown, selfTouchPetrifyingWeapons, } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling, levelIsWaterLevel, surfaceName } from './dungeon.js';

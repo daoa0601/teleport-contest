@@ -24,14 +24,14 @@ import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } fro
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused, finishStrangeFeeling, strangeFeeling, makeStunned } from './potion.js';
 import { feelingAfterSelfGenocide, genocideDeathOptions, heroIsUnchanging, heroMonsterForm, heroSpecies, polymorphHero, rememberPolymorphGenocide, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
-import { sokobanGuilt, erosionMatters } from './trap.js';
+import { sokobanGuilt } from './trap.js';
 import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription, chooseInventoryObject } from './invent.js';
 import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
 import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity } from './hack.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
-import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, withIndefiniteArticle } from './objnam.js';
+import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, withIndefiniteArticle, erosionMatters } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { tryCallObjectType } from './do.js';
 import { blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj } from './mkobj.js';

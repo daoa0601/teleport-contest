@@ -48,7 +48,7 @@ import {
     objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName,
     objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName,
     corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle,
-    bareArtifactOrPlainName, killerObjectName, definiteObjectAction, objectMonsterName,
+    bareArtifactOrPlainName, killerObjectName, definiteObjectAction, objectMonsterName, erosionMatters,
 } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
@@ -403,10 +403,6 @@ export function objectIsVulnerableToErosion(object: GameObject, kind: ErosionKin
     return objectIsCrackable(object, state);
 }
 
-export function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>) {
-    return [WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS].includes(object.oclass)
-        || isWeaponTool(object);
-}
 
 function inventoryResists(kind: ErosionKind, state: GameState, random: typeof rn2) {
     if (kind !== 'burn' && kind !== 'corrosion') return false;

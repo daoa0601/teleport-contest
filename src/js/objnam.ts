@@ -60,7 +60,7 @@ import { counterWereSpecies } from './were.js';
 import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
 import { iceDescriptionAt, waterbodyName } from './pager.js';
 import { deleteEngravingAt, make_grave } from './engrave.js';
-import { fireDamageChain, deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion, resetUtrap, maketrap } from './trap.js';
+import { fireDamageChain, deleteTrap, trapName, waterDamageObject, objectIsVulnerableToErosion, resetUtrap, maketrap } from './trap.js';
 import type { MapLocation } from './map_types.js';
 import { canFallThrough, countLevelFeatures } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
@@ -935,17 +935,15 @@ function currentDescription(otyp: number): string | null | undefined {
     return OBJ_DESCR(otyp);
 }
 
-// C objclass.h:is_damageable() and objnam.c:readobjnam()'s primary and
-// secondary erosion tests, expanded through the named owners in
-// object_properties.js and mkobj.js.  Wished proof applies only where the
-// object instance can retain erosion state; an ordinary non-weapon tool does
+
+// C objnam.c:erosion_matters(): used to prevent rust on items where rust
+// makes no difference.  A weptool counts; an ordinary non-weapon tool does
 // not become proof merely because its material could otherwise decay.
-function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
+export function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
     if ([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS]
         .includes(object.oclass)) return true;
     return isWeaponTool(object);
 }
-
 
 function objectAcceptsPrimaryErosion(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
     return objectIsFlammable(object) || objectIsRustprone(object)
@@ -3130,7 +3128,7 @@ export function observeBucForNaming(object: GameObject, state: GameState = game)
 
 // C objnam.c:add_erosion_words().
 function erosionDescription(object: GameObject, state: GameState): string[] {
-    if (!trapErosionMatters(object)) return [];
+    if (!erosionMatters(object)) return [];
     const fixedKnife = object.otyp === CRYSKNIFE;
     const rusty = objectIsVulnerableToErosion(object, 'rust', state);
     const cracked = objectIsVulnerableToErosion(object, 'crack', state);
