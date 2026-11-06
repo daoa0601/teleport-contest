@@ -202,7 +202,8 @@ export function roomHasStair(croom: Room, up: boolean): boolean {
     return false;
 }
 
-// C ref: mkroom.c invalid_shop_shape().  A shopkeeper must have more than a
+// C mkroom.c:invalid_shop_shape()
+// A shopkeeper must have more than a
 // one-square cul-de-sac immediately inside the selected room's only door.
 async function invalidShopShape(croom: Room): Promise<boolean> {
     const level = requireGameLevel();
@@ -284,7 +285,8 @@ export async function mkshop(): Promise<boolean> {
     return true;
 }
 
-// C refs: mkroom.c pick_room()/mkzoo()/mktemple().  Random special rooms use
+// C mkroom.c:pick_room()
+// Used by mkzoo() and mktemple(). Random special rooms use
 // a randomized starting room, then walk the stable room array with exact
 // stair and door eligibility gates.
 function pickSpecialRoom(strict: boolean): Room | null {
@@ -312,7 +314,8 @@ function pickSpecialRoom(strict: boolean): Room | null {
     return null;
 }
 
-// C ref: mkroom.c shrine_pos().  Even-width or even-height interiors have
+// C mkroom.c:shrine_pos()
+// Even-width or even-height interiors have
 // two central squares, and each such axis owns one independent tie-breaker.
 export function shrinePosition(room: Room): Position {
     const xDelta = room.hx - room.lx;
@@ -325,6 +328,7 @@ export function shrinePosition(room: Room): Position {
     return { x, y };
 }
 
+// Part of C mkroom.c:mktemple(): the temple construction after the caller has selected a room.
 // C ref: mkroom.c mktemple().  Unlike zoo-family rooms, a temple is fully
 // constructed at selection time; ordinary-room filling must observe both its
 // changed room type and its resident priest.
@@ -719,6 +723,7 @@ export async function fillBarracksRoom(room: Room): Promise<void> {
     level.flags.has_barracks = true;
 }
 
+// Part of C mkroom.c:fill_zoo(): the BEEHIVE stocking branch.
 // C ref: mkroom.c fill_zoo(BEEHIVE). The queen uses the center when it
 // belongs to the room. Every other eligible square receives a sleeping
 // killer bee, followed by that square's independent royal-jelly probe.

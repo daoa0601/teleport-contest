@@ -120,6 +120,7 @@ export function xyToDirection(dx, dy) {
     const direction = xdir.findIndex((x, index) => x === dx && ydir[index] === dy);
     return direction < 8 ? direction : -1;
 }
+// Part of C allmain.c:moveloop_core(): the occupation continuation between complete world turns.
 // C refs: cmd.c set_occupation()/timed_occupation() and
 // allmain.c:moveloop_core().  A count-prefixed search executes once in
 // rhack(), then repeats without reading another input key; each repetition is
@@ -475,6 +476,7 @@ async function repeatLastCommand() {
         game.iflags.menu_requested = false;
     }
 }
+// Part of C cmd.c:rhack(): dispatch adapter for do_reqmenu(), do_fight(), do_rush(), and do_run().
 // C cmd.c's four movement-prefix commands, each a branch here:
 // Also C cmd.c:do_reqmenu(): inlined here (menu_requested toggle).
 // Also C cmd.c:do_fight(): inlined here (forcefight toggle).
@@ -1104,7 +1106,7 @@ function mouseAction(click) {
     }
     queue(contextMenuCommand({ action: 'move', x: game.u.ux + Math.sign(dx), y: game.u.uy + Math.sign(dy) }));
 }
-// Also C cmd.c:act_on_act(): the MCMD-action-to-command mapping half;
+// Part of C cmd.c:act_on_act(): the MCMD-action-to-command mapping half;
 // the queued-answer half is contextMenuResponses() below.
 function contextMenuCommand(selection) {
     switch (selection.action) {
@@ -1152,6 +1154,7 @@ function contextMenuCommand(selection) {
         case 'throw': return selection.action;
     }
 }
+// Part of C cmd.c:act_on_act(): the queued-answer half; contextMenuCommand() supplies the command.
 // The answer tail C cmd.c:act_on_act() queues behind each action's
 // command (cmd.c:4690-4833): directions, letters, and the user-input
 // placeholder its prompts consume.
@@ -1810,6 +1813,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['timeout', wizTimeoutQueue],
     ['wizshownhuuid', wizShowNhuuid],
 ]);
+// Part of C cmd.c:domonability(): the mounted steed breath-attack branch.
 // C ref: cmd.c:domonability().
 async function useSteedBreathAbility(steed) {
     requirePlayingGame(game);
@@ -2098,6 +2102,7 @@ export function commandAutocompletes(command) {
 export function countCommandAutocompletions() {
     return autocompleteOverrides.size;
 }
+// C cmd.c:handler_change_autocompletions()
 // This editor includes wizard commands even during ordinary play, as C does.
 // C cmd.c:handler_change_autocompletions().
 export async function changeCommandAutocompletions() {
@@ -2122,7 +2127,7 @@ export async function changeCommandAutocompletions() {
             setCommandAutocomplete(command.name, selected.has(command));
     }
 }
-// Also C cmd.c:extcmds_match(): inlined here (the CMD_NOT_AVAILABLE and
+// Part of C cmd.c:extcmds_match(): inlined here (the CMD_NOT_AVAILABLE and
 // WIZMODECMD eligibility filter of the window-port matcher; the prefix
 // match half is completeExtendedCommand()).
 export function availableExtendedCommands() {
@@ -2190,6 +2195,7 @@ export async function extendedCommandMenu() {
             return null;
     }
 }
+// C cmd.c:doextlist()
 // A list entry is informational. Only the list controls are selectable.
 // C cmd.c:doc_extcmd_flagstr().
 // C cmd.c:accept_menu_prefix().
@@ -2276,7 +2282,8 @@ function matchesSearch(text, pattern) {
         : character === '?' ? '.' : character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('');
     return new RegExp(`^${expression}$`, 'i').test(text);
 }
-// C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
+// C cmd.c:dotravel()
+// Uses getpos.c:getpos(), hack.c:handle_tip(), and
 // dat/nhcore.lua show_getpos_tip().  The tty message window and the Lua text
 // window own distinct input boundaries; after the tutorial, getpos retains
 // its cursor and accepts terrain-symbol cycling before one of the pick keys.
@@ -2390,6 +2397,7 @@ async function doversion() {
         await pline(NATIVE_VERSION);
     game.context.move = 0;
 }
+// C cmd.c:count_bind_keys()
 // ── Key-binding menus (C cmd.c:handler_rebind_keys*(), count_bind_keys(),
 //    get_changed_key_binds()) ────────────────────────────────────────────
 // cmd.c count_bind_keys(): user rebinds plus default keys that no longer
@@ -2405,7 +2413,8 @@ export function countBindKeys() {
             count++;
     return count;
 }
-// cmd.c get_changed_key_binds(): the "BIND=key:command" config rows.
+// C cmd.c:get_changed_key_binds()
+// The "BIND=key:command" config rows.
 export function changedKeyBindsLines() {
     const bound = new Set(game.commandBindings.bindings.map(binding => binding.key));
     const lines = [];
@@ -2421,7 +2430,8 @@ export function changedKeyBindsLines() {
             lines.push(`BIND=${keyText(command.key)}:nothing`);
     return lines;
 }
-// cmd.c handler_rebind_keys_add(): keyfirst asks for the key before showing
+// C cmd.c:handler_rebind_keys_add()
+// keyfirst asks for the key before showing
 // the command list, otherwise the key is asked after a command is chosen.
 async function handlerRebindKeysAdd(keyfirst) {
     let key = 0;
@@ -2508,7 +2518,8 @@ async function handlerRebindKeysAdd(keyfirst) {
         await pline('Key binding failed?!');
     }
 }
-// cmd.c handler_rebind_keys(): the "Do what?" pick list, redone after every
+// C cmd.c:handler_rebind_keys()
+// The "Do what?" pick list, redone after every
 // action until it is cancelled.
 export async function handlerRebindKeys() {
     for (;;) {
@@ -2558,6 +2569,7 @@ export function parseAutocomplete(value, addRawError) {
     }
     setCommandAutocomplete(value, condition);
 }
+// Part of C cmd.c:rhack(): adapter that initializes the command result before a handler runs.
 // ── Runtime command counts and results (C cmd.c:rhack(), reset_cmd_vars()) ──
 // C command handlers return an ECMD_* status which rhack() inspects after
 // the command finishes (cmd.c:3810): ECMD_CANCEL and ECMD_FAIL make it call
@@ -2574,12 +2586,14 @@ export function commandResultCancelled(state = game) {
 export function commandResultFailed(state = game) {
     state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_FAIL;
 }
+// Part of C apply.c:doapply(): adapter that preserves ECMD_TIME from an artifact speaking during tool use.
 // doapply() ORs arti_speak()'s ECMD_TIME into the tool result
 // (apply.c:4422), so a cancelled tool use by a speaking artifact still
 // spends its turn.
 export function commandResultSpentTime(state = game) {
     state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_TIME;
 }
+// Part of C cmd.c:rhack(): the DOMOVE_RUSH setup after set_move_cmd(), before hack.c:lookaround().
 // C refs: cmd.c set_move_cmd(run=1) and hack.c lookaround().
 export function startRun(dx, dy, g = game, mode = 1) {
     g._runState = {
@@ -2595,6 +2609,7 @@ export function startRun(dx, dy, g = game, mode = 1) {
     g.context.mv = true;
     return g._runState;
 }
+// Part of C cmd.c:rhack(): the DOMOVE_WALK setup for a counted direction.
 // C rhack()'s DOMOVE_WALK dispatch (cmd.c:3785-3788): a counted direction
 // only marks the repeat active.  context.run keeps whatever value an
 // earlier rush or travel left behind, as does the last corridor turn.
@@ -2955,6 +2970,7 @@ export async function promptKey(message, cursorOffset = 0, { canned = true } = {
         clearMessageWindow(coveredRows);
     return key;
 }
+// Part of C cmd.c:yn_function(): the response-free single-key query path.
 // The response-free single-key call form of cmd.c:yn_function() —
 // yn_function(query, (char *) 0, def, TRUE) — used by getobj() prompts
 // and invent.c:adjust_split(). Its queue handling is yn_function()'s
@@ -3156,6 +3172,7 @@ export async function restoreCommandMap() {
     game._pending_message = '';
     game._retained_message = '';
 }
+// Part of C cmd.c:help_dir(): the help-page projection; the caller owns its window and input.
 // C help_dir(): use the current movement bindings and hide diagonals when
 // the hero's body cannot use them. Explicit help omits the error heading.
 // Also C cmd.c:show_direction_keys(): inlined here (the direction-key
@@ -3239,7 +3256,8 @@ export async function yn_function(query, responses, defaultAnswer = '', addComma
         await reportInvalidYnAnswer(query, responses, defaultAnswer, result.answer, alternative);
     return { ...result, answer: alternative };
 }
-// cmd.c:yn_function_menu(): the preselected answer wins when the menu is
+// C cmd.c:yn_function_menu()
+// The preselected answer wins when the menu is
 // cancelled; choosing another answer overrides it. This path keeps yn_number
 // from the previous tty question because it never calls tty_yn_function().
 // Also C cmd.c:yn_func_menu_opt(): inlined here (one menu entry per

@@ -86,6 +86,7 @@ export async function prepareQuestText(messageId: string, state: GameState = gam
         ?? await prepareSection('common', messageId, state);
 }
 
+// Part of C questpgr.c:com_pager_core(): the prepared-text delivery adapter.
 // Also C questpgr.c:deliver_by_pline(): inlined here after prepareSection converts lines
 // Also C questpgr.c:deliver_by_window(): inlined here after prepareSection converts lines
 export async function displayQuestText(text: QuestText | null, state: GameState = game): Promise<boolean> {

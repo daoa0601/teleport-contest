@@ -212,7 +212,8 @@ interface FloodFillResult extends Rectangle {
     filled: number;
 }
 
-// C ref: mkmap.c flood_fill_rm(). Bounds and the fill count are local to one
+// C mkmap.c:flood_fill_rm()
+// Bounds and the fill count are local to one
 // flood instead of shared generation globals.
 export function flood_fill_rm(
     sx: number, sy: number, roomNumber: number, lit: boolean, anyroom: boolean,

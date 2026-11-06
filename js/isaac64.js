@@ -21,14 +21,17 @@ function seedByteAt(bytes, index) {
         throw new RangeError(`ISAAC64 seed has no byte at ${index}`);
     return byte;
 }
+// C isaac64.c:lower_bits()
 // cf. isaac64.c:39 — extract SZ_LOG bits starting at bit 3
 export function lower_bits(x) {
     return Number((x >> 3n) & 0xffn);
 }
+// C isaac64.c:upper_bits()
 // cf. isaac64.c:45 — extract SZ_LOG bits starting at bit SZ_LOG+3 = 11
 export function upper_bits(y) {
     return Number((y >> 11n) & 0xffn);
 }
+// C isaac64.c:isaac64_mix()
 // cf. isaac64.c:103 — mix 8 values using alternating shift pattern
 export function isaac64_mix(x) {
     const SHIFT = [9n, 9n, 23n, 15n, 14n, 20n, 17n, 14n];
@@ -42,6 +45,7 @@ export function isaac64_mix(x) {
         x[(i + 7) & 7] = (wordAt(x, (i + 7) & 7) + wordAt(x, i)) & MASK;
     }
 }
+// C isaac64.c:isaac64_update()
 // cf. isaac64.c:50 — generate next batch of 256 random values
 export function isaac64_update(ctx) {
     const m = ctx.m;
@@ -103,6 +107,7 @@ export function isaac64_update(ctx) {
     ctx.a = a;
     ctx.n = SZ;
 }
+// C isaac64.c:isaac64_init()
 // cf. isaac64.c:118 — create a new ISAAC64 context and seed it
 export function isaac64_init(seed_bytes) {
     const ctx = {
@@ -116,6 +121,7 @@ export function isaac64_init(seed_bytes) {
     isaac64_reseed(ctx, seed_bytes);
     return ctx;
 }
+// C isaac64.c:isaac64_reseed()
 // cf. isaac64.c:124 — mix seed into state and reinitialize
 export function isaac64_reseed(ctx, seed_bytes) {
     const m = ctx.m;
@@ -167,6 +173,7 @@ export function isaac64_reseed(ctx, seed_bytes) {
     // Generate first batch
     isaac64_update(ctx);
 }
+// C isaac64.c:isaac64_next_uint64()
 // cf. isaac64.c:161 — return next random uint64
 // Autotranslated from isaac64.c:161
 export function isaac64_next_uint64(_ctx) {
@@ -182,6 +189,7 @@ export function isaac64_peek_uint64(_ctx) {
         isaac64_update(_ctx);
     return wordAt(_ctx.r, _ctx.n - 1);
 }
+// C isaac64.c:isaac64_next_uint()
 // cf. isaac64.c:166 — return unbiased random value in [0, n)
 // Autotranslated from isaac64.c:166
 export function isaac64_next_uint(_ctx, _n) {

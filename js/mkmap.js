@@ -188,7 +188,8 @@ export async function mkmap({ lit: lighting, foreground = ROOM, background = STO
         level.flags.is_cavernous_lev = true;
     }
 }
-// C ref: mkmap.c flood_fill_rm(). Bounds and the fill count are local to one
+// C mkmap.c:flood_fill_rm()
+// Bounds and the fill count are local to one
 // flood instead of shared generation globals.
 export function flood_fill_rm(sx, sy, roomNumber, lit, anyroom) {
     const level = requireGameLevel();

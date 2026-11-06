@@ -170,6 +170,7 @@ export async function releaseCarriedBall(state: GameState, showMessage = false):
     await encumber_msg(state);
 }
 
+// C ball.c:unplacebc()
 // C unplacebc()/placebc(): swallowing removes the floor pair but leaves a
 // carried ball in the pack. Expulsion returns the chain to the hero's square.
 // Also C ball.c:check_restriction(): inlined here as the _ballChainRestriction
@@ -243,8 +244,8 @@ export async function placeBallAndChain(
     await restoreBallAndChainPlacement(0, state, publish);
 }
 
+// C ball.c:placebc_core()
 // A negative pin overrides the restriction during terminal object cleanup.
-// C ball.c:placebc_core().
 export async function restoreBallAndChainPlacement(
     pin: number, state: GameState = game, publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {

@@ -11,7 +11,7 @@ import type { Rectangle } from './map_types.js';
 const XLIM = 4;
 const YLIM = 3;
 
-// C ref: rect.c:28 init_rect()
+// C rect.c:init_rect()
 export function init_rect(): void {
     if (!game.nhrect) {
         game.n_rects = Math.trunc((COLNO * ROWNO) / 30);
@@ -32,13 +32,13 @@ function rectangleAt(index: number): Rectangle {
     return rectangle;
 }
 
-// C ref: rect.c:44 free_rect()
+// C rect.c:free_rect()
 export function free_rect(): void {
     game.nhrect = null;
     game.n_rects = game.rect_cnt = 0;
 }
 
-// C ref: rect.c:59 get_rect_ind()
+// C rect.c:get_rect_ind()
 export function get_rect_ind(r: Rectangle): number {
     const { lx, ly, hx, hy } = r;
     for (let i = 0; i < get_rect_cnt(); i++) {
@@ -50,7 +50,7 @@ export function get_rect_ind(r: Rectangle): number {
     return -1;
 }
 
-// C ref: rect.c:81 get_rect()
+// C rect.c:get_rect()
 // Find a free rectangle that includes the given one.
 export function get_rect(r: Rectangle): Rectangle | null {
     const { lx, ly, hx, hy } = r;
@@ -63,7 +63,7 @@ export function get_rect(r: Rectangle): Rectangle | null {
     return null;
 }
 
-// C ref: rect.c:103 rnd_rect()
+// C rect.c:rnd_rect()
 // RNG: rn2(rect_cnt)
 export function rnd_rect(): Rectangle | null {
     const count = get_rect_cnt();
@@ -80,7 +80,7 @@ export function within_bounded_area(x: number, y: number, lx: number, ly: number
     return (x >= lx && x <= hx && y >= ly && y <= hy);
 }
 
-// C ref: rect.c:115 intersect()
+// C rect.c:intersect()
 function intersect(r1: Rectangle, r2: Rectangle, r3: Rectangle): boolean {
     if (r2.lx > r1.hx || r2.ly > r1.hy
         || r2.hx < r1.lx || r2.hy < r1.ly)
@@ -96,7 +96,7 @@ function intersect(r1: Rectangle, r2: Rectangle, r3: Rectangle): boolean {
     return true;
 }
 
-// C ref: rect.c:133 rect_bounds()
+// C rect.c:rect_bounds()
 export function rect_bounds(r1: Rectangle, r2: Rectangle, r3: Rectangle): void {
     r3.lx = Math.min(r1.lx, r2.lx);
     r3.ly = Math.min(r1.ly, r2.ly);
@@ -104,7 +104,7 @@ export function rect_bounds(r1: Rectangle, r2: Rectangle, r3: Rectangle): void {
     r3.hy = Math.max(r1.hy, r2.hy);
 }
 
-// C ref: rect.c:146 remove_rect()
+// C rect.c:remove_rect()
 export function remove_rect(r: Rectangle): void {
     const ind = get_rect_ind(r);
     if (ind >= 0) {
@@ -115,7 +115,7 @@ export function remove_rect(r: Rectangle): void {
     }
 }
 
-// C ref: rect.c:160 add_rect()
+// C rect.c:add_rect()
 export function add_rect(r: Rectangle): void {
     const rectangles = game.nhrect;
     const capacity = game.n_rects;
@@ -133,7 +133,7 @@ export function add_rect(r: Rectangle): void {
     game.rect_cnt = count + 1;
 }
 
-// C ref: rect.c:181 split_rects()
+// C rect.c:split_rects()
 // Split r1 to accommodate r2 (r2 is included in r1).
 export function split_rects(r1: Rectangle, r2: Rectangle): void {
     const old_r = { ...r1 };

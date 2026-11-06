@@ -2873,6 +2873,7 @@ export async function inventoryActionForObject(item) {
     const key = await showItemActionMenu(item);
     return key === 0 ? null : { key: inventoryActionKey(key), item };
 }
+// Part of C iactions.c:itemactions(): the contextual action-menu rows.
 // Also C iactions.c:item_naming_classification(): inlined here
 // Also C iactions.c:ia_addmenu(): keyed action rows are built inline here
 // Also C worn.c:armcat_to_wornmask(): inlined here as armorSlotFor(),
@@ -3444,9 +3445,9 @@ export function lootSortMode({ inventoryLetters = false, state = game } = {}) {
         ? SORTLOOT_LOOT : inventoryLetters ? SORTLOOT_INVLET : 0)
         | (state.flags.sortpack !== false ? SORTLOOT_PACK : 0);
 }
+// C invent.c:sortloot()
 // Returns a new order without rewriting the inventory or container chain.
 // Observation is the native sort boundary; name normalization uses a view.
-// C invent.c:sortloot().
 export function sortObjects(objects, { mode = 0, state = game, filter = null, } = {}) {
     const keepPetrifying = !!(mode & SORTLOOT_PETRIFY);
     mode &= ~SORTLOOT_PETRIFY;

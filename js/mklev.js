@@ -207,6 +207,7 @@ export function stairwayDescription(stairway, state) {
     const dungeon = descriptor.dname.replace(/^The /, 'the ');
     return `branch ${noun} ${direction} to ${dungeon}`;
 }
+// C dungeon.c:Can_dig_down()
 // ── Hero placement (C ref: stairs.c, mkmaze.c) ──
 // C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
 // flag is only one of the gates: bottom levels and the invocation level also
@@ -224,7 +225,8 @@ export function canDigDown(uz = game.u.uz) {
 export function canFallThrough(uz = game.u.uz) {
     return canDigDown(uz) || (uz !== undefined && Is_stronghold(uz));
 }
-// C ref: stairs.c:u_on_sstairs() — place the hero on the special (branch)
+// C stairs.c:u_on_sstairs()
+// place the hero on the special (branch)
 // staircase, falling back to a random arrival spot.
 export async function u_on_sstairs(upflag) {
     const stway = stairway_find_special_dir(!!(upflag & 1));
@@ -235,7 +237,8 @@ export async function u_on_sstairs(upflag) {
     await u_on_rndspot(!!(upflag & 1)
         ? game.level?.upTeleportRegion : game.level?.downTeleportRegion, !!(upflag & 1));
 }
-// C ref: stairs.c:u_on_upstairs() — place you on upstairs (or special
+// C stairs.c:u_on_upstairs()
+// place you on upstairs (or special
 // equivalent).
 export async function u_on_upstairs() {
     const stway = stairway_find_dir(true);
@@ -245,7 +248,8 @@ export async function u_on_upstairs() {
     }
     await u_on_sstairs(0); /* destination upstairs implies moving down */
 }
-// C ref: stairs.c:u_on_dnstairs() — place you on dnstairs (or special
+// C stairs.c:u_on_dnstairs()
+// place you on dnstairs (or special
 // equivalent).
 export async function u_on_downstairs() {
     const stway = stairway_find_dir(false);
@@ -255,10 +259,11 @@ export async function u_on_downstairs() {
     }
     await u_on_sstairs(1); /* destination dnstairs implies moving up */
 }
-// C refs: mhitu.c:cloneu() and dog.c:initedog().
+// C mhitu.c:cloneu()
 // The actor is a fresh makemon birth rather than a copy of youmonst: it owns
 // ordinary placement, HP, gender, attitude, and identity RNG before cloneu()
 // replaces its level/HP and initializes a named tame companion.
+// Also C dog.c:initedog(): the everything=TRUE pet initialization is inlined here.
 export async function cloneHeroMonsterForm(state = game) {
     if (state !== game)
         throw new Error('hero clone owner requires live game state');
@@ -321,6 +326,7 @@ export async function cloneHeroMonsterForm(state = game) {
     u.uconduct.pets = (u.uconduct.pets ?? 0) + 1;
     return clone;
 }
+// Part of C makemon.c:makemon(): adapter for nearby placement through teleport.c:enexto() before monster construction.
 // C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().
 export async function makemonNear(mnum, centerX, centerY, flags = 0, requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy) {
     // Hero-origin placement belongs to makemon(), after its debug guard.
@@ -334,7 +340,8 @@ export async function makemonNear(mnum, centerX, centerY, flags = 0, requestedBy
     // goodpos() for the requested species before makemon() owns construction.
     return makemon(mnum, pos.x, pos.y, flags, requestedByHero);
 }
-// C refs: wizard.c:nasty()/pick_nasty() and mcastu.c:mcast_summon_mons().
+// C wizard.c:nasty()
+// Uses wizard.c:pick_nasty() for mcastu.c:mcast_summon_mons().
 // A monster-cast summon deliberately chooses an explicit high-difficulty
 // species, asks enexto() for a square around the caster's apparent hero
 // position, then runs the ordinary makemon() constructor.  The created
@@ -481,7 +488,8 @@ export async function runClaimedObjectRotTimer(claimed, state = game) {
         await deleteObject(object, state);
     return { kind, object, where, x, y };
 }
-// C ref: rumors.c get_rnd_line().  makedefs pads each source line to a
+// C rumors.c:get_rnd_line()
+// makedefs pads each source line to a
 // minimum of 59 text bytes plus its newline.  Selection deliberately seeks
 // into one line and returns the following line.
 export function getRandomTextLine(lines) {
@@ -526,11 +534,11 @@ export function getRumor(excludeCookie, truth = 0) {
         rumor = rumor.slice('[cookie] '.length);
     return rumor;
 }
-// C ref: nhlua.c l_nhcore_init() (defined at nhlua.c:140)
+// Part of C nhlua.c:l_nhcore_init(): entry adapter; LuaLifecycle.startCore() initializes the core.
 export async function l_nhcore_init() {
     await currentLuaLifecycle().startCore(game);
 }
-// C ref: mklev.c mklev()
+// C mklev.c:mklev()
 export async function mklev() {
     const g = game;
     if (await getbones())
@@ -563,7 +571,7 @@ export function countLevelFeatures(state = game) {
     lvl.flags.nfountains = nfountains;
     lvl.flags.nsinks = nsinks;
 }
-// C ref: mklev.c clear_level_structures()
+// C mklev.c:clear_level_structures()
 // Also C region.c:clear_regions(): a fresh GameMap owns no regions.
 // Also C dungeon.c:free_exclusions(): a fresh GameMap owns no exclusion zones.
 // Also C stairs.c:stairway_free_all(): inlined here as the stairway-chain reset.
@@ -617,6 +625,7 @@ function clear_level_structures() {
     lf.stasis_until = 0;
     init_rect();
 }
+// Part of C mklev.c:makelevel(): the generation driver; placeRoomLevelBranch() already holds the first-line citation.
 // C ref: mklev.c makelevel()
 // Also C mklev.c:themerooms_post_level_generate(): inlined here (the
 // post_level_generate theme call plus whole-level wallification).
@@ -975,7 +984,8 @@ async function makelevel() {
         wallification(1, 0, COLNO - 1, ROWNO - 1);
     }
 }
-// C ref: mklev.c mk_knox_portal().  Fort Ludios starts with an out-of-range
+// C mklev.c:mk_knox_portal()
+// Fort Ludios starts with an out-of-range
 // source dnum.  Each otherwise eligible vault owns one deferral draw until a
 // deep main-dungeon vault resolves that source; subsequent vaults skip it.
 async function maybePlaceKnoxPortal(x, y) {
@@ -1007,6 +1017,7 @@ async function maybePlaceKnoxPortal(x, y) {
     await placeBranchAt(branch, x, y);
     return true;
 }
+// Part of C mklev.c:makelevel(): the depth-dependent random special-room selection.
 // C ref: mklev.c makelevel() random-special-room else-if chain.  Every failed
 // depth-eligible predicate owns its draw; once one type is selected, room
 // picking becomes mkroom.c's responsibility and later predicates are skipped.
@@ -1042,7 +1053,7 @@ async function maybeMakeSpecialRoom(roomThreshold) {
         return markRandomSpecialRoom(COCKNEST);
     return false;
 }
-// C ref: mklev.c makerooms()
+// C mklev.c:makerooms()
 async function makerooms(themedRooms) {
     const g = game;
     const level = requireGameLevel();
@@ -1076,6 +1087,7 @@ async function makerooms(themedRooms) {
     if (themedRooms)
         await callLuaThemerooms('post_themerooms_generate');
 }
+// C mklev.c:add_subroom()
 // C refs: sp_lev.c create_subroom() and mklev.c add_subroom().  Subrooms
 // share their parent's rectangle allocation but retain distinct room
 // identity for shop/temple membership and recursive special-room filling.
@@ -1101,7 +1113,7 @@ export function add_subroom(proom, lowx, lowy, hix, hiy, lit, rtype, special) {
 function create_vault() {
     return create_room(-1, -1, 2, 2, -1, -1, VAULT, true);
 }
-// C ref: mklev.c add_room()
+// C mklev.c:add_room()
 export function add_room(lowx, lowy, hix, hiy, lit, rtype, special) {
     const level = requireGameLevel();
     const croom = {
@@ -1121,7 +1133,7 @@ export function add_room(lowx, lowy, hix, hiy, lit, rtype, special) {
     }
     return croom;
 }
-// C ref: mklev.c do_room_or_subroom()
+// C mklev.c:do_room_or_subroom()
 function do_room_or_subroom(croom, lowx, lowy, hix, hiy, lit, rtype, special, is_room) {
     const map = requireGameLevel();
     if (!lowx)
@@ -1197,8 +1209,8 @@ function do_room_or_subroom(croom, lowx, lowy, hix, hiy, lit, rtype, special, is
         }
     }
 }
-// C ref: mklev.c sort_rooms()
-// C mklev.c:mkroom_cmp().
+// C mklev.c:sort_rooms()
+// Also C mklev.c:mkroom_cmp(): inlined as the room-x comparator.
 function sort_rooms() {
     const level = requireGameLevel();
     const n = level.nroom;
@@ -1227,7 +1239,7 @@ function sort_rooms() {
             }
         }
 }
-// C ref: mklev.c topologize()
+// C mklev.c:topologize()
 export function topologize(croom) {
     if (!croom || croom.irregular)
         return;
@@ -1324,7 +1336,7 @@ function finddpos_shift(xp, yp, dir, aroom) {
     }
     return false;
 }
-// C ref: mklev.c finddpos()
+// C mklev.c:finddpos()
 function finddpos(cc, dir, aroom) {
     let x1, y1, x2, y2;
     switch (dir) {
@@ -1379,7 +1391,7 @@ export function maybe_sdoor(chance) {
     const d = depth_of_level(game.u?.uz);
     return (d > 2) && !rn2(Math.max(2, chance));
 }
-// C ref: mklev.c dosdoor()
+// C mklev.c:dosdoor()
 async function dosdoor(x, y, aroom, type) {
     const map = requireGameLevel();
     const loc = map.at(x, y);
@@ -1487,7 +1499,7 @@ export function okdoor(x, y) {
         || (isok(x, y - 1) && !IS_OBSTRUCTED(map.requireAt(x, y - 1).typ))
         || (isok(x, y + 1) && !IS_OBSTRUCTED(map.requireAt(x, y + 1).typ)));
 }
-// C ref: mklev.c join()
+// C mklev.c:join()
 async function join(a, b, nxcor) {
     const g = game;
     const level = requireGameLevel();
@@ -1560,7 +1572,7 @@ async function join(a, b, nxcor) {
     else
         equivalence[a] = second;
 }
-// C ref: mklev.c makecorridors()
+// C mklev.c:makecorridors()
 export async function makecorridors() {
     const g = game;
     const level = requireGameLevel();
@@ -2031,6 +2043,7 @@ export async function mktrap_victim(trap) {
         throw new Error('Trap victim creation did not produce an aged corpse.');
     corpse.age -= 51; // TAINT_AGE + 1
 }
+// Part of C dothrow.c:breaktest(): the trap-victim subset, including zap.c:obj_resists() for fresh non-invocation objects.
 // C refs: zap.c obj_resists() and dothrow.c breaktest().  This helper is
 // private to the trap-victim generation block; its inputs are freshly made,
 // non-invocation objects from the four possession classes above.
@@ -2050,9 +2063,10 @@ function trapVictimObjectBreaks(object) {
         || object.otyp === 479 // BLINDING_VENOM
         || object.otyp === 480; // ACID_VENOM
 }
+// C mklev.c:mktrap()
 // C mktrap(): the room and maze callers share type selection, collision
 // checks, web residents, and shallow-level victims.
-// C mklev.c:traptype_roguelvl().
+// Also C mklev.c:traptype_roguelvl(): inlined in the Rogue-level type selection.
 export async function mktrap(num, options, croom, coordinate) {
     const level = requireGameLevel();
     // Explicit locations are screened before type selection. Room and maze

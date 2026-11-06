@@ -255,7 +255,9 @@ async function showInlineMore(message: string): Promise<void> {
     await flushPendingTopline();
 }
 
-// C ref: calendar.c phase_of_the_moon(), friday_13th(), both from getlt().
+// C calendar.c:phase_of_the_moon()
+// Also C calendar.c:friday_13th(): both checks share the same local date.
+// C reads getlt(); the port reads the recording's local date.
 export function fixedCalendar(datetime?: string | null) {
     const date = recorderLocalDate(datetime);
     if (!date) return { moonphase: null, friday13: false };
@@ -286,6 +288,7 @@ async function applyCalendarMessages() {
     }
 }
 
+// Part of C restore.c:dorecover(): restore/startup adapter that also runs allmain.c:moveloop_preamble().
 // C refs: restore.c dorecover(), allmain.c moveloop_preamble(resuming=TRUE).
 // Restoring skips new-game RNG setup but reinitializes the Lua alignment
 // shuffle, presents the saved map, and applies real-world calendar effects.
@@ -373,6 +376,7 @@ async function askTutorial(): Promise<boolean> {
     }
 }
 
+// Part of C allmain.c:maybe_do_tutorial(): tutorial-entry adapter combining Lua state transfer and do.c:goto_level() arrival.
 // C/Lua refs: allmain.c maybe_do_tutorial(), do.c goto_level(),
 // nhcore.lua tutorial_enter(), and nhlua.c nhl_gamestate().  Destination
 // construction and arrival precede the entry pager, but that pager still
@@ -524,7 +528,8 @@ async function finishMoveloopPreamble() {
     game._moveloopStarted = true;
 }
 
-// C ref: allmain.c:interrupt_multi().  Count-prefixed ordinary commands use
+// C allmain.c:interrupt_multi()
+// Count-prefixed ordinary commands use
 // positive `multi`; full HP or power recovery cancels that voluntary repeat,
 // but must not stop independent occupations such as eating, lock-picking, or
 // spellbook study.  This port represents both kinds in `_occupation`, so keep
@@ -538,6 +543,7 @@ async function interruptCountedActivity(message: string): Promise<void> {
     }
 }
 
+// Part of C allmain.c:moveloop_core(): the once-per-hero-action status and clairvoyance tail.
 // C ref: allmain.c's `once-per-hero-took-time` tail, after the movement-ration
 // loop has allocated as many global turns as the hero needs.  Burden can make
 // one action span two allocations; seer_turn is checked only after the last
@@ -592,6 +598,7 @@ async function finishInitialTurnMaintenanceAfterIntervention(
     }
 }
 
+// Part of C allmain.c:moveloop_core(): the Amulet, engraving, and demigod-intervention maintenance.
 // State-derived subset of the once-per-turn maintenance in allmain.c.
 // This covers the first quiet turn: monster movement allotments, random
 // monster generation, ambient feature sounds, hunger, and engraving wear.
@@ -646,6 +653,7 @@ async function finishInitialTurnMaintenanceAfterAutomaticSearch({
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn });
 }
 
+// Part of C allmain.c:moveloop_core(): recovery, teleportitis, shape changes, and automatic search.
 // Also C allmain.c:regen_pw(): inlined here (the power-recovery block
 // before teleportitis and shape changes).
 async function finishInitialTurnMaintenanceAfterRegions({
@@ -960,7 +968,8 @@ async function settleHeroLiquidAfterAction() {
     return applyHeroLiquidEffects(plineWithContinuation, { entry: 'turn' });
 }
 
-// Native hack.c:unmul(). The after-handler is cleared before invocation so
+// C hack.c:unmul()
+// The after-handler is cleared before invocation so
 // recovery can start another delay without inheriting the old completion.
 // Also C steal.c:unstolenarm(): the 'unstolen-armor' case below.
 export async function finishHeroHelplessness(
@@ -1017,7 +1026,7 @@ export async function finishHeroHelplessness(
     }
 }
 
-// allmain.c:u_calc_moveamt() clamps a negative movement balance after every
+// Part of C allmain.c:u_calc_moveamt(): clamps a negative movement balance after every
 // global allocation.  Without this, a slow polymorph can carry the action
 // debit across zero-speed turns and require an extra monster/global round.
 function addHeroMovementRation(state: GameState, amount: number): void {
@@ -1026,6 +1035,7 @@ function addHeroMovementRation(state: GameState, amount: number): void {
     );
 }
 
+// Part of C allmain.c:newgame(): entry adapter around initializeNewGame() and startup monster notices.
 // C ref: allmain.c newgame()
 export async function newgame() {
     await withMonsterNoticesBlocked(game, () => initializeNewGame());
@@ -1151,6 +1161,7 @@ function markMultiStepStatusDirty(g: GameState): void {
     }
 }
 
+// Part of C allmain.c:moveloop_core(): the main turn driver; world-turn maintenance is extracted into advanceWorldTurn().
 // C ref: allmain.c moveloop_core()
 export async function runMoveloopCore() {
     const g = requireInitializedGame();
@@ -1333,7 +1344,7 @@ export async function runMoveloopCore() {
     await currentLuaLifecycle().runCallbacks(g, 'end_turn');
 }
 
-// C ref: allmain.c moveloop()
+// C allmain.c:moveloop()
 export async function moveloop(resuming?: boolean): Promise<void> {
     const game = requireInitializedGame();
     await docrt();

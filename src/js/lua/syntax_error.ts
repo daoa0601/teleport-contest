@@ -1,3 +1,4 @@
+// Part of C llex.c:lexerror(): the syntax-error construction using lobject.c:luaO_chunkid().
 // Lua llex.c:lexerror() and lobject.c:luaO_chunkid().
 export function luaSyntaxError(
     chunkName: string, line: number, message: string, near: string,

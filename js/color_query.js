@@ -50,7 +50,8 @@ export const ATTRIBUTE_NAMES = [
     ['blink', 5], ['inverse', 7],
     ['normal', 0], ['uline', 4], ['reverse', 7],
 ];
-// coloratt.c:clr2colorname()/attr2attrname(): the first canonical table
+// C coloratt.c:clr2colorname()
+// Like attr2attrname(), uses the first canonical table
 // entry naming the value.
 export function colorName(color) {
     return COLOR_NAMES.find(([, value]) => value === color)?.[0] ?? 'no color';
@@ -58,7 +59,8 @@ export function colorName(color) {
 export function attributeName(attr) {
     return ATTRIBUTE_NAMES.find(([, value]) => value === attr)?.[0] ?? 'none';
 }
-// coloratt.c:match_str2clr(); returns CLR_MAX (16) when nothing matched.  A
+// C coloratt.c:match_str2clr()
+// Returns CLR_MAX (16) when nothing matched. A
 // non-null addError mirrors the unsuppressed config_error_add() calls.
 export function matchColorName(text, addError) {
     const named = COLOR_NAMES.find(([name]) => fuzzyMatch(text, name));
@@ -72,7 +74,8 @@ export function matchColorName(text, addError) {
     }
     return color;
 }
-// coloratt.c:match_str2attr(); returns -1 when nothing matched.
+// C coloratt.c:match_str2attr()
+// Returns -1 when nothing matched.
 export function matchAttributeName(text, addError) {
     const named = ATTRIBUTE_NAMES.find(([name]) => fuzzyMatch(text, name));
     if (named)
@@ -114,7 +117,8 @@ function basicMenuColors(loadColors) {
         savedMenuColors = null;
     }
 }
-// coloratt.c:query_color(): PICK_ONE over the canonical color names; Escape
+// C coloratt.c:query_color()
+// PICK_ONE over the canonical color names; Escape
 // is -1, an accepted-but-empty pick keeps the current value, and a second
 // entry behind "no color" wins over it. Each name is colored by the
 // temporary basic_menu_colors() rule that matches it.
@@ -141,7 +145,7 @@ export async function queryColorMenu(title, current) {
     const [chosen = current, alternate] = picks;
     return alternate !== undefined && chosen === NO_COLOR ? alternate : chosen;
 }
-// coloratt.c:query_attr(): PICK_ONE over the canonical attribute names, each
+// Part of C coloratt.c:query_attr(): PICK_ONE over the canonical attribute names, each
 // drawn in its own attribute; a second entry behind the current default wins
 // over it.
 export async function queryAttributeMenu(title, current) {

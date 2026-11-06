@@ -168,6 +168,7 @@ export function restoreLightSourceBatch(batch, state = game) {
     });
     state._lightSerial = base + lights.length;
 }
+// Part of C restore.c:getlev(): the level-local light-source restoration.
 // C getlev() restores the entered level's light sources after the level
 // data (restore.c:1145); other levels keep waiting in their files.
 export function restoreLevelLightSources(state = game) {
@@ -214,6 +215,7 @@ export async function snuffLitObject(object, state = game, publish = plineWithCo
     endObjectBurn(object, state);
     return true;
 }
+// Part of C mhitm.c:gulpmm(): the engulfed inventory light pass, shared with uhitm.c:gulpum().
 // The engulf loops at mhitm.c:868 and uhitm.c:4985 inline this pass: every
 // light a swallowed actor carries is snuffed with apply.c:snuff_lit()
 // semantics (snuffLitObject above is its port), the carrier's square
@@ -265,6 +267,7 @@ export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
         await map_invisible(monster.mx, monster.my);
     }
 }
+// C read.c:litroom()
 // Also C read.c:set_lit(): inlined as the per-cell lit flag write and the
 // gremlin collection below.
 export async function lightRoom(lit, { radius = 5, source, finishMonsterKill } = {}) {
@@ -397,7 +400,7 @@ export function registerObjectLightSource(object, state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;
 }
-// apply.c:dorub() performs this type change before the released djinni can
+// Part of C apply.c:dorub(): performs this type change before the released djinni can
 // grant a fatal wish.  A lit magic lamp already has a light source but no
 // timer; once it becomes an oil lamp, begin_burn(..., TRUE) attaches the
 // ordinary fuel timer while preserving that light-source identity.

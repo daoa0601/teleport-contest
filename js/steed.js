@@ -137,6 +137,7 @@ export async function ridingPreventsMovement() {
     await plineWithContinuation(`${name} won't move!`);
     return true;
 }
+// Part of C hack.c:domove_core(): the steed-position update and steed.c:exercise_steed() training.
 // C hack.c moves the steed with the hero before resolving displacement.
 // C steed.c:exercise_steed().
 export async function moveSteedWithHero() {
@@ -151,6 +152,7 @@ export async function moveSteedWithHero() {
         await useHeroSkill(P_RIDING);
     }
 }
+// Part of C hack.c:test_move(): the TEST_MOVE reachability checks used by landing_spot().
 // test_move(TEST_MOVE) (C hack.c) checks reach without opening, chewing,
 // or pushing anything. Boulders normally pass this test; landing_spot()
 // makes its own decision about avoiding them on its first two passes.
@@ -842,6 +844,7 @@ async function dropSteedIntoLiquid(steed, state, announce) {
     adjustHeroAlignment(-1, state);
     return { dead: steed.dead || steed.mhp <= 0 };
 }
+// C steed.c:kick_steed()
 // Kicks and bullwhips share steed.c:kick_steed().  The caller prints the
 // initial hit; this function owns the steed's response and riding state.
 export async function strikeSteed({ state = game, random = rn2, roll = rnd, announce = async () => { }, } = {}) {

@@ -1350,6 +1350,7 @@ function canCenterCloud(x: number, y: number, state: PlayingGameState): boolean 
         && cansee(x, y) && (x - state.u.ux) ** 2 + (y - state.u.uy) ** 2 < 32;
 }
 
+// Part of C read.c:do_stinking_cloud(): the target-selection adapter with valid-position highlights.
 // Also C read.c:display_stinking_cloud_positions(): inlined as the valid-
 // position highlights below (the hero's own square is not highlighted).
 async function chooseCenter(question: string, state: PlayingGameState): Promise<Position | null> {
@@ -2033,6 +2034,7 @@ function declinedGenocide(response: string): boolean {
     return response.startsWith('\u001b') || ['none', "'none'", 'nothing'].includes(response.toLowerCase());
 }
 
+// Part of C read.c:do_genocide(): the quest-role-specific immunity message predicate.
 // Also C questpgr.c:quest_info(): leader, nemesis, and guardian fields are read inline here
 function canAnnounceImmuneSpecies(species: number): boolean {
     const role = requireInitializedGame().urole;

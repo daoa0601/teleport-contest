@@ -67,6 +67,7 @@ export async function pline_mon(monster: Monster | Hero, message: string): Promi
     await pline(message);
 }
 
+// Part of C pline.c:vpline(): the BUFSZ-1 truncation shared by raw startup diagnostics.
 // vpline()'s BUFSZ-1 byte truncate, shared with cfgfiles.c's raw startup
 // diagnostics: shorten prose while retaining its last three bytes.
 export function truncatePlineMessage(message: string): string {
@@ -233,6 +234,7 @@ export async function setTopline(msg: string) {
     game._lastPlineKind = PLNMSG_UNKNOWN;
 }
 
+// Part of C pline.c:vraw_printf(): the BUFSZ-1 prefix truncation also used by files.c:paniclog().
 // vraw_printf()'s BUFSZ-1 byte truncate, shared with files.c:paniclog()'s
 // yn-debug line: keep only the prefix, with no ellipsis.
 export function truncateRawMessage(message: string): string {
@@ -247,6 +249,7 @@ export function rawPrintf(message: string): void {
     if (!game.program_state.beyond_savefile_load) game.earlyRawMessages += 2;
 }
 
+// C wintty.c:tty_raw_print()
 // C win/tty/wintty.c:tty_raw_print().
 export function rawPrint(message: string) {
     writeRawText(`${message}\n`);

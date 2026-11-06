@@ -262,6 +262,7 @@ function autopickupDescription(): string {
     return `on for ${types ? `'${types}'` : 'all types'}${types && game.flags.pickup_thrown !== false ? ' plus thrown' : ''}${exceptions}`;
 }
 
+// Part of C insight.c:status_enlightenment(): the status rows; weapon insight and armor rows are assembled by its caller.
 // C ref: insight.c status_enlightenment().  These rows are a projection of
 // live trouble/nutrition/load state; their optional length determines every
 // section that follows on the second attributes page.
@@ -440,7 +441,8 @@ const DIRECTION_NAMES = [
     { dx: 0, dy: 1, name: 'south' }, { dx: -1, dy: 1, name: 'southwest' },
 ] as const;
 
-// C ref: insight.c:weapon_insight().  Weapons are described by
+// C insight.c:weapon_insight()
+// Weapons are described by
 // weapon.c:weapon_descr(); the skill rows come from the hero's live skill
 // table, including two-weapon limits and pending #enhance eligibility.
 function weaponInsightLines(final: EnlightenmentFinal = 0) {
@@ -535,6 +537,7 @@ function skillLevel(skill: number): number {
     return entry.skill;
 }
 
+// Part of C weapon.c:skill_level_name(): the enlightenment wording adapter, using "no" for restricted skills.
 // "no" for restricted, otherwise weapon.c:skill_level_name() lowercased.
 function skillLevelDescription(level: number): string {
     if (level === P_ISRESTRICTED) return 'no';
@@ -847,7 +850,7 @@ export function contractEnlightenment(line: string): string {
         .replace(' can not ', " can't ").replace(' could not ', " couldn't ");
 }
 
-// worn.c:setworn() sets tux_penalty from these same live fields.
+// Part of C worn.c:setworn(): sets tux_penalty from these same live fields.
 export function monkArmorPenalty(): number {
     return game.uarm && game.urole?.key === 'monk' && !Upolyd(game.u)
         ? game.urole.spellcasting.armor : 0;
@@ -978,6 +981,7 @@ export function heroHidingStatus(state: GameState = game): string {
     return `hiding on the ${surfaceName(ux, uy, state)}`;
 }
 
+// Part of C insight.c:show_conduct(): the present-tense conduct projection.
 // Voluntary challenges, present tense.
 // C insight.c:sokoban_in_play(): the Sokoban-rules conduct appears only
 // once the entered-Sokoban achievement is on record.
@@ -1062,6 +1066,7 @@ export async function doconduct() {
     game.context.move = 0;
 }
 
+// Part of C insight.c:show_conduct(): the end-of-game conduct projection.
 // Voluntary challenges, past tense, for the end-of-game disclosure.
 // C insight.c:sokoban_in_play(): the Sokoban-rules conduct appears only
 // once the entered-Sokoban achievement is on record.
@@ -1272,7 +1277,7 @@ const ACHIEVEMENT_LOG_FLAGS: ReadonlyMap<number, number> = new Map([
     [31, LL_MINORAC],
 ]);
 
-// insight.c:record_achievement() message selection.
+// Part of C insight.c:record_achievement(): message selection.
 function achievementLogText(
     achievement: number, state: AchievementLogState,
 ): string | null {
@@ -1329,7 +1334,7 @@ export function achievementEntries(state: Pick<GameState, 'u'> | null | undefine
         ? state.u.uachieved.filter(Number.isInteger) : [];
 }
 
-// do.c:goto_level(): Gehennom is logged before the branch chain; the branch
+// Part of C do.c:goto_level(): Gehennom is logged before the branch chain; the branch
 // achievement (mines or sokoban) and the bigroom follow before the livelog
 // "entered <level>" line.  Callers own the endgame, quest, and Knox cases.
 export function recordDungeonEntryAchievements(
@@ -1364,8 +1369,9 @@ export function isSpoilerGameLogEvent(
     return ((entry.flags ?? 0) & LL_SPOILER) !== 0;
 }
 
-// C ref: insight.c:do_gamelog()/show_gamelog(ENL_GAMEINPROGRESS).  Chronicle
-// is a projection of events recorded by their owning mechanics; it does not
+// C insight.c:do_gamelog()
+// Also C insight.c:show_gamelog(): the live chronicle projection is inlined here.
+// Chronicle projects events recorded by their owning mechanics; it does not
 // infer history from the command transcript or current aggregate counters.
 // Spoiler-flagged lines (insight.c:spoilerevent) stay hidden outside wizard
 // mode; if every entry is one, the window still shows " none".
@@ -1816,6 +1822,7 @@ interface StatusLineOptions {
     y?: number;
 }
 
+// C insight.c:mstatusline()
 // One-line monster feedback for a stethoscope or probing hit.
 // C insight.c:size_str(): SIZE_NAMES holds the size word of the status line.
 export async function monsterStatusLine(monster: Monster, {
