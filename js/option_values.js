@@ -118,7 +118,8 @@ export function cInteger(value) {
     const prefix = value.match(/^\s*[+-]?\d+/)?.[0];
     return prefix ? Number(prefix) : 0;
 }
-// cfgfiles.c:config_erradd() adds punctuation at the interactive boundary.
+// Interactive option errors end with punctuation, as config_erradd()
+// (cfgfiles.c) does at the pline() boundary.
 export async function optionError(message) {
     await plineWithContinuation(/[.!?]$/.test(message) ? message : `${message}.`);
 }

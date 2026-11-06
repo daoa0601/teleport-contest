@@ -8,7 +8,7 @@ import { mksobj } from '../js/mkobj.js';
 import { BELL_OF_OPENING, POT_HEALING, WAN_FIRE } from '../js/object_data.js';
 import { recordObjectKnowledge } from '../js/o_init.js';
 
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 

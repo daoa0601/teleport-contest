@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { game, requireGameDisplay, requireInitializedGame } from '../js/gstate.js';
 import { showEnlightenment, showFinalAttributes } from '../js/insight.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { displaySelf, flush_screen, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { POT_HEALING } from '../js/object_data.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { farlookText } from './support/farlook.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

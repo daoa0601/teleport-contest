@@ -3,7 +3,7 @@ import test from 'node:test';
 import { showKeyBindings } from '../js/cmd.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { HeadlessTerminal } from '../js/terminal.js';
 import { freshTurnRoom } from './support/playable-room.js';
 

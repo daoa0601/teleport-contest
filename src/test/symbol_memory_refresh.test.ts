@@ -6,7 +6,7 @@ import { cmapToGlyph, CmapSymbol } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { docrt, flush_screen } from '../js/display.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { freshObjectRoom } from './support/object-room.js';

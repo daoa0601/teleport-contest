@@ -5,7 +5,7 @@ import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { applyNethackrc, parseNethackrc } from '../js/options.js';
+import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
 import { dolook } from '../js/invent.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 function topline() {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('#wizcustom shows the active symbol set without taking a turn', async () => {

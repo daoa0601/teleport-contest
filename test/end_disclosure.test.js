@@ -13,7 +13,7 @@ import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME } from '../js
 import { makePlural } from '../js/objnam.js';
 import { G_EXTINCT, G_GENOD } from '../js/const.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { C_ATR_BOLD, C_ATR_INVERSE } from '../js/color_attr.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';

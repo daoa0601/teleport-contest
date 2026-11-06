@@ -4,7 +4,7 @@ import { PL_PSIZ } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Engine, runSegment } from '../js/jsmain.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { parseNethackrc } from '../js/options.js';
+import { parseNethackrc } from '../js/cfgfiles.js';
 import { memoryStorage } from './support/memory-storage.js';
 const CHARACTER = 'OPTIONS=name:Traveler,role:ranger,race:human,gender:male,align:neutral';
 const PLAY = 'OPTIONS=!legacy,!tutorial,!autopickup';

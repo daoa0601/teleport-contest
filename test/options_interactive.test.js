@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { NO_MINVENT, PARANOID_PRAY, PARANOID_SWIM, PARANOID_TRAP } from '../js/const.js';
 import { inventoryOrderSymbols } from '../js/invent.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { bot } from '../js/botl.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -9,7 +9,7 @@ import { objectNeedsFullIdentification } from '../js/objnam.js';
 import { resetInputState } from '../js/input.js';
 import { Engine } from '../js/jsmain.js';
 import { FOOD_RATION, OIL_LAMP, POT_BLINDNESS, POT_HEALING, WAN_LIGHT, WAX_CANDLE } from '../js/object_data.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

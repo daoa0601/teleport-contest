@@ -8,7 +8,7 @@ import { syncDeafness } from '../js/senses.js';
 import { dryFountainAt } from '../js/fountain.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/potion.js';
 import { createMonsterAt } from './support/monsters.js';

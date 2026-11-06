@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import { LENSES } from '../js/object_data.js';
-import { parseNethackrc } from '../js/options.js';
+import { parseNethackrc } from '../js/cfgfiles.js';
 import {
     blindnessBlocked, blindfolded, syncBlindness, syncDeafness,
 } from '../js/senses.js';

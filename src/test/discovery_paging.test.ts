@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { recordObjectKnowledge } from '../js/o_init.js';
 import { recordObjectCall } from '../js/do_name.js';
 
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a long discovery call name wraps without losing its unidentified appearance', async () => {

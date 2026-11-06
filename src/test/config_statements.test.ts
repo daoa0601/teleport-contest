@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { Engine, runSegment } from '../js/jsmain.js';
 import { ARROW, BOULDER, SCR_MAGIC_MAPPING } from '../js/object_data.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';
-import { applyNethackrc, parseNethackrc } from '../js/options.js';
+import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 import { memoryStorage } from './support/memory-storage.js';

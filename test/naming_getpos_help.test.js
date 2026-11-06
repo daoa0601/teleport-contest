@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { queueCannedKeys } from './support/canned-input.js';
 import { RIN_PROTECTION } from '../js/object_data.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

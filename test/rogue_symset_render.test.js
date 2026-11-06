@@ -6,7 +6,7 @@ import { _statusLine2 } from '../js/botl.js';
 import { displaySelf, flush_screen, newsym, show_glyph_cell, swallowed, zapdir_to_glyph } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { GOLD_PIECE, STATUE } from '../js/object_data.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { explode } from '../js/explode.js';
 import { CLR_BROWN, CLR_ORANGE, CLR_RED, CLR_YELLOW, NO_COLOR } from '../js/terminal.js';
 import { requireScreenCell } from './support/screen.js';

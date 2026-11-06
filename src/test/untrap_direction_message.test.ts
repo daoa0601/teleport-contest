@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 

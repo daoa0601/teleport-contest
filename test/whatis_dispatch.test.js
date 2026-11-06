@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 for (const keys of ['/', '#whatis\n', '!']) {
     void test(`${JSON.stringify(keys)} opens the whatis choices without spending a turn`, async () => {

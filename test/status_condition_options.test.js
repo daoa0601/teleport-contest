@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT, TT_LAVA } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyNethackrc } from '../js/options.js';
+import { applyNethackrc } from '../js/cfgfiles.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';

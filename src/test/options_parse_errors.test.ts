@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { PARANOID_PRAY, MENU_FULL, MENU_TRADITIONAL, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from '../js/const.js';
-import { parseNethackOptions, parseNethackrc } from '../js/options.js';
+import { parseNethackOptions, parseNethackrc } from '../js/cfgfiles.js';
 
 const PLAY = 'OPTIONS=name:Traveler,!legacy,!tutorial,!autopickup';
 

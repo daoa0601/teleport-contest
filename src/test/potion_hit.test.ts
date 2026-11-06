@@ -21,7 +21,7 @@ import {
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { pushKey, pushKeys } from '../js/input.js';
-import { parseNethackrc } from '../js/options.js';
+import { parseNethackrc } from '../js/cfgfiles.js';
 import { initRng } from '../js/rng.js';
 import {
     addInventoryObject, artifactObject, knownObject,
