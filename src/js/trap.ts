@@ -82,7 +82,7 @@ import type {
 } from './mon.js';
 import {
     objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig,
-    billDummyObject, chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt,
+    chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt,
     makeAngryShopkeeper, deleteObjectContents,
 } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
@@ -147,8 +147,8 @@ import {
 import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
 import {
-    mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable,
-    placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack,
+    billDummyObject, mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable,
+    objectIsRottable, placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack,
     updateIceObjectTimersAt,
 } from './mkobj.js';
 import {

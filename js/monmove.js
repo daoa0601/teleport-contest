@@ -30,12 +30,12 @@ import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotio
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './zap.js';
 import { drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
-import { billDummyObject, costlySpot, afterShopkeeperMove, moveShopkeeper, shopkeeperInOwnShop, shopkeeperIsMuted, addShopDamage, rileShopkeeper, shopkeeperRepairsDamage } from './shk.js';
+import { costlySpot, afterShopkeeperMove, moveShopkeeper, shopkeeperInOwnShop, shopkeeperIsMuted, addShopDamage, rileShopkeeper, shopkeeperRepairsDamage } from './shk.js';
 import { monsterAlignmentType, inHeroSanctuary, priestIsInOwnTemple, movePriest } from './priest.js';
 import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.js';
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
 import { displayMessageWindow } from './topl.js';
-import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
+import { billDummyObject, splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
 import { dropMonsterObject } from './steal.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
