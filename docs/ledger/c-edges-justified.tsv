@@ -229,7 +229,7 @@ mkmap	alloc	n/a	memory
 movebubbles	set_wportal	n/a	gw.wportal is never read
 movebubbles	block_point	n/a	vision is recalculated in full
 msummon	sgn	inlined	summonerAlignment (minion.ts)
-msummon	transient_light_cleanup	inlined	cleanupTransientLight (minion.ts)
+msummon	transient_light_cleanup	inlined	cleanupTransientLight (light.ts)
 newgame	obj_delivery	n/a	wizard-mode wizkit
 newgame	read_wizkit	n/a	wizard mode only
 newgame	save_currentstate	n/a	INSURANCE file I/O
@@ -473,7 +473,7 @@ finish_towel_change	update_inventory	n/a	no persistent inventory window; glib to
 fix_shop_damage	next_shkp	inlined	shopkeeper scan over the level (shk.ts)
 float_up	reset_utrap	inlined	resetUtrap(false) when rising out of a pit (trap.ts)
 fruitname	nextobuf	n/a	name buffers are strings (objnam.ts)
-gain_guardian_angel	mk_roamer	inlined	guardian angel creation with roamer flags (guardian_angel.ts)
+gain_guardian_angel	mk_roamer	inlined	guardian angel creation with roamer flags (minion.ts)
 gem_learned	find_oid	inlined	bill object lookup by o_id (shk.ts)
 generate_stairs_find_room	alloc	n/a	room index array is a plain array (mklev.ts)
 genl_outrip	alloc	n/a	tombstone lines are strings
@@ -559,7 +559,7 @@ lookat	is_drawbridge_wall	inlined	findDrawbridgeAt on door glyphs (pager_feature
 lookat	look_at_object	inlined	objectAtMapDescription (map_object_description.ts)
 lookat	rn2_on_display_rng	inlined	transientMonsterGlyph draws the hallucinated engulfer on the display stream (cmd.ts)
 lookat	trap_description	inlined	displayedTrapDescription (pager_features.ts)
-lose_guardian_angel	mk_roamer	inlined	guardian removal mirrors the roamer creation (guardian_angel.ts)
+lose_guardian_angel	mk_roamer	inlined	guardian removal mirrors the roamer creation (minion.ts)
 lspo_map	create_des_coder	n/a	Lua des-coder state; per-level context objects replace it (sp_lev_lua.ts)
 lspo_map	get_table_option	inlined	tableOptions reads halign/valign (lua/des.ts)
 lspo_map	get_table_xy_or_coord	inlined	get_table_xy_or_coord resolves x/y or coord (lua/des.ts)
@@ -1208,7 +1208,7 @@ getpos_sethilite	selection_new	inlined	game._mapPositionHighlight object (getpos
 lev_by_name	find_mapseen_by_str	inlined	_levelAnnotations name lookup (level_teleport.ts levelDepthByName)
 lev_by_name	ledger_to_dlev	n/a	locations carried as {dnum,dlevel} objects, not ledger ids
 lev_by_name	ledger_to_dnum	n/a	locations carried as {dnum,dlevel} objects, not ledger ids
-save_light_sources	discard_flashes	inlined	discardFlashes (transient_light.ts)
+save_light_sources	discard_flashes	inlined	discardFlashes (light.ts)
 save_light_sources	maybe_write_ls	inlined	global and per-level batches split by lightObjectIsGlobal (light.ts save/restore)
 save_light_sources	obj_is_local	inlined	!lightObjectIsGlobal filter (light.ts)
 savelife	make_sick	inlined	cureHeroSickness cures the final timeout (end.ts restoreHeroAfterDeath)
@@ -1305,8 +1305,8 @@ set_artifact_intrinsic	make_hallucinated	inlined	hallucination transitions via t
 set_artifact_intrinsic	spec_m2	inlined	warning target flags via artifact.target (artifact.ts)
 set_wear	Shield_on	inlined	per-slot on effects in applyArmorOnEffects (armor.ts)
 set_wear	Shirt_on	inlined	per-slot on effects in applyArmorOnEffects (armor.ts)
-show_transient_light	dist2	inlined	squared distance <= range^2 (transient_light.ts)
-show_transient_light	new_light_core	inlined	_transientLights unshift entry (transient_light.ts)
+show_transient_light	dist2	inlined	squared distance <= range^2 (light.ts)
+show_transient_light	new_light_core	inlined	_transientLights unshift entry (light.ts)
 spot_checks	spot_stop_timers	inlined	stopLevelTimer MELT_ICE_AWAY (digging_terrain.ts)
 spot_checks	spot_time_left	inlined	timer presence checked in updateIceObjectTimersAt (digging_terrain.ts)
 start_tin	fingers_or_gloves	inlined	opener prose names fingers or gloves (eat.ts)
@@ -1672,7 +1672,7 @@ count_surround_traps	t_at	inlined	warnWithMasterKey searches level.traps at each
 create_particular_parse	digit	inlined	parseCreationRequest recognizes the leading monster count with a decimal-digit regular expression (read.ts)
 deadbook	discover_object	inlined	readBookOfDead calls learnObjectType before applying the book effect (spell.ts)
 deadbook	iter_mons	inlined	readBookOfDead visits living monsters in monstersInFmonOrder (spell.ts)
-deadbook	mkinvokearea	inlined	invokeBook calls makeInvocationArea for prepared, uncursed invocation relics (spell.ts, invocation_area.ts)
+deadbook	mkinvokearea	inlined	invokeBook calls makeInvocationArea for prepared, uncursed invocation relics (spell.ts, mklev.ts)
 deadbook_pacify_undead	dist2	inlined	pacifyUndead computes squared coordinate offsets before testing distance below four (spell.ts)
 deadbook_pacify_undead	sgn	inlined	pacifyUndead compares Math.sign of monster and hero alignment (spell.ts)
 dopramulet	obj_to_let	inlined	reportSubset reassigns letters when fixinv is off before displaying the worn item (invent.ts)
