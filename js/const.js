@@ -2826,10 +2826,6 @@ export const NORMAL_SPEED = 12;
 // JS: ESHK(mtmp) → mtmp.mextra?.eshk
 // ========================================================================
 export function ESHK(mtmp) { return mtmp?.mextra?.eshk; }
-// C mextra.h:EPRI()
-export function EPRI(mtmp) { return mtmp?.mextra?.epri; }
-// C mextra.h:EMIN()
-export function EMIN(mtmp) { return mtmp?.mextra?.emin; }
 // C mextra.h:EDOG()
 export function EDOG(mtmp) { return mtmp?.mextra?.edog; }
 // C mextra.h:EBONES()
