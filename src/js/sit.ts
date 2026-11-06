@@ -1,15 +1,17 @@
-import { stack_object } from './invent.js';
+import { stack_object, delobj } from './invent.js';
 import { COIN_CLASS } from './objclass.js';
 import { eggTypeFromParent } from './mon.js';
 // #sit and the immediate consequences of sitting down.
-// C ref: sit.c dosit() and lay_an_egg().
+// C ref: sit.c dosit(), take_gold(), and lay_an_egg(); the hero's carried
+// gold helpers (money_cnt/addinv/freeinv/splitobj refs) live here too.
 
 import { objectMaterial, observeObject } from './o_init.js';
 import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, FOOT } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { plineWithContinuation as pline } from './pline.js';
+import { plineWithContinuation as pline, formatFeltMessage } from './pline.js';
 
 import { game, requireInitializedGame } from './gstate.js';
+import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
 import { waterDamageObject, dotrap } from './trap.js';
@@ -21,10 +23,12 @@ import { heroCanReachFloor } from './engrave.js';
 import { burnAwayHeroSlime, heroGoldAmount, loseHeroHp } from './hack.js';
 import { dropObjectAtHero } from './do.js';
 import { useUpFloorObject } from './invent.js';
+import { removeWornHeroItem } from './hero_equipment.js';
+import { markJustPicked } from './pickup.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { mksobj, set_corpsenm, objectWeight } from './mkobj.js';
+import { mksobj, set_corpsenm, objectWeight, splitObjectStack, unlinkObject, createObjectBase, nextIdent } from './mkobj.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
-import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, TOWEL, WATER_WALKING_BOOTS, oc_nutrition } from './object_data.js';
+import { CHEST, CORPSE, CREAM_PIE, EGG, GOLD_PIECE, LARGE_BOX, TOWEL, WATER_WALKING_BOOTS, oc_nutrition } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import {
@@ -61,6 +65,135 @@ function objectQuantity(object: GameObject): number {
 function waterEggLayer() {
     const form = heroMonsterForm(game);
     return form !== null && eggs_in_water(form);
+}
+
+// The hero's carried gold is the COIN_CLASS object in inventory.
+// C refs: hack.c money_cnt(), invent.c addinv()/freeinv()/splitobj().
+
+type GoldInventoryState = Pick<GameState, 'inventory' | 'uquiver' | 'u' | 'moves' | 'context'>;
+
+interface GoldAddition {
+    object: GameObject | null;
+    merged: boolean;
+}
+
+// C sit.c:take_gold(). Contained coins are not exposed to the effect.
+export async function takeHeroGold(state: GameState = game): Promise<void> {
+    let lostMoney = false;
+    for (const object of [...state.inventory]) {
+        if (object.oclass !== COIN_CLASS) continue;
+        lostMoney = true;
+        await removeWornHeroItem(object, state);
+        await delobj(object, state);
+    }
+    await pline(lostMoney
+        ? 'You notice you have no gold!'
+        : formatFeltMessage('a strange sensation.', state));
+    if (lostMoney) state.context.botl = true;
+}
+
+export function heroGoldQuantity(object: GameObject | null | undefined): number {
+    return Math.max(0, Math.trunc(
+        object?.quan ?? object?.quantity ?? 0,
+    ));
+}
+
+function coinWeight(amount: number): number {
+    return Math.max(1, Math.trunc((amount + 50) / 100));
+}
+
+function normalizeGoldObject(object: GameObject, amount = heroGoldQuantity(object)): GameObject {
+    object.otyp = GOLD_PIECE;
+    object.oclass = COIN_CLASS;
+    object.invlet = '$';
+    object.name = 'gold piece';
+    object.plural = 'gold pieces';
+    object.quan = object.quantity = amount;
+    object.owt = coinWeight(amount);
+    return object;
+}
+
+export function heroGoldObject(state: Pick<GameState, 'inventory'>): GameObject | null {
+    return (state?.inventory || []).find(object =>
+        object?.otyp === GOLD_PIECE || object?.oclass === COIN_CLASS) || null;
+}
+
+export function addHeroGoldObject(state: GoldInventoryState, incoming: GameObject | null | undefined): GoldAddition {
+    if (!incoming) return { object: heroGoldObject(state), merged: false };
+    const amount = heroGoldQuantity(incoming);
+    if (!amount) return { object: heroGoldObject(state), merged: false };
+    state.context.botl = true;
+    const existing = heroGoldObject(state);
+    if (existing && existing !== incoming) {
+        const total = heroGoldQuantity(existing) + amount;
+        normalizeGoldObject(existing, total);
+        incoming.where = 'gone';
+        incoming.ox = incoming.oy = 0;
+        incoming.quan = incoming.quantity = 0;
+        return { object: markJustPicked(existing), merged: true };
+    }
+    normalizeGoldObject(incoming, amount);
+    incoming.where = 'inventory';
+    incoming.container = null;
+    incoming.ox = incoming.oy = 0;
+    incoming.owornmask = incoming.owornmask ?? 0;
+    state.inventory ||= [];
+    if (!state.inventory.includes(incoming)) state.inventory.unshift(incoming);
+    return { object: markJustPicked(incoming), merged: false };
+}
+
+export function setHeroGoldAmount(state: GoldInventoryState, amount: number): GameObject | null {
+    amount = Math.max(0, Math.trunc(amount ?? 0));
+    let object = heroGoldObject(state);
+    if (amount !== heroGoldAmount(state)) state.context.botl = true;
+    if (!amount) {
+        if (object) {
+            state.inventory = (state.inventory || [])
+                .filter(candidate => candidate !== object);
+            if (state.uquiver === object) state.uquiver = null;
+            if (state.u?.uquiver === object) state.u.uquiver = null;
+            object.ready = false;
+            object.owornmask = 0;
+            object.where = 'gone';
+            object.quan = object.quantity = 0;
+        }
+        return null;
+    }
+    if (!object) {
+        object = normalizeGoldObject({
+            ...createObjectBase(GOLD_PIECE, nextIdent(), state.moves),
+            where: 'inventory',
+            worn: false,
+            wielded: false,
+            alternate: false,
+            ready: false,
+            owornmask: 0,
+            contents: [],
+            objectTimers: [],
+            timed: 0,
+        }, amount);
+        state.inventory ||= [];
+        state.inventory.unshift(object);
+    }
+    normalizeGoldObject(object, amount);
+    return object;
+}
+
+export function detachHeroGold(state: GameState, requested: number | null = null): GameObject | null {
+    const object = heroGoldObject(state);
+    if (!object) return null;
+    const amount = heroGoldQuantity(object);
+    const count = requested === null
+        ? amount : Math.max(1, Math.min(Math.trunc(requested), amount));
+    const detached = count < amount ? splitObjectStack(object, count, state) : object;
+    if (!detached) throw new Error('A gold stack must yield the requested coins.');
+    unlinkObject(detached, state);
+    state.context.botl = true;
+    if (state.uquiver === detached) state.uquiver = null;
+    if (state.u?.uquiver === detached) state.u.uquiver = null;
+    detached.ready = false;
+    detached.owornmask = 0;
+    return detached;
 }
 
 // C sit.c:lay_an_egg().

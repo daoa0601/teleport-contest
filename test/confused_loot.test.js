@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { CHEST, POT_HEALING } from '../js/object_data.js';
 import { THRONE } from '../js/const.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

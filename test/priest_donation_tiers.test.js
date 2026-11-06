@@ -3,7 +3,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOMOFFSET, TEMPLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, propertyTimeout } from '../js/properties.js';
 import { initRng } from '../js/rng.js';

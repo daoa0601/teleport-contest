@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { A_CON, A_DEX, A_STR, D_BROKEN, D_CLOSED, D_NODOOR, D_TRAPPED, DOOR, SHARED, SHOP_DOOR_COST, VWALL, W_ARMF } from '../js/const.js';
 import { canSpotMonster } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { KICKING_BOOTS } from '../js/object_data.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';

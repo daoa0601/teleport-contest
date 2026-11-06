@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { cls } from '../js/display.js';
 import { pushKey } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { unlinkObject, addObjectToContainer } from '../js/mkobj.js';
 import { buryObject } from '../js/dig.js';
 import { CHEST, DAGGER, POT_HEALING } from '../js/object_data.js';

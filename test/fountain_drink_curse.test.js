@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { FOUNTAIN } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldObject, setHeroGoldAmount } from '../js/hero_gold.js';
+import { heroGoldObject, setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { ROCK, DAGGER, LEATHER_ARMOR, SACK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

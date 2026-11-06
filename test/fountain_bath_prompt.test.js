@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FOUNTAIN } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

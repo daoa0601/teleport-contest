@@ -58,7 +58,7 @@ import {
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import type { MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
-import { heroGoldObject, detachHeroGold } from './hero_gold.js';
+import { heroGoldObject, detachHeroGold } from './sit.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';

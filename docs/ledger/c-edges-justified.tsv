@@ -1672,7 +1672,7 @@ deadbook_pacify_undead	sgn	inlined	pacifyUndead compares Math.sign of monster an
 dopramulet	obj_to_let	inlined	reportSubset reassigns letters when fixinv is off before displaying the worn item (invent.ts)
 doprarm	obj_to_let	inlined	reportSubset reassigns letters when fixinv is off before displaying armor (invent.ts)
 doprarm	wearing_armor	inlined	inventoryReport collects the seven armor slots and tests whether that list is empty (invent.ts)
-doprgold	money_cnt	inlined	reportWallet calls heroGoldAmount, which finds the first carried coin stack (invent.ts, hero_gold.ts)
+doprgold	money_cnt	inlined	reportWallet calls heroGoldAmount, which finds the first carried coin stack (invent.ts, sit.ts heroGoldObject)
 doprring	obj_to_let	inlined	reportSubset reassigns letters when fixinv is off before displaying worn rings (invent.ts)
 doprtool	obj_to_let	inlined	reportSubset reassigns letters when fixinv is off before displaying applied tools (invent.ts)
 doprwep	empty_handed	inlined	inventoryReport chooses empty handed, bare handed, or not wielding a weapon from gloves and hero anatomy (invent.ts)

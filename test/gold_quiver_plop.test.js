@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { POOL } from '../js/const.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { freshTurnRoom } from './support/playable-room.js';
 // C dothrow.c throwit() gives every landing projectile a liquid sound, so
 // quivered coins fired into a pool announce themselves before flooreffects.

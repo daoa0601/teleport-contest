@@ -25,7 +25,7 @@ import { AMULET_OF_REFLECTION, AMULET_OF_YENDOR, OBJECT_NAMES, SHIELD_OF_REFLECT
 import { stopHeroOccupation } from './occupation.js';
 import { getLine } from './query.js';
 import { addCreatedObjectToMonsterInventory, addObjectToMonsterInventory } from './steal.js';
-import { detachHeroGold } from './hero_gold.js';
+import { detachHeroGold } from './sit.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { enexto, randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';

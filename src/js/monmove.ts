@@ -117,7 +117,7 @@ import { dist2, distmin } from './hacklib.js';
 
 import { shopkeeperName } from './shknam.js';
 
-import { heroGoldObject } from './hero_gold.js';
+import { heroGoldObject } from './sit.js';
 import { canLetGo } from './do.js';
 import { canFallThrough } from './mklev.js';
 import { getTrack, hasTrack } from './track.js';

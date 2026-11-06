@@ -51,7 +51,7 @@ import { enlightenment } from './insight.js';
 import { detectMonsters } from './detect.js';
 import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from './properties.js';
 import { encumber_msg } from './pickup.js';
-import { setHeroGoldAmount } from './hero_gold.js';
+import { setHeroGoldAmount } from './sit.js';
 import { someGold } from './steal.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { consumeInventoryItem } from './invent.js';

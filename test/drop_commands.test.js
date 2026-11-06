@@ -11,7 +11,7 @@ import { setPrimaryWeapon } from '../js/wield.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { addInventoryObject, knownObject, artifactObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/invent.js';
 import { invokeInventoryObject } from './support/commands.js';

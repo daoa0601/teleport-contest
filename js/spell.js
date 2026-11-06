@@ -29,7 +29,7 @@ import { walkPathCells } from './dothrow.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn1, rn2, rnd, rnl, rn2Display } from './rng.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
-import { takeHeroGold } from './hero_gold.js';
+import { takeHeroGold } from './sit.js';
 import { recordAchievement } from './insight.js';
 import { makeInvocationArea } from './mklev.js';
 import { consumeInventoryItem } from './invent.js';

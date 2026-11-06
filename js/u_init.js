@@ -26,7 +26,7 @@ import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { ensureHeroSkills } from './weapon.js';
 import { spellSkillType } from './spell.js';
 import { hiddenGold } from './vault.js';
-import { addHeroGoldObject, setHeroGoldAmount } from './hero_gold.js';
+import { addHeroGoldObject, setHeroGoldAmount } from './sit.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';

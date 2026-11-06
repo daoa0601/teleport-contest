@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { CORR, ROOMOFFSET, STONE, VAULT, VWALL, NO_MINVENT } from '../js/const.js';
 import { canSeeMonster, glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { GOLD_PIECE, TIN_WHISTLE } from '../js/object_data.js';

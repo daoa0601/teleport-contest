@@ -130,7 +130,7 @@ import {
     monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies,
     formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, canBlnd,
 } from './mondata.js';
-import { detachHeroGold, heroGoldObject } from './hero_gold.js';
+import { detachHeroGold, heroGoldObject } from './sit.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
 import { applyFloorEffects } from './floor_effects.js';

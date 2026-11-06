@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { talkToDemon } from '../js/monmove.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import type { GameMap } from '../js/game.js';
 import type { Monster } from '../js/monster_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';

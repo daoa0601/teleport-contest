@@ -118,7 +118,7 @@ import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, ent
 import { hello } from './role.js';
 import { doopen } from './lock.js';
 
-import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
+import { heroGoldObject, heroGoldQuantity } from './sit.js';
 import {
     objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object,
 } from './mkobj.js';

@@ -14,7 +14,7 @@ import { applyArmorOnEffects } from '../js/do_wear.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addFruit } from '../js/options.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { addInventoryObject, floorArtifact, floorObject, } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { requirePlayingGame, game } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { DAGGER } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
 import { sellHeroDroppedObject, shopOfferForObject } from '../js/shk.js';

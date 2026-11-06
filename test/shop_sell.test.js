@@ -5,7 +5,7 @@ import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
 import { SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { HUNGRY, WEAK } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
 import { shopStocksObject } from '../js/shknam.js';

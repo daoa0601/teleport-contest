@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { SORTLOOT_INUSE, SORTLOOT_LOOT, SORTLOOT_PETRIFY, W_WEP, W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { mksobj, set_corpsenm, addObjectToContainer, placeCreatedObject } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

@@ -56,7 +56,7 @@ import { applyPickAxeDirection, diggingTarget, watchDigging, ensureDiggingContex
 import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
 import { hello } from './role.js';
 import { doopen } from './lock.js';
-import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
+import { heroGoldObject, heroGoldQuantity } from './sit.js';
 import { objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object, } from './mkobj.js';
 import { floorObjectDescription, stack_object, freeInventoryObject, delobj } from './invent.js';
 import { insideRoom, searchSpecial } from './mkroom.js';

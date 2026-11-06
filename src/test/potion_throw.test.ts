@@ -14,7 +14,7 @@ import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/timeout.js';

@@ -61,7 +61,7 @@ import { currency } from './invent.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects } from './muse.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { detachHeroGold, heroGoldObject } from './hero_gold.js';
+import { detachHeroGold, heroGoldObject } from './sit.js';
 import { heroIsUnaware } from './senses.js';
 import { inventoryItemDescription } from './invent.js';
 import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';

@@ -73,7 +73,7 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, canBlnd, } from './mondata.js';
-import { detachHeroGold, heroGoldObject } from './hero_gold.js';
+import { detachHeroGold, heroGoldObject } from './sit.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
 import { applyFloorEffects } from './floor_effects.js';

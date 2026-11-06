@@ -6,7 +6,7 @@ import { D_LOCKED, D_NODOOR, DOOR, HWALL, MON_LIMBO, POOL, ROOM, SV0, TRCORNER, 
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { canSpotMonster, back_to_glyph } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
 import { ARROW, DAGGER, BOULDER, CHAIN_MAIL, LAND_MINE, LEASH, LOCK_PICK, POT_FRUIT_JUICE, } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -28,7 +28,7 @@ import { currency, mergable, addInventoryItem, countContents, finishInventoryRem
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle, objectDescription, paymentObjectDescription, } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
-import { heroGoldObject, detachHeroGold } from './hero_gold.js';
+import { heroGoldObject, detachHeroGold } from './sit.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { W_AMUL, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { takeFromContainer } from '../js/pickup.js';
 import { addInventoryItem } from '../js/invent.js';

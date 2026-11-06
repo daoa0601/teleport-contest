@@ -27,7 +27,7 @@ import { randomMonsterRelocation, relocateObjectRandomly, reportMonsterTeleportR
 import { openHoldingTrap, petrifyMonsterImmediately } from './trap.js';
 import { armorSimpleName, stopDonning, isBeingTakenOff, pendingArmorAction } from './do_wear.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
-import { detachHeroGold } from './hero_gold.js';
+import { detachHeroGold } from './sit.js';
 import { isWeldedPrimary } from './wield.js';
 import { monsterCanCarryObject, finishHeroMonsterKill, } from './mon.js';
 import { releaseObjectLeash } from './apply.js';
