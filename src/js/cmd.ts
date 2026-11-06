@@ -122,6 +122,7 @@ type DirectionKey = 'h' | 'l' | 'j' | 'k' | 'y' | 'u' | 'b' | 'n';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 
+// Part of C cmd.c:movecmd(): the vi-movement key test.
 function isMovementKey(ch: string): ch is DirectionKey {
     return ch.length === 1 && 'hjklyubn'.includes(ch);
 }
@@ -131,6 +132,7 @@ function isMovementKey(ch: string): ch is DirectionKey {
 export function isok(x: number, y: number): boolean {
     return x >= 1 && x <= COLNO - 1 && y >= 0 && y <= ROWNO - 1;
 }
+// Part of C cmd.c:rhack(): resolving a pressed key to its bound command.
 function configuredCommand(key: number): CommandBinding {
     key &= 255;
     if (key === 27) return { key, command: null, parameter: null };
@@ -167,6 +169,8 @@ export async function continueCountedCommand(g: GameState = game): Promise<boole
     return !g.program_state.gameover;
 }
 
+// Part of C allmain.c:moveloop_core(): the per-occupation continuation
+// dispatch (C calls the installed occupation function pointer).
 async function continueOccupation(g: GameState): Promise<boolean> {
     const occupation = g._occupation;
     if (!occupation) {
@@ -234,6 +238,8 @@ async function continueOccupation(g: GameState): Promise<boolean> {
     return false;
 }
 
+// Part of C cmd.c:set_occupation(): installing a count-prefixed command
+// occupation.
 function prepareTimedCommand(binding: CommandBinding): void {
     const text = binding.command?.occupation;
     if (text && !game._occupation && game.multi) {
@@ -247,11 +253,13 @@ export function setOccupation(occupation: HeroOccupation, g: GameState = game): 
     g._occupation = occupation;
 }
 
+// C cmd.c:redraw_cmd()
 async function redrawCommand(): Promise<void> {
     await docrt();
     game.context.move = 0;
 }
 
+// Part of C do.c:donull(): the wait command.
 async function performWaitCommand(force = game.iflags.menu_requested) {
     if (!await donull(force, !!game.multi)) return;
     game.context.move = 1;
@@ -612,6 +620,7 @@ async function doToggleOption(parameter: string | null): Promise<void> {
     }
     if (!await toggleBooleanOptionPrefix(parameter)) commandResultFailed();
 }
+// Part of C cmd.c:rhack(): invoking the bound command's handler.
 // Admission belongs to the caller. Keep the selected binding, including its
 // parameter, rather than looking up a possibly rebound key inside the action.
 async function runCommandHandler(binding: CommandBinding): Promise<void> {
@@ -854,12 +863,16 @@ function enqueueInventoryAction(action: InventoryAction | null): void {
     cmdq_add_key(CQ_CANNED, item.invlet.charCodeAt(0));
 }
 
+// Port only: result adapter between the quaff command and potion.c's
+// dodrink().
 async function doquaff() {
     const result = await quaff();
     if (result.cancelled) commandResultCancelled(); // potion.c:dodrink() ECMD_CANCEL.
     game.context.move = result.spentTime && !result.heroDied ? 1 : 0;
 }
 
+// Port only: result adapter between the read command and read.c's
+// doread().
 async function readCommand(): Promise<void> {
     const result = await doread();
     if (result.cancelled) commandResultCancelled(); // read.c:doread() ECMD_CANCEL.
@@ -897,6 +910,7 @@ export async function terrainCommand(): Promise<void> {
 }
 
 
+// Port only: alias wrapper over terrainCommand() for the command table.
 async function doTerrainOverview(): Promise<void> {
     await terrainCommand();
 }
@@ -907,6 +921,7 @@ async function doherecmdmenu(): Promise<void> {
     enqueueContextMenu(await selectContextMenu(game.u.ux, game.u.uy, CLICK_1));
 }
 
+// C cmd.c:dotherecmdmenu()
 async function dotherecmdmenu(): Promise<void> {
     game.iflags.getdir_click = CLICK_1 | CLICK_2;
     const target = game._clicklookTarget;
@@ -950,13 +965,14 @@ async function doclicklook(): Promise<void> {
     if (target && isok(target.x, target.y)) await autoDescribePosition(target.x, target.y);
 }
 
+// C cmd.c:domouseaction()
 async function domouseaction(): Promise<void> {
     game.context.move = 0;
     const target = game._clicklookTarget;
     if (target && isok(target.x, target.y)) mouseAction(target);
 }
 
-// C cmd.c:domouseaction(), the optional mouse binding which chooses an action.
+// Part of C cmd.c:domouseaction(): the chooser half over a click target.
 function mouseAction(click: Position): void {
     requirePlayingGame(game);
     let dx = click.x - game.u.ux, dy = click.y - game.u.uy;
@@ -1141,6 +1157,8 @@ export async function selectContextMenu(x: number, y: number, click: number): Pr
     return action ? { action, x, y } : null;
 }
 
+// Part of C cmd.c:there_cmd_menu_far(): the linedup() eligibility for
+// the throw entry.
 // C linedup(..., 1): boulders do not obstruct an explicitly chosen throw.
 function canThrowToward(x: number, y: number): boolean {
     requirePlayingGame(game);
@@ -1196,6 +1214,7 @@ async function selfEntries(add: AddEntry, x: number, y: number): Promise<void> {
     if (trap?.tseen && trap.ttyp !== VIBRATING_SQUARE) add('untrap-here', 'Attempt to disarm trap');
 }
 
+// Part of C cmd.c:there_cmd_menu(): the object entry's name.
 async function menuObjectName(object: GameObject): Promise<string> {
     observeObjectForNaming(object);
     return floorObjectDescription(object);
@@ -1242,6 +1261,8 @@ function adjacentEntries(add: AddEntry, x: number, y: number, click: number): vo
         add('attack', `Attack ${monster ? monsterName(monster, { article: 'the' }) : 'unseen creature'}`);
 }
 
+// Part of C cmd.c:there_cmd_menu_common(): the unusual-hero-glyph test
+// for the self "look" entry.
 function unusualHeroGlyph(): boolean {
     const hero = game.u;
     if (Upolyd(hero)) return true;
@@ -1402,6 +1423,7 @@ export async function dolookaround(): Promise<void> {
 // success path resets a pending 'A', unwields uswapwep, and reports.
 const HANDS_ITEM_KEY = '-'.charCodeAt(0);
 
+// C do_wear.c:remarm_swapwep()
 async function remarmSwapwep(): Promise<void> {
     const cmdq = cmdq_pop();
     const key = cmdq?.typ === CMDQ_KEY ? cmdq.key : undefined;
@@ -1443,6 +1465,8 @@ async function enterExploreMode(): Promise<void> {
     game.context.move = 0;
 }
 
+// Port only: null the port's cached victual/tin/spbook pointers when
+// their object leaves the level.
 function freeLevelObject(object: GameObject): void {
     for (const content of [...(object.contents ?? [])]) freeLevelObject(content);
     const { victual, tin, spbook } = game.context;
@@ -1665,6 +1689,7 @@ async function useSteedBreathAbility(steed: Monster) {
     game.context.move = 1;
 }
 
+// C cmd.c:domonability()
 async function domonability() {
     const canHide = heroHasHidingAbility(game);
     const canSpinWeb = heroCanSpinWeb(game);
@@ -1927,18 +1952,22 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
 // table here is immutable, so the adjustments live in this overlay.
 const autocompleteOverrides = new Map<string, boolean>();
 
+// Part of C cmd.c:parseautocomplete(): setting one command's
+// autocomplete flag.
 export function setCommandAutocomplete(name: string, enabled: boolean): void {
     const command = NATIVE_COMMANDS.find(entry => entry.name === name);
     if (command && enabled === !!(command.flags & NATIVE_COMMAND_FLAGS.AUTOCOMPLETE)) autocompleteOverrides.delete(name);
     else autocompleteOverrides.set(name, enabled);
 }
 
+// Port only: clear per-engine autocomplete overrides.
 // One native process parses one rc file; the overrides must not outlive an
 // engine start in this port.
 export function resetCommandAutocomplete(): void {
     autocompleteOverrides.clear();
 }
 
+// Part of C cmd.c:parseautocomplete(): the effective autocomplete flag.
 export function commandAutocompletes(command: NativeCommand): boolean {
     const override = command.name !== null ? autocompleteOverrides.get(command.name) : undefined;
     return override !== undefined ? override : !!(command.flags & NATIVE_COMMAND_FLAGS.AUTOCOMPLETE);
@@ -1983,6 +2012,7 @@ export function availableExtendedCommands(): NativeCommand[] {
 }
 
 
+// Port only: the ext_func_tab description text keyed by command name.
 export function commandDescription(command: NativeCommand): string {
     // update_rest_on_space() binds its own wait entry with a distinct description.
     if (command.name === 'wait' && command.key === 32)
@@ -2103,6 +2133,7 @@ export async function showExtendedCommandList(): Promise<void> {
     }
 }
 
+// Part of C cmd.c:keylist_putcmds(): the keylist description wording.
 // C doextlist() changes the description before both searching and display.
 function listedCommandDescription(command: NativeCommand): string {
     const description = commandDescription(command);
@@ -2111,6 +2142,7 @@ function listedCommandDescription(command: NativeCommand): string {
     return description.replace(' been genocided or become extinct', ' been genocided');
 }
 
+// Part of C cmd.c:extcmd_via_menu(): the '*'/'?' search pattern.
 function matchesSearch(text: string, pattern: string): boolean {
     if (text.toLowerCase().includes(pattern.toLowerCase())) return true;
     const expression = [...pattern].map(character => character === '*' ? '.*'
@@ -2218,6 +2250,7 @@ async function dotravelTarget(): Promise<void> {
     else if (!game._runState && game.context.run === 8) arriveTravel(game);
 }
 
+// C version.c:doversion()
 async function doversion(): Promise<void> {
     if (game.iflags.menu_requested) await doextversion();
     else await pline(NATIVE_VERSION);
@@ -2289,6 +2322,7 @@ export interface CommandInput {
 // ── Key-binding menus (C cmd.c:handler_rebind_keys*(), count_bind_keys(),
 //    get_changed_key_binds()) ────────────────────────────────────────────
 
+// C cmd.c:count_bind_keys()
 // cmd.c count_bind_keys(): user rebinds plus default keys that no longer
 // have their command bound.
 export function countBindKeys(): number {
@@ -2454,6 +2488,7 @@ export function parseAutocomplete(value: string, addRawError: (message: string) 
 // Part of C cmd.c:rhack(): adapter that initializes the command result before a handler runs.
 // ── Runtime command counts and results (C cmd.c:rhack(), reset_cmd_vars()) ──
 
+// Port only: begin an ECMD_* result accumulation.
 // C command handlers return an ECMD_* status which rhack() inspects after
 // the command finishes (cmd.c:3810): ECMD_CANCEL and ECMD_FAIL make it call
 // reset_cmd_vars(TRUE), clearing CQ_CANNED and CQ_REPEAT. JS handlers run
@@ -2462,12 +2497,14 @@ export function beginCommandResult(state: GameState = game): void {
     state._commandResult = ECMD_OK;
 }
 
+// Port only: OR ECMD_CANCEL into the result a C return value would carry.
 // Multiple failure paths can combine bits exactly like a C return value
 // (use_pole() returns res|ECMD_CANCEL after an already-timed wield).
 export function commandResultCancelled(state: GameState = game): void {
     state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_CANCEL;
 }
 
+// Port only: OR ECMD_FAIL into the result a C return value would carry.
 export function commandResultFailed(state: GameState = game): void {
     state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_FAIL;
 }
@@ -2571,6 +2608,7 @@ export function cmdq_add_int(q: CmdQueueId, val: number, state: GameState = game
     state.command_queue[q].push({ typ: CMDQ_INT, intval: val });
 }
 
+// C cmd.c:cmd_from_ecname()
 // Resolve a command by name for producers which hold the visible name
 // (act_on_act(), domouseaction()); the queue stores the handler's first
 // table entry, exactly like ext_func_tab_from_func().
@@ -2624,6 +2662,8 @@ export function takeQueuedAdjacentPosition(): Position | null | undefined {
     return null;
 }
 
+// Port only: the u.multi counter with involuntary delays mirrored
+// negative.
 // C has one multi counter; involuntary delays have a positive mirror here.
 export function currentMulti(state: GameState = game): number {
     const helplessTurns = state._helplessTurns ?? 0;
@@ -2631,6 +2671,7 @@ export function currentMulti(state: GameState = game): number {
     return state.multi;
 }
 
+// Port only: assignment of the unified multi counter.
 // Direct native assignments (combat wake, life saving, unmul, countdown)
 // must change the same counter that nomul() compares during this turn.
 export function setMulti(value: number, state: GameState = game): void {
@@ -2638,6 +2679,7 @@ export function setMulti(value: number, state: GameState = game): void {
     state._helplessTurns = Math.max(0, -value);
 }
 
+// Port only: the native multi < 0 involuntary-delay test.
 // Native multi < 0 includes sleep, paralysis, prayer, and delayed actions.
 export function heroHasInvoluntaryDelay(state: GameState = game): boolean {
     return currentMulti(state) < 0;
@@ -2645,6 +2687,7 @@ export function heroHasInvoluntaryDelay(state: GameState = game): boolean {
 
 // ── Command counts (C cmd.c:get_count(), parse()) ─────────────────────────
 
+// Part of C cmd.c:rhack(): reading the command key and its count prefix.
 export async function readCommandInput(): Promise<CommandInput> {
     game._commandCount = 0;
     setMulti(0);
@@ -2739,6 +2782,7 @@ export async function getCount(
     return { key, count: accepted };
 }
 
+// C cmd.c:get_count()
 // C parse() collects the repeat count through get_count((char *) 0, '\0',
 // LARGEST_INT, &gc.command_count, GC_NOFLAGS) in command input state.
 async function readCommandCount(): Promise<CommandInput> {
@@ -2784,10 +2828,13 @@ const CONTROL_RUSH_DIRECTION = new Map([
     [12, 'l'], [14, 'n'], [21, 'u'], [25, 'y'],
 ]);
 
+// Part of C cmd.c:reset_commands(): the Ctrl-direction rush bindings.
 export function controlRushDirection(key: number): string | null {
     return CONTROL_RUSH_DIRECTION.get(key) || null;
 }
 
+// Port only: the execution key a command-table entry selects (not the
+// live key map).
 // These keys select existing JS handlers; they are not the live key map.
 export function commandExecutionKey(command: string | null | undefined): string | null {
     if (!command) return null;
@@ -2802,6 +2849,8 @@ export function commandExecutionKey(command: string | null | undefined): string 
     return null;
 }
 
+// Part of C cmd.c:yn_function(): converting a direction to its movement
+// key.
 // movecmd() recognizes a bound handler, including run/rush and vertical
 // movement. This projection keeps the existing direction consumers on one
 // coordinate alphabet without treating that alphabet as the live bindings.
@@ -2810,12 +2859,15 @@ export function movementDirectionKey(key: number, bindings: CommandBindings): st
     return movement ? 'hykulnjb><'.charAt(movement.direction) : '';
 }
 
+// Part of C cmd.c:yn_function(): the self-key answer for a queued
+// direction.
 export function promptedDirectionKey(key: number, bindings: CommandBindings): string {
     if (key === bindings.specialKey('getdir.self')
         || key === bindings.specialKey('getdir.self2')) return '.';
     return movementDirectionKey(key, bindings);
 }
 
+// C hacklib.c:visctrl()
 export function visibleCommandKey(code: number): string {
     code &= 255;
     if (code >= 128) return `M-${visibleCommandKey(code & 127)}`;
@@ -2852,12 +2904,15 @@ const impairedDirections = [
 // Top-line key prompts used by commands which can pause for input.
 // C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
 
+// Port only: paint the pending key prompt on the topline.
 async function paintKeyPrompt(message: string, cursorOffset = 0): Promise<number> {
     await setTopline(message);
     await flush_screen(1);
     return renderKeyPrompt(message, cursorOffset);
 }
 
+// Part of C cmd.c:yn_function(): the queue-aware key prompt and its
+// canned answers.
 export async function promptKey(
     message: string, cursorOffset = 0,
     { canned = true }: { canned?: boolean } = {},
@@ -2921,6 +2976,7 @@ export async function ynSingleKey(message: string, cursorOffset = 0): Promise<nu
     return key;
 }
 
+// Part of C cmd.c:yn_function(): the queued-direction answer key.
 // C getdir() converts CMDQ_DIR through xytodir() and Cmd.dirchars only
 // when it needs the direction; other prompts must keep its entry type.
 function queuedDirectionKey({ dirx, diry, dirz }: CmdQueueDirEntry): number {
@@ -3041,6 +3097,7 @@ export async function promptDirection(
     }
 }
 
+// Part of C getpos.c:getpos(): the mouse-click aiming prompt.
 // C getdir's simulated click returns directly from getpos: it bypasses
 // both the grid-bug movement restriction and confusion redirection.
 async function promptClickDirection(): Promise<DirectionSelection | null> {
@@ -3077,6 +3134,7 @@ async function promptClickDirection(): Promise<DirectionSelection | null> {
     return { key: '_', dx: hero.dx, dy: hero.dy, dz: hero.dz };
 }
 
+// C cmd.c:confdir()
 // C getdir() calls confdir(FALSE) even for self, but never for up/down.
 export function confusePromptDirection(hero: Hero, forceImpairment = false): void {
     const stunned = hero.stunned || (hero.stunnedTurns ?? 0) > 0;
@@ -3088,6 +3146,7 @@ export function confusePromptDirection(hero: Hero, forceImpairment = false): voi
     [hero.dx, hero.dy] = vector;
 }
 
+// Port only: release the topline after a dismissed overlay window.
 export async function restoreCommandMap() {
     // The dismissed menu or text window already restored its covered rows.
     // Release its topline without another redraw or status update.
@@ -3210,6 +3269,7 @@ async function queryResponseMenu(query: string, responses: string, defaultAnswer
     return { answer, count: game._ynNumber ?? 0n };
 }
 
+// Part of C cmd.c:yn_function(): the invalid-answer diagnostic.
 async function reportInvalidYnAnswer(
     query: string, responses: string, defaultAnswer: string, answer: string, alternative: string,
 ): Promise<void> {
@@ -3234,6 +3294,7 @@ async function reportInvalidYnAnswer(
     }
 }
 
+// C cmd.c:paranoid_query()
 // A per-question paranoia bit changes affirmative input from `y` to the full
 // line `yes`.  PARANOID_CONFIRM additionally removes the default and requires
 // `no` (or Escape) to reject, retrying other committed lines up to six times.
@@ -3285,10 +3346,12 @@ export async function pgetchar(): Promise<number> {
     return nativeChar(key);
 }
 
+// C cmd.c:readchar()
 export async function readchar(inputState: InputState = 'other'): Promise<number> {
     return (await readcharCore(inputState)).key;
 }
 
+// C cmd.c:readchar_poskey()
 // C readchar_poskey(): only position selection receives the click coordinates.
 // All readchar callers receive the same NUL character for a click.
 export function readcharPoskey(): Promise<CharacterInput> {
@@ -3328,6 +3391,7 @@ async function readcharCore(inputState: InputState): Promise<CharacterInput> {
     return { key: nativeChar(key), click: null };
 }
 
+// Port only: normalize a key to the native signed/unsigned char model.
 function nativeChar(key: number): number {
     return NATIVE_COMMAND_PROFILE.signedChar ? (key << 24) >> 24 : key & 255;
 }
@@ -3340,6 +3404,7 @@ function nativeChar(key: number): number {
 let fuzzerCommandIndex = 0; /* static unsigned i: extcmdlist index */
 let lastFuzzerCommand = 0; /* static char last_c: repeat key */
 
+// C cmd.c:randomkey()
 export function randomKey(inputState: InputState): number {
     if (inputState === 'command' && (lastFuzzerCommand === 1 || lastFuzzerCommand === 16)
         && rn2(5)) return lastFuzzerCommand;
@@ -3367,6 +3432,7 @@ export function randomKey(inputState: InputState): number {
     return key;
 }
 
+// Port only: reset the per-game fuzzer key statics.
 // Reset by bindInputGate() (every game binds a freshly built gate, as
 // jsmain's start() does) and by resetInputState().
 export function resetFuzzerCommandState(): void {
