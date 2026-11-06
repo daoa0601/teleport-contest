@@ -6,7 +6,7 @@ import {
 } from '../js/object_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { heroGoldObject } from '../js/hero_gold.js';
+import { heroGoldObject } from '../js/sit.js';
 import { mksobj } from '../js/mkobj.js';
 import { addCreatedInventoryItem } from '../js/invent.js';
 import { uInitInventoryAttrs } from '../js/u_init.js';

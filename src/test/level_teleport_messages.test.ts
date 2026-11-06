@@ -4,7 +4,7 @@ import { MARK } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { levelTeleport } from '../js/level_teleport.js';
+import { levelTeleport } from '../js/teleport.js';
 import { finishScheduledLevelChange } from '../js/do.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { answerPrompts } from './support/input-boundaries.js';

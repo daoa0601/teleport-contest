@@ -79,7 +79,7 @@ dungeon.c	dumpit	, dunlev_ureached	diagnostic	#ifdef DEBUG dumpit() gated by exp
 dungeon.c	dumpit	, ledger_start	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
 dungeon.c	dumpit	Special levels:	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
 dungeon.c	init_dungeons	Cannot open dungeon description - "	out-of-scope	Fatal error when the dungeon.lua dlb resource cannot be opened; a data-file open error outside the port, which embeds the generated dungeon graph.
-dungeon.c	lev_by_name	to Vlad's tower	composed	src/js/level_teleport.ts:destinationAtDepth; The gehennom alias resolves to " to vlad's tower" while inside the tower branch, matching lev_by_name()'s special case.
+dungeon.c	lev_by_name	to Vlad's tower	composed	src/js/teleport.ts:destinationAtDepth; The gehennom alias resolves to " to vlad's tower" while inside the tower branch, matching lev_by_name()'s special case.
 dungeon.c	load_exclusions	exclusion-zonetype	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_exclusions(); serialized metadata, not displayed text. The port validates its own storage format.
 dungeon.c	load_exclusions	exclusion_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_exclusions(); serialized metadata, not displayed text. The port validates its own storage format.
 dungeon.c	load_mapseen	mapseen-branch_index	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.

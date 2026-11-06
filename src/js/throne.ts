@@ -30,7 +30,7 @@ import { dropCursedSecondaryWeapon } from './wield.js';
 import { makePlural, verbForSubject, definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './do.js';
-import { takeHeroGold } from './hero_gold.js';
+import { takeHeroGold } from './sit.js';
 import { scheduleLevelChange } from './do.js';
 import { identifyPack } from './invent.js';
 import { msummon } from './minion.js';

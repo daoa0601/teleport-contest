@@ -57,7 +57,7 @@ import { objectShedsLight } from './light.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { assertCreatedObject, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
-import { heroGoldObject } from './hero_gold.js';
+import { heroGoldObject } from './sit.js';
 import { hiddenGold } from './vault.js';
 import { nomul, heroGoldAmount, roomsAt, nearCapacity } from './hack.js';
 import { displayLiquidName, monsterName } from './do_name.js';

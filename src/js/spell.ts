@@ -32,7 +32,6 @@ import {
 import { exerciseWisdom, currentAttribute, exerciseAttribute, poisonHeroStrengthAndHp } from './attrib.js';
 
 import { impossible } from './diagnostics.js';
-import { makeFamiliar } from './familiar.js';
 import { zapHeroWithObject, paintRayCell, turnCarriedObjects, adjustSpellDamage, applyWandEffect, hitMonsterWithRay } from './zap.js';
 import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
@@ -64,7 +63,7 @@ import { walkPathCells } from './dothrow.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn1, rn2, rnd, rnl, rn2Display } from './rng.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
-import { takeHeroGold } from './hero_gold.js';
+import { takeHeroGold } from './sit.js';
 import { recordAchievement } from './insight.js';
 import { makeInvocationArea } from './mklev.js';
 import { consumeInventoryItem } from './invent.js';
@@ -78,7 +77,7 @@ import { teleportHero, askTeleportDestination } from './teleport.js';
 import { rndcurse } from './throne.js';
 import { aggravateMonsters } from './wizard.js';
 import { makeMonsterFlee } from './monmove.js';
-import { tameMonster } from './dog.js';
+import { makeFamiliar, tameMonster } from './dog.js';
 import { readNovelTribute } from './novel_tribute.js';
 import { makemonAt, setMonsterMalign } from './makemon.js';
 import { makeUndeadNear } from './mkroom.js';

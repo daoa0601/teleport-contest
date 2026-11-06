@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { BAG_OF_HOLDING, DAGGER, POT_HEALING } from '../js/object_data.js';

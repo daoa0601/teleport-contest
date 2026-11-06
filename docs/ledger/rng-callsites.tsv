@@ -12,6 +12,9 @@ src/js/allmain.ts	u_calc_moveamt	rn2	"[""3""]"	constant
 src/js/allmain.ts	u_calc_moveamt	rn2	"[""3""]"	constant
 src/js/allmain.ts	maybe_generate_rnd_mon	rn2	"[""generationRate""]"	constant
 src/js/allmain.ts	regen_pw	rn2	"[""upper""]"	invariant
+src/js/allmain.ts	regenerateHeroHp	rn2	"[""100""]"	constant
+src/js/allmain.ts	regenerateHeroHp	rn2	"[""8""]"	constant
+src/js/allmain.ts	regenerateHeroHp	rn2	"[""hero.mh""]"	guarded
 src/js/allmain.ts	moveloop_core	rn2	"[""40 + currentAttribute(A_DEX) * 3""]"	invariant
 src/js/allmain.ts	moveloop_core	rnd	"[""3""]"	constant
 src/js/allmain.ts	moveloopPreamble	rnd	"[""30""]"	constant
@@ -117,8 +120,6 @@ src/js/attrib.ts	redistributeActiveAttributes	rn2	"[""5""]"	constant
 src/js/attrib.ts	varyInitAttr	rn2	"[""20""]"	constant
 src/js/attrib.ts	varyInitAttr	rn2	"[""7""]"	constant
 src/js/potion.ts	restoreHeroBaseAttributes	rn2	"[""A_MAX""]"	constant
-src/js/bag_of_tricks.ts	useBagOfTricks	rn2	"[""23""]"	constant
-src/js/bag_of_tricks.ts	useBagOfTricks	rnd	"[""7""]"	constant
 src/js/ball.ts	beginBallAndChainMove	rn2	"[""2""]"	constant
 src/js/ball.ts	dragBallDownStairs	rn2	"[""2""]"	constant
 src/js/ball.ts	dragBallDownStairs	rn2	"[""3""]"	constant
@@ -259,6 +260,8 @@ src/js/dig.ts	digActualHole	rn2	"[""4""]"	constant
 src/js/dig.ts	digHole	d	"[""3"", ""6""]"	constant
 src/js/dig.ts	digHole	rn2	"[""2""]"	constant
 src/js/dig.ts	digUpGrave	rn2	"[""5""]"	constant
+src/js/dig.ts	formatDraftMessage	random	"[""2""]"	constant
+src/js/dig.ts	formatDraftMessage	random	"[""3""]"	constant
 src/js/do_name.ts	displayColorName	rn2Display	"[""HALLUCINATED_COLORS.length""]"	constant
 src/js/do_name.ts	displayLiquidName	rn2Display	"[""HALLUCINATED_LIQUIDS.length + (fallback ? 1 : 0)""]"	constant
 src/js/display.ts	displayMonsterAtCell	rn2Display	"[""MONSTER_COLOR.length""]"	constant
@@ -285,6 +288,9 @@ src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""9""]"	constant
 src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.length""]"	constant
 src/js/pray.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
 src/js/dog.ts	abusePet	rn2	"[""monster.mtame""]"	guarded
+src/js/dog.ts	familiarSpecies	rn2	"[""2""]"	constant
+src/js/dog.ts	familiarSpecies	rn2	"[""3""]"	constant
+src/js/dog.ts	makeFamiliar	rn2	"[""10""]"	constant
 src/js/uhitm.ts	abusePetAfterHeroHit	rnd	"[""damage""]"	guarded
 src/js/dog.ts	makePetWary	random	"[""(dog.abuse ?? 0) + 1""]"	unproved
 src/js/dog.ts	makePetWary	random	"[""2""]"	constant
@@ -301,8 +307,6 @@ src/js/dokick.ts	kickOuch	rn2	"[""2""]"	constant
 src/js/dokick.ts	kickOuch	rn2	"[""3""]"	constant
 src/js/dokick.ts	kickOuch	rnd	"[""5""]"	constant
 src/js/dokick.ts	kickOuch	rnd	"[""currentAttribute(A_CON) > 15 ? 3 : 5""]"	constant
-src/js/draft_message.ts	formatDraftMessage	random	"[""2""]"	constant
-src/js/draft_message.ts	formatDraftMessage	random	"[""3""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""6""]"	constant
@@ -382,9 +386,6 @@ src/js/exper.ts	randomExperience	rn2	"[""range""]"	unproved
 src/js/extversion.ts	doextversion	rn2	"[""2""]"	constant
 src/js/extversion.ts	doextversion	rn2	"[""3""]"	constant
 src/js/read.ts	fallingRock	rn1	"[""5"", ""2""]"	constant
-src/js/familiar.ts	familiarSpecies	rn2	"[""2""]"	constant
-src/js/familiar.ts	familiarSpecies	rn2	"[""3""]"	constant
-src/js/familiar.ts	makeFamiliar	rn2	"[""10""]"	constant
 src/js/figurine.ts	scheduleFigurineRetry	rnd	"[""5000""]"	constant
 src/js/figurine_timer.ts	attachFigurineTimer	rnd	"[""9000""]"	constant
 src/js/trap.ts	burnContainer	context.random	"[""chance""]"	constant
@@ -580,9 +581,6 @@ src/js/hero_potion_hit.ts	applyDirectHeroPotion	rollDice	"[""potion.cursed ? 2 :
 src/js/hero_potion_hit.ts	hitHeroWithThrownPotion	rollOne	"[""2""]"	constant
 src/js/dothrow.ts	hitMonsterWithRangedObject	rollOne	"[""20""]"	constant
 src/js/dothrow.ts	missRangedObject	rn2	"[""3""]"	constant
-src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""100""]"	constant
-src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""8""]"	constant
-src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""hero.mh""]"	guarded
 src/js/artifact.ts	retouchHeroObject	rnd	"[""10""]"	constant
 src/js/artifact.ts	retouchHeroObject	rnd	"[""10""]"	constant
 src/js/zap.ts	elementalSelfZap	d	"[""12"", ""6""]"	constant
@@ -737,13 +735,6 @@ src/js/do.ts	gotoLevel	rnd	"[""diff""]"	unproved
 src/js/do.ts	resolveHeroArrivalCollision	rn2	"[""2""]"	constant
 src/js/do.ts	gotoLevel	rnd	"[""10""]"	constant
 src/js/do.ts	familiarLevelMsg	rn2	"[""4""]"	constant
-src/js/level_teleport.ts	levelTeleport	rn2	"[""dungeonAt(state, dnum).num_dunlevs""]"	unproved
-src/js/level_teleport.ts	levelTeleport	rn2	"[""state.dungeons.length""]"	unproved
-src/js/level_teleport.ts	randomTeleportDepth	random	"[""5""]"	constant
-src/js/level_teleport.ts	randomTeleportDepth	random	"[""current + 3 - minimum""]"	unproved
-src/js/level_teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
-src/js/level_teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
-src/js/level_teleport.ts	readLevelRequest	rnl	"[""5""]"	constant
 src/js/levitation_commands.ts	refreshLevitationArtifactCooldowns	rnz	"[""100""]"	constant
 src/js/potion.ts	applyLevitationPotion	rn1	"[""140"", ""10""]"	constant
 src/js/potion.ts	applyLevitationPotion	rn1	"[""50"", ""250""]"	constant
@@ -1647,6 +1638,10 @@ src/js/mhitu.ts	resolveMonsterSelfExplosion	d	"[""dice"", ""sides""]"	unproved
 src/js/mhitu.ts	resolveMonsterSelfExplosion	d	"[""dice"", ""sides""]"	unproved
 src/js/mhitu.ts	resolveMonsterSelfExplosion	rnd	"[""damage""]"	unproved
 src/js/sounds.ts	publishMonsterNoise	rn2	"[""2""]"	constant
+src/js/sounds.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
+src/js/sounds.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
+src/js/sounds.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
+src/js/sounds.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
 src/js/mon.ts	mcalcmove	random	"[""2""]"	constant
 src/js/mon.ts	mcalcmove	random	"[""NORMAL_SPEED""]"	constant
 src/js/mcastu.ts	summonMonsterInsects	rnd	"[""Math.trunc(level / 2)""]"	guarded
@@ -1655,6 +1650,8 @@ src/js/mon.ts	createStoneRemains	rn2	"[""2 + Number(frequency > 2)""]"	constant
 src/js/muse.ts	mon_consume_unstone	rollOne	"[""15""]"	constant
 src/js/dog.ts	tameMonster	rn2	"[""6""]"	constant
 src/js/dog.ts	tameMonster	rnd	"[""10""]"	constant
+src/js/makemon.ts	useBagOfTricks	rn2	"[""23""]"	constant
+src/js/makemon.ts	useBagOfTricks	rnd	"[""7""]"	constant
 src/js/zap.ts	restoreMonsterTraits	rollOne	"[""speciesLevel + 1""]"	invariant
 src/js/trap.ts	mintrap	random	"[""2""]"	constant
 src/js/trap.ts	mintrap	random	"[""40""]"	constant
@@ -2242,6 +2239,13 @@ src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	mlevel_tele_trap	random	"[""7""]"	constant
 src/js/teleport.ts	goodPosition	random	"[""13""]"	constant
+src/js/teleport.ts	levelTeleport	rn2	"[""dungeonAt(state, dnum).num_dunlevs""]"	unproved
+src/js/teleport.ts	levelTeleport	rn2	"[""state.dungeons.length""]"	unproved
+src/js/teleport.ts	randomTeleportDepth	random	"[""5""]"	constant
+src/js/teleport.ts	randomTeleportDepth	random	"[""current + 3 - minimum""]"	unproved
+src/js/teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
+src/js/teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
+src/js/teleport.ts	readLevelRequest	rnl	"[""5""]"	constant
 src/js/trap.ts	floatHeroDown	rnd	"[""2""]"	constant
 src/js/throne.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	unproved
 src/js/throne.ts	normalThroneEffect	rn1	"[""100"", ""250""]"	constant
@@ -2292,10 +2296,6 @@ src/js/eat.ts	start_tin	rn2	"[""2""]"	constant
 src/js/eat.ts	start_tin	rn2	"[""weapon.cursed ? 3 : weapon.blessed ? 1 : 2""]"	constant
 src/js/eat.ts	tin_variety	rn2	"[""7""]"	constant
 src/js/eat.ts	tin_variety	rn2	"[""preparations.length - 1""]"	constant
-src/js/tip_hat.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
-src/js/tip_hat.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
-src/js/tip_hat.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
-src/js/tip_hat.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
 src/js/topten.ts	randomToptenEntry	rollOne	"[""TOP_NAME_RANK""]"	constant
 src/js/topten.ts	toptenMonsterForm	random	"[""13""]"	constant
 src/js/topten.ts	toptenMonsterForm	random	"[""LAST_PLAYER_MONSTER - FIRST_PLAYER_MONSTER + 1""]"	constant

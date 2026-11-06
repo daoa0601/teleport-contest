@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { MENU_TRADITIONAL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount } from '../js/hack.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

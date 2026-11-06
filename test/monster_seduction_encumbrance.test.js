@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { A_CON, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import { mhitm_adtyping } from '../js/uhitm.js';

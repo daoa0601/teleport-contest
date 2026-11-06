@@ -1,16 +1,19 @@
 // Tame monster state.
-// C refs: dog.c tamedog(), newedog(), initedog(), and abuse_dog().
+// C refs: dog.c tamedog(), newedog(), initedog(), pick_familiar_pm(), make_familiar(), and abuse_dog().
 
 import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { currentAttribute } from './attrib.js';
 import {
-    A_CHA, DISMOUNT_THROWN, W_ARMS, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS,
+    A_CHA, DISMOUNT_THROWN, G_EXTINCT, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG,
+    NO_MINVENT, W_ARMS, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS,
     MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM,
     MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU,
     MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING,
     NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, EYE, LL_CONDUCT,
 } from './const.js';
 
+import { isPoolAt } from './dbridge.js';
+import { makemonNear } from './mklev.js';
 import { canSpotMonster, newsym, canSeeMonster } from './display.js';
 import { plineWithContinuation, recordGameLogEvent } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -20,7 +23,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { publishMonsterYelp, publishMonsterGrowl, sessionIsNight } from './sounds.js';
 import { releaseMonsterLeash } from './apply.js';
 import { finishMonsterEating } from './dogmove.js';
-import { monsterName } from './do_name.js';
+import { monsterName, setMonsterGivenName } from './do_name.js';
 import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';
 import { cansee, monsterEmitsLight, vision_recalc } from './vision.js';
 import {
@@ -31,7 +34,7 @@ import {
 } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
-import { setMonsterMalign } from './makemon.js';
+import { setMonsterMalign, makemonAt, rndmonstAdj, monsterBirthLimit } from './makemon.js';
 import type { Monster, MonsterLevel, PetData } from './monster_types.js';
 import { stairway_find, stairway_find_from } from './stairs.js';
 import type { GameObject } from './object_types.js';
@@ -43,11 +46,11 @@ import {
     monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, monsterIsMindless,
     needspick, regenerates, tunnels, cantwield, speciesHasWeaponAttack,
 } from './mondata.js';
-import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
+import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo, resolveMonsterLiquid, finishLiquidDeathForCurrentMover } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 
-import { wieldMonsterWeapon } from './weapon.js';
+import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
@@ -195,6 +198,109 @@ export function initializePet(monster: Monster | null | undefined, { state = gam
     }
     state.u.uconduct.pets = (state.u.uconduct.pets || 0) + 1;
     return true;
+}
+
+// C dog.c:pick_familiar_pm(). The figurine species comes from its
+// corpsenm; a spell chooses among the role pet, the preferred pet, and a
+// random domestic species weighted by clerical skill (dog.c:pet_type()).
+function familiarSpecies(object: GameObject | null, state: GameState): number | null {
+    if (object) {
+        const species = object.corpsenm;
+        if (species === undefined) throw new Error('Figurine requires a monster species');
+        const specialLimit = monsterBirthLimit(species) !== 120;
+        return specialLimit && (state.mvitals?.[species]?.mvflags ?? 0) & G_EXTINCT
+            ? null
+            : species;
+    }
+    if (!rn2(3)) {
+        const rolePet = state.urole?.petnum;
+        if (rolePet != null && rolePet >= 0) return rolePet;
+        if (state.preferred_pet === 'c') return MONSTER_NAME.indexOf('kitten');
+        if (state.preferred_pet === 'd') return MONSTER_NAME.indexOf('little dog');
+        return MONSTER_NAME.indexOf(rn2(2) ? 'kitten' : 'little dog');
+    }
+    const clerical = ensureHeroSkills(state)?.[32]; // clerical spells
+    if (!clerical) throw new Error('Familiar creation requires clerical skill state');
+    const skill = clerical.skill;
+    return rndmonstAdj(0, 3 * skill);
+}
+
+// C dog.c:make_familiar().
+export async function makeFamiliar(
+    object: GameObject | null = null,
+    x = game.u.ux,
+    y = game.u.uy,
+    quietly = false,
+    {
+        state = game,
+        announce = plineWithContinuation,
+    }: { state?: GameState; announce?: MessagePublisher } = {},
+): Promise<Monster | null> {
+    requireLiveGame(state);
+    let monster: Monster | null = null;
+    for (let attempts = 100; attempts > 0; attempts--) {
+        const species = familiarSpecies(object, state);
+        if (species == null) {
+            if (!quietly)
+                await announce(
+                    object
+                        ? '... into a pile of dust.'
+                        : 'There seems to be nothing available for a familiar.',
+                );
+            break;
+        }
+        let flags = MM_EDOG | MM_IGNOREWATER | NO_MINVENT | MM_NOMSG;
+        const gender = object ? (object.spe ?? 0) & 3 : 0;
+        if (gender === 1) flags |= MM_FEMALE;
+        else if (gender === 2) flags |= MM_MALE;
+        monster =
+            x === state.u.ux && y === state.u.uy
+                ? await makemonNear(species, x, y, flags, true)
+                : await makemonAt(species, x, y, flags);
+        if (monster || object) {
+            if (!monster && !quietly)
+                await announce('The figurine writhes and then shatters into pieces!');
+            break;
+        }
+    }
+    if (!monster) return null;
+    monster.mtame ??= 0;
+    monster.pet = false;
+    if (object && monster.isminion) {
+        monster.isminion = 0;
+        delete monster.emin;
+        if (monster.mextra) delete monster.mextra.emin;
+    }
+    if (isPoolAt(monster.mx, monster.my, state)) {
+        const result = await resolveMonsterLiquid(monster, state, {
+            announce,
+            finishDeath: finishLiquidDeathForCurrentMover,
+            monsterMoving: !!state.context.mon_moving,
+        });
+        if (result?.dead) return null;
+    }
+    let tame = true;
+    if (object) {
+        let disposition = rn2(10);
+        if (disposition > 2) disposition = object.blessed ? 0 : !object.cursed ? 1 : 2;
+        tame = disposition === 0;
+        if (disposition === 2) {
+            if (!quietly) await announce('You get a bad feeling about this.');
+            monster.mpeaceful = 0;
+            setMonsterMalign(monster, state);
+        }
+        const name = object.oextra?.oname || object.oname;
+        if (name) setMonsterGivenName(monster, name);
+    }
+    if (tame) initializePet(monster, { state, everything: true });
+    monster.msleeping = 0;
+    setMonsterMalign(monster, state);
+    await newsym(monster.mx, monster.my);
+    if (monster.mtame && speciesHasWeaponAttack(monster.mnum)) {
+        monster.weaponCheck = NEED_HTH_WEAPON;
+        await wieldMonsterWeapon(monster, state, { publish: announce });
+    }
+    return monster;
 }
 
 export async function makePetWary(

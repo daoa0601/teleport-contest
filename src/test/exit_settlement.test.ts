@@ -7,7 +7,7 @@ import { finishLivingGame, finishOrdinaryQuit } from '../js/end.js';
 import { doGenocide } from '../js/read.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { bonesLevelExists } from '../js/bones.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';

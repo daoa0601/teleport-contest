@@ -2,7 +2,7 @@
 // C ref: makemon.c — mkclass, rndmonst, peace_minded, makemon, m_initweap,
 // m_initinv, set_mimic_sym, create_critters.
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, MAXOCLASSES, } from './objclass.js';
-import { objectBaseWeight, objectSkill, SPE_BOOK_OF_THE_DEAD, AXE, BOULDER, BULLWHIP, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART, DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT, DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, EGG, ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, ELVEN_SHORT_SWORD, ELVEN_SPEAR, FIGURINE, GOLD_PIECE, HELMET, IRON_SHOES, LARGE_BOX, LEATHER_ARMOR, LEATHER_CLOAK, LEATHER_GLOVES, LEATHER_JACKET, LUCKSTONE, LUMP_OF_ROYAL_JELLY, MACE, MIRROR, ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, ORCISH_DAGGER, ORCISH_HELM, ORCISH_SHIELD, ORCISH_SHORT_SWORD, PICK_AXE, POT_OBJECT_DETECTION, POT_SICKNESS, QUARTERSTAFF, RING_MAIL, RIN_INVISIBILITY, ROBE, ROCK, SCIMITAR, SLIME_MOLD, SLING, SMALL_SHIELD, SPEAR, SPE_DIG, SPLINT_MAIL, STATUE, TALLOW_CANDLE, TIN, URUK_HAI_SHIELD, WAX_CANDLE, } from './object_data.js';
+import { objectBaseWeight, objectSkill, SPE_BOOK_OF_THE_DEAD, AXE, BAG_OF_TRICKS, BOULDER, BULLWHIP, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART, DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT, DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, EGG, ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, ELVEN_SHORT_SWORD, ELVEN_SPEAR, FIGURINE, GOLD_PIECE, HELMET, IRON_SHOES, LARGE_BOX, LEATHER_ARMOR, LEATHER_CLOAK, LEATHER_GLOVES, LEATHER_JACKET, LUCKSTONE, LUMP_OF_ROYAL_JELLY, MACE, MIRROR, ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, ORCISH_DAGGER, ORCISH_HELM, ORCISH_SHIELD, ORCISH_SHORT_SWORD, PICK_AXE, POT_OBJECT_DETECTION, POT_SICKNESS, QUARTERSTAFF, RING_MAIL, RIN_INVISIBILITY, ROBE, ROCK, SCIMITAR, SLIME_MOLD, SLING, SMALL_SHIELD, SPEAR, SPE_DIG, SPLINT_MAIL, STATUE, TALLOW_CANDLE, TIN, URUK_HAI_SHIELD, WAX_CANDLE, } from './object_data.js';
 import { armorBonus } from './do_wear.js';
 import { artifactByName, nameArtifact } from './artifact.js';
 import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines, In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, BOLT_LIM, MM_NOEXCLAM, MM_NOMSG, OBJECT_TIMER_KIND } from './const.js';
@@ -10,6 +10,8 @@ import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
+import { consumeObjectCharge } from './invent.js';
+import { learnObjectType, objectTypeKnown } from './o_init.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { verbForSubject, withIndefiniteArticle, rndClass } from './objnam.js';
@@ -2358,6 +2360,37 @@ export async function cloneMonster(monster, state = game, { monsterMoving = !!st
     if (state === game)
         await newsym(clone.mx, clone.my);
     return clone;
+}
+// C makemon.c:bagotricks(), shared by applying and tipping.
+export async function useBagOfTricks(bag, { tipping = false } = {}) {
+    if (bag.spe < 1) {
+        await plineWithContinuation(tipping && bag.cknown ? "It's empty." : 'Nothing happens.');
+        if (bag.dknown && objectTypeKnown(bag, game))
+            bag.cknown = true;
+        return { created: 0, seen: 0 };
+    }
+    await consumeObjectCharge(bag, { maybeUnpaid: !tipping });
+    let count = 1;
+    if (!rn2(23))
+        count += rnd(7);
+    let created = 0, seen = 0;
+    for (let index = 0; index < count; index++) {
+        const monster = await makemonAt(null, game.u.ux, game.u.uy);
+        if (!monster)
+            continue;
+        created++;
+        const appearance = M_AP_TYPE(monster);
+        if (canSeeMonster(monster) && (appearance === 0 || appearance === M_AP_MONSTER)
+            || canSenseMonster(monster))
+            seen++;
+    }
+    if (seen) {
+        if (bag.dknown)
+            learnObjectType(BAG_OF_TRICKS, game);
+    }
+    else if (!tipping)
+        await plineWithContinuation(created ? 'Nothing seems to happen.' : 'Nothing happens.');
+    return { created, seen };
 }
 // C makemon.c:summon_furies(). Erinyes are a real species with a birth
 // limit; makemon() updates that history, ending the unlimited Astral case.

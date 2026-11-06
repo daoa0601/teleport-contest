@@ -18,6 +18,7 @@ import type { AlignmentName } from './role.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { QUEST_LUA_SOURCE } from './quest_data.js';
+import type { ActiveSpecialLevel } from './map_types.js';
 import { LuaTable } from './lua/runtime.js';
 import { flushPendingTopline, putMessageHistory } from './topl.js';
 import { plineWithContinuation } from './pline.js';
@@ -309,4 +310,17 @@ export function questMonsterType(): number | null {
     if (species !== null && rn2(5) && !((game.mvitals?.[species]?.mvflags ?? 0) & G_GENOD))
         return species;
     return mkclass(first ? role.enemy1sym : role.enemy2sym, 0);
+}
+
+// C questpgr.c:deliver_splev_message(): a special level's custom arrival
+// message prints once and is freed, so returning to the level later cannot
+// repeat it.  Bones loads generate no level script, so they carry none.
+// goto_level() (do.ts) delivers this ahead of every other arrival message.
+export async function deliverSpecialLevelMessages(
+    active: ActiveSpecialLevel | null | undefined = game._activeSpecialLevel,
+): Promise<void> {
+    const messages = active?.specialMessages;
+    if (!active || !messages?.length) return;
+    for (const line of messages) await plineWithContinuation(line);
+    active.specialMessages = [];
 }

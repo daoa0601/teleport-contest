@@ -69,7 +69,7 @@ import { monsterBreathAttack, performPetRangedAttack } from './dogmove.js';
 import { deliverMigratingMonsters } from './dog.js';
 import { killGenocidedMonsters } from './mon.js';
 import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain } from './ball.js';
-import { deliverSpecialLevelMessages } from './level_change.js';
+import { deliverSpecialLevelMessages } from './questpgr.js';
 import { heroCanSplitLikeGremlin, useHeroGremlinSplit } from './hero_gremlin.js';
 import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
 import { heroCanSummonWerePack } from './were.js';

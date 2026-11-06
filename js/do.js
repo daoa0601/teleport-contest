@@ -89,7 +89,7 @@ import { recordAchievement, recordDungeonEntryAchievements } from './insight.js'
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { resurrectWizard } from './wizard.js';
 import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, collectLevelFollowers, } from './dog.js';
-import { deliverSpecialLevelMessages } from './level_change.js';
+import { deliverSpecialLevelMessages } from './questpgr.js';
 import { descendFromLevitation } from './levitation_commands.js';
 import { do_attack, hitMonsterWithHeroObject } from './uhitm.js';
 import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer } from './mondata.js';

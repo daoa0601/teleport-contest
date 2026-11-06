@@ -23,7 +23,7 @@ import {
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addFruit } from '../js/options.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import {
     addInventoryObject, floorArtifact, floorObject,
 } from './support/game-objects.js';

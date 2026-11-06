@@ -53,7 +53,6 @@ import {
     formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, set_msg_dir,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { formatDraftMessage } from './draft_message.js';
 import { waterbodyName } from './pager.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -74,7 +73,7 @@ import type { DeathHandler } from './end.js';
 import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
 import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval, displayBuriedInventory, probedContentsTitle, engulfedHeroMenuSection } from './invent.js';
 import { cleanupTransientLight, lightRoom, showTransientLight } from './light.js';
-import { buryFloorObjectsAt, zapDigWithObject } from './dig.js';
+import { buryFloorObjectsAt, formatDraftMessage, zapDigWithObject } from './dig.js';
 import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';

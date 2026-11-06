@@ -40,10 +40,8 @@ import { finishMonsterKilled, finishMonsterLiquidDeath, killGenocidedMonsters, p
 } from './mon.js';
 import { finishHeroDeath } from './end.js';
 import { hurtleHero, hurtleMonster } from './dothrow.js';
-import { finishTeleportArrival } from './teleport.js';
-import { deliverSpecialLevelMessages } from './level_change.js';
+import { finishTeleportArrival, levelTeleport } from './teleport.js';
 import { gotoLevel, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
-import { levelTeleport } from './level_teleport.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';

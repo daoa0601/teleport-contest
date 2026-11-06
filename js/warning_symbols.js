@@ -1,7 +1,7 @@
 // options.c:warning_opts()/assign_warnings(); drawing.c:def_warnsyms.
 import { def_warnsyms } from './const.js';
 import { game } from './gstate.js';
-import { decodeOptionEscapes } from './option_escapes.js';
+import { decodeOptionEscapes } from './options.js';
 // C options.c:warning_opts()/assign_warnings(): the string-valued warnings
 // option; the numeric WARNINGS= statement lives in cfgfiles.ts.
 export function setWarningSymbols(value, flags) {

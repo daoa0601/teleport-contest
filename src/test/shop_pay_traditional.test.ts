@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MENU_TRADITIONAL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, SACK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

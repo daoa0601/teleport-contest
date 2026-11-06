@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { freshTurnRoom } from './support/playable-room.js';
 // C wield.c:setuqwep() clears the quiver when the last quivered coin leaves.
 // hero_gold's zero/detach paths must clear both slot mirrors, or 'A' later

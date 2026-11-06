@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import {mksobj, placeObject} from '../js/mkobj.js';
 import { AD_SGLD, AT_CLAW } from '../js/monster_attack_types.js';
 import { mhitm_adtyping } from '../js/uhitm.js';

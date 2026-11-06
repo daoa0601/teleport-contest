@@ -74,7 +74,7 @@ import {
 import {
     heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly,
     relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted,
-    finishTeleportArrival,
+    finishTeleportArrival, randomTeleportDepth,
 } from './teleport.js';
 
 import type { HeroTeleportMovement } from './teleport.js';
@@ -118,7 +118,7 @@ import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, ent
 import { hello } from './role.js';
 import { doopen } from './lock.js';
 
-import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
+import { heroGoldObject, heroGoldQuantity } from './sit.js';
 import {
     objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object,
 } from './mkobj.js';
@@ -128,7 +128,6 @@ import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
 
-import { randomTeleportDepth } from './level_teleport.js';
 
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';

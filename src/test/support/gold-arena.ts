@@ -5,7 +5,7 @@ import { ALTAR, AM_SHRINE, Align2amask, MM_EPRI, NO_MINVENT, ROOMOFFSET, TEMPLE 
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import { createStaffedShop } from './shop.js';
 import { createRoom } from './topology.js';
-import { addHeroGoldObject } from '../../js/hero_gold.js';
+import { addHeroGoldObject } from '../../js/sit.js';
 import { pushKey, pushKeys } from '../../js/input.js';
 import { mksobj } from '../../js/mkobj.js';
 import { GOLD_PIECE } from '../../js/object_data.js';

@@ -5,7 +5,7 @@ import test from 'node:test';
 // request flags (disp.botl, disp.time_botl) are cleared together.
 import { bot, updateStatusLines } from '../js/botl.js';
 import { game } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 

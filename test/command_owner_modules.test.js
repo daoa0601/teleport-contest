@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { showEncyclopediaInformation } from '../js/pager.js';
 import { FOUNTAIN, HWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

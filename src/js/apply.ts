@@ -28,7 +28,6 @@ import {
 } from './do_wear.js';
 import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
 import { currentAttribute } from './attrib.js';
-import { useBagOfTricks } from './bag_of_tricks.js';
 
 import { bot } from './botl.js';
 import {
@@ -55,7 +54,7 @@ import {
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
 import { explode } from './explode.js';
-import { makeFamiliar } from './familiar.js';
+import { makeFamiliar } from './dog.js';
 import { figurinePlacementFailure } from './figurine.js';
 import {
     useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse, holdAnotherObject, freeInventoryObject,
@@ -106,7 +105,7 @@ import {
     monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet,
 } from './teleport.js';
 import { pickLock } from './lock.js';
-import { makemonAt, mkclassAligned } from './makemon.js';
+import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
 import { canDigDown } from './mklev.js';

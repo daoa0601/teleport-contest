@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import { ICE, IRONBARS, STONE, W_ARMH, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { heroGoldObject } from '../js/hero_gold.js';
+import { heroGoldObject } from '../js/sit.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { DIAMOND, GOLD_PIECE, HELMET } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

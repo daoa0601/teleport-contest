@@ -132,7 +132,7 @@ import { resurrectWizard } from './wizard.js';
 import {
     deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, collectLevelFollowers,
 } from './dog.js';
-import { deliverSpecialLevelMessages } from './level_change.js';
+import { deliverSpecialLevelMessages } from './questpgr.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';

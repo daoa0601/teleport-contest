@@ -25,7 +25,7 @@ import { NO_COLOR, ATR_INVERSE, ATR_BOLD, ATR_UNDERLINE, CLR_GRAY, DEC_TO_UNICOD
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
 import { statusConditionBit, bot, repadWithDashes } from './botl.js';
 import { docrt, flush_screen, row_refresh, ROGUE_SYMSETS, shownSymbolSet } from './display.js';
-import { getMenuColoring, menuitem_invert_test } from './menu_coloring.js';
+import { getMenuColoring, menuitem_invert_test } from './windows.js';
 import { nhgetch } from './input.js';
 import { tty_getlin } from './query.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';

@@ -2,7 +2,7 @@ import { RING_CLASS, SPBOOK_CLASS } from '../js/objclass.js';
 import { objectCharged, LUCKSTONE, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, POT_POLYMORPH, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, RIN_POISON_RESISTANCE, SPE_CONFUSE_MONSTER, SPE_FORCE_BOLT, SPE_POLYMORPH, WAN_NOTHING, WAN_POLYMORPH, } from '../js/object_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { heroGoldObject } from '../js/hero_gold.js';
+import { heroGoldObject } from '../js/sit.js';
 import { mksobj } from '../js/mkobj.js';
 import { addCreatedInventoryItem } from '../js/invent.js';
 import { uInitInventoryAttrs } from '../js/u_init.js';

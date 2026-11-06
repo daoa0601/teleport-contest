@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { glyphAt } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { invault } from '../js/vault.js';

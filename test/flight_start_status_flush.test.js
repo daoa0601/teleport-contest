@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { STONE } from '../js/const.js';
-import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/sit.js';
 import { freshTurnRoom } from './support/playable-room.js';
 // C zap.c bhit() opens every thrown-object flight with
 // tmp_at(DISP_FLASH, ...), and tmp_at()'s init calls flush_screen(0)
