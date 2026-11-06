@@ -21,7 +21,7 @@ import {
 import {
     setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused,
     makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages,
-    cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting,
+    heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting,
 } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
@@ -1339,7 +1339,7 @@ async function consume_tin(message: string, { state }: {
         if (post.heroDied || state.program_state.gameover || !state.context.tin?.tin)
             return;
         if (preparation.nutrition < 0)
-            startHeroVomiting({ state, turns: rn1(15, 10) });
+            await makeHeroVomiting(rn1(15, 10), { state });
         else {
             const nutrition = (variety === HOMEMADE_TIN
                 ? Math.min(preparation.nutrition, requireMonsterData(MONSTER_BODY_META, species)[1])
@@ -1744,7 +1744,7 @@ export async function fprefx(food: GameObject, { state = game }: FoodEffectOptio
         }
         if (eggIsStale(food, state)) {
             await pline('Ugh.  Rotten egg.');
-            startHeroVomiting({ state, turns: Math.min(TIMEOUT, (state.u.vomitingTurns || 0) + d(10, 4)) });
+            await makeHeroVomiting(Math.min(TIMEOUT, (state.u.vomitingTurns || 0) + d(10, 4)), { state });
             return !state.program_state.gameover;
         }
     }
@@ -1769,7 +1769,7 @@ export async function fprefx(food: GameObject, { state = game }: FoodEffectOptio
             addExperience(1, 0, state);
             await checkExperienceLevel();
             if (rn2(2) && state.urole.key !== 'caveman' && state.urace.name !== 'orc')
-                startHeroVomiting({ state, turns: rn1(currentFoodMeal(state).reqtime, 14) });
+                await makeHeroVomiting(rn1(currentFoodMeal(state).reqtime, 14), { state });
         }
         return !state.program_state.gameover;
     }
@@ -1787,7 +1787,7 @@ export async function fprefx(food: GameObject, { state = game }: FoodEffectOptio
     }
     else if (type === CLOVE_OF_GARLIC) {
         if (monsterIsUndead(species)) {
-            startHeroVomiting({ state, turns: rn1(currentFoodMeal(state).reqtime, 5) });
+            await makeHeroVomiting(rn1(currentFoodMeal(state).reqtime, 5), { state });
             return !state.program_state.gameover;
         }
         await garlic_breath(state);
@@ -2086,8 +2086,7 @@ export async function fpostfx(food: GameObject, { state = game }: FoodEffectOpti
         case EUCALYPTUS_LEAF:
             if (!food.cursed) {
                 await cureHeroSicknessWithMessages(state);
-                if (cureHeroVomiting(state) && !heroIsUnaware(state))
-                    await pline(formatFeltMessage('much less nauseated now.', state));
+                await makeHeroVomiting(0, { state, talk: true, publish: pline });
             }
             break;
         case APPLE:

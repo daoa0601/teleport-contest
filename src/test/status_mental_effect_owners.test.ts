@@ -5,7 +5,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { startHeroVomiting } from '../js/potion.js';
+import { makeHeroVomiting } from '../js/potion.js';
 import { pushKeys } from '../js/input.js';
 import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
@@ -32,7 +32,7 @@ void test('yellow mold contact displays its new stun condition', async () => {
 for (const [turns, conditions] of [[10, /\bConf\b/], [7, /\bConf Stun\b/]] as const) {
     void test(`nausea with ${turns} turns remaining displays its new impairments`, async () => {
         await freshObjectRoom();
-        startHeroVomiting({ turns });
+        await makeHeroVomiting(turns);
         await bot();
 
         await advanceHeroVomiting();

@@ -11,7 +11,7 @@ import { heroFormClings, heroIsFlying, heroMonsterForm } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './dungeon.js';
 import { riderCannotReachMessage } from './steed.js';
-import { floorReachProblem } from './engrave.js';
+import { heroCanReachFloor } from './engrave.js';
 import { heroTeetersAtPit } from './trap.js';
 import { monsterDigests, monsterIsBreathless, monsterIsFloater } from './mondata.js';
 function heroStaysAboveLiquid(state) {
@@ -120,10 +120,10 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
         };
     }
     const trap = trapAtHero(state);
-    const reachProblem = floorReachProblem(state, {
+    const unreachable = !heroCanReachFloor(state, {
         checkPit: !!trap && is_pit(trap.ttyp),
     });
-    return reachProblem ? {
+    return unreachable ? {
         messages: [reachMessage(state, trap)],
         spendsTurn: false,
     } : null;

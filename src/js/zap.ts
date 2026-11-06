@@ -59,7 +59,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount, resistsBlnd } from './mondata.js';
 import {
     setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap,
-    openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap,
+    openFallingTrap, openHoldingTrap, sokobanGuilt, igniteItems, resetUtrap, maketrap,
     deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue,
 } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
@@ -77,7 +77,7 @@ import { buryFloorObjectsAt, zapDigWithObject } from './dig.js';
 import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
-import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
+import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass, erosionMatters } from './objnam.js';
 import {
     objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm,
     replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, placeObject,

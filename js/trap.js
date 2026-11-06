@@ -11,7 +11,7 @@ import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE
 import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet, heroHasFreeAction, destroyWornArmor, } from './do_wear.js';
 import { delobj, consumeObjectCharge, useUpInventoryStack, chooseInventoryObject, inventoryItemDescription, currency, } from './invent.js';
-import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName, definiteObjectAction, objectMonsterName, } from './objnam.js';
+import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName, definiteObjectAction, objectMonsterName, erosionMatters, } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
 import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep } from './timeout.js';
@@ -266,10 +266,6 @@ export function objectIsVulnerableToErosion(object, kind, state = game) {
     if (kind === 'rot')
         return objectIsRottable(object, state);
     return objectIsCrackable(object, state);
-}
-export function erosionMatters(object) {
-    return [WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS].includes(object.oclass)
-        || isWeaponTool(object);
 }
 function inventoryResists(kind, state, random) {
     if (kind !== 'burn' && kind !== 'corrosion')

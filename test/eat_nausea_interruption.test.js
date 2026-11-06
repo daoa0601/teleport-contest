@@ -6,7 +6,7 @@ import { NOT_HUNGRY } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { doeat } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { startHeroVomiting } from '../js/potion.js';
+import { makeHeroVomiting } from '../js/potion.js';
 import { makeConfused } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -30,7 +30,7 @@ void test('nausea stops an unfinished meal with feedback and leaves it available
     input.feed(ration.invlet);
     await doeat();
     const nutrition = game.u.uhunger;
-    startHeroVomiting({ turns: 7 });
+    await makeHeroVomiting(7);
     await advanceHeroVomiting();
     assert.match(game._lastPlineMessage, /You stop eating the food ration\./);
     assert.equal(game._occupation, null);
@@ -55,7 +55,7 @@ for (const turns of [7, 1]) {
             await continueCountedCommand(game);
         assert.equal(lizard.oeaten, 1);
         assert.ok(game._occupation, 'the final completion turn is still pending');
-        startHeroVomiting({ turns });
+        await makeHeroVomiting(turns);
         await advanceHeroVomiting();
         assert.equal(lizard.where, 'gone', 'the swallowed last bite is consumed when nausea interrupts eating');
         assert.equal(game.context.victual, null);
@@ -73,7 +73,7 @@ void test('early nausea cancels repeated turns while allowing the meal to contin
     input.feed(ration.invlet);
     await doeat();
     game.multi = 3;
-    startHeroVomiting({ turns: 10 });
+    await makeHeroVomiting(10);
     await advanceHeroVomiting();
     assert.equal(game.multi, 0);
     assert.equal(game._occupation?.key, 'eat-food');
@@ -87,7 +87,7 @@ void test('nausea describes existing confusion as slightly more confused', async
     input.feed(ration.invlet);
     await doeat();
     await makeConfused(20, { talk: false });
-    startHeroVomiting({ turns: 12 });
+    await makeHeroVomiting(12);
     await advanceHeroVomiting();
     assert.equal(game._lastPlineMessage, 'You feel slightly more confused.');
     assert.equal(game._occupation?.key, 'eat-food');

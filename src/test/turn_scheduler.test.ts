@@ -21,7 +21,7 @@ import {
     AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, CORPSE, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';
 import { startHeroSickness } from '../js/potion.js';
-import { startHeroVomiting } from '../js/potion.js';
+import { makeHeroVomiting } from '../js/potion.js';
 import { startHeroSliming } from '../js/potion.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { addInventoryObject, artifactObject, chargedWand, knownObject } from './support/game-objects.js';
@@ -697,7 +697,7 @@ void test('nausea advances before sickness during an ordinary world turn',
     async () => {
         const inputGate = freshTurnRoom();
         requirePlayingGame(game);
-        startHeroVomiting({ state: game, turns: 15 });
+        await makeHeroVomiting(15, { state: game });
         await startHeroSickness({
             state: game,
             turns: 7,

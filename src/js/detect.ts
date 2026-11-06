@@ -601,44 +601,39 @@ async function senseDetectedTrap(trap: DetectionTrap) {
     await map_object(image, true, false);
 }
 
-// C detect.c:detect_obj_traps(): detection and optional map display.
-async function detectContainerTraps(objects: readonly GameObject[], shown: DetectionMap | null, cursed: boolean, state: PlayingGameState): Promise<number> {
+// C detect.c:detect_obj_traps(): check one object list for trapped
+// containers; ft is the findone() search coordinate, whose count of found
+// traps accumulates in ft.numTraps.
+async function detectContainerTraps(objects: readonly GameObject[] | null | undefined,
+    shown: DetectionMap | null, cursed: boolean, state: PlayingGameState,
+    ft?: { x: number; y: number; numTraps: number } | null): Promise<number> {
     let result = 0;
-    for (const object of objects) {
+    for (const object of objects || []) {
         const trapped = (object.otyp === CHEST || object.otyp === LARGE_BOX) && object.otrapped;
         const contents = object.contents || [];
         if (!trapped && !contents.length) continue;
         const position = getObjectLocation(object, state, { contained: true, buried: true });
         if (!position || !isok(position.x, position.y)) continue;
         const { x, y } = position;
+        if (ft && (x !== ft.x || y !== ft.y)) continue;
         if (trapped) {
             object.tknown = true;
             observeObject(object, state);
             result |= atHero(x, y, state) ? HERE : ELSEWHERE;
-            if (shown) await senseTrap({ tx: x, ty: y, ttyp: TRAPPED_CHEST }, shown, cursed, state);
+            const trap = { tx: x, ty: y, ttyp: TRAPPED_CHEST };
+            if (ft) {
+                const glyph = transientTrapGlyph(trap);
+                await flashGlyphAt(x, y, glyph, 6);
+                await senseDetectedTrap(trap);
+                await showFoundFeature(x, y, glyph);
+                ft.numTraps++;
+            } else if (shown) {
+                await senseTrap(trap, shown, cursed, state);
+            }
         }
-        if (contents.length) result |= await detectContainerTraps(contents, shown, cursed, state);
+        if (contents.length) result |= await detectContainerTraps(contents, shown, cursed, state, ft);
     }
     return result;
-}
-
-// C detect.c:detect_obj_traps(): trapped-container reporting during magical searching.
-async function revealTrappedContainers(objects: readonly GameObject[] | null | undefined, x: number, y: number): Promise<number> {
-    let found = 0;
-    for (const object of objects || []) {
-        if ([LARGE_BOX, CHEST].includes(object.otyp) && object.otrapped) {
-            object.tknown = true;
-            observeObject(object, game);
-            const trap = { ttyp: TRAPPED_CHEST, tx: x, ty: y };
-            const glyph = transientTrapGlyph(trap);
-            await flashGlyphAt(x, y, glyph, 6);
-            await senseDetectedTrap(trap);
-            await showFoundFeature(x, y, glyph);
-            found++;
-        }
-        found += await revealTrappedContainers(object.contents, x, y);
-    }
-    return found;
 }
 
 async function displayTrapMap(cursed: boolean, state: PlayingGameState): Promise<DetectionResult> {
@@ -1167,22 +1162,19 @@ export async function findit() {
             found.traps++;
         }
 
-        let trappedContainers = await revealTrappedContainers(
-            game.level.buriedObjects?.filter(object =>
-                object.ox === x && object.oy === y), x, y,
-        );
-        trappedContainers += await revealTrappedContainers(
-            game.level.objects?.[x]?.[y], x, y,
-        );
+        // C detect.c:findone() scans every container list at the search
+        // coordinate; the trap count comes back through the ft accumulator.
+        const cellFind = { x, y, numTraps: 0 };
+        await detectContainerTraps(game.level.buriedObjects, null, false, game, cellFind);
+        await detectContainerTraps(game.level.objects?.[x]?.[y], null, false, game, cellFind);
         if (monster) {
-            trappedContainers += await revealTrappedContainers(
-                monster.minvent || monster.inventory, x, y,
-            );
+            await detectContainerTraps(monster.minvent || monster.inventory,
+                null, false, game, cellFind);
         }
         if (game.u.ux === x && game.u.uy === y)
-            trappedContainers += await revealTrappedContainers(game.inventory, x, y);
-        if (trappedContainers) {
-            found.traps += trappedContainers;
+            await detectContainerTraps(game.inventory, null, false, game, cellFind);
+        if (cellFind.numTraps) {
+            found.traps += cellFind.numTraps;
         }
 
         if (monster && (!canSpotMonster(monster)

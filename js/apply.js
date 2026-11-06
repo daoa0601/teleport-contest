@@ -36,7 +36,7 @@ import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { setHeroGrip, paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, isRider, } from './mon.js';
-import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting, } from './potion.js';
+import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting, } from './potion.js';
 import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
@@ -586,25 +586,23 @@ export function releaseObjectLeash(leash, state = game) {
     leash.leashmon = 0;
 }
 // C apply.c:m_unleash().
-export function releaseMonsterLeash(monster, state = game) {
+export async function releaseMonsterLeash(monster, feedback, { state = game, publish = plineWithContinuation, } = {}) {
+    if (feedback) {
+        requireLiveGame(state);
+        if (canSeeMonster(monster)) {
+            const name = monsterName(monster, { capitalized: true, state });
+            const possessive = monsterPossessive(monster, { state });
+            await publish(`${name} pulls free of ${possessive} leash!`);
+        }
+        else {
+            await publish('Your leash falls slack.');
+        }
+    }
     const leash = leashAttachedToMonster(monster, state);
     if (leash)
         leash.leashmon = 0;
     monster.mleashed = 0;
     return leash;
-}
-// C apply.c:m_unleash() with feedback.
-export async function releaseMonsterLeashWithFeedback(monster, { state = game, publish = plineWithContinuation, } = {}) {
-    requireLiveGame(state);
-    if (canSeeMonster(monster)) {
-        const name = monsterName(monster, { capitalized: true, state });
-        const possessive = monsterPossessive(monster, { state });
-        await publish(`${name} pulls free of ${possessive} leash!`);
-    }
-    else {
-        await publish('Your leash falls slack.');
-    }
-    return releaseMonsterLeash(monster, state);
 }
 // C apply.c:unleash_all().
 export function releaseAllMonsterLeashes(state = game) {
@@ -734,7 +732,7 @@ export async function checkHeroLeashes(oldX, oldY) {
         }
         else if (separation > 5) {
             await pline(`${possessiveName(monsterName(monster, { capitalized: true }))} leash snaps loose!`);
-            releaseMonsterLeash(monster);
+            await releaseMonsterLeash(monster, false);
         }
         else {
             await pline('You pull on the leash.');
@@ -752,7 +750,9 @@ export async function checkHeroLeashes(oldX, oldY) {
             return;
     }
 }
-// C apply.c:next_to_u().
+// Part of C apply.c:next_to_u(): the distance-only half allmain.c:313 uses
+// after involuntary teleportation, where the ported moveloop does not run the
+// mleashed_next2u relocation (bringLeashedFollowers below owns that half).
 export function heroNextToLeashedFollowers() {
     const level = game.level;
     if (level?.monsters.some(monster => monster.mleashed
@@ -788,7 +788,7 @@ export async function bringLeashedFollowers(state = game, random = rn2) {
         const leash = leashAttachedToMonster(monster, state);
         if (!leash || leash.cursed)
             return false;
-        releaseMonsterLeash(monster, state);
+        await releaseMonsterLeash(monster, false, { state });
         // C apply.c:number_leashed(): a/the from the remaining leash count.
         const leashedCount = requireGameLevel(state).monsters.filter(candidate => candidate.mleashed).length;
         await plineWithContinuation(formatFeltMessage(`${leashedCount > 1 ? 'a' : 'the'} leash go slack.`, state));
@@ -1843,9 +1843,7 @@ async function cureHornTrouble(trouble, state, publish) {
         return;
     }
     if (trouble === VOMITING) {
-        cureHeroVomiting(state);
-        if (talk)
-            await publish(formatFeltMessage('much less nauseated now.', state));
+        await makeHeroVomiting(0, { state, talk, publish });
         return;
     }
     if (trouble === CONFUSED) {
@@ -1897,7 +1895,7 @@ async function causeHornTrouble(object, state, publish, random, rollDice) {
             await vomit({ state, publish, random, rollDice });
         }
         else {
-            startHeroVomiting({ state, turns: 14 });
+            await makeHeroVomiting(14, { state });
         }
         return VOMITING;
     }

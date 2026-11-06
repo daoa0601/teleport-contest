@@ -95,68 +95,6 @@ function heroEquipmentSlots() {
     ] as const;
 }
 
-// C steal.c:steal().  Inventory stacks are candidates as objects rather than
-// by quantity.  Worn armor and accessories receive five tickets; weapons
-// (including the primary and alternate weapon) still receive one.  Keep
-// selection after an animal's hit message and before removal prose.
-function selectHeroItemForTheft(
-    state: PlayingGameState,
-    random: RandomBelow,
-    calls: MonsterCallLog,
-) {
-    const inventory = state?.inventory || [];
-    const wornObjects = new Set(
-        [
-            state?.uarm,
-            state?.uarmc,
-            state?.uarmh,
-            state?.uarms,
-            state?.uarmg,
-            state?.uarmf,
-            state?.uarmu,
-            state?.uleft,
-            state?.uright,
-            state?.uamul,
-            state?.ublindf,
-            state?.u?.uleft,
-            state?.u?.uright,
-        ].filter(Boolean),
-    );
-    const candidates = [];
-    let total = 0;
-    for (const object of inventory) {
-        if (object === state?.uskin || (object?.oclass ?? object?.class) === COIN_CLASS) continue;
-        // When body armor is present, steal() omits the cloak from this
-        // weighted pass; its later equipment-dependency rewrites remain
-        // separate from candidate weighting.
-        if (state?.uarm && object === state?.uarmc) continue;
-        const wornMask = object?.owornmask ?? 0;
-        const weighted = wornObjects.has(object) || !!(wornMask & (W_ARMOR | W_ACCESSORY));
-        const weight = weighted ? 5 : 1;
-        candidates.push({ object, weight });
-        total += weight;
-    }
-    if (!total) return null;
-    let ticket = recordRandom(random, calls, total);
-    for (const candidate of candidates) {
-        ticket -= candidate.weight;
-        if (ticket < 0) {
-            return theftEquipmentTarget(candidate.object, state);
-        }
-    }
-    return null;
-}
-
-// C steal.c:steal(): rings are taken through gloves, gloves displace the
-// wielded weapon, and body armor defers to the cloak over it.
-function theftEquipmentTarget(object: GameObject, state: PlayingGameState): GameObject {
-    if ((object === state.uleft || object === state.uright) && state.uarmg)
-        object = state.uarmg;
-    if (object === state.uarmg && state.uwep) return state.uwep;
-    if (object === state.uarm && state.uarmc) return state.uarmc;
-    if (object === state.uarmu) return state.uarmc || state.uarm || object;
-    return object;
-}
 // C steal.c:steal() (steal.c:343-613), the hero as the victim. C
 // uhitm.c:mhitm_ad_sedu() awaits this whole transaction inline: the
 // monnear() gate, the naked-hero prose, the weighted selection, curse
@@ -209,7 +147,65 @@ export async function stealFromHero(
     const adornment = !animal && !game.uarmg
         ? [game.uleft, game.uright].find(ring => ring?.otyp === OBJECT_NAMES.indexOf('adornment'))
         : null;
-    let object = adornment ?? selectHeroItemForTheft(game, random, calls);
+    // C steal.c:413-446: the weighted inventory draw — inventory stacks are
+    // candidates as objects rather than by quantity; worn armor and
+    // accessories receive five tickets while weapons (including the primary
+    // and alternate weapon) still receive one — then the retargeting that
+    // takes rings through gloves, displaces the wielded weapon for gloves,
+    // and defers body armor to the cloak over it.
+    const selectHeroItemForTheft = (): GameObject | null => {
+        const wornObjects = new Set(
+            [
+                game.uarm,
+                game.uarmc,
+                game.uarmh,
+                game.uarms,
+                game.uarmg,
+                game.uarmf,
+                game.uarmu,
+                game.uleft,
+                game.uright,
+                game.uamul,
+                game.ublindf,
+                game.u?.uleft,
+                game.u?.uright,
+            ].filter(Boolean),
+        );
+        const candidates: { object: GameObject; weight: number }[] = [];
+        let total = 0;
+        for (const object of game.inventory) {
+            if (object === game.uskin || (object.oclass ?? object.class) === COIN_CLASS) continue;
+            // When body armor is present, steal() omits the cloak from this
+            // weighted pass; its later equipment-dependency rewrites remain
+            // separate from candidate weighting.
+            if (game.uarm && object === game.uarmc) continue;
+            const wornMask = object.owornmask ?? 0;
+            const weighted = wornObjects.has(object) || !!(wornMask & (W_ARMOR | W_ACCESSORY));
+            const weight = weighted ? 5 : 1;
+            candidates.push({ object, weight });
+            total += weight;
+        }
+        if (!total) return null;
+        let ticket = recordRandom(random, calls, total);
+        for (const candidate of candidates) {
+            ticket -= candidate.weight;
+            if (ticket < 0) {
+                let chosen: GameObject = candidate.object;
+                /* can't steal ring(s) while wearing gloves */
+                if ((chosen === game.uleft || chosen === game.uright) && game.uarmg)
+                    chosen = game.uarmg;
+                /* can't steal gloves while wielding - so steal the wielded item. */
+                if (chosen === game.uarmg && game.uwep) return game.uwep;
+                /* can't steal armor while wearing cloak - so steal the cloak. */
+                if (chosen === game.uarm && game.uarmc) return game.uarmc;
+                /* can't steal shirt while wearing cloak or suit */
+                if (chosen === game.uarmu) return game.uarmc || game.uarm || chosen;
+                return chosen;
+            }
+        }
+        return null;
+    };
+    let object = adornment ?? selectHeroItemForTheft();
     const throwsRocks = monsterThrowsRocks(monster.mnum);
     let retriedBoulder = false;
     while (object) {
@@ -219,7 +215,7 @@ export async function stealFromHero(
             return { outcome: 'busy' };
         if (object.otyp !== BOULDER || throwsRocks || retriedBoulder) break;
         retriedBoulder = true;
-        object = selectHeroItemForTheft(game, random, calls);
+        object = selectHeroItemForTheft();
     }
     if (!object) {
         // C steal.c:381-405: not even a thousand men in armor can strip a
@@ -472,8 +468,10 @@ async function fleeWithGold(
     await makeMonsterFlee(monster, { state, announce: false, publish, random, rollOne });
 }
 
-// C steal.c:mpickobj(). Carrying effects precede merging; engulfing snuffs
-// the surviving object.
+// Part of C steal.c:mpickobj(): the pre-transfer object steps (thrown and
+// kicked tracking, the shop bill, engulfed light, how_lost), kept separate
+// because addCreatedObjectToMonsterInventory shares them. Carrying effects
+// precede merging; engulfing snuffs the surviving object.
 async function prepareMonsterPickup(
     monster: Monster, object: GameObject, state: GameState,
 ): Promise<boolean> {

@@ -9,7 +9,7 @@ import { rhack } from '../js/cmd.js';
 import { wearEyewear } from '../js/do_wear.js';
 import {placeCreatedObject} from '../js/mkobj.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { startHeroVomiting } from '../js/potion.js';
+import { makeHeroVomiting } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
@@ -87,7 +87,7 @@ void test('the final nausea turn can cause a real faint instead of only changing
     } });
     requireFixtureGame(game);
     acknowledgeMessages();
-    startHeroVomiting({ turns: 1 });
+    await makeHeroVomiting(1);
 
     await advanceHeroVomiting();
 

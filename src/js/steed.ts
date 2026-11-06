@@ -22,7 +22,7 @@ import { finishMonsterKilled,
 import { AD_PHYS } from './monster_attack_types.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
+import { releaseMonsterLeash } from './apply.js';
 import { BOULDER, SADDLE, } from './object_data.js';
 import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject, freeInventoryObject } from './invent.js';
@@ -368,7 +368,7 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
             await newsym(steed.mx, steed.my);
             const leash = steed.mleashed ? ' and its leash comes off' : '';
             await pline(`${monsterName(steed, { capitalized: true })} resists${leash}!`);
-            if (steed.mleashed) releaseMonsterLeash(steed, game);
+            if (steed.mleashed) await releaseMonsterLeash(steed, false);
             return false;
         }
     }
@@ -944,7 +944,7 @@ export async function strikeSteed({
     const tameness = steed.mtame ?? 0;
     steed.pet = tameness > 0;
     if (!steed.mtame && steed.mleashed)
-        await releaseMonsterLeashWithFeedback(steed, { state, publish: announce });
+        await releaseMonsterLeash(steed, true, { state, publish: announce });
     const resisted = tameness > 0
         && (hero.ulevel ?? 1) + tameness >= roll(20);
     if (!resisted) {

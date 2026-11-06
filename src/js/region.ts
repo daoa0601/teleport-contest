@@ -416,7 +416,9 @@ async function wakeNearGas(
     await wake(x, y, 2, state, publish);
 }
 
-// C region.c:inside_gas_cloud(), hero branch: fog-cloud maintenance, eyes
+// Part of C region.c:inside_gas_cloud(): the hero branch (C indicates the
+// hero with a Null monster pointer; the TS hero is not a Monster, so the
+// hero and monster halves stay separate functions): fog-cloud maintenance, eyes
 // that sting and blind, and the cough plus poison damage for a breather.
 async function affectHeroWithGas(
     region: GasCloud, state: GameState,
@@ -450,7 +452,7 @@ async function affectHeroWithGas(
     return event;
 }
 
-// C region.c:inside_gas_cloud(), monster branch: the cough, anger at the
+// Part of C region.c:inside_gas_cloud(), monster branch: the cough, anger at the
 // hero's cloud, blindness, and the poison that can kill.
 async function affectMonsterWithGas(
     region: GasCloud, monster: Monster, state: GameState,

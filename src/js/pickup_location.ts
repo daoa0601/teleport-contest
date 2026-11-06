@@ -16,7 +16,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Trap } from './map_types.js';
-import { floorReachProblem } from './engrave.js';
+import { heroCanReachFloor } from './engrave.js';
 import { heroTeetersAtPit } from './trap.js';
 import { monsterDigests, monsterIsBreathless, monsterIsFloater } from './mondata.js';
 
@@ -147,10 +147,10 @@ export function pickupLocationProblem({
     }
 
     const trap = trapAtHero(state);
-    const reachProblem = floorReachProblem(state, {
+    const unreachable = !heroCanReachFloor(state, {
         checkPit: !!trap && is_pit(trap.ttyp),
     });
-    return reachProblem ? {
+    return unreachable ? {
         messages: [reachMessage(state, trap)],
         spendsTurn: false,
     } : null;

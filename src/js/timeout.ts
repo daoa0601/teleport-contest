@@ -11,7 +11,7 @@ import { castMonsterSpellRay } from './breath_ray.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
 import type { CorpseRevivalTimerEvent } from './do.js';
 import {
-    clearHeroSliming, cureHeroSickness, cureHeroVomiting, heroIsSick, heroIsSliming,
+    clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming,
     heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf,
     setSlipperyHands,
 } from './potion.js';
@@ -143,7 +143,7 @@ export async function petrificationDialogue({
     } else if (turns === 2) {
         if (hero.deafTurns !== undefined && hero.deafTurns > 0 && hero.deafTurns < 5)
             hero.deafTurns = 5;
-        cureHeroVomiting(state);
+        await makeHeroVomiting(0, { state });
         clearHeroSliming(state);
     }
     await exerciseAttribute(A_DEX, false, state);

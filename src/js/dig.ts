@@ -49,7 +49,7 @@ import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
-import { isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
+import { greatestErosion, isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import type { DiggingOccupation } from './occupation_types.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation } from './pline.js';
@@ -215,13 +215,6 @@ export function clearDiggingContext(state: GameState): void {
 }
 // weapon.c's abon() lives in weapon.js (heroAttackBonus); dig.c's digmon()
 // reads the same strength/dexterity ladder for digging effort.
-
-// C obj.h:greatest_erosion()
-// The include/obj.h macro (not weapon.c, as an earlier revision of this
-// comment said): worst of fire and rot damage.
-function greatestErosion(object: Pick<GameObject, 'oeroded' | 'oeroded2'>): number {
-    return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
-}
 
 function maybeHalfPhysical(damage: number, state: GameState): number {
     return state.u.halfPhysicalDamage
@@ -1227,7 +1220,7 @@ async function teleportPetVictim(monster: Monster, state: GameState): Promise<bo
     if (!monster.mleashed) return true;
     const leash = leashAttachedToMonster(monster, state);
     if (!leash) {
-        releaseMonsterLeash(monster, state);
+        await releaseMonsterLeash(monster, false, { state });
         return true;
     }
     if (leash.cursed) {
@@ -1235,7 +1228,7 @@ async function teleportPetVictim(monster: Monster, state: GameState): Promise<bo
         return false;
     }
     await plineWithContinuation('Your leash goes slack.');
-    releaseMonsterLeash(monster, state);
+    await releaseMonsterLeash(monster, false, { state });
     return true;
 }
 

@@ -43,6 +43,11 @@ export function isGrayStone(object: ObjectCandidate): boolean {
     return [LUCKSTONE, LOADSTONE, FLINT, TOUCHSTONE].includes(object.otyp);
 }
 
+// C obj.h:greatest_erosion() macro: worst of fire and rot damage.
+export function greatestErosion(object: Pick<GameObject, 'oeroded' | 'oeroded2'>): number {
+    return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
+}
+
 // C obj.h:is_weptool().
 export function isWeaponTool(object: ObjectCandidate): boolean {
     if (!object) return false;

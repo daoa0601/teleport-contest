@@ -229,24 +229,16 @@ export function resetHeroSlimingCountdown(state = game, turns = 10) {
 export function heroIsVomiting(state = game) {
     return !!state.u?.vomiting || (state.u?.vomitingTurns ?? 0) > 0;
 }
-// C potion.c:make_vomiting()
-// Sets the timeout; callers own any recovery message.
-export function startHeroVomiting({ state = game, turns } = {}) {
+// C potion.c:make_vomiting().
+export async function makeHeroVomiting(turns, { state = game, talk = false, publish = plineWithContinuation, } = {}) {
     const hero = state.u;
-    hero.vomitingTurns = Math.max(0, turns ?? 0);
+    const wasVomiting = heroIsVomiting(state);
+    hero.vomitingTurns = Math.max(0, turns);
     hero.vomiting = hero.vomitingTurns > 0;
     state.context.botl = true;
-    return hero.vomiting;
-}
-// C potion.c:make_vomiting()
-// Clears the timeout; callers own the talk and Unaware checks.
-export function cureHeroVomiting(state = game) {
-    const hero = state.u;
-    const cured = heroIsVomiting(state);
-    hero.vomiting = false;
-    hero.vomitingTurns = 0;
-    state.context.botl = true;
-    return cured;
+    if (!turns && wasVomiting && talk && !heroIsUnaware(state))
+        await publish(formatFeltMessage('much less nauseated now.', state));
+    return wasVomiting;
 }
 // C potion.c:make_stoned()
 // Also C end.c:dealloc_killer(): delayed petrification fields are removed inline here
@@ -1255,8 +1247,7 @@ export async function healHero(amount, extraMaximum, { state = game, cureSicknes
         await makeDeaf(0, { state });
     }
     if (cureSickness) {
-        if (cureHeroVomiting(state) && !heroIsUnaware(state))
-            await plineWithContinuation(formatFeltMessage('much less nauseated now.', state));
+        await makeHeroVomiting(0, { state, talk: true });
         await cureHeroSicknessWithMessages(state);
     }
     state.context.botl = true;
@@ -2968,8 +2959,10 @@ export async function releaseDjinni(source, state) {
             break;
     }
 }
-// C potion.c:split_mon() for a monster.  The heat source is named before
-// cloning, and a spotted monster announces the division.
+// Part of C potion.c:split_mon(): the monster branch. C takes one monster
+// pointer that may be &gy.youmonst; the hero port is not a Monster, so the
+// hero and monster halves stay separate functions.  The heat source is
+// named before cloning, and a spotted monster announces the division.
 export async function splitMonster(monster, state = game, { heatSource = null, publish = plineWithContinuation, ...options } = {}) {
     if (!monster)
         return null;
@@ -2987,7 +2980,8 @@ export async function splitMonster(monster, state = game, { heatSource = null, p
         await publish(`${monsterName(monster, { state, capitalized: true })} multiplies${reason}!`);
     return clone;
 }
-// C potion.c:split_mon() halves maximum HP after cloneu() divides current HP.
+// Part of C potion.c:split_mon(): the &gy.youmonst branch. Halves maximum
+// HP after cloneu() divides current HP.
 export async function splitHeroMonsterForm(state = game) {
     const maximum = state.u.mhmax;
     if (maximum === undefined)
@@ -3033,9 +3027,9 @@ export async function finishStrangeFeeling(source, { state = game, } = {}) {
         await consumeInventoryItem(source, state);
     return { known: false, consumed: !!source, heroDied: !!state.program_state.gameover };
 }
-// C potion.c:strange_feeling(), message half, as detect.c's detectors call
-// it; the trycall/useup half stays with the callers' effectResult handling.
-// The owning full port is strangeFeeling() above.
+// Part of C potion.c:strange_feeling(): the message half, kept separate
+// because detect.c's detectors own their trycall/useup handling outside
+// the call. The owning full port is strangeFeeling() above.
 export async function strangeFeelingMessage(message, state, forceMessage = false) {
     await plineWithContinuation(state.flags.beginner && !forceMessage
         ? `You have a ${heroIsHallucinating(state) ? 'normal' : 'strange'} feeling for a moment, then it passes.`
