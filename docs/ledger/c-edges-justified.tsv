@@ -1862,7 +1862,7 @@ notice_all_mons	alloc	n/a	memory allocation; the port builds a plain array of th
 notice_mons_cmp	dist2	inlined	noticeAllMonsters sorts by (mx-ux)^2+(my-uy)^2, dist2(u,mon) inline, and the stable Array.sort retains fmon order like the deterministic qsort tie-break (hack.ts)
 show_glyph	isok	n/a	isok only guards the impossible() diagnostic for out-of-range glyph positions (display.c:1894); the port has no developer-diagnostic path to guard
 noises	dist2	inlined	reportMonsterCombatNoise compares (mx-ux)^2+(my-uy)^2 > 15, mdistu() inline (mhitm.ts)
-peacefuls_respond	quest_info	inlined	quest_info(MS_LEADER) and gu.urole.guardnum read directly as urole.ldrnum/guardnum in reactHumanoidBystander (mon.ts)
+peacefuls_respond	quest_info	inlined	quest_info(MS_LEADER) and gu.urole.guardnum read directly as urole.ldrnum/guardnum in reactPeacefulBystanders' humanoid branch (mon.ts)
 qst_guardians_respond	quest_info	inlined	quest_info(MS_GUARDIAN) read directly as urole.guardnum in angerQuestGuardiansAfterAttack (mon.ts)
 wake_nearto_core	dist2	inlined	monstersNear filters dx*dx+dy*dy < distance inline (mon.ts wakeMonstersNearWithMessages)
 newgame	reset_glyphmap	inlined	glyph appearance is computed at render (cmapSymbolAppearance and the rogue-color path in display.ts:1907-1994) instead of precomputed glyphmap tables, so a new game has no cache to reset
