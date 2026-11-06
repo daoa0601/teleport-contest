@@ -155,12 +155,16 @@ a helper that counterparts a different C function owns its calls and is not
 walked through (they are compared in that function's own pair); only
 helpers without a C counterpart — code the port moved out of the caller —
 are transparent.
-Equal multisets of per-call sequences match; equal call and argument counts
-with different values are mismatches, the class of bug an edge check cannot
-see (`reset_utrap(TRUE)` called as `resetUtrap(false)`); different counts,
-flags inside options objects such as `{ silent: true }`, and calls routed
-through macros — booleans written inside another macro's argument list,
-which clang versions position differently — are uncomparable. Mismatches are
+Each side contributes the call sites that spell at least one boolean
+literal, so a pair that also passes a non-literal flag still compares.
+Equal multisets of per-call sequences match; equal call counts and
+per-call boolean counts with different values are mismatches, the class of
+bug an edge check cannot see (`reset_utrap(TRUE)` called as
+`resetUtrap(false)`); different call counts, per-call counts split
+differently across the calls, flags inside options objects such as
+`{ silent: true }`, and calls routed through macros — booleans written
+inside another macro's argument list, which clang versions position
+differently — are uncomparable. Mismatches are
 audit leads — a signature that renames or inverts the flag reads as one
 until classified.
 `docs/ledger/c-args.tsv` freezes the matching `caller\tcallee\tsequences`

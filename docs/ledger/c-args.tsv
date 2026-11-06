@@ -65,6 +65,7 @@ do_earthquake	desecrate_altar	false
 do_enlightenment_effect	exercise	true
 do_improvisation	exercise	false;false;false;true;true;true;true
 do_loot_cont	autokey	true
+do_mapping	exercise	true
 do_pit	exercise	true
 do_pit	reset_utrap	true
 do_reset_eat	newuhs	false
@@ -75,7 +76,9 @@ doclose	exercise	true
 doclose	obstructed	false
 doconsult	outoracle	true
 dodown	stucksteed	true
+doeat	start_eating	false
 doengrave	cant_reach_floor	false+true+false;false+true+true
+dog_move	m_unleash	false
 doloot_core	able_to_loot	true
 domove_fight_empty	map_object	true
 done_eating	newuhs	false
@@ -205,9 +208,11 @@ m_initthrow	mksobj	true+false
 m_move	monhaskey	true
 make_engr_at	exercise	true
 makecorridors	join	false;false;false;true
+makelevel	add_room	true+false
 makelevel	check_room	true;true
 makemap_prepost	reset_utrap	false
 makemap_remove_mons	keepdogs	true
+makemaz	create_maze	false
 makemon	mkobj_at	true
 makemon	propagate	false
 makeniche	mkobj_at	true
@@ -292,7 +297,9 @@ peffect_sickness	poisontell	false
 peffect_water	newuhs	false
 pick_vibrasquare_location	stairway_find_dir	true
 place_branch	stairway_add	false
+place_lregion	put_lregion_here	true
 place_monster	minimal_monnam	false;true;true
+poisoned	setuhpmax	true
 polyman	check_strangling	true
 polymon	check_strangling	false;true
 polymon	exercise	false;true;true
@@ -301,6 +308,7 @@ polyself	exercise	false
 pooleffects	back_on_ground	false
 populate_maze	mkobj_at	true
 populate_maze	mksobj_at	true+false
+potion_dip	exercise	false;true
 potion_dip	mkobj	false
 prayer_done	exercise	false;false
 print_mapseen	formatkiller	true
@@ -318,9 +326,11 @@ remote_burglary	call_kops	false
 repair_damage	mksobj	true+false
 rescued_from_terrain	back_on_ground	true
 resetobjs	cant_revive	false
+retouch_equipment	untouchable	false
 return_throw_to_inv	set_twoweap	true
 revive	delobj_core	true
 revive_mon	rider_revival_time	true
+rhack	reset_cmd_vars	true;true;true;true;true
 rider_corpse_revival	exercise	false
 rnd_otyp_by_namedesc	wishymatch	false;false;false;false;true
 roguecorr	roguejoin	false;true
@@ -349,6 +359,7 @@ speed_up	exercise	true
 spelleffects	exercise	true
 spelleffects	make_familiar	false
 spelleffects	mksobj	false+false
+start_eating	done_eating	false
 start_engulf	map_location	true
 stolen_container	billable	true
 stolen_value	angry_guards	false
@@ -363,6 +374,7 @@ throne_sit_effect	exercise	false
 throne_sit_effect	identify_pack	false
 throne_sit_effect	map_background	false
 throwit	exercise	false;true
+throwit	impact_disturbs_zombies	true
 throwspell	exercise	false
 tin_details	tin_variety	true
 tipcontainer	tipcontainer_checks	false;true

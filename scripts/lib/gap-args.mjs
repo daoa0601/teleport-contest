@@ -24,15 +24,18 @@
 // reset_utrap(FALSE)` chain, and potionbreathe's exercise() calls, out of
 // the pairs that merely call into those functions.
 //
-// Comparison per pair: the C side contributes one TRUE/FALSE sequence per
-// call site that spells at least one of them (other arguments ignored); the
-// port side one true/false sequence per counterpart call. Equal multisets
-// match; the same number of calls and boolean arguments with different
-// values is a mismatch; anything else — different call or argument counts,
-// or a flag moved into an options object such as `{ silent: true }` — is
-// uncomparable. A mismatch is an audit lead, not a verdict: a signature that
-// renames or inverts the flag reads as a mismatch until a human classifies
-// it. Sessions, the RNG ledgers and the state oracle still decide.
+// Comparison per pair: each side contributes one sequence per call site
+// that spells at least one boolean literal (other arguments ignored) — a
+// port call whose flags all hide in defaults, variables or an options
+// object is not an occurrence, so a pair that also passes a non-literal
+// flag still compares. Equal multisets match; the same number of calls and
+// per-call boolean counts with different values is a mismatch; anything
+// else — different call counts, per-call counts split differently across
+// the calls, or a flag moved into an options object such as
+// `{ silent: true }` — is uncomparable. A mismatch is an audit lead, not a
+// verdict: a signature that renames or inverts the flag reads as one
+// until a human classifies it. Sessions, the RNG ledgers and the state
+// oracle still decide.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -306,9 +309,15 @@ export function classifyArgs(cSequences, portCalls) {
     const portKeys = portCalls.map(call => key(call.values)).sort();
     if (cKeys.join(';') === portKeys.join(';'))
         return { verdict: 'match', reason: '' };
-    if (cSequences.reduce((total, sequence) => total + sequence.length, 0)
-        !== portCalls.reduce((total, call) => total + call.values.length, 0)) {
-        return { verdict: 'uncomparable', reason: 'different numbers of boolean arguments' };
+    // The same number of booleans overall is not enough: the port may split
+    // them differently across its calls (C 1+3 against port 2+2), and then
+    // no call aligns with a C call. Equal multisets of per-call counts still
+    // allow a mismatch, because pairing the equal-length calls shows the
+    // differing values.
+    const counts = (lengths) => [...lengths].sort((a, b) => a - b).join(',');
+    if (counts(cSequences.map(sequence => sequence.length))
+        !== counts(portCalls.map(call => call.values.length))) {
+        return { verdict: 'uncomparable', reason: 'different numbers of boolean arguments per call' };
     }
     return { verdict: 'mismatch', reason: 'the same calls with the same argument counts spell different values' };
 }
@@ -385,6 +394,10 @@ export async function compareArgs(root, tree, cacheDir) {
             // caller counterparts and of helpers no other C function owns.
             const seen = new Set();
             const portCalls = [];
+            // A call inside a nested closure belongs to the enclosing
+            // function's own list as well as the closure's, and the walk
+            // passes through the closure; one call node counts once.
+            const attributed = new Set();
             let frontier = [...callerFns];
             for (let depth = 0; depth <= REACH_DEPTH && frontier.length; depth++) {
                 const next = [];
@@ -402,9 +415,18 @@ export async function compareArgs(root, tree, cacheDir) {
                         && [...owners].some(owner => owner !== caller))
                         continue;
                     for (const call of index.callsOf(fn)) {
-                        if (!calleeFns.has(call.callee))
+                        if (!calleeFns.has(call.callee) || attributed.has(call.node))
                             continue;
+                        attributed.add(call.node);
                         const args = portCallArgs(call.node);
+                        // An occurrence spells at least one bare literal, the
+                        // same rule the C side applies; a call whose flags all
+                        // hide in defaults, variables or an options object is
+                        // not one, so the reset_utrap(TRUE)-vs-false class
+                        // still compares when the pair also passes a
+                        // non-literal flag elsewhere.
+                        if (!args.values.length)
+                            continue;
                         const source = call.node.getSourceFile();
                         portCalls.push({ fn: index.locate(fn),
                             line: source.getLineAndCharacterOfPosition(call.node.getStart(source)).line + 1,

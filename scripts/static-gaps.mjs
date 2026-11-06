@@ -4,6 +4,7 @@
 //   node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs edges [--function NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs args [--check-ledger L.tsv] [--write-ledger L.tsv]
+//   node scripts/static-gaps.mjs owners [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs screens RUN_DIR
 //
 // `messages` lists every C string literal (outside debugging calls) whose

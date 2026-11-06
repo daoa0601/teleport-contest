@@ -14,17 +14,19 @@ import assert from 'node:assert/strict';
 
 import { argumentTokens, classifyArgs } from '../scripts/lib/gap-args.mjs';
 
-void test('an argument whose expansion location omits elided keys resolves them in print order', () => {
+void test('an argument whose expansion location omits both elided keys resolves in print order', () => {
     // clang's JSON dumper omits a location's `file` and `line` when they
-    // equal the last location it printed, so a location only means
-    // something in print order. Here the macro's spelling location prints
-    // line 57 just before the argument's expansion location, which elides
-    // the line; the nested cast's own expansion location must not capture.
+    // equal the last location it printed (CI lost engrave.c's
+    // `getrumor(..., TRUE)` to that elision). The realistic shape omits
+    // both keys — the dumper never prints a file without its line — and
+    // mirrors a real dump's argument (pray.c's rn2), whose spelling
+    // location is elided the same way; the nested cast's deeper location
+    // must not capture.
     const call = {
         kind: 'CallExpr',
         range: {
             begin: { offset: 10, file: 'src/engrave.c', line: 57, col: 12, tokLen: 8 },
-            end: { offset: 70, line: 57, col: 63, tokLen: 1 },
+            end: { offset: 70, col: 63, tokLen: 1 },
         },
         inner: [
             { kind: 'DeclRefExpr', referencedDecl: { name: 'getrumor' },
@@ -33,23 +35,59 @@ void test('an argument whose expansion location omits elided keys resolves them 
             { kind: 'ParenExpr',
                 range: {
                     begin: {
-                        spellingLoc: { offset: 3947, file: 'include/global.h', line: 57, col: 15, tokLen: 6 },
-                        expansionLoc: { offset: 42, file: 'src/engrave.c', col: 59, tokLen: 4 },
+                        spellingLoc: { offset: 3947, col: 15, tokLen: 6 },
+                        expansionLoc: { offset: 42, col: 59, tokLen: 4 },
                     },
                     end: {
-                        spellingLoc: { offset: 3958, file: 'include/global.h', line: 57, col: 25, tokLen: 1 },
-                        expansionLoc: { offset: 42, file: 'src/engrave.c', line: 57, col: 59, tokLen: 4 },
+                        spellingLoc: { offset: 3958, col: 25, tokLen: 1 },
+                        expansionLoc: { offset: 42, col: 59, tokLen: 4 },
                     },
                 },
                 inner: [{ kind: 'CStyleCastExpr',
-                    range: { begin: { expansionLoc: { offset: 42, file: 'src/engrave.c', line: 57, col: 62, tokLen: 4 } } },
+                    range: { begin: { expansionLoc: { offset: 42, col: 62, tokLen: 4 } } },
                     inner: [{ kind: 'IntegerLiteral', value: '1' }] }] },
         ],
     };
-    // The plain `0` argument has no expansion location; the TRUE argument
-    // resolves its elided line from the spelling location printed before it.
+    // The plain `0` has no expansion location; the TRUE argument's token
+    // resolves both elided keys from the last printed location above it.
     assert.deepEqual(argumentTokens(call, { file: 'src/engrave.c', line: 55 }),
         [null, { file: 'src/engrave.c', line: 57, col: 59, tokLen: 4 }]);
+});
+
+void test('a macro-argument expansion location is not captured', () => {
+    // The dumper marks tokens written inside another macro's argument list
+    // (here the shape of pray.c's rn2 argument); clang versions position
+    // them differently, so the replay skips them.
+    const call = {
+        kind: 'CallExpr',
+        range: { begin: { offset: 41316, file: 'src/pray.c', line: 1126, col: 18, tokLen: 3 } },
+        inner: [
+            { kind: 'DeclRefExpr', referencedDecl: { name: 'rn2' },
+                range: { begin: { offset: 41316, col: 18, tokLen: 3 } } },
+            { kind: 'UnaryOperator', range: { begin: {
+                spellingLoc: { offset: 41320, col: 22, tokLen: 11 },
+                expansionLoc: { offset: 41316, col: 18, tokLen: 3, isMacroArgExpansion: true },
+            } } },
+        ],
+    };
+    assert.deepEqual(argumentTokens(call, { file: 'src/pray.c', line: 1120 }), [null]);
+});
+
+void test('the same totals split differently across calls are uncomparable', () => {
+    // C spells one boolean in one call and three in the other; the port
+    // spells two in each. The totals agree, but no port call can align
+    // with a C call, so the pair cannot be compared.
+    const verdict = classifyArgs([['TRUE'], ['FALSE', 'FALSE', 'FALSE']],
+        [{ values: ['true', 'false'], optionsObject: false }, { values: ['true', 'false'], optionsObject: false }]);
+    assert.equal(verdict.verdict, 'uncomparable');
+});
+
+void test('equal per-call counts with different values mismatch', () => {
+    // Both sides hold one call with one boolean and one with two; paired
+    // by length, both pairs spell different values.
+    const verdict = classifyArgs([['TRUE'], ['FALSE', 'FALSE']],
+        [{ values: ['true', 'false'], optionsObject: false }, { values: ['false'], optionsObject: false }]);
+    assert.equal(verdict.verdict, 'mismatch');
 });
 
 void test('equal per-call sequences match, in any call order', () => {
