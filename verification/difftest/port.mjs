@@ -43,7 +43,7 @@ const changes = {
         "return 'aefhilmnos'.includes(word.charAt(0)) ? 'an ' : 'a ';"],
     naming_the: ['objnam.js', "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the ${name}`;",
         "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the  ${name}`;"],
-    naming_bogus_titles: ['objnam.js', '...BOGUS_MONSTERS.flatMap(name => {',
+    naming_bogus_titles: ['rumors.js', '...BOGUS_MONSTERS.flatMap(name => {',
         '...[].flatMap(name => {'],
     naming_xname: ['objnam.js', "noun = `pair of ${noun}`;", "noun = `two ${noun}`;"],
     naming_doname: ['objnam.js', "if (object.greased)\n        prefix.push('greased');",
