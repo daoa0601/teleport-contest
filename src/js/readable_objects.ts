@@ -37,6 +37,8 @@ const RED_MONSTERS: readonly string[] = [
     'barbed devil', 'marilith', 'piranha',
 ];
 
+// Part of C read.c:doread(): the ordinary readable objects (cookie,
+// garments, hats, card, grease, marker, coin, artifact signature, wrapper).
 export async function readOrdinaryObject(
     object: GameObject, { state = game }: { state?: GameState } = {},
 ): Promise<OrdinaryReadingResult> {
@@ -99,6 +101,8 @@ export async function readOrdinaryObject(
     return readingResult(state, false);
 }
 
+// Part of C read.c:doread(): the shirt/smock/hawaiian branch, via
+// tshirt_text, apron_text, and hawaiian_design.
 async function readGarment(object: GameObject, state: PlayingGameState): Promise<OrdinaryReadingResult> {
     if (heroIsBlind(state)) return noBraille(state);
     const suit = state.uarm || state.u.uarm;
@@ -125,6 +129,7 @@ async function readGarment(object: GameObject, state: PlayingGameState): Promise
     return readingResult(state, true);
 }
 
+// Part of C read.c:doread(): the tourist dunce-cap/cornuthaum branch.
 async function readConicalHat(object: GameObject, state: PlayingGameState): Promise<OrdinaryReadingResult> {
     const name = object.quan === 1
         ? minimalObjectName(object, state) : makePlural(minimalObjectName(object, state));
@@ -139,6 +144,7 @@ async function readConicalHat(object: GameObject, state: PlayingGameState): Prom
     return readingResult(state, true);
 }
 
+// Part of C read.c:doread(): the credit-card branch.
 async function readCreditCard(object: GameObject, state: PlayingGameState): Promise<OrdinaryReadingResult> {
     const blind = heroIsBlind(state);
     if (blind) await pline('You feel the embossed numbers:');
@@ -159,15 +165,19 @@ async function readCreditCard(object: GameObject, state: PlayingGameState): Prom
     return readingResult(state, true);
 }
 
+// Part of C read.c:doread(): the blind "no Braille" refusals.
 async function noBraille(state: GameState): Promise<OrdinaryReadingResult> {
     await pline("You can't feel any Braille writing.");
     return readingResult(state, false);
 }
 
+// Port only: TS result plumbing for ordinary-object reading.
 function readingResult(state: GameState, spentTime: boolean): Extract<OrdinaryReadingResult, { handled: true }> {
     return { handled: true, spentTime, heroDied: !!state.program_state.gameover };
 }
 
+// Part of C read.c:doread(): the o_id-indexed label pick from card_msgs
+// or red_mons.
 function inscriptionAt(messages: readonly string[], index: number): string {
     const message = messages[index];
     if (message === undefined)

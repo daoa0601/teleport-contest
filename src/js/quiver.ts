@@ -13,6 +13,8 @@ import {
     isLauncherAmmunition, launcherMatchesAmmo,
 } from './object_properties.js';
 
+// Port only: the obj.h oclass read with the JS type-table fallback; the C
+// ready_ok and autoquiver reads obj->oclass directly.
 // The obj.h oclass read with the type-table fallback; autoquiver()
 // (dothrow.ts) and ready_ok() below share it.
 export function quiverObjectClass(item: GameObject): number {

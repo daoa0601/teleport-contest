@@ -15,6 +15,7 @@ type Participant = Monster | 'hero';
 const S_NYMPH = 14;
 const PM_AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
 
+// C mhitu.c:could_seduce(). Cancellation belongs to each attack caller.
 export function could_seduce(
     aggressor: Participant, defender: Participant, attack: AttackTuple | null,
     state: GameState = game,
@@ -35,6 +36,8 @@ export function could_seduce(
         ? 1 : nymph ? 2 : 0;
 }
 
+// Part of C mhitu.c:could_seduce(): the poly_gender/gender reads for each
+// participant.
 function participantGender(participant: Participant, state: GameState): 0 | 1 | 2 {
     if (participant === 'hero') return heroPolyGender(state);
     return is_neuter(participant.mnum)

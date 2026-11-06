@@ -8,12 +8,15 @@ interface EntityIdentity {
     id: number;
 }
 
+// Port only: type guard for plain records at the save-data boundary.
 // Records at the serialized-data boundary have not acquired domain types.
 export function isSavedRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object'
         && !Array.isArray(value) && !(value instanceof Map) && !(value instanceof Set);
 }
 
+// Port only: recognizes a monster/object by its id fields in a serialized
+// record.
 function entityIdentity(value: unknown): EntityIdentity | null {
     if (!isSavedRecord(value)) return null;
     if (isEntityId(value.m_id)) return { kind: 'monster', id: value.m_id };
@@ -24,10 +27,13 @@ function entityIdentity(value: unknown): EntityIdentity | null {
     return null;
 }
 
+// Port only: type guard for entity id fields.
 function isEntityId(value: unknown): value is number {
     return typeof value === 'number' && Number.isInteger(value) && value > 0;
 }
 
+// Port only: JSON replacer that gives shared entities stable identity
+// markers while serializing the saved graph.
 function graphReplacer(): (key: string, value: unknown) => unknown {
     const entities = new Map<string, object>();
     return (_key, value) => {
@@ -80,12 +86,15 @@ function graphReplacer(): (key: string, value: unknown) => unknown {
     };
 }
 
+// Port only: serializes the saved-state graph to JSON.
 export function encodeSavedGraph(value: unknown): string {
     const encoded = JSON.stringify(value, graphReplacer());
     if (encoded === undefined) throw new TypeError('Saved graph has no root value');
     return encoded;
 }
 
+// Port only: restores the saved-state graph from JSON, re-linking shared
+// entities.
 export function decodeSavedGraph(encoded: string): unknown {
     const entities = new Map<string, Record<string, unknown>>();
     const parsed: unknown = JSON.parse(encoded);
@@ -182,11 +191,13 @@ export function decodeSavedGraph(encoded: string): unknown {
     }
 }
 
+// Port only: coerces a decoded value to an array.
 function savedArray(value: unknown): unknown[] {
     if (!Array.isArray(value)) throw new TypeError('Invalid saved graph array');
     return value;
 }
 
+// Port only: reads the identity marker of a decoded entity record.
 function savedEntityIdentity(value: Record<string, unknown>): EntityIdentity {
     const kind = value[ENTITY_KIND];
     const id = value[ENTITY_ID];

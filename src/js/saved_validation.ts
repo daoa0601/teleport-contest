@@ -6,6 +6,7 @@ import type { Room } from './map_types.js';
 export type Check<T> = (value: unknown) => value is T;
 export type Fields<T> = { [Key in keyof T]-?: Check<T[Key]> };
 
+// Port only: validates each field of a saved record against its check.
 export function fieldsMatch<T>(
     value: unknown, fields: Fields<T>, invalidField?: (field: string) => void,
 ): value is T {
@@ -23,6 +24,7 @@ export function fieldsMatch<T>(
     return true;
 }
 
+// Port only: fieldsMatch that also rejects unknown extra fields.
 // Use this for a complete saved record. Structural predicates such as a
 // coordinate check may still use fieldsMatch on a larger domain object.
 export function closedFieldsMatch<T>(
@@ -38,6 +40,7 @@ export function closedFieldsMatch<T>(
     return fieldsMatch(value, fields, invalidField);
 }
 
+// Port only: type-guard combinator for Map values in saved state.
 export function mapOf<Key, Value>(keyCheck: Check<Key>, valueCheck: Check<Value>): Check<Map<Key, Value>> {
     return (value): value is Map<Key, Value> => {
         if (!(value instanceof Map)) return false;
@@ -49,6 +52,7 @@ export function mapOf<Key, Value>(keyCheck: Check<Key>, valueCheck: Check<Value>
     };
 }
 
+// Port only: type-guard combinator for Set values in saved state.
 export function setOf<T>(check: Check<T>): Check<Set<T>> {
     return (value): value is Set<T> => {
         if (!(value instanceof Set)) return false;
@@ -58,6 +62,7 @@ export function setOf<T>(check: Check<T>): Check<Set<T>> {
     };
 }
 
+// Port only: type-guard combinator for numeric-key records in saved state.
 export function numericRecordOf<T>(check: Check<T>): Check<Partial<Record<number, T>>> {
     return (value): value is Partial<Record<number, T>> => {
         if (!isSavedRecord(value)) return false;
@@ -66,20 +71,24 @@ export function numericRecordOf<T>(check: Check<T>): Check<Partial<Record<number
     };
 }
 
+// Port only: type-guard combinator for a fixed set of literal values.
 export function oneOf<const Values extends readonly (string | number | boolean)[]>(
     ...values: Values
 ): Check<Values[number]> {
     return (value): value is Values[number] => values.some(candidate => candidate === value);
 }
 
+// Port only: type-guard combinator for optional saved fields.
 export function optional<T>(check: Check<T>): Check<T | undefined> {
     return (value): value is T | undefined => value === undefined || check(value);
 }
 
+// Port only: type-guard combinator for nullable saved fields.
 export function nullable<T>(check: Check<T>): Check<T | null> {
     return (value): value is T | null => value === null || check(value);
 }
 
+// Port only: type-guard combinator for arrays in saved state.
 export function arrayOf<T>(check: Check<T>): Check<T[]> {
     return (value): value is T[] => {
         if (!Array.isArray(value)) return false;
@@ -91,9 +100,12 @@ export function arrayOf<T>(check: Check<T>): Check<T[]> {
     };
 }
 
+// Port only: primitive type guards for decoded save values.
 export const integer = (value: unknown): value is number =>
     typeof value === 'number' && Number.isInteger(value);
+// Port only: primitive type guard for decoded save values.
 export const boolean = (value: unknown): value is boolean => typeof value === 'boolean';
+// Port only: primitive type guard for decoded save values.
 export const string = (value: unknown): value is string => typeof value === 'string';
 
 type SavedEntityKind = 'object' | 'monster' | 'savedMonster' | 'room';
@@ -108,6 +120,7 @@ export interface SavedEntityContext {
     failure?: string;
 }
 
+// Port only: cycle-aware field validation of one saved entity.
 // A carrier can point back to the object currently being checked. Only an
 // active check of that same entity type closes a cycle; another entity type
 // must still validate its own fields. Failed checks are never cached.
