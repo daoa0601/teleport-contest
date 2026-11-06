@@ -28,7 +28,7 @@ import { equipmentLightDescription } from './light.js';
 import { beginObjectBurn, scheduleObjectTimer, stopLevelTimer } from './timeout.js';
 import { OBJECT_CLASS_SYMBOLS, docrt, feel_newsym, canOverwriteTerrain } from './display.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
-import { BOGUS_MONSTERS } from './random_text_data.js';
+import { capitalizedMonsterTitle } from './rumors.js';
 import { nameToMonster, resolveMonsterNamePrefix, is_male, is_neuter, is_were, monsterHasProperName, monsterIsFemale, monsterIsHuman, monsterIsVerySmall, } from './mondata.js';
 import { counterWereSpecies } from './were.js';
 import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
@@ -448,32 +448,6 @@ export function definiteName(name, state = game) {
         || suffix < 0 && name.endsWith('Platinum Yendorian Express Card'))
         return `the ${name}`;
     return name;
-}
-// C rumors.c:init_CapMons()
-// Native rumors.c:CapitalMon() includes capitalized species names and titles,
-// but excludes individual names in both the real and hallucinatory tables.
-// Read trait owners after module initialization; their module also uses objnam.
-function capitalizedMonsterTitles() {
-    return [
-        ...MONSTER_NAME.flatMap((name, species) => {
-            const unique = !!((MONSTER_GENO[species] ?? 0) & 0x1000);
-            const personal = monsterHasProperName(species);
-            if (unique && (personal || name === 'high cleric' || name === 'long worm tail'))
-                return [];
-            return [name, monsterTypeName(species), monsterTypeName(species, true)];
-        }),
-        ...BOGUS_MONSTERS.flatMap(name => {
-            const code = name.charAt(0);
-            if (code && '-+='.includes(code))
-                return [];
-            return ['_', '|'].includes(code) ? [name.slice(1)] : [name];
-        }),
-    ].filter(name => /^[A-Z]/u.test(name));
-}
-// C rumors.c:CapitalMon().
-function capitalizedMonsterTitle(name) {
-    return capitalizedMonsterTitles().some(title => name.startsWith(title)
-        && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));
 }
 // C simple_typename()/obj_typename(): type knowledge alone selects the name.
 // Potions, rings, scrolls, wands and spellbooks retain their generic noun
