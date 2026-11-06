@@ -7,8 +7,11 @@
 // This mode records, for every CallExpr inside a C function, the arguments
 // spelled `TRUE` or `FALSE` — the macro spelling at the expansion location,
 // not the folded 1/0, so `makeknown(x)` (whose TRUEs live in a header macro
-// body) and `safe_teleds(TELEDS_NO_FLAGS)` do not count — and compares, per
-// (C caller, C callee) pair, the sequences against the bare `true`/`false`
+// body) and `safe_teleds(TELEDS_NO_FLAGS)` do not count; locations marked
+// `isMacroArgExpansion` (booleans written inside another macro's argument
+// list, `Sprintf(buf, "%s", piousness(TRUE, ...))`) are skipped too, because
+// clang versions report different positions for them. What remains is
+// compared, per (C caller, C callee) pair, against the bare `true`/`false`
 // literals of the counterpart calls.
 //
 // Reach rule, same depth as `edges`: a call counts when it sits in the
@@ -41,7 +44,7 @@ import { REACH_DEPTH, counterpartsOf, portIndex, readAliases } from './gap-edges
 import type { PortFunction } from './gap-edges.mjs';
 import { arrayValue, numberValue, objectValue, stringValue } from './session-types.mjs';
 
-const EXTRACTOR_VERSION = 'args-3';
+const EXTRACTOR_VERSION = 'args-4';
 
 export type CBool = 'TRUE' | 'FALSE';
 export type PortBool = 'true' | 'false';
@@ -111,37 +114,104 @@ function literalOf(node: Record<string, unknown>): Record<string, unknown> | nul
     return child === null ? null : literalOf(child);
 }
 
-function readToken(loc: Record<string, unknown>, readLines: (path: string) => string[] | null): string | null {
-    const file = loc['file'], line = loc['line'], col = loc['col'], tokLen = loc['tokLen'];
-    if (typeof file !== 'string' || typeof line !== 'number' || typeof col !== 'number' || typeof tokLen !== 'number') return null;
-    const lines = readLines(file);
-    const text = lines === null ? null : lines[line - 1];
+// A token location with clang's elided `file`/`line` resolved.
+export interface TokenLoc { file: string; line: number; col: number; tokLen: number }
+
+// clang's JSON dumper omits a location's `file` and `line` when they equal
+// the last location it printed (LastLocFilename/LastLocLine across the whole
+// dump, in print order: `loc`, then `range.begin`, `range.end`, and within a
+// macro location `spellingLoc` before `expansionLoc`). Which locations come
+// out elided depends on the clang version, so reading one in isolation drops
+// real arguments — CI's clang lost `getrumor(..., TRUE)` (engrave.c) this
+// way while the local one lost others. This replays the print order over one
+// call subtree, seeded with the tracker state at the call, and returns each
+// argument's own range.begin.expansionLoc — the token it spells — resolved.
+export function argumentTokens(call: Record<string, unknown>, seed: { file: string; line: number }):
+    (TokenLoc | null)[] {
+    const state = { file: seed.file, line: seed.line };
+    const tokens: (TokenLoc | null)[] = [];
+    const advance = (value: unknown, path: string, capture: { token: TokenLoc | null } | null): void => {
+        if (Array.isArray(value)) {
+            for (const item of value) advance(item, path, capture);
+            return;
+        }
+        if (typeof value !== 'object' || value === null) return;
+        const record: Record<string, unknown> = Object.fromEntries(Object.entries(value));
+        if (typeof record['offset'] === 'number') {
+            const file = record['file'];
+            const line = record['line'];
+            if (typeof file === 'string') state.file = file;
+            if (typeof line === 'number') state.line = line;
+            // Only the argument's own range.begin.expansionLoc counts;
+            // nested wrapper nodes carry the same token but deeper paths.
+            // A macro-argument expansion is skipped: clang versions disagree
+            // on where it points (CI's resolves the argument's position,
+            // this one points at the enclosing Sprintf() token), so those
+            // spellings are not stable across the dumpers.
+            if (capture !== null && capture.token === null && path === 'range.begin.expansionLoc'
+                && record['isMacroArgExpansion'] !== true) {
+                const col = record['col'], tokLen = record['tokLen'];
+                if (typeof col === 'number' && typeof tokLen === 'number') {
+                    capture.token = {
+                        file: typeof file === 'string' ? file : state.file,
+                        line: typeof line === 'number' ? line : state.line,
+                        col, tokLen,
+                    };
+                }
+            }
+        }
+        for (const [key, child] of Object.entries(record)) {
+            if (key === 'includedFrom' || typeof child !== 'object' || child === null) continue;
+            advance(child, path === '' ? key : `${path}.${key}`, capture);
+        }
+    };
+    for (const [key, child] of Object.entries(call)) {
+        if (key === 'includedFrom' || typeof child !== 'object' || child === null) continue;
+        if (key !== 'inner') {
+            advance(child, '', null);
+            continue;
+        }
+        // The callee comes first; every following child is an argument.
+        if (Array.isArray(child)) {
+            child.forEach((element, index) => {
+                if (typeof element !== 'object' || element === null) return;
+                if (index === 0) {
+                    advance(element, '', null);
+                    return;
+                }
+                const capture: { token: TokenLoc | null } = { token: null };
+                advance(element, '', capture);
+                tokens.push(capture.token);
+            });
+        }
+    }
+    return tokens;
+}
+
+function readTokenAt(token: TokenLoc, readLines: (path: string) => string[] | null): string | null {
+    const lines = readLines(token.file);
+    const text = lines === null ? null : lines[token.line - 1];
     if (typeof text !== 'string') return null;
-    return text.slice(col - 1, col - 1 + tokLen);
+    return text.slice(token.col - 1, token.col - 1 + token.tokLen);
 }
 
 // `TRUE`/`FALSE` when the argument is exactly the macro's literal and the
-// expansion location spells the macro name itself.
-function booleanArg(arg: unknown, readLines: (path: string) => string[] | null): CBool | null {
+// resolved expansion location spells the macro name itself.
+function booleanArg(arg: unknown, token: TokenLoc | null, readLines: (path: string) => string[] | null): CBool | null {
     const record = asRecord(arg);
-    if (record === null) return null;
+    if (record === null || token === null) return null;
     const literal = literalOf(record);
     if (literal === null) return null;
-    const range = asRecord(record['range']);
-    const begin = range === null ? null : asRecord(range['begin']);
-    const expansion = begin === null ? null : asRecord(begin['expansionLoc']);
-    if (expansion === null) return null;
-    const spelled = readToken(expansion, readLines);
+    const spelled = readTokenAt(token, readLines);
     const value = literal['value'];
     if (spelled === 'TRUE' && value === '1') return 'TRUE';
     if (spelled === 'FALSE' && value === '0') return 'FALSE';
     return null;
 }
 
-// clang's JSON dump omits a location's `line` when it did not change since
-// the previous location, so the walk keeps the last line it saw and a call
-// whose own range omits the line falls back to it (enter runs before the
-// call's range children, so `lastLine` is the location just above it).
+// The call's own line, with the same elision handled through the tracker's
+// last seen line (enter runs before the call's range children, so that line
+// is the location just above the call).
 function callLine(call: Record<string, unknown>, lastLine: number): number {
     const range = asRecord(call['range']);
     const begin = range === null ? null : asRecord(range['begin']);
@@ -176,22 +246,23 @@ async function extractArgFacts(tree: CSourceTree, file: string): Promise<FileArg
         // order is the body; header declarations have none.
         let bodyFile: string | null = null;
         let depth = 0;
-        let lastLine = 0;
         walkJson(decl, tracker, node => {
             depth++;
-            if (typeof node['line'] === 'number' && typeof node['offset'] === 'number') lastLine = node['line'];
             if (bodyFile === null && node['kind'] === 'CompoundStmt') bodyFile = tracker.current;
             if (node['kind'] !== 'CallExpr') return;
             const callee = calleeName(node);
             if (callee === null) return;
             const inner = node['inner'];
             if (!Array.isArray(inner)) return;
+            // The tracker state at enter is the print-order predecessor of
+            // the call's own locations, exactly what the replay needs.
+            const tokens = argumentTokens(node, { file: tracker.current, line: tracker.line });
             const args: { index: number; value: CBool }[] = [];
             for (let index = 1; index < inner.length; index++) {
-                const value = booleanArg(inner[index], readLines);
+                const value = booleanArg(inner[index], tokens[index - 1] ?? null, readLines);
                 if (value !== null) args.push({ index: index - 1, value });
             }
-            if (args.length) pending.push({ caller: name, callee, line: callLine(node, lastLine), args });
+            if (args.length) pending.push({ caller: name, callee, line: callLine(node, tracker.line), args });
         }, node => {
             depth--;
             // Commit only when the walk returns to the declaration itself:

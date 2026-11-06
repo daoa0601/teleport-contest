@@ -117,13 +117,21 @@ function recordOf(value: object): Record<string, unknown> {
     return Object.fromEntries(Object.entries(value));
 }
 
-// Follows clang's last-written location file through a walk in key order.
+// Follows clang's last-written location file and line through a walk in key
+// order: the JSON dumper omits a location's `file` and `line` keys when they
+// equal the last location it printed (LastLocFilename/LastLocLine across the
+// whole dump), so a location only means something in that print order.
 export class FileTracker {
     current = '';
+    line = 0;
     // Call on every object in emission order before visiting its children.
     observe(node: Record<string, unknown>): void {
-        const file = node['file'];
-        if (typeof file === 'string' && 'offset' in node) this.current = file;
+        if ('offset' in node) {
+            const file = node['file'];
+            if (typeof file === 'string') this.current = file;
+            const line = node['line'];
+            if (typeof line === 'number') this.line = line;
+        }
     }
 }
 

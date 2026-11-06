@@ -159,8 +159,10 @@ Equal multisets of per-call sequences match; equal call and argument counts
 with different values are mismatches, the class of bug an edge check cannot
 see (`reset_utrap(TRUE)` called as `resetUtrap(false)`); different counts,
 flags inside options objects such as `{ silent: true }`, and calls routed
-through macros are uncomparable. Mismatches are audit leads — a signature
-that renames or inverts the flag reads as one until classified.
+through macros — booleans written inside another macro's argument list,
+which clang versions position differently — are uncomparable. Mismatches are
+audit leads — a signature that renames or inverts the flag reads as one
+until classified.
 `docs/ledger/c-args.tsv` freezes the matching `caller\tcallee\tsequences`
 rows, so a later change that flips a matching literal fails the check.
 
