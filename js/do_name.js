@@ -189,13 +189,6 @@ export function randomDisplayMonsterIdentity() {
 export function randomDisplayMonsterName() {
     return randomDisplayMonsterIdentity().name;
 }
-// C do_name.c:Monnam() requests ARTICLE_THE, except personal bogus-monster
-// names suppress the article before the result is sentence-capitalized.
-export function randomDisplayMonsterSubject(forceThe = false) {
-    const { name, personal } = randomDisplayMonsterIdentity();
-    const subject = personal && !forceThe ? name : `the ${name}`;
-    return subject.charAt(0).toUpperCase() + subject.slice(1);
-}
 // C do_name.c:roguename().
 export function roguePlayerName() {
     const options = typeof process === 'undefined' ? undefined : process.env.ROGUEOPTS;
@@ -495,8 +488,8 @@ export function distantMonsterName(monster, { state = game, article = 'none', } 
         article, called: true, suppressSaddle: false,
     });
 }
-// C do_name.c:noname_monnam(monster, ARTICLE_NONE).
-// C do_name.c:l_monnam(): leash messages retain the species of a named creature.
+// C do_name.c:l_monnam(): keeps the species with "called", so leash
+// messages retain the species of a named creature.
 export function monsterLeashName(monster, state = game) {
     requireLiveGame(state);
     return formatMonsterName(monster, state, {
@@ -598,7 +591,10 @@ export function formatMonsterName(monster, state, { adjective = '', article = 't
         return withIndefiniteArticle(description);
     return (article === 'none' ? '' : `${article} `) + description;
 }
-// C do_name.c:Monnam().
+// C do_name.c:Monnam(): mon_nam() with the first letter upper-cased for use
+// at the start of a sentence.  Hallucinated subjects (rndmonnam(); personal
+// bogus-monster names suppress the article) are chosen inside mon_nam()'s
+// port, so callers must not branch on hallucination before calling this.
 export function visibleMonsterSubject(monster) {
     return monsterName(monster, { capitalized: true });
 }

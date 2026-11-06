@@ -26,7 +26,7 @@ import type { MessagePublisher } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
-import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, randomDisplayMonsterSubject, displayLiquidName } from './do_name.js';
+import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import {
     monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
@@ -90,7 +90,7 @@ import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { find_offensive } from './muse.js';
 import { isPoolAt } from './dbridge.js';
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
-import { monsterSentenceSubject, sessionIsNight, monsterGrowlSound } from './sounds.js';
+import { sessionIsNight, monsterGrowlSound } from './sounds.js';
 import type { Hero } from './hero_types.js';
 import { setHeroGrip } from './mon.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -1127,9 +1127,9 @@ export async function passiveum(monster: Monster, oldForm: number, attackType: n
 
     if (type === AD_ACID) {
         if (random(2) === 0) {
-            await publish(`${subject(monster)} is splashed by ${Upolyd(state.u) ? 'your ' : ''}${displayLiquidName('acid', state)}!`);
+            await publish(`${visibleMonsterSubject(monster)} is splashed by ${Upolyd(state.u) ? 'your ' : ''}${displayLiquidName('acid', state)}!`);
             if (monsterHasAcidResistance(monster)) {
-                await publish(`${subject(monster)} is not affected.`);
+                await publish(`${visibleMonsterSubject(monster)} is not affected.`);
                 damage = 0;
             }
         } else damage = 0;
@@ -1187,11 +1187,11 @@ export async function passiveum(monster: Monster, oldForm: number, attackType: n
                     learnObjectType(reflection.object.otyp, state);
                 return { attackerStopped: false };
             }
-            await publish(`${subject(monster)} is frozen by your gaze!`);
+            await publish(`${visibleMonsterSubject(monster)} is frozen by your gaze!`);
             paralyzeMonster(monster, effectiveTurns);
             return { attackerStopped: true };
         }
-        await publish(`${subject(monster)} is frozen by you.`);
+        await publish(`${visibleMonsterSubject(monster)} is frozen by you.`);
         paralyzeMonster(monster, turns);
         return { attackerStopped: true };
     }
@@ -1204,13 +1204,13 @@ export async function passiveum(monster: Monster, oldForm: number, attackType: n
             await shieldeff(monster.mx, monster.my, state);
             const feeling = type === AD_COLD ? 'mildly chilly'
                 : type === AD_FIRE ? 'mildly warm' : 'slightly tingled';
-            await publish(`${subject(monster)} is ${feeling}.`);
+            await publish(`${visibleMonsterSubject(monster)} is ${feeling}.`);
             await applyMonsterGolemEffects(monster, type, damage, { state, publish });
             damage = 0;
         } else {
             const feeling = type === AD_COLD ? 'suddenly very cold'
                 : type === AD_FIRE ? 'suddenly very hot' : 'jolted with your electricity';
-            await publish(`${subject(monster)} is ${feeling}!`);
+            await publish(`${visibleMonsterSubject(monster)} is ${feeling}!`);
             if (type === AD_COLD) {
                 state.u.mh += Math.trunc((damage + random(2)) / 2);
                 state.u.mhmax = Math.max(state.u.mhmax, state.u.mh);
@@ -1226,7 +1226,7 @@ export async function passiveum(monster: Monster, oldForm: number, attackType: n
     case AD_STUN:
         if (!monster.mstun) {
             monster.mstun = 1;
-            await publish(`${subject(monster)} ${staggerVerb(monster.mnum)}.`);
+            await publish(`${visibleMonsterSubject(monster)} ${staggerVerb(monster.mnum)}.`);
         }
         damage = 0;
         break;
@@ -1284,20 +1284,14 @@ async function assess_dmg(
 ): Promise<HeroFormPassiveResult> {
     monster.mhp -= damage;
     if (monster.mhp > 0) return { attackerStopped: false, damage };
-    await publish(`${subject(monster)} dies!`);
+    await publish(`${visibleMonsterSubject(monster)} dies!`);
     await finishHeroMonsterKill(monster, monster.mx, monster.my, { showKillMessage: false });
     const died = !!monster.dead || monster.mhp <= 0;
     return { attackerDied: died, attackerStopped: died, damage };
 }
 
-function subject(monster: Monster) {
-    if (!canSpotMonster(monster)) return 'It';
-    return heroIsHallucinating(game)
-        ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
-}
-
 function possessive(monster: Monster) {
-    const name = subject(monster).replace(/^The /u, 'the ');
+    const name = visibleMonsterSubject(monster).replace(/^The /u, 'the ');
     return name === 'It' ? 'its' : name.endsWith('s') ? `${name}'` : `${name}'s`;
 }
 
