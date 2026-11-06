@@ -116,39 +116,36 @@ function monsterAt(x, y) {
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
 }
-// C bones.c:give_to_nearby_mon() takes from a monster with any of the
-// likes_gold()/likes_gems()/likes_objs()/likes_magic() appetites
-// (mondata.h macros), with no check that the object matches.
-export function monsterLikesObjects(monster) {
-    return likes_gold(monster.mnum) || likes_gems(monster.mnum)
-        || likes_objs(monster.mnum) || likes_magic(monster.mnum);
-}
-// C bones.c:give_to_nearby_mon(): reservoir sampling over the 3x3
-// neighborhood picks the taker.
-function nearbyMonsterForDeathDrop(x, y) {
+// C bones.c:give_to_nearby_mon(): give the object to a random
+// object-liking monster on or adjacent to x,y but skipping the hero's
+// location; when no such monster (or none that can carry it) is found the
+// object is placed on the floor at x,y.  Reservoir sampling over the 3x3
+// neighborhood picks the taker, with no check that the object matches the
+// monster's likes_gold()/likes_gems()/likes_objs()/likes_magic() appetite
+// (mondata.h macros).
+async function giveToNearbyMonster(object, x, y) {
     let selected = null;
-    let candidateCount = 0;
-    for (let nearbyX = x - 1; nearbyX <= x + 1; nearbyX++) {
-        for (let nearbyY = y - 1; nearbyY <= y + 1; nearbyY++) {
-            if (!isok(nearbyX, nearbyY)
-                || nearbyX === game.u.ux && nearbyY === game.u.uy)
+    let nmon = 0;
+    for (let xx = x - 1; xx <= x + 1; xx++) {
+        for (let yy = y - 1; yy <= y + 1; yy++) {
+            if (!isok(xx, yy)
+                || xx === game.u.ux && yy === game.u.uy)
                 continue;
-            const monster = monsterAt(nearbyX, nearbyY);
-            if (!monster || !monsterLikesObjects(monster))
+            const mtmp = monsterAt(xx, yy);
+            if (!mtmp)
                 continue;
-            candidateCount++;
-            if (rn2(candidateCount) === 0)
-                selected = monster;
+            if (!(likes_gold(mtmp.mnum) || likes_gems(mtmp.mnum)
+                || likes_objs(mtmp.mnum) || likes_magic(mtmp.mnum)))
+                continue;
+            nmon++;
+            if (rn2(nmon) === 0)
+                selected = mtmp;
         }
     }
-    return selected;
-}
-async function giveDeathDropToNearbyMonster(object, x, y) {
-    const monster = nearbyMonsterForDeathDrop(x, y);
-    if (!monster || !monsterCanCarryObject(monster, object, game))
-        return false;
-    await linkObjectToMonsterInventory(monster, object);
-    return true;
+    if (selected && monsterCanCarryObject(selected, object, game))
+        await linkObjectToMonsterInventory(selected, object);
+    else
+        placeObjectSynchronously(object, x, y);
 }
 export async function dropHeroInventoryForBones(x, y, { carrier = null, container = null } = {}) {
     setTwoWeaponCombat(false);
@@ -172,9 +169,10 @@ export async function dropHeroInventoryForBones(x, y, { carrier = null, containe
             await addObjectToContainer(container, object, game);
             continue;
         }
-        if (rn2(8) === 0 && await giveDeathDropToNearbyMonster(object, x, y))
-            continue;
-        placeObjectSynchronously(object, x, y);
+        if (rn2(8) === 0)
+            await giveToNearbyMonster(object, x, y);
+        else
+            placeObjectSynchronously(object, x, y);
     }
     if (container)
         container.owt = objectWeight(container);

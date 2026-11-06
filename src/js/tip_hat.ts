@@ -1,6 +1,6 @@
 // C sounds.c:tiphat() and responsive_mon_at().
 import { BOLT_LIM, IRONBARS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, W_ARMH } from './const.js';
-import { isok, promptDirection, readDirectionKey } from './cmd.js';
+import { isok, promptDirection } from './cmd.js';
 import { armorSimpleName } from './do_wear.js';
 import { canSeeMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -38,7 +38,7 @@ export async function tipWornHelmet(helmet: GameObject): Promise<boolean> {
         helmet.bknown = true;
         return discovery;
     }
-    const direction = await promptDirection((_message, retry) => readDirectionKey('At whom? (in what direction) ', retry));
+    const direction = await promptDirection('At whom? (in what direction) ');
     if (!direction) return discovery;
     await pline(`You briefly doff your ${armorSimpleName(helmet)}.`);
     if (!direction.dx && !direction.dy) {

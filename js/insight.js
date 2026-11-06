@@ -994,7 +994,9 @@ function finalAttributePages({ final, killer = '' }) {
     }
     return pages;
 }
-// C end.c:disclose() -> enlightenment(BASIC | MAGIC, final).
+// C insight.c:enlightenment(): the final-gameover form end.c:disclose()
+// requests with BASICENLIGHTENMENT | MAGICENLIGHTENMENT; the in-progress
+// menu form is showEnlightenment().
 export async function showFinalAttributes(options) {
     return showTextPages(finalAttributePages(options), {
         validKeys: [27, 32, 10, 13],
@@ -1618,8 +1620,8 @@ export function vanquishedLines(ask = false) {
         lines.push(`${total} creatures vanquished.`);
     return lines;
 }
-// C insight.c:dovanquished() -> list_vanquished().  The 'm' command prefix
-// (iflags.menu_requested) passes 'A' and forces the sort-order choice even
+// C insight.c:list_vanquished().  The 'm' command prefix (dovanquished's
+// iflags.menu_requested) passes 'A' and forces the sort-order choice even
 // when nothing has been vanquished yet; Escape there keeps the old order
 // and the (possibly empty) list still follows.
 export async function listVanquished(defquery = 'y') {

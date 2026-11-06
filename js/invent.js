@@ -3164,17 +3164,6 @@ function inventoryActionKey(code) {
             throw new RangeError(`Unexpected inventory action key ${code}`);
     }
 }
-// C end.c:really_done() discovers every carried type and marks all of the
-// object's knowledge bits before disclose() calls display_inventory().
-// Keep that state transition separate from the ordinary `i` command, whose
-// descriptions are still constrained by what the hero learned in play.
-export async function showIdentifiedInventory() {
-    for (const item of game.inventory)
-        identifyObjectForDisclosure(item, true);
-    // disclose() requests a reply so an inventory letter closes the menu;
-    // it ignores the selected object and continues with the next question.
-    return selectInventoryObject({ headingAttr: 0, pickMode: PICK_ONE });
-}
 export function identifyObjectForDisclosure(item, identifyTinContents = false) {
     recordObjectEncounter(item.otyp);
     recordObjectKnowledge(item.otyp);

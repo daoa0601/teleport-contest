@@ -34,7 +34,7 @@ import type { GlyphMetadata } from './display.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
     cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings,
-    visibleCommandKey, promptDirection, readDirectionKey, restoreCommandMap, showExtendedCommandList,
+    visibleCommandKey, promptDirection, restoreCommandMap, showExtendedCommandList,
 } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { getLine, promptYesNo } from './query.js';
@@ -1092,7 +1092,7 @@ function coveringSymbolAt(x: number, y: number): string {
 
 export async function identifyTrap(): Promise<void> {
     game.context.move = 0;
-    const direction = await promptDirection(readDirectionKey, { ctrlCommandHint: true });
+    const direction = await promptDirection('In what direction? ', { ctrlCommandHint: true });
     if (!direction) {
         // pager.c:doidtrap() returns ECMD_CANCEL when getdir() is declined;
         // the rhack seam clears the queues after the command.

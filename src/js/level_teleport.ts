@@ -1,11 +1,16 @@
 // C teleport.c:level_tele() and random_teleport_level().
 
 import { buriedBallToPunishment } from './dig.js';
-import { chooseWizardLevelDestination } from './wizcmds.js';
 import { In_endgame, In_mines, In_quest, In_sokoban, TT_BURIEDBALL } from './const.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { formatFeltMessage, plineWithContinuation } from './pline.js';
-import { depth, levelAtDepth, levelDepthByName, specialDisplayName, surfaceName } from './dungeon.js';
+import { formatFeltMessage, pline, plineWithContinuation } from './pline.js';
+import { depth, levelAtDepth, levelDepthByName, printDungeon, specialDisplayName, surfaceName } from './dungeon.js';
+import type { WizardLevelDestination } from './dungeon.js';
+import { showPagedPickOneMenu } from './windows.js';
+import { mksobj } from './mkobj.js';
+import { AMULET_OF_YENDOR } from './object_data.js';
+import { recordObjectEncounter } from './o_init.js';
+import { addInventoryItem } from './invent.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -114,6 +119,42 @@ export async function levelTeleport({ state = game,
         arrival: 'random',
         postMessage: state.flags.verbose ? 'You materialize on a different level!' : '',
     });
+}
+
+// Part of C teleport.c:level_tele(): its wizard-menu entry into the
+// Elemental Planes grants the real Amulet before deferred_goto() starts.
+// Object construction, inventory identity, and prinv() precede
+// getbones()/mklev().  Destination placement finishes before tty asks
+// for acknowledgement.
+async function endgamePrerequisite(destination: DungeonLocation) {
+    if (!In_endgame(destination) || In_endgame(game.u?.uz)
+        || game.u?.uhave?.amulet) return;
+    const amulet = await addInventoryItem(
+        await mksobj(AMULET_OF_YENDOR, true, false),
+    );
+    // teleport.c prints the grant with prinv(); its doname()->xname() path
+    // observes the visible object and appends it to the Amulet disco[] class
+    // before the destination transaction begins.
+    recordObjectEncounter(amulet.otyp);
+    if (!game.u.uhave) game.u.uhave = {};
+    game.u.uhave.amulet = 1;
+    const message = `Endgame prerequisite: ${
+        amulet.invlet
+    } - the Amulet of Yendor.`;
+    await pline(message);
+}
+
+// Part of C teleport.c:level_tele(): the wizard level-teleport menu path,
+// 'm ^V' or '?', which calls dungeon.c:print_dungeon(TRUE) and then grants
+// the endgame prerequisite before forcing the destination.
+export async function chooseWizardLevelDestination(): Promise<{ destination: WizardLevelDestination } | null> {
+    const { rows, choices } = printDungeon(true);
+    const destination = await showPagedPickOneMenu({
+        rows, choices, prompt: 'Level teleport to where:',
+    });
+    if (!destination) return null;
+    await endgamePrerequisite(destination);
+    return { destination };
 }
 
 async function readLevelRequest(state: PlayingGameState, menuRequested: boolean): Promise<LevelRequest | null> {

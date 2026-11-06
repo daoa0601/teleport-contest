@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
-import { chooseWizardLevelDestination } from '../js/wizcmds.js';
+import { chooseWizardLevelDestination } from '../js/level_teleport.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

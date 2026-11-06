@@ -760,7 +760,47 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         hasInventory: false,
     };
     const monsterIndex = level.monsters.push(pendingMonster) - 1;
-    allocateMonsterBirthExtensions(pendingMonster, mmflags);
+    // C makemon() allocates requested role records (newedog/newemin/newepri/
+    // neweshk/newegd) without appointing the monster to that role; the caller
+    // fills them before setting role flags.  Native allocation precedes
+    // next_ident(), while the actor's ID is zero.
+    if (mmflags & (MM_EDOG | MM_EGD | MM_EMIN | MM_EPRI | MM_ESHK)) {
+        pendingMonster.mcorpsenm = -1;
+        const parentmid = 0;
+        if (mmflags & MM_EDOG) {
+            pendingMonster.edog = {
+                parentmid, droptime: 0, dropdist: 0, apport: 0, whistletime: 0,
+                hungrytime: 0, ogoal: { x: 0, y: 0 }, abuse: 0, revivals: 0,
+                mhpmax_penalty: 0, killed_by_u: 0,
+            };
+        }
+        if (mmflags & MM_EMIN)
+            ensureMinionData(pendingMonster).parentmid = parentmid;
+        if (mmflags & MM_EPRI) {
+            pendingMonster.epri = {
+                parentmid, shroom: 0, shralign: 0, shrpos: { x: 0, y: 0 },
+                shrlevel: { dnum: 0, dlevel: 0 }, cheapskate_count: 0,
+                intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0,
+            };
+        }
+        if (mmflags & MM_ESHK) {
+            pendingMonster.eshk = {
+                parentmid, shoproom: 0, shoptype: 0, shoplevel: { dnum: 0, dlevel: 0 },
+                shd: { x: 0, y: 0 }, shk: { x: 0, y: 0 }, shknam: '',
+                bill: [], billct: 0, billUnavailable: true,
+                credit: 0, debit: 0, loan: 0, robbed: 0, surcharge: 0,
+                following: 0, customer: '', visitct: 0, dismiss_kops: false,
+                break_seq: 0, seq_peaceful: 0,
+            };
+        }
+        if (mmflags & MM_EGD) {
+            pendingMonster._egd = {
+                gdlevel: { dnum: 0, dlevel: 0 }, gddone: 0,
+                ogx: 0, ogy: 0, gdx: 0, gdy: 0, vault: null,
+                warncnt: 0, fcbeg: 0, fcend: 0, fakecorr: [], dropgoldcnt: 0,
+            };
+        }
+    }
     if (!monsterIsMindless(mndx)) {
         if (In_sokoban(game.u.uz))
             pendingMonster.mtrapseen = (1 << (PIT - 1)) | (1 << (HOLE - 1));
@@ -1802,16 +1842,18 @@ export function golemHitPoints(mnum) {
     const name = MONSTER_NAME[mnum];
     return name === undefined ? null : GOLEM_HIT_POINTS.get(name) ?? null;
 }
-// C makemon.c:is_home_elemental(). The hero and other monsters use this rule.
-export function isHomeElemental(mnum) {
+// C makemon.c:is_home_elemental().  The hero, other monsters, and grow_up()
+// all use this rule; grow_up() passes its caller's state so deferred growth
+// honors the state it was scheduled with.
+export function isHomeElemental(mnum, state = game) {
     const name = MONSTER_NAME[mnum];
     if (name === undefined)
         return false;
     switch (name) {
-        case 'air elemental': return Is_airlevel(game.u.uz);
-        case 'earth elemental': return Is_earthlevel(game.u.uz);
-        case 'fire elemental': return Is_firelevel(game.u.uz);
-        case 'water elemental': return Is_waterlevel(game.u.uz);
+        case 'air elemental': return sameLevel(state.u?.uz, state.air_level);
+        case 'earth elemental': return sameLevel(state.u?.uz, state.earth_level);
+        case 'fire elemental': return sameLevel(state.u?.uz, state.fire_level);
+        case 'water elemental': return sameLevel(state.u?.uz, state.water_level);
         default: return false;
     }
 }
@@ -1981,28 +2023,10 @@ export async function giveMonsterStartingGold(monster, amount) {
 }
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
-const PM_AIR_ELEMENTAL_GROWTH = 154;
-const PM_FIRE_ELEMENTAL_GROWTH = 155;
-const PM_EARTH_ELEMENTAL_GROWTH = 156;
-const PM_WATER_ELEMENTAL_GROWTH = 157;
 function sameLevel(left, right) {
     return !!left && !!right
         && left.dnum === right.dnum
         && left.dlevel === right.dlevel;
-}
-// C makemon.c:is_home_elemental() against an explicit state; grow_up()
-// honors the caller's state rather than the global game.
-function isHomeElementalAt(mnum, state) {
-    const level = state.u?.uz;
-    if (mnum === PM_AIR_ELEMENTAL_GROWTH)
-        return sameLevel(level, state.air_level);
-    if (mnum === PM_FIRE_ELEMENTAL_GROWTH)
-        return sameLevel(level, state.fire_level);
-    if (mnum === PM_EARTH_ELEMENTAL_GROWTH)
-        return sameLevel(level, state.earth_level);
-    if (mnum === PM_WATER_ELEMENTAL_GROWTH)
-        return sameLevel(level, state.water_level);
-    return false;
 }
 function targetSpecies(mnum, killedMonster) {
     if (!killedMonster && mnum === PM_KILLER_BEE)
@@ -2048,7 +2072,7 @@ function growthFromKill(monster, victim, state, rollOne, random, calls) {
         hpThreshold = (Math.trunc((monster.mhpmax ?? 1) / 10) + 1)
             * 10 - 1;
     }
-    else if (level && isHomeElementalAt(monster.mnum, state)) {
+    else if (level && isHomeElemental(monster.mnum, state)) {
         hpThreshold *= 3;
     }
     const victimLevel = victim.m_lev ?? MONSTER_LEVEL[victim.mnum] ?? 0;
@@ -2170,48 +2194,6 @@ export function finishMonsterGrowth(monster, growth) {
     }
     growth.applied = true;
     return true;
-}
-// C makemon.c:makemon() allocates requested role records without appointing
-// the monster to that role. The caller fills them before setting role flags.
-export function allocateMonsterBirthExtensions(monster, flags) {
-    if (!(flags & (MM_EDOG | MM_EGD | MM_EMIN | MM_EPRI | MM_ESHK)))
-        return;
-    monster.mcorpsenm = -1;
-    // Native allocation precedes next_ident(), while the actor's ID is zero.
-    const parentmid = 0;
-    if (flags & MM_EDOG) {
-        monster.edog = {
-            parentmid, droptime: 0, dropdist: 0, apport: 0, whistletime: 0,
-            hungrytime: 0, ogoal: { x: 0, y: 0 }, abuse: 0, revivals: 0,
-            mhpmax_penalty: 0, killed_by_u: 0,
-        };
-    }
-    if (flags & MM_EMIN)
-        ensureMinionData(monster).parentmid = parentmid;
-    if (flags & MM_EPRI) {
-        monster.epri = {
-            parentmid, shroom: 0, shralign: 0, shrpos: { x: 0, y: 0 },
-            shrlevel: { dnum: 0, dlevel: 0 }, cheapskate_count: 0,
-            intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0,
-        };
-    }
-    if (flags & MM_ESHK) {
-        monster.eshk = {
-            parentmid, shoproom: 0, shoptype: 0, shoplevel: { dnum: 0, dlevel: 0 },
-            shd: { x: 0, y: 0 }, shk: { x: 0, y: 0 }, shknam: '',
-            bill: [], billct: 0, billUnavailable: true,
-            credit: 0, debit: 0, loan: 0, robbed: 0, surcharge: 0,
-            following: 0, customer: '', visitct: 0, dismiss_kops: false,
-            break_seq: 0, seq_peaceful: 0,
-        };
-    }
-    if (flags & MM_EGD) {
-        monster._egd = {
-            gdlevel: { dnum: 0, dlevel: 0 }, gddone: 0,
-            ogx: 0, ogy: 0, gdx: 0, gdy: 0, vault: null,
-            warncnt: 0, fcbeg: 0, fcend: 0, fakecorr: [], dropgoldcnt: 0,
-        };
-    }
 }
 // ---------------------------------------------------------------------------
 // Runtime completion of a monster birth.

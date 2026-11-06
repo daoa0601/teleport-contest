@@ -26,7 +26,7 @@ import { monsterAtPosition } from './steed.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { healMonster, monsterIndexByName, speciesWasGenocided, mnearto, wakeMonstersNearWithMessages } from './mon.js';
 import { randomMonsterRelocation, relocateMonsterTo, monsterTeleportRestricted } from './teleport.js';
-import { deliverCommonQuestInsult } from './questpgr.js';
+import { comPager } from './questpgr.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { cansee } from './vision.js';
 import { expelHero } from './mhitu.js';
@@ -261,9 +261,41 @@ const WANTS_BELL = 2;
 const WANTS_BOOK = 4;
 const WANTS_CANDELABRUM = 8;
 const WANTS_ARTIFACT = 16;
-// C wizard.c:strategy(): install the chosen strategy and goal.
+// C wizard.c:strategy(): the health threshold, the want-mask priority, and
+// target_on()'s pick, then the strategy word installed on the monster.
 export function chooseCovetousStrategy(monster, state) {
-    const { strategy, goal } = decideCovetousStrategy(monster, state);
+    let goal;
+    let strategy;
+    if (shopkeeperInOwnShop(monster, state) || priestIsInOwnTemple(monster, state)) {
+        strategy = { kind: 'harass' };
+    }
+    else {
+        const health = Math.trunc(monster.mhp * 3 / monster.mhpmax);
+        if (health < 1 || health > 3
+            || health === 1 && MONSTER_NAME[monster.mnum] !== 'Wizard of Yendor') {
+            strategy = { kind: 'heal' };
+        }
+        else {
+            const masks = state.context.made_amulet ? [WANTS_AMULET] : [];
+            masks.push(...(state.u.uevent?.invoked
+                ? [WANTS_ARTIFACT, WANTS_BOOK, WANTS_BELL, WANTS_CANDELABRUM]
+                : [WANTS_BOOK, WANTS_BELL, WANTS_CANDELABRUM, WANTS_ARTIFACT]));
+            let chosen = null;
+            for (const mask of masks) {
+                // strategy() selects individual targets from the raw wants word.
+                if (!(questMonsterFlags3(monster.mnum, state) & mask))
+                    continue;
+                const target = findCovetousTarget(monster, mask, state);
+                if (target) {
+                    chosen = { kind: 'target', target };
+                    goal = { ...target.position };
+                    break;
+                }
+                goal = { x: 0, y: 0 };
+            }
+            strategy = chosen ?? { kind: health < 3 ? 'heal' : 'harass' };
+        }
+    }
     if (goal)
         monster.mgoal = goal;
     const target = strategy.kind === 'target' ? strategy.target : null;
@@ -272,30 +304,6 @@ export function chooseCovetousStrategy(monster, state) {
             : target.kind === 'floor' ? STRAT_GROUND : STRAT_MONSTR) : 0;
     monster.mstrategy = ((monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG)) | flags;
     return strategy;
-}
-// C wizard.c:strategy(): health thresholds and artifact priorities.
-function decideCovetousStrategy(monster, state) {
-    if (shopkeeperInOwnShop(monster, state) || priestIsInOwnTemple(monster, state))
-        return { strategy: { kind: 'harass' }, goal: undefined };
-    const health = Math.trunc(monster.mhp * 3 / monster.mhpmax);
-    if (health < 1 || health > 3 || health === 1 && MONSTER_NAME[monster.mnum] !== 'Wizard of Yendor')
-        return { strategy: { kind: 'heal' }, goal: undefined };
-    const masks = state.context.made_amulet ? [WANTS_AMULET] : [];
-    masks.push(...(state.u.uevent?.invoked
-        ? [WANTS_ARTIFACT, WANTS_BOOK, WANTS_BELL, WANTS_CANDELABRUM]
-        : [WANTS_BOOK, WANTS_BELL, WANTS_CANDELABRUM, WANTS_ARTIFACT]));
-    let goal;
-    for (const mask of masks) {
-        // C wizard.c:strategy() selects individual targets from the raw wants word.
-        if (!(questMonsterFlags3(monster.mnum, state) & mask))
-            continue;
-        const target = findCovetousTarget(monster, mask, state);
-        if (target) {
-            return { strategy: { kind: 'target', target }, goal: { ...target.position } };
-        }
-        goal = { x: 0, y: 0 };
-    }
-    return { strategy: { kind: health < 3 ? 'heal' : 'harass' }, goal };
 }
 // C wizard.c:target_on()
 // Also C wizard.c:mon_has_arti(): inlined here for the seeking monster.
@@ -470,13 +478,13 @@ export async function publishMonsterCuss(monster, state, random = rn2) {
     }
     else if (minion && monsterAlignmentType(monster) === 1
         && !(monster.isminion && extension?.renegade)) {
-        await deliverCommonQuestInsult('angel_cuss', state);
+        await comPager('angel_cuss', state);
     }
     else if (!random(minion ? 100 : 5)) {
         await plineWithContinuation(`${monsterName(monster, { capitalized: true, state })} casts aspersions on your ancestry.`);
     }
     else {
-        await deliverCommonQuestInsult('demon_cuss', state);
+        await comPager('demon_cuss', state);
     }
     await wakeMonstersNearWithMessages(monster.mx, monster.my, 25, state);
 }

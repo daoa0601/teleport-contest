@@ -11,7 +11,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { DungeonBranch, DungeonLocation, SpecialLevelDescriptor } from './dungeon_types.js';
-import { ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showMultiSelectWindow, showTextWindow } from './windows.js';
+import { ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showTextMenuOverlay, showMultiSelectWindow, showTextWindow } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible, customizedGlyphs } from './display.js';
@@ -19,7 +19,7 @@ import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { getLine, promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery, yn_function } from './cmd.js';
-import { promptDirection, readDirectionKey } from './cmd.js';
+import { promptDirection } from './cmd.js';
 import { visibleCommandKey, setMulti, makemapPrepost } from './cmd.js';
 import {
     inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription,
@@ -49,10 +49,9 @@ import { exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip, checkSpecialRoom } from './hack.js';
 import { depth, dungeonDepth, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
-import { mksobj, unlinkObject, deallocateObject } from './mkobj.js';
-import { AMULET_OF_YENDOR } from './object_data.js';
-import { recordObjectEncounter, objectTypeKnown } from './o_init.js';
-import { addInventoryItem, reassignInventoryLetters } from './invent.js';
+import { unlinkObject, deallocateObject } from './mkobj.js';
+import { objectTypeKnown } from './o_init.js';
+import { reassignInventoryLetters } from './invent.js';
 import { objectNeedsFullIdentification, observeObjectForNaming } from './objnam.js';
 import { setPaidShopkeeper } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
@@ -234,7 +233,7 @@ export async function wizTelekinesis(): Promise<void> {
         const monster = monsterAtPosition(game.level, cursor.x, cursor.y);
         const atHero = cursor.x === game.u.ux && cursor.y === game.u.uy;
         if (!(monster && canSpotMonster(monster)) && !atHero) continue;
-        const direction = await promptDirection((_message, retry) => readDirectionKey('which direction? ', retry));
+        const direction = await promptDirection('which direction? ');
         if (!direction) break;
         if (monster) {
             await hurtleMonster(monster, direction.dx, direction.dy, 6, {
@@ -262,33 +261,6 @@ export async function wizTelekinesis(): Promise<void> {
     game.context.move = 0;
 }
 
-
-
-// Part of C teleport.c:level_tele(): its wizard-menu entry into the
-// Elemental Planes grants the real Amulet before deferred_goto() starts.
-// Object construction, inventory identity, and prinv() precede
-// getbones()/mklev().  Destination placement finishes before tty asks
-// for acknowledgement.
-async function endgamePrerequisite(destination: DungeonLocation) {
-    if (!In_endgame(destination) || In_endgame(game.u?.uz)
-        || game.u?.uhave?.amulet) return;
-    const amulet = await addInventoryItem(
-        await mksobj(AMULET_OF_YENDOR, true, false),
-    );
-    // teleport.c prints the grant with prinv(); its doname()->xname() path
-    // observes the visible object and appends it to the Amulet disco[] class
-    // before the destination transaction begins.
-    recordObjectEncounter(amulet.otyp);
-    if (!game.u.uhave) game.u.uhave = {};
-    game.u.uhave.amulet = 1;
-    const message = `Endgame prerequisite: ${
-        amulet.invlet
-    } - the Amulet of Yendor.`;
-    await pline(message);
-}
-
-
-
 // C wizcmds.c:wiz_where(): the #wizwhere text page over the complete live
 // graph from dungeon.c:print_dungeon(FALSE), unlike #overview's
 // visited-level history and #levelteleport's menu projection.
@@ -304,17 +276,6 @@ export async function wizWhere() {
 // svn.nhuuid stays empty and the native game prints an empty identifier.
 export async function wizShowNhuuid() {
     await pline('The NHUUID for this game is {  }.');
-}
-
-// C dungeon.c:print_dungeon(TRUE), with the endgame entry prerequisite.
-export async function chooseWizardLevelDestination() {
-    const { rows, choices } = printDungeon(true);
-    const destination = await showPagedPickOneMenu({
-        rows, choices, prompt: 'Level teleport to where:',
-    });
-    if (!destination) return null;
-    await endgamePrerequisite(destination);
-    return { destination };
 }
 
 // C wizcmds.c:wiz_level_tele().

@@ -224,8 +224,9 @@ async function dropMonsterProjectile(shot: MonsterProjectileShot, hit: boolean, 
     if (state._thrownObject === object) state._thrownObject = null;
 }
 
-// C mthrowu.c:monmulti(). Role and launcher multipliers decide how many
-// missiles leave the source's hands in one volley.
+// Part of C mthrowu.c:monmulti(): the multishot_class_bonus() step.  The
+// hero-side volley uses dothrow.ts' multishotClassBonus() over role keys;
+// C passes one pm index to both.
 function monsterClassVolleyBonus(monster: Monster, missile: GameObject, launcher: GameObject | null | undefined) {
     const skill = objectSkill(missile.otyp);
     if (monster.mnum === PM_CAVE_DWELLER)
@@ -571,25 +572,6 @@ export function monsterProjectileDisplay(object: GameObject, state: PlayingGameS
     };
 }
 
-// C mthrowu.c:m_throw(). Detaches one missile from the thrower and flies it
-// along its line; each projectile completes its visible flight and world
-// effects before the next is detached.
-async function detachMissile(source: Monster, object: GameObject, state: PlayingGameState, publish: MessagePublisher): Promise<GameObject> {
-    if (object.quan > 1) {
-        const split = splitObjectStack(object, 1, state);
-        if (!split) throw new Error(`Cannot detach projectile from object ${object.o_id}`);
-        return unlinkObject(split, state);
-    }
-    if (monsterWieldedWeapon(source) === object)
-        await unwieldMonsterWeapon(source, state, { weapon: object, publish });
-    if (object.where === 'minvent') unlinkMonsterObject(source, object);
-    if (object.where !== 'free') throw new Error('A monster projectile must be free or carried by its source');
-    object.owornmask = 0;
-    object.worn = false;
-    object.wielded = false;
-    return object;
-}
-
 async function flightBlocked(object: GameObject, dx: number, dy: number, forceHit: boolean, {
     state, publish, random,
 }: FlightContext): Promise<boolean> {
@@ -606,6 +588,9 @@ async function flightBlocked(object: GameObject, dx: number, dy: number, forceHi
     return bars.blocked || bars.heroDied;
 }
 
+// C mthrowu.c:m_throw(): flies one detached missile along its line; each
+// projectile completes its visible flight and world effects before the
+// next is detached.
 export async function throwMonsterProjectile(source: Monster, object: GameObject, {
     state = game, dx, dy, range, target = null, archer = null,
     random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, volley,
@@ -613,7 +598,23 @@ export async function throwMonsterProjectile(source: Monster, object: GameObject
     requirePlayingGame(state);
     const tethered = object === monsterWieldedWeapon(source) && returningWeaponRangeSquared(object) !== null;
     const launched = launcherMatchesAmmo(object, monsterWieldedWeapon(source));
-    const missile = await detachMissile(source, object, state, publish);
+    // m_throw() detaches one missile from the thrower: a stack loses one
+    // piece, a wielded single weapon is unwielded, a carried one unlinked.
+    let missile: GameObject;
+    if (object.quan > 1) {
+        const split = splitObjectStack(object, 1, state);
+        if (!split) throw new Error(`Cannot detach projectile from object ${object.o_id}`);
+        missile = unlinkObject(split, state);
+    } else {
+        if (monsterWieldedWeapon(source) === object)
+            await unwieldMonsterWeapon(source, state, { weapon: object, publish });
+        if (object.where === 'minvent') unlinkMonsterObject(source, object);
+        if (object.where !== 'free') throw new Error('A monster projectile must be free or carried by its source');
+        object.owornmask = 0;
+        object.worn = false;
+        object.wielded = false;
+        missile = object;
+    }
     state._thrownObject = missile;
     state.bhitpos = { x: source.mx, y: source.my };
     state.notonhead = false;
@@ -841,9 +842,10 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
     if (cansee(x, y)) await newsym(x, y);
 }
 
-// C mthrowu.c:thrwmm() and thrwmu() open with the same weapon_check swap.
-// Switching to a launcher consumes this action. If no launcher is needed,
-// or the correct launcher is already wielded, the monster may shoot now.
+// Part of C mthrowu.c:thrwmm() and thrwmu(): both open with the same
+// weapon_check swap.  Switching to a launcher consumes this action. If no
+// launcher is needed, or the correct launcher is already wielded, the
+// monster may shoot now.
 export async function readyRangedMonsterWeapon(monster: Monster, state: GameState = game) {
     const current = monsterWieldedWeapon(monster);
     if (monster?.weaponCheck !== NEED_WEAPON && current) return null;
@@ -868,7 +870,8 @@ export async function throwMonsterWeaponAtMonster(
     return { ...await launchVolley(source, weapon, target, state, options), targetKind: 'monster', aimedAt: target };
 }
 
-// C mthrowu.c:thrwmm(). A weapon change spends the slot without a hit.
+// Part of C mhitm.c:mattackm(): its AT_WEAP slot calls thrwmm(); a weapon
+// change spends the slot without a hit.
 export async function resolveMonsterCombatThrow(source: Monster, target: Monster, {
     state, random, rollOne, publish,
 }: { state: GameState; random?: typeof rn2; rollOne?: typeof rnd; publish?: MessagePublisher }): Promise<{
@@ -1210,7 +1213,7 @@ export async function attackHeroWithPolearm(monster: Monster, weapon: GameObject
     if (!result.died) await stopHeroOccupation(state, publish);
 }
 
-// C mthrowu.c:m_throw() and thrwmu() end in a throw at the hero.
+// Part of C mthrowu.c:thrwmu(): thrwmu ends in a hero-targeted monshoot().
 export async function throwMonsterWeaponAtHero(
     source: Monster, state: GameState, weapon: GameObject, options: ProjectileOptions = {},
 ): Promise<HeroMonsterWeaponVolley> {

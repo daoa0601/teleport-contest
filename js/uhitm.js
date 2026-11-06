@@ -17,7 +17,7 @@ import { isok } from './cmd.js';
 import { specialContactDamage } from './contact_damage.js';
 import { isPoolAt } from './dbridge.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, glyphAt, map_invisible, map_location, newsym, senseWithTelepathy, shieldeff, show_glyph_cell, transientMonsterGlyph, unmap_invisible } from './display.js';
-import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName, randomDisplayMonsterSubject } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName, visibleMonsterSubject } from './do_name.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeAction, objectIsHardHelmet, some_armor } from './do_wear.js';
 import { abusePet, tameMonster } from './dog.js';
 import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, willMonsterHurtle } from './dothrow.js';
@@ -4419,8 +4419,7 @@ export async function mhitmAdSton(call) {
             return statusContinueResult(0);
         const spotted = canSpotMonster(attacker);
         const hallucinating = heroIsHallucinating(state);
-        const subject = () => !spotted ? 'It'
-            : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(attacker);
+        const subject = () => !spotted ? 'It' : visibleMonsterSubject(attacker);
         // C mon_nam(magr): the mid-sentence name; a given name stays as typed
         // instead of being decapitalized from the sentence subject.
         const target = () => monsterName(attacker, { state });

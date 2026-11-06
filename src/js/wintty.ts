@@ -991,8 +991,9 @@ export function writeMapCell(display: GameDisplay, x: number, y: number,
         loc.disp_attr ?? 0, frameColor, byteGlyph);
 }
 
-// C wintty.c:tty_clear_nhwindow(WIN_MAP): clear the map rows of the
-// physical screen.
+// Part of C win/tty/wintty.c:tty_clear_nhwindow(): the NHW_MAP/NHW_BASE
+// term_clear_screen() case, which just clears the map rows of the physical
+// screen and flags the bottom lines for redraw.
 export function clearMapDisplay() {
     for (let row = 1; row <= ROWNO; row++) game.nhDisplay?.clearRow(row);
 }

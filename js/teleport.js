@@ -1234,25 +1234,25 @@ export async function askTeleportDestination({ onPrompt = null } = {}) {
     game._pending_message = '';
     return destination;
 }
-// C teleport.c:dotelecmd()
-// dotele()/teleds(), getpos.c getpos(), and priest.c intemple(): a
+// Part of C teleport.c:dotelecmd(): dotele()'s command invocation —
+// dotele()/teleds() with getpos.c getpos() and priest.c intemple(): a
 // successful position teleport returns ECMD_TIME.  Its first getpos use
 // still owns the shared Lua tutorial, while the destination room
 // separately owns entry effects after relocation.
-export async function teleportAtWillCommand(ignoreRestrictions) {
+const teleportAtWill = async (ignoreRestrictions) => {
     const result = await teleportHeroAtWill({
         ignoreRestrictions, chooseDestination: askTeleportDestination,
     });
     game.context.move = Number(result.spentTime);
-}
+};
 // C teleport.c:dotelecmd(). The #teleport command: normal mode ignores an
 // 'm' prefix, while wizard mode picks among teleport modes around dotele()
 // (spell.c:tport_spell() inlined in the switch's save/restore).
-export async function dotelecmd(teleport = teleportAtWillCommand) {
+export async function dotelecmd() {
     requirePlayingGame(game);
     // normal mode; ignore 'm' prefix if it was given
     if (!game.flags.debug) {
-        await teleport(false);
+        await teleportAtWill(false);
         return;
     }
     let mode;
@@ -1285,7 +1285,7 @@ export async function dotelecmd(teleport = teleportAtWillCommand) {
         mode = 'w';
     }
     if (mode === 'w') {
-        await teleport(true);
+        await teleportAtWill(true);
         return;
     }
     // the tmode switch: 'n' confers an intrinsic (I_SPECIAL), 's' and 't'
@@ -1321,7 +1321,7 @@ export async function dotelecmd(teleport = teleportAtWillCommand) {
             spells.push(createMemorizedSpell(SPE_TELEPORT_AWAY, 20000, game));
             added = true;
         }
-        await teleport(false);
+        await teleportAtWill(false);
     }
     finally {
         if (added)

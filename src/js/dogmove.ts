@@ -21,7 +21,7 @@ import type {
     AttackTuple, MonsterCallLog, MonsterCombatResult, MonsterMovement, MonsterMovementAction, RandomBelow,
     RollDice, RollOne,
 } from './monster_action_types.js';
-import type { PetRangedSelection, PetRangedTarget, PetTargetOptions } from './pet_ranged_types.js';
+import type { PetRangedTarget, PetTargetOptions } from './pet_ranged_types.js';
 import {
     monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon,
     setMonsterApparentHeroPosition,
@@ -88,20 +88,6 @@ function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);
 }
 
-// C dogmove.c:pet_ranged_attk(). Selection and hunger precede the shared
-// monster attack; only a forced attempt without an admitted target makes noise.
-export function selectPetRangedTarget(
-    pet: Monster,
-    state: PlayingGameState,
-    { forced = false, random = rn2, rollOne = rnd }: PetTargetOptions = {},
-): PetRangedSelection {
-    const hungry = !pet.isminion && state.moves > (pet.edog?.hungrytime ?? 0) + DOG_HUNGRY;
-    const target = bestPetRangedTarget(pet, state, { forced, random, rollOne });
-    if (!target || (hungry && random(5) !== 0)) {
-        return { target: null, makeNoise: forced };
-    }
-    return { target, makeNoise: false };
-}
 
 // C dogmove.c:best_target().
 export function bestPetRangedTarget(
@@ -721,8 +707,10 @@ export interface PetRangedAttackResult {
     counterattack?: MonsterCombatResult;
 }
 
-// C dogmove.c:pet_ranged_attk(). Selection precedes one complete mattackm or
-// mattacku action; only the original target can answer it with a counterattack.
+// C dogmove.c:pet_ranged_attk().  How hungry the pet is and the
+// best_target() pick precede one complete mattackm or mattacku action; only
+// the original target can answer it with a counterattack, and only a forced
+// attempt without an admitted target makes noise (domonnoise).
 export async function performPetRangedAttack(
     pet: Monster, state: PlayingGameState, {
         forced = false, random = rn2, rollDice = d, rollOne = rnd,
@@ -730,13 +718,18 @@ export async function performPetRangedAttack(
     }: PetRangedAttackOptions = {},
 ): Promise<PetRangedAttackResult> {
     requireLiveGame(state);
-    const selection = selectPetRangedTarget(pet, state, {
-        forced, random: range => recordRandom(random, calls, range),
+    /* How hungry is the pet? */
+    const hungry = !pet.isminion && state.moves > (pet.edog?.hungrytime ?? 0) + DOG_HUNGRY;
+    /* Identify the best target in a straight line from the pet; if there is
+     * such a target, we'll let the pet attempt an attack. */
+    const target = bestPetRangedTarget(pet, state, {
+        forced,
+        random: range => recordRandom(random, calls, range),
         rollOne: sides => { calls.push(`rnd(${sides})`); return rollOne(sides); },
     });
-    const target = selection.target;
-    if (!target) {
-        if (selection.makeNoise) await publishMonsterNoise(pet, state);
+    /* Hungry pets are unlikely to use breath/spit attacks */
+    if (!target || (hungry && recordRandom(random, calls, 5) !== 0)) {
+        if (forced) await publishMonsterNoise(pet, state);
         return { status: MMOVE_NOTHING, heroDied: !!state.program_state.gameover };
     }
     if (!('mnum' in target)) {
@@ -790,149 +783,6 @@ async function petAttacksMonster(
     );
 }
 
-// dogmove.c:dog_move()'s plan through the newdogpos section.  `food` holds
-// the do_eat object; `dropped` carries dog_invent()'s release for callers
-// that report it on the movement record.
-interface PetMovePlan {
-    oldx: number;
-    oldy: number;
-    nix: number;
-    niy: number;
-    selectedInfo: number;
-    reluctant: boolean;
-    dropped?: GameObject[] | undefined;
-    food: GameObject | null;
-}
-
-// C dogmove.c:dog_move() newdogpos: the ALLOW_U mattacku(), the swap to the
-// chosen square, the reluctant-step line, mon_track_add(), dog_eat(), and
-// the leash kludge for a pet which stayed in place.  Every message here is
-// awaited in C order; postmov() follows only after this returns.
-async function finishPetMovePlan(
-    monster: Monster,
-    state: PlayingGameState,
-    plan: PetMovePlan,
-    random: RandomBelow,
-    rollDice: RollDice,
-    rollOne: RollOne,
-    calls: MonsterCallLog,
-): Promise<MonsterMovement> {
-    const { oldx, oldy, selectedInfo, reluctant, dropped, food } = plan;
-    let { nix, niy } = plan;
-    if (selectedInfo & ALLOW_U) {
-        if (monster.mleashed) {
-            const pronoun =
-                is_neuter(monster.mnum)
-                    ? 'its'
-                    : monster.female
-                      ? 'her'
-                      : 'his';
-            const subject = canSpotMonster(monster) ? monsterSentenceSubject(monster) : 'It';
-            await plineWithContinuation(`${subject} breaks loose of ${pronoun} leash!`);
-            await releaseMonsterLeash(monster, false, { state });
-        }
-        // C dog_move() runs mattacku() to completion here.  The hero-contact
-        // messages are presented with the turn driver's contact deferral
-        // already closed, exactly as the presenter did for the deferred flag.
-        const attack = await mattacku(monster,
-        state,
-        random,
-        rollOne,
-        rollDice,
-        calls,);
-        const heroAction: MonsterMovementAction = {
-            monster,
-            calls,
-            movement: {
-                oldx,
-                oldy,
-                x: oldx,
-                y: oldy,
-                moved: false,
-                ...attack,
-            },
-        };
-        const previousDeferral = state._deferVisibleMonsterContact;
-        state._deferVisibleMonsterContact = false;
-        let heroDied = false;
-        try {
-            heroDied = (await presentMonsterAttackEffects(
-                heroAction,
-                state,
-                { random, rollDice, rollOne },
-            )).heroDied;
-        } finally {
-            state._deferVisibleMonsterContact = previousDeferral;
-        }
-        const offensive = heroAction.movement.heroAttackSequence?.offensive;
-        const attackDeath = heroAction.movement.heroAttackResult === 1
-            || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
-        const petDied = monster.dead || monster.mhp <= 0;
-        return {
-            oldx,
-            oldy,
-            x: oldx,
-            y: oldy,
-            moved: false,
-            heroAttackResult: attackDeath || petDied ? 1 : 0,
-            ...(heroDied ? { heroDied: true } : {}),
-            actionCompleted: true,
-            postMoveStatus: petDied ? MMOVE_DIED : MMOVE_DONE,
-            movementStage: 'postmov',
-            ...(dropped ? { dropped } : {}),
-        };
-    }
-
-    if (nix !== oldx || niy !== oldy) {
-        updateMonsterRegions(monster, state, { x: nix, y: niy });
-        if (await readyMonsterDiggingWeapon(monster, state, nix, niy)) {
-            return {
-                oldx, oldy, x: oldx, y: oldy, moved: false,
-                postMoveStatus: MMOVE_NOTHING, movementStage: 'postmov',
-                ...(dropped ? { dropped } : {}),
-            };
-        }
-    }
-    let moved = false;
-    if (nix !== oldx || niy !== oldy) {
-        // C dog_move() samples canseemon() before the swap so the reluctant
-        // line can still refer to a pet that was visible before the move.
-        const wasseen = canSeeMonster(monster);
-        removeMonsterFromMapAt(oldx, oldy, state);
-        await placeMonsterOnMap(monster, nix, niy, state);
-        if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
-        monster.mtrack.unshift({ x: oldx, y: oldy });
-        monster.mtrack.length = Math.min(monster.mtrack.length, 4);
-        if (reluctant && (wasseen || canSeeMonster(monster))) {
-            await plineWithContinuation(await reluctantPetMessage(monster, { x: nix, y: niy }));
-        }
-        moved = true;
-    } else {
-        await pullLeashedPetCloser(monster, state, random, calls);
-        nix = monster.mx;
-        niy = monster.my;
-    }
-    let died = false;
-    if (food) {
-        // C dog_move() calls dog_eat() only after mon_track_add().
-        const meal = beginPetEating(monster, food, { x: oldx, y: oldy }, state);
-        await finishPetEating(monster, meal, state, random, calls);
-        if (monster.dead || monster.mhp <= 0) died = true;
-    }
-    const movement: MonsterMovement = {
-        oldx,
-        oldy,
-        x: nix,
-        y: niy,
-        moved,
-        postMoveStatus: died ? MMOVE_DIED : MMOVE_MOVED,
-        movementStage: 'postmov',
-        ...(dropped ? { dropped } : {}),
-    };
-    if (movement.moved && reluctant) movement.reluctant = true;
-    return movement;
-}
-
 // C dog_move() keeps a leashed pet close even after an action which left it
 // in place. Its fallback probes use dirtocoord's map coordinates as written.
 async function pullLeashedPetCloser(
@@ -982,6 +832,131 @@ export async function movePet(
 ): Promise<MonsterMovement> {
     const oldx = monster.mx;
     const oldy = monster.my;
+    let dropped: GameObject[] | undefined;
+    // C dog_move()'s newdogpos label, as an inner function so the do_eat
+    // goto and the loop fall-through land in one place: the ALLOW_U
+    // mattacku(), the swap to the chosen square, the reluctant-step line,
+    // mon_track_add(), dog_eat(), and the leash kludge for a pet which
+    // stayed in place.  `food` holds the do_eat object; `dropped` carries
+    // dog_invent()'s release for callers that report it on the movement
+    // record.  Every message here is awaited in C order; postmov() follows
+    // only after this returns.
+    const newdogpos = async (
+        nix: number, niy: number, selectedInfo: number, reluctant: boolean, food: GameObject | null,
+    ): Promise<MonsterMovement> => {
+        if (selectedInfo & ALLOW_U) {
+            if (monster.mleashed) {
+                const pronoun =
+                    is_neuter(monster.mnum)
+                        ? 'its'
+                        : monster.female
+                          ? 'her'
+                          : 'his';
+                const subject = canSpotMonster(monster) ? monsterSentenceSubject(monster) : 'It';
+                await plineWithContinuation(`${subject} breaks loose of ${pronoun} leash!`);
+                await releaseMonsterLeash(monster, false, { state });
+            }
+            // C dog_move() runs mattacku() to completion here.  The hero-contact
+            // messages are presented with the turn driver's contact deferral
+            // already closed, exactly as the presenter did for the deferred flag.
+            const attack = await mattacku(monster,
+            state,
+            random,
+            rollOne,
+            rollDice,
+            calls,);
+            const heroAction: MonsterMovementAction = {
+                monster,
+                calls,
+                movement: {
+                    oldx,
+                    oldy,
+                    x: oldx,
+                    y: oldy,
+                    moved: false,
+                    ...attack,
+                },
+            };
+            const previousDeferral = state._deferVisibleMonsterContact;
+            state._deferVisibleMonsterContact = false;
+            let heroDied = false;
+            try {
+                heroDied = (await presentMonsterAttackEffects(
+                    heroAction,
+                    state,
+                    { random, rollDice, rollOne },
+                )).heroDied;
+            } finally {
+                state._deferVisibleMonsterContact = previousDeferral;
+            }
+            const offensive = heroAction.movement.heroAttackSequence?.offensive;
+            const attackDeath = heroAction.movement.heroAttackResult === 1
+                || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
+            const petDied = monster.dead || monster.mhp <= 0;
+            return {
+                oldx,
+                oldy,
+                x: oldx,
+                y: oldy,
+                moved: false,
+                heroAttackResult: attackDeath || petDied ? 1 : 0,
+                ...(heroDied ? { heroDied: true } : {}),
+                actionCompleted: true,
+                postMoveStatus: petDied ? MMOVE_DIED : MMOVE_DONE,
+                movementStage: 'postmov',
+                ...(dropped ? { dropped } : {}),
+            };
+        }
+
+        if (nix !== oldx || niy !== oldy) {
+            updateMonsterRegions(monster, state, { x: nix, y: niy });
+            if (await readyMonsterDiggingWeapon(monster, state, nix, niy)) {
+                return {
+                    oldx, oldy, x: oldx, y: oldy, moved: false,
+                    postMoveStatus: MMOVE_NOTHING, movementStage: 'postmov',
+                    ...(dropped ? { dropped } : {}),
+                };
+            }
+        }
+        let moved = false;
+        if (nix !== oldx || niy !== oldy) {
+            // C dog_move() samples canseemon() before the swap so the reluctant
+            // line can still refer to a pet that was visible before the move.
+            const wasseen = canSeeMonster(monster);
+            removeMonsterFromMapAt(oldx, oldy, state);
+            await placeMonsterOnMap(monster, nix, niy, state);
+            if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
+            monster.mtrack.unshift({ x: oldx, y: oldy });
+            monster.mtrack.length = Math.min(monster.mtrack.length, 4);
+            if (reluctant && (wasseen || canSeeMonster(monster))) {
+                await plineWithContinuation(await reluctantPetMessage(monster, { x: nix, y: niy }));
+            }
+            moved = true;
+        } else {
+            await pullLeashedPetCloser(monster, state, random, calls);
+            nix = monster.mx;
+            niy = monster.my;
+        }
+        let died = false;
+        if (food) {
+            // C dog_move() calls dog_eat() only after mon_track_add().
+            const meal = beginPetEating(monster, food, { x: oldx, y: oldy }, state);
+            await finishPetEating(monster, meal, state, random, calls);
+            if (monster.dead || monster.mhp <= 0) died = true;
+        }
+        const movement: MonsterMovement = {
+            oldx,
+            oldy,
+            x: nix,
+            y: niy,
+            moved,
+            postMoveStatus: died ? MMOVE_DIED : MMOVE_MOVED,
+            movementStage: 'postmov',
+            ...(dropped ? { dropped } : {}),
+        };
+        if (movement.moved && reluctant) movement.reluctant = true;
+        return movement;
+    };
     const masterDistance = dist2(oldx, oldy, state.u.ux, state.u.uy);
     if (monster.edog && await applyPetHunger(monster, state)) {
         return {
@@ -1016,7 +991,6 @@ export async function movePet(
     // jumps to newdogpos without choosing a destination.
     let nix = oldx;
     let niy = oldy;
-    let dropped: GameObject[] | undefined;
     if (monster.edog) {
         const inventory = await dogInvent(monster, state, random, rollDice, rollOne, calls);
         dropped = inventory.dropped;
@@ -1031,16 +1005,7 @@ export async function movePet(
         if (inventory.result === 1) {
             // The meal spent the move; newdogpos can only apply the leash
             // kludge to draw the pet back toward its master.
-            return finishPetMovePlan(monster, state, {
-                oldx,
-                oldy,
-                nix,
-                niy,
-                selectedInfo: 0,
-                reluctant: false,
-                dropped,
-                food: null,
-            }, random, rollDice, rollOne, calls);
+            return newdogpos(nix, niy, 0, false, null);
         }
     }
     const goal = dogGoal(monster, state, random, calls);
@@ -1174,20 +1139,11 @@ export async function movePet(
         }
         if (edible) {
             // C dog_move()'s do_eat goto jumps to newdogpos with the food
-            // square selected: finishPetMovePlan() re-tests ALLOW_U (a
-            // conflicted pet called to its master's square attacks the hero
-            // instead of stepping onto the food beneath the hero), moves,
-            // then runs dog_eat() after mon_track_add().
-            return finishPetMovePlan(monster, state, {
-                oldx,
-                oldy,
-                nix: nx,
-                niy: ny,
-                selectedInfo: candidate.info,
-                reluctant: false,
-                dropped,
-                food: edible,
-            }, random, rollDice, rollOne, calls);
+            // square selected: the tail re-tests ALLOW_U (a conflicted pet
+            // called to its master's square attacks the hero instead of
+            // stepping onto the food beneath the hero), moves, then runs
+            // dog_eat() after mon_track_add().
+            return newdogpos(nx, ny, candidate.info, false, edible);
         }
         if (cursed && !monster.mleashed && uncursedCount > 0
             && recordRandom(random, calls, 13 * uncursedCount))
@@ -1245,16 +1201,7 @@ export async function movePet(
             ...(dropped ? { dropped } : {}),
         };
     }
-    return finishPetMovePlan(monster, state, {
-        oldx,
-        oldy,
-        nix,
-        niy,
-        selectedInfo,
-        reluctant,
-        dropped,
-        food: null,
-    }, random, rollDice, rollOne, calls);
+    return newdogpos(nix, niy, selectedInfo, reluctant, null);
 }
 
 async function distantMonsterObjectName(object: GameObject): Promise<string> {

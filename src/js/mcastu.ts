@@ -127,7 +127,54 @@ export async function castmuSpellEffect(
     attack.damage = dmg;
     const type = attack.damageType;
     if (type === AD_FIRE || type === AD_COLD || type === AD_MAGM) {
-        return await castmuElementalSpell(attack, monster, type, dmg, ctx);
+        // castmu() AD_FIRE/AD_COLD/AD_MAGM switch cases: the elemental
+        // effect line, resistance feedback, and mon_spell_hits_spot(),
+        // closed by the shared mdamageu() tail.  These never enter
+        // hitmu()'s armor cancellation or contact/passive tail.
+        const effectLineDismissal = await ctx.publish(
+            type === AD_FIRE ? "You're enveloped in flames."
+                : type === AD_COLD ? "You're covered in frost."
+                    : 'You are hit by a shower of missiles!',
+        );
+        const resisted = type === AD_FIRE ? !!state.u.fireResistance
+            : type === AD_COLD ? !!state.u.coldResistance : !!state.u.antimagic;
+        if (resisted) {
+            await shieldeff(state.u.ux, state.u.uy, state);
+            await ctx.publish(type === AD_MAGM ? 'The missiles bounce off!' : 'But you resist the effects.');
+            monstersObserveHeroResistance(seenResistanceForDamage(type), state);
+            dmg = 0;
+        } else {
+            monstersForgetHeroResistance(seenResistanceForDamage(type), state);
+            if (type === AD_MAGM) {
+                // Native replaces its already-halved pre-roll with fresh missile
+                // damage. Half_spell_damage is not applied to this second roll.
+                const count = Math.trunc(monster.m_lev / 2) + 1;
+                dmg = ctx.rollDice(count, 6);
+                ctx.calls.push(`d(${count},6)`);
+            }
+        }
+        if (type === AD_FIRE && clearHeroSliming(state))
+            await ctx.publish('The slime that covers you is burned away!');
+        if (type === AD_MAGM) {
+            // A shower of magic missiles scuffs an engraving.
+            const engraving = engravingAt(state.u.ux, state.u.uy, state.level);
+            if (engraving) {
+                const wear = ctx.rollDice(6, 6);
+                ctx.calls.push('d(6,6)');
+                wipeEngravingAt(state.u.ux, state.u.uy, engraving.text.length + wear, true, state.level);
+            }
+        }
+        await applyRayFloorFeatures(type === AD_FIRE ? 'fire' : type === AD_COLD ? 'cold' : 'magic',
+            state.u.ux, state.u.uy, state, {
+                rayNoun: 'spell', heroCaused: false, publish: ctx.publish,
+                random: limit => {
+                    ctx.calls.push(`rn2(${limit})`);
+                    return ctx.random(limit);
+                },
+            });
+        if (dmg && !state.program_state.gameover)
+            return await finishSpellDamage(attack, dmg, effectLineDismissal, ctx);
+        return !!state.program_state.gameover;
     }
     if (!attack.spell)
         throw new Error('A monster spell cast must retain its chosen spell');
@@ -135,64 +182,6 @@ export async function castmuSpellEffect(
     if (outcome.dmg && !state.program_state.gameover)
         return await finishSpellDamage(attack, outcome.dmg, outcome.effectLineDismissal, ctx);
     return outcome.died || !!state.program_state.gameover;
-}
-
-// C mcastu.c:castmu() AD_FIRE/AD_COLD/AD_MAGM switch cases: the elemental
-// effect line, resistance feedback, and mon_spell_hits_spot(), closed by
-// the shared mdamageu() tail.  These never enter hitmu()'s armor
-// cancellation or contact/passive tail.
-async function castmuElementalSpell(
-    attack: HeroSpellAttack,
-    monster: Monster,
-    type: typeof AD_FIRE | typeof AD_COLD | typeof AD_MAGM,
-    dmg: number,
-    ctx: McastuSpellContext,
-): Promise<boolean> {
-    const { state } = ctx;
-    const effectLineDismissal = await ctx.publish(
-        type === AD_FIRE ? "You're enveloped in flames."
-            : type === AD_COLD ? "You're covered in frost."
-                : 'You are hit by a shower of missiles!',
-    );
-    const resisted = type === AD_FIRE ? !!state.u.fireResistance
-        : type === AD_COLD ? !!state.u.coldResistance : !!state.u.antimagic;
-    if (resisted) {
-        await shieldeff(state.u.ux, state.u.uy, state);
-        await ctx.publish(type === AD_MAGM ? 'The missiles bounce off!' : 'But you resist the effects.');
-        monstersObserveHeroResistance(seenResistanceForDamage(type), state);
-        dmg = 0;
-    } else {
-        monstersForgetHeroResistance(seenResistanceForDamage(type), state);
-        if (type === AD_MAGM) {
-            // Native replaces its already-halved pre-roll with fresh missile
-            // damage. Half_spell_damage is not applied to this second roll.
-            const count = Math.trunc(monster.m_lev / 2) + 1;
-            dmg = ctx.rollDice(count, 6);
-            ctx.calls.push(`d(${count},6)`);
-        }
-    }
-    if (type === AD_FIRE && clearHeroSliming(state))
-        await ctx.publish('The slime that covers you is burned away!');
-    if (type === AD_MAGM) {
-        // A shower of magic missiles scuffs an engraving.
-        const engraving = engravingAt(state.u.ux, state.u.uy, state.level);
-        if (engraving) {
-            const wear = ctx.rollDice(6, 6);
-            ctx.calls.push('d(6,6)');
-            wipeEngravingAt(state.u.ux, state.u.uy, engraving.text.length + wear, true, state.level);
-        }
-    }
-    await applyRayFloorFeatures(type === AD_FIRE ? 'fire' : type === AD_COLD ? 'cold' : 'magic',
-        state.u.ux, state.u.uy, state, {
-            rayNoun: 'spell', heroCaused: false, publish: ctx.publish,
-            random: limit => {
-                ctx.calls.push(`rn2(${limit})`);
-                return ctx.random(limit);
-            },
-        });
-    if (dmg && !state.program_state.gameover)
-        return await finishSpellDamage(attack, dmg, effectLineDismissal, ctx);
-    return !!state.program_state.gameover;
 }
 
 // castmu() reaches mdamageu() here after mcast_spell(): raw HP is kept for
@@ -262,9 +251,16 @@ export async function mcastSpell(
     case 'stun-you':
         await mcastStunYou(ctx);
         return { dmg: 0, died: false, effectLineDismissal: null };
-    case 'haste-self':
-        await mcastHasteSelf(monster, ctx);
+    case 'haste-self': {
+        // MCAST_HASTE_SELF: mon_adjust_speed(mtmp, 1, 0).
+        const speed = adjustMonsterSpeed(monster, 1);
+        const message = speed.changed && speed.canDescribe && !ctx.state.in_mklev
+            && canSeeMonster(monster)
+            ? monsterSpeedMessage(speed, canonicalMonsterName(monster, { state: ctx.state, capitalized: true }))
+            : null;
+        if (message) await ctx.publish(message);
         return { dmg: 0, died: false, effectLineDismissal: null };
+    }
     case 'cure-self':
         await mCureSelf(monster, ctx);
         return { dmg: 0, died: false, effectLineDismissal: null };
@@ -466,12 +462,6 @@ async function mcastStunYou(ctx: McastuSpellContext): Promise<void> {
     state.u.stunnedTurns = duration;
     state.u.stunned = duration > 0;
     if (!resisted) monstersForgetHeroResistance(M_SEEN_MAGR, state);
-}
-
-// C mcastu.c:mcast_spell() MCAST_HASTE_SELF: mon_adjust_speed(mtmp, 1, 0).
-async function mcastHasteSelf(monster: Monster, ctx: McastuSpellContext): Promise<void> {
-    const effect = monsterHasteSelfEffect(monster, ctx.state);
-    if (effect.message) await ctx.publish(effect.message);
 }
 
 // C mcastu.c:mcast_psi_bolt().
@@ -770,7 +760,9 @@ export function monsterCurseKind(monster: Monster, undirected: boolean, state: P
     return null;
 }
 
-// C mcastu.c:cursetxt(): publish the selected curse.
+// Part of C mcastu.c:cursetxt(): publish the selected curse.  The kind
+// choice itself is monsterCurseKind(), shared with the deferred
+// hero-spell attack records.
 // Also C mcastu.c:is_undirected_spell(): inlined here.
 async function publishMonsterSpellFailure(monster: Monster, spell: MonsterSpell,
     state: PlayingGameState, random: RandomBelow, calls: MonsterCallLog): Promise<void> {
@@ -870,15 +862,6 @@ async function monsterSummonSpellEffect(
         }
     }
     return effect;
-}
-
-function monsterHasteSelfEffect(monster: Monster, state: PlayingGameState) {
-    const speed = adjustMonsterSpeed(monster, 1);
-    const message = speed.changed && speed.canDescribe && !state.in_mklev
-        && canSeeMonster(monster)
-        ? monsterSpeedMessage(speed, canonicalMonsterName(monster, { state, capitalized: true }))
-        : null;
-    return { message, oldSpeed: speed.oldSpeed, speed: speed.speed };
 }
 
 // C mcastu.c:touch_of_death(). Entered from uhitm.c:mhitm_ad_deth()'s hero

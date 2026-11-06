@@ -2764,8 +2764,9 @@ async function inheritHeroInventory(
     return completeShopSettlement(keeper, taken);
 }
 
-// C shk.c:rouse_shk() wakes the keeper, then home_shk() returns it to the
-// shop if it has wandered.
+// Wakes the keeper the way C shk.c:rouse_shk(shkp, FALSE) does — no wake
+// line — then home_shk() returns it to the shop if it has wandered.
+// rouseShopkeeper() below is rouse_shk()'s verbose port.
 async function returnShopkeeperHome(keeper: Shopkeeper): Promise<void> {
     requireShopGame(game);
     if (monsterIsHelpless(keeper)) {

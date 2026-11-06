@@ -16,7 +16,7 @@ import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';
 import { doclose, doopen, continuePicking, continueForceLock, doforce, maybeResetPick, resetPick } from './lock.js';
 import { moveIntoFailedUntrap, doUntrap, resetUtrap } from './trap.js';
-import { askTeleportDestination, teleportAtWillCommand, dotelecmd } from './teleport.js';
+import { askTeleportDestination, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import type { InventoryAction } from './invent.js';
 import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
@@ -647,7 +647,7 @@ async function runCommandHandler(binding: CommandBinding): Promise<void> {
         return;
     }
     if (key === 20) { // Ctrl-T: dotelecmd()
-        await dotelecmd(teleportAtWillCommand);
+        await dotelecmd();
         return;
     }
     if (key === 6 && game.flags?.debug) { // Ctrl-F: wiz_map()
@@ -2845,7 +2845,6 @@ export interface DirectionSelection {
     dy: number;
     dz: number;
 }
-export type DirectionKeyReader = (message: string, retry: boolean) => string | number | Promise<string | number>;
 
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const impairedDirections = [
@@ -2925,54 +2924,6 @@ export async function ynSingleKey(message: string, cursorOffset = 0): Promise<nu
     return key;
 }
 
-// C cmd.c:getdir() removes its query immediately after receiving a key,
-// before interpreting that key as a direction, cancellation, or help.
-// Its cmdq_pop() at function entry (cmd.c:3962) is consumed once per
-// getdir() call; after the help or redraw retry, every further key comes
-// from readchar() (repeating) or yn_function() (ordinary play), never from
-// the command queue again.
-// Also C cmd.c:redraw_cmd(): inlined here (the doredraw retry check that
-// keeps the redraw key out of the recorded answer).
-export async function readDirectionKey(message = 'In what direction? ', retry = false) {
-    // C cmd.c:getdir() pops one entry (cmd.c:3962); cmdq_pop() selects
-    // CQ_REPEAT during do-again, otherwise CQ_CANNED. Only CMDQ_DIR and
-    // CMDQ_KEY answer it; every other popped entry clears CQ_CANNED and
-    // reports the impossible (cmd.c:3974-3977).
-    const queued = retry ? null : cmdq_pop();
-    if (queued) {
-        if (queued.typ === CMDQ_DIR) return queuedDirectionKey(queued);
-        if (queued.typ === CMDQ_KEY) return queued.key;
-        cmdq_clear(CQ_CANNED);
-        await impossible('getdir: command queue had no dir?');
-        return 0;
-    }
-    if (game._inDoAgain) {
-        // C getdir() bypasses yn_function() while repeating: readchar()
-        // takes the next physical key without painting the question
-        // (cmd.c:3985-3986), and the message line is still cleared
-        // afterwards (cmd.c:4010-4011).
-        const key = (await readchar('direction')) & 255;
-        clearMessageWindow();
-        return key;
-    }
-    // tty_yn_function() skips an unread topline stopped by Escape, then
-    // clears WIN_STOP before painting its question.
-    if (game._suppressMessagesUntilInput) clearMessageWindow();
-    else await flushPendingTopline();
-    game._suppressMessagesUntilInput = false;
-    await paintKeyPrompt(message);
-    const key = (await readchar('direction')) & 255;
-    // C cmd.c:4017-4018 records the live answer for do-again, except a
-    // redraw key, which getdir() retries instead.
-    if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
-        cmdq_add_key(CQ_REPEAT, key);
-    // getdir() asks through yn_function(), whose clean_up rewrites
-    // gt.toplines with the prompt and its recorded answer.
-    game._toplines = `${message}${keyText(key)}`;
-    clearMessageWindow();
-    return key;
-}
-
 // C getdir() converts CMDQ_DIR through xytodir() and Cmd.dirchars only
 // when it needs the direction; other prompts must keep its entry type.
 function queuedDirectionKey({ dirx, diry, dirz }: CmdQueueDirEntry): number {
@@ -2990,19 +2941,63 @@ export interface DirectionPromptOptions {
 }
 
 // C cmd.c:getdir(): the direction-question loop with its key handling,
-// movecmd() translation, confdir() and help_dir() assists.
-// Also C cmd.c:redraw_cmd(): inlined here (the doredraw retry branch).
+// movecmd() translation, confdir() and help_dir() assists.  Key
+// acquisition pops one entry (cmd.c:3962); cmdq_pop() selects CQ_REPEAT
+// during do-again, otherwise CQ_CANNED, and only CMDQ_DIR and CMDQ_KEY
+// answer it.  After the help or redraw retry, every further key comes from
+// readchar() (repeating) or yn_function() (ordinary play), never from the
+// command queue again.  The query is removed immediately after a key
+// arrives, before it is interpreted as a direction, cancellation, or help.
+// Also C cmd.c:redraw_cmd(): inlined here (the doredraw retry check that
+// keeps the redraw key out of the recorded answer, and the retry branch).
 // Also C cmd.c:dxdy_moveok(): inlined here (the grid-bug refusal that
 // ends the question with "You can't orient yourself that direction.").
 export async function promptDirection(
-    readKey: DirectionKeyReader = readDirectionKey,
+    prompt = 'In what direction? ',
     { ctrlCommandHint = false }: DirectionPromptOptions = {},
 ): Promise<DirectionSelection | null> {
     let retry = false;
     for (;;) {
-        const key = await readKey('In what direction? ', retry);
+        // C cmd.c:getdir() pops one entry (cmd.c:3962); cmdq_pop() selects
+        // CQ_REPEAT during do-again, otherwise CQ_CANNED. Only CMDQ_DIR and
+        // CMDQ_KEY answer it; every other popped entry clears CQ_CANNED and
+        // reports the impossible (cmd.c:3974-3977).
+        const queued = retry ? null : cmdq_pop();
+        let key: number;
+        if (queued) {
+            if (queued.typ === CMDQ_DIR) key = queuedDirectionKey(queued);
+            else if (queued.typ === CMDQ_KEY) key = queued.key;
+            else {
+                cmdq_clear(CQ_CANNED);
+                await impossible('getdir: command queue had no dir?');
+                key = 0;
+            }
+        } else if (game._inDoAgain) {
+            // C getdir() bypasses yn_function() while repeating: readchar()
+            // takes the next physical key without painting the question
+            // (cmd.c:3985-3986), and the message line is still cleared
+            // afterwards (cmd.c:4010-4011).
+            key = (await readchar('direction')) & 255;
+            clearMessageWindow();
+        } else {
+            // tty_yn_function() skips an unread topline stopped by Escape, then
+            // clears WIN_STOP before painting its question.
+            if (game._suppressMessagesUntilInput) clearMessageWindow();
+            else await flushPendingTopline();
+            game._suppressMessagesUntilInput = false;
+            await paintKeyPrompt(prompt);
+            key = (await readchar('direction')) & 255;
+            // C cmd.c:4017-4018 records the live answer for do-again, except a
+            // redraw key, which getdir() retries instead.
+            if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
+                cmdq_add_key(CQ_REPEAT, key);
+            // getdir() asks through yn_function(), whose clean_up rewrites
+            // gt.toplines with the prompt and its recorded answer.
+            game._toplines = `${prompt}${keyText(key)}`;
+            clearMessageWindow();
+        }
         retry = true; // the entry cmdq_pop() is spent; retries read fresh keys
-        const code = (typeof key === 'number' ? key : String(key).charCodeAt(0)) & 255;
+        const code = key & 255;
         if (game.commandBindings.lookup(code)?.command?.handler === 'doredraw') {
             // docrt_flags(docrtRefresh) resends the current glyphs without
             // recalculating vision or choosing new hallucinated forms.
@@ -3138,7 +3133,7 @@ export function directionAssistPage(invalidDirection = true, ctrlHintKey: number
 // C cmd.c:get_adjacent_loc() delegates input and command assistance to
 // getdir(), then turns its relative result into a checked map location.
 export async function getAdjacentLocation(prompt: string, errorMessage: string | null, x: number, y: number) {
-    const direction = await promptDirection((_message, retry) => readDirectionKey(`${prompt} `, retry));
+    const direction = await promptDirection(`${prompt} `);
     if (!direction) {
         await pline('Never mind.');
         game.context.move = 0;

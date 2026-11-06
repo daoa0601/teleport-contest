@@ -9,8 +9,3 @@ export interface PetTargetOptions {
     random?: RandomBelow;
     rollOne?: RollOne;
 }
-
-export interface PetRangedSelection {
-    target: PetRangedTarget | null;
-    makeNoise: boolean;
-}

@@ -20,7 +20,7 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { resetGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
 import { getLine, promptChoice } from '../js/query.js';
-import { readDirectionKey } from '../js/cmd.js';
+import { promptDirection } from '../js/cmd.js';
 function rowText(row) {
     return requireGameDisplay().grid[row]?.map(cell => cell.ch).join('').trimEnd() ?? '';
 }
@@ -633,10 +633,10 @@ void test('a direction prompt files its question with the answered key', async (
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
-    const direction = readDirectionKey();
+    const direction = promptDirection();
     await input.waitUntilBlocked();
     input.feed('h');
-    assert.equal(await direction, 'h'.charCodeAt(0));
+    assert.equal((await direction)?.key, 'h');
     await pline('Afterwards.'); // remembers the answered direction prompt
     await rhack(16);
     await rhack(16);

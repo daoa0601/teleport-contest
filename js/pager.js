@@ -14,7 +14,7 @@ import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.
 import { surfaceName } from './dungeon.js';
 import { trapName } from './trap.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, visibleCommandKey, promptDirection, readDirectionKey, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
+import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, visibleCommandKey, promptDirection, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { getLine, promptYesNo } from './query.js';
 import { selectMapPosition } from './getpos.js';
@@ -1125,7 +1125,7 @@ function coveringSymbolAt(x, y) {
 // ---------------------------------------------------------------------------
 export async function identifyTrap() {
     game.context.move = 0;
-    const direction = await promptDirection(readDirectionKey, { ctrlCommandHint: true });
+    const direction = await promptDirection('In what direction? ', { ctrlCommandHint: true });
     if (!direction) {
         // pager.c:doidtrap() returns ECMD_CANCEL when getdir() is declined;
         // the rhack seam clears the queues after the command.

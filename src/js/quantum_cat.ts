@@ -4,7 +4,7 @@ import { monsterHasMapPosition } from './steed.js';
 
 import { MM_ADJACENTOK, MM_NOMSG, NO_MINVENT, FOOT } from './const.js';
 import { canSpotMonster } from './display.js';
-import { randomDisplayMonsterName, randomDisplayMonsterSubject } from './do_name.js';
+import { randomDisplayMonsterName, visibleMonsterSubject } from './do_name.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -66,8 +66,7 @@ export async function observeQuantumCat(box: GameObject, {
             if (!canSpotMonster(cat)) {
                 await pline(`You think something brushed your ${body_part(FOOT)}.`);
             } else {
-                const subject = heroIsHallucinating(state)
-                    ? randomDisplayMonsterSubject() : 'The housecat';
+                const subject = visibleMonsterSubject(cat);
                 await pline(`${subject} inside the box is still alive!`);
             }
         }
