@@ -51,8 +51,8 @@ import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './cmd.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { chargeUnpaidUsage, addShopDamage, payForShopDamage, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
-import { hasWornProperty } from './properties.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { hasIntrinsicProperty, hasTimedProperty, hasWornProperty } from './properties.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
 import { showInventoryWindow } from './windows.js';
 import { useUpFloorObject } from './invent.js';
@@ -511,19 +511,29 @@ export async function hitMonsterWithWand(monster, wand, { state = game, x = mons
         learnWand(wand, { state });
     return result;
 }
-// The make-invisible wand against a monster. C zap.c:bhitm().
+// C display.h:_knowninvisible(): minvis && ((cansee(mx,my)
+// && (See_invisible || Detect_monsters)) || (!Blind
+// && (HTelepat & ~INTRINSIC) && mdistu(mon) <= BOLT_LIM * BOLT_LIM)).
+// prop.h INTRINSIC = FROMOUTSIDE|FROMRACE|FROMEXPER, so HTelepat & ~INTRINSIC
+// keeps the polymorphed form's telepathy (polyself.c PROPSET(TELEPAT,
+// telepathic(mdat))) and a #wizintrinsic timeout (TIMEOUT bits; timeout.c
+// notes TELEPAT only times out that way); worn extrinsic telepathy (ETelepat:
+// helm of telepathy, amulet of ESP) and plain gained intrinsics do not
+// qualify.
 function knownInvisible(monster, state = game) {
     if (!monster.minvis)
         return false;
     const hero = state.u;
-    if (cansee(monster.mx, monster.my) && (hero.seeInvisible
-        || (hero.seeInvisibleTurns ?? 0) > 0
-        || hero.detectMonsters || state.detectMonsters))
+    if (cansee(monster.mx, monster.my)
+        && (hero.seeInvisible || (hero.seeInvisibleTurns ?? 0) > 0
+            || heroDetectsMonsters(state)))
         return true;
-    const hasSightedTelepathy = (hero.unblind_telepat_range ?? -1) >= 0
-        || state.uarmh?.otyp === 100 || state.uamul?.otyp === 201;
+    const inRangeTelepathy = hasTimedProperty('telepathy', state)
+        || hasIntrinsicProperty('telepathy', 'form', state);
+    if (heroIsBlind(state) || !inRangeTelepathy)
+        return false;
     const distance = (monster.mx - hero.ux) ** 2 + (monster.my - hero.uy) ** 2;
-    return !heroIsBlind(state) && hasSightedTelepathy && distance <= BOLT_LIM ** 2;
+    return distance <= BOLT_LIM ** 2;
 }
 export async function makeMonsterInvisible(monster) {
     const wasInvisible = !!monster.minvis;
