@@ -96,23 +96,29 @@ const DIRECTIONS = [
     { dx: -1, dy: 1 },
 ];
 
+// Part of C explode.c:scatter(): the floor pile read.
 function floorPile(state: GameState, x: number, y: number): GameObject[] {
     return state.level?.objects?.[x]?.[y] || [];
 }
 
+// Part of C explode.c:scatter(): the obj_extract_self removal.
 function removeFloorObject(object: GameObject, state: GameState): void {
     unlinkObject(object, state);
 }
 
+// Part of C explode.c:scatter(): the cansee square test.
 function squareIsVisible(state: GameState, x: number, y: number): boolean {
     return !state.blind && !((state.u.blindTurns ?? 0) > 0)
         && (!state.viz_array || !!((state.viz_array?.[y]?.[x] ?? 0) & 0x2));
 }
 
+// Part of C explode.c:scatter(): the m_at read.
 function monsterAt(state: GameState, x: number, y: number): Monster | null {
     return monsterAtPosition(requireGameLevel(state), x, y);
 }
 
+// Part of C explode.c:scatter(): the ZAP_POS/closed-door flight-square
+// test.
 function openFlightSquare(state: GameState, x: number, y: number): boolean {
     if (!isok(x, y)) return false;
     const location = state.level?.at(x, y);
@@ -122,6 +128,8 @@ function openFlightSquare(state: GameState, x: number, y: number): boolean {
             || !(location.doormask & (D_CLOSED | D_LOCKED)));
 }
 
+// Part of C mthrowu.c:ohitmon(): the killed/monkilled finish for a
+// monster killed by a scattered object.
 async function finishScatteredMonsterDeath(
     monster: Monster, x: number, y: number, death: HeroMonsterKillOptions,
     state: GameState, options: ScatterSettings,
@@ -142,8 +150,9 @@ async function finishScatteredMonsterDeath(
     return { killed: !result.survived, heroDied: !!result.heroDied };
 }
 
-// C drop_throw(): an impact can mulch ammunition, ship it through a gate,
-// or expose it to the defender's passive effect before floor stacking.
+// Part of C mthrowu.c:drop_throw(): after a hit, an impact can mulch ammunition, ship it
+// through a gate, or expose it to the defender's passive effect before
+// floor stacking.
 async function landAfterMonsterHit(object: GameObject, node: Position, state: GameState, options: ScatterSettings): Promise<void> {
     requirePlayingGame(state);
     const broken = object.otyp === CREAM_PIE || object.oclass === VENOM_CLASS || object.otyp === EGG
@@ -166,6 +175,8 @@ async function landAfterMonsterHit(object: GameObject, node: Position, state: Ga
     if (!state.program_state.gameover) await stack_object(object, state);
 }
 
+// Part of C mthrowu.c:ohitmon(): the scatter flight's monster hit; the
+// shared port is hitMonsterWithProjectile in mthrowu.ts.
 async function hitMonster(monster: Monster, node: ScatterNode, state: GameState, options: ScatterSettings): Promise<boolean> {
     const object = node.object;
     if (!object) return false;
@@ -297,6 +308,8 @@ async function hitMonster(monster: Monster, node: ScatterNode, state: GameState,
     return true;
 }
 
+// Part of C explode.c:scatter(): the u_at hero hit branch with
+// dmgval/hitvalu/thitu.
 async function hitHero(node: ScatterNode, state: GameState, options: ScatterSettings): Promise<boolean> {
     requirePlayingGame(state);
     const object = node.object;
@@ -323,6 +336,7 @@ async function hitHero(node: ScatterNode, state: GameState, options: ScatterSett
     return result.hit;
 }
 
+// Part of C explode.c:scatter(): the MAY_FRACTURE boulder/statue branch.
 async function fractureObject(object: GameObject, x: number, y: number, state: GameState, options: ScatterSettings): Promise<void> {
     const boulder = object.otyp === BOULDER;
     if (!boulder) {
@@ -353,6 +367,8 @@ async function fractureObject(object: GameObject, x: number, y: number, state: G
     await newsym(x, y);
 }
 
+// Part of C explode.c:scatter(): one pile entry — splitobj, the direction
+// roll, and the range roll.
 async function prepareScatteredObject(object: GameObject, x: number, y: number, state: GameState, options: ScatterSettings): Promise<ScatterNode | null> {
     removeFloorObject(object, state);
     if (options.mayFracture
@@ -399,6 +415,8 @@ async function prepareScatteredObject(object: GameObject, x: number, y: number, 
     };
 }
 
+// Part of C explode.c:scatter(): taking the next object from the pile
+// with its splitobj quantity.
 function nextObjectFromPile(pile: GameObject[], state: GameState, options: ScatterSettings): { object: GameObject; lastPiece: boolean } | null {
     const object = options.onlyObject || pile[0];
     if (!object || !options.onlyObject && !pile.includes(object)) return null;
@@ -411,6 +429,7 @@ function nextObjectFromPile(pile: GameObject[], state: GameState, options: Scatt
     return { object: part, lastPiece: false };
 }
 
+// C explode.c:scatter().
 export async function scatterFloorObjects(
     x: number,
     y: number,

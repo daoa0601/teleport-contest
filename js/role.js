@@ -496,6 +496,7 @@ const roleRecords = [
         enemy2sym: 49,
         greeting: 'Hello', goodbye: 'Goodbye' },
 ];
+// Port only: roles[] lookup in the native role.c table order.
 // role.c orders Rogue before Ranger; the player-monster indices do the reverse.
 // Native random role choices must use the role table's order.
 export function nativeRoleAt(index) {
@@ -635,6 +636,7 @@ export const genders = [
     { name: 'female', value: 1 },
 ];
 // ── role.c function ports, in role.c source order ──
+// Port only: the roles[] table in native order for random selection.
 // C ref: role.c roles[] table order.  The JS role table keeps Ranger
 // before Rogue for historical callers, while the C selection table
 // deliberately keeps Rogue before Ranger; random character selection must
@@ -643,6 +645,7 @@ const CHARACTER_ROLE_ORDER = [
     'archeologist', 'barbarian', 'caveman', 'healer', 'knight', 'monk',
     'priest', 'rogue', 'ranger', 'samurai', 'tourist', 'valkyrie', 'wizard',
 ];
+// Port only: the roles[] table in native order for random selection.
 export function nativeRoleChoices() {
     return CHARACTER_ROLE_ORDER.flatMap(key => {
         const role = roles.find(candidate => candidate.key === key);
@@ -917,6 +920,7 @@ export function build_plselection_prompt(choices, random, filters) {
     }
     return `${prompt} for you? [ynaq]`;
 }
+// C role.c:plnamesuffix(): the -role-race-gender-alignment suffix parse.
 export function plnamesuffix(raw) {
     const [name = '', ...tokens] = raw.split('-');
     const result = {
@@ -948,6 +952,7 @@ export function initializeRoleQuestGenders() {
         throw new Error('Quest gender initialization requires a selected role');
     rollQuestFigureGenders(role, ensureQuestStatus());
 }
+// Part of C role.c:role_init(): the leader/nemesis gender rolls.
 // The rolls role_init makes whenever the quest figure's own species has
 // no fixed gender. On restore they run inside restgamestate() before the
 // hero is even read, and the saved quest_status then overwrites the values.
@@ -956,6 +961,8 @@ export function rollQuestFigureGenders(role, quest) {
     if (role.neminum !== undefined)
         quest.nemgend = questMonsterGender(role.neminum);
 }
+// Part of C role.c:role_init(): the neuter/female/male chain with its
+// rn2 draw.
 // role_init's is_neuter(pm)/is_female(pm)/is_male(pm) chain, with the
 // rn2(100) < 50 draw when the species has no fixed gender.
 function questMonsterGender(species) {
@@ -1548,6 +1555,7 @@ async function finishMenu(window, title, defaultChoice) {
     return result.selections.find(item => item.identifier !== defaultChoice)?.identifier
         ?? result.selections[0]?.identifier ?? defaultChoice;
 }
+// Port only: fresh gr.rfilter masks before any ROLEDISCARD parse.
 // C ref: role.c gr.rfilter — the zeroed filter masks before any
 // ROLEDISCARD option is parsed.
 export function createCharacterFilters() {

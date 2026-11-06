@@ -114,6 +114,8 @@ export async function outOracle(special, delphi, state = game) {
     state._pending_message = '';
     state._retained_message = '';
 }
+// Part of C eat.c:fpostfx(), read.c:doread(): the bcs-sign rumor draw for a
+// fortune cookie.
 export async function readCookieFortune(cookie, { state = game } = {}) {
     await outRumor(cookie.blessed ? 1 : cookie.cursed ? -1 : 0, BY_COOKIE, state);
 }
@@ -220,13 +222,16 @@ export async function rumorCheck() {
     ];
     await showTextWindow(lines);
 }
+// Port only: rumor section byte size under the makedefs line padding.
 function rumorSectionSize(lines) {
     return lines.reduce((size, line) => size + paddedLine(line, MD_PAD_RUMORS).length + 1, 0);
 }
+// Port only: one T/F start-end-size boundary line of the rumor report.
 function rumorBoundary(label, start, end, size) {
     const field = (value) => `${decimal(value)} (${value.toString(16).padStart(6, '0')})`;
     return `${label} start=${field(start)}, end=${field(end)}, size=${field(size)}`;
 }
+// Port only: the first and last padded lines bounding a rumor section.
 function rumorEndpoints(label, start, lines) {
     const first = lines[0];
     const last = lines.at(-1);
@@ -235,6 +240,7 @@ function rumorEndpoints(label, start, lines) {
     return [`${label} ${decimal(start)} ${paddedLine(first, MD_PAD_RUMORS)}`,
         `         ${paddedLine(last, MD_PAD_RUMORS)}`];
 }
+// Port only: engraving/epitaph/bogus-mon section text for the rumor report.
 function supportingText(title, entries, padding) {
     const first = entries[0];
     if (first === undefined)
@@ -253,9 +259,11 @@ function supportingText(title, entries, padding) {
         throw new Error(`${title} has no last entry`);
     return [...lines, paddedLine(last, padding)];
 }
+// Port only: one makedefs-padded line.
 function paddedLine(line, lengthWithNewline) {
     return line.padEnd(lengthWithNewline - 1, '_');
 }
+// Port only: six-digit decimal field of the rumor report.
 function decimal(value) {
     return String(value).padStart(6, '0');
 }

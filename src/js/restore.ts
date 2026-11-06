@@ -138,6 +138,7 @@ const corridor: Check<VaultGuardData['fakecorr'][number]> =
         x: integer, y: integer, typ: integer, flags: integer,
     });
 
+// Port only: field checks for a saved vault guard record.
 function guard(context: SavedEntityContext): Check<VaultGuardData> {
     return (value): value is VaultGuardData => closedFieldsMatch<VaultGuardData>(value, {
         gdlevel: monsterHomeLevel,
@@ -169,6 +170,7 @@ const bones: Check<BonesMonsterData> = (value): value is BonesMonsterData => clo
     crowned: boolean,
 });
 
+// Port only: field checks for a saved monster extra record.
 function extra(representation: Check<number>): Check<MonsterExtra> {
     return (value): value is MonsterExtra => closedFieldsMatch<MonsterExtra>(value, {
         mgivenname: optional(string),
@@ -181,11 +183,14 @@ function extra(representation: Check<number>): Check<MonsterExtra> {
     });
 }
 
+// Port only: reads a saved monster's m_ap_type appearance code.
 function appearanceType(value: unknown): number {
     return isSavedRecord(value) && integer(value.m_ap_type)
         ? value.m_ap_type & M_AP_TYPMASK : 0;
 }
 
+// Port only: validates a saved mimic's mappearance payload by its
+// appearance type.
 // makemon.c:set_mimic_sym() also stores a fruit ID or altar mask here.
 // Neither overload is a monster index, despite the field's native name.
 function mimicRepresentation(value: unknown): Check<number> {
@@ -200,6 +205,7 @@ function mimicRepresentation(value: unknown): Check<number> {
     return validSavedSpeciesOrNone;
 }
 
+// Port only: field checks for a saved Monster.
 function monsterFields(value: unknown, context: SavedEntityContext): Fields<Monster> {
     const representation = mimicRepresentation(value);
     return {
@@ -314,10 +320,12 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
     };
 }
 
+// Port only: full saved Monster validation.
 export function validSavedMonster(value: unknown, context: SavedEntityContext): value is Monster {
     return validateSavedEntity(value, 'monster', context, monsterFields(value, context));
 }
 
+// Port only: bones-monster trait validation.
 export function validSavedMonsterTraits(value: unknown, context: SavedEntityContext): value is SavedMonsterTraits {
     const {
         minvent, inventory, mw, wormSegments, wormDetachedSegments, wormHead, wormGrowTime, lightRemoved, headOnMap,
@@ -356,6 +364,7 @@ export interface WormRestoreLevel {
     monsters: WormRestoreMonster[];
 }
 
+// Port only: validates the worm fields of every saved monster on a level.
 // This boundary proves only worm restoration fields, not a complete Monster.
 // Full saves and bones retain body identity and deadlines rather than rebuilding them.
 export function validMonsterWormBodies(level: unknown): level is WormRestoreLevel {
@@ -397,6 +406,7 @@ export function validMonsterWormBodies(level: unknown): level is WormRestoreLeve
     return true;
 }
 
+// Port only: type guard for one saved worm segment point.
 function savedWormPoint(value: unknown): value is WormSegment {
     return isSavedRecord(value)
         && typeof value.x === 'number' && Number.isInteger(value.x)
@@ -404,6 +414,8 @@ function savedWormPoint(value: unknown): value is WormSegment {
         && (value.onMap === undefined || typeof value.onMap === 'boolean');
 }
 
+// Part of C restore.c:getlev(): the worm head placement after monster
+// restore.
 export function restoreMonsterWormHeads(level: WormRestoreLevel): void {
     for (const monster of level.monsters) {
         // The native monster grid is rebuilt from fmon when loading a level.
@@ -446,12 +458,14 @@ export function repairBonesConnections(level: GameMap, location: DungeonLocation
     }
 }
 
+// C restore.c:restore_msghistory().
 /**
  * C restore.c:restore_msghistory(): the first restored message purges the
  * session's own ring (keeping its entries), each restored message becomes
  * the current topline in turn, and the final empty call puts the session's
  * messages back on top of the restored ones.
  */
+// C restore.c:restore_msghistory().
 export function restoreMessageHistory(saved: readonly string[]): void {
     if (!saved.length) return;
     rememberToplines();

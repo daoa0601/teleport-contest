@@ -26,6 +26,7 @@ import { angerMonster, angerWatchGuards } from './mon.js';
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
 const MS_LEADER = 36;
+// Port only: lazily initializes the quest_status record.
 // C struct q_score is global game state, not a property inferred from the
 // current special level.  Keeping the complete shape here makes the state
 // survive level cache changes and ordinary game serialization as later quest
@@ -69,6 +70,7 @@ export function checkQuestMonsterStatus(monster, state = game) {
         && Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1;
 }
+// Part of C makemon.c:makemon(): records the quest leader's identity.
 // C makemon() records the quest leader's identity. Birth flags still control
 // anger and waiting; recording the identity must not change either one.
 export function registerQuestLeader(monster, g = game) {
@@ -79,6 +81,7 @@ export function registerQuestLeader(monster, g = game) {
     monster.questLeader = true;
     return true;
 }
+// Part of C quest.c:quest_chat(), quest_talk(): the leader identity test.
 export function isQuestLeader(monster, g = game) {
     if (!monster)
         return false;
@@ -99,6 +102,7 @@ export function markQuestLeaderDead(monster, g = game) {
         status.killed_leader = true;
     return ownLeader || leaderSpecies;
 }
+// Port only: clears the TS leader-death flag when the leader lives again.
 export function markQuestLeaderAlive(monster, g = game) {
     if (!isQuestLeader(monster, g))
         return false;
@@ -132,6 +136,7 @@ export async function markQuestNemesisDead(monster, g = game, x = monster?.mx ??
     }
     return true;
 }
+// Port only: splits a prepared quest text into pline or window delivery.
 async function prepareQtDelivery(messageId, state) {
     const text = await prepareQuestText(messageId, state);
     return text?.output === 'pline'
@@ -258,6 +263,8 @@ export async function prepareMainQuestPortalCall({ fromDepth } = {}, g = game) {
     event.qcalled = true;
     return text?.lines ?? null;
 }
+// Part of C quest.c:on_start(), on_locate(), on_goal(): the deferred
+// display half of the arrival text.
 export async function displayPreparedQuestArrival(arrival, g = game) {
     if (!arrival)
         return false;
@@ -268,6 +275,7 @@ export async function displayPreparedQuestArrival(arrival, g = game) {
     arrival.commit?.();
     return !!(arrival.page || arrival.line);
 }
+// Port only: a pline'd quest line with its tty more prompt.
 async function questMore(message, g = game) {
     await pline(message);
     await flush_screen(1);
@@ -280,6 +288,7 @@ async function questMore(message, g = game) {
     g._retained_message = '';
     return key;
 }
+// Part of C quest.c:is_pure(): the wizard alignment adjust prompt.
 async function wizardAdjustAlignment(g = game) {
     await pline('adjust?');
     await flush_screen(1);
@@ -292,9 +301,11 @@ async function wizardAdjustAlignment(g = game) {
     g._retained_message = '';
     return String.fromCharCode(key);
 }
+// Part of C quest.c:is_pure(): the u.ualignbase original-alignment read.
 function originalAlignment(g = game) {
     return g.u?.ualignbase?.[1] ?? g.u?.ualign?.type ?? 0;
 }
+// Part of C quest.c:is_pure(): the u.ualignbase current-base read.
 function currentBaseAlignment(g = game) {
     return g.u?.ualignbase?.[0] ?? g.u?.ualign?.type ?? 0;
 }
@@ -322,6 +333,7 @@ async function questPurity(talk, g = game) {
         return 1;
     return currentBaseAlignment(g) !== original ? -1 : 0;
 }
+// C dungeon.h:Is_qstart().
 // C Is_qstart(&u.uz): the quest home is identified by dungeon position.
 export function onQuestStart(g = game) {
     return sameDungeonLevel(g.u?.uz, g.specialLevels?.get('x-strt'));
@@ -371,6 +383,7 @@ export async function finishQuest(object, state = game) {
         fullyIdentifyObject(object, state);
     }
 }
+// C quest.c:artitouch().
 export async function touchQuestArtifact(object, state = game) {
     const status = ensureQuestStatus(state);
     if (status.touched_artifact)
@@ -511,6 +524,7 @@ export async function talkQuestCharacter(monster, state = game) {
         await angerWatchGuards(false, { state });
     }
 }
+// Part of C quest.c:expulsion(): the goto scheduling and the sealed half.
 export async function scheduleQuestExpulsion(seal, state = game) {
     endVoluntaryMultiTurn(state);
     state._questExpulsionPending = { seal, portal: !state.u.uevent?.qexpelled };
@@ -525,6 +539,7 @@ export async function scheduleQuestExpulsion(seal, state = game) {
             await impossible('quest portal already gone?', { state });
     }
 }
+// Part of C quest.c:expulsion(): the remdun_mapseen overview forget.
 function forgetQuestOverview(state) {
     const dungeon = state.quest_dnum ?? state.u.uz?.dnum;
     if (dungeon === undefined)

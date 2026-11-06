@@ -53,10 +53,12 @@ type SaveStorage = Pick<StorageBackend, 'setItem'>
 type RestoreStorage = Pick<StorageBackend, 'getItem'>
     & Partial<Pick<StorageBackend, 'removeItem'>>;
 
+// Port only: derives the storage key from the player name.
 function saveKey(name: string | null | undefined, prefix = SAVE_PREFIX): string {
     return `${prefix}${String(name || 'player').toLowerCase()}`;
 }
 
+// Port only: snapshots the persistent state for serialization.
 // Snapshot persistent state, including the message window's recall history.
 // Also C save.c:save_msghistory(): inlined here with the rest of the saved state.
 // Also C topl.c:msghistory_snapshot(): inlined here before serializing the oldest-first history.
@@ -71,6 +73,7 @@ function snapshotState(): SavedGame {
     };
 }
 
+// Part of C restore.c:getlev(): one level's monster restore.
 function restoreLevelMonsters(level: GameMap, moves: number): void {
     restoreLevelPetHistory(level, 0);
     restoreEngravings(level, moves);
@@ -79,6 +82,8 @@ function restoreLevelMonsters(level: GameMap, moves: number): void {
     for (const monster of level.monsters) restoreMonsterInventoryOwnership(monster);
 }
 
+// Part of C restore.c:dorecover(): monster restore across levels,
+// migrations, and the steed.
 function restoreSavedMonsters(state: PersistentState): void {
     if (state.level) restoreLevelMonsters(state.level, state.moves);
     for (const cached of state._levelCache?.values() ?? []) {
@@ -131,18 +136,21 @@ export async function dosave(): Promise<void> {
     game.context.move = 0;
 }
 
+// Port only: writes a snapshot under the player's storage key.
 export async function saveGame(
     storage: SaveStorage | null | undefined = game.storage,
 ): Promise<boolean> {
     return await writeSave(storage, saveKey(game.plname), true, 'replace');
 }
 
+// Port only: writes the error snapshot under its own key.
 export async function saveErrorGame(
     storage: SaveStorage | null | undefined = game.storage,
 ): Promise<boolean> {
     return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false, 'replace');
 }
 
+// Port only: checks storage for an existing error snapshot.
 export function hasErrorSave(
     name: string | null | undefined,
     storage: Pick<StorageBackend, 'getItem'> | null | undefined = game.storage,
@@ -164,6 +172,7 @@ export async function askAboutPanicSave(): Promise<boolean> {
     return await promptChoice(question, ['y', 'n', 'q'], 'n', { visibleChoices: 'yn' }) === 'y';
 }
 
+// Port only: pre-save monster pass (dead purge, priest timers).
 function prepareMonstersForSave(): void {
     const levels = [game.level, ...[...(game._levelCache?.values() ?? [])].map(cached => cached.level)];
     for (const level of levels) {
@@ -189,6 +198,7 @@ function undoDateLuck(): number {
     return before;
 }
 
+// C save.c:dosave0().
 async function writeSave(
     storage: SaveStorage | null | undefined, key: string, reportFailure: boolean,
     overwrite: 'ask' | 'replace',
@@ -228,6 +238,7 @@ async function writeSave(
     return saved;
 }
 
+// Part of C save.c:dosave0(): the overwrite question.
 // C dosave0() asks after interrupted-action cleanup, before saving level data.
 async function confirmSaveOverwrite(storage: SaveStorage, key: string): Promise<boolean> {
     const previous = storage.getItem?.(key);
@@ -255,10 +266,13 @@ export async function askKeepRestoredSave(): Promise<void> {
         restored.storage.removeItem?.(restored.key);
 }
 
+// Port only: reports the deferred unhealthy-restore refusal.
 export function restoreRefusedAsUnhealthy(): boolean {
     return restoreRefusal === 'unhealthy';
 }
 
+// Part of C restore.c:dorecover(): the unhealthy-refusal message, wait,
+// and file discard.
 export async function dismissUnhealthyRestore(
     name: string | null | undefined,
     storage: RestoreStorage | null | undefined = game.storage,
@@ -270,6 +284,8 @@ export async function dismissUnhealthyRestore(
     storage?.removeItem?.(saveKey(name));
 }
 
+// C restore.c:dorecover().
+// Also C restore.c:restgamestate(): inlined here.
 export async function restoreGame(
     name: string | null | undefined,
     storage: RestoreStorage | null | undefined = game.storage,
@@ -380,6 +396,7 @@ export async function restoreGame(
     }
 }
 
+// Port only: clears process-scoped globals when restoring into live state.
 // C starts a restored game in a new process. These values belong to decl.c
 // instance globals or function statics, rather than the saved context or hero.
 // Clear them here too when callers restore into the existing live state.
@@ -444,6 +461,8 @@ function resetRestoredInstanceState(): void {
 // C save.c:savemon() and restore.c:restmon(): saved pet extensions.
 // ---------------------------------------------------------------------------
 
+// Part of C restore.c:restmon(): the pet fix across a level's monsters
+// and objects.
 export function restoreLevelPetHistory(level: GameMap, elapsed: number): void {
     for (const monster of level.monsters) {
         restoreMonsterPetHistory(monster, elapsed);
@@ -454,6 +473,8 @@ export function restoreLevelPetHistory(level: GameMap, elapsed: number): void {
     restoreObjectPetHistory(level.buriedObjects ?? [], elapsed);
 }
 
+// Part of C restore.c:restmon(): the edog fields (droptime, hungrytime,
+// apport).
 export function restoreMonsterPetHistory(monster: Monster | SavedMonsterTraits, elapsed: number): void {
     const pet = monster.edog || monster.mextra?.edog;
     if (!pet) return;
@@ -467,6 +488,8 @@ export function restoreMonsterPetHistory(monster: Monster | SavedMonsterTraits, 
     else monster.mextra = { edog: pet };
 }
 
+// Part of C restore.c:restmon(): the edog fix applied to pets saved
+// inside objects.
 export function restoreObjectPetHistory(objects: readonly GameObject[], elapsed: number): void {
     for (const object of objects) {
         if (object.oextra?.omonst) restoreMonsterPetHistory(object.oextra.omonst, elapsed);

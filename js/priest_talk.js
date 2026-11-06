@@ -13,6 +13,7 @@ import { rn1, rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { moneyToHero } from './shk.js';
 import { heroGoldAmount, monsterGoldAmount } from './hack.js';
+// C priest.c:priest_talk(). Payments and property changes follow the dialogue.
 export async function talkToPriest(priest, state) {
     const coaligned = state.u.ualign.type === monsterAlignmentType(priest);
     const strayed = state.u.ualign.record < 0;
@@ -126,6 +127,8 @@ export async function talkToPriest(priest, state) {
         }
     }
 }
+// Part of C priest.c:priest_talk(): the quoted speech lines C routes
+// through verbalize.
 async function speak(text) {
     await pline(`"${text}"`);
 }

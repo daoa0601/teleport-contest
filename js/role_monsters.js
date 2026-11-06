@@ -9,6 +9,7 @@ const M2_NASTY = 0x02000000;
 const M3_CLOSE = 0x0080;
 const M3_WANTSARTI = 0x0010;
 const M3_WAITFORU = 0x0040;
+// Part of C role.c:role_init(): the quest species mflags2 rewrite.
 export function questMonsterFlags2(species, state = game) {
     // C role.c:role_init() copies and rewrites the shared mflags2 word.
     const flags = MONSTER_FLAGS2[species] ?? 0;
@@ -19,6 +20,7 @@ export function questMonsterFlags2(species, state = game) {
         return flags | M2_PEACEFUL;
     return flags;
 }
+// Part of C role.c:role_init(): the quest species mflags3 rewrite.
 export function questMonsterFlags3(species, state = game) {
     // C role.c:role_init() copies and rewrites the shared mflags3 word.
     const flags = MONSTER_FLAGS3[species] ?? 0;
@@ -28,6 +30,7 @@ export function questMonsterFlags3(species, state = game) {
         return flags | M3_CLOSE;
     return flags;
 }
+// Part of C role.c:role_init(): the leader/guard maligntyp rewrite.
 export function questMonsterAlignment(species, state = game) {
     if (species === state.urole?.ldrnum || species === state.urole?.guardnum) {
         const startingAlignment = state.initAlignment?.value
@@ -36,6 +39,7 @@ export function questMonsterAlignment(species, state = game) {
     }
     return requireMonsterData(MONSTER_ALIGNMENT, species);
 }
+// Part of C role.c:role_init(): the leader/nemesis msound rewrite.
 export function questMonsterSound(species, state = game) {
     if (species === state.urole?.neminum)
         return 37; // MS_NEMESIS

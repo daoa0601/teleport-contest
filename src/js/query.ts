@@ -25,6 +25,7 @@ interface LineInputOptions {
     inMenu?: boolean;
 }
 
+// C windows.c:getlin(): core line input; owns the command queue.
 export async function getLine(
     prompt: string,
     accepts: (character: string, key: number) => boolean = ch => /^[0-9+-]$/.test(ch),
@@ -215,6 +216,8 @@ export async function tty_getlin(
     }
 }
 
+// Part of C topl.c:tty_yn_function(): paints the question line and
+// cursor on the tty.
 function renderChoicePrompt(message: string): void {
     const display = game.nhDisplay;
     if (!display) return;
@@ -231,8 +234,10 @@ function renderChoicePrompt(message: string): void {
     game._promptOwnsTopline = false;
 }
 
-// C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
-// the displayed default. Invalid keys leave the same question active.
+// Port only: typed choice wrapper over yn_function for JS callers.
+// tty_yn_function behavior: Escape prefers quit, then no; whitespace
+// chooses the displayed default. Invalid keys leave the same question
+// active.
 export async function promptChoice<Choice extends string>(
     query: string, choices: readonly Choice[], defaultAnswer: Choice,
     { visibleChoices = choices.join(''), addCommandQueue = true, menuable = false }: {
@@ -258,6 +263,7 @@ export function completeExtendedCommand(prefix: string): string | null {
 }
 
 
+// C topl.c:tty_yn_function().
 // Native tty_yn_function returns the answer and sets yn_number. Keep the
 // number in the result so each suspended question owns its own answer.
 export async function tty_yn_function(
@@ -357,14 +363,17 @@ export async function tty_yn_function(
 }
 
 
+// Port only: y/n convenience wrapper.
 export function promptYesNo(message: string, defaultAnswer: 'y' | 'n' = 'n', addCommandQueue = true): Promise<'y' | 'n'> {
     return promptChoice(message, ['y', 'n'], defaultAnswer, { addCommandQueue, menuable: true });
 }
 
+// Port only: y/n/q convenience wrapper.
 export function promptYesNoQuit(message: string, defaultAnswer: 'y' | 'n' | 'q' = 'q'): Promise<'y' | 'n' | 'q'> {
     return promptChoice(message, ['y', 'n', 'q'], defaultAnswer, { menuable: true });
 }
 
+// Port only: y/n/a/q convenience wrapper.
 export function promptYesNoAllQuit(message: string, defaultAnswer: 'y' | 'n' | 'a' | 'q' = 'y'): Promise<'y' | 'n' | 'a' | 'q'> {
     return promptChoice(message, ['y', 'n', 'a', 'q'], defaultAnswer, { menuable: true });
 }

@@ -233,10 +233,12 @@ export async function startHeroSickness({
     return { started: hero.sick, newlySick };
 }
 
+// C youprop.h:Sick().
 export function heroIsSick(state = game) {
     return !!state.u?.sick || (state.u?.sickTurns ?? 0) > 0;
 }
 
+// C potion.c:make_sick(): the cure half without its message.
 export function cureHeroSickness(state = game, type = SICK_ALL) {
     const hero = state.u;
     const currentType = hero.sickType ?? 0;
@@ -255,6 +257,7 @@ export function cureHeroSickness(state = game, type = SICK_ALL) {
     return true;
 }
 
+// C potion.c:make_sick(): the cure half with its message.
 // Native make_sick(0, ..., talk, type): the type mask changes before the
 // cure message; the timeout and delayed cause remain until that line returns.
 export async function cureHeroSicknessWithMessages(state = game, type = SICK_ALL, publish: MessagePublisher = plineWithContinuation) {
@@ -295,6 +298,7 @@ export async function setHeroSlimingTimeout(turns: number, {
     // The fake late-countdown appearance and cause survive the cure message.
     if (!hero.slimedTurns) clearHeroSliming(state);
 }
+// C youprop.h:Slimed().
 export function heroIsSliming(state: GameState = game): boolean {
     return (state.u?.slimedTurns ?? 0) > 0 || !!state.u?.slimed;
 }
@@ -317,6 +321,7 @@ export function startHeroSliming({
     return hero.slimed;
 }
 
+// Part of C potion.c:make_slimed(): clearing the sliming state.
 export function clearHeroSliming(state: GameState = game): boolean {
     const wasSliming = heroIsSliming(state);
     if (wasSliming) state.context.botl = true;
@@ -324,6 +329,7 @@ export function clearHeroSliming(state: GameState = game): boolean {
     return wasSliming;
 }
 
+// Part of C polyself.c:newman(): re-sliming after a new form.
 export function resetHeroSlimingCountdown(state: GameState = game, turns = 10): boolean {
     if (!heroIsSliming(state)) return false;
     state.u.slimedTurns = turns;
@@ -331,6 +337,7 @@ export function resetHeroSlimingCountdown(state: GameState = game, turns = 10): 
     return true;
 }
 
+// C youprop.h:Vomiting().
 export function heroIsVomiting(state = game) {
     return !!state.u?.vomiting || (state.u?.vomitingTurns ?? 0) > 0;
 }
@@ -422,6 +429,7 @@ export async function makeBlinded(turns: number, {
     if (couldSee !== canSee) await toggleBlindness(state);
 }
 
+// Part of C potion.c:make_blinded(): the masked cure/set messages.
 function maskedBlindnessMessage(clearing: boolean, state: GameState) {
     const hallucinating = heroIsHallucinating(state);
     if (!monsterHasEyes(heroSpecies(state)) || permanentBlind(state)) {
@@ -552,6 +560,7 @@ async function releaseGhost(state: PlayingGameState) {
     state._helplessDoneMessage = 'You regain your composure.';
 }
 
+// Part of C potion.c:dodrink(): the milky/smoky occupant release.
 export async function releasePotionOccupant(source: GameObject, { state = game }: PotionEffectOptions = {}): Promise<{ released: boolean; heroDied: boolean }> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -659,12 +668,14 @@ export async function drinkPotion(source: GameObject, { state = game, consume = 
     return outcome(effect.result !== 0, state, source);
 }
 
+// Part of C potion.c:dopotion(): the potion useup.
 async function consumePotion(source: GameObject, state: GameState) {
     if (source.where === 'inventory' || state.inventory.includes(source))
         await consumeInventoryItem(source, state);
     else await useUpFloorObject(source, 1, { state });
 }
 
+// Port only: quaff result plumbing (turn spent, hero death, object).
 function outcome(spentTime: boolean, state: GameState, object: GameObject | null = null): QuaffResult {
     return { spentTime, heroDied: !!state.program_state.gameover, object, cancelled: false };
 }
@@ -688,6 +699,8 @@ export function restoreHeroBaseAttributes({ all = false, state = game }: { all?:
     }
 }
 
+// Part of C potion.c:peffect_restore_ability(): the potion messages and
+// level catch-up.
 async function restoreAbility(source: GameObject, state: PlayingGameState) {
     if (source.cursed) {
         await pline('Ulch!  This makes you feel mediocre!');
@@ -721,11 +734,13 @@ async function hallucinationEffect(source: GameObject, state: PlayingGameState) 
     return nothing;
 }
 
+// C hack.h:Maybe_Half_Phys().
 function halfPhysical(amount: number, state: GameState) {
     return state.u.halfPhysicalDamage
         ? Math.ceil(amount / 2) : amount;
 }
 
+// C potion.c:peffect_water().
 async function drinkWater(source: GameObject, state: PlayingGameState) {
     const hero = state.u;
     if (!source.blessed && !source.cursed) {
@@ -780,6 +795,7 @@ async function drinkWater(source: GameObject, state: PlayingGameState) {
     return !!state.program_state.gameover;
 }
 
+// C mkobj.c:bcsign().
 function blessing(source: GameObject) {
     return source.blessed ? 1 : source.cursed ? -1 : 0;
 }
@@ -1006,6 +1022,8 @@ async function drinkSickness(source: GameObject, state: PlayingGameState) {
     return !!state.program_state.gameover;
 }
 
+// Part of C potion.c:peffect_gain_ability(): its adjattrib call with the
+// last-attempt msgflg.
 // msgflg -1 suppresses failed attempts but still reports successful changes.
 async function increaseAttribute(attribute: number, reportFailure: boolean, state: PlayingGameState) {
     const change = adjustAttribute(attribute, 1, state);
@@ -1021,6 +1039,7 @@ async function increaseAttribute(attribute: number, reportFailure: boolean, stat
     return change;
 }
 
+// C potion.c:peffect_gain_level().
 async function drinkGainLevel(source: GameObject, state: PlayingGameState) {
     if (!source.cursed) {
         await gainExperienceLevel({ state });
@@ -1065,6 +1084,7 @@ async function drinkOil(source: GameObject, state: PlayingGameState) {
     return !!state.program_state.gameover;
 }
 
+// C potion.c:peffect_acid().
 async function drinkAcid(source: GameObject, state: PlayingGameState) {
     if (propertyIsActive('acidResistance', state))
         await plineWithContinuation(`This tastes ${heroIsHallucinating(state) ? 'tangy' : 'sour'}.`);
@@ -1094,9 +1114,8 @@ async function drinkPolymorph(source: GameObject, state: PlayingGameState) {
 
 // ---- peffects() (C potion.c:1333) ----
 
-// C potion.c:peffect_water().
-// C potion.c:peffect_acid().
-// C potion.c:peffect_gain_level().
+// Part of C potion.c:peffects(): the water/sickness/oil/acid/polymorph/
+// gain-level dispatch; the peffect_* ports are the functions below.
 export async function applyPotionBodyEffect(source: GameObject, { state = game }: PotionEffectOptions = {}): Promise<PartialPotionEffectResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1366,6 +1385,7 @@ function increaseLevitationTimeout(hero: Hero, amount: number): void {
     hero.levitationTurns = Math.min(TIMEOUT, current + amount);
 }
 
+// Part of C potion.c:peffect_levitation(): the upstairs check before doup.
 function upStairwayAt(x: number, y: number, state: GameState): Stairway | null {
     let stairs = state.stairs;
     while (stairs && (stairs.sx !== x || stairs.sy !== y))
@@ -1470,12 +1490,14 @@ export function randomBottleName(
     return name;
 }
 
+// Part of C potion.c:potionhit(): the impacting potion's name.
 export function potionImpactObjectName(potion: GameObject, state: GameState = game) {
     return objectCombatName(potion, { state, includeCorpseSpecies: false });
 }
 
 // ---- H2Opotion_dip() (C potion.c:1498) ----
 
+// C potion.c:H2Opotion_dip().
 async function dipInWater(object: GameObject, potion: GameObject): Promise<boolean> {
     let action: 'uncurse' | 'bless' | 'unbless' | 'curse' | null = null;
     let color = '';
@@ -1727,11 +1749,13 @@ const HEALING_POTION_TYPES = new Set([
 const CONFUSION_POTION_TYPES = new Set([POT_CONFUSION, POT_BOOZE]);
 const HELPLESS_POTION_TYPES = new Set([POT_PARALYSIS, POT_SLEEPING]);
 
+// Part of C potion.c:potionhit(): the capitalized monster subject.
 function sentenceSubject(monster: Monster) {
     const subject = monsterName(monster);
     return `${subject.charAt(0).toUpperCase()}${subject.slice(1)}`;
 }
 
+// Part of C potion.c:potionhit(): the saddle-hit rolls.
 function potionHitsSaddle(monster: Monster, potion: GameObject): GameObject | null {
     const saddle = monsterSaddle(monster);
     if (!saddle) return null;
@@ -1744,11 +1768,13 @@ function potionHitsSaddle(monster: Monster, potion: GameObject): GameObject | nu
     return rn2(3) === 0 ? saddle : null;
 }
 
+// Part of C potion.c:potionhit(): the saddle owner phrase.
 function saddleOwnerPhrase(monster: Monster, state: GameState) {
     const phrase = possessiveName(monsterName(monster, { state, suppressIt: true, suppressSaddle: true }));
     return `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}`;
 }
 
+// Part of C potion.c:potionhit(): the saddle bless/curse change.
 async function applyPotionToSaddle({
     state, monster, saddle, potion, targetVisible, targetSpotted, publish,
 }: { state: GameState; monster: Monster; saddle: GameObject; potion: GameObject; targetVisible: boolean; targetSpotted: boolean; publish: MessagePublisher }): Promise<void> {
@@ -1789,12 +1815,14 @@ async function applyPotionToSaddle({
     change.apply();
 }
 
+// Part of C potion.c:potionhit(): which healing cures blindness.
 function healingCuresBlindness(potion: GameObject) {
     if (potion.otyp === POT_FULL_HEALING) return true;
     if (potion.otyp === POT_EXTRA_HEALING) return !potion.cursed;
     return potion.otyp === POT_HEALING && !!potion.blessed;
 }
 
+// Part of C potion.c:potionhit(): the sickness immunity test.
 function sicknessCannotHarmMonster(monster: Monster) {
     return monsterHasPoisonResistance(monster)
         || MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
@@ -1817,6 +1845,7 @@ function monsterResistsPotion(monster: Monster, state: GameState = game) {
         < (MONSTER_MAGIC_RESISTANCE[mnum] ?? 0);
 }
 
+// Part of C potion.c:potionhit(): the sleep resistance test.
 function monsterHasSleepDefense(monster: Monster) {
     const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
         | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
@@ -1824,6 +1853,7 @@ function monsterHasSleepDefense(monster: Monster) {
         || !!monster?.defendedSleep;
 }
 
+// Part of C potion.c:potionhit(): the is_were test.
 function monsterIsWere(monster: Monster) {
     return is_were(monster?.mnum);
 }
@@ -1850,6 +1880,7 @@ async function publishPotionPainAndWakeRadius({
     }
 }
 
+// Part of C potion.c:potionhit(): the were transformation noun.
 function wereTransformationNoun(monster: Monster) {
     if (!monsterIsHuman(monster?.mnum)) return 'human';
     if (monster.mnum === 261) return 'rat';
@@ -1857,10 +1888,12 @@ function wereTransformationNoun(monster: Monster) {
     return 'wolf';
 }
 
+// Part of C potion.c:potionhit(): the survived-the-potion test.
 function monsterSurvivedPotion(monster: Monster) {
     return !monster.dead && (monster.mhp ?? 0) > 0;
 }
 
+// Part of C potion.c:potionhit(): the per-type direct effect dispatch.
 async function applySupportedDirectEffect({
     state, monster, potion, targetVisible, targetSpotted, wakeMonster: wakeAttackedTarget,
     publish, showShield, spotMonster, repaintMonster, rememberInvisible,
@@ -2289,6 +2322,7 @@ async function applySupportedDirectEffect({
     };
 }
 
+// C potion.c:potionhit().
 export async function hitMonsterWithSupportedPotion({
     state = game,
     monster,
@@ -2396,6 +2430,7 @@ export async function hitMonsterWithSupportedPotion({
 
 // ---- potionbreathe() (C potion.c:1932) ----
 
+// Part of C potion.c:potionbreathe(): the one-point heal.
 function healHeroOnePoint(state: PlayingGameState) {
     const hero = state.u;
     if (Upolyd(hero) && hero.mh < hero.mhmax) {
@@ -2408,6 +2443,7 @@ function healHeroOnePoint(state: PlayingGameState) {
     }
 }
 
+// Part of C potion.c:potionbreathe(): the restore-ability vapor.
 function restoreBaseAttributes(state: PlayingGameState, potion: GameObject) {
     const base = state.u?.acurr?.a;
     const maximum = state.u?.amax?.a;
@@ -2426,6 +2462,7 @@ function restoreBaseAttributes(state: PlayingGameState, potion: GameObject) {
     return start;
 }
 
+// Part of C potion.c:potionbreathe(): the breathless/eyes admission gate.
 export function heroPotionVaporProfile(state: GameState) {
     const mnum = Number.isInteger(state.u?.umonnum)
         ? state.u.umonnum
@@ -2436,11 +2473,14 @@ export function heroPotionVaporProfile(state: GameState) {
     return { breathless, hasEyes, canReceive: !breathless || hasEyes };
 }
 
+// Part of C potion.c:potionbreathe(): the towel vapor shield.
 function heroHasVaporShield(state: GameState) {
     const eyewear = state.ublindf || state.u?.ublindf;
     return eyewear?.otyp === TOWEL && (eyewear.spe ?? 0) > 0;
 }
 
+// Part of C potion.c:potionbreathe(): the paralysis/sleeping vapor
+// helplessness.
 async function installPotionHelplessness(state: GameState, duration: number, reason: string) {
     // nomul() keeps a longer involuntary delay. The caller still replaces
     // its reason and recovery message, even when nomul() returns early.
@@ -2450,18 +2490,21 @@ async function installPotionHelplessness(state: GameState, duration: number, rea
     await exerciseAttribute(A_DEX, false, state);
 }
 
+// Part of C potion.c:potionbreathe(): the Very_fast test.
 function heroIsFast(state: GameState) {
     return !!(state.u?.fast || state.u?.veryFast
         || state.u?.veryFastFromArmor
         || (state.u?.veryFastTurns ?? 0) > 0);
 }
 
+// Part of C potion.c:potionbreathe(): the See_invisible test.
 function heroSeesInvisible(state: GameState) {
     const hero = state.u;
     return !!(hero.seeInvisible
         || (hero.seeInvisibleTurns ?? 0) > 0);
 }
 
+// Part of C potion.c:potionbreathe(): the makeknown or type-call ending.
 async function finishPotionVaporKnowledge(state: GameState, potion: GameObject, identifiesType: boolean): Promise<PotionKnowledge | null> {
     if (potion.dknown === false) return null;
     if (identifiesType) {
@@ -2476,12 +2519,14 @@ async function finishPotionVaporKnowledge(state: GameState, potion: GameObject, 
     return await tryCallObjectType(potion, state);
 }
 
+// Part of C potion.c:potionbreathe(): the stinging-eyes message.
 function cursedVaporEyeMessage(state: GameState): string {
     const eye = body_part(EYE, state);
     const eyes = eyecount(heroSpecies(state)) === 1 ? eye : makePlural(eye);
     return `Your ${eyes} ${verbForSubject(eyes, 'sting')}!`;
 }
 
+// C potion.c:potionbreathe().
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Its final knowledge transaction either identifies an unambiguous effect or
 // asks for a type-wide call name before the caller frees the potion identity.
@@ -2504,6 +2549,7 @@ export async function applySupportedPotionVapor(options: PotionVaporOptions): Pr
     return { ...effect, typeCall };
 }
 
+// Part of C potion.c:potionbreathe(): the per-type vapor effects.
 async function applyPotionVaporEffect({
     state = game,
     potion,
@@ -2654,6 +2700,7 @@ async function applyPotionVaporEffect({
 
 const AMETHYST = OBJECT_NAMES.indexOf('amethyst');
 
+// Part of C potion.c:potion_dip(): the mixture color name.
 function potionColor(potion: GameObject): string {
     return displayColorName(OBJ_DESCR(potion.otyp));
 }
@@ -2707,7 +2754,8 @@ function mixtureType(first: GameObject, second: GameObject): number | null {
 
 // ---- dip_ok()/dip_hands_ok() (C potion.c:2214-2242) ----
 
-// C dip_ok() downplays hands; dip_hands_ok() suggests them instead when
+// Part of C potion.c:dodip(): the dip target getobj with dip_hands_ok.
+// C dip_ok downplays hands; dip_hands_ok() suggests them instead when
 // slippery hands could be washed in the water source here.
 async function chooseDipTarget(verb: string, floorWater = true): Promise<DipTarget | null> {
     requirePlayingGame(game);
@@ -2722,17 +2770,20 @@ async function chooseDipTarget(verb: string, floorWater = true): Promise<DipTarg
     return selection.none ? 'hands' : selection.object;
 }
 
+// C potion.c:dip_ok().
 function dipClassification(object: GameObject): InventoryClassification {
     if (object.oclass === COIN_CLASS) return GETOBJ_EXCLUDE;
     return coveringEquipment(object).length ? GETOBJ_EXCLUDE_INACCESS : GETOBJ_SUGGEST;
 }
 
+// C potion.c:drink_ok(): the dip-into potion filter.
 function potionClassification(object: GameObject): InventoryClassification {
     return object.oclass === POTION_CLASS ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE;
 }
 
 // ---- hold_potion() (C potion.c:2243) ----
 
+// C potion.c:hold_potion().
 async function holdPotion(potion: GameObject, dropPrefix: string): Promise<void> {
     const burden = game.flags.pickup_burden;
     game.flags.pickup_burden = Math.max(nearCapacity(game), pickupBurden(game));
@@ -2748,6 +2799,8 @@ async function holdPotion(potion: GameObject, dropPrefix: string): Promise<void>
 
 // ---- dodip()/dip_into() (C potion.c:2267-2406) ----
 
+// Part of C potion.c:dodip(): the target selection and water-source
+// prompts.
 export async function dip({
     fountain,
 }: { fountain: (object: DipTarget, location: MapLocation) => Promise<void> }): Promise<'cancelled' | void> {
@@ -2798,6 +2851,7 @@ export async function dip({
     game.context.move = Number(await finishDip(object, potion));
 }
 
+// Part of C potion.c:dodip(): the it/them short name.
 function dipTargetPronoun(object: DipTarget): string {
     if (object === 'hands') return 'them';
     const slot = object.oclass === ARMOR_CLASS ? armorSlotFor(object.otyp) : null;
@@ -2811,6 +2865,7 @@ function dipTargetPronoun(object: DipTarget): string {
 // or ?*] " whose trailing blank and NUL leave 50 characters for the item.
 const DIP_PROMPT_RESERVE = 77;
 
+// Part of C potion.c:dodip(): the short_oname formatted item name.
 async function dipTargetDescription(object: GameObject): Promise<string> {
     observeObjectForNaming(object);
     return await objectQuestion(object, {
@@ -2827,6 +2882,7 @@ export async function dodip(): Promise<void> {
     if (await dip({ fountain: dipFountain }) === 'cancelled') commandResultCancelled();
 }
 
+// C potion.c:dip_into().
 export async function dipInto(): Promise<void> {
     if (!cmdq_peek(CQ_CANNED)) {
         // C potion.c:2384 dip_into() refuses to run when cmdq_peek(
@@ -2860,6 +2916,7 @@ export async function dipInto(): Promise<void> {
 
 // ---- poof()/dip_potion_explosion()/potion_dip() (C potion.c:2407-2795) ----
 
+// C potion.c:poof().
 async function poof(potion: GameObject): Promise<void> {
     if (potion.dknown) await tryCallObjectType(potion);
     await consumeInventoryItem(potion);
@@ -2880,6 +2937,7 @@ async function mixtureExplodes(object: GameObject, damage: number): Promise<bool
     return true;
 }
 
+// C potion.c:potion_dip().
 export async function treatDippedObject(object: GameObject, potion: GameObject): Promise<boolean> {
     requirePlayingGame(game);
     if (object === potion && objectQuantity(potion) === 1) {
@@ -2949,6 +3007,7 @@ export async function treatDippedObject(object: GameObject, potion: GameObject):
     return true;
 }
 
+// Part of C potion.c:potion_dip(): the polymorph branch.
 async function dipInPolymorph(object: GameObject, potion: GameObject): Promise<void> {
     if (obj_unpolyable(object.otyp === POT_POLYMORPH ? potion : object)) {
         await pline('Nothing happens.');
@@ -2975,12 +3034,15 @@ async function dipInPolymorph(object: GameObject, potion: GameObject): Promise<v
     }
 }
 
+// Part of C potion.c:dodip(), dip_into(): their potion_dip call, with its
+// hands refusal.
 async function finishDip(object: DipTarget, potion: GameObject): Promise<boolean> {
     if (object !== 'hands') return treatDippedObject(object, potion);
     await pline(`You can't fit your ${body_part(HAND)} into the mouth of the bottle!`);
     return false;
 }
 
+// Part of C potion.c:potion_dip(): the potion-mixing branch.
 export async function mixPotions(object: GameObject, potion: GameObject): Promise<void> {
     requirePlayingGame(game);
     const mixture = mixtureType(object, potion);
@@ -3033,6 +3095,7 @@ export async function mixPotions(object: GameObject, potion: GameObject): Promis
     await holdPotion(object, 'You drop');
 }
 
+// Part of C potion.c:potion_dip(): the unicorn horn/amethyst branch.
 export async function neutralizePotion(object: GameObject, potion: GameObject): Promise<boolean> {
     if (object.otyp !== UNICORN_HORN && object.otyp !== AMETHYST) return false;
     const mixture = mixtureType(object, potion);
@@ -3069,6 +3132,7 @@ export async function neutralizePotion(object: GameObject, potion: GameObject): 
     return true;
 }
 
+// Part of C potion.c:potion_dip(): the oil branch.
 async function dipInOil(object: GameObject, potion: GameObject): Promise<boolean> {
     let wisdom = false;
     if (potion.lamplit) {
@@ -3098,6 +3162,7 @@ async function dipInOil(object: GameObject, potion: GameObject): Promise<boolean
     return true;
 }
 
+// Part of C potion.c:potion_dip(): the lamp-filling branch.
 async function fillLamp(lamp: GameObject, potion: GameObject): Promise<void> {
     if (lamp.lamplit || potion.lamplit) {
         await consumeInventoryItem(potion);
@@ -3122,6 +3187,7 @@ async function fillLamp(lamp: GameObject, potion: GameObject): Promise<void> {
 
 // ---- mongrantswish()/djinni_from_bottle()/split_mon() (C potion.c:2796-2918) ----
 
+// C potion.c:mongrantswish().
 export async function grantMonsterWish(monster: Monster, {
     state = game,
 }: PotionEffectOptions = {}): Promise<void> {
@@ -3266,6 +3332,7 @@ export async function strangeFeeling(source: GameObject | null, text: string | n
     return finishStrangeFeeling(source, { state });
 }
 
+// Part of C potion.c:strange_feeling(): the trycall and useup half.
 export async function finishStrangeFeeling(source: GameObject | null, {
     state = game,
 }: Pick<ScrollEffectOptions, 'state'> = {}): Promise<ScrollEffectResult> {

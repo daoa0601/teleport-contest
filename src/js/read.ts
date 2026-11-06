@@ -167,6 +167,7 @@ const SCR_GOLD_DETECTION = OBJECT_NAMES.indexOf('gold detection');
 const SCR_FOOD_DETECTION = OBJECT_NAMES.indexOf('food detection');
 const SCR_CHARGING = OBJECT_NAMES.indexOf('charging');
 
+// C read.c:doread().
 export async function doread(options: Omit<ScrollEffectOptions, 'state'> = {}) {
     const {
         gotoLevel = (...args: Parameters<typeof changeLevel>) => { scheduleLevelChange(args); },
@@ -234,6 +235,7 @@ function classifyReadableObject(object: GameObject | null | undefined) {
     return [SCROLL_CLASS, SPBOOK_CLASS].includes(object.oclass) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
 }
 
+// Part of C read.c:doread(): the scroll announcement and confusion line.
 async function announceScroll(source: GameObject, confused: boolean) {
     const silently = !heroCanChant();
     const staysVisible = source.otyp === SCR_FIRE || (source.otyp === SCR_REMOVE_CURSE && source.cursed);
@@ -248,6 +250,7 @@ async function announceScroll(source: GameObject, confused: boolean) {
         : `Being confused, you ${silently ? 'misunderstand' : 'mispronounce'} the magic words...`);
 }
 
+// Port only: read result bookkeeping (turn spent, hero death, cancel).
 function finishRead(spentTime: boolean, cancelled = false) {
     const heroDied = !!game.program_state.gameover;
     game.context.move = Number(spentTime && !heroDied);
@@ -306,6 +309,7 @@ function chargingChoice(object: GameObject, state: GameState): InventoryClassifi
     return GETOBJ_EXCLUDE;
 }
 
+// Part of C read.c:seffect_charging(): the getobj charge prompt.
 // getobj("charge", charge_ok, GETOBJ_PROMPT | GETOBJ_ALLOWCNT).
 export async function chooseObjectToCharge(state: GameState = game): Promise<GameObject | null> {
     return chooseInventoryObject('charge', object => chargingChoice(object, state),
@@ -329,6 +333,7 @@ export async function rechargeObject(object: GameObject, blessing: number, state
     return { heroDied: false };
 }
 
+// Part of C read.c:recharge(): the wand half.
 async function rechargeWand(wand: GameObject, blessing: number, state: GameState) {
     const limit = wand.otyp === WAN_WISHING ? 1
         : objectDirection(wand.otyp, state) === NODIR ? 15 : 8;
@@ -354,6 +359,7 @@ async function rechargeWand(wand: GameObject, blessing: number, state: GameState
     }
 }
 
+// Part of C read.c:recharge(): the ring half.
 export async function rechargeRing(ring: GameObject, blessing: number, state: GameState = game, {
     publish = pline, random = rn2, rollOne = rnd, die = defaultHeroDeath,
 }: RechargeRingOptions = {}): Promise<RingRechargeResult> {
@@ -391,6 +397,7 @@ export async function rechargeRing(ring: GameObject, blessing: number, state: Ga
     return { damage: 0, heroDied: false };
 }
 
+// Part of C read.c:recharge(): the tool half.
 async function rechargeTool(tool: GameObject, blessing: number, state: GameState) {
     const previous = tool.recharged;
     if (objectCharged(tool.otyp) && previous < 7) tool.recharged++;
@@ -530,6 +537,7 @@ export async function explodeWand(wand: GameObject, extraCharges = 0, state: Gam
     await exerciseAttribute(A_STR, false, state);
 }
 
+// C hack.h:Maybe_Half_Phys().
 function physicalDamage(amount: number, state: GameState) {
     return state.u.halfPhysicalDamage
         ? Math.trunc((amount + 1) / 2) : amount;
@@ -552,6 +560,8 @@ function swallowedLightMessage() {
         : `${subject} glistens.`;
 }
 
+// Part of C read.c:litroom(): the affected cells (do_clear_area, or the
+// whole room on rogue levels).
 async function roomEffectCells(radius: number, lit: boolean): Promise<Position[]> {
     if (!Is_rogue_level(game.u?.uz)) {
         // Sunsword illuminates the hero's spot directly; do_clear_area
@@ -572,6 +582,7 @@ async function roomEffectCells(radius: number, lit: boolean): Promise<Position[]
     return cells;
 }
 
+// Part of C read.c:litroom(): the carried-light snuff and count pass.
 async function affectCarriedLights(worsen: boolean) {
     let stillLit = 0;
     for (const object of [...game.inventory]) {
@@ -660,6 +671,7 @@ export async function lightRoom(
 // Armor and weapon scroll effects. C read.c:seffect_enchant_armor(),
 // seffect_destroy_armor(), and seffect_enchant_weapon().
 
+// Part of C read.c:seffects(): the armor/weapon scroll dispatch.
 // Initial reading prose, Wisdom exercise, normal disposal, and discovery
 // remain with seffects()/doread(). Strange feelings consume their own source.
 export async function applyArmorScrollEffect(
@@ -755,6 +767,7 @@ async function enchantArmor(source: GameObject, state: PlayingGameState): Promis
     return { known };
 }
 
+// Part of C read.c:seffect_enchant_armor(): the confused proofing branch.
 async function proofArmor(armor: GameObject, cursed: boolean, state: PlayingGameState): Promise<void> {
     const oldProof = !!armor.oerodeproof;
     armor.oerodeproof = false;
@@ -775,6 +788,7 @@ async function proofArmor(armor: GameObject, cursed: boolean, state: PlayingGame
     await replaceProofing(armor, oldProof, !cursed, state);
 }
 
+// Part of C read.c:seffect_enchant_armor(): the dragon scales hardening.
 async function hardenDragonScales(armor: GameObject, source: GameObject, state: PlayingGameState): Promise<void> {
     await pline(`${ownedObjectAction(armor, null, state)} merges and hardens!`);
     const wasLit = armor.lamplit;
@@ -829,6 +843,8 @@ export async function enchantWeapon(scroll: GameObject, state: GameState = game)
     return !processed;
 }
 
+// Part of C read.c:seffect_enchant_weapon(): the confused proof/repair
+// branch.
 // C seffect_enchant_weapon() confused branch: set, clear, or repair
 // erosion proofing. The enchantment never changes here.
 async function proofConfusedReading(uwep: GameObject, scursed: boolean, state: GameState) {
@@ -918,6 +934,8 @@ async function destroyArmor(source: GameObject, state: PlayingGameState): Promis
     return itchyFeeling(source, 'Your skin itches.', state);
 }
 
+// Part of C read.c:seffect_destroy_armor(), seffect_enchant_armor(): the
+// strange-feeling plus STR/CON exercise exit.
 async function itchyFeeling(source: GameObject, message: string, state: PlayingGameState): Promise<ScrollEffectResult> {
     const result = await strangeFeeling(source, message, { state });
     await exerciseAttribute(A_STR, false, state);
@@ -925,6 +943,9 @@ async function itchyFeeling(source: GameObject, message: string, state: PlayingG
     return result;
 }
 
+// Part of C read.c:seffect_destroy_armor(), seffect_enchant_weapon(),
+// seffect_enchant_armor(): restoring old proofing before the degradation
+// charge.
 async function replaceProofing(armor: GameObject, oldProof: boolean, newProof: boolean, state: GameState): Promise<void> {
     if (oldProof && !newProof) {
         armor.oerodeproof = true;
@@ -933,6 +954,8 @@ async function replaceProofing(armor: GameObject, oldProof: boolean, newProof: b
     armor.oerodeproof = newProof;
 }
 
+// Port only: vision recalc and shine message after an armor's light
+// radius changes.
 async function adjustArmorLight(armor: GameObject, oldRadius: number, state: GameState): Promise<void> {
     if (!oldRadius) return;
     const delta = objectLightRadius(armor, state) - oldRadius;
@@ -944,6 +967,7 @@ async function adjustArmorLight(armor: GameObject, oldRadius: number, state: Gam
     }
 }
 
+// Part of C read.c:seffect_enchant_armor(): the glow/vibrate subject.
 function armorGlow(armor: GameObject, cursed: boolean, sameColor: boolean, violent: boolean, state: GameState): string {
     const verb = heroIsBlind(state) ? 'vibrate' : 'glow';
     const color = heroIsBlind(state) || sameColor
@@ -951,20 +975,25 @@ function armorGlow(armor: GameObject, cursed: boolean, sameColor: boolean, viole
     return `${ownedObjectAction(armor, `${violent ? 'violently ' : ''}${verb}`, state)}${color}`;
 }
 
+// Part of C read.c:seffect_enchant_armor(): the verb pluralization.
 function armorVerb(armor: GameObject, verb: string): string {
     return armor.quan > 1 ? verb : `${verb}s`;
 }
 
+// Part of C read.c:seffect_enchant_armor(): the special-armor test.
 function isSpecialArmor(armor: GameObject, state: GameState): boolean {
     return [ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK,
         ELVEN_SHIELD, ELVEN_BOOTS].includes(armor.otyp)
         || armor.otyp === CORNUTHAUM && state.urole?.key === 'wizard';
 }
 
+// C youprop.h:Confusion().
 function isConfused(state: GameState): boolean {
     return !!state.u?.confused || (state.u?.confusionTurns ?? 0) > 0;
 }
 
+// Part of C read.c:seffect_enchant_armor(), seffect_destroy_armor(): the
+// enchantment write.
 function setEnchantment(armor: GameObject, amount: number): void {
     armor.spe = Math.max(-SPE_LIM, Math.min(SPE_LIM, amount));
     armor.enchantment = armor.spe;
@@ -1037,6 +1066,8 @@ async function causeFearEffect(source: GameObject, state: PlayingGameState): Pro
     return;
 }
 
+// Part of C read.c:seffect_remove_curse(): the effective worn mask with
+// the swap-weapon and quiver carve-outs.
 function removeCurseWornMask(object: GameObject, state: PlayingGameState): number {
     let mask = (object.owornmask ?? 0) & ~(W_BALL | W_ART | W_ARTI);
     const swapWeapon = state.uswapwep || state.u?.uswapwep;
@@ -1055,12 +1086,16 @@ function removeCurseWornMask(object: GameObject, state: PlayingGameState): numbe
     return mask;
 }
 
+// Part of C read.c:seffect_remove_curse(): the blessed/loadstone/leash
+// applicability test.
 function removeCurseAppliesTo(object: GameObject, blessed: boolean, state: PlayingGameState): boolean {
     return blessed || !!removeCurseWornMask(object, state)
         || object.otyp === LOADSTONE
         || (object.otyp === LEASH && !!object.leashmon);
 }
 
+// Part of C read.c:seffect_remove_curse(): the confused random
+// bless-or-curse.
 async function randomlyBlessOrCurse(object: GameObject, state: PlayingGameState): Promise<boolean> {
     if (object.blessed || object.cursed || rn2(2)) return false;
     if (rn2(2)) return blessObjectState(object);
@@ -1069,6 +1104,7 @@ async function randomlyBlessOrCurse(object: GameObject, state: PlayingGameState)
     return changed;
 }
 
+// Part of C read.c:seffect_remove_curse(): the felt-helping message.
 export function removeCurseFeeling(confused: boolean): string {
     const hallucinating = heroIsHallucinating(game);
     if (hallucinating) {
@@ -1163,6 +1199,7 @@ export async function applyRemoveCurseSpell({
     return { known: false, consumed: false, heroDied: !!state.program_state.gameover };
 }
 
+// C read.c:maybe_tame().
 async function maybeTame(monster: Monster, source: GameObject, state: PlayingGameState): Promise<number> {
     const wasTame = monster.mtame ?? 0;
     const wasPeaceful = !!monster.mpeaceful;
@@ -1233,6 +1270,7 @@ export async function applyLightScrollEffect(
     return { known, consumed: false, heroDied: !!game.program_state.gameover };
 }
 
+// Part of C read.c:seffect_light(): the confused light pets.
 async function createConfusedLightPets(scroll: GameObject): Promise<boolean> {
     const mnum = scroll.cursed ? PM_BLACK_LIGHT : PM_YELLOW_LIGHT;
     if ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE) {
@@ -1306,6 +1344,7 @@ interface AreaEffectOptions {
     finishMonsterKill: ScrollMonsterKill;
 }
 
+// Part of C read.c:seffects(): the area scroll dispatch.
 export async function applyAreaScrollEffect(source: GameObject, {
     state = game, finishHeroDeath = defaultHeroDeath, finishMonsterKill = finishHeroMonsterKillOutcome,
 }: ScrollEffectOptions = {}): Promise<ScrollEffectResult> {
@@ -1448,10 +1487,13 @@ async function cloudEffect(source: GameObject, state: PlayingGameState): Promise
     return { known: true, consumed: false, heroDied: false };
 }
 
+// C mkobj.c:bcsign().
 function blessing(source: Pick<GameObject, 'blessed' | 'cursed'>): -1 | 0 | 1 {
     return source.blessed ? 1 : source.cursed ? -1 : 0;
 }
 
+// Part of C read.c:seffect_genocide(), seffect_fire(),
+// seffect_stinking_cloud(): the already_known spell-or-typed test.
 function sourceTypeKnown(source: GameObject, state: GameState): boolean {
     return source.oclass === SPBOOK_CLASS || objectTypeKnown(source, state);
 }
@@ -1466,6 +1508,7 @@ export function validCloudPosition(state: GameState, x: number, y: number): bool
         || isPoolAt(x, y, state) || isLavaAt(x, y, state);
 }
 
+// C read.c:can_center_cloud().
 function canCenterCloud(x: number, y: number, state: PlayingGameState): boolean {
     if (!isok(x, y)) return false;
     const location = state.level.at(x, y);
@@ -1531,6 +1574,7 @@ async function detectionEffect(source: GameObject, state: PlayingGameState): Pro
     return { known: !!result.known, consumed: !!result.result };
 }
 
+// C read.c:seffect_identify().
 // Native seffect_identify(), including the scroll-only consumption and
 // discovery boundary before selecting the remaining inventory.
 export async function identifyEffect(source: GameObject, {
@@ -1612,6 +1656,7 @@ export async function applyScrollEffects(source: GameObject, {
     };
 }
 
+// Part of C read.c:seffects(): the magic-source Wisdom exercise.
 async function exerciseScrollWisdom(otyp: number, state: PlayingGameState): Promise<void> {
     if (objectMagic(otyp)) await exerciseAttribute(A_WIS, true, state);
 }
@@ -1814,11 +1859,14 @@ export async function dropBoulderOnMonster(x: number, y: number, {
     return { dropped: true, heroDied: !!state.program_state.gameover };
 }
 
+// Part of C read.c:drop_boulder_on_monster(): the hittable-monster test.
 function canBeHit(monster: Pick<Monster, 'mnum'>): boolean {
     return !monsterIsAmorphous(monster) && !monsterIsNoncorporeal(monster)
         && !monsterIsUnsolid(monster) && !monsterPassesWalls(monster.mnum);
 }
 
+// Part of C read.c:drop_boulder_on_player(), drop_boulder_on_monster(): the
+// falling rock/boulder creation.
 async function fallingRock(confused: boolean): Promise<GameObject> {
     const object = await mksobj(confused ? ROCK : BOULDER, false, false);
     object.quan = confused ? rn1(5, 2) : 1;
@@ -1826,6 +1874,8 @@ async function fallingRock(confused: boolean): Promise<GameObject> {
     return object;
 }
 
+// Part of C read.c:drop_boulder_on_player(), drop_boulder_on_monster():
+// the falling object's doname description.
 // C doname() observes the falling object, so later blind feeling still
 // calls seen rocks "rocks" rather than "stones".
 async function fallingRockName(object: GameObject, state: GameState): Promise<string> {
@@ -1833,11 +1883,14 @@ async function fallingRockName(object: GameObject, state: GameState): Promise<st
     return await inventoryItemDescription(object);
 }
 
+// Part of C read.c:drop_boulder_on_player(), drop_boulder_on_monster():
+// landing the object on the floor.
 async function landFallingRock(object: GameObject, x: number, y: number, state: PlayingGameState): Promise<void> {
     await landFloorObject(object, x, y, { state, verb: 'fall' });
     await newsym(x, y);
 }
 
+// Part of C read.c:drop_boulder_on_monster(): the You_hear result lines.
 async function hear(message: string, state: GameState): Promise<void> {
     const heard = formatHeardMessage(message, state);
     if (heard) await plineWithContinuation(heard);
@@ -1974,21 +2027,26 @@ export async function doGenocide(how: number, {
     return true;
 }
 
+// Part of C read.c:do_genocide(): the hero's own-species test.
 function heroOwnSpecies(species: number): boolean {
     const state = requireInitializedGame();
     return species === state.u.umonster || species === state.urace.mnum;
 }
 
+// Port only: validated mvitals record access for genocide.
 function genocideVital(species: number): MonsterVital {
     const vital = game.mvitals?.[species];
     if (!vital) throw new Error(`Genocide requires initialized history for species ${species}`);
     return vital;
 }
 
+// Part of C read.c:do_genocide(): the G_GENOD test.
 function speciesWasGenocided(species: number): boolean {
     return !!(genocideVital(species).mvflags & G_GENOD);
 }
 
+// Part of C read.c:do_genocide(): setting G_GENOD/G_NOCORPSE and the
+// conduct count.
 function recordGenocide(species: number): void {
     const state = requireInitializedGame();
     const vital = genocideVital(species);
@@ -1998,6 +2056,7 @@ function recordGenocide(species: number): void {
     state.u.uconduct.genocides = (state.u.uconduct.genocides ?? 0) + 1;
 }
 
+// Part of C read.c:do_genocide(): the wiped-out name presentation.
 function genocidePresentation(species: number): { name: string; prefix: string } {
     const state = requireInitializedGame();
     if (heroIsHallucinating(state)) {
@@ -2012,6 +2071,7 @@ function genocidePresentation(species: number): { name: string; prefix: string }
     return { name: requireMonsterData(MONSTER_NAME, species), prefix: unique ? named ? '' : 'the ' : 'all ' };
 }
 
+// Part of C read.c:do_genocide(): reverting a targeted vampire form.
 async function revertTargetedVampireForm(species: number): Promise<void> {
     const state = requireInitializedGame();
     const base = state.u.mcham;
@@ -2021,6 +2081,7 @@ async function revertTargetedVampireForm(species: number): Promise<void> {
         await polymorphHero(POLY_REVERT);
 }
 
+// Part of C read.c:do_genocide(): the "Sent in" replacement monsters.
 async function sendInMonsters(species: number, name: string): Promise<boolean> {
     const state = requireInitializedGame();
     const census = () => state.level.monsters.filter(monster =>
@@ -2046,6 +2107,7 @@ async function sendInMonsters(species: number, name: string): Promise<boolean> {
     return true;
 }
 
+// Part of C read.c:do_genocide(): the species request loop.
 async function requestGenocideSpecies(really: boolean): Promise<number | null> {
     const state = requireInitializedGame();
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -2094,6 +2156,7 @@ async function requestGenocideSpecies(really: boolean): Promise<number | null> {
     return null;
 }
 
+// Part of C read.c:do_class_genocide(): the class request loop.
 async function requestGenocideClass(): Promise<number | null> {
     const state = requireInitializedGame();
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -2144,6 +2207,8 @@ async function requestGenocideClass(): Promise<number | null> {
     return null;
 }
 
+// Part of C read.c:do_genocide(), do_class_genocide(): the shared
+// genocide prompt.
 async function genocideInput(kind: 'class' | 'species', attempt: number): Promise<string> {
     const state = requireInitializedGame();
     const subject = kind === 'class' ? 'class of monsters' : 'type of monster';
@@ -2155,6 +2220,8 @@ async function genocideInput(kind: 'class' | 'species', attempt: number): Promis
     return response === null ? '\u001b' : response.trim().replace(/\s+/g, ' ');
 }
 
+// Part of C read.c:do_genocide(), do_class_genocide(): the declined
+// answer test.
 function declinedGenocide(response: string): boolean {
     return response.startsWith('\u001b') || ['none', "'none'", 'nothing'].includes(response.toLowerCase());
 }
@@ -2260,6 +2327,8 @@ export function revivalReplacement(mnum: number, body: GameObject | null, reviva
     return null;
 }
 
+// Part of C trap.c:animate_statue(), zap.c:revive(): the spe
+// CORPSTAT_GENDER to MM_ flags read.
 export function bodyGenderFlags(body: GameObject): number {
     const gender = (body.spe ?? 0) & 0x03;
     if (gender === 1) return MM_FEMALE;
@@ -2355,6 +2424,8 @@ function parseCreationRequest(text: string): CreationRequest | null {
     };
 }
 
+// Part of C read.c:create_particular_parse(): the name-to-monster
+// resolution.
 function monsterChoice(name: string): MonsterChoice | null {
     if (game.flags.debug && (name === '*' || name === 'random')) return { kind: 'random' };
     const match = resolveMonsterName(name);
@@ -2411,6 +2482,7 @@ async function createRequestedMonsters(request: CreationRequest): Promise<boolea
     return madeAny;
 }
 
+// Part of C read.c:create_particular_creation(): the MM_ flag computation.
 function creationFlags(request: CreationRequest, species: number | null): number {
     const fixedGender = species !== null && (is_male(species) || monsterIsFemale(species));
     const setGender = request.genderConflict || !fixedGender;
@@ -2420,6 +2492,8 @@ function creationFlags(request: CreationRequest, species: number | null): number
         | (request.invisible ? MM_MINVIS : 0);
 }
 
+// Part of C read.c:create_particular_creation(): whether the created
+// monster can start hidden.
 function canHideCreatedMonster(monster: Monster): boolean {
     const symbol = requireMonsterData(MONSTER_SYMBOL, monster.mnum);
     return monsterIsHider(monster.mnum) && symbol !== 13
@@ -2427,6 +2501,7 @@ function canHideCreatedMonster(monster: Monster): boolean {
         || symbol === 57 && isPoolAt(monster.mx, monster.my);
 }
 
+// C mon.c:flash_mon().
 async function flashCreatedMonster(monster: Monster): Promise<void> {
     let count = couldsee(monster.mx, monster.my) ? 8 : 4;
     if (game.flags.sparkle === false) count /= 2;
@@ -2484,12 +2559,16 @@ export function hawaiianDesign(object: ObjectInscriptionView, state: GameState =
     return `${makePlural(hawaiianMotif(object, state))} on ${withIndefiniteArticle(backgroundText)} background`;
 }
 
+// Part of C read.c:erode_obj_text(), hawaiian_design(): the u.ubirthday
+// read.
 function heroBirthday(state: GameState): number {
     if (state.ubirthday === undefined)
         throw new Error('Object text requires the initialized hero birth time.');
     return state.ubirthday;
 }
 
+// Part of C read.c:tshirt_text(), hawaiian_motif(): the indexed
+// inscription pick.
 function inscriptionAt(messages: readonly string[], index: number): string {
     const message = messages[index];
     if (message === undefined)

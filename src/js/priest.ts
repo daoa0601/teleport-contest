@@ -55,6 +55,7 @@ import { body_part } from './polyself.js';
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
 const PM_ALIGNED_CLERIC = 275, PM_HIGH_CLERIC = 276;
 
+// C dungeon.c:on_level(): compares two dungeon locations.
 function sameLevel(
     left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined,
 ): boolean {
@@ -62,10 +63,12 @@ function sameLevel(
         && (left?.dlevel ?? 1) === (right?.dlevel ?? 1);
 }
 
+// C mextra.h:EPRI(): the epri extra-data read.
 function priestData(priest: Monster | null | undefined): PriestData | null {
     return priest?.epri || priest?.mextra?.epri || null;
 }
 
+// C mextra.h:EMIN(): the emin extra-data read.
 function minionData(priest: Monster | null | undefined): MinionData | null {
     return priest?.emin || priest?.mextra?.emin || null;
 }
@@ -143,7 +146,8 @@ export function priestHasShrine(priest: Monster, state: GameState = game): boole
         && epri.shralign === Amask2align(altar.flags & ~AM_SHRINE);
 }
 
-// C forget_temple_entry(): saving a monster starts its entry feedback anew.
+// C priest.c:forget_temple_entry(): saving a monster starts its entry
+// feedback anew.
 export function forgetTempleEntry(priest: Monster): void {
     const shrine = priestData(priest);
     if (!priest.ispriest || !shrine)
@@ -255,6 +259,8 @@ export async function ghodHitsu(priest: Monster, {
     return { heroDied: false };
 }
 
+// Part of C mthrowu.c:linedup(): local copy for the shrine ray; the
+// shared port is linedUp in mthrowu.ts.
 function shrineRayIsLinedUp(x: number, y: number, state: GameState): boolean {
     const level = requireGameLevel(state);
     const dx = state.u.ux - x, dy = state.u.uy - y;
@@ -272,6 +278,8 @@ function shrineRayIsLinedUp(x: number, y: number, state: GameState): boolean {
     return true;
 }
 
+// Part of C priest.c:mon_aligntyp(): priest/minion alignment without a
+// live monster record.
 export function priestAlignment(priest: Monster | null | undefined): number {
     const alignment = priestData(priest)?.shralign
         ?? minionData(priest)?.min_align ?? A_NONE;
@@ -284,6 +292,8 @@ export function priestAlignment(priest: Monster | null | undefined): number {
 type MonsterAlignmentSubject = Pick<Monster, 'mnum'> & Partial<Pick<Monster,
     'm_id' | 'ispriest' | 'epri' | 'isminion' | 'emin'>>;
 
+// Part of C priest.c:mon_aligntyp(): the raw alignment read from epri,
+// emin, or the quest table.
 export function monsterAlignmentValue(monster: MonsterAlignmentSubject, state: GameState): number {
     if (monster.ispriest) {
         if (!monster.epri) throw new Error(`Priest ${monster.m_id} has no temple state`);
@@ -296,6 +306,7 @@ export function monsterAlignmentValue(monster: MonsterAlignmentSubject, state: G
     return questMonsterAlignment(monster.mnum, state);
 }
 
+// Part of C priest.c:mon_aligntyp(): the A_NONE/sign reduction.
 export function monsterAlignmentType(monster: MonsterAlignmentSubject, state: GameState = game): number {
     const alignment = monsterAlignmentValue(monster, state);
     return alignment === A_NONE ? A_NONE : Math.sign(alignment);
@@ -342,22 +353,27 @@ export function priestName(monster: Monster, { article, hallucinating, invisible
     return prefix + name;
 }
 
+// C priest.c:p_coaligned().
 export function priestIsCoaligned(priest: Monster, state: GameState = game): boolean {
     return (state.u?.ualign?.type ?? A_NONE) === priestAlignment(priest);
 }
 
+// Part of C priest.c:intemple(): "A nearby voice" when the intoning
+// priest is unseen.
 export function visiblePriestName(priest: Monster, state: GameState = game): string {
     if (!canSeeMonster(priest))
         return 'A nearby voice';
     return monsterName(priest, { state, capitalized: true });
 }
 
+// Part of C priest.c:intemple(): the can_speak/!Deaf speech test.
 // C can_speak uses !helpless(priest); monst.h helpless() is only
 // msleeping || !mcanmove, so a monster frozen mid-action still speaks.
 function priestCanSpeak(priest: Monster, state: GameState = game): boolean {
     return !state.u?.deaf && !priest.msleeping && priest.mcanmove !== 0;
 }
 
+// C priest.c:intemple().
 // C intemple() keeps TEMPLE repeatable and rate-limits each class of entry
 // message on the resident's epri record.  plineWithContinuation is important:
 // an intone can fit beside a short Quest arrival line, while the following
@@ -470,12 +486,15 @@ export async function intemple(roomno: number, state: GameState = game): Promise
     return priest;
 }
 
+// Part of C priest.c:temple_occupied(): the TEMPLE room lookup with its
+// room record.
 export function templeRoomAt(
     state: GameState, x: number, y: number,
 ): { room: Room | null; roomno: number } | null {
     const roomno = roomsAt(state.level, x, y, TEMPLE)[0];
     return roomno ? { room: roomForRoomno(state.level, roomno), roomno } : null;
 }
+// C priest.c:priestini().
 export async function specialShrinePriest(
     temple: Room | null, altarX: number, altarY: number, altarAlignment: number,
     { sanctum = false }: { sanctum?: boolean } = {},
@@ -685,7 +704,7 @@ export async function moveSpecial(
     };
 }
 
-// C include/vision.h:m_canseeu(): the special mover sees the hero with
+// C vision.h:m_canseeu(): the special mover sees the hero with
 // its own eyes, without displacement, and not from the water.  pri_move()
 // and shk_move() both test it after the monster's own mcansee.
 export function specialMoverSeesHero(monster: Monster, state: PlayingGameState) {

@@ -30,10 +30,12 @@ interface QuantumCatOptions { makeCat?: boolean; showMessage?: boolean; state?: 
 const HOUSECAT = MONSTER_NAME.indexOf('housecat');
 const CAT_NAME = "Schroedinger's Cat";
 
+// C obj.h:SchroedingersBox().
 export function isQuantumBox(object: Pick<GameObject, 'otyp' | 'spe'>): boolean {
     return object.otyp === LARGE_BOX && object.spe === 1;
 }
 
+// C pickup.c:observe_quantum_cat(): shared by opening and final disclosure.
 export async function observeQuantumCat(box: GameObject, {
     makeCat = true, showMessage = true, state = game,
 }: QuantumCatOptions = {}): Promise<boolean> {

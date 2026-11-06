@@ -111,6 +111,8 @@ export async function outOracle(special: boolean, delphi: boolean, state: GameSt
     state._retained_message = '';
 }
 
+// Part of C eat.c:fpostfx(), read.c:doread(): the bcs-sign rumor draw for a
+// fortune cookie.
 export async function readCookieFortune(
     cookie: GameObject, { state = game }: { state?: GameState } = {},
 ): Promise<void> {
@@ -218,15 +220,18 @@ export async function rumorCheck(): Promise<void> {
     await showTextWindow(lines);
 }
 
+// Port only: rumor section byte size under the makedefs line padding.
 function rumorSectionSize(lines: readonly string[]): number {
     return lines.reduce((size, line) => size + paddedLine(line, MD_PAD_RUMORS).length + 1, 0);
 }
 
+// Port only: one T/F start-end-size boundary line of the rumor report.
 function rumorBoundary(label: string, start: number, end: number, size: number): string {
     const field = (value: number) => `${decimal(value)} (${value.toString(16).padStart(6, '0')})`;
     return `${label} start=${field(start)}, end=${field(end)}, size=${field(size)}`;
 }
 
+// Port only: the first and last padded lines bounding a rumor section.
 function rumorEndpoints(label: string, start: number, lines: readonly string[]): string[] {
     const first = lines[0];
     const last = lines.at(-1);
@@ -235,6 +240,7 @@ function rumorEndpoints(label: string, start: number, lines: readonly string[]):
         `         ${paddedLine(last, MD_PAD_RUMORS)}`];
 }
 
+// Port only: engraving/epitaph/bogus-mon section text for the rumor report.
 function supportingText(title: string, entries: readonly string[], padding: number): string[] {
     const first = entries[0];
     if (first === undefined) throw new Error(`${title} has no default entry`);
@@ -249,10 +255,12 @@ function supportingText(title: string, entries: readonly string[], padding: numb
     return [...lines, paddedLine(last, padding)];
 }
 
+// Port only: one makedefs-padded line.
 function paddedLine(line: string, lengthWithNewline: number): string {
     return line.padEnd(lengthWithNewline - 1, '_');
 }
 
+// Port only: six-digit decimal field of the rumor report.
 function decimal(value: number): string {
     return String(value).padStart(6, '0');
 }

@@ -83,6 +83,8 @@ async function prepareSection(section: string, messageId: string, state: GameSta
     }
 }
 
+// Part of C questpgr.c:qt_pager(), com_pager(): resolves the role or
+// common section text.
 export async function prepareQuestText(messageId: string, state: GameState = game, common = false): Promise<QuestText | null> {
     if (common) return prepareSection('common', messageId, state);
     return await prepareSection(state.urole?.filecode ?? '', messageId, state)
@@ -134,10 +136,12 @@ function roleMonsterName(mnum: number | undefined): string {
     return monsterHasProperName(mnum) ? name : `the ${name}`;
 }
 
+// C questpgr.c:ldrname().
 export function questLeaderName(g: GameState = game): string {
     return roleMonsterName(g.urole?.ldrnum);
 }
 
+// C questpgr.c:neminame().
 export function questNemesisName(g: GameState = game): string {
     return roleMonsterName(g.urole?.neminum);
 }
@@ -186,6 +190,7 @@ export function levelContainsQuestArtifact(g: GameState = game) {
             .some(object => objectContainsQuestArtifact(object, g)));
 }
 
+// Part of C questpgr.c:convert_arg(): the align_str word for %a/%A/%G.
 function alignmentName(alignment: number | undefined): AlignmentName {
     if (alignment === undefined) return 'neutral';
     return alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
@@ -195,6 +200,8 @@ function alignmentName(alignment: number | undefined): AlignmentName {
 // possessiveName port in hacklib.ts.
 
 
+// Part of C questpgr.c:convert_arg(): the u.ualignbase original-alignment
+// read.
 // The original alignment recorded at game start drives %a, %d, and %G.
 function originalAlignment(g: GameState): number {
     return g.u?.ualignbase?.[1] ?? g.u?.ualign?.type ?? 0;

@@ -20,6 +20,7 @@ export function init_rect() {
     first.hx = COLNO - 1;
     first.hy = ROWNO - 1;
 }
+// Part of C rect.c:init_rect(), get_rect(): the rect array index read.
 function rectangleAt(index) {
     const rectangle = game.nhrect?.[index];
     if (!rectangle)
@@ -62,11 +63,13 @@ export function rnd_rect() {
         return null;
     return rectangleAt(rn2(count));
 }
+// Port only: accessor for the rect_cnt global (a plain variable in C).
 export function get_rect_cnt() {
     if (game.rect_cnt === undefined)
         throw new Error('Rectangle allocation is not initialized.');
     return game.rect_cnt;
 }
+// C dungeon.h:within_bounded_area().
 // C: within_bounded_area(x, y, lx, ly, hx, hy) — check if point is within bounds
 export function within_bounded_area(x, y, lx, ly, hx, hy) {
     return (x >= lx && x <= hx && y >= ly && y <= hy);
@@ -161,6 +164,8 @@ export function split_rects(r1, r2) {
         add_rect(r);
     }
 }
+// Port only: clears the JS rectangle-allocator globals; C keeps them
+// until exit.
 export function init_rect_globals() {
     game.nhrect = null;
     game.n_rects = 0;

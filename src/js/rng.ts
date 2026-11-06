@@ -12,6 +12,7 @@ export type RngSeed = number | bigint | string;
 let _rngLog: string[] = [];
 let _rngLogEnabled = false;
 
+// C rnd.c:init_random(): seeds the core and display isaac64 contexts.
 export function initRng(seed: RngSeed): void {
     game.currentSeed = seed;
     // Convert seed to 8 little-endian bytes
@@ -26,21 +27,27 @@ export function initRng(seed: RngSeed): void {
     _rngLog = [];
 }
 
+// Port only: enables capture of RNG draws for the recorder.
 export function enableRngLog() { _rngLogEnabled = true; _rngLog = []; }
+// Port only: returns the captured RNG log.
 export function getRngLog() { return _rngLog; }
+// Port only: appends one draw to the captured RNG log.
 export function pushRngLogEntry(entry: string): void { if (_rngLogEnabled) _rngLog.push(entry); }
 
+// Port only: resolves the core or display isaac64 context for a draw.
 function initializedContext(stream: 'core' | 'display'): Isaac64Context {
     const context = stream === 'core' ? game.coreCtx : game.displayCtx;
     if (!context) throw new Error(`The ${stream} random stream has not been initialized`);
     return context;
 }
 
+// C rnd.c:RND().
 function RND(x: number): number {
     const val = isaac64_next_uint64(initializedContext('core'));
     return Number(val % BigInt(x));
 }
 
+// C rnd.c:rn2().
 // C ref: rn2(x) — random number 0..x-1
 export function rn2(x: number): number {
     if (x <= 0) return 0;
@@ -49,6 +56,7 @@ export function rn2(x: number): number {
     return val;
 }
 
+// C rnd.c:rn2_on_display_rng().
 // C ref: rn2_on_display_rng(). Cosmetic choices use a separate RNG stream and
 // do not appear in the core RNG log.
 export function rn2Display(x: number): number {
@@ -56,6 +64,7 @@ export function rn2Display(x: number): number {
     return Number(isaac64_next_uint64(initializedContext('display')) % BigInt(x));
 }
 
+// C rnd.c:rnd().
 // C ref: rnd(x) — random number 1..x
 export function rnd(x: number): number {
     if (x <= 0) return 0;
@@ -64,9 +73,11 @@ export function rnd(x: number): number {
     return val;
 }
 
+// C hack.h:rn1().
 // C ref: rn1(x, y) — random number y..y+x-1
 export function rn1(x: number, y: number): number { return rn2(x) + y; }
 
+// C rnd.c:rnl().
 // C ref: rnl(x) — luck-adjusted random number.  The base draw is logged as
 // rnl rather than rn2; only the conditional adjustment uses a nested rn2.
 export function rnl(x: number): number {
@@ -84,6 +95,7 @@ export function rnl(x: number): number {
     return value;
 }
 
+// C rnd.c:d().
 // C ref: d(n, x) — roll n dice of x sides
 export function d(n: number, x: number): number {
     let sum = 0;
@@ -94,6 +106,7 @@ export function d(n: number, x: number): number {
     return sum;
 }
 
+// C rnd.c:rne().
 // C ref: rne(x) — exponentially distributed
 // Internal rn2 calls are logged (matching C's PRNG log format).
 export function rne(x: number): number {
@@ -105,6 +118,7 @@ export function rne(x: number): number {
     return tmp;
 }
 
+// C rnd.c:rnz().
 // C ref: rnz(i) — fuzzy random around i
 // Internal rn2/rne calls are logged (matching C's PRNG log format).
 export function rnz(i: number): number {
