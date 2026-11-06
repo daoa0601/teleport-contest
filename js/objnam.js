@@ -2415,10 +2415,12 @@ async function say(message) {
 // Noun grammar. C refs: obj.h pair_of(), objnam.c armor_simple_name()/
 // obj_typename(), makeplural(), makesingular(), just_an(), vtense().
 // ---------------------------------------------------------------------------
-// C objnam.c:xname()'s ARMOR_CLASS naming: obj.h is_boots()/is_gloves()
-// take pair grammar and the inline dragon-scales range takes set grammar.
-// Callers holding only a type pass its number; obj_typename() likewise
-// builds a temporary object carrying the class from objects[].
+// Part of C objnam.c:xname(): the ARMOR_CLASS pair/set noun grammar
+// (obj.h is_boots()/is_gloves() take pair grammar; the inline dragon-scales
+// range takes set grammar). Kept as a shared helper because obj_typename()
+// and the discovery-list naming (o_init.ts) build the same grammar;
+// callers holding only a type pass its number, as obj_typename() builds a
+// temporary object carrying the class from objects[].
 export function armorPresentationName(name, source = null) {
     const view = typeof source === 'number'
         ? { otyp: source, oclass: objectClassForType(source) } : source;
