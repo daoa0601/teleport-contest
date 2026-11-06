@@ -25,10 +25,14 @@ const G_UNIQ = 0x1000;
 const S_EYE = 5;
 const S_DRAGON = 30;
 const S_LIGHT = 25;
+// Part of C timeout.c:hatch_egg(): the OBJ_FLOOR "You_see %s hatch." message.
 function floorHatchMessage(mnum, count, state) {
     const name = monsterTypeName(mnum);
     return formatSeenMessage(count > 1 ? `some ${makePlural(name)} hatch.` : `${withIndefiniteArticle(name)} hatch.`, state);
 }
+// Part of C mondata.c:locomotion(): hatch-message copy of the motion-verb
+// mapping; C hatch_egg() calls locomotion(mon->data, "drop"). The general
+// port is monsterLocomotion() in mondata.ts.
 function hatchLocomotion(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === S_EYE || symbol === S_LIGHT)
@@ -45,6 +49,8 @@ function hatchLocomotion(mnum) {
         return 'crawl';
     return 'drop';
 }
+// Part of C timeout.c:hatch_egg(): the OBJ_INVENT You_feel/You_see
+// "out of your pack!" message.
 function inventoryHatchMessage(mnum, count, visible, state) {
     const motion = hatchLocomotion(mnum);
     if (!visible)
@@ -55,21 +61,29 @@ function inventoryHatchMessage(mnum, count, visible, state) {
         : withIndefiniteArticle(name);
     return formatSeenMessage(`${newborn} ${motion} out of your pack!`, state);
 }
+// Part of C hacklib.c:s_suffix(): local possessive for the hatch "pack"
+// phrase; the general port is possessiveName() in hacklib.ts.
 function possessive(noun) {
     return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
 }
+// Part of C timeout.c:hatch_egg(): the OBJ_MINVENT "%s pack" carrier
+// description (C: Sprintf(carriedby, "%s pack", s_suffix(a_monnam(mon2)))).
 function monsterPackName(monster) {
     if (monster.name)
         return `${possessive(monster.name)} pack`;
     const species = monsterTypeName(monster.mnum, !!monster.female);
     return `${possessive(withIndefiniteArticle(species))} pack`;
 }
+// Part of C zap.c:get_obj_location(): resolves egg->ocarry for the
+// OBJ_MINVENT case (JS also stores a carrierMid fallback).
 function eggCarrier(egg, state) {
     if (egg.ocarry)
         return egg.ocarry;
     return (state.level?.monsters || []).find(monster => monster.m_id === egg.carrierMid
         || (monster.minvent || monster.inventory || []).includes(egg));
 }
+// Part of C zap.c:get_obj_location(): the INVENT/FLOOR/MINVENT cases
+// hatch_egg() relies on; migrating/contained/buried eggs return null.
 function hatchLocation(egg, state) {
     if (egg.where === 'floor')
         return { kind: 'floor', x: egg.ox, y: egg.oy, carrier: null };
@@ -94,6 +108,8 @@ function hatchLocation(egg, state) {
     }
     return null;
 }
+// Part of C timeout.c:hatch_egg(): the OBJ_MINVENT "out of %s!" message
+// with the knows_egg result for a visible vs unseen carrier.
 function monsterInventoryHatchMessage(mnum, count, carrier, x, y, state) {
     const name = monsterTypeName(mnum);
     const newborn = count > 1
@@ -116,6 +132,7 @@ function monsterInventoryHatchMessage(mnum, count, carrier, x, y, state) {
         knowsEgg: carrierIsVisible,
     };
 }
+// C sounds.c:cry_sound(): the hatchling cry used by the mommy/daddy message.
 function hatchlingCry(mnum) {
     const sound = MONSTER_SOUND[mnum] ?? 0;
     if (sound === 9)
@@ -134,10 +151,14 @@ function hatchlingCry(mnum) {
         return 'mumble';
     return monsterIsEel(mnum) ? 'gurgle' : 'chitter';
 }
+// Port only: Deaf state check for the hatch messages (C reads the Deaf
+// macro inline in hatch_egg()).
 function heroIsDeaf(state) {
     return !!(state.deaf || state.u?.deaf
         || (state.u?.deafTurns ?? 0) > 0);
 }
+// Part of C timeout.c:hatch_egg(): the "yours" pline, "%s %s %s like
+// \"%s%s\"" with ing_suffix(cry_sound(mon)).
 function parentHatchMessage(mnum, count, egg, state) {
     const subject = count > 1 ? 'Their' : 'Its';
     const description = (MONSTER_SOUND[mnum] ?? 0) === 0
@@ -147,6 +168,9 @@ function parentHatchMessage(mnum, count, egg, state) {
     const punctuation = egg.spe ? '.' : '?';
     return `${subject} ${ingSuffix(hatchlingCry(mnum))} ${description} like "${parent}${punctuation}"`;
 }
+// Part of C timeout.c:hatch_egg(): the monster-creating half of the timer
+// callback, split so the caller can publish the hatch message before the
+// finishing phase runs.
 // C creates the monsters and reduces the egg stack before it prints the hatch
 // message. The caller prints that message before finishEggHatchTimer() updates
 // knowledge, schedules the remaining eggs, or removes the empty stack.
@@ -248,6 +272,9 @@ export async function runClaimedEggHatchTimer(claimed, state = game, currentTurn
         finishPending: true,
     };
 }
+// Part of C timeout.c:hatch_egg(): the tail of the timer callback, after
+// the message: learn the egg type, reschedule or free the stack, redraw.
+// Also C timeout.c:learn_egg_type(): inlined here (MV_KNOWS_EGG update).
 export async function finishEggHatchTimer(event, state = game, currentTurn = state.moves) {
     if (!event?.finishPending || !event.egg)
         return event;

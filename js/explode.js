@@ -69,6 +69,8 @@ const explosionStyles = new Map([
     [AD_DRCO, EXPL_NOXIOUS], [AD_DISE, EXPL_NOXIOUS],
     [AD_PEST, EXPL_NOXIOUS], [AD_PHYS, EXPL_NOXIOUS],
 ]);
+// C explode.c:explode(). The whole explosion: source naming, the 3x3
+// mask, the visual, floor and monster damage, and the hero's injury.
 // A negative type is a monster zap, except that WAND_CLASS uses -otyp.
 export async function explode(x, y, type, damage, objectClass, style, { state = game, publish = plineWithContinuation, die = finishHeroDeath, killer = null, heroCaused = !state.context.mon_moving, random = rn2, } = {}) {
     requireLiveGame(state);
@@ -249,6 +251,9 @@ export async function explode(x, y, type, damage, objectClass, style, { state = 
     await wakeMonstersNearWithMessages(x, y, insideEngulfer ? Math.trunc((noise + 3) / 4) : noise, state, publish);
     return { damage, heroDied: false };
 }
+// Part of C explode.c:explode(): the olet/type normalization, the role
+// damage reduction, and the adstr damage-type names ("burning oil",
+// "tower of flame", "death field").
 async function explosionSource(type, damage, objectClass, state) {
     let explodingObject = 0;
     let heroDamage = damage;
@@ -287,10 +292,14 @@ async function explosionSource(type, damage, objectClass, state) {
     const floorNoun = explodingObject || Math.abs(type) >= 20 ? 'blast' : Math.abs(type) >= 10 ? 'spell' : 'bolt';
     return { type, damageType, heroDamage, name, floor, floorNoun, explodingObject };
 }
+// Part of C explode.c:explode(): m_at() with the u.usteed fallback for
+// the hero's square.
 function occupant(x, y, state) {
     return monsterAtPosition(state.level, x, y)
         || (state.u.ux === x && state.u.uy === y ? state.u.usteed ?? null : null);
 }
+// Part of C explode.c:explosionmask(): the AD_DISN WAND_CLASS test
+// (nonliving(m->data) || is_demon(m->data)).
 function ignoresDeathField(mnum) {
     return monsterIsNonliving(mnum) || monsterIsDemon(mnum);
 }
@@ -315,6 +324,8 @@ function monsterResists(monster, damageType, objectClass) {
         throw new Error(`Unknown explosion damage type ${damageType}`);
     return kind.resists(monster);
 }
+// Part of C explode.c:explode(): the 3x3 explmask loop (isok, hero and
+// monster shields, map_invisible/unmap_invisible, visibility).
 async function explosionCells(x, y, damageType, objectClass, style, state) {
     const cells = [];
     for (let dx = -1; dx <= 1; dx++) {
@@ -339,6 +350,8 @@ async function explosionCells(x, y, damageType, objectClass, style, state) {
     }
     return cells;
 }
+// Part of C explode.c:explode(): the visual — the DISP_BEAM tmp_at walk,
+// the shield sparkle with flags.sparkle, and the delays.
 async function paintExplosion(cells, state) {
     const paint = async (cell) => await show_glyph_cell(cell.x, cell.y, cell.glyph.ch, cell.glyph.color, cell.glyph.decgfx, 0, cell.glyph);
     const flush = async () => {
@@ -379,6 +392,8 @@ async function paintExplosion(cells, state) {
         await effect.clear();
     }
 }
+// Part of C explode.c:explode(): the do_hallu rndmonnam() loop that
+// avoids capitalized names.
 function hallucinatedExplosion(limit = Infinity) {
     let name;
     let tries = 0;
@@ -387,6 +402,8 @@ function hallucinatedExplosion(limit = Infinity) {
     } while (name.charAt(0) !== name.charAt(0).toLowerCase() && ++tries < limit);
     return name;
 }
+// C explode.c:engulfer_explosion_msg(): what the engulfer suffers when
+// the blast goes off inside it.
 async function engulferMessage(monster, damageType, objectClass, state, publish) {
     const digesting = (MONSTER_ATTACKS[monster.mnum] || [])
         .some(([method, damage]) => method === AT_ENGL && damage === AD_DGST);
@@ -403,6 +420,9 @@ async function engulferMessage(monster, damageType, objectClass, state, publish)
     const effect = effects.get(damageType)?.[digesting ? 0 : 1] || 'fried';
     await publish(`${monsterName(monster, { state, capitalized: true })} gets ${digesting ? '' : 'slightly '}${effect}!`);
 }
+// Part of C explode.c:explode(): the DEADMONSTER disposition —
+// xkilled() for hero-caused, the mdef "burned completely" message, else
+// monkilled().
 async function finishExplosionMonsterDeath(monster, { state, publish, heroCaused, creditedMonster, burnsCompletely, random, damageType, }) {
     if (heroCaused)
         return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, { noCorpse: burnsCompletely, publish });
@@ -419,6 +439,8 @@ async function finishExplosionMonsterDeath(monster, { state, publish, heroCaused
         publish, random, damageType: burnsCompletely ? AD_RBRE : damageType,
     });
 }
+// Part of C explode.c:explode(): the killer.format/name assignment when
+// the hero dies ("caught %self in ...").
 function explosionDeathCause(type, objectClass, description, killer, state) {
     if (objectClass === MON_EXPLODE)
         return { killer: killer || description, killerFormat: KILLED_BY_AN };
@@ -434,6 +456,8 @@ function explosionDeathCause(type, objectClass, description, killer, state) {
     return { killer: description, killerFormat: ['tower of flame', 'fireball'].includes(description)
             ? KILLED_BY_AN : KILLED_BY };
 }
+// Part of C explode.c:mon_explodes(): the elemental branch
+// (type = -((adtyp - 1) + 20), style from adtyp_to_expltype()).
 export async function createElementalMonsterExplosion(x, y, damageType, damage, killer, options = {}) {
     const style = await explosionStyleForDamage(damageType, options.state ?? game);
     return explode(x, y, -(damageType - 1 + 20), damage, MON_EXPLODE, style, {

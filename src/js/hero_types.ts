@@ -304,6 +304,7 @@ const INITIALIZED_FIELDS: {
     skillRecord: 'skillRecord', weapon_slots: 'weapon_slots',
 };
 
+// Port only: assert the startup phases have installed the hero's fields.
 export function requireInitializedHero(hero: Hero): asserts hero is InitializedHero {
     for (const field of Object.values(INITIALIZED_FIELDS)) {
         if (hero[field] === undefined)
@@ -311,11 +312,13 @@ export function requireInitializedHero(hero: Hero): asserts hero is InitializedH
     }
 }
 
-// Allocation must preserve absence until the owning startup phase runs.
+// Port only: allocation must preserve absence until the owning startup
+// phase runs.
 export function createHeroState(): Hero {
     return { ux: 0, uy: 0, ux0: 0, uy0: 0 };
 }
 
+// Port only: validated attribute-table access for startup rolls.
 export function requireHeroAttributes(hero: Hero): Pick<HeroStartingAttributes,
     'acurr' | 'amax' | 'atemp'> {
     const { acurr, amax, atemp } = hero;

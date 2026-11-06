@@ -102,6 +102,8 @@ const RUBOUTS = new Map([
 export function engravingAt(x, y, level = game.level) {
     return level?.engravings?.find((engraving) => engraving.x === x && engraving.y === y) || null;
 }
+// C engrave.c:sengr_at(): strict — the word is present only when it is the
+// entire intact engraving (engr_time <= moves, not a headstone).
 export function hasCompletedEngraving(text, x, y, state = game) {
     const engraving = engravingAt(x, y, state.level);
     return (!!engraving &&
@@ -127,6 +129,7 @@ export function deleteEngraving(engraving, level = game.level) {
     level.engravings = level.engravings.filter((candidate) => candidate !== engraving);
     return true;
 }
+// C engrave.c:make_engr_at().
 export function makeEngravingAt(x, y, text, pristine = null, epoch = 0, engrType = ENGRAVE, { nowipeout = false, guardobjects = false } = {}) {
     if (!game.level)
         return null;
@@ -155,8 +158,8 @@ export function makeEngravingAt(x, y, text, pristine = null, epoch = 0, engrType
     game.level.engravings.unshift(engraving);
     return engraving;
 }
-// Positional adapter for make_engr_at() callers written against the C
-// signature; makeEngravingAt() is the port.
+// Port only: positional adapter for make_engr_at() callers written against
+// the C signature; makeEngravingAt() is the port.
 export function make_engr_at(x, y, text, pristine, epoch, engr_type, options = undefined) {
     return makeEngravingAt(x, y, text, pristine, epoch, engr_type, options);
 }
@@ -307,8 +310,8 @@ export async function relocateEngraving(engraving, state) {
         return;
     }
 }
-// C engrave.c:disturb_grave(), shared by engraving and kicking.
 const PM_GHOUL = 246;
+// C engrave.c:disturb_grave(), shared by engraving and kicking.
 export async function disturbGrave(x, y, state = game) {
     const location = requireGameLevel(state).requireAt(x, y);
     if (location.typ !== GRAVE) {
@@ -324,6 +327,8 @@ export async function disturbGrave(x, y, state = game) {
         await exerciseAttribute(A_WIS, false, state);
     }
 }
+// Part of C engrave.c:read_engr_at(): the two sensed-message texts by
+// engraving type, including the blind "You feel the words" tail.
 function readingMessages(engraving, surface, icy) {
     const blind = !!game.blind;
     const canFeel = heroCanReachFloor(game, { checkPit: true });
@@ -367,8 +372,9 @@ function readingMessages(engraving, surface, icy) {
         : `You read: "${text}"${punctuation}`;
     return { first, second };
 }
-// Native read_engr_at() sends two separate messages. The terminal decides
-// whether each fits beside earlier prose before it asks for acknowledgement.
+// C engrave.c:read_engr_at(). Native sends two separate messages; the
+// terminal decides whether each fits beside earlier prose before it asks
+// for acknowledgement.
 export async function readEngravingAt(x, y, publish) {
     const engraving = engravingAt(x, y);
     const surface = surfaceName(x, y, game);
@@ -424,18 +430,25 @@ export function heroCanReachFloor(state = game, { checkPit = false } = {}) {
         return false;
     return true;
 }
+// Part of C engrave.c:can_reach_floor(): u.ustuck holding the hero with an
+// AT_HUGS attack while the hero's own form does not stick.
 function holderHugs(holder) {
     return (MONSTER_ATTACKS[holder?.mnum] || [])
         .some(([attackType]) => attackType === AT_HUGS);
 }
+// Part of C engrave.c:can_reach_floor(): P_SKILL(P_RIDING).
 function ridingSkill(state) {
     return state.u?.weaponSkills?.[P_RIDING]?.skill ?? 0;
 }
+// Part of C engrave.c:can_reach_floor(): Is_airlevel()/Is_waterlevel()
+// compare the hero's location with the level records.
 function sameDungeonLevel(current, target) {
     return !!current && !!target
         && current.dnum === target.dnum
         && current.dlevel === target.dlevel;
 }
+// Part of C engrave.c:can_reach_floor(): t_at(u.ux, u.uy) for the pit
+// check.
 function trapAtHeroInState(state) {
     const hero = state.u;
     return state.level?.traps?.find(trap => trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
@@ -1285,6 +1298,8 @@ export async function continueEngraving(state = game) {
         await newsym(pos.x, pos.y);
     return false;
 }
+// Part of C engrave.c:doengrave(): the "You finish %s" verb, including
+// the frost variants on ice.
 function engravingFinishVerb(x, y, engraveType, state) {
     switch (engraveType) {
         case DUST:

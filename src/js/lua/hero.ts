@@ -14,6 +14,8 @@ const HERO_FIELDS = [
     'mhmax', 'mtimedone', 'uluck', 'uhp', 'uhpmax', 'uen', 'uenmax',
 ] as const;
 
+// Part of C nhlua.c:nhl_meta_u_index(): membership in the ustruct[] field
+// list.
 function isHeroField(value: LuaValue): value is typeof HERO_FIELDS[number] {
     return HERO_FIELDS.some(field => field === value);
 }

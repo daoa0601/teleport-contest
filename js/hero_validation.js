@@ -5,6 +5,7 @@ import { validSavedSpeciesOrNone } from './species_validation.js';
 import { validSavedGlyph } from './display_validation.js';
 import { validSavedDungeonLocation } from './map_validation.js';
 import { validSavedAlignmentValue, validSavedAttributeValues, validSavedHeroAlignment, } from './character_validation.js';
+// Port only: saved-state validation of the whole hero record.
 export function validSavedHero(value, entities) {
     const fields = {
         ...heroPropertyFields,
@@ -190,24 +191,30 @@ export function validSavedHero(value, entities) {
         throw new TypeError(`Saved hero has invalid ${field}`);
     });
 }
+// Port only: saved hero-event flags accept booleans and 0/1.
 const heroFlag = (value) => boolean(value) || value === 0 || value === 1;
+// Port only: saved-state validation of the attribute tables.
 function validHeroAttributes(value) {
     return closedFieldsMatch(value, { a: validSavedAttributeValues });
 }
+// Port only: saved-state validation of ualignbase.
 function validAlignmentBases(value) {
     return arrayOf(validSavedAlignmentValue)(value) && value.length === 2;
 }
+// Port only: saved-state validation of the uroleplay record.
 function validHeroRoleplay(value) {
     return closedFieldsMatch(value, {
         pauper: boolean, nudist: boolean, reroll: boolean,
         numrerolls: integer, numbones: integer, blind: boolean, deaf: boolean,
     });
 }
+// Port only: saved-state validation of one weapon-skill record.
 function validHeroSkill(value) {
     return closedFieldsMatch(value, {
         skill: integer, maxSkill: integer, advance: integer,
     });
 }
+// Port only: saved-state validation of the conduct record.
 function validHeroConduct(value) {
     return closedFieldsMatch(value, {
         food: optional(integer),
@@ -226,6 +233,7 @@ function validHeroConduct(value) {
         pets: optional(integer),
     });
 }
+// Port only: saved-state validation of the uachievements-like event record.
 function validHeroEvents(value) {
     return closedFieldsMatch(value, {
         amulet_wish: optional(heroFlag),
@@ -245,6 +253,7 @@ function validHeroEvents(value) {
         uvibrated: optional(heroFlag),
     });
 }
+// Port only: saved-state validation of the uhave possessions record.
 function validHeroPossessions(value) {
     return closedFieldsMatch(value, {
         amulet: optional(heroFlag),
@@ -254,11 +263,13 @@ function validHeroPossessions(value) {
         questart: optional(heroFlag),
     });
 }
+// Port only: saved-state validation of the property-source table.
 function validPropertySourceTable(value) {
     if (!isSavedRecord(value))
         return false;
     return Object.entries(value).every(([name, source]) => propertyNames.has(name) && validPropertySources(source));
 }
+// Port only: saved-state validation of one property's source records.
 function validPropertySources(value) {
     return closedFieldsMatch(value, {
         intrinsic: validIntrinsicSources,
@@ -268,6 +279,7 @@ function validPropertySources(value) {
         blockedByTerrain: optional(boolean),
     });
 }
+// Port only: saved-state validation of a property's intrinsic origins.
 function validIntrinsicSources(value) {
     const present = (entry) => entry === true;
     return closedFieldsMatch(value, {
@@ -275,17 +287,20 @@ function validIntrinsicSources(value) {
         outside: optional(present), form: optional(present), potion: optional(present),
     });
 }
+// Port only: saved-state validation of a worn property source.
 function validWornSource(value) {
     return closedFieldsMatch(value, {
         slot: oneOf('uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu', 'uleft', 'uright', 'uamul', 'ublindf', 'uwep', 'uswapwep', 'uquiver'),
         otyp: nullable(integer), objectId: nullable(integer),
     });
 }
+// Port only: saved-state validation of an invoked-artifact source.
 function validInvokedSource(value) {
     return closedFieldsMatch(value, {
         objectId: nullable(integer), artifactId: nullable(integer), objectType: nullable(integer),
     });
 }
+// Port only: saved-state validation of a carried property source.
 function validCarriedSource(value) {
     return closedFieldsMatch(value, {
         objectId: nullable(integer), artifactId: nullable(integer), otyp: nullable(integer),
@@ -362,6 +377,7 @@ const propertyValues = {
     lifeSaving: optional(boolean),
 };
 const propertyNames = new Set(Object.keys(propertyValues));
+// Port only: saved-state validation of a property name.
 export function validSavedPropertyName(value) {
     return typeof value === 'string' && propertyNames.has(value);
 }

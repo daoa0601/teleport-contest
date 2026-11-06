@@ -26,6 +26,8 @@ export async function explodeLitOilPotion(potion, x, y, { state = game, heroCaus
         state, heroCaused, publish, random,
     });
 }
+// Part of C dothrow.c:breakobj(), uhitm.c:hmon_hitmon_misc_obj(): the
+// shared explode(x, y, -11, dmg, 0, EXPL_FIERY) pyrolisk-egg call.
 export function createFireExplosion(x, y, damage, { state = game, heroCaused = !state.context.mon_moving, publish = plineWithContinuation, random = rn2, } = {}) {
     // Pyrolisk eggs use the native generic object class, with a fire spell type.
     return explode(x, y, -11, damage, RANDOM_CLASS, EXPL_FIERY, { state, heroCaused, publish, random });

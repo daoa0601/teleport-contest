@@ -10,6 +10,8 @@ import { MONSTER_ATTACKS, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { rnd } from './rng.js';
 import { monsterIsShade } from './mondata.js';
+// Part of C dokick.c:kick_monster(): the polymorphed-form branch that
+// attacks with the form's AT_KICK slots instead of ordinary kicking.
 export async function kickWithMonsterForm(monster, x, y) {
     requirePlayingGame(game);
     if (!Upolyd(game.u)

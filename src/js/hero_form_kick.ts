@@ -12,6 +12,8 @@ import { rnd } from './rng.js';
 import type { Monster } from './monster_types.js';
 import { monsterIsShade } from './mondata.js';
 
+// Part of C dokick.c:kick_monster(): the polymorphed-form branch that
+// attacks with the form's AT_KICK slots instead of ordinary kicking.
 export async function kickWithMonsterForm(monster: Monster, x: number, y: number): Promise<boolean> {
     requirePlayingGame(game);
     if (!Upolyd(game.u)

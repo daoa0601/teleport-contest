@@ -11,10 +11,13 @@ const PM_BLACK_PUDDING = MONSTER_NAME.indexOf('black pudding');
 const NONROTTING = new Set(['acid blob', 'lichen', 'lizard', 'Death', 'Pestilence', 'Famine']
     .map(name => MONSTER_NAME.indexOf(name)));
 
+// C eat.c:nonrotting_corpse(): corpses that never rot (the macro is
+// defined inside eat.c).
 export function nonrottingCorpse(species: number | undefined): boolean {
     return species !== undefined && NONROTTING.has(species);
 }
 
+// C mondata.h:vegan(): the vegan() macro over monster body symbols.
 export function veganCorpse(species: number | undefined): boolean {
     if (species === undefined) return false;
     const symbol = MONSTER_SYMBOL[species];
@@ -24,6 +27,8 @@ export function veganCorpse(species: number | undefined): boolean {
         || symbol === S_GOLEM && species !== PM_FLESH_GOLEM && species !== PM_LEATHER_GOLEM;
 }
 
+// C mondata.h:vegetarian(): the vegetarian() macro (vegan() plus puddings
+// except the black pudding).
 export function vegetarianCorpse(species: number | undefined): boolean {
     return veganCorpse(species)
         || species !== undefined && MONSTER_SYMBOL[species] === S_PUDDING && species !== PM_BLACK_PUDDING;

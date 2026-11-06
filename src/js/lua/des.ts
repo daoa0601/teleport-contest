@@ -246,7 +246,7 @@ export const TRAP_TYPES = new Map([
     ['vibrating square', VIBRATING_SQUARE],
 ]);
 
-// TS adapter at the Lua boundary: shared validation for des.* tables;
+// Port only: shared validation for des.* tables at the Lua boundary;
 // each binding owns its defaults and feature creation.
 // Also C sp_lev.c:get_table_coords_or_region(): inlined here (x1..y2
 // with the region fallback).
@@ -332,6 +332,7 @@ export function tableOptions(
     return options;
 }
 
+// Port only: pass a Lua table through as plain JS for the des bindings.
 export function luaArgument(value: LuaValue | undefined): unknown {
     return value instanceof LuaTable ? luaValueToJs(value) : value;
 }
@@ -354,6 +355,8 @@ export function get_coord(value: unknown, y: unknown = null): LuaPoint | null {
     return null;
 }
 
+// Part of C sp_lev.c:get_table_objclass(): the def_char_to_objclass()
+// symbol-letter resolution, as l_des_object()'s class argument applies it.
 export function objectClassForSymbol(symbol: string) {
     const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
     if (objectClass < ILLOBJ_CLASS)

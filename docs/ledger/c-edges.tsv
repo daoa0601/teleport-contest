@@ -83,6 +83,7 @@ adj_pit_checks	closed_door
 adj_pit_checks	is_pool
 adj_pit_checks	isok
 adjattrib	acurr
+adjattrib	encumber_msg
 adjattrib	rn2
 adjust_attrib	acurr
 adjust_attrib	learnring
@@ -149,7 +150,11 @@ attributes_enlightenment	stone_luck
 attributes_enlightenment	temp_resist
 attributes_enlightenment	walking_on_water
 auto_describe	flush_screen
+avoid_moving_on_liquid	hliquid
 avoid_moving_on_liquid	is_pool
+avoid_moving_on_liquid	set_msg_xy
+avoid_moving_on_trap	set_msg_xy
+avoid_moving_on_trap	trapname
 avoid_running_into_trap_or_liquid	nomul
 avoid_trap_andor_region	immune_to_trap
 avoid_trap_andor_region	into_vs_onto
@@ -1058,6 +1063,7 @@ domove_fight_web	acurrstr
 domove_fight_web	newsym
 domove_fight_web	rn2
 domove_swap_with_pet	adjalign
+domove_swap_with_pet	goodpos
 domove_swap_with_pet	newsym
 domove_swap_with_pet	rn2
 domove_swap_with_pet	trapname
@@ -1092,6 +1098,7 @@ doopen_indir	recalc_block_point
 doopen_indir	rnl
 doopen_indir	stumble_on_door_mimic
 doopen_indir	update_mapseen_for
+doopen_indir	yn_function
 doorganize	doorganize_core
 doorganize	getobj
 doorganize	reassign
@@ -1865,6 +1872,7 @@ hmon_hitmon_jousting	uwepgone
 hmon_hitmon_misc_obj	change_luck
 hmon_hitmon_misc_obj	d
 hmon_hitmon_misc_obj	exercise
+hmon_hitmon_misc_obj	explode
 hmon_hitmon_misc_obj	rn2
 hmon_hitmon_misc_obj	rnd
 hmon_hitmon_misc_obj	weight
@@ -2897,6 +2905,7 @@ move_into_trap	u_on_newpos
 move_into_trap	vision_recalc
 move_out_of_bounds	isok
 move_out_of_bounds	nomul
+move_update	in_rooms
 movebubbles	block_point
 movebubbles	isok
 movebubbles	lift_covet_and_placebc
@@ -3562,6 +3571,7 @@ randrole_filtered	ok_role
 randrole_filtered	rn2
 rank	rank_of
 rcfile	parseoptions
+read_engr_at	nomul
 read_engr_at	surface
 readchar	readchar_core
 readchar_core	randomkey
@@ -4708,6 +4718,8 @@ water_turbulence	isok
 water_turbulence	near_capacity
 water_turbulence	nomul
 weapon_insight	skill_name
+weight_cap	acurr
+weight_cap	acurrstr
 welcome	l_nhcore_call
 welcome	print_level_annotation
 wielding_corpse	instapetrify

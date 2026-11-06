@@ -56,11 +56,15 @@ export const TIMED_LIGHT_TYPES = new Set([
 ]);
 export const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
 
+// C light.c:obj_sheds_light(): obj_is_burning() — lamplit and ignitable
+// or an artifact light.
 export function objectShedsLight(object: GameObject | null | undefined) {
     return !!object?.lamplit
         && (LIGHT_TYPES.has(object.otyp) || artifactEmitsLight(object));
 }
 
+// C light.c:candle_light_range(), arti_light_radius(): one object's light
+// radius, including the gold-dragon scales and candelabrum ranges.
 export function objectLightRadius(object: GameObject | null | undefined, state: GameState = game) {
     if (!object?.lamplit) return 0;
     // Clearing a worn slot precedes the message and the call that extinguishes it.
@@ -79,18 +83,23 @@ export function objectLightRadius(object: GameObject | null | undefined, state: 
 }
 
 
+// C light.c:arti_light_description(): the adverb for the current radius.
 export function equipmentLightDescription(object: GameObject | null | undefined, state: GameState = game) {
     return ['strangely', 'dimly', 'brightly', 'brilliantly', 'radiantly'][
         objectLightRadius(object, state)
     ] || 'strangely';
 }
 
+// Part of C wield.c:ready_weapon(), worn.c:m_dowear_type(): the shared
+// "begins to shine %s" / "stops shining" phrasing.
 export function equipmentLightMessage(object: GameObject, shining: boolean, state: GameState = game) {
     return shining
         ? `${definiteObjectAction(object, 'begin', state)} to shine ${equipmentLightDescription(object, state)}!`
         : `${definiteObjectAction(object, 'stop', state)} shining.`;
 }
 
+// Part of C wield.c:ready_weapon(): begin_burn() plus the shine message
+// for a wielded light artifact.
 export async function lightWieldedArtifact(
     object: GameObject, state: GameState = game,
     publish: Publish = plineWithContinuation,
@@ -101,6 +110,8 @@ export async function lightWieldedArtifact(
         await publish(equipmentLightMessage(object, true, state));
 }
 
+// Part of C light.c:snuff_light_source(): the end_burn() half that skips
+// artifact lights.
 function snuffOrdinaryLight(object: GameObject | null | undefined) {
     if (!object?.lamplit || !LIGHT_TYPES.has(object.otyp)) return false;
     return endObjectBurn(object, game, game.moves ?? 0);
@@ -199,12 +210,16 @@ export async function snuffMonsterInventoryLights(
     }
 }
 
+// C uhitm.c:light_hits_gremlin(): the gremlin's cry or recoil, damage,
+// wake, and death.
 export function lightHitsGremlin(
     monster: Monster, damage: number,
 ): Promise<LightDeathOutcome | void>;
+// C uhitm.c:light_hits_gremlin(): the overload with a kill handler.
 export function lightHitsGremlin(
     monster: Monster, damage: number, finishMonsterKill: FinishMonsterKill,
 ): Promise<boolean | LightDeathOutcome | void>;
+// C uhitm.c:light_hits_gremlin(): the implementation.
 export async function lightHitsGremlin(
     monster: Monster, damage: number,
     finishMonsterKill?: FinishMonsterKill,

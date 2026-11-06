@@ -20,6 +20,7 @@ import {
     validSavedAlignmentValue, validSavedAttributeValues, validSavedHeroAlignment,
 } from './character_validation.js';
 
+// Port only: saved-state validation of the whole hero record.
 export function validSavedHero(
     value: unknown, entities: SavedEntityContext,
 ): value is Hero {
@@ -208,17 +209,21 @@ export function validSavedHero(
     });
 }
 
+// Port only: saved hero-event flags accept booleans and 0/1.
 const heroFlag = (value: unknown): value is HeroEventFlag =>
     boolean(value) || value === 0 || value === 1;
 
+// Port only: saved-state validation of the attribute tables.
 function validHeroAttributes(value: unknown): value is HeroAttributes {
     return closedFieldsMatch<HeroAttributes>(value, { a: validSavedAttributeValues });
 }
 
+// Port only: saved-state validation of ualignbase.
 function validAlignmentBases(value: unknown): value is [AlignmentValue, AlignmentValue] {
     return arrayOf(validSavedAlignmentValue)(value) && value.length === 2;
 }
 
+// Port only: saved-state validation of the uroleplay record.
 function validHeroRoleplay(value: unknown): value is HeroRoleplay {
     return closedFieldsMatch<HeroRoleplay>(value, {
         pauper: boolean, nudist: boolean, reroll: boolean,
@@ -226,12 +231,14 @@ function validHeroRoleplay(value: unknown): value is HeroRoleplay {
     });
 }
 
+// Port only: saved-state validation of one weapon-skill record.
 function validHeroSkill(value: unknown): value is HeroSkill {
     return closedFieldsMatch<HeroSkill>(value, {
         skill: integer, maxSkill: integer, advance: integer,
     });
 }
 
+// Port only: saved-state validation of the conduct record.
 function validHeroConduct(value: unknown): value is HeroConduct {
     return closedFieldsMatch<HeroConduct>(value, {
         food: optional(integer),
@@ -251,6 +258,7 @@ function validHeroConduct(value: unknown): value is HeroConduct {
     });
 }
 
+// Port only: saved-state validation of the uachievements-like event record.
 function validHeroEvents(value: unknown): value is HeroEvents {
     return closedFieldsMatch<HeroEvents>(value, {
         amulet_wish: optional(heroFlag),
@@ -271,6 +279,7 @@ function validHeroEvents(value: unknown): value is HeroEvents {
     });
 }
 
+// Port only: saved-state validation of the uhave possessions record.
 function validHeroPossessions(value: unknown): value is HeroPossessions {
     return closedFieldsMatch<HeroPossessions>(value, {
         amulet: optional(heroFlag),
@@ -281,6 +290,7 @@ function validHeroPossessions(value: unknown): value is HeroPossessions {
     });
 }
 
+// Port only: saved-state validation of the property-source table.
 function validPropertySourceTable(
     value: unknown,
 ): value is Partial<Record<PropertyName, PropertySources>> {
@@ -289,6 +299,7 @@ function validPropertySourceTable(
         propertyNames.has(name) && validPropertySources(source));
 }
 
+// Port only: saved-state validation of one property's source records.
 function validPropertySources(value: unknown): value is PropertySources {
     return closedFieldsMatch<PropertySources>(value, {
         intrinsic: validIntrinsicSources,
@@ -299,6 +310,7 @@ function validPropertySources(value: unknown): value is PropertySources {
     });
 }
 
+// Port only: saved-state validation of a property's intrinsic origins.
 function validIntrinsicSources(value: unknown): value is Partial<Record<IntrinsicOrigin, true>> {
     const present = (entry: unknown): entry is true => entry === true;
     return closedFieldsMatch<Partial<Record<IntrinsicOrigin, true>>>(value, {
@@ -307,6 +319,7 @@ function validIntrinsicSources(value: unknown): value is Partial<Record<Intrinsi
     });
 }
 
+// Port only: saved-state validation of a worn property source.
 function validWornSource(value: unknown): value is WornPropertySource {
     return closedFieldsMatch<WornPropertySource>(value, {
         slot: oneOf('uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
@@ -315,12 +328,14 @@ function validWornSource(value: unknown): value is WornPropertySource {
     });
 }
 
+// Port only: saved-state validation of an invoked-artifact source.
 function validInvokedSource(value: unknown): value is InvokedPropertySource {
     return closedFieldsMatch<InvokedPropertySource>(value, {
         objectId: nullable(integer), artifactId: nullable(integer), objectType: nullable(integer),
     });
 }
 
+// Port only: saved-state validation of a carried property source.
 function validCarriedSource(value: unknown): value is CarriedPropertySource {
     return closedFieldsMatch<CarriedPropertySource>(value, {
         objectId: nullable(integer), artifactId: nullable(integer), otyp: nullable(integer),
@@ -400,6 +415,7 @@ const propertyValues: Fields<Partial<Record<PropertyName, boolean>>> = {
 
 const propertyNames: ReadonlySet<string> = new Set(Object.keys(propertyValues));
 
+// Port only: saved-state validation of a property name.
 export function validSavedPropertyName(value: unknown): value is PropertyName {
     return typeof value === 'string' && propertyNames.has(value);
 }

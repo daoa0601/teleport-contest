@@ -90,6 +90,8 @@ const DEC_GETPOS_FEATURE_SYMBOLS = new Set([
     '\xf8', '\xf1', '\xef', '\xf3', '\xfc',
 ]);
 
+// Part of C getpos.c:getpos(): whether the key can match a dungeon
+// feature (the matching[] loop finding k > 0).
 export function isGetposFeatureSymbol(ch: string, symset: string | null | undefined = ''): boolean {
     if (typeof ch !== 'string' || ch.length !== 1) return false;
     if (DEFAULT_GETPOS_FEATURE_SYMBOLS.has(ch)) return true;
@@ -158,7 +160,8 @@ export function moveGetposCursor(cursor: Position, dx: number, dy: number): void
 }
 
 
-// getpos() prints a separate pline; tty decides whether it fits after the caller's message.
+// Part of C getpos.c:getpos(): the "(For instructions type a '%s')" pline
+// when flags.verbose; tty decides whether it fits after the caller's message.
 export async function showGetposInstructions(state: GameState = game): Promise<void> {
     if (!state.flags.verbose) return;
     const helpKey = state.commandBindings.specialKey('getpos.help');
@@ -180,6 +183,9 @@ const DEC_FEATURE_SYMBOLS = new Map<number, string>([
 ]);
 const EFFECT_FEATURE_SYMBOLS = ['|', '-', '\\', '/', '*', '!', ')', '(', '0', '#', '@', '*', '#', '$'];
 
+// Part of C getpos.c:getpos(): the matching[MAXPCHARS] build — defsyms and
+// active showsyms, '^' matching every trap, and the room-engraving '`'
+// matching corridor engravings.
 function matchingGetposSymbols(key: string, state: GameState): ReadonlySet<number> {
     const matching = new Set<number>();
     const dec = /^DECgraphics$/i.test(state.symset ?? '');
@@ -227,6 +233,8 @@ export function knownVibratingSquareAt(x: number, y: number, state: GameState): 
             && trap.ttyp === VIBRATING_SQUARE && trap.tseen);
 }
 
+// Part of C getpos.c:getpos(): the foundc test — current glyph, remembered
+// glyph, '~' at the known vibrating square, then seen terrain.
 function getposFeatureMatches(
     x: number, y: number, key: string, matching: ReadonlySet<number>, state: GameState,
 ): boolean {
@@ -247,7 +255,8 @@ function getposFeatureMatches(
     return false;
 }
 
-// Search from the cursor to the bottom-right of the map, then wrap around.
+// Part of C getpos.c:getpos(): the two-pass feature scan — from just past
+// the cursor to the bottom-right of the map, then wrapping around.
 export function nextGetposFeature(cursor: Position, symbol: string, state: GameState = game): Position | null {
     const matching = matchingGetposSymbols(symbol, state);
     for (let pass = 0; pass <= 1; pass++) {
@@ -266,6 +275,8 @@ export function nextGetposFeature(cursor: Position, symbol: string, state: GameS
     return null;
 }
 
+// Part of C getpos.c:getpos(): the "Can't find dungeon feature '%c'." and
+// "Unknown direction: '%s' ..." messages.
 export function getposFeatureMissMessage(ch: string, state: GameState = game): string {
     const code = ch.codePointAt(0);
     const visible = code === undefined ? '' : visibleCommandKey(code);
@@ -276,6 +287,8 @@ export function getposFeatureMissMessage(ch: string, state: GameState = game): s
     return `Unknown direction: '${visible}' (use ${directions} or '${pick}').`;
 }
 
+// Part of C getpos.c:getpos(): the pick_chars_def[] NHKF_GETPOS_PICK*
+// keys.
 function mapPositionPickType(code: number): MapPositionPickType | null {
     const choices: readonly (readonly [string, MapPositionPickType])[] = [
         ['getpos.pick', LOOK_TRADITIONAL], ['getpos.pick.quick', LOOK_QUICK],
@@ -284,12 +297,15 @@ function mapPositionPickType(code: number): MapPositionPickType | null {
     return choices.find(([name]) => game.commandBindings.specialKey(name) === code)?.[1] ?? null;
 }
 
+// Part of C getpos.c:getpos(): strchr(pick_chars, c).
 export function isGetposPickCharacter(ch: string): boolean {
     return mapPositionPickType(ch.charCodeAt(0)) !== null;
 }
 
-// getpos() flushes the existing glyph buffer. Recalculating sight here would
-// discover warnings or erase unseen-monster memory in the middle of a turn.
+// Part of C getpos.c:getpos(): the per-round cursor repaint — curs(WIN_MAP)
+// and flush_screen(0), with auto_describe()'s topline. getpos() flushes the
+// existing glyph buffer; recalculating sight here would discover warnings or
+// erase unseen-monster memory in the middle of a turn.
 export async function paintGetposCursor(cursor: Position, message: string | null,
     markedSpots: readonly Position[] | null = null,
     { flushPending = false }: { flushPending?: boolean } = {},
@@ -412,6 +428,7 @@ async function describeSelectedPosition(
         + (game.iflags.getloc_travelmode && !await isValidTravelTarget(cursor.x, cursor.y) ? ' (no travel path)' : '');
 }
 
+// C getpos.c:getpos_menu().
 async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKind): Promise<Position | null> {
     const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
     const name = names[kind];
@@ -437,8 +454,9 @@ async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKin
     }
 }
 
-// getpos_menu() describes the displayed glyph even when the caller only
-// supplied a validity rule, such as spell or polearm targeting.
+// Part of C getpos.c:getpos_menu(), auto_describe(): the do_screen_description()
+// text for one spot. getpos_menu() describes the displayed glyph even when
+// the caller only supplied a validity rule, such as spell or polearm targeting.
 export async function describeGetposLocation(x: number, y: number): Promise<string | null> {
     const screen = screenDescription(x, y, '');
     if (!screen.count) return null;
@@ -544,6 +562,8 @@ export async function prepareMapPositionHighlights(isValidLocation: ValidLocatio
     await setMapPositionHighlights(isValidLocation, game.iflags.bgcolors !== false);
 }
 
+// Part of C getpos.c:getpos_sethilite(): install or clear the validity
+// rule and redraw the union of old and new selections.
 async function setMapPositionHighlights(isValidLocation: ValidLocation | null, background: boolean): Promise<void> {
     const previous = game._mapPositionHighlight;
     if (isValidLocation) game._mapPositionHighlight = { isValidLocation, background };
@@ -555,6 +575,7 @@ async function setMapPositionHighlights(isValidLocation: ValidLocation | null, b
         !!previous?.isValidLocation(x, y) || !!isValidLocation?.(x, y))) await newsym_force(x, y);
 }
 
+// Part of C getpos.c:getpos(): the mMoOdDxX[] cycle keys and their step.
 function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } | null {
     const kinds: readonly GetposCycleKind[] = ['mon', 'obj', 'door', 'unexplored', 'all', 'valid'];
     for (const kind of kinds) {
@@ -566,6 +587,8 @@ function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } |
     return null;
 }
 
+// Part of C getpos.c:gather_locs_interesting(): the per-kind GLOC_ tests
+// (mon, obj, door, unexplored beside an unseen square).
 function matchesGetposCycle(kind: Exclude<GetposCycleKind, 'valid'>, x: number, y: number): boolean {
     const glyph = glyphAt(x, y);
     if (kind === 'mon') return glyph?.kind === 'monster'

@@ -47,16 +47,20 @@ export type FloorEffectResult = {
 };
 
 
+// Port only: cansee(x, y) for an explicit state (viz_array bit).
 function squareIsVisible(state: GameState, x: number, y: number): boolean {
     if (state === game) return cansee(x, y);
     if (state.blind || (state.u?.blindTurns ?? 0) > 0) return false;
     return !state.viz_array || !!((state.viz_array[y]?.[x] ?? 0) & 0x2);
 }
 
+// Port only: publish each queued message through the caller's publisher.
 async function publishAll(messages: readonly string[], publish: MessagePublisher): Promise<void> {
     for (const message of messages) await publish(message);
 }
 
+// Part of C do.c:flooreffects(): the hot-ground potion branch
+// (level.flags.temperature > 0 on room or corridor).
 async function breakPotionOnHotGround(
     object: GameObject, x: number, y: number, state: GameState,
     publish: MessagePublisher, random: typeof rn2, luckRoll: typeof rnl,
@@ -97,6 +101,8 @@ async function breakPotionOnHotGround(
     return true;
 }
 
+// Part of C do.c:flooreffects(): the u_at(x,y) uteetering_at_seen_pit() /
+// uescaped_shaft() branch.
 async function handleHeroShaftEdge(
     object: GameObject, trap: Trap | undefined, x: number, y: number,
     state: GameState, publish: MessagePublisher, random: typeof rn2,
@@ -122,6 +128,8 @@ async function handleHeroShaftEdge(
     return shipped ? { finished: true, object: null } : { finished: false, object };
 }
 
+// C do.c:flooreffects(). What happens when a free object lands on a
+// dungeon square; the C reference is also in the module header above.
 export async function applyFloorEffects(
     object: GameObject,
     x: number,
@@ -220,6 +228,8 @@ export async function applyFloorEffects(
     return { finished: false, object };
 }
 
+// Part of C do.c:dropz(): the shared flooreffects() → place_object() →
+// stackobj() landing tail.
 export async function landFloorObject(
     object: GameObject,
     x: number,

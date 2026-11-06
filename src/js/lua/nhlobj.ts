@@ -90,11 +90,14 @@ function handle(value: LuaValue | undefined): ObjectHandle {
     return value;
 }
 
+// Part of C nhlobj.c:l_obj_check(): dereference to the live GameObject.
 function object(value: LuaValue | undefined): GameObject | null {
     const item = handle(value).value;
     return item && item.where !== 'gone' ? item : null;
 }
 
+// Part of C nhlobj.c:l_obj_timer_start()/l_obj_timer_stop(): the timer
+// name to TIMER_KIND mapping.
 function timerKind(name: LuaValue | undefined): TimerKind | null {
     if (typeof name !== 'string' || !TIMER_KINDS.has(name))
         throw new TypeError(`Unknown object timer: ${name}`);
@@ -299,6 +302,8 @@ export function createObjectApi(state: GameState = game): ObjectApi {
     return api;
 }
 
+// Part of C nhlobj.c:l_obj_nextobj(): the floor chain in fobj (nobj)
+// order for the iteration setup.
 function floorChain(state: GameState): GameObject[] {
     return (state.level?.objects || []).flatMap(column =>
         (column || []).flatMap(pile => pile || []))

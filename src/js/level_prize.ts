@@ -4,6 +4,8 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 
+// Part of C obj.h:is_mines_prize()/is_soko_prize(): which pending prize,
+// if any, this concrete object identity is.
 export function levelPrizeKind(
     object: GameObject, state: GameState = game,
 ): 'mines' | 'sokoban' | null {
@@ -14,6 +16,7 @@ export function levelPrizeKind(
     return null;
 }
 
+// Part of C obj.h:is_mines_prize()/is_soko_prize(): the combined test.
 export function isLevelPrize(object: GameObject, state: GameState = game): boolean {
     return levelPrizeKind(object, state) !== null;
 }

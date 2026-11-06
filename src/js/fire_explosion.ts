@@ -38,6 +38,8 @@ export async function explodeLitOilPotion(potion: GameObject, x: number, y: numb
     });
 }
 
+// Part of C dothrow.c:breakobj(), uhitm.c:hmon_hitmon_misc_obj(): the
+// shared explode(x, y, -11, dmg, 0, EXPL_FIERY) pyrolisk-egg call.
 export function createFireExplosion(x: number, y: number, damage: number, {
     state = game, heroCaused = !state.context.mon_moving, publish = plineWithContinuation, random = rn2,
 }: ExplosionOptions = {}): Promise<MagicDamageResult> {

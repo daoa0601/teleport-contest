@@ -31,10 +31,14 @@ export const TIMED_LIGHT_TYPES = new Set([
     BRASS_LANTERN, OIL_LAMP, POT_OIL, ...CANDLE_TYPES,
 ]);
 export const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
+// C light.c:obj_sheds_light(): obj_is_burning() — lamplit and ignitable
+// or an artifact light.
 export function objectShedsLight(object) {
     return !!object?.lamplit
         && (LIGHT_TYPES.has(object.otyp) || artifactEmitsLight(object));
 }
+// C light.c:candle_light_range(), arti_light_radius(): one object's light
+// radius, including the gold-dragon scales and candelabrum ranges.
 export function objectLightRadius(object, state = game) {
     if (!object?.lamplit)
         return 0;
@@ -54,14 +58,19 @@ export function objectLightRadius(object, state = game) {
         return Math.min(15, Math.floor(Math.sqrt(object.quan ?? object.quantity ?? 1)) + 1);
     return LIGHT_TYPES.has(object.otyp) ? 3 : 0;
 }
+// C light.c:arti_light_description(): the adverb for the current radius.
 export function equipmentLightDescription(object, state = game) {
     return ['strangely', 'dimly', 'brightly', 'brilliantly', 'radiantly'][objectLightRadius(object, state)] || 'strangely';
 }
+// Part of C wield.c:ready_weapon(), worn.c:m_dowear_type(): the shared
+// "begins to shine %s" / "stops shining" phrasing.
 export function equipmentLightMessage(object, shining, state = game) {
     return shining
         ? `${definiteObjectAction(object, 'begin', state)} to shine ${equipmentLightDescription(object, state)}!`
         : `${definiteObjectAction(object, 'stop', state)} shining.`;
 }
+// Part of C wield.c:ready_weapon(): begin_burn() plus the shine message
+// for a wielded light artifact.
 export async function lightWieldedArtifact(object, state = game, publish = plineWithContinuation) {
     if (!artifactEmitsLight(object) || object.lamplit)
         return;
@@ -69,6 +78,8 @@ export async function lightWieldedArtifact(object, state = game, publish = pline
     if (!heroIsBlind(state))
         await publish(equipmentLightMessage(object, true, state));
 }
+// Part of C light.c:snuff_light_source(): the end_burn() half that skips
+// artifact lights.
 function snuffOrdinaryLight(object) {
     if (!object?.lamplit || !LIGHT_TYPES.has(object.otyp))
         return false;
@@ -156,6 +167,7 @@ export async function snuffMonsterInventoryLights(defender, state, publish) {
         endObjectBurn(object, state);
     }
 }
+// C uhitm.c:light_hits_gremlin(): the implementation.
 export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
     const dx = monster.mx - game.u.ux;
     const dy = monster.my - game.u.uy;

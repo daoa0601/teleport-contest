@@ -18,16 +18,19 @@ const INITIALIZED_FIELDS = {
     uhunger: 'uhunger', uhs: 'uhs', weaponSkills: 'weaponSkills',
     skillRecord: 'skillRecord', weapon_slots: 'weapon_slots',
 };
+// Port only: assert the startup phases have installed the hero's fields.
 export function requireInitializedHero(hero) {
     for (const field of Object.values(INITIALIZED_FIELDS)) {
         if (hero[field] === undefined)
             throw new Error(`Hero initialization has not installed ${field}`);
     }
 }
-// Allocation must preserve absence until the owning startup phase runs.
+// Port only: allocation must preserve absence until the owning startup
+// phase runs.
 export function createHeroState() {
     return { ux: 0, uy: 0, ux0: 0, uy0: 0 };
 }
+// Port only: validated attribute-table access for startup rolls.
 export function requireHeroAttributes(hero) {
     const { acurr, amax, atemp } = hero;
     if (!acurr || !amax || !atemp)

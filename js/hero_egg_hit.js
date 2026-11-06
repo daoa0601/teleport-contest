@@ -14,6 +14,8 @@ import { deleteObject } from './shk.js';
 import { EGG } from './object_data.js';
 import { rnd, rn2 } from './rng.js';
 import { monsterHasStoneResistance, touchPetrifies } from './mondata.js';
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the EGG case of the misc-object
+// hit switch (the main port is in uhitm.ts).
 export async function resolveHeroEggHit(monster, egg, { state = game, mode, publish, random = rn2, rollOne = rnd, finishMonsterKill = (victim, death) => finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, death), }) {
     if (egg.otyp !== EGG)
         throw new RangeError('Egg contact requires an egg');
@@ -71,6 +73,8 @@ export async function resolveHeroEggHit(monster, egg, { state = game, mode, publ
     await exerciseAttribute(A_WIS, false, state);
     return result;
 }
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the useup_eggs() macro it
+// defines for that case (obfree when thrown, useupall otherwise).
 async function consumeEggs(egg, mode, state) {
     if (mode === 'melee' && egg.where === 'inventory')
         await useUpInventoryStack(egg, state);

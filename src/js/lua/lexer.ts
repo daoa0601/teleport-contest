@@ -17,14 +17,17 @@ const doubleSymbols = new Set([
     '==', '~=', '<=', '>=', '//', '<<', '>>', '..', '::',
 ]);
 
+// C lctype.h:lislalpha(): identifier start (letter or underscore).
 function isNameStart(char: string | undefined): boolean {
     return /[A-Za-z_]/u.test(char || '');
 }
 
+// C lctype.h:lislalpha()/lisalnum(): identifier continuation.
 function isNamePart(char: string | undefined): boolean {
     return /[A-Za-z0-9_]/u.test(char || '');
 }
 
+// Part of C llex.c:skip_sep(): the [=*[ long-bracket level count.
 function longBracketLevel(source: string, offset: number): number {
     if (source[offset] !== '[') return -1;
     let cursor = offset + 1;
@@ -32,6 +35,8 @@ function longBracketLevel(source: string, offset: number): number {
     return source[cursor] === '[' ? cursor - offset - 1 : -1;
 }
 
+// C llex.c:llex(): the Lua tokenizer (identifiers, long strings, numbers
+// and short strings), with incl()/next() line counting inlined.
 export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
     const tokens: LuaToken[] = [];
     let offset = 0;

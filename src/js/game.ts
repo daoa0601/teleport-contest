@@ -12,7 +12,7 @@ import type {
     RoomEntry, Room, ShopDamage, Trap,
 } from './map_types.js';
 
-// A single map cell. Mirrors C's struct rm.
+// Port only: construct one map cell (C's levl[x][y] entries are static).
 export function makeLocation(): MapLocation {
     return {
         typ: STONE,      // terrain type (STONE, ROOM, CORR, DOOR, etc.)

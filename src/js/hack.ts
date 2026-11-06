@@ -180,6 +180,8 @@ export async function reviveNastyAt(
     return revived;
 }
 
+// Part of C hack.c:revive_nasty(): relocate an occupant that blocks a
+// revived monster.
 async function moveRevivalOccupant(monster: Monster, x: number, y: number, state: GameState): Promise<void> {
     const position = enexto(monster.mnum, x, y, { state });
     if (position) await relocateMonsterTo(monster, position.x, position.y, { state });
@@ -300,14 +302,19 @@ export function heroCouldMoveOntoBoulder(sx: number, sy: number, state: GameStat
     return heroIsVerySmall(state) || !state.inventory.length || invWeight(state) <= -WT_SQUEEZABLE_INV;
 }
 
+// Port only: sobj_at(BOULDER, x, y) accessor over the floor pile.
 function boulderAt(x: number, y: number): GameObject | undefined {
     return game.level?.objects[x]?.[y]?.find(object => object.otyp === BOULDER);
 }
 
+// Part of C mondata.h:throws_rocks(): the hero-form test (the shared port
+// is in mondata.ts).
 function heroThrowsRocks(state: GameState = game): boolean {
     return monsterThrowsRocks(heroSpecies(state));
 }
 
+// Part of C hack.c:moverock_core(): the m<dir> nopick branch — step over
+// the boulder, squeeze against it, or learn that it blocks the way.
 async function stepOntoBoulder(x: number, y: number): Promise<boolean> {
     const old = glyphAt(x, y);
     await feel_location(x, y);
@@ -359,6 +366,8 @@ async function cannotPush(boulder: GameObject, x: number, y: number): Promise<bo
     return true;
 }
 
+// Part of C hack.c:moverock_core(): the monster-behind-the-boulder branch
+// ("There's %s on the other side" or the heard variant).
 async function monsterBlocksBoulder(boulder: GameObject, monster: Monster, sx: number, sy: number, rx: number, ry: number): Promise<void> {
     if (heroIsBlind(game)) await feel_location(sx, sy);
     let heardOrSeen = false;
@@ -514,6 +523,8 @@ async function moveBoulder(boulder: GameObject, sx: number, sy: number, rx: numb
     }
 }
 
+// Part of C eat.c:doeat(): the &hands_obj iron-bars branch —
+// still_chewing(u.ux, u.uy) plus "You pause to swallow."
 export async function chewIronBars({ state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -661,6 +672,7 @@ export function heroLocomotion(fallback: string, state: GameState = game): strin
     return fallback.charAt(0) === fallback.charAt(0).toUpperCase()
         ? verb.charAt(0).toUpperCase() + verb.slice(1) : verb;
 }
+// Part of C hack.c:handle_tip(): the once-per-game condition.
 export function shouldShowGetposTip(state = game) {
     return state.flags?.tips !== false && !state._travelTipShown;
 }
@@ -713,6 +725,8 @@ const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const PM_AIR_ELEMENTAL = 154;
 const PM_IRON_GOLEM = 259;
 
+// Part of C hack.c:u_simple_floortyp(): the u_in_air test — Levitation,
+// Flying, or an ungrounded form (floaters, ceiling clingers).
 function heroIsInAir(state: GameState) {
     const hero = state.u;
     if (hero.levitating || hero.levitation) return true;
@@ -737,6 +751,8 @@ function heroFloorType(state: GameState, x: number, y: number) {
     return ROOM;
 }
 
+// C hack.c:avoid_moving_on_liquid(): whether running should stop at the
+// edge of the water or lava ahead.
 export function heroShouldAvoidLiquid(x: number, y: number, state = game) {
     const hero = state.u;
     const destination = state.level?.at?.(x, y);
@@ -776,6 +792,8 @@ export function heroCanPassWallAt(state: GameState, x: number, y: number) {
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
 }
 
+// C hack.c:doorless_door(): rogue-level doorways keep their diagonal
+// restrictions.
 export function doorlessDoor(location: MapLocation | null | undefined) {
     return location?.typ === DOOR
         // Rogue doorways have no doors but retain diagonal restrictions.
@@ -783,11 +801,14 @@ export function doorlessDoor(location: MapLocation | null | undefined) {
         && !((location.doormask || 0) & ~D_BROKEN);
 }
 
+// Part of C hack.c:test_move(): the diagonal door test,
+// !doorless_door(x, y) || block_door(x, y).
 export function blocksDiagonalDoor(current: MapLocation | null | undefined, destination: MapLocation | null | undefined) {
     return (destination?.typ === DOOR && !doorlessDoor(destination))
         || (current?.typ === DOOR && !doorlessDoor(current));
 }
 
+// C hack.c:bad_rock(): the hero-species test.
 export function heroBadRock(state: GameState, x: number, y: number) {
     const location = state.level?.at?.(x, y);
     if (!location) return true;
@@ -827,6 +848,8 @@ export function badRockForMonster(
     return !mayTunnel && !mayPassWall;
 }
 
+// C hack.c:cant_squeeze_thru(): why a diagonal between blocked shoulders
+// does not fit (big body, too much weight, Sokoban rules).
 export function heroTightDiagonalReason(state = game) {
     const u = state.u;
 
@@ -869,31 +892,41 @@ export async function crawlDestinationAllowed(
         && heroTightDiagonalReason(state));
 }
 
+// Part of C hack.c:pooleffects(): the enter-water gate — Levitation,
+// Flying, or water walking over anything but a wall of water.
 function heroStaysAboveWater(state: GameState, location: MapLocation | null) {
     const u = state.u;
     if (u.levitating || u.levitation || u.flying) return true;
     return heroHasWaterWalking(state) && location?.typ !== WATER;
 }
 
+// Part of C youprop.h:Fire_resistance().
 export function heroResistsFire(state: GameState) {
     const hero = state.u;
     return !!(hero.fireResistance);
 }
 
+// Part of C timeout.c:burn_away_slime(): the shared port is in
+// timeout.ts.
 export async function burnAwayHeroSlime(state: GameState, publish: MessagePublisher) {
     if (!clearHeroSliming(state)) return false;
     await publish('The slime that covers you is burned away!');
     return true;
 }
 
+// Part of C youprop.h:Swimming(), mondata.h:is_swimmer(): the hero can
+// move through water.
 export function heroCanSwim(state: GameState) {
     return !!(state.u?.swimming || monsterIsSwimmer(heroMonsterForm(state) ?? -1));
 }
 
+// Port only: resolve an equipment slot through either state field.
 function equippedObject(state: GameState, slot: EquipmentSlot) {
     return state[slot] || state.u?.[slot] || null;
 }
 
+// Part of C trap.c:emergency_disrobe(): the undroppable test (worn armor,
+// accessories, welded weapon, cursed loadstone, in_use).
 function canDropWhileDrowning(object: GameObject | null, state: GameState) {
     if (!object || object.in_use) return false;
     if (object.otyp === LOADSTONE && object.cursed) return false;
@@ -911,6 +944,7 @@ function canDropWhileDrowning(object: GameObject | null, state: GameState) {
     return true;
 }
 
+// Part of C trap.c:emergency_disrobe(): the random droppable-object pick.
 export function pickEmergencyDrop(state: GameState, random: RandomBelow) {
     const inventory = state.inventory || [];
     if (!inventory.length) return null;
@@ -924,6 +958,7 @@ export function pickEmergencyDrop(state: GameState, random: RandomBelow) {
     return candidate;
 }
 
+// Part of C trap.c:emergency_disrobe(): remove_worn_item() plus dropx().
 export async function dropEmergencyObject(object: GameObject, state: GameState) {
     await removeWornHeroItem(object, state);
     if (state.program_state?.gameover) return false;
@@ -931,6 +966,8 @@ export async function dropEmergencyObject(object: GameObject, state: GameState) 
     return !state.program_state?.gameover;
 }
 
+// Part of C hack.c:pooleffects(): the leaving-water block — air bubble,
+// cork, flying out, or slowly rising above the surface.
 async function leaveWater({
     state, location, publish,
 }: { state: PlayingGameState; location: MapLocation; publish: MessagePublisher }) {
@@ -974,7 +1011,7 @@ async function leaveWater({
     return true;
 }
 
-// TS-only adapter dispatching into the C hack.c liquid-effect ports; it
+// Port only: adapter dispatching into the C hack.c liquid-effect ports; it
 // has no single C original.  Which C path each entry follows:
 // entry 'spot-effects' (C hack.c:spoteffects() -> pooleffects()) is the
 // default.  entry 'float-down' (float_down() -> drown()/
@@ -1081,8 +1118,8 @@ function heroOozesUnderDoor(destination: MapLocation | null, g: GameState = game
         && !heroPassesWalls(g) && heroCanOoze(g);
 }
 
-// C test_move(TEST_MOVE): tests obstacles without performing auto-open,
-// boulder pushing, or the hero's eventual movement.
+// Part of C hack.c:test_move(): the TEST_MOVE mode — obstacles without
+// auto-open, boulder pushing, or the hero's eventual movement.
 export function heroTestMove(x: number, y: number, g: GameState = game): boolean {
     return testHeroMove(g.u.ux, g.u.uy, x, y, 'test', g).passes;
 }
@@ -1101,9 +1138,9 @@ interface HeroMoveTest {
     blockedBy?: Shopkeeper;
 }
 
-// Shop doorway checks print even during a path search (C block_door()/
-// block_entry() pline from inside test_move()), so publish them at this
-// awaited boundary while the shared movement decision stays pure.
+// Part of C hack.c:test_move(): the block_door()/block_entry() pline from
+// inside test_move() prints even during a path search, so publish it at
+// this awaited boundary while the shared movement decision stays pure.
 async function testTravelMove(
     fromX: number, fromY: number, x: number, y: number,
     mode: 'test' | 'travel' | 'trap', g: GameState,
@@ -1197,6 +1234,8 @@ function testHeroMove(
     return { passes: true };
 }
 
+// Part of C hacklib.c:dist2(): local squared-distance helper for the
+// travel search (the shared port is dist2() in hacklib.ts).
 function runDist2(x1: number, y1: number, x2: number, y2: number): number {
     const dx = x1 - x2;
     const dy = y1 - y2;
@@ -1213,15 +1252,20 @@ export const TRAVEL_DIRECTIONS: readonly (readonly [number, number])[] = [
     [-1, -1], [1, -1], [1, 1], [-1, 1],
 ];
 
+// Part of C hack.c:findtravelpath(): the closed- or locked-door delay
+// test.
 function closedTravelDoor(x: number, y: number, g: GameState): boolean {
     const location = g.level?.at(x, y);
     return location?.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED));
 }
 
+// Part of C hack.c:findtravelpath(): sobj_at(BOULDER, x, y).
 function travelBoulderAt(x: number, y: number, g: GameState): boolean {
     return !!g.level?.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
 }
 
+// Part of C hack.c:findtravelpath(): the known-cell test — seenv, or
+// couldsee() while not blind.
 function travelCellKnown(x: number, y: number, g: GameState): boolean {
     const location = g.level?.at(x, y);
     return !!location && (!!location.seenv || !heroIsBlind(g) && couldsee(x, y));
@@ -1262,7 +1306,7 @@ async function showTravelSearch(
     }
 }
 
-// C findtravelpath(): each radius preserves cardinal-first frontier order.
+// C hack.c:findtravelpath(): each radius preserves cardinal-first frontier
 // Door, boulder and trap delays apply to each edge before TEST_TRAV, in all
 // three search modes. The origin starts unmarked, as in C's zeroed matrix.
 async function searchTravelPath(
@@ -1323,10 +1367,12 @@ function markTravelStep(x: number, y: number, g: GameState): void {
     g._travelMap.add(y * COLNO + x);
 }
 
+// Part of C hack.c:findtravelpath(): distmin() over the guessed target.
 function travelDistance(x1: number, y1: number, x2: number, y2: number): number {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }
 
+// Part of C hack.c:findtravelpath(): dist2() over the guessed target.
 function travelDistanceSquared(x1: number, y1: number, x2: number, y2: number): number {
     const dx = x1 - x2;
     const dy = y1 - y2;
@@ -1985,6 +2031,8 @@ export function classifyStatusTerrain(state: GameState): void {
     if (state.flags.terrainstatus && !state.context.run) state.context.botl = true;
 }
 
+// Part of C hack.c:classify_terrain(): the terrain pseudo-type under the
+// hero, including the rm.h xFLOOR..xWATERWALL values.
 function terrainType(state: GameState): number {
     const hero = state.u;
     const location = state.level?.at(hero.ux, hero.uy);
@@ -2091,6 +2139,8 @@ let activeSpot: ActiveSpot | null = null;
 // trap reached by crawling out of the water its own flames melted.
 let triggeringTrapType: number | null = null;
 
+// Part of C hack.c:spoteffects(): the destination-effect continuation —
+// traps, pickup, room effects and terrain after an awaited move.
 export async function finishDestinationSpotEffects({
     oldx, oldy, newx, newy, trapOptions = {},
     publish = plineWithContinuation, pick = true,
@@ -2182,6 +2232,9 @@ async function warnAboutMeltingIce(publish: MessagePublisher): Promise<void> {
 }
 const S_PIERCER = 16;
 
+// Part of C hack.c:spoteffects(): the arriving ceiling-hider block — a
+// piercer drops (hard helm, hit, or miss), a tame monster jumps near, and
+// others are surprised.
 export async function finishCeilingMonsterArrival(state: PlayingGameState, publish: MessagePublisher): Promise<boolean> {
     const hero = state.u;
     const monster = monsterAtPosition(state.level, hero.ux, hero.uy);
@@ -2227,6 +2280,7 @@ export async function finishCeilingMonsterArrival(state: PlayingGameState, publi
     return !!state.program_state.gameover;
 }
 
+// Port only: rooms[]/subrooms[] index lookup (C indexes the arrays).
 export function roomForIndex(level: RoomMap | null | undefined, index: number): Room | null {
     if (!Number.isInteger(index) || index < 0 || index === MAXNROFROOMS) return null;
     if (index < MAXNROFROOMS) {
@@ -2236,11 +2290,15 @@ export function roomForIndex(level: RoomMap | null | undefined, index: number): 
     return level?.subrooms?.[index - MAXNROFROOMS - 1] || null;
 }
 
+// Port only: roomno to rooms[]/subrooms[] entry (C subtracts ROOMOFFSET
+// inline).
 export function roomForRoomno(level: RoomMap | null | undefined, roomno: number): Room | null {
     if (!Number.isInteger(roomno) || roomno < ROOMOFFSET) return null;
     return roomForIndex(level, roomno - ROOMOFFSET);
 }
 
+// Part of C hack.c:in_rooms(): the room-type match, including shop
+// subtypes above SHOPBASE.
 function roomHasType(level: RoomMap | null | undefined, roomno: number, wantedType: number): boolean {
     if (!wantedType) return true;
     const roomType = roomForRoomno(level, roomno)?.rtype;
@@ -2284,6 +2342,7 @@ export function inTown(level: RoomMap | null | undefined, x: number, y: number):
     }
     return !hasSubrooms;
 }
+// C hack.c:move_update().
 export function updateHeroRoomMembership(state: Pick<GameState, 'u' | 'level'>, leavingLevel = false): void {
     const u = state.u;
     if (!u.urooms || !u.ushops)
@@ -2510,7 +2569,8 @@ async function finishHeroMovement({
     return true;
 }
 
-// C domove_core() applies the dragging delay even when a pet refuses the swap.
+// Part of C hack.c:domove_core(): the dragging delay (nomul(-2)) applies
+// even when a pet refuses the swap.
 async function delayAfterDraggingBall(): Promise<void> {
     nomul(-2);
     game._helplessReason = 'dragging an iron ball';
@@ -2521,11 +2581,14 @@ async function delayAfterDraggingBall(): Promise<void> {
     );
 }
 
+// Part of C hack.c:trapmove(): the uwep == Sting test.
 function heroWieldsSting() {
     const weapon = game.uwep || game.u?.uwep;
     return artifactById(weapon?.oartifact)?.name === 'Sting';
 }
 
+// Part of C hack.c:trapmove(): the web struggle — Sting cuts through,
+// else the decrement and the stuck messages.
 async function struggleInWeb(steedName: string | null) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -2549,6 +2612,8 @@ async function struggleInWeb(steedName: string | null) {
             : 'You are stuck to the web.', { noRepeat: true });
     }
 }
+// Part of C hack.c:trapmove(): the floor/pit struggle — the buried-ball
+// reach, then the decrement and the stuck messages.
 async function struggleInFloor(
     targetX: number, targetY: number, anchored: boolean, steedName: string | null,
 ): Promise<boolean> {
@@ -2767,6 +2832,8 @@ export function runLiquidIsDangerous(x: number, y: number, state: GameState): bo
     return !!((pool || lava) && location.seenv);
 }
 
+// Part of C hack.c:avoid_moving_on_trap(): the mention_walls "You stop in
+// front of ..." with set_msg_xy().
 export async function announceRunTrap(trap: Trap, state: GameState): Promise<void> {
     if (state.flags.mention_walls) {
         // C avoid_moving_on_trap() marks the trap square before the message.
@@ -2775,6 +2842,8 @@ export async function announceRunTrap(trap: Trap, state: GameState): Promise<voi
     }
 }
 
+// Part of C hack.c:avoid_moving_on_liquid(): the mention_walls "You stop
+// at the edge of ..." with set_msg_xy().
 export async function announceRunLiquid(x: number, y: number, state: GameState): Promise<void> {
     if (state.flags.mention_walls) {
         // C avoid_moving_on_liquid() marks the liquid square before the message.
@@ -2783,7 +2852,8 @@ export async function announceRunLiquid(x: number, y: number, state: GameState):
     }
 }
 
-// The caller first checks test_move(TEST_MOVE), without opening doors,
+// Part of C hack.c:domove_core(): the ParanoidTrap step confirmation,
+// after the caller's test_move(TEST_MOVE) check without opening doors,
 // pushing boulders, or escaping the hero's current trap.
 export async function confirmHeroStep(x: number, y: number, state: GameState = game): Promise<boolean> {
     requirePlayingGame(state);
@@ -2819,6 +2889,8 @@ export async function confirmHeroStep(x: number, y: number, state: GameState = g
     return false;
 }
 
+// Part of C hack.c:domove_core(): cancel the step — stop the run, end
+// the multi, and clear the move flag.
 function cancelStep(state: GameState): void {
     stopRun(state);
     endVoluntaryMultiTurn(state);
@@ -2911,8 +2983,9 @@ export function heroMayDisplaceMonster(monster: Monster): boolean {
         && !heroIsHallucinating(game) && !u.stunned && !(u.stunnedTurns ?? 0);
 }
 
-// C domove_core(): a failed test_move() or swim_move_danger() cancels the
-// move and calls nomul(0), which also requests a full status update.
+// Part of C hack.c:domove_core(): a failed test_move() or
+// swim_move_danger() cancels the move and calls nomul(0), which also
+// requests a full status update.
 function rejectHeroMove(): false {
     game.context.move = 0;
     nomul(0, game);
@@ -2942,14 +3015,17 @@ export function beastChoosesHeroDisplacement(
         { state, gpflags: GP_ALLOW_U });
 }
 
-// Displacer beasts neither tunnel nor pass walls. Sokoban boulders still
-// count as rock even when the square beneath them is open floor.
+// Part of C hack.c:domove_attackmon_at(): displacer beasts neither tunnel
+// nor pass walls. Sokoban boulders still count as rock even when the
+// square beneath them is open floor.
 function beastBadRock(state: PlayingGameState, x: number, y: number): boolean {
     return IS_OBSTRUCTED(state.level.at(x, y)?.typ ?? STONE)
         || !!(state.level.flags.sokoban_rules
             && state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER));
 }
 
+// Part of C hack.c:domove_swap_with_pet(): settle the displacer-beast
+// displacement after the swap roll.
 export async function settleBeastHeroDisplacement(beast: Monster, state: PlayingGameState): Promise<void> {
     const u = state.u;
     const remembered = glyphAt(beast.mx, beast.my, state);
@@ -3100,6 +3176,8 @@ export async function settlePetHeroDisplacement(monster: Monster, state: Playing
     return true;
 }
 
+// Part of C hack.c:domove_swap_with_pet(): bad_rock() for the swapping
+// pet, including Sokoban boulders as rock.
 function petBadRock(monster: Monster, state: PlayingGameState, x: number, y: number): boolean {
     const location = state.level.at(x, y);
     if (!location) return true;
@@ -3700,6 +3778,7 @@ export function blockMonsterNotices(state: GameState): void {
     state._monsterNoticesBlocked = (state._monsterNoticesBlocked ?? 0) + 1;
 }
 
+// Part of C flag.h:notice_mon_off()/notice_mon_on(): the paired decrement.
 export async function unblockMonsterNotices(state: GameState): Promise<void> {
     state._monsterNoticesBlocked = (state._monsterNoticesBlocked ?? 0) - 1;
     if (state._monsterNoticesBlocked < 0) {
@@ -3708,6 +3787,7 @@ export async function unblockMonsterNotices(state: GameState): Promise<void> {
     }
 }
 
+// Port only: async wrapper holding monster notices blocked.
 export async function withMonsterNoticesBlocked<T>(
     state: GameState, action: () => Promise<T>,
 ): Promise<T> {
@@ -3719,6 +3799,8 @@ export async function withMonsterNoticesBlocked<T>(
     }
 }
 
+// Part of C hack.c:notice_mon(): canspotmon() with concealing hiders
+// excluded.
 function monsterIsSpottable(monster: Monster): boolean {
     if (!canSpotMonster(monster)) return false;
     // C: a hider that is still concealing itself never counts as spotted,
@@ -3803,8 +3885,9 @@ export function nomul(value: number, state: GameState = game): void {
     cmdq_clear(CQ_CANNED, state);
 }
 
-// Keep the full command count and any occupation. A timed occupation may
-// still need its final callback after the remaining multi becomes zero.
+// Port only: keep the full command count and any occupation. A timed
+// occupation may still need its final callback after the remaining multi
+// becomes zero.
 export function endVoluntaryMultiTurn(state: GameState = game): void {
     nomul(0, state);
 }
@@ -3867,6 +3950,7 @@ export async function finishHeroHelplessness(
     }
 }
 
+// Part of C hack.c:monster_nearby(): the non-boom attack test.
 function monsterHasActiveAttack(monster: Monster): boolean {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(([attackType]) => attackType && attackType !== AT_BOOM);
@@ -3936,13 +4020,14 @@ export function arriveTravel(g: GameState = game): void {
     if (g.multi > 0) g.multi = 0;
 }
 
-// C flag.h RUN_TPORT: runmode:teleport skips every per-step display
+// Part of C flag.h:RUN_TPORT: runmode:teleport skips every per-step
 // update until the multi-step action stops. Options normalize the value.
 export function isTeleportRunmode(g: GameState = game): boolean {
     const runmode = String(g.flags?.runmode || 'run').toLowerCase();
     return runmode === 'teleport' || runmode === 'tport';
 }
 
+// C hack.c:runmode_delay_output(): how many frames this run step pauses.
 export function runmodeDelayFrameCount(
     g: GameState = game, enabled = false, sourceTurn = g.moves || 0,
 ) {
@@ -3954,6 +4039,7 @@ export function runmodeDelayFrameCount(
         ? 0 : runmode === 'crawl' ? 5 : 1;
 }
 
+// Part of C hack.c:runmode_delay_output(): pause for the frames above.
 export async function captureRunmodeDelay(
     g: GameState = game, enabled = false, sourceTurn = g.moves || 0,
     {
@@ -4013,11 +4099,13 @@ export function maybeSmudgeEngravings(x1: number, y1: number, x2: number, y2: nu
         wipeEngravingAt(x2, y2, rnd(5), false);
     }
 }
+// Port only: the hero's helpless state (C reads multi < 0 inline).
 function heroIsHelpless(state: GameState) {
     return (state.multi ?? 0) < 0
         || (state._helplessTurns ?? 0) > 0;
 }
 
+// Port only: the active HP field by form (C reads u.mh or u.uhp inline).
 function activeHitPointField(hero: Hero) {
     return Upolyd(hero) ? 'mh' : 'uhp';
 }
@@ -4065,11 +4153,13 @@ function heroPositionDescription(): string {
     return `under your ${makePlural(body_part(FOOT))}`;
 }
 
+// Part of C hack.c:invocation_message(): carrying(CANDELABRUM_OF_INVOCATION).
 function carriedCandelabrum(): GameObject | undefined {
     return (game.inventory || []).find(object =>
         object.otyp === CANDELABRUM_OF_INVOCATION);
 }
 
+// C hack.c:invocation_message().
 export async function announceInvocationSquare(): Promise<boolean> {
     if (!isInvocationPosition(game.u?.ux, game.u?.uy)
         || heroIsOnStairs()) return false;
@@ -4098,6 +4188,7 @@ export function isInvocationPosition(x: number, y: number, state: GameState = ga
             trap.ttyp === VIBRATING_SQUARE && trap.tx === x && trap.ty === y);
 }
 
+// Part of C hack.c:invocation_message(): the on-stairs exception.
 export function heroIsOnStairs(state: GameState = game): boolean {
     const x = state.u?.ux, y = state.u?.uy;
     if (state.level?.upstair?.x === x && state.level.upstair.y === y)
@@ -4186,13 +4277,15 @@ export type SinkFallResult = { fell: true; died: true } | { fell: boolean; died:
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 const FELL_ON_SINK = 'fell onto a sink';
 
+// Port only: resolve a worn slot through either state field.
 function wornAt(slot: 'uarmf' | 'uleft' | 'uright', state: GameState): GameObject | null {
     return state[slot] || state.u?.[slot] || null;
 }
 
-// C HFlying || EFlying: the hero's own flight sources before the Flying
-// macro applies the blocked mask or a flying steed.  A steed therefore does
-// not prevent the fall, and neither does flight overridden by levitation.
+// Part of C youprop.h:HFlying()/EFlying(): the hero's own flight sources
+// before the Flying macro applies the blocked mask or a flying steed.  A
+// steed therefore does not prevent the fall, and neither does flight
+// overridden by levitation.
 function heroHasOwnFlight(state: GameState): boolean {
     return hasIntrinsicProperty('flying', null, state)
         || hasWornProperty('flying', state)
@@ -4200,18 +4293,20 @@ function heroHasOwnFlight(state: GameState): boolean {
         || (state.u.flyingTurns ?? 0) > 0;
 }
 
-// C Maybe_Half_Phys().
+// C hack.h:Maybe_Half_Phys().
 function maybeHalfPhysicalDamage(amount: number, state: GameState): number {
     const hero = state.u;
     return hero.halfPhysicalDamage
         ? Math.trunc((amount + 1) / 2) : amount;
 }
 
+// Part of C hack.c:dosinkfall(): the weapon-or-weptool test.
 function isWeaponOrWeaponTool(object: GameObject): boolean {
     return object.oclass === WEAPON_CLASS
         || isWeaponTool(object);
 }
 
+// C hack.c:dosinkfall().
 export async function fallIntoSink(
     state: GameState = game,
     { publish = plineWithContinuation, die = finishHeroDeath }: SinkFallOptions = {},
@@ -4383,16 +4478,17 @@ export const OVERLOADED = 5;
 const S_NYMPH = 14;
 const MZ_HUMAN = 2;
 const WT_HUMAN = 1450;
-// C hack.c:weight_cap() ignores the trap block on levitation, and defers
+// Part of C hack.c:weight_cap(): the levitation support test, ignoring
 // the carrying benefit of boots whose Boots_on callback has not run yet.
 export function levitationSupportsLoad(ignoreBoots: boolean, state: PropertyState = game): boolean {
     return !existingPropertyRecord('levitation', state)?.blockedByTerrain
         && levitationSourceIsActive(ignoreBoots, state);
 }
 
-// Removing pending boots' levitation for weight_cap() also restores flight
-// through float_vs_flight(). Query that temporary state without changing the
-// abilities projected onto the hero while the boots are actually worn.
+// Part of C hack.c:weight_cap(): the flight support test while pending
+// boots' levitation is removed. float_vs_flight() also restores flight;
+// query that temporary state without changing the abilities projected
+// onto the hero while the boots are actually worn.
 export function flyingSupportsLoad(ignoreBoots: boolean, state: PropertyState = game): boolean {
     if (!ignoreBoots) return propertyIsActive('flying', state);
     if (existingPropertyRecord('flying', state)?.blockedByTerrain
@@ -4405,6 +4501,7 @@ export function flyingSupportsLoad(ignoreBoots: boolean, state: PropertyState = 
         && monsterIsFlyer(hero.usteed.mnum);
     return flying || !!steedFlies;
 }
+// C hack.c:inv_weight().
 export function inventoryWeight(state: GameState): number {
     const inventory = state.inventory || [];
     const species = state.u.umonnum;
@@ -4425,6 +4522,7 @@ export function inventoryWeight(state: GameState): number {
     return objectWeightTotal;
 }
 
+// C hack.c:weight_cap().
 export function weightCapacity(state: GameState): number {
     const strength = currentStrength(state);
     const constitution = currentAttribute(A_CON, state);
@@ -4485,10 +4583,12 @@ export function weightCapacity(state: GameState): number {
     return Math.max(1, Math.min(1000, capacity));
 }
 
+// Part of C hack.c:inv_weight(): weight minus capacity.
 export function invWeight(state: GameState): number {
     return inventoryWeight(state) - weightCapacity(state);
 }
 
+// C hack.c:calc_capacity().
 export function calcCapacity(state: GameState, extraWeight = 0): number {
     const capacity = weightCapacity(state);
     const excess = invWeight(state) + extraWeight;
@@ -4497,6 +4597,7 @@ export function calcCapacity(state: GameState, extraWeight = 0): number {
     return Math.min(Math.trunc(excess * 2 / capacity) + 1, OVERLOADED);
 }
 
+// C hack.c:near_capacity().
 export function nearCapacity(state: GameState): number {
     return calcCapacity(state, 0);
 }
@@ -4520,6 +4621,7 @@ export function heroGoldAmount(state: Pick<GameState, 'inventory'>): number {
 export function monsterGoldAmount(monster: Monster): number {
     return monster.minvent?.find(object => object.oclass === COIN_CLASS)?.quan ?? 0;
 }
+// C hack.c:rounddiv().
 export function roundDiv(numerator: number, denominator: number) {
     const magnitude = Math.trunc((Math.abs(numerator) + Math.trunc(denominator / 2)) / denominator);
     return Math.sign(numerator) * magnitude;

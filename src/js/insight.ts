@@ -71,6 +71,8 @@ import { depth, endgameLevelName, levelHasCeiling, surfaceName, ceilingName } fr
 import type { DungeonLocation } from './dungeon_types.js';
 import { is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal, monsterIsClinger, monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterHasEyes } from './mondata.js';
 
+// Part of C hack.h:plur(): local singular/plural picker (the shared port
+// is plur() in end.ts).
 function plural(n: number, singular: string, pluralForm = `${singular}s`) {
     return n === 1 ? singular : pluralForm;
 }
@@ -78,6 +80,8 @@ function plural(n: number, singular: string, pluralForm = `${singular}s`) {
 // C insight.c:background_enlightenment(), basics_enlightenment(),
 // characteristics_enlightenment(), one_characteristic(), attrval().
 
+// Part of C insight.c:background_enlightenment(): the female-aware role
+// name.
 export function enlightenmentRoleName(): string {
     const female = Upolyd(game.u) ? game.u.mfemale : game.flags.female;
     return female && game.urole?.name.f ? game.urole.name.f : game.urole?.name.m ?? 'Adventurer';
@@ -198,6 +202,9 @@ function characteristicLine(attribute: AttributeIndex, magic: boolean, final: En
         details.length ? ` (${final ? '' : 'current; '}${details.join(', ')})` : ''}.`;
 }
 
+// Part of C insight.c:one_characteristic(): when the innate limit is
+// hidden (sustain-ability rings, Gauntlets of Power, Ogresmasher, or a
+// cursed dunce cap).
 function hideInnateCharacteristic(attribute: AttributeIndex, magic: boolean): boolean {
     if (Upolyd(game.u)) return true;
     if (magic) return false;
@@ -214,6 +221,8 @@ function characteristicValue(attribute: AttributeIndex, value: number): string {
     return value > 118 ? String(value - 100) : `18/${String(value - 18).padStart(2, '0')}`;
 }
 
+// Part of C insight.c:basics_enlightenment(): the wallet lines, including
+// the hidden_gold() stash.
 export function goldInsightLines(final: boolean, indent = '  '): [string, ...string[]] {
     const purse = heroGoldAmount(game);
     const stashed = hiddenGold(game, final);
@@ -225,14 +234,19 @@ export function goldInsightLines(final: boolean, indent = '  '): [string, ...str
     return lines;
 }
 
+// Part of C insight.c:background_enlightenment(): the handedness word
+// ("normally" for handless forms).
 export function handednessDescription(): string {
     return `${body_part(HANDED) === 'handed' ? '' : 'normally '}${game.u.rightHanded ? 'right' : 'left'}-handed`;
 }
 
+// C insight.c:align_str().
 function alignmentName(value: number): 'lawful' | 'neutral' | 'chaotic' {
     return value > 0 ? 'lawful' : value < 0 ? 'chaotic' : 'neutral';
 }
 
+// Part of C insight.c:background_enlightenment(): the "You are in ..."
+// location row (endgame, Knox, quest depth, big room, rogue level).
 function locationLine(final: EnlightenmentFinal): string {
     const { u } = requireInitializedGame();
     let location: string;
@@ -250,6 +264,8 @@ function locationLine(final: EnlightenmentFinal): string {
     return `  You ${final ? 'were' : 'are'} ${location}.`;
 }
 
+// Part of C insight.c:basics_enlightenment(): the autopickup row,
+// including the in-shop suspension and pickup exceptions.
 function autopickupDescription(): string {
     if (!game.flags.pickup) return 'off';
     if (costlySpot(game.u.ux, game.u.uy)) return 'on, but temporarily disabled while inside the shop';
@@ -529,6 +545,7 @@ function weaponInsightLines(final: EnlightenmentFinal = 0) {
     return lines;
 }
 
+// Part of C insight.c:weapon_insight(): the P_SKILL() read.
 function skillLevel(skill: number): number {
     const entry = ensureHeroSkills(game)?.[skill];
     if (!entry) throw new Error(`Weapon insight requires initialized skill ${skill}`);
@@ -542,6 +559,8 @@ function skillLevelDescription(level: number): string {
     return (SKILL_LEVEL_NAMES[level] ?? 'Unknown').toLowerCase();
 }
 
+// Part of C insight.c:status_enlightenment(): the weapon insight and
+// armor rows (weapon_insight() plus the no-armor line).
 function statusEquipmentLines(final: EnlightenmentFinal = 0): string[] {
     const lines = weaponInsightLines(final);
     const penalty = monkArmorPenalty();
@@ -552,6 +571,8 @@ function statusEquipmentLines(final: EnlightenmentFinal = 0): string[] {
     return lines;
 }
 
+// Part of C insight.c:N_times(): the once/twice/thrice phrase for the
+// conduct lines.
 function killedCountPhrase(count: number) {
     if (count === 1) return 'once';
     if (count === 2) return 'twice';
@@ -559,6 +580,7 @@ function killedCountPhrase(count: number) {
     return `${count} times`;
 }
 
+// Part of C insight.c:show_conduct(): the reroll rows.
 function rerollConductLine() {
     const roleplay = game.u.uroleplay;
     if (!roleplay?.reroll)
@@ -572,6 +594,7 @@ function rerollConductLine() {
 export type EnlightenmentFinal = 0 | 1 | 2;
 interface PiousnessOptions { showNegative?: boolean; suffix?: string }
 
+// C insight.c:piousness().
 export function piousness(record: number, { showNegative = true, suffix = '' }: PiousnessOptions = {}) {
     const description = record >= 20 ? 'piously' : record > 13 ? 'devoutly'
         : record > 8 ? 'fervently' : record > 3 ? 'stridently'
@@ -801,6 +824,8 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     return lines;
 }
 
+// Part of C insight.c:status_enlightenment(): who the warning sense
+// covers, from the warntype mask.
 function warningPeople(mask: number, form: boolean): string {
     if (form && (mask & 0x18) === 0x18) return 'humans and elves';
     if (form && (mask & 0x08)) return 'humans';
@@ -836,6 +861,7 @@ export function combatIncrement(kind: 'to hit' | 'damage' | 'defense', amount: n
         final || game.flags.debug ? ` (${amount > 0 ? '+' : ''}${amount})` : ''}`;
 }
 
+// C insight.c:N_times(): "once" vs "twice" vs "N times".
 function times(count: number): string {
     return count === 1 ? 'once' : count === 2 ? 'twice' : count === 3 ? 'thrice' : `${count} times`;
 }
@@ -1055,6 +1081,7 @@ export function currentConductLines() {
     return lines;
 }
 
+// C insight.c:doconduct().
 export async function doconduct() {
     await showDisclosureOverlay(currentConductLines(), {
         restoreUnderlay: true,
@@ -1299,6 +1326,7 @@ function achievementLogText(
     return ACHIEVEMENT_LOG_TEXT[index] || null;
 }
 
+// C insight.c:record_achievement().
 export function recordAchievement(
     state: AchievementLogState | null | undefined, achievement: number,
 ): boolean {
@@ -1327,6 +1355,7 @@ export function rankAchievement(rank: number, female = false): number {
     return female ? -achievement : achievement;
 }
 
+// Part of C insight.c:show_achievements(): the u.uachieved list.
 export function achievementEntries(state: Pick<GameState, 'u'> | null | undefined): number[] {
     return Array.isArray(state?.u?.uachieved)
         ? state.u.uachieved.filter(Number.isInteger) : [];
@@ -1430,15 +1459,18 @@ const S_ZOMBIE = 52;
 // C vanqsort_cmp(): punctuation classes order after S_ZOMBIE in this
 // sequence rather than by their internal indexes.
 const PUNCTUATION_CLASS_ORDER = [58, 57, 55, 54, 56, 53];
-
+// Part of C insight.c:vanqsort_cmp(), list_vanquished(): the
+// flags.vanq_sortmode read.
 function vanqSortMode(): number {
     return game.flags.vanqSortmode ?? VANQ_MLVL_MNDX;
 }
-
+// Part of C insight.c:vanqsort_cmp(): the G_UNIQ test that skips the
+// high cleric.
 function speciesIsUnique(mnum: number): boolean {
     return !!((MONSTER_GENO[mnum] ?? 0) & G_UNIQ) && mnum !== PM_HIGH_CLERIC;
 }
-
+// Part of C insight.c:vanqsort_cmp(): the punctuation-class ordering
+// after S_ZOMBIE.
 function monsterClassOrder(mlet: number): number {
     if (mlet > S_ZOMBIE) {
         const position = PUNCTUATION_CLASS_ORDER.indexOf(mlet);
@@ -1446,7 +1478,7 @@ function monsterClassOrder(mlet: number): number {
     }
     return mlet;
 }
-
+// Part of C insight.c:vanqsort_cmp(): strcmpi().
 function compareCaseInsensitive(left: string, right: string): number {
     return left.toLowerCase() < right.toLowerCase() ? -1
         : left.toLowerCase() > right.toLowerCase() ? 1 : 0;
@@ -1510,7 +1542,8 @@ interface VanquishedEntry {
     unique: boolean;
     pname: boolean;
 }
-
+// Part of C insight.c:list_vanquished(): the mindx[] array of killed
+// species, sorted by vanqsort_cmp().
 function vanquishedEntries(): VanquishedEntry[] {
     return (game.mvitals || []).flatMap((vital, mnum) => {
         const count = vital?.died ?? 0;
@@ -1524,27 +1557,25 @@ function vanquishedEntries(): VanquishedEntry[] {
         }];
     }).sort((a, b) => vanqsortCompare(vanqSortMode(), a.mnum, b.mnum));
 }
-
+// Part of C insight.c:list_vanquished(): the number of vanquished species.
 export function vanquishedTypeCount(): number {
     return (game.mvitals || []).filter(vital => (vital?.died ?? 0) > 0).length;
 }
-
-// C N_times(): "once", "twice", "thrice", then "N times".
+// C insight.c:N_times(): "once", "twice", "thrice", then "N times".
 function timesText(count: number): string {
     if (count === 2) return 'twice';
     if (count === 3) return 'thrice';
     return `${count} times`;
 }
-
-// C list_vanquished() indents each entry so its name column lines up with
-// the three-digit count prefix of multiple-kill rows.
+// Part of C insight.c:list_vanquished(): indents each entry so its name
+// column lines up with the three-digit count prefix of multiple-kill rows.
 function vanquishedIndent(text: string): number {
     if (/^the /i.test(text)) return 0;
     if (/^an /i.test(text)) return 1;
     if (/^a /i.test(text)) return 2;
     return /[0-9]/.test(text.charAt(2)) ? 0 : 4;
 }
-
+// C insight.c:list_vanquished().
 export function vanquishedLines(ask = false): TextMenuEntry[] {
     const mode = vanqSortMode();
     const entries = vanquishedEntries();
@@ -1651,7 +1682,8 @@ function goneSpecies(includeExtinct = true): GoneSpecies[] {
             ? [{ mnum, genocided, extinctOnly }] : [];
     });
 }
-
+// Part of C insight.c:list_genocided(): the species rows with class
+// headers, counts and the counting-order fallback.
 function genocidedLines(
     gone: GoneSpecies[], genocided: number, extinct: number,
     { ask, dumping = false }: { ask: boolean; dumping?: boolean },
@@ -1695,7 +1727,9 @@ function genocidedLines(
 // Native dump_redirect() writes putstr() rows without displaying a window.
 // Return the dump rows so file output stays outside this listing.
 export function listGenocided(defquery: 'd', ask?: false): Promise<readonly string[]>;
+// Part of C insight.c:list_genocided(): the second overload signature.
 export function listGenocided(defquery?: DisclosureDefault | 'g', ask?: boolean): Promise<void>;
+// C insight.c:list_genocided(). The implementation.
 export async function listGenocided(
     defquery: DisclosureDefault | 'g' | 'd' = 'y', ask = false,
 ): Promise<readonly string[] | void> {
@@ -1737,8 +1771,8 @@ const VANQ_ORDER_CHOICES: ReadonlyArray<readonly [number, string]> = [
     [VANQ_ALPHA_MIX, 'A'], [VANQ_MCLS_HTOL, 'C'], [VANQ_MCLS_LTOH, 'c'],
     [VANQ_COUNT_H_L, 'n'], [VANQ_COUNT_L_H, 'z'],
 ];
-
-// Short descriptions in options.c use column 1 of C's vanqorders table.
+// Part of C options.c:optfn_sortvanquished(): the short descriptions from
+// column 1 of insight.c's vanqorders table.
 export function vanquishedOptionValue(mode = vanqSortMode()): string {
     const key = 'tdaACcnz'.charAt(mode);
     switch (mode) {
@@ -1752,7 +1786,7 @@ export function vanquishedOptionValue(mode = vanqSortMode()): string {
     default: return `${key}: by count, low to high`;
     }
 }
-
+// Part of C insight.c:set_vanq_order(): the vanqorders[i][2] descriptions.
 function vanqOrderDescription(mode: number, forVanquished: boolean): string {
     switch (mode) {
     case VANQ_MLVL_MNDX:
@@ -1773,6 +1807,9 @@ function vanqOrderDescription(mode: number, forVanquished: boolean): string {
     }
 }
 
+// C insight.c:set_vanq_order().  A PICK_ONE menu over the vanqorders
+// table; the currently chosen order is preselected, and Escape cancels
+// by leaving the menu unanswered (select_menu returns -1).
 export async function setVanqOrder(forVanquished: boolean): Promise<number> {
     const current = vanqSortMode();
     const items: InventoryMenuItem<number>[] = [];

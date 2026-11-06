@@ -3,13 +3,17 @@ import { ENCYCLOPEDIA_ENTRIES } from './encyclopedia_data.js';
 import { BUFSZ } from './const.js';
 import { game } from './gstate.js';
 import { fruitFromName, makeSingular } from './objnam.js';
+// Part of C pager.c:checkfile(): the matched entries (the display port is
+// showEncyclopediaInformation() in pager.ts).
 export function encyclopediaEntries(name, state = game) {
     return encyclopediaMatches(name, state).map(match => match.entry);
 }
+// Part of C pager.c:checkfile().
 // checkfile() copies the original text after "called", including conditions.
 export function encyclopediaSupplementalName(name, state = game) {
     return lookupNames(name, state).supplementalName;
 }
+// Part of C pager.c:checkfile(): the two-pass data.base entry walk.
 export function encyclopediaMatches(name, state = game) {
     const { base, alternate } = lookupNames(name, state);
     const names = alternate === base ? [base] : [alternate, base];
@@ -26,6 +30,8 @@ export function encyclopediaMatches(name, state = game) {
     }
     return matches;
 }
+// Part of C pager.c:checkfile(): the dbase_str simplification (article,
+// count, BUC, enchantment, statue/figurine, named/called, fruit, singular).
 function lookupNames(name, state) {
     let base = name.toLowerCase();
     base = base.replace(/^interior of /, '').replace(/^(?:a |an |the |some |\d+ ?)/, '')
@@ -76,6 +82,8 @@ function lookupNames(name, state) {
     alternate ??= makeSingular(base);
     return { base, alternate, supplementalName };
 }
+// Part of C pager.c:checkfile(): the key walk over one entry, including
+// the '~'-prefixed exclusions.
 function entryMatches(entry, name) {
     // Exclusions apply only until the next native entry. The first matching
     // positive key wins, even if a later key would have excluded that name.

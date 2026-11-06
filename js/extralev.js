@@ -14,12 +14,15 @@ import { add_room, dodoor } from './mklev.js';
 import { isRoom } from './map_types.js';
 // Object/class constant (normally from objects.js, not in contest template)
 const PLATE_MAIL = 121;
+// Port only: bounds-checked access to the 3x3 Rogue grid (C indexes
+// the gr array directly).
 function rogueGridCell(grid, x, y) {
     const cell = grid[x]?.[y];
     if (!cell)
         throw new RangeError(`Missing Rogue grid cell ${x},${y}`);
     return cell;
 }
+// Port only: resolves a grid cell's nroom index into its generated room.
 function rogueGridRoom(cell) {
     const room = cell.nroom === undefined ? undefined : requireGameLevel().rooms[cell.nroom];
     if (!isRoom(room))
@@ -32,6 +35,7 @@ function rogueCorrCell(x, y) {
     if (loc)
         loc.typ = rn2(50) ? CORR : SCORR;
 }
+// C extralev.c:roguejoin().
 function roguejoin(x1, y1, x2, y2, horiz) {
     if (horiz) {
         const middle = x1 + rn2(x2 - x1 + 1);
@@ -52,6 +56,7 @@ function roguejoin(x1, y1, x2, y2, horiz) {
             rogueCorrCell(x2, y);
     }
 }
+// C extralev.c:roguecorr().
 async function roguecorr(grid, x, y, dir) {
     const level = requireGameLevel();
     let fromx, fromy, tox, toy;
@@ -162,6 +167,7 @@ function rogueMiniwalk(grid, x, y) {
         rogueMiniwalk(grid, x, y);
     }
 }
+// C extralev.c:makeroguerooms().
 export async function makeroguerooms() {
     const g = game;
     const level = requireGameLevel();
@@ -216,6 +222,7 @@ export async function makeroguerooms() {
         }
     }
 }
+// C extralev.c:makerogueghost().
 export async function makerogueghost() {
     const level = requireGameLevel();
     if (!level.nroom)

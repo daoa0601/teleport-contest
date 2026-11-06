@@ -6,6 +6,7 @@ import { validSavedObject } from './object_validation.js';
 import { validSavedMonster, validSavedMonsterTraits } from './restore.js';
 import { validSavedRoom } from './map_validation.js';
 
+// Port only: builds the recursive saved-entity validation context.
 export function createSavedEntityChecks(): SavedEntityContext {
     const context: SavedEntityContext = {
         active: new WeakMap(),

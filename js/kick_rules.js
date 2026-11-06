@@ -2,6 +2,8 @@
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { KICKING_BOOTS } from './object_data.js';
+// C dokick.c:martial(): the macro combining martial_bonus(),
+// is_bigfoot(), and kicking boots.
 export function heroHasMartialKick(state = game) {
     return state.urole?.key === 'monk' || state.urole?.key === 'samurai'
         || state.u.umonnum === MONSTER_NAME.indexOf('sasquatch')

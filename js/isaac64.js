@@ -9,12 +9,14 @@ const SZ_LOG = 8;
 const SZ = 1 << SZ_LOG;
 const SEED_SZ_MAX = SZ * 8; // 2048
 const GOLDEN = 0x9e3779b97f4a7c13n;
+// Port only: bounds-checked state-word access.
 function wordAt(words, index) {
     const word = words[index];
     if (word === undefined)
         throw new RangeError(`ISAAC64 state has no word at ${index}`);
     return word;
 }
+// Port only: bounds-checked seed-byte access.
 function seedByteAt(bytes, index) {
     const byte = bytes[index];
     if (byte === undefined)
@@ -181,7 +183,8 @@ export function isaac64_next_uint64(_ctx) {
         isaac64_update(_ctx);
     return wordAt(_ctx.r, --_ctx.n);
 }
-// Peek at the next PRNG value without consuming it.
+// Port only: peek at the next PRNG value without consuming it; used by
+// mail daemon delivery to leave the RNG stream untouched.
 // Used by mail daemon to check delivery probability without
 // perturbing the RNG stream.
 export function isaac64_peek_uint64(_ctx) {

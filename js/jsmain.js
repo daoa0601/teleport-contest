@@ -18,9 +18,10 @@ import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C, COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 const UNICODE_TO_DEC = new Map(Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]));
-// Serialize semantic terminal cells back into the tty wire form recorded by
-// the C harness. The frozen grid intentionally stores rendered Unicode and
-// literal blank cells; C emits DEC shift sequences and cursor-forward skips.
+// Port only: serialize semantic terminal cells back into the tty wire form
+// recorded by the C harness. The frozen grid intentionally stores rendered
+// Unicode and literal blank cells; C emits DEC shift sequences and
+// cursor-forward skips.
 export function serializeCapture(term) {
     if (!term)
         return '';
@@ -535,6 +536,7 @@ export class NethackGame {
         });
     }
 }
+// Port only: run one recorded session segment (the contest contract below).
 // ── Per-segment runner — the contest contract ──
 //
 // The judge calls this once per segment with five input fields:

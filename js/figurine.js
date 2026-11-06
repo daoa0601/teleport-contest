@@ -20,6 +20,9 @@ import { monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsEel,
 const S_EYE = 5;
 const S_MIMIC = 13;
 const S_LIGHT = 25;
+// Part of C mondata.c:locomotion(): figurine-message copy of the motion-verb
+// mapping; C fig_transform() calls locomotion(mtmp->data, "drop"). The
+// general port is monsterLocomotion() in mondata.ts.
 function figurineLocomotion(mnum, fallback = 'drop') {
     const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === S_EYE || symbol === S_LIGHT)
@@ -36,10 +39,12 @@ function figurineLocomotion(mnum, fallback = 'drop') {
         return 'crawl';
     return fallback;
 }
+// Part of C apply.c:figurine_location_checks(): the silent quietly==TRUE
+// verdict fig_transform() applies to the chosen spot.
 function figurineMayTransformAt(figurine, x, y, state) {
     return figurinePlacementFailure(figurine, x, y, state) === null;
 }
-// C figurine_location_checks(): timers use the same rules silently.
+// C apply.c:figurine_location_checks(): timers use the same rules silently.
 export function figurinePlacementFailure(figurine, x, y, state) {
     if (figurine.where === 'inventory' && state.u.uswallow)
         return "You don't have enough room in here.";
@@ -64,9 +69,13 @@ export function figurinePlacementFailure(figurine, x, y, state) {
         return 'You cannot fit the figurine on the boulder.';
     return null;
 }
+// Part of C zap.c:get_obj_location(): resolves the carrying monster
+// (C's figurine->ocarry) for the OBJ_MINVENT case of fig_transform().
 function monsterCarryingFigurine(figurine, state) {
     return state.level?.monsters?.find(monster => (monster.minvent || monster.inventory || []).includes(figurine)) || null;
 }
+// Part of C zap.c:get_obj_location(): the INVENT/FLOOR/MINVENT location
+// cases fig_transform() relies on.
 function figurineLocation(figurine, state) {
     if (figurine.where === 'inventory') {
         return {
@@ -91,6 +100,8 @@ function figurineLocation(figurine, state) {
     }
     return null;
 }
+// Part of C apply.c:fig_transform(): the start_timer(rnd(5000), FIG_TRANSFORM)
+// retry when the spot is not okay.
 function scheduleFigurineRetry(figurine, carrier, currentTurn, state) {
     const retryDelay = rnd(5000);
     const retryTimer = scheduleObjectTimer(figurine, OBJECT_TIMER_KIND.FIG_TRANSFORM, currentTurn + retryDelay, state);
@@ -104,9 +115,13 @@ function scheduleFigurineRetry(figurine, carrier, currentTurn, state) {
         carrier,
     };
 }
+// Part of C hacklib.c:s_suffix(): local possessive for the "pack" phrase;
+// the general port is possessiveName() in hacklib.ts.
 function possessive(noun) {
     return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
 }
+// Part of C apply.c:fig_transform(): the OBJ_MINVENT "%s pack|empty water|
+// thin air" carrier description (canseemon + wormno + is_pool).
 function monsterCarrierDescription(monster, state) {
     if (canSeeMonster(monster)
         && (!monster.wormno || cansee(monster.mx, monster.my))) {
@@ -115,6 +130,9 @@ function monsterCarrierDescription(monster, state) {
     }
     return isPoolAt(monster.mx, monster.my, state) ? 'empty water' : 'thin air';
 }
+// Part of C apply.c:fig_transform(): the You_feel/You_see message switch
+// for the newly created familiar, including the mundetected "and vanish"
+// and hides_under endings.
 async function familiarPresentation(monster, figurine, location, overdue, state) {
     const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
     const seesInvisible = !!(state.u?.seeInvisible
@@ -156,6 +174,8 @@ async function familiarPresentation(monster, figurine, location, overdue, state)
         return null;
     return formatSeenMessage(`${familiar} ${movement} out of ${monsterCarrierDescription(location.monsterCarrier, state)}${ending}!`, state);
 }
+// Part of C apply.c:fig_transform(): the "free figurine now" disposition
+// (useup when carried, obj_extract_self + obfree otherwise).
 function deleteFigurine(figurine, state) {
     if (figurine.where === 'floor')
         remove_object(figurine);
@@ -172,6 +192,9 @@ function deleteFigurine(figurine, state) {
     figurine.where = 'gone';
     figurine.ox = figurine.oy = 0;
 }
+// Part of C apply.c:fig_transform(): the timer callback up to make_familiar()
+// and the presentation message, split so the caller publishes the message
+// before the finishing phase frees the figurine.
 export async function runClaimedFigurineTimer(claimed, state = game, currentTurn = state.moves ?? 0) {
     if (!claimed || claimed.timer?.kind !== OBJECT_TIMER_KIND.FIG_TRANSFORM)
         return null;
@@ -213,6 +236,8 @@ export async function runClaimedFigurineTimer(claimed, state = game, currentTurn
         redraw: floorVisible && !overdue,
     };
 }
+// Part of C apply.c:fig_transform(): the tail of the timer callback, after
+// the message: free the figurine and redraw its former location.
 export async function finishFigurineTimer(event, state = game) {
     if (!event?.transformed || !event.finishPending)
         return event;

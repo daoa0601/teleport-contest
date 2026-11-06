@@ -67,9 +67,10 @@ const UNICODE_TO_DEC = new Map(
     Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]),
 );
 
-// Serialize semantic terminal cells back into the tty wire form recorded by
-// the C harness. The frozen grid intentionally stores rendered Unicode and
-// literal blank cells; C emits DEC shift sequences and cursor-forward skips.
+// Port only: serialize semantic terminal cells back into the tty wire form
+// recorded by the C harness. The frozen grid intentionally stores rendered
+// Unicode and literal blank cells; C emits DEC shift sequences and
+// cursor-forward skips.
 export function serializeCapture(term: Terminal | GameDisplay | null | undefined): string {
     if (!term) return '';
     const grid = term instanceof GameDisplay ? term.captureGrid : term.grid;
@@ -589,6 +590,7 @@ export class NethackGame {
     }
 }
 
+// Port only: run one recorded session segment (the contest contract below).
 // ── Per-segment runner — the contest contract ──
 //
 // The judge calls this once per segment with five input fields:

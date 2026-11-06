@@ -33,6 +33,7 @@ export interface InputGateOptions {
     display?: KeyReader | null;
 }
 
+// Port only: normalize a character string or code to its key code.
 function keyCode(key: KeyInput): number {
     if (typeof key === 'number') return key;
     if (typeof key === 'string' && key.length > 0) return key.charCodeAt(0);
@@ -141,13 +142,14 @@ export class InputGate {
 
 let activeInputGate = new InputGate();
 
-// The gate itself stays private; the folded cmd.c readchar()/pgetchar()
+// Port only: the gate accessor. The gate itself stays private; the folded cmd.c readchar()/pgetchar()
 // ports read through this accessor, exactly like their C bodies call
 // the windowport's key entry points.
 export function inputGate(): InputGate {
     return activeInputGate;
 }
 
+// Port only: bind the process-wide input gate for a new game.
 export function bindInputGate(inputGate: InputGate): void {
     if (!(inputGate instanceof InputGate))
         throw new TypeError('bindInputGate requires an InputGate');
@@ -158,10 +160,12 @@ export function bindInputGate(inputGate: InputGate): void {
     resetFuzzerCommandState();
 }
 
+// Port only: queue one key into the active gate.
 export function pushKey(key: KeyInput): void {
     activeInputGate.feed(key);
 }
 
+// Port only: queue one or many keys into the active gate.
 export function pushKeys(keys: KeyInput | readonly KeyInput[]): void {
     activeInputGate.feed(keys);
 }
@@ -193,6 +197,7 @@ export async function nh_poskey(inputState: InputState = 'other') {
 }
 
 
+// Port only: fresh input gate and command-queue state for a new game.
 export function resetInputState() {
     activeInputGate = new InputGate();
     resetFuzzerCommandState();

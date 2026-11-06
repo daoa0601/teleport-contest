@@ -5,6 +5,7 @@ import { CommandBindings } from './command_bindings.js';
 import { createGameState } from './game_state.js';
 import { requireInitializedHero } from './hero_types.js';
 export let game = createGameState();
+// Port only: replace the global game state (C clears its globals in place).
 export function resetGame(nextState = createGameState()) {
     game = nextState;
     resetErinys(game.u.ualign?.abuse ?? 0);
@@ -16,28 +17,32 @@ export function resetGame(nextState = createGameState()) {
     game.commandBindings = new CommandBindings();
     return game;
 }
-// World transitions share the live map, input, and display owners.
+// Port only: world transitions share the live map, input, and display owners.
 export function requireLiveGame(state) {
     if (state !== game)
         throw new TypeError('World transitions require the live game state.');
 }
-// Level generation can use the allocated hero before attributes are rolled.
+// Port only: level generation can use the allocated hero before attributes
+// are rolled.
 export function requireGameLevel(state = game) {
     if (!state.level)
         throw new Error('This operation requires a dungeon level.');
     return state.level;
 }
+// Port only: validated display owner access.
 export function requireGameDisplay(state = game) {
     if (!state.nhDisplay)
         throw new Error('This operation requires a game display.');
     return state.nhDisplay;
 }
-// Gameplay needs the completed hero and level; option parsing and startup do not.
+// Port only: gameplay needs the completed hero and level; option parsing
+// and startup do not.
 export function requirePlayingGame(state) {
     if (!state.level || !state.urole || !state.urace)
         throw new Error('This operation requires a started game.');
     requireInitializedHero(state.u);
 }
+// Port only: requirePlayingGame() plus the initialized-hero return.
 export function requireInitializedGame(state = game) {
     requirePlayingGame(state);
     return state;

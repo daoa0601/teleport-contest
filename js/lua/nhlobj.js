@@ -62,10 +62,13 @@ function handle(value) {
         throw new TypeError('object operation requires a Lua object');
     return value;
 }
+// Part of C nhlobj.c:l_obj_check(): dereference to the live GameObject.
 function object(value) {
     const item = handle(value).value;
     return item && item.where !== 'gone' ? item : null;
 }
+// Part of C nhlobj.c:l_obj_timer_start()/l_obj_timer_stop(): the timer
+// name to TIMER_KIND mapping.
 function timerKind(name) {
     if (typeof name !== 'string' || !TIMER_KINDS.has(name))
         throw new TypeError(`Unknown object timer: ${name}`);
@@ -277,6 +280,8 @@ export function createObjectApi(state = game) {
     const metatable = { __name: 'obj', __index: api.bindings };
     return api;
 }
+// Part of C nhlobj.c:l_obj_nextobj(): the floor chain in fobj (nobj)
+// order for the iteration setup.
 function floorChain(state) {
     return (state.level?.objects || []).flatMap(column => (column || []).flatMap(pile => pile || []))
         .sort((a, b) => (b._fobjOrder || 0) - (a._fobjOrder || 0));

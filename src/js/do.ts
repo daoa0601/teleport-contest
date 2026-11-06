@@ -2423,9 +2423,9 @@ export async function applyBoulderPitEffects(boulder: GameObject, trap: Trap, x:
     return { finished: true, object: null, buriedFloorObjects };
 }
 
-// C do.c:flooreffects() calls hmon(HMON_THROWN, 1) on a boulder settling
-// into a pit, without thitmonst()'s accuracy, Dexterity exercise, missile
-// mulch, or thrown-object passive work.
+// Part of C do.c:flooreffects(): the hmon(HMON_THROWN, 1) call on a
+// boulder settling into a pit, without thitmonst()'s accuracy, Dexterity
+// exercise, missile mulch, or thrown-object passive work.
 export async function hitMonsterWithSettlingBoulder(monster: Monster, boulder: GameObject, {
     state = game, publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<{ heroDied: boolean }> {
