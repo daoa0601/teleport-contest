@@ -1599,7 +1599,7 @@ async function chooseHeroForm({ forced, dragon, lycanthrope }: {
     return { mnum, random: true };
 }
 
-// C polyself.c:mkclass_poly(): choose by generation frequency, allowing
+// C makemon.c:mkclass_poly(): choose by generation frequency, allowing
 // extinction but excluding genocide, placeholders, and specially
 // generated monsters.
 export function pickFormFromClass(monsterClass: number): number {

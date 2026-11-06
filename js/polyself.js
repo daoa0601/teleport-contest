@@ -1508,7 +1508,7 @@ async function chooseHeroForm({ forced, dragon, lycanthrope }) {
     await plineWithContinuation("That's enough tries!");
     return { mnum, random: true };
 }
-// C polyself.c:mkclass_poly(): choose by generation frequency, allowing
+// C makemon.c:mkclass_poly(): choose by generation frequency, allowing
 // extinction but excluding genocide, placeholders, and specially
 // generated monsters.
 export function pickFormFromClass(monsterClass) {

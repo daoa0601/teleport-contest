@@ -1180,8 +1180,9 @@ export async function displayHelpFile(name: string, keyHelp = false): Promise<vo
     game.context.move = 0;
 }
 
-// Part of C files.c:display_file(): show the collected text window and
-// page through it.
+// Part of C wintty.c:tty_display_file(): show the collected text window
+// and page through it (reached through the winprocs.h display_file
+// dispatch macro).
 // tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
 // stays on the bottom row even when the text fits on a short last page.
 export async function displayPagerText(lines: Iterable<string> | AsyncIterable<string>): Promise<void> {
