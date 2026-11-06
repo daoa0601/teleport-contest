@@ -259,6 +259,8 @@ src/js/dig.ts	digActualHole	rn2	"[""4""]"	constant
 src/js/dig.ts	digHole	d	"[""3"", ""6""]"	constant
 src/js/dig.ts	digHole	rn2	"[""2""]"	constant
 src/js/dig.ts	digUpGrave	rn2	"[""5""]"	constant
+src/js/dig.ts	formatDraftMessage	random	"[""2""]"	constant
+src/js/dig.ts	formatDraftMessage	random	"[""3""]"	constant
 src/js/do_name.ts	displayColorName	rn2Display	"[""HALLUCINATED_COLORS.length""]"	constant
 src/js/do_name.ts	displayLiquidName	rn2Display	"[""HALLUCINATED_LIQUIDS.length + (fallback ? 1 : 0)""]"	constant
 src/js/display.ts	displayMonsterAtCell	rn2Display	"[""MONSTER_COLOR.length""]"	constant
@@ -301,8 +303,6 @@ src/js/dokick.ts	kickOuch	rn2	"[""2""]"	constant
 src/js/dokick.ts	kickOuch	rn2	"[""3""]"	constant
 src/js/dokick.ts	kickOuch	rnd	"[""5""]"	constant
 src/js/dokick.ts	kickOuch	rnd	"[""currentAttribute(A_CON) > 15 ? 3 : 5""]"	constant
-src/js/draft_message.ts	formatDraftMessage	random	"[""2""]"	constant
-src/js/draft_message.ts	formatDraftMessage	random	"[""3""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""6""]"	constant

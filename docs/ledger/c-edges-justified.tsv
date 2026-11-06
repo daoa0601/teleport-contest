@@ -1348,7 +1348,7 @@ doputon	fingers_or_gloves	inlined	body_part(FINGER) in ring prompts (cmd.ts putO
 doredraw	docrt	inlined	redrawCommand calls docrt (cmd.ts)
 dotakeoff	count_worn_stuff	inlined	worn.length selection messages (cmd.ts removeWornItem)
 dowipe	set_occupation	inlined	_occupation 'wipe-face' (do.ts)
-draft_message	sgn	inlined	Math.sign on alignment (draft_message.ts)
+draft_message	sgn	inlined	Math.sign on alignment (dig.ts formatDraftMessage)
 dragon_armor_handling	wielding_corpse	inlined	petrifying-corpse wield exposure (armor.ts)
 drop_upon_death	goodfruit	inlined	fruit ids retained in saveBonesLevel (bones.ts)
 end_running	selection_free	n/a	travel bitmap has no persistent allocation; stopRun clears run state
