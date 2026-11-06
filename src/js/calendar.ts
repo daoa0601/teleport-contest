@@ -1,4 +1,5 @@
-// C calendar.c:getnow(), time_from_yyyymmddhhmmss(), and getlt().
+// C calendar.c:getnow(), time_from_yyyymmddhhmmss(), getlt(),
+// phase_of_the_moon(), and friday_13th().
 
 export function recorderLocalHour(datetime: string | null | undefined): number {
     const epoch = recorderLocalEpochSeconds(datetime) || Date.now() / 1000;
@@ -94,4 +95,19 @@ export function recorderTimestamp(epoch: number): string {
 // clock's offset. A time saved across a DST boundary therefore shifts on restore.
 export function recorderRestoredTime(epoch: number): number {
     return recorderLocalEpochSeconds(recorderTimestamp(epoch));
+}
+
+// C calendar.c:phase_of_the_moon()
+// Also C calendar.c:friday_13th(): both checks share the same local date.
+// C reads getlt(); the port reads the recording's local date.
+export function fixedCalendar(datetime?: string | null) {
+    const date = recorderLocalDate(datetime);
+    if (!date) return { moonphase: null, friday13: false };
+    const { year, month, day, weekday } = date;
+    const diy = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 1)) / 86400000);
+    const goldn = ((year - 1900) % 19) + 1;
+    let epact = (11 * goldn + 18) % 30;
+    if ((epact === 25 && goldn > 11) || epact === 24) epact++;
+    const moonphase = (Math.floor(((((diy + epact) * 6) + 11) % 177) / 22)) & 7;
+    return { moonphase, friday13: weekday === 5 && day === 13 };
 }

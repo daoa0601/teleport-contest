@@ -2,6 +2,7 @@
 // interactive query_color()/query_attr() pickers shared by the options
 // menus, menu-color editing, and status-hilite rule editing.
 import { game } from './gstate.js';
+import { fuzzyMatch } from './hacklib.js';
 import { PosixRegex } from './posix_regex.js';
 import { showMultiSelectWindow } from './windows.js';
 import { BUFSZ, CLR_MAX, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE,
@@ -27,23 +28,6 @@ export function cutConfigBytes(text: string, limit: number): string {
     return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
 }
 
-// C hacklib.c:fuzzymatch(): compare while skipping ' ', '-', '_' and
-// folding case.
-export function fuzzyMatch(input: string, name: string): boolean {
-    const skip = (character: string | undefined) =>
-        character === ' ' || character === '-' || character === '_';
-    let i = 0, j = 0;
-    for (;;) {
-        while (skip(input[i])) i++;
-        while (skip(name[j])) j++;
-        const a = input[i], b = name[j];
-        if (a === undefined || b === undefined) break;
-        if (a.toLowerCase() !== b.toLowerCase()) return false;
-        i++;
-        j++;
-    }
-    return input[i] === undefined && name[j] === undefined;
-}
 
 // C coloratt.c:colornames[]: the sixteen canonical names first (the picker
 // and clr2colorname() stop at the null entry), aliases after them.  Values

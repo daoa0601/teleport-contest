@@ -15,7 +15,6 @@ import {
     finishHeroLiquidMonsterDeath,
     isRider,
 } from './mon.js';
-import { finishHeroHelplessness } from './allmain.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { BURNING, CMDQ_EXTCMD, CQ_CANNED, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, Is_rogue_level, LAVAPOOL, LAVAWALL, Luck, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, A_STR, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, In_mines, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND, HOLE, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, P_TWO_WEAPON_COMBAT, P_ISRESTRICTED, P_UNSKILLED, ROLLING_BOULDER_TRAP, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, IN_SIGHT, SHOP_DOOR_COST, PARANOID_CONFIRM, PARANOID_TRAP, TRAP_EXPLANATIONS, TRAPNUM, W_QUIVER, W_SWAPWEP, SQKY_BOARD, SLP_GAS_TRAP, RUST_TRAP, BEAR_TRAP, PIT, SPIKED_PIT, MAGIC_PORTAL, VIBRATING_SQUARE, WEB, HEADSTONE, In_endgame, is_hole, is_pit, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, MAXNROFROOMS, Invocation_lev, OROOM, DELPHI, TEMPLE, COURT, MORGUE, ZOO, BARRACKS, BEEHIVE, LEPREHALL, COCKNEST, ANTHOLE, THRONE, ACH_TOWN, RLOC_NOMSG, IS_SINK, KILLED_BY_AN, LL_CONDUCT, SWAMP, GP_ALLOW_U, FOOT } from './const.js';
 import {
@@ -44,13 +43,13 @@ import { heroCanReachFloor, engravingAt, wipeEngravingAt } from './engrave.js';
 import {
     putHeroToSleep, objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers,
 } from './timeout.js';
-import { reset_faint, gethungry, morehungry } from './eat.js';
-import { removeWornHeroItem } from './steal.js';
+import { reset_faint, gethungry, morehungry, Hear_again, unfaint, eatmdone, Finish_digestion } from './eat.js';
+import { removeWornHeroItem, finishDelayedArmorTheft } from './steal.js';
 import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
 import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming } from './potion.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData, monsterTypeName } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import {
@@ -66,7 +65,7 @@ import { isRoom } from './map_types.js';
 import type { Room, RoomMap, MapLocation, Position, Trap } from './map_types.js';
 
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet } from './do_wear.js';
+import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet, armorSimpleName, finishDelayedArmorAction } from './do_wear.js';
 import { waterbodyName, iceDescriptionAt } from './pager.js';
 import {
     do_attack, prepareAppliedWeaponAttack, hasDoorAppearance, stumbleOntoMimic, resolveHeroCombatExplosion,
@@ -78,6 +77,7 @@ import {
 } from './teleport.js';
 
 import type { HeroTeleportMovement } from './teleport.js';
+import { finishPrayerOccupation } from './pray.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
 import {
@@ -3807,6 +3807,64 @@ export function nomul(value: number, state: GameState = game): void {
 // still need its final callback after the remaining multi becomes zero.
 export function endVoluntaryMultiTurn(state: GameState = game): void {
     nomul(0, state);
+}
+
+// C hack.c:unmul()
+// The after-handler is cleared before invocation so
+// recovery can start another delay without inheriting the old completion.
+// Also C steal.c:unstolenarm(): the 'unstolen-armor' case below.
+export async function finishHeroHelplessness(
+    messageOverride?: string, state: GameState = game,
+    publish: MessagePublisher = plineWithContinuation,
+): Promise<void> {
+    state.context.botl = true;
+    setMulti(0, state);
+    const message = messageOverride ?? state._helplessDoneMessage ?? 'You can move again.';
+    if (message) {
+        await publish(message);
+        if (Upolyd(state.u) && message.toLowerCase().startsWith('you survived that '))
+            await publish(`You are ${withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.u.mfemale))}.`);
+    }
+    state.u.usleep = 0;
+    state._helplessReason = null;
+    state._helplessDoneMessage = null;
+    const after = state._afterMove;
+    state._afterMove = null;
+    if (!after) return;
+    switch (after.kind) {
+    case 'wear':
+    case 'remove':
+        await finishDelayedArmorAction(after, state);
+        break;
+    case 'hear-again':
+        await Hear_again({ state });
+        break;
+    case 'unfaint':
+        await unfaint({ state });
+        break;
+    case 'end-mimic-meal':
+        await eatmdone(state);
+        break;
+    case 'finish-digestion':
+        await Finish_digestion(state);
+        break;
+    case 'steal': {
+        const theft = state._armorTheft;
+        if (theft?.thief) await finishDelayedArmorTheft(theft.thief, theft.object, state);
+        state._armorTheft = null;
+        break;
+    }
+    case 'unstolen-armor': {
+        const object = state._armorTheft?.object;
+        state._armorTheft = null;
+        if (object && state.inventory.includes(object))
+            await plineWithContinuation(`You finish taking off your ${armorSimpleName(object, state)}.`);
+        break;
+    }
+    case 'finish-prayer':
+        await finishPrayerOccupation(state);
+        break;
+    }
 }
 
 function monsterHasActiveAttack(monster: Monster): boolean {

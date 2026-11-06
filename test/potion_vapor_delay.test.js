@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { finishHeroHelplessness } from '../js/allmain.js';
+import { finishHeroHelplessness } from '../js/hack.js';
 import { PARANOID_PRAY } from '../js/const.js';
 import { clearMessageWindow } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

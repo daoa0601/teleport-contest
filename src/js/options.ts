@@ -6,6 +6,8 @@
 // option and registry live here, beside the rest of the option handlers.
 // C options.c:warning_opts()/assign_warnings(): the warnings option and its
 // symbol table live here.
+// C options.c:ask_do_tutorial(): the tutorial query lives here as
+// askTutorial().
 
 import { ILLOBJ_CLASS, COIN_CLASS, FOOD_CLASS } from './objclass.js';
 import { game } from './gstate.js';
@@ -53,12 +55,12 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { mungSpaces } from './hacklib.js';
+import { mungSpaces, fuzzyMatch } from './hacklib.js';
 
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
-import { attributeName, colorAttrToString, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName,
+import { attributeName, colorAttrToString, colorName, cutConfigBytes, matchAttributeName,
     matchColorName, parseColorAttr, parseMenuColoring, queryAttributeMenu, queryColorMenu } from './coloratt.js';
 import {
     BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
@@ -694,6 +696,26 @@ export interface OptionParseState {
     paranoiaSeen: boolean;
     optionsSeen: Map<number, number>;
     characterOptionsSeen: Map<CharacterFacet, 'positive' | 'negative'>;
+}
+
+// C options.c:ask_do_tutorial(). Empty acceptance rebuilds the menu with
+// an explanation; a selected answer or Escape ends the question.
+export async function askTutorial(): Promise<boolean> {
+    let pass = 0;
+    for (;;) {
+        const items: InventoryMenuItem[] = [
+            { key: 'y', text: 'Yes, do a tutorial' },
+            { key: 'n', text: 'No, just start play' },
+            { text: '' },
+            { text: 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.' },
+        ];
+        if (pass++) items.push({ text: "(Please choose 'y' or 'n'.)" });
+        const answer = await showInventoryWindow([{ items }], {
+            title: 'Do you want a tutorial?', pickMode: PICK_ONE,
+        });
+        if (answer.key === 0) continue;
+        return answer.key === 'y'.charCodeAt(0);
+    }
 }
 
 // C options.c:parseoptions(): parse one OPTIONS= value list (or the whole

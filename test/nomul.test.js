@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
+import { moveloop_core } from '../js/allmain.js';
+import { finishHeroHelplessness } from '../js/hack.js';
 import { stopDonning } from '../js/do_wear.js';
 import { nomul } from '../js/hack.js';
 import { game } from '../js/gstate.js';

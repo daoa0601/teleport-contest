@@ -6,7 +6,7 @@ import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTe
 import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting, } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName, heroIsStrangled } from './do_wear.js';
-import { finishHeroHelplessness, stopHeroOccupation } from './allmain.js';
+import { stopHeroOccupation } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
 import { bot } from './botl.js';
@@ -26,7 +26,7 @@ import { useUpFloorObject, stack_object } from './invent.js';
 import { heroCanReachFloor } from './engrave.js';
 import { nonrottingCorpse, veganCorpse, vegetarianCorpse } from './food_traits.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { nomul, loseHeroHp, chewIronBars, stopRun, exceedsActionCapacity, nearCapacity } from './hack.js';
+import { nomul, loseHeroHp, chewIronBars, stopRun, exceedsActionCapacity, nearCapacity, finishHeroHelplessness } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { heroAcidBreathAttack, hitHeroWithRay, meltIce } from './zap.js';
 import { hasNonArtifactConflict } from './hero_conflict.js';

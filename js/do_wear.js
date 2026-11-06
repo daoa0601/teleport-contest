@@ -15,14 +15,14 @@ import { objectDelay, objectSkill, objectCharged, GRAY_DRAGON_SCALES, HELM_OF_OP
 import { game, requireLiveGame } from './gstate.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery } from './cmd.js';
-import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects } from './hack.js';
-import { finishHeroHelplessness, stopHeroOccupation } from './allmain.js';
+import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects, finishHeroHelplessness } from './hack.js';
+import { stopHeroOccupation } from './allmain.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, } from './const.js';
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt, isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
-import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName, erosionMatters } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
@@ -47,7 +47,7 @@ import { artifactEmitsLight, heroHasArtifactDefense, setWornArtifactProperties }
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { rn2, rnd } from './rng.js';
-import { changeHeroAlignment, currentAttribute, attributeIsAtLimit } from './attrib.js';
+import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
@@ -1960,6 +1960,45 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
         }
     }
     return messages;
+}
+// Part of C do_wear.c:Armor_on()/Armor_off(): the delayed don/doff
+// completion that hack.c:unmul() dispatches through afternmv when the
+// immobile-hero delay tail (C allmain.c:379-388) reaches zero, even if
+// burden still prevents hero movement.
+// Also C do_wear.c:Shield_on(): inlined here as the wear completion
+// marking the shield's enchantment known.
+// Also C do_wear.c:Shirt_on(): the same completion marks shirts known.
+export async function finishDelayedArmorAction(delayed, g) {
+    if (delayed.kind === 'wear') {
+        // unmul() has printed nomovemsg before Armor_on() and find_ac().
+        const effectMessages = await applyArmorOnEffects(delayed.object, g);
+        delayed.object.known = true;
+        const discoverArmorType = armorOnIdentifiesType(delayed.object, effectMessages)
+            && !g._knownObjectTypes?.has(delayed.object.otyp);
+        const deferDiscoveryUntilAfterMessage = delayed.object.otyp === 166;
+        if (discoverArmorType && !deferDiscoveryUntilAfterMessage) {
+            recordObjectKnowledge(delayed.object.otyp);
+            await exerciseAttribute(A_WIS, true);
+        }
+        const completionMessage = effectMessages.filter(Boolean).join('  ');
+        if (completionMessage)
+            await plineWithContinuation(completionMessage);
+        // If an actor line already owns tty, afternmv itself is resumed
+        // only after that pager is dismissed.  Attribute the makeknown()
+        // Wisdom credit to the resumed input boundary, not the capture
+        // which displayed the actor pager.
+        if (discoverArmorType && deferDiscoveryUntilAfterMessage) {
+            recordObjectKnowledge(delayed.object.otyp);
+            await exerciseAttribute(A_WIS, true);
+        }
+    }
+    else if (delayed.kind === 'remove') {
+        // unmul() has acknowledged nomovemsg while the armor was still worn.
+        await finishArmorRemoval(delayed.object, { silent: true });
+    }
+    if (g.program_state.gameover)
+        return;
+    g._armorClassDirty = true;
 }
 // C do_wear.c:set_wear(NULL). ini_inv_use_obj() has already installed
 // the slots, so apply their callbacks without installing equipment again.

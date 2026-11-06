@@ -6,7 +6,8 @@ import { installPagerInput, finishAtCommandInput } from './support/pager-input.j
 import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
 
-import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
+import { moveloop_core } from '../js/allmain.js';
+import { finishHeroHelplessness } from '../js/hack.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';

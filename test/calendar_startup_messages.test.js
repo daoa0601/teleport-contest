@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runSegment } from '../js/jsmain.js';
-import { fixedCalendar } from '../js/allmain.js';
+import { fixedCalendar } from '../js/calendar.js';
 import { memoryStorage } from './support/memory-storage.js';
 function visibleScreen(engine) {
     assert.ok(engine.display);

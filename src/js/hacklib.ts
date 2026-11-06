@@ -1,5 +1,6 @@
 // hacklib.js — Utility functions.
-// C ref: hacklib.c — nh_deterministic_qsort() and the string/number helpers.
+// C ref: hacklib.c — nh_deterministic_qsort(), fuzzymatch(), swapbits(),
+// and the string/number helpers.
 
 import { game } from './gstate.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -229,3 +230,27 @@ export function mungSpaces(bytes: Uint8Array): Uint8Array {
     return new Uint8Array(out);
 }
 
+
+// C hacklib.c:fuzzymatch(): compare while skipping ' ', '-', '_' and
+// folding case.
+export function fuzzyMatch(input: string, name: string): boolean {
+    const skip = (character: string | undefined) =>
+        character === ' ' || character === '-' || character === '_';
+    let i = 0, j = 0;
+    for (;;) {
+        while (skip(input[i])) i++;
+        while (skip(name[j])) j++;
+        const a = input[i], b = name[j];
+        if (a === undefined || b === undefined) break;
+        if (a.toLowerCase() !== b.toLowerCase()) return false;
+        i++;
+        j++;
+    }
+    return input[i] === undefined && name[j] === undefined;
+}
+
+// C hacklib.c:swapbits(): swap a pair of bits.
+export function swapDirectionBits(value: number, first: number, second: number): number {
+    const different = ((value >> first) ^ (value >> second)) & 1;
+    return value ^ ((different << first) | (different << second));
+}

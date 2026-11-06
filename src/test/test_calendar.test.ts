@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fixedCalendar } from '../js/allmain.js';
-import { recorderIsLeapDay } from '../js/calendar.js';
+import { fixedCalendar, recorderIsLeapDay } from '../js/calendar.js';
 import { game } from '../js/gstate.js';
 import { sessionIsNight } from '../js/sounds.js';
 import { freshGame } from './support/game-state.js';

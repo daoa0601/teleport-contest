@@ -1,27 +1,28 @@
+// allmain.js — Main game loop.
+// C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
 import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot } from './dungeon.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom } from './hack.js';
-import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, getLine, promptYesNo, rhack, dolookaround } from './cmd.js';
-import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
+import { recorderLocalEpochSeconds, fixedCalendar } from './calendar.js';
 import { pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent } from './pline.js';
+import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, getLine, promptYesNo, rhack, dolookaround } from './cmd.js';
 import { doStorms } from './timeout.js';
 import { rewindEngravingsForSave, engravingAt, wipeEngravingAt, readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './mon.js';
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
+import { gethungry, eatfood } from './eat.js';
 import { makeBlinded, makeStunned } from './potion.js';
-import { eatmdone, Finish_digestion, gethungry, unfaint, Hear_again, eatfood } from './eat.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { recordRandom } from './monster_action_types.js';
 import { clearBypasses } from './worn.js';
 import { clearSplitObjects, unlinkObject } from './mkobj.js';
 import { tryCallObjectType } from './do.js';
-import { observeBucForNaming, verbForSubject, withIndefiniteArticle, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName } from './objnam.js';
-import { observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType } from './o_init.js';
-import { A_CURRENT, A_ORIGINAL, CQ_CANNED, CQ_REPEAT, ESCAPED, G_NOCORPSE, In_endgame, In_hell, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM, RLOC_NOMSG, WATER, RLOC_MSG, LOST_STOLEN, MMOVE_DIED, NORMAL_SPEED, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_ARMOR, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, LL_ACHIEVE, } from './const.js';
-import { showInventoryWindow } from './windows.js';
-import { pendingArmorAction, armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning, applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor, isBeingTakenOff, finishArmorRemoval, heroHasSlipperyHands, slipFromSlipperyHands } from './do_wear.js';
+import { observeBucForNaming, verbForSubject, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName } from './objnam.js';
+import { observeObject, recordObjectEncounter, learnObjectType } from './o_init.js';
+import { A_CURRENT, A_ORIGINAL, CQ_CANNED, CQ_REPEAT, ESCAPED, G_NOCORPSE, In_endgame, In_hell, MON_FLOOR, PLNMSG_MON_TAKES_OFF_ITEM, RLOC_NOMSG, WATER, RLOC_MSG, LOST_STOLEN, MMOVE_DIED, NORMAL_SPEED, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_ARMOR, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, LL_ACHIEVE, } from './const.js';
+import { pendingArmorAction, heroHasFreeAction, heroIsDisplaced, stopDonning, applyStartingArmorEffects, findArmorClass, erodeWornArmor, isBeingTakenOff, heroHasSlipperyHands, slipFromSlipperyHands } from './do_wear.js';
 import { dosounds, sessionIsNight } from './sounds.js';
 import { warnWithMasterKey, applyArtifactHit, findArtifact } from './artifact.js';
 import { isPoolAt } from './dbridge.js';
@@ -34,7 +35,7 @@ import { finishScheduledLevelChange } from './do.js';
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion, monsterIsAnimal, monsterIsNonliving, heroHasOlfaction, monsterIsEel } from './mondata.js';
-import { MONSTER_GENO, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath, } from './end.js';
 import { restoreMonsterCover, finishInUseInventory } from './restore.js';
@@ -75,6 +76,7 @@ import { initializeSourceStartup } from './startup.js';
 import { fumaroles } from './mkmaze.js';
 import { commitPetPickup } from './dogmove.js';
 import { monsterWieldedWeapon } from './weapon.js';
+import { askTutorial } from './options.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
 import { reportMonsterTeleportRestriction } from './teleport.js';
 import { clearHeroSliming } from './potion.js';
@@ -207,22 +209,6 @@ async function showInlineMore(message) {
     await plineWithContinuation(message);
     await flushPendingTopline();
 }
-// C calendar.c:phase_of_the_moon()
-// Also C calendar.c:friday_13th(): both checks share the same local date.
-// C reads getlt(); the port reads the recording's local date.
-export function fixedCalendar(datetime) {
-    const date = recorderLocalDate(datetime);
-    if (!date)
-        return { moonphase: null, friday13: false };
-    const { year, month, day, weekday } = date;
-    const diy = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 1)) / 86400000);
-    const goldn = ((year - 1900) % 19) + 1;
-    let epact = (11 * goldn + 18) % 30;
-    if ((epact === 25 && goldn > 11) || epact === 24)
-        epact++;
-    const moonphase = (Math.floor(((((diy + epact) * 6) + 11) % 177) / 22)) & 7;
-    return { moonphase, friday13: weekday === 5 && day === 13 };
-}
 async function applyCalendarMessages() {
     const game = requireInitializedGame();
     const calendar = fixedCalendar(game.datetime);
@@ -308,27 +294,6 @@ export async function restoregamePreamble() {
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     await fixShopDamage(game);
     await finishMoveloopPreamble();
-}
-// C options.c:ask_do_tutorial(). Empty acceptance rebuilds the menu with
-// an explanation; a selected answer or Escape ends the question.
-async function askTutorial() {
-    let pass = 0;
-    for (;;) {
-        const items = [
-            { key: 'y', text: 'Yes, do a tutorial' },
-            { key: 'n', text: 'No, just start play' },
-            { text: '' },
-            { text: 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.' },
-        ];
-        if (pass++)
-            items.push({ text: "(Please choose 'y' or 'n'.)" });
-        const answer = await showInventoryWindow([{ items }], {
-            title: 'Do you want a tutorial?', pickMode: PICK_ONE,
-        });
-        if (answer.key === 0)
-            continue;
-        return answer.key === 'y'.charCodeAt(0);
-    }
 }
 // Part of C allmain.c:maybe_do_tutorial(): tutorial-entry adapter combining Lua state transfer and do.c:goto_level() arrival.
 // C/Lua refs: allmain.c maybe_do_tutorial(), do.c goto_level(),
@@ -666,101 +631,6 @@ export async function stopHeroOccupation(state = game, publish = plineWithContin
     if (occupation || (state.multi ?? 0) >= 0)
         endVoluntaryMultiTurn(state);
     cmdq_clear(CQ_CANNED, state);
-}
-// Part of C do_wear.c:Armor_on()/Armor_off(): the delayed don/doff
-// completion that hack.c:unmul() dispatches through afternmv when the
-// immobile-hero delay tail (C allmain.c:379-388) reaches zero, even if
-// burden still prevents hero movement.
-// Also C do_wear.c:Shield_on(): inlined here as the wear completion
-// marking the shield's enchantment known.
-// Also C do_wear.c:Shirt_on(): the same completion marks shirts known.
-async function finishDelayedArmorAction(delayed, g) {
-    if (delayed.kind === 'wear') {
-        // unmul() has printed nomovemsg before Armor_on() and find_ac().
-        const effectMessages = await applyArmorOnEffects(delayed.object, g);
-        delayed.object.known = true;
-        const discoverArmorType = armorOnIdentifiesType(delayed.object, effectMessages)
-            && !g._knownObjectTypes?.has(delayed.object.otyp);
-        const deferDiscoveryUntilAfterMessage = delayed.object.otyp === 166;
-        if (discoverArmorType && !deferDiscoveryUntilAfterMessage) {
-            recordObjectKnowledge(delayed.object.otyp);
-            await exerciseAttribute(A_WIS, true);
-        }
-        const completionMessage = effectMessages.filter(Boolean).join('  ');
-        if (completionMessage)
-            await plineWithContinuation(completionMessage);
-        // If an actor line already owns tty, afternmv itself is resumed
-        // only after that pager is dismissed.  Attribute the makeknown()
-        // Wisdom credit to the resumed input boundary, not the capture
-        // which displayed the actor pager.
-        if (discoverArmorType && deferDiscoveryUntilAfterMessage) {
-            recordObjectKnowledge(delayed.object.otyp);
-            await exerciseAttribute(A_WIS, true);
-        }
-    }
-    else if (delayed.kind === 'remove') {
-        // unmul() has acknowledged nomovemsg while the armor was still worn.
-        await finishArmorRemoval(delayed.object, { silent: true });
-    }
-    if (g.program_state.gameover)
-        return;
-    g._armorClassDirty = true;
-}
-// C hack.c:unmul()
-// The after-handler is cleared before invocation so
-// recovery can start another delay without inheriting the old completion.
-// Also C steal.c:unstolenarm(): the 'unstolen-armor' case below.
-export async function finishHeroHelplessness(messageOverride, state = game, publish = plineWithContinuation) {
-    state.context.botl = true;
-    setMulti(0, state);
-    const message = messageOverride ?? state._helplessDoneMessage ?? 'You can move again.';
-    if (message) {
-        await publish(message);
-        if (Upolyd(state.u) && message.toLowerCase().startsWith('you survived that '))
-            await publish(`You are ${withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.u.mfemale))}.`);
-    }
-    state.u.usleep = 0;
-    state._helplessReason = null;
-    state._helplessDoneMessage = null;
-    const after = state._afterMove;
-    state._afterMove = null;
-    if (!after)
-        return;
-    switch (after.kind) {
-        case 'wear':
-        case 'remove':
-            await finishDelayedArmorAction(after, state);
-            break;
-        case 'hear-again':
-            await Hear_again({ state });
-            break;
-        case 'unfaint':
-            await unfaint({ state });
-            break;
-        case 'end-mimic-meal':
-            await eatmdone(state);
-            break;
-        case 'finish-digestion':
-            await Finish_digestion(state);
-            break;
-        case 'steal': {
-            const theft = state._armorTheft;
-            if (theft?.thief)
-                await finishDelayedArmorTheft(theft.thief, theft.object, state);
-            state._armorTheft = null;
-            break;
-        }
-        case 'unstolen-armor': {
-            const object = state._armorTheft?.object;
-            state._armorTheft = null;
-            if (object && state.inventory.includes(object))
-                await plineWithContinuation(`You finish taking off your ${armorSimpleName(object, state)}.`);
-            break;
-        }
-        case 'finish-prayer':
-            await finishPrayerOccupation(state);
-            break;
-    }
 }
 // Part of C allmain.c:newgame(): entry adapter around initializeNewGame() and startup monster notices.
 // C ref: allmain.c newgame()
