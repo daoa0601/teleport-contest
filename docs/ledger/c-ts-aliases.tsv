@@ -90,7 +90,6 @@ wishcmdassist	showWishHelp
 is_drawbridge_wall	findDrawbridgeAt
 update_mapseen_for	recordMappedOverviewState
 doopen_indir	doopen
-moveloop_core	advanceWorldTurn
 done	finishHeroDeath
 acid_damage	damageObjectWithAcid
 golemeffects	applyMonsterGolemEffects

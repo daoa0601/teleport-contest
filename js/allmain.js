@@ -496,213 +496,31 @@ async function interruptCountedActivity(message) {
         await plineWithContinuation(message);
     }
 }
-// Part of C allmain.c:moveloop_core(): the once-per-hero-action status and clairvoyance tail.
-// C ref: allmain.c's `once-per-hero-took-time` tail, after the movement-ration
-// loop has allocated as many global turns as the hero needs.  Burden can make
-// one action span two allocations; seer_turn is checked only after the last
-// one, against the final `moves` value.
-async function finishHeroTookTime(sourceTurn) {
-    const game = requireInitializedGame();
-    statusEvalNextUnhilite();
-    if (sourceTurn >= (game.seer_turn ?? Infinity)) {
-        if ((game.u.uhave.amulet || propertyIsActive('clairvoyant', game))
-            && !In_endgame(game.u.uz) && !propertyIsBlocked('clairvoyant', game))
-            await mapVicinity(null, { state: game });
-        game.seer_turn = sourceTurn + 15 + rn2(31);
-    }
-}
-async function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
-    const game = requireInitializedGame();
-    // allmain.c's environmental owner runs after engraving wear. Air and
-    // Water share the moving bubble list created by fixup_special(); Fire
-    // reuses the same fumarole sampler as initial arrival.
-    if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
-        await movebubbles();
-    else if (game.level?.flags?.fumaroles)
-        await fumaroles(game);
-    // C allmain.c:379-388, still inside the once-per-turn block: an immobile
-    // hero's delay output runs before the counter moves, so the animation
-    // frames still see the helpless condition in the status line.  Reaching
-    // zero calls unmul() and, when that scheduled travel, deferred_goto().
-    if (currentMulti(game) < 0) {
-        // Dressing retains its physical topline through each negative-multi
-        // frame; its armor effects still wait for unmul's recovery message.
-        const delayedAction = pendingArmorAction(game);
-        if (delayedAction) {
-            if (game._pending_message) {
-                delete delayedAction._runmodeRetainedTopline;
-            }
-            else if (!delayedAction._runmodeRetainedTopline) {
-                delayedAction._runmodeRetainedTopline
-                    = game.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }));
-            }
-        }
-        await captureRunmodeDelay(game, true, sourceTurn, {
-            preservePhysicalTopline: true,
-            retainedTopline: delayedAction?._runmodeRetainedTopline ?? null,
-        });
-        setMulti(currentMulti(game) + 1, game);
-        if (currentMulti(game) === 0) {
-            await finishHeroHelplessness();
-            // if unmul() caused a level change, take it now
-            await finishScheduledLevelChange();
-        }
-    }
-}
-// Part of C allmain.c:moveloop_core(): the Amulet, engraving, and demigod-intervention maintenance.
-// State-derived subset of the once-per-turn maintenance in allmain.c.
-// This covers the first quiet turn: monster movement allotments, random
-// monster generation, ambient feature sounds, hunger, and engraving wear.
-async function finishInitialTurnMaintenanceRng(sourceTurn) {
-    const game = requireInitializedGame();
-    if (game.u.uhave.amulet)
-        await amuletTurn(game);
-    if (!rn2(40 + currentAttribute(A_DEX) * 3))
-        wipeHeroEngraving(rnd(3));
-    // allmain.c's demigod intervention clock advances after engraving wear
-    // and before environmental level motion. Complete any paged intervention
-    // before restarting the countdown, as the synchronous C call does.
-    if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
-        if (game.u.udg_cnt !== undefined && game.u.udg_cnt > 0)
-            game.u.udg_cnt--;
-        if ((game.u.udg_cnt ?? 0) === 0) {
-            await intervene();
-            game.u.udg_cnt = 50 + rn2(200);
-        }
-    }
-    await finishInitialTurnMaintenanceAfterIntervention(sourceTurn);
-}
-async function finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, }) {
-    const game = requireInitializedGame();
-    await gethungry({ invulnerable: game.u.invulnerable });
-    if (game.program_state.gameover)
-        return { kind: 'complete' };
-    // JS has already advanced `game.moves` for the hero action which caused
-    // this maintenance pass.  C increments svm.moves inside this pass, so
-    // the resulting C turn number is the existing JS value, not value + 1.
-    await periodicTurnExercise(sourceTurn);
-    await checkAttributeExercise(sourceTurn);
-    // C allmain.c:357 — invault() runs here in the once-per-turn block,
-    // after exerchk() and before the Amulet check.  Its interrogation
-    // completes before the turn decrements negative multi, so a busy
-    // hero's armor removal can finish below, paging the guard's
-    // departure before the recovery message.
-    await invault(game);
-    await finishInitialTurnMaintenanceRng(sourceTurn);
-    return { kind: 'complete' };
-}
-async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, }) {
-    if (game.u.warning)
-        await revealWarnedMonsters();
-    if (game.were_changes)
-        setHeroSpecies(heroSpecies(game), game);
-    await warnWithMasterKey(game);
-    // Each sound keeps its native message wait before later feature rolls.
-    await dosounds();
-    await doStorms(game);
-    if (game.program_state.gameover)
-        return { kind: 'complete' };
-    return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn });
-}
-// Part of C allmain.c:moveloop_core(): recovery, teleportitis, shape changes, and automatic search.
-// Also C allmain.c:regen_pw(): inlined here (the power-recovery block
-// before teleportitis and shape changes).
-async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, capacity, }) {
-    const game = requireInitializedGame();
-    if (game.u.ublesscnt > 0)
-        game.u.ublesscnt--;
-    // allmain.c:regen_hp() runs after nh_timeout().  If a timeout pline
-    // suspended at tty, no regeneration or later maintenance may run until
-    // that exact source stack resumes.
-    const recoveryCapacity = game.u.invulnerable ? UNENCUMBERED : capacity;
-    if (await regenerateHeroHp(recoveryCapacity, sourceTurn))
-        await interruptCountedActivity('You are in full health.');
-    if (game.program_state.gameover)
-        return { kind: 'complete' };
-    // C moveloop_core(): moving around while Strained or worse is hard work.
-    if (recoveryCapacity > MOD_ENCUMBER && game.u.umoved
-        && sourceTurn % (recoveryCapacity < EXT_ENCUMBER ? 30 : 10) === 0)
-        await overexertHeroHp(game);
-    if ((game.u?.uen ?? 0) < (game.u?.uenmax ?? 0)) {
-        const level = game.u?.ulevel ?? 1;
-        const roleFactor = game.urole?.key === 'wizard' ? 3 : 4;
-        const interval = Math.max(1, Math.trunc(((30 + 8 - level) * roleFactor) / 6));
-        const energyRegeneration = propertyIsActive('energyRegeneration', game);
-        if ((recoveryCapacity < MOD_ENCUMBER
-            && sourceTurn % interval === 0)
-            || energyRegeneration) {
-            let upper = Math.trunc((currentAttribute(A_WIS, game) + currentAttribute(A_INT, game)) / 15) + 1;
-            if (hasWornProperty('magicalBreathing', game)
-                || hasCarriedProperty('magicalBreathing', null, game)
-                || hasInvokedProperty('magicalBreathing', game))
-                upper += 2;
-            game.u.uen = Math.min(game.u.uenmax, game.u.uen + 1 + rn2(upper));
-            game.context.botl = true;
-            if (game.u.uen === game.u.uenmax)
-                await interruptCountedActivity('You feel full of energy.');
-        }
-    }
-    await rollHeroTeleportitis();
-    if (game.program_state.gameover)
-        return { kind: 'complete' };
-    await advanceHeroShapeChange();
-    if (game.program_state.gameover)
-        return { kind: 'complete' };
-    if (game.u?.searching && !game.level?.flags?.noautosearch
-        && !heroHasInvoluntaryDelay(game)) {
-        const search = await automaticSearch();
-        if (typeof search === 'object' && search.statueTrap) {
-            const { x, y } = search.statueTrap;
-            return {
-                kind: 'statue-trap',
-                x, y, sourceTurn, capacity,
-            };
-        }
-    }
-    return await finishInitialTurnMaintenanceAfterAutomaticSearch({
-        sourceTurn,
-    });
-}
-// C allmain.c:moveloop_core(): Teleportation, including a teleporting form,
-// moves the hero once in 85 turns. A move away from a leashed follower checks
-// the leash and cancels queued and repeated commands.
-async function rollHeroTeleportitis() {
-    if (game.u.invulnerable || !heroCanTeleport(game) || rn2(85))
+// C allmain.c:regen_pw()
+// Power recovery: once per level-dependent interval when unencumbered, or
+// whenever the energy regeneration property is active; a magical breathing
+// form draws a deeper reserve.  Reaching full power cancels a counted
+// voluntary repeat (allmain.c:interrupt_multi()).
+async function regen_pw(wtcap, sourceTurn, state) {
+    if ((state.u?.uen ?? 0) >= (state.u?.uenmax ?? 0))
         return;
-    const from = { x: game.u.ux, y: game.u.uy };
-    await teleportHero({ chooseDestination: askTeleportDestination });
-    if (game.program_state.gameover || (game.u.ux === from.x && game.u.uy === from.y))
-        return;
-    if (!heroNextToLeashedFollowers())
-        await checkHeroLeashes(from.x, from.y);
-    cmdq_clear(CQ_CANNED);
-    cmdq_clear(CQ_REPEAT);
-}
-// C allmain.c:moveloop_core(). A selected change waits through involuntary
-// delays and Unchanging; losing the source of the change cancels it.
-async function advanceHeroShapeChange() {
-    if (game.u.invulnerable)
-        return;
-    const polymorph = propertyIsActive('polymorph', game);
-    const infection = game.u.ulycn;
-    const infected = infection !== undefined && infection >= 0 && infection < MONSTER_NAME.length;
-    if ((game._pendingHeroShapeChange === 'polymorph' && !polymorph)
-        || (game._pendingHeroShapeChange === 'were' && !infected))
-        delete game._pendingHeroShapeChange;
-    if (polymorph && rn2(100) === 0)
-        game._pendingHeroShapeChange = 'polymorph';
-    else if (infected && !Upolyd(game.u)
-        && rn2(80 - (sessionIsNight(game.datetime) ? 20 : 0)) === 0)
-        game._pendingHeroShapeChange = 'were';
-    if (!game._pendingHeroShapeChange || heroIsUnchanging(game)
-        || heroHasInvoluntaryDelay(game))
-        return;
-    await stopHeroOccupation(game);
-    if (game._pendingHeroShapeChange === 'polymorph')
-        await polymorphHero();
-    else
-        await applyHeroWereChange();
-    delete game._pendingHeroShapeChange;
+    const level = state.u?.ulevel ?? 1;
+    const roleFactor = state.urole?.key === 'wizard' ? 3 : 4;
+    const interval = Math.max(1, Math.trunc(((30 + 8 - level) * roleFactor) / 6));
+    const energyRegeneration = propertyIsActive('energyRegeneration', state);
+    if ((wtcap < MOD_ENCUMBER
+        && sourceTurn % interval === 0)
+        || energyRegeneration) {
+        let upper = Math.trunc((currentAttribute(A_WIS, state) + currentAttribute(A_INT, state)) / 15) + 1;
+        if (hasWornProperty('magicalBreathing', state)
+            || hasCarriedProperty('magicalBreathing', null, state)
+            || hasInvokedProperty('magicalBreathing', state))
+            upper += 2;
+        state.u.uen = Math.min(state.u.uenmax, state.u.uen + 1 + rn2(upper));
+        state.context.botl = true;
+        if (state.u.uen === state.u.uenmax)
+            await interruptCountedActivity('You feel full of energy.');
+    }
 }
 async function runLevelRegionTurn() {
     const game = requireInitializedGame();
@@ -720,39 +538,6 @@ async function runLevelRegionTurn() {
         },
     });
 }
-async function beginInitialTurnMaintenance() {
-    const game = requireInitializedGame();
-    // allmain.c caches this after monster movement. Timeouts can change the
-    // load, but movement and recovery for this turn keep the earlier capacity.
-    const capacity = nearCapacity(game);
-    // allmain.c runs mcalcdistress() before allocating the next movement
-    // ration. Regeneration, were-change checks, and temporary maladies count
-    // down once per global turn, independent of the monster's own speed.
-    game.were_changes = 0;
-    for await (const event of monsterDistressEvents(game.level?.monsters || [], game, rn2, game.moves, plineWithContinuation)) {
-        if (event.kind === 'stationary-liquid') {
-            if (game.vision_full_recalc) {
-                await vision_recalc(0);
-            }
-            await resolveMonsterLiquid(event.monster, game, {
-                announce: plineWithContinuation,
-                monsterMoving: false,
-                finishDeath: finishHeroLiquidMonsterDeath,
-            });
-            continue;
-        }
-        if (event.kind === 'shape-change') {
-            if (event.change.heroDied)
-                return { kind: 'hero-died' };
-            continue;
-        }
-        await presentWereChange(event.change, {
-            publish: plineWithContinuation,
-            wakeNearby: (x, y, distance) => wakeMonstersNearWithMessages(x, y, distance, game),
-        });
-    }
-    return finishInitialTurnMaintenanceAfterMonsterDistress(capacity);
-}
 // Part of C allmain.c:moveloop_core(): the new-turn loop that reallocates
 // every monster's movement ration with mcalcmove() after mcalcdistress(),
 // before any of them acts. C iterates fmon in creation order; JS stores
@@ -764,105 +549,62 @@ export function allocateMonsterMovement(monsters = [], random = rn2, state = req
         monster.movement = (monster.movement ?? 0) + amount;
     }
 }
-// C allmain.c:maybe_generate_rnd_mon().
-async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity) {
-    const game = requireInitializedGame();
-    allocateMonsterMovement(game.level?.monsters || [], rn2, game);
-    // allmain.c:maybe_generate_rnd_mon().  Monster pressure increases below
-    // the Castle and again after demigodhood; the denominator is topology
-    // state, not a fixed scheduler constant.
-    const currentDepth = dungeonDepth(game.u?.uz?.dnum ?? 0, game.u?.uz?.dlevel ?? 1);
-    const strongholdDepth = dungeonDepth(game.stronghold_level?.dnum ?? 0, game.stronghold_level?.dlevel ?? Number.MAX_SAFE_INTEGER);
-    const generationRate = game.u?.uevent?.udemigod ? 25
+// C allmain.c:maybe_generate_rnd_mon().  Monster pressure increases below
+// the Castle and again after demigodhood; the denominator is topology
+// state, not a fixed scheduler constant.
+async function maybe_generate_rnd_mon(state) {
+    const currentDepth = dungeonDepth(state.u?.uz?.dnum ?? 0, state.u?.uz?.dlevel ?? 1);
+    const strongholdDepth = dungeonDepth(state.stronghold_level?.dnum ?? 0, state.stronghold_level?.dlevel ?? Number.MAX_SAFE_INTEGER);
+    const generationRate = state.u?.uevent?.udemigod ? 25
         : currentDepth > strongholdDepth ? 50 : 70;
     if (rn2(generationRate) === 0)
         await makemonAt(null, 0, 0);
-    const polymorphed = (game.u.mtimedone !== undefined && game.u.mtimedone > 0)
-        && Number.isInteger(game.u?.umonnum);
+}
+// C allmain.c:u_calc_moveamt()
+// The hero's movement ration for the coming round: the current form's
+// natural speed and Fast/Very_fast bonus (or the steed's own speed when
+// mounted and moving), then the cached carrying capacity applied to the
+// total.  OVERLOADED is deliberately the default case: a zero-speed mold
+// receives no movement until intrinsic Fast grants a complete 12-point
+// action.  Clamps a negative movement balance after every global
+// allocation: without this, a slow polymorph can carry the action debit
+// across zero-speed turns and require an extra monster/global round.
+function u_calc_moveamt(wtcap, state) {
     let moveAmount;
-    if (game.u.usteed && game.u.umoved) {
-        moveAmount = mcalcmove(game.u.usteed, true, rn2, game);
+    const polymorphed = (state.u.mtimedone !== undefined && state.u.mtimedone > 0)
+        && Number.isInteger(state.u?.umonnum);
+    if (state.u.usteed && state.u.umoved) {
+        moveAmount = mcalcmove(state.u.usteed, true, rn2, state);
     }
     else {
         moveAmount = polymorphed
-            ? (MONSTER_MOVE[game.u.umonnum] ?? 0) : 12;
-        if (game.u.veryFast) {
+            ? (MONSTER_MOVE[state.u.umonnum] ?? 0) : 12;
+        if (state.u.veryFast) {
             if (rn2(3) !== 0)
                 moveAmount += 12;
         }
-        else if (game.u.fast && rn2(3) === 0) {
+        else if (state.u.fast && rn2(3) === 0) {
             moveAmount += 12;
         }
     }
-    // allmain.c:u_calc_moveamt() applies the cached carrying capacity after
-    // the current form's natural speed and Fast/Very_fast bonus.  OVERLOADED is
-    // deliberately the default case: a zero-speed mold receives no movement
-    // until intrinsic Fast grants a complete 12-point action.
-    if (capacity === 1) {
+    if (wtcap === 1) {
         moveAmount -= Math.trunc(moveAmount / 4);
     }
-    else if (capacity === 2) {
+    else if (wtcap === 2) {
         moveAmount -= Math.trunc(moveAmount / 2);
     }
-    else if (capacity === 3) {
+    else if (wtcap === 3) {
         moveAmount -= Math.trunc(moveAmount * 3 / 4);
     }
-    else if (capacity === 4) {
+    else if (wtcap === 4) {
         moveAmount -= Math.trunc(moveAmount * 7 / 8);
     }
-    // C records the hero's current square after monster movement/allocation
-    // and before the new global turn's callbacks.  Pets which lose sight of
-    // the hero consult this ring on their next action.
-    addHeroMovementRation(game, moveAmount);
-    setTrack(game);
-    game.moves = (game.moves || 1) + 1;
-    if (game.moves >= 1000000000) {
-        await flushPendingTopline();
-        await plineWithContinuation('The dungeon capitulates.', { urgent: true });
-        await finishHeroDeath({ killer: '', deathType: ESCAPED });
-        return { kind: 'complete' };
-    }
-    if (game.flags.time && !game.context.run)
-        game.context.time_botl = true;
-    game._heroActionSeq = game.moves * 8;
-    await currentLuaLifecycle().callCore(game, 'moveloop_turn');
-    if (heroHasSlipperyHands(game))
-        await slipFromSlipperyHands(game);
-    // nh_timeout() precedes regeneration and exerchk() in the C loop.
-    // C allmain.c:273 calls it between glibr() and run_regions(); the
-    // countdown and its expiry messages live in timeout.ts.
-    await nhTimeout();
-    if (game.program_state?.gameover)
-        return { kind: 'complete' };
-    return { kind: 'regions', sourceTurn: game.moves, capacity };
+    state.u.umovement = Math.max(0, (state.u.umovement ?? 0) + moveAmount);
 }
-// C allmain.c:moveloop_core() runs the immobile-hero delay tail (allmain.c:379-388)
-// inside this turn's maintenance: finishInitialTurnMaintenanceAfterIntervention
-// completes the delay and calls hack.c:unmul() through finishHeroHelplessness,
-// then deferred_goto() through finishScheduledLevelChange.
-async function advanceWorldTurn() {
-    const game = requireInitializedGame();
-    const initialPhase = await beginInitialTurnMaintenance();
-    if (initialPhase.kind === 'hero-died')
-        return;
-    let phase = initialPhase;
-    if (game.program_state?.gameover)
-        return;
-    while (phase.kind === 'regions') {
-        await runLevelRegionTurn();
-        if (game.program_state?.gameover)
-            return;
-        phase = await finishInitialTurnMaintenanceAfterRegions(phase);
-    }
-    while (phase.kind === 'statue-trap') {
-        const monster = await activateStatueTrapAt(phase.x, phase.y);
-        if (monster)
-            await exerciseAttribute(A_WIS, true);
-        phase = await finishInitialTurnMaintenanceAfterAutomaticSearch(phase);
-    }
-}
-// C allmain.c:moveloop_core() calls unmul() at the end of the world turn
-// which finishes negative multi, even if burden still prevents hero movement.
+// Part of C do_wear.c:Armor_on()/Armor_off(): the delayed don/doff
+// completion that hack.c:unmul() dispatches through afternmv when the
+// immobile-hero delay tail (C allmain.c:379-388) reaches zero, even if
+// burden still prevents hero movement.
 // Also C do_wear.c:Shield_on(): inlined here as the wear completion
 // marking the shield's enchantment known.
 // Also C do_wear.c:Shirt_on(): the same completion marks shirts known.
@@ -897,25 +639,6 @@ async function finishDelayedArmorAction(delayed, g) {
     if (g.program_state.gameover)
         return;
     g._armorClassDirty = true;
-}
-async function settleHeroLiquidAfterAction() {
-    const game = requireInitializedGame();
-    const finishLanding = ({ from, to }) => finishDestinationSpotEffects({
-        oldx: from.x,
-        oldy: from.y,
-        newx: to.x,
-        newy: to.y,
-    });
-    if (game.u?.utrap && game.u.utraptype === TT_LAVA) {
-        return sinkHeroIntoLava({
-            state: game,
-            publish: plineWithContinuation,
-            applyLandingEffects: finishLanding,
-        });
-    }
-    if (game.u?.umoved)
-        return null;
-    return applyHeroLiquidEffects(plineWithContinuation, { entry: 'turn' });
 }
 // C hack.c:unmul()
 // The after-handler is cleared before invocation so
@@ -972,12 +695,6 @@ export async function finishHeroHelplessness(messageOverride, state = game, publ
             await finishPrayerOccupation(state);
             break;
     }
-}
-// Part of C allmain.c:u_calc_moveamt(): clamps a negative movement balance after every
-// global allocation.  Without this, a slow polymorph can carry the action
-// debit across zero-speed turns and require an extra monster/global round.
-function addHeroMovementRation(state, amount) {
-    state.u.umovement = Math.max(0, (state.u.umovement ?? 0) + amount);
 }
 // Part of C allmain.c:newgame(): entry adapter around initializeNewGame() and startup monster notices.
 // C ref: allmain.c newgame()
@@ -1070,27 +787,20 @@ let playStep = null;
 export function bindPlayStep(step) {
     playStep = step;
 }
-export async function moveloop_core() {
-    if (playStep && playStep.state === game)
-        return playStep.step();
-    return runMoveloopCore();
-}
-// C allmain.c:moveloop_core() end-of-command display cadence: while a
-// multi-step action is pending with no run or with teleport runmode,
-// every 7th step marks the status line dirty (travel strides on moves,
-// plain runs and count repeats on the remaining multi) so the next
-// flush repaints the turn counter mid-run. Non-tport runs refresh
-// through runmode_delay_output() instead, and display_nhwindow(WIN_MAP,
-// FALSE) is a tty fflush with no screen effect.
-function markMultiStepStatusDirty(g) {
-    if ((!g.context.run || isTeleportRunmode(g)) && g.multi
-        && (g.context.travel ? (g.moves || 0) % 7 === 0 : g.multi % 7 === 0)
-        && g.flags.time && g.context.run) {
-        g.context.botl = true;
-    }
-}
-// Part of C allmain.c:moveloop_core(): the main turn driver; world-turn maintenance is extracted into advanceWorldTurn().
-// C ref: allmain.c moveloop_core()
+// C allmain.c:moveloop_core(): the whole turn driver in C statement order.
+// The monster-movement/time-advance loop with its once-per-turn maintenance,
+// the once-per-hero-action tail, and the once-per-player-input part (vision,
+// botl, the occupation/multi/run handling and rhack()) all live in this one
+// function, as in C. The pieces C itself names stay named here too:
+// u_calc_moveamt(), maybe_generate_rnd_mon(), regen_pw() and
+// interrupt_multi() (as interruptCountedActivity()); regen_hp() lives in
+// hero_regeneration.ts and see_nearby_monsters() in mon.ts. hack.ts
+// continueRun() is the port's separate run/multi resumption step, and the
+// immobile-hero delay tail ends through hack.c:unmul() (finishHeroHelplessness).
+// The port keeps one entry split from this body: moveloop_core() below adds
+// the play-page keystroke shim, and Engine.runGame() (jsmain.ts) drives this
+// body directly, parking on its input gate between commands instead of
+// reading display keys.
 export async function runMoveloopCore() {
     const g = requireInitializedGame();
     g.program_state.in_moveloop = true;
@@ -1113,7 +823,218 @@ export async function runMoveloopCore() {
             if (g.program_state?.gameover)
                 return;
             if (!somebodyCanMove && g.u.umovement < NORMAL_SPEED) {
-                await advanceWorldTurn();
+                // C allmain.c:222: both hero and monsters are out of steam
+                // this round, so set up a new turn.
+                oncePerTurn: {
+                    // allmain.c caches mvl_wtcap = near_capacity() after
+                    // monster movement. Timeouts can change the load, but
+                    // movement and recovery for this turn keep the earlier
+                    // capacity.
+                    const capacity = nearCapacity(g);
+                    // allmain.c runs mcalcdistress() before allocating the
+                    // next movement ration. Regeneration, were-change checks,
+                    // and temporary maladies count down once per global turn,
+                    // independent of the monster's own speed.
+                    g.were_changes = 0;
+                    for await (const event of monsterDistressEvents(g.level?.monsters || [], g, rn2, g.moves, plineWithContinuation)) {
+                        if (event.kind === 'stationary-liquid') {
+                            if (g.vision_full_recalc) {
+                                await vision_recalc(0);
+                            }
+                            await resolveMonsterLiquid(event.monster, g, {
+                                announce: plineWithContinuation,
+                                monsterMoving: false,
+                                finishDeath: finishHeroLiquidMonsterDeath,
+                            });
+                            continue;
+                        }
+                        if (event.kind === 'shape-change') {
+                            if (event.change.heroDied)
+                                break oncePerTurn;
+                            continue;
+                        }
+                        await presentWereChange(event.change, {
+                            publish: plineWithContinuation,
+                            wakeNearby: (x, y, distance) => wakeMonstersNearWithMessages(x, y, distance, g),
+                        });
+                    }
+                    allocateMonsterMovement(g.level?.monsters || [], rn2, g);
+                    await maybe_generate_rnd_mon(g);
+                    u_calc_moveamt(capacity, g);
+                    // C records the hero's current square after monster
+                    // movement/allocation and before the new global turn's
+                    // callbacks.  Pets which lose sight of the hero consult
+                    // this ring on their next action.
+                    setTrack(g);
+                    g.moves = (g.moves || 1) + 1;
+                    if (g.moves >= 1000000000) {
+                        await flushPendingTopline();
+                        await plineWithContinuation('The dungeon capitulates.', { urgent: true });
+                        await finishHeroDeath({ killer: '', deathType: ESCAPED });
+                        break oncePerTurn;
+                    }
+                    if (g.flags.time && !g.context.run)
+                        g.context.time_botl = true;
+                    g._heroActionSeq = g.moves * 8;
+                    await currentLuaLifecycle().callCore(g, 'moveloop_turn');
+                    if (heroHasSlipperyHands(g))
+                        await slipFromSlipperyHands(g);
+                    // nh_timeout() precedes regeneration and exerchk() in the C loop.
+                    // C allmain.c:273 calls it between glibr() and run_regions(); the
+                    // countdown and its expiry messages live in timeout.ts.
+                    await nhTimeout();
+                    if (g.program_state?.gameover)
+                        break oncePerTurn;
+                    const sourceTurn = g.moves;
+                    await runLevelRegionTurn();
+                    if (g.program_state?.gameover)
+                        break oncePerTurn;
+                    if (g.u.ublesscnt > 0)
+                        g.u.ublesscnt--;
+                    // allmain.c:regen_hp() runs after nh_timeout().  If a timeout
+                    // pline suspended at tty, no regeneration or later maintenance
+                    // may run until that exact source stack resumes.
+                    const recoveryCapacity = g.u.invulnerable ? UNENCUMBERED : capacity;
+                    if (await regenerateHeroHp(recoveryCapacity, sourceTurn))
+                        await interruptCountedActivity('You are in full health.');
+                    if (g.program_state.gameover)
+                        break oncePerTurn;
+                    // C moveloop_core(): moving around while Strained or worse is hard work.
+                    if (recoveryCapacity > MOD_ENCUMBER && g.u.umoved
+                        && sourceTurn % (recoveryCapacity < EXT_ENCUMBER ? 30 : 10) === 0)
+                        await overexertHeroHp(g);
+                    await regen_pw(recoveryCapacity, sourceTurn, g);
+                    // C allmain.c:moveloop_core(): Teleportation, including a
+                    // teleporting form, moves the hero once in 85 turns. A move
+                    // away from a leashed follower checks the leash and cancels
+                    // queued and repeated commands.
+                    if (!g.u.invulnerable && heroCanTeleport(g) && !rn2(85)) {
+                        const from = { x: g.u.ux, y: g.u.uy };
+                        await teleportHero({ chooseDestination: askTeleportDestination });
+                        if (!(g.program_state.gameover
+                            || (g.u.ux === from.x && g.u.uy === from.y))) {
+                            if (!heroNextToLeashedFollowers())
+                                await checkHeroLeashes(from.x, from.y);
+                            cmdq_clear(CQ_CANNED);
+                            cmdq_clear(CQ_REPEAT);
+                        }
+                    }
+                    if (g.program_state.gameover)
+                        break oncePerTurn;
+                    // C allmain.c:moveloop_core(). A selected change waits
+                    // through involuntary delays and Unchanging; losing the
+                    // source of the change cancels it.
+                    if (!g.u.invulnerable) {
+                        const polymorph = propertyIsActive('polymorph', g);
+                        const infection = g.u.ulycn;
+                        const infected = infection !== undefined && infection >= 0
+                            && infection < MONSTER_NAME.length;
+                        if ((g._pendingHeroShapeChange === 'polymorph' && !polymorph)
+                            || (g._pendingHeroShapeChange === 'were' && !infected))
+                            delete g._pendingHeroShapeChange;
+                        if (polymorph && rn2(100) === 0)
+                            g._pendingHeroShapeChange = 'polymorph';
+                        else if (infected && !Upolyd(g.u)
+                            && rn2(80 - (sessionIsNight(g.datetime) ? 20 : 0)) === 0)
+                            g._pendingHeroShapeChange = 'were';
+                        if (g._pendingHeroShapeChange && !heroIsUnchanging(g)
+                            && !heroHasInvoluntaryDelay(g)) {
+                            await stopHeroOccupation(g);
+                            if (g._pendingHeroShapeChange === 'polymorph')
+                                await polymorphHero();
+                            else
+                                await applyHeroWereChange();
+                            delete g._pendingHeroShapeChange;
+                        }
+                    }
+                    if (g.program_state.gameover)
+                        break oncePerTurn;
+                    if (g.u?.searching && !g.level?.flags?.noautosearch
+                        && !heroHasInvoluntaryDelay(g)) {
+                        const search = await automaticSearch();
+                        if (typeof search === 'object' && search.statueTrap) {
+                            const { x, y } = search.statueTrap;
+                            const monster = await activateStatueTrapAt(x, y);
+                            if (monster)
+                                await exerciseAttribute(A_WIS, true);
+                        }
+                    }
+                    if (g.u.warning)
+                        await revealWarnedMonsters();
+                    if (g.were_changes)
+                        setHeroSpecies(heroSpecies(g), g);
+                    await warnWithMasterKey(g);
+                    // Each sound keeps its native message wait before later feature rolls.
+                    await dosounds();
+                    await doStorms(g);
+                    if (g.program_state.gameover)
+                        break oncePerTurn;
+                    await gethungry({ invulnerable: g.u.invulnerable });
+                    if (g.program_state.gameover)
+                        break oncePerTurn;
+                    // JS has already advanced `game.moves` for the hero action which caused
+                    // this maintenance pass.  C increments svm.moves inside this pass, so
+                    // the resulting C turn number is the existing JS value, not value + 1.
+                    await periodicTurnExercise(sourceTurn);
+                    await checkAttributeExercise(sourceTurn);
+                    // C allmain.c:357 — invault() runs here in the once-per-turn block,
+                    // after exerchk() and before the Amulet check.  Its interrogation
+                    // completes before the turn decrements negative multi, so a busy
+                    // hero's armor removal can finish below, paging the guard's
+                    // departure before the recovery message.
+                    await invault(g);
+                    if (g.u.uhave.amulet)
+                        await amuletTurn(g);
+                    if (!rn2(40 + currentAttribute(A_DEX) * 3))
+                        wipeHeroEngraving(rnd(3));
+                    // allmain.c's demigod intervention clock advances after engraving wear
+                    // and before environmental level motion. Complete any paged intervention
+                    // before restarting the countdown, as the synchronous C call does.
+                    if (g.u?.uevent?.udemigod && !g.u?.invulnerable) {
+                        if (g.u.udg_cnt !== undefined && g.u.udg_cnt > 0)
+                            g.u.udg_cnt--;
+                        if ((g.u.udg_cnt ?? 0) === 0) {
+                            await intervene();
+                            g.u.udg_cnt = 50 + rn2(200);
+                        }
+                    }
+                    // allmain.c's environmental owner runs after engraving wear.  Air and
+                    // Water share the moving bubble list created by fixup_special(); Fire
+                    // reuses the same fumarole sampler as initial arrival.
+                    if (Is_airlevel(g.u?.uz) || Is_waterlevel(g.u?.uz))
+                        await movebubbles();
+                    else if (g.level?.flags?.fumaroles)
+                        await fumaroles(g);
+                    // C allmain.c:379-388, still inside the once-per-turn block: an
+                    // immobile hero's delay output runs before the counter moves, so the
+                    // animation frames still see the helpless condition in the status
+                    // line.  Reaching zero calls unmul() and, when that scheduled
+                    // travel, deferred_goto().
+                    if (currentMulti(g) < 0) {
+                        // Dressing retains its physical topline through each negative-multi
+                        // frame; its armor effects still wait for unmul's recovery message.
+                        const delayedAction = pendingArmorAction(g);
+                        if (delayedAction) {
+                            if (g._pending_message) {
+                                delete delayedAction._runmodeRetainedTopline;
+                            }
+                            else if (!delayedAction._runmodeRetainedTopline) {
+                                delayedAction._runmodeRetainedTopline
+                                    = g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }));
+                            }
+                        }
+                        await captureRunmodeDelay(g, true, sourceTurn, {
+                            preservePhysicalTopline: true,
+                            retainedTopline: delayedAction?._runmodeRetainedTopline ?? null,
+                        });
+                        setMulti(currentMulti(g) + 1, g);
+                        if (currentMulti(g) === 0) {
+                            await finishHeroHelplessness();
+                            // if unmul() caused a level change, take it now
+                            await finishScheduledLevelChange();
+                        }
+                    }
+                }
                 if (g.program_state?.gameover)
                     return;
                 // Native encumber_msg() starts each further world round.
@@ -1131,11 +1052,41 @@ export async function runMoveloopCore() {
         g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
         // C moveloop_core() checks again after nh_timeout() can remove weight.
         await encumber_msg(g);
-        if (!g.program_state?.gameover)
-            await finishHeroTookTime(g.moves || 1);
+        if (!g.program_state?.gameover) {
+            // C allmain.c's `once-per-hero-took-time` tail, after the
+            // movement-ration loop has allocated as many global turns as the
+            // hero needs.  Burden can make one action span two allocations;
+            // seer_turn is checked only after the last one, against the
+            // final `moves` value.
+            const tookTimeTurn = g.moves || 1;
+            statusEvalNextUnhilite();
+            if (tookTimeTurn >= (g.seer_turn ?? Infinity)) {
+                if ((g.u.uhave.amulet || propertyIsActive('clairvoyant', g))
+                    && !In_endgame(g.u.uz) && !propertyIsBlocked('clairvoyant', g))
+                    await mapVicinity(null, { state: g });
+                // we maintain this counter even when clairvoyance isn't
+                // taking place; on average, go again 30 turns from now
+                g.seer_turn = tookTimeTurn + 15 + rn2(31);
+            }
+        }
     }
     if (movementRationActionPending && !g.program_state?.gameover) {
-        await settleHeroLiquidAfterAction();
+        // C allmain.c:422-436: a hero stuck in lava keeps sinking, an
+        // unmoved hero runs pooleffects(), and buried/underwater vision
+        // updates before see_nearby_monsters().
+        const finishLanding = ({ from, to }) => finishDestinationSpotEffects({
+            oldx: from.x, oldy: from.y, newx: to.x, newy: to.y,
+        });
+        if (g.u?.utrap && g.u.utraptype === TT_LAVA) {
+            await sinkHeroIntoLava({
+                state: g,
+                publish: plineWithContinuation,
+                applyLandingEffects: finishLanding,
+            });
+        }
+        else if (!g.u?.umoved) {
+            await applyHeroLiquidEffects(plineWithContinuation, { entry: 'turn' });
+        }
         if (g.program_state?.gameover)
             return;
         if (g.u.uinwater || g.underwater)
@@ -1243,7 +1194,20 @@ export async function runMoveloopCore() {
             return;
         if (g.vision_full_recalc)
             await vision_recalc(0);
-        markMultiStepStatusDirty(g);
+        // C allmain.c:moveloop_core() end-of-command display cadence: while
+        // a multi-step action is pending with no run or with teleport
+        // runmode, every 7th step marks the status line dirty (travel
+        // strides on moves, plain runs and count repeats on the remaining
+        // multi) so the next flush repaints the turn counter mid-run.
+        // Non-tport runs refresh through runmode_delay_output() instead, and
+        // display_nhwindow(WIN_MAP, FALSE) is a tty fflush with no screen
+        // effect.  C has one such site after rhack(); the port's separate
+        // run resumption repeats it here.
+        if ((!g.context.run || isTeleportRunmode(g)) && g.multi
+            && (g.context.travel ? (g.moves || 0) % 7 === 0 : g.multi % 7 === 0)
+            && g.flags.time && g.context.run) {
+            g.context.botl = true;
+        }
         if (continuation.tookTime) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             g._heroTimePending = true;
@@ -1272,7 +1236,13 @@ export async function runMoveloopCore() {
     // Falling into a pit narrows sight after domove()'s earlier refresh.
     if (g.vision_full_recalc)
         await vision_recalc(0);
-    markMultiStepStatusDirty(g);
+    // The same end-of-command display cadence as the run resumption above;
+    // this is the site C allmain.c:549-556 itself has, after rhack().
+    if ((!g.context.run || isTeleportRunmode(g)) && g.multi
+        && (g.context.travel ? (g.moves || 0) % 7 === 0 : g.multi % 7 === 0)
+        && g.flags.time && g.context.run) {
+        g.context.botl = true;
+    }
     // Advance turn
     if (g.context?.move) {
         g.u.umovement = (g.u.umovement ?? 12) - 12;
@@ -1280,13 +1250,22 @@ export async function runMoveloopCore() {
     }
     await currentLuaLifecycle().runCallbacks(g, 'end_turn');
 }
+// Part of C allmain.c:moveloop_core(): the contest play page calls this once
+// per keystroke. While a NethackGame drives the live game, the call hands
+// its engine one display key and waits for the next input boundary;
+// otherwise it runs the C-shaped body in runMoveloopCore() directly.
+export async function moveloop_core() {
+    if (playStep && playStep.state === game)
+        return playStep.step();
+    return runMoveloopCore();
+}
 // C allmain.c:moveloop()
 export async function moveloop(resuming) {
     const game = requireInitializedGame();
     await docrt();
     await flush_screen(1);
     for (;;) {
-        await runMoveloopCore();
+        await moveloop_core();
         if (game.program_state?.gameover)
             break;
     }

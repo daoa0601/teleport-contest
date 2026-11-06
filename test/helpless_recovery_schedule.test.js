@@ -10,7 +10,7 @@ import { putHeroToSleep } from '../js/timeout.js';
 import { HOLE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { dopray } from '../js/pray.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
-import { grantIntrinsicProperty } from '../js/properties.js';
+import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { statusConditionBit } from '../js/botl.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -67,6 +67,21 @@ void test('recovery waits behind a monster line still holding the pager', async 
     await drainHelplessTurns();
     const transcript = messages.join('\n');
     assert.match(transcript, /jackal bites[\s\S]*You wake up\./, 'The waking line follows the attack that still owned the topline');
+});
+// C allmain.c:273 vs 379-388: nh_timeout() runs inside the same
+// once-per-turn block that counts the negative multi down to zero, so a
+// timeout expiry of the recovery turn pages before unmul()'s recovery line.
+void test('a timeout expiry of the recovery turn pages before the recovery line', async () => {
+    const input = freshTurnRoom();
+    requirePlayingGame(game);
+    const messages = [];
+    recordToplines(input, messages);
+    setPropertyTimeout('confusion', 1);
+    nomul(-1);
+    game._helplessReason = "frozen by a monster's gaze";
+    await drainHelplessTurns();
+    const transcript = messages.join('\n');
+    assert.match(transcript, /You feel less confused now\.[\s\S]*You can move again\./, 'nh_timeout() finishes its line before unmul() recovers the hero');
 });
 // C allmain.c:383 unmul() -> afternmv: interrupted armor removal finishes on
 // the same turn the counter reaches zero, after the recovery line.
