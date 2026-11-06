@@ -2,7 +2,6 @@
 src/js/apply.ts	apply.c
 src/js/artifact.ts	artifact.c
 src/js/attrib.ts	attrib.c
-src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
 src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
@@ -81,7 +80,6 @@ src/js/steed.ts	steed.c
 src/js/teleport.ts	teleport.c
 src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
-src/js/tip_hat.ts	sounds.c
 src/js/topl.ts	topl.c
 src/js/topten.ts	topten.c
 src/js/track.ts	track.c
