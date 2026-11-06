@@ -2380,10 +2380,11 @@ async function doorganizeCore(object, splitting, inventory) {
         await plineWithContinuation(`Moving: ${bumped.invlet} - ${await inventoryItemDescription(bumped)}.`);
     game.context.move = 0;
 }
-// C pickup.c:query_objlist()'s INCLUDE_HERO branch: an engulfer's loot
-// menu closes after the last class group with an "Engulfed Creatures"
-// heading ("Swallowed" when the engulfer digests) and a fake hero entry
-// selectable through CONTAINED_SYM and described by an(self_lookat()).
+// Part of C pickup.c:query_objlist(): its INCLUDE_HERO branch — an
+// engulfer's loot menu closes after the last class group with an
+// "Engulfed Creatures" heading ("Swallowed" when the engulfer digests)
+// and a fake hero entry selectable through CONTAINED_SYM and described
+// by an(self_lookat()).
 export function engulfedHeroMenuSection(monster) {
     // query_objlist() attaches a monster glyph even though tty only shows text.
     transientMonsterGlyph({ mnum: heroSpecies(game),

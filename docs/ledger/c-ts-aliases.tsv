@@ -207,7 +207,6 @@ newman	renewHumanForm
 arti_invoke	invokeArtifactPower
 arti_invoke_cost	beginInvocation
 invoke_storm_spell	invokeStorm
-enlightenment	showEnlightenment
 get_artifact	artifactById
 maze_remove_deadends	openDeadEnds
 pick_vibrasquare_location	vibratingSquarePoint

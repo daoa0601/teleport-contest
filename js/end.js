@@ -10,11 +10,11 @@ import { encumber_msg } from './pickup.js';
 import { cureHeroSickness } from './potion.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { endmultishot } from './dothrow.js';
-import { BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, PANICKED, PICK_ONE, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd, LL_CONDUCT, } from './const.js';
+import { BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BASICENLIGHTENMENT, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, MAGICENLIGHTENMENT, PANICKED, PICK_ONE, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd, LL_CONDUCT, } from './const.js';
 import { isok, setMulti, paranoidQuery } from './cmd.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
-import { achievementEntries, recordAchievement, finalConductLines, listGenocided, setVanqOrder, showFinalAttributes, vanquishedLines, vanquishedTypeCount, } from './insight.js';
+import { achievementEntries, recordAchievement, finalConductLines, listGenocided, setVanqOrder, enlightenment, vanquishedLines, vanquishedTypeCount, } from './insight.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { heroFormSticks } from './polyself.js';
@@ -677,7 +677,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
             ? await ynQuestion('Do you want to see your attributes?', 'ynq', defquery, { menuable: true })
             : defquery;
         if (attributes === 'y')
-            await showFinalAttributes({ final: survived ? ENL_GAMEOVERALIVE : ENL_GAMEOVERDEAD, killer });
+            await enlightenment(BASICENLIGHTENMENT | MAGICENLIGHTENMENT, survived ? ENL_GAMEOVERALIVE : ENL_GAMEOVERDEAD, killer);
         if (attributes === 'q')
             return stopDisclosure();
     }

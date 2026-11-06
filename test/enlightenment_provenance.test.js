@@ -3,7 +3,7 @@ import test from 'node:test';
 import { applyNethackrc } from '../js/cfgfiles.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { game, requireGameDisplay, requireInitializedGame } from '../js/gstate.js';
-import { showEnlightenment, showFinalAttributes } from '../js/insight.js';
+import { enlightenment } from '../js/insight.js';
 import { resetInputState } from '../js/input.js';
 import { finishOrdinaryQuit } from '../js/end.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -16,7 +16,7 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
-import { A_INT, A_STR, ENL_GAMEOVERDEAD, POOL, W_TOOL } from '../js/const.js';
+import { A_INT, A_STR, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, POOL, W_TOOL } from '../js/const.js';
 import { races } from '../js/role.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createSaddledSteed } from './support/monsters.js';
@@ -28,7 +28,7 @@ async function enlightenmentText(basic = false, final = false, magic = true) {
     // the full-screen menu, so each row carries only report text.
     const savedOverlay = game.flags.menu_overlay;
     game.flags.menu_overlay = false;
-    const report = final ? showFinalAttributes({ final: ENL_GAMEOVERDEAD }) : showEnlightenment({ basic, magic });
+    const report = enlightenment((basic ? BASICENLIGHTENMENT : 0) | (magic ? MAGICENLIGHTENMENT : 0), final ? ENL_GAMEOVERDEAD : ENL_GAMEINPROGRESS);
     const lines = [];
     try {
         let pages = 0;

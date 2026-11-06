@@ -19,7 +19,7 @@ import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { expiredFatally } from './timeout.js';
 import { gameLogEvents, pline, recordGameLogEvent } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWindow, ATR_NONE, showInventoryWindow } from './windows.js';
-import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
+import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
 import { simpleArmorName, fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import {
     SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE,
@@ -70,8 +70,6 @@ import { heroIsPetrifying } from './stoning.js';
 import { depth, endgameLevelName, levelHasCeiling, surfaceName, ceilingName } from './dungeon.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal, monsterIsClinger, monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterHasEyes } from './mondata.js';
-
-export interface EnlightenmentOptions { basic?: boolean; magic?: boolean }
 
 function plural(n: number, singular: string, pluralForm = `${singular}s`) {
     return n === 1 ? singular : pluralForm;
@@ -856,39 +854,45 @@ export function monkArmorPenalty(): number {
         ? game.urole.spellcasting.armor : 0;
 }
 
-// C enlightenment() uses add_menu_str() while the game is in progress.
-// The shared disclosure lines already include the tty menu leading column.
-function attributeMenuLines({ basic = true, magic = false }: EnlightenmentOptions = {}): string[] {
-    const roleName = enlightenmentRoleName();
+// C insight.c:enlightenment(): the one window behind both the in-progress
+// ^X menu and end.c:disclose()'s gameover "Final Attributes".  C's
+// ge.en_via_menu = !final picks the display: while the game runs the rows
+// are add_menu_str() entries answered through select_menu(PICK_NONE), and
+// the final form is displayed through putstr().  The section builders emit
+// the tty menu's leading column; both forms drop it below.
+export async function enlightenment(
+    mode: number, final: EnlightenmentFinal, killer = '',
+): Promise<void> {
+    const basic = (mode & BASICENLIGHTENMENT) !== 0;
+    const magic = (mode & MAGICENLIGHTENMENT) !== 0;
+    // title
     const lines = [
-        ` ${game.displayName || game.plname} the ${roleName}'s attributes:`,
+        ` ${game.displayName || game.plname} the ${enlightenmentRoleName()}'s attributes:`,
     ];
-    if (basic) lines.push(...backgroundEnlightenmentLines(), ...basicsEnlightenmentLines(), ...characteristicEnlightenmentLines(magic));
+    // background and characteristics; ^X or end-of-game disclosure
+    if (basic) {
+        // role, race, alignment, deities, dungeon level, time, experience
+        lines.push(...backgroundEnlightenmentLines(final));
+        // hit points, energy points, armor class, gold
+        lines.push(...basicsEnlightenmentLines(final));
+        // strength, dexterity, &c
+        lines.push(...characteristicEnlightenmentLines(magic, final));
+    }
+    // expanded status line information, including things which aren't
+    // included there due to space considerations; shown for both basic
+    // and magic enlightenment
+    lines.push('', ` ${final ? 'Final ' : ''}Status:`,
+        ...statusEnlightenmentLines(magic, final, killer), ...statusEquipmentLines(final));
+    // remaining attributes; shown for potion,&c or wizard mode and
+    // explore mode ^X or end of game disclosure
+    if (magic) {
+        // intrinsics and other traditional enlightenment feedback
+        lines.push(...attributeEnlightenmentLines(final));
+    }
 
-    lines.push('', ' Status:', ...statusEnlightenmentLines(magic));
-    lines.push(...statusEquipmentLines());
-
-    if (magic) lines.push(...attributeEnlightenmentLines());
-
-    lines.push(...miscellaneousLines(basic));
-    return lines.map(line => line.startsWith(' ') ? line.slice(1) : line);
-}
-
-export async function showEnlightenment(options: EnlightenmentOptions = {}) {
-    await showTextMenuOverlay(attributeMenuLines(options));
-}
-
-export async function doattributes() {
-    const magic = !!(game.flags?.debug || game.flags?.explore);
-    await showEnlightenment({ magic });
-    game.context.move = 0;
-}
-
-// C insight.c:enlightenment() "Miscellaneous" section.  The recorder's
-// fixed clock leaves urealtime.realtime at zero, so elapsed time is " none".
-// C insight.c:fmt_elapsed_time(): the zero elapsed-time line it would build.
-function miscellaneousLines(basic: boolean, final: EnlightenmentFinal = 0): string[] {
-    const lines = ['', ' Miscellaneous:'];
+    // separator and the "Miscellaneous" section C writes inline here.
+    // reminder to player and/or information for dumplog
+    lines.push('', ' Miscellaneous:');
     const wizard = !!game.flags.debug, discover = !!game.flags.explore;
     if (basic && (wizard || discover || final)) {
         if (wizard || discover)
@@ -906,44 +910,36 @@ function miscellaneousLines(basic: boolean, final: EnlightenmentFinal = 0): stri
             } else lines.push(`  You ${final ? '' : 'have '}encountered ${bones} bones level${bones === 1 ? '' : 's'}.`);
         }
     }
+    // C insight.c:fmt_elapsed_time(): the recorder's fixed clock leaves
+    // urealtime.realtime at zero, so elapsed time is " none".
     lines.push(`  Total elapsed playing time ${final ? 'was' : 'is'} none.`);
-    return lines;
-}
 
-export interface FinalAttributeOptions {
-    final: typeof ENL_GAMEOVERALIVE | typeof ENL_GAMEOVERDEAD;
-    // svk.killer.name; a dismount death excludes the steed from Final Status.
-    killer?: string;
-}
-
-function finalAttributePages({ final, killer = '' }: FinalAttributeOptions): TextPage[] {
-    const lines = [
-        ` ${game.displayName || game.plname} the ${enlightenmentRoleName()}'s attributes:`,
-        ...backgroundEnlightenmentLines(final),
-        ...basicsEnlightenmentLines(final),
-        ...characteristicEnlightenmentLines(true, final),
-        '', ' Final Status:', ...statusEnlightenmentLines(true, final, killer),
-        ...statusEquipmentLines(final),
-    ];
-    lines.push(...attributeEnlightenmentLines(final), ...miscellaneousLines(true, final));
-    // Final disclosure uses putstr(), without the menu's extra leading column.
+    // add_menu_str() drops the menu's leading column; so does the final
+    // putstr() form.
     const textLines = lines.map(line => line.startsWith(' ') ? line.slice(1) : line);
+    if (!final) {
+        // en_via_menu: the rows are menu entries, answered with PICK_NONE.
+        await showTextMenuOverlay(textLines);
+        return;
+    }
+    // Final disclosure uses putstr(), without the menu's extra leading
+    // column; the tty text window pages 23 rows at a time.
     const pages: TextPage[] = [];
     for (let offset = 0; offset < textLines.length; offset += 23) {
         const pageLines = textLines.slice(offset, offset + 23);
         pageLines.push(' --More--');
         pages.push({ lines: pageLines, cursor: [9, pageLines.length - 1] });
     }
-    return pages;
+    await showTextPages(pages, { validKeys: [27, 32, 10, 13] });
 }
 
-// C insight.c:enlightenment(): the final-gameover form end.c:disclose()
-// requests with BASICENLIGHTENMENT | MAGICENLIGHTENMENT; the in-progress
-// menu form is showEnlightenment().
-export async function showFinalAttributes(options: FinalAttributeOptions) {
-    return showTextPages(finalAttributePages(options), {
-        validKeys: [27, 32, 10, 13],
-    });
+// C insight.c:doattributes(): ^X.  Wizard and explore modes show more, as
+// if final disclosure.
+export async function doattributes() {
+    const mode = BASICENLIGHTENMENT
+        | (game.flags?.debug || game.flags?.explore ? MAGICENLIGHTENMENT : 0);
+    await enlightenment(mode, ENL_GAMEINPROGRESS);
+    game.context.move = 0;
 }
 
 // C insight.c:youhiding(): the shared phrase for #monster feedback and the
