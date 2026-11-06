@@ -42,6 +42,7 @@ import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.
 import { heroIsUnconscious } from './trap.js';
 import { monsterIsHumanoid } from './mondata.js';
 
+// C botl.c:get_strength_str()
 // C ref: botl.c:get_strength_str(): strength values above 18 encode the exceptional
 // 18/xx range; 118 is the traditional 18/** maximum.
 export function formatStrength(value: number | null | undefined) {
@@ -52,6 +53,7 @@ export function formatStrength(value: number | null | undefined) {
     return `18/${String(value - 18).padStart(2, '0')}`;
 }
 
+// C botl.c:check_gold_symbol()
 // botl.c:check_gold_symbol(). This process flag changes at explicit
 // option and level-change boundaries; dorecover() leaves it alone.
 export function checkGoldSymbol(): void {
@@ -106,6 +108,8 @@ export interface StatusLine2Fields {
     version: string;
 }
 
+// Part of C botl.c:do_statusline2(): the field values gathered for the
+// windowport evaluation.
 // The second status line's fields, gathered for the windowport evaluation;
 // do_statusline2() above shows the same values as one string. The location
 // label comes from describeLevel() below, with the trailing blanks that
@@ -146,6 +150,7 @@ function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     };
 }
 
+// C botl.c:bot()
 // ── bot ──
 export async function bot() {
     refreshStatusLines();
@@ -253,6 +258,7 @@ export function experienceRankIndex(level: number) {
     return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
 }
 
+// Port only: the Role_switch species number C keeps as a global.
 // C include/you.h Role_switch (gu.urole.mnum): the hero's role as a player
 // monster species number. Roles store the 0-based mnum, so the species
 // number is SPECIAL_PM + 1 + mnum, as u_init.ts computes for u.umonster.
@@ -345,6 +351,7 @@ const definitions: readonly ConditionDefinition[] = [
 const defaultMask = definitions.reduce((mask, condition, index) =>
     condition.enabled ? mask | (1 << index) : mask, 0);
 
+// Part of C botl.c:parse_cond_option(): the per-condition bit indexing.
 export function statusConditionBit(text: ConditionText): number {
     const index = definitions.findIndex(condition => condition.text[0] === text[0]);
     return index >= 0 ? 1 << index : 0;
@@ -376,12 +383,15 @@ export function statusConditions(state: GameState): readonly ConditionText[] {
     return selected.map(condition => condition.text);
 }
 
+// Part of C botl.c:condopt(): testing one condition's enabled bit.
 export function statusConditionEnabled(name: ConditionName, state: GameState): boolean {
     const mask = state.flags.statusConditionMask ?? defaultMask;
     return definitions.some((condition, index) =>
         condition.option === name && (mask & (1 << index)) !== 0);
 }
 
+// Part of C botl.c:cond_menu(): the enumerated conditions with their
+// bits and ranks.
 export function statusConditionOptions(state: GameState) {
     const mask = state.flags.statusConditionMask ?? defaultMask;
     return definitions.map((condition, index) => ({
@@ -390,6 +400,8 @@ export function statusConditionOptions(state: GameState) {
     }));
 }
 
+// Part of C botl.c:evaluate_and_notify_windowport(): the per-condition
+// evaluation behind BL_CONDITION.
 function conditionApplies(
     name: ConditionName, state: GameState, enabled: (name: ConditionName) => boolean,
 ): boolean {
@@ -521,6 +533,7 @@ export function describeLevel(dflgs: number, state: GameState = game): string {
     return description;
 }
 
+// C botl.c:weapon_status()
 // ── botl.c:weapon_status() and armor_status() ──
 export function weaponStatus(state: GameState): string {
     const weapon = state.uwep;
@@ -551,11 +564,13 @@ export function weaponStatus(state: GameState): string {
     return `${twoHanded ? '2H-' : ''}${text.replace(/ /g, '-')}`;
 }
 
+// C weapon.c:weapon_type()
 function weaponSkill(object: GameObject | null | undefined): number {
     return object && [WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(object.oclass)
         ? Math.abs(objectSkill(object.otyp)) : 0;
 }
 
+// C botl.c:armor_status()
 export function armorStatus(state: GameState): string {
     const armor: readonly (readonly [GameObject | null | undefined, string, string])[] = [
         [state.uarmg, 'G', 'gloves'], [state.uarmc, 'C', 'cloak'],
@@ -583,12 +598,16 @@ const descriptions: readonly string[] = [
     'Floor', 'Ground', 'Open-door', 'Shut-door', 'Swamp', 'Submerged', 'Sea', 'WaterWall',
 ];
 
+// Part of C botl.c:evaluate_and_notify_windowport(): the BL_TERRAIN
+// label from the terrain_descr table.
 export function statusTerrain(state: GameState): string {
     if (state.iflags.terrain_typ === undefined || state.iflags.terrain_typ === MAX_TYPE)
         classifyStatusTerrain(state);
     return descriptions[state.iflags.terrain_typ ?? MAX_TYPE] ?? '';
 }
 
+// Part of C wintty.c:status_update(): the bar_pos computation for the
+// hitpoint bar.
 // ── botl.c:percentage() feeding wintty.c's bar_pos ──
 // botl.c:percentage() feeding wintty.c:5220-5229's bar_pos, the number of
 // lit cells in the fixed thirty-character bar.  Dead heroes light nothing;
@@ -783,6 +802,7 @@ export class StatusHighlights {
     }
 }
 
+// C botl.c:get_hilite()
 // C best-fit precedence is shared between absolute and percentage rules:
 // exact matches win; otherwise prefer the closest lower/upper bound. Change
 // rules override persistent rules, and a qualifying critical-HP rule wins.
@@ -852,6 +872,8 @@ function isPolymorphedTitleFallback(text: string): boolean {
         || text.replace(/[" _()\-]/g, '').toLowerCase() === 'noneoftheabovepolymorphed';
 }
 
+// Part of C botl.c:eval_notify_windowport_field(): the old-vs-new
+// comparison behind change rules.
 function compare(previous: number | string, current: number | string): number {
     // C sgn(): the direction of the difference.
     if (typeof previous === 'string' && typeof current === 'string')
@@ -859,6 +881,8 @@ function compare(previous: number | string, current: number | string): number {
     return previous < current ? 1 : previous > current ? -1 : 0;
 }
 
+// Part of C botl.c:get_hilite(): the fuzzymatch() normalization of
+// textmatch values.
 function fuzzyText(text: string): string { return text.replace(/[" _-]/g, '').toLowerCase(); }
 
 // C botl.c:anything_to_s(): format numeric status values as text.
@@ -866,14 +890,17 @@ function numberValue(value: number, raw = value, percent = 0, text = String(valu
     return { value, raw, percent, text };
 }
 
+// Part of C botl.c:anything_to_s(): the string-typed field value.
 function textValue(text: string): FieldValue { return { value: text, raw: text, text, percent: 0 }; }
 
+// C botl.c:percentage()
 function percentage(value: number, maximum: number): number {
     if (!maximum) return 0;
     const percent = Math.trunc(100 * value / maximum);
     return value && !percent ? 1 : percent;
 }
 
+// C botl.c:exp_percentage()
 // botl.c exp_percentage(): the final point before a new level counts as 100%.
 function experiencePercentage(state: GameState): number {
     const level = state.u.ulevel ?? 1;
@@ -884,6 +911,8 @@ function experiencePercentage(state: GameState): number {
     return progress === range - 1 ? 100 : percentage(progress, range);
 }
 
+// Part of C botl.c:evaluate_and_notify_windowport(): every field's
+// current value, gathered for evaluation.
 function fieldValues(state: GameState, fields: StatusLine2Fields): Map<number, FieldValue> {
     const hero = state.u;
     const hp = Math.max(0, (Upolyd(hero) ? hero.mh : hero.uhp) ?? 0);
@@ -925,11 +954,14 @@ function fieldValues(state: GameState, fields: StatusLine2Fields): Map<number, F
     return values;
 }
 
+// Port only: strip ANSI escapes from a composed status line.
 function plainStatusText(text: string): string {
     return text.replace(/\x1b\[(\d+)C/g, (_match, count) => ' '.repeat(Number(count)))
         .replace(/\x1b\[[0-9;]*m/g, '');
 }
 
+// Part of C wintty.c:status_update(): the field spans of the first
+// status line.
 export function firstStatusLineSpans(text: string, hitpointBar: boolean,
     hitpointBarFill = 0): StatusFieldSpan[] {
     const plain = plainStatusText(text);
@@ -948,6 +980,8 @@ export function firstStatusLineSpans(text: string, hitpointBar: boolean,
     return spans;
 }
 
+// Part of C wintty.c:status_update(): the HL_* to ATR_* attribute
+// mapping.
 // term_attr_fixup() is identity for the recorded terminal, so hilite
 // attribute masks map straight onto terminal attributes.
 function hiliteAttributes(mask: number): number {
@@ -1006,6 +1040,8 @@ const STATUS_FIELDS: readonly { fld: number; name: string; anytype: AnyType; idx
 if (STATUS_FIELDS.length !== MAXBLSTATS) throw new Error('initblstats must list every status field');
 
 /** botl.c initblstats[] table for the config rule parser. */
+// Port only: accessor exposing the initblstats field table to the config
+// rule parser.
 export function statusFieldTable() {
     return STATUS_FIELDS;
 }
@@ -1025,6 +1061,7 @@ const HILITE_CONDITIONS: readonly (readonly [number, string])[] = [
 ];
 
 /** botl.c conditions[] for the config rule parser. */
+// Port only: accessor exposing C botl.c conditions[] to the rule parser.
 export function conditionEntries() {
     return HILITE_CONDITIONS;
 }
@@ -1052,6 +1089,8 @@ const CONDITION_ALIASES: readonly (readonly [string, number])[] = [
 ];
 
 /** botl.c condition_aliases[] for the config rule parser. */
+// Port only: accessor exposing C botl.c condition_aliases[] to the rule
+// parser.
 export function conditionAliasEntries() {
     return CONDITION_ALIASES;
 }
@@ -1063,28 +1102,35 @@ const ALIGN_TEXTS: readonly string[] = ['chaotic', 'neutral', 'lawful'];
 const HUNGER_TEXTS: readonly (string | null)[] = ['Satiated', null, 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'];
 
 /** botl.c enc_stat[] indices SLT_ENCUMBER..OVERLOADED. */
+// Port only: accessor exposing C botl.c enc_stat[] to the rule parser.
 export function encStatNames() {
     return ENC_STAT;
 }
 
 /** botl.c aligntxt[]. */
+// Port only: accessor exposing C botl.c aligntxt[] to the rule parser.
 export function alignTexts() {
     return ALIGN_TEXTS;
 }
 
 /** botl.c hutxt[]: hu_stat[] names between Satiated and Starved. */
+// Port only: accessor exposing eat.c's hu_stat[] hunger names to the rule
+// parser.
 export function hungerTexts() {
     return HUNGER_TEXTS;
 }
 
+// Port only: lazy accessor for the per-field hilite rule store.
 function fieldThresholds(): StatusHiliteRule[][] {
     return game.iflags.statusThresholds ??= Array.from({ length: MAXBLSTATS }, () => []);
 }
 
+// Port only: lazy accessor for the condition color/attribute array.
 function condHilites(): number[] {
     return game.iflags.condHilites ??= new Array<number>(BL_ATTCLR_MAX).fill(0);
 }
 
+// C botl.c:conditionbitmask2str()
 // botl.c conditionbitmask2str(): canonical names joined with '+', replaced
 // by an alias name when the whole mask equals that alias.
 function conditionBitmaskToString(mask: number): string {
@@ -1097,6 +1143,7 @@ function conditionBitmaskToString(mask: number): string {
     return text && alias ? alias : text;
 }
 
+// C botl.c:hlattr2attrname()
 // botl.c hlattr2attrname(): the attribute half of a hilite rule's
 // coloridx, as written into config-format rule text.
 function hlAttrToAttrName(attrib: number): string | null {
@@ -1112,6 +1159,7 @@ function hlAttrToAttrName(attrib: number): string | null {
     return parts.join('+') || null;
 }
 
+// C botl.c:status_hilite2str()
 // botl.c status_hilite2str(): the config-format "field/behavior/color"
 // rendering of one rule. a_int reads truncate the stored value to 32 bits
 // for both int and long rules, as C's union read does in practice.
@@ -1164,6 +1212,7 @@ function linestrCountField(fld: number): number {
     return hiliteStrs.reduce((count, line) => count + (fld === BL_FLUSH || line.fld === fld ? 1 : 0), 0);
 }
 
+// C botl.c:status_hilite_linestr_gather_conditions()
 // botl.c status_hilite_linestr_gather_conditions(): every condition mask
 // that shares a color/attribute pair becomes one grouped rule row.
 function linestrGatherConditions(): void {
@@ -1211,6 +1260,7 @@ function linestrGather(): void {
     linestrGatherConditions();
 }
 
+// C botl.c:count_status_hilites()
 // botl.c count_status_hilites(), used by the options-menu rows.
 export function countStatusHilites(): number {
     linestrGather();
@@ -1219,10 +1269,12 @@ export function countStatusHilites(): number {
     return count;
 }
 
+// C botl.c:clear_status_hilites()
 export function clearStatusHilites(iflags: InterfaceFlags = game.iflags): void {
     iflags.statusThresholds = Array.from({ length: MAXBLSTATS }, () => []);
 }
 
+// C botl.c:reset_status_hilites()
 // botl.c reset_status_hilites(): the tty repaint (disp.botlx = TRUE, a full
 // BL_RESET render of both rows) is carried by context.botl here because every
 // status refresh repaints the rows in full; the update_all round that
@@ -1232,6 +1284,7 @@ export function resetStatusHilites(): void {
     game.context.botl = true;
 }
 
+// C botl.c:query_conditions()
 // botl.c query_conditions(): PICK_ANY over the condition names.
 async function queryConditions(): Promise<number> {
     const picks = await showMultiSelectWindow<number>({
@@ -1242,6 +1295,7 @@ async function queryConditions(): Promise<number> {
     return (picks ?? []).reduce((mask, bit) => mask | bit, 0);
 }
 
+// C botl.c:query_arrayvalue()
 // botl.c query_arrayvalue(): PICK_ONE over a slice of a name table.
 async function queryArrayValue(prompt: string, values: readonly (string | null)[],
     arrmin: number, arrmax: number): Promise<number> {
@@ -1261,6 +1315,7 @@ async function queryArrayValue(prompt: string, values: readonly (string | null)[
     return picks[0] - adj;
 }
 
+// C botl.c:status_hilite_menu_choose_field()
 // botl.c status_hilite_menu_choose_field(): BL_FLUSH when nothing is picked.
 async function statusHiliteMenuChooseField(): Promise<number> {
     const thresholds = fieldThresholds();
@@ -1280,6 +1335,7 @@ async function statusHiliteMenuChooseField(): Promise<number> {
     return picks[0] - 1;
 }
 
+// C botl.c:status_hilite_menu_choose_behavior()
 // botl.c status_hilite_menu_choose_behavior(): BL_TH_NONE-1 for a cancelled
 // menu, BL_TH_NONE for an answered-but-empty one.
 async function statusHiliteMenuChooseBehavior(fld: number): Promise<number> {
@@ -1327,6 +1383,7 @@ async function statusHiliteMenuChooseBehavior(fld: number): Promise<number> {
     return picks[0];
 }
 
+// C botl.c:status_hilite_menu_choose_updownboth()
 // botl.c status_hilite_menu_choose_updownboth().
 async function statusHiliteMenuChooseUpDownBoth(
     fld: number, str: string | null, ltok: boolean, gtok: boolean,
@@ -1358,6 +1415,7 @@ async function statusHiliteMenuChooseUpDownBoth(
     return picks[0] - 10;
 }
 
+// C botl.c:status_hilite_menu_add()
 // botl.c status_hilite_menu_add(): one whole rule entry session, including
 // C's goto retry structure. Returns whether a rule was added.
 async function statusHiliteMenuAdd(origfld: number): Promise<boolean> {
@@ -1619,6 +1677,7 @@ async function statusHiliteMenuAdd(origfld: number): Promise<boolean> {
     }
 }
 
+// Part of C botl.c:status_hilite_menu_add(): the BL_TITLE textmatch rows.
 // botl.c status_hilite_menu_add() BL_TITLE branch: the role's nine ranks,
 // female variants first for a female hero, then the polymorph fallback.
 function titleTextMatchRows(): string[] {
@@ -1643,6 +1702,7 @@ function titleTextMatchRows(): string[] {
     return rows;
 }
 
+// C botl.c:status_hilite_remove()
 // botl.c status_hilite_remove().
 function statusHiliteRemove(id: number): boolean {
     const line = hiliteStrs.find(entry => entry.id === id);
@@ -1666,6 +1726,7 @@ function statusHiliteRemove(id: number): boolean {
     return true;
 }
 
+// C botl.c:status_hilite_menu_fld()
 // botl.c status_hilite_menu_fld().
 async function statusHiliteMenuFld(fld: number): Promise<boolean> {
     const field = STATUS_FIELDS[fld];
@@ -1710,12 +1771,14 @@ async function statusHiliteMenuFld(fld: number): Promise<boolean> {
     return acted;
 }
 
+// C botl.c:status_hilites_viewall()
 // botl.c status_hilites_viewall(): every rule in config format.
 async function statusHilitesViewAll(): Promise<void> {
     const lines = hiliteStrs.map(line => `OPTIONS=hilite_status: ${line.str}`);
     await showTextWindow(lines);
 }
 
+// C botl.c:status_hilite_menu()
 // botl.c status_hilite_menu(): the "status highlight rules" handler.
 export async function statusHiliteMenu(): Promise<boolean> {
     let countAll = 0;
@@ -1805,6 +1868,7 @@ export function repadWithDashes(text: string): string {
     return text;
 }
 
+// C botl.c:fldname_to_bl_indx()
 // botl.c fldname_to_bl_indx().
 function fieldNameToIndex(name: string): number {
     const table = statusFieldTable();
@@ -1833,16 +1897,19 @@ function fieldNameToIndex(name: string): number {
     return matches === 1 ? fld : BL_FLUSH;
 }
 
+// C botl.c:is_ltgt_percentnumber()
 // botl.c is_ltgt_percentnumber(): "[<>]?=?[-+]?[0-9]+%?"
 function isLtgtPercentNumber(text: string): boolean {
     return /^[<>]?=?[+-]?\d+%?$/.test(text);
 }
 
+// C botl.c:has_ltgt_percentnumber()
 // botl.c has_ltgt_percentnumber().
 function hasLtgtPercentNumber(text: string): boolean {
     return /^[<>=\-+0-9%]*$/.test(text);
 }
 
+// C botl.c:splitsubfields()
 // botl.c splitsubfields(): split on '+' or '&'.
 function splitSubfields(text: string): string[] {
     const pieces = text.split(/[+&]/);
@@ -1863,6 +1930,8 @@ function isFieldArrayValue(text: string, values: readonly (string | null)[],
     return null;
 }
 
+// Part of C botl.c:s_to_anything(): atoi()/atol() semantics for the
+// numeric parse.
 // botl.c s_to_anything(): C's atoi()/atol() semantics stop at the first
 // non-digit, so a leading number is read and anything after it ignored.
 function cAtoi(text: string): number {
@@ -1870,6 +1939,7 @@ function cAtoi(text: string): number {
     return match ? Number.parseInt(match[0], 10) : 0;
 }
 
+// Port only: strip the given characters from a string.
 function stripChars(text: string, remove: string): string {
     return [...text].filter(character => !remove.includes(character)).join('');
 }
@@ -1882,6 +1952,7 @@ export interface StatusHiliteOperation {
 }
 
 /** botl.c parse_status_hl1(): split one config entry into rules. */
+// C botl.c:parse_status_hl1()
 export function parseStatusHl1(option: string, addError: (message: string) => void,
     fromConfigFile = false, operations: StatusHiliteOperation[] = []): boolean {
     const MAX_THRESH = 21;
@@ -1928,6 +1999,7 @@ export function parseStatusHl1(option: string, addError: (message: string) => vo
 }
 
 /** botl.c parse_status_hl2(): parse one field/behavior/color rule. */
+// C botl.c:parse_status_hl2()
 export function parseStatusHl2(fields: readonly string[], addError: (message: string) => void,
     fromConfigFile = false, operations: StatusHiliteOperation[] = []): boolean {
     void fromConfigFile;
@@ -2122,6 +2194,7 @@ export function parseStatusHl2(fields: readonly string[], addError: (message: st
 }
 
 /** botl.c parse_condition(). */
+// C botl.c:parse_condition()
 function parseCondition(fields: readonly string[], start: number,
     addError: (message: string) => void, operations: StatusHiliteOperation[]): boolean {
     let result = false;
@@ -2175,6 +2248,7 @@ function parseCondition(fields: readonly string[], start: number,
     return result;
 }
 
+// C botl.c:str2conditionbitmask()
 // botl.c str2conditionbitmask().
 function str2ConditionBitmask(text: string, addError: (message: string) => void): number {
     let mask = 0;
@@ -2191,6 +2265,7 @@ function str2ConditionBitmask(text: string, addError: (message: string) => void)
     return mask;
 }
 
+// C botl.c:match_str2conditionbitmask()
 // botl.c match_str2conditionbitmask().
 function matchConditionBitmask(text: string): number {
     let mask = 0;

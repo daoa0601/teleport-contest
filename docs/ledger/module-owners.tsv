@@ -4,7 +4,6 @@ src/js/apply.ts	apply.c
 src/js/artifact.ts	artifact.c
 src/js/attrib.ts	attrib.c
 src/js/ball.ts	ball.c
-src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
 src/js/cfgfiles.ts	cfgfiles.c

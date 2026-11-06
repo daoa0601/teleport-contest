@@ -87,9 +87,13 @@ const SYMBOL_TARGETS = {
     S_OGRE,
     S_TROLL,
 };
+// Part of C artifact.c:set_artifact_intrinsic(): the SPFX_HALRES
+// hallucination-resistance property.
 function wieldedProperties(artifact) {
     return artifact.flags.includes('SPFX_HALRES') ? ['hallucinationResistance'] : [];
 }
+// Part of C artifact.c:artifact_name(): the fuzzymatch() normalization
+// ("the" prefix, spaces, dashes, case) used for name lookup.
 function fuzzyArtifactName(value) {
     return String(value || '')
         .trim()
@@ -102,6 +106,8 @@ function fuzzyArtifactName(value) {
 // role.js, whose selection-UI imports reach this module before role.js
 // finishes initializing.
 let questArtifactNames;
+// Port only: any-role quest-artifact membership computed from the role
+// table (C compares the single urole.questarti index).
 function isQuestArtifactName(name) {
     questArtifactNames ??= new Set(roles.map((role) => fuzzyArtifactName(role.artifactName)).filter(Boolean));
     return questArtifactNames.has(name);
@@ -146,13 +152,17 @@ export function artifactGlowColor(object, state = game) {
         return 'light blue';
     throw new Error(`Artifact ${artifact.id} has no glow color`);
 }
+// Port only: accessor for the per-game artifact table versus the static
+// artilist.
 function artifactList(state = game) {
     return state._artifactRuntime instanceof Map ? [...state._artifactRuntime.values()] : ARTIFACTS;
 }
+// C artifact.c:artifact_name()
 export function artifactByName(value, state = game) {
     const wanted = fuzzyArtifactName(value);
     return (artifactList(state).find((artifact) => fuzzyArtifactName(artifact.name) === wanted) || null);
 }
+// Port only: accessor for the artilist index an object's oartifact carries.
 export function artifactById(id, state = game) {
     if (id == null)
         return null;
@@ -199,6 +209,7 @@ export function initializeArtifacts(state = game) {
     state._artifactDiscoveries = [];
     return runtime;
 }
+// Port only: lazy accessor for the per-game artifact existence set.
 function existenceSet(state) {
     if (!(state._artifactExists instanceof Set))
         state._artifactExists = new Set();
@@ -277,6 +288,7 @@ export function setArtifactOrigin(object, origin, { knownOrigin = false, state =
     else
         state._artifactFound?.delete(id);
 }
+// C artifact.c:disp_artifact_discoveries()
 // The discovered-artifact rows of the #discoveries list.
 // C artifact.c:disp_artifact_discoveries(): each identified artifact with
 // its alignment (align_str(), unaligned printed as "non-aligned") and
@@ -302,6 +314,7 @@ export function artifactInfoLines(state = game) {
         return `  ${artifact.name.slice(0, 36).padEnd(36)}[${exists}${found}${origin ? ` ${origin}` : ''}]`;
     });
 }
+// Part of C artifact.c:artifact_exists(): the un-create (mod=FALSE) path.
 export function uncreateArtifact(object, state = game) {
     if (!object?.oartifact)
         return false;
@@ -312,15 +325,18 @@ export function uncreateArtifact(object, state = game) {
     object.oartifact = 0;
     return removed;
 }
+// C artifact.c:nartifact_exist()
 export function artifactExistCount(state = game) {
     return state._artifactExists?.size ?? 0;
 }
-// C found_artifact(): wishes and gifts are known without a "found" log.
+// C artifact.c:found_artifact()
+// Wishes and gifts are known without a "found" log.
 export function markArtifactFound(id, state = game) {
     (state._artifactFound ||= new Set()).add(id);
 }
-// C xname() -> find_artifact(). Only the object's real dknown flag counts,
-// not a temporary full-identification view.
+// C artifact.c:find_artifact()
+// Only the object's real dknown flag counts, not a temporary
+// full-identification view (the xname() gate).
 export function findArtifact(object, { source = object, state = game, } = {}) {
     const id = object.oartifact;
     if (!id || !object.dknown || state._artifactFound?.has(id))
@@ -343,6 +359,7 @@ export function findArtifact(object, { source = object, state = game, } = {}) {
     recordGameLogEvent(`found ${name}${where}`, { state, flags: LL_ARTIFACT });
     return true;
 }
+// C artifact.c:discover_artifact()
 export function discoverArtifact(id, state = game) {
     const discoveries = (state._artifactDiscoveries ||= []);
     if (!discoveries.includes(id))
@@ -458,6 +475,8 @@ function defendedByArtifact(artifact, damageType) {
 function carriedArtifactDefends(inventory, damageType, state) {
     return (inventory || []).some((object) => artifactById(object?.oartifact, state)?.carriedDefense === damageType);
 }
+// Part of C artifact.c:defends(), artifact.c:defends_when_carried(): the
+// wielded-or-carried defense query.
 function artifactDefenseApplies(defender, damageType, hero, state) {
     if (!hero && !defender)
         return false;
@@ -468,15 +487,23 @@ function artifactDefenseApplies(defender, damageType, hero, state) {
     const inventory = hero ? state.inventory : defender?.minvent || defender?.inventory;
     return carriedArtifactDefends(inventory, damageType, state);
 }
+// Part of C artifact.c:defends(), artifact.c:defends_when_carried(): the
+// hero entry (uwep plus inventory).
 export function heroHasArtifactDefense(damageType, state = game) {
     return artifactDefenseApplies(null, damageType, true, state);
 }
+// Part of C artifact.c:defends(), artifact.c:defends_when_carried(): the
+// monster entry (weapon plus minvent).
 export function monsterHasArtifactDefense(monster, damageType, state = game) {
     return artifactDefenseApplies(monster, damageType, false, state);
 }
+// Part of C artifact.c:set_artifact_intrinsic(): querying a carried cspfx
+// through the property source it installs.
 export function heroHasCarriedArtifactFlag(flag, state = game) {
     return (state.inventory || []).some((object) => artifactById(object?.oartifact, state)?.carriedFlags.includes(flag));
 }
+// Part of C artifact.c:spec_applies(): the resistance/damage-type tests
+// of the phys-attack branch.
 function resistanceAttackApplies(artifact, defender, { hero, random, state }) {
     if (!artifact.attack)
         return false;
@@ -554,6 +581,7 @@ function artifactAttackApplies(artifact, defender, { hero = false, random = rn2,
             return false;
     }
 }
+// C artifact.c:spec_abon()
 // weapon.c's hitval() calls spec_abon() before hitum() rolls its ordinary d20.
 export function artifactToHitBonus(object, defender, roll = rnd, { hero = false, random = rn2, state = game } = {}) {
     const artifact = artifactById(object?.oartifact, state);
@@ -578,6 +606,8 @@ export function artifactDamageBonus(object, defender, baseWeaponDamage, roll = r
         ? roll(artifact.attack.damageDie)
         : Math.max(baseWeaponDamage, 1);
 }
+// Part of C artifact.c:spec_dbon(): the zero-damage-die case that doubles
+// base weapon damage.
 export function artifactDoublesWeaponDamage(object, defender, { hero = false, random = rn2, state = game } = {}) {
     const artifact = artifactById(object?.oartifact, state);
     return (!!artifact?.attack &&
@@ -593,6 +623,8 @@ export function artifactEmitsLight(object) {
         return true;
     return artifactById(object?.oartifact)?.name === 'Sunsword';
 }
+// Part of C artifact.c:shade_glare(): the artifact half (Sunsword's
+// undead bane); the silver-material half stays with callers.
 export function artifactStrikesShade(object) {
     return artifactById(object?.oartifact)?.name === 'Sunsword';
 }
@@ -604,6 +636,8 @@ export function artifactBaneApplies(artifact, state = game) {
         return false;
     return artifactAttackApplies(artifact, { mnum: heroSpecies(state) }, { hero: true, state });
 }
+// Part of C artifact.c:touch_artifact(): the monster branch — refusal
+// without a blast.
 // Unlike the hero, a monster refuses a hostile artifact without taking a blast.
 export function monsterCanTouchArtifact(monster, object, state = game) {
     const artifact = artifactById(object.oartifact, state);
@@ -647,6 +681,7 @@ export function resolveHeroArtifactTouch(object, artifact, state = game) {
         bane,
     };
 }
+// Part of C artifact.c:touch_artifact(): the hero blast damage roll.
 export function rollHeroArtifactBlast(object, artifact, state = game) {
     const antimagic = !!state.u?.antimagic;
     let damage = d(antimagic ? 2 : 4, artifact.selfWilled ? 10 : 4);
@@ -692,6 +727,8 @@ const FLAG_PROPERTIES = [
     ['SPFX_HSPDAM', 'halfSpellDamage'], ['SPFX_HPHDAM', 'halfPhysicalDamage'],
     ['SPFX_PROTECT', 'protection'],
 ];
+// Part of C artifact.c:set_artifact_intrinsic(): the spfx/cspfx-to-
+// property table walk.
 function conferredProperties(artifact, carried) {
     const flags = carried ? artifact.carriedFlags : artifact.flags;
     const defense = carried ? artifact.carriedDefense : artifact.defense;
@@ -706,6 +743,7 @@ function conferredProperties(artifact, carried) {
         properties.push('warning');
     return properties;
 }
+// Part of C artifact.c:set_artifact_intrinsic(): the W_ART (carried) pass.
 export async function setCarriedArtifactProperties(object, active, state = game) {
     const artifact = artifactById(object.oartifact, state);
     if (!artifact)
@@ -719,6 +757,7 @@ export async function setCarriedArtifactProperties(object, active, state = game)
         }
     }
 }
+// Part of C artifact.c:set_artifact_intrinsic(): the worn-slot pass.
 export function setWornArtifactProperties(object, slot, active, state = game) {
     recalculateTelepathyRange(state);
     const artifact = artifactById(object.oartifact, state);
@@ -756,6 +795,8 @@ export async function setWieldedArtifactProperties(object, active, state) {
     await setArtifactWarningWielded(object, active, state);
 }
 // C artifact.c:set_artifact_intrinsic(), Sting_effects(), glow_verb().
+// Part of C artifact.c:Sting_effects(): the warn-count-to-strength
+// mapping.
 function glowStrength(count) {
     return count > 12 ? 3 : count > 4 ? 2 : count > 0 ? 1 : 0;
 }
@@ -765,6 +806,8 @@ export function artifactGlowVerb(count, continuous = false) {
     const verb = verbs[glowStrength(count)];
     return continuous ? `${verb}ing` : verb;
 }
+// Part of C artifact.c:set_artifact_intrinsic(): whether the wielded
+// weapon carries the SPFX_WARN warning mask.
 export function wieldedArtifactWarns(state = game) {
     const object = state.uwep;
     return !!(object &&
@@ -772,6 +815,8 @@ export function wieldedArtifactWarns(state = game) {
         artifactWarningMask(object, state) &&
         wornObjectGrantsProperty(object, 'warnOfMonster', state));
 }
+// Part of C artifact.c:set_artifact_intrinsic(): the SPFX_WARN
+// warntype.obj mask set and clear.
 export async function setArtifactWarningWielded(object, active, state = game) {
     const mask = artifactWarningMask(object, state);
     if (!mask)
@@ -788,6 +833,7 @@ export async function setArtifactWarningWielded(object, active, state = game) {
     }
     await see_monsters();
 }
+// C artifact.c:Sting_effects()
 // The census owns count commits. -1 announces a sight change without recounting.
 // C artifact.c:Sting_effects().
 export async function artifactWarningFeedback(count, { beforeGlow = null } = {}) {
@@ -824,6 +870,7 @@ export async function artifactWarningFeedback(count, { beforeGlow = null } = {})
 // Losing a form while handling an item can enter this routine again.
 // Nested passes share C's bypass marks until the outer pass finishes.
 const activeChecks = new WeakSet();
+// C artifact.c:retouch_object()
 // Explicit handling (apply, wield, invoke) also checks carried items which
 // are not currently equipped. retouch_equipment() keeps its in-use filter.
 // C artifact.c:retouch_object(): the touch test for one object — the
@@ -975,15 +1022,19 @@ export async function retouchEquipment(dropFlag = 0, { state = game, publish = p
         }
     }
 }
+// Port only: equipment-slot accessor over both state shapes.
 function slotObject(slot, state) {
     return state[slot] || state.u?.[slot] || null;
 }
+// Part of C artifact.c:retouch_equipment(): the worn-ring count around
+// the equipment pass.
 function ringCount(state) {
     return Number(!!slotObject('uleft', state))
         + Number(!!slotObject('uright', state));
 }
-// C mkot_trap_warn(): warmth counts locations whose trap is not displayed,
-// including trapped doors and containers beneath other floor objects.
+// C artifact.c:mkot_trap_warn()
+// Warmth counts locations whose trap is not displayed, including trapped
+// doors and containers beneath other floor objects.
 // C artifact.c:count_surround_traps().
 export async function warnWithMasterKey(state = game) {
     const weapon = state.uwep;
@@ -1011,6 +1062,7 @@ export async function warnWithMasterKey(state = game) {
     state._magicKeyTrapWarningCount = count;
 }
 // C artifact.c:arti_speak(). Speaking artifacts select rumors by their BUC.
+// C artifact.c:arti_speak()
 export async function speakArtifact(object, { state = game } = {}) {
     requireLiveGame(state);
     if (!artifactById(object?.oartifact, state)?.flags.includes('SPFX_SPEAK'))
@@ -1024,9 +1076,12 @@ export async function speakArtifact(object, { state = game } = {}) {
     await plineWithContinuation(`"${line}"`);
     return true;
 }
+// Port only: local carried() macro duplicate (obj.h) with the
+// inventory-list fallback.
 function heroCarries(object, state) {
     return object?.where === 'inventory' || (state.inventory || []).includes(object);
 }
+// C artifact.c:touch_artifact()
 export async function touchArtifactByHero(object, artifact = artifactById(object?.oartifact), { state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
     const result = resolveHeroArtifactTouch(object, artifact, state);
     if (!artifact || !object?.oartifact)
@@ -1228,6 +1283,7 @@ const PM_WATER_ELEMENTAL = 157;
 const PM_JABBERWOCK = MONSTER_NAME.indexOf('jabberwock');
 // Native fatal blows leave enough damage for the caller's AC reduction.
 const FATAL_DAMAGE_MODIFIER = 200;
+// C artifact.c:artifact_hit()
 export async function applyArtifactHit(object, defender, baseDamage, { state = game, attacker, 
 // C artifact.c:1456-1466: vis is seeing the attacker, seeing the
 // defender, or a hero attacker engulfing its defender; realizes_damage
@@ -1324,6 +1380,8 @@ visible = defender !== 'hero' && cansee(defender.mx, defender.my)
         await burnAwayHeroSlime(state, publish);
     return { damage, specialMessage: realizesDamage };
 }
+// Part of C artifact.c:artifact_hit(): the adtyp-to-inventory-damage
+// mapping.
 function elementalDamageType(damageType) {
     if (damageType === 'cold')
         return INVENTORY_DAMAGE.COLD;
@@ -1333,6 +1391,7 @@ function elementalDamageType(damageType) {
         return INVENTORY_DAMAGE.ELECTRIC;
     return null;
 }
+// Part of C artifact.c:artifact_hit(): the elemental blade messages.
 function elementalHitMessage(damageType, applied, monster, targetName) {
     if (damageType === 'fire') {
         const verb = !applied
@@ -1352,9 +1411,13 @@ function elementalHitMessage(damageType, applied, monster, targetName) {
     }
     return null;
 }
+// Part of C artifact.c:artifact_hit(): the per-element inventory damage
+// chance (rn2(4), rn2(5) for shock).
 function inventoryDamageChance(damageType) {
     return damageType === 'shock' ? 5 : 4;
 }
+// Part of C artifact.c:artifact_hit(): dknown and encounter bookkeeping
+// for the attacking artifact.
 function observeArtifactObject(object, state) {
     const hallucinating = heroIsHallucinating(state);
     if (hallucinating)
@@ -1362,11 +1425,15 @@ function observeArtifactObject(object, state) {
     object.dknown = true;
     recordObjectEncounter(object.otyp, state);
 }
+// Part of C artifact.c:artifact_hit(): the possessive forms of the drain
+// messages.
 function possessiveTarget(target) {
     if (target === 'it')
         return 'its';
     return target.endsWith('s') ? `${target}'` : `${target}'s`;
 }
+// Part of C artifact.c:artifact_hit(): the Vorpal/Tsurugi beheading
+// branch.
 async function applyBeheading(artifact, object, defender, damage, { state, attacker, visible, hittee, dieRoll, hitOnHead, describeTarget, publish, random }) {
     if (!artifact.flags.includes('SPFX_BEHEAD'))
         return null;
@@ -1459,6 +1526,7 @@ async function applyBeheading(artifact, object, defender, damage, { state, attac
         specialMessage: true,
     };
 }
+// Part of C artifact.c:artifact_hit(): the SPFX_DRLI life-drain branch.
 async function applyLifeDrain(artifact, object, defender, damage, { state, attacker, visible, describeTarget, publish, random, rollOne }) {
     if (defender === 'hero') {
         requirePlayingGame(state);
@@ -1519,6 +1587,8 @@ async function applyLifeDrain(artifact, object, defender, damage, { state, attac
     }
     return { damage, specialMessage: visible };
 }
+// Part of C artifact.c:artifact_hit(): healing the hero attacker by the
+// drained amount.
 function healHeroFromDrain(state, amount) {
     if (amount <= 0)
         return;
@@ -1548,15 +1618,20 @@ const DIRECT_POWERS = [
     'banish',
     'fling-poison',
 ];
+// Part of C artifact.c:arti_invoke(): the direct-power dispatch table.
 function isDirectPower(power) {
     return DIRECT_POWERS.some((candidate) => candidate === power);
 }
+// Part of C artifact.c:arti_invoke(): the levitation independence check.
 // C do_wear.c-style extrinsic check: an invoked artifact is nothing special
 // while an independent intrinsic (including the potion timeout), worn ring,
 // or boots source also grants levitation (artifact.c:2197-2201).
+// Part of C artifact.c:arti_invoke(): the levitation independence check.
 function hasNonArtifactLevitation(state) {
     return propertyHasOtherSources('levitation', state);
 }
+// Part of C artifact.c:arti_invoke(): the levitation refresh after the
+// toggle.
 function syncHeroLevitation(state) {
     refreshProperty('levitation', state);
 }
@@ -1577,14 +1652,18 @@ const PROPERTY_POWERS = Object.freeze({
         sync: syncHeroLevitation,
     },
 });
+// Part of C artifact.c:arti_invoke(): the property-power artifact test.
 function isPropertyArtifact(artifact) {
     const power = artifact?.invokePower;
     return power === 'conflict' || power === 'invisibility' || power === 'levitation';
 }
+// Part of C artifact.c:arti_invoke(): querying whether a property
+// artifact's invocation is currently active.
 export function artifactInvokeIsActive(artifact, state = game) {
     return (isPropertyArtifact(artifact) &&
         hasInvokedProperty(PROPERTY_POWERS[artifact.invokePower].property, state));
 }
+// C artifact.c:nothing_special()
 async function nothingSpecial(object, state, publish) {
     if ((state.inventory || []).includes(object)) {
         await publish(formatFeltMessage('a surge of power, but nothing seems to happen.', state));
@@ -1615,10 +1694,13 @@ async function beginInvocation(object, artifact, state, publish, rollDice, scale
     }
     return true;
 }
+// Part of C artifact.c:arti_invoke(): the "ignoring you" message.
 async function ignoringHero(object, state, publish) {
     const subject = definiteName(objectCombatName(object, { state }), state);
     await publish(formatFeltMessage(`that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`, state));
 }
+// Part of C artifact.c:arti_invoke(): the conflict/invisibility/
+// levitation property toggles.
 async function invokeProperty(object, artifact, state, publish, rollDice, scaledRandom) {
     // Artifact property toggles mutate the invoked source and the object's
     // invoke cooldown, then run the live float owners.
@@ -1677,6 +1759,7 @@ async function invokeProperty(object, artifact, state, publish, rollDice, scaled
     }
     return { used: true, ready: true, on };
 }
+// C artifact.c:invoke_healing()
 async function invokeHealing(object, state, publish) {
     const hero = state.u;
     const polymorphed = Upolyd(hero);
@@ -1707,6 +1790,7 @@ async function invokeHealing(object, state, publish) {
         await makeBlinded(cream, { state, talk: false, publish });
     state.context.botl = true;
 }
+// C artifact.c:invoke_energy_boost()
 async function invokeEnergyBoost(object, state, publish) {
     const hero = state.u;
     const missing = Math.max(0, (hero.uenmax ?? 0) - (hero.uen ?? 0));
@@ -1723,6 +1807,7 @@ async function invokeEnergyBoost(object, state, publish) {
     state.context.botl = true;
     await publish(formatFeltMessage('re-energized.', state));
 }
+// C artifact.c:invoke_create_ammo()
 async function invokeCreateAmmo(object, rollOne, state, publish) {
     const arrows = await mksobj(ARROW, true, false);
     arrows.blessed = !!object.blessed;
@@ -1749,6 +1834,7 @@ async function invokeCreateAmmo(object, rollOne, state, publish) {
         dropMessage: `Suddenly ${arrows.quan} ${objectCombatName(arrows, { state })} fall out.`,
     });
 }
+// C artifact.c:invoke_blinding_ray()
 async function invokeBlindingRay(object, state, publish) {
     requireLiveGame(state);
     const direction = await promptDirection();
@@ -1780,6 +1866,7 @@ async function invokeBlindingRay(object, state, publish) {
     }
     return true;
 }
+// C artifact.c:invoke_storm_spell()
 async function invokeStorm(power, state) {
     const spell = power === 'snowstorm' ? SPE_CONE_OF_COLD : SPE_FIREBALL;
     const skill = ensureHeroSkills(state)?.[spellSkillType(spell, state)];
@@ -1794,6 +1881,7 @@ async function invokeStorm(power, state) {
         skill.skill = previous;
     }
 }
+// C artifact.c:invoke_create_portal()
 async function invokeCreatePortal(object, state, publish) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1837,6 +1925,7 @@ async function invokeCreatePortal(object, state, publish) {
         : 'You are surrounded by a shimmering sphere!');
     await gotoLevel(destination);
 }
+// C artifact.c:invoke_banish()
 async function invokeBanish(state, publish) {
     requirePlayingGame(state);
     const hell = state.valley_level;
@@ -1889,6 +1978,7 @@ async function invokeBanish(state, publish) {
         await publish(`${amount} ${subject} ${vanished === 1 ? 'disappears' : 'disappear'} in a cloud of brimstone!`);
     }
 }
+// C artifact.c:invoke_fling_poison()
 async function invokeFlingPoison(object, state, publish) {
     requireLiveGame(state);
     const direction = await promptDirection();
@@ -2009,17 +2099,21 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
         return { used: true, heroDied: true };
     return { used: true, ready: true };
 }
+// Part of C artifact.c:set_artifact_intrinsic(): the drop-side off-toggle
+// of an invoked property.
 export async function deactivateArtifactProperty(object, artifact, { state = game, publish = pline, rollDice = d, scaledRandom = rnz, } = {}) {
     if (!isPropertyArtifact(artifact) || !artifactInvokeIsActive(artifact, state))
         return false;
     await invokeProperty(object, artifact, state, publish, rollDice, scaledRandom);
     return true;
 }
+// C artifact.c:finesse_ahriman()
 // Finesse for the do.c drop caller: dropping an invoked levitation
 // artifact while unable to reach the floor.  finesse_ahriman() (artifact.c)
 // decides whether freeinv() would end levitation, pins a carried W_ART
 // source so the hero stays aloft through freeinv()/hitfloor(), and the
 // caller lands the hero afterwards with the explicit float-down below.
+// C artifact.c:finesse_ahriman()
 // C finesse_ahriman(): true when dropping `object` would toggle levitation
 // off inside freeinv().  On true, the invoked source is replaced by an
 // explicit carried source (C `ELevitation = W_ART`), so set_artifact_
@@ -2105,6 +2199,7 @@ export function whatGives(property, state = game) {
     }
     return null;
 }
+// C artifact.c:doinvoke()
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
 // suggests artifacts and other unique objects; an artifact with inv_prop 0
 // still consumes a turn after retouching, but its only effect is the ordinary
@@ -2145,6 +2240,7 @@ export async function doinvoke() {
     await pline('Nothing happens.');
     game.context.move = 1;
 }
+// C artifact.c:arti_reflects()
 // ── moved from src/js/ray.ts ──
 // C artifact.c:arti_reflects(): a monster gets reflection from an
 // artifact — the wielded/worn SPFX_REFLECT bit, or a carried cspfx one

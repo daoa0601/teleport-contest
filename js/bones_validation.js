@@ -2,9 +2,12 @@ import { decodeSavedGraph, isSavedRecord } from './saved_graph.js';
 import { createSavedEntityChecks } from './entity_validation.js';
 import { arrayOf, closedFieldsMatch as fieldsMatch, integer, string } from './saved_validation.js';
 import { restoreSavedMap, validSavedPosition, validSavedStairways } from './map_validation.js';
+// Port only: runtime validation of a saved fruit record.
 function validFruit(value) {
     return fieldsMatch(value, { fid: integer, fname: string });
 }
+// Port only: decode and validate a stored bones payload (C reads the
+// bones file through its Sfi_* field readers and validate()).
 export function decodeBonesPayload(encoded, expectedVersion) {
     const value = decodeSavedGraph(encoded);
     if (!isSavedRecord(value) || value.version !== expectedVersion)

@@ -24,6 +24,8 @@ import { canBlnd, eyecount, monsterHasEyes } from './mondata.js';
 
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the mcansee/mblinded
+// application for a blinding hit, shared with the thrown-pie callers.
 export function applyMonsterBlindness(monster: Monster, blindIncrement: number) {
     const wasSeeing = !!monster.mcansee;
     monster.mcansee = 0;
@@ -33,6 +35,8 @@ export function applyMonsterBlindness(monster: Monster, blindIncrement: number) 
     return { blindIncrement, wasSeeing };
 }
 
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the CREAM_PIE/BLINDING_VENOM
+// impact and blinded-target messages.
 export function heroBlindingObjectHitMessage(
     monster: Monster,
     object: GameObject,
@@ -59,6 +63,8 @@ export function heroBlindingObjectHitMessage(
     return `${subject} ${plural ? 'splash' : 'splashes'} over ${target}!`;
 }
 
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the s_suffix + mbodypart FACE
+// "whom" of the pie-splash message.
 function creamPieTarget(monster: Monster, name: string): string {
     const hasFace = monsterHasEyes(monster.mnum)
         && monster.mnum !== PM_FLOATING_EYE;
@@ -67,6 +73,8 @@ function creamPieTarget(monster: Monster, name: string): string {
     return /s$/i.test(name) ? `${name}' ${face}` : `${name}'s ${face}`;
 }
 
+// Part of C mthrowu.c:m_throw(): the blinding-venom hit message for the
+// hero ("The venom blinds you." / "Your eyes sting.").
 function venomBlindMessage(state: GameState, wasBlind: boolean): string {
     if (!wasBlind) return 'The venom blinds you.';
     const eye = body_part(EYE, state);
@@ -74,6 +82,8 @@ function venomBlindMessage(state: GameState, wasBlind: boolean): string {
     return `Your ${eyes} ${verbForSubject(eyes, 'sting')}.`;
 }
 
+// Part of C mthrowu.c:m_throw(): the cream-pie hit message for the hero
+// ("Yecch!  You've been creamed." / sticky FACE).
 function creamPieBlindMessage(state: GameState, wasBlind: boolean): string {
     return wasBlind
         ? `There's something sticky all over your ${body_part(FACE, state)}.`
@@ -86,6 +96,9 @@ export interface HeroThrownBlindness {
     message: string;
 }
 
+// Part of C mthrowu.c:m_throw(): the hero-side can_blnd() check and rnd(25)
+// blinding roll of a monster-thrown pie or venom.
+// The impact message precedes the end of the visible missile flight.
 // The impact message precedes the end of the visible missile flight.
 export function prepareHeroThrownBlindness(
     objectType: number, state: GameState = game, rollOne: (sides: number) => number = rnd,
@@ -104,6 +117,8 @@ export function prepareHeroThrownBlindness(
     return { blindIncrement, wasBlind, message };
 }
 
+// Part of C mthrowu.c:m_throw(): the blindinc tail — ucreamed,
+// make_blinded(), and the quick-clear notice.
 export async function finishHeroThrownBlindness(
     effect: HeroThrownBlindness, state: GameState = game,
     publish: MessagePublisher = plineWithContinuation,

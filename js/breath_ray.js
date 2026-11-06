@@ -5,6 +5,8 @@ const DIRECTIONS = Object.freeze({
     h: [-1, 0], l: [1, 0], j: [0, 1], k: [0, -1],
     y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1],
 });
+// Part of C polyself.c:dobreathe(): the hero's ubuzz(BZ_U_BREATH(...))
+// breath ray.
 export async function breatheInDirection(direction, { attack, state = game, sourceMonster = null, ...options } = {}) {
     if (!attack)
         return { used: false, heroDied: false, hits: 0 };
@@ -13,12 +15,16 @@ export async function breatheInDirection(direction, { attack, state = game, sour
         ...options, state, sourceMonster,
     });
 }
+// Part of C mcastu.c:buzzmu(): the buzz(BZ_M_SPELL(...)) monster-spell
+// ray.
 // A null sourceMonster is divine retribution, not a hero-caused ray.
 export async function castMonsterSpellRay(direction, originX, originY, attack, options = {}) {
     return buzz(-(10 + attack[1] - 1), attack[2], direction, {
         ...options, originX, originY,
     });
 }
+// Part of C mthrowu.c:breamm(): aiming the monster's breath at its
+// target.
 export async function breatheFromMonster(sourceMonster, target, options = {}) {
     const dx = Math.sign(target.mx - sourceMonster.mx);
     const dy = Math.sign(target.my - sourceMonster.my);

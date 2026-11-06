@@ -16,10 +16,13 @@ export interface BonesPayload {
     fruits: Fruit[];
 }
 
+// Port only: runtime validation of a saved fruit record.
 function validFruit(value: unknown): value is Fruit {
     return fieldsMatch<Fruit>(value, { fid: integer, fname: string });
 }
 
+// Port only: decode and validate a stored bones payload (C reads the
+// bones file through its Sfi_* field readers and validate()).
 export function decodeBonesPayload(encoded: string, expectedVersion: number): BonesPayload {
     const value = decodeSavedGraph(encoded);
     if (!isSavedRecord(value) || value.version !== expectedVersion)

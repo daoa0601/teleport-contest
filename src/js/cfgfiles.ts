@@ -587,6 +587,8 @@ function parseConfiguration(
     return result;
 }
 
+// Part of C cfgfiles.c:rcfile(): the NETHACKOPTIONS half around
+// parseoptions().
 // rcfile()'s NETHACKOPTIONS half (cfgfiles.c): config_error_init(FALSE,
 // envname, FALSE) around parseoptions(), then config_error_done(). C waits
 // for the rc file's errors first; the caller displays them between the two

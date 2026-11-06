@@ -10,6 +10,7 @@ import { monsterWieldedWeapon } from './weapon.js';
 import { CORPSE } from './object_data.js';
 import { isHomeElemental } from './makemon.js';
 import { monsterHasColdResistance, monsterIsShade, touchPetrifies } from './mondata.js';
+// C mhitu.c:getmattk()
 export function getmattk(attacker, defender, attackIndex, previousResults, state) {
     requireLiveGame(state);
     const attackerSpecies = actorSpecies(attacker, state);
@@ -52,15 +53,23 @@ export function getmattk(attacker, defender, attackIndex, previousResults, state
     // energy dice. Only an unmodified source slot gets the home-plane bonus.
     return isHomeElemental(attackerSpecies) ? [method, damage, dice * 2, sides] : attack;
 }
+// Port only: type guard for the hero side of the shared hero/monster
+// combat-actor union (C compares against youmonst directly).
 function isHero(actor, state) {
     return actor === state.u;
 }
+// Part of C mhitu.c:getmattk(): the attacker's permonst lookup — youmonst
+// maps to the hero's current form.
 function actorSpecies(actor, state) {
     return isHero(actor, state) ? heroSpecies(state) : actor.mnum;
 }
+// Part of C mhitu.c:getmattk(): the cold-resistance test of the lich
+// touch-downgrade branch (Cold_resistance vs resists_cold).
 function actorResistsCold(actor, state) {
     return isHero(actor, state) ? !!state.u.coldResistance : monsterHasColdResistance(actor);
 }
+// Part of C mhitu.c:getmattk(): the AD_DREN dice adjustment that tracks
+// the defending hero's energy.
 function energyDrainAttack(attack, state) {
     const [method, damage] = attack;
     let [, , dice, sides] = attack;

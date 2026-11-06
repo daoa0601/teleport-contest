@@ -15,18 +15,24 @@ const HANDED_WEAPONS = new Set([
     BOW, ELVEN_BOW, ORCISH_BOW, YUMI, BOOMERANG,
 ]);
 const G_UNIQ = 0x1000;
+// Part of C bones.c:resetobjs(): the name-keeping test of the save branch
+// (artifacts, statues, novels, special corpses).
 function keepIndividualName(object) {
     return !!(object.oartifact || object.artifact)
         || object.otyp === STATUE
         || object.otyp === SPE_NOVEL
         || (object.otyp === CORPSE && object.corpsenm !== undefined && object.corpsenm >= SPECIAL_PM);
 }
+// Port only: drop cached presentation fields so the receiving game
+// rebuilds them.
 function clearPresentation(object) {
     for (const key of [
         'name', 'plural', 'class', 'enchantment', 'buc',
     ])
         delete object[key];
 }
+// Part of C bones.c:resetobjs(): the corpse/statue branch discarding
+// cant_revive() incarnation details.
 function discardUnsafeMonsterTraits(object) {
     if (![CORPSE, STATUE].includes(object.otyp)
         || !object.oextra?.omonst)
@@ -41,6 +47,8 @@ function discardUnsafeMonsterTraits(object) {
     if (replacement === PM_DOPPELGANGER && object.otyp === CORPSE)
         set_corpsenm(object, replacement);
 }
+// Part of C bones.c:resetobjs(): the per-object save branch — known-flag,
+// name, and unique-object downgrades.
 export function prepareBonesObjectForSave(object) {
     if (!object)
         return object;
@@ -108,6 +116,8 @@ export function prepareBonesObjectForSave(object) {
     delete object.buc;
     return object;
 }
+// Part of C bones.c:resetobjs(): the restore branch reverting a duplicate
+// artifact to an ordinary object.
 function removeArtifactIdentity(object) {
     object.oartifact = 0;
     object.artifact = false;
@@ -115,6 +125,8 @@ function removeArtifactIdentity(object) {
     if (object.oextra)
         delete object.oextra.oname;
 }
+// Part of C bones.c:resetobjs(): the outermost-container walk of the
+// partly-eaten-food shop test.
 function outermostContainer(object) {
     let current = object;
     const visited = new Set();
@@ -125,6 +137,8 @@ function outermostContainer(object) {
     }
     return current;
 }
+// Part of C bones.c:resetobjs(): the inside_shop()/tended_shop() test for
+// partly eaten food in a staffed shop.
 function isInStaffedShop(object, state) {
     const top = outermostContainer(object);
     if (top?.where !== 'floor')
@@ -136,6 +150,8 @@ function isInStaffedShop(object, state) {
     return !!room && room.rtype >= SHOPBASE
         && shopkeeperInOwnShop(room.resident, state);
 }
+// Part of C bones.c:resetobjs(): the per-object restore branch — artifact
+// renewal, name sanitization, and shop no_charge.
 export function prepareBonesObjectForRestore(object, state = game) {
     if (!object)
         return object;
@@ -157,6 +173,8 @@ export function prepareBonesObjectForRestore(object, state = game) {
         object.no_charge = isInStaffedShop(object, state);
     return object;
 }
+// C bones.c:fix_ghostly_obj()
+// The ghostly pickup notice; returns the handedness adjustment message.
 export function finishGhostlyPickup(object, state) {
     if (!object?.ghostly)
         return null;

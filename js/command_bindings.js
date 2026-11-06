@@ -13,6 +13,7 @@ const MOVEMENT_DELTAS = [
     [1, 0, 0], [1, 1, 0], [0, 1, 0], [-1, 1, 0],
     [0, 0, 1], [0, 0, -1],
 ];
+// Port only: lookup in the port's native command table.
 const commandNamed = (name) => NATIVE_COMMANDS.find(command => command.name === name);
 // C cmd.c:ext_func_tab_from_func(): the first command table entry whose
 // handler is this C function. Aliases such as #name resolve to #call.
@@ -22,8 +23,11 @@ export function extFuncTabFromFunc(handler) {
         throw new Error(`No command table entry for handler ${handler}`);
     return command;
 }
+// C global.h:C()
 const control = (key) => key & 0x1f;
+// C global.h:M()
 const meta = (key) => key | 0x80;
+// C hacklib.c:highc()
 const uppercase = (key) => key >= 97 && key <= 122 ? key - 32 : key;
 const WAIT_COMMAND = commandNamed('wait');
 if (!WAIT_COMMAND)

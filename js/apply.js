@@ -86,6 +86,7 @@ import { showPagedPickOneMenu } from './windows.js';
 import { snapshotMenuUnderlay } from './wintty.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { useMagicMarker } from './write.js';
+// C apply.c:use_camera()
 export async function useCamera(object, { state = game } = {}) {
     requireLiveGame(state);
     const result = { spentTime: false, heroDied: false, object };
@@ -129,6 +130,7 @@ export async function useCamera(object, { state = game } = {}) {
     result.heroDied ||= !!state.program_state.gameover;
     return result;
 }
+// C apply.c:use_towel()
 export async function useTowel(object, { state = game } = {}) {
     requireLiveGame(state);
     const result = { spentTime: false, heroDied: false, object };
@@ -205,6 +207,7 @@ export async function useTowel(object, { state = game } = {}) {
         await dryTowel(object, -1, { state, verbose: object === state.uwep });
     return result;
 }
+// C apply.c:use_stethoscope()
 export async function useStethoscope(object) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -312,6 +315,8 @@ export async function useStethoscope(object) {
         await pline('You hear nothing special.');
     return spentTime || floor.spentTime;
 }
+// Port only: module-local You_hear adapter (formats the line for a deaf
+// or unconscious hero).
 async function hear(sound) {
     const message = formatHeardMessage(sound);
     if (message)
@@ -356,6 +361,8 @@ async function diagnoseMonster(monster, x, y) {
     if (!canSpotMonster(monster))
         await map_invisible(x, y);
 }
+// C apply.c:its_dead()
+// The stethoscope's corpse and statue diagnosis.
 async function diagnoseFloorObjects(x, y) {
     requirePlayingGame(game);
     const pile = game.level.objects[x]?.[y] ?? [];
@@ -394,6 +401,8 @@ async function diagnoseFloorObjects(x, y) {
     }
     return { found: true, spentTime: false };
 }
+// Part of C apply.c:its_dead(): the "He's/She's/It's dead" pronoun of
+// the hallucination branch.
 function corpsePronoun(corpse, species) {
     const saved = corpse.oextra?.omonst;
     if (saved) {
@@ -409,6 +418,8 @@ function corpsePronoun(corpse, species) {
         return 'She';
     return is_male(species) ? 'He' : 'It';
 }
+// Part of C apply.c:doapply(): the whistle dispatch, including the
+// blessed eucalyptus leaf case.
 export async function useWhistle(object, { state = game } = {}) {
     requireLiveGame(state);
     const magic = object.otyp === MAGIC_WHISTLE
@@ -434,6 +445,7 @@ export async function useWhistle(object, { state = game } = {}) {
     }
     return { spentTime: true, heroDied: false };
 }
+// C apply.c:use_whistle()
 async function blowOrdinaryWhistle(object, state) {
     if (state.u.uinwater) {
         await plineWithContinuation(`You blow bubbles through ${ownedObjectName(object, state, { capitalized: false })}.`);
@@ -446,10 +458,13 @@ async function blowOrdinaryWhistle(object, state) {
     if (object.cursed)
         await summonVaultGuardSoon(state);
 }
+// Part of C apply.c:use_whistle(), apply.c:use_magic_whistle(): the
+// wake_nearby() call both share.
 async function callNearbyPets(state) {
     requireInitializedHero(state.u);
     await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, state.u.ulevel * 20, state, plineWithContinuation, { petCall: true });
 }
+// C apply.c:use_magic_whistle()
 async function blowMagicWhistle(object, state) {
     if (object.cursed && rn2(2) === 0) {
         const pitch = state.u.uinwater ? 'very high' : 'high';
@@ -531,9 +546,12 @@ async function summonPets(object, state) {
     if (message)
         await plineWithContinuation(`${message}.`);
 }
+// Part of C apply.c:magic_whistled(): the y_monnam() name captured for
+// the summary message.
 function petName(pet, state) {
     return monsterName(pet, { state, article: 'your', suppressIt: true });
 }
+// C apply.c:HowMany()
 function creatureCount(count) {
     if (count > 4)
         return count <= 7 ? 'several' : 'many';
@@ -542,6 +560,8 @@ function creatureCount(count) {
         throw new RangeError(`Invalid creature count: ${count}`);
     return name;
 }
+// Part of C apply.c:magic_whistled(): the cumulative
+// shift/appear/disappear summary message.
 function summonMessage({ shift, appear, disappear }) {
     const groups = [];
     if (shift.length)
@@ -701,7 +721,8 @@ async function useLeashOnMonster(leash, monster, x, y, spotted) {
         await pline(`You remove the leash from ${spotted ? 'your ' : ''}${petName()}.`);
     }
 }
-// C check_leash(): only movement farther from a pet tightens its leash.
+// C apply.c:check_leash()
+// Only movement farther from a pet tightens its leash.
 export async function checkHeroLeashes(oldX, oldY) {
     requirePlayingGame(game);
     const distance = (x, y, monster) => (x - monster.mx) ** 2 + (y - monster.my) ** 2;
@@ -762,6 +783,8 @@ export function heroNextToLeashedFollowers() {
     const steed = game.u.usteed;
     return !(steed && monsterCarriesAmulet(steed));
 }
+// Part of C apply.c:mleashed_next2u(): the enexto() relocation of one
+// leashed follower.
 async function moveLeashedMonsterNextToHero(monster, state, random) {
     if (distanceToHero(monster, state) <= 1)
         return;
@@ -807,6 +830,7 @@ const AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
 const S_NYMPH = 14;
 const S_GHOST = 54;
 const DIRECT_SIGHT = MONSEEN_NORMAL | MONSEEN_SEEINVIS | MONSEEN_INFRAVIS;
+// C apply.c:use_mirror()
 export async function useMirror(object, { state = game } = {}) {
     requireLiveGame(state);
     const direction = await promptDirection();
@@ -857,6 +881,8 @@ export async function useMirror(object, { state = game } = {}) {
     result.heroDied = await showMonsterReflection(target.monster, object, mirror, invisible, state);
     return result;
 }
+// Part of C apply.c:use_mirror(): the See_invisible test that decides
+// whether an invisible hero can see the reflection.
 function seesInvisible(state) {
     return !!state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
 }
@@ -879,6 +905,8 @@ export function heroBeautyDescription(state = game) {
         return 'homely';
     return charisma >= 4 ? 'ugly' : 'hideous';
 }
+// Part of C apply.c:use_mirror(): the self-gaze branch (floating-eye
+// freeze, vampire, umber hulk, appearance).
 async function seeOwnReflection(mirror, visible, state) {
     const hero = state.u;
     requireInitializedHero(hero);
@@ -925,6 +953,8 @@ async function seeOwnReflection(mirror, visible, state) {
         await pline(`You look as ${heroBeautyDescription(state)} as ever.`);
     }
 }
+// Part of C apply.c:use_mirror(): the bhit() beam walk that finds the
+// reflection target.
 // The invisible beam checks an occupant before its terrain and can pass an
 // invisible creature which cannot see itself. It never animates or lights tiles.
 function mirrorTarget({ dx, dy }, state) {
@@ -943,6 +973,8 @@ function mirrorTarget({ dx, dy }, state) {
     }
     return null;
 }
+// Part of C apply.c:use_mirror(): the monster-facing branch (Medusa,
+// floating eye, nymph fright, unicorn indifference).
 async function showMonsterReflection(monster, object, mirror, invisible, state) {
     const visible = canSeeMonster(monster);
     const ways = visible ? howMonsterSeen(monster) : 0;
@@ -1049,14 +1081,18 @@ async function showMonsterReflection(monster, object, mirror, invisible, state) 
 }
 const NYMPHS = ['wood nymph', 'water nymph', 'mountain nymph']
     .map(name => MONSTER_NAME.indexOf(name));
+// Part of C apply.c:use_bell(): the the(xname()) name of the bell.
 function bellName(object, state) {
     const name = objectName(object, state);
     return `the ${objectNameIsPlural(object, state) ? makePlural(name) : name}`;
 }
+// Part of C apply.c:use_bell(): the capitalized subject-verb prefix of
+// the shatter and issue messages.
 function bellAction(object, verb, state) {
     const name = bellName(object, state);
     return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${objectNameIsPlural(object, state) ? verb : verb === 'have' ? 'has' : `${verb}s`}`;
 }
+// C apply.c:use_bell()
 export async function useBell(object, { state = game } = {}) {
     requireLiveGame(state);
     requireInitializedHero(state.u);
@@ -1151,33 +1187,45 @@ export async function useBell(object, { state = game } = {}) {
         await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, state.u.ulevel * 20, state, plineWithContinuation, { petCall: true });
     return { spentTime: true, heroDied: !!state.program_state.gameover, object: remainingObject };
 }
+// Port only: shared spent-time result builder for the apply light family.
 function result(object, state) {
     return { spentTime: true, heroDied: !!state.program_state?.gameover, object };
 }
+// Port only: candle-type test shared by the apply light family.
 function isCandle(object) {
     return object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
 }
+// Port only: shared in-or-under-water guard for the bell/lamp family
+// (C tests Underwater and u.uinwater inline at each site).
 function inOrUnderWater(state) {
     return !!(state.u.uinwater || state.underwater || state.u.underwater);
 }
+// Part of C apply.c:use_lamp(): the Shk_Your() capitalized pronoun
+// prefix of the lamp on/off messages.
 function lampOwner(object, state) {
     const owner = carriedObjectOwner(object, state);
     return owner.charAt(0).toUpperCase() + owner.slice(1); // C Shk_Your().
 }
+// Port only: the() definite-name wrapper for the light family messages.
 function theName(object, state) {
     return definiteObjectAction(object, null, state);
 }
+// Part of C apply.c:use_lamp(), apply.c:use_candle(): the verbalize()
+// purchase notice.
 async function announcePurchase(message) {
     // These apply.c verbalize() calls have no hearing/muteshk gate. The
     // separate usage-fee owner does check those before its own notice.
     await plineWithContinuation(`"${message}"`);
 }
+// Part of C apply.c:use_candle(): splitting the stack when attaching to
+// a partly filled candelabrum.
 function splitCarriedObject(object, count, state) {
     const split = splitObjectStack(object, count, state);
     if (!split)
         throw new Error('Lighting requires a valid quantity to split from the stack.');
     return split;
 }
+// C apply.c:use_lamp()
 export async function useLamp(object, { state = game } = {}) {
     requireLiveGame(state);
     const lamp = object.otyp === BRASS_LANTERN ? 'lantern'
@@ -1228,6 +1276,7 @@ export async function useLamp(object, { state = game } = {}) {
     beginObjectBurn(object, state);
     return result(object, state);
 }
+// C apply.c:use_candelabrum()
 export async function useCandelabrum(object, { state = game } = {}) {
     requireLiveGame(state);
     const candles = object.spe === 1 ? 'candle' : 'candles';
@@ -1276,6 +1325,7 @@ export async function useCandelabrum(object, { state = game } = {}) {
     beginObjectBurn(object, state);
     return result(object, state);
 }
+// C apply.c:use_candle()
 export async function useCandle(object, { state = game } = {}) {
     requireLiveGame(state);
     if (state.u.uswallow) {
@@ -1336,6 +1386,7 @@ export async function snuffLitObject(object, state = game, publish = plineWithCo
     endObjectBurn(object, state);
     return true;
 }
+// C apply.c:light_cocktail()
 export async function lightCocktail(object, { state = game } = {}) {
     requireLiveGame(state);
     if (state.u.uswallow) {
@@ -1476,6 +1527,7 @@ export async function dojump() {
     game.context.move = result.spentTime ? 1 : 0;
 }
 const ANY = 0, HORIZONTAL = 1, VERTICAL = 2, DIAGONAL = 3;
+// Port only: shared result builder for the jump family.
 function jumpResult(spentTime, state) {
     return { spentTime, heroDied: !!state.program_state.gameover };
 }
@@ -1535,6 +1587,9 @@ function jumpRestriction(x, y, magic, state) {
     }
     return null;
 }
+// Part of C apply.c:jump(): the refusal cascade before the landing query
+// (no legs, property range, steed, engulfed, held, levitation, burden,
+// strength, wounded legs).
 async function jumpAdmission(magic, state) {
     const hero = state.u;
     if (!magic && (monsterHasNoLimbs(heroSpecies(state)) || monsterIsSlithy(heroSpecies(state))))
@@ -1578,6 +1633,8 @@ async function jumpAdmission(magic, state) {
         return { message: `${monsterName(hero.usteed, { capitalized: true })} is stuck in a trap.` };
     return null;
 }
+// Part of C apply.c:jump(): the trapped-hero escape switch of a jump
+// attempt (bear trap, pit, web, lava, buried ball).
 async function escapeJumpTrap(target, state) {
     const hero = state.u;
     if (hero.utraptype === undefined)
@@ -1717,6 +1774,7 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
     await morehungry(rnd(25), { state });
     return jumpResult(true, state);
 }
+// C apply.c:use_tinning_kit()
 export async function useTinningKit(kit) {
     requirePlayingGame(game);
     if (kit.spe <= 0) {
@@ -1823,6 +1881,8 @@ const VOMITING = 'vomiting';
 const CONFUSED = 'confusion';
 const STUNNED = 'stun';
 const DEAF = 'deafness';
+// Part of C apply.c:use_unicorn_horn(): the property-trouble collection
+// into the trouble list.
 function currentHornTroubles(state) {
     const hero = state.u;
     const troubles = [];
@@ -1843,11 +1903,14 @@ function currentHornTroubles(state) {
         troubles.push(DEAF);
     return troubles;
 }
+// Part of C apply.c:use_unicorn_horn(): the engulfing-blinder check that
+// keeps swallowed blindness out of the trouble list.
 function swallowedByBlindingMonster(state) {
     if (!state.u?.uswallow || !state.u?.ustuck)
         return false;
     return (MONSTER_ATTACKS[state.u.ustuck.mnum] || []).some(([attackType, damageType]) => attackType === AT_ENGL && damageType === AD_BLND);
 }
+// Part of C apply.c:use_unicorn_horn(): the per-trouble cure switch.
 async function cureHornTrouble(trouble, state, publish) {
     const hero = state.u;
     const talk = !heroIsUnaware(state);
@@ -1878,6 +1941,7 @@ async function cureHornTrouble(trouble, state, publish) {
     }
     await makeDeaf(0, { state, talk, publish });
 }
+// Part of C apply.c:use_unicorn_horn(): the cursed-horn trouble switch.
 async function causeHornTrouble(object, state, publish, random, rollDice) {
     const extraTurns = random(90) + 10;
     const trouble = Math.trunc(random(13) / 2);
@@ -1930,6 +1994,7 @@ async function causeHornTrouble(object, state, publish, random, rollDice) {
     await makeDeaf((state.u.deafTurns ?? 0) + extraTurns, { state, publish });
     return DEAF;
 }
+// C apply.c:use_unicorn_horn()
 export async function useUnicornHorn({ object = null, state = game, publish = plineWithContinuation, random = rn2, rollDice = d, } = {}) {
     if (object?.cursed) {
         const caused = await causeHornTrouble(object, state, publish, random, rollDice);
@@ -1958,6 +2023,7 @@ export async function useUnicornHorn({ object = null, state = game, publish = pl
         await publish('Nothing seems to happen.');
     return { used: true, spentTime: true, caused: null, cured };
 }
+// C rnd.c:shuffle_int_array()
 function shuffleTroubles(values, random) {
     for (let index = values.length - 1; index > 0; index--) {
         const other = random(index + 1);
@@ -1970,6 +2036,7 @@ function shuffleTroubles(values, random) {
         [values[index], values[other]] = [otherValue, currentValue];
     }
 }
+// C apply.c:use_figurine()
 export async function useFigurine(object) {
     requireLiveGame(game);
     if (game.u.uswallow) {
@@ -2001,7 +2068,7 @@ export async function useFigurine(object) {
         await map_invisible(x, y);
     return { spentTime: true, object: null };
 }
-// C apply.c:grease_ok().
+// C apply.c:use_grease()
 export async function useGrease(can) {
     if (game.u.glib || (game.u.glibTurns ?? 0) > 0) {
         await dropGrease(can);
@@ -2056,11 +2123,15 @@ export async function useGrease(can) {
     }
     return true;
 }
+// C apply.c:grease_ok()
+// The getobj() callback for the grease target.
 function greaseSuggestion(object) {
     if (object.oclass === COIN_CLASS)
         return GETOBJ_EXCLUDE;
     return coveringEquipment(object).length ? GETOBJ_EXCLUDE_INACCESS : GETOBJ_SUGGEST;
 }
+// Part of C do_wear.c:inaccessible_equipment(): the covering list that
+// makes worn gear ungreasable.
 function coveringEquipment(object) {
     if (!object.owornmask)
         return [];
@@ -2073,10 +2144,12 @@ function coveringEquipment(object) {
         return [gloves];
     return [];
 }
+// C do_wear.c:fingers_or_gloves()
 function fingers(simple) {
     const gloves = game.uarmg;
     return simple && gloves ? armorSimpleName(gloves, game) : makePlural(body_part(FINGER, game));
 }
+// Part of C apply.c:use_grease(): the can slipping from greasy fingers.
 async function dropGrease(can) {
     await pline(`${definiteObjectAction(can, 'slip')} from your ${fingers(false)}.`);
     await dropInventoryObjectAtHero(can);
@@ -2157,10 +2230,14 @@ function touchstoneSuggestion(object, state) {
         return GETOBJ_SUGGEST;
     return GETOBJ_DOWNPLAY;
 }
+// Part of C apply.c:use_stone(): the rubbed object's name in the shatter
+// message.
 function stoneNoun(object, state) {
     const name = objectName(object, state);
     return (object.quantity ?? object.quan ?? 1) > 1 ? makePlural(name) : name;
 }
+// Part of C apply.c:use_stone(): the material switch producing scratch
+// marks and streak colors.
 function stoneMarks(stone, object, gemLike, material, state) {
     const colorIndex = objectTypeColor(object.otyp, state);
     const color = colorIndex === undefined ? null : OBJECT_COLOR_NAMES[colorIndex] ?? null;
@@ -2277,6 +2354,8 @@ export async function continueTrapSetting(state = game) {
     resetTrapSetting(state);
     return false;
 }
+// Part of C apply.c:use_trap(): the Dex/Strength/blindness turn count for
+// arming.
 function trapPreparationTime(type, dexterity, strength, blind) {
     let turns = 5;
     if (dexterity > 17)
@@ -2293,6 +2372,7 @@ function trapPreparationTime(type, dexterity, strength, blind) {
         return turns + 1;
     return turns + (strength > 7 ? 2 : 4);
 }
+// Part of C apply.c:use_trap(): the "can't set a trap" refusal reasons.
 function trapSettingRefusal() {
     requirePlayingGame(game);
     const hero = game.u, level = game.level;
@@ -2705,25 +2785,32 @@ export async function useWhip(whip, { state = game } = {}) {
     }
     return { spentTime: true };
 }
-// C apply.c glyph_is_poleable()/glyph_is_statue() over the drawn glyph.
+// C apply.c:glyph_is_poleable()
 function poleableGlyph(glyph) {
     return glyph?.kind === 'monster' || glyph?.kind === 'invisible' || statueGlyph(glyph);
 }
+// C display.h:glyph_is_statue()
 function statueGlyph(glyph) {
     return glyph?.kind === 'object' && !!glyph.statueGlyph;
 }
+// Part of C apply.c:use_pole(): the sobj_at() pile scan behind a drawn
+// statue or boulder glyph.
 function floorHasObject(otyp, x, y, state) {
     // C sobj_at(): any matching object in the pile, not just the drawn top.
     return (state.level?.objects?.[x]?.[y] || []).some((object) => object.otyp === otyp);
 }
+// C hack.h:distu()
 function squaredDistance(x, y, state) {
     const dx = x - state.u.ux;
     const dy = y - state.u.uy;
     return dx * dx + dy * dy;
 }
+// C rm.h:m_at()
 function monsterAt(x, y, state) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
+// Part of C apply.c:find_poleable_mon(): the Confusion/Stunned/
+// Hallucination flag that relaxes polearm targeting.
 function heroIsImpaired(state) {
     const confused = !!state.u?.confused || (state.u?.confusionTurns ?? 0) > 0;
     const stunned = !!state.u?.stunned || (state.u?.stunnedTurns ?? 0) > 0;
@@ -2733,6 +2820,7 @@ function heroIsImpaired(state) {
 // uwep_skill_type() (weapon.js uwepSkillType): dual wielding uses the
 // two-weapon skill and otherwise the wielded item's own class, so
 // Snickersnee (a katana) measures reach with sword skill, not polearm skill.
+// C apply.c:calc_pole_range()
 function calcPoleRange(weapon, { state = game } = {}) {
     const skillType = uwepSkillType(weapon, state);
     const level = skillType === 0 ? 0 : (ensureHeroSkills(state)?.[skillType]?.skill ?? 0);
@@ -2782,12 +2870,16 @@ function findPoleableSpot(state, min, max) {
     }
     return spot;
 }
+// Part of C apply.c:use_pole(), apply.c:could_pole_mon(): reading the
+// remembered polearm target from context.polearm.
 function rememberedPolearmMonster(state) {
     const id = state.context?.polearm?.hitmonId;
     if (id === null || id === undefined)
         return null;
     return ((state.level?.monsters || []).find((monster) => monster.m_id === id && !monster.dead && (monster.mhp ?? 1) > 0) || null);
 }
+// Part of C apply.c:use_pole(): setting the remembered polearm target in
+// context.polearm.
 function rememberPolearmTarget(monster, state) {
     if (!state.context.polearm)
         state.context.polearm = { hitmonId: null };
@@ -2807,11 +2899,15 @@ export function couldPoleMonster(weapon, { state = game } = {}) {
     const distance = squaredDistance(remembered.mx, remembered.my, state);
     return distance <= max && distance >= min;
 }
+// Part of C apply.c:snickersnee_used_dist_attk(): the ART_SNICKERSNEE
+// test.
 // C obj.h u_wield_art(ART_SNICKERSNEE), via the same id lookup
 // object_properties.js uses for is_pole().
 function isArtifactSnickersnee(object) {
     return artifactById(object?.oartifact)?.name === 'Snickersnee';
 }
+// Part of C apply.c:use_pole(): the obstacle wording of the
+// "uselessly attack" message.
 // C words the obstacle with the displayed cmap glyph's defsyms
 // explanation; glyphAt() carries that as terrainName.
 function obstacleDescription(glyph, x, y, state) {
@@ -2972,9 +3068,12 @@ export async function usePolearm(object, { state = game, ensureWielded, autohit 
     wipeHeroEngraving(2, state);
     return { spentTime: !freehit };
 }
+// Port only: prompt adapter passing the pick-axe direction query through.
 async function pickAxeDirection(prompt) {
     return promptDirection(`${prompt} `);
 }
+// Part of C apply.c:doapply(): the PICK_AXE case, wiring the dig.c
+// use_pick_axe() port to the apply dispatch.
 async function applyPickAxe(item) {
     const result = await usePickAxe(item, {
         state: game,
@@ -2995,6 +3094,8 @@ async function applyPickAxe(item) {
     }
     game.context.move = 'spentTime' in result && result.spentTime ? 1 : 0;
 }
+// Part of C apply.c:doapply(): the polearm case wiring use_pole() to the
+// apply dispatch.
 export async function applyPolearm(item, autohit = false) {
     const result = await usePolearm(item, {
         state: game,
@@ -3017,6 +3118,7 @@ export async function applyPolearm(item, autohit = false) {
         commandResultFailed();
     game.context.move = 'spentTime' in result && result.spentTime ? 1 : 0;
 }
+// Part of C apply.c:use_cream_pie(): splitting one pie from the stack.
 function splitOnePie(stack) {
     const quantity = stack.quan ?? stack.quantity ?? 1;
     if (quantity <= 1)
@@ -3026,6 +3128,8 @@ function splitOnePie(stack) {
         throw new Error('A stack of cream pies must yield one pie.');
     return { pie, several: true };
 }
+// Part of C apply.c:use_cream_pie(): disposing of the used pie
+// (setnotworn + useup).
 async function deletePie(pie) {
     // C apply.c:use_cream_pie() clears the wield slot via setnotworn(),
     // which does not arm the "begin bashing" bare-hands notice.
@@ -3034,6 +3138,7 @@ async function deletePie(pie) {
     unlinkObject(pie, game);
     await delobj(pie, game);
 }
+// C apply.c:use_cream_pie()
 export async function useCreamPie(stack) {
     if (stack?.otyp !== CREAM_PIE)
         return false;
@@ -3067,6 +3172,8 @@ export async function useCreamPie(stack) {
 }
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
+// Part of C apply.c:use_royal_jelly(): split off one lump (splitobj ->
+// splitbill), then freeinv() it so the egg prompt cannot offer it.
 // C use_royal_jelly(): split off one lump (splitobj -> splitbill), then
 // freeinv() it so the egg prompt cannot offer it.
 async function takeOneJelly(stack) {
@@ -3079,6 +3186,8 @@ async function takeOneJelly(stack) {
     await freeInventoryObject(jelly, game);
     return { jelly, parent };
 }
+// Part of C apply.c:use_royal_jelly(): returning the unused lump
+// (unsplitobj, or a nomerge re-add).
 async function putJellyBack(use) {
     if (use.parent) {
         // C unsplitobj() refuses the freed lump, so it never returns.
@@ -3097,6 +3206,7 @@ async function putJellyBack(use) {
             use.jelly.nomerge = savedNoMerge;
     }
 }
+// Part of C apply.c:use_royal_jelly(): consuming the used lump.
 async function consumeJelly(jelly) {
     // C apply.c:use_royal_jelly() clears slots through setnotworn(), which
     // does not arm the bare-hands notice.
@@ -3105,12 +3215,17 @@ async function consumeJelly(jelly) {
     jelly.worn = false;
     await deleteObject(jelly);
 }
+// Part of C apply.c:use_royal_jelly(): the egg quiver messages.
 function quiverMessage(egg, adverb) {
     return `${definiteObjectAction(egg, 'quiver')} ${adverb}.`;
 }
+// Port only: type guard for the royal jelly object type — C tests otyp
+// inline; the getobj callback that filters the EGG rub targets is cited
+// by rubRoyalJelly below.
 export function isRoyalJelly(object) {
     return object?.otyp === LUMP_OF_ROYAL_JELLY;
 }
+// C apply.c:use_royal_jelly()
 export async function useRoyalJelly(stack, chooseTarget) {
     if (stack?.otyp !== LUMP_OF_ROYAL_JELLY)
         return false;
@@ -3152,6 +3267,8 @@ export async function useRoyalJelly(stack, chooseTarget) {
     await consumeJelly(use.jelly);
     return true;
 }
+// Part of C apply.c:use_grapple(): the uwep_skill_type()-based skill
+// lookup.
 function hookSkill(hook, state) {
     const skillType = state.u.twoweap
         ? P_TWO_WEAPON_COMBAT : Math.abs(objectSkill(hook.otyp));
@@ -3165,11 +3282,14 @@ function hookRange(skill) {
         return 5;
     return 8;
 }
+// Port only: local distu duplicate kept beside the grapple code (same as
+// squaredDistance above).
 function squaredDistanceFromHero(x, y, state) {
     const dx = x - state.u.ux;
     const dy = y - state.u.uy;
     return dx * dx + dy * dy;
 }
+// Part of C apply.c:use_grapple(): the skilled "Aim for what?" menu.
 async function chooseAim(x, y, state) {
     const surface = surfaceName(x, y, state);
     const rows = [
@@ -3182,6 +3302,7 @@ async function chooseAim(x, y, state) {
         rows, choices, prompt: 'Aim for what?',
     });
 }
+// Part of C apply.c:use_grapple(): the "snag an object" outcome.
 async function snagObject(x, y, state) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object)
@@ -3197,6 +3318,8 @@ async function pullTinyMonster(monster, destination, state) {
     monster.mundetected = 0;
     await relocateMonsterTo(monster, destination.x, destination.y, { state });
 }
+// Part of C apply.c:use_grapple(): the attack_checks() call before the
+// strike.
 async function prepareHookAttack(monster, hook, target, state) {
     const confirmation = state.flags.confirm;
     state.flags.confirm = false;
@@ -3214,6 +3337,7 @@ async function prepareHookAttack(monster, hook, target, state) {
     if (!state.program_state.gameover)
         await applyCaitiffPenalty(monster, state);
 }
+// Part of C apply.c:use_grapple(): the "You hook yourself!" outcome.
 async function damageHero(state) {
     await syncPline('You hook yourself!');
     let damage = 10 + rn2(10);
@@ -3509,6 +3633,7 @@ export async function breakWand(wand, { state = game } = {}) {
     await discardBrokenWand(state);
     return { spentTime: true, heroDied: false };
 }
+// C apply.c:discard_broken_wand()
 async function discardBrokenWand(state) {
     const wand = state._currentWand;
     state._currentWand = null;
@@ -3516,6 +3641,8 @@ async function discardBrokenWand(state) {
         await delobj(wand, state);
     endVoluntaryMultiTurn(state);
 }
+// Part of C apply.c:do_break_wand(): the per-square object-pile zap of
+// the ray sweep.
 async function affectPile(wand, x, y, state) {
     if (!state.level.objects[x]?.[y]?.length)
         return;
@@ -3523,6 +3650,8 @@ async function affectPile(wand, x, y, state) {
     if (!state.program_state.gameover)
         await bot();
 }
+// Part of C apply.c:do_break_wand(): the terrain effect of one ray
+// square — wall watch, liquid fill, pit or hole, and boulder dunking.
 async function digWithBrokenWand(wand, x, y, fillMessageShown, state) {
     const result = { shopDamage: false, filledWithLiquid: false };
     const check = digCheck('object', x, y, state);
@@ -3598,6 +3727,7 @@ export function applySuggestion(object, state = game) {
     }
     return GETOBJ_EXCLUDE_SELECTABLE;
 }
+// C apply.c:doapply()
 export async function doapply() {
     // apply.c:doapply() rejects the current body and excessive load before
     // choosing an object through getobj().
@@ -3643,6 +3773,8 @@ export async function doapply() {
         game.context.move = 1;
     }
 }
+// Part of C apply.c:doapply(): the tool switch dispatching each applyable
+// object.
 // Return the surviving object for the native talking-artifact tail. Applied
 // stacks can split or disappear, so each destructive owner returns its object.
 export async function applyTool(item, underlay) {
@@ -3844,6 +3976,7 @@ export function restorationLeavesTrouble(state) {
 const FADED_INK = [
     'fresh', 'slightly faded', 'very faded', 'extremely faded', 'barely visible',
 ];
+// C apply.c:flip_through_book()
 export async function flipThroughBook(book, { state = game } = {}) {
     requireLiveGame(state);
     if (state.u.uinwater) {
@@ -3896,6 +4029,7 @@ export async function flipThroughBook(book, { state = game } = {}) {
     }
     return { spentTime: true, heroDied: false };
 }
+// C apply.c:flip_coin()
 export async function flipCoin(coin, { state = game } = {}) {
     requireLiveGame(state);
     await plineWithContinuation(`You flip ${withIndefiniteArticle(objectName(coin, state))}.`);

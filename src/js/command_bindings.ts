@@ -39,6 +39,7 @@ const MOVEMENT_DELTAS: readonly (readonly [number, number, number])[] = [
     [0, 0, 1], [0, 0, -1],
 ];
 
+// Port only: lookup in the port's native command table.
 const commandNamed = (name: string) => NATIVE_COMMANDS.find(command => command.name === name);
 
 // C cmd.c:ext_func_tab_from_func(): the first command table entry whose
@@ -49,8 +50,11 @@ export function extFuncTabFromFunc(handler: string): NativeCommand {
     return command;
 }
 
+// C global.h:C()
 const control = (key: number) => key & 0x1f;
+// C global.h:M()
 const meta = (key: number) => key | 0x80;
+// C hacklib.c:highc()
 const uppercase = (key: number) => key >= 97 && key <= 122 ? key - 32 : key;
 const WAIT_COMMAND = commandNamed('wait');
 if (!WAIT_COMMAND) throw new Error('The native command table must define wait.');

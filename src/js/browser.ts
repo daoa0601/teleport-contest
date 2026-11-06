@@ -46,6 +46,7 @@ OPTIONS=runmode:walk
 OPTIONS=disclose:+i +a +v +g +c +o
 `;
 
+// Port only: browser play-page entry point.
 async function main(): Promise<void> {
     const snapshot = await loadSnapshot();
     if (snapshot?.owner) window.__TELEPORT_VFS_PREFIX = `vfs:${snapshot.owner}:`;
@@ -94,6 +95,7 @@ async function main(): Promise<void> {
     showGameOver(vfsReadFile('/record'));
 }
 
+// Port only: load the fork snapshot from browser storage.
 async function loadSnapshot(): Promise<ForkSnapshot | null> {
     try {
         const response = await fetch('./snapshot.json', { cache: 'no-store' });
@@ -109,6 +111,7 @@ async function loadSnapshot(): Promise<ForkSnapshot | null> {
     }
 }
 
+// Port only: render the fork identity in the page header.
 function showFork(owner: string, fork: string): void {
     const subtitle = document.getElementById('play-subtitle');
     if (!subtitle) return;
@@ -134,6 +137,7 @@ function showFork(owner: string, fork: string): void {
     }
 }
 
+// Port only: read the saved .nethackrc from browser storage.
 function readSavedOptions(): string | null {
     try {
         const stored = localStorage.getItem(NETHACKRC_KEY);
@@ -143,6 +147,7 @@ function readSavedOptions(): string | null {
     }
 }
 
+// Port only: render the previous game's end message.
 function showGameOver(record: string | null): void {
     const panel = document.getElementById('game-over-panel');
     const recordDisplay = document.getElementById('game-over-record');
@@ -153,6 +158,7 @@ function showGameOver(record: string | null): void {
     panel.classList.add('visible');
 }
 
+// Port only: wire a toolbar button to its panel.
 function wireToolbarButton(id: string, activate: () => void): void {
     const button = document.getElementById(id);
     if (!(button instanceof HTMLButtonElement)) return;
@@ -164,6 +170,7 @@ function wireToolbarButton(id: string, activate: () => void): void {
     });
 }
 
+// Port only: clear saved games from browser storage.
 function clearSavedGames(): number {
     const prefix = window.__TELEPORT_VFS_PREFIX || 'vfs:';
     const keys: string[] = [];

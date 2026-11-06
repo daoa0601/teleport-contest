@@ -8,6 +8,7 @@ import { game } from './gstate.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { WAN_POLYMORPH, SPE_POLYMORPH } from './object_data.js';
 
+// C lock.c:boxlock()
 export async function changeBoxLockByMagic(box: GameObject, source: Pick<GameObject, 'otyp'>, { state = game }: { state?: GameState } = {}) {
     const effect = OBJ_NAME(source.otyp);
     if (effect === 'locking' || effect === 'wizard lock') {

@@ -43,9 +43,12 @@ const ATTRIBUTE_NAME = [
 export const ATTRIBUTE_DISPLAY_ORDER = Object.freeze([
     A_STR, A_DEX, A_CON, A_INT, A_WIS, A_CHA,
 ]);
+// Part of C attrib.c:acurr(), attrib.c:adjattrib(): equipment-slot accessor
+// for the checks C writes as direct uarmg/uwep/uarmh reads.
 function wornObject(state, slot) {
     return state?.[slot] || state?.u?.[slot] || null;
 }
+// C attrib.c:acurr()
 // Equipment changes the effective value without overwriting the base value.
 export function currentAttribute(attribute, state = game) {
     requireAttributeIndex(attribute);
@@ -67,6 +70,8 @@ export function currentStrength(state = game) {
         return 19 + Math.trunc(strength / 50);
     return Math.min(strength, 125) - 100;
 }
+// Part of C attrib.c:acurr(): the per-equipment bounds (gauntlets of power,
+// Ogresmasher, dunce cap) and the 3..25 clamp, returned as a pair.
 function attributeLimits(attribute, state) {
     if (attribute === A_STR)
         return [wornObject(state, 'uarmg')?.otyp === GAUNTLETS_OF_POWER ? STR25 : 3, STR25];
@@ -372,6 +377,8 @@ export function setMoreLuck(state = game) {
     else
         state.u.moreluck = -LUCKADD;
 }
+// Part of C attrib.c:adjattrib(): the msgflg message half, split out for
+// async callers.
 // adjattrib()'s message half (msgflg handling), split out for async callers.
 export function attributeChangeMessage(attribute, result, state = game) {
     requireAttributeIndex(attribute);
@@ -403,12 +410,16 @@ export async function exerciseAttribute(attribute, improving, state = game) {
     if (state.moves > 0 && (attribute === A_STR || attribute === A_CON))
         await encumber_msg(state);
 }
+// Part of C attrib.c:exercise(): the synchronous Wisdom-only entry callers
+// reach without an input boundary.
 // Sync wrapper over exercise() for Wisdom: exercise(A_WIS, ...) never
 // reaches the encumber_msg() tail, so knowledge and identification can use
 // the same accumulation rule without an input boundary.
 export function exerciseWisdom(improving = true, state = game) {
     accumulateAttributeExercise(A_WIS, improving, state);
 }
+// Part of C attrib.c:exercise(): the accumulation core shared by the async
+// and sync paths.
 function accumulateAttributeExercise(attribute, improving, state) {
     requireAttributeIndex(attribute);
     const hero = state.u;
@@ -627,6 +638,7 @@ export function varyInitAttr() {
         }
     }
 }
+// Part of C attrib.c:exerchk(): the deferral test for the periodic check.
 function exerciseCheckIsDeferred(state) {
     // C attrib.c:exerchk() runs its test whenever `moves >=
     // next_attrib_check && !multi`.  An occupation installed with multi
@@ -640,6 +652,9 @@ const SLOT_MASKS = {
     uleft: W_RINGL, uright: W_RINGR, uamul: W_AMUL, ublindf: W_TOOL,
     uwep: W_WEP, uswapwep: W_SWAPWEP, uquiver: W_QUIVER,
 };
+// Port only: recompute a property's intrinsic bit mask (FROMEXPER,
+// FROMRACE, ...) from the recorded property sources, mirroring the
+// u.uprops[] intrinsic field C maintains in place.
 export function intrinsicPropertyMask(property, state = game) {
     const sources = state.u._propertySources?.[property]?.intrinsic;
     return propertyTimeout(property, state)
@@ -649,6 +664,9 @@ export function intrinsicPropertyMask(property, state = game) {
         | (sources?.form ? FROMFORM : 0)
         | (sources?.potion ? I_SPECIAL : 0);
 }
+// Port only: recompute a property's extrinsic worn-slot mask (W_ARM,
+// W_RINGL, ...) from the recorded property sources, mirroring the
+// u.uprops[] extrinsic field C maintains in place.
 export function extrinsicPropertyMask(property, state = game) {
     const sources = state.u._propertySources?.[property];
     let mask = (sources?.carried.length ? W_ART : 0) | (sources?.invoked ? W_ARTI : 0);
@@ -659,6 +677,7 @@ export function extrinsicPropertyMask(property, state = game) {
         mask |= W_TOOL;
     return mask;
 }
+// C youprop.h:Very_fast()
 export function veryFast(state = game) {
     return !!((intrinsicPropertyMask('fast', state) & ~INTRINSIC)
         || extrinsicPropertyMask('fast', state));
@@ -772,10 +791,14 @@ export function fromWhat(property, state = game, blocked = false) {
         suffix = suffix.replace(/ of strangulation.*$/i, '');
     return suffix;
 }
+// Part of C attrib.c:from_what(): the owning object's display name in
+// provenance strings.
 function propertyObjectName(object, state) {
     return artifactById(object.oartifact, state)?.name.replace(/^The /, 'the ')
         ?? ownedSimpleObjectName(object, state, { capitalized: false });
 }
+// Part of C attrib.c:from_what(): the "because of ..." tails for sources
+// blocked by a conflicting item.
 function blockedProvenance(property, state) {
     const blindfold = state.ublindf || state.u.ublindf;
     if (property === 'blinded' && blindnessBlocked(state) && isEyesOfTheOverworld(blindfold, state)
@@ -789,6 +812,7 @@ function blockedProvenance(property, state) {
         return ` because of ${ownedSimpleObjectName(helmet, state, { capitalized: false })}`;
     return '';
 }
+// Port only: hero-shaped wrapper for mondata.c's noeyes() species test.
 export function heroHasNoEyes(state = game) {
     return !monsterHasEyes(state.u.umonnum ?? -1);
 }
@@ -872,6 +896,7 @@ export function newHeroHitPoints(state) {
     }
     return hp;
 }
+// Part of C attrib.c:newhp(): the Con adjustment table.
 // The Con adjustment table of C newhp().
 function newHeroConstitutionBonus(constitution) {
     if (constitution <= 3)
@@ -984,6 +1009,8 @@ export async function changeHeroAlignment(newAlignment, reason, state = game) {
         await retouchEquipment(0, { state });
     }
 }
+// Port only: runtime validation that an attribute index is one of the six
+// hero attributes.
 export function requireAttributeIndex(attribute) {
     if (!Number.isInteger(attribute) || attribute < A_STR || attribute > A_CHA)
         throw new RangeError(`Unknown hero attribute ${attribute}`);

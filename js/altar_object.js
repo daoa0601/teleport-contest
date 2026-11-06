@@ -10,17 +10,23 @@ import { inventoryItemDescription } from './invent.js';
 import { simpleObjectNameWithArticle, observeObjectForNaming, } from './objnam.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { withIndefiniteArticle } from './objnam.js';
+// Part of C do.c:doaltarobj(): the landing object's doname() description
+// for the flash and land messages.
 async function objectDescription(object, state) {
     observeObjectForNaming(object, { state });
     return state === game
         ? await inventoryItemDescription(object)
         : simpleObjectNameWithArticle(object, state);
 }
+// Part of C do.c:doaltarobj(): the observed BUC state becomes known
+// (C sets bknown directly here).
 function rememberBlessingOrCurse(object) {
     object.bknown = true;
     object.buc = object.blessed ? 'blessed'
         : object.cursed ? 'cursed' : undefined;
 }
+// C do.c:doaltarobj()
+// What an altar reveals when an object lands on it.
 export async function landObjectOnAltar(object, { state = game, monsterMoving = !!state.context?.mon_moving, publish = plineWithContinuation, } = {}) {
     if (heroIsBlind(state))
         return false;

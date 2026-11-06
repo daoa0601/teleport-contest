@@ -31,7 +31,9 @@ import type { GameObject } from './object_types.js';
 import { game } from './gstate.js';
 import { CLR_BLACK, CLR_BLUE, CLR_BRIGHT_BLUE, CLR_BRIGHT_CYAN, CLR_BRIGHT_GREEN, CLR_BRIGHT_MAGENTA, CLR_BROWN, CLR_CYAN, CLR_GRAY, CLR_GREEN, CLR_MAGENTA, CLR_ORANGE, CLR_RED, CLR_WHITE, CLR_YELLOW } from './terminal.js';
 
+// C global.h:SIZE()
 // C macro: SIZE(arr) = sizeof(arr)/sizeof(arr[0]) → JS: arr.length
+// C global.h:SIZE()
 export function SIZE(arr: ArrayLike<unknown>): number { return arr.length; }
 
 // Version (patchlevel.h)
@@ -128,6 +130,7 @@ export const DIR_DOWN = 8;
 export const DIR_UP = 9;
 export const N_DIRS = 8;
 export const N_DIRS_Z = 10;
+// C hack.h:DIR_180()
 export function DIR_180(dir: number): number { return (dir + 4) % N_DIRS; }
 
 // Encumbrance levels (hack.h)
@@ -153,12 +156,15 @@ export const AM_MASK = 0x07;
 export const AM_SHRINE = 0x08;
 export const AM_SANCTUM = 0x10;
 
+// C align.h:Align2amask()
 // C ref: align.h Align2amask / Amask2align
+// C align.h:Align2amask()
 export function Align2amask(x: number): number {
     if (x === A_NONE) return AM_NONE;
     if (x === A_LAWFUL) return AM_LAWFUL;
     return (x + 2) & 0xff; // A_NEUTRAL(0)->2, A_CHAOTIC(-1)->1
 }
+// C align.h:Amask2align()
 export function Amask2align(x: number): number {
     const masked = x & AM_MASK;
     if (masked === 0) return A_NONE;
@@ -250,11 +256,16 @@ export const A_CON = 4;
 export const A_CHA = 5;
 export const NUM_ATTRS = 6;
 
+// C attrib.h:STR18()
 // C ref: attrib.h — strength encoding helpers
+// C attrib.h:STR18()
 export function STR18(x: number): number { return 18 + x; }  // 18/xx
+// C attrib.h:STR19()
 export function STR19(x: number): number { return 100 + x; } // 19 and above
 
+// C hack.h:BZ_OFS_AD()
 // C ref: zap.h — BZ_OFS_AD(x) = (x) - 1
+// C hack.h:BZ_OFS_AD()
 export function BZ_OFS_AD(adtyp: number): number { return adtyp - 1; }
 
 // Room types (mkroom.h)
@@ -307,6 +318,7 @@ export const SUPPRESS_SADDLE = 0x08;
 export const SUPPRESS_MAPPEARANCE = 0x10;
 export const SUPPRESS_NAME = 0x20;
 export const AUGMENT_IT = 0x40;
+// C hack.h:EXACT_NAME()
 export const EXACT_NAME = (SUPPRESS_IT | SUPPRESS_INVISIBLE
     | SUPPRESS_HALLUCINATION | SUPPRESS_SADDLE | SUPPRESS_MAPPEARANCE);
 
@@ -458,6 +470,7 @@ export const TUTORIAL = 8;
 
 // These values come from the pinned source tree's generated date.h.
 export const BUILD_DATE = "Sun May  3 01:27:17 2026";
+// C date.h:BUILD_TIME()
 export const BUILD_TIME = (1777786037);
 // date.c:populate_nomakedefs() pins the recorder's runtime build banner.
 export const COPYRIGHT_BANNER_C = "         Version 5.0.0 MacOS, built May  2 2026 12:00:00.";
@@ -479,7 +492,9 @@ export const LEFTBUTTON = 0x2;
 export const MIDBUTTON = 0x80;
 // RIGHTMOST_BUTTON_PRESSED fallback
 export const RIGHTBUTTON = 0x800;
+// Port only: platform fallback for the curses mouse-button mask.
 // mouse button mask fallback
+// Port only: platform fallback for the curses mouse-button mask.
 export const MOUSEMASK = (LEFTBUTTON | RIGHTBUTTON | MIDBUTTON);
 // A_LEFT fallback disabled in web renderer
 export const A_LEFTLINE = 0;
@@ -490,6 +505,7 @@ export const A_ITALIC = 0;
 
 // ===== align.h =====
 export const A_COALIGNED = 1;
+// C align.h:A_OPALIGNED()
 export const A_OPALIGNED = (-1);
 export const AM_SPLEV_CO = 0x20;
 export const AM_SPLEV_NONCO = 0x40;
@@ -512,18 +528,23 @@ export const INTUI_NEW_LOOK = 1;
 export const DEFAULT_ICON = "NetHack:default.icon";
 export const CHANGE_COLOR = 1;
 export const DEPTH = 6;
+// C amiconf.h:AMII_MAXCOLORS()
 export const AMII_MAXCOLORS = (1 << DEPTH);
 export const AMII_MUFFLED_VOLUME = 40;
 export const AMII_SOFT_VOLUME = 50;
 export const AMII_OKAY_VOLUME = 60;
 export const AMII_LOUDER_VOLUME = 80;
 
+// C monflag.h:NEUTRAL()
 // ===== monflag.h =====
+// C monflag.h:NEUTRAL()
 export const NEUTRAL = (FEMALE + 1);
+// C monflag.h:NUM_MGENDERS()
 export const NUM_MGENDERS = (NEUTRAL + 1);
 export const G_KNOWN = 0x04;
 export const G_GENOD = 0x02;
 export const G_EXTINCT = 0x01;
+// C monflag.h:G_GONE()
 export const G_GONE = (G_GENOD | G_EXTINCT);
 export const MV_KNOWS_EGG = 0x08;
 export const G_NOCORPSE = 0x0010;
@@ -534,7 +555,9 @@ export const W_ARTI = 0x00002000;
 export const FROMRACE = 0x02000000;
 export const FROMFORM = 0x10000000;
 
+// C attrib.h:A_MAX()
 // ===== attrib.h =====
+// C attrib.h:A_MAX()
 export const A_MAX = (A_CHA + 1);
 
 // ===== botl.h =====
@@ -542,39 +565,72 @@ export const BL_CHARACTERISTICS = -3;
 export const BL_RESET = -2;
 export const BL_FLUSH = -1;
 export const BL_TITLE = 0;
+// C botl.h:BL_STR()
 export const BL_STR = (BL_TITLE + 1);
+// C botl.h:BL_DX()
 export const BL_DX = (BL_STR + 1);
+// C botl.h:BL_CO()
 export const BL_CO = (BL_DX + 1);
+// C botl.h:BL_IN()
 export const BL_IN = (BL_CO + 1);
+// C botl.h:BL_WI()
 export const BL_WI = (BL_IN + 1);
+// C botl.h:BL_CH()
 export const BL_CH = (BL_WI + 1);
+// C botl.h:BL_ALIGN()
 export const BL_ALIGN = (BL_CH + 1);
+// C botl.h:BL_SCORE()
 export const BL_SCORE = (BL_ALIGN + 1);
+// C botl.h:BL_CAP()
 export const BL_CAP = (BL_SCORE + 1);
+// C botl.h:BL_GOLD()
 export const BL_GOLD = (BL_CAP + 1);
+// C botl.h:BL_ENE()
 export const BL_ENE = (BL_GOLD + 1);
+// C botl.h:BL_ENEMAX()
 export const BL_ENEMAX = (BL_ENE + 1);
+// C botl.h:BL_XP()
 export const BL_XP = (BL_ENEMAX + 1);
+// C botl.h:BL_AC()
 export const BL_AC = (BL_XP + 1);
+// C botl.h:BL_HD()
 export const BL_HD = (BL_AC + 1);
+// C botl.h:BL_TIME()
 export const BL_TIME = (BL_HD + 1);
+// C botl.h:BL_HUNGER()
 export const BL_HUNGER = (BL_TIME + 1);
+// C botl.h:BL_HP()
 export const BL_HP = (BL_HUNGER + 1);
+// C botl.h:BL_HPMAX()
 export const BL_HPMAX = (BL_HP + 1);
+// C botl.h:BL_LEVELDESC()
 export const BL_LEVELDESC = (BL_HPMAX + 1);
+// C botl.h:BL_EXP()
 export const BL_EXP = (BL_LEVELDESC + 1);
+// C botl.h:BL_CONDITION()
 export const BL_CONDITION = (BL_EXP + 1);
+// C botl.h:BL_WEAPON()
 export const BL_WEAPON = (BL_CONDITION + 1);
+// C botl.h:BL_ARMOR()
 export const BL_ARMOR = (BL_WEAPON + 1);
+// C botl.h:BL_TERRAIN()
 export const BL_TERRAIN = (BL_ARMOR + 1);
+// C botl.h:BL_VERS()
 export const BL_VERS = (BL_TERRAIN + 1);
+// C botl.h:MAXBLSTATS()
 export const MAXBLSTATS = (BL_VERS + 1);
 export const NO_LTEQGT = -1;
+// C botl.h:EQ_VALUE()
 export const EQ_VALUE = (NO_LTEQGT + 1);
+// C botl.h:LT_VALUE()
 export const LT_VALUE = (EQ_VALUE + 1);
+// C botl.h:LE_VALUE()
 export const LE_VALUE = (LT_VALUE + 1);
+// C botl.h:GE_VALUE()
 export const GE_VALUE = (LE_VALUE + 1);
+// C botl.h:GT_VALUE()
 export const GT_VALUE = (GE_VALUE + 1);
+// C botl.h:TXT_VALUE()
 export const TXT_VALUE = (GT_VALUE + 1);
 export const HL_UNDEF = 0x00;
 export const HL_NONE = 0x01;
@@ -674,6 +730,7 @@ export const CONFIG_TEMPLATE = "nethackrc.template";
 export const SYSCF_TEMPLATE = "sysconf.template";
 export const SYMBOLS_TEMPLATE = "symbols.template";
 export const INTERJECT_PANIC = 0;
+// C windconf.h:INTERJECTION_TYPES()
 export const INTERJECTION_TYPES = (INTERJECT_PANIC + 1);
 export const MAX_LAN_USERNAME = 20;
 
@@ -706,8 +763,11 @@ export const TRIBUTEFILE = "tribute";
 export const LEV_EXT = ".lua";
 export const MD_PAD_RUMORS = 60;
 export const MD_PAD_BOGONS = 20;
+// C global.h:TRUE()
 export const TRUE = (1);
+// C global.h:FALSE()
 export const FALSE = (0);
+// C global.h:BOOL_RANDOM()
 export const BOOL_RANDOM = (-1);
 export const LARGEST_INT = 32767;
 export const PORT_ID = "Amiga";
@@ -724,6 +784,7 @@ export const PL_NSIZ = 32;
 export const PL_CSIZ = 32;
 export const PL_FSIZ = 32;
 export const PL_PSIZ = 63;
+// C global.h:PL_NSIZ_PLUS()
 export const PL_NSIZ_PLUS = (PL_NSIZ + 4 * (1 + 3) + 1);
 export const MAXSTAIRS = 1;
 export const ALIGNWEIGHT = 4;
@@ -774,6 +835,7 @@ export const NHL_SB_ALL = 0x0000ffff;
 export const NHL_SBRV_DENY = 1;
 export const NHL_SBRV_ACCEPT = 2;
 export const NHL_SBRV_FAIL = 3;
+// C global.h:SFCTOOL_BIT()
 export const SFCTOOL_BIT = (1 << 30);
 
 // ===== config.h =====
@@ -794,9 +856,13 @@ export const DUMPLOG_MSG_COUNT = 50;
 
 // ===== context.h =====
 export const TIP_ENHANCE = 0;
+// C context.h:TIP_SWIM()
 export const TIP_SWIM = (TIP_ENHANCE + 1);
+// C context.h:TIP_UNTRAP_MON()
 export const TIP_UNTRAP_MON = (TIP_SWIM + 1);
+// C context.h:TIP_GETPOS()
 export const TIP_GETPOS = (TIP_UNTRAP_MON + 1);
+// C context.h:NUM_TIPS()
 export const NUM_TIPS = (TIP_GETPOS + 1);
 export const CONTEXTVERBSZ = 30;
 
@@ -818,8 +884,11 @@ export const MAZELIKE = 0x04;
 export const ROGUELIKE = 0x08;
 export const UNCONNECTED = 0x10;
 export const D_ALIGN_NONE = 0;
+// C dgn_file.h:D_ALIGN_CHAOTIC()
 export const D_ALIGN_CHAOTIC = (AM_CHAOTIC << 4);
+// C dgn_file.h:D_ALIGN_NEUTRAL()
 export const D_ALIGN_NEUTRAL = (AM_NEUTRAL << 4);
+// C dgn_file.h:D_ALIGN_LAWFUL()
 export const D_ALIGN_LAWFUL = (AM_LAWFUL << 4);
 export const D_ALIGN_MASK = 0x70;
 export const LEV_LIMIT = 50;
@@ -852,17 +921,25 @@ export const WRBMODE = "w+b";
 
 // ===== dungeon.h =====
 export const LR_DOWNSTAIR = 0;
+// C dungeon.h:LR_UPSTAIR()
 export const LR_UPSTAIR = (LR_DOWNSTAIR + 1);
+// C dungeon.h:LR_PORTAL()
 export const LR_PORTAL = (LR_UPSTAIR + 1);
+// C dungeon.h:LR_BRANCH()
 export const LR_BRANCH = (LR_PORTAL + 1);
+// C dungeon.h:LR_TELE()
 export const LR_TELE = (LR_BRANCH + 1);
+// C dungeon.h:LR_UPTELE()
 export const LR_UPTELE = (LR_TELE + 1);
+// C dungeon.h:LR_DOWNTELE()
 export const LR_DOWNTELE = (LR_UPTELE + 1);
+// C dungeon.h:LR_MONGEN()
 export const LR_MONGEN = (LR_DOWNTELE + 1);
 export const BR_STAIR = 0;
 export const BR_NO_END1 = 1;
 export const BR_NO_END2 = 2;
 export const BR_PORTAL = 3;
+// C dungeon.h:MIGR_NOWHERE()
 export const MIGR_NOWHERE = (-1);
 export const MIGR_RANDOM = 0;
 export const MIGR_APPROX_XY = 1;
@@ -894,30 +971,52 @@ export const N_ENGRAVE = 6;
 export const GFILTER_NONE = 0;
 export const GFILTER_VIEW = 1;
 export const GFILTER_AREA = 2;
+// C flag.h:NUM_GFILTER()
 export const NUM_GFILTER = (GFILTER_AREA + 1);
 export const PLNMSG_UNKNOWN = 0;
+// C flag.h:PLNMSG_ONE_ITEM_HERE()
 export const PLNMSG_ONE_ITEM_HERE = (PLNMSG_UNKNOWN + 1);
+// C flag.h:PLNMSG_TOWER_OF_FLAME()
 export const PLNMSG_TOWER_OF_FLAME = (PLNMSG_ONE_ITEM_HERE + 1);
+// C flag.h:PLNMSG_CAUGHT_IN_EXPLOSION()
 export const PLNMSG_CAUGHT_IN_EXPLOSION = (PLNMSG_TOWER_OF_FLAME + 1);
+// C flag.h:PLNMSG_ENVELOPED_IN_GAS()
 export const PLNMSG_ENVELOPED_IN_GAS = (PLNMSG_CAUGHT_IN_EXPLOSION + 1);
+// C flag.h:PLNMSG_OBJ_GLOWS()
 export const PLNMSG_OBJ_GLOWS = (PLNMSG_ENVELOPED_IN_GAS + 1);
+// C flag.h:PLNMSG_OBJNAM_ONLY()
 export const PLNMSG_OBJNAM_ONLY = (PLNMSG_OBJ_GLOWS + 1);
+// C flag.h:PLNMSG_OK_DONT_DIE()
 export const PLNMSG_OK_DONT_DIE = (PLNMSG_OBJNAM_ONLY + 1);
+// C flag.h:PLNMSG_BACK_ON_GROUND()
 export const PLNMSG_BACK_ON_GROUND = (PLNMSG_OK_DONT_DIE + 1);
+// C flag.h:PLNMSG_GROWL()
 export const PLNMSG_GROWL = (PLNMSG_BACK_ON_GROUND + 1);
+// C flag.h:PLNMSG_HIDE_UNDER()
 export const PLNMSG_HIDE_UNDER = (PLNMSG_GROWL + 1);
+// C flag.h:PLNMSG_MON_TAKES_OFF_ITEM()
 export const PLNMSG_MON_TAKES_OFF_ITEM = (PLNMSG_HIDE_UNDER + 1);
+// C flag.h:PLNMSG_enum()
 export const PLNMSG_enum = (PLNMSG_MON_TAKES_OFF_ITEM + 1);
 export const RUN_TPORT = 0;
+// C flag.h:RUN_LEAP()
 export const RUN_LEAP = (RUN_TPORT + 1);
+// C flag.h:RUN_STEP()
 export const RUN_STEP = (RUN_LEAP + 1);
+// C flag.h:RUN_CRAWL()
 export const RUN_CRAWL = (RUN_STEP + 1);
 export const GLOC_MONS = 0;
+// C flag.h:GLOC_OBJS()
 export const GLOC_OBJS = (GLOC_MONS + 1);
+// C flag.h:GLOC_DOOR()
 export const GLOC_DOOR = (GLOC_OBJS + 1);
+// C flag.h:GLOC_EXPLORE()
 export const GLOC_EXPLORE = (GLOC_DOOR + 1);
+// C flag.h:GLOC_INTERESTING()
 export const GLOC_INTERESTING = (GLOC_EXPLORE + 1);
+// C flag.h:GLOC_VALID()
 export const GLOC_VALID = (GLOC_INTERESTING + 1);
+// C flag.h:NUM_GLOCS()
 export const NUM_GLOCS = (GLOC_VALID + 1);
 export const AUTOUNLOCK_UNTRAP = 1;
 export const AUTOUNLOCK_APPLY_KEY = 2;
@@ -1002,22 +1101,39 @@ export const WT_DRAGON = 4500;
 
 // ===== wintype.h =====
 export const ANY_VOID = 1;
+// C wintype.h:ANY_OBJ()
 export const ANY_OBJ = (ANY_VOID + 1);
+// C wintype.h:ANY_MONST()
 export const ANY_MONST = (ANY_OBJ + 1);
+// C wintype.h:ANY_INT()
 export const ANY_INT = (ANY_MONST + 1);
+// C wintype.h:ANY_CHAR()
 export const ANY_CHAR = (ANY_INT + 1);
+// C wintype.h:ANY_UCHAR()
 export const ANY_UCHAR = (ANY_CHAR + 1);
+// C wintype.h:ANY_SCHAR()
 export const ANY_SCHAR = (ANY_UCHAR + 1);
+// C wintype.h:ANY_UINT()
 export const ANY_UINT = (ANY_SCHAR + 1);
+// C wintype.h:ANY_LONG()
 export const ANY_LONG = (ANY_UINT + 1);
+// C wintype.h:ANY_ULONG()
 export const ANY_ULONG = (ANY_LONG + 1);
+// C wintype.h:ANY_IPTR()
 export const ANY_IPTR = (ANY_ULONG + 1);
+// C wintype.h:ANY_UPTR()
 export const ANY_UPTR = (ANY_IPTR + 1);
+// C wintype.h:ANY_LPTR()
 export const ANY_LPTR = (ANY_UPTR + 1);
+// C wintype.h:ANY_ULPTR()
 export const ANY_ULPTR = (ANY_LPTR + 1);
+// C wintype.h:ANY_STR()
 export const ANY_STR = (ANY_ULPTR + 1);
+// C wintype.h:ANY_NFUNC()
 export const ANY_NFUNC = (ANY_STR + 1);
+// C wintype.h:ANY_MASK32()
 export const ANY_MASK32 = (ANY_NFUNC + 1);
+// C wintype.h:ANY_INVALID()
 export const ANY_INVALID = (ANY_MASK32 + 1);
 export const NHW_LAST_TYPE = NHW_PERMINVENT;
 export const ATR_DIM = 2;
@@ -1025,6 +1141,7 @@ export const ATR_ITALIC = 3;
 export const CLICK_1 = 1;
 export const CLICK_2 = 2;
 export const NUM_MOUSE_BUTTONS = 2;
+// C wintype.h:WIN_ERR()
 export const WIN_ERR = (-1);
 export const MENU_FIRST_PAGE = '^';
 export const MENU_LAST_PAGE = '|';
@@ -1051,6 +1168,7 @@ export const H_MAC = 4;
 export const H_UTF8 = 5;
 export const PRIMARYSET = 0;
 export const ROGUESET = 1;
+// C sym.h:NUM_GRAPHICS()
 export const NUM_GRAPHICS = (ROGUESET + 1);
 export const UNICODESET = NUM_GRAPHICS;
 export const DEFAULT_GRAPHICS = 0;
@@ -1081,9 +1199,13 @@ export const CANDLESHOP = 25;
 export const D_SCATTER = 0;
 export const D_SHOP = 1;
 export const D_TEMPLE = 2;
+// C mkroom.h:MAXRTYPE()
 export const MAXRTYPE = (CANDLESHOP);
+// C mkroom.h:UNIQUESHOP()
 export const UNIQUESHOP = (CANDLESHOP);
+// C mkroom.h:ANY_TYPE()
 export const ANY_TYPE = (-1);
+// C mkroom.h:ANY_SHOP()
 export const ANY_SHOP = (-2);
 export const NO_ROOM = 0;
 export const SHARED = 1;
@@ -1162,6 +1284,7 @@ export const WM_X_BL = 3;
 export const WM_X_BR = 4;
 export const WM_X_TLBR = 5;
 export const WM_X_BLTR = 6;
+// C rm.h:SVALL()
 export const SVALL = (0xFF);
 
 // ===== sndprocs.h =====
@@ -1174,6 +1297,7 @@ export const SOUND_TRIGGER_VERBAL = 0x0020;
 
 // ===== spell.h =====
 export const NO_SPELL = 0;
+// C spell.h:UNKNOWN_SPELL()
 export const UNKNOWN_SPELL = (-1);
 export const MAX_SPELL_STUDY = 3;
 export const ALL_MAP = 0x1;
@@ -1185,14 +1309,22 @@ export const TIMER_LEVEL = 1;
 export const TIMER_GLOBAL = 2;
 export const TIMER_OBJECT = 3;
 export const TIMER_MONSTER = 4;
+// C timeout.h:NUM_TIMER_KINDS()
 export const NUM_TIMER_KINDS = (TIMER_MONSTER + 1);
 export const ROT_ORGANIC = 0;
+// C timeout.h:ROT_CORPSE()
 export const ROT_CORPSE = (ROT_ORGANIC + 1);
+// C timeout.h:REVIVE_MON()
 export const REVIVE_MON = (ROT_CORPSE + 1);
+// C timeout.h:ZOMBIFY_MON()
 export const ZOMBIFY_MON = (REVIVE_MON + 1);
+// C timeout.h:BURN_OBJECT()
 export const BURN_OBJECT = (ZOMBIFY_MON + 1);
+// C timeout.h:HATCH_EGG()
 export const HATCH_EGG = (BURN_OBJECT + 1);
+// C timeout.h:FIG_TRANSFORM()
 export const FIG_TRANSFORM = (HATCH_EGG + 1);
+// C timeout.h:SHRINK_GLOB()
 export const SHRINK_GLOB = (FIG_TRANSFORM + 1);
 export const RANGE_LEVEL = 0;
 export const RANGE_GLOBAL = 1;
@@ -1268,6 +1400,7 @@ export const WININIT_UNDO = 1;
 export const WINCHAIN_ALLOC = 0;
 export const WINCHAIN_INIT = 1;
 
+// C mextra.h:FCSIZ()
 // ===== mextra.h =====
 export const FCSIZ = (ROWNO + COLNO);
 export const REPAIR_DELAY = 5;
@@ -1308,6 +1441,7 @@ export const STRAT_APPEARMSG = 0x80000000;
 export const STRAT_ARRIVE = 0x40000000;
 export const STRAT_WAITFORU = 0x20000000;
 export const STRAT_CLOSE = 0x10000000;
+// C monst.h:STRAT_WAITMASK()
 export const STRAT_WAITMASK = (STRAT_CLOSE | STRAT_WAITFORU);
 export const STRAT_HEAL = 0x08000000;
 export const STRAT_GROUND = 0x04000000;
@@ -1335,7 +1469,9 @@ export const ROLE_ALIGNMASK = AM_MASK;
 export const ROLE_LAWFUL = AM_LAWFUL;
 export const ROLE_NEUTRAL = AM_NEUTRAL;
 export const ROLE_CHAOTIC = AM_CHAOTIC;
+// C you.h:ROLE_NONE()
 export const ROLE_NONE = (-1);
+// C you.h:ROLE_RANDOM()
 export const ROLE_RANDOM = (-2);
 export const ROLE_GENDERS = 2;
 export const PRONOUN_NORMAL = 0;
@@ -1350,6 +1486,7 @@ export const A_ORIGINAL = 1;
 export const A_CURRENT = 0;
 export const LUCKADD = 3;
 export const LUCKMAX = 10;
+// C you.h:LUCKMIN()
 export const LUCKMIN = (-10);
 export const AC_MAX = 99;
 
@@ -1362,39 +1499,72 @@ export const FLASHED_LIGHT = 4;
 export const INVIS_BEAM = 5;
 export const NO_PART = -1;
 export const CONS_OBJ = 0;
+// C hack.h:CONS_MON()
 export const CONS_MON = (CONS_OBJ + 1);
+// C hack.h:CONS_HERO()
 export const CONS_HERO = (CONS_MON + 1);
+// C hack.h:CONS_TRAP()
 export const CONS_TRAP = (CONS_HERO + 1);
+// C hack.h:NUM_CQS()
 export const NUM_CQS = (CQ_REPEAT + 1);
 export const NHKF_ESC = 0;
+// C hack.h:NHKF_GETDIR_SELF()
 export const NHKF_GETDIR_SELF = (NHKF_ESC + 1);
+// C hack.h:NHKF_GETDIR_SELF2()
 export const NHKF_GETDIR_SELF2 = (NHKF_GETDIR_SELF + 1);
+// C hack.h:NHKF_GETDIR_HELP()
 export const NHKF_GETDIR_HELP = (NHKF_GETDIR_SELF2 + 1);
+// C hack.h:NHKF_GETDIR_MOUSE()
 export const NHKF_GETDIR_MOUSE = (NHKF_GETDIR_HELP + 1);
+// C hack.h:NHKF_COUNT()
 export const NHKF_COUNT = (NHKF_GETDIR_MOUSE + 1);
+// C hack.h:NHKF_GETPOS_SELF()
 export const NHKF_GETPOS_SELF = (NHKF_COUNT + 1);
+// C hack.h:NHKF_GETPOS_PICK()
 export const NHKF_GETPOS_PICK = (NHKF_GETPOS_SELF + 1);
+// C hack.h:NHKF_GETPOS_PICK_Q()
 export const NHKF_GETPOS_PICK_Q = (NHKF_GETPOS_PICK + 1);
+// C hack.h:NHKF_GETPOS_PICK_O()
 export const NHKF_GETPOS_PICK_O = (NHKF_GETPOS_PICK_Q + 1);
+// C hack.h:NHKF_GETPOS_PICK_V()
 export const NHKF_GETPOS_PICK_V = (NHKF_GETPOS_PICK_O + 1);
+// C hack.h:NHKF_GETPOS_SHOWVALID()
 export const NHKF_GETPOS_SHOWVALID = (NHKF_GETPOS_PICK_V + 1);
+// C hack.h:NHKF_GETPOS_AUTODESC()
 export const NHKF_GETPOS_AUTODESC = (NHKF_GETPOS_SHOWVALID + 1);
+// C hack.h:NHKF_GETPOS_MON_NEXT()
 export const NHKF_GETPOS_MON_NEXT = (NHKF_GETPOS_AUTODESC + 1);
+// C hack.h:NHKF_GETPOS_MON_PREV()
 export const NHKF_GETPOS_MON_PREV = (NHKF_GETPOS_MON_NEXT + 1);
+// C hack.h:NHKF_GETPOS_OBJ_NEXT()
 export const NHKF_GETPOS_OBJ_NEXT = (NHKF_GETPOS_MON_PREV + 1);
+// C hack.h:NHKF_GETPOS_OBJ_PREV()
 export const NHKF_GETPOS_OBJ_PREV = (NHKF_GETPOS_OBJ_NEXT + 1);
+// C hack.h:NHKF_GETPOS_DOOR_NEXT()
 export const NHKF_GETPOS_DOOR_NEXT = (NHKF_GETPOS_OBJ_PREV + 1);
+// C hack.h:NHKF_GETPOS_DOOR_PREV()
 export const NHKF_GETPOS_DOOR_PREV = (NHKF_GETPOS_DOOR_NEXT + 1);
+// C hack.h:NHKF_GETPOS_UNEX_NEXT()
 export const NHKF_GETPOS_UNEX_NEXT = (NHKF_GETPOS_DOOR_PREV + 1);
+// C hack.h:NHKF_GETPOS_UNEX_PREV()
 export const NHKF_GETPOS_UNEX_PREV = (NHKF_GETPOS_UNEX_NEXT + 1);
+// C hack.h:NHKF_GETPOS_INTERESTING_NEXT()
 export const NHKF_GETPOS_INTERESTING_NEXT = (NHKF_GETPOS_UNEX_PREV + 1);
+// C hack.h:NHKF_GETPOS_INTERESTING_PREV()
 export const NHKF_GETPOS_INTERESTING_PREV = (NHKF_GETPOS_INTERESTING_NEXT + 1);
+// C hack.h:NHKF_GETPOS_VALID_NEXT()
 export const NHKF_GETPOS_VALID_NEXT = (NHKF_GETPOS_INTERESTING_PREV + 1);
+// C hack.h:NHKF_GETPOS_VALID_PREV()
 export const NHKF_GETPOS_VALID_PREV = (NHKF_GETPOS_VALID_NEXT + 1);
+// C hack.h:NHKF_GETPOS_HELP()
 export const NHKF_GETPOS_HELP = (NHKF_GETPOS_VALID_PREV + 1);
+// C hack.h:NHKF_GETPOS_MENU()
 export const NHKF_GETPOS_MENU = (NHKF_GETPOS_HELP + 1);
+// C hack.h:NHKF_GETPOS_LIMITVIEW()
 export const NHKF_GETPOS_LIMITVIEW = (NHKF_GETPOS_MENU + 1);
+// C hack.h:NHKF_GETPOS_MOVESKIP()
 export const NHKF_GETPOS_MOVESKIP = (NHKF_GETPOS_LIMITVIEW + 1);
+// C hack.h:NUM_NHKF()
 export const NUM_NHKF = (NHKF_GETPOS_MOVESKIP + 1);
 export const COST_CANCEL = 0;
 export const COST_DRAIN = 1;
@@ -1420,10 +1590,15 @@ export const COST_NOCONTENTS = 0;
 export const COST_CONTENTS = 1;
 export const COST_SINGLEOBJ = 2;
 export const ARG_DEBUG = 0;
+// C hack.h:ARG_VERSION()
 export const ARG_VERSION = (ARG_DEBUG + 1);
+// C hack.h:ARG_SHOWPATHS()
 export const ARG_SHOWPATHS = (ARG_VERSION + 1);
+// C hack.h:ARG_DUMPENUMS()
 export const ARG_DUMPENUMS = (ARG_SHOWPATHS + 1);
+// C hack.h:ARG_DUMPGLYPHIDS()
 export const ARG_DUMPGLYPHIDS = (ARG_DUMPENUMS + 1);
+// C hack.h:ARG_DUMPMONGEN()
 export const ARG_DUMPMONGEN = (ARG_DUMPGLYPHIDS + 1);
 export const LOOK_TRADITIONAL = 0;
 export const LOOK_QUICK = 1;
@@ -1442,23 +1617,38 @@ export const FAINTING = 4;
 export const FAINTED = 5;
 export const STARVED = 6;
 export const MV_ANY = -1;
+// C hack.h:MV_WALK()
 export const MV_WALK = (MV_ANY + 1);
+// C hack.h:MV_RUN()
 export const MV_RUN = (MV_WALK + 1);
+// C hack.h:MV_RUSH()
 export const MV_RUSH = (MV_RUN + 1);
+// C hack.h:N_MOVEMODES()
 export const N_MOVEMODES = (MV_RUSH + 1);
 export const DIR_ERR = -1;
 export const NHCORE_START_NEW_GAME = 0;
+// C hack.h:NHCORE_RESTORE_OLD_GAME()
 export const NHCORE_RESTORE_OLD_GAME = (NHCORE_START_NEW_GAME + 1);
+// C hack.h:NHCORE_MOVELOOP_TURN()
 export const NHCORE_MOVELOOP_TURN = (NHCORE_RESTORE_OLD_GAME + 1);
+// C hack.h:NHCORE_GAME_EXIT()
 export const NHCORE_GAME_EXIT = (NHCORE_MOVELOOP_TURN + 1);
+// C hack.h:NHCORE_GETPOS_TIP()
 export const NHCORE_GETPOS_TIP = (NHCORE_GAME_EXIT + 1);
+// C hack.h:NHCORE_ENTER_TUTORIAL()
 export const NHCORE_ENTER_TUTORIAL = (NHCORE_GETPOS_TIP + 1);
+// C hack.h:NHCORE_LEAVE_TUTORIAL()
 export const NHCORE_LEAVE_TUTORIAL = (NHCORE_ENTER_TUTORIAL + 1);
+// C hack.h:NUM_NHCORE_CALLS()
 export const NUM_NHCORE_CALLS = (NHCORE_LEAVE_TUTORIAL + 1);
 export const NHCB_CMD_BEFORE = 0;
+// C hack.h:NHCB_LVL_ENTER()
 export const NHCB_LVL_ENTER = (NHCB_CMD_BEFORE + 1);
+// C hack.h:NHCB_LVL_LEAVE()
 export const NHCB_LVL_LEAVE = (NHCB_LVL_ENTER + 1);
+// C hack.h:NHCB_END_TURN()
 export const NHCB_END_TURN = (NHCB_LVL_LEAVE + 1);
+// C hack.h:NUM_NHCB()
 export const NUM_NHCB = (NHCB_END_TURN + 1);
 export const POLY_NOFLAGS = 0x00;
 export const POLY_CONTROLLED = 0x01;
@@ -1469,13 +1659,21 @@ export const REST_GSTATE = 1;
 export const REST_LEVELS = 2;
 export const REST_CURRENT_LEVEL = 3;
 export const VANQ_MLVL_MNDX = 0;
+// C hack.h:VANQ_MSTR_MNDX()
 export const VANQ_MSTR_MNDX = (VANQ_MLVL_MNDX + 1);
+// C hack.h:VANQ_ALPHA_SEP()
 export const VANQ_ALPHA_SEP = (VANQ_MSTR_MNDX + 1);
+// C hack.h:VANQ_ALPHA_MIX()
 export const VANQ_ALPHA_MIX = (VANQ_ALPHA_SEP + 1);
+// C hack.h:VANQ_MCLS_HTOL()
 export const VANQ_MCLS_HTOL = (VANQ_ALPHA_MIX + 1);
+// C hack.h:VANQ_MCLS_LTOH()
 export const VANQ_MCLS_LTOH = (VANQ_MCLS_HTOL + 1);
+// C hack.h:VANQ_COUNT_H_L()
 export const VANQ_COUNT_H_L = (VANQ_MCLS_LTOH + 1);
+// C hack.h:VANQ_COUNT_L_H()
 export const VANQ_COUNT_L_H = (VANQ_COUNT_H_L + 1);
+// C hack.h:NUM_VANQ_ORDER_MODES()
 export const NUM_VANQ_ORDER_MODES = (VANQ_COUNT_L_H + 1);
 export const TELL = 1;
 export const NOTELL = 0;
@@ -1492,8 +1690,11 @@ export const CXN_NO_PFX = 2;
 export const CXN_PFX_THE = 4;
 export const CXN_ARTICLE = 8;
 export const CXN_NOCORPSE = 16;
+// C hack.h:SELL_NORMAL()
 export const SELL_NORMAL = (0);
+// C hack.h:SELL_DELIBERATE()
 export const SELL_DELIBERATE = (1);
+// C hack.h:SELL_DONTSELL()
 export const SELL_DONTSELL = (2);
 export const SHOP_DOOR_COST = 400;
 export const SHOP_BARS_COST = 300;
@@ -1512,8 +1713,11 @@ export const MSGTYP_NORMAL = 0;
 export const MSGTYP_NOREP = 1;
 export const MSGTYP_NOSHOW = 2;
 export const MSGTYP_STOP = 3;
+// C hack.h:MSGTYP_MASK_REP_SHOW()
 export const MSGTYP_MASK_REP_SHOW = ((1 << MSGTYP_NOREP) | (1 << MSGTYP_NOSHOW));
+// C hack.h:NUM_ROLES()
 export const NUM_ROLES = (13);
+// C hack.h:NUM_RACES()
 export const NUM_RACES = (5);
 export const UTD_CHECKSIZES = 0x01;
 export const UTD_CHECKFIELDCOUNTS = 0x02;
@@ -1563,6 +1767,7 @@ export const WIZKIT_MAX = 128;
 export const CVT_BUF_SIZE = 64;
 export const LUA_VER_BUFSIZ = 20;
 export const LUA_COPYRIGHT_BUFSIZ = 120;
+// C hack.h:SYM_OFF_P()
 export const SYM_OFF_P = (0);
 export const UNDEFINED_VALUE = 0;
 export const MM_ANGRY = 0x00000020;
@@ -1599,6 +1804,7 @@ export const SHIFT_MSG = 0x02;
 export const DF_NONE = 0x00;
 export const DF_RANDOM = 0x01;
 export const DF_ALL = 0x04;
+// C hack.h:DEFUNCT_MONSTER()
 export const DEFUNCT_MONSTER = (-100);
 export const ALL_FINISHED = 0x01;
 export const BY_NEXTHERE = 0x0001;
@@ -1623,6 +1829,7 @@ export const FM_FMON = 0x01;
 export const FM_MIGRATE = 0x02;
 export const FM_MYDOGS = 0x04;
 export const FM_YOU = 0x08;
+// C hack.h:FM_EVERYWHERE()
 export const FM_EVERYWHERE = (FM_YOU | FM_FMON | FM_MIGRATE | FM_MYDOGS);
 export const PICK_RANDOM = 0;
 export const PICK_RIGID = 1;
@@ -1661,10 +1868,14 @@ export const GC_CONDHIST = 2;
 export const GC_ECHOFIRST = 4;
 export const ROTTEN_TIN = 0;
 export const HOMEMADE_TIN = 1;
+// C hack.h:SPINACH_TIN()
 export const SPINACH_TIN = (-1);
+// C hack.h:RANDOM_TIN()
 export const RANDOM_TIN = (-2);
+// C hack.h:HEALTHY_TIN()
 export const HEALTHY_TIN = (-3);
 export const TROLL_REVIVE_CHANCE = 37;
+// C hack.h:ROT_AGE()
 export const ROT_AGE = (250);
 export const WAND_BACKFIRE_CHANCE = 100;
 export const WAND_WREST_CHANCE = 121;
@@ -1678,6 +1889,7 @@ export const BRK_BY_HERO = 0x01;
 export const BRK_FROM_INV = 0x02;
 export const BRK_KNOWN2BREAK = 0x04;
 export const BRK_KNOWN2NOTBREAK = 0x08;
+// C hack.h:BRK_KNOWN_OUTCOME()
 export const BRK_KNOWN_OUTCOME = (BRK_KNOWN2BREAK | BRK_KNOWN2NOTBREAK);
 export const BRK_MELEE = 0x10;
 export const ECMD_OK = 0x00;
@@ -1691,11 +1903,14 @@ export const PHYS_EXPL_TYPE = -1;
 export const DEVTEAM_EMAIL = "devteam@nethack.org";
 export const DEVTEAM_URL = "https://www.nethack.org/";
 
+// C isaac64.h:ISAAC64_SZ_LOG()
 // ===== isaac64.h =====
 // isaac64.h
 export const ISAAC64_SZ_LOG = (8);
+// C isaac64.h:ISAAC64_SZ()
 // isaac64.h
 export const ISAAC64_SZ = (1<<ISAAC64_SZ_LOG);
+// C isaac64.h:ISAAC64_SEED_SZ_MAX()
 // isaac64.h
 export const ISAAC64_SEED_SZ_MAX = (ISAAC64_SZ<<3);
 
@@ -1713,6 +1928,7 @@ export const MCF_HOSTILE = 0x0004;
 // ===== nhmd4.h =====
 // nhmd4.h
 export const NHMD4_DIGEST_LENGTH = 128;
+// C nhmd4.h:NHMD4_RESULTLEN()
 // nhmd4.h
 export const NHMD4_RESULTLEN = (128 / 8);
 
@@ -1722,17 +1938,24 @@ export const NHTYPE_COMPLEX = 2;
 
 // ===== sp_lev.h =====
 export const LVLINIT_NONE = 0;
+// C sp_lev.h:LVLINIT_SOLIDFILL()
 export const LVLINIT_SOLIDFILL = (LVLINIT_NONE + 1);
+// C sp_lev.h:LVLINIT_MAZEGRID()
 export const LVLINIT_MAZEGRID = (LVLINIT_SOLIDFILL + 1);
+// C sp_lev.h:LVLINIT_MAZE()
 export const LVLINIT_MAZE = (LVLINIT_MAZEGRID + 1);
+// C sp_lev.h:LVLINIT_MINES()
 export const LVLINIT_MINES = (LVLINIT_MAZE + 1);
+// C sp_lev.h:LVLINIT_ROGUE()
 export const LVLINIT_ROGUE = (LVLINIT_MINES + 1);
+// C sp_lev.h:LVLINIT_SWAMP()
 export const LVLINIT_SWAMP = (LVLINIT_ROGUE + 1);
 export const W_RANDOM = -1;
 export const W_NORTH = 1;
 export const W_SOUTH = 2;
 export const W_EAST = 4;
 export const W_WEST = 8;
+// C sp_lev.h:W_ANY()
 export const W_ANY = (W_NORTH | W_SOUTH | W_EAST | W_WEST);
 export const MAP_X_LIM = 76;
 export const MAP_Y_LIM = 21;
@@ -1769,6 +1992,7 @@ export const NO_INVENT = 0;
 export const CUSTOM_INVENT = 0x01;
 export const DEFAULT_INVENT = 0x02;
 
+// C tile2x11.h:TILES_PER_ROW()
 // ===== tile2x11.h =====
 // tile2x11.h
 export const TILES_PER_ROW = (40);
@@ -1807,8 +2031,11 @@ export const EXIT_ON_SENT_EVENT = 3;
 
 // ===== winami.h =====
 export const WEUNK = 0;
+// C winami.h:WEKEY()
 export const WEKEY = (WEUNK + 1);
+// C winami.h:WEMOUSE()
 export const WEMOUSE = (WEKEY + 1);
+// C winami.h:WEMENU()
 export const WEMENU = (WEMOUSE + 1);
 export const MAXWINTAGS = 5;
 export const FLMAP_INGLYPH = 1;
@@ -1821,10 +2048,15 @@ export const NHW_OVER = 7;
 
 // ===== wincurs.h =====
 export const CENTER = 0;
+// C wincurs.h:UP()
 export const UP = (CENTER + 1);
+// C wincurs.h:DOWN()
 export const DOWN = (UP + 1);
+// C wincurs.h:RIGHT()
 export const RIGHT = (DOWN + 1);
+// C wincurs.h:LEFT()
 export const LEFT = (RIGHT + 1);
+// C wincurs.h:UNDEFINED()
 export const UNDEFINED = (LEFT + 1);
 export const NHW_END = 19;
 export const NONE = -1;
@@ -1851,6 +2083,7 @@ export const TOPLINE_SPECIAL_PROMPT = 3;
 // ===== botl.h =====
 export const REASSESS_ONLY = TRUE;
 
+// C fnamesiz.h:LOCKNAMESIZE()
 // ===== fnamesiz.h =====
 export const LOCKNAMESIZE = (PL_NSIZ + 14);
 // AUTO-IMPORT-END: CONST_ALL_HEADERS
@@ -1901,6 +2134,7 @@ export const MON_EXPLODE = 20;
 export const TRAP_EXPLODE = 21;
 export const MAY_HITMON = 0x02;
 export const MAY_HITYOU = 0x04;
+// C hack.h:MAY_HIT()
 export const MAY_HIT = (MAY_HITMON | MAY_HITYOU);
 export const MAY_DESTROY = 0x08;
 export const MAY_FRACTURE = 0x10;
@@ -2044,47 +2278,59 @@ export const MAXLEVEL = 32;
 export const ROOMOFFSET = 3;
 
 
+// C rm.h:IS_WALL()
 // Check terrain type helpers (rm.h)
 export function IS_WALL(typ: number): boolean {
     // C ref: rm.h — IS_WALL(typ) ((typ) && (typ) <= DBWALL)
     return typ >= VWALL && typ <= DBWALL;
 }
+// C rm.h:IS_STWALL()
 export function IS_STWALL(typ: number): boolean {
     return typ <= DBWALL; // includes STONE and all wall types
 }
+// Port only: terrain below POOL — rm.h expresses this as IS_OBSTRUCTED.
 export function IS_ROCK(typ: number): boolean {
     return typ < POOL;
 }
+// C rm.h:IS_DOOR()
 export function IS_DOOR(typ: number): boolean {
     return typ === DOOR;
 }
+// C rm.h:IS_ROOM()
 export function IS_ROOM(typ: number): boolean {
     // C ref: rm.h -- #define IS_ROOM(typ) ((typ) >= ROOM)
     return typ >= ROOM;
 }
+// C rm.h:IS_FURNITURE()
 export function IS_FURNITURE(typ: number): boolean {
     return typ >= STAIRS && typ <= ALTAR;
 }
+// C rm.h:ACCESSIBLE()
 export function ACCESSIBLE(typ: number): boolean {
     // C ref: rm.h -- #define ACCESSIBLE(typ) ((typ) >= DOOR)
     return typ >= DOOR;
 }
+// C rm.h:IS_POOL()
 export function IS_POOL(typ: number): boolean {
     // C ref: rm.h — IS_POOL(typ) ((typ) >= POOL && (typ) <= DRAWBRIDGE_UP)
     return typ >= POOL && typ <= DRAWBRIDGE_UP;
 }
+// C rm.h:IS_LAVA()
 export function IS_LAVA(typ: number): boolean {
     // C ref: rm.h — IS_LAVA(typ) ((typ) == LAVAPOOL || (typ) == LAVAWALL)
     return typ === LAVAPOOL || typ === LAVAWALL;
 }
+// C rm.h:IS_OBSTRUCTED()
 export function IS_OBSTRUCTED(typ: number): boolean {
     // C ref: rm.h — IS_OBSTRUCTED(typ) ((typ) < POOL)
     return typ < POOL;
 }
+// C rm.h:IS_DRAWBRIDGE()
 export function IS_DRAWBRIDGE(typ: number): boolean {
     // C ref: rm.h — IS_DRAWBRIDGE(typ) ((typ) == DRAWBRIDGE_UP || (typ) == DRAWBRIDGE_DOWN)
     return typ === DRAWBRIDGE_UP || typ === DRAWBRIDGE_DOWN;
 }
+// C rm.h:IS_WATERWALL()
 export function IS_WATERWALL(typ: number): boolean {
     // C ref: rm.h — IS_WATERWALL(typ) ((typ) == WATER)
     return typ === WATER;
@@ -2301,8 +2547,10 @@ export const TRAP_EXPLANATIONS = [
     'vibrating square', 'trapped door', 'trapped chest',
 ];
 
+// C trap.h:is_pit()
 // Trap helpers (trap.h)
 export function is_pit(ttyp: number): boolean { return ttyp === PIT || ttyp === SPIKED_PIT; }
+// C trap.h:is_hole()
 export function is_hole(ttyp: number): boolean { return ttyp === HOLE || ttyp === TRAPDOOR; }
 
 // Trap flags for mktrap
@@ -2394,6 +2642,7 @@ export const TIMEOUT = 0x00FFFFFF;     // timeout portion of intrinsic
 export const FROMEXPER = 0x01000000;   // from role/experience
 export const FROM_RACE = 0x02000000;   // from race/experience
 export const FROMOUTSIDE = 0x04000000; // from outside source (corpse, potion)
+// C prop.h:INTRINSIC()
 export const INTRINSIC = (FROMEXPER | FROM_RACE | FROMOUTSIDE);
 export const FROM_FORM = 0x10000000;   // from polymorph form
 export const I_SPECIAL = 0x20000000;   // property-specific flag
@@ -2462,18 +2711,29 @@ export const MAXEXPCHARS = 9;                               // number of explosi
 export const MATCH_WALL      = 38;
 export const INVALID_TYPE    = 127;
 
+// C rm.h:IS_SDOOR()
 // Level type utility macros (from include/rm.h, lines 104-128)
 export function IS_SDOOR(typ: number): boolean { return typ === SDOOR; }
+// C rm.h:IS_TREE()
 // C ref: rm.h — IS_TREE includes STONE on arboreal levels
 export function IS_TREE(typ: number): boolean { return typ === TREE || (!!game?.level?.flags?.arboreal && typ === STONE); }
+// C rm.h:ZAP_POS()
 export function ZAP_POS(typ: number): boolean { return typ >= POOL; }
+// C rm.h:SPACE_POS()
 export function SPACE_POS(typ: number): boolean { return typ > DOOR; }
+// C rm.h:IS_THRONE()
 export function IS_THRONE(typ: number): boolean { return typ === THRONE; }
+// C rm.h:IS_FOUNTAIN()
 export function IS_FOUNTAIN(typ: number): boolean { return typ === FOUNTAIN; }
+// C rm.h:IS_SINK()
 export function IS_SINK(typ: number): boolean { return typ === SINK; }
+// C rm.h:IS_GRAVE()
 export function IS_GRAVE(typ: number): boolean { return typ === GRAVE; }
+// C rm.h:IS_ALTAR()
 export function IS_ALTAR(typ: number): boolean { return typ === ALTAR; }
+// C rm.h:IS_AIR()
 export function IS_AIR(typ: number): boolean { return typ === AIR || typ === CLOUD; }
+// C rm.h:IS_SOFT()
 export function IS_SOFT(typ: number): boolean { return typ === AIR || typ === CLOUD || IS_POOL(typ); }
 
 // ==========================================================================
@@ -2482,12 +2742,14 @@ export function IS_SOFT(typ: number): boolean { return typ === AIR || typ === CL
 // ==========================================================================
 
 
+// C trap.h:is_magical_trap()
 // Trap utility macros (from include/trap.h)
 export function is_magical_trap(ttyp: number): boolean {
     return ttyp === TELEP_TRAP || ttyp === LEVEL_TELEP
         || ttyp === MAGIC_TRAP || ttyp === ANTI_MAGIC
         || ttyp === POLY_TRAP;
 }
+// C trap.h:is_xport()
 export function is_xport(ttyp: number): boolean { return ttyp >= TELEP_TRAP && ttyp <= MAGIC_PORTAL; }
 
 // trap_to_defsym/defsym_to_trap moved to symbols.js (depends on S_arrow_trap)
@@ -2548,6 +2810,7 @@ const cssColorMap = [
  * @param {number} color - A CLR_* constant (0-15) or NO_COLOR (8)
  * @returns {string} CSS color string (hex)
  */
+// Port only: terminal color-index to CSS color mapping for the web renderer.
 export function colorToCSS(color: number): string {
     if (color >= 0 && color < cssColorMap.length) {
         return cssColorMap[color] ?? cssColorMap[CLR_GRAY];
@@ -2695,6 +2958,7 @@ export const LEFT_RING = W_RINGL;
 export const RIGHT_RING = W_RINGR;
 export const LEFT_SIDE = LEFT_RING;
 export const RIGHT_SIDE = RIGHT_RING;
+// C prop.h:BOTH_SIDES()
 export const BOTH_SIDES = (LEFT_SIDE | RIGHT_SIDE);
 export const WORN_ARMOR = W_ARM;
 export const WORN_CLOAK = W_ARMC;
@@ -2716,15 +2980,20 @@ export const HL_ATTCLR_BLINK = CLR_MAX + 6;
 export const HL_ATTCLR_INVERSE = CLR_MAX + 7;
 export const BL_ATTCLR_MAX = CLR_MAX + 8;
 
+// C vision.h:NUM_LS_SOURCES()
 // ===== vision.h =====
 export const NUM_LS_SOURCES = (LS_MONSTER + 1);
 
+// C timeout.h:NUM_TIME_FUNCS()
 // ===== timeout.h =====
 export const NUM_TIME_FUNCS = (MELT_ICE_AWAY + 1);
 
+// C hack.h:MAXLINFO()
 // ===== hack.h =====
 export const MAXLINFO = (MAXDUNGEON * MAXLEVEL);
+// C hack.h:BUC_ALLBKNOWN()
 export const BUC_ALLBKNOWN = (BUC_BLESSED | BUC_CURSED | BUC_UNCURSED);
+// C hack.h:BUCX_TYPES()
 export const BUCX_TYPES = (BUC_ALLBKNOWN | BUC_UNKNOWN);
 
 // ===== wincurs.h =====
@@ -2746,30 +3015,46 @@ export const LEAVESTATUE = NON_PM - 1;
 export const NATTK = 6;
 export const NORMAL_SPEED = 12;
 
+// C mextra.h:ESHK()
 // ========================================================================
 // C macro accessors for monster/object extra fields
 // C: ESHK(mtmp) → ((struct eshk *)(mtmp)->mextra->eshk)
 // JS: ESHK(mtmp) → mtmp.mextra?.eshk
 // ========================================================================
 export function ESHK(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.eshk; }
+// C mextra.h:EPRI()
 export function EPRI(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.epri; }
+// C mextra.h:EMIN()
 export function EMIN(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.emin; }
+// C mextra.h:EDOG()
 export function EDOG(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.edog; }
+// C mextra.h:EBONES()
 export function EBONES(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.ebones; }
+// C mextra.h:MCORPSENM()
 export function MCORPSENM(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.mcorpsenm ?? -1; }
 
+// C mextra.h:has_eshk()
 export function has_eshk(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return !!mtmp?.mextra?.eshk; }
+// C mextra.h:has_epri()
 export function has_epri(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return !!mtmp?.mextra?.epri; }
+// C mextra.h:has_emin()
 export function has_emin(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return !!mtmp?.mextra?.emin; }
+// C mextra.h:has_edog()
 export function has_edog(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return !!mtmp?.mextra?.edog; }
+// C mextra.h:has_ebones()
 export function has_ebones(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return !!mtmp?.mextra?.ebones; }
 
+// C obj.h:ONAME()
 // Object extra accessors
 // C: ONAME(obj) → ((char *)(obj)->oextra->oname)
 export function ONAME(obj: Pick<GameObject, 'oextra'> | null | undefined) { return obj?.oextra?.oname || ''; }
+// C obj.h:has_oname()
 export function has_oname(obj: Pick<GameObject, 'oextra'> | null | undefined) { return !!obj?.oextra?.oname; }
+// C obj.h:OMONST()
 export function OMONST(obj: Pick<GameObject, 'oextra'> | null | undefined) { return obj?.oextra?.omonst; }
+// C mextra.h:MGIVENNAME()
 export function MGIVENNAME(mtmp: Pick<Monster, 'mextra' | 'mgivenname'> | null | undefined) { return mtmp?.mextra?.mgivenname || mtmp?.mgivenname || ''; }
+// C mextra.h:has_mgivenname()
 export function has_mgivenname(mtmp: Pick<Monster, 'mextra' | 'mgivenname'> | null | undefined) { return !!(mtmp?.mextra?.mgivenname || mtmp?.mgivenname); }
 
 // C you.h: the current body remains polymorphed until its species changes.
@@ -2783,25 +3068,33 @@ export function Luck(hero: Pick<Hero, 'uluck' | 'moreluck'> | null | undefined):
     return (hero?.uluck ?? 0) + (hero?.moreluck ?? 0);
 }
 
+// C you.h:u_at()
 // Canonical macros — previously duplicated as local stubs in 15+ files
 export function u_at(x: number, y: number): boolean { return game?.u?.ux === x && game?.u?.uy === y; }
+// C monst.h:M_AP_TYPE()
 export function M_AP_TYPE(mon: Pick<Monster, 'm_ap_type'> | null | undefined): number { return (mon?.m_ap_type ?? 0) & M_AP_TYPMASK; }
+// C monst.h:engulfing_u()
 export function engulfing_u(mon: Monster): boolean { return !!game?.u?.uswallow && game.u.ustuck === mon; }
+// C monst.h:ismnum()
 // C ref: monst.h — ismnum(x) means x is a valid monster index.
 // JS call sites pass integer indices (for example u.ulycn, corpsenm, cham).
 export function ismnum(pm: unknown): pm is number {
     return typeof pm === 'number' && Number.isInteger(pm) && pm >= LOW_PM && pm < MONSTER_NAME.length;
 }
 
+// C dungeon.c:In_quest()
 // ── Level classification predicates (C: dungeon.h macros) ──
 export function In_quest(uz?: DungeonLocation | null): boolean { return (uz ?? game?.u?.uz)?.dnum === game?.quest_dnum; }
+// C dungeon.h:In_endgame()
 export function In_endgame(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const specialLevel = game?.astral_level;
     return !!level && !!specialLevel
         && level.dnum === specialLevel.dnum;
 }
+// C dungeon.h:Is_astralevel()
 export function Is_astralevel(uz?: DungeonLocation | null): boolean { return In_endgame(uz) && (uz ?? game?.u?.uz)?.dlevel === 1; }
+// C dungeon.h:Is_waterlevel()
 export function Is_waterlevel(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const specialLevel = game?.water_level;
@@ -2809,6 +3102,7 @@ export function Is_waterlevel(uz?: DungeonLocation | null): boolean {
         && level.dnum === specialLevel.dnum
         && level.dlevel === specialLevel.dlevel;
 }
+// C dungeon.h:Is_firelevel()
 export function Is_firelevel(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const specialLevel = game?.fire_level;
@@ -2816,6 +3110,7 @@ export function Is_firelevel(uz?: DungeonLocation | null): boolean {
         && level.dnum === specialLevel.dnum
         && level.dlevel === specialLevel.dlevel;
 }
+// C dungeon.h:Is_earthlevel()
 export function Is_earthlevel(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const specialLevel = game?.earth_level;
@@ -2823,6 +3118,7 @@ export function Is_earthlevel(uz?: DungeonLocation | null): boolean {
         && level.dnum === specialLevel.dnum
         && level.dlevel === specialLevel.dlevel;
 }
+// C dungeon.h:Is_airlevel()
 export function Is_airlevel(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const specialLevel = game?.air_level;
@@ -2830,9 +3126,13 @@ export function Is_airlevel(uz?: DungeonLocation | null): boolean {
         && level.dnum === specialLevel.dnum
         && level.dlevel === specialLevel.dlevel;
 }
+// C dungeon.c:In_mines()
 export function In_mines(uz?: DungeonLocation | null): boolean { return (uz ?? game?.u?.uz)?.dnum === game?.mines_dnum; }
+// C dungeon.h:In_sokoban()
 export function In_sokoban(uz?: DungeonLocation | null): boolean { return (uz ?? game?.u?.uz)?.dnum === game?.sokoban_dnum; }
+// C dungeon.c:In_V_tower()
 export function In_V_tower(uz?: DungeonLocation | null): boolean { return (uz ?? game?.u?.uz)?.dnum === game?.tower_dnum; }
+// C dungeon.h:Is_stronghold()
 export function Is_stronghold(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const specialLevel = game?.stronghold_level;
@@ -2840,6 +3140,7 @@ export function Is_stronghold(uz?: DungeonLocation | null): boolean {
         && level?.dnum === specialLevel.dnum
         && level?.dlevel === specialLevel.dlevel;
 }
+// C dungeon.h:Is_valley()
 // C ref: dungeon.h:120 — Is_valley() compares the level against the Valley
 // of the Dead, the gateway level of the Gehennom branch.
 export function Is_valley(uz?: DungeonLocation | null): boolean {
@@ -2850,10 +3151,12 @@ export function Is_valley(uz?: DungeonLocation | null): boolean {
         && level?.dlevel === specialLevel.dlevel;
 }
 
+// C dungeon.c:In_hell()
 export function In_hell(uz?: DungeonLocation | null, state: Pick<GameState, 'u' | 'dungeons'> = game): boolean {
     const lev = uz ?? state?.u?.uz;
     return !!lev && !!state.dungeons[lev.dnum]?.flags.hellish;
 }
+// C dungeon.c:Invocation_lev()
 export function Invocation_lev(uz?: DungeonLocation | null, state: Pick<GameState, 'u' | 'valley_level' | 'dungeons'> = game): boolean {
     const lev = uz ?? state?.u?.uz;
     if (!lev) return false;
@@ -2861,6 +3164,7 @@ export function Invocation_lev(uz?: DungeonLocation | null, state: Pick<GameStat
     return !!dungeon && In_hell(lev, state)
         && lev.dlevel === dungeon.num_dunlevs - 1;
 }
+// C dungeon.h:Is_rogue_level()
 export function Is_rogue_level(uz?: DungeonLocation | null, state: Pick<GameState, 'u' | 'rogue_level'> = game): boolean {
     const level = uz ?? state.u.uz;
     const specialLevel = state.rogue_level;
@@ -2868,6 +3172,7 @@ export function Is_rogue_level(uz?: DungeonLocation | null, state: Pick<GameStat
         && level?.dnum === specialLevel.dnum
         && level?.dlevel === specialLevel.dlevel;
 }
+// C dungeon.h:Is_oracle_level()
 export function Is_oracle_level(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const specialLevel = game?.oracle_level;
@@ -2875,6 +3180,7 @@ export function Is_oracle_level(uz?: DungeonLocation | null): boolean {
         && level?.dnum === specialLevel.dnum
         && level?.dlevel === specialLevel.dlevel;
 }
+// C dungeon.h:Is_knox()
 export function Is_knox_level(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const specialLevel = game?.knox_level;
@@ -2882,6 +3188,7 @@ export function Is_knox_level(uz?: DungeonLocation | null): boolean {
         && level?.dnum === specialLevel.dnum
         && level?.dlevel === specialLevel.dlevel;
 }
+// C dungeon.h:Is_juiblex_level()
 export function Is_juiblex_level(uz?: DungeonLocation | null): boolean {
     const level = uz ?? game?.u?.uz;
     const juiblexLevel = game?.juiblex_level;
