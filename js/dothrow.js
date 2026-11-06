@@ -28,7 +28,8 @@ import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLand
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
 import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
-import { finishQuest, isQuestArtifact, isQuestLeader } from './quest.js';
+import { finishQuest, isQuestLeader } from './quest.js';
+import { isQuestArtifact } from './questpgr.js';
 import { deityName } from './pray.js';
 import { encumber_msg } from './pickup.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile, makeBlinded } from './potion.js';
