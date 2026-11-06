@@ -7,6 +7,7 @@ import { makemonAt } from './makemon.js';
 import { reviveCorpseImmediately } from './do.js';
 import { CORPSE } from './object_data.js';
 import { rnd } from './rng.js';
+// Port only: duplicate undead-summoning entry point; makeUndeadNear is the native owner.
 export async function summonUndead(center, { reviveCorpses = false, flags = 0, state = game, } = {}) {
     requireLiveGame(state);
     const level = requireGameLevel(state);

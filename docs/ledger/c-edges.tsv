@@ -253,6 +253,7 @@ buried_ball_to_punishment	punish
 buried_ball_to_punishment	reset_utrap
 burn_floor_objects	ignite_items
 burn_floor_objects	rn2
+burn_floor_objects	weight
 burnarmor	rn2
 bury_objs	costly_spot
 bury_objs	currency
@@ -3619,6 +3620,7 @@ readobjnam_postparse2	rnd_class
 readobjnam_preparse	rn2
 readobjnam_preparse	rnd
 ready_weapon	setuwep
+ready_weapon	shop_keeper
 really_done	Goodbye
 really_done	can_make_bones
 really_done	currency

@@ -60,13 +60,16 @@ const ANSI_COLOR = [
     90,  // remembered room/corridor while blind (tty dark gray)
 ];
 
+// Port only: access the live terminal display for tty window operations.
 // ── Terminal access shared by the wintty.c ports ──
 function display(): GameDisplay | null { return game.nhDisplay; }
+// Port only: write styled text through the terminal display adapter.
 function putLine(col: number, row: number, text: string, attr = ATR_NONE): void {
     const d = display();
     if (!d) return;
     d.putstr(col, row, text, NO_COLOR, attr);
 }
+// Port only: clear a rectangular region of the terminal grid.
 function clearRect(left: number, top: number, right: number, bottom: number): void {
     const d = display();
     if (!d) return;
@@ -163,10 +166,12 @@ export function tty_exit_nhwindows(farewell: string): void {
     tty_suspend_nhwindows(farewell);
 }
 
+// C wintty.c:tty_create_nhwindow()
 export function tty_create_nhwindow<T>(_type: typeof NHW_MENU): TtyMenuWindow<T> {
     return { entries: [], layout: null, offx: 0, active: false, cancelled: false, destroyed: false, underlay: null };
 }
 
+// Port only: reject operations on a destroyed tty menu window.
 function requireWindow<T>(window: TtyMenuWindow<T>): void {
     if (window.destroyed) throw new Error('The tty menu window has been destroyed');
 }
@@ -479,6 +484,7 @@ async function process_menu_window<T>(
     }
 }
 
+// Part of C wintty.c:process_menu_window(): collect usable group selectors for the current pick mode.
 function groupAccelerators<T>(rows: readonly TtyMenuRow<T>[], how: MenuPickMode): Set<string> {
     if (how === PICK_NONE) return new Set();
     const counts = new Map<string, number>();
@@ -530,6 +536,7 @@ async function process_text_window<T>(
     }
 }
 
+// Part of C wintty.c:process_menu_window(): match the menu search pattern without ASCII case differences.
 function menuSearchMatches(query: string, text: string): boolean {
     // strutil.c:pmatchi() uses lowc(), which changes only ASCII A..Z.
     const lowerAscii = (value: string) => value.replace(/[A-Z]/g, letter => letter.toLowerCase());
@@ -538,6 +545,7 @@ function menuSearchMatches(query: string, text: string): boolean {
     return new RegExp(pattern).test(lowerAscii(text));
 }
 
+// Part of C wintty.c:process_menu_window(), wintty.c:process_text_window(): paint page rows and restore uncovered map cells.
 export function paintMenuPage<T extends TextMenuLine>(
     d: GameDisplay, menu: DisplayedMenuLayout<T>, page: number,
     rows: readonly PaintedMenuRow[], underlay: MenuUnderlay | null,
@@ -580,6 +588,7 @@ export function paintMenuPage<T extends TextMenuLine>(
     // leaves the cursor after it once the page is drawn.
 }
 
+// C wintty.c:tty_display_nhwindow()
 export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: MenuPickMode = PICK_NONE): Promise<TtyMenuResult<T>> {
     requireWindow(window);
     if (window.cancelled) return { cancelled: true, key: 27, selections: [] };
@@ -611,6 +620,7 @@ export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: Men
     return result;
 }
 
+// Part of C wintty.c:tty_display_nhwindow(): choose the overlay's horizontal origin.
 // The pinned tty build enables H2344_BROKEN: corner windows occupy at
 // most half the terminal and at most 82 columns from its left edge.
 export function windowOrigin(columns: number, rows: number, maxcol: number, maxrow: number, overlay: boolean): number {
@@ -618,14 +628,16 @@ export function windowOrigin(columns: number, rows: number, maxcol: number, maxr
     return Math.max(0, Math.min(82, Math.floor(columns / 2), columns - maxcol - 1));
 }
 
+// Part of C wintty.c:tty_end_menu(): assign lowercase then uppercase page selectors.
 export function menuSelector(index: number): string {
     return String.fromCharCode(index < 26 ? 97 + index : 65 + index - 26);
 }
 
-// C display_nhwindow() followed by destroy_nhwindow(): windows the core
+// Port only: combine tty window display and dismissal for text-window callers.
+// C display_nhwindow followed by destroy_nhwindow: windows the core
 // shows this way (the quest pager, the unpaid-items list, the shop bill,
-// novel passages) are never wrapped in select_menu(), so bot_disabled
-// stays clear and their dismissal's docorner()/docrt() runs bot()
+// novel passages) are never wrapped in select_menu, so bot_disabled
+// stays clear and their dismissal's docorner/docrt runs bot
 // immediately, redrawing a wrecked status window at once.
 export async function tty_display_and_dismiss<T>(
     window: TtyMenuWindow<T>, how: MenuPickMode = PICK_NONE,
@@ -646,6 +658,7 @@ export async function tty_dismiss_nhwindow<T>(window: TtyMenuWindow<T>, roleSele
     window.underlay = null;
 }
 
+// C wintty.c:tty_destroy_nhwindow()
 export async function tty_destroy_nhwindow<T>(window: TtyMenuWindow<T>): Promise<void> {
     requireWindow(window);
     await tty_dismiss_nhwindow(window);
@@ -663,14 +676,17 @@ export function compressStr(text: string, columns: number): string {
         ? compressed.slice(0, -1) : compressed;
 }
 
+// Part of C wintty.c:tty_add_menu(): prefix selectable text with its selector and marker.
 export function selectableMenuText(key: string, text: string, marker = '-'): string {
     return `${key} ${marker} ${text.slice(0, BUFSZ - 1)}`;
 }
 
+// C wintty.c:tty_start_menu()
 export async function tty_start_menu<T>(window: TtyMenuWindow<T>): Promise<void> {
     await tty_clear_nhwindow(window);
 }
 
+// C wintty.c:tty_add_menu()
 export function tty_add_menu<T>(window: TtyMenuWindow<T>, entry: TtyMenuEntry<T>): void {
     requireWindow(window);
     // C windows.c:add_menu() consults the menucoloring rules before the
@@ -700,7 +716,8 @@ export function tty_add_menu<T>(window: TtyMenuWindow<T>, entry: TtyMenuEntry<T>
     window.layout = null;
 }
 
-// Native tty_end_menu() measures every assembled row, including later pages,
+// Part of C wintty.c:tty_end_menu(), wintty.c:tty_putstr(): measure clipped rows, page counts, and pager width.
+// Native tty_end_menu measures every assembled row, including later pages,
 // after assigning selectors. Margins and the largest pager also occupy width.
 export function menuLayout<T extends TextMenuLine>(
     rows: readonly T[], columns: number, terminalRows: number,
@@ -738,6 +755,7 @@ export function menuLayout<T extends TextMenuLine>(
     return { rows: clippedRows, pageSize, pageCount, maxRows, width, endMarker, putstrMeasured };
 }
 
+// C wintty.c:tty_end_menu()
 export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null = null,
     putstrMeasured = false,
 ): void {
@@ -764,6 +782,7 @@ export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null 
     window.layout = menuLayout(window.entries, d.cols, d.rows, putstrMeasured);
 }
 
+// C wintty.c:tty_select_menu()
 export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPickMode,
     roleSelection = false): Promise<TtyMenuResult<T>> {
     const previousStatusDisabled = game._statusUpdatesDisabled;
@@ -812,11 +831,13 @@ export async function showMessageMenu(
     return key === menuLetter || key === 27 ? key : 0;
 }
 
+// Port only: retain terminal cells beneath an overlay menu.
 export function snapshotMenuUnderlay(): MenuUnderlay | null {
     const d = display();
     return d?.grid?.map(row => row.map(cell => ({ ...cell }))) || null;
 }
 
+// Port only: restore saved overlay cells while respecting current topline ownership.
 export function restoreMenuUnderlay(snapshot: MenuUnderlay | null): void {
     const d = display();
     if (!d || !snapshot) return;
@@ -867,6 +888,7 @@ async function docorner(d: GameDisplay, left: number, bottom: number): Promise<v
     }
 }
 
+// Port only: serialize cached map glyphs with ANSI color and DEC graphics controls.
 // ── Serialize a map row with DEC line-drawing and ANSI colors ──
 // Also C wintty.c:end_glyphout(): inlined here to end color and graphics modes after the row.
 function render_map_row(y: number) {
@@ -927,6 +949,7 @@ function render_map_row(y: number) {
     return output;
 }
 
+// Port only: serialize the terminal grid for the replay boundary.
 // ── Serialize terminal grid for screen comparison ──
 export function serialize_terminal_grid(display: Pick<GameDisplay, 'rows' | 'cols' | 'grid'>) {
     function characterAt(row: number, column: number): string {
@@ -992,12 +1015,13 @@ export function writeMapCell(display: GameDisplay, x: number, y: number,
 }
 
 // Part of C win/tty/wintty.c:tty_clear_nhwindow(): the NHW_MAP/NHW_BASE
-// term_clear_screen() case, which just clears the map rows of the physical
+// term_clear_screen case, which just clears the map rows of the physical
 // screen and flags the bottom lines for redraw.
 export function clearMapDisplay() {
     for (let row = 1; row <= ROWNO; row++) game.nhDisplay?.clearRow(row);
 }
 
+// Port only: read the status text currently visible in the terminal grid.
 // The tty status rows currently on screen: the windowport's cached lines
 // when the status window is live, else whatever the grid still holds.
 function displayedStatusLines(): readonly [string, string] {
@@ -1149,12 +1173,12 @@ export function renderStatusLine2(
 }
 
 // Part of C wintty.c:render_status(): the BL_TITLE hitpoint-bar text.
-// ── wintty.c:render_status() BL_TITLE branch — the hitpoint bar ──
-// wintty.c:render_status()'s BL_TITLE branch.  The tty draws the bar's
+// ── wintty.c render_status BL_TITLE branch — the hitpoint bar ──
+// The BL_TITLE branch of wintty.c render_status. The tty draws the bar's
 // colour and attribute from the title cell's stored style
 // (StatusHighlights.barStyle), so this builds only the bracketed text;
 // wintty.c:5212-5213 repads a critical title's trailing space pairs with
-// dashes through botl.c:repad_with_dashes() (botl.ts).
+// dashes through botl.c repad_with_dashes (botl.ts).
 export function hitpointBar(title: string, critical: boolean): string {
     const text = critical ? repadWithDashes(title.slice(0, 30).padEnd(30))
         : title.slice(0, 30).padEnd(30);
@@ -1178,6 +1202,7 @@ export function conditionStyle(mask: number, masks: readonly number[]): StatusSt
 
 // ── Build screen output ──
 
+// Port only: compose replay output and repaint the terminal grid from live display state.
 export function _buildScreenOutput() {
     const display = game?.nhDisplay;
     if (!display) return;

@@ -5,6 +5,7 @@
 import { game } from './gstate.js';
 import { heroMonsterForm } from './polyself.js';
 import { monsterIsUnicorn } from './mondata.js';
+// Part of C cmd.c:domonability(): admission to the unicorn-horn ability.
 export function heroCanUseUnicornHorn(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && monsterIsUnicorn(form);

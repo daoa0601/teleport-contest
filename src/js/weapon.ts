@@ -148,6 +148,7 @@ const CLASS_NAMES = [
     'large rock', 'iron ball', 'chain', 'venom',
 ];
 
+// C weapon.c:weapon_descr()
 export function weaponDescription(object: GameObject): string {
     const skill = [WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(object.oclass)
         ? Math.abs(objectSkill(object.otyp)) : 0;
@@ -184,9 +185,11 @@ export interface WeaponAccuracyOptions {
     rollOne?: (sides: number) => number;
 }
 
+// Port only: distinguish a hero defender from a monster defender by identity.
 function heroTarget(defender: Hero | Monster, state: GameState): defender is Hero {
     return defender === state.u;
 }
+// C weapon.c:hitval()
 export function weaponHitValue(object: GameObject, defender: Hero | Monster, {
     state = game, random = rn2, rollOne = rnd,
 }: WeaponAccuracyOptions = {}): number {
@@ -248,6 +251,7 @@ export interface PhysicalWeaponDamageOptions {
 const LEATHER = 7;
 const SILVER = 14;
 
+// Port only: resolve object names into a set of metadata indices.
 function objectTypes(names: readonly string[]): Set<number> {
     return new Set(names.map(name => OBJECT_NAMES.indexOf(name))
         .filter(otyp => otyp >= 0));
@@ -277,6 +281,7 @@ const SMALL_RND4 = objectTypes([
 ]);
 const SMALL_RND6 = objectTypes(['splash of acid venom']);
 
+// Part of C weapon.c:dmgval(): select the size-dependent base damage dice.
 function damageProfile(object: GameObject, monster: ArtifactDefender) {
     const large = monsterIsBig(monster.mnum);
     const otyp = object.otyp;
@@ -291,10 +296,12 @@ function damageProfile(object: GameObject, monster: ArtifactDefender) {
     return { range, fixed, random4, random6, twoD4, twoD6 };
 }
 
+// Port only: read the object's stored enchantment value.
 function enchantment(object: GameObject): number {
     return object.spe ?? object.enchantment ?? 0;
 }
 
+// Part of C weapon.c:dmgval(): add weapon enchantment and clamp negative damage.
 function addWeaponEnchantment(object: GameObject, damage: number): number {
     const objectClass = object.oclass || objectClassForType(object.otyp);
     const weaponLike = objectClass === WEAPON_CLASS
@@ -305,6 +312,7 @@ function addWeaponEnchantment(object: GameObject, damage: number): number {
     return Math.max(0, damage);
 }
 
+// Part of C weapon.c:dmgval(): select classes eligible for target-specific bonuses.
 function canHaveTargetDamageBonus(object: GameObject): boolean {
     const objectClass = object.oclass || objectClassForType(object.otyp);
     return objectClass === WEAPON_CLASS
@@ -315,6 +323,7 @@ function canHaveTargetDamageBonus(object: GameObject): boolean {
         || objectClass === CHAIN_CLASS;
 }
 
+// Part of C weapon.c:dmgval(): suppress ordinary base damage against shades.
 export function shadeBlocksWeaponBaseDamage(
     object: GameObject, monster: ArtifactDefender, state: GameState = game,
 ): boolean {
@@ -323,6 +332,7 @@ export function shadeBlocksWeaponBaseDamage(
         && !artifactStrikesShade(object);
 }
 
+// Part of C weapon.c:dmgval(): apply thick skin, shades, and heavy iron-ball weight.
 function applyTargetBaseRules(
     object: GameObject, monster: ArtifactDefender, damage: number,
     rollOne: (sides: number) => number, state: GameState,
@@ -343,6 +353,7 @@ function applyTargetBaseRules(
     return damage;
 }
 
+// Part of C weapon.c:dmgval(): apply blessed, material, wooden-target, and artifact-light bonuses.
 function targetDamageBonus(
     object: GameObject, monster: ArtifactDefender,
     { hatesBlessings, hatesSilver, hero }: {
@@ -367,6 +378,7 @@ function targetDamageBonus(
         ? Math.trunc((bonus + 1) / 2) : bonus;
 }
 
+// Part of C weapon.c:dmgval(): reduce positive damage by erosion, retaining one point.
 function applyErosion(object: GameObject, damage: number): number {
     if (damage > 0) damage = Math.max(1, damage - greatestErosion(object));
     return damage;
@@ -399,7 +411,8 @@ export function rollPhysicalWeaponDamage(
     return applyErosion(object, damage);
 }
 
-// C dmgval(otmp, &youmonst) call sites: the defender is the hero's form.
+// Port only: adapt the hero's current form to the weapon-damage defender contract.
+// At native dmgval call sites using youmonst, the defender is the hero's form.
 export function rollPhysicalWeaponDamageAgainstHero(
     object: GameObject, state: GameState, options: PhysicalWeaponDamageOptions = {},
 ): number {
@@ -413,6 +426,7 @@ export function rollPhysicalWeaponDamageAgainstHero(
     );
 }
 
+// C weapon.c:oselect()
 // C oselect(): keep inventory order among items of the same type.
 export function selectMonsterWeaponOfType(
     monster: Monster, type: number, state: GameState = game,
@@ -445,6 +459,7 @@ export function returningWeaponRangeSquared(object: WeaponCandidate): number | n
     return object?.otyp === AKLYS ? AKLYS_LIM * AKLYS_LIM : null;
 }
 
+// C weapon.c:select_rwep()
 // C select_rwep(). Keep the selected weapon and launcher together instead of
 // storing the launcher in C's global propellor.
 export function selectMonsterRangedWeapon(
@@ -627,6 +642,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster: Monster, state:
     return null;
 }
 
+// C weapon.c:mon_wield_item()
 // C mon_wield_item(): returns whether the attempt spent the monster's action.
 export async function wieldMonsterWeapon(monster: Monster, state: GameState = game, {
     publish = plineWithContinuation,
@@ -726,7 +742,8 @@ export async function wieldMonsterWeapon(monster: Monster, state: GameState = ga
     return true;
 }
 
-// C mon_wield_item() checks bimanual() at both the welded message (866) and
+// Part of C weapon.c:mon_wield_item(): choose singular or plural hand wording.
+// C mon_wield_item checks bimanual at both the welded message (866) and
 // the welds-itself message (910): the monster's hand name, pluralized.
 function wieldingHand(monster: Monster, weapon: GameObject): string {
     const hand = mbodypart(monster.mnum, HAND);
@@ -787,8 +804,9 @@ export function heroAttackBonus(state: GameState): number {
         : dexterity < 8 ? -1 : dexterity < 14 ? 0 : dexterity - 14);
 }
 
+// Part of C weapon.c:dbon(): the human Strength damage ladder.
 // Strength values above 18 retain NetHack's internal encoding (19 == 18/01,
-// 93 == 18/75, 118 == 18/**), matching botl.js:formatStrength().
+// 93 == 18/75, 118 == 18/**), matching botl.js:formatStrength.
 export function strengthDamageBonus(strength: number): number {
     if (strength < 6) return -1;
     if (strength < 16) return 0;
@@ -843,7 +861,8 @@ export async function dryTowel(
     if (wetness !== object.spe) finishTowelChange(object, wetness, state);
 }
 
-// wet_a_towel()/dry_a_towel() share the carried-or-monster report.
+// Part of C weapon.c:wet_a_towel(), weapon.c:dry_a_towel(): report a carried towel's wetness change.
+// wet_a_towel/dry_a_towel share the carried-or-monster report.
 async function reportTowelChange(
     object: GameObject, change: string, state: GameState, publish: MessagePublisher,
 ): Promise<void> {
@@ -915,13 +934,15 @@ export async function advanceHeroSkill(state: GameState, skill: number, { speedy
     return proficiency;
 }
 
-// C skills.h P_SKILL()/P_MAX_SKILL() with the port's initialized-skill check.
+// Port only: require an initialized hero skill entry.
+// C skills.h P_SKILL/P_MAX_SKILL with the port's initialized-skill check.
 export function requiredSkill(skills: readonly HeroSkill[], skill: number): HeroSkill {
     const proficiency = skills[skill];
     if (!proficiency) throw new RangeError(`Hero skill ${skill} is missing`);
     return proficiency;
 }
 
+// Port only: require initialized hero skills for the current role.
 export function initializedSkills(state: GameState): HeroSkill[] {
     const skills = ensureHeroSkills(state);
     if (!skills) throw new Error('Hero skills require an initialized role');
@@ -1122,7 +1143,8 @@ export function uwepSkillType(weapon: GameObject | null, state: GameState): numb
     return Math.abs(objectSkill(weapon.otyp));
 }
 
-// weapon_hit_bonus() and weapon_dam_bonus() share the attack-skill choice:
+// Part of C weapon.c:weapon_hit_bonus(), weapon.c:weapon_dam_bonus(): choose two-weapon or ordinary attack skill.
+// weapon_hit_bonus and weapon_dam_bonus share the attack-skill choice:
 // two-weapon skill only when attacking with a wielded weapon.
 function attackSkillType(weapon: GameObject | null, state: GameState): number {
     return state.u.twoweap && weapon !== null
@@ -1131,7 +1153,8 @@ function attackSkillType(weapon: GameObject | null, state: GameState): number {
         ? P_TWO_WEAPON_COMBAT : weaponSkillType(weapon);
 }
 
-// C skills.h P_SKILL(): the skill's current proficiency level.
+// Port only: read a validated proficiency from initialized hero skills.
+// C skills.h P_SKILL: the skill's current proficiency level.
 function proficiency(skill: number, state: GameState): number {
     const entry = ensureHeroSkills(state)?.[skill];
     if (!entry) throw new Error(`Hero combat requires initialized skill ${skill}`);

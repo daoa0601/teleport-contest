@@ -11,6 +11,7 @@ import { reviveCorpseImmediately } from './do.js';
 import { CORPSE } from './object_data.js';
 import { rnd } from './rng.js';
 
+// Port only: duplicate undead-summoning entry point; makeUndeadNear is the native owner.
 export async function summonUndead(center: Position, {
     reviveCorpses = false, flags = 0, state = game,
 }: { reviveCorpses?: boolean; flags?: number; state?: GameState } = {}): Promise<void> {

@@ -61,14 +61,17 @@ const WORN_SLOTS = [
     { slot: 'uball', mask: W_BALL },
     { slot: 'uchain', mask: W_CHAIN },
 ];
+// Port only: read a hero equipment slot from its game and hero references.
 function wornSlotObject(slot, state) {
     return state[slot] ?? state.u?.[slot] ?? null;
 }
+// Port only: synchronize the port's duplicate equipment-slot references.
 function assignWornSlot(slot, object, state) {
     state[slot.slot] = object;
     if (state.u)
         state.u[slot.slot] = object;
 }
+// Port only: set the port's descriptive worn-slot aliases.
 function markWornObject(object, slot) {
     if (slot.weaponFlag) {
         if (slot.weaponFlag === 'wielded')
@@ -83,6 +86,7 @@ function markWornObject(object, slot) {
         object.wornSlot = slot.label;
     }
 }
+// Port only: clear the port's descriptive worn-slot aliases.
 function unmarkWornObject(object, slot) {
     if (slot.weaponFlag) {
         if (slot.weaponFlag === 'wielded')
@@ -98,7 +102,7 @@ function unmarkWornObject(object, slot) {
     }
 }
 // Part of C worn.c:setworn(): the property refresh after the w_blocks macro changes a worn-slot block.
-// C worn.c w_blocks(): at most one blocking item per property, keyed on the
+// C worn.c w_blocks: at most one blocking item per property, keyed on the
 // mask being worn or unworn. The Eyes of the Overworld's BLINDED block is
 // derived live from ublindf in senses.ts, so it needs no bookkeeping here.
 function refreshWornBlocks(object, mask, state, on) {
@@ -242,8 +246,9 @@ export async function setnotworn(object, state = game) {
     // update_inventory(): the tty inventory view is rebuilt from state.
     recalculateTelepathyRange(state);
 }
+// Port only: coordinate armor, accessory, blindness, and worn-slot removal for an object.
 // Clear every equipment slot an item still occupies when it leaves the hero
-// or changes type (C worn.c:setnotworn(), steal.c:remove_worn_item()).
+// or changes type (C worn.c:setnotworn, steal.c:remove_worn_item).
 // Command messages belong to the caller.
 export async function removeHeroEquipment(object, state = game, { deferArmorClass = false, } = {}) {
     const armorSlot = armorSlotFor(object.otyp);
@@ -318,6 +323,7 @@ export function adjustMonsterSpeed(monster, amount) {
             && !(monster.mfrozen ?? 0) && !monster.msleeping,
     };
 }
+// Part of C worn.c:mon_adjust_speed(): describe an observable speed change.
 export function monsterSpeedMessage(change, subject, state = game) {
     if (state.in_mklev || [2, -2, -4].includes(change.amount)
         || (!change.changed && change.amount !== -3) || !change.canDescribe)
@@ -341,7 +347,8 @@ const RESISTANCE_BITS = {
     acidResistance: 0x40,
     stoneResistance: 0x80,
 };
-// The altprop() macro: a worn alchemy smock confers poison and acid
+// Part of C worn.c:update_mon_extrinsics(): enumerate the primary property and the alchemy smock's alternate property.
+// The altprop macro: a worn alchemy smock confers poison and acid
 // resistance even though objects[] names only one of the two.
 function equipmentProperties(object) {
     const primary = objectPropertyName(object.otyp);
@@ -352,11 +359,11 @@ function equipmentProperties(object) {
     return [primary, primary === 'poisonResistance' ? 'acidResistance' : 'poisonResistance'];
 }
 // Part of C worn.c:update_mon_extrinsics(): the property loop and mummy-wrapping tail; updateMonsterEquipment() owns the complete operation.
-// The `again:` property loop of C worn.c:update_mon_extrinsics() plus its
-// w_blocks() mummy-wrapping tail: the part that flips minvis, speed and
-// the worn resistance bits.  It stands alone because mon.c:monstone()
+// The `again:` property loop of C worn.c update_mon_extrinsics plus its
+// w_blocks mummy-wrapping tail: the part that flips minvis, speed and
+// the worn resistance bits. It stands alone because mon.c monstone
 // strips a dead monster's item-conferred traits without the
-// saddle-dismount and newsym tail C never runs there; updateMonsterEquipment()
+// saddle-dismount and newsym tail C never runs there; updateMonsterEquipment
 // below is the whole C function.
 export function applyMonsterEquipmentProperties(monster, object, on) {
     let speed = null;
@@ -405,7 +412,8 @@ export async function updateMonsterEquipment(monster, object, on, state = game, 
     if (!silently && wasVisible !== canSeeMonster(monster))
         await newsym(monster.mx, monster.my);
 }
-// The C cantweararm() macro: breakarm() or sliparm() species cannot keep
+// Part of C mondata.h:cantweararm(): invert the armor-breaking or slipping test for suit eligibility.
+// The C cantweararm macro: breakarm or sliparm species cannot keep
 // body armor on.
 function monsterCanWearSuit(monster) {
     return !monsterSlipsArmor(monster.mnum)
@@ -853,9 +861,9 @@ export async function adjustMonsterClothingAfterPolymorph(monster, state = game,
     }
     return { dropped, destroyed };
 }
-// Part of C worn.c:m_dowear_type(): the armor score combining ARM_BONUS with extra_pref().
+// Part of C worn.c:m_dowear_type(): the armor score combining ARM_BONUS with extra_pref.
 // Bias a monster's preferences towards armor that has special benefits.
-// C worn.c:extra_pref().
+// Also C worn.c:extra_pref(): the speed-boot preference is inlined here.
 function preference(monster, object) {
     return armorBonus(object)
         + Number(object?.otyp === SPEED_BOOTS && monster?.permspeed !== 2) * 20;
@@ -905,8 +913,9 @@ export async function removeObjectFromMonsterInventory(monster, object, state = 
     object.ready = false;
     return true;
 }
-// extract_from_minvent() followed by obfree(): m_useup() and
-// discard_minvent() destroy a monster's worn or carried object this way.
+// Port only: combine monster-inventory extraction with object deletion.
+// extract_from_minvent followed by obfree: m_useup and
+// discard_minvent destroy a monster's worn or carried object this way.
 export async function destroyObjectFromMonsterInventory(monster, object, state = game, options = {}) {
     if (!await removeObjectFromMonsterInventory(monster, object, state, options))
         return false;
@@ -915,6 +924,7 @@ export async function destroyObjectFromMonsterInventory(monster, object, state =
 // C worn.c:find_mac()
 // trap.c wearing_iron_shoes() tests the boots' material, so iron kicking
 // boots protect as well as iron shoes do.
+// C worn.c:find_mac()
 // C ref: worn.c:find_mac().  Species AC is the base; only inventory objects
 // whose worn bit is present in misc_worn_check contribute protection.
 export function findMonsterArmorClass(monster) {

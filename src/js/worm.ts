@@ -30,6 +30,7 @@ export interface WormMonster extends Monster {
     wormGrowTime: number;
 }
 
+// Port only: require an initialized worm body before traversing it.
 // A reserved worm slot owns both the visible tail and its hidden head.
 function requireWormBody(monster: Monster): asserts monster is WormMonster {
     if (monster.wormno === undefined || !monster.wormHead
@@ -135,6 +136,7 @@ export async function cutWorm(monster: Monster, x: number, y: number, sliceOrCho
     }
 }
 
+// C worm.c:get_wormno()
 function nextWormNumber(state: GameState) {
     const used = new Set((state.level?.monsters || [])
         .map(monster => monster.wormno)
@@ -198,6 +200,7 @@ export async function clearMonsterWormFromMap(monster: Monster) {
     return count;
 }
 
+// Part of C worm.c:remove_worm(): clear one segment's occupancy and redraw it.
 async function clearWormSquare(point: Position): Promise<void> {
     // C removes the map slot even if another monster has replaced this
     // segment. A displaced live head is separate from the hidden segment.
@@ -241,9 +244,9 @@ export async function performWormTailAttacks(
 }
 
 // Part of C worm.c:initworm(): the body allocation before arrival places any segments.
-// C get_wormno() + initworm(): reserve the body before arrival can restore a
+// Native get_wormno and initworm reserve the body before arrival can restore a
 // shapechanger. Tail segments have no map occupancy until rloc places them.
-// C worm.c:create_worm_tail().
+// Also C worm.c:create_worm_tail(): the tail-segment allocation is inlined here.
 export function initializeUnplacedMonsterWormBody(
     monster: Monster, segmentCount: number,
     { state = game }: Pick<WormPlacementOptions, 'state'> = {},
@@ -258,6 +261,7 @@ export function initializeUnplacedMonsterWormBody(
     return monster.wormno !== 0;
 }
 
+// Port only: combine worm-body reservation and randomized tail placement for callers.
 // Ordinary births reserve the body first, then roll and place their tail.
 // An explicit count also serves callers rebuilding a known tail on the map.
 export async function initializeMonsterWormBody(
@@ -279,6 +283,7 @@ export async function initializeMonsterWormBody(
     return true;
 }
 
+// C worm.c:place_worm_tail_randomly()
 export async function placeMonsterWormTailRandomly(monster: Monster, requestedSegments: number, {
     state = game, random = rn2,
 }: WormPlacementOptions = {}) {

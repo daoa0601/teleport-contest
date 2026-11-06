@@ -36,6 +36,7 @@ import { shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { encumber_msg } from './pickup.js';
 import { monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
+// Part of C wield.c:dotwoweapon(): adapt the command's time result to the engine.
 export async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
     if (!game.program_state.gameover)
@@ -191,12 +192,14 @@ export async function dowield() {
     }
     await wieldSelectedWeapon(object);
 }
+// Part of C wield.c:dowield(): report a repeated selection and clear the bashing notice.
 async function reportAlreadyWielded(object) {
     await pline('You are already wielding that!');
     if (isWeaponTool(object) || isWetTowel(object))
         game._unweapon = false;
     commandResultFailed(); // wield.c:dowield() already-wielded ECMD_FAIL.
 }
+// Part of C wield.c:dowield(): install the selection, apply pushweapon, and set the command result.
 async function wieldSelectedWeapon(object) {
     const oldPrimary = game.uwep || game.u.uwep || null;
     const result = await readyHeroWeapon(object);
@@ -213,23 +216,27 @@ async function wieldSelectedWeapon(object) {
     else
         game.context.move = result === 'time' ? 1 : 0;
 }
+// C wield.c:dowieldquiver()
 // C refs: dowieldquiver(), doquiver_core().  Q and empty-quiver fire share
 // one live inventory transaction; neither role nor recorded input selects a
 // different readiness implementation.
 export async function doready() {
     await doquiverCore('ready');
 }
+// Port only: require a successful split of a selected inventory stack.
 function splitCarriedStack(item, count) {
     const split = splitObjectStack(item, count, game);
     if (!split)
         throw new Error('cannot split selected inventory stack');
     return split;
 }
+// Part of C wield.c:doquiver_core(): split ammunition and give the child its own inventory letter.
 async function splitStackForQuiver(item, count) {
     const child = splitCarriedStack(item, count);
     await finishSplittingCarriedStack(child);
     return child;
 }
+// C wield.c:finish_splitting()
 // C finish_splitting(): take the child out and add it without merging so
 // its inherited inventory letter is replaced and carried effects refresh.
 async function finishSplittingCarriedStack(object) {
@@ -239,13 +246,16 @@ async function finishSplittingCarriedStack(object) {
     await addInventoryItem(object, null, false);
     object.nomerge = nomerge;
 }
+// Part of C invent.c:splittable(): reject cursed loadstones and welded weapons for quiver counts.
 function splittableForQuiver(item) {
     return !(item?.otyp === LOADSTONE && item.cursed)
         && !isWeldedPrimary(item);
 }
+// Part of C wield.c:doquiver_core(): check for a spare inventory letter before offering a split.
 function hasFreeBasicInventoryLetter() {
     return game.inventory.filter(item => item.oclass !== COIN_CLASS).length < 52;
 }
+// C wield.c:doquiver_core()
 export async function doquiverCore(verb) {
     setMulti(0);
     if (!(game.inventory || []).length) {
@@ -406,15 +416,16 @@ export async function doquiverCore(verb) {
     game.context.move = spentTime ? 1 : 0;
     return { item, spentTime, cancelled: false };
 }
-// Part of C wield.c's TWOWEAPOK macro (wield.c:75): the weapon-class
-// test; the two-handed check is separate.
+// C wield.c:TWOWEAPOK()
+// The weapon-class and weapon-tool test; the two-handed check is separate.
 export function isTwoWeaponObject(object) {
     if (object?.oclass !== WEAPON_CLASS)
         return isWeaponTool(object);
     return !is_launcher(object)
         && !isLauncherAmmunition(object) && !isMissileObject(object);
 }
-// C setuwep(): an improvised weapon announces its first use in melee.
+// Part of C wield.c:setuwep(): decide whether the equipped item arms a bashing notice.
+// C setuwep: an improvised weapon announces its first use in melee.
 export function weaponNeedsBashingMessage(object, state) {
     if (!object)
         return true;
@@ -426,6 +437,7 @@ export function weaponNeedsBashingMessage(object, state) {
     return launcher || isLauncherAmmunition(object) || isMissileObject(object)
         || groundedPolearm;
 }
+// C wield.c:will_weld()
 export function willWeld(object) {
     if (!object?.cursed)
         return false;
@@ -435,6 +447,7 @@ export function willWeld(object) {
 }
 // Readiness messages around a semantic primary-weapon change.
 // C refs: wield.c ready_weapon(), before and after setuwep().
+// C wield.c:weldmsg()
 export async function refuseWeldedPrimary(state = game) {
     const weapon = state.uwep || state.u.uwep;
     if (!weapon || !willWeld(weapon))
@@ -445,6 +458,7 @@ export async function refuseWeldedPrimary(state = game) {
     await plineWithContinuation(`${ownedObjectAction(weapon, 'are', state)} welded to your ${hands}!`);
     return true;
 }
+// Part of C wield.c:ready_weapon(): announce a newly welded weapon and reveal its curse.
 export async function announceWeaponWeld(object, state = game) {
     const noun = objectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
@@ -458,6 +472,7 @@ export async function announceWeaponWeld(object, state = game) {
     await plineWithContinuation(`${article}${subject} ${quantity === 1 ? 'welds itself' : 'weld themselves'} to your ${hands}!`);
     object.bknown = true;
 }
+// Part of C wield.c:ready_weapon(): report the loss of two-weapon combat after wielding.
 export async function explainTwoWeaponEnd(wasTwoWeapon, state = game) {
     const weapon = state.uwep || state.u?.uwep;
     if (!wasTwoWeapon || state.u.twoweap || !weapon
@@ -468,15 +483,16 @@ export async function explainTwoWeaponEnd(wasTwoWeapon, state = game) {
         ? 'You are no longer using two weapons at once.'
         : 'You can no longer wield two weapons at once.');
 }
-// C wield.c:ready_weapon() and cant_wield_corpse(): the wield messages and
-// the bare-handed petrifying-corpse refusal live in readySelectedWeapon.
-// C wield.c:empty_handed().
+// C wield.c:empty_handed()
+// The wield messages and bare-handed petrifying-corpse refusal from
+// ready_weapon and cant_wield_corpse live in readySelectedWeapon.
 export function emptyHandedDescription(state = game) {
     if (state.uarmg || state.u.uarmg)
         return 'empty handed';
     const humanoid = monsterIsHumanoid(heroSpecies(state));
     return humanoid ? 'bare handed' : 'not wielding anything';
 }
+// C wield.c:ready_weapon()
 // The caller has already checked whether the old weapon is welded. A failed
 // touch spends a turn; a shield refusal does not. Neither installs the item.
 export async function readyHeroWeapon(weapon, state = game) {
@@ -487,7 +503,8 @@ export async function readyHeroWeapon(weapon, state = game) {
         state.context.botl = true;
     return result;
 }
-// C wield.c:cant_wield_corpse(): a bare-handed petrifying-corpse wield
+// Part of C wield.c:ready_weapon(): prepare and install the selected weapon.
+// Also C wield.c:cant_wield_corpse(): inlined here; a bare-handed petrifying-corpse wield
 // announces itself and petrifies instead of installing the weapon.
 async function readySelectedWeapon(weapon, state) {
     requirePlayingGame(state);
@@ -541,6 +558,7 @@ async function readySelectedWeapon(weapon, state) {
     }
     return 'time';
 }
+// C wield.c:welded()
 export function isWeldedPrimary(object, state = game) {
     if (!object || object !== (state.uwep || state.u?.uwep) || !willWeld(object))
         return false;
@@ -556,6 +574,7 @@ export function setTwoWeaponCombat(enabled, state = game) {
     if (state.flags.weaponstatus)
         state.context.botl = true;
 }
+// Port only: read a weapon slot from the game and hero slot references.
 function slotObject(slot, state) {
     return state[slot] || state.u?.[slot] || null;
 }
@@ -628,10 +647,12 @@ export async function uqwepgone(state = game) {
 // ── Two-weapon combat (folded from two_weapon.js) ──
 // C refs: wield.c can_twoweapon(), dotwoweapon(), drop_uswapwep(),
 // untwoweapon().
+// Port only: apply the species two-weapon predicate to the hero's current form.
 // Two-weapon anatomy follows the current body, independent of equipment.
 export function heroCanUseTwoWeapons(state = game) {
     return could_twoweap(heroSpecies(state));
 }
+// Part of C objnam.c:yname(): omit ownership for personally named, non-quest artifacts.
 function weaponName(object, state) {
     // C Yname2() omits ownership for personal, non-quest artifact names.
     if (object.where === 'inventory' && objectHasPersonalName(object, state)
@@ -644,6 +665,7 @@ function weaponName(object, state) {
     }
     return ownedObjectName(object, state);
 }
+// Part of C wield.c:dotwoweapon(): toggle dual wielding and determine whether starting it costs time.
 export async function toggleTwoWeaponCombat(state = game) {
     if (state.u.twoweap) {
         await plineWithContinuation('You switch to your primary weapon.');
@@ -710,12 +732,14 @@ export async function canBeginTwoWeaponCombat(state) {
     }
     return true;
 }
-// C curse(): this equipment reaction does not reveal BUC knowledge.
+// Part of C mkobj.c:curse(): drop the secondary weapon when it becomes cursed during dual wielding.
+// C curse: this equipment reaction does not reveal BUC knowledge.
 export async function dropCursedSecondaryWeapon(object, state = game) {
     if (state.u.twoweap && object.cursed
         && object === (state.uswapwep || state.u.uswapwep))
         await dropSecondaryWeapon(state);
 }
+// Part of C wield.c:drop_uswapwep(): choose the slipping or cursed-hand message and drop the item.
 export async function dropSecondaryWeapon(state = game) {
     const object = state.uswapwep || state.u.uswapwep;
     if (!object)
@@ -831,7 +855,8 @@ export async function chwepon(scroll, amount, state) {
     }
     return true;
 }
-// C chwepon() worm tooth branch: fusion into one uncursed crysknife.
+// Part of C wield.c:chwepon(): turn worm teeth into one uncursed crysknife.
+// C chwepon worm tooth branch: fusion into one uncursed crysknife.
 async function sharpenWormTeeth(uwep, scrollType, state) {
     const multiple = objectQuantity(uwep) > 1;
     /* order: message, transformation, shop handling */
@@ -855,7 +880,8 @@ async function sharpenWormTeeth(uwep, scrollType, state) {
     if (multiple)
         await encumber_msg(state, pline);
 }
-// C chwepon() crysknife branch: degradation back into one worm tooth.
+// Part of C wield.c:chwepon(): turn a crysknife into one worm tooth.
+// C chwepon crysknife branch: degradation back into one worm tooth.
 async function dullCrysknife(uwep, scrollBknown, scrollType, state) {
     const multiple = objectQuantity(uwep) > 1;
     /* order matters: message, shop handling, transformation */
@@ -875,7 +901,8 @@ async function dullCrysknife(uwep, scrollBknown, scrollType, state) {
     if (multiple)
         await encumber_msg(state, pline);
 }
-// C chwepon() bare-hands branch, including the cursed welded tin opener.
+// Part of C wield.c:chwepon(): handle the bare-hands or welded tin-opener enchantment.
+// C chwepon bare-hands branch, including the cursed welded tin opener.
 async function strangeFeelingOn(scroll, amount, state) {
     const uwep = state.uwep || state.u?.uwep || null;
     let text;
@@ -899,9 +926,11 @@ async function strangeFeelingOn(scroll, amount, state) {
     await strangeFeeling(scroll, text, { state });
     await exerciseAttribute(A_DEX, amount >= 0, state);
 }
+// Port only: read a weapon stack's stored quantity.
 function objectQuantity(object) {
     return object.quan ?? object.quantity ?? 1;
 }
+// Port only: refresh cached names after a weapon changes type.
 // The inventory description reads the object's stored name for weapons,
 // so a type change must rewrite it, as other type-changing owners do.
 function renameTransformedWeapon(uwep, name) {
@@ -910,18 +939,22 @@ function renameTransformedWeapon(uwep, name) {
     if (uwep.plural !== undefined)
         uwep.plural = makePlural(name);
 }
+// Port only: read an object's stored enchantment value.
 export function objectEnchantment(object) {
     return object.spe ?? object.enchantment ?? 0;
 }
+// Port only: keep the object's enchantment aliases synchronized.
 export function setWeaponEnchantment(object, value) {
     object.spe = value;
     object.enchantment = value;
 }
-// Part of C's u_wield_art(ART_MAGICBANE) test (include/obj.h:441) as
+// Part of C obj.h:u_wield_art(): test the hero's primary weapon for Magicbane.
+// The native u_wield_art test for ART_MAGICBANE (include/obj.h:441), as
 // wield.c reads it.
 function heroWieldsMagicbane(state) {
     return artifactById((state.uwep || state.u?.uwep)?.oartifact)?.name === 'Magicbane';
 }
+// Part of C objnam.c:simpleonames(): name transformed teeth or crysknives without personal or called names.
 // Only the tooth/crysknife transformations use simpleonames here. C omits
 // individual names and call names from that transformation message.
 function simpleonames(object) {
@@ -930,21 +963,26 @@ function simpleonames(object) {
         throw new Error(`Transformed weapon type ${object.otyp} has no name`);
     return objectQuantity(object) > 1 ? makePlural(name) : name;
 }
+// Port only: read a tool stack's stored quantity.
 function quantityOf(object) {
     return object.quan ?? object.quantity ?? 1;
 }
+// Part of C wield.c:wield_tool(): distinguish weapons from tools in the shield refusal.
 function isWeapon(object) {
     return object.oclass === WEAPON_CLASS;
 }
+// Part of C wield.c:wield_tool(): apply the two-handed item predicate.
 function isTwoHanded(object) {
     // C wield.c:wield_tool() checks bimanual(obj) at both the welded message
     // and the shield refusal.
     return isBimanualObject(object);
 }
+// Part of C wield.c:wield_tool(): find the welded primary weapon blocking the tool.
 function weldedPrimary(state) {
     const primary = state.uwep || state.u?.uwep || null;
     return willWeld(primary) ? primary : null;
 }
+// Part of C wield.c:wield_tool(): explain why the welded weapon prevents applying the tool.
 async function explainWeldedPrimary(primary, verb, name, plural, state) {
     primary.bknown = true;
     if (state.flags?.verbose === false) {
@@ -957,6 +995,7 @@ async function explainWeldedPrimary(primary, verb, name, plural, state) {
     await pline(`Since your weapon is welded to your ${hand}, `
         + `you cannot ${verb} ${demonstrative} ${name}.`);
 }
+// C wield.c:wield_tool()
 export async function wieldTool(object, verb = 'wield', { swapWeapons } = {}, state = game) {
     const current = state.uwep || state.u?.uwep || null;
     if (object === current)

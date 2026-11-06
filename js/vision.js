@@ -13,6 +13,7 @@ import { objectsInTimerGraph } from './timeout.js';
 import { isMoatAt, isPoolAt } from './dbridge.js';
 import { isRoom } from './map_types.js';
 import { monsterPerceives } from './mondata.js';
+// Port only: local mimic-light predicate; appearanceBlocksLight carries the native macro citation.
 export function mimicBlocksLight(monster) {
     if (monster.mappearance === undefined)
         return false;
@@ -34,12 +35,14 @@ const LIGHT_EMITTING_MONSTERS = new Set([
     144, // gold dragon
     155, // fire elemental
 ]);
+// C mondata.h:emits_light()
 export function monsterEmitsLight(mnum) {
     if (mnum === undefined)
         return false;
     return MONSTER_SYMBOL[mnum] === 25 // S_LIGHT
         || LIGHT_EMITTING_MONSTERS.has(mnum);
 }
+// Port only: derive moving light sources from live monsters and objects instead of a native light list.
 function mobileLightSources(level) {
     const monsters = [...(level?.monsters || [])];
     const sources = monsters.filter(monster => !monster.dead && !monster.lightRemoved && !monster.mburied
@@ -78,6 +81,7 @@ export function hasLightSources() {
             .some(monster => !monster.dead && !monster.lightRemoved && monsterEmitsLight(monster.mnum))
         || objectsInTimerGraph(game).some(object => objectLightRadius(object) > 0);
 }
+// C light.c:do_light_sources()
 function doLightSources(level, couldSee) {
     let atHeroRange = 0;
     for (const source of mobileLightSources(level)) {
@@ -145,6 +149,7 @@ const cs_rmin0 = new Int16Array(ROWNO).fill(COLNO);
 const cs_rmax0 = new Int16Array(ROWNO).fill(0);
 const cs_rmin1 = new Int16Array(ROWNO).fill(COLNO);
 const cs_rmax1 = new Int16Array(ROWNO).fill(0);
+// Port only: validate a row in the dense vision tables.
 // Dense vision tables have fixed native dimensions. A missing entry is a
 // broken scan boundary, so report it instead of treating it as a dark cell.
 function visionRow(rows, row) {
@@ -153,12 +158,14 @@ function visionRow(rows, row) {
         throw new RangeError(`Vision row ${row} is outside ${rows.length} rows.`);
     return value;
 }
+// Port only: validate a numeric vision-table index.
 function visionValue(values, index) {
     const value = values[index];
     if (value === undefined)
         throw new RangeError(`Vision index ${index} is outside ${values.length} entries.`);
     return value;
 }
+// Part of C display.c:set_seenv(): select the viewing-angle bit for an adjacent direction.
 function seenVector(dx, dy) {
     if (Math.abs(dx) > 1 || Math.abs(dy) > 1)
         throw new RangeError(`Seen direction (${dx}, ${dy}) must be adjacent.`);
@@ -168,6 +175,7 @@ function seenVector(dx, dy) {
 export function set_seenv(location, fromX, fromY, x, y) {
     location.seenv |= seenVector(Math.sign(x - fromX), Math.sign(fromY - y));
 }
+// Part of C vision.c:right_side(), vision.c:left_side(), vision.c:view_from(): mark a visible span or visit its cells.
 function mark_visible_range(output, row, left, right) {
     if (left > right)
         return;
@@ -232,6 +240,7 @@ export function visionCellBlocksLight(level, x, y) {
  * the hero is submerged at the moment the table is (re)built, and later
  * single-cell updates must not rewrite that decision level-wide.
  * ====================================================================== */
+// C vision.c:dig_point()
 function dig_point(row, col) {
     const clearRow = visionRow(viz_clear, row);
     const leftPointers = visionRow(left_ptrs, row);
@@ -310,6 +319,7 @@ function dig_point(row, col) {
         }
     }
 }
+// C vision.c:fill_point()
 function fill_point(row, col) {
     const clearRow = visionRow(viz_clear, row);
     const leftPointers = visionRow(left_ptrs, row);
@@ -384,7 +394,8 @@ function fill_point(row, col) {
         }
     }
 }
-// C ref: vision_reset() — rebuild viz_clear and left/right ptrs
+// Part of C vision.c:vision_reset(): rebuild the blocker table and its row pointers.
+// C ref: vision_reset — rebuild viz_clear and left/right ptrs
 export function vision_reset() {
     const level = game.level;
     if (!level)
@@ -432,9 +443,9 @@ export function vision_reset() {
     game._viz_rmax = null;
 }
 // Part of C vision.c:recalc_block_point(): the single cell joins or leaves
-// the blocker table incrementally (block_point()/unblock_point() bodies
+// the blocker table incrementally (block_point/unblock_point bodies
 // inlined); every other row bit keeps its current value.  C only requests
-// the deferred vision_recalc() when the hero could see the changed cell.
+// the deferred vision_recalc when the hero could see the changed cell.
 export function vision_note_blocker_change(x, y) {
     const level = game.level;
     if (!level || y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
@@ -460,6 +471,7 @@ export function block_point(x, y) {
     if (game.viz_array?.[y]?.[x])
         game.vision_full_recalc = 1;
 }
+// C vision.c:unblock_point()
 export function unblock_point(x, y) {
     if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
         return;
@@ -520,6 +532,7 @@ function q1_path(srow, scol, y2, x2) {
     }
     return 1;
 }
+// C vision.c:q2_path()
 function q2_path(srow, scol, y2, x2) {
     let x = scol, y = srow;
     const dx = x - x2, dy = y - y2;
@@ -552,6 +565,7 @@ function q2_path(srow, scol, y2, x2) {
     }
     return 1;
 }
+// C vision.c:q3_path()
 function q3_path(srow, scol, y2, x2) {
     let x = scol, y = srow;
     const dx = x - x2, dy = y2 - y;
@@ -584,6 +598,7 @@ function q3_path(srow, scol, y2, x2) {
     }
     return 1;
 }
+// C vision.c:q4_path()
 function q4_path(srow, scol, y2, x2) {
     let x = scol, y = srow;
     const dx = x2 - x, dy = y2 - y;
@@ -802,9 +817,9 @@ function view_from(srow, scol, output, range = 0) {
     }
 }
 // Part of C vision.c:do_clear_area(): the not-centered-on-hero branch —
-// view_from() with a collecting callback, so non-rendering consumers can
+// view_from with a collecting callback, so non-rendering consumers can
 // reason about visibility from another actor's position (the citation
-// owner is clearAreaCells() below).
+// owner is clearAreaCells below).
 export function visibleCellsFrom(scol, srow, range) {
     if (!game.level || scol < 1 || scol >= COLNO
         || srow < 0 || srow >= ROWNO)
@@ -917,6 +932,7 @@ async function rogueVision(level, output) {
         }
     }
 }
+// Part of C vision.c:vision_recalc(): apply x-ray and night-vision ranges.
 async function extendHeroSight(output, range, xray) {
     if (range < 0)
         return;
@@ -1043,11 +1059,13 @@ export async function vision_recalc(control = 0) {
     game._viz_rmax = next_rmax;
     await noticeAllMonsters(game);
 }
+// C vision.h:cansee()
 export function cansee(x, y) {
     if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
         return false;
     return !!((game.viz_array?.[y]?.[x] ?? 0) & IN_SIGHT);
 }
+// C vision.h:couldsee()
 // C ref: couldsee(x, y)
 export function couldsee(x, y) {
     if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
@@ -1057,14 +1075,16 @@ export function couldsee(x, y) {
 // C ref: vision.h m_canseeu(m). Assumes that if the hero has a clear line of
 // sight to the monster's location and the hero is visible, the monster could
 // see the hero; it deliberately does not test the monster's blindness.
+// Port only: local observer-visibility predicate; specialMoverSeesHero carries the native macro citation.
 export function monsterHasLineOfSightToHero(monster, state = game) {
     return (!heroIsInvisible(state) || monsterPerceives(monster.mnum))
         && !state.u.uinwater && couldsee(monster.mx, monster.my);
 }
-// State-aware couldsee() for modules that run against either the live game
+// Port only: expose state-aware geometric sight to live games and focused test states.
+// State-aware couldsee for modules that run against either the live game
 // or a focused unit state. COULD_SEE is bit 0 of the vision buffer. Focused
 // unit states omit the buffer and are treated as unobstructed; live games
-// always carry the current buffer produced by domove()/vision_recalc().
+// always carry the current buffer produced by domove/vision_recalc.
 // Terrain browsing can rebuild it while temporarily lifting engulfment.
 export function couldSeeFromHero(state, x, y) {
     if (!state?.viz_array)

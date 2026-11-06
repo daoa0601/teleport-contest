@@ -88,6 +88,7 @@ const HUMAN_WERE_CORPSE = new Map([
     [PM_HUMAN_WEREWOLF, PM_WEREWOLF],
 ]);
 
+// Part of C eat.c:cpostfx(): catch lycanthropy from a human werecreature corpse.
 export function catchLycanthropyFromCorpse(mnum: number, state: GameState = game) {
     const beast = HUMAN_WERE_CORPSE.get(mnum);
     if (beast === undefined) return false;
@@ -95,6 +96,7 @@ export function catchLycanthropyFromCorpse(mnum: number, state: GameState = game
     return true;
 }
 
+// C were.c:set_ulycn()
 // C set_ulycn(): infection and its innate resistance change together.
 export function setHeroLycanthropy(species: number, state: GameState = game) {
     requirePlayingGame(state);
@@ -102,6 +104,7 @@ export function setHeroLycanthropy(species: number, state: GameState = game) {
     setHeroSpecies(state.u.umonnum, state);
 }
 
+// Part of C were.c:were_summon(): choose a relative of the summoning werecreature.
 function summonedWereAlly(form: number | null, random: typeof rn2) {
     if (form === PM_WERERAT || form === PM_HUMAN_WERERAT) {
         return random(3) ? PM_SEWER_RAT
@@ -118,6 +121,7 @@ function summonedWereAlly(form: number | null, random: typeof rn2) {
     return null;
 }
 
+// C were.c:were_beastie()
 // C were_beastie(): ordinary relatives can request the infected beast form.
 export function wereBeastForSpecies(mnum: number) {
     if ([PM_WERERAT, PM_SEWER_RAT, PM_GIANT_RAT, PM_RABID_RAT].includes(mnum))
@@ -129,11 +133,13 @@ export function wereBeastForSpecies(mnum: number) {
     return null;
 }
 
+// Part of C cmd.c:domonability(): admit werecreatures to the summoning ability.
 export function heroCanSummonWerePack(state: GameState = game) {
     const form = heroMonsterForm(state);
     return form != null && isWereMonster({ mnum: form });
 }
 
+// Port only: validate the hero's infected beast species.
 function lycanthropeBeastMnum(state: GameState) {
     const mnum = state.u?.ulycn;
     if (mnum === undefined || !Number.isInteger(mnum) || mnum < 0 || mnum >= MONSTER_NAME.length)
@@ -142,10 +148,12 @@ function lycanthropeBeastMnum(state: GameState) {
     return is_were(mnum) && !monsterIsHuman(mnum) ? mnum : null;
 }
 
+// Part of C were.c:you_were(): remove the were prefix from the beast's name.
 function beastFormName(beast: number) {
     return (MONSTER_NAME[beast] || 'creature').replace(/^were/u, '');
 }
 
+// Part of C were.c:you_were(), were.c:you_unwere(): ask the controlled-transformation question with the paranoia option.
 async function queryControlledWereChange(state: GameState, prompt: string) {
     const paranoiaBits = state.flags?.paranoia_bits ?? 0;
     return paranoidQuery(
@@ -155,6 +163,7 @@ async function queryControlledWereChange(state: GameState, prompt: string) {
     );
 }
 
+// Part of C potion.c:potionbreathe(): water vapor splits gremlins or changes an infected hero's form.
 export async function applyHeroWaterVaporChange({
     state = game,
     potion,
@@ -232,6 +241,7 @@ export async function revertHeroWereForm({
     return { kind: remain ? 'remained' : 'blocked', cured: purify, changed: false };
 }
 
+// Port only: request purification only when the hero is infected or in werecreature form.
 export async function purifyHeroLycanthropy({
     state = game, publish = plineWithContinuation,
 }: HeroWereChangeOptions = {}) {
@@ -241,11 +251,13 @@ export async function purifyHeroLycanthropy({
     return revertHeroWereForm({ state, publish, purify: true });
 }
 
+// Port only: adapt an optional monster species to the werecreature predicate.
 export function isWereMonster(monster: WereSpecies | null | undefined): boolean {
     const mnum = monster?.mnum;
     return mnum !== undefined && is_were(mnum);
 }
 
+// Part of C were.c:were_change(), were.c:new_were(): distinguish human werecreatures from beasts.
 export function isHumanWereMonster(monster: WereSpecies | null | undefined): boolean {
     const mnum = monster?.mnum;
     if (mnum === undefined) return false;
@@ -272,11 +284,13 @@ export async function summonWerePack(
     return helpers;
 }
 
+// Part of C were.c:new_were(): choose the human or beast name for the change message.
 function changedWereFormName(monster: Pick<Monster, 'mnum'>) {
     if (isHumanWereMonster(monster)) return 'human';
     return (MONSTER_NAME[monster.mnum] || 'creature').replace(/^were/u, '');
 }
 
+// Part of C were.c:were_change(): choose an unseen, audible wolf or jackal howl.
 function unseenWereHowl(monster: Monster, state: GameState) {
     if (heroIsDeaf(state)
         || canSeeMonster(monster)) return null;
@@ -285,6 +299,7 @@ function unseenWereHowl(monster: Monster, state: GameState) {
     return null;
 }
 
+// C were.c:were_change()
 export async function wereChange(monster: Monster, state: GameState = game, random = rn2, {
     publish = plineWithContinuation,
 }: { publish?: MessagePublisher } = {}): Promise<WereChange | null> {
@@ -317,6 +332,7 @@ export async function wereChange(monster: Monster, state: GameState = game, rand
     };
 }
 
+// Part of C were.c:were_change(): publish the howl and wake nearby monsters.
 export async function presentWereChange(change: WereChange | null | undefined, {
     publish = plineWithContinuation,
     wakeNearby,
@@ -339,6 +355,7 @@ export async function presentWereChange(change: WereChange | null | undefined, {
     return change;
 }
 
+// C were.c:new_were()
 export async function transformWereMonster(monster: Monster, state: GameState = game, {
     repaint = state === game,
     publish = plineWithContinuation,
