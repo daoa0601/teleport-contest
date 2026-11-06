@@ -1,13 +1,15 @@
 import { game } from './gstate.js';
-// C bones.c:sanitize_name(). High-bit control bytes are still controls;
-// printable high-bit characters follow the tty eight-bit input option.
-export function sanitizeBonesName(name) {
+// C bones.c:sanitize_name(): while loading bones (and when the fruit option
+// names a fruit), strip text that could disrupt display. High-bit control
+// bytes are still controls; printable high-bit characters follow the tty
+// eight-bit input option. optfn_fruit() also runs this over pl_fruit.
+export function sanitizeName(name, iflags = game.iflags) {
     return [...String(name || '')].map(character => {
         const code = character.charCodeAt(0);
         const lowBits = code & 127;
         if (lowBits < 32 || lowBits === 127)
             return '.';
-        if (code > 127 && !game.iflags.wc_eight_bit_input)
+        if (code > 127 && !iflags.wc_eight_bit_input)
             return '_';
         return character;
     }).join('');

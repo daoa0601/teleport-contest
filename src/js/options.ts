@@ -51,6 +51,7 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { sanitizeName } from './bones_name.js';
 
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
@@ -2879,12 +2880,15 @@ async function editSortLoot(): Promise<void> {
 }
 
 // C options.c:optfn_fruit(): the goodfruit normalization — mungspaces, the
-// PL_FSIZ copy, sanitize_name, and the "slime mold" fallback.
+// PL_FSIZ copy (nmcpy), sanitize_name (sanitizeName in bones_name.ts), and
+// the "slime mold" fallback.
 export function normalizePreferredFruitName(name: string, state: FruitNameSettings = game): string {
     const firstLine = String(name).split('\n', 1)[0] ?? '';
     const spaced = firstLine.replace(/\t/g, ' ')
         .replace(/ +/g, ' ').replace(/^ | $/g, '');
-    return sanitizedFruitName(spaced.split(',', 1)[0] ?? '', state) || 'slime mold';
+    // nmcpy(svp.pl_fruit, op, PL_FSIZ) caps the copy at PL_FSIZ-1 bytes
+    // before sanitize_name() runs.
+    return sanitizeFruitCopy(spaced.split(',', 1)[0] ?? '', state.iflags) || 'slime mold';
 }
 
 // C options.c:optfn_fruit(). Runtime option changes can rename an unused
@@ -2956,7 +2960,7 @@ export function addFruit(name: string, { preferred = false, initial = false, rep
         }
     } else {
         // Not user-specified, so assumed to be from bones (or orc gang).
-        value = sanitizedFruitName(name, state);
+        value = sanitizeFruitCopy(name, state.iflags);
         state.flags.made_fruit = true;
     }
     const existing = fruitFromName(value, { state });
@@ -2976,14 +2980,13 @@ interface FruitNameSettings {
     iflags?: Pick<InterfaceFlags, 'wc_eight_bit_input'>;
 }
 
-// C bones.c:sanitize_name(): strip text that could disrupt display.
-function sanitizedFruitName(name: string, state: FruitNameSettings): string {
-    const bytes = new TextEncoder().encode(String(name)).slice(0, FRUIT_NAME_BYTES);
-    return [...bytes].map(byte => {
-        const low = byte & 127;
-        if (low < 32 || low === 127) return '.';
-        return byte > 127 && !state.iflags?.wc_eight_bit_input ? '_' : String.fromCharCode(byte);
-    }).join('');
+// C copynchars(altname, str, PL_FSIZ - 1) followed by sanitize_name():
+// optfn_fruit() (above) and fruitadd() (below) both cap the bytes before
+// sanitizing through bones.c:sanitize_name() (sanitizeName in bones_name.ts).
+function sanitizeFruitCopy(name: string, iflags?: Pick<InterfaceFlags, 'wc_eight_bit_input'>): string {
+    const capped = new TextDecoder().decode(new TextEncoder()
+        .encode(name).subarray(0, FRUIT_NAME_BYTES));
+    return sanitizeName(capped, iflags ?? { wc_eight_bit_input: false });
 }
 
 // fruitadd()'s highest_fruit_id and fruit_from_name()'s out-parameter share

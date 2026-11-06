@@ -22,7 +22,7 @@ import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { DTHSZ, formatKiller } from './topten.js';
 import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones_object.js';
-import { sanitizeBonesName } from './bones_name.js';
+import { sanitizeName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape, restoreMonsterInventoryOwnership } from './mon.js';
@@ -349,7 +349,7 @@ function sanitizeMonsterName(monster) {
         || monster?.name;
     if (!name)
         return;
-    const sanitized = sanitizeBonesName(name);
+    const sanitized = sanitizeName(name);
     setMonsterGivenName(monster, sanitized);
 }
 const HERO_RESISTANCES = Object.freeze([

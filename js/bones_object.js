@@ -1,7 +1,7 @@
 import { FOOD_CLASS } from './objclass.js';
 import { objectUsesKnown, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_NOVEL, ORCISH_BOW, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN, WAX_CANDLE, YUMI, } from './object_data.js';
 import { artifactById, nameArtifact } from './artifact.js';
-import { sanitizeBonesName } from './bones_name.js';
+import { sanitizeName } from './bones_name.js';
 import { ROOMOFFSET, SHOPBASE, OBJECT_TIMER_KIND } from './const.js';
 import { game } from './gstate.js';
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
@@ -148,9 +148,9 @@ export function prepareBonesObjectForRestore(object, state = game) {
     }
     else {
         if (object.oname)
-            object.oname = sanitizeBonesName(object.oname);
+            object.oname = sanitizeName(object.oname);
         if (object.oextra?.oname) {
-            object.oextra.oname = sanitizeBonesName(object.oextra.oname);
+            object.oextra.oname = sanitizeName(object.oextra.oname);
         }
     }
     if (object.oclass === FOOD_CLASS && (object.oeaten ?? 0) > 0)

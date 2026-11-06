@@ -32,7 +32,7 @@ import { rn2, rnd } from './rng.js';
 import { newsym } from './display.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { isIceAt, drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
-import { sanitizeBonesName } from './bones_name.js';
+import { sanitizeName } from './bones_name.js';
 import { goodPosition } from './teleport.js';
 import { artifactByName } from './artifact.js';
 import {
@@ -357,7 +357,7 @@ export function forgetEngravings(level: EngravingStore | null = game.level): voi
 // remembered and pristine buffers retain the ancestor's original bytes.
 export function sanitizeEngravings(level: EngravingStore | null = game.level): void {
     for (const engraving of level?.engravings ?? [])
-        engraving.text = sanitizeBonesName(engraving.text);
+        engraving.text = sanitizeName(engraving.text);
 }
 
 // C engrave.c:u_wipe_engr().

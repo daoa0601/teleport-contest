@@ -18,7 +18,7 @@ import { rn2, rnd } from './rng.js';
 import { newsym } from './display.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { isIceAt, drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
-import { sanitizeBonesName } from './bones_name.js';
+import { sanitizeName } from './bones_name.js';
 import { goodPosition } from './teleport.js';
 import { artifactByName } from './artifact.js';
 import { TOWEL, MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
@@ -287,7 +287,7 @@ export function forgetEngravings(level = game.level) {
 // remembered and pristine buffers retain the ancestor's original bytes.
 export function sanitizeEngravings(level = game.level) {
     for (const engraving of level?.engravings ?? [])
-        engraving.text = sanitizeBonesName(engraving.text);
+        engraving.text = sanitizeName(engraving.text);
 }
 // C engrave.c:u_wipe_engr().
 export function wipeHeroEngraving(count, state = game) {
