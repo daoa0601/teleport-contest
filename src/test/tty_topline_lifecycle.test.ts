@@ -199,7 +199,7 @@ for (const key of ['h', '\x1b']) {
     });
 }
 
-void test('an invalid direction key clears the query and leaves the complaint pending', async () => {
+void test('an invalid direction key replaces the cleared query with the complaint', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.cmdassist = false;
@@ -209,11 +209,15 @@ void test('an invalid direction key clears the query and leaves the complaint pe
     assert.equal(topline(), 'In what direction?');
     input.feed('+');
     assert.equal(await answer, null);
-    // The query row is cleared before "What a strange direction!" is filed.
-    assert.equal(topline(), '');
-    assert.equal(game._pending_message, 'What a strange direction!');
-    input.feed('l');
-    assert.equal(await nhgetch(), 'l'.charCodeAt(0));
+    // C cmd.c:4109 pline()s the complaint: it becomes the visible
+    // message row (the query row was already cleared, cmd.c:4011),
+    // waiting for a pager acknowledgment.
+    const pager = flushPendingTopline();
+    await input.waitUntilBlocked();
+    assert.equal(topline(), 'What a strange direction!--More--');
+    input.feed(' ');
+    await pager;
+    assert.equal(input.isBlocked, false);
 });
 
 void test('a successful ordinary throw leaves no answered direction query on the screen', async () => {
