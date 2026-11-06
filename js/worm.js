@@ -16,6 +16,7 @@ import { cansee } from './vision.js';
 import { dist2 } from './hacklib.js';
 import { performMonsterHeroAttack } from './mhitu.js';
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
+// Port only: require an initialized worm body before traversing it.
 // A reserved worm slot owns both the visible tail and its hidden head.
 function requireWormBody(monster) {
     if (monster.wormno === undefined || !monster.wormHead
@@ -102,6 +103,7 @@ export async function cutWorm(monster, x, y, sliceOrChop, { state = game, random
         delete monster.wormDetachedSegments;
     }
 }
+// C worm.c:get_wormno()
 function nextWormNumber(state) {
     const used = new Set((state.level?.monsters || [])
         .map(monster => monster.wormno)
@@ -163,6 +165,7 @@ export async function clearMonsterWormFromMap(monster) {
     monster.wormHead.x = 0;
     return count;
 }
+// Part of C worm.c:remove_worm(): clear one segment's occupancy and redraw it.
 async function clearWormSquare(point) {
     // C removes the map slot even if another monster has replaced this
     // segment. A displaced live head is separate from the hidden segment.
@@ -207,9 +210,9 @@ export async function performWormTailAttacks(worm, state, options) {
     return { nativeResult: 0, heroDied: false };
 }
 // Part of C worm.c:initworm(): the body allocation before arrival places any segments.
-// C get_wormno() + initworm(): reserve the body before arrival can restore a
+// Native get_wormno and initworm reserve the body before arrival can restore a
 // shapechanger. Tail segments have no map occupancy until rloc places them.
-// C worm.c:create_worm_tail().
+// Also C worm.c:create_worm_tail(): the tail-segment allocation is inlined here.
 export function initializeUnplacedMonsterWormBody(monster, segmentCount, { state = game } = {}) {
     if (!Number.isInteger(segmentCount) || segmentCount < 0)
         throw new RangeError('A worm body needs a nonnegative integer tail length.');
@@ -220,6 +223,7 @@ export function initializeUnplacedMonsterWormBody(monster, segmentCount, { state
     monster.wormGrowTime = 0;
     return monster.wormno !== 0;
 }
+// Port only: combine worm-body reservation and randomized tail placement for callers.
 // Ordinary births reserve the body first, then roll and place their tail.
 // An explicit count also serves callers rebuilding a known tail on the map.
 export async function initializeMonsterWormBody(monster, { allowTail = true, segmentCount = null, state = game, random = rn2, } = {}) {
@@ -231,6 +235,7 @@ export async function initializeMonsterWormBody(monster, { allowTail = true, seg
     await placeMonsterWormTailRandomly(monster, requestedSegments, { state, random });
     return true;
 }
+// C worm.c:place_worm_tail_randomly()
 export async function placeMonsterWormTailRandomly(monster, requestedSegments, { state = game, random = rn2, } = {}) {
     monster.wormHead = { x: monster.mx, y: monster.my };
     monster.wormSegments = [];

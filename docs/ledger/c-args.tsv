@@ -374,6 +374,7 @@ stairs.c	u_on_upstairs	stairway_find_dir	true
 steed.c	kick_steed	m_unleash	true
 steed.c	mount_steed	m_unleash	false
 steed.c	place_monster	minimal_monnam	false;true;true
+steed.c	put_saddle_on_mon	mksobj	true+false
 steed.c	use_saddle	exercise	false
 teleport.c	dotele	exercise	true
 teleport.c	level_tele	mksobj	true+false
@@ -425,6 +426,7 @@ uhitm.c	gulpum	newuhs	false
 uhitm.c	hitum	exercise	true
 uhitm.c	hmon_hitmon_jousting	set_twoweap	false
 uhitm.c	hmon_hitmon_misc_obj	exercise	false
+uhitm.c	hmonas	missum	false
 uhitm.c	mhitm_ad_acid	exercise	false
 uhitm.c	mhitm_ad_dgst	mksobj	false+false
 uhitm.c	mhitm_ad_famn	exercise	false
@@ -434,7 +436,12 @@ uhitm.c	mhitm_ad_phys	exercise	false;false;false
 uhitm.c	mhitm_ad_plys	exercise	false
 uhitm.c	mhitm_ad_sgld	exercise	true
 uhitm.c	mhitm_ad_were	exercise	false
+uhitm.c	passive	dynamic_multi_reason	false;true
+uhitm.c	passive	exercise	false;false
 uhitm.c	start_engulf	map_location	true
+vault.c	gd_move	clear_fcorr	true;true
+vault.c	gd_move	gd_move_cleanup	false;false;false;true;true
+vault.c	grddead	clear_fcorr	true;true
 vault.c	invault	hidden_gold	true
 vault.c	restfakecorr	clear_fcorr	false
 wield.c	dotwoweapon	set_twoweap	false;true
@@ -456,6 +463,8 @@ worn.c	extract_from_minvent	update_mon_extrinsics	false
 worn.c	m_dowear_type	update_mon_extrinsics	false;true
 worn.c	setnotworn	set_twoweap	false
 worn.c	setworn	set_twoweap	false
+write.c	dowrite	exercise	false;true
+write.c	dowrite	mksobj	false+false
 zap.c	bhito	exercise	true
 zap.c	do_enlightenment_effect	exercise	true
 zap.c	dozap	exercise	false

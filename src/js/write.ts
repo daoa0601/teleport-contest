@@ -35,8 +35,9 @@ import { knownSpell } from './spell.js';
 
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 
-// C write.c:new_book_description().
-// C write.c:write_ok().
+// C write.c:dowrite()
+// Also C write.c:new_book_description(): the successful spellbook message is assembled inline.
+// Also C write.c:write_ok(): the paper-selection callback is inlined here.
 export async function useMagicMarker(pen: GameObject): Promise<boolean> {
     requirePlayingGame(game);
     if (heroHasNoHands(game)) {
@@ -174,9 +175,10 @@ export async function useMagicMarker(pen: GameObject): Promise<boolean> {
 
 interface WritingType { otyp: number; byDescription: boolean }
 
+// Part of C write.c:dowrite(): find the requested name, description, or player-assigned name.
 // Unknown real scroll names are deferred so a conflicting called name can
 // win. Repeated called names use the native reservoir selection, including
-// the first rn2(1) draw.
+// the initial draw with rn2 bound 1.
 function findWritingType(name: string, oclass: number): WritingType | null {
     const { first, last } = getObjectClassBounds(oclass);
     const requested = name.toLowerCase();
@@ -204,6 +206,7 @@ function findWritingType(name: string, oclass: number): WritingType | null {
     return deferred;
 }
 
+// Port only: read an object's shuffled description for writing messages.
 function writingDescription(otyp: number): string {
     return OBJ_DESCR(otyp) ?? '';
 }
@@ -233,10 +236,12 @@ async function writingCost(object: GameObject): Promise<number> {
     }
 }
 
+// Port only: read the blessing sign for a writing ingredient.
 function blessingSign(object: GameObject): number {
     return object.blessed ? 1 : object.cursed ? -1 : 0;
 }
 
+// Part of C write.c:dowrite(): attempt a novel and optionally tear up the paper.
 async function tryWritingNovel(paper: GameObject): Promise<void> {
     const fanfic = !rn2(3), tearup = !rn2(3);
     if (fanfic)

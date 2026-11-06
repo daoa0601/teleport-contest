@@ -76,6 +76,7 @@ export async function wizWish() {
     }
     await encumber_msg();
 }
+// C wizcmds.c:wiz_polyself()
 // C wiz_polyself(): allow a chosen form without consuming a game turn.
 export async function wizPolyself() {
     await polymorphHero(POLY_CONTROLLED);
@@ -177,6 +178,7 @@ export async function wizKill() {
     level.monsters = level.monsters.filter(monster => !monster.dead);
     game.context.move = 0;
 }
+// Part of C wizcmds.c:wiz_kill(): resolve the selected monster, steed, or hero suicide request.
 async function wizardKillTarget(cursor) {
     if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
         const steed = game.u.usteed;
@@ -394,6 +396,7 @@ async function makemapUnmakemon(monster) {
         setPaidShopkeeper(monster);
     await removeMonsterFromGame(monster);
 }
+// Part of C wizcmds.c:makemap_remove_mons(): identify migrating residents of the level being replaced.
 function belongsToCurrentLevel(monster) {
     requirePlayingGame(game);
     return !!(monster.isshk && sameDungeonLevel(monster.eshk?.shoplevel, game.u.uz)
@@ -439,6 +442,7 @@ export async function wizMap() {
     game.context.move = 0;
     await bot();
 }
+// Part of C wizcmds.c:wiz_identify(): enable identification overrides while describing inventory.
 async function wizardIdentifyDescription(item, primaryHandDetail) {
     const override = game.iflags.override_ID;
     game.iflags.override_ID = true;
@@ -572,6 +576,7 @@ export async function wizPanic() {
     }
     game.context.move = 0;
 }
+// C wizcmds.c:wiz_fuzzer()
 export async function wizFuzzer() {
     if (!fuzzerWarningSuppressed()) {
         await plineWithContinuation('The fuzz tester will make NetHack execute random keypresses.');
@@ -584,6 +589,7 @@ export async function wizFuzzer() {
     }
     game.context.move = 0;
 }
+// Part of C wizcmds.c:wiz_fuzzer(): compare the suppressed-alert version with the fuzzer notice version.
 function fuzzerWarningSuppressed() {
     const version = game.flags.suppress_alert?.match(/^(\d+)\.(\d+)\.(\d+)$/);
     if (!version)
@@ -644,6 +650,7 @@ export async function showWallModes() {
     }
     await showInspection(lines);
 }
+// Port only: display a wizard inspection text window without spending a turn.
 async function showInspection(lines) {
     await displayMessageWindow();
     await showTextWindow(lines);
@@ -694,14 +701,17 @@ export async function showTerrainCodeLegend() {
         lines.push(entry(index) + entry(index + half));
     await showTerrainText(lines);
 }
+// Port only: display wizard terrain text after flushing the message window.
 async function showTerrainText(lines) {
     await displayMessageWindow();
     await showTextWindow(lines);
 }
+// Part of C wizcmds.c:wiz_map_levltyp(): encode a terrain number as a digit or letter.
 function terrainCode(terrain) {
     return String.fromCharCode(terrain < 10 ? 48 + terrain
         : terrain < 36 ? 97 + terrain - 10 : 65 + terrain - 36);
 }
+// Part of C wizcmds.c:wiz_map_levltyp(): assemble the level coordinates and feature description.
 function terrainLevelDescription() {
     const flags = requireGameLevel().flags;
     const here = game.u.uz;
@@ -741,6 +751,7 @@ function terrainLevelDescription() {
     parts.push(terrainBranchName());
     return parts.join(' ');
 }
+// Part of C wizcmds.c:wiz_map_levltyp(): append the dungeon branch identifier.
 function terrainBranchName() {
     const here = game.u.uz;
     if (!here)
@@ -882,6 +893,7 @@ const INTRINSICS = [
     { name: 'fixed abilities', property: 'sustainAbility' },
     { name: 'life will be saved', property: 'lifeSaving' },
 ];
+// C wizcmds.c:wiz_intrinsic()
 export async function wizIntrinsic() {
     const state = requireInitializedGame();
     const items = INTRINSICS.map(intrinsic => {
@@ -916,6 +928,7 @@ export async function wizIntrinsic() {
     }
     await docrt();
 }
+// Part of C wizcmds.c:wiz_intrinsic(): increase a selected intrinsic timeout and apply its immediate effects.
 async function increaseIntrinsic({ name, property }, amount, state) {
     const oldTimeout = propertyTimeout(property, state);
     const keepsDeadline = property === 'sick' || property === 'slimed' || property === 'stoned';
@@ -1015,6 +1028,7 @@ export async function wizMigrateMonsters() {
             await migrateMonsterOffLevel(monster, game, { dst: destination }, { kind: 'level-migration' });
     }
 }
+// Part of C wizcmds.c:wiz_migrate_mons(): choose the default next-level migration destination.
 function nextMigrationLevel() {
     requirePlayingGame(game);
     if (Is_stronghold(game.u.uz)) {
@@ -1025,6 +1039,7 @@ function nextMigrationLevel() {
     return Is_botlevel(game.u.uz) ? { dnum: 0, dlevel: 0 }
         : levelAtDepth(depth(game.u.uz) + 1);
 }
+// Part of C wizcmds.c:list_migrating_mons(): group destinations as current, next, or other levels.
 function migrationGroup(monster, next) {
     const destination = monster.migrationDestination;
     if (destination?.dnum === game.u.uz?.dnum && destination?.dlevel === game.u.uz?.dlevel)
@@ -1062,6 +1077,7 @@ async function listMigratingMonsters(next) {
             : choice === 'n' ? 'next level' : "'other' levels"}:`;
     await showTextWindow([title, '', ...selected.map(monster => migratingMonsterLine(monster, choice === 'a' || choice === 'o'))]);
 }
+// Part of C wizcmds.c:list_migrating_mons(): format one migrating monster and its destination.
 function migratingMonsterLine(monster, showDestination) {
     let text = `  ${monster.mtame ? 'tame ' : monster.mpeaceful ? 'peaceful ' : ''}${monsterTypeName(monster.mnum, !!monster.female)}`;
     if (monster.cham !== undefined && monster.cham >= 0)

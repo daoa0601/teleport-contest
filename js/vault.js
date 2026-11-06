@@ -53,6 +53,7 @@ export async function summonVaultGuardSoon(state = game) {
     if (inVault && !await findVaultGuard(state))
         state.u.uinvault = VAULT_GUARD_TIME - 1;
 }
+// Part of C vault.c:invault(): resolve the hero's occupied vault room.
 function vaultRoomAt(x, y, level = game.level) {
     const roomno = roomsAt(level, x, y, VAULT)[0];
     return roomno === undefined ? null : roomForRoomno(level, roomno);
@@ -261,6 +262,7 @@ export async function invault(state = game) {
     // the post-interrogation value.
     game.context.move = 0;
 }
+// Part of C vault.c:invault(): choose the guard's entry through the vault wall.
 function guardEntryToward(destination) {
     const level = requireGameLevel();
     let x = game.u.ux;
@@ -306,6 +308,7 @@ function guardEntryToward(destination) {
     }
     return { x, y };
 }
+// Part of C vault.c:invault(): ask for a nonempty name, allowing five attempts.
 async function readGuardName() {
     const prompt = heroIsDeaf(game) ? 'You are required to supply your name. -'
         : '"Hello stranger, who are you?" -';
@@ -318,14 +321,17 @@ async function readGuardName() {
     }
     return '';
 }
-// C strcmpi()/strncmpi() preserve characters outside ASCII A-Z.
+// Port only: normalize guard-name comparisons using ASCII case folding.
+// C strcmpi/strncmpi preserve characters outside ASCII A-Z.
 function lowercaseAscii(name) {
     return name.replace(/[A-Z]/g, character => character.toLowerCase());
 }
+// Port only: narrow a monster to one with initialized vault-guard state.
 export function requireVaultGuard(guard) {
     if (!guard._egd)
         throw new TypeError('Vault guard has no corridor state.');
 }
+// Port only: copy native terrain flags into the port's separate alias fields.
 // C rm.h overlays these fields on rm.flags. Vault repairs must restore
 // every alias so the restored terrain uses the saved flags.
 export function setVaultTerrainFlags(location, flags) {
@@ -339,12 +345,14 @@ export function setVaultTerrainFlags(location, flags) {
     location.icedpool = flags;
     location.emptygrave = flags !== 0;
 }
+// Port only: validate a vault corridor array index.
 function corridorPoint(corridor, index) {
     const point = corridor.fakecorr[index];
     if (!point)
         throw new RangeError(`Vault corridor has no square at index ${index}.`);
     return point;
 }
+// Port only: require a map cell for corridor repair.
 function corridorLocation(level, x, y) {
     const location = level.at(x, y);
     if (!location)
@@ -418,6 +426,7 @@ export async function clearVaultCorridor(guard, force = false, state = game) {
         await plineWithContinuation('You are encased in rock.');
     return true;
 }
+// C vault.c:blackout()
 function blackout(x, y, state) {
     const level = requireGameLevel(state);
     for (let nx = x - 1; nx <= x + 1; nx++) {
@@ -447,6 +456,7 @@ export async function parkVaultGuard(guard, state = game) {
         await placeMonsterOnMap(guard, 0, 0, state);
     guard._egd.ogx = guard._egd.ogy = 0;
 }
+// C vault.c:grddead()
 export async function prepareVaultGuardDeath(guard, state = game) {
     requireLiveGame(state);
     let dispose = await clearVaultCorridor(guard, true, state);
@@ -502,7 +512,7 @@ export async function vaultGdWatching(activity, state = game) {
             guard._egd.witness = activity;
     }
 }
-// C vault.c:gd_move(), its escort helpers, and find_guard_dest().
+// C vault.c:find_guard_dest(): search for the escort corridor destination.
 export function findGuardDestination(state = game, guard = null) {
     const level = requireGameLevel(state);
     const ux = state.u.ux;
@@ -536,6 +546,7 @@ export function findGuardDestination(state = game, guard = null) {
     }
     return null;
 }
+// C vault.c:gd_move()
 export async function moveVaultGuard(guard, state = game, random, calls = []) {
     requireLiveGame(state);
     requireVaultGuard(guard);
@@ -716,6 +727,7 @@ export async function moveVaultGuard(guard, state = game, random, calls = []) {
         return result(MMOVE_MOVED);
     }
 }
+// Part of C vault.c:find_guard_dest(): report failure and teleport when no corridor is found.
 export async function guardDestination(state, guard = null) {
     const destination = findGuardDestination(state, guard);
     if (!destination) {
@@ -724,6 +736,7 @@ export async function guardDestination(state, guard = null) {
     }
     return destination;
 }
+// C vault.c:uleftvault()
 // C uleftvault(): warn before the destination's room-entry feedback.
 export async function noticeVaultEscape(guard, state) {
     if (guard.mhp <= 0 || !guard.isgd) {
@@ -741,9 +754,11 @@ export async function noticeVaultEscape(guard, state) {
     if (!inVaultCorridor(guard, state.u.ux, state.u.uy))
         await moveVaultGuard(guard, state, rn2);
 }
+// Port only: format a visible guard name without substituting a pronoun.
 function guardDisplayName(guard, state) {
     return monsterName(guard, { state, capitalized: true, suppressIt: true });
 }
+// Part of C vault.c:gd_move(): restore the guard's original entry after hostility.
 async function restoreEntry(guard, x, y, state) {
     const entry = guard._egd.fakecorr[0];
     if (!entry)
@@ -799,12 +814,14 @@ async function moveMonsterAside(guard, x, y, state, random) {
         await sendMonsterToLimbo(occupant, state);
     vision_note_blocker_change(x, y);
 }
+// Part of C vault.c:gd_move(): record the next temporary corridor square.
 function appendCorridor(guard, x, y, typ, flags) {
     const egd = guard._egd;
     if (egd.fcend >= ROWNO + COLNO)
         throw new Error('Vault fake corridor overflow.');
     egd.fakecorr[egd.fcend++] = { x, y, typ, flags };
 }
+// Part of C vault.c:gd_move(): carve the next escort step toward the destination.
 function nextCorridorSquare(guard, state) {
     const level = requireGameLevel(state), egd = guard._egd;
     const x = guard.mx, y = guard.my;
@@ -852,6 +869,7 @@ function nextCorridorSquare(guard, state) {
 function goldAt(x, y, state) {
     return requireGameLevel(state).objects[x]?.[y]?.find(object => object.otyp === GOLD_PIECE);
 }
+// Part of C mon.c:mpickgold(): transfer the guard's floor gold to its inventory.
 async function pickGoldAtGuard(guard, state) {
     const gold = goldAt(guard.mx, guard.my, state);
     if (!gold)
@@ -927,6 +945,7 @@ async function moveGoldIntoVault(gold, guard, state, random) {
     await stack_object(gold, state);
     await newsym(x, y);
 }
+// C vault.c:wallify_vault()
 export async function wallifyVault(guard, state, random = rn2) {
     const level = requireGameLevel(state), vault = guard._egd.vault;
     if (!vault)
@@ -988,6 +1007,7 @@ export async function wallifyVault(guard, state, random = rn2) {
         await pline("The damaged vault's walls are magically restored!");
 }
 // C vault.c:paygd(). Only openly carried coins can be reclaimed by a guard.
+// C vault.c:paygd()
 export async function payVaultGuardOnExit({ silent = false, publish = plineWithContinuation, random = rn2, } = {}) {
     const state = requireInitializedGame();
     const guard = await findVaultGuard(state);
@@ -1038,6 +1058,7 @@ export function hiddenGold(state, evenIfUnknown = true) {
     }
     return total;
 }
+// Part of C vault.c:invault(), vault.c:gd_move(), vault.c:uleftvault(): count carried and hidden gold together.
 export function carriedGold(state, evenIfUnknown = true) {
     return heroGoldAmount(state) + hiddenGold(state, evenIfUnknown);
 }

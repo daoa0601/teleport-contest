@@ -125,10 +125,12 @@ export interface PagedPickOneMenuOptions<T> {
     prompt?: string | null;
 }
 
+// Port only: access the live terminal display for window adapters.
 function display(): GameDisplay | null {
     return game.nhDisplay;
 }
 
+// Port only: write styled text into the port's terminal grid with tab expansion.
 function putLine(col: number, row: number, text: string, attr = ATR_NONE): void {
     const d = display();
     if (!d || row < 0 || row >= d.rows) return;
@@ -141,6 +143,7 @@ function putLine(col: number, row: number, text: string, attr = ATR_NONE): void 
     }
 }
 
+// Port only: clear a rectangular region of the terminal grid.
 function clearRect(left: number, top: number, right: number, bottom: number): void {
     const d = display();
     if (!d) return;
@@ -186,11 +189,10 @@ export function getMenuColoring(text: string): MenuColoringRule | null {
     return null;
 }
 
-/**
- * Build an inventory menu with the native tty window owner.
- * Items carry their displayed text and selector.
- * Return a selected key/count, Escape, or key 0 for an unselected dismissal.
- */
+// Port only: adapt inventory sections and counted selections to the tty menu API.
+// Build an inventory menu with the native tty window owner.
+// Items carry their displayed text and selector.
+// Return a selected key/count, Escape, or key 0 for an unselected dismissal.
 export async function showInventoryWindow<T = never>(sections: readonly InventorySection<T>[], {
     pickMode = PICK_NONE, headingAttr, title = null, preselectedKey = null,
 }: InventoryWindowOptions = {}): Promise<InventorySelection<T>> {
@@ -227,11 +229,10 @@ export async function showInventoryWindow<T = never>(sections: readonly Inventor
     }
 }
 
-/**
- * Display a blocking disclosure window. Text windows wrap prose and use
- * `--More--`; menu-built overviews retain their rows and use the native
- * menu layout and page controls.
- */
+// Part of C wintty.c:tty_display_nhwindow(), wintty.c:process_text_window(), wintty.c:erase_menu_or_text(): place, page, and dismiss a disclosure text window.
+// Display a blocking disclosure window. Text windows wrap prose and use
+// `--More--`; menu-built overviews retain their rows and use the native
+// menu layout and page controls.
 export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     marker = '--More--', restoreUnderlay = false,
     pagerStyle = 'text', extraDismissKey = null, skipPendingPager = false,
@@ -306,7 +307,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
 }
 
 // Part of C win/tty/wintty.c:process_text_window(): its full-screen
-// pages acknowledge each prompt through dmore(); quitchars are ESC,
+// pages acknowledge each prompt through dmore; quitchars are ESC,
 // space, newline and return.  Text-backed menu windows page prose
 // without accepting menu commands.
 async function pageDisclosureWindow(
@@ -332,18 +333,16 @@ async function pageDisclosureWindow(
     }
 }
 
-/**
- * Display Lua `nh.text()` output.  Despite its name, that API creates an
- * NHW_MENU/PICK_NONE window in C.  With tty menu_overlay enabled, sparse menu
- * rows are painted over the live map at the computed corner offset.
- *
- * `viaPutstr` marks windows C fills with putstr() instead of add_menu_str()
- * (the shop bill, the unpaid-items list, novel passages, the quest pager);
- * putstr() never passes through add_menu()'s menucoloring, so their lines
- * carry MENU_ITEMFLAGS_SKIPMENUCOLORS. C shows these with display_nhwindow(),
- * so dismissal can redraw the status immediately. The other callers use
- * select_menu(), which disables status updates through dismissal.
- */
+// Port only: adapt text rows to a nonselectable tty menu window.
+// Display Lua `nh.text` output.  Despite its name, that API creates an
+// NHW_MENU/PICK_NONE window in C.  With tty menu_overlay enabled, sparse menu
+// rows are painted over the live map at the computed corner offset.
+// `viaPutstr` marks windows C fills with putstr instead of add_menu_str
+// (the shop bill, the unpaid-items list, novel passages, the quest pager);
+// putstr never passes through add_menu's menucoloring, so their lines
+// carry MENU_ITEMFLAGS_SKIPMENUCOLORS. C shows these with display_nhwindow,
+// so dismissal can redraw the status immediately. The other callers use
+// select_menu, which disables status updates through dismissal.
 export async function showTextMenuOverlay(lines: readonly TextMenuEntry[], {
     viaPutstr = false,
 }: { viaPutstr?: boolean } = {}): Promise<number> {
@@ -364,7 +363,8 @@ export async function showTextMenuOverlay(lines: readonly TextMenuEntry[], {
     }
 }
 
-/** Return a PICK_ONE selector, Escape, or zero when no item is selected. */
+// Port only: adapt choice entries to a single-selection tty menu.
+// Return a PICK_ONE selector, Escape, or zero when no item is selected.
 export async function showChoiceWindow({ title, entries }: ChoiceWindowOptions): Promise<number> {
     if (!display()) return 27;
     const window = tty_create_nhwindow<ChoiceMenuItem>(NHW_MENU);
@@ -391,27 +391,32 @@ export async function showChoiceWindow({ title, entries }: ChoiceWindowOptions):
     }
 }
 
-/**
- * Display a PICK_ANY tty menu.  Sections contain
- * `{ heading, items: [{ key, text, value }] }`; items with `selectable: false`
- * are labels. The tty owner handles selection markers and paging.
- */
+// Port only: adapt typed sections and counted selections to the tty menu API.
+// Display a PICK_ANY tty menu.  Sections contain
+// `{ heading, items: [{ key, text, value }] }`; items with `selectable: false`
+// are labels. The tty owner handles selection markers and paging.
 export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T> & {
     returnCounts: true; signalEscape: true;
 }): Promise<CountedSelection<T>[] | null>;
+// Port only: adapt typed sections and counted selections to the tty menu API.
 export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T> & {
     returnCounts: true; signalEscape?: false;
 }): Promise<CountedSelection<T>[]>;
+// Port only: adapt typed sections and counted selections to the tty menu API.
 export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T> & {
     returnCounts?: false; signalEscape: true;
 }): Promise<T[] | null>;
+// Port only: adapt typed sections and counted selections to the tty menu API.
 export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T> & {
     returnCounts?: false; signalEscape?: false;
 }): Promise<T[]>;
+// Port only: adapt typed sections and counted selections to the tty menu API.
 export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T> & {
     signalEscape?: false;
 }): Promise<T[] | CountedSelection<T>[]>;
+// Port only: adapt typed sections and counted selections to the tty menu API.
 export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T>): Promise<T[] | CountedSelection<T>[] | null>;
+// Port only: adapt typed sections and counted selections to the tty menu API.
 export async function showMultiSelectWindow<T>({
     title, sections, omitHeadings = false, introLines = [],
     pageLocalKeys = false, returnCounts = false, pickOne = false, signalEscape = false,
@@ -452,7 +457,8 @@ export async function showMultiSelectWindow<T>({
     }
 }
 
-// C tty_putstr(NHW_TEXT) buffers rows, including empty rows, and flushes at
+// Part of C wintty.c:tty_putstr(): buffer text rows and flush full text-window pages.
+// The native tty_putstr NHW_TEXT path buffers empty rows too, and flushes at
 // terminal height minus its footer. A trailing blank can therefore own a page.
 export async function showTextWindow(lines: Iterable<TextMenuEntry> | AsyncIterable<TextMenuEntry>): Promise<number> {
     const d = display();
@@ -490,6 +496,7 @@ export async function showTextWindow(lines: Iterable<TextMenuEntry> | AsyncItera
     }
 }
 
+// Part of C wintty.c:tty_putstr(): compress spaces and wrap text to the window width.
 function textWindowRows(text: string, columns: number): string[] {
     // tty_putstr() undoes topline wrapping and compresses spaces before
     // splitting the whole string again for the text window's width.
@@ -509,11 +516,10 @@ function textWindowRows(text: string, columns: number): string[] {
     return rows;
 }
 
-/**
- * Display one or more full-screen tty text pages.  Each page has
- * `{ lines, cursor }`; a line is either a string or `{ text, attr }`.
- * Escape closes the window, while any other key advances to the next page.
- */
+// Port only: display supplied full-screen text pages and restore the game display.
+// Display one or more full-screen tty text pages.  Each page has
+// `{ lines, cursor }`; a line is either a string or `{ text, attr }`.
+// Escape closes the window, while any other key advances to the next page.
 export async function showTextPages(
     pages: readonly TextPage[],
     { validKeys = [27, 32, 10, 13] }: { validKeys?: readonly number[] | null } = {},
@@ -538,6 +544,7 @@ export async function showTextPages(
     return key;
 }
 
+// Port only: paint a supplied text page and wait for an allowed key.
 // Displaying an intermediate NHW_TEXT page leaves it active. Only its
 // window's owner restores the map when the complete window is dismissed.
 async function readTextPage(
@@ -561,12 +568,11 @@ async function readTextPage(
     return key;
 }
 
-/**
- * Display a paged PICK_ONE menu. `rows` contains strings or
- * `{ text, attr }` entries and already includes the title/blank rows. Choice
- * letters select visible entries; space advances and `<` goes back.
- * C refs: tty select_menu() and dungeon.c print_dungeon(TRUE).
- */
+// Port only: adapt preformatted choice rows to a paged tty menu.
+// Display a paged PICK_ONE menu. `rows` contains strings or
+// `{ text, attr }` entries and already includes the title/blank rows. Choice
+// letters select visible entries; space advances and `<` goes back.
+// C refs: tty select_menu and dungeon.c print_dungeon with TRUE.
 export async function showPagedPickOneMenu<T>({ rows, choices, prompt = null }: PagedPickOneMenuOptions<T>): Promise<T | null> {
     if (!display()) return null;
     const window = tty_create_nhwindow<T>(NHW_MENU);

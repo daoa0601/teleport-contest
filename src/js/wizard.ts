@@ -110,6 +110,7 @@ export function wizardDeadOrGone(state: GameState = game, random = rn2): void {
     }
 }
 
+// Port only: local Amulet inventory predicate; hasAmulet in muse carries the native citation.
 export function monsterCarriesAmulet(monster: Monster): boolean {
     // C wizard.c:mon_has_amulet() searches only the top-level inventory.
     return (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
@@ -125,11 +126,13 @@ export function monsterCarriesSpecialObject(monster: Monster, state: GameState =
         || object.otyp === SPE_BOOK_OF_THE_DEAD);
 }
 
+// Port only: local helpless-monster predicate; monsterIsHelpless carries the native macro citation.
 function monsterHelpless(monster: Monster): boolean {
     // C mon.c:helpless().
     return !monster.mcanmove || !!monster.msleeping;
 }
 
+// Part of C wizard.c:resurrect(): find, revive, and place an eligible migrating Wizard.
 async function recallMigratingWizard(): Promise<Monster | null> {
     // C wizard.c:resurrect() migrating_mons scan.  Returns a placed wizard
     // or null; placement failure re-queues the monster for later attempts.
@@ -381,6 +384,7 @@ function heroHasTarget(mask: number, state: PlayingGameState): boolean {
     return !!owns?.questart;
 }
 
+// Part of C wizard.c:tactics(): pursue an artifact held by the hero, on the ground, or carried by a monster.
 export async function pursueCovetousTarget(monster: Monster, target: CovetousTarget,
     state: PlayingGameState): Promise<'continued' | 'blocked-ground'> {
     const { x, y } = target.position;
@@ -411,6 +415,7 @@ export async function pursueCovetousTarget(monster: Monster, target: CovetousTar
     return 'continued';
 }
 
+// Part of C wizard.c:tactics(): attempt relocation beside the target and retain the old position on failure.
 async function approachTarget(monster: Monster, x: number, y: number,
     restricted: boolean, state: PlayingGameState): Promise<void> {
     const oldx = monster.mx, oldy = monster.my;
@@ -507,6 +512,7 @@ const WIZARD_CUSS_MALEDICTIONS = [
     'Verily, thou shalt be one dead',
 ];
 
+// C wizard.c:cuss()
 export async function publishMonsterCuss(
     monster: Monster, state: PlayingGameState, random = rn2,
 ): Promise<void> {
@@ -526,6 +532,7 @@ export async function publishMonsterCuss(
     await wakeMonstersNearWithMessages(monster.mx, monster.my, 25, state);
 }
 
+// Part of C wizard.c:cuss(): choose the Wizard's threat or insult.
 function selectWizardCussMessage(monster: Monster, game: PlayingGameState, roll: typeof rn2): string {
     if (roll(5) === 0)
         return monsterName(monster, { capitalized: true, state: game }) + ' laughs fiendishly.';
@@ -590,6 +597,7 @@ const NASTY_SHAPE_DEMOTIONS: readonly (readonly [string, string])[] = [
 const NASTY_BIG_TO_LITTLE = new Map(NASTY_SHAPE_DEMOTIONS.map(([large, small]): [number, number] => [
     monsterIndexByName(large), monsterIndexByName(small),
 ]));
+// C wizard.c:pick_nasty()
 export function pickNastyShape(difficultyCap: number): number {
     let result = pickNastyCandidate();
     if (Is_rogue_level(game.u?.uz)
@@ -618,6 +626,7 @@ export function pickNastyShape(difficultyCap: number): number {
 const S_DEMON_WIZ = 56;
 const S_ANGEL_WIZ = 27;
 
+// Part of C minion.c:monster_census(): count all living monsters, excluding parked guards.
 function nastyMonsterCensus(): number {
     return game.level?.monsters.filter(monster => !monster.dead && monster.mhp > 0
         && !(monster.isgd && monster.mx === 0)).length ?? 0;
@@ -732,6 +741,7 @@ export async function summonNastyMonsters(
     return { count: created.length ? nastyMonsterCensus() - census : 0, created };
 }
 
+// Part of C wizard.c:pick_nasty(): draw a species from the nasty-monster table.
 function pickNastyCandidate(): number {
     const result = NASTY_MONSTERS[rn2(NASTY_MONSTERS.length)];
     if (result === undefined) throw new RangeError('Nasty monster selection is outside its species list');

@@ -92,6 +92,7 @@ export async function wizWish() {
     await encumber_msg();
 }
 
+// C wizcmds.c:wiz_polyself()
 // C wiz_polyself(): allow a chosen form without consuming a game turn.
 export async function wizPolyself() {
     await polymorphHero(POLY_CONTROLLED);
@@ -184,6 +185,7 @@ export async function wizKill() {
     game.context.move = 0;
 }
 
+// Part of C wizcmds.c:wiz_kill(): resolve the selected monster, steed, or hero suicide request.
 async function wizardKillTarget(cursor: Position): Promise<Monster | 'quit' | null> {
     if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
         const steed = game.u.usteed;
@@ -391,6 +393,7 @@ async function makemapUnmakemon(monster: Monster): Promise<void> {
     await removeMonsterFromGame(monster);
 }
 
+// Part of C wizcmds.c:makemap_remove_mons(): identify migrating residents of the level being replaced.
 function belongsToCurrentLevel(monster: Monster): boolean {
     requirePlayingGame(game);
     return !!(monster.isshk && sameDungeonLevel(monster.eshk?.shoplevel, game.u.uz)
@@ -440,6 +443,7 @@ export async function wizMap() {
     await bot();
 }
 
+// Part of C wizcmds.c:wiz_identify(): enable identification overrides while describing inventory.
 async function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string | null): Promise<string> {
     const override = game.iflags.override_ID;
     game.iflags.override_ID = true;
@@ -568,6 +572,7 @@ export async function wizPanic(): Promise<void> {
     game.context.move = 0;
 }
 
+// C wizcmds.c:wiz_fuzzer()
 export async function wizFuzzer(): Promise<void> {
     if (!fuzzerWarningSuppressed()) {
         await plineWithContinuation('The fuzz tester will make NetHack execute random keypresses.');
@@ -581,6 +586,7 @@ export async function wizFuzzer(): Promise<void> {
     game.context.move = 0;
 }
 
+// Part of C wizcmds.c:wiz_fuzzer(): compare the suppressed-alert version with the fuzzer notice version.
 function fuzzerWarningSuppressed(): boolean {
     const version = game.flags.suppress_alert?.match(/^(\d+)\.(\d+)\.(\d+)$/);
     if (!version) return false;
@@ -643,6 +649,7 @@ export async function showWallModes(): Promise<void> {
     await showInspection(lines);
 }
 
+// Port only: display a wizard inspection text window without spending a turn.
 async function showInspection(lines: readonly string[]): Promise<void> {
     await displayMessageWindow();
     await showTextWindow(lines);
@@ -695,16 +702,19 @@ export async function showTerrainCodeLegend(): Promise<void> {
     await showTerrainText(lines);
 }
 
+// Port only: display wizard terrain text after flushing the message window.
 async function showTerrainText(lines: readonly string[]): Promise<void> {
     await displayMessageWindow();
     await showTextWindow(lines);
 }
 
+// Part of C wizcmds.c:wiz_map_levltyp(): encode a terrain number as a digit or letter.
 function terrainCode(terrain: number): string {
     return String.fromCharCode(terrain < 10 ? 48 + terrain
         : terrain < 36 ? 97 + terrain - 10 : 65 + terrain - 36);
 }
 
+// Part of C wizcmds.c:wiz_map_levltyp(): assemble the level coordinates and feature description.
 function terrainLevelDescription(): string {
     const flags = requireGameLevel().flags;
     const here = game.u.uz;
@@ -738,6 +748,7 @@ function terrainLevelDescription(): string {
     return parts.join(' ');
 }
 
+// Part of C wizcmds.c:wiz_map_levltyp(): append the dungeon branch identifier.
 function terrainBranchName(): string {
     const here = game.u.uz;
     if (!here) throw new Error('Terrain inspection requires the current dungeon level');
@@ -874,6 +885,7 @@ const INTRINSICS: readonly WizardIntrinsic[] = [
     { name: 'life will be saved', property: 'lifeSaving' },
 ];
 
+// C wizcmds.c:wiz_intrinsic()
 export async function wizIntrinsic(): Promise<void> {
     const state = requireInitializedGame();
     const items = INTRINSICS.map(intrinsic => {
@@ -909,6 +921,7 @@ export async function wizIntrinsic(): Promise<void> {
     await docrt();
 }
 
+// Part of C wizcmds.c:wiz_intrinsic(): increase a selected intrinsic timeout and apply its immediate effects.
 async function increaseIntrinsic(
     { name, property }: WizardIntrinsic,
     amount: number,
@@ -1006,6 +1019,7 @@ export async function wizMigrateMonsters(): Promise<void> {
     }
 }
 
+// Part of C wizcmds.c:wiz_migrate_mons(): choose the default next-level migration destination.
 function nextMigrationLevel(): DungeonLocation {
     requirePlayingGame(game);
     if (Is_stronghold(game.u.uz)) {
@@ -1018,6 +1032,7 @@ function nextMigrationLevel(): DungeonLocation {
 
 type MigrationGroup = 'c' | 'n' | 'o';
 
+// Part of C wizcmds.c:list_migrating_mons(): group destinations as current, next, or other levels.
 function migrationGroup(monster: Monster, next: DungeonLocation): MigrationGroup {
     const destination = monster.migrationDestination;
     if (destination?.dnum === game.u.uz?.dnum && destination?.dlevel === game.u.uz?.dlevel) return 'c';
@@ -1053,6 +1068,7 @@ async function listMigratingMonsters(next: DungeonLocation): Promise<void> {
     await showTextWindow([title, '', ...selected.map(monster => migratingMonsterLine(monster, choice === 'a' || choice === 'o'))]);
 }
 
+// Part of C wizcmds.c:list_migrating_mons(): format one migrating monster and its destination.
 function migratingMonsterLine(monster: Monster, showDestination: boolean): string {
     let text = `  ${monster.mtame ? 'tame ' : monster.mpeaceful ? 'peaceful ' : ''}${monsterTypeName(monster.mnum, !!monster.female)}`;
     if (monster.cham !== undefined && monster.cham >= 0)
