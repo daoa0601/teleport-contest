@@ -2443,6 +2443,7 @@ make_corpse	rn2
 make_corpse	rnd
 make_corpse	rnl
 make_corpse	undead_to_corpse
+make_corpse	weight
 make_deaf	unconscious
 make_familiar	is_pool
 make_familiar	makemon
