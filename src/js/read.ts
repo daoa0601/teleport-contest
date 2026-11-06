@@ -94,7 +94,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { ceilingName, levelHasCeiling } from './dungeon.js';
 import {
     MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
-    nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,
+    nameToMonster, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,
     monsterHidesUnder, monsterIsAmorphous, monsterIsDemon, monsterIsFemale, monsterIsHider, monsterIsHuman,
     monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterPassesWalls,
     heroCanChant, monsterDigests,
@@ -2176,7 +2176,7 @@ async function requestGenocideClass(): Promise<number | null> {
             attempt--;
             continue;
         }
-        const monsterClass = nameToMonsterClass(response);
+        const monsterClass = resolveMonsterClass(response).monsterClass;
         let immune = 0, gone = 0, available = 0;
         for (let species = 0; species < MONSTER_NAME.length; species++) {
             if (MONSTER_SYMBOL[species] !== monsterClass) continue;

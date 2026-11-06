@@ -55,7 +55,7 @@ import { possessiveName, dist2, distmin, upstart } from './hacklib.js';
 import { depth, ledgerNo } from './dungeon.js';
 import {
     monsterObjectPronoun, monsterSubjectPronoun, monsterKnowsTrap, monsterLearnsTrap, monsterIsHelpless,
-    monsterHasAcidResistance, monsterHasStoneResistance, monsterLocomotion, monsterPolymorphsWhenStoned,
+    monsterHasAcidResistance, monsterHasStoneResistance, monsterLocomotion, formCanBecomeStoneGolem,
     monstersForgetHeroResistance, monstersObserveHeroResistance, sameMonsterRace, speciesCanBlow, is_mercenary,
     monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterHatesLight, monsterHatesSilver,
     monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless,
@@ -457,7 +457,7 @@ export function find_defensive(monster: Monster, state: PlayingGameState, {
     const weapon = state.uwep || state.u.uwep;
     if (!monster.mpeaceful && !noHands && weapon?.otyp === CORPSE
         && touchPetrifies(weapon.corpsenm ?? -1) && !monsterHasStoneResistance(monster)
-        && !monsterPolymorphsWhenStoned(monster)
+        && !formCanBecomeStoneGolem(monster.mnum)
         && monsterLinedUpWithHero(monster, state, random)) {
         const wand = inventory.find(object => object.otyp === WAN_UNDEAD_TURNING && object.spe > 0);
         if (wand) return { kind: 'undead-turning', object: wand };

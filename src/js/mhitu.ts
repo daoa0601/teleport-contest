@@ -30,7 +30,7 @@ import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject
 import { possessiveName, dist2 } from './hacklib.js';
 import {
     monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
-    monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage,
+    formCanBecomeStoneGolem, monsterPossessive, monsterStagger, seenResistanceForDamage,
     is_minion, is_orc, likes_gold, monsterDigests,
     monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder,
     monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider,
@@ -95,7 +95,6 @@ import type { Hero } from './hero_types.js';
 import { setHeroGrip } from './mon.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './do.js';
-import { staggerVerb } from './dothrow.js';
 import { unplaceBallAndChain, moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
 
 import { currency } from './invent.js';
@@ -1211,7 +1210,7 @@ export async function passiveum(monster: Monster, oldForm: number, attackType: n
     case AD_STUN:
         if (!monster.mstun) {
             monster.mstun = 1;
-            await publish(`${visibleMonsterSubject(monster)} ${staggerVerb(monster.mnum)}.`);
+            await publish(`${visibleMonsterSubject(monster)} ${makePlural(monsterStagger(monster.mnum, 'stagger'))}.`);
         }
         damage = 0;
         break;
@@ -3897,7 +3896,7 @@ export async function resolveMonsterGaze(monster: Monster, attack: MonsterAttack
             && !heroResistsStoning(state) && !heroIsUnaware(state)) {
             await publish(`You meet ${possessiveName(name(false))} gaze.`);
             await stopHeroOccupation(state, publish);
-            if (monsterPolymorphsWhenStoned({ mnum: state.u.umonnum })) {
+            if (formCanBecomeStoneGolem(state.u.umonnum)) {
                 const change = await polymonHero(MONSTER_NAME.indexOf('stone golem'));
                 if (change.transformed) break;
             }

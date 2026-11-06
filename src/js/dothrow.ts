@@ -1020,20 +1020,6 @@ function monsterAt(state: GameState, x: number, y: number, ignoredMonster: Monst
         && monster.mx === x && monster.my === y) || null;
 }
 
-// C mondata.c:stagger().
-export function staggerVerb(mnum: number): string {
-    const symbol = MONSTER_SYMBOL[mnum];
-    if (symbol === S_EYE || symbol === S_LIGHT) return 'wobbles';
-    if (monsterIsFlyer(mnum))
-        return (MONSTER_SIZE[mnum] ?? 2) <= 1
-            ? 'flutters' : 'staggers';
-    if (monsterIsSlithy(mnum)) return 'falters';
-    if (monsterIsAmorphous({ mnum })) return 'trembles';
-    if ((MONSTER_MOVE[mnum] ?? 0) === 0) return 'pulsates';
-    if (monsterHasNoLimbs(mnum)) return 'falters';
-    return 'staggers';
-}
-
 // Part of C dothrow.c:mhurtle_step(): the silent stoning finisher
 // (minstapetrify(TRUE)).
 // Both hurtle collision paths supply a silent death handler after the trap

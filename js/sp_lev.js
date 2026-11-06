@@ -61,7 +61,7 @@ import { makeroguerooms } from './extralev.js';
 import { stockShopRoom } from './shknam.js';
 import { finishSpecialRoamer, specialShrinePriest } from './priest.js';
 import { isLavaAt, isPoolAt, makeSpecialDrawbridge } from './dbridge.js';
-import { is_dwarf, is_gnome, is_male, is_shapeshifter, monsterHasStoneResistance, monsterIsFemale, monsterPolymorphsWhenStoned, setMonsterSpecies, monsterIsAmphibious, monsterIsFlyer, monsterIsSwimmer, monsterPassesWalls, monsterIsGolem, monsterIsPlayerMonster, monsterIsVampireShifter, nameToMonster } from './mondata.js';
+import { is_dwarf, is_gnome, is_male, is_shapeshifter, monsterHasStoneResistance, monsterIsFemale, formCanBecomeStoneGolem, setMonsterSpecies, monsterIsAmphibious, monsterIsFlyer, monsterIsSwimmer, monsterPassesWalls, monsterIsGolem, monsterIsPlayerMonster, monsterIsVampireShifter, nameToMonster } from './mondata.js';
 import { roomForIndex, roomsAt } from './hack.js';
 import { PanicTermination } from './panic_termination.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
@@ -1915,7 +1915,7 @@ async function create_object(context, options, corpseSpecies, parentContainer, p
             if (mndx === null)
                 throw new Error('Medusa statue monster has no species.');
             // makemon() can change the form; C tests poly_when_stoned(wastyp).
-            if (monsterHasStoneResistance(was) || monsterPolymorphsWhenStoned({ mnum: mndx })) {
+            if (monsterHasStoneResistance(was) || formCanBecomeStoneGolem(mndx)) {
                 await removeMonsterFromGame(was);
                 continue;
             }

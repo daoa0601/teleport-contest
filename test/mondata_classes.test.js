@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { nameToMonsterClass } from '../js/mondata.js';
+import { resolveMonsterClass } from '../js/mondata.js';
 void test('monster classes singularize ordinary and irregular plural nouns', () => {
-    assert.equal(nameToMonsterClass('horses'), 21);
-    assert.equal(nameToMonsterClass('vampires'), 48);
-    assert.equal(nameToMonsterClass('zombies'), 52);
-    assert.equal(nameToMonsterClass('vortices'), 22);
-    assert.equal(nameToMonsterClass('fungi'), 32);
+    assert.equal(resolveMonsterClass('horses').monsterClass, 21);
+    assert.equal(resolveMonsterClass('vampires').monsterClass, 48);
+    assert.equal(resolveMonsterClass('zombies').monsterClass, 52);
+    assert.equal(resolveMonsterClass('vortices').monsterClass, 22);
+    assert.equal(resolveMonsterClass('fungi').monsterClass, 32);
 });
 void test('a space denotes the ghost class', () => {
-    assert.equal(nameToMonsterClass(' '), 54);
+    assert.equal(resolveMonsterClass(' ').monsterClass, 54);
 });
 //# sourceMappingURL=mondata_classes.test.js.map

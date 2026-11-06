@@ -7,7 +7,7 @@ import { G_GENOD, G_NOCORPSE, OBJECT_TIMER_KIND } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
-import { nameToMonster, nameToMonsterClass } from '../js/mondata.js';
+import { nameToMonster, resolveMonsterClass } from '../js/mondata.js';
 import { doClassGenocide, doGenocide } from '../js/read.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CLUB, CRYSKNIFE, EGG, WORM_TOOTH } from '../js/object_data.js';
@@ -18,8 +18,8 @@ import { freshGameplayRoom } from './support/playable-room.js';
 void test('monster lookup accepts source names, plurals, and class descriptions', () => {
     assert.equal(nameToMonster('giant ants'), 0);
     assert.equal(nameToMonster('human werejackal'), 262);
-    assert.equal(nameToMonsterClass('major demons'), 56);
-    assert.equal(nameToMonsterClass('mummies'), 39);
+    assert.equal(resolveMonsterClass('major demons').monsterClass, 56);
+    assert.equal(resolveMonsterClass('mummies').monsterClass, 39);
 });
 void test('genocide removes the species, drops its inventory, and sterilizes eggs', async () => {
     freshGameplayRoom();

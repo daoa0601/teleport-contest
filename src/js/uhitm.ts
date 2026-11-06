@@ -43,7 +43,7 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, glyphAt, 
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName, visibleMonsterSubject } from './do_name.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeAction, objectIsHardHelmet, some_armor } from './do_wear.js';
 import { abusePet, tameMonster } from './dog.js';
-import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, willMonsterHurtle } from './dothrow.js';
+import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, willMonsterHurtle } from './dothrow.js';
 import type { HurtleDeathHandler, HurtleLiquidDeathHandler, MonsterHurtleOutcome } from './dothrow.js';
 import { levelIsWaterLevel } from './dungeon.js';
 import { eat_brains, eating_conducts, morehungry, newuhs } from './eat.js';
@@ -105,7 +105,7 @@ import {
     monsterIsBig, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
     monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver,
     monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies,
-    isHeroDefender, canBlnd, resistsBlnd,
+    isHeroDefender, canBlnd, resistsBlnd, monsterStagger,
 } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
@@ -1579,7 +1579,7 @@ export async function tryUnarmedStagger(monster: Monster, {
 
     if (canSpotMonster(monster)) {
         await announce(
-            `${nameMonster(monster)} ${staggerVerb(monster.mnum)} from your powerful strike!`,
+            `${nameMonster(monster)} ${makePlural(monsterStagger(monster.mnum, 'stagger'))} from your powerful strike!`,
         );
     }
     if (damage >= (monster.mhp ?? 1)) return { staggered: true };
@@ -2758,7 +2758,7 @@ export async function mhitmAdStun(call: MhitmAdStunCall): Promise<MhitmAdStatusR
         const mdef = call.defender;
         const { state, publish } = call.context;
         if (!heroIsBlind(state))
-            await publish(`${monsterName(mdef, { state, capitalized: true })} ${staggerVerb(mdef.mnum)} for a moment.`);
+            await publish(`${monsterName(mdef, { state, capitalized: true })} ${makePlural(monsterStagger(mdef.mnum, 'stagger'))} for a moment.`);
         mdef.mstun = 1;
         // mhitm_ad_phys(); its uhitm branch never sets mhm->done.
         return mhitm_ad_phys({ magr: 'youmonst', defender: mdef, context: call.context });
@@ -2782,7 +2782,7 @@ export async function mhitmAdStun(call: MhitmAdStunCall): Promise<MhitmAdStatusR
         const { attacker, defender, context } = call;
         if (attacker.mcan) return statusContinueResult(context.damage);
         if (canSeeMonster(defender))
-            await context.publish(`${monsterName(defender, { state: context.state, capitalized: true })} ${staggerVerb(defender.mnum)} for a moment.`);
+            await context.publish(`${monsterName(defender, { state: context.state, capitalized: true })} ${makePlural(monsterStagger(defender.mnum, 'stagger'))} for a moment.`);
         defender.mstun = 1;
         // mhitm_ad_phys(); its mhitm branch can finish the attack itself.
         return await context.applyPhysical();

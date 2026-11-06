@@ -54,7 +54,7 @@ import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName,
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
 import {
     monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars,
-    monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster,
+    monsterPassesBars, monsterLocomotion, monsterFireDescription, formCanBecomeStoneGolem, nameToMonster,
     resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown,
     is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport,
     is_dwarf, is_elf,
@@ -4342,7 +4342,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
 
 // C mon.c:mon_to_stone():
 export async function turnGolemToStone(monster: Monster, publish: MessagePublisher) {
-    if (!monsterPolymorphsWhenStoned(monster)) return null;
+    if (!formCanBecomeStoneGolem(monster.mnum)) return null;
 
     const visible = canSeeMonster(monster);
     if (visible) {

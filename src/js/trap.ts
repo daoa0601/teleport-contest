@@ -125,7 +125,7 @@ import {
     monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving,
     monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst,
     monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning,
-    formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, isHeroDefender, resistsBlnd,
+    formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, monsterStagger, isHeroDefender, resistsBlnd,
 } from './mondata.js';
 import {
     teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk,
@@ -205,7 +205,7 @@ import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
-import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
+import { rangedTargetHitBonus } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
 import { createPoisonGasCloud } from './region.js';
 import { stopHeroOccupation } from './allmain.js';
@@ -8447,7 +8447,7 @@ export async function triggerChestTrap(container: GameObject | null | undefined,
             if (!alreadyStunned) {
                 if (hallucinating) await publish('What a groovy feeling!');
                 else {
-                    const movement = staggerVerb(heroSpecies(state)).replace(/s$/, '');
+                    const movement = monsterStagger(heroSpecies(state), 'stagger');
                     const feeling = state.u.hallucinationResistance ? ''
                         : blind ? ' and get dizzy' : ' and your vision blurs';
                     await publish(`You ${movement}${feeling}...`);

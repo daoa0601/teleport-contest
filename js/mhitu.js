@@ -13,7 +13,7 @@ import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, newsym, sen
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense, } from './mondata.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, formCanBecomeStoneGolem, monsterPossessive, monsterStagger, seenResistanceForDamage, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense, } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -54,7 +54,6 @@ import { sessionIsNight, monsterGrowlSound } from './sounds.js';
 import { setHeroGrip } from './mon.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './do.js';
-import { staggerVerb } from './dothrow.js';
 import { unplaceBallAndChain, moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
 import { currency } from './invent.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
@@ -1105,7 +1104,7 @@ export async function passiveum(monster, oldForm, attackType, { state = game, ra
         case AD_STUN:
             if (!monster.mstun) {
                 monster.mstun = 1;
-                await publish(`${visibleMonsterSubject(monster)} ${staggerVerb(monster.mnum)}.`);
+                await publish(`${visibleMonsterSubject(monster)} ${makePlural(monsterStagger(monster.mnum, 'stagger'))}.`);
             }
             damage = 0;
             break;
@@ -3705,7 +3704,7 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
                 && !heroResistsStoning(state) && !heroIsUnaware(state)) {
                 await publish(`You meet ${possessiveName(name(false))} gaze.`);
                 await stopHeroOccupation(state, publish);
-                if (monsterPolymorphsWhenStoned({ mnum: state.u.umonnum })) {
+                if (formCanBecomeStoneGolem(state.u.umonnum)) {
                     const change = await polymonHero(MONSTER_NAME.indexOf('stone golem'));
                     if (change.transformed)
                         break;

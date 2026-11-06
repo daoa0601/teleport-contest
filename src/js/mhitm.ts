@@ -56,14 +56,13 @@ import {
     prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject,
     turnGolemToStone,
 } from './mon.js';
-import { staggerVerb } from './dothrow.js';
 import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName } from './do_name.js';
 import { possessiveName, dist2, distmin } from './hacklib.js';
 import {
     exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt,
 } from './steed.js';
 import {
-    monsterObjectPronoun, monsterPossessive, monsterPolymorphsWhenStoned, monsterHasAcidResistance,
+    monsterObjectPronoun, monsterPossessive, formCanBecomeStoneGolem, monsterStagger, monsterHasAcidResistance,
     monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance,
 } from './mondata.js';
 import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
@@ -1353,7 +1352,7 @@ export async function applyMonsterContactPassive(attacker: Monster, defender: Mo
             if (!attacker.mstun) {
                 attacker.mstun = 1;
                 if (visible)
-                    await publish(`${monsterName(attacker, { state, capitalized: true })} ${staggerVerb(attacker.mnum)}...`);
+                    await publish(`${monsterName(attacker, { state, capitalized: true })} ${makePlural(monsterStagger(attacker.mnum, 'stagger'))}...`);
             }
             damage = 0;
             break;
@@ -1456,7 +1455,7 @@ export async function displaceMonster(
     const wearsGloves = (aggressor.minvent ?? []).some(object => (object.owornmask ?? 0) & W_ARMG);
     if (touchPetrifies(defender.mnum) && !monsterHasStoneResistance(aggressor)
         && !wearsGloves) {
-        if (!monsterPolymorphsWhenStoned(aggressor) && !quietly && bothSpotted)
+        if (!formCanBecomeStoneGolem(aggressor.mnum) && !quietly && bothSpotted)
             await publish(displacementMessage(aggressor, defender, true, state, random));
         const result = await petrifyMonsterAttacker(aggressor, {
             visible: !quietly && aggressorSpotted,
