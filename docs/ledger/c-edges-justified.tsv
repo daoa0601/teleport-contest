@@ -1820,7 +1820,7 @@ rloc_pos_ok	tele_jump_ok	inlined	monsterTeleportDestinationOk uses crossesTelepo
 setopt_cmd	cmd_from_func	inlined	setOptionsCommand uses CommandBindings.keyForCommand, whose handler lookup preserves the native preferred-key rules
 setopt_cmd	cmdname_from_func	inlined	setOptionsCommand supplies the full fixed command names optionsfull, reqmenu and options when keys are absent
 shiny_orc_stuff	shiny_obj	inlined	shiny_orc_stuff calls randomTypeByDescription with shiny and RING_CLASS (mkmaze.ts)
-stop_occupation	maybe_finished_meal	inlined	stopHeroOccupation checks the food occupation progress and completes its last bite before clearing work (occupation.ts)
+stop_occupation	maybe_finished_meal	inlined	stopHeroOccupation checks the food occupation progress and completes its last bite before clearing work (allmain.ts)
 tiphat	dist2	inlined	acknowledgeHelmetTip uses adjacent coordinate differences, equivalent to next2u squared distance below three
 untwoweapon	update_inventory	n/a	The pinned 80x24 tty has no permanent inventory window
 update_mlstmv	iter_mons	inlined	updateMonsterLastMove visits only positive-HP monsters with MON_FLOOR state, matching iter_mons admission

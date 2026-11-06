@@ -1,4 +1,5 @@
 # module	C file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)
+src/js/allmain.ts	allmain.c
 src/js/apply.ts	apply.c
 src/js/artifact.ts	artifact.c
 src/js/attrib.ts	attrib.c
@@ -51,7 +52,6 @@ src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
 src/js/music.ts	music.c
-src/js/occupation.ts	allmain.c
 src/js/option_values.ts	version.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
@@ -85,7 +85,6 @@ src/js/topten.ts	topten.c
 src/js/track.ts	track.c
 src/js/trap.ts	trap.c
 src/js/uhitm.ts	uhitm.c
-src/js/warning_symbols.ts	options.c
 src/js/weapon.ts	weapon.c
 src/js/were.ts	were.c
 src/js/wield.ts	wield.c
