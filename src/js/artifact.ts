@@ -75,7 +75,7 @@ import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility
 import { cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, makeBlinded, makeHallucinated, makeConfused, makeStunned } from './potion.js';
 import { showEnlightenment } from './insight.js';
 import { chooseInventoryObject, freeInventoryObject } from './invent.js';
-import { useCrystalBall } from './crystal_ball.js';
+import { useCrystalBall } from './detect.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
 import { doBlindingRay } from './zap.js';
 import { castSpell, spellSkillType } from './spell.js';

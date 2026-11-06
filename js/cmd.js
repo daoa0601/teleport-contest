@@ -64,7 +64,7 @@ import { doread } from './read.js';
 import { eatfood, doeat, opentin } from './eat.js';
 import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
-import { dosearch } from './detect.js';
+import { dosearch, revealTerrain } from './detect.js';
 import { continueWipingFace, donull, dowipe, dodrop, dropMultipleObjects } from './do.js';
 import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY, BOULDER } from './object_data.js';
@@ -89,7 +89,6 @@ import { selection_floodfill, selection_getbounds, selection_getpoint, selection
 import { floorObjectDescription } from './invent.js';
 import { cansee, couldsee, vision_reset_new_level } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
-import { revealTerrain } from './terrain_view.js';
 import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 import { finishHeroMonsterKill } from './mon.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';

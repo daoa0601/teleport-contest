@@ -8,7 +8,6 @@ src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
 src/js/color_query.ts	coloratt.c
-src/js/crystal_ball.ts	detect.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
 src/js/do.ts	do.c
@@ -90,7 +89,6 @@ src/js/spell.ts	spell.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/teleport.ts	teleport.c
-src/js/terrain_view.ts	detect.c
 src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
 src/js/tip_hat.ts	sounds.c

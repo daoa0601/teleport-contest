@@ -235,17 +235,17 @@ src/js/zap.ts	revive	rn2	"[""40""]"	constant
 src/js/do.ts	reviveMon	d	"[""5"", ""50""]"	constant
 src/js/do.ts	reviveMon	rn2	"[""99""]"	constant
 src/js/apply.ts	useCreamPie	rnd	"[""25""]"	constant
-src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""100 - 3 * intelligence""]"	unproved
-src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""30""]"	constant
-src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""object.oartifact || object.blessed ? 4 : 5""]"	constant
-src/js/crystal_ball.ts	distantVision	rn2	"[""destinations.length""]"	constant
-src/js/crystal_ball.ts	hallucinatedVision	rnd	"[""6""]"	constant
-src/js/crystal_ball.ts	levelDistance	rn2	"[""3""]"	constant
-src/js/crystal_ball.ts	levelDistance	rn2	"[""3""]"	constant
-src/js/crystal_ball.ts	useCrystalBall	rn2	"[""100""]"	constant
-src/js/crystal_ball.ts	useCrystalBall	rnd	"[""charged ? 10 : 2""]"	constant
-src/js/crystal_ball.ts	useCrystalBall	rnd	"[""charged ? 4 : 2""]"	constant
-src/js/crystal_ball.ts	useCrystalBall	rnd	"[""difficulty""]"	constant
+src/js/detect.ts	useCrystalBall	rnd	"[""100 - 3 * intelligence""]"	unproved
+src/js/detect.ts	useCrystalBall	rnd	"[""30""]"	constant
+src/js/detect.ts	useCrystalBall	rnd	"[""object.oartifact || object.blessed ? 4 : 5""]"	constant
+src/js/detect.ts	useCrystalBall	rn2	"[""destinations.length""]"	constant
+src/js/detect.ts	useCrystalBall	rnd	"[""6""]"	constant
+src/js/detect.ts	levelDistance	rn2	"[""3""]"	constant
+src/js/detect.ts	levelDistance	rn2	"[""3""]"	constant
+src/js/detect.ts	useCrystalBall	rn2	"[""100""]"	constant
+src/js/detect.ts	useCrystalBall	rnd	"[""charged ? 10 : 2""]"	constant
+src/js/detect.ts	useCrystalBall	rnd	"[""charged ? 4 : 2""]"	constant
+src/js/detect.ts	useCrystalBall	rnd	"[""difficulty""]"	constant
 src/js/invent.ts	currency	random	"[""CURRENCIES.length""]"	constant
 src/js/demon_talk.ts	demandDemonBribe	random	"[""1000""]"	constant
 src/js/demon_talk.ts	demandDemonBribe	rollOne	"[""5 * currentAttribute(A_CHA, state)""]"	invariant
