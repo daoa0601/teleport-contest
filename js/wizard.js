@@ -88,9 +88,9 @@ export async function intervene() {
             break;
     }
 }
+// C wizard.c:wizdeadorgone()
 // Removal counts even when the Wizard leaves alive. The first removal starts
 // demigod intervention; later deaths must not restart an existing countdown.
-// C wizard.c:wizdeadorgone().
 export function wizardDeadOrGone(state = game, random = rn2) {
     state.context.no_of_wizards = (state.context.no_of_wizards ?? 0) - 1;
     const events = state.u.uevent ??= {};
@@ -321,7 +321,7 @@ function findCovetousTarget(monster, mask, state) {
     }
     return null;
 }
-// Also C wizard.c:which_arti(): object-type selection is inlined into this predicate.
+// Part of C wizard.c:which_arti(): object-type selection is inlined into this predicate.
 function objectMatchesTarget(object, mask, state) {
     if (mask === WANTS_AMULET)
         return object.otyp === AMULET_OF_YENDOR;

@@ -183,6 +183,7 @@ export function wizardTowerLevelAt(dnum: number, dlevel: number): boolean {
     return prototype !== null && WIZARD_TOWER_LEVELS.has(prototype);
 }
 
+// C dungeon.c:In_W_tower()
 // The teleport exclusions in the three Wizard levels mark the tower walls.
 // C dungeon.c exposes the same area as In_W_tower().
 export function insideWizardTower(x: number, y: number, state: GameState = game): boolean {
@@ -444,6 +445,7 @@ function branchMenuLabel(branch: DungeonBranch) {
     )}`;
 }
 
+// Part of C dungeon.c:print_dungeon(): the ordered special-level and branch traversal.
 // C dungeon.c print_dungeon(): circle through the special levels of this
 // dungeon and the branches that leave it, in level order; a branch on the
 // same level as a special level prints first, as print_branch()'s
@@ -579,6 +581,7 @@ export function printDungeon(bymenu: boolean): {
     return { rows, choices, lines };
 }
 
+// Part of C dungeon.c:print_dungeon(): the portal-expectation predicate in the wizard display.
 // C dungeon.c print_dungeon(FALSE): the levels that owe the hero a portal.
 function wizardLevelExpectsPortal(): boolean {
     const here = game.u.uz;
@@ -1014,6 +1017,7 @@ function possiblePlaces(
     return places;
 }
 
+// C dungeon.c:place_level()
 // Direct port of dungeon.c place_level(): recursively try placements and
 // backtrack only when a later special level has no valid square.
 // Also C dungeon.c:pick_level(): inlined here (the nth free place draw).
@@ -1129,6 +1133,7 @@ function exposeSpecialLevels(loaded: readonly LoadedDungeon[]): void {
     game.earth_level = all.get('earth');
 }
 
+// Part of C dungeon.c:fixup_level_locations(): the named-dungeon identity lookups.
 // C fixup_level_locations(): these identities are derived from the dungeon
 // graph, both after generation and after restoring the saved graph.
 // C dungeon.c:dname_to_dnum(): the named dungeons (Quest, Sokoban, Mines,
@@ -1468,6 +1473,7 @@ function overviewAutomaticNote(dnum: number, dlevel: number, record: OverviewRec
     return null;
 }
 
+// Part of C dungeon.c:print_mapseen(): the branch-description row.
 // C dungeon.c print_mapseen() branch note (br_string2 plus the upward
 // destination depth): shared by the live #overview and the final disclosure.
 // C dungeon.c:br_string2() and br_string(): the branch kind's description;
@@ -1485,6 +1491,7 @@ function overviewBranchLine(branch: OverviewRecord['branch']): string | null {
     return `      ${description} to ${target}${targetLevel}.`;
 }
 
+// Part of C dungeon.c:print_mapseen(): the second-person cause-of-death wording.
 // C dungeon.c print_mapseen() rephrases the hero's own death reason so the
 // "Final resting place for you, ..." line reads in the second person.  Each
 // strsubst() swaps only the first match (hacklib.c), not every occurrence.
@@ -1495,6 +1502,7 @@ function overviewYouCause(cause: string): string {
         .replace(' her ', ' your ');
 }
 
+// Part of C dungeon.c:show_overview(): the end-of-game dungeon-history projection.
 // C dungeon.c show_overview() with why > 0: the end-of-game disclosure
 // bypasses the interesting-level filter and prints every visited level in
 // every dungeon with its full mapseen projection.  Endgame levels print
@@ -1561,7 +1569,9 @@ function overviewDisclosureLevel(
     return lines;
 }
 
-// C ref: dungeon.c dooverview()/show_overview().  This is dungeon-history
+// C dungeon.c:dooverview()
+// Also C dungeon.c:show_overview(): the live and annotation paths are inlined here.
+// This is dungeon-history
 // projection over mapseen/cache state; it is distinct from Delete's
 // known-terrain browser, which enters a getpos-style cursor transaction.
 // traverse_mapseenchn(): the live overview shows every interesting level

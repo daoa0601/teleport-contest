@@ -168,6 +168,7 @@ function applyKickPassive(monster, hit) {
         weapon: game.uarmf || game.u?.uarmf || null,
     });
 }
+// Part of C dokick.c:kick_monster(): the live-target path, using maybe_kick_monster() admission and kickdmg() effects.
 // C refs: dokick.c:maybe_kick_monster(), kick_monster(), kickdmg().
 // Form-specific attacks share the command admission rules. Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
@@ -627,6 +628,7 @@ export async function kickDoor(x, y, average, responses) {
         await witnessDoorKick(x, y, false);
     }
 }
+// Part of C dokick.c:dokick(): the watchman response to door damage.
 // Also C mon.c:get_iter_mons_xy(): inlined here for the first watchman witness.
 // Also C dokick.c:watchman_thief_arrest(): inlined here for a broken door.
 // Also C dokick.c:watchman_door_damage(): inlined here as the D_WARNED
@@ -1010,6 +1012,7 @@ export async function tryKickReel(monster, dx, dy, { martial = false, state = ga
 // container may lose fragile contents.  Callers own placement and pass the
 // object's PRE-impact coordinates for shop-room attribution.
 const GLASS = 19;
+// Part of C dokick.c:container_impact_dmg(): the charge for each destroyed item.
 // dokick.c:443-450 per-item adapter: mark no_charge for the hero's own
 // contents, then charge the item at its pre-destruction value.  Called by
 // the container-impact owner immediately before each deletion.
@@ -1022,6 +1025,7 @@ export async function chargeDestroyedShopContent(object, x, y, fromInventory, { 
         object.no_charge = true;
     return stolenValue(object, x, y, !!spot.resident.mpeaceful, { silent: true, publish, state });
 }
+// Part of C dokick.c:container_impact_dmg(): the shop-debt and anger summary after destruction.
 // dokick.c:476-484 summary: insider debt or outsider damage and anger.
 export async function settleDestroyedShopCharges({ loss, x, y, publish = plineWithContinuation, state = game }) {
     requireLiveGame(state);
@@ -1107,6 +1111,7 @@ function unitWeight(object) {
         return objectWeight(object);
     return objectWeight({ ...object, quan: 1, quantity: 1 });
 }
+// Part of C dokick.c:really_kick_object(): the object-range and sliding calculation.
 // Also C artifact.c:is_art(): inlined here as the oartifact name test that
 // pins Mjollnir's kick range to 1.
 function kickRange(object, state, dx, dy, martial, rollOne) {
@@ -1373,7 +1378,7 @@ function inEndgame(state) {
 function onStronghold(state) {
     return sameLevel(state.u?.uz, state.stronghold_level);
 }
-// Also C dokick.c:drop_to(): the MIGR_RANDOM case — stronghold drops go to
+// Part of C dokick.c:drop_to(): the MIGR_RANDOM case — stronghold drops go to
 // the valley, endgame and bottom levels go nowhere.
 function trapDestination(state) {
     if (onStronghold(state))

@@ -61,6 +61,7 @@ export function activeObjectSymbols() {
 export function objectClassSymbol(index) {
     return activeObjectSymbols()[index] ?? '';
 }
+// Part of C symbols.c:get_othersym(): the SYM_BOULDER lookup for the active symbol set.
 // symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
 // else the default rock-class symbol.  optfn_boulder() fills both sets'
 // overrides, while the BOULDER= statement (cfgfiles.c) only fills the
@@ -473,7 +474,7 @@ export function reglyphBoulderSymbols() {
         }
     }
 }
-// glyphs.c:glyph_to_cmap() restricted to the terrain memory can hold; trap,
+// Part of C glyphs.c:glyph_to_cmap(): restricted to the terrain memory can hold; trap,
 // beam, and effect glyphs keep set-independent characters, so everything at
 // or past the first trap symbol (and every non-terrain glyph) decodes null.
 function rememberedTerrainIndex(glyph) {
@@ -760,7 +761,7 @@ function terrainGlyphChars(loc, x, y) {
         default: return { ch: '?', color: NO_COLOR, dec: false };
     }
 }
-// Also C display.c:back_to_glyph(): forest rock and forest secret doors
+// Part of C display.c:back_to_glyph(): forest rock and forest secret doors
 // share the tree projection, including its terrain name for touch and
 // obstacle messages.
 function isArborealBackground(loc) {
@@ -1014,7 +1015,7 @@ const decFurnitureSymbols = new Map([
     [CmapSymbol.explosionTopLeft + 1, 'o'], [CmapSymbol.explosionTopLeft + 3, 'x'],
     [CmapSymbol.explosionTopLeft + 5, 'x'], [CmapSymbol.explosionTopLeft + 7, 's'],
 ]);
-// symbols.c:assign_graphics() selects the active dungeon symbols. DEC
+// Part of C symbols.c:assign_graphics(): selects the active dungeon symbols. DEC
 // characters retain their alternate font so they do not match ASCII letters.
 export function cmapSymbolAppearance(symbol) {
     const defaultSymbol = MAP_SYMBOLS[symbol]?.ch ?? DEFAULT_EFFECT_SYMBOLS.get(symbol);
@@ -1188,6 +1189,7 @@ export function zapdirToGlyph(dx, dy, beamType) {
     const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;
     return ((type << 2) | direction) + GlyphOffset.zap;
 }
+// Part of C display.c:zapdir_to_glyph(): appearance adapter around the glyph-number port zapdirToGlyph().
 // zapdir_to_glyph()'s glyph with the appearance reset_glyphmap() and
 // map_glyphinfo() give it: the beam color table and the terminal symbol
 // whose index is the glyph's low two bits (display.c packs type << 2 | dir).
@@ -1263,8 +1265,9 @@ function apparentObjectGlyph(monster) {
         decgfx: false, kind: 'object', otyp, glyph: objnumToGlyph(otyp),
     };
 }
-// C refs: display.c map_background(), map_object(), and map_trap().  These
-// update hero memory independently from ordinary line-of-sight newsym().
+// C display.c:map_background()
+// Like map_object() and map_trap(), this
+// updates hero memory independently from ordinary line-of-sight newsym().
 export async function map_background(x, y, show = true) {
     const loc = game.level?.at(x, y);
     if (!loc)
@@ -1578,7 +1581,7 @@ export function glyphAt(x, y, state = game) {
     return loc.disp_glyph || { ch: ' ', color: NO_COLOR, decgfx: false,
         kind: 'unexplored', glyph: GlyphOffset.unexplored };
 }
-// display.c:map_glyphinfo() re-applies the showrace highlight to the hero's
+// Part of C display.c:map_glyphinfo(): re-applies the showrace highlight to the hero's
 // own glyph after reset_glyphmap() cleared the Rogue level's colors.  The
 // hero glyph is the race monster whenever showrace is set (display.h
 // hero_glyph).
@@ -2161,7 +2164,8 @@ async function displayMonsterAtCell(monster, x, y, projection) {
     }
     monster.meverseen = 1;
 }
-// C ref: display.c:see_monsters(). Warning, telepathy, and visible regions
+// C display.c:see_monsters()
+// Warning, telepathy, and visible regions
 // can change how a stationary monster is projected when only the hero moves;
 // repainting solely on actor movement leaves stale warning numerals behind.
 export async function see_monsters({ beforeGlow = null } = {}) {
@@ -2217,13 +2221,13 @@ export async function refreshInvisibleMonsters({ state = game } = {}) {
     set_mimic_blocking({ state });
     await see_monsters();
 }
-// Also C potion.c:peffect_see_invisible(): its tail runs
+// Part of C potion.c:peffect_see_invisible(): its tail runs
 // set_mimic_blocking(), see_monsters() and newsym(u.ux, u.uy) in order.
 export async function refreshHeroSeeing({ state = game } = {}) {
     await refreshInvisibleMonsters({ state });
     await newsym(state.u.ux, state.u.uy);
 }
-// Also C potion.c:peffect_see_invisible(): the blessed/permanent see-invisible
+// Part of C potion.c:peffect_see_invisible(): the blessed/permanent see-invisible
 // grant, followed by the same redraw tail.
 export async function grantHeroSeeInvisible({ permanent = false, duration = 0, state = game, } = {}) {
     requireLiveGame(state);
@@ -2423,6 +2427,7 @@ async function redrawRestrictedMap(full) {
             await under_ground(0);
     }
 }
+// C display.c:docrt_flags()
 // ── docrt ──
 // C display.c:docrt_flags(docrtRecalc). A screen reset pages the old message
 // before clearing the terminal, then rebuilds sight and monster overlays.
@@ -2567,6 +2572,7 @@ export async function flush_screen(mode) {
     if (mapCursor)
         display?.setCursor(...mapCursor);
 }
+// Part of C display.c:clear_glyph_buffer(): the glyph-buffer reset combined with terminal clearing and message cleanup.
 // ── cls ──
 // C display.c:clear_glyph_buffer(): every cell returns to unexplored, a
 // buffer reset rather than a discovered glyph change.

@@ -43,6 +43,7 @@ export function stepHistoryBack(): void {
         ? null : cursor - 1;
 }
 
+// C topl.c:redotoplin()
 // C tty topl.c:redotoplin(): repaint a recalled line at the top. A line
 // covering several rows pages with --More-- accepting ^P so one press can
 // keep walking, except when the previous topline state was

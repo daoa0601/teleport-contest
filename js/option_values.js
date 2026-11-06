@@ -16,7 +16,7 @@ export function textOptionValue(name) {
         default: return null;
     }
 }
-// options.c:optfn_boulder(): escapes() decodes the value, then the first
+// Part of C options.c:optfn_boulder(): escapes() decodes the value, then the first
 // byte replaces the boulder symbol in both symbol sets. A monster-class or
 // warning symbol is refused ("boulder symbol would conflict"); the warning
 // test covers '1'..'5' only, so '0' passes. char is signed in the native
@@ -118,8 +118,7 @@ export function cInteger(value) {
     const prefix = value.match(/^\s*[+-]?\d+/)?.[0];
     return prefix ? Number(prefix) : 0;
 }
-// Interactive option errors end with punctuation, as config_erradd()
-// (cfgfiles.c) does at the pline() boundary.
+// Part of C cfgfiles.c:config_erradd(): adds punctuation at the interactive boundary.
 export async function optionError(message) {
     await plineWithContinuation(/[.!?]$/.test(message) ? message : `${message}.`);
 }
@@ -137,7 +136,8 @@ export function parsePickupTypes(value) {
     }
     return { symbols, invalid };
 }
-// version.c:get_feature_notice_ver() validates the first two components,
+// C version.c:get_feature_notice_ver()
+// Validates the first two components,
 // then reads the patch component with atoi. hack.h stores them in bit fields.
 export function featureAlertVersion(value) {
     const parts = value.match(/^(\d*)\.(\d*)\.(.*)$/);

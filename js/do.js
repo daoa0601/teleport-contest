@@ -97,6 +97,7 @@ import { rotCorpse } from './corpse_rot.js';
 import { canSeeMonster } from './display.js';
 import { riderRevivalTime, set_corpsenm } from './mkobj.js';
 import { corpseName as corpseObjectName, capitalizedDefiniteName } from './objnam.js';
+// C do.c:dodrop()
 // Also C invent.c:any_obj_ok(): inlined as the drop chooser's
 // GETOBJ_SUGGEST callback below.
 export async function dodrop() {
@@ -798,6 +799,7 @@ async function engulferDigestsFood(object, { state, publish }) {
     await deleteObject(object, state); // always used up
     return { digested: true, heroDied: false };
 }
+// C do.c:better_not_try_to_drop_that()
 // with st_all (pickup.c:273-281) checks gloves and stoning resistance
 // before prompting; the caller has already established otyp == CORPSE.
 async function betterNotTryToDropThat(object, state) {
@@ -1075,6 +1077,7 @@ async function traditionalDropCategories(combo) {
     }
     return { categories, all: response.includes('a'), menu: response.includes('m'), requireUnpaid };
 }
+// Part of C invent.c:askchain(): the drop-specific sorted traversal, questions, and stack splitting.
 // Also C invent.c:safeq_xprname(): inlined here as the full-name prompt
 // callback, with the inventory letter and no final period.
 // Also C invent.c:safeq_shortxprname(): inlined here as the short-name
@@ -2116,6 +2119,7 @@ function dangerousHeroProperties() {
         || u.strangled || (u.strangledTurns ?? 0) > 0
         || u.sick || (u.sickTurns ?? 0) > 0);
 }
+// Part of C pline.c:Norep(): the repeated-message check for a preformatted string.
 // C Norep() compares pline.c's previous individual message.
 async function norep(message) {
     if (game._lastPlineMessage !== message)

@@ -140,6 +140,7 @@ async function roguecorr(grid: RogueCell[][], x: number, y: number, dir: number)
     }
 }
 
+// C extralev.c:miniwalk()
 // Modified walkfrom() from mkmaze.c.  Preserve the recursive walk and its
 // left/right/up/down candidate order: revisiting a cell can add the intended
 // one-in-ten extra connection and therefore owns observable RNG calls.

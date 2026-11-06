@@ -54,7 +54,8 @@ import type { DungeonLocation } from './dungeon_types.js';
 import { sendMonsterToLimbo, mnearto, dealWithMonsterOvercrowding, moveMonsterNextToHero } from './mon.js';
 import type { GameMap } from './game.js';
 
-// C ref: mkmaze.c set_levltyp().  Terrain mutation owns persistent tile
+// C mkmaze.c:set_levltyp()
+// Terrain mutation owns persistent tile
 // side-effects; in particular, every lava form becomes lit even when the Lua
 // terrain operation requested SET_LIT_NOCHANGE.  Callers may subsequently
 // replace the terrain again without implicitly clearing that light bit.
@@ -209,6 +210,7 @@ function maze0xy(mazeXMax: number, mazeYMax: number): Position {
     };
 }
 
+// C mkmaze.c:bad_location()
 // C refs: mklev.c occupied(), mkmaze.c bad_location().  Exclusion zones and
 // the invocation position are modeled by their owning special levels; the
 // shared terrain/feature gate belongs here.
@@ -227,6 +229,7 @@ function bad_location(x: number, y: number, nlx: number, nly: number, nhx: numbe
     return false;
 }
 
+// C mkmaze.c:place_lregion()
 // C ref: mkmaze.c place_lregion — place hero (LR_UPTELE/LR_DOWNTELE)
 export async function place_lregion(
     lx: number, ly: number, hx: number, hy: number,
@@ -685,7 +688,8 @@ const PM_ORC = MONSTER_NAME.indexOf('orc');
 const PM_ORC_SHAMAN = MONSTER_NAME.indexOf('orc shaman');
 const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
 
-// do_name.c:christen_orc(): the gang name is composed into the orc's given
+// C do_name.c:christen_orc()
+// The gang name is composed into the orc's given
 // name.  Shared by stolen_booty() and the booty delivery below.
 function nameOrc(monster: Monster, gang: string | null, suffix = ''): void {
     const name = upstart(randomOrcName());
@@ -807,7 +811,8 @@ export async function stolen_booty(): Promise<void> {
     }
 }
 
-// dokick.c:deliver_obj_to_mon()/dog.c: migrated MIGR_TO_SPECIES booty is
+// C dokick.c:deliver_obj_to_mon()
+// Migrated MIGR_TO_SPECIES booty from dog.c is
 // handed to the first matching monster that is created or arrives.  The
 // species flags ride the object's overloaded owornmask/corpsenm fields,
 // which is why the food filters above exclude them.
@@ -1156,7 +1161,8 @@ export function bound_digging(): void {
         }
 }
 
-// C ref: mkmaze.c:fumaroles(). Lava vents leave damaging gas even though
+// C mkmaze.c:fumaroles()
+// Lava vents leave damaging gas even though
 // fire striking water leaves harmless steam. Called from goto_level() when
 // arriving and moveloop_core() when on the level.
 export async function fumaroles(state: PlayingGameState = requireInitializedGame()) {

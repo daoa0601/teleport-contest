@@ -97,6 +97,7 @@ export function isGetposFeatureSymbol(ch: string, symset: string | null | undefi
         && DEC_GETPOS_FEATURE_SYMBOLS.has(ch);
 }
 
+// Part of C getpos.c:gather_locs_interesting(): the door and interesting-terrain predicates used by #lookaround.
 // A diagonal which crosses a map edge loses the same amount of movement on
 // its other axis.  Clamping each axis separately would slide along the edge.
 // C getpos.c:gather_locs_interesting().  #lookaround forces GFILTER_VIEW
@@ -456,9 +457,9 @@ export async function autoDescribePosition(x: number, y: number): Promise<void> 
     game.nhDisplay?.setCursor(x - 1, y + 1);
 }
 
+// C getpos.c:getpos_getvalids_selection()
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
 // consume display randomness in that order, independently of target cycling.
-// C getpos.c:getpos_getvalids_selection().
 function validMapSquares(isValidLocation: ValidLocation): Position[] {
     const spots = [];
     for (let x = 1; x < COLNO; x++) {
@@ -490,10 +491,13 @@ function gatherValidLocations(isValidLocation: ValidLocation, state: GameState =
     return spots;
 }
 
+// C getpos.c:gloc_filter_init()
 // C gloc_filter_init()/gloc_filter_floodfill(): target areas follow known
 // terrain classes. From a doorway, use the side of the last movement.
 // Also C getpos.c:gloc_filter_floodfill_matcharea(): inlined here (a
 // square matches when its class equals the seed's, and it has been seen).
+// Also C getpos.c:gloc_filter_floodfill(): the area flood fill is inlined here.
+// Also C getpos.c:gloc_filter_classify_glyph(): inlined as the terrain-class predicate.
 function getposArea(state: GameState): ReadonlySet<number> {
     const area = new Set<number>();
     if (state.iflags.getloc_filter !== 2) return area;

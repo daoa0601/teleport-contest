@@ -177,6 +177,7 @@ function prepareMonstersForSave(): void {
     if (game.u.usteed?.ispriest) forgetTempleEntry(game.u.usteed);
 }
 
+// Part of C save.c:dosave0(): the calendar-dependent luck reversal.
 // C save.c dosave0(): undo the date-dependent luck that
 // moveloop_preamble() applied at startup; restoring applies it again.
 function undoDateLuck(): number {
@@ -243,6 +244,7 @@ async function confirmSaveOverwrite(storage: SaveStorage, key: string): Promise<
 let restoreRefusal: 'unhealthy' | null = null;
 let retainedSave: { storage: RestoreStorage; key: string } | null = null;
 
+// Part of C unixmain.c:main(): the wizard/explore save-retention question after recovery.
 // C unixmain.c asks after dorecover()'s welcome; ordinary games consume
 // their file inside dorecover(), while wizard and explore games may keep it.
 export async function askKeepRestoredSave(): Promise<void> {

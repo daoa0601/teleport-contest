@@ -47,7 +47,8 @@ import { LUA_SOURCES } from './generated/lua_sources.js';
 import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir } from './mklev.js';
 import { isRoom } from './map_types.js';
 import { sendMonsterToLimbo, mnearto, dealWithMonsterOvercrowding, moveMonsterNextToHero } from './mon.js';
-// C ref: mkmaze.c set_levltyp().  Terrain mutation owns persistent tile
+// C mkmaze.c:set_levltyp()
+// Terrain mutation owns persistent tile
 // side-effects; in particular, every lava form becomes lit even when the Lua
 // terrain operation requested SET_LIT_NOCHANGE.  Callers may subsequently
 // replace the terrain again without implicitly clearing that light bit.
@@ -213,6 +214,7 @@ function maze0xy(mazeXMax, mazeYMax) {
         y: 3 + 2 * rn2((mazeYMax >> 1) - 1),
     };
 }
+// C mkmaze.c:bad_location()
 // C refs: mklev.c occupied(), mkmaze.c bad_location().  Exclusion zones and
 // the invocation position are modeled by their owning special levels; the
 // shared terrain/feature gate belongs here.
@@ -233,6 +235,7 @@ function bad_location(x, y, nlx, nly, nhx, nhy) {
         return true;
     return false;
 }
+// C mkmaze.c:place_lregion()
 // C ref: mkmaze.c place_lregion — place hero (LR_UPTELE/LR_DOWNTELE)
 export async function place_lregion(lx, ly, hx, hy, nlx, nly, nhx, nhy, rtype, destination) {
     if (!lx) {
@@ -663,7 +666,8 @@ const DELIVER_SPECIES = 0x21fe; // undead, were, human, elf, dwarf, gnome, orc, 
 const PM_ORC = MONSTER_NAME.indexOf('orc');
 const PM_ORC_SHAMAN = MONSTER_NAME.indexOf('orc shaman');
 const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
-// do_name.c:christen_orc(): the gang name is composed into the orc's given
+// C do_name.c:christen_orc()
+// The gang name is composed into the orc's given
 // name.  Shared by stolen_booty() and the booty delivery below.
 function nameOrc(monster, gang, suffix = '') {
     const name = upstart(randomOrcName());
@@ -786,7 +790,8 @@ export async function stolen_booty() {
         await migrate_orc(monster, false, state);
     }
 }
-// dokick.c:deliver_obj_to_mon()/dog.c: migrated MIGR_TO_SPECIES booty is
+// C dokick.c:deliver_obj_to_mon()
+// Migrated MIGR_TO_SPECIES booty from dog.c is
 // handed to the first matching monster that is created or arrives.  The
 // species flags ride the object's overloaded owornmask/corpsenm fields,
 // which is why the food filters above exclude them.
@@ -1159,7 +1164,8 @@ export function bound_digging() {
                 loc.wall_info |= W_NONPASSWALL;
         }
 }
-// C ref: mkmaze.c:fumaroles(). Lava vents leave damaging gas even though
+// C mkmaze.c:fumaroles()
+// Lava vents leave damaging gas even though
 // fire striking water leaves harmless steam. Called from goto_level() when
 // arriving and moveloop_core() when on the level.
 export async function fumaroles(state = requireInitializedGame()) {

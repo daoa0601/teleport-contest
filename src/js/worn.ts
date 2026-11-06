@@ -128,6 +128,7 @@ function unmarkWornObject(object: GameObject, slot: WornSlot): void {
     }
 }
 
+// Part of C worn.c:setworn(): the property refresh after the w_blocks macro changes a worn-slot block.
 // C worn.c w_blocks(): at most one blocking item per property, keyed on the
 // mask being worn or unworn. The Eyes of the Overworld's BLINDED block is
 // derived live from ublindf in senses.ts, so it needs no bookkeeping here.
@@ -142,9 +143,9 @@ function refreshWornBlocks(object: GameObject, mask: number, state: GameState, o
     }
 }
 
+// C worn.c:recalc_telepat_range()
 // worn.c counts all ordinary worn TELEPAT objects, plus one source for
 // every carried ESP artifact together, regardless of their number.
-// C worn.c:recalc_telepat_range().
 export function recalculateTelepathyRange(state: GameState): void {
     const worn = [state.uarm, state.uarmc, state.uarmh, state.uarms,
         state.uarmg, state.uarmf, state.uarmu, state.uamul, state.uleft,
@@ -362,6 +363,7 @@ function equipmentProperties(object: GameObject): PropertyName[] {
     return [primary, primary === 'poisonResistance' ? 'acidResistance' : 'poisonResistance'];
 }
 
+// Part of C worn.c:update_mon_extrinsics(): the property loop and mummy-wrapping tail; updateMonsterEquipment() owns the complete operation.
 // The `again:` property loop of C worn.c:update_mon_extrinsics() plus its
 // w_blocks() mummy-wrapping tail: the part that flips minvis, speed and
 // the worn resistance bits.  It stands alone because mon.c:monstone()
@@ -714,9 +716,10 @@ export function bypassObjectList(
     for (const object of objects) object.bypass = on;
 }
 
+// C worn.c:nxt_unbypassed_obj()
 // Pass the current chain each time: an action may remove or add objects.
 // A sorted traversal also supplies its original order; stale entries are skipped.
-// C worn.c:nxt_unbypassed_obj() and nxt_unbypassed_loot().
+// Also C worn.c:nxt_unbypassed_loot(): the sorted traversal skips stale entries inline.
 export function nextUnbypassedObject(
     objects: readonly GameObject[], state: GameState = game,
     order: readonly GameObject[] = objects,
@@ -872,6 +875,7 @@ export async function adjustMonsterClothingAfterPolymorph(
     return { dropped, destroyed };
 }
 
+// Part of C worn.c:m_dowear_type(): the armor score combining ARM_BONUS with extra_pref().
 // Bias a monster's preferences towards armor that has special benefits.
 // C worn.c:extra_pref().
 function preference(monster: Monster, object: GameObject): number {
@@ -936,6 +940,7 @@ export async function destroyObjectFromMonsterInventory(
     return await deleteObject(object, state);
 }
 
+// C worn.c:find_mac()
 // trap.c wearing_iron_shoes() tests the boots' material, so iron kicking
 // boots protect as well as iron shoes do.
 

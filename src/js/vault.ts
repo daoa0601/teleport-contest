@@ -810,6 +810,7 @@ function nextCorridorSquare(guard: VaultGuard, state: GameState) {
     }
 }
 
+// C invent.c:g_at()
 // The gold stack on a square, if any; C invent.c:g_at() inline.
 function goldAt(x: number, y: number, state: GameState): GameObject | undefined {
     return requireGameLevel(state).objects[x]?.[y]?.find(object => object.otyp === GOLD_PIECE);

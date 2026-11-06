@@ -2206,6 +2206,8 @@ list_genocided	set_vanq_order
 list_genocided	yn_function
 list_migrating_mons	yn_function
 list_vanquished	set_vanq_order
+litroom	rnd
+litroom	vision_recalc
 litstate_rnd	rn2
 litstate_rnd	rnd
 litter	rnd

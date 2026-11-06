@@ -216,7 +216,8 @@ function hexFloatValue(mantissa, shift) {
 function bitLength(value) {
     return value.toString(2).length;
 }
-// lobject.c:luaO_str2num(): integer syntax converts to an integer,
+// C lobject.c:luaO_str2num()
+// Integer syntax converts to an integer,
 // float syntax (including C99 hex floats such as "0x1p4") to a float,
 // and spellings outside Lua's grammar -- "0b1", "0o7", "Infinity",
 // "NaN" -- are not numbers at all.

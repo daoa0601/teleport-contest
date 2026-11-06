@@ -909,6 +909,7 @@ function vampireReply(monster, state) {
     const target = Upolyd(state.u) ? monsterTypeName(heroSpecies(state), !!state.flags.female) : race;
     return `I vill come after ${withIndefiniteArticle(target)} without regret!`;
 }
+// Part of C sounds.c:domonnoise(): Death's novel and tribute replies.
 // Death's reply; invent.c:u_have_novel() is the tribute-novel lookup.
 function deathReply(state) {
     const book = state.context.deathNotice ? undefined : state.inventory.find(object => object.otyp === SPE_NOVEL);

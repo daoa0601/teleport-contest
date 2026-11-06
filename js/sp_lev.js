@@ -677,7 +677,8 @@ function flip_dbridge_vertical(location) {
     location.flags = location.drawbridgemask = (mask & ~DB_DIR)
         | (direction === first ? second : first);
 }
-// Bit-pair swap; C hacklib.c:swapbits().
+// C hacklib.c:swapbits()
+// Swap a pair of bits.
 function swapDirectionBits(value, first, second) {
     const different = ((value >> first) ^ (value >> second)) & 1;
     return value ^ ((different << first) | (different << second));
@@ -949,9 +950,10 @@ export function add_doors_to_room(room) {
     for (const subroom of room.sbrooms || [])
         add_doors_to_room(subroom);
 }
-// sp_lev.c:link_doors_rooms(). A later Lua room can create a door shared
+// C sp_lev.c:link_doors_rooms()
+// A later Lua room can create a door shared
 // with an earlier one, so link the completed map before stocking it.
-// C sp_lev.c:link_doors_rooms(). Claim map doors for their rooms.
+// Claim map doors for their rooms.
 export function link_doors_rooms() {
     const level = requireGameLevel();
     for (let y = 0; y < ROWNO; y++) {
@@ -2410,7 +2412,7 @@ export async function lspo_exclusion(context, value) {
         lx: start.x, ly: start.y, hx: end.x, hy: end.y,
     });
 }
-// sp_lev.c:levregion_add() uses raw map-relative endpoints, never croom.
+// Part of C sp_lev.c:levregion_add(): uses raw map-relative endpoints, never croom.
 async function regionCoordinates(context, coordinates, levelCoordinates) {
     if (!coordinates)
         throw new TypeError('Lua region requires four coordinates');
@@ -2832,7 +2834,7 @@ export function check_room(lowx, ddx, lowy, ddy, vault) {
     }
     return true;
 }
-// C ref: sp_lev.c create_room()
+// C sp_lev.c:create_room()
 export function create_room(x, y, w, h, xal, yal, rtype, rlit) {
     const g = game;
     const level = requireGameLevel();
@@ -2988,7 +2990,7 @@ function create_subroom(proom, x, y, w, h, rtype, rlit) {
     rlit = litstate_rnd(rlit);
     return add_subroom(proom, proom.lx + x, proom.ly + y, proom.lx + x + w - 1, proom.ly + y + h - 1, rlit, rtype, false);
 }
-// C ref: sp_lev.c dig_corridor()
+// C sp_lev.c:dig_corridor()
 export async function dig_corridor(org, dest, npoints_out, nxcor, ftyp, btyp) {
     const map = requireGameLevel();
     let dx = 0, dy = 0;
@@ -3086,12 +3088,13 @@ export async function dig_corridor(org, dest, npoints_out, nxcor, ftyp, btyp) {
         npoints_out.v = npoints;
     return true;
 }
-// C ref: sp_lev.c wallify_map().  This is the producer half of Lua's
+// C sp_lev.c:wallify_map()
+// This is the producer half of Lua's
 // des.wallify(): turn solid rock touching room terrain (including diagonals)
 // into a provisional straight wall.  The ordinary wallification pass below
 // then resolves corners and junctions.  Iterate y-major to preserve C's
 // mutation order, although newly created walls do not themselves propagate.
-// C sp_lev.c:wallify_map(). Shape bordering stone into walls.
+// Shape bordering stone into walls.
 export function wallify_map(x1, y1, x2, y2) {
     const level = requireGameLevel();
     const lowX = Math.max(x1, 1);
@@ -3523,6 +3526,7 @@ export async function lspo_mineralize(value) {
     const options = value === undefined ? {} : tableOptions(value);
     await mineralize(options.kelp_pool ?? -1, options.kelp_moat ?? -1, options.gold_prob ?? -1, options.gem_prob ?? -1, true);
 }
+// C sp_lev.c:lvlfill_maze_grid()
 // Fill the maze rectangle with the wall-and-pillar lattice level_init uses.
 // C sp_lev.c:lvlfill_maze_grid(): stone everywhere in corridor mazes, and
 // a (y < 2 || odd x, odd y) lattice otherwise.
@@ -3569,6 +3573,7 @@ const LEVEL_TIMER_TYPE_NAMES = [
     'rot-organic', 'rot-corpse', 'revive-mon', 'zombify-mon',
     'burn-obj', 'hatch-egg', 'fig-transform', 'shrink-glob', 'melt-ice',
 ];
+// Part of C nhlua.c:nhl_timer_start_at(): the coordinate adapter using nhl_get_xy_params() and sp_lev.c:get_coord().
 // nhlua.c:nhl_get_xy_params() over sp_lev.c:get_coord(), as reached by
 // nhl_timer_start_at() after the timer type and delay were popped: two
 // integers, or one table with x/y fields or a two-entry array.
@@ -3593,7 +3598,8 @@ function luaTimerCoordinates(args) {
     }
     throw new NethackLuaError('nhl_timer_start_at: Wrong args');
 }
-// sp_lev.c:get_table_intarray_entry(): numbers and numeric strings
+// C sp_lev.c:get_table_intarray_entry()
+// Numbers and numeric strings
 // convert with lua_tointeger laxness, everything else raises nhl_error.
 // The C message hardcodes entry number 1 for both positions.
 function luaTimerArrayEntry(table, entry) {

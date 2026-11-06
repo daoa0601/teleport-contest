@@ -306,6 +306,7 @@ export function initializeHeroSpecies(state: GameState = game): void {
     setHeroSpecies(hero.umonster, state);
 }
 
+// Part of C u_init.c:u_init_misc(): the initial room/shop membership reset, also maintained by hack.c:move_update().
 // C u_init.c/u_init_misc() and hack.c:move_update().
 export function initializeHeroRoomMembership(state: Pick<GameState, 'u' | '_emptyShops'>): void {
     const hero = state.u;
@@ -423,7 +424,9 @@ const DEFAULT_DOG_NAMES: Readonly<Partial<Record<RoleKey, string>>> = {
     barbarian: 'Idefix',
 };
 
-// C ref: dog.c makedog() and pet_type().
+// C dog.c:makedog()
+// Also C dog.c:pet_type(): the starting-pet species choice is inlined here.
+// Also C dog.c:initedog(): the newborn pet's tame state and edog fields are inlined here.
 export async function makedog(): Promise<Monster | null> {
     const g = game;
     if (g.preferred_pet === 'n') {
@@ -535,7 +538,8 @@ function trquan(trobj: InitialInventoryEntry): number {
 }
 
 
-// C ref: u_init.c knows_class().  Role preknowledge is installed before
+// C u_init.c:knows_class()
+// Role preknowledge is installed before
 // ini_inv_use_obj() records starting-inventory encounters, so discovery order
 // within each class remains the object-table order followed by any exceptions
 // such as the Knight's ordinary small shield.
@@ -565,7 +569,7 @@ function knowsClass(oclass: number, role: RoleKey): void {
     }
 }
 
-// Also C u_init.c:u_init_role(): the role-specific discovery knowledge.
+// Part of C u_init.c:u_init_role(): the role-specific discovery knowledge.
 function initializeRolePreknowledge(role: RoleKey): void {
     const pauper = !!game.u?.uroleplay?.pauper;
     if (role === 'archeologist') {
@@ -749,6 +753,7 @@ function startingInventoryRestrictions(): StartingInventoryRestrictions {
     };
 }
 
+// C u_init.c:ini_inv()
 // C ini_inv(): exclusions persist across a role's inventory tables and reset
 // before race inventory. The level-one-book threshold belongs to each table.
 // Also C u_init.c:ini_inv_obj_substitution(): inlined here after object creation.
@@ -993,7 +998,7 @@ const PAUPER_PREKNOWLEDGE = new Map([
     ['samurai', FOOD_RATION],
 ]);
 
-// Also C u_init.c:pauper_reinit(): the role's one retained object discovery.
+// Part of C u_init.c:pauper_reinit(): the role's one retained object discovery.
 function applyPauperPreknowledge(role: RoleKey | undefined): void {
     if (!role || !game.u?.uroleplay?.pauper) return;
     const otyp = PAUPER_PREKNOWLEDGE.get(role);

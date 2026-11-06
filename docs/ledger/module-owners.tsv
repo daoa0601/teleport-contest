@@ -37,7 +37,6 @@ src/js/isaac64.ts	isaac64.c
 src/js/jsmain.ts	wintty.c
 src/js/level_change.ts	questpgr.c
 src/js/level_teleport.ts	teleport.c
-src/js/light.ts	light.c
 src/js/lock.ts	lock.c
 src/js/lua/des.ts	sp_lev.c
 src/js/lua/lifecycle.ts	nhlua.c
@@ -61,11 +60,11 @@ src/js/muse.ts	muse.c
 src/js/music.ts	music.c
 src/js/occupation.ts	allmain.c
 src/js/option_escapes.ts	options.c
+src/js/option_values.ts	version.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pickup.ts	pickup.c
 src/js/pickup_location.ts	hack.c
-src/js/pline.ts	pline.c
 src/js/potion.ts	potion.c
 src/js/pray.ts	pray.c
 src/js/prevmsg.ts	topl.c
@@ -93,8 +92,8 @@ src/js/tip_hat.ts	sounds.c
 src/js/topten.ts	topten.c
 src/js/track.ts	track.c
 src/js/trap.ts	trap.c
+src/js/tty_topline.ts	topl.c
 src/js/uhitm.ts	uhitm.c
-src/js/vault.ts	vault.c
 src/js/warning_symbols.ts	options.c
 src/js/weapon.ts	weapon.c
 src/js/were.ts	were.c

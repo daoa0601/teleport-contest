@@ -443,6 +443,7 @@ export async function eating_conducts(species, { state = game } = {}) {
         await violated_vegetarian(state);
     }
 }
+// Part of C eat.c:eating_conducts(): the shared food-counter increment and first-food log expression.
 // Shared u.uconduct.food++ and first-food livelog expression in eat.c.
 function incrementFood(message, state) {
     const first = incrementConduct('food', state);
@@ -716,6 +717,7 @@ export async function cprefx(mnum, { state = game, food = null, tin = null } = {
     }
     return { stopped: false, heroDied: !!state.program_state.gameover };
 }
+// Part of C eat.c:cprefx(): the slime-admission predicate shared with eatcorpse().
 // Shared slime-admission expression in eat.c:cprefx() and eatcorpse().
 export function heroCanBeSlimed(state = game) {
     const hero = state.u;
@@ -2571,6 +2573,7 @@ export async function reset_faint({ state = game } = {}) {
     await finishHeroHelplessness('You revive.', state);
     return true;
 }
+// Part of C eat.c:newuhs(): the nutrition thresholds, preserving FAINTED and STARVED.
 // C eat.c newuhs() thresholds, shared without changing FAINTED or STARVED.
 export function currentHungerState(state = game) {
     if (state.u.uhs === FAINTED || state.u.uhs === STARVED)

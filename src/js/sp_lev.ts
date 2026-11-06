@@ -650,7 +650,8 @@ function flip_dbridge_vertical(location: MapLocation): void {
         | (direction === first ? second : first);
 }
 
-// Bit-pair swap; C hacklib.c:swapbits().
+// C hacklib.c:swapbits()
+// Swap a pair of bits.
 function swapDirectionBits(value: number, first: number, second: number): number {
     const different = ((value >> first) ^ (value >> second)) & 1;
     return value ^ ((different << first) | (different << second));
@@ -946,9 +947,10 @@ export function add_doors_to_room(room: Room): void {
     for (const subroom of room.sbrooms || []) add_doors_to_room(subroom);
 }
 
-// sp_lev.c:link_doors_rooms(). A later Lua room can create a door shared
+// C sp_lev.c:link_doors_rooms()
+// A later Lua room can create a door shared
 // with an earlier one, so link the completed map before stocking it.
-// C sp_lev.c:link_doors_rooms(). Claim map doors for their rooms.
+// Claim map doors for their rooms.
 export function link_doors_rooms(): void {
     const level = requireGameLevel();
     for (let y = 0; y < ROWNO; y++) {
@@ -2377,7 +2379,7 @@ export async function lspo_exclusion(context: SpecialLevelContext, value: LuaVal
     });
 }
 
-// sp_lev.c:levregion_add() uses raw map-relative endpoints, never croom.
+// Part of C sp_lev.c:levregion_add(): uses raw map-relative endpoints, never croom.
 async function regionCoordinates(context: SpecialLevelContext, coordinates: LuaRegion | undefined,
     levelCoordinates: boolean | number | undefined,
 ): Promise<Rectangle> {
@@ -2784,7 +2786,7 @@ export function check_room(
     return true;
 }
 
-// C ref: sp_lev.c create_room()
+// C sp_lev.c:create_room()
 export function create_room(
     x: number, y: number, w: number, h: number, xal: number, yal: number,
     rtype: number, rlit: number | boolean,
@@ -2925,7 +2927,7 @@ function create_subroom(
     );
 }
 
-// C ref: sp_lev.c dig_corridor()
+// C sp_lev.c:dig_corridor()
 export async function dig_corridor(
     org: Position, dest: Position, npoints_out: MutableNumber | null,
     nxcor: boolean, ftyp: number, btyp: number,
@@ -2997,12 +2999,13 @@ export async function dig_corridor(
     return true;
 }
 
-// C ref: sp_lev.c wallify_map().  This is the producer half of Lua's
+// C sp_lev.c:wallify_map()
+// This is the producer half of Lua's
 // des.wallify(): turn solid rock touching room terrain (including diagonals)
 // into a provisional straight wall.  The ordinary wallification pass below
 // then resolves corners and junctions.  Iterate y-major to preserve C's
 // mutation order, although newly created walls do not themselves propagate.
-// C sp_lev.c:wallify_map(). Shape bordering stone into walls.
+// Shape bordering stone into walls.
 export function wallify_map(x1: number, y1: number, x2: number, y2: number): void {
     const level = requireGameLevel();
     const lowX = Math.max(x1, 1);
@@ -3456,6 +3459,7 @@ export async function lspo_mineralize(value: LuaValue | undefined): Promise<void
         options.gold_prob ?? -1, options.gem_prob ?? -1, true);
 }
 
+// C sp_lev.c:lvlfill_maze_grid()
 // Fill the maze rectangle with the wall-and-pillar lattice level_init uses.
 // C sp_lev.c:lvlfill_maze_grid(): stone everywhere in corridor mazes, and
 // a (y < 2 || odd x, odd y) lattice otherwise.
@@ -3502,6 +3506,7 @@ const LEVEL_TIMER_TYPE_NAMES = [
     'burn-obj', 'hatch-egg', 'fig-transform', 'shrink-glob', 'melt-ice',
 ];
 
+// Part of C nhlua.c:nhl_timer_start_at(): the coordinate adapter using nhl_get_xy_params() and sp_lev.c:get_coord().
 // nhlua.c:nhl_get_xy_params() over sp_lev.c:get_coord(), as reached by
 // nhl_timer_start_at() after the timer type and delay were popped: two
 // integers, or one table with x/y fields or a two-entry array.
@@ -3525,7 +3530,8 @@ function luaTimerCoordinates(args: readonly LuaValue[]): { x: number; y: number 
     throw new NethackLuaError('nhl_timer_start_at: Wrong args');
 }
 
-// sp_lev.c:get_table_intarray_entry(): numbers and numeric strings
+// C sp_lev.c:get_table_intarray_entry()
+// Numbers and numeric strings
 // convert with lua_tointeger laxness, everything else raises nhl_error.
 // The C message hardcodes entry number 1 for both positions.
 function luaTimerArrayEntry(table: LuaTable, entry: number): number {

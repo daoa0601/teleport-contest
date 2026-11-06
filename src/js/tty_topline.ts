@@ -12,6 +12,7 @@ import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 interface ToplineCell { ch: string; dec: boolean }
 interface ToplinePagingOptions { urgent?: boolean; dismissKey?: number; rawGlyphs?: boolean }
 
+// Part of C wintty.c:tty_clear_nhwindow(): the WIN_MESSAGE branch.
 // C win/tty/wintty.c:tty_clear_nhwindow(WIN_MESSAGE). A seen prompt still occupies the
 // physical message row; clearing it is separate from acknowledging input.
 export function clearMessageWindow(coveredRows?: number) {
@@ -43,7 +44,7 @@ export function clearMessageWindow(coveredRows?: number) {
     display.setCursor(0, 0);
 }
 
-// C win/tty/topl.c:redotoplin(). Install and repaint a physical topline.
+// Part of C topl.c:redotoplin(): Install and repaint a physical topline.
 export function replaceTopline(msg: string): void {
     // update_topl()/redotoplin() repaint the whole physical line.
     resetToplineClip();
@@ -71,12 +72,14 @@ export function replaceTopline(msg: string): void {
     }
 }
 
+// Part of C wintty.c:tty_create_nhwindow(): the NHW_MESSAGE recall-ring capacity.
 // C win/tty/wintty.c:tty_create_nhwindow(NHW_MESSAGE) sizes the recall ring: iflags.msg_history
 // clamped into 20..MAX_MSG_HISTORY slots.
 export function messageHistoryCapacity(): number {
     return Math.max(20, Math.min(MAX_MSG_HISTORY, game.iflags.msg_history ?? 20));
 }
 
+// C topl.c:remember_topl()
 // C win/tty/topl.c:remember_topl(): archive gt.toplines into the WIN_MESSAGE
 // recall ring and clear the negotiated topline. The port keeps the ring
 // oldest-first on game state so ^P recall and save/restore share it.
@@ -92,6 +95,7 @@ export function rememberToplines(): void {
     game._messageHistoryCursor = null;
 }
 
+// Part of C topl.c:tty_putmsghistory(): the non-restoring message insertion path.
 // C win/tty/topl.c:tty_putmsghistory(msg, FALSE): remember what is pending and
 // make this line the current topline without displaying it. The quest pager
 // synopsis, novel tribute attribution, and count echoes use this path.
@@ -183,7 +187,7 @@ export function clipToplineToColumn(message: string, column: number): string {
     return clipped;
 }
 
-// C win/tty/topl.c:update_topl()/topl_putsym(): word breaks and physical wrapping.
+// Part of C topl.c:update_topl(): word breaks, followed by topl_putsym() hard wrapping.
 export function toplineRows(
     message: string, columns: number, { splitWords = true }: { splitWords?: boolean } = {},
 ): [ToplineCell[], ...ToplineCell[][]] {
@@ -218,7 +222,7 @@ export function toplineRows(
     return lines;
 }
 
-// C win/tty/topl.c:show_topl(), used for SUPPRESS_HISTORY prose such as getpos
+// Part of C topl.c:show_topl(): used for SUPPRESS_HISTORY prose such as getpos
 // autodescribe: addtopl() wraps at the last column without update_topl()'s
 // word splitting, and its extra rows never ask for --More--.
 export function showUnrememberedTopline(message: string, { flushPending = false } = {}): void {
@@ -237,7 +241,7 @@ export function showUnrememberedTopline(message: string, { flushPending = false 
     }
 }
 
-// C win/tty/topl.c:topl_putsym(): key queries wrap without a More prompt.
+// Part of C topl.c:topl_putsym(): key queries wrap without a More prompt.
 // Return the rows covered so tty_yn_function's cleanup can restore the map.
 // Also C topl.c:putsyms(): inlined here to write the prompt's cells.
 export function renderKeyPrompt(message: string, cursorOffset = 0): number {
@@ -260,6 +264,7 @@ export async function moreUntilDismissed(message: string, { urgent = false }: To
     return pageTopline(message, { urgent });
 }
 
+// C topl.c:more()
 // C win/tty/topl.c:more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
 export async function pageTopline(
@@ -324,6 +329,7 @@ export async function flushPendingTopline() {
     return pending ? pageTopline(pending) : null;
 }
 
+// Part of C wintty.c:tty_display_nhwindow(): the WIN_MESSAGE branch.
 // C win/tty/wintty.c:tty_display_nhwindow(WIN_MESSAGE): unlike a direct more(), the window
 // display honors Escape's WIN_STOP/WIN_CANCELLED flag before acknowledging.
 // Only TOPLINE_NEED_MORE erases the row; answered questions remain visible.
@@ -340,7 +346,7 @@ export async function displayMessageWindow(): Promise<number | null> {
     return dismissal;
 }
 
-// C win/tty/topl.c:update_topl()'s WIN_STOP branch for prose that cannot restart the pager
+// Part of C topl.c:update_topl(): the WIN_STOP branch for prose that cannot restart the pager
 // (only "You die" does): gt.toplines and the recall history advance, but
 // redotoplin() never runs, so the screen keeps its suppressed line.
 export function appendSuppressedTopline(msg: string): void {
@@ -359,6 +365,7 @@ export function appendSuppressedTopline(msg: string): void {
     }
 }
 
+// C topl.c:update_topl()
 // C win/tty/topl.c:update_topl() also owns bare tty_putstr() output from singleton menus.
 // Sample WIN_STOP on entry: Escape at an older line suppresses subsequent
 // calls, while the incoming line from this call still gets drawn.
@@ -423,7 +430,7 @@ export async function updateTopline(
     return dismissal;
 }
 
-// C win/tty/topl.c:update_topl()'s storage wrap: from each CO-1 boundary search back to the
+// Part of C topl.c:update_topl(): the storage wrap: from each CO-1 boundary search back to the
 // nearest space and replace it with a newline; a huge token is split after
 // its end, and text with no space at all is left to topl_putsym()'s hard
 // column wrap at render time.  tty_putmixed() folds each DEC-graphics pair

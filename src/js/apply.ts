@@ -381,6 +381,7 @@ async function hear(sound: string): Promise<void> {
     if (message) await pline(message);
 }
 
+// Part of C apply.c:use_stethoscope(): the monster-revelation and status-report branch.
 // Also C mkobj.c:init_dummyobj(): inlined here (the name-formatting dummy
 // object literal with the slime-mold fruit id).
 async function diagnoseMonster(monster: Monster, x: number, y: number) {
@@ -1383,6 +1384,7 @@ async function rubRoyalJelly(jelly: GameObject) {
     return used;
 }
 
+// Part of C apply.c:dorub(): the rub command; light.ts:transformMagicLampToOilLamp() contains the extracted conversion.
 // C refs: apply.c:dorub(), invent.c:getobj(), wield.c:wield_tool(), and
 // cmd.c:CQ_CANNED.  Selecting an unwielded lamp does not rub it immediately:
 // wield_tool() installs it, consumes one action, and queues dorub plus the
@@ -1763,6 +1765,7 @@ function tinnable(corpse: GameObject): boolean {
     return corpse.otyp === CORPSE && !corpse.oeaten && !!MONSTER_NUTRITION[corpse.corpsenm ?? -1];
 }
 
+// Part of C apply.c:use_tinning_kit(): the corpse chooser through eat.c:floorfood() and tin_ok().
 // Also C eat.c:tin_ok(): inlined as the tinning-kit chooser callback at the
 // end (food-class corpses that can still be tinned).
 async function chooseTinningCorpse(): Promise<GameObject | null> {
@@ -2763,7 +2766,7 @@ function calcPoleRange(weapon: GameObject, { state = game } = {}) {
     return { min: 4, max };
 }
 
-// C apply.c get_valid_polearm_position().
+// C apply.c:get_valid_polearm_position()
 function validPolearmPosition(x: number, y: number, min: number, max: number, state: GameState) {
     if (!isok(x, y)) return false;
     const distance = squaredDistance(x, y, state);
@@ -2774,7 +2777,8 @@ function validPolearmPosition(x: number, y: number, min: number, max: number, st
     );
 }
 
-// C apply.c find_poleable_mon(): the single auto-target candidate, if any.
+// C apply.c:find_poleable_mon()
+// The single auto-target candidate, if any.
 // More than one candidate leaves the cursor on the hero, like C returning
 // FALSE without touching the out parameter.
 function findPoleableSpot(state: GameState, min: number, max: number) {
@@ -2822,7 +2826,8 @@ function rememberPolearmTarget(monster: Monster | null, state: GameState) {
     state.context.polearm.hitmonId = monster ? monster.m_id : null;
 }
 
-// C apply.c could_pole_mon(): the dofire fireassist predicate.
+// C apply.c:could_pole_mon()
+// The dofire fireassist predicate.
 export function couldPoleMonster(weapon: GameObject | null | undefined, { state = game } = {}) {
     if (!weapon || !isPolearm(weapon)) return false;
     const { min, max } = calcPoleRange(weapon, { state });
@@ -2872,6 +2877,7 @@ async function choosePolearmTarget(
     });
 }
 
+// C apply.c:use_pole()
 // Also C apply.c:snickersnee_used_dist_attk(): inlined here.
 export async function usePolearm(
     object: GameObject,

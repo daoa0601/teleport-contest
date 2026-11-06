@@ -1280,6 +1280,7 @@ async function shieldMonster(monster: Monster, state: PlayingGameState) {
         await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
 }
 
+// Part of C zap.c:bhitm(): the stone-to-flesh monster branch.
 // zap.c:stone-to-flesh on a monster: mkobj.c stone_object_type() and
 // stone_furniture_type() decide which mimicked shapes revert to a mimic.
 async function fleshMonster(monster: Monster, state: PlayingGameState) {
@@ -1685,6 +1686,7 @@ export async function revive(corpse: GameObject, state: GameState, { byHero = fa
     };
 }
 
+// Part of C zap.c:montraits(): the validated trait-field copy, without inventory or body ownership.
 // Monster state restored from a corpse or statue. C zap.c:montraits().
 // Both arguments have the same trait contract; the target's type determines
 // which values the saved record may supply. Inventory/body ownership is restored

@@ -231,6 +231,7 @@ export function stairwayDescription(stairway: Stairway, state: GameState): strin
     return `branch ${noun} ${direction} to ${dungeon}`;
 }
 
+// C dungeon.c:Can_dig_down()
 // ── Hero placement (C ref: stairs.c, mkmaze.c) ──
 
 // C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
@@ -250,7 +251,8 @@ export function canFallThrough(uz: DungeonLocation | undefined = game.u.uz): boo
     return canDigDown(uz) || (uz !== undefined && Is_stronghold(uz));
 }
 
-// C ref: stairs.c:u_on_sstairs() — place the hero on the special (branch)
+// C stairs.c:u_on_sstairs()
+// place the hero on the special (branch)
 // staircase, falling back to a random arrival spot.
 export async function u_on_sstairs(upflag: number): Promise<void> {
     const stway = stairway_find_special_dir(!!(upflag & 1));
@@ -260,7 +262,8 @@ export async function u_on_sstairs(upflag: number): Promise<void> {
         !!(upflag & 1));
 }
 
-// C ref: stairs.c:u_on_upstairs() — place you on upstairs (or special
+// C stairs.c:u_on_upstairs()
+// place you on upstairs (or special
 // equivalent).
 export async function u_on_upstairs(): Promise<void> {
     const stway = stairway_find_dir(true);
@@ -268,7 +271,8 @@ export async function u_on_upstairs(): Promise<void> {
     await u_on_sstairs(0); /* destination upstairs implies moving down */
 }
 
-// C ref: stairs.c:u_on_dnstairs() — place you on dnstairs (or special
+// C stairs.c:u_on_dnstairs()
+// place you on dnstairs (or special
 // equivalent).
 export async function u_on_downstairs(): Promise<void> {
     const stway = stairway_find_dir(false);
@@ -278,10 +282,11 @@ export async function u_on_downstairs(): Promise<void> {
 
 
 
-// C refs: mhitu.c:cloneu() and dog.c:initedog().
+// C mhitu.c:cloneu()
 // The actor is a fresh makemon birth rather than a copy of youmonst: it owns
 // ordinary placement, HP, gender, attitude, and identity RNG before cloneu()
 // replaces its level/HP and initializes a named tame companion.
+// Also C dog.c:initedog(): the everything=TRUE pet initialization is inlined here.
 export async function cloneHeroMonsterForm(state: GameState = game): Promise<Monster | null> {
     if (state !== game)
         throw new Error('hero clone owner requires live game state');
@@ -347,6 +352,7 @@ export async function cloneHeroMonsterForm(state: GameState = game): Promise<Mon
     return clone;
 }
 
+// Part of C makemon.c:makemon(): adapter for nearby placement through teleport.c:enexto() before monster construction.
 // C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().
 export async function makemonNear(
     mnum: number | null, centerX: number, centerY: number, flags = 0,
@@ -363,7 +369,8 @@ export async function makemonNear(
     return makemon(mnum, pos.x, pos.y, flags, requestedByHero);
 }
 
-// C refs: wizard.c:nasty()/pick_nasty() and mcastu.c:mcast_summon_mons().
+// C wizard.c:nasty()
+// Uses wizard.c:pick_nasty() for mcastu.c:mcast_summon_mons().
 // A monster-cast summon deliberately chooses an explicit high-difficulty
 // species, asks enexto() for a square around the caster's apparent hero
 // position, then runs the ordinary makemon() constructor.  The created
@@ -542,7 +549,8 @@ export async function runClaimedObjectRotTimer(claimed: DueObjectTimer | null | 
     return { kind, object, where, x, y };
 }
 
-// C ref: rumors.c get_rnd_line().  makedefs pads each source line to a
+// C rumors.c:get_rnd_line()
+// makedefs pads each source line to a
 // minimum of 59 text bytes plus its newline.  Selection deliberately seeks
 // into one line and returns the following line.
 export function getRandomTextLine(lines: readonly string[]): string {
@@ -583,12 +591,12 @@ export function getRumor(excludeCookie: boolean, truth = 0): string {
     return rumor;
 }
 
-// C ref: nhlua.c l_nhcore_init() (defined at nhlua.c:140)
+// Part of C nhlua.c:l_nhcore_init(): entry adapter; LuaLifecycle.startCore() initializes the core.
 export async function l_nhcore_init(): Promise<void> {
     await currentLuaLifecycle().startCore(game);
 }
 
-// C ref: mklev.c mklev()
+// C mklev.c:mklev()
 export async function mklev(): Promise<void> {
     const g = game;
     if (await getbones()) return;
@@ -618,7 +626,7 @@ export function countLevelFeatures(state: GameState = game): void {
     lvl.flags.nsinks = nsinks;
 }
 
-// C ref: mklev.c clear_level_structures()
+// C mklev.c:clear_level_structures()
 // Also C region.c:clear_regions(): a fresh GameMap owns no regions.
 // Also C dungeon.c:free_exclusions(): a fresh GameMap owns no exclusion zones.
 // Also C stairs.c:stairway_free_all(): inlined here as the stairway-chain reset.
@@ -673,6 +681,7 @@ function clear_level_structures(): void {
     init_rect();
 }
 
+// Part of C mklev.c:makelevel(): the generation driver; placeRoomLevelBranch() already holds the first-line citation.
 // C ref: mklev.c makelevel()
 // Also C mklev.c:themerooms_post_level_generate(): inlined here (the
 // post_level_generate theme call plus whole-level wallification).
@@ -1045,7 +1054,8 @@ async function makelevel(): Promise<void> {
     }
 }
 
-// C ref: mklev.c mk_knox_portal().  Fort Ludios starts with an out-of-range
+// C mklev.c:mk_knox_portal()
+// Fort Ludios starts with an out-of-range
 // source dnum.  Each otherwise eligible vault owns one deferral draw until a
 // deep main-dungeon vault resolves that source; subsequent vaults skip it.
 async function maybePlaceKnoxPortal(x: number, y: number): Promise<boolean> {
@@ -1077,6 +1087,7 @@ async function maybePlaceKnoxPortal(x: number, y: number): Promise<boolean> {
     return true;
 }
 
+// Part of C mklev.c:makelevel(): the depth-dependent random special-room selection.
 // C ref: mklev.c makelevel() random-special-room else-if chain.  Every failed
 // depth-eligible predicate owns its draw; once one type is selected, room
 // picking becomes mkroom.c's responsibility and later predicates are skipped.
@@ -1113,7 +1124,7 @@ async function maybeMakeSpecialRoom(roomThreshold: number): Promise<boolean> {
     return false;
 }
 
-// C ref: mklev.c makerooms()
+// C mklev.c:makerooms()
 async function makerooms(themedRooms: boolean): Promise<void> {
     const g = game;
     const level = requireGameLevel();
@@ -1144,6 +1155,7 @@ async function makerooms(themedRooms: boolean): Promise<void> {
     if (themedRooms) await callLuaThemerooms('post_themerooms_generate');
 }
 
+// C mklev.c:add_subroom()
 // C refs: sp_lev.c create_subroom() and mklev.c add_subroom().  Subrooms
 // share their parent's rectangle allocation but retain distinct room
 // identity for shop/temple membership and recursive special-room filling.
@@ -1176,7 +1188,7 @@ function create_vault(): boolean {
     return create_room(-1, -1, 2, 2, -1, -1, VAULT, true);
 }
 
-// C ref: mklev.c add_room()
+// C mklev.c:add_room()
 export function add_room(
     lowx: number, lowy: number, hix: number, hiy: number,
     lit: number | boolean, rtype: number, special: boolean,
@@ -1200,7 +1212,7 @@ export function add_room(
     return croom;
 }
 
-// C ref: mklev.c do_room_or_subroom()
+// C mklev.c:do_room_or_subroom()
 function do_room_or_subroom(
     croom: Room, lowx: number, lowy: number, hix: number, hiy: number,
     lit: number | boolean, rtype: number, special: boolean, is_room: boolean,
@@ -1260,8 +1272,8 @@ function do_room_or_subroom(
     }
 }
 
-// C ref: mklev.c sort_rooms()
-// C mklev.c:mkroom_cmp().
+// C mklev.c:sort_rooms()
+// Also C mklev.c:mkroom_cmp(): inlined as the room-x comparator.
 function sort_rooms(): void {
     const level = requireGameLevel();
     const n = level.nroom;
@@ -1288,7 +1300,7 @@ function sort_rooms(): void {
         }
 }
 
-// C ref: mklev.c topologize()
+// C mklev.c:topologize()
 export function topologize(croom: Room | null | undefined): void {
     if (!croom || croom.irregular) return;
     const roomno = (croom.roomnoidx ?? -1) + ROOMOFFSET;
@@ -1369,7 +1381,7 @@ function finddpos_shift(xp: MutableNumber, yp: MutableNumber, dir: number, aroom
     return false;
 }
 
-// C ref: mklev.c finddpos()
+// C mklev.c:finddpos()
 function finddpos(cc: Position, dir: number, aroom: Room): boolean {
     let x1, y1, x2, y2;
     switch (dir) {
@@ -1407,7 +1419,7 @@ export function maybe_sdoor(chance: number): boolean {
     return (d > 2) && !rn2(Math.max(2, chance));
 }
 
-// C ref: mklev.c dosdoor()
+// C mklev.c:dosdoor()
 async function dosdoor(x: number, y: number, aroom: Room, type: number): Promise<void> {
     const map = requireGameLevel();
     const loc = map.at(x, y);
@@ -1501,7 +1513,7 @@ export function okdoor(x: number, y: number): boolean {
     );
 }
 
-// C ref: mklev.c join()
+// C mklev.c:join()
 async function join(a: number, b: number, nxcor: boolean): Promise<void> {
     const g = game;
     const level = requireGameLevel();
@@ -1553,7 +1565,7 @@ async function join(a: number, b: number, nxcor: boolean): Promise<void> {
     else equivalence[a] = second;
 }
 
-// C ref: mklev.c makecorridors()
+// C mklev.c:makecorridors()
 export async function makecorridors(): Promise<void> {
     const g = game;
     const level = requireGameLevel();
@@ -1968,6 +1980,7 @@ export async function mktrap_victim(trap: Trap): Promise<void> {
     corpse.age -= 51; // TAINT_AGE + 1
 }
 
+// Part of C dothrow.c:breaktest(): the trap-victim subset, including zap.c:obj_resists() for fresh non-invocation objects.
 // C refs: zap.c obj_resists() and dothrow.c breaktest().  This helper is
 // private to the trap-victim generation block; its inputs are freshly made,
 // non-invocation objects from the four possession classes above.
@@ -1987,9 +2000,10 @@ function trapVictimObjectBreaks(object: GameObject): boolean {
         || object.otyp === 480; // ACID_VENOM
 }
 
+// C mklev.c:mktrap()
 // C mktrap(): the room and maze callers share type selection, collision
 // checks, web residents, and shallow-level victims.
-// C mklev.c:traptype_roguelvl().
+// Also C mklev.c:traptype_roguelvl(): inlined in the Rogue-level type selection.
 export async function mktrap(
     num: number, options: SpecialTrapOptions, croom: Room | null, coordinate: Position | null,
 ): Promise<Trap | null> {

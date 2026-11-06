@@ -151,8 +151,9 @@ export async function playerName(prompt: string): Promise<string | null> {
         .slice(0, PL_PSIZ - 1);
 }
 
+// C do_name.c:christen_monst()
 // Given-name storage shared by monster creation, revival, and bones.
-// C do_name.c:christen_monst(). No presentation imports: these setters also
+// No presentation imports: these setters also
 // run while a new monster is still being constructed.
 export function setMonsterGivenName<T extends Pick<Monster, 'name' | 'mgivenname' | 'mextra'>>(
     monster: T, value: string | null | undefined,
@@ -685,8 +686,8 @@ export function monsterReflexiveAction(monster: Monster, name: string, verb: str
     return `${name} ${action}${otherText ? ` ${otherText}` : ''} ${reflexive}`;
 }
 
+// C do_name.c:do_oname()
 // Player inscriptions and artifact naming.
-// C do_name.c:do_oname().
 export async function nameIndividualObject(object: GameObject): Promise<void> {
     if (object.otyp === SPE_NOVEL) {
         await plineWithContinuation(`${objectOwnershipPrefix(object)}${simpleObjectName(object)} already has a published name.`);
@@ -803,7 +804,8 @@ function restrictedArtifactName(object: GameObject, artifact: Artifact): boolean
     return description === other || artifact.baseType >= low && artifact.baseType <= high;
 }
 
-// o_init.c:obj_shuffle_range(), including its fixed-description exceptions.
+// C o_init.c:obj_shuffle_range()
+// Includes the fixed-description exceptions.
 function appearanceRange(object: GameObject): readonly [number, number] {
     const type = object.otyp;
     const armorRanges = [

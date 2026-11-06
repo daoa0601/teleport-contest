@@ -32,16 +32,19 @@ function seedByteAt(bytes: ArrayLike<number>, index: number): number {
     return byte;
 }
 
+// C isaac64.c:lower_bits()
 // cf. isaac64.c:39 — extract SZ_LOG bits starting at bit 3
 export function lower_bits(x: bigint): number {
     return Number((x >> 3n) & 0xFFn);
 }
 
+// C isaac64.c:upper_bits()
 // cf. isaac64.c:45 — extract SZ_LOG bits starting at bit SZ_LOG+3 = 11
 export function upper_bits(y: bigint): number {
     return Number((y >> 11n) & 0xFFn);
 }
 
+// C isaac64.c:isaac64_mix()
 // cf. isaac64.c:103 — mix 8 values using alternating shift pattern
 export function isaac64_mix(x: bigint[]): void {
     const SHIFT = [9n, 9n, 23n, 15n, 14n, 20n, 17n, 14n];
@@ -56,6 +59,7 @@ export function isaac64_mix(x: bigint[]): void {
     }
 }
 
+// C isaac64.c:isaac64_update()
 // cf. isaac64.c:50 — generate next batch of 256 random values
 export function isaac64_update(ctx: Isaac64Context): void {
     const m = ctx.m;
@@ -129,6 +133,7 @@ export function isaac64_update(ctx: Isaac64Context): void {
     ctx.n = SZ;
 }
 
+// C isaac64.c:isaac64_init()
 // cf. isaac64.c:118 — create a new ISAAC64 context and seed it
 export function isaac64_init(seed_bytes?: ArrayLike<number> | null): Isaac64Context {
     const ctx: Isaac64Context = {
@@ -143,6 +148,7 @@ export function isaac64_init(seed_bytes?: ArrayLike<number> | null): Isaac64Cont
     return ctx;
 }
 
+// C isaac64.c:isaac64_reseed()
 // cf. isaac64.c:124 — mix seed into state and reinitialize
 export function isaac64_reseed(ctx: Isaac64Context, seed_bytes?: ArrayLike<number> | null): void {
     const m = ctx.m;
@@ -196,6 +202,7 @@ export function isaac64_reseed(ctx: Isaac64Context, seed_bytes?: ArrayLike<numbe
     isaac64_update(ctx);
 }
 
+// C isaac64.c:isaac64_next_uint64()
 // cf. isaac64.c:161 — return next random uint64
 // Autotranslated from isaac64.c:161
 export function isaac64_next_uint64(_ctx: Isaac64Context): bigint {
@@ -211,6 +218,7 @@ export function isaac64_peek_uint64(_ctx: Isaac64Context): bigint {
     return wordAt(_ctx.r, _ctx.n - 1);
 }
 
+// C isaac64.c:isaac64_next_uint()
 // cf. isaac64.c:166 — return unbiased random value in [0, n)
 // Autotranslated from isaac64.c:166
 export function isaac64_next_uint(_ctx: Isaac64Context, _n: bigint): bigint {

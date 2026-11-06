@@ -1090,6 +1090,7 @@ export function renderStatusLine2(fields, columns, capacityBlank = false, levelP
         levelPrefixChanged: prefixChanged,
     };
 }
+// Part of C wintty.c:render_status(): the BL_TITLE hitpoint-bar text.
 // ── wintty.c:render_status() BL_TITLE branch — the hitpoint bar ──
 // wintty.c:render_status()'s BL_TITLE branch.  The tty draws the bar's
 // colour and attribute from the title cell's stored style
@@ -1101,9 +1102,9 @@ export function hitpointBar(title, critical) {
         : title.slice(0, 30).padEnd(30);
     return `[${text}]`;
 }
+// C wintty.c:condattr()
 // ── wintty.c:condattr()/condcolor() ──
-// C wintty.c:condattr().
-// C wintty.c:condcolor().
+// Also C wintty.c:condcolor(): inlined with the condition attributes.
 export function conditionStyle(mask, masks) {
     let color = NO_COLOR, attr = 0;
     for (let index = 0; index < CLR_MAX; index++) {
