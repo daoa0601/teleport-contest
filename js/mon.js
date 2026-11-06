@@ -543,8 +543,10 @@ function isFiniteNumber(value) {
 export function monstersInFmonOrder(monsters = []) {
     return Array.from(monsters).reverse();
 }
-// C mon.c:movemon() schedules a monster when it is alive, on the map, and
-// not held in a non-floor state. x=0 is NetHack's off-map sentinel; y=0 is
+// Part of C mon.c:movemon_singlemon(): the alive-and-on-map test
+// (!DEADMONSTER() && !mon_offmap(), with the vault-guard <0,0> park
+// excluded), shared by the ports of mcalcdistress() and
+// m_everyturn_effect(). x=0 is NetHack's off-map sentinel; y=0 is
 // the valid north row.
 export function schedulable(monster) {
     return (monster &&
@@ -598,14 +600,6 @@ export async function* monsterDistressEvents(monsters = [], state = requireIniti
             monster.mcanmove = 1;
         if (monster.mfleetim !== undefined && monster.mfleetim > 0 && --monster.mfleetim === 0)
             monster.mflee = 0;
-    }
-}
-// C mon.c:movemon() movement allocation: every schedulable monster earns
-// this turn's movement points before any of them acts.
-export function allocateMonsterMovement(monsters = [], random = rn2, state = requireInitializedGame()) {
-    for (const monster of monstersInFmonOrder(monsters)) {
-        const amount = mcalcmove(monster, true, random, state);
-        monster.movement = (monster.movement ?? 0) + amount;
     }
 }
 function speciesIsUnique(mnum) {
@@ -1408,6 +1402,10 @@ async function executeMonsterTurns() {
     }
     return game.level === level && somebodyCanMove;
 }
+// C mon.c:movemon(): perform one pass of monster movement. The
+// iter_mons_safe() loop over movemon_singlemon() is executeMonsterTurns();
+// afterwards any moving light source forces a vision recalc, object
+// bypasses are reset, and dead monsters are purged from fmon.
 export async function moveMonsters() {
     const game = requireInitializedGame();
     const level = game.level;
@@ -2709,11 +2707,6 @@ export function wornMonsterLifeSaver(monster) {
     return (monster?.minvent || monster?.inventory || []).find(object => object.otyp === AMULET_OF_LIFE_SAVING
         && ((object.owornmask ?? 0) & W_AMUL));
 }
-// C mon.c:lifesaved_monster() selects the recovery verb from explosion attacks.
-function monsterReconstitutesAfterLifeSaving(monster) {
-    return (MONSTER_ATTACKS[monster?.mnum] || [])
-        .some(attack => attack[0] === 13 || attack[0] === 14);
-}
 // C mon.c:lifesaved_monster(): an amulet of life saving revives a dying
 // monster; genocided species still fail after the medallion crumbles.
 // The caller supplies any credited kill line. The amulet is consumed and the
@@ -2733,7 +2726,11 @@ export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCur
         recordObjectEncounter(amulet.otyp);
         recordObjectKnowledge(amulet.otyp);
         if (canSeeMonster(monster)) {
-            const recovery = monsterReconstitutesAfterLifeSaving(monster)
+            // C picks the recovery verb from explosion attacks
+            // (AT_EXPL or AT_BOOM).
+            const reconstitutes = (MONSTER_ATTACKS[monster?.mnum] || [])
+                .some(attack => attack[0] === 13 || attack[0] === 14);
+            const recovery = reconstitutes
                 ? 'reconstitutes' : 'looks much better';
             await line(`${monsterName(monster, { capitalized: true })} ${recovery}!`);
         }
@@ -2781,7 +2778,7 @@ export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCur
     };
 }
 // C mon.c:mondead().
-export async function preventMonsterDeath(monster, { creditedKill, disintegrated = false, state = game, genocided = monsterSpeciesWasGenocided(monster, state), publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
+export async function preventMonsterDeath(monster, { creditedKill, disintegrated = false, state = game, genocided = !!((state.mvitals?.[monster?.mnum]?.mvflags ?? 0) & G_GENOD), publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
     requireLiveGame(state);
     monster.mhp = 0;
     const amulet = wornMonsterLifeSaver(monster);
@@ -2802,78 +2799,8 @@ export async function preventMonsterDeath(monster, { creditedKill, disintegrated
         monster, survived: false, messageShown: false, completedDeath: null,
     };
 }
-// C mon.c:mondead() tests the dying species against the genocide flag.
-function monsterSpeciesWasGenocided(monster, state = game) {
-    return !!((state.mvitals?.[monster?.mnum]?.mvflags ?? 0) & G_GENOD);
-}
-// C mon.c:vamprises() constructs the old-form description.
-function vampireRiseAction(monster, disintegrated, unaware, state) {
-    const unusualBody = monsterIsNonliving(monster.mnum)
-        || monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster);
-    const reconstitutes = disintegrated
-        || monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster);
-    const oldSubject = monsterName(monster, {
-        state, adjective: unusualBody ? '' : 'seemingly dead',
-        suppressInvisible: true, suppressSaddle: false, augmentIt: true,
-    });
-    const action = reconstitutes ? 'reconstitutes' : 'transforms';
-    const description = `${unaware ? 'you dream that ' : ''}${oldSubject} ${unaware ? '' : 'suddenly '}${action} and rises as`;
-    return description.charAt(0).toUpperCase() + description.slice(1);
-}
-// C mon.c:vamprises() destroys a closed door under the reverted vampire.
-async function smashDoorUnderVampire(monster, x, y, { visible, spotted, unaware, state, publish, rollOne, random, }) {
-    const door = state.level?.at?.(x, y);
-    if (!door || !closedDoor(state, x, y)) {
-        return { monster, survived: true, messageShown: false, completedDeath: null };
-    }
-    const trapped = !!((door.doormask ?? 0) & D_TRAPPED);
-    let message = null;
-    if (!visible) {
-        message = trapped
-            ? formatHeardMessage('an explosion.', state) : formatHeardMessage('a door being smashed.', state);
-    }
-    else if (visible && !spotted) {
-        message = formatSeenMessage(trapped ? 'a door exploding.' : 'a door being smashed.', state);
-    }
-    else if (visible && spotted && !unaware) {
-        message = trapped
-            ? 'The door is smashed and it explodes!'
-            : 'The door is smashed.';
-    }
-    if (message)
-        await publish(message);
-    door.doormask = D_NODOOR;
-    if (state === game)
-        vision_note_blocker_change(x, y);
-    if (!trapped) {
-        return { monster, survived: true, messageShown: !!message, completedDeath: null };
-    }
-    const verbose = state.flags.verbose;
-    let trap;
-    state.flags.verbose = false;
-    try {
-        trap = await triggerMonsterDoorTrap(monster, visible, { state, publish, rollOne, random });
-    }
-    finally {
-        if (verbose === undefined)
-            delete state.flags.verbose;
-        else
-            state.flags.verbose = verbose;
-    }
-    if (trap.heroDied)
-        return {
-            monster, survived: !trap.killed, messageShown: !!message,
-            completedDeath: trap.death, heroDied: true,
-        };
-    const showDeath = trap.killed && canSpotMonster(monster) && !heroIsUnaware(state);
-    if (showDeath) {
-        await publish(`${monsterName(monster, { state, capitalized: true })} is destroyed!`);
-    }
-    return { monster, survived: !trap.killed,
-        messageShown: !!message || showDeath, completedDeath: trap.death };
-}
 // C mon.c:vamprises(): a killed shapeshifted vampire reverts to its base
-// form and rises instead of dying, smashing a closed door in the way.
+// form and rises instead of dying, smashing any closed door in the way.
 async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, state, publish, random, rollOne, }) {
     const baseMnum = typeof monster.cham === 'number' && Number.isInteger(monster.cham)
         ? monster.cham : NON_PM;
@@ -2885,7 +2812,19 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
     const x = monster.mx;
     const y = monster.my;
     const unaware = heroIsUnaware(state);
-    const riseAction = vampireRiseAction(monster, disintegrated, unaware, state);
+    // Construct the 'before' argument to pass to pline(); alternate message
+    // phrasing for some monster types.
+    const unusualBody = monsterIsNonliving(monster.mnum)
+        || monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster);
+    const reconstitutes = disintegrated
+        || monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster);
+    const oldSubject = monsterName(monster, {
+        state, adjective: unusualBody ? '' : 'seemingly dead',
+        suppressInvisible: true, suppressSaddle: false, augmentIt: true,
+    });
+    const action = reconstitutes ? 'reconstitutes' : 'transforms';
+    const description = `${unaware ? 'you dream that ' : ''}${oldSubject} ${unaware ? '' : 'suddenly '}${action} and rises as`;
+    const riseAction = description.charAt(0).toUpperCase() + description.slice(1);
     monster.dead = false;
     monster.mcanmove = 1;
     monster.mfrozen = 0;
@@ -2929,17 +2868,64 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
         await publish(`${riseAction} ${newName}!`);
         messageShown = true;
     }
-    const door = await smashDoorUnderVampire(monster, x, y, {
-        visible: state === game ? cansee(x, y) : visible,
-        spotted: spottedAfter,
-        unaware,
-        state,
-        publish,
-        rollOne,
-        random,
-    });
-    if (door.heroDied)
-        return door;
+    // The revived vampire is in its normal shape, so it cannot be amorphous;
+    // if it rose on a closed door spot, destroy the door, and blow it up
+    // when trapped.
+    const doorVisible = state === game ? cansee(x, y) : visible;
+    let doorSurvived = true;
+    let doorMessageShown = false;
+    let doorDeath = null;
+    const door = state.level?.at?.(x, y);
+    if (door && closedDoor(state, x, y)) {
+        const trapped = !!((door.doormask ?? 0) & D_TRAPPED);
+        let message = null;
+        if (!doorVisible) {
+            message = trapped
+                ? formatHeardMessage('an explosion.', state) : formatHeardMessage('a door being smashed.', state);
+        }
+        else if (doorVisible && !spottedAfter) {
+            message = formatSeenMessage(trapped ? 'a door exploding.' : 'a door being smashed.', state);
+        }
+        else if (doorVisible && spottedAfter && !unaware) {
+            message = trapped
+                ? 'The door is smashed and it explodes!'
+                : 'The door is smashed.';
+        }
+        if (message)
+            await publish(message);
+        door.doormask = D_NODOOR;
+        if (state === game)
+            vision_note_blocker_change(x, y);
+        if (trapped) {
+            const verbose = state.flags.verbose;
+            let trap;
+            state.flags.verbose = false;
+            try {
+                trap = await triggerMonsterDoorTrap(monster, doorVisible, { state, publish, rollOne, random });
+            }
+            finally {
+                if (verbose === undefined)
+                    delete state.flags.verbose;
+                else
+                    state.flags.verbose = verbose;
+            }
+            if (trap.heroDied)
+                return {
+                    monster, survived: !trap.killed, messageShown: !!message,
+                    completedDeath: trap.death, heroDied: true,
+                };
+            const showDeath = trap.killed && canSpotMonster(monster) && !heroIsUnaware(state);
+            if (showDeath) {
+                await publish(`${monsterName(monster, { state, capitalized: true })} is destroyed!`);
+            }
+            doorSurvived = !trap.killed;
+            doorMessageShown = !!message || showDeath;
+            doorDeath = trap.death;
+        }
+        else {
+            doorMessageShown = !!message;
+        }
+    }
     if (state === game) {
         // mon.c:vamprises() redraws only the death square: expels() has
         // already moved a swallower with mnexto() and newcham() drew the
@@ -2947,8 +2933,10 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
         await newsym(x, y);
     }
     return {
-        ...door,
-        messageShown: messageShown || door.messageShown,
+        monster,
+        survived: doorSurvived,
+        messageShown: messageShown || doorMessageShown,
+        completedDeath: doorDeath,
     };
 }
 export function monsterDeathCount(mnum, state = game) {
@@ -3560,7 +3548,42 @@ export async function restoreShapechanger(monster, publish) {
     if (VAMPIRE_FORMS.has(baseForm)) {
         if (baseForm === monster.mnum || speciesWasGenocided(baseForm, game))
             return null;
-        return await reviveStonedVampire(monster, baseForm, publish);
+        // A shifted vampire falls in its current form, then silently
+        // resumes its vampire form and rises instead of petrifying.
+        // Construct the message before the transformation.
+        const posture = monsterIsAmorphous(monster) ? 'coalesces on the'
+            : monsterIsFlyer(monster.mnum) ? 'drops to the'
+                : 'writhes on the';
+        const fall = `The lapidifying ${monsterName(monster, {
+            article: 'none', suppressSaddle: true, suppressHallucination: true,
+            suppressInvisible: true, suppressIt: true,
+        })} ${posture} ${surfaceName(monster.mx, monster.my)}`;
+        restoreRevertedMonsterHealth(monster);
+        if (engulfing_u(monster)) {
+            const expulsion = await expelHero(monster, { message: false, publish });
+            if (expulsion.died)
+                return { changed: true, heroDied: true };
+        }
+        const location = game.level?.at(monster.mx, monster.my);
+        if (monsterIsAmorphous(monster) && location?.typ === DOOR
+            && (location.doormask ?? 0) & (D_CLOSED | D_LOCKED)) {
+            const spot = enexto(baseForm, monster.mx, monster.my);
+            if (spot)
+                await relocateMonsterTo(monster, spot.x, spot.y);
+        }
+        if (canSpotMonster(monster)) {
+            await publish(`${fall}!`);
+            await displayMessageWindow();
+        }
+        const change = await changeMonsterForm(monster, baseForm, game, { publish });
+        if (change?.heroDied)
+            return change;
+        monster.cham = monster.mnum === baseForm ? -1 : baseForm;
+        if (canSpotMonster(monster)) {
+            await publish(`${monsterName(monster, { article: 'a', capitalized: true })} rises from the ${surfaceName(monster.mx, monster.my)} with renewed agility!`);
+        }
+        await newsym(monster.mx, monster.my);
+        return { changed: true, heroDied: false };
     }
     if (!monsterHasStoneResistance({ mnum: baseForm }))
         return null;
@@ -3581,43 +3604,6 @@ function restoreRevertedMonsterHealth(monster) {
     // C mon.c:set_mon_min_mhpmax(mtmp, 10).
     monster.mhpmax = Math.max(monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10);
     monster.mhp = monster.mhpmax;
-}
-// C mon.c:vamp_stone(): a shifted vampire falls in its current form, then
-// silently resumes its vampire form and rises instead of petrifying.
-async function reviveStonedVampire(monster, baseForm, publish) {
-    const posture = monsterIsAmorphous(monster) ? 'coalesces on the'
-        : monsterIsFlyer(monster.mnum) ? 'drops to the'
-            : 'writhes on the';
-    const fall = `The lapidifying ${monsterName(monster, {
-        article: 'none', suppressSaddle: true, suppressHallucination: true,
-        suppressInvisible: true, suppressIt: true,
-    })} ${posture} ${surfaceName(monster.mx, monster.my)}`;
-    restoreRevertedMonsterHealth(monster);
-    if (engulfing_u(monster)) {
-        const expulsion = await expelHero(monster, { message: false, publish });
-        if (expulsion.died)
-            return { changed: true, heroDied: true };
-    }
-    const location = game.level?.at(monster.mx, monster.my);
-    if (monsterIsAmorphous(monster) && location?.typ === DOOR
-        && (location.doormask ?? 0) & (D_CLOSED | D_LOCKED)) {
-        const spot = enexto(baseForm, monster.mx, monster.my);
-        if (spot)
-            await relocateMonsterTo(monster, spot.x, spot.y);
-    }
-    if (canSpotMonster(monster)) {
-        await publish(`${fall}!`);
-        await displayMessageWindow();
-    }
-    const change = await changeMonsterForm(monster, baseForm, game, { publish });
-    if (change?.heroDied)
-        return change;
-    monster.cham = monster.mnum === baseForm ? -1 : baseForm;
-    if (canSpotMonster(monster)) {
-        await publish(`${monsterName(monster, { article: 'a', capitalized: true })} rises from the ${surfaceName(monster.mx, monster.my)} with renewed agility!`);
-    }
-    await newsym(monster.mx, monster.my);
-    return { changed: true, heroDied: false };
 }
 // Clears the worn, wielded and carried links of an object taken from a
 // monster's inventory, e.g. when stoning moves it into a statue.
@@ -3866,10 +3852,12 @@ export async function releaseHeroFromMonster(monster, { state = game, publish = 
     if (!monster.mspec_used && canHold)
         monster.mspec_used = rollOne(2);
 }
-// C mon.c:unstuck() sets vision_full_recalc and calls docrt() directly; it
-// never rebuilds the blocker table, so docrt()'s vision_recalc(2) pass still
-// scans the previous vision's row bounds and newsym()s each formerly lit
-// cell (drawing warning flashes for unseen-but-warned monsters there).
+// Part of C mon.c:unstuck(): the docrt() redraw of a released swallower's
+// square. unstuck() sets vision_full_recalc and calls docrt() directly; it
+// never rebuilds the blocker table, so docrt()'s vision_recalc(2) pass
+// still scans the previous vision's row bounds and newsym()s each formerly
+// lit cell (drawing warning flashes for unseen-but-warned monsters there).
+// Shared with the expels() port as its default redraw.
 export async function redrawAfterRelease() {
     await docrt();
 }
@@ -4458,15 +4446,8 @@ export async function initialShapechangedBirth(monster) {
     await refreshNewMonsterFormPerception(changed, game, plineWithContinuation);
     return changed;
 }
-// C mon.c:newcham() names the changed form with an x_monnam() call whose
-// saddle is always suppressed.
-export function monsterFormChangeName(monster, { state = game } = {}) {
-    requireLiveGame(state);
-    const name = formatMonsterName(monster, state, {
-        article: 'your', suppressSaddle: true,
-    });
-    return name.charAt(0).toUpperCase() + name.slice(1);
-}
+// C mon.c:newcham(): make a chameleon take on another shape, or a
+// polymorph target become a different monster.
 export async function changeMonsterForm(monster, forcedTargetMnum = null, state = game, { showMessage = false, publish = plineWithContinuation, finishDeath = (target, options) => finishEnvironmentalMonsterDeath(target, state, options), creditHero = !state.context?.mon_moving, polyspot = false, } = {}) {
     requireLiveGame(state);
     let baseMnum = monster.cham !== undefined
@@ -4483,7 +4464,15 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
     }
     const oldMnum = monster.mnum;
     const wasSpotted = canSpotMonster(monster);
-    const oldSubject = showMessage ? monsterFormChangeName(monster, { state }) : null;
+    // The "oldmon" of the transformation message, capitalized and possibly
+    // an assigned name; the saddle is always suppressed.
+    let oldSubject = null;
+    if (showMessage) {
+        const name = formatMonsterName(monster, state, {
+            article: 'your', suppressSaddle: true,
+        });
+        oldSubject = name.charAt(0).toUpperCase() + name.slice(1);
+    }
     const oldName = monsterName(monster, { state });
     const oldWasFluid = monsterIsAmorphous(monster) || monsterIsWhirly(monster);
     let targetMnum = forcedTargetMnum;
@@ -4646,8 +4635,9 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
         message,
     };
 }
-// C mon.c:newcham() tail. A form changed during monster movement gets a
-// fresh chance to locate the hero, then tests fear using that new body.
+// Part of C mon.c:newcham(): the mon_moving tail, where the changed form
+// gets a fresh chance to locate the hero and then tests fear in its new
+// body. Also run for a shapechanger's initial shifted birth.
 async function refreshNewMonsterFormPerception(monster, state, publish) {
     if (!state.context.mon_moving)
         return;
