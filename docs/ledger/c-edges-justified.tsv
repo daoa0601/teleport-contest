@@ -303,7 +303,7 @@ dowatersnakes	rndmonnam	inlined	hallucinatedPlural (cmd.ts)
 drop	float_down	inlined	finishLevitatingArtifactDrop (artifact.ts)
 drop	welded	n/a	canletgo() already rejects a welded weapon
 add_damage	alloc	n/a	damage records are state objects
-add_damage	in_rooms	inlined	shopRoomnosAt (shk.ts)
+add_damage	in_rooms	inlined	roomsAt(state.level, x, y, SHOPBASE) inline (shk.ts)
 add_damage	shop_keeper	inlined	shopKeeper resident lookup (shk.ts)
 add_one_tobill	add_to_billobjs	inlined	bill object list append (shk.ts)
 altar_wrath	change_luck	inlined	changeLuck roll (pray.ts)
@@ -998,12 +998,12 @@ act_on_act	cmdq_add_key	inlined	queueCommandResponses with key codes (cmd.ts con
 act_on_act	cmdq_add_userinput	inlined	'user-input' response entries (cmd.ts contextMenuResponses)
 act_on_act	sgn	inlined	Math.sign of the click offset (cmd.ts contextMenuResponses)
 act_on_act	xytodir	n/a	direction object {dx,dy,dz} carries the sign directly (cmd.ts)
-findtravelpath	distmin	inlined	travelDistance max-metric helper (cmd.ts)
-findtravelpath	selection_getpoint	inlined	travel bitmap replaced by the searchTravelPath distance map (cmd.ts)
-findtravelpath	selection_new	inlined	distance Map allocation (cmd.ts searchTravelPath)
-findtravelpath	selection_setpoint	inlined	visited/radius entries set on the distance map (cmd.ts searchTravelPath)
+findtravelpath	distmin	inlined	travelDistance max-metric helper (hack.ts findtravelpath)
+findtravelpath	selection_getpoint	inlined	travel bitmap replaced by the inline noguess distance map (hack.ts findtravelpath)
+findtravelpath	selection_new	inlined	distance Map allocation (hack.ts findtravelpath)
+findtravelpath	selection_setpoint	inlined	visited/radius entries set on the distance map (hack.ts findtravelpath)
 findtravelpath	sgn	inlined	Math.sign toward the target (hack.ts findtravelpath)
-findtravelpath	sobj_at	inlined	travelBoulderAt checks the boulder on a path cell (cmd.ts searchTravelPath)
+findtravelpath	sobj_at	inlined	travelBoulderAt checks the boulder on a path cell (hack.ts findtravelpath)
 findtravelpath	tmp_at	n/a	DEBUG-only iflags.trav_debug path visualization
 savebones	alloc	n/a	memory allocation
 savebones	compress_bonesfile	n/a	bones file compression
