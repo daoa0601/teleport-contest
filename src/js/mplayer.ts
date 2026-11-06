@@ -10,8 +10,8 @@ import {
     SHORT_SWORD, SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD, UNICORN_HORN, WAR_HAMMER,
     YELLOW_DRAGON_SCALE_MAIL,
 } from './object_data.js';
-import { artifactById, createRandomArtifact } from './artifact.js';
-import { COLNO, ROWNO, In_endgame, MM_NOMSG, RLOC_ERR, RLOC_NOMSG } from './const.js';
+import { artifactById, mk_artifact } from './artifact.js';
+import { A_NONE, COLNO, ROWNO, In_endgame, MM_NOMSG, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject, setMonsterMalign } from './makemon.js';
 import { mkobj, mksobj, blessObjectState, curseObject, objectWeight } from './mkobj.js';
@@ -175,7 +175,7 @@ async function givePlayerWeapon(monster: Monster, type: number, special: boolean
     object.spe = special ? rn1(5, 4) : rn2(4);
     if (!rn2(3)) object.oerodeproof = true;
     else if (!rn2(2)) object.greased = true;
-    if (special && rn2(2)) createRandomArtifact(object, { maximumValue: 99, adjustEnchantment: false });
+    if (special && rn2(2)) await mk_artifact({ object, alignment: A_NONE }, 99, false);
     if (objectMerge(object.otyp) && !object.oartifact && monsterMightThrowWeapon(object)) {
         object.quan += rn2(is_spear(object) ? 4 : 8);
         object.quantity = object.quan;

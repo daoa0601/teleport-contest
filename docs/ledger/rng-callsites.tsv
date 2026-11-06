@@ -89,11 +89,10 @@ src/js/artifact.ts	invokeBlindingRay	rnd	"[""damage""]"	constant
 src/js/artifact.ts	invokeFlingPoison	rn2	"[""2""]"	constant
 src/js/artifact.ts	artifactDamageBonus	roll	"[""artifact.attack.damageDie""]"	guarded
 src/js/artifact.ts	artifactToHitBonus	roll	"[""artifact.attack.toHitDie""]"	unproved
-src/js/artifact.ts	createArtifactGift	rn2	"[""2""]"	constant
-src/js/artifact.ts	createArtifactGift	rn2	"[""3""]"	constant
-src/js/artifact.ts	createArtifactGift	rn2	"[""4""]"	constant
-src/js/artifact.ts	createArtifactGift	rn2	"[""choices.length""]"	guarded
-src/js/artifact.ts	createRandomArtifact	rn2	"[""candidates.length""]"	guarded
+src/js/artifact.ts	mk_artifact	rn2	"[""2""]"	constant
+src/js/artifact.ts	mk_artifact	rn2	"[""3""]"	constant
+src/js/artifact.ts	mk_artifact	rn2	"[""4""]"	constant
+src/js/artifact.ts	mk_artifact	rn2	"[""choices.length""]"	guarded
 src/js/artifact.ts	resolveHeroArtifactTouch	rn2	"[""4""]"	constant
 src/js/artifact.ts	rollHeroArtifactBlast	d	"[""antimagic ? 2 : 4"", ""artifact.selfWilled ? 10 : 4""]"	constant
 src/js/artifact.ts	rollHeroArtifactBlast	rnd	"[""10""]"	constant

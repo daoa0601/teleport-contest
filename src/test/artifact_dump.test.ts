@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-    artifactByName, artifactInfoLines, createRandomArtifact, initializeArtifacts,
+    artifactByName, artifactInfoLines, initializeArtifacts, mk_artifact,
     setArtifactOrigin, uncreateArtifact,
 } from '../js/artifact.js';
+import { A_NONE } from '../js/const.js';
 import { prepareBonesObjectForRestore } from '../js/bones_object.js';
 import { grantPrayerFavor } from '../js/pray.js';
 import { game } from '../js/gstate.js';
@@ -52,7 +53,7 @@ void test('an artifact gift replaces its random origin and resets knowledge when
     const magicbane = artifactByName('Magicbane');
     assert.ok(magicbane);
     const athame = await mksobj(magicbane.baseType, false, false);
-    createRandomArtifact(athame);
+    await mk_artifact({ object: athame, alignment: A_NONE }, 99, true);
     assert.ok(athame.oartifact, 'An athame can become Magicbane');
 
     setArtifactOrigin(athame, 'gift', { knownOrigin: true });
@@ -91,14 +92,14 @@ void test('uncreating an artifact clears its dump flags before a replacement is 
     const magicbane = artifactByName('Magicbane');
     assert.ok(magicbane);
     const athame = await mksobj(magicbane.baseType, false, false);
-    createRandomArtifact(athame);
+    await mk_artifact({ object: athame, alignment: A_NONE }, 99, true);
     setArtifactOrigin(athame, 'gift', { knownOrigin: true });
 
     assert.equal(uncreateArtifact(athame), true);
 
     assert.match(dumpLine('Magicbane'), /\[\]$/);
 
-    createRandomArtifact(athame);
+    await mk_artifact({ object: athame, alignment: A_NONE }, 99, true);
 
     assert.match(dumpLine('Magicbane'), /\[exists; random\]$/);
 });

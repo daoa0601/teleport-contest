@@ -7,11 +7,11 @@ import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, WAND_CLASS } from './objclass.js'
 import { OBJ_DESCR } from './o_init.js';
 import { OBJ_NAME, objectClassForType, objectSkill, objectUnique, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL, BELL_OF_OPENING, LEASH, } from './object_data.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
-import { ENL_GAMEINPROGRESS, MAGICENLIGHTENMENT, P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP, NECK, LL_ARTIFACT, } from './const.js';
+import { ENL_GAMEINPROGRESS, MAGICENLIGHTENMENT, P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, A_NONE, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP, NECK, LL_ARTIFACT, } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm, mbodypart } from './polyself.js';
 import { heroHasDrainResistance, removeEyewear } from './do_wear.js';
-import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
+import { game, requirePlayingGame, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { insideShopRoomAt } from './shk.js';
 import { mksobj, objectWeight, objectQuantity, isContainer, uncurseObjectState } from './mkobj.js';
 import { races, roles } from './role.js';
@@ -349,74 +349,102 @@ export function discoverArtifact(id, state = game) {
     if (!discoveries.includes(id))
         discoveries.push(id);
 }
-// C mk_artifact() without an alignment: convert an existing object.
-export function createRandomArtifact(object, { maximumValue = 99, adjustEnchantment = true, state = game, } = {}) {
-    if (objectUnique(object.otyp))
-        return object;
-    const candidates = artifactList(state).filter((artifact) => artifact.baseType === object.otyp &&
-        !artifact.noGeneration &&
-        !state._artifactExists?.has(artifact.id) &&
-        (artifact.giftValue <= maximumValue || artifact.role === state.urole?.key));
-    if (!candidates.length)
-        return object;
-    const artifact = candidates[rn2(candidates.length)];
-    if (!artifact)
-        throw new Error('Artifact selection requires a candidate');
-    return finishArtifactGeneration(object, artifact, adjustEnchantment, state);
-}
-// C artifact.c:mk_artifact(): the shared naming, erosion reset and
-// optional enchantment adjustment after selecting an artifact.
-function finishArtifactGeneration(object, artifact, adjustEnchantment, state) {
-    object.oeroded = object.oeroded2 = 0;
-    nameArtifact(object, artifact, { state });
-    if (adjustEnchantment) {
-        const enchantment = object.spe + artifact.generationEnchantment;
-        if (enchantment >= -10 && enchantment < 10)
-            object.spe = enchantment;
-    }
-    return object;
-}
-// C artifact.c:mk_artifact(), when choosing a divine gift by alignment.
-export async function createArtifactGift(alignment, maximumValue, state = game) {
-    requirePlayingGame(state);
-    const candidates = [];
+// C artifact.c:mk_artifact().  Make an artifact.  With an alignment, an
+// object of the appropriate alignment is created from scratch, or null is
+// returned if none is available; with A_NONE, the passed object is converted
+// into an artifact of matching type, or returned as-is if that's not
+// possible.  max_giftvalue is the value of the sacrifice for an artifact
+// obtained by sacrificing, or 99 otherwise.
+export async function mk_artifact(source, maxGiftValue, adjustSpe, state = game) {
+    const byAlign = source.alignment !== A_NONE;
+    const otmp = source.object;
+    const oTyp = byAlign || !otmp ? 0 : otmp.otyp;
+    const unique = !byAlign && !!otmp && !!objectUnique(oTyp);
+    // The divine-gift caller (pray.c) always plays a started game; the
+    // conversion callers (mkobj.c, mplayer.c) also run before the hero exists.
+    const playing = byAlign ? requireInitializedGame(state) : null;
+    const skills = byAlign ? ensureHeroSkills(state) : null;
+    const eligible = [];
     const fallback = [];
-    const skills = ensureHeroSkills(state);
+    /* gather eligible artifacts */
     for (const artifact of artifactList(state)) {
-        if (state._artifactExists?.has(artifact.id) || artifact.noGeneration)
+        if (state._artifactExists?.has(artifact.id))
             continue;
-        const roleGift = artifact.role === state.urole?.key;
-        if (artifact.giftValue > maximumValue && !roleGift)
+        if (artifact.noGeneration || unique)
             continue;
-        if (artifact.alignment !== null && artifact.alignment !== alignment)
+        if (artifact.giftValue > maxGiftValue && artifact.role !== state.urole?.key)
             continue;
-        const artifactRace = races.find((race) => race.name === artifact.race);
-        if (artifactRace && artifactRace.selfmask & state.urace.hatemask)
-            continue;
-        if (roleGift) {
-            candidates.length = 0;
-            candidates.push(artifact);
-            break;
+        if (!byAlign) {
+            /* looking for a particular type of item; not producing a
+               divine gift so we don't care about role's first choice */
+            if (artifact.baseType === oTyp)
+                eligible.push(artifact);
+            continue; /* move on to next possibility */
         }
+        /* we're looking for an alignment-specific item
+           suitable for hero's role+race */
+        if (artifact.alignment !== null && artifact.alignment !== source.alignment)
+            continue;
+        /* avoid enemies' equipment */
+        const artifactRace = races.find((race) => race.name === artifact.race);
+        if (artifactRace && playing && artifactRace.selfmask & playing.urace.hatemask)
+            continue;
+        /* when a role-specific first choice is available, use it */
+        if (artifact.role === state.urole?.key) {
+            /* make this be the only possibility in the list */
+            eligible.length = 0;
+            eligible.push(artifact);
+            break; /* skip all other candidates */
+        }
+        /* check if this is skill-compatible */
         const weapon = objectClassForType(artifact.baseType) === WEAPON_CLASS;
         const skill = Math.abs(objectSkill(artifact.baseType));
-        const compatibility = weapon ? (skills?.[skill]?.maxSkill ?? 0) : P_SKILLED;
+        const skillCompatibility = weapon ? skills?.[skill]?.maxSkill ?? 0 : P_SKILLED;
+        /* right alignment, or non-aligned with at least one previous gift
+           bestowed, makes this one viable; unaligned artifacts are possible
+           even as the first gift, but less likely; if it's a bad weapon type
+           for the role that also makes it less likely */
         if ((artifact.alignment !== null || (state.u.ugifts ?? 0) > 0 || !rn2(3)) &&
-            (!rn2(4) || compatibility >= P_SKILLED || (compatibility >= P_BASIC && rn2(2)))) {
-            candidates.push(artifact);
+            (!rn2(4) || skillCompatibility >= P_SKILLED || (skillCompatibility >= P_BASIC && rn2(2)))) {
+            eligible.push(artifact);
         }
-        else if (!candidates.length) {
+        else if (!eligible.length) {
+            /* if no candidates have been found yet, record this one as a
+               fallback possibility in case all aligned candidates have been
+               used up or failed the randomized compatibility checks */
             fallback.push(artifact);
         }
     }
-    const choices = candidates.length ? candidates : fallback;
-    if (!choices.length)
-        return null;
+    /* resort to fallback list if main list was empty */
+    const choices = eligible.length ? eligible : fallback;
+    if (!choices.length) {
+        /* nothing appropriate could be found; return original object */
+        return byAlign ? null : otmp;
+    }
+    /* found at least one candidate; pick one at random */
     const artifact = choices[rn2(choices.length)];
     if (!artifact)
-        throw new Error('Artifact gift selection requires a candidate');
-    const object = await mksobj(artifact.baseType, true, false);
-    return finishArtifactGeneration(object, artifact, true, state);
+        throw new Error('Artifact selection requires a candidate');
+    let object = otmp;
+    if (byAlign) {
+        /* make an appropriate object if necessary, then christen it */
+        object = await mksobj(artifact.baseType, true, false);
+    }
+    if (!object)
+        throw new Error('Converting an object into an artifact requires the object');
+    /* prevent erosion from generating */
+    object.oeroded = object.oeroded2 = 0;
+    nameArtifact(object, artifact, { state });
+    /* set existence and reason for creation bits; 'random' is default */
+    if (adjustSpe) {
+        /* Adjust object.spe by generationEnchantment (a no-op for
+           non-weapons). The result is clamped into the normal range to
+           prevent an outside chance of +12 artifacts generating. */
+        const newSpe = object.spe + artifact.generationEnchantment;
+        if (newSpe >= -10 && newSpe < 10)
+            object.spe = newSpe;
+    }
+    return object;
 }
 // C artifact.c:defends(): the artifact's own defn field resists this
 // damage type.  C also converts dragon scale mail to scales by color here;
@@ -632,20 +660,25 @@ export function rollHeroArtifactBlast(object, artifact, state = game) {
     return damage;
 }
 const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
-// C artifact.c:is_magic_key(). Master Key of Thievery, keyed to rogues.
-export function isMonsterMagicKey(monster, object, state = game) {
+// C artifact.c:is_magic_key(). The Master Key of Thievery is magic when not
+// cursed for a rogue — the hero's role, or a rogue monster — and must be
+// blessed for anyone else.
+export function isMagicKey(carrier, object, state = game) {
     if (artifactById(object.oartifact, state)?.name !== 'The Master Key of Thievery')
         return false;
-    return monster.mnum === PM_ROGUE ? !object.cursed : !!object.blessed;
+    const rogue = 'youmonst' in carrier
+        ? state.urole?.key === 'rogue'
+        : carrier.monster.mnum === PM_ROGUE;
+    return rogue ? !object.cursed : !!object.blessed;
 }
-// C artifact.c:has_magic_key(), for the hero's inventory.
-export function heroHasMagicKey(state = game) {
-    return state.inventory.some(object => artifactById(object.oartifact, state)?.name === 'The Master Key of Thievery'
-        && (state.urole?.key === 'rogue' ? !object.cursed : object.blessed));
-}
-// C artifact.c:has_magic_key(), for a monster's inventory.
-export function monsterHasMagicKey(monster, state = game) {
-    return (monster.minvent || []).some(object => isMonsterMagicKey(monster, object, state));
+// C artifact.c:has_magic_key(). Whether 'mon' (usually youmonst) carries
+// the magic key. C walks only objects of the key's otyp with nxtobj(); the
+// artifact identity test in isMagicKey() subsumes that filter.
+export function hasMagicKey(carrier, state = game) {
+    const inventory = 'youmonst' in carrier
+        ? state.inventory
+        : carrier.monster.minvent || [];
+    return inventory.some(object => isMagicKey(carrier, object, state));
 }
 // C artifact.c:set_artifact_intrinsic(). Each artifact contributes its own
 // property source, so removing one item preserves other carried sources.

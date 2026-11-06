@@ -596,7 +596,7 @@ missmm	noises	inlined	monster sound feedback on a miss (mhitm.ts)
 missmm	pre_mm_attack	inlined	attack bookkeeping before the miss (mhitm.ts)
 mk_trap_statue	sgn	inlined	Math.sign alignment match for the statue (mklev.ts)
 mklev	reseed_random	n/a	reseed_random is a no-op without a strong OS seed; session seeds are fixed
-mksobj_init	permapoisoned	inlined	nameArtifact poisons fling-poison artifacts (mkobj.ts calls artifact.ts:createRandomArtifact)
+mksobj_init	permapoisoned	inlined	nameArtifact poisons fling-poison artifacts (mkobj.ts calls artifact.ts:mk_artifact)
 mkstairs	glyph_to_cmap	n/a	only inside an impossible() diagnostic
 movemon	any_light_source	inlined	hasLightSources forces a vision recalc (mon.ts)
 movemon	clear_bypasses	inlined	clearBypasses after the pass (mon.ts)

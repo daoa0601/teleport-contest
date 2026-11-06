@@ -23,7 +23,7 @@ import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, newsym } fro
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
 import { searches_for_item, find_offensive, use_offensive, find_defensive, use_defensive, find_misc, use_misc } from './muse.js';
-import { monsterHasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from './artifact.js';
+import { hasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from './artifact.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep, is_mercenary, is_minion, is_wanderer, likes_gems, likes_gold, likes_magic, likes_objs, metallivorous, monsterIsClinger, monsterPassesWalls, needspick, tunnels, monsterCanTeleport, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses, monsterHasNoAttacks, touchPetrifies, resistConflict, } from './mondata.js';
@@ -595,7 +595,7 @@ export async function resolveMonsterDoorPassage(monster, state, { canOpen, canUn
     if (location.typ !== DOOR || monsterPassesWalls(monster.mnum) || canTunnel)
         return { status: 'continue', heroDied: false };
     let trapped = !!(location.doormask & D_TRAPPED);
-    if (trapped && monsterHasMagicKey(monster, state)) {
+    if (trapped && hasMagicKey({ monster }, state)) {
         location.doormask &= ~D_TRAPPED;
         trapped = false;
     }

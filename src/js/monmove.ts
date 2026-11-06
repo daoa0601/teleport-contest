@@ -56,7 +56,7 @@ import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, newsym } fro
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
 import { searches_for_item, find_offensive, use_offensive, find_defensive, use_defensive, find_misc, use_misc } from './muse.js';
-import { monsterHasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from './artifact.js';
+import { hasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from './artifact.js';
 
 import type { MonsterConsumptionOptions, MonsterDeathResult } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
@@ -777,7 +777,7 @@ export async function resolveMonsterDoorPassage(monster: Monster, state: Playing
         return { status: 'continue', heroDied: false };
 
     let trapped = !!(location.doormask & D_TRAPPED);
-    if (trapped && monsterHasMagicKey(monster, state)) {
+    if (trapped && hasMagicKey({ monster }, state)) {
         location.doormask &= ~D_TRAPPED;
         trapped = false;
     }
