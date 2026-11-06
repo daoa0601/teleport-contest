@@ -24,7 +24,7 @@ import { showInventoryWindow } from './windows.js';
 import { pendingArmorAction, armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning, applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor, isBeingTakenOff, finishArmorRemoval, heroHasSlipperyHands, slipFromSlipperyHands } from './do_wear.js';
 import { dosounds, sessionIsNight } from './sounds.js';
 import { warnWithMasterKey, applyArtifactHit, findArtifact } from './artifact.js';
-import { regenerateHeroHp } from './hero_regeneration.js';
+import { isPoolAt } from './dbridge.js';
 import { consumeMonsterItem } from './mthrowu.js';
 import { heroCanTeleport, randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
@@ -33,7 +33,7 @@ import { askKeepRestoredSave } from './save.js';
 import { finishScheduledLevelChange } from './do.js';
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion, monsterIsAnimal, monsterIsNonliving, heroHasOlfaction } from './mondata.js';
+import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion, monsterIsAnimal, monsterIsNonliving, heroHasOlfaction, monsterIsEel } from './mondata.js';
 import { MONSTER_GENO, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath, } from './end.js';
@@ -41,7 +41,7 @@ import { restoreMonsterCover, finishInUseInventory } from './restore.js';
 import { releaseObjectLeash, checkHeroLeashes, heroNextToLeashedFollowers } from './apply.js';
 import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, } from './object_data.js';
 import { heroIsUnaware } from './senses.js';
-import { heroSpecies, setHeroSpecies, feelingAfterSelfGenocide, heroHasBeenGenocided, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
+import { heroSpecies, setHeroSpecies, feelingAfterSelfGenocide, heroHasBeenGenocided, heroIsUnchanging, polymorphHero, returnHeroToHumanForm, heroIsBreathless } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { openHoldingTrap, igniteItems, petrifyMonsterImmediately, burnHeroArmorByFire, sinkHeroIntoLava, activateStatueTrapAt, } from './trap.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
@@ -522,6 +522,53 @@ async function regen_pw(wtcap, sourceTurn, state) {
             await interruptCountedActivity('You feel full of energy.');
     }
 }
+// C allmain.c:regen_hp(). Once-per-world-turn HP recovery.
+// The caller owns interrupt_multi() when this recovery reaches full health.
+export async function regenerateHeroHp(capacity, turn) {
+    const state = requireInitializedGame();
+    const hero = state.u;
+    if (hero.invulnerable)
+        return false;
+    const encumbranceAllowsRecovery = capacity < MOD_ENCUMBER || !hero.umoved;
+    const regeneration = propertyIsActive('regeneration', state);
+    const sleepingRecovery = propertyIsActive('sleepy', state) && !!hero.usleep;
+    const canRegenerate = regeneration || sleepingRecovery;
+    if (Upolyd(hero)) {
+        if (hero.mh < 1) {
+            await returnHeroToHumanForm(state);
+            return false;
+        }
+        let healing = 0;
+        if (monsterIsEel(heroSpecies(state))
+            && !isPoolAt(hero.ux, hero.uy, state) && !Is_waterlevel(hero.uz)
+            && !heroIsBreathless(state)) {
+            if (hero.mh > 1 && !regeneration && rn2(hero.mh) > rn2(8)
+                && (!propertyIsActive('halfPhysicalDamage', state) || turn % 2 === 0))
+                healing = -1;
+        }
+        else if (hero.mh < hero.mhmax
+            && (canRegenerate || encumbranceAllowsRecovery && turn % 20 === 0)) {
+            healing = 1;
+        }
+        if (!healing)
+            return false;
+        state.context.botl = true;
+        hero.mh += healing;
+        return hero.mh === hero.mhmax;
+    }
+    if (hero.uhp >= hero.uhpmax || !encumbranceAllowsRecovery && !canRegenerate)
+        return false;
+    let healing = Number(hero.ulevel + currentAttribute(A_CON, state) > rn2(100));
+    if (canRegenerate)
+        healing++;
+    if (sleepingRecovery)
+        healing++;
+    if (!healing)
+        return false;
+    state.context.botl = true;
+    hero.uhp = Math.min(hero.uhpmax, hero.uhp + healing);
+    return hero.uhp === hero.uhpmax;
+}
 async function runLevelRegionTurn() {
     const game = requireInitializedGame();
     return runLevelRegions(game, {
@@ -792,9 +839,9 @@ export function bindPlayStep(step) {
 // the once-per-hero-action tail, and the once-per-player-input part (vision,
 // botl, the occupation/multi/run handling and rhack()) all live in this one
 // function, as in C. The pieces C itself names stay named here too:
-// u_calc_moveamt(), maybe_generate_rnd_mon(), regen_pw() and
-// interrupt_multi() (as interruptCountedActivity()); regen_hp() lives in
-// hero_regeneration.ts and see_nearby_monsters() in mon.ts. hack.ts
+// u_calc_moveamt(), maybe_generate_rnd_mon(), regen_pw(), regen_hp() and
+// interrupt_multi() (as interruptCountedActivity()); see_nearby_monsters()
+// in mon.ts. hack.ts
 // continueRun() is the port's separate run/multi resumption step, and the
 // immobile-hero delay tail ends through hack.c:unmul() (finishHeroHelplessness).
 // The port keeps one entry split from this body: moveloop_core() below adds

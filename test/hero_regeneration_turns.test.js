@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { grantIntrinsicProperty, refreshProperty } from '../js/properties.js';
 import { MOD_ENCUMBER, Upolyd } from '../js/const.js';
-import { regenerateHeroHp } from '../js/hero_regeneration.js';
+import { regenerateHeroHp } from '../js/allmain.js';
 import { initRng } from '../js/rng.js';
 import { ROCK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

@@ -578,9 +578,6 @@ src/js/hero_potion_hit.ts	applyDirectHeroPotion	rollDice	"[""potion.cursed ? 2 :
 src/js/hero_potion_hit.ts	hitHeroWithThrownPotion	rollOne	"[""2""]"	constant
 src/js/dothrow.ts	hitMonsterWithRangedObject	rollOne	"[""20""]"	constant
 src/js/dothrow.ts	missRangedObject	rn2	"[""3""]"	constant
-src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""100""]"	constant
-src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""8""]"	constant
-src/js/hero_regeneration.ts	regenerateHeroHp	rn2	"[""hero.mh""]"	guarded
 src/js/artifact.ts	retouchHeroObject	rnd	"[""10""]"	constant
 src/js/artifact.ts	retouchHeroObject	rnd	"[""10""]"	constant
 src/js/zap.ts	elementalSelfZap	d	"[""12"", ""6""]"	constant

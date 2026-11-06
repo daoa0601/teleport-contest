@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { regenerateHeroHp } from '../js/hero_regeneration.js';
+import { regenerateHeroHp } from '../js/allmain.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
