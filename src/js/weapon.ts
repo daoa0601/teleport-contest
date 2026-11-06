@@ -8,7 +8,7 @@
 // u_init.c:skills_for_role()/restricted_spell_discipline() live in u_init.ts.
 
 import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
-import { is_spear } from './object_properties.js';
+import { greatestErosion, is_spear } from './object_properties.js';
 import { OBJ_NAME, oc_wldam, oc_wsdam,
     objectClassForType, objectBaseWeight, objectSkill, objectBimanual, AKLYS, AXE, BATTLE_AXE, BOULDER, BOW,
     BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE,
@@ -295,11 +295,6 @@ function enchantment(object: GameObject): number {
     return object.spe ?? object.enchantment ?? 0;
 }
 
-// C obj.h:greatest_erosion() macro: worst of fire and rot damage.
-function erosion(object: GameObject): number {
-    return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
-}
-
 function addWeaponEnchantment(object: GameObject, damage: number): number {
     const objectClass = object.oclass || objectClassForType(object.otyp);
     const weaponLike = objectClass === WEAPON_CLASS
@@ -373,7 +368,7 @@ function targetDamageBonus(
 }
 
 function applyErosion(object: GameObject, damage: number): number {
-    if (damage > 0) damage = Math.max(1, damage - erosion(object));
+    if (damage > 0) damage = Math.max(1, damage - greatestErosion(object));
     return damage;
 }
 

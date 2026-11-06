@@ -7,7 +7,7 @@
 // spell.c:skill_based_spellbook_id() lives in spell.ts (identifySpellbooks);
 // u_init.c:skills_for_role()/restricted_spell_discipline() live in u_init.ts.
 import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
-import { is_spear } from './object_properties.js';
+import { greatestErosion, is_spear } from './object_properties.js';
 import { OBJ_NAME, oc_wldam, oc_wsdam, objectClassForType, objectBaseWeight, objectSkill, objectBimanual, AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE, OBJECT_NAMES, ORCISH_BOW, PICK_AXE, SLING, YUMI, HEAVY_IRON_BALL, TIN_OPENER, TOWEL, TRIDENT, FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE, TIN, TOUCHSTONE, oc_hitbon, } from './object_data.js';
 import { bypassObject } from './worn.js';
 import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, AKLYS_LIM, A_STR, A_DEX, P_AXE, P_PICK_AXE, Upolyd, WT_IRON_BALL_INCR, P_FLAIL, MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, STR18, HAND } from './const.js';
@@ -224,10 +224,6 @@ function damageProfile(object, monster) {
 function enchantment(object) {
     return object.spe ?? object.enchantment ?? 0;
 }
-// C obj.h:greatest_erosion() macro: worst of fire and rot damage.
-function erosion(object) {
-    return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
-}
 function addWeaponEnchantment(object, damage) {
     const objectClass = object.oclass || objectClassForType(object.otyp);
     const weaponLike = objectClass === WEAPON_CLASS
@@ -291,7 +287,7 @@ function targetDamageBonus(object, monster, { hatesBlessings, hatesSilver, hero 
 }
 function applyErosion(object, damage) {
     if (damage > 0)
-        damage = Math.max(1, damage - erosion(object));
+        damage = Math.max(1, damage - greatestErosion(object));
     return damage;
 }
 // C weapon.c:dmgval().

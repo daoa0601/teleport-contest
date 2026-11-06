@@ -41,7 +41,7 @@ import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
-import { isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
+import { greatestErosion, isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation } from './pline.js';
 import { heroIsFlying, body_part, mbodypart } from './polyself.js';
@@ -187,12 +187,6 @@ export function clearDiggingContext(state) {
 }
 // weapon.c's abon() lives in weapon.js (heroAttackBonus); dig.c's digmon()
 // reads the same strength/dexterity ladder for digging effort.
-// C obj.h:greatest_erosion()
-// The include/obj.h macro (not weapon.c, as an earlier revision of this
-// comment said): worst of fire and rot damage.
-function greatestErosion(object) {
-    return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
-}
 function maybeHalfPhysical(damage, state) {
     return state.u.halfPhysicalDamage
         ? Math.ceil(damage / 2) : damage;
