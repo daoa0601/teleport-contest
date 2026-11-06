@@ -71,7 +71,7 @@ import { make_engr_at } from './engrave.js';
 import { fix_wall_spines, setLevelTerrainLit, setLevelTerrainType, vibratingSquarePoint } from './mkmaze.js';
 import { makeroguerooms } from './extralev.js';
 import { stockShopRoom } from './shknam.js';
-import { specialShrinePriest } from './priest.js';
+import { finishSpecialRoamer, specialShrinePriest } from './priest.js';
 import { isLavaAt, isPoolAt, makeSpecialDrawbridge } from './dbridge.js';
 import { is_dwarf, is_gnome, is_male, is_shapeshifter, monsterHasStoneResistance, monsterIsFemale, monsterPolymorphsWhenStoned, setMonsterSpecies, monsterIsAmphibious, monsterIsFlyer, monsterIsSwimmer, monsterPassesWalls, monsterIsGolem, monsterIsPlayerMonster, monsterIsVampireShifter, nameToMonster } from './mondata.js';
 import { roomForIndex, roomsAt } from './hack.js';
@@ -702,22 +702,6 @@ export async function flip_level_rnd(allowed: number, extras = false): Promise<v
     if ((allowed & 1) && rn2(2)) flp |= 1;
     if ((allowed & 2) && rn2(2)) flp |= 2;
     await flip_level(flp, extras);
-}
-
-// C priest.c:mk_roamer()
-// The caller creates the monster; this is its aligned-minion initialization.
-export function finishSpecialRoamer(monster: Monster, alignment: number, peaceful: boolean): void {
-    const coaligned = alignment === (game.u?.ualign?.type ?? A_NEUTRAL);
-    monster.ispriest = 0;
-    monster.isminion = 1;
-    const minion = ensureMinionData(monster);
-    minion.min_align = alignment;
-    minion.renegade = coaligned && !peaceful;
-    monster.maligntyp = alignment;
-    monster.mpeaceful = peaceful ? 1 : 0;
-    monster.msleeping = 0;
-    monster.mtrapseen = 0x7fffffff;
-    setMonsterMalign(monster);
 }
 
 export interface SpecialTrapOptions {
@@ -2141,7 +2125,7 @@ export async function lspo_monster(
 }
 
 // C sp_lev.c:create_monster()
-// Also C priest.c:mk_roamer(): creation is inlined here; finishSpecialRoamer initializes it
+// Also C priest.c:mk_roamer(): creation is inlined here; priest.ts:finishSpecialRoamer initializes it
 // Resolve species and location, then apply the requested attributes.
 export async function create_monster(context: SpecialLevelContext, options: DesMonsterOptions): Promise<Monster | null> {
     const { point, monsterClass, monsterType } = options;

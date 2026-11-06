@@ -19,7 +19,8 @@ import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
 import { couldSeeFromHero, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
-import { A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NOTONL, ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER, SPINE } from './const.js';
+import { A_NEUTRAL, A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NOTONL, ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER, SPINE } from './const.js';
+import { ensureMinionData } from './minion.js';
 import { dist2, pointsOnline } from './hacklib.js';
 import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, wakeMonster } from './mon.js';
 import { breakMonsterBoulder, moveMonsterAggress } from './monmove.js';
@@ -133,6 +134,21 @@ export function forgetTempleEntry(priest) {
     if (!priest.ispriest || !shrine)
         throw new Error('Temple entry memory requires a priest with shrine data.');
     shrine.intone_time = shrine.enter_time = shrine.peaceful_time = shrine.hostile_time = 0;
+}
+// C priest.c:mk_roamer()
+// The caller creates the monster; this is its aligned-minion initialization.
+export function finishSpecialRoamer(monster, alignment, peaceful) {
+    const coaligned = alignment === (game.u?.ualign?.type ?? A_NEUTRAL);
+    monster.ispriest = 0;
+    monster.isminion = 1;
+    const minion = ensureMinionData(monster);
+    minion.min_align = alignment;
+    minion.renegade = coaligned && !peaceful;
+    monster.maligntyp = alignment;
+    monster.mpeaceful = peaceful ? 1 : 0;
+    monster.msleeping = 0;
+    monster.mtrapseen = 0x7fffffff;
+    setMonsterMalign(monster);
 }
 // C priest.c:in_your_sanctuary(). A resident protects only a faithful hero
 // sharing the temple of their intact, coaligned shrine.
