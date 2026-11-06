@@ -504,7 +504,6 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
             state: game,
             gold: item,
             dx, dy, dz,
-            captureFlight: captureThrownObjectFlight,
             wakeMonster: wakeAttackedMonster,
             angerMonster: angerAttackedMonster,
         });
@@ -592,7 +591,6 @@ async function throwSelectedUnit(item, dx, dy, volley) {
             state: game,
             gold: item,
             dx, dy, dz: game.u.dz ?? 0,
-            captureFlight: captureThrownObjectFlight,
             wakeMonster: wakeAttackedMonster,
         });
         return false;
@@ -654,7 +652,6 @@ async function throwSelectedUnit(item, dx, dy, volley) {
         selectedQuantity,
         dx,
         dy,
-        captureFlight: captureThrownObjectFlight,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNearWithMessages,
         finishKill: finishOrdinaryMapPotionKill,
@@ -709,7 +706,7 @@ function hitMonsterWithThrownPotion({ state, monster, potion, wakeMonster, wakeN
         distance: distanceFromHero(state, monster.mx, monster.my),
     });
 }
-export async function resolveMapPotionThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, dx, dy, captureFlight = null, wakeMonster = null, wakeNearby = null, finishKill = null, publish = plineWithContinuation, }) {
+export async function resolveMapPotionThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, dx, dy, wakeMonster = null, wakeNearby = null, finishKill = null, publish = plineWithContinuation, }) {
     if (!canResolveMapPotionThrow({
         state, item, objectClass, selectedQuantity, dx, dy,
     }))
@@ -754,13 +751,14 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
         const trajectory = underwater
             ? { range: 1, recoil: 0 }
             : heroThrowTrajectory(thrown, state);
+        requirePlayingGame(state);
         const flight = await flyHeroThrownObject({
             state,
             object: thrown,
             dx: actualDx,
             dy: actualDy,
             range: trajectory.range,
-            captureFlight,
+            display: monsterProjectileDisplay(thrown, state),
             publish,
         });
         if (trajectory.recoil) {
@@ -2749,8 +2747,7 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
                 dx: actualDx,
                 dy: actualDy,
                 range,
-                ...(tetherDisplay ? { display: tetherDisplay }
-                    : { captureFlight: captureThrownObjectFlight }),
+                display: tetherDisplay ?? monsterProjectileDisplay(thrown, state),
             });
         if ('heroDied' in flight && flight.heroDied)
             return { heroDied: true };
@@ -2896,7 +2893,7 @@ async function resolveQuiveredGoldMonsterContact({ state, monster, gold, swallow
         await wakeMonster?.(monster);
     return false;
 }
-export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, captureFlight = null, wakeMonster = null, angerMonster = null, }) {
+export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, wakeMonster = null, angerMonster = null, }) {
     if (!gold || gold.oclass !== COIN_CLASS || !state.inventory.includes(gold))
         return false;
     await freeInventoryObject(gold, state);
@@ -2933,9 +2930,11 @@ export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz =
         await settleGoldOnFloor(state, gold, state.u.ux, state.u.uy);
         return true;
     }
+    requirePlayingGame(state);
     const range = heroDirectGoldThrowRange(gold, state);
     const { x, y, contact } = await flyHeroThrownObject({
-        state, object: gold, dx, dy, range, captureFlight,
+        state, object: gold, dx, dy, range,
+        display: monsterProjectileDisplay(gold, state),
     });
     if (contact) {
         const caught = await resolveGoldMonsterContact({
@@ -2953,7 +2952,7 @@ export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz =
     await settleGoldOnFloor(state, gold, x, y);
     return true;
 }
-export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, captureFlight = null, wakeMonster = null, }) {
+export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, wakeMonster = null, }) {
     if (!gold || gold !== heroGoldObject(state) || gold !== state.uquiver)
         return false;
     gold = detachHeroGold(state, 1);
@@ -2986,9 +2985,11 @@ export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz
     }
     const underwater = !!(state.underwater || state.u?.uinwater);
     const trajectory = heroThrowTrajectory(gold, state);
+    requirePlayingGame(state);
     const range = underwater ? 1 : trajectory.range;
     const { x, y, contact } = await flyHeroThrownObject({
-        state, object: gold, dx, dy, range, captureFlight,
+        state, object: gold, dx, dy, range,
+        display: monsterProjectileDisplay(gold, state),
     });
     // throwit() recoils after bhit(), before resolving the monster contact.
     if (trajectory.recoil) {

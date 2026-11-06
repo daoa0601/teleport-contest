@@ -45,8 +45,8 @@ import type { Position } from './map_types.js';
 import type { PropertyName } from './property_types.js';
 import type { HeroCoordinates } from './hero_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
-import type { ProjectileFlightCapture } from './thrown_object.js';
+import { flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
+import { monsterProjectileDisplay } from './mthrowu.js';
 import { heroBreathAttack, hitHeroWithRay, destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import type { HeroRayResult, NativeRayResult } from './zap.js';
 import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePack, wereBeastForSpecies } from './were.js';
@@ -1814,14 +1814,13 @@ interface HorizontalSpitOptions {
     publish: MessagePublisher;
     random: typeof rn2;
     rollOne: typeof rnd;
-    captureFlight: ProjectileFlightCapture;
     recoilHero: typeof hurtleHero;
     finishMonsterKill: typeof finishHeroMonsterKillOutcome;
 }
 
 async function spitHorizontally({
     venom, direction, state, publish, random, rollOne,
-    captureFlight, recoilHero, finishMonsterKill,
+    recoilHero, finishMonsterKill,
 }: HorizontalSpitOptions) {
     if (state.u?.uswallow && state.u?.ustuck) {
         const impact = await hitMonsterWithVenom({
@@ -1836,11 +1835,12 @@ async function spitHorizontally({
     const trajectory = underwater
         ? { range: 1, recoil: 0 }
         : heroThrowTrajectory(venom, state);
+    requirePlayingGame(state);
     const flight = await flyHeroThrownObject({
         state, object: venom,
         dx: direction.dx, dy: direction.dy,
         range: trajectory.range,
-        captureFlight, publish, random,
+        display: monsterProjectileDisplay(venom, state), publish, random,
     });
     if (trajectory.recoil) {
         await recoilHero(
@@ -1875,7 +1875,6 @@ interface HeroSpitOptions {
     publish?: MessagePublisher;
     random?: typeof rn2;
     rollOne?: typeof rnd;
-    captureFlight?: ProjectileFlightCapture;
     recoilHero?: typeof hurtleHero;
     finishMonsterKill?: typeof finishHeroMonsterKillOutcome;
 }
@@ -1888,7 +1887,6 @@ export async function useHeroSpit({
     publish = plineWithContinuation,
     random = rn2,
     rollOne = rnd,
-    captureFlight = captureThrownObjectFlight,
     recoilHero = hurtleHero,
     finishMonsterKill = finishHeroMonsterKillOutcome,
 }: HeroSpitOptions = {}) {
@@ -1912,7 +1910,7 @@ export async function useHeroSpit({
     if (state.u?.uswallow) {
         result = await spitHorizontally({
             venom, direction, state, publish, random, rollOne,
-            captureFlight, recoilHero, finishMonsterKill,
+            recoilHero, finishMonsterKill,
         });
     } else if (direction.dz < 0) {
         const landed = await tossObjectUp(venom, { state, publish, random, rollOne });
@@ -1924,7 +1922,7 @@ export async function useHeroSpit({
     } else {
         result = await spitHorizontally({
             venom, direction, state, publish, random, rollOne,
-            captureFlight, recoilHero, finishMonsterKill,
+            recoilHero, finishMonsterKill,
         });
     }
     return { ...result, venom, used: true, spentTime: true };

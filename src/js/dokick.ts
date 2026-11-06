@@ -36,8 +36,8 @@ import { useHeroSkill } from './weapon.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
-import { captureThrownObjectFlight, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
-import type { ProjectileFlightCapture } from './thrown_object.js';
+import { flyKickedObject, snuffThrownCandle } from './thrown_object.js';
+import { monsterProjectileDisplay } from './mthrowu.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
 import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
@@ -524,7 +524,6 @@ export async function dokick() {
             dx: game.u.dx,
             dy: game.u.dy,
             publish: plineWithContinuation,
-            captureFlight: captureThrownObjectFlight,
         });
         if (game.program_state.gameover) return;
         if (!kicked) await kickOuch(x, y, killerObjectName(kickedObject));
@@ -1204,7 +1203,6 @@ export interface KickObjectOptions {
     publish?: MessagePublisher;
     random?: typeof rn2;
     rollOne?: typeof rnd;
-    captureFlight?: ProjectileFlightCapture | null;
 }
 function quantity(object: GameObject) {
     return object.quan ?? object.quantity ?? 1;
@@ -1251,7 +1249,6 @@ export async function kickFloorObject(x: number, y: number, {
     publish = plineWithContinuation,
     random = rn2,
     rollOne = rnd,
-    captureFlight = null,
 }: KickObjectOptions = {}) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object) return false;
@@ -1387,13 +1384,14 @@ export async function kickFloorObject(x: number, y: number, {
     try {
         await snuffThrownCandle(moving, state, publish);
         await newsym(x, y);
+        requirePlayingGame(state);
         const flight = await flyKickedObject({
             state,
             object: moving,
             dx,
             dy,
             range,
-            captureFlight,
+            display: monsterProjectileDisplay(moving, state),
             publish,
             random,
         });

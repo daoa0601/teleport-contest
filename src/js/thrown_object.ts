@@ -11,7 +11,7 @@ import {
 } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
-import { monsterProjectileDisplay } from './mthrowu.js';
+import { type MonsterProjectileDisplay, monsterProjectileDisplay } from './mthrowu.js';
 
 import { A_STR, BOLT_LIM, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
@@ -92,8 +92,7 @@ export interface ProjectileFlightOptions {
     dx: number;
     dy: number;
     range: number;
-    captureFlight?: ProjectileFlightCapture | null;
-    display?: ReturnType<typeof monsterProjectileDisplay>;
+    display: MonsterProjectileDisplay;
     publish?: MessagePublisher;
     random?: typeof rn2;
 }
@@ -338,7 +337,6 @@ async function flyPhysicalObject({
     startX,
     startY,
     kicked = false,
-    captureFlight = null,
     publish = plineWithContinuation,
     random = rn2,
     display,
@@ -353,10 +351,8 @@ async function flyPhysicalObject({
     const steps = kicked ? Math.max(0, range - 1) : range;
     let skip = !kicked && object.otyp === ROCK ? rockSkipRange(range) : null;
     const allowSkip = skip !== null && random(3) === 0;
-    const glyph = display?.glyph ?? transientObjectGlyph(object);
     let skipping = false;
     let skips = 0;
-    let capturedCell: Position | null = null;
 
     // zap.c bhit() opens every physical flight with tmp_at(DISP_FLASH or
     // DISP_TETHER), whose init calls flush_screen(0) (display.c).  Pending
@@ -498,14 +494,13 @@ async function flyPhysicalObject({
                 await newsym(x, y);
             }
             path.push({ x, y });
-            if (display) await display.show({ x, y });
-            if (movingLight && captureFlight) {
-                // bhit() keeps DISP_FLASH open across the next light recalc.
-                // Erase the previous projectile only when drawing this step.
-                if (capturedCell) await newsym(capturedCell.x, capturedCell.y);
-                capturedCell = cansee(x, y) ? { x, y } : null;
-                await captureFlight(object, [{ x, y }], state, glyph, true);
-            }
+            // zap.c bhit(): tmp_at(x, y) shows the missile on this square
+            // and flushes it (display.c:1291-1292); nh_delay_output()
+            // follows. The effect stays open while the next square's
+            // impact handling plines (hit_bars(), a web, rock skips), so
+            // those messages page with the last flight square still on
+            // the terminal, exactly as bhit() interleaves them.
+            await display?.show({ x, y });
             if (kicked && isPoolOrLavaAt(x, y, state)) {
                 stoppedBy = 'liquid';
                 break;
@@ -550,10 +545,14 @@ async function flyPhysicalObject({
             }
         }
 
-        if (!movingLight && captureFlight)
-            await captureFlight(object, path, state, glyph);
     } finally {
-        if (capturedCell) await newsym(capturedCell.x, capturedCell.y);
+        // zap.c bhit(): tmp_at(DISP_END, 0) closes the flight — after the
+        // loop, and at the monster and keeper stops — restoring the last
+        // painted square through newsym() without a flush (display.c:
+        // 1241-1244); the terminal keeps the missile until its next
+        // flush. A tethered weapon's display stays open for the caller's
+        // return roll instead (bhit:4125-4127).
+        if (display && !display.tethered) await display.clear();
         await cleanupTransientLight(state);
     }
     return { x, y, path, contact, stoppedBy, destroyed, migrated };

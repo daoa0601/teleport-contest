@@ -18,7 +18,8 @@ import { corpseName, verbForSubject, makePlural, withIndefiniteArticle, minimalO
 import { learnObjectType, observeObject } from './o_init.js';
 import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { finishHeroDeath } from './end.js';
-import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
+import { flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
+import { monsterProjectileDisplay } from './mthrowu.js';
 import { heroBreathAttack, hitHeroWithRay, destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePack, wereBeastForSpecies } from './were.js';
 import { AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
@@ -1640,7 +1641,7 @@ async function hitMonsterWithVenom({ monster, target, venom, state, publish, ran
     });
     return impact;
 }
-async function spitHorizontally({ venom, direction, state, publish, random, rollOne, captureFlight, recoilHero, finishMonsterKill, }) {
+async function spitHorizontally({ venom, direction, state, publish, random, rollOne, recoilHero, finishMonsterKill, }) {
     if (state.u?.uswallow && state.u?.ustuck) {
         const impact = await hitMonsterWithVenom({
             monster: state.u.ustuck, venom, state, publish, random, rollOne,
@@ -1653,11 +1654,12 @@ async function spitHorizontally({ venom, direction, state, publish, random, roll
     const trajectory = underwater
         ? { range: 1, recoil: 0 }
         : heroThrowTrajectory(venom, state);
+    requirePlayingGame(state);
     const flight = await flyHeroThrownObject({
         state, object: venom,
         dx: direction.dx, dy: direction.dy,
         range: trajectory.range,
-        captureFlight, publish, random,
+        display: monsterProjectileDisplay(venom, state), publish, random,
     });
     if (trajectory.recoil) {
         await recoilHero(-direction.dx, -direction.dy, trajectory.recoil, { verbose: true });
@@ -1684,7 +1686,7 @@ async function spitHorizontally({ venom, direction, state, publish, random, roll
     return { ...flight, destroyed: broken.destroyed };
 }
 // C polyself.c:dospit().
-export async function useHeroSpit({ state = game, attack = heroSpitAttack(state), readDirection = promptDirection, publish = plineWithContinuation, random = rn2, rollOne = rnd, captureFlight = captureThrownObjectFlight, recoilHero = hurtleHero, finishMonsterKill = finishHeroMonsterKillOutcome, } = {}) {
+export async function useHeroSpit({ state = game, attack = heroSpitAttack(state), readDirection = promptDirection, publish = plineWithContinuation, random = rn2, rollOne = rnd, recoilHero = hurtleHero, finishMonsterKill = finishHeroMonsterKillOutcome, } = {}) {
     if (!attack)
         return { used: false, spentTime: false, reason: 'no-spit' };
     const direction = await readDirection();
@@ -1702,7 +1704,7 @@ export async function useHeroSpit({ state = game, attack = heroSpitAttack(state)
     if (state.u?.uswallow) {
         result = await spitHorizontally({
             venom, direction, state, publish, random, rollOne,
-            captureFlight, recoilHero, finishMonsterKill,
+            recoilHero, finishMonsterKill,
         });
     }
     else if (direction.dz < 0) {
@@ -1715,7 +1717,7 @@ export async function useHeroSpit({ state = game, attack = heroSpitAttack(state)
     else {
         result = await spitHorizontally({
             venom, direction, state, publish, random, rollOne,
-            captureFlight, recoilHero, finishMonsterKill,
+            recoilHero, finishMonsterKill,
         });
     }
     return { ...result, venom, used: true, spentTime: true };

@@ -20,7 +20,6 @@ function spit(aim, options = {}) {
         state: game,
         attack: heroSpitAttack(game),
         readDirection: async () => aim,
-        captureFlight: async () => undefined,
         ...options,
     });
 }

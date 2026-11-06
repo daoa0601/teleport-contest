@@ -34,7 +34,6 @@ void test('a spitter killed by the recoil never breaks the venom', async () => {
         state: game,
         attack: heroSpitAttack(game),
         readDirection: async () => west,
-        captureFlight: async () => undefined,
     });
     assert.equal(game.program_state.gameover, true);
     const screen = requireGameDisplay(game).grid
