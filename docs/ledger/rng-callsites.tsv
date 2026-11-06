@@ -742,7 +742,7 @@ src/js/potion.ts	applyLevitationPotion	rnd	"[""!helmet ? 10 : !objectIsHardHelme
 src/js/read.ts	createConfusedLightPets	rn2	"[""2""]"	constant
 src/js/zap.ts	lightDamage	rnd	"[""amount""]"	unproved
 src/js/zap.ts	lightDamage	rnd	"[""damage - 10""]"	unproved
-src/js/light.ts	lightRoom	rnd	"[""5""]"	constant
+src/js/read.ts	lightRoom	rnd	"[""5""]"	constant
 src/js/hack.ts	finishDestinationSpotEffects	rn2	"[""2""]"	constant
 src/js/lock.ts	bladeBreaks	rn2	"[""1000 - enchantment""]"	unproved
 src/js/lock.ts	breakChestLock	rn2	"[""3""]"	constant
@@ -1230,10 +1230,10 @@ src/js/shknam.ts	stockShopRoom	rn2	"[""2""]"	constant
 src/js/shknam.ts	stockShopRoom	rn2	"[""5""]"	constant
 src/js/shknam.ts	stockShopRoom	rnd	"[""100""]"	constant
 src/js/shknam.ts	stockShopRoom	rnd	"[""stockPositions.length""]"	guarded
-src/js/mklev.ts	summonNastyMonsters	rn2	"[""10""]"	constant
-src/js/mklev.ts	summonNastyMonsters	rn2	"[""In_endgame(game.u.uz) ? 3 : 7""]"	constant
-src/js/mklev.ts	summonNastyMonsters	rnd	"[""4""]"	constant
-src/js/mklev.ts	summonNastyMonsters	rnd	"[""outerLimit""]"	unproved
+src/js/wizard.ts	summonNastyMonsters	rn2	"[""10""]"	constant
+src/js/wizard.ts	summonNastyMonsters	rn2	"[""In_endgame(game.u.uz) ? 3 : 7""]"	constant
+src/js/wizard.ts	summonNastyMonsters	rnd	"[""4""]"	constant
+src/js/wizard.ts	summonNastyMonsters	rnd	"[""outerLimit""]"	unproved
 src/js/mklev.ts	trapVictimObjectBreaks	rn2	"[""100""]"	constant
 src/js/mklev.ts	traptype_rnd	rn2	"[""7""]"	constant
 src/js/mklev.ts	traptype_rnd	rnd	"[""TRAPNUM - 1""]"	constant
@@ -1847,7 +1847,7 @@ src/js/mkmaze.ts	stolen_booty	rnd	"[""3""]"	constant
 src/js/mkmaze.ts	stolen_booty	rnd	"[""4""]"	constant
 src/js/mkmaze.ts	migr_booty_item	rn2	"[""2""]"	constant
 src/js/mkmaze.ts	migr_booty_item	rn2	"[""3""]"	constant
-src/js/mkmaze.ts	deliverOrcRaidLoot	rn2	"[""2""]"	constant
+src/js/dokick.ts	deliverOrcRaidLoot	rn2	"[""2""]"	constant
 src/js/mkmaze.ts	shiny_orc_stuff	rn2	"[""1000""]"	constant
 src/js/mkmaze.ts	shiny_orc_stuff	rn2	"[""1000""]"	constant
 src/js/mkmaze.ts	shiny_orc_stuff	rn2	"[""8""]"	constant
