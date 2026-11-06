@@ -106,6 +106,7 @@ const shopkeeper = (value) => closedFieldsMatch(value, {
 const corridor = (value) => closedFieldsMatch(value, {
     x: integer, y: integer, typ: integer, flags: integer,
 });
+// Port only: field checks for a saved vault guard record.
 function guard(context) {
     return (value) => closedFieldsMatch(value, {
         gdlevel: monsterHomeLevel,
@@ -135,6 +136,7 @@ const bones = (value) => closedFieldsMatch(value, {
     demigod: boolean,
     crowned: boolean,
 });
+// Port only: field checks for a saved monster extra record.
 function extra(representation) {
     return (value) => closedFieldsMatch(value, {
         mgivenname: optional(string),
@@ -146,10 +148,13 @@ function extra(representation) {
         ebones: optional(bones),
     });
 }
+// Port only: reads a saved monster's m_ap_type appearance code.
 function appearanceType(value) {
     return isSavedRecord(value) && integer(value.m_ap_type)
         ? value.m_ap_type & M_AP_TYPMASK : 0;
 }
+// Port only: validates a saved mimic's mappearance payload by its
+// appearance type.
 // makemon.c:set_mimic_sym() also stores a fruit ID or altar mask here.
 // Neither overload is a monster index, despite the field's native name.
 function mimicRepresentation(value) {
@@ -164,6 +169,7 @@ function mimicRepresentation(value) {
             || entry === AM_CHAOTIC || entry === AM_NEUTRAL || entry === AM_LAWFUL;
     return validSavedSpeciesOrNone;
 }
+// Port only: field checks for a saved Monster.
 function monsterFields(value, context) {
     const representation = mimicRepresentation(value);
     return {
@@ -277,9 +283,11 @@ function monsterFields(value, context) {
         migrationDestination: optional(monsterHomeLevel),
     };
 }
+// Port only: full saved Monster validation.
 export function validSavedMonster(value, context) {
     return validateSavedEntity(value, 'monster', context, monsterFields(value, context));
 }
+// Port only: bones-monster trait validation.
 export function validSavedMonsterTraits(value, context) {
     const { minvent, inventory, mw, wormSegments, wormDetachedSegments, wormHead, wormGrowTime, lightRemoved, headOnMap, ...fields } = monsterFields(value, context);
     return validateSavedEntity(value, 'savedMonster', context, fields);
@@ -302,6 +310,7 @@ export function restoreLevelChains(level, stairs) {
     }
     return restored;
 }
+// Port only: validates the worm fields of every saved monster on a level.
 // This boundary proves only worm restoration fields, not a complete Monster.
 // Full saves and bones retain body identity and deadlines rather than rebuilding them.
 export function validMonsterWormBodies(level) {
@@ -348,12 +357,15 @@ export function validMonsterWormBodies(level) {
     }
     return true;
 }
+// Port only: type guard for one saved worm segment point.
 function savedWormPoint(value) {
     return isSavedRecord(value)
         && typeof value.x === 'number' && Number.isInteger(value.x)
         && typeof value.y === 'number' && Number.isInteger(value.y)
         && (value.onMap === undefined || typeof value.onMap === 'boolean');
 }
+// Part of C restore.c:getlev(): the worm head placement after monster
+// restore.
 export function restoreMonsterWormHeads(level) {
     for (const monster of level.monsters) {
         // The native monster grid is rebuilt from fmon when loading a level.
@@ -399,12 +411,14 @@ export function repairBonesConnections(level, location) {
         break;
     }
 }
+// C restore.c:restore_msghistory().
 /**
  * C restore.c:restore_msghistory(): the first restored message purges the
  * session's own ring (keeping its entries), each restored message becomes
  * the current topline in turn, and the final empty call puts the session's
  * messages back on top of the restored ones.
  */
+// C restore.c:restore_msghistory().
 export function restoreMessageHistory(saved) {
     if (!saved.length)
         return;

@@ -13,6 +13,7 @@ import { isok } from './cmd.js';
 import { set_floodfillchk_match_under } from './sp_lev.js';
 export const SEL_GRADIENT_RADIAL = 0;
 export const SEL_GRADIENT_SQUARE = 1;
+// C selvar.c:selection_new().
 export function selection_new() {
     return {
         wid: COLNO,
@@ -22,6 +23,7 @@ export function selection_new() {
         map: new Int8Array(COLNO * ROWNO).fill(1),
     };
 }
+// C selvar.c:selection_clear().
 export function selection_clear(selection, value) {
     selection.map.fill(1 + value);
     selection.bounds = value
@@ -29,6 +31,7 @@ export function selection_clear(selection, value) {
         : { lx: COLNO, ly: ROWNO, hx: 0, hy: 0 };
     selection.bounds_dirty = false;
 }
+// C selvar.c:selection_clone().
 export function selection_clone(selection) {
     return {
         wid: selection.wid,
@@ -38,6 +41,7 @@ export function selection_clone(selection) {
         map: selection.map.slice(),
     };
 }
+// C selvar.c:selection_getpoint().
 export function selection_getpoint(x, y, selection) {
     if (!selection?.map || x < 0 || y < 0
         || x >= selection.wid || y >= selection.hei)
@@ -47,6 +51,7 @@ export function selection_getpoint(x, y, selection) {
         throw new RangeError('Selection storage is smaller than its dimensions.');
     return encoded - 1;
 }
+// C selvar.c:selection_setpoint().
 export function selection_setpoint(x, y, selection, value) {
     if (!selection?.map || x < 0 || y < 0
         || x >= selection.wid || y >= selection.hei)
@@ -68,6 +73,7 @@ export function selection_setpoint(x, y, selection, value) {
     }
     selection.map[index] = value + 1;
 }
+// C selvar.c:selection_recalc_bounds().
 export function selection_recalc_bounds(selection) {
     if (!selection.bounds_dirty)
         return;
@@ -113,12 +119,14 @@ export function selection_recalc_bounds(selection) {
     }
     selection.bounds_dirty = false;
 }
+// C selvar.c:selection_getbounds().
 export function selection_getbounds(selection) {
     selection_recalc_bounds(selection);
     return selection.bounds.lx >= selection.wid
         ? { lx: 0, ly: 0, hx: COLNO - 1, hy: ROWNO - 1 }
         : { ...selection.bounds };
 }
+// C selvar.c:selection_not().
 export function selection_not(selection) {
     for (let x = 0; x < selection.wid; x++)
         for (let y = 0; y < selection.hei; y++)
@@ -126,6 +134,7 @@ export function selection_not(selection) {
     selection_getbounds(selection);
     return selection;
 }
+// C selvar.c:selection_filter_percent().
 export function selection_filter_percent(selection, percent) {
     if (!selection)
         return null;
@@ -138,6 +147,7 @@ export function selection_filter_percent(selection, percent) {
                 selection_setpoint(x, y, result, 1);
     return result;
 }
+// C selvar.c:selection_numpoints().
 export function selection_numpoints(selection) {
     let count = 0;
     const bounds = selection_getbounds(selection);
@@ -147,6 +157,8 @@ export function selection_numpoints(selection) {
                 count++;
     return count;
 }
+// Part of C nhlsel.c:l_selection_and(), l_selection_or(),
+// l_selection_xor(), l_selection_sub(): the shared bounds-union cell loop.
 function selection_binary(left, right, operation) {
     selection_recalc_bounds(left);
     selection_recalc_bounds(right);
@@ -162,24 +174,29 @@ function selection_binary(left, right, operation) {
             selection_setpoint(x, y, result, operation(selection_getpoint(x, y, left), selection_getpoint(x, y, right)));
     return result;
 }
+// C nhlsel.c:l_selection_and().
 export function selection_and(left, right) {
     return selection_binary(left, right, (a, b) => a & b);
 }
+// C nhlsel.c:l_selection_or().
 export function selection_or(left, right) {
     const result = selection_binary(left, right, (a, b) => a | b);
     selection_recalc_bounds(result);
     return result;
 }
+// C nhlsel.c:l_selection_xor().
 export function selection_xor(left, right) {
     const result = selection_binary(left, right, (a, b) => a ^ b);
     selection_recalc_bounds(result);
     return result;
 }
+// C nhlsel.c:l_selection_sub().
 export function selection_sub(left, right) {
     const result = selection_binary(left, right, (a, b) => (a ^ b) & a);
     selection_recalc_bounds(result);
     return result;
 }
+// C sp_lev.c:match_maptyps().
 export function match_maptyps(expected, actual) {
     if (expected === MATCH_WALL && !IS_STWALL(actual))
         return false;
@@ -187,6 +204,7 @@ export function match_maptyps(expected, actual) {
         return false;
     return true;
 }
+// C selvar.c:selection_filter_mapchar().
 export function selection_filter_mapchar(selection, typ, lit = -2) {
     if (!selection)
         return null;
@@ -214,6 +232,7 @@ export function selection_filter_mapchar(selection, typ, lit = -2) {
     }
     return result;
 }
+// C selvar.c:selection_rndcoord().
 export function selection_rndcoord(selection, remove = false) {
     const bounds = selection_getbounds(selection);
     let count = 0;
@@ -237,6 +256,7 @@ export function selection_rndcoord(selection, remove = false) {
     }
     return null;
 }
+// C sp_lev.c:random_wdir().
 function random_wdir() {
     switch (rn2(4)) {
         case 0: return W_NORTH;
@@ -246,6 +266,7 @@ function random_wdir() {
         default: throw new RangeError('Random direction is outside 0 through 3.');
     }
 }
+// C selvar.c:selection_do_grow().
 export function selection_do_grow(selection, direction) {
     if (!selection)
         return;
@@ -284,6 +305,7 @@ export function selection_do_grow(selection, direction) {
             if (selection_getpoint(x, y, grown))
                 selection_setpoint(x, y, selection, 1);
 }
+// C selvar.c:selection_floodfill().
 export function selection_floodfill(selection, startX, startY, diagonals, accepts) {
     if (!accepts)
         return;
@@ -311,6 +333,7 @@ export function selection_floodfill(selection, startX, startY, diagonals, accept
         }
     }
 }
+// C selvar.c:selection_do_ellipse().
 export function selection_do_ellipse(selection, centerX, centerY, radiusX, radiusY, outline) {
     let x = 0, y = radiusY;
     const a2 = radiusX * radiusX, b2 = radiusY * radiusY;
@@ -376,6 +399,7 @@ export function selection_do_ellipse(selection, centerX, centerY, radiusX, radiu
         }
     }
 }
+// C selvar.c:line_dist_coord().
 function line_dist_coord(x1, y1, x2, y2, x3, y3) {
     const px = x2 - x1, py = y2 - y1;
     const squared = px * px + py * py;
@@ -389,6 +413,7 @@ function line_dist_coord(x1, y1, x2, y2, x3, y3) {
     const y = Math.trunc(Math.fround(y1 + Math.fround(proportion * py)));
     return (x - x3) ** 2 + (y - y3) ** 2;
 }
+// C selvar.c:selection_do_gradient().
 export async function selection_do_gradient(selection, x1, y1, x2, y2, type, minDistance, maxDistance) {
     if (minDistance > maxDistance)
         [minDistance, maxDistance] = [maxDistance, minDistance];
@@ -418,6 +443,7 @@ export async function selection_do_gradient(selection, x1, y1, x2, y2, type, min
         }
     }
 }
+// C selvar.c:selection_do_line().
 export function selection_do_line(x1, y1, x2, y2, selection) {
     const xStep = x1 < x2 ? 1 : -1;
     const yStep = y1 < y2 ? 1 : -1;
@@ -456,6 +482,7 @@ export function selection_do_line(x1, y1, x2, y2, selection) {
         } while (y1 !== y2);
     }
 }
+// C selvar.c:selection_do_randline().
 export function selection_do_randline(x1, y1, x2, y2, roughness, recursion, selection) {
     roughness = (roughness << 24) >> 24;
     recursion = (recursion << 24) >> 24;
@@ -482,6 +509,7 @@ export function selection_do_randline(x1, y1, x2, y2, roughness, recursion, sele
     selection_do_randline(midX, midY, x2, y2, roughness, recursion - 1, selection);
     selection_setpoint(x2, y2, selection, 1);
 }
+// C selvar.c:selection_iterate().
 export function selection_iterate(selection, callback) {
     if (!selection)
         return;
@@ -491,6 +519,7 @@ export function selection_iterate(selection, callback) {
             if (isok(x, y) && selection_getpoint(x, y, selection))
                 callback(x, y);
 }
+// C selvar.c:selection_is_irregular().
 export function selection_is_irregular(selection) {
     const bounds = selection_getbounds(selection);
     for (let x = bounds.lx; x <= bounds.hx; x++)
@@ -499,6 +528,7 @@ export function selection_is_irregular(selection) {
                 return true;
     return false;
 }
+// C selvar.c:selection_size_description().
 export function selection_size_description(selection) {
     const bounds = selection_getbounds(selection);
     const width = bounds.hx - bounds.lx + 1;
@@ -507,6 +537,7 @@ export function selection_size_description(selection) {
         ? 'irregularly shaped' : width === height ? 'square' : 'rectangular';
     return `${shape} ${width} by ${height}`;
 }
+// C selvar.c:selection_from_mkroom().
 export function selection_from_mkroom(room = null) {
     const selection = selection_new();
     if (!room)
@@ -524,6 +555,7 @@ export function selection_from_mkroom(room = null) {
     }
     return selection;
 }
+// C selvar.c:selection_force_newsyms().
 export async function selection_force_newsyms(selection) {
     for (let x = 1; x < selection.wid; x++)
         for (let y = 0; y < selection.hei; y++)
@@ -612,12 +644,15 @@ export class SpecialSelection {
                     callback(x, y);
     }
 }
+// Part of C sp_lev.c:get_location_coord(): the relative-to-absolute
+// adjustment for selection coordinates.
 function absolute(context, x, y) {
     return {
         x: (context._room?.lx ?? context.xstart) + (x & 0xff),
         y: (context._room?.ly ?? context.ystart) + (y & 0xff),
     };
 }
+// C nhlsel.c:l_selection_fillrect(): with get_location_coord resolution.
 export function specialSelectionFillRect(context, x1, y1, x2, y2) {
     const selection = selection_new();
     const start = absolute(context, x1, y1);
@@ -632,6 +667,7 @@ export function specialSelectionFillRect(context, x1, y1, x2, y2) {
     }
     return new SpecialSelection(selection);
 }
+// C nhlsel.c:l_selection_line(): with get_location_coord resolution.
 export function specialSelectionLine(context, x1, y1, x2, y2) {
     const selection = selection_new();
     const start = absolute(context, x1, y1);
@@ -639,6 +675,7 @@ export function specialSelectionLine(context, x1, y1, x2, y2) {
     selection_do_line(start.x, start.y, end.x, end.y, selection);
     return new SpecialSelection(selection);
 }
+// C nhlsel.c:l_selection_rect(): with get_location_coord resolution.
 export function specialSelectionRect(context, x1, y1, x2, y2) {
     const selection = selection_new();
     const start = absolute(context, x1, y1);
@@ -649,6 +686,8 @@ export function specialSelectionRect(context, x1, y1, x2, y2) {
     selection_do_line(start.x, end.y, end.x, end.y, selection);
     return new SpecialSelection(selection);
 }
+// Port only: unclear origin, selects the context area squares of one
+// terrain type.
 export function specialSelectionOfTerrain(context, typ) {
     const selection = selection_new();
     for (let x = 0; x < context.width; x++)
@@ -657,6 +696,7 @@ export function specialSelectionOfTerrain(context, typ) {
                 selection_setpoint(context.xstart + x, context.ystart + y, selection, 1);
     return new SpecialSelection(selection);
 }
+// C nhlsel.c:l_selection_flood(): with get_location_coord resolution.
 // The Lua flood operation matches the starting square's terrain.
 export function specialSelectionFloodFill(context, x, y, diagonals = false) {
     const start = absolute(context, x, y);
@@ -691,6 +731,7 @@ const MAP_CHAR_TYPES = {
     B: CROSSWALL,
     w: MATCH_WALL,
 };
+// Part of C nhlua.c:splev_chr2typ(): the map character type table.
 export function mapCharacterType(character) {
     return character === undefined ? undefined : MAP_CHAR_TYPES[character];
 }
@@ -736,6 +777,7 @@ export function specialSelectionMatch(fragment) {
     selection_recalc_bounds(selection);
     return new SpecialSelection(selection);
 }
+// C nhlsel.c:l_selection_randline().
 export function specialSelectionRandLine(x1, y1, x2, y2, roughness, recursion = 12, result = new SpecialSelection()) {
     selection_do_randline(x1, y1, x2, y2, roughness, recursion, result.selection);
     return result;

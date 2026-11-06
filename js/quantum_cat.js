@@ -20,9 +20,11 @@ import { objectWeight } from './mkobj.js';
 import { body_part } from './polyself.js';
 const HOUSECAT = MONSTER_NAME.indexOf('housecat');
 const CAT_NAME = "Schroedinger's Cat";
+// C obj.h:SchroedingersBox().
 export function isQuantumBox(object) {
     return object.otyp === LARGE_BOX && object.spe === 1;
 }
+// C pickup.c:observe_quantum_cat(): shared by opening and final disclosure.
 export async function observeQuantumCat(box, { makeCat = true, showMessage = true, state = game, } = {}) {
     if (!isQuantumBox(box))
         return false;

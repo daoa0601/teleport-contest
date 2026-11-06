@@ -78,6 +78,8 @@ async function prepareSection(section, messageId, state) {
         await lua.destroy();
     }
 }
+// Part of C questpgr.c:qt_pager(), com_pager(): resolves the role or
+// common section text.
 export async function prepareQuestText(messageId, state = game, common = false) {
     if (common)
         return prepareSection('common', messageId, state);
@@ -133,9 +135,11 @@ function roleMonsterName(mnum) {
         return '';
     return monsterHasProperName(mnum) ? name : `the ${name}`;
 }
+// C questpgr.c:ldrname().
 export function questLeaderName(g = game) {
     return roleMonsterName(g.urole?.ldrnum);
 }
+// C questpgr.c:neminame().
 export function questNemesisName(g = game) {
     return roleMonsterName(g.urole?.neminum);
 }
@@ -178,6 +182,7 @@ export function levelContainsQuestArtifact(g = game) {
     return (level?.monsters || []).some(monster => !monster.dead && monster.mhp > 0 && (monster.minvent || [])
         .some(object => objectContainsQuestArtifact(object, g)));
 }
+// Part of C questpgr.c:convert_arg(): the align_str word for %a/%A/%G.
 function alignmentName(alignment) {
     if (alignment === undefined)
         return 'neutral';
@@ -185,6 +190,8 @@ function alignmentName(alignment) {
 }
 // C hacklib.c:s_suffix(); %S/%s name formatting uses the shared
 // possessiveName port in hacklib.ts.
+// Part of C questpgr.c:convert_arg(): the u.ualignbase original-alignment
+// read.
 // The original alignment recorded at game start drives %a, %d, and %G.
 function originalAlignment(g) {
     return g.u?.ualignbase?.[1] ?? g.u?.ualign?.type ?? 0;

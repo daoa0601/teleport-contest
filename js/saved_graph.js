@@ -1,11 +1,14 @@
 const TYPE = '__teleportType';
 const ENTITY_KIND = '__teleportEntityKind';
 const ENTITY_ID = '__teleportEntityId';
+// Port only: type guard for plain records at the save-data boundary.
 // Records at the serialized-data boundary have not acquired domain types.
 export function isSavedRecord(value) {
     return value !== null && typeof value === 'object'
         && !Array.isArray(value) && !(value instanceof Map) && !(value instanceof Set);
 }
+// Port only: recognizes a monster/object by its id fields in a serialized
+// record.
 function entityIdentity(value) {
     if (!isSavedRecord(value))
         return null;
@@ -18,9 +21,12 @@ function entityIdentity(value) {
         return { kind: 'object', id: value.o_id };
     return null;
 }
+// Port only: type guard for entity id fields.
 function isEntityId(value) {
     return typeof value === 'number' && Number.isInteger(value) && value > 0;
 }
+// Port only: JSON replacer that gives shared entities stable identity
+// markers while serializing the saved graph.
 function graphReplacer() {
     const entities = new Map();
     return (_key, value) => {
@@ -71,12 +77,15 @@ function graphReplacer() {
         return saved;
     };
 }
+// Port only: serializes the saved-state graph to JSON.
 export function encodeSavedGraph(value) {
     const encoded = JSON.stringify(value, graphReplacer());
     if (encoded === undefined)
         throw new TypeError('Saved graph has no root value');
     return encoded;
 }
+// Port only: restores the saved-state graph from JSON, re-linking shared
+// entities.
 export function decodeSavedGraph(encoded) {
     const entities = new Map();
     const parsed = JSON.parse(encoded);
@@ -178,11 +187,13 @@ export function decodeSavedGraph(encoded) {
         return value;
     }
 }
+// Port only: coerces a decoded value to an array.
 function savedArray(value) {
     if (!Array.isArray(value))
         throw new TypeError('Invalid saved graph array');
     return value;
 }
+// Port only: reads the identity marker of a decoded entity record.
 function savedEntityIdentity(value) {
     const kind = value[ENTITY_KIND];
     const id = value[ENTITY_ID];

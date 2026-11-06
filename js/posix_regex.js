@@ -17,6 +17,8 @@ export class PosixRegex {
         return false;
     }
 }
+// Port only: encodes a JS string as C locale bytes for the ERE engine
+// (the libc regcomp that sys/share/posixregex.c delegates to).
 function cStringBytes(text) {
     const nul = text.indexOf('\0');
     const bytes = new TextEncoder().encode(nul < 0 ? text : text.slice(0, nul));
@@ -221,9 +223,11 @@ class EreParser {
         return this.pattern.charAt(this.index);
     }
 }
+// Port only: ASCII digit test used by the ERE parser.
 function isDigit(character) {
     return character >= '0' && character <= '9';
 }
+// Port only: named character-class lookup for the ERE parser.
 function characterClass(name) {
     // macOS also recognizes these BSD classes. In the C locale, none of
     // the characters are ideograms, phonograms, or special characters.
@@ -284,6 +288,7 @@ const POSIX_CHARACTER_NAMES = new Map([
     ['space', ' '], ['tab', '\t'], ['three', '3'], ['tilde', '~'], ['two', '2'],
     ['underscore', '_'], ['vertical-line', '|'], ['vertical-tab', '\v'], ['zero', '0'],
 ]);
+// Port only: empty-match assertion analysis for the ERE matcher.
 // TRE's tre_match_empty() keeps the assertions from the first branch that
 // can match without consuming input, including inside optional groups.
 // null means the expression requires a character; [] means it has no assertions.

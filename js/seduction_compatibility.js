@@ -8,6 +8,7 @@ import { propertyIsActive } from './properties.js';
 import { is_neuter, monsterIsAnimal, monsterPerceives } from './mondata.js';
 const S_NYMPH = 14;
 const PM_AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
+// C mhitu.c:could_seduce(). Cancellation belongs to each attack caller.
 export function could_seduce(aggressor, defender, attack, state = game) {
     const species = aggressor === 'hero' ? heroSpecies(state) : aggressor.mnum;
     if (monsterIsAnimal({ mnum: species }))
@@ -27,6 +28,8 @@ export function could_seduce(aggressor, defender, attack, state = game) {
     return participantGender(aggressor, state) === 1 - participantGender(defender, state)
         ? 1 : nymph ? 2 : 0;
 }
+// Part of C mhitu.c:could_seduce(): the poly_gender/gender reads for each
+// participant.
 function participantGender(participant, state) {
     if (participant === 'hero')
         return heroPolyGender(state);

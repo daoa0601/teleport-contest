@@ -1,4 +1,5 @@
 import { isSavedRecord } from './saved_graph.js';
+// Port only: validates each field of a saved record against its check.
 export function fieldsMatch(value, fields, invalidField) {
     if (!isSavedRecord(value))
         return false;
@@ -14,6 +15,7 @@ export function fieldsMatch(value, fields, invalidField) {
     }
     return true;
 }
+// Port only: fieldsMatch that also rejects unknown extra fields.
 // Use this for a complete saved record. Structural predicates such as a
 // coordinate check may still use fieldsMatch on a larger domain object.
 export function closedFieldsMatch(value, fields, invalidField) {
@@ -27,6 +29,7 @@ export function closedFieldsMatch(value, fields, invalidField) {
     }
     return fieldsMatch(value, fields, invalidField);
 }
+// Port only: type-guard combinator for Map values in saved state.
 export function mapOf(keyCheck, valueCheck) {
     return (value) => {
         if (!(value instanceof Map))
@@ -39,6 +42,7 @@ export function mapOf(keyCheck, valueCheck) {
         return true;
     };
 }
+// Port only: type-guard combinator for Set values in saved state.
 export function setOf(check) {
     return (value) => {
         if (!(value instanceof Set))
@@ -50,6 +54,7 @@ export function setOf(check) {
         return true;
     };
 }
+// Port only: type-guard combinator for numeric-key records in saved state.
 export function numericRecordOf(check) {
     return (value) => {
         if (!isSavedRecord(value))
@@ -57,15 +62,19 @@ export function numericRecordOf(check) {
         return Object.entries(value).every(([key, entry]) => Number.isInteger(Number(key)) && String(Number(key)) === key && check(entry));
     };
 }
+// Port only: type-guard combinator for a fixed set of literal values.
 export function oneOf(...values) {
     return (value) => values.some(candidate => candidate === value);
 }
+// Port only: type-guard combinator for optional saved fields.
 export function optional(check) {
     return (value) => value === undefined || check(value);
 }
+// Port only: type-guard combinator for nullable saved fields.
 export function nullable(check) {
     return (value) => value === null || check(value);
 }
+// Port only: type-guard combinator for arrays in saved state.
 export function arrayOf(check) {
     return (value) => {
         if (!Array.isArray(value))
@@ -78,9 +87,13 @@ export function arrayOf(check) {
         return true;
     };
 }
+// Port only: primitive type guards for decoded save values.
 export const integer = (value) => typeof value === 'number' && Number.isInteger(value);
+// Port only: primitive type guard for decoded save values.
 export const boolean = (value) => typeof value === 'boolean';
+// Port only: primitive type guard for decoded save values.
 export const string = (value) => typeof value === 'string';
+// Port only: cycle-aware field validation of one saved entity.
 // A carrier can point back to the object currently being checked. Only an
 // active check of that same entity type closes a cycle; another entity type
 // must still validate its own fields. Failed checks are never cached.

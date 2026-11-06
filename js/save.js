@@ -37,9 +37,11 @@ import { restoreSavedTimers } from './timeout.js';
 import { restoreLevelChains, restoreMessageHistory, restoreMonsterWormHeads, validMonsterWormBodies, } from './restore.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
+// Port only: derives the storage key from the player name.
 function saveKey(name, prefix = SAVE_PREFIX) {
     return `${prefix}${String(name || 'player').toLowerCase()}`;
 }
+// Port only: snapshots the persistent state for serialization.
 // Snapshot persistent state, including the message window's recall history.
 // Also C save.c:save_msghistory(): inlined here with the rest of the saved state.
 // Also C topl.c:msghistory_snapshot(): inlined here before serializing the oldest-first history.
@@ -53,6 +55,7 @@ function snapshotState() {
         state: copyPersistentState(game),
     };
 }
+// Part of C restore.c:getlev(): one level's monster restore.
 function restoreLevelMonsters(level, moves) {
     restoreLevelPetHistory(level, 0);
     restoreEngravings(level, moves);
@@ -62,6 +65,8 @@ function restoreLevelMonsters(level, moves) {
     for (const monster of level.monsters)
         restoreMonsterInventoryOwnership(monster);
 }
+// Part of C restore.c:dorecover(): monster restore across levels,
+// migrations, and the steed.
 function restoreSavedMonsters(state) {
     if (state.level)
         restoreLevelMonsters(state.level, state.moves);
@@ -113,12 +118,15 @@ export async function dosave() {
     game.program_state.gameover = true;
     game.context.move = 0;
 }
+// Port only: writes a snapshot under the player's storage key.
 export async function saveGame(storage = game.storage) {
     return await writeSave(storage, saveKey(game.plname), true, 'replace');
 }
+// Port only: writes the error snapshot under its own key.
 export async function saveErrorGame(storage = game.storage) {
     return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false, 'replace');
 }
+// Port only: checks storage for an existing error snapshot.
 export function hasErrorSave(name, storage = game.storage) {
     try {
         return !!storage?.getItem
@@ -137,6 +145,7 @@ export async function askAboutPanicSave() {
     const question = 'Start a new game instead?';
     return await promptChoice(question, ['y', 'n', 'q'], 'n', { visibleChoices: 'yn' }) === 'y';
 }
+// Port only: pre-save monster pass (dead purge, priest timers).
 function prepareMonstersForSave() {
     const levels = [game.level, ...[...(game._levelCache?.values() ?? [])].map(cached => cached.level)];
     for (const level of levels) {
@@ -166,6 +175,7 @@ function undoDateLuck() {
     game.u.uluck = luck;
     return before;
 }
+// C save.c:dosave0().
 async function writeSave(storage, key, reportFailure, overwrite) {
     game.program_state.saving = (game.program_state.saving || 0) + 1;
     let saved = false;
@@ -204,6 +214,7 @@ async function writeSave(storage, key, reportFailure, overwrite) {
     game.program_state.saving--;
     return saved;
 }
+// Part of C save.c:dosave0(): the overwrite question.
 // C dosave0() asks after interrupted-action cleanup, before saving level data.
 async function confirmSaveOverwrite(storage, key) {
     const previous = storage.getItem?.(key);
@@ -230,9 +241,12 @@ export async function askKeepRestoredSave() {
     if (await promptYesNo('Do you want to keep the save file?') === 'n')
         restored.storage.removeItem?.(restored.key);
 }
+// Port only: reports the deferred unhealthy-restore refusal.
 export function restoreRefusedAsUnhealthy() {
     return restoreRefusal === 'unhealthy';
 }
+// Part of C restore.c:dorecover(): the unhealthy-refusal message, wait,
+// and file discard.
 export async function dismissUnhealthyRestore(name, storage = game.storage) {
     if (restoreRefusal !== 'unhealthy')
         return;
@@ -241,6 +255,8 @@ export async function dismissUnhealthyRestore(name, storage = game.storage) {
     await displayMessageWindow();
     storage?.removeItem?.(saveKey(name));
 }
+// C restore.c:dorecover().
+// Also C restore.c:restgamestate(): inlined here.
 export async function restoreGame(name, storage = game.storage) {
     restoreRefusal = null;
     retainedSave = null;
@@ -353,6 +369,7 @@ export async function restoreGame(name, storage = game.storage) {
         return false;
     }
 }
+// Port only: clears process-scoped globals when restoring into live state.
 // C starts a restored game in a new process. These values belong to decl.c
 // instance globals or function statics, rather than the saved context or hero.
 // Clear them here too when callers restore into the existing live state.
@@ -413,6 +430,8 @@ function resetRestoredInstanceState() {
 // ---------------------------------------------------------------------------
 // C save.c:savemon() and restore.c:restmon(): saved pet extensions.
 // ---------------------------------------------------------------------------
+// Part of C restore.c:restmon(): the pet fix across a level's monsters
+// and objects.
 export function restoreLevelPetHistory(level, elapsed) {
     for (const monster of level.monsters) {
         restoreMonsterPetHistory(monster, elapsed);
@@ -423,6 +442,8 @@ export function restoreLevelPetHistory(level, elapsed) {
             restoreObjectPetHistory(pile ?? [], elapsed);
     restoreObjectPetHistory(level.buriedObjects ?? [], elapsed);
 }
+// Part of C restore.c:restmon(): the edog fields (droptime, hungrytime,
+// apport).
 export function restoreMonsterPetHistory(monster, elapsed) {
     const pet = monster.edog || monster.mextra?.edog;
     if (!pet)
@@ -439,6 +460,8 @@ export function restoreMonsterPetHistory(monster, elapsed) {
     else
         monster.mextra = { edog: pet };
 }
+// Part of C restore.c:restmon(): the edog fix applied to pets saved
+// inside objects.
 export function restoreObjectPetHistory(objects, elapsed) {
     for (const object of objects) {
         if (object.oextra?.omonst)
