@@ -84,6 +84,7 @@ src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c
 src/js/spell.ts	spell.c
+src/js/stairs.ts	stairs.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/teleport.ts	teleport.c

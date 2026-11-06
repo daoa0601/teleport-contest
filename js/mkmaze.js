@@ -44,7 +44,8 @@ import { premap_detect } from './detect.js';
 import { placeHeroOnLevel, specialLevelAt } from './dungeon.js';
 import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir } from './mklev.js';
+import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt } from './mklev.js';
+import { stairway_find_dir } from './stairs.js';
 import { isRoom } from './map_types.js';
 import { sendMonsterToLimbo, mnearto, dealWithMonsterOvercrowding, moveMonsterNextToHero } from './mon.js';
 // C mkmaze.c:set_levltyp()

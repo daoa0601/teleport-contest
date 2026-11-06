@@ -7,6 +7,7 @@ import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS,
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting } from './apply.js';
 import { doname, monsterName } from './do_name.js';
 import { doannotate, doDungeonOverview, levelIsWizardTower, recordMappedOverviewState, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
+import { On_stairs_dn, On_stairs_up } from './stairs.js';
 import { dochat } from './sounds.js';
 import { doloot, pickupAtHero, dotip, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifact.js';
@@ -1050,8 +1051,6 @@ async function domouseaction() {
         mouseAction(target);
 }
 // C cmd.c:domouseaction(), the optional mouse binding which chooses an action.
-// Also C stairs.c:On_stairs_up(): inlined here for the stairway under the hero.
-// Also C stairs.c:On_stairs_dn(): inlined here for the same direction choice.
 function mouseAction(click) {
     requirePlayingGame(game);
     let dx = click.x - game.u.ux, dy = click.y - game.u.uy;
@@ -1070,15 +1069,13 @@ function mouseAction(click) {
                 queue('quaff');
             else if (location?.typ === THRONE)
                 queue('sit');
+            else if (On_stairs_up(game, click.x, click.y))
+                queue('up');
+            else if (On_stairs_dn(game, click.x, click.y))
+                queue('down');
             else {
-                let stair = game.stairs;
-                while (stair && (stair.sx !== click.x || stair.sy !== click.y))
-                    stair = stair.next;
                 const object = game.level?.objects[click.x]?.[click.y]?.[0];
-                if (stair)
-                    queue(stair.up ? 'up' : 'down');
-                else
-                    queue(object ? isContainer(object) ? 'loot' : 'pickup' : 'wait');
+                queue(object ? isContainer(object) ? 'loot' : 'pickup' : 'wait');
             }
             return;
         }

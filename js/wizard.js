@@ -5,6 +5,7 @@ import { displayColorName, monsterName } from './do_name.js';
 import { newsym } from './display.js';
 import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
+import { stairway_find_type_dir } from './stairs.js';
 import { setMonsterMalign } from './makemon.js';
 import { monsterAlignmentType, priestIsInOwnTemple } from './priest.js';
 import { BOLT_LIM, Is_astralevel, Is_rogue_level, MAGIC_PORTAL, M_AP_MONSTER, MM_NOWAIT, RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR, STRAT_PLAYER, STRAT_WAITFORU, STRAT_WAITMASK } from './const.js';
@@ -430,22 +431,29 @@ export async function retreatCovetousMonster(monster, state, random = rn2, rollO
 // point for guardians (Kops). C prefers stairs, then a ladder, in the travel
 // direction; then a branch stairway in any direction; then stairs or a
 // ladder in the other direction. Null when only a portal reaches the level.
-// Also C stairs.c:stairway_find_type_dir(): inlined here in the ordered searches.
 export function chooseStairs(dir, state) {
-    const stairs = [];
-    for (let stair = state.stairs; stair; stair = stair.next)
-        stairs.push(stair);
     // With no stairway at all, C's stairway_find_type_dir() loop never runs;
     // skip builds_up() too, which needs an initialized dungeon list.
-    if (!stairs.length)
+    if (!state.stairs)
         return null;
-    const up = dungeonBuildsUp(state.u.uz, state) ? dir : !dir;
-    return stairs.find(stair => !stair.isladder && stair.up === up)
-        ?? stairs.find(stair => stair.isladder && stair.up === up)
-        ?? stairs.find(stair => stair.tolev.dnum !== state.u.uz.dnum)
-        ?? stairs.find(stair => !stair.isladder && stair.up !== up)
-        ?? stairs.find(stair => stair.isladder && stair.up !== up)
-        ?? null;
+    const stdir = dungeonBuildsUp(state.u.uz, state) ? dir : !dir;
+    let stway = stairway_find_type_dir(state, false, stdir)
+        ?? stairway_find_type_dir(state, true, stdir);
+    if (!stway) {
+        // no ladder either; look for branch stairs or ladder in any direction
+        for (stway = state.stairs; stway; stway = stway.next)
+            if (stway.tolev.dnum !== state.u.uz.dnum)
+                break;
+        // if no branch stairs/ladder, check for regular stairs in
+        // opposite direction, then for regular ladder if necessary
+        if (!stway) {
+            stway = stairway_find_type_dir(state, false, !stdir)
+                ?? stairway_find_type_dir(state, true, !stdir);
+        }
+    }
+    /* [note: 'stway' could still be Null if the only access to this
+       level is via magic portal] */
+    return stway;
 }
 // C wizard.c:cuss(), shared by monster turns and sounds.c:domonnoise().
 const WIZARD_CUSS_INSULTS = [

@@ -66,7 +66,8 @@ import { heroHasHalfSpellDamage, monsterResistsEffect, learnWand } from './zap.j
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { awakenSoldiers } from './music.js';
-import { canDigDown, canFallThrough, stairwayAt } from './mklev.js';
+import { canDigDown, canFallThrough } from './mklev.js';
+import { stairwayAt } from './stairs.js';
 import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';

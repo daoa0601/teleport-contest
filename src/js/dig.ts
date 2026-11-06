@@ -42,7 +42,8 @@ import { heroIsUnaware } from './senses.js';
 import { delobj } from './invent.js';
 import { gotoLevel } from './do.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
-import { canDigDown, stairwayAt } from './mklev.js';
+import { canDigDown } from './mklev.js';
+import { On_ladder, On_stairs, stairwayAt } from './stairs.js';
 import { createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
@@ -1635,7 +1636,6 @@ async function digVertically(state: GameState, direction: number): Promise<void>
 
 // C dig.c:adj_pit_checks(). Returns null to permit digging, an empty string
 // to reject silently, or the rejection message.
-// Also C stairs.c:On_ladder(): inlined here as the stairway's ladder flag test.
 function adjacentPitRejection(x: number, y: number, state: GameState): string | null {
     const location = requireGameLevel(state).requireAt(x, y);
     const type = location.typ;
@@ -1648,13 +1648,9 @@ function adjacentPitRejection(x: number, y: number, state: GameState): string | 
     if (IS_TREE(type)) return "The tree's roots glow then fade.";
     if (type === IRONBARS) return 'The bars go much deeper than your pit.';
     if (type === SINK) return 'A tangled mass of plumbing remains below the sink.';
-    const stairs = stairwayAt(state, x, y);
-    // C stairs.c:On_ladder().
-    if (stairs?.isladder) return 'The ladder is unaffected.';
-    // C stairs.c:On_stairs() names the stairs as the supporting structure;
-    // stairs.c:On_ladder() is handled above.
+    if (On_ladder(state, x, y)) return 'The ladder is unaffected.';
     const support = type === FOUNTAIN ? 'fountain' : type === THRONE ? 'throne'
-        : type === ALTAR ? 'altar' : stairs ? 'stairs'
+        : type === ALTAR ? 'altar' : On_stairs(state, x, y) ? 'stairs'
             : type === DRAWBRIDGE_DOWN || type === DBWALL ? 'drawbridge' : null;
     return support ? `The ${possessiveName(support)} supporting structures remain intact.` : null;
 }

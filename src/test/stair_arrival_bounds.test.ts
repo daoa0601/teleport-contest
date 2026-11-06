@@ -4,7 +4,7 @@ import test from 'node:test';
 import { COLNO, PANICLOG, ROWNO } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { u_on_upstairs } from '../js/mklev.js';
+import { u_on_upstairs } from '../js/stairs.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 

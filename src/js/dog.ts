@@ -33,6 +33,7 @@ import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
 import { setMonsterMalign } from './makemon.js';
 import type { Monster, MonsterLevel, PetData } from './monster_types.js';
+import { stairway_find, stairway_find_from } from './stairs.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -629,15 +630,6 @@ export async function catchUpMonster(monster: Monster, moves: number, state: Gam
     monster.mlstmv = state.moves ?? 0;
 }
 
-function arrivalStairway(state: GameState, origin: DungeonLocation | undefined, ladder?: boolean) {
-    // C stairway_find_from()/stairway_find(): the stair on this level that
-    // connects back to the origin level.
-    for (let stair = state.stairs; stair; stair = stair.next) {
-        if (sameMigrationLevel(stair.tolev, origin)
-            && (ladder === undefined || stair.isladder === ladder)) return stair;
-    }
-    return null;
-}
 
 function wanderLocale(state: GameState, x: number, y: number, wander: number): Position | null {
     // C mon_arrive(): a monster that moved during limbo arrives within
@@ -739,18 +731,18 @@ export async function monsterArrive(monster: Monster, when: MonsterArrivalPhase,
         break;
     case MIGR_STAIRS_UP:
     case MIGR_STAIRS_DOWN: {
-        const stair = arrivalStairway(state, origin, false);
+        const stair = stairway_find_from(state, origin, false);
         if (stair) xlocale = stair.sx, ylocale = stair.sy;
         break;
     }
     case MIGR_LADDER_UP:
     case MIGR_LADDER_DOWN: {
-        const stair = arrivalStairway(state, origin, true);
+        const stair = stairway_find_from(state, origin, true);
         if (stair) xlocale = stair.sx, ylocale = stair.sy;
         break;
     }
     case MIGR_SSTAIRS: {
-        const stair = arrivalStairway(state, origin);
+        const stair = stairway_find(state, origin);
         if (stair) xlocale = stair.sx, ylocale = stair.sy;
         break;
     }
