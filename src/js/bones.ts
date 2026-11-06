@@ -32,9 +32,9 @@ import { sanitizeName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import type { BonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
-import { hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape, restoreMonsterInventoryOwnership } from './mon.js';
+import { hideMonsterOnRestore, hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape, restoreMonsterInventoryOwnership } from './mon.js';
 import {
-    repairBonesConnections, restoreLevelChains, hideMonsterOnRestore, restoreMonsterWormHeads,
+    repairBonesConnections, restoreLevelChains, restoreMonsterWormHeads,
     validMonsterWormBodies,
 } from './restore.js';
 import { restoreLevelPetHistory } from './save.js';

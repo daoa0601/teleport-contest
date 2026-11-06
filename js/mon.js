@@ -1190,6 +1190,34 @@ export async function hideHeroUnder(state = game) {
         await newsym(state.u.ux, state.u.uy);
     return undetected;
 }
+// C mon.c:hide_monst(), whose only native caller is restore.c:getlev():
+// restored hiders get their attempt before normal vision can expose their
+// spot. Only that square's vision bits are hidden, and hideunder sees
+// restored vision.
+export async function hideMonsterOnRestore(monster, state = game) {
+    requireLiveGame(state);
+    const hiderUnder = monsterHidesUnder(monster.mnum) || monsterIsEel(monster.mnum);
+    if (!monsterIsHider(monster.mnum) && !hiderUnder)
+        return;
+    if (monster.mundetected || M_AP_TYPE(monster))
+        return;
+    const row = state.viz_array?.[monster.my];
+    const savedVision = row?.[monster.mx];
+    if (!row || savedVision === undefined)
+        throw new Error('Restoring monster hiding requires an initialized vision square.');
+    row[monster.mx] = savedVision & ~(IN_SIGHT | COULD_SEE);
+    try {
+        if (monsterIsHider(monster.mnum))
+            await attemptMonsterRestrap(monster, state);
+        if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC && !M_AP_TYPE(monster))
+            await attemptMonsterRestrap(monster, state);
+    }
+    finally {
+        row[monster.mx] = savedVision;
+    }
+    if (hiderUnder)
+        await hideMonsterUnder(monster, state);
+}
 export async function maybeUnhideAt(x, y, state = game) {
     const monster = state.level?.monsters.find(candidate => monsterHasMapPosition(candidate, state)
         && !candidate.dead && candidate.mx === x && candidate.my === y);

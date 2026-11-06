@@ -14,10 +14,10 @@ import { objectName, pluralizeObjectNoun } from './objnam.js';
 import { deleteTrap } from './trap.js';
 import { PanicTermination } from './panic_termination.js';
 import { attemptMonsterRestrap, hideMonsterUnder } from './mon.js';
-import { monsterHidesUnder, monsterIsEel, monsterIsHider } from './mondata.js';
+import { monsterHidesUnder } from './mondata.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { isok } from './cmd.js';
-import { AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, COULD_SEE, IN_SIGHT, ismnum, MAGIC_PORTAL, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM, } from './const.js';
+import { AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, ismnum, MAGIC_PORTAL, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM, } from './const.js';
 import { SLIME_MOLD } from './object_data.js';
 import { validSavedHeroAlignment } from './character_validation.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
@@ -370,35 +370,6 @@ export function restoreMonsterWormHeads(level) {
 export async function restoreMonsterCover(monster, state = game) {
     if (monster !== state.u.usteed && monster.mundetected
         && monsterHidesUnder(monster.mnum))
-        await hideMonsterUnder(monster, state);
-}
-const S_MIMIC = 13;
-// C mon.c:hide_monst(), whose only native caller is restore.c:getlev():
-// restored hiders get their attempt before normal vision can expose their
-// spot. Only that square's vision bits are hidden, and hideunder sees
-// restored vision.
-export async function hideMonsterOnRestore(monster, state = game) {
-    requireLiveGame(state);
-    const hiderUnder = monsterHidesUnder(monster.mnum) || monsterIsEel(monster.mnum);
-    if (!monsterIsHider(monster.mnum) && !hiderUnder)
-        return;
-    if (monster.mundetected || M_AP_TYPE(monster))
-        return;
-    const row = state.viz_array?.[monster.my];
-    const savedVision = row?.[monster.mx];
-    if (!row || savedVision === undefined)
-        throw new Error('Restoring monster hiding requires an initialized vision square.');
-    row[monster.mx] = savedVision & ~(IN_SIGHT | COULD_SEE);
-    try {
-        if (monsterIsHider(monster.mnum))
-            await attemptMonsterRestrap(monster, state);
-        if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC && !M_AP_TYPE(monster))
-            await attemptMonsterRestrap(monster, state);
-    }
-    finally {
-        row[monster.mx] = savedVision;
-    }
-    if (hiderUnder)
         await hideMonsterUnder(monster, state);
 }
 // C restore.c:getlev(): branch entrances can move between games.
