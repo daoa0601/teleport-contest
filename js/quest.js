@@ -246,12 +246,12 @@ export async function prepareQuestArrival({ fromDepth } = {}, g = game) {
     }
     return null;
 }
-// Part of C do.c's main-dungeon arrival branch: every arrival at the
-// Quest entrance level from outside the Quest branch delivers the
-// leader's summons (quest.c quest_portal() first, then
-// quest_portal_again(), or _demand for Rogues).  Loading quest.lua
-// consumes nhlib's alignment shuffle before its plines collide with any
-// pending level-teleport message.
+// Part of C do.c's main-dungeon arrival branch (do.c:1927-1930): every
+// arrival at the Quest entrance level from outside the Quest branch
+// delivers the leader's summons through com_pager() — the "quest_portal"
+// message key first, then "quest_portal_again", or "quest_portal_demand"
+// for Rogues.  Loading quest.lua consumes nhlib's alignment shuffle
+// before its plines collide with any pending level-teleport message.
 export async function prepareMainQuestPortalCall({ fromDepth } = {}, g = game) {
     const event = g.u?.uevent || (g.u.uevent = {});
     const status = ensureQuestStatus(g);
