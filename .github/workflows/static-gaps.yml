@@ -43,7 +43,8 @@ jobs:
           path: |
             .cache/static-gaps/c-facts
             .cache/static-gaps/c-graph
-          key: static-gaps-${{ env.NETHACK_SHA }}-${{ hashFiles('src/scripts/static-gaps.mts', 'src/scripts/lib/c-sources.mts', 'src/scripts/lib/gap-edges.mts') }}
+            .cache/static-gaps/c-args
+          key: static-gaps-${{ env.NETHACK_SHA }}-${{ hashFiles('src/scripts/static-gaps.mts', 'src/scripts/lib/c-sources.mts', 'src/scripts/lib/gap-edges.mts', 'src/scripts/lib/gap-args.mts') }}
       - run: npm ci --ignore-scripts
       - run: npm run compile
       - name: Message ledger check
@@ -58,6 +59,10 @@ jobs:
         run: |
           node scripts/static-gaps.mjs edges --check-ledger docs/ledger/c-edges.tsv | tee static-edges.txt
           { echo '```'; head -5 static-edges.txt; tail -1 static-edges.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Argument ledger check
+        run: |
+          node scripts/static-gaps.mjs args --check-ledger docs/ledger/c-args.tsv | tee static-args.txt
+          { echo '```'; head -4 static-args.txt; tail -1 static-args.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Module-owner ledger check
         run: |
           node scripts/static-gaps.mjs owners --check-ledger docs/ledger/module-owners.tsv | tee static-owners.txt

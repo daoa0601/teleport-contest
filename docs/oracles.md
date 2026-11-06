@@ -65,6 +65,7 @@ git -C nethack-c/upstream submodule update --init submodules/lua
 node scripts/static-gaps.mjs messages [--coverage OUT/c-coverage.json] [--verbose] [--reviewed-ledger R.tsv] [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs edges [--function C_NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
+node scripts/static-gaps.mjs args [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs owners [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs screens RUN_DIR
 ```
@@ -142,6 +143,36 @@ to `c-ts-aliases.tsv`. An alias adds a counterpart and never hides a comment
 citation. When an audit confirms an inlined or unobservable edge, or a dead C
 branch, add a justification line. `--function NAME` prints one function's
 lists.
+
+`args` reads every CallExpr inside a C function from the same clang AST and
+records the arguments spelled `TRUE` or `FALSE` — the macro spelling at the
+expansion site, not the folded 1/0, so booleans a header macro such as
+`makeknown()` adds do not count. For every (caller, callee) pair whose port
+counterparts the same name, alias and citation mapping finds, it collects
+the bare `true`/`false` literals of the counterpart calls: the
+counterpart's own body, plus port helpers up to the same two levels, where
+a helper that counterparts a different C function owns its calls and is not
+walked through (they are compared in that function's own pair); only
+helpers without a C counterpart — code the port moved out of the caller —
+are transparent.
+Each side contributes the call sites that spell at least one boolean
+literal, so a pair that also passes a non-literal flag still compares; a
+port call whose flag hides in an options object stays an occurrence and
+makes the pair uncomparable.
+Equal multisets of per-call sequences match; equal call counts and
+per-call boolean counts with different values are mismatches, the class of
+bug an edge check cannot see (`reset_utrap(TRUE)` called as
+`resetUtrap(false)`); different call counts, per-call counts split
+differently across the calls, flags inside options objects such as
+`{ silent: true }`, and calls routed through macros — booleans written
+inside another macro's argument list, which clang versions position
+differently — are uncomparable. Mismatches are
+audit leads — a signature that renames or inverts the flag reads as one
+until classified.
+`docs/ledger/c-args.tsv` freezes the matching `file\tcaller\tcallee\tsequences`
+rows, so a later change that flips a matching literal fails the check. The
+caller's C file keeps same-named static functions separate; moving a port
+function between TypeScript modules does not change its ledger row.
 
 `owners` folds the same counterpart mapping by port module: which C file each
 `src/js` module's mapped functions come from, its dominant C file, the
