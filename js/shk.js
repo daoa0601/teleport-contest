@@ -53,7 +53,7 @@ import { makemonAt } from './makemon.js';
 import { enexto } from './teleport.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
-import { intrinsic_possible } from './eat.js';
+import { intrinsic_possible, clearVictualReference } from './eat.js';
 import { artifactById } from './artifact.js';
 import { bot } from './botl.js';
 import { showGetposInstructions, selectMapPosition } from './getpos.js';
@@ -228,12 +228,6 @@ async function clearEquipment(object, state) {
     object.wielded = false;
     object.alternate = false;
     object.ready = false;
-}
-// C eat.c:396-403 food_disappears(): stop being the meal in progress.
-// Timers are stopped for every freed object further below.
-function clearVictualReference(object, state) {
-    if (state.context?.victual?.piece === object)
-        state.context.victual = null;
 }
 // C shk.c:delete_contents().
 export async function deleteObjectContents(container, state = game) {

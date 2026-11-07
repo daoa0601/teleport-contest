@@ -53,7 +53,7 @@ import { addExperience, checkExperienceLevel, gainExperienceLevel } from './expe
 import { explode } from './explode.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import { heroCanReachFloor } from './engrave.js';
-import { nonrottingCorpse, veganCorpse, vegetarianCorpse } from './food_traits.js';
+import { veganCorpse, vegetarianCorpse } from './food_traits.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { nomul, loseHeroHp, chewIronBars, stopRun, exceedsActionCapacity, nearCapacity, finishHeroHelplessness } from './hack.js';
@@ -259,6 +259,22 @@ interface VomitOptions {
 // C hands_obj represents the terrain being eaten, not an inventory object.
 export const IRON_BARS_FOOD = Object.freeze({ kind: 'iron-bars' });
 export type FoodSelection = GameObject | typeof IRON_BARS_FOOD;
+
+const NONROTTING = new Set(['acid blob', 'lichen', 'lizard', 'Death', 'Pestilence', 'Famine']
+    .map(name => MONSTER_NAME.indexOf(name)));
+
+// C eat.c:nonrotting_corpse(): corpses that never rot (the macro is
+// defined inside eat.c).
+export function nonrottingCorpse(species: number | undefined): boolean {
+    return species !== undefined && NONROTTING.has(species);
+}
+
+// C eat.c:food_disappears(): stop being the meal in progress when the
+// object decays mid-meal. Timers are stopped by the freeing owner.
+export function clearVictualReference(object: GameObject, state: GameState): void {
+    if (state.context?.victual?.piece === object)
+        state.context.victual = null;
+}
 
 // C eat.c:is_edible(). Decide whether a particular object can be eaten by
 // the possibly polymorphed character; not used for monster checks.

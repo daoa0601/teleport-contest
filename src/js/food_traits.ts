@@ -1,5 +1,6 @@
-// Native corpse composition and decay exceptions.
-// C refs: mondata.h vegan()/vegetarian(), eat.c nonrotting_corpse().
+// Native corpse composition helpers.
+// C refs: mondata.h vegan()/vegetarian(); eat.c nonrotting_corpse() lives in
+// eat.ts with its eat.c owner.
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 
 const S_BLOB = 2, S_JELLY = 10, S_VORTEX = 22, S_LIGHT = 25;
@@ -8,15 +9,6 @@ const PM_STALKER = MONSTER_NAME.indexOf('stalker');
 const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
 const PM_LEATHER_GOLEM = MONSTER_NAME.indexOf('leather golem');
 const PM_BLACK_PUDDING = MONSTER_NAME.indexOf('black pudding');
-const NONROTTING = new Set(['acid blob', 'lichen', 'lizard', 'Death', 'Pestilence', 'Famine']
-    .map(name => MONSTER_NAME.indexOf(name)));
-
-// C eat.c:nonrotting_corpse(): corpses that never rot (the macro is
-// defined inside eat.c).
-export function nonrottingCorpse(species: number | undefined): boolean {
-    return species !== undefined && NONROTTING.has(species);
-}
-
 // C mondata.h:vegan(): the vegan() macro over monster body symbols.
 export function veganCorpse(species: number | undefined): boolean {
     if (species === undefined) return false;
