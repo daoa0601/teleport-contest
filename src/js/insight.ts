@@ -396,7 +396,7 @@ function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0, 
             message(steedName.charAt(0).toUpperCase() + steedName.slice(1), ' has ', ' had ', legs);
     }
     if ((u.glibTurns ?? 0) > 0)
-        have(`slippery ${fingersOrGloves()}${wizard ? ` (${u.glibTurns})` : ''}`);
+        have(`slippery ${fingersOrGloves(true)}${wizard ? ` (${u.glibTurns})` : ''}`);
     // C insight.c:cause_known(): a worn, seen, type-discovered item confers
     // a definitely-known cause.
     const knownCause = (property: PropertyName) => (u._propertySources?.[property]?.worn ?? [])
@@ -1561,12 +1561,6 @@ function vanquishedEntries(): VanquishedEntry[] {
 export function vanquishedTypeCount(): number {
     return (game.mvitals || []).filter(vital => (vital?.died ?? 0) > 0).length;
 }
-// C insight.c:N_times(): "once", "twice", "thrice", then "N times".
-function timesText(count: number): string {
-    if (count === 2) return 'twice';
-    if (count === 3) return 'thrice';
-    return `${count} times`;
-}
 // Part of C insight.c:list_vanquished(): indents each entry so its name
 // column lines up with the three-digit count prefix of multiple-kill rows.
 function vanquishedIndent(text: string): number {
@@ -1575,7 +1569,8 @@ function vanquishedIndent(text: string): number {
     if (/^a /i.test(text)) return 2;
     return /[0-9]/.test(text.charAt(2)) ? 0 : 4;
 }
-// C insight.c:list_vanquished().
+// Part of C insight.c:list_vanquished(): the vanquished-creatures menu text,
+// shared with end.c's end-of-game disclosure (C asks the query there).
 export function vanquishedLines(ask = false): TextMenuEntry[] {
     const mode = vanqSortMode();
     const entries = vanquishedEntries();
@@ -1601,7 +1596,7 @@ export function vanquishedLines(ask = false): TextMenuEntry[] {
         let text: string;
         if (entry.unique) {
             text = `${entry.pname ? '' : 'the '}${entry.name}`;
-            if (entry.count > 1) text += ` (${timesText(entry.count)})`;
+            if (entry.count > 1) text += ` (${times(entry.count)})`;
             wasUnique = true;
         } else {
             if (uniqHeaders && wasUnique) {
