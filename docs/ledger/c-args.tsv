@@ -59,6 +59,7 @@ do.c	final_level	create_mplayers	true
 do.c	flooreffects	reset_utrap	false;true
 do.c	goto_level	reset_utrap	false
 do.c	menu_drop	bypass_objlist	false;false;false;true
+do.c	menu_drop	ggetobj	true
 do.c	revive_mon	rider_revival_time	true
 do_wear.c	Boots_on	toggle_stealth	true
 dog.c	abuse_dog	m_unleash	true
@@ -69,6 +70,8 @@ dog.c	mon_catchup_elapsed_time	m_unleash	false
 dog.c	mon_leave	set_residency	true
 dog.c	tamedog	dog_eat	false;true
 dog.c	wary_dog	m_unleash	true
+dogmove.c	dog_invent	dog_eat	false
+dogmove.c	dog_move	dog_eat	false
 dogmove.c	dog_move	m_unleash	false
 dogmove.c	quickmimic	m_unleash	false
 dokick.c	ghitm	hidden_gold	true
@@ -78,6 +81,7 @@ dokick.c	kick_dumb	exercise	false;false
 dokick.c	kick_monster	exercise	false
 dokick.c	kick_nondoor	fall_through	false
 dokick.c	kick_ouch	exercise	false;false
+dokick.c	kickdmg	exercise	true
 dokick.c	really_kick_object	breakchestlock	false
 dokick.c	really_kick_object	contained_gold	true
 dokick.c	really_kick_object	impact_disturbs_zombies	true;true
@@ -446,6 +450,7 @@ uhitm.c	mhitm_ad_famn	exercise	false
 uhitm.c	mhitm_ad_heal	exercise	true;true
 uhitm.c	mhitm_ad_legs	exercise	false;false
 uhitm.c	mhitm_ad_phys	exercise	false;false;false
+uhitm.c	mhitm_ad_plys	dynamic_multi_reason	false
 uhitm.c	mhitm_ad_plys	exercise	false
 uhitm.c	mhitm_ad_sgld	exercise	true
 uhitm.c	mhitm_ad_were	exercise	false

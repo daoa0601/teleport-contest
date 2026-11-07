@@ -119,6 +119,7 @@ angrygods	summon_minion
 antholemon	level_difficulty
 append_honorific	rn2
 armoroff	cursed
+armoroff	nomul
 arti_invoke	arti_invoke_cost
 arti_invoke	d
 arti_invoke	enlightenment
@@ -878,6 +879,7 @@ docrt_flags	under_ground
 docrt_flags	under_water
 docrt_flags	vision_recalc
 doddoremarm	take_off
+doddrop	menu_drop
 doddrop	sellobj_state
 dodip	getobj
 dodip	is_pool
@@ -1054,6 +1056,7 @@ domove_core	avoid_trap_andor_region
 domove_core	check_leash
 domove_core	disturb_buried_zombies
 domove_core	domove_fight_web
+domove_core	exercise_steed
 domove_core	findtravelpath
 domove_core	glyph_at
 domove_core	invocation_message
@@ -1495,6 +1498,7 @@ explode	dist2
 explode	done
 explode	engulfer_explosion_msg
 explode	exercise
+explode	explosionmask
 explode	golemeffects
 explode	ignite_items
 explode	isok
@@ -1945,6 +1949,7 @@ illegal_menu_cmd_key	letter
 impact_drop	angry_guards
 impact_drop	costly_spot
 impact_drop	currency
+impact_drop	drop_to
 impact_drop	in_rooms
 impact_drop	picked_container
 impact_drop	rn2
@@ -2112,6 +2117,7 @@ kick_dumb	set_wounded_legs
 kick_monster	acurr
 kick_monster	exercise
 kick_monster	inv_weight
+kick_monster	kickdmg
 kick_monster	map_invisible
 kick_monster	newsym
 kick_monster	rn2
@@ -2474,6 +2480,7 @@ make_confused	unconscious
 make_corpse	d
 make_corpse	mkgold
 make_corpse	newsym
+make_corpse	obj_meld
 make_corpse	rn2
 make_corpse	rnd
 make_corpse	rnl
@@ -4063,6 +4070,7 @@ shiny_orc_stuff	rnd
 shiny_orc_stuff	weight
 ship_object	change_luck
 ship_object	costly_spot
+ship_object	drop_to
 ship_object	impact_drop
 ship_object	in_rooms
 ship_object	maybe_unhide_at
@@ -4844,6 +4852,7 @@ wiz_telekinesis	hurtle
 wiz_where	print_dungeon
 wiz_wish	encumber_msg
 wiz_wish	makewish
+wizcustom_glyphids	wizcustom_callback
 wizdeadorgone	rn2
 wizterrainwish	count_level_features
 wizterrainwish	docrt
@@ -4864,6 +4873,7 @@ wizterrainwish	water_damage_chain
 worst_cursed_item	near_capacity
 worst_cursed_item	welded
 xname_flags	Japanese_item_name
+xname_flags	tin_details
 xprname	currency
 xy_set_wall_state	set_corn
 xy_set_wall_state	set_crosswall
