@@ -437,7 +437,7 @@ function entityName(entity, state, capitalized = false) {
         return capitalized ? 'You' : 'you';
     return monsterName(entity.actor, { state, capitalized });
 }
-// Part of C dbridge.c:e_canseemon(): is_u() || canseemon() visibility.
+// C dbridge.c:e_canseemon(): is_u() || canseemon() visibility.
 function entityIsVisible(entity) {
     return entity.hero || canSeeMonster(entity.actor);
 }

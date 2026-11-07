@@ -12,7 +12,7 @@ import { OBJ_NAME, oc_wldam, oc_wsdam, objectClassForType, objectBaseWeight, obj
 import { bypassObject } from './worn.js';
 import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_RINGL, W_RINGR, W_WEP, AKLYS_LIM, A_STR, A_DEX, P_AXE, P_PICK_AXE, Upolyd, WT_IRON_BALL_INCR, P_FLAIL, MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, STR18, HAND } from './const.js';
 import { definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular, } from './objnam.js';
-import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifact.js';
+import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, shadeGlare, artifactToHitBonus } from './artifact.js';
 import { canSeeMonster, newsym } from './display.js';
 import { formatFeltMessage, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './do.js';
@@ -251,11 +251,10 @@ function canHaveTargetDamageBonus(object) {
         || objectClass === BALL_CLASS
         || objectClass === CHAIN_CLASS;
 }
-// Part of C weapon.c:dmgval(): suppress ordinary base damage against shades.
+// Part of C weapon.c:dmgval() and uhitm.c:hmon_hitmon_potion(): suppress
+// ordinary base damage against shades (C shade_glare()).
 export function shadeBlocksWeaponBaseDamage(object, monster, state = game) {
-    return monsterIsShade(monster)
-        && objectMaterial(object, state) !== SILVER
-        && !artifactStrikesShade(object);
+    return monsterIsShade(monster) && !shadeGlare(object, state);
 }
 // Part of C weapon.c:dmgval(): apply thick skin, shades, and heavy iron-ball weight.
 function applyTargetBaseRules(object, monster, damage, rollOne, state) {

@@ -459,7 +459,7 @@ function entityName(entity: DrawbridgeEntity, state: GameState, capitalized = fa
     return monsterName(entity.actor, { state, capitalized });
 }
 
-// Part of C dbridge.c:e_canseemon(): is_u() || canseemon() visibility.
+// C dbridge.c:e_canseemon(): is_u() || canseemon() visibility.
 function entityIsVisible(entity: DrawbridgeEntity): boolean {
     return entity.hero || canSeeMonster(entity.actor);
 }
