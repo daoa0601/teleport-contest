@@ -1646,6 +1646,7 @@ float_up	spoteffects
 float_up	surface
 float_up	trapname
 flood_fill_rm	isok
+flush_screen	bot
 flush_screen	timebot
 food_detect	cls
 food_detect	docrt
@@ -2666,6 +2667,7 @@ mcast_fire_pillar	monstunseesu
 mcast_fire_pillar	shieldeff
 mcast_geyser	d
 mcast_insects	makemon
+mcast_insects	monster_census
 mcast_insects	rnd
 mcast_insects	unconscious
 mcast_lightning	d
@@ -2765,6 +2767,7 @@ mixtype	rn2
 mk_artifact	rn2
 mk_bubble	mv_bubble
 mk_bubble	rn2
+mk_knox_portal	place_branch
 mk_knox_portal	rn2
 mk_mplayer_armor	rn2
 mk_mplayer_armor	rnd
@@ -2857,6 +2860,7 @@ mkstairs	back_to_glyph
 mkstairs	isok
 mkswamp	makemon
 mkswamp	mkclass
+mkswamp	nexttodoor
 mkswamp	rn2
 mktrap	level_difficulty
 mktrap	makemon
@@ -3111,6 +3115,7 @@ newuhs	nomul
 newuhs	rn2
 next_ident	rnd
 nextoid	next_ident
+nexttodoor	isok
 nh_timeout	acurr
 nh_timeout	adjattrib
 nh_timeout	choke_dialogue
@@ -3217,6 +3222,7 @@ opentin	consume_tin
 optfn_hilite_status	parse_status_hl1
 optfn_statushilites	reset_status_hilites
 oracle_sound	rn2
+out_container	bot
 out_container	costly_spot
 out_container	fatal_corpse_mistake
 out_container	lift_object
@@ -3586,6 +3592,7 @@ punish	placebc
 put_lregion_here	bad_location
 put_lregion_here	mkportal
 put_lregion_here	mkstairs
+put_lregion_here	place_branch
 put_lregion_here	u_on_newpos
 put_monsters_to_sleep	d
 qt_montype	mkclass
@@ -4643,6 +4650,7 @@ use_grapple	rnd
 use_grapple	spoteffects
 use_grapple	surface
 use_grapple	u_wipe_engr
+use_grease	fingers_or_gloves
 use_grease	getobj
 use_grease	rn2
 use_lamp	costly_spot

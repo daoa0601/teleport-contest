@@ -777,7 +777,7 @@ export async function dropCursedSecondaryWeapon(
         await dropSecondaryWeapon(state);
 }
 
-// Part of C wield.c:drop_uswapwep(): choose the slipping or cursed-hand message and drop the item.
+// C wield.c:drop_uswapwep(): choose the slipping or cursed-hand message and drop the item.
 export async function dropSecondaryWeapon(state: GameState = game): Promise<void> {
     const object = state.uswapwep || state.u.uswapwep;
     if (!object) throw new Error('Dropping the secondary weapon requires an equipped object.');

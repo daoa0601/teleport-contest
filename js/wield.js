@@ -739,7 +739,7 @@ export async function dropCursedSecondaryWeapon(object, state = game) {
         && object === (state.uswapwep || state.u.uswapwep))
         await dropSecondaryWeapon(state);
 }
-// Part of C wield.c:drop_uswapwep(): choose the slipping or cursed-hand message and drop the item.
+// C wield.c:drop_uswapwep(): choose the slipping or cursed-hand message and drop the item.
 export async function dropSecondaryWeapon(state = game) {
     const object = state.uswapwep || state.u.uswapwep;
     if (!object)

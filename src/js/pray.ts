@@ -16,7 +16,7 @@ import {
 } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
-import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
+import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled, removeHeroAccessory } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, mk_artifact, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
@@ -552,6 +552,7 @@ export function deityName(alignment: number, state: GameState = game): string {
     const key = alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
     return state.urole?.gods?.[key] || 'your god';
 }
+
 
 // pray.c hallu_gods[]: the hallucination pantheon.
 const HALLUCINATED_GODS = [
@@ -1968,6 +1969,9 @@ async function offerFakeAmulet(amulet: GameObject, highAltar: boolean, alignment
 async function offerAmulet(amulet: GameObject, alignment: number): Promise<void> {
     const game = requireInitializedGame();
     const hero = game.u;
+    // C pray.c:offer_real_amulet() calls Amulet_off() before useup() when
+    // the Amulet is worn; its off_msg() names the amulet first.
+    if ((game.uamul ?? hero.uamul) === amulet) await removeHeroAccessory(amulet, game);
     await useOffering(amulet);
     await pline(`You offer the Amulet of Yendor to ${deityName(alignment)}...`);
     if (alignment === A_NONE) {

@@ -350,17 +350,29 @@ for (const [alignment, outcome] of [[0, 'ascended'], [1, 'escaped']] as const) {
         await wearHeroAccessory(amulet, 'uamul');
 
         const input = resetInputState();
-        // Escape suppresses further offering messages, including the native
-        // message-window flush before disclosure. The next input is the summary.
-        await answerPrompts(runExtendedCommand('offer', amulet.invlet), input, [
-            { prompt: /You offer the Amulet of Yendor to (?:Ishtar|Anu)\.\.\.--More--/, keys: '\x1b' },
-            {
-                prompt: outcome === 'ascended'
-                    ? /You went to your reward with/
-                    : /You escaped from the dungeon with/,
-                keys: '\x1b',
+        // Amulet_off() names the worn Amulet before it is offered; the
+        // driver pages through every message until the summary.
+        const messages: string[] = [];
+        input.display = {
+            async readKey() {
+                const message = requireScreenRow(0).map(cell => cell.ch).join('');
+                messages.push(message);
+                if (/^You were wearing the Amulet of Yendor\./.test(message)) return 32;
+                if (/^Goodbye /.test(message)) return '\x1b'.charCodeAt(0);
+                assert.match(message, /--More--/, `unexpected blocking screen ${message}`);
+                return 32;
             },
-        ]);
+        };
+        try {
+            await runExtendedCommand('offer', amulet.invlet);
+        } finally {
+            input.display = null;
+        }
+
+        assert.ok(
+            messages.some(message => /^You were wearing the Amulet of Yendor\./.test(message)),
+            'Amulet_off() must announce the worn Amulet before the offering',
+        );
 
         assert.equal(game.program_state.gameover, true);
         assert.equal(game.inventory.includes(amulet), false);
