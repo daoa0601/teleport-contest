@@ -209,15 +209,15 @@ export function fruitFromName(name: string, { exact = false, state = game }: Fru
     return result;
 }
 
-// Port only: the per-game fruit list (C gf.ffruit) and preferred name.
-// C gf.ffruit and svp.pl_fruit: the fruit chain and the preferred name only
-// exist after options initialization; naming before that is a port error.
+// C gf.ffruit: the per-game fruit chain; the name only exists after
+// options initialization, so naming before that is a port error.
+
 export function fruitRegistry(state: GameState): Fruit[] {
     if (!state.fruits) throw new Error('Fruit registry has not been initialized');
     return state.fruits;
 }
 
-// Port only: the preferred fruit name (C svp.pl_fruit).
+// C svp.pl_fruit: the preferred fruit name, validated.
 export function preferredFruitName(state: GameState): string {
     if (state.fruitName === undefined) throw new Error('Preferred fruit has not been initialized');
     return state.fruitName;
@@ -942,12 +942,6 @@ export function unseenObjectNoun(
     }
 }
 
-// Port only: read the per-game shuffled description.
-function currentDescription(otyp: number): string | null | undefined {
-    return OBJ_DESCR(otyp);
-}
-
-
 // C objnam.c:erosion_matters(): used to prevent rust on items where rust
 // makes no difference.  A weptool counts; an ordinary non-weapon tool does
 // not become proof merely because its material could otherwise decay.
@@ -1246,7 +1240,7 @@ export function wishedObjectPresentation(object: GameObject) {
     // individual object's charge/enchantment `known` bit.  Keep the wished
     // object's appearance only while its concrete type is still unknown.
     const description = game._knownObjectTypes?.has(otyp)
-        ? null : currentDescription(otyp);
+        ? null : OBJ_DESCR(otyp);
     let name: string;
     if (otyp === SLIME_MOLD) {
         name = fruitFromIndex(object.spe)?.fname || 'fruit';
@@ -1290,14 +1284,16 @@ export function wishedObjectPresentation(object: GameObject) {
     };
 }
 
-// Port only: checked read of an object type's native name.
+// C OBJ_NAME(objects[otyp]): the native name, with the port's
+// required-name validation.
 function requireObjectName(otyp: number): string {
     const name = OBJ_NAME(otyp);
     if (!name) throw new RangeError(`Object type ${otyp} has no native name`);
     return name;
 }
 
-// Port only: checked lookup of a required artifact.
+// Part of C objnam.c:readobjnam(): the required artifact lookup, with the
+// port's validation.
 function requiredArtifact(name: string, state: GameState): Artifact {
     const artifact = artifactByName(name, state);
     if (!artifact) throw new RangeError(`No native artifact named ${name}`);
@@ -2440,14 +2436,15 @@ function setLooted(location: MapLocation, flags: number): void {
     setMapFlags(location, flags);
 }
 
-// Port only: clear the aliased terrain flag fields.
+// Part of C objnam.c:wizterrainwish(): lev->flags = 0 — rm.h overlays the
+// one field the port stores five deep.
 function clearMapFlags(location: MapLocation): void {
     setMapFlags(location, 0);
 }
 
-// Port only: write the five aliased terrain flag fields at once (C rm.h
-// views them as one).
-// C rm.h stores these terrain-specific views in the same five flag bits.
+// Part of C objnam.c:wizterrainwish(): the lev->flags/altarmask/looted
+// writes — rm.h overlays all five views on the one C field, so every
+// wizterrainwish write fans out to the port's five aliased fields.
 function setMapFlags(location: MapLocation, flags: number): void {
     location.flags = location.doormask = location.wall_info = location.icedpool = flags;
     location.looted = location.ladder = location.drawbridgemask = location.altarmask = flags;
