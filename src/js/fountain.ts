@@ -28,6 +28,7 @@ import type { MapLocation } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { countLevelFeatures, makemonNear } from './mklev.js';
+import { nexttodoor } from './mkroom.js';
 import { splitHeroMonsterForm, grantMonsterWish, applySupportedPotionVapor, heroPotionVaporProfile, drinkPotion } from './potion.js';
 import { mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject, adjustObjectLightAfterBlessing} from './mkobj.js';
 import { definiteName, objectCombatName, rndClass, makePlural, fruitName } from './objnam.js';
@@ -155,7 +156,7 @@ export async function gushForthFromFountain({ drinking = false, state = game }: 
         const location = state.level?.at?.(x, y);
         const objects = state.level?.objects?.[x]?.[y] || [];
         if (location?.typ !== ROOM || objects.some(object => object.otyp === BOULDER)
-            || nextToDoor(x, y, state)) {
+            || nexttodoor(x, y, state)) {
             continue;
         }
         const trap = state.level?.traps?.find(candidate =>
@@ -189,17 +190,6 @@ export async function gushForthFromFountain({ drinking = false, state = game }: 
     }
 }
 
-// C mkroom.c:nexttodoor(): local copy for gush()'s room test; the mkroom
-// port does not export one.
-function nextToDoor(x: number, y: number, state: GameState): boolean {
-    for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-            const typ = state.level?.at?.(x + dx, y + dy)?.typ;
-            if (typ === DOOR || typ === SDOOR) return true;
-        }
-    }
-    return false;
-}
 
 const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
@@ -571,7 +561,7 @@ export async function washHands(): Promise<WaterDamageOutcome> {
     if (glib) {
         setPropertyTimeout('glib', 0);
         game.context.botl = true;
-        await pline(`Your ${fingersOrGloves()} are no longer slippery.`);
+        await pline(`Your ${fingersOrGloves(true)} are no longer slippery.`);
     }
     const result = game.uarmg ? await waterDamageObject(game.uarmg, [], game,
         { force: true, publish: pline }) : 'nothing';
@@ -993,7 +983,7 @@ export async function dipSink(object: DipTarget): Promise<void> {
     const hands = object === 'hands' || object === game.uarmg;
     if (!rn2(looted ? 15 : 25)) {
         await breakSinkAt(ux, uy);
-        if (hands && game.u.glibTurns) await pline(`Your ${fingersOrGloves()} are still slippery.`);
+        if (hands && game.u.glibTurns) await pline(`Your ${fingersOrGloves(true)} are still slippery.`);
         return;
     }
     if (hands) { await washHands(); return; }

@@ -388,7 +388,7 @@ async function makeSwamps(): Promise<boolean> {
                 if (!IS_ROOM(location.typ) || location.roomno !== roomIndex + ROOMOFFSET
                     || level.objects[x]?.[y]?.length || monsterAtPosition(level, x, y)
                     || level.traps.some(trap => trap.tx === x && trap.ty === y)
-                    || swampSquareBordersDoor(x, y)) continue;
+                    || nexttodoor(x, y)) continue;
                 if ((x + y) % 2) {
                     deleteEngravingAt(x, y, level);
                     location.typ = POOL;
@@ -410,9 +410,9 @@ async function makeSwamps(): Promise<boolean> {
     return madeSwamp;
 }
 
-// C mkroom.c:nexttodoor():
-function swampSquareBordersDoor(x: number, y: number): boolean {
-    const level = requireGameLevel();
+// C mkroom.c:nexttodoor().
+export function nexttodoor(x: number, y: number, state: GameState = game): boolean {
+    const level = requireGameLevel(state);
     for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
             if (!isok(x + dx, y + dy)) continue;
