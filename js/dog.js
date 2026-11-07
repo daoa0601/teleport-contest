@@ -346,7 +346,9 @@ export async function tameMonster(monster, source = null, { state = game, announ
         if (!willCatchFood(monster, food, state))
             return false;
         await describeFoodCatch(monster, food, state);
-        await feedTamedMonster(monster, food, false, state);
+        // C: dog_eat expects a floor object.
+        await placeObject(food, monster.mx, monster.my, state);
+        await dogEat(monster, food, { x: monster.mx, y: monster.my }, state, false);
         return true;
     }
     if (monster.mtame && monster.mtame < 10) {
@@ -372,8 +374,10 @@ export async function tameMonster(monster, source = null, { state = game, announ
         return false;
     initializePet(monster, { state, everything: !(monster.edog || monster.mextra?.edog) });
     if (food) {
-        await feedTamedMonster(monster, food, true, state);
-        if (monster.dead || monster.mhp <= 0 || state.program_state.gameover)
+        // C defers eating until the edog extension has been set up.
+        await placeObject(food, monster.mx, monster.my, state);
+        if (await dogEat(monster, food, { x: monster.mx, y: monster.my }, state, true) === 2
+            || state.program_state.gameover)
             return true;
     }
     if (announce && canSpotMonster(monster)) {
@@ -424,11 +428,6 @@ function catchFoodName(food, state) {
     const name = objectName(food, state);
     const noun = food.quan === 1 ? name : pluralizeObjectNoun(food, name);
     return /^the /i.test(noun) ? noun.replace(/^The /, 'the ') : `the ${noun}`;
-}
-// Part of C dog.c:tamedog(): place_object() + dog_eat() of the caught food.
-async function feedTamedMonster(monster, food, devour, state) {
-    await placeObject(food, monster.mx, monster.my, state);
-    await dogEat(monster, food, { x: monster.mx, y: monster.my }, state, devour);
 }
 // C include/monflag.h M1 flags used by mon_catchup_elapsed_time().
 // C dog.c mon_arrive()'s `when` argument.
