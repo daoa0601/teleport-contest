@@ -304,15 +304,19 @@ const definitions = [
     { option: 'holding', rank: 20, enabled: false, text: ['UHold', 'UHld', 'UHd'] },
 ];
 const defaultMask = definitions.reduce((mask, condition, index) => condition.enabled ? mask | (1 << index) : mask, 0);
-// Part of C botl.c:parse_cond_option(): the per-condition bit indexing.
+// Port-only: map a condition's display text back to its bit.  C passes the
+// condition mask straight to wintty.c:status_update()'s BL_CONDITION case;
+// this port's status line carries display texts, so the bit is re-derived
+// when a condition is painted.
 export function statusConditionBit(text) {
     const index = definitions.findIndex(condition => condition.text[0] === text[0]);
     return index >= 0 ? 1 << index : 0;
 }
-// C botl.c:condopt(): one cond_ element flips its condition bit; C's
-// init-to-defaults pass is the defaultMask constant.
-// parse_cond_option() accepts each option's first four letters (or its
-// complete name if shorter). Config parsing supplies the negation separately.
+// C botl.c:parse_cond_option(): match one cond_ element against the
+// condition table (its first four letters, or the complete name when
+// shorter) and flip its bit; condopt() is inlined as the mask update and
+// C's init-to-defaults pass is the defaultMask constant.  Config parsing
+// supplies the negation separately.
 export function setConditionOption(option, enabled, mask = defaultMask) {
     const name = option.slice(5).toLowerCase();
     const index = definitions.findIndex(condition => name.length >= Math.min(4, condition.option.length)
@@ -822,8 +826,8 @@ function isPolymorphedTitleFallback(text) {
         || text.replace(/["()]/g, '').toLowerCase() === 'polymorphed'
         || text.replace(/[" _()\-]/g, '').toLowerCase() === 'noneoftheabovepolymorphed';
 }
-// Part of C botl.c:eval_notify_windowport_field(): the old-vs-new
-// comparison behind change rules.
+// C botl.c:compare_blstats(): the old-vs-new comparison behind change
+// rules; C's numeric ANY_* cases collapse onto JS numbers here.
 function compare(previous, current) {
     // C sgn(): the direction of the difference.
     if (typeof previous === 'string' && typeof current === 'string')
