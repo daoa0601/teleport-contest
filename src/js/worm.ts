@@ -243,9 +243,11 @@ export async function performWormTailAttacks(
     return { nativeResult: 0, heroDied: false };
 }
 
-// Part of C worm.c:initworm(): the body allocation before arrival places any segments.
-// Native get_wormno and initworm reserve the body before arrival can restore a
-// shapechanger. Tail segments have no map occupancy until rloc places them.
+// C worm.c:initworm(): reserve a worm body — worm number, the tail
+// (create_worm_tail(), inlined: segments have no map occupancy until rloc
+// places them), the head at the monster's position, and zero grow time.
+// Native get_wormno and initworm reserve the body before arrival can
+// restore a shapechanger.
 // Also C worm.c:create_worm_tail(): the tail-segment allocation is inlined here.
 export function initializeUnplacedMonsterWormBody(
     monster: Monster, segmentCount: number,
