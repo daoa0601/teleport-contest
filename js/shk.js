@@ -36,7 +36,7 @@ import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_
 import { isok, commandResultCancelled, setMulti } from './cmd.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { dropObjectAtHero } from './do.js';
-import { splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent, nextObjectId, objectWeight, placeObject, remove_object, billDummyObject, } from './mkobj.js';
+import { splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent, nextObjectId, objectWeight, quantity, placeObject, remove_object, billDummyObject, } from './mkobj.js';
 import { recordAchievement } from './insight.js';
 import { getObjectLocation } from './zap.js';
 import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
@@ -1858,9 +1858,9 @@ function removeTrap(trap, state) {
 const LITTER_UPDATE = 0x01;
 const LITTER_OPEN = 0x02;
 const LITTER_INSHOP = 0x04;
-// Port only: the 3x3 grid offsets (C computes i%3-1 inline).
+// C shk.c:horiz(i) macro (shk.c:4582).
 const horiz = (i) => (i % 3) - 1;
-// Port only: the 3x3 grid offsets (C computes i/3-1 inline).
+// C shk.c:vert(i) macro (shk.c:4583).
 const vert = (i) => Math.trunc(i / 3) - 1;
 // C shk.c:litter_getpos()
 function litterGetpos(x, y, keeper, state) {
@@ -2769,10 +2769,6 @@ export function shopkeeperIsMuted(resident) {
     return monsterIsHelpless(resident)
         || (MONSTER_SOUND[resident?.mnum] ?? 0) <= MS_ANIMAL;
 }
-// Port only: the object quantity read.
-function objectQuan(object) {
-    return object.quan ?? object.quantity ?? 1;
-}
 // C shk.c:1084 find_objowner(): on-bill objects belong to their billing
 // shop; otherwise the rooms containing (x,y) claim via bill then resident.
 export function findObjectOwner(object, x, y, state) {
@@ -2817,7 +2813,7 @@ async function checkShopCredit(value, resident, publish) {
 }
 // C shk.c:get_pricing_units(): stack quantity, globs priced by weight.
 export function objectPricingUnits(object) {
-    let units = objectQuan(object);
+    let units = quantity(object);
     if (object.globby) {
         const unitWeight = objectBaseWeight(object.otyp);
         if (unitWeight) {
@@ -3007,10 +3003,6 @@ async function stolenContainer(container, resident, { inInventory, state }) {
     }
     return price;
 }
-// Port only: N-currency formatting helper.
-function zorkmids(amount) {
-    return `${amount} ${currency(amount)}`;
-}
 // C shk.c:3754 stolen_value().  World mutations (bills, credit, debit,
 // robbed, pursuit, guards) are live-game only.
 export async function stolenValue(object, x, y, peaceful, { silent = true, publish = plineWithContinuation, state = game } = {}) {
@@ -3042,7 +3034,7 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
     let value = 0;
     let gvalue = 0;
     if (object.oclass === COIN_CLASS) {
-        gvalue += objectQuan(object);
+        gvalue += quantity(object);
     }
     else {
         if (billamt)
@@ -3076,7 +3068,7 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
             let still = '';
             if (creditUse) {
                 if (resident.eshk.credit) {
-                    await publish(`You have ${zorkmids(resident.eshk.credit)} credit remaining.`);
+                    await publish(`You have ${moneyAmount(resident.eshk.credit, state)} credit remaining.`);
                     return value;
                 }
                 else if (!value) {
@@ -3085,12 +3077,12 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
                 }
                 still = 'still ';
             }
-            let owed = `${still}owe ${shopkeeperName(resident)} ${zorkmids(value)}`;
+            let owed = `${still}owe ${shopkeeperName(resident)} ${moneyAmount(value, state)}`;
             if (uCount) {
                 owed += ` for ${wasUnpaid ? 'it and ' : ''}${cCount > uCount ? 'some of ' : ''}its contents`;
             }
             else if (object.oclass !== COIN_CLASS) {
-                owed += ` for ${objectQuan(object) > 1 ? 'them' : 'it'}`;
+                owed += ` for ${quantity(object) > 1 ? 'them' : 'it'}`;
             }
             await publish(`You ${owed}!`);
         }
@@ -3851,7 +3843,7 @@ export function shopOfferForObject(object, resident, state = game) {
             if ([19, 20].includes(objectMaterial(object.otyp))) {
                 tmp = (object.otyp - FIRST_REAL_GEM)
                     % (6 - (resident?.m_id ?? 1) % 3);
-                tmp = (tmp + 3) * objectQuan(object);
+                tmp = (tmp + 3) * quantity(object);
                 divisor = 1;
             }
         }
@@ -3940,13 +3932,9 @@ function countAllContents(container) {
     for (const content of container.contents || []) {
         if (content.contents?.length)
             count += countAllContents(content);
-        count += objectQuan(content);
+        count += quantity(content);
     }
     return count;
-}
-// Port only: the gold-object test.
-function isGold(object) {
-    return object.oclass === COIN_CLASS;
 }
 // C obj.h:Has_contents().
 function hasContents(object) {
@@ -3976,7 +3964,7 @@ export function setSellDisposition(disposition) {
 function moneyAmount(amount, state) {
     return `${amount} ${currency(amount, { state })}`;
 }
-// Port only: N gold pieces formatting.
+// Part of C shk.c:2292-2293: the "%ld gold piece%s" offer format.
 function goldPieces(amount) {
     return `${amount} gold piece${amount === 1 ? '' : 's'}`;
 }
@@ -4121,7 +4109,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
     const resident = spot.resident;
     const eshk = resident.eshk;
     const container = hasContents(object);
-    const gold = isGold(object);
+    const gold = object.oclass === COIN_CLASS;
     if (object.unpaid && !container && !gold) {
         removeObjectAndContentsFromBill(object, state);
         return { sold: false };
@@ -4177,7 +4165,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
     if (eshk.robbed) {
         // bones; shop robbed by previous customer
         if (gold)
-            offer = objectQuan(object);
+            offer = quantity(object);
         else if (cgold)
             offer += 1; // C adds the boolean, not the amount
         // In pinned C, '<' binds before '-=' in the balance update.
@@ -4192,7 +4180,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
     }
     if (gold || cgold) {
         if (!cgold)
-            gltmp = objectQuan(object);
+            gltmp = quantity(object);
         await donateGold(gltmp, resident, { selling: true, publish });
         if (!offer || sellHow === SELL_DONTSELL) {
             if (!gold) {
@@ -4227,7 +4215,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         }
         else if (sellResponse !== 'n') {
             await publish(`${shopkeeperName(resident)} cannot pay you at present.`);
-            recordObjectPriceQuote(object.otyp, Math.trunc(tmpcr / objectQuan(object)), 'sell');
+            recordObjectPriceQuote(object.otyp, Math.trunc(tmpcr / quantity(object)), 'sell');
             const prefix = `Will you accept ${moneyAmount(tmpcr, state)} in credit for `;
             answer = await askSell(await saleQuestion(object, prefix, '?', object.quan === 1, state, 'credit'), { query, defaultAnswer: 'y' });
             if (answer === 'a') {
@@ -4271,14 +4259,14 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             onlyPartially = shksc > 0 && yourc > 0;
         }
         const one = !ltmp ? yourc === 1
-            : objectQuan(object) === 1 && !cltmp;
+            : quantity(object) === 1 && !cltmp;
         let contentsSuffix = '';
         if (cltmp && ltmp) {
             contentsSuffix = onlyPartially
                 ? (yourc === 1 ? ' and item inside' : ' and items inside')
                 : ' and its contents';
         }
-        recordObjectPriceQuote(object.otyp, Math.trunc(offer / objectQuan(object)), 'sell');
+        recordObjectPriceQuote(object.otyp, Math.trunc(offer / quantity(object)), 'sell');
         const prefix = `${shopkeeperName(resident)} offers${shortFunds ? ' only' : ''} ${goldPieces(offer)} for ${cltmp && !ltmp
             ? (yourc === 1 ? 'your item in ' : 'your items in ') : ''}${object.unpaid ? 'the' : 'your'} `;
         const suffix = `${contentsSuffix}.  Sell ${one ? 'it' : 'them'}?`;
@@ -4532,10 +4520,6 @@ export function priceQuoteSuffix(otyp, state = game) {
     }
     return parts.length ? ` {${parts.join(' ')}}` : '';
 }
-// Port only: the object quantity read with a zero default.
-function quantity(object) {
-    return object?.quan ?? object?.quantity ?? 0;
-}
 // C shk.c:contained_gold().
 // `container` is the already-admitted enclosing object. Immediate coin
 // stacks are countable; deeper containers require their own cknown bit when
@@ -4544,7 +4528,7 @@ export function containedGold(container, evenIfUnknown = true) {
     let total = 0;
     for (const object of container?.contents || []) {
         if (object.otyp === GOLD_PIECE || object.oclass === COIN_CLASS) {
-            total += quantity(object);
+            total += object.quan ?? object.quantity ?? 0;
         }
         else if (Array.isArray(object.contents)
             && (evenIfUnknown || object.cknown)) {
