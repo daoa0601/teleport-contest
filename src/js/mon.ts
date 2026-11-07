@@ -833,7 +833,7 @@ export function monsterCanOpenDoor(monster: Monster): boolean {
     return !monsterHasNoHands(monster.mnum) && !monsterIsVerySmall(monster.mnum);
 }
 
-// Part of C mon.c:mon_allowflags(): the can_unlock local.
+// Part of C mon.c:mon_allowflags(), monmove.c:m_move(): the can_unlock local.
 export function monsterCanUnlockDoor(monster: Monster): boolean {
     return monsterCanOpenDoor(monster) && monsterHasKey(monster, true)
         || !!monster.iswiz || monsterIsRider(monster);

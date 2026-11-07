@@ -1,4 +1,5 @@
 # file	caller	callee	sequences — C TRUE/FALSE argument sequences the port spells identically (static-gaps.mjs args)
+allmain.c	moveloop_core	mcalcmove	true
 allmain.c	newgame	welcome	true
 allmain.c	u_calc_moveamt	mcalcmove	true
 apply.c	check_leash	m_unleash	false
@@ -91,6 +92,7 @@ dothrow.c	toss_up	hitfloor	false;false;false;true
 dungeon.c	print_mapseen	formatkiller	true
 dungeon.c	u_on_newpos	map_location	false
 eat.c	choke	exercise	false
+eat.c	cpostfx	toggle_displacement	true
 eat.c	cprefx	exercise	false
 eat.c	do_reset_eat	newuhs	false
 eat.c	doeat	start_eating	false
@@ -131,6 +133,7 @@ fountain.c	dryup	angry_guards	false
 fountain.c	sink_backs_up	exercise	true;true
 getpos.c	getpos	lock_mouse_buttons	false;true
 hack.c	air_turbulence	exercise	false;true
+hack.c	domove_core	reset_utrap	true
 hack.c	domove_fight_empty	map_object	true
 hack.c	dopush	exercise	true
 hack.c	dosinkfall	exercise	false;false
@@ -200,6 +203,7 @@ mkmaze.c	pick_vibrasquare_location	stairway_find_dir	true
 mkmaze.c	place_lregion	put_lregion_here	true
 mkmaze.c	populate_maze	mkobj_at	true
 mkmaze.c	populate_maze	mksobj_at	true+false
+mkmaze.c	restore_waterlevel	mv_bubble	true
 mkmaze.c	shiny_orc_stuff	mkobj	false
 mkmaze.c	shiny_orc_stuff	mksobj	true+false;true+false
 mkobj.c	costly_alteration	billable	false
@@ -305,6 +309,7 @@ quest.c	chat_with_leader	expulsion	false;false;false
 quest.c	chat_with_leader	is_pure	true
 quest.c	prisoner_speaks	angry_guards	false
 read.c	create_particular_creation	cant_revive	false
+read.c	drop_boulder_on_monster	mksobj	false+false
 read.c	drop_boulder_on_player	mksobj	false+false
 read.c	punish	mkobj	true;true;true
 read.c	seffect_amnesia	exercise	false
@@ -384,6 +389,7 @@ teleport.c	teleds	reset_utrap	false
 timeout.c	choke_dialogue	exercise	false
 timeout.c	nh_timeout	deferred_decor	false
 timeout.c	nh_timeout	exercise	false
+timeout.c	nh_timeout	toggle_displacement	false
 timeout.c	sickness_dialogue	exercise	false
 timeout.c	slime_dialogue	exercise	false
 timeout.c	stoned_dialogue	exercise	false
@@ -467,6 +473,7 @@ write.c	dowrite	exercise	false;true
 write.c	dowrite	mksobj	false+false
 zap.c	bhito	exercise	true
 zap.c	do_enlightenment_effect	exercise	true
+zap.c	dobuzz	flashburn	true
 zap.c	dozap	exercise	false
 zap.c	fracture_rock	billable	false
 zap.c	maybe_destroy_item	exercise	false
