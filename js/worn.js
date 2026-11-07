@@ -246,10 +246,9 @@ export async function setnotworn(object, state = game) {
     // update_inventory(): the tty inventory view is rebuilt from state.
     recalculateTelepathyRange(state);
 }
-// Port only: coordinate armor, accessory, blindness, and worn-slot removal for an object.
-// Clear every equipment slot an item still occupies when it leaves the hero
-// or changes type (C worn.c:setnotworn, steal.c:remove_worn_item).
-// Command messages belong to the caller.
+// Part of C worn.c:setnotworn() and steal.c:remove_worn_item(): clear every
+// equipment slot an item still occupies when it leaves the hero or changes
+// type.  Command messages belong to the caller.
 export async function removeHeroEquipment(object, state = game, { deferArmorClass = false, } = {}) {
     const armorSlot = armorSlotFor(object.otyp);
     if (state.uskin === object) {
@@ -913,9 +912,9 @@ export async function removeObjectFromMonsterInventory(monster, object, state = 
     object.ready = false;
     return true;
 }
-// Port only: combine monster-inventory extraction with object deletion.
-// extract_from_minvent followed by obfree: m_useup and
-// discard_minvent destroy a monster's worn or carried object this way.
+// C mthrowu.c:m_useupall(): extract_from_minvent() followed by obfree();
+// mkobj.c:discard_minvent() destroys a monster's worn or carried objects
+// the same way.
 export async function destroyObjectFromMonsterInventory(monster, object, state = game, options = {}) {
     if (!await removeObjectFromMonsterInventory(monster, object, state, options))
         return false;
