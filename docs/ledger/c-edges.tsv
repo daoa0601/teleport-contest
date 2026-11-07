@@ -2998,6 +2998,7 @@ moveloop_core	under_water
 moveloop_core	vision_recalc
 moveloop_core	warnreveal
 moveloop_core	you_were
+moveloop_preamble	change_luck
 moveloop_preamble	encumber_msg
 moveloop_preamble	pickup
 moveloop_preamble	rnd
