@@ -610,13 +610,13 @@ import type { Hero, InitializedHero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position, Trap, MapLocation } from './map_types.js';
-import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
+import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_SLEE, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import {
     removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot,
     applyMonsterEquipmentProperties, initializeMonsterArmor,
 } from './worn.js';
 import {
-    monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance,
+    monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, defended,
     monsterHasMagicResistance, monsterHasStoneResistance, monstersForgetHeroResistance,
     monstersObserveHeroResistance, monsterIsHelpless,
     monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests,
@@ -1734,18 +1734,21 @@ export function monsterTrapIsHarmless(monster: Monster, trap: Trap, state: Playi
                 whirly
             );
         case SLP_GAS_TRAP:
-            return monsterResistsSleep(monster);
+            // C trap.c:1134
+            return monsterResistsSleep(monster) || defended(monster, AD_SLEE, state);
         case RUST_TRAP:
             return monster.mnum !== PM_IRON_GOLEM;
         case FIRE_TRAP:
-            return monsterHasFireResistance(monster);
+            // C trap.c:1142
+            return monsterHasFireResistance(monster) || defended(monster, AD_FIRE, state);
         case PIT:
         case SPIKED_PIT:
         case HOLE:
         case TRAPDOOR:
             return monsterIsClinger(monster.mnum) && !sokoban;
         case ANTI_MAGIC:
-            return monsterHasMagicResistance(monster);
+            // C trap.c:1174
+            return monsterHasMagicResistance(monster) || defended(monster, AD_MAGM, state);
         case STATUE_TRAP:
         case MAGIC_TRAP:
         case VIBRATING_SQUARE:
