@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PIT, TT_PIT } from '../js/const.js';
-import { createEarthquake } from '../js/earthquake.js';
+import { createEarthquake } from '../js/music.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { CHEST, LUCKSTONE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

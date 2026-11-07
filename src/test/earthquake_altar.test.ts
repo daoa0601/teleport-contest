@@ -7,7 +7,7 @@ import { pushKeys } from '../js/input.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { DRUM_OF_EARTHQUAKE } from '../js/object_data.js';
-import { createEarthquake } from '../js/earthquake.js';
+import { createEarthquake } from '../js/music.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';

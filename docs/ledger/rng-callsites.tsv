@@ -321,14 +321,14 @@ src/js/dungeon.ts	init_dungeons	rn2	"[""7""]"	constant
 src/js/dungeon.ts	init_dungeons	rn2	"[""definition.range""]"	unproved
 src/js/dungeon.ts	init_dungeons/definition.levels.map argument 1	rn2	"[""100""]"	constant
 src/js/dungeon.ts	placeLevels	rn2	"[""places.length""]"	guarded
-src/js/earthquake.ts	createEarthquake	rn2	"[""14 - force""]"	constant
-src/js/earthquake.ts	dropHeroIntoChasm	rn2	"[""5""]"	constant
-src/js/earthquake.ts	dropHeroIntoChasm	rn2	"[""5""]"	constant
-src/js/earthquake.ts	dropHeroIntoChasm	rnd	"[""6""]"	constant
-src/js/earthquake.ts	dropHeroIntoChasm	rnd	"[""keepsFooting ? 2 : 4""]"	constant
-src/js/earthquake.ts	dropHeroIntoChasm	rnl	"[""roleRange""]"	constant
-src/js/earthquake.ts	dropMonsterIntoChasm	rnd	"[""wasTrapped ? 4 : 6""]"	constant
-src/js/earthquake.ts	trapHeroInChasm	rn2	"[""6""]"	constant
+src/js/music.ts	createEarthquake	rn2	"[""14 - force""]"	constant
+src/js/music.ts	dropHeroIntoChasm	rn2	"[""5""]"	constant
+src/js/music.ts	dropHeroIntoChasm	rn2	"[""5""]"	constant
+src/js/music.ts	dropHeroIntoChasm	rnd	"[""6""]"	constant
+src/js/music.ts	dropHeroIntoChasm	rnd	"[""keepsFooting ? 2 : 4""]"	constant
+src/js/music.ts	dropHeroIntoChasm	rnl	"[""roleRange""]"	constant
+src/js/music.ts	dropMonsterIntoChasm	rnd	"[""wasTrapped ? 4 : 6""]"	constant
+src/js/music.ts	trapHeroInChasm	rn2	"[""6""]"	constant
 src/js/eat.ts	doeat	rn2	"[""7""]"	constant
 src/js/eat.ts	bounded_increase	rn2	"[""Math.abs(amount)""]"	unproved
 src/js/eat.ts	bounded_increase	rnd	"[""20 - Math.abs(old)""]"	unproved
