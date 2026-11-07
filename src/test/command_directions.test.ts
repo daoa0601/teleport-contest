@@ -9,6 +9,7 @@ import { PICK_AXE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 
 void test('a stunned pick swing digs in the direction chosen after the direction prompt', async () => {
     const input = freshTurnRoom();
@@ -135,7 +136,11 @@ void test('stunned movement rejects surrounding rock despite temporary wall pass
 });
 
 void test('a stunned ghost can choose rock because its species passes walls', async () => {
-    freshTurnRoom({ hero: { umonnum: MONSTER_NAME.indexOf('ghost'), mtimedone: 100 } });
+    freshTurnRoom();
+    // C reaches a polymorphed ghost only through set_uasmon(), which folds
+    // passes_walls(mdat) into HPasses_walls (polyself.c:104); the fixture
+    // must cross the same property boundary instead of writing raw fields.
+    installPolymorphedHero('ghost', { turns: 100, hitPoints: 40 });
     assert.ok(game.level);
     for (let x = 9; x <= 11; x++) {
         for (let y = 9; y <= 11; y++) {
