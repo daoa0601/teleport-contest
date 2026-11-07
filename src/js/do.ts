@@ -44,9 +44,7 @@ import { AD_POLY } from './monster_attack_types.js';
 import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH, I_SPECIAL, TIMEOUT, W_ARTI, W_ART, CORR, Luck, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
-import { gulp_blnd_check,
-    holdingMonsterName,
-} from './mhitu.js';
+import { gulp_blnd_check } from './mhitu.js';
 
 import type { GameObject } from './object_types.js';
 import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, POT_OIL, TIN, WORM_TOOTH } from './object_data.js';
@@ -1013,7 +1011,7 @@ export async function dropHeroObject(
         if (!hero.ustuck) throw new Error('Swallowed hero has no swallowing monster');
         // barrier between you and the floor
         if (state.flags?.verbose !== false) {
-            const swallowerName = holdingMonsterName(hero.ustuck, state);
+            const swallowerName = monsterName(hero.ustuck, { state });
             const into = monsterDigests(hero.ustuck)
                 ? `${possessiveName(swallowerName)} ${
                     mbodypart(hero.ustuck.mnum, STOMACH)}`
