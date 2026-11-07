@@ -11,7 +11,8 @@ import { impossible } from './diagnostics.js';
 import { NethackLuaError } from './lua/errors.js';
 import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL } from './const.js';
 import { isok } from './cmd.js';
-import { set_floodfillchk_match_under } from './sp_lev.js';
+import { match_maptyps, random_wdir, set_floodfillchk_match_under } from './sp_lev.js';
+import { mapCharacterType } from './lua/lifecycle.js';
 
 import type { Room } from './map_types.js';
 
@@ -237,13 +238,6 @@ export function selection_sub(left: Selection, right: Selection) {
     return result;
 }
 
-// C sp_lev.c:match_maptyps().
-export function match_maptyps(expected: number, actual: number): boolean {
-    if (expected === MATCH_WALL && !IS_STWALL(actual)) return false;
-    if (expected < MAX_TYPE && expected !== actual) return false;
-    return true;
-}
-
 // C selvar.c:selection_filter_mapchar().
 export function selection_filter_mapchar(selection: Selection, typ: number, lit?: number): Selection;
 // C selvar.c:selection_filter_mapchar().
@@ -297,17 +291,6 @@ export function selection_rndcoord(selection: Selection, remove = false): Coordi
         }
     }
     return null;
-}
-
-// C sp_lev.c:random_wdir().
-function random_wdir() {
-    switch (rn2(4)) {
-    case 0: return W_NORTH;
-    case 1: return W_SOUTH;
-    case 2: return W_EAST;
-    case 3: return W_WEST;
-    default: throw new RangeError('Random direction is outside 0 through 3.');
-    }
 }
 
 // C selvar.c:selection_do_grow().
@@ -814,39 +797,6 @@ export function specialSelectionFloodFill(context: SelectionArea, x: number, y: 
         start.x, start.y, diagonals,
         set_floodfillchk_match_under(terrain),
     );
-}
-
-const MAP_CHAR_TYPES: Readonly<Record<string, number>> = {
-    ' ': STONE,
-    '#': CORR,
-    '.': ROOM,
-    '-': HWALL,
-    '|': VWALL,
-    '+': DOOR,
-    A: AIR,
-    C: CLOUD,
-    S: SDOOR,
-    H: SCORR,
-    '{': FOUNTAIN,
-    '\\': THRONE,
-    K: SINK,
-    '}': MOAT,
-    P: POOL,
-    L: LAVAPOOL,
-    Z: LAVAWALL,
-    I: ICE,
-    W: WATER,
-    T: TREE,
-    F: IRONBARS,
-    x: MAX_TYPE,
-    B: CROSSWALL,
-    w: MATCH_WALL,
-};
-
-// C nhlua.c:splev_chr2typ(): the map character type table; an unmatched
-// character has no type (C INVALID_TYPE).
-export function mapCharacterType(character: string | undefined): number | undefined {
-    return character === undefined ? undefined : MAP_CHAR_TYPES[character];
 }
 
 // C nhlsel.c:l_selection_match(): the map fragment match. The fragment
