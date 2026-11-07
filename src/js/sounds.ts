@@ -24,7 +24,7 @@ import {
     monsterIsHelpless, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead,
     monsterIsVampireShifter, monsterPerceives, monsterIsEel,
 } from './mondata.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnderwater } from './senses.js';
 import { STATUE, SPE_NOVEL, GOLD_PIECE } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
 import { monsterAtPosition } from './steed.js';
@@ -70,7 +70,7 @@ const MS_ANIMAL = 17;
 // find() branches below; C's get_iter_mons() walkers became livingResidents().
 export async function dosounds(state: PlayingGameState = requireInitializedGame()): Promise<void> {
     if (heroIsDeaf(state) || state.flags.acoustics === false
-        || state.u.uswallow || state.u.uinwater || state.u.underwater || state.underwater) return;
+        || state.u.uswallow || heroIsUnderwater(state)) return;
     const flags = state.level.flags;
     const hallu = Number(heroIsHallucinating(state));
     if (flags.nfountains && !rn2(400))
@@ -120,9 +120,11 @@ export async function dosounds(state: PlayingGameState = requireInitializedGame(
                 const message = gold
                     ? hallu ? 'the quarterback calling the play.' : 'someone counting gold coins.'
                     : 'someone searching.';
-                await hear(state, message);
+                await publishHeardMessage(message, plineWithContinuation, state);
             } else {
-                await hear(state, selection === 2 ? 'Ebenezer Scrooge!' : 'the footsteps of a guard on patrol.');
+                await publishHeardMessage(
+                    selection === 2 ? 'Ebenezer Scrooge!' : 'the footsteps of a guard on patrol.',
+                    plineWithContinuation, state);
             }
         }
         return;
@@ -237,7 +239,7 @@ async function templePriestSound(priest: Monster, state: PlayingGameState, hallu
     message = message.slice(1);
     if (message.includes('%s'))
         message = message.replace('%s', hallucinatedDeityName(shrine.shralign, state));
-    await hear(state, message);
+    await publishHeardMessage(message, plineWithContinuation, state);
     return true;
 }
 
@@ -248,7 +250,8 @@ function monInRoom(monster: Monster, type: number, state: PlayingGameState): boo
     return roomForRoomno(state.level, roomno)?.rtype === type;
 }
 
-// Port only: find the hero's room membership by room type.
+// Part of C priest.c:temple_occupied()/vault.c:vault_occupied(): the
+// u.urooms walk testing a room type.
 function heroOccupies(type: number, state: PlayingGameState): number | undefined {
     return state.u.urooms.find(roomno => roomForRoomno(state.level, roomno)?.rtype === type);
 }
@@ -262,12 +265,7 @@ function choice(messages: readonly string[], selection: number): string {
 
 // Port only: publish an indexed ambient message through the hearing boundary.
 async function hearChoice(state: PlayingGameState, messages: readonly string[], selection: number): Promise<void> {
-    await hear(state, choice(messages, selection));
-}
-
-// Port only: route ambient messages through the shared hearing publisher.
-async function hear(state: PlayingGameState, message: string): Promise<void> {
-    await publishHeardMessage(message, plineWithContinuation, state);
+    await publishHeardMessage(choice(messages, selection), plineWithContinuation, state);
 }
 
 // C sounds.c:dochat()
@@ -506,7 +504,7 @@ const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const PM_GECKO = MONSTER_NAME.indexOf('gecko');
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 
-// Port only: format a monster name at the start of a sentence.
+// C do_name.c:Monnam(): monsterName capitalized, for sentence subjects.
 export function monsterSentenceSubject(monster: Monster): string {
     return monsterName(monster, { capitalized: true });
 }

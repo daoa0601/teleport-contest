@@ -17,7 +17,7 @@ import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { monsterName, novelTitle, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { monsterPossessive, sameMonsterRace, carnivorous, herbivorous, is_dwarf, is_elf, is_gnome, is_lord, is_mercenary, is_minion, is_prince, likes_magic, monsterHasEyes, monsterIsAnimal, monsterIsFlyer, monsterIsHelpless, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, monsterPerceives, monsterIsEel, } from './mondata.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnderwater } from './senses.js';
 import { STATUE, SPE_NOVEL, GOLD_PIECE } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
 import { monsterAtPosition } from './steed.js';
@@ -58,7 +58,7 @@ const MS_ANIMAL = 17;
 // find() branches below; C's get_iter_mons() walkers became livingResidents().
 export async function dosounds(state = requireInitializedGame()) {
     if (heroIsDeaf(state) || state.flags.acoustics === false
-        || state.u.uswallow || state.u.uinwater || state.u.underwater || state.underwater)
+        || state.u.uswallow || heroIsUnderwater(state))
         return;
     const flags = state.level.flags;
     const hallu = Number(heroIsHallucinating(state));
@@ -109,10 +109,10 @@ export async function dosounds(state = requireInitializedGame()) {
                 const message = gold
                     ? hallu ? 'the quarterback calling the play.' : 'someone counting gold coins.'
                     : 'someone searching.';
-                await hear(state, message);
+                await publishHeardMessage(message, plineWithContinuation, state);
             }
             else {
-                await hear(state, selection === 2 ? 'Ebenezer Scrooge!' : 'the footsteps of a guard on patrol.');
+                await publishHeardMessage(selection === 2 ? 'Ebenezer Scrooge!' : 'the footsteps of a guard on patrol.', plineWithContinuation, state);
             }
         }
         return;
@@ -227,7 +227,7 @@ async function templePriestSound(priest, state, hallu) {
     message = message.slice(1);
     if (message.includes('%s'))
         message = message.replace('%s', hallucinatedDeityName(shrine.shralign, state));
-    await hear(state, message);
+    await publishHeardMessage(message, plineWithContinuation, state);
     return true;
 }
 // C sounds.c:mon_in_room()
@@ -235,7 +235,8 @@ function monInRoom(monster, type, state) {
     const roomno = state.level.at(monster.mx, monster.my)?.roomno ?? 0;
     return roomForRoomno(state.level, roomno)?.rtype === type;
 }
-// Port only: find the hero's room membership by room type.
+// Part of C priest.c:temple_occupied()/vault.c:vault_occupied(): the
+// u.urooms walk testing a room type.
 function heroOccupies(type, state) {
     return state.u.urooms.find(roomno => roomForRoomno(state.level, roomno)?.rtype === type);
 }
@@ -248,11 +249,7 @@ function choice(messages, selection) {
 }
 // Port only: publish an indexed ambient message through the hearing boundary.
 async function hearChoice(state, messages, selection) {
-    await hear(state, choice(messages, selection));
-}
-// Port only: route ambient messages through the shared hearing publisher.
-async function hear(state, message) {
-    await publishHeardMessage(message, plineWithContinuation, state);
+    await publishHeardMessage(choice(messages, selection), plineWithContinuation, state);
 }
 // C sounds.c:dochat()
 // Also C sounds.c:dotalk(): command dispatch calls dochat directly
@@ -495,7 +492,7 @@ const PM_DINGO = MONSTER_NAME.indexOf('dingo');
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const PM_GECKO = MONSTER_NAME.indexOf('gecko');
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
-// Port only: format a monster name at the start of a sentence.
+// C do_name.c:Monnam(): monsterName capitalized, for sentence subjects.
 export function monsterSentenceSubject(monster) {
     return monsterName(monster, { capitalized: true });
 }
