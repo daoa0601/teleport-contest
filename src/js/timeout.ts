@@ -77,7 +77,7 @@ import {
     captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification,
 } from './trap.js';
 import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
-import { figTransform } from './figurine.js';
+import { figTransform } from './apply.js';
 import { meltIce } from './zap.js';
 import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
 import {objectWeight, runClaimedGlobTimer, finishGlobTimer} from './mkobj.js';

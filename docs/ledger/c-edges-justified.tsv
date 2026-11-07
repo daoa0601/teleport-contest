@@ -1354,7 +1354,7 @@ drop_upon_death	goodfruit	inlined	fruit ids retained in saveBonesLevel (bones.ts
 end_running	selection_free	n/a	travel bitmap has no persistent allocation; stopRun clears run state
 engrave	update_inventory	n/a	no persistent inventory window; perm_invent parsed only
 exp_percent_changing	get_hilite	inlined	rule evaluation on the experience field (status_highlighting.ts)
-figurine_location_checks	sobj_at	inlined	boulder exclusion on the figurine square (figurine.ts)
+figurine_location_checks	sobj_at	inlined	boulder exclusion on the figurine square (apply.ts)
 find_friends	sgn	inlined	Math.sign toward the friend (dogmove.ts)
 find_poleable_mon	isqrt	inlined	Math.sqrt for the polearm reach (apply.ts)
 fixup_level_locations	dname_to_dnum	inlined	findIndex by dname for the well-known dungeons (dungeon.ts)
