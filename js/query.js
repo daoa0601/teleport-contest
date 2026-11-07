@@ -15,43 +15,6 @@ import { FUZZER_IMPOSSIBLE_CONTINUE, impossible } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { showChoiceWindow } from './windows.js';
 import { availableExtendedCommands, commandAutocompletes, yn_function } from './cmd.js';
-// C windows.c:getlin(): core line input; owns the command queue.
-export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
-    // C windows.c:getlin(): queued CMDQ_KEY entries answer without any tty
-    // prompt and are echoed as pline("%s %s", query, buf). The first
-    // non-key entry stops the drain and is discarded; '\n' ends the
-    // answer (windows.c:1875-1893).
-    const queuedKeys = [];
-    let queued = false;
-    for (;;) {
-        const entry = cmdq_pop();
-        if (!entry || entry.typ !== CMDQ_KEY)
-            break;
-        queued = true;
-        if (entry.key === 10)
-            break;
-        queuedKeys.push(entry.key);
-    }
-    if (queued) {
-        // The C buffer ends at its first NUL for both the echo and callers.
-        const joined = String.fromCharCode(...queuedKeys);
-        const text = joined.includes('\0') ? joined.slice(0, joined.indexOf('\0')) : joined;
-        await pline(`${prompt} ${text}`);
-        // C getlin() leaves "\033" in the buffer; callers cancel on it, the
-        // same cancellation the typed path reports as null.
-        return text.charCodeAt(0) === 27 ? null : text;
-    }
-    // windows.c:getlin() disables bot() through tty's prompt cleanup.
-    // Covered status rows stay blank until a later status update.
-    const statusUpdatesDisabled = game._statusUpdatesDisabled ?? false;
-    game._statusUpdatesDisabled = true;
-    try {
-        return await tty_getlin(prompt, accepts, options);
-    }
-    finally {
-        game._statusUpdatesDisabled = statusUpdatesDisabled;
-    }
-}
 // C getline.c:tty_getlin()
 // Also C getline.c:hooked_tty_getlin(): line editing is inlined here
 // Direct tty callers, such as menu search, read live input without consuming

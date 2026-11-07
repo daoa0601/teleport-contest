@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { nhgetch, pushKeys, resetInputState } from '../js/input.js';
-import { getLine, promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit, tty_yn_function } from '../js/query.js';
+import { promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit, tty_yn_function } from '../js/query.js';
+import { getLine } from '../js/windows.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';

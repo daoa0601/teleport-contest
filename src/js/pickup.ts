@@ -41,12 +41,12 @@ import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen,
 import { pline, plineWithContinuation } from './pline.js';
 import type { FeatureOptions, InventoryClassification } from './invent.js';
 import type { MessagePublisher } from './pline.js';
-import { showMultiSelectWindow, showDisclosureOverlay, showChoiceWindow, showTextWindow } from './windows.js';
+import { getLine, showMultiSelectWindow, showDisclosureOverlay, showChoiceWindow, showTextWindow } from './windows.js';
 import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';
 import type { ChoiceMenuEntry, CountedSelection, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
 import type { MenuUnderlay } from './wintty.js';
 import { takeQueuedInventoryChoice } from './invent.js';
-import { promptYesNoQuit, getLine, promptChoice, tty_yn_function } from './query.js';
+import { promptYesNoQuit, promptChoice, tty_yn_function } from './query.js';
 import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { hideHeroUnder, finishEnvironmentalMonsterDeath,

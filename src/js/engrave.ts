@@ -49,7 +49,8 @@ import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js'
 import {
     plineWithContinuation as pline, plineWithContinuation, formatSeenMessage, recordGameLogEvent,
 } from './pline.js';
-import { getLine, promptYesNoQuit } from './query.js';
+import { promptYesNoQuit } from './query.js';
+import { getLine } from './windows.js';
 import { getobj, inventoryItemDescription, useUpInventoryStack } from './invent.js';
 import type { InventoryClassification } from './invent.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

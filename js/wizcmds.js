@@ -6,12 +6,12 @@ import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_
 import { AD_PHYS } from './monster_attack_types.js';
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
-import { ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showTextMenuOverlay, showMultiSelectWindow, showTextWindow } from './windows.js';
+import { getLine, ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showTextMenuOverlay, showMultiSelectWindow, showTextWindow } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible, customizedGlyphs } from './display.js';
 import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { getLine, promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
+import { promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery, yn_function } from './cmd.js';
 import { promptDirection } from './cmd.js';
 import { visibleCommandKey } from './hacklib.js';

@@ -35,7 +35,7 @@ import { currentBoulderSymbol, docrt, flush_screen, reglyph_darkroom, reglyphBou
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { vision_recalc } from './vision.js';
-import { getLine } from './query.js';
+import { getLine } from './windows.js';
 import { inventoryClassOrder, inventoryOrderSymbols } from './invent.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, showInventoryWindow, showMultiSelectWindow } from './windows.js';

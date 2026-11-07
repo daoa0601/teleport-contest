@@ -61,7 +61,7 @@ import {
     monsterPossessive, monsterPronounGender, monsterSubjectPronoun, monsterHasProperName, monsterIsAnimal,
     monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider,
 } from './mondata.js';
-import { getLine } from './query.js';
+import { getLine } from './windows.js';
 
 import { displayMessageWindow } from './topl.js';
 import { wipeoutText } from './engrave.js';

@@ -107,7 +107,8 @@ import {
     monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterWrappingAllowed, notake, polyok, regenerates,
     strongmonst, cantwield, formCanBecomeStoneGolem, touchPetrifies, PM_STONE_GOLEM,
 } from './mondata.js';
-import { getLine, promptYesNo } from './query.js';
+import { promptYesNo } from './query.js';
+import { getLine } from './windows.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { retouchEquipment } from './artifact.js';
 import { removeWornHeroItem } from './steal.js';

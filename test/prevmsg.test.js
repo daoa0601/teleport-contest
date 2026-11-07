@@ -19,7 +19,8 @@ import { memoryStorage } from './support/memory-storage.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { resetGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
-import { getLine, promptChoice } from '../js/query.js';
+import { promptChoice } from '../js/query.js';
+import { getLine } from '../js/windows.js';
 import { promptDirection } from '../js/cmd.js';
 function rowText(row) {
     return requireGameDisplay().grid[row]?.map(cell => cell.ch).join('').trimEnd() ?? '';

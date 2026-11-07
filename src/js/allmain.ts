@@ -4,7 +4,8 @@ import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLe
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
 import { recorderLocalEpochSeconds, fixedCalendar, sessionIsNight } from './calendar.js';
 import { pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent } from './pline.js';
-import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, getLine, promptYesNo, rhack,  dolookaround } from './cmd.js';
+import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, promptYesNo, rhack,  dolookaround } from './cmd.js';
+import { getLine } from './windows.js';
 import type { MessagePublisher } from './pline.js';
 
 import { doStorms } from './timeout.js';

@@ -56,8 +56,8 @@ import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon 
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulp_blnd_check } from './mhitu.js';
-import { getLine, promptYesNoAllQuit } from './query.js';
-import { showMultiSelectWindow } from './windows.js';
+import { promptYesNoAllQuit } from './query.js';
+import { getLine, showMultiSelectWindow } from './windows.js';
 import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import type { MultiSelectItem, MultiSelectSection } from './windows.js';
 import type { MenuUnderlay } from './wintty.js';

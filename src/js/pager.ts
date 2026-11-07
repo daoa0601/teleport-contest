@@ -37,10 +37,10 @@ import {
     promptDirection, restoreCommandMap, showExtendedCommandList,
 } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
-import { getLine, promptYesNo } from './query.js';
+import { promptYesNo } from './query.js';
 import { selectMapPosition } from './getpos.js';
 import {
-    decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
+    getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
     type PageLocalMultiSelectItem,
 } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';

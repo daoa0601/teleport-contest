@@ -10,7 +10,7 @@ import type { GameMap } from './game.js';
 import type { VaultGuardData, Monster } from './monster_types.js';
 import type { Position, Room, MapLocation } from './map_types.js';
 import { isRoom } from './map_types.js';
-import { getLine } from './query.js';
+import { getLine } from './windows.js';
 import { deleteEngravingAt, make_grave } from './engrave.js';
 import { newsym, canSpotMonster, map_invisible, map_location, monsterVisible, xy_set_wall_state } from './display.js';
 import {

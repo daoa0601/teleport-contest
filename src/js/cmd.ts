@@ -52,8 +52,8 @@ import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff,
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
-import { completeExtendedCommand, getLine, promptChoice, tty_yn_function } from './query.js';
-import { showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
+import { completeExtendedCommand, promptChoice, tty_yn_function } from './query.js';
+import { getLine, showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
 import { promptYesNo } from './query.js';
@@ -115,7 +115,7 @@ import type { TextPage } from './windows.js';
 import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 import { finishHeroMonsterKill } from './mon.js';
 
-export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
+export { promptYesNo, promptYesNoQuit } from './query.js';
 
 // Direction deltas: y u k
 //                   h . l

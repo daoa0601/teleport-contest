@@ -7,8 +7,7 @@ import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_se
     tty_display_nhwindow, tty_clear_nhwindow, tty_dismiss_nhwindow, tty_destroy_nhwindow } from '../js/wintty.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { showMultiSelectWindow } from '../js/windows.js';
-import { getLine } from '../js/query.js';
+import { getLine, showMultiSelectWindow } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { planInput } from './support/planned-input.js';
 import { queueCannedKeys } from './support/canned-input.js';

@@ -12,7 +12,8 @@ import { pline, plineWithContinuation, publishHeardMessage } from './pline.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import { definiteName, objectCombatName } from './objnam.js';
-import { getLine, promptYesNoQuit } from './query.js';
+import { promptYesNoQuit } from './query.js';
+import { getLine } from './windows.js';
 import { heroIsDeaf } from './senses.js';
 
 // Part of C music.c:do_play_instrument(): find the adjacent drawbridge.
