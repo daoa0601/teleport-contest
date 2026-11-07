@@ -4,6 +4,7 @@
 // beg(), growl_sound().
 
 import { WEAPON_CLASS } from './objclass.js';
+import { sessionIsNight } from './calendar.js';
 import { hallucinatedDeityName } from './pray.js';
 
 import { ANY_SHOP, BARRACKS, BEEHIVE, BOLT_LIM, COURT, IRONBARS, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, W_ARMH, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd, NECK, HEAD, HAIR, BLOOD } from './const.js';
@@ -516,11 +517,7 @@ export function monsterSentenceSubject(monster: Monster): string {
     return monsterName(monster, { capitalized: true });
 }
 
-// C calendar.c:night()
-export function sessionIsNight(datetime: string | null | undefined): boolean {
-    const hour = recorderLocalHour(datetime);
-    return hour < 6 || hour > 21;
-}
+
 
 // C sounds.c:growl_sound(). Summoning uses the same noise while unseen.
 export function monsterGrowlSound(monster: Monster): string {

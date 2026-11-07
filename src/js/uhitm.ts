@@ -12,7 +12,8 @@ import {
     IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_NAMES, TOWEL, YA, YUMI,
 } from './object_data.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
-import { monsterSentenceSubject, sessionIsNight } from './sounds.js';
+import { monsterSentenceSubject } from './sounds.js';
+import { sessionIsNight } from './calendar.js';
 import { monsterHasMagicResistance } from './trap.js';
 import {
     applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject,

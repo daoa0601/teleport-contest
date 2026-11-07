@@ -49,8 +49,8 @@ import { isWereMonster, isHumanWereMonster, transformWereMonster, summonWerePack
 import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { find_offensive } from './muse.js';
 import { isPoolAt } from './dbridge.js';
-import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
-import { sessionIsNight, monsterGrowlSound } from './sounds.js';
+import { recorderIsLeapDay, recorderLocalHour, sessionIsNight } from './calendar.js';
+import { monsterGrowlSound } from './sounds.js';
 import { setHeroGrip } from './mon.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './do.js';
