@@ -9,10 +9,9 @@
 import { castMonsterSpellRay } from './mthrowu.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
 import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, setPropertyTimeout, } from './potion.js';
-import { clearHeroStrangulation } from './do_wear.js';
+import { clearHeroStrangulation, advanceDisplacementTimeout } from './do_wear.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle, } from './objnam.js';
 import { advanceSpellProtection } from './spell.js';
-import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
 import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt, finishHeroMonsterKill, } from './mon.js';

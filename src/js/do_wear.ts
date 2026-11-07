@@ -40,7 +40,7 @@ import {
     W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Is_waterlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL,
     W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD,
     P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL,
-    SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, CMDQ_KEY,
+    SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, CMDQ_KEY, TIMEOUT,
 } from './const.js';
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,  isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
 
@@ -77,8 +77,9 @@ import { removeWornHeroItem } from './steal.js';
 import { artifactEmitsLight, heroHasArtifactDefense, setWornArtifactProperties } from './artifact.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription, equipmentLightMessage } from './light.js';
-import { rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
+import { heroIsInvisible } from './hero_invisibility.js';
 import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttribute } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import { encumber_msg, heroIsSafeFromFatalCorpse, ST_CORPSE, ST_PETRIFIES } from './pickup.js';
@@ -1846,6 +1847,40 @@ function canObserveDisplacement(state: GameState): boolean {
         || (state.u.unblind_telepat_range ?? -1) >= 0
         || blind && (propertyIsActive('telepathy', state) || !!state.u.blindTelepathy)
         || heroDetectsMonsters(state);
+}
+
+// Part of C eat.c:cpostfx(): the PM_DISPLACER_BEAST branch —
+// toggle_displacement() before gaining incr_itimeout(&HDisplaced, d(6, 6)).
+export async function gainCorpseDisplacement({ state = game }: { state?: GameState } = {}): Promise<void> {
+    if (!heroIsDisplaced(state)) await announceDisplacementChange(true, state);
+    state.u.displacedTurns = Math.min(TIMEOUT, (state.u.displacedTurns || 0) + d(6, 6));
+    refreshProperty('displaced', state);
+}
+
+// Part of C timeout.c:nh_timeout(): the DISPLACED decrement and its expiry
+// toggle_displacement(0, 0, FALSE).
+export async function advanceDisplacementTimeout(state: GameState = game): Promise<void> {
+    const turns = state.u.displacedTurns;
+    if (turns === undefined || turns <= 0) return;
+    state.u.displacedTurns = turns - 1;
+    if (state.u.displacedTurns) return;
+    refreshProperty('displaced', state);
+    if (!heroIsDisplaced(state)) await announceDisplacementChange(false, state);
+}
+
+// C do_wear.c:toggle_displacement(): the message test — see self, or
+// sense monsters via telepathy or monster detection.
+async function announceDisplacementChange(on: boolean, state: GameState): Promise<void> {
+    const hero = state.u;
+    const blind = heroIsBlind(state);
+    const unseen = heroIsInvisible(state) && !propertyIsActive('seeInvisible', state);
+    const seesSelf = !blind && !hero.uswallow && !unseen;
+    const sensesMonsters = hasWornProperty('telepathy', state)
+        || (hero.unblind_telepat_range ?? -1) >= 0
+        || blind && propertyIsActive('telepathy', state)
+        || (hero.monsterDetectionTurns ?? 0) > 0;
+    if (hero.displacementBlocked || hero.displacedBlocked || !(seesSelf || sensesMonsters)) return;
+    await plineWithContinuation(formatFeltMessage(`that monsters${on ? '' : ' no longer'} have difficulty pinpointing your location.`, state));
 }
 
 // C do_wear.c:Cloak_on(): the cloak switch — elven-cloak stealth, the

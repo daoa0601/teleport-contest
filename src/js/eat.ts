@@ -26,7 +26,7 @@ import {
     heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting, setPropertyTimeout,
 } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
-import { removeHeroAccessory, armorSimpleName, heroIsStrangled } from './do_wear.js';
+import { removeHeroAccessory, armorSimpleName, heroIsStrangled, gainCorpseDisplacement } from './do_wear.js';
 import { stopHeroOccupation } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
@@ -60,7 +60,6 @@ import { nomul, loseHeroHp, chewIronBars, stopRun, exceedsActionCapacity, nearCa
 import { possessiveName } from './hacklib.js';
 import { heroAcidBreathAttack, hitHeroWithRay, meltIce } from './zap.js';
 import { hasNonArtifactConflict } from './hero_conflict.js';
-import { gainCorpseDisplacement } from './hero_displacement.js';
 import { removeWornHeroItem } from './steal.js';
 import { freeInventoryObject, useUpInventoryStack, addInventoryItem, chooseInventoryObject, consumeInventoryItem, inventoryItemDescription, feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';

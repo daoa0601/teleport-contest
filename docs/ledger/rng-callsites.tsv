@@ -496,7 +496,7 @@ src/js/dig.ts	continueHeroDigging	rn2	"[""6""]"	constant
 src/js/dig.ts	continueHeroDigging	rnd	"[""5""]"	constant
 src/js/dig.ts	continueHeroDigging	rnl	"[""7""]"	constant
 src/js/mkobj.ts	placeTreeFruit	random	"[""TREE_FRUITS.length""]"	constant
-src/js/hero_displacement.ts	gainCorpseDisplacement	d	"[""6"", ""6""]"	constant
+src/js/do_wear.ts	gainCorpseDisplacement	d	"[""6"", ""6""]"	constant
 src/js/trap.ts	drainHeroEnergy	rollOne	"[""-hero.uen""]"	unproved
 src/js/trap.ts	drainHeroEnergy	rollOne	"[""amount""]"	unproved
 src/js/mhitu.ts	gulpmu	random	"[""20""]"	constant
