@@ -238,9 +238,10 @@ export async function deleteObjectContents(container, state = game) {
         container.owt = objectWeight(container);
     }
 }
-// C shk.c:1185-1275 obfree().  A billed object is not freed: without a
-// merge target it stays as a used-up bill entry; with one, the sink-owned
-// billing branch reconciles the survivor's bill before deallocation.
+// C shk.c:obfree() (shk.c:1185-1275).  A billed object is not freed:
+// without a merge target it stays as a used-up bill entry; with one, the
+// sink-owned billing branch reconciles the survivor's bill before
+// deallocation.
 export async function deleteObject(object, state = game, { mergeInto = null } = {}) {
     if (!object || object.where === 'gone')
         return false;
@@ -438,8 +439,10 @@ export function getCostOfShopItem(object, state = game) {
         roomno: shop.roomno,
     };
 }
-// Iteration matches next_shkp(fmon, TRUE), including the anger surcharge
-// applied before each keeper's bill is inspected.
+// C shk.c:next_shkp(): the with-bill iteration (next_shkp(fmon, TRUE)),
+// including the anger surcharge applied before each keeper's bill is
+// inspected; the withbill=FALSE iterations are inlined at
+// exitShopkeepers() and choosePaymentShopkeeper().
 export function* visitBilledShopkeepers(state = game) {
     requireLiveGame(state);
     for (const keeper of [...requireGameLevel(state).monsters].reverse()) {
@@ -956,8 +959,9 @@ export function costlyAdjacent(resident, x, y, state = game) {
     return !!(state.level?.at(x, y)?.edge
         || (x === home.x && y === home.y));
 }
-// C shk.c:3492 addtobill(): bills the picked object and its eligible
-// contents for the hero's current shop; gold routes through costly_gold.
+// C shk.c:addtobill() (shk.c:3492): bills the picked object and its
+// eligible contents for the hero's current shop; gold routes through
+// costly_gold.
 export async function addShopObjectToBill(object, state = game, { ininv = true, silent = false, publish = plineWithContinuation } = {}) {
     requireLiveGame(state);
     // C billable(&shkp, obj, *u.ushops, TRUE): the hero's first shop room
@@ -2962,7 +2966,7 @@ function corpsenmPriceAdj(object) {
     }
     return value;
 }
-// C shk.c:4319 getprice(): one price owner for buying and selling.
+// C shk.c:getprice() (shk.c:4319): one price owner for buying and selling.
 export function shopGetPrice(object, shkBuying, state = game) {
     let tmp = objectBaseCost(object.otyp);
     if (object.oartifact) {
@@ -3331,17 +3335,7 @@ export async function buyShopBillItem(resident, item, state = game, { itemize = 
         finally {
             object.quan = originalQuantity;
         }
-        if (item.kind === 'used' && object.where !== 'onbill' && object.quan > 0) {
-            entry.bquan = object.quan;
-        }
-        else {
-            object.unpaid = false;
-            if (object.where === 'onbill') {
-                unlinkObject(object, state);
-                deallocateObject(object, state);
-            }
-            removeBillEntry(resident, entry);
-        }
+        updateBillAfterPurchase(resident, entry, object, item.kind === 'used', state);
         bought++;
     }
     if (container && bought === 0) {
@@ -3360,6 +3354,23 @@ export async function buyShopBillItem(resident, item, state = game, { itemize = 
         item.object.no_charge = false;
     }
     return 'paid';
+}
+// C shk.c:update_bill(): after a purchase — a partly used entry keeps its
+// intact remainder on the bill; anything fully bought leaves the bill (its
+// used-up on-bill copy is deallocated) and removeBillEntry() compacts the
+// vacated slot.
+function updateBillAfterPurchase(resident, entry, object, partlyUsed, state) {
+    if (partlyUsed && object.where !== 'onbill' && object.quan > 0) {
+        entry.bquan = object.quan;
+    }
+    else {
+        object.unpaid = false;
+        if (object.where === 'onbill') {
+            unlinkObject(object, state);
+            deallocateObject(object, state);
+        }
+        removeBillEntry(resident, entry);
+    }
 }
 // Part of C shk.c:dopayobj(): the safe_qbuf pay question.
 // C dopayobj(): safe_qbuf() reserves the price and question before shortening
@@ -3697,7 +3708,8 @@ async function chooseBilledItems(billed, multiple) {
     const selected = await paymentMenu(billed);
     return { items: billed.filter(item => selected.includes(item)), itemize: false, queued: true };
 }
-// Part of C shk.c:menu_pick_pay_items().
+// C shk.c:menu_pick_pay_items(): the bill menu with its used-up and unpaid
+// headings and the "Pay for which items?" picker.
 async function paymentMenu(billed) {
     for (const item of billed)
         observeObjectForNaming(item.object);

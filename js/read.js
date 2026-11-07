@@ -71,7 +71,7 @@ import { landFloorObject } from './do.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { makemonNear } from './mklev.js';
-import { isWeaponTool } from './object_properties.js';
+import { greatestErosion, isWeaponTool } from './object_properties.js';
 import { questMonsterSound } from './role_monsters.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { drainHeroWeaponSkills, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
@@ -2399,18 +2399,22 @@ function canHideCreatedMonster(monster) {
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
 // C read.c:tshirt_text() and read.c:apron_text(). Erosion wears the
 // lettering away deterministically from the hero's birth date.
-// Also C read.c:erode_obj_text(): inlined as the erosion-proportional
-// wipeoutText below.
 export function garmentInscription(object, state = game) {
     if (object.otyp !== T_SHIRT && object.otyp !== ALCHEMY_SMOCK)
         throw new Error('Only T-shirts and alchemy smocks have garment inscriptions.');
     const messages = object.otyp === T_SHIRT ? SHIRT_MESSAGES : APRON_MESSAGES;
     const id = object.o_id ?? 0;
     const text = inscriptionAt(messages, id % messages.length);
-    const erosion = Math.max(object.oeroded || 0, object.oeroded2 || 0);
+    return erodeObjectText(text, object, state);
+}
+// C read.c:erode_obj_text(): wipe out an erosion-proportional part of a
+// garment's inscription (2 * MAX_ERODE = 6), seeded by the object id and
+// the hero's birth date.
+function erodeObjectText(text, object, state) {
+    const erosion = greatestErosion(object);
     if (!erosion)
         return text;
-    return wipeoutText(text, Math.trunc(text.length * erosion / 6), (id ^ heroBirthday(state)) >>> 0);
+    return wipeoutText(text, Math.trunc(text.length * erosion / 6), ((object.o_id ?? 0) ^ heroBirthday(state)) >>> 0);
 }
 // C read.c:candy_wrapper_text().
 export function candyWrapperText(object) {
