@@ -5,7 +5,7 @@ import {
     artifactByName,
     artifactDamageBonus,
     artifactToHitBonus,
-    resolveHeroArtifactTouch,
+    touchArtifactByHero,
 } from '../js/artifact.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, W_ARM, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -122,7 +122,9 @@ void test('Grimtooth rejects an elf hero', async () => {
     initRng(301n);
     const grimtooth = await artifactObject('Grimtooth');
 
-    const touch = resolveHeroArtifactTouch(grimtooth, artifactByName('Grimtooth'));
+    const touch = await touchArtifactByHero(grimtooth, artifactByName('Grimtooth'), {
+        publish: async () => {},
+    });
 
     assert.equal(touch.badAlignment, true);
 });
