@@ -8,13 +8,13 @@ import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { CORPSE, POT_SLEEPING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { runMonsterAction } from '../js/mon.js';
 
 void test('catching a monster potion transfers it into hero inventory ownership', async () => {
     await freshObjectRoom({ flags: { verbose: false } });

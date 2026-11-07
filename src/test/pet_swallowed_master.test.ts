@@ -3,12 +3,12 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 void test('a sleeping pet wakes after its swallowed master browses the terrain', async () => {
     await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10,

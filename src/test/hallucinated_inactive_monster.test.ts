@@ -3,11 +3,11 @@ import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { makeBlinded } from '../js/potion.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 for (const inactive of ['frozen', 'sleeping', 'waiting']) {
     void test(`a sensed ${inactive} monster is redrawn as a hallucination on its turn`, async () => {

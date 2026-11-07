@@ -3,11 +3,11 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 void test('infravision reveals a disappearance spell cast from a dark square', async () => {
     const level = await freshObjectRoom({ hero: { infravision: true }, flags: { verbose: true } });

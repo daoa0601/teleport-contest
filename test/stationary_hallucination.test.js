@@ -3,10 +3,10 @@ import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 for (const condition of ['paralyzed', 'waiting', 'sleeping']) {
     void test(`a ${condition} monster changes its hallucinated appearance without moving`, async () => {
         await freshObjectRoom({ hero: { hallucinationTurns: 20, stealth: true } });

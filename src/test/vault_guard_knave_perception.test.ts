@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { runMonsterAction } from '../js/monmove.js';
 import { ROOM, ROOMOFFSET, VAULT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initRng, rn2 } from '../js/rng.js';
@@ -13,6 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 import { flushPendingTopline } from '../js/topl.js';
+import { runMonsterAction } from '../js/mon.js';
 
 // monmove.c:m_move() refreshes the actor's apparent hero position exactly
 // once (set_apparxy(), monmove.c:1761) before dispatching to shk_move(),

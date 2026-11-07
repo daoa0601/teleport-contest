@@ -4,11 +4,11 @@ import { A_CON, A_DEX, A_STR, NO_MINVENT, W_ARMC, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { CLOAK_OF_PROTECTION, DART } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 for (const [species, attribute] of [['quasit', A_DEX], ['rabid rat', A_CON]]) {
     void test(`${species} poison harms its target attribute rather than Strength`, async () => {
         await freshObjectRoom({ flags: { verbose: false } });

@@ -7,11 +7,11 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { attackMonsterWithMonster } from '../js/mhitm.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { DAGGER, SHIELD_OF_REFLECTION } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 async function freshFight(defenderSpecies: string, attackerSpecies = 'soldier') {
     await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });

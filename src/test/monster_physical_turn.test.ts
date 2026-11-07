@@ -7,7 +7,6 @@ import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, W_AMUL, W_WEP } from '../js/const
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AT_BITE, AT_KICK, AT_TENT } from '../js/monster_attack_types.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, OBJECT_NAMES, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
@@ -16,6 +15,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { runMonsterAction } from '../js/mon.js';
 
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
 

@@ -10,7 +10,6 @@ import { initializePet } from '../js/dog.js';
 import { heroHasConflict } from '../js/hero_conflict.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -18,6 +17,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 for (const conflict of [false, true]) {
     void test(`an adjacent hostile ${conflict ? 'fights its neighbor under Conflict before approaching the hero' : 'leaves its neighbor alone without Conflict'}`, async () => {

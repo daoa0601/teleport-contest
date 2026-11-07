@@ -5,7 +5,6 @@ import { M_AP_F_DKNOWN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, NO_MINVENT, }
 import { game } from '../js/gstate.js';
 import { nameToMonster } from '../js/mondata.js';
 import { MAP_SYMBOLS } from '../js/map_symbols.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { CHEST, STETHOSCOPE } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
 import { applyInventoryObject, runMonsterAbilityCommand } from './support/commands.js';
@@ -14,6 +13,7 @@ import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { threateningMonsterNearby } from '../js/hack.js';
+import { runMonsterAction } from '../js/mon.js';
 for (const [appearance, label] of [[M_AP_FURNITURE, 'furniture'], [M_AP_OBJECT, 'object']]) {
     void test(`a known ${label} disguise does not block safe waiting`, async () => {
         freshPlayableRoom();

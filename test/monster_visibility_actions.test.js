@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOTAIL, NO_MINVENT, W_ARM, W_ARMC, W_ARMF, W_ARMH } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { WAN_DEATH, WAN_SPEED_MONSTER, WAN_STRIKING, OBJECT_NAMES, HELMET, IRON_SHOES, CLOAK_OF_PROTECTION } from '../js/object_data.js';
@@ -15,6 +14,7 @@ import { cansee, vision_recalc } from '../js/vision.js';
 import { kickDirection } from './support/commands.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 void test('kicking a detected invisible worm tail names the worm', async () => {
     await freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10, heroX: 8, heroY: 10 });
     requirePlayingGame(game);

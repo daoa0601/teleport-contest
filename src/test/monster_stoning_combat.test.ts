@@ -9,13 +9,13 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { attackMonsterWithMonster } from '../js/mhitm.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, LEATHER_GLOVES, STATUE } from '../js/object_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 async function givePetrifyingWeapon(monster: Monster) {
     await equipMonsterObject(monster, await knownObject(LEATHER_GLOVES), W_ARMG);

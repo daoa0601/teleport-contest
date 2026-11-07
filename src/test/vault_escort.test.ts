@@ -14,7 +14,6 @@ import { initRng, rn2 } from '../js/rng.js';
 import { teleds } from '../js/teleport.js';
 import { finishTeleportArrival } from '../js/teleport.js';
 import { moveVaultGuard } from '../js/vault.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -22,6 +21,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 import { monsterGoldAmount } from '../js/hack.js';
+import { runMonsterAction } from '../js/mon.js';
 
 async function escort() {
     const level = await freshObjectRoom();

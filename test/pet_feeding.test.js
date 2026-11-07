@@ -11,12 +11,12 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER, CARROT, CORPSE, DAGGER, GOLD_PIECE, LUMP_OF_ROYAL_JELLY, ROCK, SACK, TRIPE_RATION } from '../js/object_data.js';
 import { mksobj, addCreatedObjectToContainer, placeCreatedObject } from '../js/mkobj.js';
 import { getObjectLocation } from '../js/zap.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { installPagerInput } from './support/pager-input.js';
+import { runMonsterAction } from '../js/mon.js';
 async function createPet(species = 'little dog', x = 11, y = 10) {
     const pet = await createMonsterAt(species, x, y, NO_MINVENT);
     initializePet(pet);

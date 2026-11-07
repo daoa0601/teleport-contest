@@ -12,7 +12,6 @@ import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { AT_SPIT } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { resolveMonsterCombatSpit, resolveMonsterSpitAtHero } from '../js/mthrowu.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { performPetRangedAttack } from '../js/dogmove.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, HELMET } from '../js/object_data.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
@@ -21,6 +20,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { runMonsterAction } from '../js/mon.js';
 const BIRTH_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function spitRoom(sourceName = 'black naga', targetName = 'jackal', heroTarget = false) {
     await freshObjectRoom({

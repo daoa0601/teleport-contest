@@ -19,7 +19,6 @@ import {
 } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
@@ -28,6 +27,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
+import { runMonsterAction } from '../js/mon.js';
 
 function screen() {
     return requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join('')).join('\n');

@@ -7,7 +7,6 @@ import { releaseHold } from '../js/zap.js';
 
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS, AT_BITE, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP } from '../js/monster_attack_types.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { mintrap, maketrap } from '../js/trap.js';
 import { DAGGER, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -19,6 +18,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { cancelMonster } from '../js/zap.js';
 import { monsterHasColdResistance } from '../js/mondata.js';
+import { runMonsterAction } from '../js/mon.js';
 async function conflictRoom(expectedMessages: RegExp) {
     await freshObjectRoom({ hero: { ulevel: 30 } });
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');

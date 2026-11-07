@@ -7,12 +7,12 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 void test('weapon poison weakens the hero despite armor magic cancellation', async () => {
     await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);

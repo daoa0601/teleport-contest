@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { A_STR, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { ROCK } from '../js/object_data.js';
 
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { nearCapacity } from '../js/hack.js';
+import { runMonsterAction } from '../js/mon.js';
 
 void test('monster poison waits for the load pager before remembering the new encumbrance', async () => {
     await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
