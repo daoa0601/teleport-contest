@@ -35,7 +35,7 @@ import { inventoryItemDescription, finishInventoryRemoval, freeInventoryObject, 
 import { heroIsBlind, heroIsUnaware } from './senses.js';
 import { impossible } from './diagnostics.js';
 import { rn2 } from './rng.js';
-import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { carryObjEffects } from './figurine_timer.js';
 import { objectShedsLight, snuffLightSource } from './light.js';
 import { heroSpecies, body_part, mbodypart } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -543,7 +543,7 @@ async function prepareMonsterPickup(
         if (object.how_lost === LOST_THROWN) object.how_lost = LOST_STOLEN;
         else if (object.how_lost === LOST_DROPPED) object.how_lost = LOST_NONE;
     }
-    attachCursedFigurineTimer(object, state);
+    carryObjEffects(object, state);
     return snuff;
 }
 

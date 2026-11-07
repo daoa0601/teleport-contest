@@ -31,7 +31,7 @@ import {
     inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem,
     chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription,
     freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving,
-    recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse,
+    recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, bucCategory,
 } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero, landObjectOnAltar } from './do.js';
 import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm} from './mkobj.js';
@@ -1616,12 +1616,6 @@ export function matchesObjectCategories(object: GameObject, selection: ObjectCla
 // Part of C pickup.c:query_objlist(): whether BUC categories were chosen.
 export function hasBucCategory(selection: ObjectClassSelection): boolean {
     return selection.categories.some(category => typeof category === 'string' && 'BUCX'.includes(category));
-}
-
-// Part of C pickup.c:query_objlist(): an object's B/U/C/X category.
-function bucCategory(object: GameObject): BucCategory {
-    if (object.oclass === COIN_CLASS) return game.flags.goldX ? 'X' : 'U';
-    return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 
 // C pickup.c:simple_look().

@@ -7,7 +7,7 @@ import {
 } from './const.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation } from './pline.js';
-import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { carryObjEffects } from './figurine_timer.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -105,7 +105,7 @@ async function restoreTutorialState(state: GameState): Promise<void> {
         state.inventory.push(object);
         await finishInventoryAddition(object, state);
         restoreWornItem(object, state);
-        attachCursedFigurineTimer(object, state);
+        carryObjEffects(object, state);
     }
     if (state.flags.fixinv !== false) {
         // C inv_rank() orders lowercase inventory letters before uppercase.

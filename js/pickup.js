@@ -11,7 +11,7 @@ import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription, makePlural, withIndefiniteArticle, wishedObjectPresentation, ownedObjectAction, definiteObjectAction, ownedObjectQuestion, corpseName, killerObjectName, } from './objnam.js';
 import { autokey, autoUnlockFlags, pickLock, isForceableWeapon, changeBoxLockByMagic } from './lock.js';
 import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND, MM_ADJACENTOK, MM_NOMSG, NO_MINVENT, FOOT } from './const.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, } from './invent.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, bucCategory, } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero, landObjectOnAltar } from './do.js';
 import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm } from './mkobj.js';
 import { hitFloorWithObject } from './dothrow.js';
@@ -1580,12 +1580,6 @@ export function matchesObjectCategories(object, selection) {
 // Part of C pickup.c:query_objlist(): whether BUC categories were chosen.
 export function hasBucCategory(selection) {
     return selection.categories.some(category => typeof category === 'string' && 'BUCX'.includes(category));
-}
-// Part of C pickup.c:query_objlist(): an object's B/U/C/X category.
-function bucCategory(object) {
-    if (object.oclass === COIN_CLASS)
-        return game.flags.goldX ? 'X' : 'U';
-    return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 // C pickup.c:simple_look().
 async function lookAtObjects(objects) {

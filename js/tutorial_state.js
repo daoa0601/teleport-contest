@@ -2,7 +2,7 @@
 import { I_SPECIAL, W_AMUL, W_ARM, W_ARMOR, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_BALL, W_CHAIN, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation } from './pline.js';
-import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { carryObjEffects } from './figurine_timer.js';
 import { game } from './gstate.js';
 import { removeHeroEquipment } from './worn.js';
 import { prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './invent.js';
@@ -96,7 +96,7 @@ async function restoreTutorialState(state) {
         state.inventory.push(object);
         await finishInventoryAddition(object, state);
         restoreWornItem(object, state);
-        attachCursedFigurineTimer(object, state);
+        carryObjEffects(object, state);
     }
     if (state.flags.fixinv !== false) {
         // C inv_rank() orders lowercase inventory letters before uppercase.

@@ -25,7 +25,7 @@ import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
-import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
+import { chooseInventoryObject, compactInventoryLetters, bucCategory } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { setBallAndChainFelt } from './ball.js';
@@ -875,21 +875,16 @@ export async function selectBulkTakeoff(selectOff) {
 function wornInventory() {
     return game.inventory.filter(object => TAKEOFF_ORDER.some(slot => takeoffSlotObject(slot) === object));
 }
-// Part of C pickup.c:allow_category(): the BUC-state categorization.
-function bucCategory(object) {
-    if (object.oclass === COIN_CLASS)
-        return game.flags.goldX ? 'X' : 'U';
-    return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
-}
 // Part of C invent.c:count_buc(): the removal-category subset — the
 // priest knowledge pass and per-status tallies for the removal-category
 // menu (query_classes in pickup.ts builds the same set for pickup menus).
+// The classifier itself is invent.ts:bucCategory().
 function wornBucCategories(worn) {
     // Native count_buc() grants priest knowledge before applying is_worn().
     if (game.urole?.key === 'priest')
         for (const object of game.inventory)
             object.bknown = object.oclass !== COIN_CLASS;
-    return new Set(worn.map(bucCategory));
+    return new Set(worn.map(object => bucCategory(object)));
 }
 // Part of C pickup.c:allow_category(): the unpaid filter including
 // contents.
