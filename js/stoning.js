@@ -39,11 +39,6 @@ export function clearHeroPetrification(state = game) {
     delete hero.stoneKillerFormat;
     return wasPetrifying;
 }
-// Part of C pickup.c:u_safe_from_fatal_corpse(): test protection from bare-handed petrifying corpse contact.
-export function handlesPetrifyingCorpseBareHanded(object) {
-    return object?.otyp === CORPSE && touchPetrifies(object.corpsenm)
-        && !(game.uarmg || game.u?.uarmg) && !heroResistsStoning();
-}
 // Part of C pickup.c:fatal_corpse_mistake(): attempt stone-golem conversion before fatal corpse contact.
 export async function petrifyFromCorpseContact(message, killer, beforeDeath = null) {
     // Pickup and snatching try the golem conversion before warning or
