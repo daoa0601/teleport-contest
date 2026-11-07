@@ -398,6 +398,7 @@ could_pole_mon	calc_pole_range
 could_pole_mon	dist2
 could_untrap	near_capacity
 count_contents	costly_spot
+count_feat_lastseentyp	altarmask_at
 count_feat_lastseentyp	is_drawbridge_wall
 count_feat_lastseentyp	isok
 count_surround_traps	glyph_at
@@ -561,6 +562,7 @@ dig	rnl
 dig	set_wounded_legs
 dig	trapname
 dig	unblock_point
+dig_check	altarmask_at
 dig_check	is_pool_or_lava
 dig_check	stairway_at
 dig_typ	closed_door
@@ -703,6 +705,7 @@ do_class_genocide	polyself
 do_class_genocide	rehumanize
 do_clear_area	view_from
 do_clear_area	vision_recalc
+do_earthquake	altarmask_at
 do_earthquake	desecrate_altar
 do_earthquake	in_rooms
 do_earthquake	newsym
@@ -2310,6 +2313,7 @@ lookaround_known_room	selection_getpoint
 lookaround_known_room	selection_new
 lookaround_known_room	selection_size_description
 lookaround_known_room	set_msg_xy
+lookat	altarmask_at
 lookat	dist2
 lookat	glyph_at
 lookat	is_drawbridge_wall
