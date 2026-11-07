@@ -75,7 +75,6 @@ import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './message_types.js';
 
 import { rumorCheck } from './rumors.js';
-import { resetUtrap } from './trap.js';
 import type { PropertyName } from './property_types.js';
 import { monsterIsNonliving, heroHasOlfaction } from './mondata.js';
 

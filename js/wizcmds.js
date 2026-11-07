@@ -60,7 +60,6 @@ import { displayMessageWindow } from './topl.js';
 import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './message_types.js';
 import { rumorCheck } from './rumors.js';
-import { resetUtrap } from './trap.js';
 import { monsterIsNonliving, heroHasOlfaction } from './mondata.js';
 // C wizcmds.c:wiz_wish().
 export async function wizWish() {
