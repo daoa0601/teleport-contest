@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMINE, PIT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { dotrapAt } from '../js/trap.js';
+import { dotrap, trapAt } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
@@ -20,7 +20,7 @@ void test('a hero-triggered land mine changes the level around the blast', async
     sleeper.msleeping = 1;
     makeEngravingAt(10, 10, 'Elbereth');
     pushKeys('                    ');
-    await dotrapAt(10, 10);
+    await dotrap(trapAt(game, 10, 10));
     assert.equal(mine.ttyp, PIT);
     assert.equal(game.u.utraptype, TT_PIT);
     assert.equal(floorObjectsAt(level, 10, 10).includes(rock), false);

@@ -27,7 +27,7 @@ import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming, setPropertyTimeo
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt, triggerBoobyTrap, selfTouchPetrifyingWeapons, drown, lava_effects, heroCanLiveUnderwater, finishLiquidDeath, launchRollingBoulder, immune_to_trap, explodeLandMine, into_vs_onto, heroTeetersAtPit, } from './trap.js';
+import { waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrap, trapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt, triggerBoobyTrap, selfTouchPetrifyingWeapons, drown, lava_effects, heroCanLiveUnderwater, finishLiquidDeath, launchRollingBoulder, immune_to_trap, explodeLandMine, into_vs_onto, heroTeetersAtPit, } from './trap.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, riderCannotReachMessage } from './steed.js';
 import { isRoom } from './map_types.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -2149,7 +2149,7 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, tra
                 triggeringTrapType = trap.ttyp;
                 let result;
                 try {
-                    result = await dotrapAt(newx, newy, {
+                    result = await dotrap(trapAt(game, newx, newy), {
                         finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
                     });
                 }

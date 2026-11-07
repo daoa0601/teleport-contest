@@ -19,7 +19,7 @@ import { currentAttribute, loseHeroStrength } from './attrib.js';
 import { clearHeroSliming, makeBlinded } from './potion.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage, flashBurn } from './zap.js';
-import { burnHeroArmorByFire, igniteItems } from './trap.js';
+import { burnArmorByFire, igniteItems } from './trap.js';
 import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { discoverHeroReflectionSource, ureflects } from './muse.js';
@@ -561,7 +561,7 @@ async function mcastFirePillar(ctx: McastuSpellContext): Promise<McastuSpellOutc
     }
     // burnarmor() retries until it hits a worn slot; it keeps the global
     // die, as the deferred resolver did.
-    await burnHeroArmorByFire(state, ctx.publish, ctx.calls, rn2);
+    await burnArmorByFire(state.u, state, ctx.publish, ctx.calls, rn2);
     const items = await destroyFireInventory(originalDamage, {
         state,
         publish: ctx.publish,

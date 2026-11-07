@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { W_ARMH } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { CORNUTHAUM, ELVEN_LEATHER_HELM } from '../js/object_data.js';
-import { burnHeroArmorByFire } from '../js/trap.js';
+import { burnArmorByFire } from '../js/trap.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -20,7 +20,7 @@ for (const { type, description } of [
         game.uarmh = hat;
         const messages: string[] = [];
 
-        const torso = await burnHeroArmorByFire(game,
+        const torso = await burnArmorByFire(game.u, game,
             message => { messages.push(message); }, [], () => 0);
 
         assert.equal(torso, false);

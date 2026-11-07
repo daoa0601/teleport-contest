@@ -8,7 +8,7 @@ import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE,
 } from './object_data.js';
 import { monsterHasMagicResistance } from './mondata.js';
-import { burnArmorByFire, burnHeroArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact } from './trap.js';
+import { burnArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact } from './trap.js';
 import { heroHasArtifactDefense } from './artifact.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BURNING, BURNING_OIL, COLNO, DOOR, D_CLOSED, D_LOCKED, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, LARGEST_INT, LOST_EXPLODING, M_AP_MONSTER, M_AP_TYPE, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, SHOPBASE, SINK, STATUE_TRAP, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, ZAP_POS } from './const.js';
@@ -285,7 +285,7 @@ export async function explode(x: number, y: number, type: number, damage: number
         } else if ([AD_PHYS, AD_ACID].includes(damageType)
             && state.u.halfPhysicalDamage) heroDamage = Math.trunc((heroDamage + 1) / 2);
         if (damageType === AD_FIRE) {
-            await burnHeroArmorByFire(state, publish, [], random);
+            await burnArmorByFire(state.u, state, publish, [], random);
             await igniteItems(state.inventory, { state, publish, random });
         }
         const items = await destroyInventoryByElement(damageKinds.get(damageType)?.items, damage, {

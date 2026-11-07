@@ -121,7 +121,7 @@ import { liveSpellSkill } from './spell.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { putHeroToSleep } from './timeout.js';
-import { burnArmorByFire, burnHeroArmorByFire, damageObjectWithAcid, fillPitWithBoulderAt } from './trap.js';
+import { burnArmorByFire, damageObjectWithAcid, fillPitWithBoulderAt } from './trap.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { flushPendingTopline } from './topl.js';
 import { monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
@@ -2737,7 +2737,7 @@ async function elementalSelfZap(kind, damageType, memory, resistance, state) {
     }
     if (kind === 'fire') {
         await burnAwayHeroSlime(state, pline);
-        await burnHeroArmorByFire(state, pline);
+        await burnArmorByFire(state.u, state, pline);
         if (state.program_state.gameover)
             return 0;
     }
@@ -3929,7 +3929,7 @@ export async function hitHeroWithRay({ state = game, attack = heroBreathAttack(s
             noteRayResistance(context, false);
         if (clearHeroSliming(state))
             await publish('The slime that covers you is burned away!');
-        const bodyHit = await burnHeroArmorByFire(state, publish, [], random);
+        const bodyHit = await burnArmorByFire(state.u, state, publish, [], random);
         if (bodyHit && random(3) === 0) {
             const items = await destroyFireInventory(sourceDamage, {
                 state, publish, random, rollOne, die: context.die,

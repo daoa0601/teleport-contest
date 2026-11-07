@@ -69,7 +69,7 @@ import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming,
 import { d, rn1, rn2, rnd } from './rng.js';
 import {
     waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue,
-    resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt,
+    resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrap, trapAt,
     igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt,
     triggerBoobyTrap, selfTouchPetrifyingWeapons, drown, lava_effects, heroCanLiveUnderwater, finishLiquidDeath,
     launchRollingBoulder, immune_to_trap, explodeLandMine, into_vs_onto, heroTeetersAtPit,
@@ -2251,7 +2251,7 @@ export async function finishDestinationSpotEffects({
                 triggeringTrapType = trap.ttyp;
                 let result;
                 try {
-                    result = await dotrapAt(newx, newy, {
+                    result = await dotrap(trapAt(game, newx, newy), {
                         finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
                     });
                 } finally {
