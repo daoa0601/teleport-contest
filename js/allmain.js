@@ -66,7 +66,8 @@ import { resolveMonsterGaze, completeHeroAttackSlot, mattacku, missmu, resolveMo
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import { canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, curs_on_u } from './display.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, rememberToplines, appendSuppressedTopline, resetToplineClip } from './topl.js';
-import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level } from './vision.js';
+import { hasLightSources } from './light.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';

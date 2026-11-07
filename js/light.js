@@ -11,12 +11,12 @@ import { beginObjectBurn, endObjectBurn, lightObjectIsGlobal, objectsInTimerGrap
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { artifactEmitsLight } from './artifact.js';
-import { CORR, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS } from './const.js';
+import { COLNO, CORR, COULD_SEE, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, ROWNO, TEMP_LIT } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible } from './display.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { rnd } from './rng.js';
 import { impactArtifactLight } from './potion.js';
-import { cansee, clearAreaCells, vision_recalc } from './vision.js';
+import { cansee, clearAreaCells, vision_recalc, clearPath, monsterEmitsLight, circle_data, circle_start, visionRow, visionValue, } from './vision.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { getObjectLocation } from './zap.js';
@@ -165,6 +165,69 @@ export async function snuffMonsterInventoryLights(defender, state, publish) {
             }
         }
         endObjectBurn(object, state);
+    }
+}
+// Port only: derive moving light sources from live monsters and objects instead of a native light list.
+function mobileLightSources(level) {
+    const monsters = [...(level?.monsters || [])];
+    const sources = monsters.filter(monster => !monster.dead && !monster.lightRemoved && !monster.mburied
+        && monster.mx > 0 && monsterEmitsLight(monster.mnum))
+        .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
+    if (game.u.formLightRange)
+        sources.push({ x: game.u.ux, y: game.u.uy, range: game.u.formLightRange });
+    const addObjectLight = (object, x, y) => {
+        const range = objectLightRadius(object);
+        if (range)
+            sources.push({ x, y, range });
+    };
+    for (let x = 1; x < COLNO; x++)
+        for (let y = 0; y < ROWNO; y++)
+            for (const object of level?.objects?.[x]?.[y] || [])
+                addObjectLight(object, x, y);
+    for (const object of game.inventory || [])
+        addObjectLight(object, game.u.ux, game.u.uy);
+    for (const monster of monsters) {
+        if (monster.dead || monster.mx < 1)
+            continue;
+        for (const object of monster.minvent || monster.inventory || [])
+            addObjectLight(object, monster.mx, monster.my);
+    }
+    sources.push(...(game._transientLights || []));
+    return sources;
+}
+// C light.c:any_light_source(). The monster pass must request a refresh even
+// when the hero stays still: a monster can move its own light or a lit object.
+export function hasLightSources() {
+    // Sources in containers, underground, or in transit still exist even
+    // when get_obj_location()/get_mon_location() cannot expose their light.
+    return !!game._transientLights?.length
+        || !!game.u.formLightRange
+        || [...(game.level?.monsters ?? []), ...(game._migratingMonsters ?? [])]
+            .some(monster => !monster.dead && !monster.lightRemoved && monsterEmitsLight(monster.mnum))
+        || objectsInTimerGraph(game).some(object => objectLightRadius(object) > 0);
+}
+// C light.c:do_light_sources()
+export function doLightSources(level, couldSee) {
+    let atHeroRange = 0;
+    for (const source of mobileLightSources(level)) {
+        const atHero = source.x === game.u.ux && source.y === game.u.uy;
+        if (atHero) {
+            if (atHeroRange >= source.range)
+                continue;
+            atHeroRange = source.range;
+        }
+        const limits = visionValue(circle_start, source.range);
+        for (let y = Math.max(0, source.y - source.range); y <= Math.min(ROWNO - 1, source.y + source.range); y++) {
+            const offset = visionValue(circle_data, limits + Math.abs(y - source.y));
+            for (let x = Math.max(1, source.x - offset); x <= Math.min(COLNO - 1, source.x + offset); x++) {
+                if (atHero ? ((couldSee[y]?.[x] ?? 0) & COULD_SEE)
+                    : ((source.x === x && source.y === y)
+                        || clearPath(source.x, source.y, x, y))) {
+                    const row = visionRow(couldSee, y);
+                    row[x] = visionValue(row, x) | TEMP_LIT;
+                }
+            }
+        }
     }
 }
 // C light.c:show_transient_light(). A thrown or kicked lit object lights its
