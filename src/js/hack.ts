@@ -5,7 +5,7 @@ import { WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js'
 import { OBJ_DESCR, objectTypeKnown } from './o_init.js';
 import {
     objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, PICK_AXE,
-    DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL,
+    DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL, WATER_WALKING_BOOTS,
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE,
 } from './object_data.js';
 import {
@@ -64,7 +64,7 @@ import { isRoom } from './map_types.js';
 import type { Room, RoomMap, MapLocation, Position, Trap } from './map_types.js';
 
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet, armorSimpleName, finishDelayedArmorAction } from './do_wear.js';
+import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet, armorSimpleName, finishDelayedArmorAction } from './do_wear.js';
 import { waterbodyName, iceDescriptionAt } from './pager.js';
 import {
     do_attack, prepareAppliedWeaponAttack, hasDoorAppearance, stumbleOntoMimic, resolveHeroCombatExplosion,
@@ -102,7 +102,7 @@ import type { Shopkeeper } from './shop_types.js';
 
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 
-import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
+import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt, monsterCanFog } from './monmove.js';
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 
@@ -829,6 +829,38 @@ export function badRock(
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
     return cannotTunnel && !canPass;
 }
+
+// C hack.c:cant_squeeze_thru(): the monster branch, whose only caller is
+// mon.c:mfndpos (mon.ts).
+export function monsterCannotSqueezeThrough(monster: Monster, state: PlayingGameState) {
+    if (monsterPassesWalls(monster.mnum)) return false;
+    const flexible =
+        (monsterIsAmorphous({ mnum: monster?.mnum }) || monsterIsSlithy(monster?.mnum)) ||
+        monsterIsWhirly(monster) ||
+        monsterIsNoncorporeal(monster) ||
+        monsterCanFog(monster, state);
+    if (monsterIsBig(monster.mnum) && !flexible) return true;
+    return currentMonsterLoad(monster) > WT_TOOMUCH_DIAGONAL;
+}
+
+// C hack.c:Known_wwalking().
+export function heroKnowsWaterWalking(state: GameState = game) {
+    const hero = state.u;
+    const boots = state?.uarmf || hero.uarmf;
+    const typeKnown = boots && objectTypeKnown(boots, state);
+    return !hero.usteed && boots?.otyp === WATER_WALKING_BOOTS && !!typeKnown;
+}
+
+// C hack.c:Known_lwalking().
+export function heroKnowsLavaWalking(state: GameState = game) {
+    if (!heroKnowsWaterWalking(state)) return false;
+    const hero = state.u;
+    const boots = state?.uarmf || hero.uarmf;
+    const fireResistant = hero.fireResistance;
+    return !!fireResistant && !!boots?.oerodeproof && !!boots.rknown;
+}
+
+
 
 // Part of C hack.c:cant_squeeze_thru(): the youmonst branch, which reads
 // the hero's wall-passing property rather than the species flag, weighs

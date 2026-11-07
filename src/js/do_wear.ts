@@ -1260,22 +1260,6 @@ export function heroHasWaterWalking(state: GameState = game) {
         || boots?.otyp === WATER_WALKING_BOOTS);
 }
 
-// C hack.c:Known_wwalking().
-export function heroKnowsWaterWalking(state: GameState = game) {
-    const hero = state.u;
-    const boots = state?.uarmf || hero.uarmf;
-    const typeKnown = boots && objectTypeKnown(boots, state);
-    return !hero.usteed && boots?.otyp === WATER_WALKING_BOOTS && !!typeKnown;
-}
-
-// C hack.c:Known_lwalking().
-export function heroKnowsLavaWalking(state: GameState = game) {
-    if (!heroKnowsWaterWalking(state)) return false;
-    const hero = state.u;
-    const boots = state?.uarmf || hero.uarmf;
-    const fireResistant = hero.fireResistance;
-    return !!fireResistant && !!boots?.oerodeproof && !!boots.rknown;
-}
 
 // Part of C do_wear.c:Gloves_on()/Cloak_on()/Boots_on(): these callbacks
 // distinguish the physical worn property from the observable feedback

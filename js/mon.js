@@ -53,7 +53,7 @@ import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
-import { badRock, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects } from './hack.js';
+import { badRock, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects, monsterCannotSqueezeThrough } from './hack.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
@@ -943,18 +943,6 @@ export function monsterCarryAmount(monster, object, state = game, random = rn2) 
 // Part of C mon.c:can_carry(): the boolean form.
 export function monsterCanCarryObject(monster, object, state = game, random = rn2) {
     return monsterCarryAmount(monster, object, state, random) > 0;
-}
-// C hack.c:cant_squeeze_thru():
-function monsterCannotSqueezeThrough(monster, state) {
-    if (monsterPassesWalls(monster.mnum))
-        return false;
-    const flexible = (monsterIsAmorphous({ mnum: monster?.mnum }) || monsterIsSlithy(monster?.mnum)) ||
-        monsterIsWhirly(monster) ||
-        monsterIsNoncorporeal(monster) ||
-        monsterCanFog(monster, state);
-    if (monsterIsBig(monster.mnum) && !flexible)
-        return true;
-    return currentMonsterLoad(monster) > WT_TOOMUCH_DIAGONAL;
 }
 // C mon.c:mfndpos(). Scan x first, then y; finding the real hero updates
 // perception before later squares are classified against the apparent hero.
