@@ -360,6 +360,9 @@ async function m_tele(monster: Monster, type: number, seen: boolean, options: Mo
     const { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation } = options;
     if (await reportMonsterTeleportRestriction(monster, { state, publish })) {
         if (seen && type) learnObjectType(type, state);
+        // C muse.c:395-396: a blocked teleport teaches the monster that
+        // teleportation is useless on this level.
+        monsterLearnsTrap(monster, { ttyp: TELEP_TRAP });
     } else if ((monsterCarriesAmulet(monster) || levelIsWizardTower(state)) && !random(3)) {
         if (seen) await publish(`${monsterName(monster, { state, capitalized: true })} seems disoriented for a moment.`);
     } else {

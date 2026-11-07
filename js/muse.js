@@ -315,6 +315,9 @@ async function m_tele(monster, type, seen, options, trap = null) {
     if (await reportMonsterTeleportRestriction(monster, { state, publish })) {
         if (seen && type)
             learnObjectType(type, state);
+        // C muse.c:395-396: a blocked teleport teaches the monster that
+        // teleportation is useless on this level.
+        monsterLearnsTrap(monster, { ttyp: TELEP_TRAP });
     }
     else if ((monsterCarriesAmulet(monster) || levelIsWizardTower(state)) && !random(3)) {
         if (seen)
