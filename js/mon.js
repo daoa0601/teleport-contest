@@ -14,7 +14,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE, IN_SIGHT, MMOVE_DIED, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, STOMACH, LL_ACHIEVE, LL_KILLEDPET, LL_UMONST, } from './const.js';
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters, flashGlyphAt, transientMonsterGlyph, shieldeff } from './display.js';
 import { splitMonster } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
@@ -5162,5 +5162,37 @@ export function validVampireShiftForm(base, form) {
         && (form === PM_VAMPIRE_BAT
             || form === PM_FOG_CLOUD
             || (form === PM_WOLF && base !== PM_VAMPIRE));
+}
+// C mon.c:monnear(): whether a monster is near a position (two steps for
+// grid bugs).  The hero-side wrapper in dog.ts passes the hero's square.
+export function nearHero(monster, state) {
+    const dx = monster.mx - state.u.ux;
+    const dy = monster.my - state.u.uy;
+    const distance = dx * dx + dy * dy;
+    return distance < 3 && !(distance === 2 && monster.mnum === PM_GRID_BUG);
+}
+// C mon.c:flash_mon().
+export async function flashCreatedMonster(monster) {
+    let count = couldsee(monster.mx, monster.my) ? 8 : 4;
+    if (game.flags.sparkle === false)
+        count /= 2;
+    const row = game.viz_array?.[monster.my];
+    const saved = row?.[monster.mx];
+    if (!row || saved === undefined)
+        throw new Error('A created monster needs its visibility cell');
+    row[monster.mx] = saved | 3;
+    try {
+        await flashGlyphAt(monster.mx, monster.my, transientMonsterGlyph(monster), count);
+    }
+    finally {
+        row[monster.mx] = saved;
+        await newsym(monster.mx, monster.my);
+    }
+}
+// C mon.c:shieldeff_mon()
+export async function shieldMonster(monster, state) {
+    await shieldeff(monster.mx, monster.my, state);
+    if (cansee(monster.mx, monster.my))
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
 }
 //# sourceMappingURL=mon.js.map

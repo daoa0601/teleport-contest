@@ -114,6 +114,7 @@ import {
     changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance,
     checkMonsterGearNextTurn,
 } from './mon.js';
+
 import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, MonsterSelfTouchResult } from './mon.js';
 import {
     setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed,
@@ -174,10 +175,10 @@ import { putMonsterToSleep } from './mhitm.js';
 import { heroHasRemovableSpeed, u_slow_down,
     expelHero, holdingMonsterName,
 } from './mhitu.js';
-import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid } from './mon.js';
-import type { MonsterLiquidDeathResult } from './mon.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid, shieldMonster } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
+import type { MonsterLiquidDeathResult } from './mon.js';
 import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterTypeName } from './monster_data.js';
@@ -1285,13 +1286,6 @@ async function drainMonster(monster: Monster, attackLevel: number, state: Playin
         monster.m_lev--;
         if (canSeeMonster(monster)) await plineWithContinuation(`${monsterName(monster, { capitalized: true })} suddenly seems weaker!`);
     }
-}
-
-// C mon.c:shieldeff_mon()
-async function shieldMonster(monster: Monster, state: PlayingGameState) {
-    await shieldeff(monster.mx, monster.my, state);
-    if (cansee(monster.mx, monster.my))
-        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
 }
 
 // Part of C zap.c:bhitm(): the stone-to-flesh monster branch.

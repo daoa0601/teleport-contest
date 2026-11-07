@@ -47,7 +47,7 @@ import {
 } from './const.js';
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters, flashGlyphAt, transientMonsterGlyph, shieldeff } from './display.js';
 import { splitMonster } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
@@ -5907,4 +5907,36 @@ export function validVampireShiftForm(base: number, form: number) {
         && (form === PM_VAMPIRE_BAT
             || form === PM_FOG_CLOUD
             || (form === PM_WOLF && base !== PM_VAMPIRE));
+}
+
+// C mon.c:monnear(): whether a monster is near a position (two steps for
+// grid bugs).  The hero-side wrapper in dog.ts passes the hero's square.
+export function nearHero(monster: Monster, state: GameState): boolean {
+    const dx = monster.mx - state.u.ux;
+    const dy = monster.my - state.u.uy;
+    const distance = dx * dx + dy * dy;
+    return distance < 3 && !(distance === 2 && monster.mnum === PM_GRID_BUG);
+}
+
+// C mon.c:flash_mon().
+export async function flashCreatedMonster(monster: Monster): Promise<void> {
+    let count = couldsee(monster.mx, monster.my) ? 8 : 4;
+    if (game.flags.sparkle === false) count /= 2;
+    const row = game.viz_array?.[monster.my];
+    const saved = row?.[monster.mx];
+    if (!row || saved === undefined) throw new Error('A created monster needs its visibility cell');
+    row[monster.mx] = saved | 3;
+    try {
+        await flashGlyphAt(monster.mx, monster.my, transientMonsterGlyph(monster), count);
+    } finally {
+        row[monster.mx] = saved;
+        await newsym(monster.mx, monster.my);
+    }
+}
+
+// C mon.c:shieldeff_mon()
+export async function shieldMonster(monster: Monster, state: PlayingGameState): Promise<void> {
+    await shieldeff(monster.mx, monster.my, state);
+    if (cansee(monster.mx, monster.my))
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
 }

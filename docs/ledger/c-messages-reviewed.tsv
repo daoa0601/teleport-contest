@@ -352,8 +352,8 @@ pray.c	god_zaps_you	fries to a crisp!	composed	src/js/pray.ts:strikeSwallower; S
 pray.c	offer_real_amulet	ascend to the status of Demigod	composed	src/js/pray.ts:offerAmulet; The winning altar branch appends dess for a female hero to Demigod before the ellipsis.
 priest.c	angry_priest	has_emin(priest)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 priest.c	priest_talk	Begone!  Thou desecratest this holy place with thy presence.	dead	The earlier !inhistemple(priest) branch returns, and inhistemple() requires has_shrine(); the later !has_shrine branch cannot run.
-priest.c	priest_talk	asks you for a contribution for the temple (base	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
-priest.c	priest_talk	asks you for a contribution for the temple.	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
+priest.c	priest_talk	asks you for a contribution for the temple (base	composed	src/js/priest.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
+priest.c	priest_talk	asks you for a contribution for the temple.	composed	src/js/priest.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
 read.c	do_class_genocide	What class of monsters do you want to genocide?	composed	src/js/read.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'class of monsters' plus the cmdassist suffix.
 read.c	do_genocide	What type of monster do you want to genocide?	composed	src/js/read.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'type of monster' plus the cmdassist suffix.
 read.c	recharge	clockwise for a moment.	composed	src/js/read.ts:rechargeRing; Selects clockwise or counterclockwise inside the spinning-ring template.

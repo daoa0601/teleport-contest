@@ -24,7 +24,7 @@ import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWorm
 import { setMonsterMalign, makemonAt, rndmonstAdj, monsterBirthLimit } from './makemon.js';
 import { stairway_find, stairway_find_from } from './stairs.js';
 import { levelFollower, carnivorous, herbivorous, is_domestic, monsterHasEyes, monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, regenerates, speciesHasWeaponAttack, } from './mondata.js';
-import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo, resolveMonsterLiquid, finishLiquidDeathForCurrentMover } from './mon.js';
+import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo, resolveMonsterLiquid, finishLiquidDeathForCurrentMover, nearHero } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';
@@ -903,13 +903,6 @@ export async function collectLevelFollowers(state = game, petsOnly = false) {
         }
     }
     return followers;
-}
-// C mon.c:monnear().
-function nearHero(monster, state) {
-    const dx = monster.mx - state.u.ux;
-    const dy = monster.my - state.u.uy;
-    const distance = dx * dx + dy * dy;
-    return distance < 3 && !(distance === 2 && monster.mnum === PM_GRID_BUG);
 }
 // Part of C dog.c:keepdogs(): the stay-behind branch (eating, trapped,
 // amulet, loose leash).

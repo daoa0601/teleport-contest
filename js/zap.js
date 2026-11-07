@@ -105,7 +105,7 @@ import { mergeObjectStacks } from './invent.js';
 import { monsterSpellDeathReason } from './mcastu.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { heroHasRemovableSpeed, u_slow_down, expelHero, holdingMonsterName, } from './mhitu.js';
-import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid } from './mon.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid, shieldMonster } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
@@ -796,12 +796,6 @@ async function drainMonster(monster, attackLevel, state) {
         if (canSeeMonster(monster))
             await plineWithContinuation(`${monsterName(monster, { capitalized: true })} suddenly seems weaker!`);
     }
-}
-// C mon.c:shieldeff_mon()
-async function shieldMonster(monster, state) {
-    await shieldeff(monster.mx, monster.my, state);
-    if (cansee(monster.mx, monster.my))
-        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
 }
 // Part of C zap.c:bhitm(): the stone-to-flesh monster branch.
 // Also C mkobj.c:stone_object_type(): the mimicked-object type test is inlined here.
