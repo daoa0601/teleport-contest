@@ -28,7 +28,7 @@ import { randomMonsterRelocation } from './teleport.js';
 import { restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies } from './restore.js';
 import { restoreLevelPetHistory } from './save.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { impossible, panic } from './diagnostics.js';
+import { panic } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
@@ -48,7 +48,7 @@ import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TAL
 import { MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, back_to_glyph, canOverwriteTerrain, set_wall_state } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, impossible } from './pline.js';
 import { premap_detect, convertSecretDoor } from './detect.js';
 import { deleteEngravingAt, makeEngravingAt, make_grave, randomEngraving, make_engr_at, restoreEngravings, sanitizeEngravings, wipeEngravingAt } from './engrave.js';
 import { addObjectToMonsterInventory } from './steal.js';

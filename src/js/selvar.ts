@@ -7,7 +7,6 @@
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { newsym_force } from './display.js';
-import { impossible } from './diagnostics.js';
 import { NethackLuaError } from './lua/errors.js';
 import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL } from './const.js';
 import { isok } from './cmd.js';
@@ -15,6 +14,7 @@ import { match_maptyps, random_wdir, set_floodfillchk_match_under } from './sp_l
 import { mapCharacterType } from './lua/lifecycle.js';
 
 import type { Room } from './map_types.js';
+import { impossible } from './pline.js';
 
 export interface Coordinate { x: number; y: number }
 export interface SelectionBounds { lx: number; ly: number; hx: number; hy: number }

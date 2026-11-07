@@ -29,10 +29,9 @@ import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhy
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import { canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor, show_glyph_cell, canOverwriteTerrain, transientObjectGlyph, feel_newsym, map_invisible, under_water, } from './display.js';
 import { objectResistsDestruction, getObjectLocation, blankNovel, burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory, heroHasHalfSpellDamage, meltIce, monsterResistsEffect, poly_obj, restoreMonsterTraits, destroyElectricInventory, fractureRock, } from './zap.js';
-import { impossible } from './diagnostics.js';
 import { d, rnl, rn2, rnd, rn2Display, rn1 } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
-import { plineWithContinuation, pline, set_msg_xy, formatSeenMessage, formatFeltMessage, formatHeardMessage, publishHeardMessage, recordGameLogEvent, } from './pline.js';
+import { plineWithContinuation, pline, set_msg_xy, formatSeenMessage, formatFeltMessage, formatHeardMessage, publishHeardMessage, recordGameLogEvent, impossible, } from './pline.js';
 import { requireInitializedHero } from './hero_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor, } from './worn.js';

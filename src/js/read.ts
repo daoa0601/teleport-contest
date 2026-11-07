@@ -144,12 +144,24 @@ import {
 import { canSpotMonster, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
 import { isok } from './cmd.js';
 import {
-    formatFeltMessage, formatHeardMessage, pline as syncPline, plineWithContinuation,
-    plineWithContinuation as pline, recordGameLogEvent,
+
+    formatFeltMessage,
+
+    formatHeardMessage,
+
+    pline as syncPline,
+
+    plineWithContinuation,
+
+    plineWithContinuation as pline,
+
+    recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
-import { impossible } from './diagnostics.js';
 import { lightDamage } from './zap.js';
 import { objectLightRadius, snuffLightSource } from './light.js';
 import { lightHitsGremlin } from './uhitm.js';

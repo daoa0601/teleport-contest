@@ -21,7 +21,21 @@ import { game, requireLiveGame, requireGameLevel, requirePlayingGame, requireIni
 import type { GameState } from './game_state.js';
 import type { WipeFaceOccupation } from './occupation_types.js';
 import {
-    formatHeardMessage, norep, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent,
+
+    formatHeardMessage,
+
+    norep,
+
+    pline,
+
+    plineWithContinuation,
+
+    publishHeardMessage,
+
+    recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
@@ -65,7 +79,6 @@ import {
     selfTouchPetrifyingWeapons, floatHeroDown, waterDamageObject, lava_damage,
 } from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
-import { impossible } from './diagnostics.js';
 import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero } from './pickup.js';

@@ -1,7 +1,7 @@
 // Message admission and publishing: C pline.c pline(), pline_dir(),
 // pline_xy(), pline_mon(), set_msg_dir(), set_msg_xy(), vpline(), You_feel(),
 // You_hear(), You_see(), verbalize(), gamelog_add(), and raw_printf().
-import { game } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
 import { flush_screen } from './display.js';
 import { vision_recalc } from './vision.js';
 import { coordinateDescription } from './pager.js';
@@ -12,6 +12,9 @@ import { nhgetch, rawPrint, writeRawText } from './input.js';
 import { BUFSZ, LL_NONE, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
+import { diagnosticReason, fuzzerMode, panic } from './diagnostics.js';
+import { paniclog } from './novel_tribute.js';
+import { FUZZER_IMPOSSIBLE_PANIC } from './diagnostics.js';
 // C pline.c:set_msg_dir(). The next vpline consumes the location, even when hidden.
 export function set_msg_dir(direction) {
     const previous = game.iflags.messageLocation ?? { x: 0, y: 0 };
@@ -249,5 +252,24 @@ export async function beginPanicOutput() {
     game._retained_message = '';
     game.nhDisplay.clearScreen();
     game.program_state.windows_exited = true;
+}
+// C pline.c:impossible().
+export async function impossible(reason, { state = game } = {}) {
+    requireLiveGame(state);
+    reason = diagnosticReason(reason);
+    if (state.program_state.in_impossible)
+        await panic('impossible called impossible', { state });
+    state.program_state.in_impossible = true;
+    paniclog('impossible', reason, state);
+    if (fuzzerMode(state) === FUZZER_IMPOSSIBLE_PANIC)
+        await panic(reason, { state });
+    await plineWithContinuation(reason, { urgent: true });
+    if (!state.program_state.in_sanity_check) {
+        await plineWithContinuation('Program in disorder!'
+            + (state.program_state.something_worth_saving
+                ? '  (Saving and reloading may fix this problem.)' : ''));
+        await plineWithContinuation('Please report these messages to devteam@nethack.org.');
+    }
+    state.program_state.in_impossible = false;
 }
 //# sourceMappingURL=pline.js.map

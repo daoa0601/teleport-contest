@@ -30,13 +30,13 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import type { GameState } from './game_state.js';
 
 import { MONSTER_NAME } from './monster_data.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, impossible } from './pline.js';
 import { roomForIndex, roomsAt, switchHeroTerrain } from './hack.js';
 import { place_lregion } from './mkmaze.js';
 import { formatKiller } from './topten.js';
 import type { BranchDefinition, BranchDefinitionType, Dungeon, DungeonAlignment, DungeonBranch, DungeonBranchType, DungeonDefinition, DungeonFlag, DungeonLocation, LevelRangeDefinition, SpecialLevelDefinition, SpecialLevelDescriptor, OverviewFlags, OverviewRecord } from './dungeon_types.js';
 import { isok } from './cmd.js';
-import { impossible, panic } from './diagnostics.js';
+import { panic } from './diagnostics.js';
 import { displayLiquidName } from './do_name.js';
 import { onQuestStart } from './quest.js';
 import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';

@@ -7,8 +7,7 @@ import { exerciseWisdom } from './attrib.js';
 
 import { commandResultCancelled } from './cmd.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, FINGER } from './const.js';
-import { impossible } from './diagnostics.js';
-import { plineWithContinuation as pline } from './pline.js';
+import { plineWithContinuation as pline, impossible } from './pline.js';
 import { wipeoutText } from './engrave.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './do.js';

@@ -6,7 +6,7 @@ import { SCROLL_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, RANDOM_CLASS, FOOD_CLA
 import { OBJ_DESCR, objectTypeColor } from './o_init.js';
 import { objectBaseWeight, objectBimanual, AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FIGURINE, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
 import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, requireLiveGame } from './gstate.js';
-import { formatFeltMessage, formatHeardMessage, formatSeenMessage, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage, recordGameLogEvent, } from './pline.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage, recordGameLogEvent, impossible, } from './pline.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility, bypassObject, clearBypasses, removeObjectFromMonsterInventory, adjustMonsterClothingAfterPolymorph, findMonsterArmorClass, applyMonsterEquipmentProperties, initializeMonsterArmor, } from './worn.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { beginMonsterDochug, isAccessibleAt, canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject, setMonsterApparentHeroPosition } from './monmove.js';
@@ -53,7 +53,6 @@ import { heroIsDisplaced } from './do_wear.js';
 import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './region.js';
 import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
-import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
 import { badRock, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects, monsterCannotSqueezeThrough } from './hack.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';

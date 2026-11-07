@@ -18,8 +18,19 @@ import type { Monster } from './monster_types.js';
 import { requirePlayingGame, game, requireLiveGame } from './gstate.js';
 import { commandResultFailed, isok, promptDirection, cmdq_add_key, cmdq_pop, yn_function } from './cmd.js';
 import {
-    formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage,
+
+    formatFeltMessage,
+
+    plineWithContinuation,
+
+    plineWithContinuation as pline,
+
+    publishHeardMessage,
+
     recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import {
     ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR,
@@ -31,7 +42,6 @@ import {
 } from './const.js';
 import { exerciseWisdom, currentAttribute, exerciseAttribute, poisonHeroStrengthAndHp } from './attrib.js';
 
-import { impossible } from './diagnostics.js';
 import { zapHeroWithObject, paintRayCell, turnCarriedObjects, adjustSpellDamage, applyWandEffect, hitMonsterWithRay } from './zap.js';
 import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';

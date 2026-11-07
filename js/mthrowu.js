@@ -24,7 +24,6 @@ import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterO
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
 import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_KNIFE, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_NONDIGGABLE, W_WEP, WT_IRON_BALL_INCR, ARM, HAND, FOOT } from './const.js';
 import { isok } from './cmd.js';
-import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph, TemporaryMapEffect, } from './display.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
@@ -61,7 +60,7 @@ import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { formatHeardMessage, plineWithContinuation, publishHeardMessage, set_msg_xy } from './pline.js';
+import { formatHeardMessage, plineWithContinuation, publishHeardMessage, set_msg_xy, impossible } from './pline.js';
 import { requirePerceivedHero, dissolveBars } from './monmove.js';
 // Port only: finite-number type guard for decoded projectile options.
 function isFiniteNumber(value) {

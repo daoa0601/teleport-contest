@@ -14,7 +14,17 @@ import { getLine } from './windows.js';
 import { deleteEngravingAt, make_grave } from './engrave.js';
 import { newsym, canSpotMonster, map_invisible, map_location, monsterVisible, xy_set_wall_state, unset_seenv } from './display.js';
 import {
-    formatSeenMessage, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage,
+
+    formatSeenMessage,
+
+    plineWithContinuation,
+
+    plineWithContinuation as pline,
+
+    publishHeardMessage,
+
+    impossible,
+
 } from './pline.js';
 import { displayMessageWindow } from './topl.js';
 import { ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, MM_NOMSG, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, LEVEL_TIMER_KIND, RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, ACCESSIBLE, COLNO, COULD_SEE, GD_DESTROYGOLD, GD_EATGOLD, IN_SIGHT, IS_POOL, IS_ROOM, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_NOMSG, ROWNO, SCORR } from './const.js';
@@ -43,7 +53,6 @@ import { deleteTrap } from './trap.js';
 import { publishMonsterYelp } from './sounds.js';
 import type { GameObject } from './object_types.js';
 import type { MonsterCallLog, MonsterMovement } from './monster_action_types.js';
-import { impossible } from './diagnostics.js';
 import { heroFormSticks } from './polyself.js';
 import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object } from './mkobj.js';
 import { currency, freeInventoryObject, stack_object } from './invent.js';

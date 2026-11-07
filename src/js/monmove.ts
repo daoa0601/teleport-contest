@@ -36,7 +36,7 @@ import {
 } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig, switchHeroTerrain } from './hack.js';
 import type { Monster } from './monster_types.js';
-import { impossible, panic } from './diagnostics.js';
+import { panic } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position, MapLocation, Trap } from './map_types.js';
@@ -87,7 +87,17 @@ import { dropMonsterObject } from './steal.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
 import {
-    formatHeardMessage, formatSeenMessage, plineWithContinuation, publishHeardMessage,
+
+    formatHeardMessage,
+
+    formatSeenMessage,
+
+    plineWithContinuation,
+
+    publishHeardMessage,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroSpecies, heroFormSticks, dragonFormForArmor, heroHasProtectionFromShapeChangers } from './polyself.js';

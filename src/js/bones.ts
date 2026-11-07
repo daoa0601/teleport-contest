@@ -67,10 +67,9 @@ import {
 } from './const.js';
 import { GameMap } from './game.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, impossible } from './pline.js';
 import { flush_screen, newsym } from './display.js';
 import { nhgetch } from './input.js';
-import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { DTHSZ, formatKiller } from './topten.js';

@@ -60,7 +60,21 @@ import type { TerminalCell } from './terminal.js';
 import { promptYesNo } from './query.js';
 import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js';
 import {
-    pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy, truncateRawMessage,
+
+    pline,
+
+    plineWithContinuation,
+
+    setTopline,
+
+    pline_xy,
+
+    set_msg_xy,
+
+    truncateRawMessage,
+
+    impossible,
+
 } from './pline.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
@@ -99,7 +113,7 @@ import { doenhance } from './weapon.js';
 import { dopay } from './shk.js';
 import { dokick } from './dokick.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { FUZZER_IMPOSSIBLE_CONTINUE, impossible } from './diagnostics.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { heroCanReachFloor } from './engrave.js';
 import { CmapSymbol, GlyphOffset, monnumToGlyph, objnumToGlyph } from './glyph_numbers.js';

@@ -6,9 +6,8 @@ import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMons
 import { updateHeroRegions, updateMonsterRegions } from './region.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { impossible } from './diagnostics.js';
 import { selectMapPosition } from './getpos.js';
-import { formatFeltMessage, pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation, impossible } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';

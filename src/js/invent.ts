@@ -51,7 +51,7 @@ import { consumeHallucinatedMenuObjectGlyph, transientMonsterGlyph, flush_screen
 import { formatStrength } from './botl.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './topl.js';
 import { showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin } from './wintty.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, impossible } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { getLine, showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import type { InventoryMenuItem, InventorySection, InventorySelection, MenuLabel, MultiSelectSection, PageLocalMultiSelectSection } from './windows.js';
@@ -88,7 +88,7 @@ import {
     heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem,
 } from './mondata.js';
 import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
-import { impossible, panic } from './diagnostics.js';
+import { panic } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
 import {
     currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill,

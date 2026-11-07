@@ -17,7 +17,6 @@ import { commandResultCancelled, commandResultFailed, commandResultSpentTime, cm
 import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, CQ_CANNED, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir, IS_WATERWALL, LAVAWALL, HAND, FACE, FINGER, LEG, FOOT, HEAD, STOMACH, NOSE } from './const.js';
 import { use_container, pickupFloorObject, handlesPetrifyingCorpseBareHanded } from './pickup.js';
 import { useCrystalBall, convertSecretDoor, findit, openit } from './detect.js';
-import { impossible } from './diagnostics.js';
 import { digActualHole, digCheck, liquidFlow, liquidForHole, watchDigging, freeHeroFromBuriedBall, usePickAxe, } from './dig.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, howMonsterSeen, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName, monsterTypeName } from './do_name.js';
@@ -62,7 +61,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject, } from './object_properties.js';
 import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, singularObjectName, withIndefiniteArticle, } from './objnam.js';
-import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline as syncPline, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage, } from './pline.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline as syncPline, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage, impossible, } from './pline.js';
 import { propertyIsActive } from './properties.js';
 import { unpunishHero } from './read.js';
 import { promptChoice, promptYesNo } from './query.js';

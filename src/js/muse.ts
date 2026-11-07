@@ -66,7 +66,17 @@ import {
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, shieldeff, show_glyph_cell, transientMonsterGlyph } from './display.js';
 import {
-    formatFeltMessage, formatHeardMessage, plineWithContinuation, publishHeardMessage,
+
+    formatFeltMessage,
+
+    formatHeardMessage,
+
+    plineWithContinuation,
+
+    publishHeardMessage,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { d, rn2, rnd } from './rng.js';
@@ -116,7 +126,6 @@ import { inHeroSanctuary } from './priest.js';
 import { explode } from './explode.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { petFoodNutrition, extendPetHungerDeadline } from './dogmove.js';
-import { impossible } from './diagnostics.js';
 import { displayMessageWindow } from './topl.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';

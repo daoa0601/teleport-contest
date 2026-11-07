@@ -29,7 +29,6 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RES
 import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, IS_POOL, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, MATCH_WALL, MAX_TYPE, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GENOD, G_GONE, LEVEL_TIMER_KIND, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
-import { impossible } from './diagnostics.js';
 import { l_register_des, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, MONSTER_CLASS_SYMBOLS, TRAP_TYPES } from './lua/des.js';
 import type { DesOptions, DesObjectOptions, DesMonsterOptions, DesSelectionOptions, DesOperations, MonsterAppearance, LuaPoint, LuaRegion } from './lua/des.js';
 import { LuaTable, objectToLuaTable, luaTableToArray, luaCheckString, luaCheckInteger, luaType } from './lua/runtime.js';
@@ -80,6 +79,7 @@ import { PanicTermination } from './panic_termination.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 import { swapDirectionBits } from './hacklib.js';
+import { impossible } from './pline.js';
 
 // C sp_lev.c:match_maptyps().
 export function match_maptyps(expected: number, actual: number): boolean {

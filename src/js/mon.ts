@@ -18,8 +18,23 @@ import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, req
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import {
-    formatFeltMessage, formatHeardMessage, formatSeenMessage, plineWithContinuation,
-    plineWithContinuation as pline, publishHeardMessage, recordGameLogEvent,
+
+    formatFeltMessage,
+
+    formatHeardMessage,
+
+    formatSeenMessage,
+
+    plineWithContinuation,
+
+    plineWithContinuation as pline,
+
+    publishHeardMessage,
+
+    recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import {
@@ -105,7 +120,6 @@ import { heroIsDisplaced } from './do_wear.js';
 import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './region.js';
 import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
-import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
 import { badRock, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects, monsterCannotSqueezeThrough } from './hack.js';
 import type { MapLocation } from './map_types.js';

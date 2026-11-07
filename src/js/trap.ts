@@ -578,13 +578,29 @@ import {
     destroyFireMonsterInventory, heroHasHalfSpellDamage, meltIce, monsterResistsEffect, poly_obj,
     restoreMonsterTraits, destroyElectricInventory, fractureRock,
 } from './zap.js';
-import { impossible } from './diagnostics.js';
 import { d, rnl, rn2, rnd, rn2Display, rn1 } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import type { MintrapOptions, MonsterMovement, MonsterMovementAction, MonsterRollingBoulderEvent, MonsterTrapEvent, MonsterTrapResumeOptions, PublishMonsterMessage, RollDice, RollOne, MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import {
-    plineWithContinuation, pline, set_msg_xy, formatSeenMessage, formatFeltMessage, formatHeardMessage,
-    publishHeardMessage, recordGameLogEvent,
+
+    plineWithContinuation,
+
+    pline,
+
+    set_msg_xy,
+
+    formatSeenMessage,
+
+    formatFeltMessage,
+
+    formatHeardMessage,
+
+    publishHeardMessage,
+
+    recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';

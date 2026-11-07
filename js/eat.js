@@ -13,7 +13,6 @@ import { bot } from './botl.js';
 import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti, setOccupation, paranoidQuery } from './cmd.js';
 import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, BEAR_TRAP, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, IRONBARS, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, MON_FLOOR, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TT_BEARTRAP, TIMEOUT, Upolyd, WEAK, W_AMUL, W_ARMOR, W_NONDIGGABLE, W_RING, W_SADDLE, W_TOOL, FINGER, LIGHT_HEADED, STOMACH, NOSE, LL_CONDUCT, } from './const.js';
 import { reviveCorpseImmediately } from './do.js';
-import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { displayColorName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
@@ -48,7 +47,7 @@ import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, PM_GREEN_SLIME, } from './monster_data.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
-import { pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation, recordGameLogEvent, formatFeltMessage, publishHeardMessage, } from './pline.js';
+import { pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation, recordGameLogEvent, formatFeltMessage, publishHeardMessage, impossible, } from './pline.js';
 import { altarWrath } from './pray.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty } from './properties.js';
 import { unpunishHero } from './read.js';

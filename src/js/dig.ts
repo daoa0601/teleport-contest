@@ -17,7 +17,6 @@ import { isok } from './cmd.js';
 import { currency } from './invent.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
 import { convertSecretDoor } from './detect.js';
-import { impossible } from './diagnostics.js';
 import { impactDrop } from './dokick.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { displayLiquidName, monsterName } from './do_name.js';
@@ -51,7 +50,7 @@ import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, 
 import { greatestErosion, isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
 import { stopHeroOccupation } from './allmain.js';
 import type { DiggingOccupation } from './occupation_types.js';
-import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, impossible } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroIsFlying, body_part, mbodypart } from './polyself.js';
 import { altarWrath, altarmaskAt, desecrateAltar } from './pray.js';

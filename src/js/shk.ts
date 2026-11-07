@@ -20,7 +20,6 @@ import {
     MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER,
     ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE,
 } from './object_data.js';
-import { impossible } from './diagnostics.js';
 import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
@@ -29,7 +28,21 @@ import type { Monster, ShopBillEntry, MonsterFlag } from './monster_types.js';
 import { isRoom } from './map_types.js';
 import type { Room, Position, Trap, ShopDamage, MapLocation } from './map_types.js';
 import {
-    formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, verbalize,
+
+    formatFeltMessage,
+
+    pline,
+
+    plineWithContinuation,
+
+    publishHeardMessage,
+
+    recordGameLogEvent,
+
+    verbalize,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';

@@ -27,7 +27,6 @@ import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArt
 import type { Artifact } from './artifact.js';
 import { objectOwnershipPrefix, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
-import { impossible } from './diagnostics.js';
 import { displayColorName, lookupNovelTitle, monsterName, objectMonsterName, monsterTypeName } from './do_name.js';
 import { currency } from './invent.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
@@ -38,7 +37,7 @@ import {
     placeCreatedObject,
 } from './mkobj.js';
 
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, impossible } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol } from './monster_data.js';
 import { ordinalSuffix, possessiveName } from './hacklib.js';
 import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutrition } from './eat.js';

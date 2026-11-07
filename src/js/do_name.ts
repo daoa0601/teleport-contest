@@ -43,9 +43,8 @@ import {
     pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, verbForSubject,
     withIndefiniteArticle, type CorpseNameView,
 } from './objnam.js';
-import { impossible } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
-import { pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
+import { pline, plineWithContinuation, recordGameLogEvent, impossible } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { glyphIsSwallow } from './glyph_numbers.js';
 import { selectMapPosition } from './getpos.js';

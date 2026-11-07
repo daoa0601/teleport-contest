@@ -8,7 +8,6 @@
 // composition it feeds on.
 import { CORPSTAT_FEMALE, CORPSTAT_MALE } from './const.js';
 import { canSeeMonster } from './display.js';
-import { impossible } from './diagnostics.js';
 import { game, requireLiveGame } from './gstate.js';
 import { objectWeight, set_corpsenm } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -16,6 +15,7 @@ import { setMonsterGivenName } from './do_name.js';
 import { roles } from './role.js';
 import { rn2, rnd } from './rng.js';
 import { ATR_BOLD } from './terminal.js';
+import { impossible } from './pline.js';
 const ENTRYMAX = 100; // sysopt.entrymax (config.h ENTRYMAX) in the pinned build
 export const SCORE_RECORD_STORAGE_KEY = 'teleport-contest:record:v1';
 const FIRST_PLAYER_MONSTER = MONSTER_NAME.indexOf('archeologist');

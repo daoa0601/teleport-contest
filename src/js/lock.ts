@@ -29,7 +29,7 @@ import { recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { heroPassesWalls, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 import { rnl, rn2 } from './rng.js';
-import { formatHeardMessage, pline, plineWithContinuation } from './pline.js';
+import { formatHeardMessage, pline, plineWithContinuation, impossible } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { ForceLockOccupation, PickLockOccupation } from './occupation_types.js';
@@ -55,7 +55,6 @@ import { possessiveName } from './hacklib.js';
 import { heroIsUnaware } from './senses.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { stopHeroOccupation } from './allmain.js';
-import { impossible } from './diagnostics.js';
 import { roomsAt } from './hack.js';
 
 // C lock.c:doforce().

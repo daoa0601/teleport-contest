@@ -9,14 +9,13 @@ import { objectProb, objectMaterial, observeObject, objectTypeKnown, OBJ_DESCR }
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns } from './artifact.js';
 import { objectOwnershipPrefix, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
-import { impossible } from './diagnostics.js';
 import { displayColorName, lookupNovelTitle, monsterName, objectMonsterName, monsterTypeName } from './do_name.js';
 import { currency } from './invent.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
 import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, BUFSZ, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, Luck, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND, HAND } from './const.js';
 import { mkobj, mksobj, set_corpsenm, unlinkObject, objectWeight, objectIsFlammable, objectIsRottable, isContainer, placeCreatedObject, } from './mkobj.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, impossible } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol } from './monster_data.js';
 import { ordinalSuffix, possessiveName } from './hacklib.js';
 import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutrition } from './eat.js';

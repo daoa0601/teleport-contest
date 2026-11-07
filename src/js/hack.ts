@@ -22,11 +22,27 @@ import {
 } from './cmd.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain, beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
 import { docrt, feel_newsym, newsym, under_water, feel_location, back_to_glyph, glyphAt, canSpotMonster, canSenseMonster, canSeeMonster, monsterVisible, unmap_invisible, map_object, unmapObject, map_invisible, flush_screen, TemporaryMapEffect } from './display.js';
-import { impossible } from './diagnostics.js';
 import { bot } from './botl.js';
 import {
-    formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, pline_dir, publishHeardMessage,
-    recordGameLogEvent, set_msg_xy,
+
+    formatFeltMessage,
+
+    formatHeardMessage,
+
+    pline,
+
+    plineWithContinuation,
+
+    pline_dir,
+
+    publishHeardMessage,
+
+    recordGameLogEvent,
+
+    set_msg_xy,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava, heroFormClings, heroHidesOnCeiling, heroIsFlying, heroHasProtectionFromShapeChangers, heroIsPolymorphed, returnHeroToHumanForm, heroIsVerySmall, heroIsAmphibious, heroMonsterForm, body_part, floatVsFlight } from './polyself.js';

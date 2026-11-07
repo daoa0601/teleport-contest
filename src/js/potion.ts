@@ -44,7 +44,6 @@ import {
     POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT,
     FACE, HEAD, HAND, LEG, LL_CONDUCT,
 } from './const.js';
-import { impossible } from './diagnostics.js';
 import type { PropertyObject, WornPropertySlot, PropertyName, PropertyState } from './property_types.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands, floatingAbove } from './fountain.js';
@@ -115,7 +114,17 @@ import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';
 import {
-    formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, recordGameLogEvent,
+
+    formatFeltMessage,
+
+    plineWithContinuation,
+
+    plineWithContinuation as pline,
+
+    recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty } from './properties.js';

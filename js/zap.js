@@ -17,7 +17,7 @@ import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbrid
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifact.js';
 import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom, currentAttribute, poisonHero } from './attrib.js';
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
-import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, set_msg_dir, } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, set_msg_dir, impossible, } from './pline.js';
 import { waterbodyName } from './pager.js';
 import { resetPick, changeDoorByMagic, changeBoxLockByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -62,7 +62,6 @@ import { redrawMonsterWormSegments } from './worm.js';
 import { monsterHasMagicResistance } from './mondata.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
-import { impossible } from './diagnostics.js';
 import { recordMappedOverviewState, ceilingName, surfaceName, In_mines, Invocation_lev } from './dungeon.js';
 import { forceDescribeDecor } from './pickup.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving } from './engrave.js';

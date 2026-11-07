@@ -16,7 +16,7 @@ import { ILLOBJ_CLASS, RING_CLASS, COIN_CLASS, VENOM_CLASS, POTION_CLASS } from 
 import { OBJ_NAME } from './object_data.js';
 import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
-import { formatHeardMessage, norep, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
+import { formatHeardMessage, norep, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, impossible, } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
 import { AD_POLY } from './monster_attack_types.js';
@@ -40,7 +40,6 @@ import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt, selfTouchPetrifyingWeapons, floatHeroDown, waterDamageObject, lava_damage, } from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
-import { impossible } from './diagnostics.js';
 import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero } from './pickup.js';

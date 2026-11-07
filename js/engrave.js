@@ -25,7 +25,7 @@ import { TOWEL, MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WA
 import { isBimanualObject, isBlade, isWetTowel } from './object_properties.js';
 import { willWeld, isWeldedPrimary } from './wield.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
-import { plineWithContinuation as pline, plineWithContinuation, formatSeenMessage, recordGameLogEvent, } from './pline.js';
+import { plineWithContinuation as pline, plineWithContinuation, formatSeenMessage, recordGameLogEvent, impossible, } from './pline.js';
 import { promptYesNoQuit } from './query.js';
 import { getLine } from './windows.js';
 import { getobj, inventoryItemDescription, useUpInventoryStack } from './invent.js';
@@ -44,7 +44,6 @@ import { getRndLine, getRumor } from './rumors.js';
 import { monsterName } from './do_name.js';
 import { makemonAt } from './makemon.js';
 import { unlinkObject, splitObjectStack } from './mkobj.js';
-import { impossible } from './diagnostics.js';
 import { exceedsActionCapacity } from './hack.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';

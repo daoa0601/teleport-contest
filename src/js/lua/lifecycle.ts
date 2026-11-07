@@ -5,7 +5,6 @@ import {
 } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
 import { commandKeyDescription } from '../cmd.js';
-import { impossible } from '../diagnostics.js';
 import { applyNethackrc } from '../cfgfiles.js';
 import { rn2 } from '../rng.js';
 import { changeTutorialState } from '../tutorial_state.js';
@@ -21,6 +20,7 @@ import {
     LuaState, LuaTable, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs,
     objectToLuaTable,
 } from './runtime.js';
+import { impossible } from '../pline.js';
 
 export interface LuaBindings extends LuaHostObject {
     nh?: LuaHostObject;

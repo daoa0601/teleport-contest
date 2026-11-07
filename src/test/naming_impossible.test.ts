@@ -4,11 +4,11 @@ import { rhack } from '../js/cmd.js';
 import { FOUNTAIN, NO_MINVENT, PANICLOG } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { FUZZER_IMPOSSIBLE_PANIC, impossible } from '../js/diagnostics.js';
+import { FUZZER_IMPOSSIBLE_PANIC } from '../js/diagnostics.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { moreUntilDismissed } from '../js/topl.js';
-import { plineWithContinuation } from '../js/pline.js';
+import { plineWithContinuation, impossible } from '../js/pline.js';
 import { containerContents } from '../js/end.js';
 
 import { PanicTermination } from '../js/panic_termination.js';

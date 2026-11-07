@@ -1,7 +1,6 @@
 import { AIR, CLOUD, COLNO, CORR, CROSSWALL, DOOR, FOUNTAIN, HWALL, ICE, IRONBARS, LAVAPOOL, LAVAWALL, MATCH_WALL, MAX_TYPE, MOAT, POOL, ROOM, ROWNO, SCORR, SDOOR, SINK, STONE, THRONE, TREE, VWALL, WATER, } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
 import { commandKeyDescription } from '../cmd.js';
-import { impossible } from '../diagnostics.js';
 import { applyNethackrc } from '../cfgfiles.js';
 import { rn2 } from '../rng.js';
 import { changeTutorialState } from '../tutorial_state.js';
@@ -11,6 +10,7 @@ import { luaInteger } from './arguments.js';
 import { LuaHeroTable } from './hero.js';
 import { createObjectApi } from './nhlobj.js';
 import { LuaState, LuaTable, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
+import { impossible } from '../pline.js';
 export class LuaGameState extends LuaState {
     objects;
     sid;

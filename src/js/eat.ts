@@ -43,7 +43,6 @@ import {
     W_ARMOR, W_NONDIGGABLE, W_RING, W_SADDLE, W_TOOL, FINGER, LIGHT_HEADED, STOMACH, NOSE, LL_CONDUCT,
 } from './const.js';
 import { reviveCorpseImmediately } from './do.js';
-import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { displayColorName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
@@ -108,8 +107,23 @@ import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import type { FoodMeal, FoodOccupation, NonfoodMeal, PreparedFoodObject, TinOpening } from './occupation_types.js';
 import {
-    pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation,
-    recordGameLogEvent, formatFeltMessage, publishHeardMessage,
+
+    pline as immediatePline,
+
+    pline1,
+
+    plineWithContinuation as pline,
+
+    plineWithContinuation,
+
+    recordGameLogEvent,
+
+    formatFeltMessage,
+
+    publishHeardMessage,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { altarWrath } from './pray.js';

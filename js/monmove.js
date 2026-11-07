@@ -8,7 +8,7 @@ import { objectMaterial, learnObjectType } from './o_init.js';
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap, enexto, monsterTeleportRestricted, reportMonsterTeleportRestriction, } from './teleport.js';
 import { moveMonsterNextToHero, monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake, releaseHeroFromMonster, isZombieMaker, zombieForm, } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig, switchHeroTerrain } from './hack.js';
-import { impossible, panic } from './diagnostics.js';
+import { panic } from './diagnostics.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { veganCorpse } from './food_traits.js';
 import { AD_RBRE, AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL } from './monster_attack_types.js';
@@ -39,7 +39,7 @@ import { billDummyObject, splitObjectStack, mksobj, placeCreatedObject, placeObj
 import { dropMonsterObject } from './steal.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
-import { formatHeardMessage, formatSeenMessage, plineWithContinuation, publishHeardMessage, } from './pline.js';
+import { formatHeardMessage, formatSeenMessage, plineWithContinuation, publishHeardMessage, impossible, } from './pline.js';
 import { heroSpecies, heroFormSticks, dragonFormForArmor, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { hasShopkeeperData } from './shop_types.js';

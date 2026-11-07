@@ -9,7 +9,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import { gotoLevel } from './do.js';
 import { nhgetch } from './input.js';
 import { canSeeMonster, flush_screen } from './display.js';
-import { pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
+import { pline, plineWithContinuation, recordGameLogEvent, impossible } from './pline.js';
 import { MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_WAITMASK, MAGIC_PORTAL, LL_ACHIEVE } from './const.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { questMonsterSound } from './role_monsters.js';
@@ -27,7 +27,6 @@ import { endVoluntaryMultiTurn } from './hack.js';
 import { rn2 } from './rng.js';
 import { createPoisonGasCloud } from './region.js';
 import { deleteTrap } from './trap.js';
-import { impossible } from './diagnostics.js';
 import { markOverviewUnreachable, sameDungeonLevel } from './dungeon.js';
 import { angerMonster, angerWatchGuards } from './mon.js';
 

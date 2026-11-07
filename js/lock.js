@@ -22,7 +22,7 @@ import { recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { heroPassesWalls, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 import { rnl, rn2 } from './rng.js';
-import { formatHeardMessage, pline, plineWithContinuation } from './pline.js';
+import { formatHeardMessage, pline, plineWithContinuation, impossible } from './pline.js';
 import { consumeInventoryItem, delobj, inventoryItemDescription } from './invent.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { objectMaterial } from './o_init.js';
@@ -45,7 +45,6 @@ import { possessiveName } from './hacklib.js';
 import { heroIsUnaware } from './senses.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { stopHeroOccupation } from './allmain.js';
-import { impossible } from './diagnostics.js';
 import { roomsAt } from './hack.js';
 // C lock.c:doforce().
 // Lock forcing.
