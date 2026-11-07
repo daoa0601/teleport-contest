@@ -1325,8 +1325,8 @@ function consumedIdentity(object: GameObject): boolean {
     return object.where === 'gone' || object.where === 'onbill';
 }
 
-// C ysimple_name(obj) as the contact messages use it: the minimal
-// "your/the <name>" with the stack pluralized.
+// Part of C uhitm.c:hmon_hitmon_misc_obj(): the ysimple_name(obj) of the
+// break/destroy messages — the minimal "your/the <name>", pluralized.
 function ownedSimpleName(object: GameObject, state: GameState): string {
     const owner = carriedObjectOwner(object, state);
     const name = objectName(object, state, { minimal: true });
@@ -6221,7 +6221,8 @@ async function steal_it(monster: Monster, context: HeroNaturalEffectContext): Pr
     if (gold) await addObjectToMonsterInventory(monster, gold, state);
 }
 
-// C steal.c:findgold(): the monster's coin stack (uhitm.c:steal_it()).
+// Part of C uhitm.c:steal_it(): the monster's coin stack, C steal.c's
+// findgold(mdef->minvent).
 function monsterGold(monster: Monster): GameObject | null {
     return (monster.minvent || monster.inventory || []).find(object => object.oclass === COIN_CLASS) ?? null;
 }
@@ -6955,7 +6956,8 @@ async function damageHero(monster: Monster, amount: number, { state, publish, di
     });
 }
 
-// C mondata.c:Resists_Elem(): the hero arm — uprops alias, worn items,
+// Part of C uhitm.c:passive(): the elemental resist gates read
+// mondata.c's Resists_Elem(&gy.youmonst, ...) — uprops alias, worn items,
 // and the polyform's resist bits.
 function heroResists(state: GameState, property: 'acidResistance' | 'coldResistance' | 'fireResistance' | 'shockResistance' | 'stoneResistance', mask: number): boolean {
     const hero = state.u;
@@ -6964,7 +6966,7 @@ function heroResists(state: GameState, property: 'acidResistance' | 'coldResista
     return form != null && ((MONSTER_RESISTS[form] ?? 0) & mask) !== 0;
 }
 
-// C mondata.c:Resists_Elem(mon, ACID_RES) as passive()'s AD_ACID gate.
+// Part of C uhitm.c:passive(): Resists_Elem(mon, ACID_RES) for AD_ACID.
 function heroResistsAcid(state: GameState): boolean {
     return heroResists(state, 'acidResistance', MR_ACID);
 }

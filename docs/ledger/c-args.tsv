@@ -226,6 +226,8 @@ mkobj.c	mksobj_init	mk_artifact	true;true
 mkobj.c	mksobj_init	mkobj	false
 mkroom.c	fill_zoo	mkobj	false
 mkroom.c	fill_zoo	mkobj_at	false
+mkroom.c	mktemple	pick_room	true
+mkroom.c	mkzoo	pick_room	false
 mon.c	m_detach	m_unleash	false
 mon.c	mon_allowflags	monhaskey	true
 mon.c	mongone	discard_minvent	false

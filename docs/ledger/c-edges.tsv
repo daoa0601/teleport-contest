@@ -754,6 +754,7 @@ do_mapping	unconstrain_map
 do_mgivenname	glyph_at
 do_mgivenname	isok
 do_mkroom	mkshop
+do_mkroom	mktemple
 do_pit	acurr
 do_pit	exercise
 do_pit	fillholetyp
@@ -1466,6 +1467,7 @@ engrave	newsym
 engulfer_digests_food	pm_to_cham
 enhance_weapon_skill	yn_function
 enlght_halfdmg	from_what
+enlightenment	status_enlightenment
 ensure_way_out	generate_way_out_method
 ensure_way_out	selection_floodfill
 ensure_way_out	selection_getpoint
@@ -1511,6 +1513,7 @@ explode	tmp_at
 explode	unmap_invisible
 explode	wake_nearto
 expulsion	nomul
+ext_cmd_getlin_hook	extcmds_match
 extremeattr	acurr
 eye_of_newt_buzz	rn2
 eye_of_newt_buzz	rnd
@@ -1709,6 +1712,7 @@ gain_guardian_angel	rnd
 gainstr	adjattrib
 gainstr	rn2
 gainstr	rnd
+gather_locs	gather_locs_interesting
 gather_locs_interesting	glyph_at
 gather_locs_interesting	known_vibrating_square_at
 gazemm	rn2
@@ -1867,6 +1871,8 @@ gush	rn2
 gush	water_damage_chain
 halu_gname	align_gname
 handle_tip	l_nhcore_call
+handler_menu_colors	query_attr
+handler_petattr	query_attr
 handler_rebind_keys	count_bind_keys
 handler_rebind_keys	handler_rebind_keys_add
 handler_rebind_keys_add	bind_key
@@ -2276,6 +2282,7 @@ liquid_flow	fire_damage_chain
 liquid_flow	hliquid
 liquid_flow	is_pool_or_lava
 liquid_flow	pooleffects
+liquid_flow	trapname
 liquid_flow	water_damage_chain
 list_genocided	set_vanq_order
 list_genocided	yn_function
@@ -4217,6 +4224,7 @@ status_hilite_menu	reset_status_hilites
 status_hilite_menu	status_hilite_menu_fld
 status_hilite_menu	status_hilites_viewall
 status_hilite_menu_add	query_arrayvalue
+status_hilite_menu_add	query_attr
 status_hilite_menu_add	query_conditions
 status_hilite_menu_add	reset_status_hilites
 status_hilite_menu_add	status_hilite_menu_choose_behavior
@@ -4312,6 +4320,7 @@ theft_petrifies	instapetrify
 themerooms_post_level_generate	wallification
 there_cmd_menu	test_move
 there_cmd_menu_common	glyph_at
+there_cmd_menu_far	linedup
 there_cmd_menu_next2u	can_saddle
 there_cmd_menu_next2u	glyph_at
 thitm	newsym
@@ -4521,6 +4530,7 @@ tty_display_nhwindow	process_text_window
 tty_display_nhwindow	tty_clear_nhwindow
 tty_doprev_message	redotoplin
 tty_exit_nhwindows	tty_suspend_nhwindows
+tty_get_ext_cmd	extcmds_match
 tty_nhgetch	randomkey
 tty_putstr	compress_str
 tty_select_menu	tty_dismiss_nhwindow
