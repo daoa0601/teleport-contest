@@ -90,14 +90,16 @@ export class GameDisplay {
         const current = this.capturedMapCells.get(index) ?? this.grid[row]?.[col];
         const previous = current ? { ...current } : undefined;
         const code = byteGlyph ? ch.charCodeAt(0) & 0x7f : ch.charCodeAt(0);
-        this.setCell(col, row, ch, color, frameColor === null ? attr : 0, altFont);
-        if (code < 32 && previous) {
+        // A control glyph leaves the recorded cell exactly as the previous
+        // write left it: its character and its alternate-font shift both
+        // stay, so the incoming glyph's own font flag must not touch the
+        // retained cell.
+        const retainsPreviousCell = code < 32 && !!previous;
+        this.setCell(col, row, ch, color, frameColor === null ? attr : 0, retainsPreviousCell ? this.altFontCells.has(index) : altFont);
+        if (retainsPreviousCell) {
             this.capturedMapCells.set(index, previous);
-            // The control glyph leaves the previous recorded cell visible,
-            // keeping its alternate-font shift with it.
         }
         else if (byteGlyph) {
-            this.altFontCells.delete(index);
             this.capturedMapCells.set(index, {
                 ch: String.fromCharCode(code), color, attr: frameColor === null ? attr : 0,
             });

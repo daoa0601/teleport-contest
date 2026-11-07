@@ -1263,6 +1263,7 @@ export function _buildScreenOutput() {
                         c, 0,
                         cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch,
                         NO_COLOR, 0,
+                        cell.dec && game._toplineGlyphPainted,
                     );
                 }
             } else {

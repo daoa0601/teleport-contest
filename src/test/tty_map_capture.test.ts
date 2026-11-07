@@ -5,6 +5,30 @@ import { serializeCapture } from '../js/jsmain.js';
 import { CLR_BROWN, CLR_GREEN, NO_COLOR } from '../js/terminal.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
 
+void test('a control glyph keeps the retained cell out of the alternate font', () => {
+    const display = new GameDisplay(null);
+    display.setMapCell(4, 3, 'x', CLR_GREEN, 0, null);
+    // An AmigaFont glyph such as the 0x91 door strips to the 0x11 control
+    // byte; the recorder leaves the previous cell entirely unchanged.
+    display.setMapCell(4, 3, '\x11', NO_COLOR, 0, null, false, true);
+
+    const captured = serializeCapture(display);
+    const row = captured.split('\n')[3] ?? '';
+    assert.equal(decodeScreen(captured)[3]?.[4]?.ch, 'x');
+    assert.ok(!row.includes('\x0e'),
+        `the retained cell carries no alternate-font shift: ${JSON.stringify(row)}`);
+});
+
+void test('a control glyph keeps a shifted cell inside its shift', () => {
+    const display = new GameDisplay(null);
+    display.setMapCell(4, 3, '\u2502', CLR_GREEN, 0, null, false, true);
+    display.setMapCell(4, 3, '\x01', NO_COLOR, 0, null, false, false);
+
+    const row = serializeCapture(display).split('\n')[3] ?? '';
+    assert.ok(row.includes('\x0ex\x0f'),
+        `the retained wall keeps its alternate-font shift: ${JSON.stringify(row)}`);
+});
+
 void test('the tty capture records an IBM wall while the live display retains its symbol', () => {
     const display = new GameDisplay(null);
     display.setMapCell(4, 3, '\xcd', CLR_BROWN, 0, null, true);

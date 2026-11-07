@@ -1202,7 +1202,7 @@ export function _buildScreenOutput() {
                 for (const [c, cell] of cells.entries()) {
                     if (c >= display.cols)
                         break;
-                    display.setCell(c, 0, cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch, NO_COLOR, 0);
+                    display.setCell(c, 0, cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch, NO_COLOR, 0, cell.dec && game._toplineGlyphPainted);
                 }
             }
             else {
