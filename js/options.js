@@ -3214,17 +3214,10 @@ export async function doOptions(menuRequested = false) {
 // ---------------------------------------------------------------------------
 // C options.c:change_inv_order().
 // ---------------------------------------------------------------------------
-// C options.c:change_inv_order() keeps valid entries even when others are
-// bad, then fills omitted classes using their previous order. Omitted gold
-// leads.
+// C options.c:change_inv_order(). Keeps valid entries even when others are
+// bad, then fills omitted classes using their previous order; omitted gold
+// leads. Returns the errors config_error_add() would have logged.
 export function changeInventoryOrder(symbols, state = game) {
-    const change = planInventoryOrder(symbols, state);
-    state.flags.inv_order = change.order;
-    return change.errors.length === 0;
-}
-// C options.c:change_inv_order(): validate and complete an inventory
-// order.
-export function planInventoryOrder(symbols, state = game) {
     const previous = inventoryClassOrder(state);
     const order = symbols.includes('$') ? [] : [COIN_CLASS];
     const errors = [];
@@ -3240,7 +3233,8 @@ export function planInventoryOrder(symbols, state = game) {
             order.push(oclass);
         }
     }
-    return { order: [...order, ...previous.filter(oclass => !order.includes(oclass))], errors };
+    state.flags.inv_order = [...order, ...previous.filter(oclass => !order.includes(oclass))];
+    return errors;
 }
 // ---------------------------------------------------------------------------
 // C options.c:warning_opts()/assign_warnings().
