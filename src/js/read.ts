@@ -1287,24 +1287,6 @@ export async function removeCurseEffect({
     return changed;
 }
 
-// C sit.c:316 calls seffects() with a zeroobj spell source on the stack. It
-// has no inventory identity or creation effects, but still passes through
-// seffects' Wisdom gain. throne.c's confused blessed remove curse and
-// trap.c's magic trap use the same entry.
-export async function applyRemoveCurseSpell({
-    state = game, blessed = false, cursed = false,
-}: Pick<RemoveCurseOptions, 'state' | 'blessed' | 'cursed'> = {}): Promise<ScrollEffectResult> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    await exerciseScrollWisdom(SPE_REMOVE_CURSE, state);
-    await removeCurseEffect({
-        source: { otyp: SPE_REMOVE_CURSE, blessed, cursed },
-        state,
-        publish: plineWithContinuation,
-    });
-    return { known: false, consumed: false, heroDied: !!state.program_state.gameover };
-}
-
 // C read.c:maybe_tame().
 async function maybeTame(monster: Monster, source: GameObject, state: PlayingGameState): Promise<number> {
     const wasTame = monster.mtame ?? 0;
@@ -1759,7 +1741,7 @@ export async function applyScrollEffects(source: GameObject, {
 }
 
 // Part of C read.c:seffects(): the magic-source Wisdom exercise.
-async function exerciseScrollWisdom(otyp: number, state: PlayingGameState): Promise<void> {
+export async function exerciseScrollWisdom(otyp: number, state: PlayingGameState): Promise<void> {
     if (objectMagic(otyp)) await exerciseAttribute(A_WIS, true, state);
 }
 
