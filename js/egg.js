@@ -21,7 +21,8 @@ import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { tameMonster } from './dog.js';
 import { objectWeight } from './mkobj.js';
-import { monsterHasNoLimbs, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterIsEel, monsterOlderForm, monsterYoungerForm } from './mondata.js';
+import { monsterHasNoLimbs, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterOlderForm, monsterYoungerForm } from './mondata.js';
+import { hatchlingCry } from './sounds.js';
 const G_UNIQ = 0x1000;
 const S_EYE = 5;
 const S_DRAGON = 30;
@@ -132,25 +133,6 @@ function monsterInventoryHatchMessage(mnum, count, carrier, x, y, state) {
         message: formatSeenMessage(`${newborn} ${hatchLocomotion(mnum)} out of ${source}!`, state),
         knowsEgg: carrierIsVisible,
     };
-}
-// C sounds.c:cry_sound(): the hatchling cry used by the mommy/daddy message.
-function hatchlingCry(mnum) {
-    const sound = MONSTER_SOUND[mnum] ?? 0;
-    if (sound === 9)
-        return 'hiss';
-    if (sound === 3 || sound === 5)
-        return 'growl';
-    if (sound === 8)
-        return 'chirp';
-    if (sound === 10)
-        return 'buzz';
-    if (sound === 7)
-        return 'screech';
-    if (sound === 11)
-        return 'grunt';
-    if (sound === 21)
-        return 'mumble';
-    return monsterIsEel(mnum) ? 'gurgle' : 'chitter';
 }
 // Port only: Deaf state check for the hatch messages (C reads the Deaf
 // macro inline in hatch_egg()).
