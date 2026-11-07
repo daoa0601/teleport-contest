@@ -74,7 +74,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
-import { possessiveName } from './hacklib.js';
+import { distmin, possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import {
     setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
@@ -105,7 +105,7 @@ import type { InventoryClassification } from './invent.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, transformMagicLampToOilLamp } from './light.js';
 import { lightRoom } from './read.js';
 import {
-    finishTeleportArrival, askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted,
+    finishTeleportArrival, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted,
     monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet,
 } from './teleport.js';
 import { pickLock } from './lock.js';
@@ -871,7 +871,8 @@ export function heroNextToLeashedFollowers(): boolean {
 // Part of C apply.c:mleashed_next2u(): the enexto() relocation of one
 // leashed follower.
 async function moveLeashedMonsterNextToHero(monster: Monster, state: GameState, random: RandomBelow) {
-    if (distanceToHero(monster, state) <= 1) return;
+    // C distmin(mtmp->mx, mtmp->my, u.ux, u.uy) > 1.
+    if (distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1) return;
     const oldx = monster.mx;
     const oldy = monster.my;
     const destination = enexto(
@@ -892,7 +893,8 @@ export async function bringLeashedFollowers(state = game, random = rn2) {
     for (const monster of [...(state.level?.monsters || [])].reverse()) {
         if (!monster?.mleashed || (monster.mhp ?? 1) <= 0) continue;
         await moveLeashedMonsterNextToHero(monster, state, random);
-        if (distanceToHero(monster, state) <= 1) continue;
+        // C apply.c:next_to_u(): distmin(mtmp, you) <= 1.
+        if (distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1) continue;
 
         const leash = leashAttachedToMonster(monster, state);
         if (!leash || leash.cursed) return false;
