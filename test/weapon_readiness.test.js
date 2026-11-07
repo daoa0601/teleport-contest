@@ -9,7 +9,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { BOW, CORPSE, DAGGER, HEAVY_IRON_BALL, OBJECT_NAMES, PICK_AXE, POT_HEALING, TOWEL } from '../js/object_data.js';
+import { BOW, CORPSE, DAGGER, HEAVY_IRON_BALL, OBJECT_NAMES, PICK_AXE, POT_HEALING, TOWEL, WAN_NOTHING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { destroyFireInventory } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -22,7 +22,7 @@ async function combatRoom() {
     const messages = [];
     const input = resetInputState();
     installPagerInput(input, {
-        expected: /wield|hand|bash|hit|miss|pick-axe|bow|halberd|towel|pony|ride|drop|dig|minotaur|potion|evaporat|crash|shard/i,
+        expected: /wield|hand|bash|hit|miss|pick-axe|bow|halberd|towel|pony|ride|drop|dig|minotaur|potion|evaporat|crash|shard|wand|nothing else/i,
         limit: 200,
     });
     input.beforeRead = () => {
@@ -53,6 +53,23 @@ void test('dropping a used weapon announces bare-handed combat on the next attac
     await text(messages);
     await rhack('l'.charCodeAt(0));
     assert.match(await text(messages), /You begin bashing monsters with your bare hands\./);
+    await rhack('l'.charCodeAt(0));
+    assert.doesNotMatch(await text(messages), /You begin bashing/);
+});
+void test('breaking a wielded wand does not announce bare-handed combat on the next attack', async () => {
+    const messages = await combatRoom();
+    requirePlayingGame(game);
+    const wand = await addInventoryObject(WAN_NOTHING, { spe: 3 });
+    await wield(wand);
+    await rhack('l'.charCodeAt(0));
+    assert.match(await text(messages), /You begin bashing monsters with your wand/);
+    await applyInventoryObject(wand, 'y');
+    await text(messages);
+    assert.equal(game.uwep, null, 'the broken wand leaves the wield slot');
+    // C apply.c:do_break_wand() unwields via setnotworn(), which does not
+    // arm the "begin bashing with your bare hands" notice.
+    await rhack('l'.charCodeAt(0));
+    assert.doesNotMatch(await text(messages), /You begin bashing/);
     await rhack('l'.charCodeAt(0));
     assert.doesNotMatch(await text(messages), /You begin bashing/);
 });

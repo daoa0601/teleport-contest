@@ -4166,7 +4166,10 @@ export async function breakWand(wand: GameObject, { state = game }: { state?: Ga
     state._currentWand = wand;
     await freeInventoryObject(wand, state);
     if (state.program_state.gameover) return { spentTime: true, heroDied: true };
-    await removeWornHeroItem(wand, state);
+    // C apply.c:do_break_wand(): freeinv(obj) + setnotworn(obj); a broken
+    // wielded wand must not arm the "begin bashing with your bare hands"
+    // notice the way steal.c:remove_worn_item()'s uwepgone() would.
+    await setnotworn(wand, state);
     if (state.program_state.gameover) return { spentTime: true, heroDied: true };
     if (!await zappable(wand, { state })) {
         await pline('But nothing else happens...');
