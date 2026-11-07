@@ -4,7 +4,7 @@
 // mhitm.c noises(), pre_mm_attack(), missmm(), failed_grab(), hitmm(),
 // gazemm(), engulf_target(), gulpmm(), explmm(), mdamagem(), passivemm() and
 // xdrainenergym(), attk_protection(), and rustm() are folded in below.
-import { setHeroGrip, isZombieMaker, zombieForm } from './mon.js';
+import { setHeroGrip, isZombieMaker, zombieForm, releaseHeroFromMonster } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
@@ -51,7 +51,7 @@ import { could_seduce } from './mhitu.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, heroFormSticks } from './polyself.js';
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const G_UNIQ = 0x1000;
 const MZ_HUGE = 4;
@@ -1351,5 +1351,16 @@ export async function erodeAttackingWeapon(defender, weapon, { state = game, ran
     if (kind && random(kind === 'burn' ? 6 : 1) === 0) {
         await erodeObject(weapon, kind, { ...options, state, random, verbose: true });
     }
+}
+// C mhitm.c:slept_monst()
+// A sleeping grabber releases the hero (an engulfer does not; never use
+// for paralysis): "%s grip relaxes." (s_suffix(Monnam(mon))) then
+// unstuck().  C's helpless() gate opens the release.
+export async function sleptMonst(monster, { state = game, publish = plineWithContinuation, rollOne = rnd } = {}) {
+    if (!monsterIsHelpless(monster) || state.u.ustuck !== monster
+        || state.u.uswallow || heroFormSticks(state))
+        return;
+    await publish(`${possessiveName(monsterName(monster, { state, capitalized: true }))} grip relaxes.`);
+    await releaseHeroFromMonster(monster, { state, publish, rollOne });
 }
 //# sourceMappingURL=mhitm.js.map

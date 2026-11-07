@@ -16,11 +16,11 @@ import { zapHeroWithObject, monsterResistsEffect, zapRayWithObject } from './zap
 import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { revealMonsterAppearance, releaseHeroFromMonster } from './mon.js';
+import { revealMonsterAppearance } from './mon.js';
 import { displayRayName } from './zap.js';
 import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
 import { monsterResistsSleep, is_mercenary, monsterIsMindless, heroCanBlow } from './mondata.js';
-import { putMonsterToSleep } from './mhitm.js';
+import { putMonsterToSleep, sleptMonst } from './mhitm.js';
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import {
     BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM,
@@ -200,10 +200,8 @@ async function putMonstersToSleep(distance: number) {
         }
         if (!await putMonsterToSleep(monster, duration)) continue;
         monster.msleeping = 1;
-        if (monster === game.u.ustuck && !game.u.uswallow && !heroFormSticks()) {
-            await plineWithContinuation(`${possessiveName(monsterName(monster, { capitalized: true }))} grip relaxes.`);
-            await releaseHeroFromMonster(monster);
-        }
+        // C mhitm.c:slept_monst(): a sleeping grabber releases the hero.
+        await sleptMonst(monster);
     }
 }
 

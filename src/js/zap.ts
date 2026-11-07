@@ -171,7 +171,7 @@ import { heroStatusLine } from './insight.js';
 import { mergeObjectStacks } from './invent.js';
 import type { MapLocation, Position } from './map_types.js';
 import { monsterSpellDeathReason } from './mcastu.js';
-import { putMonsterToSleep } from './mhitm.js';
+import { putMonsterToSleep, sleptMonst } from './mhitm.js';
 import { heroHasRemovableSpeed, u_slow_down,
     expelHero, holdingMonsterName,
 } from './mhitu.js';
@@ -1236,10 +1236,8 @@ async function sleepMonsterWithMagic(monster: Monster, duration: number, state: 
     }
     if (!await putMonsterToSleep(monster, duration)) return;
     await finishMonsterEating(monster, state);
-    if (monster === state.u.ustuck && !state.u.uswallow && !heroFormSticks(state)) {
-        await plineWithContinuation(`${possessiveName(monsterName(monster, { capitalized: true }))} grip relaxes.`);
-        await releaseHeroFromMonster(monster, { state });
-    }
+    // C mhitm.c:slept_monst(): a sleeping grabber releases the hero.
+    await sleptMonst(monster, { state });
 }
 
 // Part of C zap.c:bhitm(): magical opening drops a target's saddle.
@@ -5264,10 +5262,7 @@ async function finishMonsterRayHit(
     if (sayHit || visible) await publish(rayHitMessage(displayName(), monster, {
         x, y, damage: hit.damage, state,
     }));
-    if (hit.slept && state.u.ustuck === monster && !state.u.uswallow && !heroFormSticks(state)) {
-        await publish(`${possessiveName(nameTarget())} grip relaxes.`);
-        await releaseHeroFromMonster(monster, { state, publish });
-    }
+    if (hit.slept) await sleptMonst(monster, { state, publish });
     if (!hit.sleepEffect)
         return wakeMonster(monster, { attacked: source.startsWith('hero-') });
     return { heroDied: false };

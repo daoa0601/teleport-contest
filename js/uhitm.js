@@ -44,7 +44,7 @@ import { consumeInventoryItem, inventoryItemDescription, mergable } from './inve
 import { snuffMonsterInventoryLights } from './light.js';
 import { cloneMonster } from './makemon.js';
 import { touchHeroWithDeath } from './mcastu.js';
-import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit, contactIsProtected, erodeAttackingWeapon, } from './mhitm.js';
+import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit, contactIsProtected, erodeAttackingWeapon, sleptMonst, } from './mhitm.js';
 import { mdamageu, heroHasRemovableSpeed, u_slip_free, diseasemu, magic_negation, mpoisons_subj, presentMonsterAttackEffects, doseduce, u_slow_down } from './mhitu.js';
 import { normalDemon } from './minion.js';
 import { makemonNear } from './mklev.js';
@@ -4084,11 +4084,8 @@ export async function mhitmAdSlee(call) {
                 await publish(`${name} is put to sleep by ${monsterName(attacker, { state })}.`);
             }
             clearWaiting(defender);
-            if (monsterIsHelpless(defender) && state.u.ustuck === defender
-                && !heroFormSticks(state) && !state.u.uswallow) {
-                await publish(`${possessiveName(monsterName(defender, { state, capitalized: true }))} grip relaxes.`);
-                await releaseHeroFromMonster(defender, { state, publish, rollOne });
-            }
+            // C mhitm.c:slept_monst(): a sleeping grabber releases the hero.
+            await sleptMonst(defender, { state, publish, rollOne });
         }
         return statusContinueResult(context.damage);
     }
