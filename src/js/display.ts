@@ -2674,10 +2674,9 @@ export async function flush_screen(mode?: number) {
     if (mapCursor) display?.setCursor(...mapCursor);
 }
 
-// ── cls ──
-// C display.c:clear_glyph_buffer(): every cell returns to unexplored, a
-// buffer reset rather than a discovered glyph change, combined with the
-// terminal clearing and message cleanup of the port's cls path.
+// C display.c:cls().  Flush the message window, force the botl update and
+// clear the physical screen, then clear_glyph_buffer(): every cell returns
+// to unexplored, a buffer reset rather than a discovered glyph change.
 export async function cls() {
     await flushPendingTopline();
     game.context.botl = true;
