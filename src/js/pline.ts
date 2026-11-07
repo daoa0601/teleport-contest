@@ -60,6 +60,12 @@ export async function pline_xy(x: number, y: number, message: string): Promise<v
     await pline(message);
 }
 
+// C pline.c:Norep(): pline() with PLINE_NOREPEAT — the message is
+// suppressed when it repeats the previous individual message.
+export async function norep(message: string): Promise<void> {
+    if (game._lastPlineMessage !== message) await pline(message);
+}
+
 // C pline.c:pline_mon().
 export async function pline_mon(monster: Monster | Hero, message: string): Promise<void> {
     if ('mx' in monster) set_msg_xy(monster.mx, monster.my);
@@ -147,10 +153,11 @@ export function formatFeltMessage(text: string, state = game): string {
     return `${heroIsUnaware(state) ? 'You dream that you feel' : 'You feel'} ${text}`;
 }
 
-// C pline.c:436-452 You_hear().  Pure formatter: returns the exact line
-// to publish, or null when the sound is suppressed.  An awake deaf hero or
-// disabled acoustics hears nothing; an unaware (sleeping, fainted,
-// unconscious) hero only dreams the sound; being underwater muffles it.
+// Part of C pline.c:You_hear(): the pure formatter half (pline.c:436-452).
+// Returns the exact line to publish, or null when the sound is
+// suppressed: an awake deaf hero or disabled acoustics hears nothing; an
+// unaware (sleeping, fainted, unconscious) hero only dreams the sound;
+// being underwater muffles it.
 export function formatHeardMessage(text: string, state = game) {
     const deaf = heroIsDeaf(state);
     const unaware = heroIsUnaware(state);
@@ -163,7 +170,7 @@ export function formatHeardMessage(text: string, state = game) {
     return `You hear ${text}`;
 }
 
-// Part of C pline.c:You_hear(): format the sound line and publish it
+// C pline.c:You_hear(): format the sound line and publish it
 // unless suppressed.
 // Publishes through You_hear()'s own suppression. Callers must retain their
 // C guards: an unconditional You_hear reaches a deaf unaware hero, but

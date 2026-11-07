@@ -21,7 +21,7 @@ import { game, requireLiveGame, requireGameLevel, requirePlayingGame, requireIni
 import type { GameState } from './game_state.js';
 import type { WipeFaceOccupation } from './occupation_types.js';
 import {
-    formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent,
+    formatHeardMessage, norep, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
@@ -2531,11 +2531,6 @@ function dangerousHeroProperties() {
         || u.sick || (u.sickTurns ?? 0) > 0);
 }
 
-// Part of C pline.c:Norep(): the repeated-message check for a preformatted string.
-// C Norep() compares pline.c's previous individual message.
-async function norep(message: string): Promise<void> {
-    if (game._lastPlineMessage !== message) await pline(message);
-}
 
 // C do.c:cmd_safety_prevention().  The per-command counter is durable across
 // rejected inputs: with cmdassist disabled the first warning includes the

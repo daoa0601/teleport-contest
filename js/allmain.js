@@ -304,17 +304,35 @@ export async function restoregamePreamble() {
     await fixShopDamage(game);
     await finishMoveloopPreamble();
 }
-// Part of C allmain.c:maybe_do_tutorial(): tutorial-entry adapter combining Lua state transfer and do.c:goto_level() arrival.
-// C/Lua refs: allmain.c maybe_do_tutorial(), do.c goto_level(),
-// nhcore.lua tutorial_enter(), and nhlua.c nhl_gamestate().  Destination
-// construction and arrival precede the entry pager, but that pager still
-// projects the source graph.  Tutorial inventory is deliberately sequestered
-// until a later portal restores the saved game state.
-async function enterTutorial() {
+// C allmain.c:maybe_do_tutorial()
+// ask_do_tutorial() (options.c) contributes the config gate and the Yes/No
+// menu below; schedule_goto()+deferred_goto() run through do.c:goto_level()
+// arrival, modeled here as a hand-rolled level transition combining Lua
+// state transfer and that arrival.  Destination construction and arrival
+// precede the entry pager, but that pager still projects the source graph.
+// Tutorial inventory is deliberately sequestered until a later portal
+// restores the saved game state.
+async function maybeDoTutorial() {
     const game = requireInitializedGame();
     const target = game.specialLevels?.get('tut-1');
     if (!target)
-        return false;
+        return;
+    // ask_do_tutorial() obeys a tutorial option set in the configuration
+    // file without asking; unlike C, this port then skips entry entirely.
+    if (game.tutorial_set_in_config)
+        return;
+    // Menu creation flushes only a message still awaiting dismissal.
+    // A wrapped welcome has already completed its own pager.
+    await flushPendingTopline();
+    await flush_screen(1);
+    const doTutorial = await askTutorial();
+    game._tutorialDeclined = !doTutorial;
+    game._pending_message = '';
+    if (!doTutorial) {
+        await redrawMap();
+        await flush_screen(1);
+        return;
+    }
     const oldLevel = game.level;
     const oldStairs = game.stairs;
     const oldDepth = { ...(game.u?.uz || {}) };
@@ -400,11 +418,8 @@ async function enterTutorial() {
     findArmorClass(game);
     await redrawMap();
     await flush_screen(1);
-    return true;
 }
 // C allmain.c:moveloop_preamble()
-// Also C allmain.c:maybe_do_tutorial(): the ask_do_tutorial() prompt C's
-// moveloop() runs immediately after the preamble.
 async function moveloopPreamble() {
     const game = requireInitializedGame();
     if (game._moveloopStarted)
@@ -424,21 +439,8 @@ async function moveloopPreamble() {
     initTrack();
     game._nextAttribCheck = 600;
     await finishMoveloopPreamble();
-    if (!game.tutorial_set_in_config) {
-        // Menu creation flushes only a message still awaiting dismissal.
-        // A wrapped welcome has already completed its own pager.
-        await flushPendingTopline();
-        await flush_screen(1);
-        const doTutorial = await askTutorial();
-        game._tutorialDeclined = !doTutorial;
-        game._pending_message = '';
-        if (doTutorial)
-            await enterTutorial();
-        else {
-            await redrawMap();
-            await flush_screen(1);
-        }
-    }
+    // moveloop() runs maybe_do_tutorial() right after the preamble.
+    await maybeDoTutorial();
 }
 // Part of C allmain.c:moveloop_preamble(): the shared new/restore tail.
 // Equipment and pickup messages may suspend before this boundary makes

@@ -16,7 +16,7 @@ import { ILLOBJ_CLASS, RING_CLASS, COIN_CLASS, VENOM_CLASS, POTION_CLASS } from 
 import { OBJ_NAME } from './object_data.js';
 import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
-import { formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
+import { formatHeardMessage, norep, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
 import { AD_POLY } from './monster_attack_types.js';
@@ -2395,12 +2395,6 @@ function dangerousHeroProperties() {
         || u.slimed || (u.slimedTurns ?? 0) > 0
         || u.strangled || (u.strangledTurns ?? 0) > 0
         || u.sick || (u.sickTurns ?? 0) > 0);
-}
-// Part of C pline.c:Norep(): the repeated-message check for a preformatted string.
-// C Norep() compares pline.c's previous individual message.
-async function norep(message) {
-    if (game._lastPlineMessage !== message)
-        await pline(message);
 }
 // C do.c:cmd_safety_prevention().  The per-command counter is durable across
 // rejected inputs: with cmdassist disabled the first warning includes the

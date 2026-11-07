@@ -669,6 +669,12 @@ function repairContainedObjects(container) {
         repairContainedObjects(object);
     }
 }
+// C restore.c:reset_oattached_mids(): walk the restored object graph and
+// remap each ghostly omid (and the port's leashmon), zeroing any omonst —
+// a dead owner's pet is no longer peaceful or tame.
+function resetObjectAttachedMonsterIds(level, monsterIds) {
+    eachObjectInBonesGraph(level, object => repairObjectMonsterIds(object, monsterIds));
+}
 // Part of C restore.c:reset_oattached_mids(): ghostly omonst zeroing and
 // omid remap; the port also remaps leashmon.
 function repairObjectMonsterIds(object, monsterIds) {
@@ -775,7 +781,7 @@ async function renewBonesIdentities(level, fruits) {
         }
         restoreMonsterInventoryOwnership(monster);
     }
-    eachObjectInBonesGraph(level, object => repairObjectMonsterIds(object, monsterIds));
+    resetObjectAttachedMonsterIds(level, monsterIds);
     eachTopLevelBonesObject(level, repairContainedObjects);
     for (const region of level.regions) {
         region.heroFault = false;

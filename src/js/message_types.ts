@@ -58,7 +58,7 @@ import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorAttrToString, colorName, cutConfigBytes, matchAttributeName,
-    matchColorName, parseColorAttr, parseMenuColoring, queryAttributeMenu, queryColorMenu } from './coloratt.js';
+    matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
 import {
     BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
     MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
@@ -2071,8 +2071,8 @@ async function editMenuHeadings(): Promise<void> {
     const prompt = 'How to highlight menu headings:';
     const color = await queryColorMenu(prompt, current.color);
     if (color === null) return;
-    const attr = await queryAttributeMenu(prompt, current.attr);
-    if (attr === null) return;
+    const attr = await queryAttr(prompt, current.attr);
+    if (attr === -1) return;
     game.iflags.menu_headings = { attr, color };
 }
 
@@ -2185,9 +2185,9 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
 // options.c:handler_petattr() commits and requests a redraw even when
 // the accepted attribute equals the current one. Escape changes nothing.
 async function editPetAttribute(): Promise<boolean> {
-    const attr = await queryAttributeMenu('Select pet highlight attribute',
+    const attr = await queryAttr('Select pet highlight attribute',
         game.iflags.wc2_petattr ?? C_ATR_INVERSE);
-    if (attr === null) return false;
+    if (attr === -1) return false;
     game.iflags.wc2_petattr = attr;
     game.flags.hilite_pet = attr !== C_ATR_NONE;
     return true;
@@ -2278,8 +2278,8 @@ async function editMenuColors(): Promise<void> {
                 if (regex) {
                     const color = await queryColorMenu('Pick a color', NO_COLOR);
                     if (color !== null) {
-                        const attr = await queryAttributeMenu('Pick an attribute', 0);
-                        if (attr !== null) {
+                        const attr = await queryAttr('Pick an attribute', 0);
+                        if (attr !== -1) {
                             (game.iflags.menuColorings ??= []).unshift({ origstr: pattern, color, attr, regex });
                             game.flags.menucolors = true;
                         }

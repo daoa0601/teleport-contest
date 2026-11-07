@@ -95,44 +95,38 @@ export function matchAttributeName(text, addError) {
     addError?.(`Unknown text attribute '${cutConfigBytes(text, 50)}'`);
     return -1;
 }
-// Part of C coloratt.c:query_attr(): PICK_ONE over the canonical attribute names, each
-// drawn in its own attribute; a second entry behind the current default wins
-// over it.
-export async function queryAttributeMenu(title, current) {
-    const picks = await showMultiSelectWindow({
-        title: title || 'Pick an attribute', omitHeadings: true, pickOne: true,
-        signalEscape: true, pageLocalKeys: true,
-        sections: [{ items: ATTRIBUTE_NAMES.slice(0, 7).map(([name, attr]) => ({
-                    value: attr, text: name, attr: terminalAttrFromCAttr(attr),
-                    itemFlags: attr === current ? MENU_ITEMFLAGS_SELECTED : 0,
-                })) }],
-    });
-    if (picks === null)
-        return null;
-    if (!picks.length)
-        return current;
-    const [chosen = current, alternate] = picks;
-    return alternate !== undefined && chosen === current ? alternate : chosen;
-}
-// coloratt.c:query_attr() with a "Choose..." prompt: PICK_ANY so several
-// attributes can combine, returning HL_* bits (HL_NONE alone for "none"),
-// or -1 on Escape / an accepted empty pick. The ATR_NONE row is preselected
-// and drops out of the result unless it is the only choice.
+// C coloratt.c:query_attr(): the attribute menu.  A prompt whose first six
+// characters are "Choose" (case-insensitive) takes PICK_ANY so several
+// attributes can combine into HL_* bits (HL_NONE alone for "none"), with
+// the dflt_attr row preselected and the ATR_NONE row dropping out of the
+// result unless it is the only choice; any other prompt takes PICK_ONE
+// over the canonical attribute names, each drawn in its own attribute,
+// where an accepted empty pick keeps dflt_attr and a second entry behind
+// the default wins over it.  Escape (or an accepted empty PICK_ANY)
+// returns -1.
 const ATR_TO_HL = new Map([
     [0, HL_NONE], [1, HL_BOLD], [2, HL_DIM], [3, HL_ITALIC],
     [4, HL_ULINE], [5, HL_BLINK], [7, HL_INVERSE],
 ]);
-// Part of C coloratt.c:query_attr(): PICK_ANY over the attribute names.
-export async function queryAttributeSet(title) {
+export async function queryAttr(prompt, dfltAttr) {
+    const allowMany = prompt !== null && prompt.slice(0, 6).toLowerCase() === 'choose';
     const picks = await showMultiSelectWindow({
-        title: title || 'Pick an attribute', omitHeadings: true, signalEscape: true,
-        pageLocalKeys: true,
+        title: prompt || 'Pick an attribute', omitHeadings: true,
+        pickOne: !allowMany, signalEscape: true, pageLocalKeys: true,
         sections: [{ items: ATTRIBUTE_NAMES.slice(0, 7).map(([name, attr]) => ({
                     value: attr, text: name, attr: terminalAttrFromCAttr(attr),
-                    itemFlags: attr === 0 ? MENU_ITEMFLAGS_SELECTED : 0,
+                    itemFlags: attr === dfltAttr ? MENU_ITEMFLAGS_SELECTED : 0,
                 })) }],
     });
-    if (picks === null || !picks.length)
+    if (picks === null)
+        return -1;
+    if (!allowMany) {
+        if (!picks.length)
+            return dfltAttr;
+        const [chosen = dfltAttr, alternate] = picks;
+        return alternate !== undefined && chosen === dfltAttr ? alternate : chosen;
+    }
+    if (!picks.length)
         return -1;
     let bits = 0;
     for (const attr of picks) {

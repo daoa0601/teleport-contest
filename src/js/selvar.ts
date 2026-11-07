@@ -843,7 +843,8 @@ const MAP_CHAR_TYPES: Readonly<Record<string, number>> = {
     w: MATCH_WALL,
 };
 
-// Part of C nhlua.c:splev_chr2typ(): the map character type table.
+// C nhlua.c:splev_chr2typ(): the map character type table; an unmatched
+// character has no type (C INVALID_TYPE).
 export function mapCharacterType(character: string | undefined): number | undefined {
     return character === undefined ? undefined : MAP_CHAR_TYPES[character];
 }

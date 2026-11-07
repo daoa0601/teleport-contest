@@ -1,5 +1,6 @@
-// Part of C llex.c:lexerror(): the syntax-error construction using lobject.c:luaO_chunkid().
-// Lua llex.c:lexerror() and lobject.c:luaO_chunkid().
+// C llex.c:lexerror(): luaG_addinfo() prefixes the chunk name and line,
+// then "%s near %s" appends the offending token; luaO_chunkid() renders
+// the chunk name.
 export function luaSyntaxError(
     chunkName: string, line: number, message: string, near: string,
 ): SyntaxError {

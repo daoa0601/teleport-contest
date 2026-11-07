@@ -278,16 +278,21 @@ export function canSpotMonster(monster: Monster | null | undefined) {
     return !!monster && (canSeeMonster(monster) || canSenseMonster(monster));
 }
 
-// Part of C display.c:mon_warning(), display.c:warning_of(): the warning
-// projection test.
+// C display.c:mon_warning(): the warning projection test — display.h's
+// _mon_warning macro: Warning, not peaceful, mdistu() < 100, and
+// m_lev / 4 already at context.warnlevel.
 export function monsterHasWarningProjection(monster: Monster | null | undefined) {
     if (!monster || !game.u?.warning || monster.mpeaceful) return null;
     const dx = monster.mx - game.u.ux, dy = monster.my - game.u.uy;
     if (dx * dx + dy * dy >= 100) return null;
     // C dist2(): the warning radius is a squared distance (ten squares).
-    const level = Math.min(def_warnsyms.length - 1,
-        Math.trunc((monster.m_lev ?? 0) / 4));
-    return level >= (game.context?.warnlevel ?? 1);
+    return warningOf(monster) >= (game.context?.warnlevel ?? 1);
+}
+
+// C display.c:warning_of(): the warning level of a warning-eligible
+// monster: m_lev / 4 clamped to WARNCOUNT - 1 (def_warnsyms here).
+function warningOf(monster: Monster): number {
+    return Math.min(def_warnsyms.length - 1, Math.trunc((monster.m_lev ?? 0) / 4));
 }
 
 // C display.c:display_warning(): the ordinary-warning glyph — warning_of()'s
@@ -298,8 +303,7 @@ function warningProjection(monster: Monster | null | undefined) {
     if (!monster || !monsterHasWarningProjection(monster)) return null;
     const level = heroIsHallucinating()
         ? rn2Display(def_warnsyms.length - 1) + 1
-        : Math.min(def_warnsyms.length - 1,
-            Math.trunc((monster.m_lev ?? 0) / 4));
+        : warningOf(monster);
     // The map reads showsyms[SYM_OFF_W+n], which symset loading initializes
     // from def_warnsyms; WARNINGS=/warnings: only retarget the pager lookup.
     const warning = def_warnsyms[level];
@@ -1087,8 +1091,8 @@ export function monsterClassSymbol(index: number): string {
     return MONSTER_CLASS_SYMBOLS[index] ?? '';
 }
 
-// Part of C display.c:swallowed(), pager.c:is_swallow_sym(): the swallow
-// border symbol.
+// Part of C display.c:swallowed(): the swallow border symbol; is_swallow_sym()
+// (pager.c) tests a displayed symbol against these eight.
 export function swallowSymbolAppearance(index: number): { ch: string; dec: boolean } {
     if (!Number.isInteger(index) || index < 0 || index > 7)
         throw new RangeError(`Unknown swallow border ${index}`);
@@ -2101,8 +2105,8 @@ function monsterDisplayAttribute(state: 'normal' | 'pet' | 'detected') {
     return state === 'detected' && inverse ? ATR_INVERSE : 0;
 }
 
-// Part of C display.c:show_mon_or_warn(): a located actor replaces
-// remembered invisibility.
+// C display.c:show_mon_or_warn(): a located actor replaces remembered
+// invisibility, then the glyph reaches the map.
 async function showMonsterOrWarning(x: number, y: number, glyph: DisplayGlyph, attr = 0) {
     if (game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible') {
         await unmapObject(x, y);
@@ -2670,10 +2674,10 @@ export async function flush_screen(mode?: number) {
     if (mapCursor) display?.setCursor(...mapCursor);
 }
 
-// Part of C display.c:clear_glyph_buffer(): the glyph-buffer reset combined with terminal clearing and message cleanup.
 // ── cls ──
 // C display.c:clear_glyph_buffer(): every cell returns to unexplored, a
-// buffer reset rather than a discovered glyph change.
+// buffer reset rather than a discovered glyph change, combined with the
+// terminal clearing and message cleanup of the port's cls path.
 export async function cls() {
     await flushPendingTopline();
     game.context.botl = true;

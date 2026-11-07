@@ -682,8 +682,7 @@ export function summonEnvironment(monster) {
             return 'cloud of smoke';
     }
 }
-// C mondata.c:give_u_to_m_resistances(): give monster mtmp the same
-// intrinsics the hero has.
+// The hero intrinsic to monster MR_* bit table (mondata.c:res_to_mr()).
 const HERO_RESISTANCES = Object.freeze([
     ['fireResistance', 0x01],
     ['coldResistance', 0x02],
@@ -694,6 +693,8 @@ const HERO_RESISTANCES = Object.freeze([
     ['acidResistance', 0x40],
     ['stoneResistance', 0x80],
 ]);
+// C mondata.c:give_u_to_m_resistances(): give monster mtmp the same
+// intrinsics the hero has, as monster magic-resistance bits.
 export function giveHeroResistancesToMonster(monster, state = game) {
     let inherited = 0;
     for (const [property, bit] of HERO_RESISTANCES) {

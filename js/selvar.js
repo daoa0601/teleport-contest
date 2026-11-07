@@ -731,7 +731,8 @@ const MAP_CHAR_TYPES = {
     B: CROSSWALL,
     w: MATCH_WALL,
 };
-// Part of C nhlua.c:splev_chr2typ(): the map character type table.
+// C nhlua.c:splev_chr2typ(): the map character type table; an unmatched
+// character has no type (C INVALID_TYPE).
 export function mapCharacterType(character) {
     return character === undefined ? undefined : MAP_CHAR_TYPES[character];
 }

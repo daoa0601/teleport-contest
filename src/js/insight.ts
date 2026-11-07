@@ -276,7 +276,16 @@ function autopickupDescription(): string {
     return `on for ${types ? `'${types}'` : 'all types'}${types && game.flags.pickup_thrown !== false ? ' plus thrown' : ''}${exceptions}`;
 }
 
-// Part of C insight.c:status_enlightenment(): the status rows; weapon insight and armor rows are assembled by its caller.
+// C insight.c:status_enlightenment(): the whole Status section — separator,
+// heading, status rows, weapon insight, and armor rows — exactly what C's
+// enlightenment() appends between the characteristics and the remaining
+// attributes.
+function statusEnlightenment(magic: boolean, final: EnlightenmentFinal, killer: string): string[] {
+    return ['', ` ${final ? 'Final ' : ''}Status:`,
+        ...statusEnlightenmentLines(magic, final, killer), ...statusEquipmentLines(final)];
+}
+
+// Part of C insight.c:status_enlightenment(): the status rows; weapon insight and armor rows are assembled by statusEnlightenment().
 // C ref: insight.c status_enlightenment().  These rows are a projection of
 // live trouble/nutrition/load state; their optional length determines every
 // section that follows on the second attributes page.
@@ -832,7 +841,7 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     return lines;
 }
 
-// Part of C insight.c:status_enlightenment(): who the warning sense
+// Part of C insight.c:attributes_enlightenment(): who the warning sense
 // covers, from the warntype mask.
 function warningPeople(mask: number, form: boolean): string {
     if (form && (mask & 0x18) === 0x18) return 'humans and elves';
@@ -915,8 +924,7 @@ export async function enlightenment(
     // expanded status line information, including things which aren't
     // included there due to space considerations; shown for both basic
     // and magic enlightenment
-    lines.push('', ` ${final ? 'Final ' : ''}Status:`,
-        ...statusEnlightenmentLines(magic, final, killer), ...statusEquipmentLines(final));
+    lines.push(...statusEnlightenment(magic, final, killer));
     // remaining attributes; shown for potion,&c or wizard mode and
     // explore mode ^X or end of game disclosure
     if (magic) {
