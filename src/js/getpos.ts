@@ -26,7 +26,7 @@ import {
 } from './wintty.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
-import { visibleCommandKey } from './cmd.js';
+import { visibleCommandKey } from './hacklib.js';
 import { withIndefiniteArticle } from './objnam.js';
 
 import { showDisclosureOverlay } from './windows.js';

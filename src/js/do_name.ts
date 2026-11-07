@@ -25,7 +25,7 @@ import {
     M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND,
     LL_ARTIFACT, LL_CONDUCT, CORPSTAT_FEMALE, MD_PAD_BOGONS,
 } from './const.js';
-import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition, visibleCommandKey } from './cmd.js';
+import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition } from './cmd.js';
 import { OBJ_DESCR } from './o_init.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { renameDiscoveredType, recordObjectEncounter, rememberType, objectTypeKnown } from './o_init.js';
@@ -56,7 +56,7 @@ import { cansee } from './vision.js';
 import { priestName } from './priest.js';
 import { shopkeeperName } from './shknam.js';
 import { rankOf, roleSwitch } from './botl.js';
-import { possessiveName, upstart } from './hacklib.js';
+import { possessiveName, upstart, visibleCommandKey } from './hacklib.js';
 import {
     monsterPossessive, monsterPronounGender, monsterSubjectPronoun, monsterHasProperName, monsterIsAnimal,
     monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider,

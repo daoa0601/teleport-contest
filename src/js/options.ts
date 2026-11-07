@@ -55,7 +55,7 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { mungSpaces, fuzzyMatch } from './hacklib.js';
+import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf } from './hacklib.js';
 
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
@@ -324,8 +324,7 @@ interface OptionMatch extends OptionTableEntry {
     viaAlias: boolean;
 }
 
-// C hacklib.c:lowc(): ASCII lowercasing of one byte.
-const asciiLower = (code: number): number => code >= 65 && code <= 90 ? code + 32 : code;
+
 
 // C options.c:determine_ambiguities(): minmatch is one past the longest
 // common case-insensitive prefix with any other option name, clamped to
@@ -358,15 +357,7 @@ const OPTION_ENTRIES: readonly OptionTableEntry[] = (() => {
     }));
 })();
 
-// C hacklib.c:strncmpi(): case-insensitive prefix comparison.
-// C hacklib.c lowc()/strncmpi() over a leading run of the element.
-function asciiNameEqual(name: string, element: string, length: number): boolean {
-    if (length > name.length) return false;
-    for (let i = 0; i < length; i++) {
-        if (asciiLower(name.charCodeAt(i)) !== asciiLower(element.charCodeAt(i))) return false;
-    }
-    return true;
-}
+
 
 // C options.c:length_without_val(): the element up to the first ':' or
 // '=' whichever leads, with preceding whitespace excluded.
@@ -405,13 +396,7 @@ export const MENU_KEY_OPTIONS: Record<string, true> = {
     menu_shift_left: true,
 };
 
-// C hacklib.c:str_start_is(): case-insensitive leading-substring test.
-// C hacklib.c str_start_is(name, value, TRUE): the value is a leading
-// substring of the name, case-insensitively; an empty value matches.
-function ciPrefixOf(name: string, value: string): boolean {
-    return value.length <= name.length
-        && name.slice(0, value.length).toLowerCase() === value.toLowerCase();
-}
+
 
 // Part of C options.c:illegal_menu_cmd_key(): the hacklib.c visctrl
 // spelling of a reserved byte.

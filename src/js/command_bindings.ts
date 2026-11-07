@@ -11,6 +11,7 @@ import {
     DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS,
     NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS,
 } from './command_data.js';
+import { uppercase } from './hacklib.js';
 import type { NativeCommand } from './cmd.js';
 
 export interface KeyBinding {
@@ -54,8 +55,7 @@ export function extFuncTabFromFunc(handler: string): NativeCommand {
 const control = (key: number) => key & 0x1f;
 // C global.h:M()
 const meta = (key: number) => key | 0x80;
-// C hacklib.c:highc()
-const uppercase = (key: number) => key >= 97 && key <= 122 ? key - 32 : key;
+
 const WAIT_COMMAND = commandNamed('wait');
 if (!WAIT_COMMAND) throw new Error('The native command table must define wait.');
 const SPACE_WAIT: NativeCommand = { ...WAIT_COMMAND, key: 32 };

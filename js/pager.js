@@ -14,7 +14,7 @@ import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.
 import { surfaceName } from './dungeon.js';
 import { trapName } from './trap.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, visibleCommandKey, promptDirection, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
+import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, promptDirection, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { getLine, promptYesNo } from './query.js';
 import { selectMapPosition } from './getpos.js';
@@ -29,7 +29,7 @@ import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { CmapSymbol, cmapToGlyph, glyphIsCmapC, glyphIsCmapZap, glyphToWarning } from './glyph_numbers.js';
 import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonsterName } from './do_name.js';
-import { dist2 } from './hacklib.js';
+import { dist2, visibleCommandKey } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { cansee, couldsee } from './vision.js';

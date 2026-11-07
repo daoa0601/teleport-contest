@@ -8,6 +8,7 @@
 // gstate -> game_state cycle that dies at import time with
 // "Cannot access 'CommandBindings' before initialization" (verified).
 import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS, } from './command_data.js';
+import { uppercase } from './hacklib.js';
 const MOVEMENT_DELTAS = [
     [-1, 0, 0], [-1, -1, 0], [0, -1, 0], [1, -1, 0],
     [1, 0, 0], [1, 1, 0], [0, 1, 0], [-1, 1, 0],
@@ -27,8 +28,6 @@ export function extFuncTabFromFunc(handler) {
 const control = (key) => key & 0x1f;
 // C global.h:M()
 const meta = (key) => key | 0x80;
-// C hacklib.c:highc()
-const uppercase = (key) => key >= 97 && key <= 122 ? key - 32 : key;
 const WAIT_COMMAND = commandNamed('wait');
 if (!WAIT_COMMAND)
     throw new Error('The native command table must define wait.');
