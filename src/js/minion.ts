@@ -3,7 +3,7 @@
 // bribe(), lose_guardian_angel(), and gain_guardian_angel().
 
 import type { Monster, MinionData } from './monster_types.js';
-import type { PlayingGameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import { artifactById } from './artifact.js';
 import { deityName } from './pray.js';
 import { A_CHA, A_NONE, FAINTED, In_endgame, In_hell, LL_UMONST, MM_ADJACENTOK, MM_EMIN, MM_NOMSG, NON_PM, RLOC_MSG, STRAT_APPEARMSG, W_ARMS } from './const.js';
@@ -326,8 +326,8 @@ function summonEnvironment(monster: Monster): string {
 }
 
 // C minion.c:monster_census():
-export function monsterCensus(spotted = false): number {
-    return requireGameLevel().monsters.filter(monster => monster.mhp > 0
+export function monsterCensus(spotted = false, state: GameState = game): number {
+    return requireGameLevel(state).monsters.filter(monster => !monster.dead && monster.mhp > 0
         && !(monster.isgd && monster.mx === 0)
         && (!spotted || canSpotMonster(monster))).length;
 }

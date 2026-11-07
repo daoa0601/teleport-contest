@@ -296,8 +296,8 @@ function summonEnvironment(monster) {
     }
 }
 // C minion.c:monster_census():
-export function monsterCensus(spotted = false) {
-    return requireGameLevel().monsters.filter(monster => monster.mhp > 0
+export function monsterCensus(spotted = false, state = game) {
+    return requireGameLevel(state).monsters.filter(monster => !monster.dead && monster.mhp > 0
         && !(monster.isgd && monster.mx === 0)
         && (!spotted || canSpotMonster(monster))).length;
 }
