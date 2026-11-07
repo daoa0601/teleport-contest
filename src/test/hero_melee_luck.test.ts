@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { LUCKSTONE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { HORN_OF_PLENTY } from '../js/object_data.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';

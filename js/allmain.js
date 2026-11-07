@@ -13,7 +13,7 @@ import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './s
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
 import { gethungry, eatfood } from './eat.js';
-import { makeBlinded, makeStunned } from './potion.js';
+import { makeBlinded, makeStunned, setPropertyTimeout } from './potion.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { recordRandom } from './monster_action_types.js';
@@ -92,7 +92,7 @@ import { monsterAlignmentType } from './priest.js';
 import { movebubbles } from './mkmaze.js';
 import { removeObjectAndContentsFromBill, currentShopResident, fixShopDamage } from './shk.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
-import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout } from './properties.js';
+import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty } from './properties.js';
 import { nhTimeout } from './timeout.js';
 // Port only: raw map-display cell writer for the legacy screen (C draws the
 // intro through window putstr calls).

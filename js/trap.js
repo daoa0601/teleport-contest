@@ -48,7 +48,7 @@ import { billDummyObject, mksobj, objectWeight, unlinkObject, mkcorpstat, rndmon
 import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt, liquidForHole, } from './dig.js';
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
 import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid } from './do.js';
-import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, setPropertyTimeout, } from './properties.js';
+import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
@@ -64,7 +64,7 @@ import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster, makeHallucinated, makeStunned, } from './potion.js';
+import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster, makeHallucinated, makeStunned, setPropertyTimeout, } from './potion.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';

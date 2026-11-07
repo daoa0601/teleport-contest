@@ -6,7 +6,7 @@ import { flushPendingTopline } from '../js/topl.js';
 import { gameLogEvents } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { startLuaCore } from './support/lua-game.js';

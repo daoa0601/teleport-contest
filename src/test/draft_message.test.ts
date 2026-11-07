@@ -5,7 +5,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { WAN_PROBING } from '../js/object_data.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { zapMapAt } from '../js/zap.js';

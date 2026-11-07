@@ -17,7 +17,8 @@ import {
     DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION,
     RING_MAIL, SMALL_SHIELD, TOWEL, TWO_HANDED_SWORD, WATER_WALKING_BOOTS,
 } from '../js/object_data.js';
-import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
+import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { objectTypeKnown } from '../js/o_init.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

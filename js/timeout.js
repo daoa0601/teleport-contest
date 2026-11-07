@@ -8,7 +8,7 @@
 // timeout_luck.js, and timeout_body.js.
 import { castMonsterSpellRay } from './breath_ray.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
-import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, } from './potion.js';
+import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, setPropertyTimeout, } from './potion.js';
 import { clearHeroStrangulation } from './do_wear.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle, } from './objnam.js';
 import { advanceSpellProtection } from './spell.js';
@@ -18,7 +18,7 @@ import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } fro
 import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt, finishHeroMonsterKill, } from './mon.js';
 import { deferredDecor } from './pickup.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
-import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removeIntrinsicProperty, setPropertyTimeout, } from './properties.js';
+import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removeIntrinsicProperty, } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { healHeroLegs } from './do.js';
 import { isPoolAt, isIceAt, isPoolOrLavaAt } from './dbridge.js';

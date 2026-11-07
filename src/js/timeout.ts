@@ -13,7 +13,7 @@ import type { CorpseRevivalTimerEvent } from './do.js';
 import {
     clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming,
     heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf,
-    setSlipperyHands,
+    setSlipperyHands, setPropertyTimeout,
 } from './potion.js';
 import { clearHeroStrangulation } from './do_wear.js';
 import {
@@ -34,7 +34,7 @@ import { d, rnd, rn1, rn2 } from './rng.js';
 import {
     hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty,
     propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty,
-    removeIntrinsicProperty, setPropertyTimeout,
+    removeIntrinsicProperty,
 } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { healHeroLegs } from './do.js';

@@ -56,7 +56,7 @@ import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject } from './a
 import type { ArtifactDefenseQuery } from './artifact.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explode.js';
-import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
+import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm, setPropertyTimeout } from './potion.js';
 import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import type { MonsterDeathOptions, MonsterLiquidDeathContext, HeroMonsterKillOptions, ReleaseHeroOptions } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
@@ -118,7 +118,7 @@ import { releaseAllMonsterLeashes } from './apply.js';
 import type { MapLocation } from './map_types.js';
 import { dismountHero } from './steed.js';
 import { encumber_msg } from './pickup.js';
-import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty } from './properties.js';
 import { stopHeroOccupation } from './allmain.js';
 
 // Local copies of the C mondata.h flags and permonst indices the attack

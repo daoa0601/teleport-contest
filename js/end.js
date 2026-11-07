@@ -7,9 +7,9 @@ import { objectClassForType, objectBaseCost, AMULET_OF_LIFE_SAVING, BAG_OF_TRICK
 import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
 import { encumber_msg, observeQuantumCat } from './pickup.js';
-import { cureHeroSickness } from './potion.js';
+import { cureHeroSickness, setPropertyTimeout } from './potion.js';
 import { parseDisclosureSettings } from './message_types.js';
-import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { removeIntrinsicProperty } from './properties.js';
 import { endmultishot } from './dothrow.js';
 import { BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BASICENLIGHTENMENT, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, MAGICENLIGHTENMENT, PANICKED, PICK_ONE, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd, LL_CONDUCT, } from './const.js';
 import { isok, setMulti, paranoidQuery } from './cmd.js';

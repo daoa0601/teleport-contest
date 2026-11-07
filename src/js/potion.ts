@@ -45,7 +45,8 @@ import {
     FACE, HEAD, HAND, LEG, LL_CONDUCT,
 } from './const.js';
 import { impossible } from './diagnostics.js';
-import type { PropertyObject, WornPropertySlot } from './property_types.js';
+import type { PropertyObject, WornPropertySlot, PropertyName, PropertyState } from './property_types.js';
+import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
 import type { DipTarget } from './fountain.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible, grantHeroSeeInvisible } from './display.js';
@@ -117,7 +118,7 @@ import {
     formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, recordGameLogEvent,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty } from './properties.js';
 import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, updateUnpaidObjectPrice, deleteObject } from './shk.js';
@@ -162,6 +163,19 @@ interface MentalStatusOptions {
 
 interface HallucinationOptions extends MentalStatusOptions {
     resistanceSource?: { object: PropertyObject; slot: WornPropertySlot } | null;
+}
+
+// C potion.c:set_itimeout(): generic property timeout write.
+// C set_itimeout() changes only TIMEOUT, leaving all permanent and extrinsic
+// sources intact. Display, landing, and status messages belong to effect owners.
+export function setPropertyTimeout(
+    property: PropertyName, turns: number, state: PropertyState = game,
+): number {
+    if (!Number.isFinite(turns)) throw new RangeError(`Invalid ${property} timeout ${turns}`);
+    const timeout = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
+    state.u[PROPERTY_TIMEOUT_FIELDS[property]] = timeout;
+    refreshProperty(property, state);
+    return timeout;
 }
 
 // C potion.c:make_confused().

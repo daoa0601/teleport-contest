@@ -31,8 +31,8 @@ import {
     hasIntrinsicProperty,
     propertyIsActive,
     propertyTimeout,
-    setPropertyTimeout,
 } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { addInventoryObject, untimedCorpse } from './support/game-objects.js';

@@ -159,7 +159,7 @@ import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid } 
 import {
     hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord,
     propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill,
-    grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, setPropertyTimeout,
+    grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty,
 } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -188,7 +188,7 @@ import type { HeroHurtleOptions } from './dothrow.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import {
     splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster,
-    makeHallucinated, makeStunned,
+    makeHallucinated, makeStunned, setPropertyTimeout,
 } from './potion.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';

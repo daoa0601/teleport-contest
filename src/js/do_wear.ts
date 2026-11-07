@@ -64,7 +64,7 @@ import type { MenuUnderlay } from './wintty.js';
 import { yn_function } from './cmd.js';
 import { objectOwnershipPrefix } from './shk.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, isEyesOfTheOverworld, syncBlindness } from './senses.js';
-import { makeHallucinated, setSlipperyHands, showInvisibilityMessage, toggleBlindness } from './potion.js';
+import { makeHallucinated, setSlipperyHands, showInvisibilityMessage, toggleBlindness, setPropertyTimeout } from './potion.js';
 import { newsym, see_monsters, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, refreshInvisibleMonsters } from './display.js';
 import { objectResistsDestruction } from './zap.js';
 import {
@@ -84,7 +84,7 @@ import type { AttributeIndex } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName, objectMonsterName } from './do_name.js';
-import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
+import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty } from './properties.js';
 import {
     monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious,
     monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid,

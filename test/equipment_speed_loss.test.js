@@ -6,7 +6,8 @@ import { stopDonning } from '../js/do_wear.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
-import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('speed boots announce slowing to intrinsic speed when taken off', async () => {

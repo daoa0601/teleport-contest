@@ -7,7 +7,8 @@ import { flushPendingTopline } from '../js/topl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
-import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from '../js/properties.js';
+import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

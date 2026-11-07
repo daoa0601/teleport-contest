@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
 void test('the billionth world turn ends in escape before property timeouts', async () => {

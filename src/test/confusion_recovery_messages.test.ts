@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { setPropertyTimeout, propertyTimeout } from '../js/properties.js';
+import { propertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 

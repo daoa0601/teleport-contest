@@ -8,7 +8,7 @@ import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import { mhitm_adtyping } from '../js/uhitm.js';
 import { monsterName } from '../js/do_name.js';
 import { GAUNTLETS_OF_POWER, LEATHER_ARMOR, LEATHER_GLOVES, OBJECT_NAMES } from '../js/object_data.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { initRng } from '../js/rng.js';
 import { loadScoreRecords } from '../js/topten.js';
 import { addInventoryObject } from './support/game-objects.js';

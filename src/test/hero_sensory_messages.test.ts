@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { dotrap, maketrap } from '../js/trap.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterDoorPassage } from '../js/monmove.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { nhTimeout, putHeroToSleep } from '../js/timeout.js';
 import { vision_recalc } from '../js/vision.js';

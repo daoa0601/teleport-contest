@@ -3,7 +3,7 @@
 import { RANDOM_CLASS, WEAPON_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectPropertyName, oc_nutrition, objectDelay, objectCharged, objectUnique, AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, BEARTRAP, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION, } from './object_data.js';
 import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, fleshPetrifies, formCanBecomeStoneGolem, heroResistsStoning, heroWouldPetrifyFromFlesh, } from './mondata.js';
-import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting, } from './potion.js';
+import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting, setPropertyTimeout, } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName, heroIsStrangled } from './do_wear.js';
 import { stopHeroOccupation } from './allmain.js';
@@ -50,7 +50,7 @@ import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge }
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import { pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation, recordGameLogEvent, formatFeltMessage, publishHeardMessage, } from './pline.js';
 import { altarWrath } from './pray.js';
-import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty } from './properties.js';
 import { unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { d, rn1, rn2, rnd } from './rng.js';

@@ -12,9 +12,9 @@ import {
 import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
 import { encumber_msg, observeQuantumCat } from './pickup.js';
-import { cureHeroSickness } from './potion.js';
+import { cureHeroSickness, setPropertyTimeout } from './potion.js';
 import { parseDisclosureSettings } from './message_types.js';
-import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { removeIntrinsicProperty } from './properties.js';
 import { endmultishot } from './dothrow.js';
 import {
     BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum,

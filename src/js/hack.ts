@@ -47,7 +47,7 @@ import { removeWornHeroItem, finishDelayedArmorTheft } from './steal.js';
 import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
-import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming } from './potion.js';
+import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming, setPropertyTimeout } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData, monsterTypeName } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
@@ -85,7 +85,7 @@ import {
 } from './dungeon.js';
 
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
-import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty, grantWornProperty, removeWornProperty, setPropertyFloatBlocked } from './properties.js';
+import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty, grantWornProperty, removeWornProperty, setPropertyFloatBlocked } from './properties.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

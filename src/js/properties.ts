@@ -20,19 +20,6 @@ export function propertyTimeout(property: PropertyName, state: PropertyState = g
     return state.u[PROPERTY_TIMEOUT_FIELDS[property]] ?? 0;
 }
 
-// C potion.c:set_itimeout(): generic property timeout write.
-// C set_itimeout() changes only TIMEOUT, leaving all permanent and extrinsic
-// sources intact. Display, landing, and status messages belong to effect owners.
-export function setPropertyTimeout(
-    property: PropertyName, turns: number, state: PropertyState = game,
-): number {
-    if (!Number.isFinite(turns)) throw new RangeError(`Invalid ${property} timeout ${turns}`);
-    const timeout = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
-    state.u[PROPERTY_TIMEOUT_FIELDS[property]] = timeout;
-    refreshProperty(property, state);
-    return timeout;
-}
-
 // Port only: lazily creates the property-source record.
 function propertyRecord(property: PropertyName, state: PropertyState = game): PropertySources {
     const hero = state.u;

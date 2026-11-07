@@ -22,7 +22,7 @@ import {
 import {
     setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused,
     makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages,
-    heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting,
+    heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting, setPropertyTimeout,
 } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName, heroIsStrangled } from './do_wear.js';
@@ -93,7 +93,7 @@ import {
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { altarWrath } from './pray.js';
-import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty } from './properties.js';
 import type { PropertyName } from './property_types.js';
 import { unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';

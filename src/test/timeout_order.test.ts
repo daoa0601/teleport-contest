@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { OIL_LAMP } from '../js/object_data.js';
 import { startHeroSliming } from '../js/potion.js';
