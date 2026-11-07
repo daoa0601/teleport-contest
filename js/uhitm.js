@@ -61,7 +61,7 @@ import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTE
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
 import { munslime, munstone } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
-import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
+import { greatestErosion, isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
 import { captureHeroProjectileName, corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle, } from './objnam.js';
 import { stopHeroOccupation } from './allmain.js';
 import { objectAtMonsterDescription } from './pager.js';
@@ -73,7 +73,7 @@ import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { paranoidQuery } from './cmd.js';
 import { capitalizedDefiniteName } from './objnam.js';
-import { rayHitMessage } from './zap.js';
+import { exclam, rayHitMessage } from './zap.js';
 import { ureflects, heroReflectsRay } from './muse.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -113,7 +113,9 @@ function continueResult(damage) {
 const DISGUISE_TYPES = new Set([
     M_AP_OBJECT, M_AP_FURNITURE, M_AP_MONSTER,
 ]);
-// Port only: read the hero's runtime blindness flags and timeout.
+// Part of C uhitm.c:attack_checks(): the Blind gate, read from the runtime
+// blind aliases (game.blind, hero blind, blindTurns) rather than the
+// property records senses.ts re-derives.
 function heroIsBlindFromState(state) {
     return !!(state.blind || state.u?.blind || (state.u?.blindTurns ?? 0) > 0);
 }
@@ -123,11 +125,6 @@ function heroIsImpaired(state) {
     return !!(hero?.confused || (hero?.confusionTurns ?? 0) > 0
         || heroIsHallucinating(state)
         || hero?.stunned || (hero?.stunnedTurns ?? 0) > 0);
-}
-// Port only: read the runtime shapechanger-protection aliases.
-function shapechangerProtection(state) {
-    return !!(state.u?.protectionFromShapeChangers
-        || state.protectionFromShapeChangers);
 }
 // Part of C uhitm.c:attack_checks(): inspect warning and invisible markers at the struck square.
 function targetGlyphState(at, state) {
@@ -140,15 +137,8 @@ function targetGlyphState(at, state) {
 // Part of C uhitm.c:attack_checks(): test an appearance not blocked by shapechanger protection.
 function hasUnrevealedAppearance(monster, state) {
     return DISGUISE_TYPES.has(M_AP_TYPE(monster))
-        && !shapechangerProtection(state);
-}
-// Port only: adapt the shared hiding-under predicate to a monster record.
-function hidesUnder(monster) {
-    return monsterHidesUnder(monster?.mnum);
-}
-// Port only: adapt the shared eel predicate to a monster record.
-function isEel(monster) {
-    return monsterIsEel(monster?.mnum);
+        && !(state.u?.protectionFromShapeChangers
+            || state.protectionFromShapeChangers);
 }
 // Part of C uhitm.c:attack_checks(): find an adhering attack for unseen mimic contact.
 // C dmgtype(mtmp->data, AD_STCK): any attack of the species adheres.
@@ -207,7 +197,7 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
     const unrevealedAppearance = hasUnrevealedAppearance(monster, state);
     const spotted = canSpotMonster(monster);
     const hiddenUnderVisibleCover = !heroIsBlindFromState(state)
-        && monster.mundetected && hidesUnder(monster);
+        && monster.mundetected && monsterHidesUnder(monster.mnum);
     if (!spotted && !glyph.warning && !glyph.invisible
         && !hiddenUnderVisibleCover) {
         await plineWithContinuation("Wait!  There's something there you can't see!");
@@ -232,7 +222,7 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
     }
     if (monster.mundetected
         && !canSeeMonster(monster)
-        && !glyph.warning && (hidesUnder(monster) || isEel(monster))) {
+        && !glyph.warning && (monsterHidesUnder(monster.mnum) || monsterIsEel(monster.mnum))) {
         monster.mundetected = 0;
         monster.msleeping = 0;
         await newsym(monster.mx, monster.my);
@@ -630,11 +620,12 @@ function heroAttackInterrupted(mortality) {
     return !!game.program_state.gameover || (game.multi ?? 0) < 0
         || (game._helplessTurns ?? 0) > 0 || (game.u.umortality ?? 0) > mortality;
 }
-// Port only: read the runtime primary-weapon aliases.
+// C decl.h uwep: the hero's primary weapon (the runtime keeps game-level
+// and hero-level aliases).
 function primaryWeapon() {
     return game.uwep || game.u.uwep || null;
 }
-// Port only: read the runtime secondary-weapon aliases.
+// C decl.h uswapwep: the hero's secondary weapon (dual aliases).
 function secondaryWeapon() {
     return game.uswapwep || game.u.uswapwep || null;
 }
@@ -674,14 +665,15 @@ export async function resolveHeroWeaponHit(monster, x, y, weapon, { attack, hit,
         await cutWorm(monster, x, y, sliceOrChop);
     return { ...result, hit: true };
 }
-// Port only: require an initialized combat skill entry.
+// C skills.h:P_SKILL(): the skill's current proficiency level, validated
+// against the initialized role skill table.
 function requiredHeroSkill(state, skill) {
     const entry = ensureHeroSkills(state)?.[skill];
     if (!entry)
         throw new Error(`Hero combat requires initialized skill ${skill}.`);
     return entry;
 }
-// Port only: read the hero's current bare-handed combat skill.
+// C skills.h P_SKILL(P_BARE_HANDED_COMBAT).
 export function barehandSkill(state = game) {
     return requiredHeroSkill(state, P_BARE_HANDED_COMBAT).skill;
 }
@@ -730,7 +722,9 @@ export async function showBarehandSilverHit(monster, hit, { state = game } = {})
     await plineWithContinuation(spotted
         ? `Your silver ring sears ${target}!` : `${target} is seared!`);
 }
-// Port only: form a possessive noun or pronoun for contact messages.
+// Port only kept: hacklib.ts:possessiveName() (C s_suffix) turns "it" into
+// "its"; this contact subject can be an unseen monster's "it", where the
+// port historically prints "it's", so the two are not interchangeable.
 function possessive(noun) {
     if (noun.toLowerCase() === 'it')
         return `${noun}s`;
@@ -855,11 +849,6 @@ function shatterCandidate(monster, weapon, dieRoll, state) {
         return null;
     const defenderWeapon = monsterWieldedWeapon(monster);
     return defenderWeapon && !isFlimsyObject(defenderWeapon, state) ? defenderWeapon : null;
-}
-// Port only: duplicate the worst-erosion lookup for weapon contact.
-// The full macro port is greatestErosion in object_properties.ts.
-function greatestErosion(weapon) {
-    return Math.max(weapon.oeroded ?? 0, weapon.oeroded2 ?? 0);
 }
 const VEGGY = 3;
 const PAPER = 5;
@@ -1021,18 +1010,22 @@ async function potionContact(monster, object, { state = game, target = { x: mons
 export function objectCanTouchShade(object, state = game) {
     return !!object && (SHADE_AWARE_OBJECTS.has(object.otyp) || objectMaterial(object, state) === SILVER);
 }
-// Port only: recognize consumed runtime object identities.
+// Port only kept: C frees consumed objects; the runtime marks them 'gone'
+// or 'onbill' instead, so consumption is recognized from where.
 function consumedIdentity(object) {
     return object.where === 'gone' || object.where === 'onbill';
 }
-// Port only: compose a minimally named contact object with its owner.
+// C ysimple_name(obj) as the contact messages use it: the minimal
+// "your/the <name>" with the stack pluralized.
 function ownedSimpleName(object, state) {
     const owner = carriedObjectOwner(object, state);
     const name = objectName(object, state, { minimal: true });
     return `${owner === 'Your' || owner === 'The' ? owner.toLowerCase() : owner} ${objectQuantity(object) === 1
         ? name : pluralizeObjectNoun(object, name)}`;
 }
-// Port only: consume a contact object through its current runtime ownership boundary.
+// Part of C uhitm.c:hmon_hitmon_misc_obj()/hmon_hitmon_potion():
+// useup(obj) of the struck contact object, following its current runtime
+// ownership (inventory stack, floor stack, or whole object).
 async function consumeContactObject(object, state, all) {
     if (all) {
         await deleteObject(object, state);
@@ -1289,7 +1282,7 @@ export async function showHeroPhysicalHit(monster, object, { state = game, publi
         const verb = object && (armorSlotFor(object.otyp) === 'uarms' || object.otyp === HEAVY_IRON_BALL)
             ? 'bash' : object && (objectSkill(object.otyp) === P_WHIP || object.otyp === TOWEL && object.spe > 0)
             ? 'lash' : state.urole?.key === 'barbarian' ? 'smite' : 'hit';
-        const punctuation = canSeeMonster(monster) ? damagePunctuation(damage) : '.';
+        const punctuation = canSeeMonster(monster) ? exclam(damage) : '.';
         await publish(`You ${verb} ${monsterName(monster, { state })}${punctuation}`);
     }
     return true;
@@ -1355,11 +1348,6 @@ function searedTarget(monster, originalSpecies, state) {
     const original = { mnum: originalSpecies };
     return monsterIsNoncorporeal(original) || monsterIsAmorphous(original)
         ? name : `${possessiveName(name)} flesh`;
-}
-// Port only: duplicate damage punctuation for physical contact messages.
-// The full native port is exclam in zap.ts.
-function damagePunctuation(damage) {
-    return damage < 0 ? '?' : damage <= 4 ? '.' : '!';
 }
 // ─── C uhitm.c:hmon() aftermath (from hero_hit_aftermath.ts) ───
 // C uhitm.c:hmon(): reactions after the hit and any resulting monster death.
@@ -2462,21 +2450,21 @@ export async function mhitmAdSsex(call) {
 }
 const S_EYE = 5;
 const S_LIGHT = 25;
-// Port only: narrow a shared combat actor to the runtime hero.
-// Shared actor comparison with &gy.youmonst in the uhitm.c effect functions.
+// C uhitm.c compares the actor with &gy.youmonst; the TS type guard keeps
+// the same narrowing for the hero arm of the shared effect functions.
 function isHeroActor(actor, state) {
     return actor === state.u;
 }
-// Port only: read the species of a shared hero or monster combat actor.
-// Shared actor->data lookup; the hero uses u.umonnum (monst.h and you.h).
+// C actor->data: the species of a hero or monster combat actor
+// (youmonst.data is u.umonnum for the hero arm).
 function species(actor, state) {
     if (!isHeroActor(actor, state))
         return actor.mnum;
     requireInitializedHero(actor);
     return actor.umonnum;
 }
-// Port only: read the weapon of a shared hero or monster combat actor.
-// Shared uwep/MON_WEP expression (decl.h and monst.h:MON_WEP).
+// C uwep/MON_WEP: the weapon a shared combat actor wields
+// (state.uwep for &gy.youmonst, monst.h:MON_WEP otherwise).
 function wieldedWeapon(actor, state) {
     return isHeroActor(actor, state) ? state.uwep : monsterWieldedWeapon(actor);
 }
@@ -3970,7 +3958,7 @@ export async function mhitmAdHalu(call) {
         /* mhitm: monster versus monster */
         const { attacker, defender, context } = call;
         const { state, publish, visible } = context;
-        if (!attacker.mcan && hasEyes(defender) && defender.mcansee) {
+        if (!attacker.mcan && monsterHasEyes(defender.mnum) && defender.mcansee) {
             if (visible && canSeeMonster(defender))
                 await publish(`${monsterName(defender, { state, capitalized: true })} looks ${defender.mconf ? 'more ' : ''}confused.`);
             defender.mconf = 1;
@@ -4225,11 +4213,8 @@ export async function applyMonsterCombatBlindness(attacker, defender, attack, { 
     defender.mcansee = 0;
     clearWaiting(defender);
 }
-// Port only: adapt the shared eye predicate to a monster record.
-function hasEyes(monster) {
-    return monsterHasEyes(monster.mnum);
-}
-// Port only: clear the runtime monster's waiting-for-hero strategy bit.
+// C uhitm.c: mdef->mstrategy &= ~STRAT_WAITFORU in the sleep and blind
+// effect arms (uhitm.c:2332, 2357, 2412, 2840).
 function clearWaiting(monster) {
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
 }
@@ -4887,19 +4872,22 @@ async function summonDemonPet(context) {
     exerciseWisdom(true, state);
     return true;
 }
-// Port only: combine a dragon species check with worn scales or scale mail.
+// Part of C uhitm.c:mhitm_ad_dise()/mhitm_ad_slow(): defended()'s worn
+// dragon scales/scale mail term.
 function wearsDragonDefense(monster, species, scales, mail) {
     return speciesIs(monster, species) || (monster.minvent ?? []).some(object => ((object.owornmask ?? 0) & W_ARM) && (object.otyp === scales || object.otyp === mail));
 }
-// Port only: compare a monster's species name with metadata.
+// C mon->data == &mons[PM_X]: the species comparisons of the golem and
+// dragon effect arms.
 function speciesIs(monster, species) {
     return MONSTER_NAME[monster.mnum] === species;
 }
-// Port only: format the natural-attack defender's sentence subject.
+// C Monnam(mdef): the natural-attack defender's capitalized subject.
 function subject(monster, { state }) {
     return monsterName(monster, { state, capitalized: true });
 }
-// Port only: route natural-contact death through the shared hero kill boundary.
+// Part of C uhitm.c:damageum(): route the natural attack's kill through
+// the shared killed() boundary without the announcement hmon adds.
 async function killNaturalTarget(monster, context, options = {}) {
     await finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
         ...options, showKillMessage: false, publish: context.publish,
@@ -5272,8 +5260,7 @@ async function steal_it(monster, context) {
     if (gold)
         await addObjectToMonsterInventory(monster, gold, state);
 }
-// Port only: find the coin stack in a monster's runtime inventory.
-// Shared coin lookup for steal_it and the hero gold-theft effect.
+// C steal.c:findgold(): the monster's coin stack (uhitm.c:steal_it()).
 function monsterGold(monster) {
     return (monster.minvent || monster.inventory || []).find(object => object.oclass === COIN_CLASS) ?? null;
 }
@@ -5926,7 +5913,8 @@ async function applyElectricPassive({ monster, damage, state, publish, die }) {
     });
     return { appliedDamage: damage, heroDied };
 }
-// Port only: route passive damage through the shared monster-damage boundary.
+// Port only kept: adapts the passive die handler into mdamageu()'s death
+// boundary (the injected killer naming is resume plumbing).
 async function damageHero(monster, amount, { state, publish, die }) {
     if (!die)
         return mdamageu(monster, amount, { state, publish });
@@ -5934,7 +5922,8 @@ async function damageHero(monster, amount, { state, publish, die }) {
         state, publish, die: async (victim) => die({ killer: passiveMonsterName(victim) }),
     });
 }
-// Port only: combine runtime hero, equipment and form elemental resistance.
+// C mondata.c:Resists_Elem(): the hero arm — uprops alias, worn items,
+// and the polyform's resist bits.
 function heroResists(state, property, mask) {
     const hero = state.u;
     if (hero[property] || hasWornProperty(property, state))
@@ -5942,11 +5931,13 @@ function heroResists(state, property, mask) {
     const form = heroMonsterForm(state);
     return form != null && ((MONSTER_RESISTS[form] ?? 0) & mask) !== 0;
 }
-// Port only: query combined hero acid resistance.
+// C mondata.c:Resists_Elem(mon, ACID_RES) as passive()'s AD_ACID gate.
 function heroResistsAcid(state) {
     return heroResists(state, 'acidResistance', MR_ACID);
 }
-// Port only: combine runtime hero, equipment and form magic resistance.
+// Port only kept: C uhitm.c:passive()'s AD_MAGM gate reads Antimagic only;
+// this adds the polyform AD_MAGM/baby-gray-dragon terms, so it is not the
+// Antimagic macro and mondata.ts:monsterHasMagicResistance() also differs.
 function heroResistsMagic(state) {
     const hero = state.u;
     if (hero.antimagic
@@ -6010,9 +6001,8 @@ export function passiveDamage(level, attack, rollDice) {
         return rollDice(level + 1, sides);
     return 0;
 }
-// Port only: name a passive attacker for an injected death handler.
-// Renamed from monsterName when passive moved here: uhitm.ts already
-// imports the shared monster namer under that name.
+// Port only kept: names the passive attacker for the injected die handler
+// (the shared monsterName import keeps its own name).
 function passiveMonsterName(monster) {
     return monster.name || monsterTypeName(monster.mnum, !!monster.female);
 }
@@ -6191,7 +6181,8 @@ export function isObjectOrFurnitureMimic(monster, state = game) {
         && !canSenseMonster(monster)
         && glyphAt(monster.mx, monster.my, state)?.kind !== 'warning';
 }
-// Port only: combine an unrevealed mimic check with a closed-door appearance.
+// Part of C lock.c:stumble_on_door_mimic(): m_at(x,y) && is_door_mappear()
+// && !Protection_from_shape_changers.
 export function isDoorMimic(monster, state = game) {
     return isObjectOrFurnitureMimic(monster, state)
         && hasDoorAppearance(monster);
@@ -6202,7 +6193,8 @@ export function hasDoorAppearance(monster) {
     return !!monster && M_AP_TYPE(monster) === M_AP_FURNITURE
         && monster.mappearance !== undefined && CLOSED_DOOR_APPEARANCES.has(monster.mappearance);
 }
-// Port only: reveal and contact an optional unrevealed mimic through the shared owner.
+// Part of C lock.c:stumble_on_door_mimic(): the guarded stumble_onto_mimic()
+// contact (also trap.c:untrap()'s mimic reveal).
 export async function revealMimic(monster, state = game, publish = plineWithContinuation) {
     if (!isObjectOrFurnitureMimic(monster, state))
         return false;
