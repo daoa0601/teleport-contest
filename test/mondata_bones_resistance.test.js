@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { giveHeroResistancesToMonster } from '../js/bones.js';
+import { giveHeroResistancesToMonster } from '../js/mondata.js';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

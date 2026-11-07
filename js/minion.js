@@ -32,7 +32,7 @@ import { selectHandToHandWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './worn.js';
 import { finishSpecialRoamer } from './priest.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { is_lord, is_minion, monsterIsDemon, is_ndemon, is_dlord, is_dprince, } from './mondata.js';
+import { is_lord, is_minion, monsterIsDemon, is_ndemon, is_dlord, is_dprince, summonEnvironment, } from './mondata.js';
 const S_DEMON = 56;
 const G_GONE = 0x03;
 const PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
@@ -265,35 +265,6 @@ function summonedType(monster, alignment) {
         return { mnum: summoned, double: 'minion' };
     }
     return { mnum: null, double: null };
-}
-// C mondata.c:msummon_environ(): the "appears in a <cloud> of <what>"
-// description.
-function summonEnvironment(monster) {
-    if (MONSTER_SYMBOL[monster.mnum] === 27 || MONSTER_SYMBOL[monster.mnum] === 25)
-        return 'flash of light';
-    switch (MONSTER_NAME[monster.mnum] ?? '') {
-        case 'water demon':
-        case 'air elemental':
-        case 'water elemental':
-        case 'fog cloud':
-        case 'ice vortex':
-        case 'freezing sphere':
-            return 'cloud of vapor';
-        case 'steam vortex':
-            return 'cloud of steam';
-        case 'energy vortex':
-        case 'shocking sphere':
-            return 'shower of sparks';
-        case 'earth elemental':
-        case 'dust vortex':
-            return 'cloud of dust';
-        case 'fire elemental':
-        case 'fire vortex':
-        case 'flaming sphere':
-            return 'ball of flame';
-        default:
-            return 'cloud of smoke';
-    }
 }
 // C minion.c:monster_census():
 export function monsterCensus(spotted = false, state = game) {

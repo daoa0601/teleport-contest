@@ -49,6 +49,7 @@ import { monsterCarriesAmulet } from './wizard.js';
 import type { Trap } from './map_types.js';
 import { dist2 } from './hacklib.js';
 import type { Hero } from './hero_types.js';
+import { hasPermanentIntrinsicProperty } from './properties.js';
 
 type SpeciesReference = Pick<Monster, 'mnum'>;
 type ShifterReference = SpeciesReference & Partial<Pick<Monster, 'cham'>>;
@@ -692,6 +693,59 @@ export function monsterFireDescription(monster: Pick<Monster, 'mnum'>, method: A
         return method === AT_HUGS ? 'being roasted' : 'on fire';
     }
 }
+
+// C mondata.c:msummon_environ(): the "appears in a <cloud> of <what>"
+// description.
+export function summonEnvironment(monster: Monster): string {
+    if (MONSTER_SYMBOL[monster.mnum] === 27 || MONSTER_SYMBOL[monster.mnum] === 25)
+        return 'flash of light';
+    switch (MONSTER_NAME[monster.mnum] ?? '') {
+    case 'water demon':
+    case 'air elemental':
+    case 'water elemental':
+    case 'fog cloud':
+    case 'ice vortex':
+    case 'freezing sphere':
+        return 'cloud of vapor';
+    case 'steam vortex':
+        return 'cloud of steam';
+    case 'energy vortex':
+    case 'shocking sphere':
+        return 'shower of sparks';
+    case 'earth elemental':
+    case 'dust vortex':
+        return 'cloud of dust';
+    case 'fire elemental':
+    case 'fire vortex':
+    case 'flaming sphere':
+        return 'ball of flame';
+    default:
+        return 'cloud of smoke';
+    }
+}
+
+// C mondata.c:give_u_to_m_resistances(): give monster mtmp the same
+// intrinsics the hero has.
+const HERO_RESISTANCES = Object.freeze([
+    ['fireResistance', 0x01],
+    ['coldResistance', 0x02],
+    ['sleepResistance', 0x04],
+    ['disintegrationResistance', 0x08],
+    ['shockResistance', 0x10],
+    ['poisonResistance', 0x20],
+    ['acidResistance', 0x40],
+    ['stoneResistance', 0x80],
+] as const);
+
+export function giveHeroResistancesToMonster(monster: Monster, state: GameState = game): number {
+    let inherited = 0;
+    for (const [property, bit] of HERO_RESISTANCES) {
+        if (hasPermanentIntrinsicProperty(property, state)) inherited |= bit;
+    }
+    monster.mintrinsics = (monster.mintrinsics ?? 0) | inherited;
+    return inherited;
+}
+
 
 // C mondata.c:olfaction().  This is a current-form sensory capability, not
 // a blindness check: molds and several other body classes can sense smoke
