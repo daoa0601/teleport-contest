@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LOST_EXPLODING, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { explodeLitOilPotion } from '../js/fire_explosion.js';
+import { explodeLitOilPotion } from '../js/explode.js';
 import { resetInputState } from '../js/input.js';
 import { POT_OIL } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';

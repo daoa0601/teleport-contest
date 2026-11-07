@@ -9,7 +9,7 @@ import { A_INT, M_AP_OBJECT } from '../js/const.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { placeCreatedObject } from '../js/mkobj.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { advanceDisplacementTimeout } from '../js/hero_displacement.js';
+import { advanceDisplacementTimeout } from '../js/do_wear.js';
 import { makeHallucinated } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

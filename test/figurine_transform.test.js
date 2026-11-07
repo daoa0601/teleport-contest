@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { COLNO, G_GENOD, POOL, ROOM, ROWNO, STONE, OBJECT_TIMER_KIND } from '../js/const.js';
-import { finishFigurineTimer, runClaimedFigurineTimer, } from '../js/figurine.js';
+import { finishFigurineTimer, runClaimedFigurineTimer, } from '../js/apply.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishInventoryRemoval } from '../js/invent.js';
 import { pushKey } from '../js/input.js';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POOL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { pickupLocationProblem } from '../js/pickup_location.js';
+import { pickupLocationProblem } from '../js/hack.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 void test('a hero stuck above a pool bottom cannot pick up something', () => {
     const level = freshGameplayRoom({ role: 'tourist' });

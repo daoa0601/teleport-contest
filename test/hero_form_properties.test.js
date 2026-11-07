@@ -5,7 +5,7 @@ import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { NO_MINVENT, PIT, STONE, WEB } from '../js/const.js';
 import { canSeeMonster, canSpotMonster } from '../js/display.js';
-import { createFireExplosion } from '../js/fire_explosion.js';
+import { createFireExplosion } from '../js/explode.js';
 import { game } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/polyself.js';
 import { dotrap } from '../js/trap.js';
