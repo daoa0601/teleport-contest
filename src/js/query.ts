@@ -19,7 +19,7 @@ import { CMDQ_KEY } from './const.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { showChoiceWindow } from './windows.js';
-import { availableExtendedCommands, commandAutocompletes, yn_function } from './cmd.js';
+import { extcmdsMatch, yn_function } from './cmd.js';
 
 export interface LineInputOptions {
     suppressStatus?: boolean;
@@ -200,13 +200,11 @@ export async function promptChoice<Choice extends string>(
 
 
 // C getline.c:ext_cmd_getlin_hook().
-// Also C cmd.c:extcmds_match(): inlined here (the case-insensitive prefix
-// match over autocomplete-eligible commands; the eligibility filter half
-// is availableExtendedCommands()).
+// The base-completion match is cmd.c:extcmds_match(base, ECM_NOFLAGS):
+// prefix match over autocomplete-eligible commands; the eligibility
+// filter half is availableExtendedCommands().
 export function completeExtendedCommand(prefix: string): string | null {
-    const matches = availableExtendedCommands().filter(command =>
-        commandAutocompletes(command)
-        && command.name?.toLowerCase().startsWith(prefix.toLowerCase()));
+    const matches = extcmdsMatch(prefix);
     return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
 

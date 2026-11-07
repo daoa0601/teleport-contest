@@ -722,6 +722,17 @@ interface ScreenDescription {
     needsDetail: boolean;
 }
 
+// C pager.c:is_swallow_sym(): whether the displayed symbol is one of the
+// eight swallow-border symbols, resolved through the displayed symbol set.
+function isSwallowSymbol(appearance: { ch: string; dec?: boolean }): boolean {
+    for (let index = 0; index < 8; index++) {
+        const swallow = swallowSymbolAppearance(index);
+        if (swallow.ch === appearance.ch && !!swallow.dec === !!appearance.dec)
+            return true;
+    }
+    return false;
+}
+
 // Part of C pager.c:do_screen_description(): the symbol-matching pass —
 // every meaning the displayed symbol can carry. add_cmap_descr() is the
 // cmap pass (pool, moat, trap, warning) and append_str() the " or "
@@ -753,7 +764,7 @@ function screenDescription(x: number, y: number): ScreenDescription {
     };
     const sameSymbol = (candidate: { ch: string; dec?: boolean }): boolean =>
         candidate.ch === appearance.ch && !!candidate.dec === !!appearance.dec;
-    if (Array.from({ length: 8 }, (_, index) => swallowSymbolAppearance(index)).some(sameSymbol)) {
+    if (isSwallowSymbol(appearance)) {
         append('the interior of a monster', 'the interior of a monster');
         needLook = true;
     }
@@ -898,12 +909,11 @@ export function farlookDescribesHero(x: number, y: number): boolean {
         && (!game.iflags.terrainmode || !!(game.iflags.terrainmode & TER_MON));
 }
 
-// Part of C pager.c:lookat(): the second branch — C self_lookat() plus
-// lookat()'s "[seen: ...]" suffix naming how an invisible, undetected hero
-// is sensed. Shared by the farlook dispatcher below and the getpos and
-// look-list describers (lookatDescription); it applies regardless of
-// canspotself(), which only the lookat() gate above checks.
-async function sensedSelfDescription(): Promise<string> {
+// C pager.c:self_lookat(): the hero's own description — race with role
+// unless polymorphed, invisibility while blind only when sensed, the
+// mounted/mimicking/hiding clauses, the punishment chain, and the trap
+// predicament.
+async function selfLookat(): Promise<string> {
     const species = game.u.umonnum;
     const polymorphName = heroIsPolymorphed(game) && species !== undefined
         ? monsterTypeName(species, !!game.u.mfemale) : '';
@@ -918,10 +928,22 @@ async function sensedSelfDescription(): Promise<string> {
     const telepathy = unblindTelepathyRange() >= 0;
     const detection = heroDetectsMonsters(game);
     const invisible = propertyIsActive('invisible', game);
-    // self_lookat() includes invisibility while blind only when sensed.
     const prefix = invisible && (!blind || telepathy || detection)
         ? 'invisible ' : '';
-    const description = `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
+    return `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
+}
+
+// Part of C pager.c:lookat(): the second branch — self_lookat() plus
+// lookat()'s "[seen: ...]" suffix naming how an invisible, undetected hero
+// is sensed. Shared by the farlook dispatcher below and the getpos and
+// look-list describers (lookatDescription); it applies regardless of
+// canspotself(), which only the lookat() gate above checks.
+async function sensedSelfDescription(): Promise<string> {
+    const description = await selfLookat();
+    const blind = heroIsBlind(game);
+    const telepathy = unblindTelepathyRange() >= 0;
+    const detection = heroDetectsMonsters(game);
+    const invisible = propertyIsActive('invisible', game);
     const unseen = invisible && !game.u.seeInvisible
         && (game.u.seeInvisibleTurns ?? 0) === 0;
     // lookat() treats touch while blind or swallowed as normal vision.

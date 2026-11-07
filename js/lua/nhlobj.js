@@ -68,7 +68,8 @@ function object(value) {
     return item && item.where !== 'gone' ? item : null;
 }
 // Part of C nhlobj.c:l_obj_timer_start()/l_obj_timer_stop(): the timer
-// name to TIMER_KIND mapping.
+// name to TIMER_KIND mapping, through nhlua.c:nhl_get_timertype()'s
+// luaL_checkoption() table.
 function timerKind(name) {
     if (typeof name !== 'string' || !TIMER_KINDS.has(name))
         throw new TypeError(`Unknown object timer: ${name}`);
@@ -235,6 +236,8 @@ export function createObjectApi(state = game) {
             const [timer] = stopTimers(item, timerKind(name), state);
             return timer ? timer.deadline - state.moves : 0;
         },
+        // C nhlobj.c:l_obj_timer_start(): replace an existing timer of the
+        // kind and schedule it `when` turns ahead.
         start_timer: (value, name, timeout) => {
             const kind = timerKind(name), when = luaInteger(timeout);
             const item = object(value);

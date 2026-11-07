@@ -3728,6 +3728,9 @@ function sp_level_coder_init() {
                     throw new NethackLuaError('level_difficulty should not have any args');
                 return level_difficulty();
             },
+            // C nhlua.c:nhl_timer_start_at(): register a level timer at a
+            // map position; only melt-ice is a position timer
+            // (timer_is_pos()).
             start_timer_at: (...args) => {
                 // nhl_get_timertype() takes luaL_checkoption over every
                 // timeout_funcs entry at stack index -2, so a bad name is

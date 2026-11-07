@@ -321,11 +321,15 @@ export function shrinePosition(room) {
         y++;
     return { x, y };
 }
-// Part of C mkroom.c:mktemple(): the temple construction after the caller has selected a room.
-// C ref: mkroom.c mktemple().  Unlike zoo-family rooms, a temple is fully
-// constructed at selection time; ordinary-room filling must observe both its
-// changed room type and its resident priest.
-async function makeRandomTemple(room) {
+// C mkroom.c:mktemple(): pick an ordinary room and build the temple:
+// a blessed-shrine altar in the room's center with its resident priest.
+// Unlike zoo-family rooms, a temple is fully constructed at selection
+// time; ordinary-room filling must observe both its changed room type and
+// its resident priest.
+async function mkTemple() {
+    const room = pickSpecialRoom(true);
+    if (!room)
+        return false;
     const level = requireGameLevel();
     room.rtype = TEMPLE;
     const shrine = shrinePosition(room);
@@ -340,16 +344,17 @@ async function makeRandomTemple(room) {
     level.flags.has_temple = true;
     return true;
 }
-// Part of C mkroom.c:do_mkroom(), mkroom.c:mkzoo(): the special-room type
-// dispatch and the rtype-with-needfill marking.
+// C mkroom.c:mkzoo(): pick a room, set its type, and leave it to be
+// stocked by ordinary filling at the end of makelevel(); merged into
+// do_mkroom()'s type dispatch, which C routes through mkzoo().
 export async function markRandomSpecialRoom(roomType) {
     if (roomType === SWAMP)
         return makeSwamps();
-    const room = pickSpecialRoom(roomType === TEMPLE);
+    if (roomType === TEMPLE)
+        return mkTemple();
+    const room = pickSpecialRoom(false);
     if (!room)
         return false;
-    if (roomType === TEMPLE)
-        return makeRandomTemple(room);
     room.rtype = roomType;
     room.needfill = FILL_NORMAL;
     return true;

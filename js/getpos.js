@@ -1,6 +1,6 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
+import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_EXPLORE, GLOC_INTERESTING, GLOC_MONS, GLOC_OBJS, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
 import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './topl.js';
 import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph, TemporaryMapEffect } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -52,15 +52,28 @@ export function isGetposFeatureSymbol(ch, symset = '') {
     return /^DECgraphics$/i.test(symset ?? '')
         && DEC_GETPOS_FEATURE_SYMBOLS.has(ch);
 }
-// Part of C getpos.c:gather_locs_interesting(): the door and interesting-terrain predicates used by #lookaround.
-// A diagonal which crosses a map edge loses the same amount of movement on
-// its other axis.  Clamping each axis separately would slide along the edge.
-// C getpos.c:gather_locs_interesting().  #lookaround forces GFILTER_VIEW
-// before scanning, so the GFILTER_AREA flood-fill branch is unreachable here.
+// C getpos.c:gather_locs_interesting(): one target-kind test over the
+// displayed glyph — monsters (minus long worm tails and warning signs),
+// objects (minus boulder and rock), doors, unexplored floor beside an
+// unseen square, and the interesting-everything else.  C's GFILTER_AREA
+// branch runs in this port's gatherValidLocations() (C gather_locs());
+// #lookaround forces GFILTER_VIEW before scanning, and every other caller
+// filters in view as well.  The getpos cycle keys reach these tests
+// through matchesGetposCycle(); GLOC_VALID's getpos_getvalid hook stays at
+// its call site, as in C.
 export function gatherLocsInteresting(x, y, gloc) {
     if (game.iflags.getloc_filter === GFILTER_VIEW && !cansee(x, y))
         return false;
     const glyph = glyphAt(x, y);
+    if (gloc === GLOC_MONS)
+        // unlike '/M', this skips monsters revealed by warning glyphs and
+        // remembered unseen ones
+        return glyph?.kind === 'monster'
+            && glyph.mnum !== MONSTER_NAME.indexOf('long worm tail');
+    if (gloc === GLOC_OBJS)
+        return glyph?.kind === 'object'
+            && glyph.glyph !== GlyphOffset.object + BOULDER
+            && glyph.glyph !== GlyphOffset.object + ROCK;
     const symbol = glyph ? glyphToCmapSymbol(glyph.glyph) : null;
     if (gloc === GLOC_DOOR)
         // C is_cmap_door(), is_cmap_drawbridge(), plus S_ndoor.
@@ -68,6 +81,20 @@ export function gatherLocsInteresting(x, y, gloc) {
             && (symbol >= CmapSymbol.vodoor && symbol <= CmapSymbol.hcdoor
                 || symbol >= CmapSymbol.vodbridge && symbol <= CmapSymbol.hcdbridge
                 || symbol === CmapSymbol.ndoor);
+    if (gloc === GLOC_EXPLORE) {
+        // C requires glyph_is_cmap() and !glyph_is_nothing().
+        if (symbol === null || glyph?.kind === 'nothing')
+            return false;
+        const floor = gatherLocsInteresting(x, y, GLOC_DOOR)
+            || symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
+            || symbol >= CmapSymbol.corr && symbol <= CmapSymbol.litcorr;
+        const offsets = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        return floor && offsets.some(([dx, dy]) => {
+            const adjacent = game.level?.at(x + dx, y + dy);
+            return !!adjacent && !adjacent.seenv && (!adjacent.remembered_glyph
+                || adjacent.remembered_glyph.kind === 'unexplored');
+        });
+    }
     // GLOC_INTERESTING
     if (gatherLocsInteresting(x, y, GLOC_DOOR))
         return true;
@@ -543,36 +570,14 @@ function getposCycleKind(key) {
     }
     return null;
 }
-// Part of C getpos.c:gather_locs_interesting(): the per-kind GLOC_ tests
-// (mon, obj, door, unexplored beside an unseen square).
+// Part of C getpos.c:gather_locs_interesting(): the getpos cycle kinds
+// ('m', 'o', 'd', 'x', 'a') mapped onto C's GLOC_ tests.
 function matchesGetposCycle(kind, x, y) {
-    const glyph = glyphAt(x, y);
-    if (kind === 'mon')
-        return glyph?.kind === 'monster'
-            && glyph.mnum !== MONSTER_NAME.indexOf('long worm tail');
-    if (kind === 'obj')
-        return glyph?.kind === 'object'
-            && glyph.glyph !== GlyphOffset.object + BOULDER && glyph.glyph !== GlyphOffset.object + ROCK;
-    const terrain = glyph?.kind === 'terrain' ? glyph.terrainName : null;
-    const door = terrain && (terrain.includes('door') || terrain.includes('drawbridge'));
-    if (kind === 'door')
-        return !!door;
-    if (kind === 'unexplored') {
-        const floor = door || (terrain !== null && ['floor of a room', 'dark part of a room', 'corridor', 'lit corridor'].includes(terrain));
-        const offsets = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-        return !!floor && offsets.some(([dx, dy]) => {
-            const adjacent = game.level?.at(x + dx, y + dy);
-            return !!adjacent && !adjacent.seenv && (!adjacent.remembered_glyph
-                || adjacent.remembered_glyph.kind === 'unexplored');
-        });
-    }
-    if (door || knownVibratingSquareAt(x, y, game))
-        return true;
-    if (!glyph || ['nothing', 'unexplored'].includes(glyph.kind))
-        return false;
-    return terrain === null || !['wall', 'stone', 'tree', 'iron bars', 'ice', 'air', 'cloud',
-        'water', 'molten lava', 'wall of lava', 'floor of a room',
-        'dark part of a room', 'corridor', 'lit corridor'].includes(terrain);
+    return gatherLocsInteresting(x, y, kind === 'mon' ? GLOC_MONS
+        : kind === 'obj' ? GLOC_OBJS
+            : kind === 'door' ? GLOC_DOOR
+                : kind === 'unexplored' ? GLOC_EXPLORE
+                    : GLOC_INTERESTING);
 }
 // Part of C cmd.c:dotravel(): its menu_requested branch — getpos_menu(&cc,
 // GLOC_INTERESTING) with GFILTER_VIEW, gathering only visible spots, then
