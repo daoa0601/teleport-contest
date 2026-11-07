@@ -133,7 +133,8 @@ import {
     triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds,
     teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth,
 } from './teleport.js';
-import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
+import { countLevelFeatures, makemonNear } from './mklev.js';
+import { canFallThrough } from './dungeon.js';
 import {
     displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName,
     monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName,

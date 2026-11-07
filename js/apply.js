@@ -53,7 +53,6 @@ import { finishTeleportArrival, askTeleportDestination, distanceToHero, enexto, 
 import { pickLock } from './lock.js';
 import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { canDigDown } from './mklev.js';
 import { billDummyObject, mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object, } from './mkobj.js';
 import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsRider, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow, } from './mondata.js';
 import { wakeAttackedMonster } from './mon.js';
@@ -75,7 +74,7 @@ import { castSpell, knownSpell } from './spell.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle, strikeSteed } from './steed.js';
 import { handlesPetrifyingCorpseBareHanded, heroIsPetrifying, petrifyFromCorpseContact } from './stoning.js';
-import { ceilingName, surfaceName } from './dungeon.js';
+import { ceilingName, surfaceName, canDigDown } from './dungeon.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { summonUndead } from './undead_summoning.js';
 import { summonVaultGuardSoon } from './vault.js';

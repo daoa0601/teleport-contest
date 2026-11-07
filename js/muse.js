@@ -47,7 +47,7 @@ import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibilit
 import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon.js';
 import { makePlural, verbForSubject, withIndefiniteArticle, definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile } from './mkobj.js';
-import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel, ceilingName, surfaceName } from './dungeon.js';
+import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel, ceilingName, surfaceName, canDigDown, canFallThrough } from './dungeon.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './worn.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
@@ -65,7 +65,6 @@ import { rayHitMessage, rayMissMessage } from './zap.js';
 import { heroHasHalfSpellDamage, monsterResistsEffect, learnWand } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, randomTeleportDepth, teleportHero } from './teleport.js';
 import { awakenSoldiers } from './music.js';
-import { canDigDown, canFallThrough } from './mklev.js';
 import { stairwayAt } from './stairs.js';
 import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
 import { monsterCarriesSpecialObject, monsterCarriesAmulet } from './wizard.js';

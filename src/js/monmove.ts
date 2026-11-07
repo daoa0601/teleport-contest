@@ -120,7 +120,7 @@ import { shopkeeperName } from './shknam.js';
 
 import { heroGoldObject } from './sit.js';
 import { canLetGo } from './do.js';
-import { canFallThrough } from './mklev.js';
+import { canFallThrough } from './dungeon.js';
 import { getTrack, hasTrack } from './track.js';
 import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween } from './worm.js';
