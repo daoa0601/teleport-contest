@@ -19,7 +19,6 @@ import { AT_KICK } from './monster_attack_types.js';
 import { deleteEngravingAt, wipeHeroEngraving, disturbGrave } from './engrave.js';
 import { displayColorName, displayLiquidName, monsterName, nameOrc } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
-import { heroHasMartialKick } from './kick_rules.js';
 import { useHeroSkill } from './weapon.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { monsterAtPosition } from './steed.js';
@@ -63,6 +62,13 @@ import { eggHasMonsterSpecies } from './egg_impact.js';
 import { shopkeeperName } from './shknam.js';
 import { objectResistsDestruction } from './zap.js';
 import { is_mercenary, likes_gold, monsterCanTeleport, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterIsBig, monsterIsClinger, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsSlithy, monsterIsThickSkinned, touchPetrifies, heroResistsStoning, } from './mondata.js';
+// C dokick.c:martial(): the macro combining martial_bonus(),
+// is_bigfoot(), and kicking boots.
+export function heroHasMartialKick(state = game) {
+    return state.urole?.key === 'monk' || state.urole?.key === 'samurai'
+        || state.u.umonnum === MONSTER_NAME.indexOf('sasquatch')
+        || (state.uarmf || state.u.uarmf)?.otyp === KICKING_BOOTS;
+}
 // C dokick.c:kick_ouch().
 async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');
