@@ -107,7 +107,8 @@ export function tty_exit_nhwindows(farewell) {
 export function tty_create_nhwindow(_type) {
     return { entries: [], layout: null, offx: 0, active: false, cancelled: false, destroyed: false, underlay: null };
 }
-// Port only: reject operations on a destroyed tty menu window.
+// Part of C wintty.c:tty_start_menu()/tty_add_menu()/tty_end_menu(): the
+// wins[window] validity check, rejecting operations on a destroyed window.
 function requireWindow(window) {
     if (window.destroyed)
         throw new Error('The tty menu window has been destroyed');
