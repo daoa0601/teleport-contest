@@ -3022,10 +3022,6 @@ export const NORMAL_SPEED = 12;
 // JS: ESHK(mtmp) → mtmp.mextra?.eshk
 // ========================================================================
 export function ESHK(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.eshk; }
-// C mextra.h:EPRI()
-export function EPRI(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.epri; }
-// C mextra.h:EMIN()
-export function EMIN(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.emin; }
 // C mextra.h:EDOG()
 export function EDOG(mtmp: Pick<Monster, 'mextra'> | null | undefined) { return mtmp?.mextra?.edog; }
 // C mextra.h:EBONES()
@@ -3095,9 +3091,12 @@ export function In_endgame(uz?: DungeonLocation | null): boolean {
 // C dungeon.h:Is_astralevel()
 export function Is_astralevel(uz?: DungeonLocation | null): boolean { return In_endgame(uz) && (uz ?? game?.u?.uz)?.dlevel === 1; }
 // C dungeon.h:Is_waterlevel()
-export function Is_waterlevel(uz?: DungeonLocation | null): boolean {
-    const level = uz ?? game?.u?.uz;
-    const specialLevel = game?.water_level;
+export function Is_waterlevel(
+    uz?: DungeonLocation | null,
+    state: Pick<GameState, 'u' | 'water_level'> = game,
+): boolean {
+    const level = uz ?? state?.u?.uz;
+    const specialLevel = state?.water_level;
     return !!level && !!specialLevel
         && level.dnum === specialLevel.dnum
         && level.dlevel === specialLevel.dlevel;

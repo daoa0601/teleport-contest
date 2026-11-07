@@ -13,7 +13,6 @@ import {
     revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid,
     finishEnvironmentalMonsterDeath, publishMonsterWake,
     finishHeroLiquidMonsterDeath,
-    isRider,
 } from './mon.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { BURNING, CMDQ_EXTCMD, CQ_CANNED, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, Is_rogue_level, LAVAPOOL, LAVAWALL, Luck, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, A_STR, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, In_mines, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND, HOLE, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, P_TWO_WEAPON_COMBAT, P_ISRESTRICTED, P_UNSKILLED, ROLLING_BOULDER_TRAP, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, IN_SIGHT, SHOP_DOOR_COST, PARANOID_CONFIRM, PARANOID_TRAP, TRAP_EXPLANATIONS, TRAPNUM, W_QUIVER, W_SWAPWEP, SQKY_BOARD, SLP_GAS_TRAP, RUST_TRAP, BEAR_TRAP, PIT, SPIKED_PIT, MAGIC_PORTAL, VIBRATING_SQUARE, WEB, HEADSTONE, In_endgame, is_hole, is_pit, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, MAXNROFROOMS, Invocation_lev, OROOM, DELPHI, TEMPLE, COURT, MORGUE, ZOO, BARRACKS, BEEHIVE, LEPREHALL, COCKNEST, ANTHOLE, THRONE, ACH_TOWN, RLOC_NOMSG, IS_SINK, KILLED_BY_AN, LL_CONDUCT, SWAMP, GP_ALLOW_U, FOOT } from './const.js';
@@ -81,7 +80,7 @@ import { finishPrayerOccupation } from './pray.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
 import {
-    depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel,
+    depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling,
     surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain,
 } from './dungeon.js';
 
@@ -94,7 +93,7 @@ import type { Monster } from './monster_types.js';
 import type { PropertyState, PropertyName } from './property_types.js';
 import type { Hero } from './hero_types.js';
 import type { GameMap } from './game.js';
-import { ingSuffix, upstart } from './hacklib.js';
+import { dist2, ingSuffix, upstart } from './hacklib.js';
 
 import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
 import { updateHeroRegions, visibleRegionAt } from './region.js';
@@ -104,7 +103,7 @@ import type { Shopkeeper } from './shop_types.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 
 import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
-import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
+import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
@@ -165,7 +164,7 @@ export async function reviveNastyAt(
     let revived = false;
     for (const corpse of [...state.level.objects[x]?.[y] ?? []]) {
         if (corpse.otyp !== CORPSE
-            || !(isRider(corpse.corpsenm)
+            || !(monsterIsRider({ mnum: corpse.corpsenm })
                 || MONSTER_NAME[corpse.corpsenm ?? -1] === 'Wizard of Yendor')) continue;
         const occupant = monsterAtPosition(state.level, x, y);
         if (occupant) await moveRevivalOccupant(occupant, x, y, state);
@@ -965,14 +964,14 @@ async function leaveWater({
     let message = null;
     let stillInWater = false;
     if (!isPoolAt(u.ux, u.uy, state)) {
-        if (heroIsOnWaterLevel(state)) {
+        if (Is_waterlevel(u.uz, state)) {
             message = 'You pop into an air bubble.';
         } else if (isLavaAt(u.ux, u.uy, state)) {
             message = `You leave the ${displayLiquidName('water', state)}...`;
         } else {
             message = backOnGroundMessage(false, state);
         }
-    } else if (heroIsOnWaterLevel(state)) {
+    } else if (Is_waterlevel(u.uz, state)) {
         stillInWater = true;
     } else if (u.levitating || u.levitation) {
         message = `You pop out of the ${displayLiquidName('water', state)} like a cork!`;
@@ -987,7 +986,7 @@ async function leaveWater({
     if (stillInWater) return false;
     if (message) await publish(message);
     // C Underwater is u.uinwater, still set until set_uinwater(0) below.
-    const wasUnderwater = !!(u.uinwater || state.underwater) && !heroIsOnWaterLevel(state);
+    const wasUnderwater = !!(u.uinwater || state.underwater) && !Is_waterlevel(u.uz, state);
     await setHeroInWater(false, state);
     state.underwater = false;
     // C restores the surface view by redrawing the screen and deferring the
@@ -4269,10 +4268,20 @@ function heroHasOwnFlight(state: GameState): boolean {
 }
 
 // C hack.h:Maybe_Half_Phys().
-function maybeHalfPhysicalDamage(amount: number, state: GameState): number {
+export function maybeHalfPhysicalDamage(amount: number, state: GameState): number {
     const hero = state.u;
     return hero.halfPhysicalDamage
         ? Math.trunc((amount + 1) / 2) : amount;
+}
+
+// C hack.h:distu().
+// C hack.h distu()/mdistu(): squared euclidean distance to the hero.
+export function distu(x: number, y: number, state: GameState): number {
+    return dist2(x, y, state.u.ux, state.u.uy);
+}
+// C you.h:m_next2u(): is the monster on top of or next to the hero.
+export function mNext2u(monster: Monster, state: GameState): boolean {
+    return distu(monster.mx, monster.my, state) <= 2;
 }
 
 // Part of C hack.c:dosinkfall(): the weapon-or-weptool test.

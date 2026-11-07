@@ -104,10 +104,11 @@ import { monsterAtPosition } from './steed.js';
 import { deleteTrap, trapAt, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
+import { isQuantumBox } from './quantum_cat.js';
 import { bookDisappears } from './spell.js';
 import {
     checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex,
-    showGetposTip,
+    showGetposTip, distu, mNext2u,
 } from './hack.js';
 
 const GLASS = 19;
@@ -1009,7 +1010,7 @@ async function addOneToBill(object: GameObject, resident: BilledShopkeeper,
 // Schroedinger box keeps its mystery and its contents unbilled.
 async function billBoxContent(container: GameObject, resident: BilledShopkeeper,
     publish: MessagePublisher, state: GameState): Promise<void> {
-    if (isSchroedingersBox(container)) return;
+    if (isQuantumBox(container)) return;
     for (const content of container.contents || []) {
         if (content.oclass === COIN_CLASS) continue;
         if (!content.no_charge) await addOneToBill(content, resident, publish, state);
@@ -1017,11 +1018,6 @@ async function billBoxContent(container: GameObject, resident: BilledShopkeeper,
             await billBoxContent(content, resident, publish, state);
         }
     }
-}
-
-// C obj.h:SchroedingersBox(): only a large box can hold the cat.
-function isSchroedingersBox(object: GameObject): boolean {
-    return object.otyp === LARGE_BOX && object.spe === 1;
 }
 
 // C shk.c:566 costly_adjacent(): a shop wall spot (edge flag, door
@@ -1300,7 +1296,8 @@ export const REPAIR_DELAY = 5;
 
 const ANGRY_TEXTS = ['quite upset', 'ticked off', 'furious'];
 
-// C rm.h:m_at(): the monster at a square.
+// Part of C rm.h:m_at(): the monster at a square (steed.ts
+// monsterAtPosition() resolves the occupant).
 function monsterAt(state: ShopGameState, x: number, y: number): Monster | null {
     return monsterAtPosition(state.level, x, y);
 }
@@ -1308,29 +1305,6 @@ function monsterAt(state: ShopGameState, x: number, y: number): Monster | null {
 // C display.h:vobj_at(): the object pile at a square.
 function objectsAt(state: GameState, x: number, y: number): GameObject[] {
     return state.level?.objects?.[x]?.[y] || [];
-}
-
-// C hack.h:distu().
-// C hack.h distu()/mdistu(): squared euclidean distance.
-function distu(state: GameState, x: number, y: number): number {
-    return dist2(x, y, state.u.ux, state.u.uy);
-}
-
-// C you.h:m_next2u().
-// C include/you.h m_next2u(): squared distance within 2, the 8 neighbors.
-function mNext2u(monster: Monster, state: GameState): boolean {
-    return distu(state, monster.mx, monster.my) <= 2;
-}
-
-// C monst.h:helpless().
-function monsterHelpless(monster: Monster): boolean {
-    return !!(monster?.msleeping || monster?.mcanmove === 0
-        || (monster?.mfrozen ?? 0) > 0);
-}
-
-// C mondata.h:nolimbs().
-function monsterNolimbs(monster: Monster): boolean {
-    return monsterHasNoLimbs(monster?.mnum);
 }
 
 // Part of C shk.c:muteshk(): the msound read.
@@ -1341,7 +1315,7 @@ function monsterSound(monster: Monster): number {
 // C shk.c:muteshk()
 // A keeper who cannot speak up.
 function muteShopkeeper(monster: Monster): boolean {
-    return monsterHelpless(monster) || monsterSound(monster) <= MS_ANIMAL;
+    return monsterIsHelpless(monster) || monsterSound(monster) <= MS_ANIMAL;
 }
 
 // Port only: the level damage-list accessor.
@@ -1689,7 +1663,7 @@ export async function shopkeeperCatch(
     const roomno = insideShop(state, x, y);
     const keeper = roomno !== null ? shopResident(roomno, state) : null;
     if (!keeper || !shopkeeperInOwnShop(keeper, state)) return null;
-    if (monsterHelpless(keeper)
+    if (monsterIsHelpless(keeper)
         || (state.u.ushops?.[0] === keeper.eshk.shoproom
             && insideShop(state, state.u.ux, state.u.uy) !== null)
         || dist2(x, y, keeper.mx, keeper.my) >= 3
@@ -1775,7 +1749,7 @@ function restoreOverlaidTerrainFlags(location: MapLocation, flags: number): void
 function shopkeeperImpaired(keeper: Shopkeeper, state: GameState): boolean {
     if (!keeper?.isshk || !keeper.eshk
         || !shopkeeperInOwnShop(keeper, state)) return true;
-    return monsterHelpless(keeper) || !!keeper.eshk.following;
+    return monsterIsHelpless(keeper) || !!keeper.eshk.following;
 }
 
 // C shk.c:repairable_damage()
@@ -1876,7 +1850,7 @@ export async function shopkeeperRepairsDamage(
     const record = findDamage(keeper, state);
     if (!record) return 0;
 
-    const shkCloseby = distu(state, keeper.mx, keeper.my)
+    const shkCloseby = distu(keeper.mx, keeper.my, state)
         <= (BOLT_LIM / 2) * (BOLT_LIM / 2);
     if (canSeeMonster(keeper)) {
         await pline(`${shopkeeperName(keeper, { capitalized: true })} whispers ${
@@ -1899,7 +1873,7 @@ async function getcad(
 ) {
     const dugwall = dmgstr === 'dig into' || dmgstr === 'damage';
     if (muteShopkeeper(keeper)) {
-        if (animal && !monsterHelpless(keeper))
+        if (animal && !monsterIsHelpless(keeper))
             await publishMonsterYelp(keeper);
     } else if (pursue || uinshp || !umDist(state, x, y, 1)) {
         if (!heroIsDeaf(state)) {
@@ -1947,8 +1921,7 @@ export async function payForShopDamage(
             const candidate = shopKeeper(state, roomno);
             if (!candidate) continue;
             if (candidate === keeper) {
-                const damageDistance = distu(
-                    state, record.place.x, record.place.y);
+                const damageDistance = distu(record.place.x, record.place.y, state);
                 if (damageDistance < nearestDamage) {
                     nearestDamage = damageDistance;
                     appearHere = record;
@@ -1967,7 +1940,7 @@ export async function payForShopDamage(
             keeper = candidate;
             nearestShk = shkDistance;
             appearHere = record;
-            nearestDamage = distu(state, record.place.x, record.place.y);
+            nearestDamage = distu(record.place.x, record.place.y, state);
         }
     }
 
@@ -2359,7 +2332,7 @@ export async function shopDig(fall: number | boolean, state: GameState = game): 
 
     // 0 == can't speak, 1 == makes animal noises, 2 == speaks.
     let lang = 0;
-    if (!monsterHelpless(keeper) && monsterSound(keeper) > 0)
+    if (!monsterIsHelpless(keeper) && monsterSound(keeper) > 0)
         lang = monsterSound(keeper) <= MS_ANIMAL ? 1
             : monsterSound(keeper) >= MS_HUMANOID ? 2 : 0;
 
@@ -2385,13 +2358,13 @@ export async function shopDig(fall: number | boolean, state: GameState = game): 
         return;
     }
 
-    if (umDist(state, keeper.mx, keeper.my, 5) || monsterHelpless(keeper))
+    if (umDist(state, keeper.mx, keeper.my, 5) || monsterIsHelpless(keeper))
         return;
     if (!(keeper.eshk.billct || heroCarriesBillFor(keeper)
         || keeper.eshk.debit)) return;
 
     let grabs = 'grabs';
-    if (monsterNolimbs(keeper)) grabs = 'knocks off';
+    if (monsterHasNoLimbs(keeper.mnum)) grabs = 'knocks off';
 
     if (!mNext2u(keeper, state)) {
         await moveMonsterNextToHero(keeper, state, { flags: RLOC_MSG });

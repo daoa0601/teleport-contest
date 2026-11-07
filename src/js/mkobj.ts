@@ -37,7 +37,7 @@ import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse,
-    isReviver, isRider, zombieForm,
+    isReviver, zombieForm,
 } from './mon.js';
 import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
 import { isIceAt } from './dbridge.js';
@@ -86,7 +86,7 @@ import type { ShopTransaction } from './shop_types.js';
 import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { dropCursedAlternateWeapon } from './wield.js';
-import { is_male, is_neuter, monsterIsFemale, monsterIsHuman } from './mondata.js';
+import { is_male, is_neuter, monsterIsFemale, monsterIsHuman, monsterIsRider } from './mondata.js';
 
 const G_NOGEN = 0x0200;
 const LIQUID = 1;
@@ -809,7 +809,7 @@ export async function mkcorpstat(
         };
         if (pm == null) pm = mtmp.mnum;
         /* don't give a revive timer to a cancelled troll's corpse */
-        if (mtmp.mcan && !isRider(pm)) otmp.norevive = true;
+        if (mtmp.mcan && !monsterIsRider({ mnum: pm })) otmp.norevive = true;
     }
 
     /* when 'pm' is non-null it comes from our caller or from 'mtmp';

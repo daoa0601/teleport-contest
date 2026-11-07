@@ -65,7 +65,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './s
 import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import {
-    levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel, levelAtDepth,
+    levelHasCeiling, level_difficulty, specialPrototypeAt, levelAtDepth,
     depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain,
 } from './dungeon.js';
 import {
@@ -6734,11 +6734,11 @@ export async function announceTerrainRescue(
     const { ux, uy } = state.u;
     const location = state.level.requireAt(ux, uy);
     if (how === DROWNING && isPoolAt(ux, uy, state)) {
-        const position = heroIsOnWaterLevel(state) || IS_WATERWALL(location.typ)
+        const position = Is_waterlevel(state.u.uz, state) || IS_WATERWALL(location.typ)
             ? 'in the midst' : 'on top';
         await publish(`You find yourself ${position} of ${displayLiquidName('water', state)}.`);
     } else if (how === DROWNING && IS_AIR(location.typ)) {
-        await publish(`You find yourself in ${heroIsOnWaterLevel(state) ? 'an air bubble' : 'mid air'}.`);
+        await publish(`You find yourself in ${Is_waterlevel(state.u.uz, state) ? 'an air bubble' : 'mid air'}.`);
     } else if (how !== DROWNING && isPoolAt(ux, uy, state)) {
         await publish(`You find yourself ${state.u.uinwater ? 'in' : 'on'} ${displayLiquidName('water', state)}.`);
     } else if (how !== DROWNING && isLavaAt(ux, uy, state)) {
@@ -6816,7 +6816,7 @@ export async function drown({
     if (canLiveUnderwater) {
         if (heroDoesNotNeedAir(state)) {
             if (state.flags.verbose) await publish("But you aren't drowning.");
-            if (!heroIsOnWaterLevel(state))
+            if (!Is_waterlevel(state.u.uz, state))
                 await publish(heroIsHallucinating(state) ? 'Your keel hits the bottom.' : 'You touch bottom.');
         }
         // C trap.c:5117-5120: the settling ball and chain are re-placed
@@ -6888,7 +6888,7 @@ export async function drown({
     const destination = canMove
         ? await rnd_nextto_goodpos(state, x, y, random, publish) : null;
     if (destination) {
-        const escape = heroIsOnWaterLevel(state)
+        const escape = Is_waterlevel(state.u.uz, state)
             ? { escaped: true, dropped: false }
             : await emergencyDisrobe(state, random);
         if (escape.died) return { entered: true, moved: false, died: true };

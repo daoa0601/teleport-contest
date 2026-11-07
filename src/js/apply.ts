@@ -72,14 +72,13 @@ import {
 import type { GameState, PlayingGameState } from './game_state.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity } from './hack.js';
+import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import {
     setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
     moveMonsterNextToHero,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
-    isRider,
 } from './mon.js';
 import {
     makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands,
@@ -121,7 +120,7 @@ import {
     is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive,
     monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests,
     monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid,
-    monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives,
+    monsterIsRider, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives,
     monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow,
 } from './mondata.js';
 import { wakeAttackedMonster } from './mon.js';
@@ -1818,7 +1817,7 @@ export async function useTinningKit(kit: GameObject) {
         await resolveImmediatePetrification({ killer: transform ? '' : `trying to tin ${name} without gloves` });
         if (game.program_state.gameover) return;
     }
-    if (isRider(corpse.corpsenm)) {
+    if (monsterIsRider({ mnum: corpse.corpsenm })) {
         const revival = await reviveCorpseImmediately(corpse);
         for (const message of revival?.messages ?? []) await pline(message);
         await pline(revival?.monster ? '"Yes...  But War does not preserve its enemies..."' : 'The corpse evades your grasp.');
@@ -2837,7 +2836,9 @@ function poleableGlyph(glyph: GlyphMetadata | null) {
     return glyph?.kind === 'monster' || glyph?.kind === 'invisible' || statueGlyph(glyph);
 }
 
-// C display.h:glyph_is_statue()
+// Part of C display.h:glyph_is_statue(): the screen-memory form use_pole()
+// and find_poleable_mon() test (a remembered GlyphMetadata flag, not a
+// glyph number; glyph_numbers.ts glyphIsStatue() is the numeric macro).
 function statueGlyph(glyph: GlyphMetadata | null) {
     return glyph?.kind === 'object' && !!glyph.statueGlyph;
 }
@@ -2849,14 +2850,8 @@ function floorHasObject(otyp: number, x: number, y: number, state: GameState) {
     return (state.level?.objects?.[x]?.[y] || []).some((object) => object.otyp === otyp);
 }
 
-// C hack.h:distu()
-function squaredDistance(x: number, y: number, state: GameState) {
-    const dx = x - state.u.ux;
-    const dy = y - state.u.uy;
-    return dx * dx + dy * dy;
-}
-
-// C rm.h:m_at()
+// Part of C rm.h:m_at(): the polearm targeting read, guarding a level that
+// may not exist yet (steed.ts monsterAtPosition() resolves the occupant).
 function monsterAt(x: number, y: number, state: GameState) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
@@ -2886,7 +2881,7 @@ function calcPoleRange(weapon: GameObject, { state = game } = {}) {
 // C apply.c:get_valid_polearm_position()
 function validPolearmPosition(x: number, y: number, min: number, max: number, state: GameState) {
     if (!isok(x, y)) return false;
-    const distance = squaredDistance(x, y, state);
+    const distance = distu(x, y, state);
     return (
         distance >= min &&
         distance <= max &&
@@ -2955,7 +2950,7 @@ export function couldPoleMonster(weapon: GameObject | null | undefined, { state 
     if (findPoleableSpot(state, min, max)) return true;
     const remembered = rememberedPolearmMonster(state);
     if (!remembered || !canSenseMonster(remembered)) return false;
-    const distance = squaredDistance(remembered.mx, remembered.my, state);
+    const distance = distu(remembered.mx, remembered.my, state);
     return distance <= max && distance >= min;
 }
 
@@ -3031,7 +3026,7 @@ export async function usePolearm(
     else {
         const remembered = rememberedPolearmMonster(state);
         if (remembered && canSenseMonster(remembered)) {
-            const distance = squaredDistance(remembered.mx, remembered.my, state);
+            const distance = distu(remembered.mx, remembered.my, state);
             if (distance <= max && distance >= min) cc = { x: remembered.mx, y: remembered.my };
         }
     }
@@ -3043,7 +3038,7 @@ export async function usePolearm(
     }
 
     const glyph = glyphAt(cc.x, cc.y, state);
-    const distance = squaredDistance(cc.x, cc.y, state);
+    const distance = distu(cc.x, cc.y, state);
     if (distance > max) {
         await syncPline('Too far!');
         return { spentTime: false, failure: true };
@@ -3393,14 +3388,6 @@ function hookRange(skill: number) {
     return 8;
 }
 
-// Port only: local distu duplicate kept beside the grapple code (same as
-// squaredDistance above).
-function squaredDistanceFromHero(x: number, y: number, state: GameState) {
-    const dx = x - state.u.ux;
-    const dy = y - state.u.uy;
-    return dx * dx + dy * dy;
-}
-
 // Part of C apply.c:use_grapple(): the skilled "Aim for what?" menu.
 async function chooseAim(x: number, y: number, state: GameState) {
     const surface = surfaceName(x, y, state);
@@ -3466,7 +3453,7 @@ async function chooseGrappleTarget(hook: GameObject, state: GameState) {
     await syncPline('Where do you want to hit?');
     const range = hookRange(hookSkill(hook, state));
     const valid = (x: number, y: number) => isok(x, y) && cansee(x, y)
-        && squaredDistanceFromHero(x, y, state) <= range;
+        && distu(x, y, state) <= range;
     await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) await showGetposTip(state);
@@ -3506,7 +3493,7 @@ export async function useGrapplingHook(hook: GameObject, {
     }
 
     const range = hookRange(hookSkill(hook, state));
-    if (squaredDistanceFromHero(target.x, target.y, state) > range) {
+    if (distu(target.x, target.y, state) > range) {
         await syncPline('Too far!');
         return { spentTime: false };
     }

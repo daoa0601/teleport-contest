@@ -20,7 +20,7 @@ import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment,
 import { setBallAndChainFelt } from './ball.js';
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, poisonAttributeMessage, requireAttributeIndex } from './attrib.js';
 import { commandResultCancelled, commandResultFailed, setMulti, cmdq_peek } from './cmd.js';
-import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
+import { applyHeroLocationEffects, loseHeroHp, maybeHalfPhysicalDamage, nearCapacity, nomul } from './hack.js';
 import { restorationLeavesTrouble } from './apply.js';
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, ENL_GAMEINPROGRESS, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MAGICENLIGHTENMENT, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT, FACE, HEAD, HAND, LEG, LL_CONDUCT, } from './const.js';
 import { impossible } from './diagnostics.js';
@@ -609,11 +609,6 @@ async function hallucinationEffect(source, state) {
     }
     return nothing;
 }
-// C hack.h:Maybe_Half_Phys().
-function halfPhysical(amount, state) {
-    return state.u.halfPhysicalDamage
-        ? Math.ceil(amount / 2) : amount;
-}
 // C potion.c:peffect_water().
 async function drinkWater(source, state) {
     const hero = state.u;
@@ -642,7 +637,7 @@ async function drinkWater(source, state) {
                     return true;
                 setHeroLycanthropy(-1, state);
             }
-            return loseHeroHp(halfPhysical(d(2, 6), state), 'potion of holy water', { state });
+            return loseHeroHp(maybeHalfPhysicalDamage(d(2, 6), state), 'potion of holy water', { state });
         }
         await plineWithContinuation(formatFeltMessage('quite proud of yourself.', state));
         await healHero(d(2, 6), 0, { state });
@@ -664,7 +659,7 @@ async function drinkWater(source, state) {
     else {
         if (hero.ualign.type === 1) {
             await plineWithContinuation(`This burns like ${displayLiquidName('acid', state)}!`);
-            if (await loseHeroHp(halfPhysical(d(2, 6), state), 'potion of unholy water', { state }))
+            if (await loseHeroHp(maybeHalfPhysicalDamage(d(2, 6), state), 'potion of unholy water', { state }))
                 return true;
         }
         else
@@ -967,7 +962,7 @@ async function drinkAcid(source, state) {
         await plineWithContinuation(`This tastes ${heroIsHallucinating(state) ? 'tangy' : 'sour'}.`);
     else {
         await plineWithContinuation(`This burns${source.blessed ? ' a little' : source.cursed ? ' a lot' : ' like acid'}!`);
-        const damage = halfPhysical(d(source.cursed ? 2 : 1, source.blessed ? 4 : 8), state);
+        const damage = maybeHalfPhysicalDamage(d(source.cursed ? 2 : 1, source.blessed ? 4 : 8), state);
         if (await loseHeroHp(damage, 'potion of acid', { state }))
             return true;
         await exerciseAttribute(A_CON, false, state);

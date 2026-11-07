@@ -29,7 +29,7 @@ import { objectMaterial } from './o_init.js';
 import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import { heroCanReachFloor } from './engrave.js';
 import { objectResistsDestruction } from './zap.js';
-import { isWeaponTool, isBlade } from './object_properties.js';
+import { isWeaponTool, isBlade, isPick } from './object_properties.js';
 import { startCorpseTimeout, unlinkObject, isContainer, placeObject } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
@@ -199,11 +199,6 @@ export function isForceableWeapon(weapon) {
         return skill >= P_DAGGER && skill <= P_LANCE && skill !== P_FLAIL;
     }
     return weapon.oclass === ROCK_CLASS;
-}
-// C obj.h:is_pick(): the P_PICK_AXE-skill tool test.
-function isPick(weapon) {
-    return (weapon?.oclass === WEAPON_CLASS || weapon?.oclass === TOOL_CLASS)
-        && objectSkill(weapon.otyp) === P_PICK_AXE;
 }
 // Part of C lock.c:doforce(): the "can't force anything ..." weapon
 // refusals.

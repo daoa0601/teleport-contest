@@ -32,10 +32,10 @@ import { useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse, holdA
 import { doBlindingRay, getObjectLocation, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn, objectResistsDestruction, zappable, } from './zap.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity } from './hack.js';
+import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
-import { setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, isRider, } from './mon.js';
+import { setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting, heroIsSick, heroIsSliming, } from './potion.js';
 import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -55,7 +55,7 @@ import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { canDigDown } from './mklev.js';
 import { billDummyObject, mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object, } from './mkobj.js';
-import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow, } from './mondata.js';
+import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsRider, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow, } from './mondata.js';
 import { wakeAttackedMonster } from './mon.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
 import { AD_BLND, AT_ENGL, AT_WEAP } from './monster_attack_types.js';
@@ -1799,7 +1799,7 @@ export async function useTinningKit(kit) {
         if (game.program_state.gameover)
             return;
     }
-    if (isRider(corpse.corpsenm)) {
+    if (monsterIsRider({ mnum: corpse.corpsenm })) {
         const revival = await reviveCorpseImmediately(corpse);
         for (const message of revival?.messages ?? [])
             await pline(message);
@@ -2789,7 +2789,9 @@ export async function useWhip(whip, { state = game } = {}) {
 function poleableGlyph(glyph) {
     return glyph?.kind === 'monster' || glyph?.kind === 'invisible' || statueGlyph(glyph);
 }
-// C display.h:glyph_is_statue()
+// Part of C display.h:glyph_is_statue(): the screen-memory form use_pole()
+// and find_poleable_mon() test (a remembered GlyphMetadata flag, not a
+// glyph number; glyph_numbers.ts glyphIsStatue() is the numeric macro).
 function statueGlyph(glyph) {
     return glyph?.kind === 'object' && !!glyph.statueGlyph;
 }
@@ -2799,13 +2801,8 @@ function floorHasObject(otyp, x, y, state) {
     // C sobj_at(): any matching object in the pile, not just the drawn top.
     return (state.level?.objects?.[x]?.[y] || []).some((object) => object.otyp === otyp);
 }
-// C hack.h:distu()
-function squaredDistance(x, y, state) {
-    const dx = x - state.u.ux;
-    const dy = y - state.u.uy;
-    return dx * dx + dy * dy;
-}
-// C rm.h:m_at()
+// Part of C rm.h:m_at(): the polearm targeting read, guarding a level that
+// may not exist yet (steed.ts monsterAtPosition() resolves the occupant).
 function monsterAt(x, y, state) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
@@ -2833,7 +2830,7 @@ function calcPoleRange(weapon, { state = game } = {}) {
 function validPolearmPosition(x, y, min, max, state) {
     if (!isok(x, y))
         return false;
-    const distance = squaredDistance(x, y, state);
+    const distance = distu(x, y, state);
     return (distance >= min &&
         distance <= max &&
         (cansee(x, y) || (couldsee(x, y) && poleableGlyph(glyphAt(x, y, state)))));
@@ -2896,7 +2893,7 @@ export function couldPoleMonster(weapon, { state = game } = {}) {
     const remembered = rememberedPolearmMonster(state);
     if (!remembered || !canSenseMonster(remembered))
         return false;
-    const distance = squaredDistance(remembered.mx, remembered.my, state);
+    const distance = distu(remembered.mx, remembered.my, state);
     return distance <= max && distance >= min;
 }
 // Part of C apply.c:snickersnee_used_dist_attk(): the ART_SNICKERSNEE
@@ -2963,7 +2960,7 @@ export async function usePolearm(object, { state = game, ensureWielded, autohit 
     else {
         const remembered = rememberedPolearmMonster(state);
         if (remembered && canSenseMonster(remembered)) {
-            const distance = squaredDistance(remembered.mx, remembered.my, state);
+            const distance = distu(remembered.mx, remembered.my, state);
             if (distance <= max && distance >= min)
                 cc = { x: remembered.mx, y: remembered.my };
         }
@@ -2975,7 +2972,7 @@ export async function usePolearm(object, { state = game, ensureWielded, autohit 
         cc = target;
     }
     const glyph = glyphAt(cc.x, cc.y, state);
-    const distance = squaredDistance(cc.x, cc.y, state);
+    const distance = distu(cc.x, cc.y, state);
     if (distance > max) {
         await syncPline('Too far!');
         return { spentTime: false, failure: true };
@@ -3282,13 +3279,6 @@ function hookRange(skill) {
         return 5;
     return 8;
 }
-// Port only: local distu duplicate kept beside the grapple code (same as
-// squaredDistance above).
-function squaredDistanceFromHero(x, y, state) {
-    const dx = x - state.u.ux;
-    const dy = y - state.u.uy;
-    return dx * dx + dy * dy;
-}
 // Part of C apply.c:use_grapple(): the skilled "Aim for what?" menu.
 async function chooseAim(x, y, state) {
     const surface = surfaceName(x, y, state);
@@ -3352,7 +3342,7 @@ async function chooseGrappleTarget(hook, state) {
     await syncPline('Where do you want to hit?');
     const range = hookRange(hookSkill(hook, state));
     const valid = (x, y) => isok(x, y) && cansee(x, y)
-        && squaredDistanceFromHero(x, y, state) <= range;
+        && distu(x, y, state) <= range;
     await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse)
@@ -3385,7 +3375,7 @@ export async function useGrapplingHook(hook, { state = game, ensureWielded, atta
         return { spentTime: false };
     }
     const range = hookRange(hookSkill(hook, state));
-    if (squaredDistanceFromHero(target.x, target.y, state) > range) {
+    if (distu(target.x, target.y, state) > range) {
         await syncPline('Too far!');
         return { spentTime: false };
     }

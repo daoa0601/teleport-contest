@@ -37,8 +37,8 @@ import { makemonNear } from './mklev.js';
 import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject, adjustObjectLightAfterBlessing } from './mkobj.js';
 import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { displayColorName, monsterName } from './do_name.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount, heroCanChant, } from './mondata.js';
-import { wakeMonstersNearWithMessages, finishHeroMonsterKill, isRider } from './mon.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterIsRider, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount, heroCanChant, } from './mondata.js';
+import { wakeMonstersNearWithMessages, finishHeroMonsterKill } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { isWeaponTool, isBimanualObject } from './object_properties.js';
@@ -1635,7 +1635,7 @@ async function offerCorpse(corpse, highAltar, alignment) {
     await feelPetrifyingCorpse(corpse, { forceTouch: true });
     if (game.program_state.gameover)
         return;
-    if (isRider(corpse.corpsenm)) {
+    if (monsterIsRider({ mnum: corpse.corpsenm })) {
         await pline('At your touch, the corpse suddenly moves...');
         const revival = await reviveCorpseImmediately(corpse);
         for (const message of revival?.messages ?? [])

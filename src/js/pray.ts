@@ -58,9 +58,9 @@ import { displayColorName, monsterName } from './do_name.js';
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance,
     monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn,
-    monsterIsVampireShifter, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount, heroCanChant,
+    monsterIsVampireShifter, monsterIsRider, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount, heroCanChant,
 } from './mondata.js';
-import { wakeMonstersNearWithMessages, finishHeroMonsterKill, isRider } from './mon.js';
+import { wakeMonstersNearWithMessages, finishHeroMonsterKill } from './mon.js';
 import type { HeroMonsterKillOptions } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import type { Monster } from './monster_types.js';
@@ -1605,7 +1605,7 @@ async function offerCorpse(corpse: GameObject, highAltar: boolean, alignment: nu
     conduct.gnostic = (conduct.gnostic || 0) + 1;
     await feelPetrifyingCorpse(corpse, { forceTouch: true });
     if (game.program_state.gameover) return;
-    if (isRider(corpse.corpsenm)) {
+    if (monsterIsRider({ mnum: corpse.corpsenm })) {
         await pline('At your touch, the corpse suddenly moves...');
         const revival = await reviveCorpseImmediately(corpse);
         for (const message of revival?.messages ?? []) await pline(message);

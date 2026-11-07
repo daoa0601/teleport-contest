@@ -91,12 +91,12 @@ import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } f
 import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
-import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, pickFormFromClass, body_part } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, pickFormFromClass, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { insideWizardTower, sameDungeonLevel, level_difficulty, levelIsWaterLevel, levelHasCeiling, surfaceName } from './dungeon.js';
+import { insideWizardTower, sameDungeonLevel, level_difficulty, levelHasCeiling, surfaceName } from './dungeon.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments, removeMonsterWormBody } from './worm.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -161,7 +161,7 @@ import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { simpleObjectTypeName } from './objnam.js';
-import { RLOC_NONE, Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
+import { RLOC_NONE, Is_astralevel, Is_waterlevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { isHomeElemental } from './makemon.js';
 import { AD_STCK, AT_HUGS } from './monster_attack_types.js';
@@ -334,7 +334,7 @@ export function rollMonsterPoolReaction(
 ): MonsterPoolReaction {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     const waterWall = location?.typ === WATER;
-    const waterLevel = levelIsWaterLevel(state);
+    const waterLevel = Is_waterlevel(state.u.uz, state);
     const safelyAirborne = !waterWall && !waterLevel
         && monsterFliesOrFloats(monster);
     if (heroKeepsSteedAboveLiquid(monster, state, waterWall)
@@ -405,7 +405,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
         return finishDeath(monster, { state, random, rollOne, leaveCorpse, cause, sadFeeling, publish: announce });
     };
 
-    const waterLevel = levelIsWaterLevel(state);
+    const waterLevel = Is_waterlevel(state.u.uz, state);
     const waterWall = location.typ === WATER;
     if (heroKeepsSteedAboveLiquid(monster, state, waterWall))
         return { survived: true };
@@ -641,18 +641,11 @@ export function zombieForm(mnum: number): number | null {
     }
 }
 
-// C mondata.h:is_rider():
-// C include/mondata.h:is_rider(). Death, Pestilence and Famine never leave
-// a revivable corpse behind for long.
-export function isRider(mnum: number | undefined): boolean {
-    return mnum !== undefined && mnum >= 311 && mnum <= 313;
-}
-
 // C mondata.h:is_reviver():
 // C include/mondata.h:is_reviver(). Riders and trolls rise from their
 // corpses unless the corpse is timed or eaten first.
 export function isReviver(mnum: number | undefined): boolean {
-    return isRider(mnum) || mnum !== undefined && MONSTER_SYMBOL[mnum] === 46; // S_TROLL
+    return monsterIsRider({ mnum }) || mnum !== undefined && MONSTER_SYMBOL[mnum] === 46; // S_TROLL
 }
 
 const UNDEAD_CORPSE_TYPES = new Map([
@@ -1517,7 +1510,7 @@ function hidingPlace(actor: HidingActor, state: GameState): HidingPlace {
     if (monsterIsEel(actor.species)) {
         const heroUnderwater = !!(state.underwater || state.u.uinwater);
         const inLineOfSight = !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
-        const hidden = isPoolAt(x, y, state) && !levelIsWaterLevel(state)
+        const hidden = isPoolAt(x, y, state) && !Is_waterlevel(state.u.uz, state)
             && (!heroUnderwater || !inLineOfSight);
         return { undetected: hidden, cover: null, water: true };
     }
@@ -2358,7 +2351,7 @@ async function eatOrEngulfPile(monster: Monster, context: FloorMealContext): Pro
     let eaten = 0, engulfed = 0, engulfMessage = '';
     for (const object of [...(level.objects[monster.mx]?.[monster.my] ?? [])]) {
         if (isLevelPrize(object, state)) continue;
-        if (object.otyp === CORPSE && isRider(object.corpsenm)) {
+        if (object.otyp === CORPSE && monsterIsRider({ mnum: object.corpsenm })) {
             if (await reviveMeal(object, context) || mealInterrupted(monster, context)) break;
             continue;
         }
@@ -2410,7 +2403,7 @@ async function meatcorpse(monster: Monster, context: FloorMealContext): Promise<
     for (const corpse of [...pile]) {
         if (corpse.otyp !== CORPSE || veganCorpse(corpse.corpsenm)
             || (fleshPetrifies(corpse.corpsenm) && !monsterHasStoneResistance(monster))) continue;
-        if (isRider(corpse.corpsenm)) {
+        if (monsterIsRider({ mnum: corpse.corpsenm })) {
             if (await reviveMeal(corpse, context) || mealInterrupted(monster, context)) break;
             continue;
         }
@@ -5037,14 +5030,6 @@ function pickVampireShape(monster: Monster): number {
     return targetMnum;
 }
 
-// C youprop.h:Protection_from_shape_changers():
-function shapechangerProtectionActive() {
-    return !!(
-        game.u?.protectionFromShapeChangers
-        || game.protectionFromShapeChangers
-    );
-}
-
 // Part of C mondata.h:is_shapeshifter(): the cham test; the macro's port is
 // is_shapeshifter in mondata.ts.
 function naturalShapechanger(mnum: number): boolean {
@@ -5334,7 +5319,7 @@ async function initialShapechangedMonster<T extends Monster>(monster: T, targetM
 // Part of C makemon.c:makemon(): birthing a shapechanger through newcham.
 export async function initialShapechangedBirth<T extends Monster>(monster: T): Promise<T | null> {
     const baseMnum = monster?.mnum;
-    if (!naturalShapechanger(baseMnum) || shapechangerProtectionActive())
+    if (!naturalShapechanger(baseMnum) || heroHasProtectionFromShapeChangers())
         return null;
     monster.cham = baseMnum;
     // makemon() keeps Vlad in his natural body to carry the Candelabrum.
@@ -5391,7 +5376,7 @@ export async function changeMonsterForm(
         return null;
     if (baseMnum < 0 && monster?.mcan
         && naturalShapechanger(monster.mnum)
-        && !shapechangerProtectionActive()) {
+        && !heroHasProtectionFromShapeChangers(state)) {
         baseMnum = monster.mnum;
         monster.cham = baseMnum;
         monster.mcan = 0;
@@ -5528,7 +5513,7 @@ export async function changeMonsterForm(
     }
     if (baseMnum < 0 && MONSTER_SYMBOL[targetMnum] === S_VAMPIRE
         && naturalShapechanger(targetMnum)
-        && !shapechangerProtectionActive()) {
+        && !heroHasProtectionFromShapeChangers(state)) {
         monster.cham = targetMnum;
     }
     const droppedWeapon = await updateMonsterWeaponAfterPolymorph(monster, state, { publish, polyspot });

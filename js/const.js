@@ -2826,10 +2826,6 @@ export const NORMAL_SPEED = 12;
 // JS: ESHK(mtmp) → mtmp.mextra?.eshk
 // ========================================================================
 export function ESHK(mtmp) { return mtmp?.mextra?.eshk; }
-// C mextra.h:EPRI()
-export function EPRI(mtmp) { return mtmp?.mextra?.epri; }
-// C mextra.h:EMIN()
-export function EMIN(mtmp) { return mtmp?.mextra?.emin; }
 // C mextra.h:EDOG()
 export function EDOG(mtmp) { return mtmp?.mextra?.edog; }
 // C mextra.h:EBONES()
@@ -2893,9 +2889,9 @@ export function In_endgame(uz) {
 // C dungeon.h:Is_astralevel()
 export function Is_astralevel(uz) { return In_endgame(uz) && (uz ?? game?.u?.uz)?.dlevel === 1; }
 // C dungeon.h:Is_waterlevel()
-export function Is_waterlevel(uz) {
-    const level = uz ?? game?.u?.uz;
-    const specialLevel = game?.water_level;
+export function Is_waterlevel(uz, state = game) {
+    const level = uz ?? state?.u?.uz;
+    const specialLevel = state?.water_level;
     return !!level && !!specialLevel
         && level.dnum === specialLevel.dnum
         && level.dlevel === specialLevel.dlevel;

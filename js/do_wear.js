@@ -18,8 +18,8 @@ import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery } from './c
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects, finishHeroHelplessness } from './hack.js';
 import { stopHeroOccupation } from './allmain.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
-import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, } from './const.js';
-import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt, isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
+import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Is_waterlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, } from './const.js';
+import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt, isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
@@ -41,7 +41,7 @@ import { newsym, see_monsters, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_
 import { objectResistsDestruction } from './zap.js';
 import { erodeObject, objectIsVulnerableToErosion, resolveImmediatePetrification, captureLevitationState, floatHeroUp, floatHeroDown, selfTouchPetrifyingWeapons, } from './trap.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { levelHasCeiling, levelIsWaterLevel, surfaceName } from './dungeon.js';
+import { levelHasCeiling, surfaceName } from './dungeon.js';
 import { removeWornHeroItem } from './steal.js';
 import { artifactEmitsLight, heroHasArtifactDefense, setWornArtifactProperties } from './artifact.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
@@ -1691,10 +1691,6 @@ function objectEnchantment(object) {
         return object.enchantment;
     return 0;
 }
-// C obj.h:greatest_erosion().
-function greatestErosion(object) {
-    return Math.max(0, object?.oeroded || 0, object?.oeroded2 || 0);
-}
 // C hack.h:ARM_BONUS().
 export function armorBonus(object) {
     if (!object)
@@ -2587,7 +2583,7 @@ async function removeAmulet(object, state) {
     else if (object.otyp === AMULET_OF_FLYING && flying && !propertyIsActive('flying', state)) {
         state.context.botl = true;
         const overLiquid = isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state)
-            || levelIsWaterLevel(state) || Is_airlevel(state.u.uz);
+            || Is_waterlevel(state.u.uz, state) || Is_airlevel(state.u.uz);
         await plineWithContinuation(overLiquid ? 'You stop flying.' : 'You land.');
         await applyHeroLocationEffects();
         if (state.program_state.gameover)

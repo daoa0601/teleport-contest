@@ -1681,9 +1681,11 @@ export function monsterHatesLight(monster: SpeciesReference | null | undefined) 
     return monster?.mnum === PM_GREMLIN;
 }
 
-// C mondata.h:is_rider()
-export function monsterIsRider(monster: SpeciesReference) {
-    return RIDER_SPECIES.has(monster.mnum);
+// C mondata.h:is_rider(). Death, Pestilence and Famine never leave a
+// revivable corpse behind for long. The species index may be missing on a
+// corpse being restored or queried before its corpsenm is set.
+export function monsterIsRider(monster: { mnum: number | undefined }) {
+    return monster.mnum !== undefined && RIDER_SPECIES.has(monster.mnum);
 }
 
 // Port only: the PM_SHADE test C callers apply inline.

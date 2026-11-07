@@ -45,7 +45,6 @@ import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeActio
 import { abusePet, tameMonster } from './dog.js';
 import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, willMonsterHurtle } from './dothrow.js';
 import type { HurtleDeathHandler, HurtleLiquidDeathHandler, MonsterHurtleOutcome } from './dothrow.js';
-import { levelIsWaterLevel } from './dungeon.js';
 import { eat_brains, eating_conducts, morehungry, newuhs } from './eat.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
@@ -55,7 +54,7 @@ import { explode } from './explode.js';
 import { floorObjectDescription } from './invent.js';
 import type { GameState, MonsterHelplessnessReason, PlayingGameState } from './game_state.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { checkHeroAttackOverexertion, doorlessDoor, exceedsActionCapacity, heroTestMove, nearCapacity, nomul, roomForRoomno, roomsAt, stopRun } from './hack.js';
+import { checkHeroAttackOverexertion, doorlessDoor, exceedsActionCapacity, heroTestMove, mNext2u, nearCapacity, nomul, roomForRoomno, roomsAt, stopRun } from './hack.js';
 import { dist2, ordinalSuffix, possessiveName, upstart } from './hacklib.js';
 import { dropObjectAtHero, woundHeroLegs } from './do.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
@@ -301,14 +300,6 @@ function hasStickyAttack(monster: Monster) {
         .some(attack => attack[1] === AD_STCK);
 }
 
-// C you.h:m_next2u()
-// The squared Euclidean distance to the hero is at most 2.
-function isAdjacentToHero(monster: Monster, state: GameState) {
-    const dx = monster.mx - (state.u?.ux ?? monster.mx);
-    const dy = monster.my - (state.u?.uy ?? monster.my);
-    return dx * dx + dy * dy <= 2;
-}
-
 // Part of C uhitm.c:attack_checks(): observe and name a hidden monster's floor cover.
 async function floorObjectName(x: number, y: number, state: GameState) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
@@ -383,7 +374,7 @@ export async function prepareAppliedWeaponAttack(
         // as if it had been stumbled upon while visible.
         if (hasUnrevealedAppearance(monster, state) && !state.u.ustuck
             && !monster.mflee && hasStickyAttack(monster)
-            && isAdjacentToHero(monster, state)) {
+            && mNext2u(monster, state)) {
             setHeroGrip(monster, state);
         }
         await wakeAttackedMonster(monster);
@@ -4517,7 +4508,7 @@ export async function mhitmAdWrap(call: MhitmAdWrapCall): Promise<HeroNaturalEff
             const terrain = state.level.requireAt(monster.mx, monster.my).typ;
             const medusa = state.medusa_level;
             const onMedusa = medusa && medusa.dnum === hero.uz.dnum && medusa.dlevel === hero.uz.dlevel;
-            const moat = terrain !== POOL && terrain !== WATER && !onMedusa && !levelIsWaterLevel(state);
+            const moat = terrain !== POOL && terrain !== WATER && !onMedusa && !Is_waterlevel(hero.uz, state);
             const species = withIndefiniteArticle(monsterTypeName(monster.mnum, !!monster.female));
             const killer = `${moat ? 'moat' : 'pool of water'} by ${species}`;
             attack.heroDied = await finishHeroDeath({
