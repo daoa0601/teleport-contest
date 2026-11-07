@@ -16,7 +16,8 @@ import { NO_COLOR } from './terminal.js';
 import { CMDQ_KEY } from './const.js';
 import { doprevMessage, keyText } from './cmd.js';
 import { visibleCommandKey } from './hacklib.js';
-import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE, impossible } from './diagnostics.js';
+import { paniclog } from './novel_tribute.js';
 import { showChoiceWindow } from './windows.js';
 import { availableExtendedCommands, commandAutocompletes, yn_function } from './cmd.js';
 
