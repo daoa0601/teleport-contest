@@ -1944,12 +1944,6 @@ const TOGGLE_BOOLEAN_NAMES: readonly string[] = (() => {
     return names;
 })();
 
-// C options.c:reset_needed_visuals(): the after-toggle redraw and status
-// flush.
-// options.c:reset_needed_visuals(), after the toggle message. Both reset
-// kinds redraw; only opt_need_redraw re-probes the gold symbol and re-glyphs
-// dark rooms, and no toggle path flushes the screen. A pending status
-// update must finish even when option messages have been silenced.
 
 export type MessageType = typeof MSGTYP_NORMAL | typeof MSGTYP_NOREP
     | typeof MSGTYP_NOSHOW | typeof MSGTYP_STOP;
@@ -2092,7 +2086,6 @@ function numberPadDescription(): string {
     return bindings.pcHack ? '2=on, MSDOS compatible' : '1=on';
 }
 
-// C options.c:handler_number_pad(): the number_pad mode menu.
 
 // Part of C options.c:optfn_number_pad(): apply the chosen numberpad mode.
 function setNumberPadOption(value: number, settings: Pick<ConfigurationSettings, 'commandBindings' | 'iflags'>): void {
@@ -2101,6 +2094,7 @@ function setNumberPadOption(value: number, settings: Pick<ConfigurationSettings,
     settings.iflags.num_pad_mode = value === -1 ? 1 : value > 0 ? value - 1 : 0;
 }
 
+// C options.c:handler_number_pad(): the number_pad mode menu.
 async function editNumberPad(): Promise<void> {
     const selected = await showMultiSelectWindow({
         title: 'Select number_pad mode:', omitHeadings: true, pickOne: true,
@@ -3028,6 +3022,13 @@ async function editBoulderSymbol(): Promise<boolean> {
     return true;
 }
 
+// C options.c:reset_needed_visuals(): the after-toggle redraw and status
+// flush.
+// options.c:reset_needed_visuals(), after the toggle message. Both reset
+// kinds redraw; only opt_need_redraw re-probes the gold symbol and re-glyphs
+// dark rooms, and no toggle path flushes the screen. A pending status
+// update must finish even when option messages have been silenced.
+
 async function resetBooleanVisuals(pending: PendingVisuals): Promise<void> {
     if (pending.redraw || pending.customReset) {
         if (pending.redraw) {
@@ -3039,14 +3040,6 @@ async function resetBooleanVisuals(pending: PendingVisuals): Promise<void> {
     if (game.context.botl) await bot();
 }
 
-// C options.c:toggle_bool_option(): toggle every set_in_game boolean
-// matching a prefix.
-// options.c:toggle_bool_option() behind #toggle(<prefix>): every set_in_game
-// boolean whose name starts with the text is toggled through the ordinary
-// option path, with the menu's visual refresh after each one. give_opt_msg
-// is the file static options.c carries across commands: once
-// idlecheckpoint (or the options menu) has silenced it, later toggles print
-// nothing until doset_simple() resets it.
 
 // C options.c:handle_add_list_remove(): the shared add/list/remove chooser.
 // options.c:handle_add_list_remove(): the shared add/list/remove chooser.
@@ -3068,6 +3061,15 @@ async function chooseAddListRemove(kind: string, count: number): Promise<'add' |
     const [first = 'done', second] = picks ?? [];
     return second !== undefined && first === 'done' ? second : first;
 }
+
+// C options.c:toggle_bool_option(): toggle every set_in_game boolean
+// matching a prefix.
+// options.c:toggle_bool_option() behind #toggle(<prefix>): every set_in_game
+// boolean whose name starts with the text is toggled through the ordinary
+// option path, with the menu's visual refresh after each one. give_opt_msg
+// is the file static options.c carries across commands: once
+// idlecheckpoint (or the options menu) has silenced it, later toggles print
+// nothing until doset_simple() resets it.
 
 export async function toggleBooleanOptionPrefix(prefix: string): Promise<boolean> {
     let toggled = false;

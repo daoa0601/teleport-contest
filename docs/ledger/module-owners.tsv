@@ -4,6 +4,7 @@ src/js/apply.ts	apply.c
 src/js/artifact.ts	artifact.c
 src/js/attrib.ts	attrib.c
 src/js/ball.ts	ball.c
+src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
 src/js/cfgfiles.ts	cfgfiles.c
@@ -26,6 +27,7 @@ src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/figurine.ts	apply.c
 src/js/fire_explosion.ts	explode.c
+src/js/fountain.ts	fountain.c
 src/js/game_state.ts	decl.c
 src/js/hack.ts	hack.c
 src/js/hacklib.ts	hacklib.c
@@ -49,6 +51,7 @@ src/js/mhitu.ts	mhitu.c
 src/js/minion.ts	minion.c
 src/js/mkmap.ts	mkmap.c
 src/js/mkmaze.ts	mkmaze.c
+src/js/mkobj.ts	mkobj.c
 src/js/mon.ts	mon.c
 src/js/mondata.ts	mondata.c
 src/js/monmove.ts	monmove.c
@@ -60,13 +63,16 @@ src/js/music.ts	music.c
 src/js/novel_tribute.ts	files.c
 src/js/objnam.ts	objnam.c
 src/js/option_editors.ts	options.c
+src/js/options.ts	symbols.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pickup.ts	pickup.c
 src/js/pickup_location.ts	hack.c
+src/js/pline.ts	pline.c
 src/js/potion.ts	potion.c
 src/js/pray.ts	pray.c
 src/js/priest.ts	priest.c
+src/js/query.ts	getline.c
 src/js/quest.ts	quest.c
 src/js/questpgr.ts	questpgr.c
 src/js/quiver.ts	wield.c
@@ -79,8 +85,10 @@ src/js/rumors.ts	rumors.c
 src/js/save.ts	save.c
 src/js/scatter.ts	explode.c
 src/js/senses.ts	detect.c
+src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c
+src/js/sounds.ts	sounds.c
 src/js/sp_lev.ts	sp_lev.c
 src/js/spell.ts	spell.c
 src/js/stairs.ts	stairs.c
