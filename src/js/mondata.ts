@@ -76,7 +76,6 @@ import { monsterHasLineOfSightToHero, clearPath } from './vision.js';
 import { canSpotMonster } from './display.js';
 import { blindfolded, heroIsBlind, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import type { GameObject } from './object_types.js';
-import { ARTIFACT_DATA } from './artifact_data.js';
 import { BANANA, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BLINDING_VENOM, CLOAK_OF_MAGIC_RESISTANCE, CORPSE, CREAM_PIE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, POT_BLINDNESS } from './object_data.js';
 import { FOOD_CLASS } from './objclass.js';
 import { OBJ_DESCR, objectMaterial } from './o_init.js';
@@ -607,13 +606,14 @@ export function canTrack(mnum: number, state: GameState = game): boolean {
     return monsterHasEyes(mnum);
 }
 
-// Port only: MONSTER_NAME.indexOf for mondata.c:same_race()'s family
-// tables, like symbol() below.
+// Part of C mondata.c:same_race(): the family tables' PM_ constants,
+// resolved by name (the checked monsterIndexByName() lives in mon.ts;
+// importing it here would cycle module initialization).
 function species(name: string) {
     return MONSTER_NAME.indexOf(name);
 }
 
-// Port only: resolves a species' class symbol for the same_race tables.
+// Part of C mondata.c:same_race(): the family tables' S_ class constants.
 function symbol(name: string) {
     return requireMonsterData(MONSTER_SYMBOL, species(name));
 }
@@ -928,27 +928,17 @@ const PM_DEATH = 311;
 const PM_BLACK_DRAGON = MONSTER_NAME.indexOf('black dragon');
 const PM_GRAY_DRAGON = MONSTER_NAME.indexOf('gray dragon');
 const PM_YELLOW_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
-const ARTIFACT_BY_ID = new Map(
-    ARTIFACT_DATA.map(artifact => [artifact.id, artifact]),
-);
 
-// Port only: resolves an artifact by its id; C indexes artilist.
-function artifactForObject(object: GameObject | null | undefined) {
-    return object?.oartifact === undefined ? null : ARTIFACT_BY_ID.get(object.oartifact) || null;
-}
-
-// Port only: the minvent accessor.
+// C mtmp->minvent: the monster inventory list; the port also accepts the
+// restored 'inventory' spelling.
 function monsterInventory(monster: ResistantMonster | null | undefined): GameObject[] {
     return monster?.minvent || monster?.inventory || [];
 }
 
-// Port only: the wielded-weapon accessor; C uses MON_WEP.
-function monsterWeapon(monster: ResistantMonster | null | undefined): GameObject | undefined {
-    return monster?.mw || monsterInventory(monster).find(object =>
-        object?.wielded || ((object?.owornmask ?? 0) & W_WEP));
-}
 
-// Port only: the worn-type test the resistance checks share.
+// Part of C mondata.c:Resists_Elem()/resists_drli(): the worn-item loop
+//((o->owornmask & slotmask) && objects[o->otyp].oc_oprop == propindx),
+// with the port's otyp list in place of the oc_oprop test.
 function monsterWearsOneOf(monster: ResistantMonster | null | undefined, objectTypes: readonly number[], mask: number): boolean {
     return (monster?.minvent || monster?.inventory || []).some(object =>
         objectTypes.includes(object?.otyp)
@@ -964,9 +954,9 @@ export function monsterResistanceBits(monster: ResistantMonster | null | undefin
 
 // Part of C mondata.c:Resists_Elem(): the artifact defense halves.
 function monsterArtifactDefends(monster: ResistantMonster | null | undefined, element: 'fire' | 'cold' | 'shock' | 'poison'): boolean {
-    return artifactForObject(monsterWeapon(monster))?.defense === element
+    return artifactById(monsterWieldedWeapon(monster)?.oartifact)?.defense === element
         || monsterInventory(monster).some(object =>
-            artifactForObject(object)?.carriedDefense === element);
+            artifactById(object?.oartifact)?.carriedDefense === element);
 }
 
 // C monst.h:resists_fire():
@@ -1000,7 +990,7 @@ export function monsterHasDrainResistance(monster: ResistantMonster | null | und
     return (monsterIsUndead(monster.mnum) || is_were(monster.mnum) || monsterIsDemon(monster.mnum))
         || monster?.mnum === PM_DEATH
         || monsterIsVampireShifter(monster)
-        || artifactForObject(monsterWeapon(monster))?.defense === 'life-drain'
+        || artifactById(monsterWieldedWeapon(monster)?.oartifact)?.defense === 'life-drain'
         || (monster.mnum >= PM_GRAY_DRAGON && monster.mnum <= PM_YELLOW_DRAGON
             ? monster.mnum === PM_BLACK_DRAGON
             : monsterWearsOneOf(monster, [
@@ -1023,7 +1013,7 @@ export function heroResistsLifeDrain(state: GameState = game): boolean {
         || (!dragonBody
             && armor !== null && armor !== undefined
             && [BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES].includes(armor.otyp))
-        || artifactForObject(weapon)?.defense === 'life-drain';
+        || artifactById(weapon?.oartifact)?.defense === 'life-drain';
 }
 
 // C monst.h:resists_acid():
@@ -1067,7 +1057,7 @@ export function monsterHasMagicResistance(monster: ResistantMonster | null | und
         return true;
     }
 
-    const weapon = monsterWeapon(monster);
+    const weapon = monsterWieldedWeapon(monster);
     if (artifactById(weapon?.oartifact)?.defense === 'magic') return true;
     return monsterInventory(monster).some((object) => {
         if (artifactById(object?.oartifact)?.carriedDefense === 'magic') return true;
@@ -1448,17 +1438,17 @@ export function monsterIsCovetous(monster: SpeciesReference, state: GameState = 
     return !!(questMonsterFlags3(monster.mnum, state) & 0x001f);
 }
 
-// Port only: the plain-human species test; C compares mons[PM_HUMAN] inline.
+// C ptr == &mons[PM_HUMAN]: the plain-human species test callers apply inline.
 export function monsterIsPlainHuman(mnum: number) {
     return mnum === PM_HUMAN;
 }
 
-// Port only: the MS_NEMESIS test C callers apply inline.
+// C ptr->msound == MS_NEMESIS: the test quest.c callers apply inline.
 export function monsterIsQuestNemesis(mnum: number) {
     return questMonsterSound(mnum) === MS_NEMESIS;
 }
 
-// Port only: the MS_GUARDIAN test C callers apply inline.
+// C ptr->msound == MS_GUARDIAN: the test callers apply inline.
 export function monsterIsQuestGuardian(mnum: number) {
     return MONSTER_SOUND[mnum] === MS_GUARDIAN;
 }
@@ -1598,17 +1588,17 @@ export function monsterIsSlithy(mnum: number) {
     return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY);
 }
 
-// Port only: the S_CENTAUR test C callers apply inline.
+// C ptr->mlet == S_CENTAUR: the test callers apply inline.
 export function monsterIsCentaur(mnum: number) {
     return MONSTER_SYMBOL[mnum] === S_CENTAUR;
 }
 
-// Port only: the S_KOP test C callers apply inline.
+// C ptr->mlet == S_KOP: the test callers apply inline.
 export function monsterIsKop(mnum: number) {
     return MONSTER_SYMBOL[mnum] === S_KOP;
 }
 
-// Port only: the S_EEL test C callers apply inline.
+// C ptr->mlet == S_EEL: the test callers apply inline.
 export function monsterIsEel(mnum: number) {
     return MONSTER_SYMBOL[mnum] === S_EEL;
 }
@@ -1820,7 +1810,7 @@ export function monsterIsRider(monster: { mnum: number | undefined }) {
     return monster.mnum !== undefined && RIDER_SPECIES.has(monster.mnum);
 }
 
-// Port only: the PM_SHADE test C callers apply inline.
+// C ptr == &mons[PM_SHADE]: the test callers apply inline.
 export function monsterIsShade(monster: SpeciesReference | null | undefined) {
     return monster?.mnum === PM_SHADE;
 }
