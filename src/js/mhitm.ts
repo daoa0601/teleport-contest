@@ -70,7 +70,7 @@ import { mswings_verb } from './mhitu.js';
 import { isPolearm } from './object_properties.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from './weapon.js';
 import { weaponHitValue } from './weapon.js';
-import { getmattk } from './attack_selection.js';
+import { getmattk } from './mhitu.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { trapAt, mintrap, damageObjectWithAcid, erodeObject } from './trap.js';
 import {
@@ -90,7 +90,7 @@ import { minimalObjectName, objectCombatName, pluralizeObjectNoun } from './objn
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
 import { drainObjectEnchantment } from './zap.js';
 import { snuffMonsterInventoryLights } from './light.js';
-import { could_seduce } from './seduction_compatibility.js';
+import { could_seduce } from './mhitu.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN,
     AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL,

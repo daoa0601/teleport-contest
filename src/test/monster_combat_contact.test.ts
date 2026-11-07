@@ -15,7 +15,7 @@ import {
 import { rejectMonsterShadeContact } from '../js/uhitm.js';
 import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { could_seduce } from '../js/seduction_compatibility.js';
+import { could_seduce } from '../js/mhitu.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';

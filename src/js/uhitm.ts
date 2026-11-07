@@ -19,7 +19,7 @@ import {
     applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject,
     monsterHasArtifactDefense,
 } from './artifact.js';
-import { getmattk } from './attack_selection.js';
+import { getmattk } from './mhitu.js';
 import { heroIsPunished } from './ball.js';
 import { applyMonsterBlindness, heroBlindingObjectHitMessage } from './blinding_attack.js';
 
@@ -81,7 +81,8 @@ import {
 } from './mhitm.js';
 import { mdamageu, heroHasRemovableSpeed, u_slip_free, diseasemu, magic_negation, mpoisons_subj, presentMonsterAttackEffects, doseduce, u_slow_down } from './mhitu.js';
 import { normalDemon } from './minion.js';
-import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { cloneHeroMonsterForm } from './mhitu.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
 import {
     angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled,

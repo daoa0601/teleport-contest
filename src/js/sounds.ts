@@ -48,7 +48,7 @@ import { demandDemonBribe } from './minion.js';
 import { DEATH_QUOTES } from './death_quotes.js';
 import { doseduce } from './mhitu.js';
 import { selectTributePassage } from './novel_tribute.js';
-import { could_seduce } from './seduction_compatibility.js';
+import { could_seduce } from './mhitu.js';
 import { talkToPriest } from './priest.js';
 import { aggravateMonsters, publishMonsterCuss } from './wizard.js';
 import { AT_TUCH, AD_SSEX } from './monster_attack_types.js';

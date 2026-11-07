@@ -6,14 +6,14 @@ import { objectBaseDirection, objectSkill, AMULET_OF_REFLECTION, CORPSE, EGG, OB
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISN, AD_DISE, AD_DGST, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SPC1, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPEL, AD_SPC2, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, RLOC_NOMSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, TT_WEB, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT, is_pit, HAND, HAIR } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, RLOC_NOMSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, TT_WEB, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT, is_pit, HAND, HAIR, G_EXTINCT, G_GENOD, NO_MINVENT, MM_EDOG, MM_NOMSG } from './const.js';
 import { formatFeltMessage, formatHeardMessage, plineWithContinuation, set_msg_xy } from './pline.js';
 import { displayMessageWindow } from './topl.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, formCanBecomeStoneGolem, monsterPossessive, monsterStagger, seenResistanceForDamage, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense, } from './mondata.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, formCanBecomeStoneGolem, monsterPossessive, monsterStagger, seenResistanceForDamage, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense, monsterIsShade, is_neuter, } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -32,7 +32,7 @@ import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
 import { adjustAttribute, adjustHeroAlignment, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { heroHasHalfSpellDamage, drainObjectEnchantment, destroyInventoryByElement } from './zap.js';
-import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm, heroFormSticks, heroSpecies, heroIsBreathless, heroPassesWalls, body_part } from './polyself.js';
+import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm, heroFormSticks, heroSpecies, heroIsBreathless, heroPassesWalls, body_part, heroPolyGender } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMonsterPostMove, requirePerceivedHero, setMonsterApparentHeroPosition } from './monmove.js';
 import { attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero } from './mthrowu.js';
@@ -40,7 +40,6 @@ import { castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPE
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { bot } from './botl.js';
 import { burnArmorByFire, trapAt, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately, resetUtrap, } from './trap.js';
-import { getmattk } from './attack_selection.js';
 import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
 import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker, contactIsProtected, paralyzeMonster, swingMonsterWeapon, } from './mhitm.js';
@@ -49,7 +48,7 @@ import { isWereMonster, isHumanWereMonster, transformWereMonster, summonWerePack
 import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { find_offensive } from './muse.js';
 import { isPoolAt } from './dbridge.js';
-import { recorderIsLeapDay, recorderLocalHour, sessionIsNight } from './calendar.js';
+import { recorderLocalHour, recorderLocalEpochSeconds, sessionIsNight } from './calendar.js';
 import { monsterGrowlSound } from './sounds.js';
 import { setHeroGrip } from './mon.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -63,8 +62,12 @@ import { heroIsUnaware } from './senses.js';
 import { inventoryItemDescription } from './invent.js';
 import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
 import { promptYesNo } from './query.js';
-import { could_seduce } from './seduction_compatibility.js';
+import { isHomeElemental } from './makemon.js';
+import { setMonsterGivenName } from './do_name.js';
+import { setMonsterMalign } from './makemon.js';
+import { is_domestic } from './mondata.js';
 import { randomMonsterRelocation, reportMonsterTeleportRestriction, teleds, enexto } from './teleport.js';
+import { makemonNear } from './mklev.js';
 import { advanceMonsterWormBody, performWormTailAttacks } from './worm.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './worn.js';
@@ -74,7 +77,7 @@ import { endObjectBurn } from './timeout.js';
 import { releaseAllMonsterLeashes } from './apply.js';
 import { dismountHero } from './steed.js';
 import { encumber_msg } from './pickup.js';
-import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty } from './properties.js';
+import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, propertyIsActive } from './properties.js';
 import { stopHeroOccupation } from './allmain.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
@@ -85,6 +88,82 @@ const S_EEL = 57;
 const S_MIMIC = 13;
 const S_PIERCER = 16;
 const PM_TRAPPER = MONSTER_NAME.indexOf('trapper');
+// C mhitu.c:getmattk()
+export function getmattk(attacker, defender, attackIndex, previousResults, state) {
+    requireLiveGame(state);
+    const attackerSpecies = actorSpecies(attacker, state);
+    const attacks = MONSTER_ATTACKS[attackerSpecies];
+    const attack = attacks?.[attackIndex];
+    if (!attack || !Number.isInteger(attackIndex))
+        throw new RangeError(`Species ${attackerSpecies} has no attack slot ${attackIndex}.`);
+    const [method, damage, dice, sides] = attack;
+    if (attackIndex > 0 && (previousResults[attackIndex - 1] ?? M_ATTK_MISS) > M_ATTK_MISS
+        && [AD_DISE, AD_PEST, AD_FAMN].includes(damage)
+        && damage === attacks?.[attackIndex - 1]?.[1]) {
+        return [method, AD_STUN, dice, sides];
+    }
+    if (damage === AD_DREN && isHeroActor(defender, state)) {
+        return energyDrainAttack(attack, state);
+    }
+    // Native youmonst.mspec_used stays zero. The hero's ability delays are
+    // separate state; monster cooldowns must never suppress a hero's form.
+    if (!isHeroActor(attacker, state) && attacker.mspec_used
+        && (method === AT_ENGL || method === AT_HUGS || damage === AD_STCK || damage === AD_POLY)) {
+        if ([AD_ACID, AD_ELEC, AD_COLD, AD_FIRE].includes(damage))
+            return [AT_TUCH, damage, 1, 6];
+        return sides === 0 ? [AT_TUCH, AD_PHYS, 0, 0] : [AT_CLAW, AD_PHYS, 1, 6];
+    }
+    if (attackIndex === 0 && !isHeroActor(attacker, state)
+        && method === AT_WEAP && damage !== AD_PHYS
+        && !(attacks?.[1]?.[0] === AT_WEAP && attacks[1][1] === AD_PHYS)) {
+        const weapon = monsterWieldedWeapon(attacker);
+        const petrifyingWeapon = weapon?.otyp === CORPSE && touchPetrifies(weapon.corpsenm);
+        const artifact = artifactById(weapon?.oartifact, state);
+        if (attacker.mcan || petrifyingWeapon
+            || artifact?.enumName === 'STORMBRINGER' || artifact?.enumName === 'VORPAL_BLADE')
+            return [method, AD_PHYS, dice, sides];
+    }
+    if (attackIndex === 0 && method === AT_TUCH && damage === AD_COLD
+        && actorResistsCold(defender, state) && !monsterIsShade({ mnum: actorSpecies(defender, state) })) {
+        return [method, AD_PHYS, Math.trunc((dice + 1) / 2), sides === 10 ? 6 : sides];
+    }
+    // Every replacement above used C's alternate buffer, including unchanged
+    // energy dice. Only an unmodified source slot gets the home-plane bonus.
+    return isHomeElemental(attackerSpecies) ? [method, damage, dice * 2, sides] : attack;
+}
+// Port only: type guard for the hero side of the shared hero/monster
+// combat-actor union (C compares against youmonst directly).
+function isHeroActor(actor, state) {
+    return actor === state.u;
+}
+// Part of C mhitu.c:getmattk(): the attacker's permonst lookup — youmonst
+// maps to the hero's current form.
+function actorSpecies(actor, state) {
+    return isHeroActor(actor, state) ? heroSpecies(state) : actor.mnum;
+}
+// Part of C mhitu.c:getmattk(): the cold-resistance test of the lich
+// touch-downgrade branch (Cold_resistance vs resists_cold).
+function actorResistsCold(actor, state) {
+    return isHeroActor(actor, state) ? !!state.u.coldResistance : monsterHasColdResistance(actor);
+}
+// Part of C mhitu.c:getmattk(): the AD_DREN dice adjustment that tracks
+// the defending hero's energy.
+function energyDrainAttack(attack, state) {
+    const [method, damage] = attack;
+    let [, , dice, sides] = attack;
+    const level = Math.max(state.u.ulevel, 6);
+    if (state.u.uen <= 5 * level && dice > 1) {
+        dice--;
+        if (state.u.uenmax <= 2 * level && sides > 3)
+            sides -= 3;
+    }
+    else if (state.u.uen > 12 * level) {
+        dice++;
+        if (state.u.uenmax > 20 * level)
+            sides += 3;
+    }
+    return [method, damage, dice, sides];
+}
 // C mhitu.c:hitmsg(): the attacker's hit line, including the again-verb for
 // consecutive identical attack slots. A missed slot is dispatched to
 // missmu() below, as mattacku()'s switch chooses between them; effect
@@ -3892,5 +3971,126 @@ export async function u_slow_down(state = game, publish = plineWithContinuation)
     await publish(state.u.fast || state.u.veryFast
         ? 'Your quickness feels less natural.' : 'You slow down.');
     await exerciseAttribute(A_DEX, false, state);
+}
+// C mhitu.c:ld() uses calendar.c:yyyymmdd(0), after localtime()
+// normalizes the fixed clock's inherited daylight saving offset.
+export function recorderIsLeapDay(datetime) {
+    const epoch = recorderLocalEpochSeconds(datetime) || Date.now() / 1000;
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date(epoch * 1000));
+    return parts.some(part => part.type === 'month' && part.value === '02')
+        && parts.some(part => part.type === 'day' && part.value === '29');
+}
+const S_NYMPH = 14;
+const PM_AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
+// C mhitu.c:could_seduce(). Cancellation belongs to each attack caller.
+export function could_seduce(aggressor, defender, attack, state = game) {
+    const species = aggressor === 'hero' ? heroSpecies(state) : aggressor.mnum;
+    if (monsterIsAnimal({ mnum: species }))
+        return 0;
+    const attacks = MONSTER_ATTACKS[species];
+    const damage = attack?.[1] ?? (attacks?.some(candidate => candidate[1] === AD_SSEX)
+        ? AD_SSEX : attacks?.some(candidate => candidate[1] === AD_SEDU) ? AD_SEDU : AD_PHYS);
+    const invisible = aggressor === 'hero' ? heroIsInvisible(state) : !!aggressor.minvis;
+    const perceived = defender === 'hero' ? propertyIsActive('seeInvisible', state)
+        : monsterPerceives(defender.mnum);
+    if (invisible && !perceived && damage === AD_SEDU)
+        return 0;
+    const nymph = MONSTER_SYMBOL[species] === S_NYMPH;
+    if ((!nymph && species !== PM_AMOROUS_DEMON)
+        || ![AD_SEDU, AD_SSEX, AD_SITM].includes(damage))
+        return 0;
+    return participantGender(aggressor, state) === 1 - participantGender(defender, state)
+        ? 1 : nymph ? 2 : 0;
+}
+// Part of C mhitu.c:could_seduce(): the poly_gender/gender reads for each
+// participant.
+function participantGender(participant, state) {
+    if (participant === 'hero')
+        return heroPolyGender(state);
+    return is_neuter(participant.mnum)
+        ? 2 : participant.female ? 1 : 0;
+}
+// C mhitu.c:ranged_attk_available(): an unresisted spit, breath, gaze, or
+// magic bolt.
+// mhitu.c:ranged_attk_available() excludes effects the hero has resisted.
+// Also C mondata.c:get_atkdam_type(): inlined here for random breath attacks.
+export function monsterHasAvailableDistanceAttack(monster, random) {
+    for (const [method, damage] of MONSTER_ATTACKS[monster.mnum] ?? []) {
+        if (![AT_SPIT, AT_BREA, AT_MAGC, AT_GAZE].includes(method))
+            continue;
+        const damageType = damage === AD_RBRE ? AD_MAGM + random(8) : damage;
+        if (damageType >= 0 && !((monster.seen_resistance ?? 0) & seenResistanceForDamage(damageType)))
+            return true;
+    }
+    return false;
+}
+// C mhitu.c:cloneu()
+// The actor is a fresh makemon birth rather than a copy of youmonst: it owns
+// ordinary placement, HP, gender, attitude, and identity RNG before cloneu()
+// replaces its level/HP and initializes a named tame companion.
+// Also C dog.c:initedog(): the everything=TRUE pet initialization is inlined here.
+export async function cloneHeroMonsterForm(state = game) {
+    if (state !== game)
+        throw new Error('hero clone owner requires live game state');
+    const u = state.u;
+    if (typeof u.mh !== 'number' || typeof u.mhmax !== 'number')
+        return null;
+    if (Number.isFinite(u.mh) && Number.isFinite(u.mhmax)
+        && u.mh > u.mhmax)
+        u.mh = u.mhmax;
+    const mnum = u.umonnum;
+    if (typeof mnum !== 'number' || !Number.isInteger(mnum))
+        return null;
+    const vitalFlags = state.mvitals?.[mnum]?.mvflags ?? 0;
+    if (!Number.isFinite(u.mh)
+        || !Number.isFinite(u.mhmax) || u.mh <= 1
+        || (vitalFlags & (G_EXTINCT | G_GENOD)))
+        return null;
+    const clone = await makemonNear(mnum, u.ux, u.uy, NO_MINVENT | MM_EDOG | MM_NOMSG, true);
+    if (!clone)
+        return null;
+    const name = state.plname || 'player';
+    const edog = {
+        parentmid: clone.m_id,
+        droptime: 0,
+        dropdist: 10000,
+        apport: u.acurr?.a?.[A_CHA] ?? 3,
+        whistletime: 0,
+        hungrytime: (state.moves ?? 0) + 1000,
+        ogoal: { x: -1, y: -1 },
+        abuse: 0,
+        revivals: 0,
+        mhpmax_penalty: 0,
+        killed_by_u: 0,
+    };
+    clone.mcloned = 1;
+    setMonsterGivenName(clone, name);
+    clone.m_lev = MONSTER_LEVEL[mnum] ?? clone.m_lev;
+    clone.mtame = Math.max(is_domestic(mnum) ? 10 : 5, clone.mtame ?? 0);
+    clone.mpeaceful = 1;
+    clone.mavenge = 0;
+    clone.mleashed = 0;
+    clone.meating = 0;
+    clone.pet = true;
+    clone.minvent = [];
+    clone.inventory = clone.minvent;
+    clone.hasInventory = false;
+    clone.edog = edog;
+    clone.mextra ??= {};
+    clone.mextra.edog = edog;
+    setMonsterMalign(clone, state);
+    clone.mhpmax = u.mhmax;
+    clone.mhp = Math.trunc(u.mh / 2);
+    u.mh -= clone.mhp;
+    state.context.botl = true;
+    // C cloneu() never redraws the clone's square after taming it: the glyph
+    // cached by makemon()'s newsym() (warning digit for a blind warned hero,
+    // hostile monster glyph otherwise) stays until something else redraws it.
+    if (!u.uconduct)
+        u.uconduct = {};
+    u.uconduct.pets = (u.uconduct.pets ?? 0) + 1;
+    return clone;
 }
 //# sourceMappingURL=mhitu.js.map

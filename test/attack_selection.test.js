@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getmattk } from '../js/attack_selection.js';
+import { getmattk } from '../js/mhitu.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NO_MINVENT, W_ARM, W_ARMG, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_COLD, AD_DISE, AD_DREN, AD_DRLI, AD_DRST, AD_ELEC, AD_FAMN, AD_PEST, AD_PHYS, AD_POLY, AD_SSEX, AD_STCK, AD_STUN, AT_CLAW, AT_ENGL, AT_HUGS, AT_TUCH, AT_WEAP, } from '../js/monster_attack_types.js';

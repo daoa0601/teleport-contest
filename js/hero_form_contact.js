@@ -7,11 +7,11 @@ import { AD_DGST, AD_STCK, AD_WRAP, AT_HUGS } from './monster_attack_types.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
-import { could_seduce } from './seduction_compatibility.js';
+import { could_seduce } from './mhitu.js';
 import { monsterHasHead, monsterIsBreathless, monsterIsMindless, monsterIsUnsolid } from './mondata.js';
 const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
 // Part of C mhitu.c:could_seduce(): the hero-perspective call (the shared
-// port is could_seduce() in seduction_compatibility.ts).
+// port is could_seduce() in mhitu.ts).
 export function heroSeductionCompatibility(monster, attack, state = game) {
     return could_seduce('hero', monster, attack, state);
 }
