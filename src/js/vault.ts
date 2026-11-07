@@ -625,7 +625,7 @@ export async function moveVaultGuard(
         if (egd.fcend > 2 && inVaultCorridor(guard, guard.mx, guard.my)
             && !inVaultCorridor(guard, state.u.ux, state.u.uy)
             && level.requireAt(entry.x, entry.y).typ === entry.typ) {
-            await pline(`${guardDisplayName(guard, state)}, confused, disappears.`);
+            await pline(`${monsterName(guard, { state, capitalized: true, suppressIt: true })}, confused, disappears.`);
             return result(await finishEscort(guard, semiDead, true, state));
         }
         if (carryingGold && (inVaultCorridor(guard, state.u.ux, state.u.uy) || heroInVault)) {
@@ -634,8 +634,8 @@ export async function moveVaultGuard(
             if (!heroIsDeaf(state)) await pline(firstWarning ? '"Drop all your gold, scoundrel!"' : '"So be it, rogue!"');
             else if (!heroIsBlind(state)) {
                 const pronoun = monsterPossessive(guard, { state, noIt: true });
-                await pline(firstWarning ? `${guardDisplayName(guard, state)} holds out ${pronoun} palm demandingly!`
-                    : `${guardDisplayName(guard, state)} rubs ${pronoun} hands with enraged delight!`);
+                await pline(firstWarning ? `${monsterName(guard, { state, capitalized: true, suppressIt: true })} holds out ${pronoun} palm demandingly!`
+                    : `${monsterName(guard, { state, capitalized: true, suppressIt: true })} rubs ${pronoun} hands with enraged delight!`);
             }
             if (firstWarning) return result();
             guard.mpeaceful = 0;
@@ -734,10 +734,6 @@ export async function noticeVaultEscape(guard: VaultGuard, state: GameState): Pr
     if (!inVaultCorridor(guard, state.u.ux, state.u.uy)) await moveVaultGuard(guard, state, rn2);
 }
 
-// Port only: format a visible guard name without substituting a pronoun.
-function guardDisplayName(guard: Monster, state: GameState) {
-    return monsterName(guard, { state, capitalized: true, suppressIt: true });
-}
 
 // Part of C vault.c:gd_move(): restore the guard's original entry after hostility.
 async function restoreEntry(guard: VaultGuard, x: number, y: number, state: GameState) {
@@ -949,7 +945,7 @@ export async function wallifyVault(guard: VaultGuard, state: GameState, random: 
     }
     if (!movedGold && !fixed) return;
     if (inVaultCorridor(guard, guard.mx, guard.my) || cansee(guard.mx, guard.my))
-        await pline(`${guardDisplayName(guard, state)} whispers an incantation.`);
+        await pline(`${monsterName(guard, { state, capitalized: true, suppressIt: true })} whispers an incantation.`);
     else await publishHeardMessage('a distant chant.', pline, state);
     if (movedGold) await pline('A mysterious force moves the gold into the vault.');
     if (fixed) await pline("The damaged vault's walls are magically restored!");
