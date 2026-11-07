@@ -33,7 +33,9 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import { SHOPBASE } from './const.js';
 import type { ObjectDefinition } from './object_data.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { removeWornHeroItem } from './steal.js';
 import { novelTitle } from './do_name.js';
+import { stopHeroOccupation } from './allmain.js';
 import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { objectIsVulnerableToErosion } from './trap.js';
@@ -2231,34 +2233,6 @@ function globIceState(glob: GameObject, state: GameState): 'none' | 'buried' | '
     return outer.where === 'buried' ? 'buried' : 'on-ice';
 }
 
-// Part of C steal.c:remove_worn_item(): clearing every hero slot the object
-// occupied; shrinking_glob_gone reaches it.
-function clearHeroEquipment(object: GameObject, state: GameState): void {
-    const slots = [
-        'uwep', 'uswapwep', 'uquiver',
-        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
-        'uleft', 'uright', 'uamul', 'ublindf',
-    ] as const;
-    let removed = !!(object.owornmask || object.worn || object.wielded
-        || object.alternate || object.ready);
-    for (const slot of slots) {
-        if (state[slot] === object) {
-            state[slot] = null;
-            removed = true;
-        }
-        if (state.u?.[slot] === object) {
-            state.u[slot] = null;
-            removed = true;
-        }
-    }
-    object.owornmask = 0;
-    object.worn = false;
-    object.wielded = false;
-    object.alternate = false;
-    object.ready = false;
-    // C stop_occupation(): a worn glob vanishing interrupts the occupation.
-    if (removed) state._occupation = null;
-}
 
 // C mkobj.c:shrinking_glob_gone(): a glob that shrank away to nothing
 // unwields/unwears itself and is removed from wherever it lives.
@@ -2266,7 +2240,13 @@ async function deleteGlob(glob: GameObject, state: GameState): Promise<void> {
     const where = glob.where;
     const x = glob.ox, y = glob.oy;
     if (where === 'inventory') {
-        clearHeroEquipment(glob, state);
+        // C mkobj.c:shrinking_glob_gone(): remove_worn_item(obj, FALSE) for a
+        // worn glob, then stop_occupation().  A wielded glob arms the
+        // "begin bashing" bare-hands notice through uwepgone().
+        if (glob.owornmask) {
+            await removeWornHeroItem(glob, state);
+            await stopHeroOccupation(state);
+        }
     } else if (where === 'migrating') {
         glob.owornmask = 0;
     } else if (where === 'minvent' && glob.ocarry?.mw === glob) {
