@@ -52,7 +52,8 @@ import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff,
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
-import { completeExtendedCommand, promptChoice, tty_yn_function } from './query.js';
+import { completeExtendedCommand, promptChoice } from './query.js';
+import { tty_yn_function } from './topl.js';
 import { getLine, showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
@@ -108,7 +109,7 @@ import { floorObjectDescription } from './invent.js';
 import { cansee, couldsee, vision_reset_new_level } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
 import type { Selection } from './selvar.js';
-import type { TtyPromptAnswer } from './query.js';
+import type { TtyPromptAnswer } from './topl.js';
 import type { CharacterInput, CommandDirection, InputState } from './input.js';
 import type { Hero } from './hero_types.js';
 import type { TextPage } from './windows.js';

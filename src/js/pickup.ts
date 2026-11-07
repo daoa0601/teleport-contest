@@ -46,7 +46,8 @@ import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';
 import type { ChoiceMenuEntry, CountedSelection, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
 import type { MenuUnderlay } from './wintty.js';
 import { takeQueuedInventoryChoice } from './invent.js';
-import { promptYesNoQuit, promptChoice, tty_yn_function } from './query.js';
+import { promptYesNoQuit, promptChoice } from './query.js';
+import { tty_yn_function } from './topl.js';
 import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { hideHeroUnder, finishEnvironmentalMonsterDeath,

@@ -78,7 +78,8 @@ import {
 } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject } from './mkobj.js';
-import { tty_yn_function, promptYesNo } from './query.js';
+import { promptYesNo } from './query.js';
+import { tty_yn_function } from './topl.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { getLine, showMultiSelectWindow } from './windows.js';
 import type { MultiSelectSection } from './windows.js';
