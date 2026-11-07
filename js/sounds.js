@@ -26,7 +26,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { isAccessibleAt } from './monmove.js';
 import { couldsee } from './vision.js';
 import { searchSpecial } from './mkroom.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { wakeMonstersNearWithMessages, livingResidents } from './mon.js';
 import { priestIsInOwnTemple, monsterAlignmentType } from './priest.js';
 import { findVaultGuard } from './vault.js';
 import { rn1, rn2, rnd } from './rng.js';
@@ -229,12 +229,6 @@ async function templePriestSound(priest, state, hallu) {
         message = message.replace('%s', hallucinatedDeityName(shrine.shralign, state));
     await hear(state, message);
     return true;
-}
-// Part of C mon.c:get_iter_mons(): enumerate living floor monsters for ambient sounds.
-function livingResidents(state) {
-    // C get_iter_mons() tests mstate, not square occupancy: a mounted steed
-    // remains on fmon with MON_FLOOR even though the hero shares its square.
-    return [...state.level.monsters].reverse().filter(monster => !monster.dead && monster.mhp > 0 && (monster.mstate ?? MON_FLOOR) === MON_FLOOR);
 }
 // C sounds.c:mon_in_room()
 function monInRoom(monster, type, state) {

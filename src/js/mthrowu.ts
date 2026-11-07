@@ -14,6 +14,7 @@ import {
 } from './object_data.js';
 import { currentAttribute, currentStrength, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifact.js';
+import { snuffCandle } from './apply.js';
 import {
     applyMonsterBlindness, prepareHeroThrownBlindness, finishHeroThrownBlindness,
 } from './blinding_attack.js';
@@ -89,7 +90,6 @@ import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { snuffThrownCandle } from './thrown_object.js';
 import { formatHeardMessage, plineWithContinuation, publishHeardMessage, set_msg_xy } from './pline.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
@@ -829,7 +829,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
     }
 
     const options = { state: requireInitializedGame(state), publish, random };
-    await snuffThrownCandle(weapon, state, publish);
+    await snuffCandle(weapon, state, publish);
     if (!await shipObject(weapon, x, y, options)) {
         const landed = await landFloorObject(weapon, x, y, { ...options, verb: 'drop' });
         if (!landed) {

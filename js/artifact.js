@@ -623,8 +623,15 @@ export function artifactEmitsLight(object) {
         return true;
     return artifactById(object?.oartifact)?.name === 'Sunsword';
 }
+// C artifact.c:shade_glare()
+// Effective against shades: any silver object, or a non-silver artifact
+// with an undead bane (Sunsword).  Does not consider the blessed-vs-undead
+// bonus.
+export function shadeGlare(object, state = game) {
+    return objectMaterial(object, state) === SILVER || artifactStrikesShade(object);
+}
 // Part of C artifact.c:shade_glare(): the artifact half (Sunsword's
-// undead bane); the silver-material half stays with callers.
+// undead bane).
 export function artifactStrikesShade(object) {
     return artifactById(object?.oartifact)?.name === 'Sunsword';
 }

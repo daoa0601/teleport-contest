@@ -9,6 +9,7 @@ import { OBJ_NAME } from './object_data.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CORPSE, CREAM_PIE, CREDIT_CARD, EGG, ELVEN_ARROW, ELVEN_BOW, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, WAN_STRIKING, } from './object_data.js';
 import { currentAttribute, currentStrength, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifact.js';
+import { snuffCandle } from './apply.js';
 import { applyMonsterBlindness, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn, calcCapacity } from './hack.js';
@@ -59,7 +60,6 @@ import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { snuffThrownCandle } from './thrown_object.js';
 import { formatHeardMessage, plineWithContinuation, publishHeardMessage, set_msg_xy } from './pline.js';
 import { requirePerceivedHero, dissolveBars } from './monmove.js';
 // Port only: finite-number type guard for decoded projectile options.
@@ -786,7 +786,7 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
         await publishHeardMessage('a loud snap!', publish, state);
     }
     const options = { state: requireInitializedGame(state), publish, random };
-    await snuffThrownCandle(weapon, state, publish);
+    await snuffCandle(weapon, state, publish);
     if (!await shipObject(weapon, x, y, options)) {
         const landed = await landFloorObject(weapon, x, y, { ...options, verb: 'drop' });
         if (!landed) {

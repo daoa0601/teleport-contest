@@ -55,7 +55,7 @@ import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from '
 import { objectShedsLight } from './light.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { assertCreatedObject, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { carryObjEffects } from './figurine_timer.js';
 import { heroGoldObject } from './sit.js';
 import { hiddenGold } from './vault.js';
 import { nomul, heroGoldAmount, roomsAt, nearCapacity } from './hack.js';
@@ -298,6 +298,17 @@ const HANDS_SYM = 45, QUESTION = 63, ASTERISK = 42, ESCAPE = 27;
 // strchr(quitchars, '\0') also succeeds, for a literal NUL from the fuzzer.
 const QUITCHARS = [0, 32, 13, 10, ESCAPE];
 const BUC_CHOICES = ['B', 'C', 'U', 'X'];
+// C invent.c:count_buc()
+// The B/U/C/X classification of one object: coins follow the goldX
+// option, unknown status stays X.  C's counting loops became the menu
+// builders' category sets (wornBucCategories(), query_categories());
+// every classifier site shares this one.  The priest knowledge pass runs
+// before the filter at each caller, as in count_buc().
+export function bucCategory(object, state = game) {
+    if (object.oclass === COIN_CLASS)
+        return state.flags.goldX ? 'X' : 'U';
+    return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
+}
 const DEFAULT_PACK_ORDER = [
     COIN_CLASS, AMULET_CLASS, WEAPON_CLASS, ARMOR_CLASS, FOOD_CLASS,
     SCROLL_CLASS, SPBOOK_CLASS, POTION_CLASS, RING_CLASS, WAND_CLASS,
@@ -1637,7 +1648,7 @@ async function typeInventory() {
     const carried = unpaidObjects(game.inventory);
     const floor = unpaidObjects(level.objects.flatMap(column => (column ?? []).flatMap(pile => pile ?? [])));
     const buried = unpaidObjects(level.buriedObjects ?? []);
-    const statuses = new Set(game.inventory.map(beatitude));
+    const statuses = new Set(game.inventory.map(object => bucCategory(object)));
     const picked = game.inventory.filter(object => object.pickup_prev);
     const classes = [...new Set(game.inventory.map(object => object.oclass))];
     const extra = `${carried.length + floor.length + buried.length ? 'u' : ''}${bill.length ? 'x' : ''}${[...'BUCX'].filter(status => statuses.has(bucChoice(status))).join('')}${picked.length ? 'P' : ''}`;
@@ -1682,7 +1693,7 @@ async function typeInventory() {
     const status = typeof choice === 'string' && 'BUCXP'.includes(choice) ? choice : null;
     const oclass = typeof choice === 'number' ? choice : OBJECT_CLASS_SYMBOLS.indexOf(choice);
     const candidates = game.inventory.filter(object => status === 'P' ? object.pickup_prev
-        : status ? beatitude(object) === status : object.oclass === oclass);
+        : status ? bucCategory(object) === status : object.oclass === oclass);
     const before = status === 'B' ? 'known to be blessed ' : status === 'U' ? 'known to be uncursed '
         : status === 'C' ? 'known to be cursed ' : status ? '' : 'such ';
     const after = status === 'X' ? ' whose blessed/uncursed/cursed status is unknown'
@@ -2635,7 +2646,7 @@ async function finishAddedInventoryItem(item, recoveredThrownStack = false) {
         await setQuiverObject(item, game);
     item.pickup_prev = true;
     await finishInventoryAddition(item, game);
-    attachCursedFigurineTimer(item, game);
+    carryObjEffects(item, game);
     return item;
 }
 // Part of C invent.c:addinv(): the created-object entry — the same
@@ -2693,9 +2704,16 @@ export function confersLuck(object, state = game) {
 function admitsChoice(classification) {
     return classification === GETOBJ_SUGGEST || classification === GETOBJ_DOWNPLAY;
 }
-// Part of C invent.c:getobj(): followed by its split_otmp tail, for
-// callers which take the object getobj() returns; hands are not a choice
-// for these callbacks.
+// C invent.c:splittable()
+// Some objects shouldn't be split when a count is given to getobj() or
+// askchain(): a cursed loadstone and the welded weapon.
+export function splittable(object) {
+    return !(object.otyp === LOADSTONE && object.cursed) && !isWeldedPrimary(object);
+}
+// Part of C invent.c:getobj(): followed by its split_otmp tail (the two
+// arms of !splittable(), each with its own side effect), for callers
+// which take the object getobj() returns; hands are not a choice for
+// these callbacks.
 export async function chooseInventoryObject(word, classify, options = {}) {
     const selection = await getobj(word, classify, options);
     const object = selection.object;
@@ -2735,14 +2753,6 @@ async function askInventoryPrompt(prompt) {
     const { answer } = await yn_function(prompt, null, '', false);
     return answer.charCodeAt(0);
 }
-// Part of C invent.c:count_buc(): the BUC letter of one object.
-function identificationBuc(object) {
-    if (object.oclass === COIN_CLASS)
-        return game.flags.goldX ? 'X' : 'U';
-    if (!object.bknown)
-        return 'X';
-    return object.blessed ? 'B' : object.cursed ? 'C' : 'U';
-}
 // Part of C invent.c:dounpaid()/count_buc(): the unpaid recursion into
 // containers.
 function hasUnpaidContents(object) {
@@ -2764,7 +2774,7 @@ function traditionalIdentifyChoices(candidates) {
     if (inventory.some(hasUnpaidContents))
         choices += 'u';
     for (const category of 'BUCX') {
-        if (eligible.some(object => identificationBuc(object) === category))
+        if (eligible.some(object => bucCategory(object) === category))
             choices += category;
     }
     if (inventory.some(object => object.pickup_prev))
@@ -2805,7 +2815,7 @@ async function parseIdentificationCategories(answer) {
 function matchesIdentificationCategories(object, categories) {
     if (categories.unpaid && !hasUnpaidContents(object))
         return false;
-    if (categories.beatitudes.size && !categories.beatitudes.has(identificationBuc(object)))
+    if (categories.beatitudes.size && !categories.beatitudes.has(bucCategory(object)))
         return false;
     return !categories.picked || !!object.pickup_prev;
 }
@@ -2922,7 +2932,10 @@ async function showItemActionMenu(item) {
         entries: itemActionEntries(item, game, repairGold),
     });
 }
-// Part of C iactions.c:itemactions(): the selection entry over the menu.
+// C iactions.c:itemactions()
+// The action-choice entry for one item: the menu window
+// (showItemActionMenu()), the contextual rows (itemActionEntries()), and
+// the selection the caller replays as queued keys.
 export async function inventoryActionForObject(item) {
     const key = await showItemActionMenu(item);
     return key === 0 ? null : { key: inventoryActionKey(key), item };
@@ -3281,12 +3294,6 @@ function inUseHeading(object, accessoryLabel) {
     if (mask & W_ARMOR)
         return 'Worn Armor';
     return 'Miscellaneous';
-}
-// Part of C invent.c:count_buc(): the BUC classification of one object.
-function beatitude(object) {
-    if (object.oclass === COIN_CLASS)
-        return game.flags.goldX ? 'X' : 'U';
-    return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 // Part of C invent.c:dotypeinv(): the BUCX answer keys.
 function bucChoice(choice) {

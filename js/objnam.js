@@ -23,7 +23,7 @@ import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutr
 import { isBimanualObject, is_boots, is_gloves, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, is_damageable, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
-import { isBeingTakenOff, pendingArmorAction, armorSimpleName, objectIsHardHelmet } from './do_wear.js';
+import { isBeingDoffed, isBeingDonned, armorSimpleName, objectIsHardHelmet } from './do_wear.js';
 import { equipmentLightDescription } from './light.js';
 import { beginObjectBurn, scheduleObjectTimer, stopLevelTimer } from './timeout.js';
 import { OBJECT_CLASS_SYMBOLS, docrt, feel_newsym, canOverwriteTerrain } from './display.js';
@@ -2961,11 +2961,11 @@ export function primaryHandDescriptionDetail(item, state = game) {
 // Part of C objnam.c:doname_base(): the armor wearing, doffing, and
 // embedded states.
 function wornArmorDescription(item, state) {
-    const pending = pendingArmorAction(state);
-    const dressing = pending?.object === item ? pending.kind : null;
+    // C objnam.c checks doffing() before donning() because donning()
+    // returns True for both cases.
     let description = item === (state.uskin || state.u.uskin) ? 'embedded in your skin'
-        : dressing === 'remove' || isBeingTakenOff(item, state) ? 'being doffed'
-            : dressing === 'wear' ? 'being donned' : 'being worn';
+        : isBeingDoffed(item, state) ? 'being doffed'
+            : isBeingDonned(item, state) ? 'being donned' : 'being worn';
     description = ` (${description})`;
     // Native Concat(bp, 1, ...) uses strncat(), which still appends after the
     // closing parenthesis it meant to replace; the light text uses snprintf()

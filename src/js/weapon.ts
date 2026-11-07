@@ -23,7 +23,7 @@ import {
     definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming,
     observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular,
 } from './objnam.js';
-import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifact.js';
+import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, shadeGlare, artifactToHitBonus } from './artifact.js';
 import { canSeeMonster, newsym } from './display.js';
 import { formatFeltMessage, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './do.js';
@@ -323,13 +323,12 @@ function canHaveTargetDamageBonus(object: GameObject): boolean {
         || objectClass === CHAIN_CLASS;
 }
 
-// Part of C weapon.c:dmgval(): suppress ordinary base damage against shades.
+// Part of C weapon.c:dmgval() and uhitm.c:hmon_hitmon_potion(): suppress
+// ordinary base damage against shades (C shade_glare()).
 export function shadeBlocksWeaponBaseDamage(
     object: GameObject, monster: ArtifactDefender, state: GameState = game,
 ): boolean {
-    return monsterIsShade(monster)
-        && objectMaterial(object, state) !== SILVER
-        && !artifactStrikesShade(object);
+    return monsterIsShade(monster) && !shadeGlare(object, state);
 }
 
 // Part of C weapon.c:dmgval(): apply thick skin, shades, and heavy iron-ball weight.

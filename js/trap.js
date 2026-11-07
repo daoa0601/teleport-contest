@@ -58,7 +58,7 @@ import { displayMessageWindow } from './topl.js';
 import { abusePet, tameMonster, makePetWary } from './dog.js';
 import { heroCanReachFloor, deleteEngravingAt } from './engrave.js';
 import { beginBallAndChainMove, finishBallAndChainMove, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { checkHeroLeashes, bringLeashedFollowers, releaseAllMonsterLeashes, splashLitObject } from './apply.js';
+import { catchLit, checkHeroLeashes, bringLeashedFollowers, releaseAllMonsterLeashes, splashLitObject } from './apply.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic, applyMonsterPassiveToObject } from './uhitm.js';
 import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
@@ -7661,64 +7661,17 @@ export function trapName(type, { ignoreHallucination = false, state = game } = {
     return name;
 }
 // C trap.c:ignite_items()
-// Also C apply.c:catch_lit(): ignite each object and bill unpaid fuel.
+// Also C apply.c:catch_lit(): each ignitable object catches fire through
+// apply.ts:catchLit(), which owns C's catch_lit() body; the loop owns only
+// the chain walk and the visibility the caller observed.
 export async function igniteItems(objects, { state = game, publish = async () => { }, random = rn2, visible = true, } = {}) {
     const ignited = [];
     for (const object of objects || []) {
         // catch_lit() requires a current location, even during floor effects.
-        if (!getObjectLocation(object, state))
-            continue;
-        if (!catchesFire(object, random))
-            continue;
-        const plural = (object.quan ?? object.quantity ?? 1) > 1;
-        const blind = heroIsBlind(state);
-        if (visible) {
-            const name = lightSourceName(object, state);
-            // C catch_lit() names the source with Yname2(): shop, carrier, or your/the.
-            const prefix = objectOwnershipPrefix(object, state);
-            await publish(blind
-                ? `${prefix}${name} ${plural ? 'feel' : 'feels'} warm.`
-                : `${prefix}${name} ${plural ? 'catch' : 'catches'} light!`);
-        }
-        // C apply.c:catch_lit() credits discovery even when the fire is unseen.
-        if (object.otyp === POT_OIL)
-            learnObjectType(POT_OIL, state);
-        // C catch_lit(): an unpaid source that catches while carried is billed
-        // for its use on top of its price.
-        if (object.where === 'inventory' && object.unpaid
-            && costlySpot(state.u.ux, state.u.uy, state)) {
-            await chargeUnpaidUsage(object, { state });
-            await publish(`"That's in addition to the cost of ${ownedObjectName(object, state, { capitalized: false })} ${plural ? 'themselves' : 'itself'}, of course."`);
-            await billDummyObject(object, state);
-        }
-        if (beginObjectBurn(object, state, state.moves ?? 0))
+        if (await catchLit(object, { state, publish, random, visible }))
             ignited.push(object);
     }
     return ignited;
-}
-// Part of C apply.c:catch_lit(): decide whether an object can catch light.
-function catchesFire(object, random) {
-    if (!object || object.lamplit || object.in_use
-        || !LIGHT_TYPES.has(object.otyp)
-        || object.otyp === BRASS_LANTERN)
-        return false;
-    if ((object.otyp === MAGIC_LAMP
-        || object.otyp === CANDELABRUM_OF_INVOCATION)
-        && (object.spe ?? 0) <= 0)
-        return false;
-    if (TIMED_LIGHT_TYPES.has(object.otyp) && (object.age ?? 0) <= 0)
-        return false;
-    if (object.otyp === CANDELABRUM_OF_INVOCATION && object.cursed)
-        return false;
-    return !([OIL_LAMP, MAGIC_LAMP].includes(object.otyp)
-        && object.cursed && random(2) === 0);
-}
-// Part of C apply.c:catch_lit(): name the ignited light source.
-function lightSourceName(object, state) {
-    observeObjectForNaming(object, { state });
-    const name = objectName(object, state);
-    const quantity = object.quan ?? object.quantity ?? 1;
-    return quantity > 1 ? makePlural(name) : name;
 }
 // Part of C trap.c:trap_ice_effects(): melt the ice beneath a trap.
 export async function meltIceTrap(x, y) {

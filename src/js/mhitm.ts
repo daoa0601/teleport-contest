@@ -5,7 +5,7 @@
 // gazemm(), engulf_target(), gulpmm(), explmm(), mdamagem(), passivemm() and
 // xdrainenergym(), attk_protection(), and rustm() are folded in below.
 
-import { setHeroGrip, isZombieMaker, zombieForm } from './mon.js';
+import { setHeroGrip, isZombieMaker, zombieForm, releaseHeroFromMonster } from './mon.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { PlayingGameState, GameState } from './game_state.js';
@@ -101,7 +101,7 @@ import {
 } from './monster_attack_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, heroFormSticks } from './polyself.js';
 import type { Hero } from './hero_types.js';
 import type { ErosionOptions } from './trap.js';
 
@@ -1611,4 +1611,24 @@ export async function erodeAttackingWeapon(defender: Hero | Monster, weapon: Gam
     if (kind && random(kind === 'burn' ? 6 : 1) === 0) {
         await erodeObject(weapon, kind, { ...options, state, random, verbose: true });
     }
+}
+
+// C mhitm.c:slept_monst()
+// A sleeping grabber releases the hero (an engulfer does not; never use
+// for paralysis): "%s grip relaxes." (s_suffix(Monnam(mon))) then
+// unstuck().  C's helpless() gate opens the release.
+export async function sleptMonst(
+    monster: Monster,
+    { state = game, publish = plineWithContinuation, rollOne = rnd }: SleptMonstOptions = {},
+): Promise<void> {
+    if (!monsterIsHelpless(monster) || state.u.ustuck !== monster
+        || state.u.uswallow || heroFormSticks(state)) return;
+    await publish(`${possessiveName(monsterName(monster, { state, capitalized: true }))} grip relaxes.`);
+    await releaseHeroFromMonster(monster, { state, publish, rollOne });
+}
+
+interface SleptMonstOptions {
+    state?: GameState;
+    publish?: MessagePublisher;
+    rollOne?: (sides: number) => number;
 }

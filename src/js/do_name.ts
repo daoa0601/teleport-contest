@@ -908,7 +908,8 @@ export type ObjectCallResult =
     | { prompted: boolean; named: false; callName: null }
     | { prompted: true; named: true; callName: string };
 
-// C do_name.c:docall_xname().
+// C do_name.c:docall()
+// Also C do_name.c:docall_xname(): the prompt names the sample object.
 // Also C o_init.c:undiscover_object(): inlined here when the call name is cleared.
 export async function callObjectType(object: GameObject, state: GameState = game): Promise<ObjectCallResult> {
     if (!object.dknown) return { prompted: false, named: false, callName: null };

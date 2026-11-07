@@ -141,7 +141,7 @@ import { bot } from './botl.js';
 import { isWeaponTool, isBimanualObject, isPoisonableObject, objectIsMetallic } from './object_properties.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './mon.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
-import { releaseObjectLeash } from './apply.js';
+import { releaseObjectLeash, snuffCandle } from './apply.js';
 import { vegetarianCorpse } from './food_traits.js';
 import { updateInventoryPresentation } from './invent.js';
 import { shopkeeperName } from './shknam.js';
@@ -171,7 +171,7 @@ import { heroStatusLine } from './insight.js';
 import { mergeObjectStacks } from './invent.js';
 import type { MapLocation, Position } from './map_types.js';
 import { monsterSpellDeathReason } from './mcastu.js';
-import { putMonsterToSleep } from './mhitm.js';
+import { putMonsterToSleep, sleptMonst } from './mhitm.js';
 import { heroHasRemovableSpeed, u_slow_down,
     expelHero, holdingMonsterName,
 } from './mhitu.js';
@@ -230,7 +230,6 @@ import { seeMonsterCloseup } from './mon.js';
 import { SINK, xdir, ydir } from './const.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { snuffThrownCandle } from './thrown_object.js';
 import { CLR_BROWN } from './terminal.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import type { ProjectileFlight } from './thrown_object.js';
@@ -1237,10 +1236,8 @@ async function sleepMonsterWithMagic(monster: Monster, duration: number, state: 
     }
     if (!await putMonsterToSleep(monster, duration)) return;
     await finishMonsterEating(monster, state);
-    if (monster === state.u.ustuck && !state.u.uswallow && !heroFormSticks(state)) {
-        await plineWithContinuation(`${possessiveName(monsterName(monster, { capitalized: true }))} grip relaxes.`);
-        await releaseHeroFromMonster(monster, { state });
-    }
+    // C mhitm.c:slept_monst(): a sleeping grabber releases the hero.
+    await sleptMonst(monster, { state });
 }
 
 // Part of C zap.c:bhitm(): magical opening drops a target's saddle.
@@ -3966,7 +3963,7 @@ export async function flyBoomerang(
                     flight.stoppedBy = 'monster';
                     break;
                 }
-                await snuffThrownCandle(object, state);
+                await snuffCandle(object, state);
                 const hit = await hitMonsterWithThrownObject(monster, object, {
                     state, target: { x, y }, ...(volley ? { volley } : {}),
                 });
@@ -5265,10 +5262,7 @@ async function finishMonsterRayHit(
     if (sayHit || visible) await publish(rayHitMessage(displayName(), monster, {
         x, y, damage: hit.damage, state,
     }));
-    if (hit.slept && state.u.ustuck === monster && !state.u.uswallow && !heroFormSticks(state)) {
-        await publish(`${possessiveName(nameTarget())} grip relaxes.`);
-        await releaseHeroFromMonster(monster, { state, publish });
-    }
+    if (hit.slept) await sleptMonst(monster, { state, publish });
     if (!hit.sleepEffect)
         return wakeMonster(monster, { attacked: source.startsWith('hero-') });
     return { heroDied: false };

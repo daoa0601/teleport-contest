@@ -22,9 +22,9 @@ import { corpseName, killerObjectName, objectCombatName, objectName, observeObje
 import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore, stack_object, fullyIdentifyObject, addInventoryItem, } from './invent.js';
 import { objectMaterial, objectTypeKnown } from './o_init.js';
 import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously } from './mkobj.js';
-import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
+import { applyPolearm, applyTool, couldPoleMonster, snuffCandle } from './apply.js';
 import { snapshotMenuUnderlay } from './wintty.js';
-import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, heroDirectGoldThrowRange, snuffThrownCandle } from './thrown_object.js';
+import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, heroDirectGoldThrowRange } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
 import { canLetGo, dropObjectAtHero, landObjectOnAltar, applyFloorEffects } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -2710,7 +2710,7 @@ export async function resolveGenericSwallowedThrow({ state = game, item, objectC
         await applyLowStaminaThrow({ state, object: thrown });
         // throwit_mon_hit() runs snuff_candle() before thitmonst() consumes
         // its d20 targeting roll (dothrow.c:1490-1492, 2152).
-        await snuffThrownCandle(thrown, state);
+        await snuffCandle(thrown, state);
         rnd(20);
         const wake = await wakeMonster(engulfer);
         if (wake.heroDied)
@@ -2832,7 +2832,7 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
             if (flight.contact.isshk && thrown.where === 'minvent'
                 && thrown.ocarry === flight.contact)
                 return { ...flight, consumed: true };
-            await snuffThrownCandle(thrown, state);
+            await snuffCandle(thrown, state);
             const contact = await hitMonsterWithThrownObject(flight.contact, thrown, {
                 state, target: { x: flight.x, y: flight.y },
                 ...(volley ? { volley } : {}),

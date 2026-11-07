@@ -35,7 +35,7 @@ import { isLevelPrize } from './level_prize.js';
 import { objectMaterial } from './o_init.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } from './dogmove.js';
-import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
+import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs, linkObjectToMonsterInventory } from './mkobj.js';
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
@@ -59,7 +59,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import { finishScheduledLevelChange, applyFloorEffects, landFloorObject } from './do.js';
-import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
+import { moveVaultGuard, prepareVaultGuardDeath, goldAt } from './vault.js';
 import { recordAchievement } from './insight.js';
 import { SHOP_TYPES } from './shknam.js';
 import { buryObject } from './dig.js';
@@ -2201,8 +2201,10 @@ async function describeSound(sound, { state, publish }) {
 // ── C mon.c:mon_give_prop() and mon_givit(). Properties conveyed to
 // monsters by corpses; monsters retain only the six resistance bits.
 const STALKER = MONSTER_NAME.indexOf('stalker');
-// Part of C mon.c:mon_givit(): the stalker invisibility and the chance
-// gate.
+// C mon.c:mon_givit()
+// The whole corpse-intrinsic grant: the DEADMONSTER() return, the stalker
+// invisibility branch with its vanish/flicker message and mstun, the
+// should_givit() chance gate, then mon_give_prop().
 export async function grantMonsterCorpseIntrinsic(monster, species, state = game) {
     requireLiveGame(state);
     const property = corpse_intrinsic(species);
@@ -4240,6 +4242,24 @@ function selectSandestinForm(monster) {
     }
     return null;
 }
+// C mon.c:select_newcham_form()
+// The cham switch: one draw for the monster's natural shapeshifter species,
+// with the twenty-attempt accept loop C drives from newcham() folded into
+// each branch (the wizard mon_polycontrol override stays with the caller).
+async function selectNewchamForm(monster) {
+    const baseMnum = monster.cham;
+    if (baseMnum === PM_DOPPELGANGER)
+        return await selectDoppelgangerForm(monster);
+    if (baseMnum === PM_CHAMELEON)
+        return selectChameleonForm(monster);
+    if (baseMnum === PM_SANDESTIN)
+        return selectSandestinForm(monster);
+    if (baseMnum === PM_VLAD_THE_IMPALER
+        || baseMnum === PM_VAMPIRE_LEADER
+        || baseMnum === PM_VAMPIRE)
+        return pickVampireShape(monster);
+    return selectOrdinaryPolymorphForm(monster);
+}
 // Part of C mon.c:newcham(): the new form's gender.
 export function shapechangerGender(baseMnum, targetMnum, female) {
     if (is_male(targetMnum))
@@ -4516,6 +4536,27 @@ export async function restartMonsterShapechanging(state = game) {
         }
     }
 }
+// C mon.c:get_iter_mons()
+// The liveness-filtered walk over the level's monsters; callers' find()
+// callbacks are C's bfunc, stopping at the first TRUE like the C walker.
+export function livingResidents(state) {
+    // C get_iter_mons() tests mstate, not square occupancy: a mounted steed
+    // remains on fmon with MON_FLOOR even though the hero shares its square.
+    return [...state.level.monsters].reverse().filter(monster => !monster.dead && monster.mhp > 0 && (monster.mstate ?? MON_FLOOR) === MON_FLOOR);
+}
+// C mon.c:mpickgold()
+// A guard picks up the gold stack it stands on.  C's flags.verbose pline
+// needs !mtmp->isgd, which every caller's vault guard fails, so the newsym
+// is the whole visible effect.  vault.ts's g_at() finds the stack.
+export async function pickGoldAtGuard(guard, state = game) {
+    const gold = goldAt(guard.mx, guard.my, state);
+    if (!gold)
+        return;
+    unlinkObject(gold, state);
+    await linkObjectToMonsterInventory(guard, gold, { state });
+    if (cansee(guard.mx, guard.my))
+        await newsym(guard.mx, guard.my);
+}
 // Part of C mon.c:newcham(): dropping boulders the new form cannot carry.
 async function dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publish) {
     if (monsterThrowsRocks(monster.mnum))
@@ -4591,21 +4632,10 @@ export async function initialShapechangedBirth(monster) {
         // wizard prompt owns the first form here as well.
         targetMnum = await selectControlledForm(monster, baseMnum, game);
     }
-    else if (baseMnum === PM_DOPPELGANGER) {
-        targetMnum = await selectDoppelgangerForm(monster);
-        if (targetMnum === PM_DOPPELGANGER)
-            targetMnum = null;
-    }
-    else if (baseMnum === PM_CHAMELEON) {
-        targetMnum = selectChameleonForm(monster);
-        if (targetMnum === PM_CHAMELEON)
-            targetMnum = null;
-    }
-    else if (baseMnum === PM_SANDESTIN) {
-        targetMnum = selectSandestinForm(monster);
-    }
-    else if (baseMnum === PM_VAMPIRE || baseMnum === PM_VAMPIRE_LEADER) {
-        targetMnum = pickVampireShape(monster);
+    else {
+        // C select_newcham_form(): the cham draw (same-form results are
+        // rejected below, like C's mdat == olddata check).
+        targetMnum = await selectNewchamForm(monster);
     }
     if (targetMnum === null || targetMnum === baseMnum
         || !acceptsShapechangerForm(baseMnum, targetMnum))
@@ -4653,22 +4683,8 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
         // select_newcham_form(): the wizard prompt overrides the cham pick.
         targetMnum = await selectControlledForm(monster, baseMnum, state);
     }
-    else if (targetMnum == null && baseMnum === PM_DOPPELGANGER) {
-        targetMnum = await selectDoppelgangerForm(monster);
-    }
-    else if (targetMnum == null && baseMnum === PM_SANDESTIN) {
-        targetMnum = selectSandestinForm(monster);
-    }
-    else if (targetMnum == null && baseMnum === PM_CHAMELEON) {
-        targetMnum = selectChameleonForm(monster);
-    }
-    else if (targetMnum == null && (baseMnum === PM_VAMPIRE
-        || baseMnum === PM_VAMPIRE_LEADER
-        || baseMnum === PM_VLAD_THE_IMPALER)) {
-        targetMnum = pickVampireShape(monster);
-    }
     else if (targetMnum == null) {
-        targetMnum = selectOrdinaryPolymorphForm(monster);
+        targetMnum = await selectNewchamForm(monster);
     }
     if (targetMnum == null || targetMnum === monster.mnum
         || speciesWasGenocided(targetMnum, game))

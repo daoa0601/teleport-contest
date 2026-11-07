@@ -27,7 +27,7 @@ import { character_race, races } from './role.js';
 import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware, heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js';
-import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, isBeingTakenOff, removeEyewear } from './do_wear.js';
+import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, isBeingDonned, removeEyewear } from './do_wear.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv, finishHeroHelplessness } from './hack.js';
 import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { displayLiquidName, monsterName } from './do_name.js';
@@ -635,9 +635,12 @@ async function dropCarriedObject(object, options = {}) {
 }
 // Part of C polyself.c:break_armor(): cancel a delayed don or doff.
 function cancelPolymorphDressing(object) {
+    // C break_armor() calls cancel_don() when donning() — which also covers
+    // doffing() — reports the piece in progress; cancelled_don itself is
+    // the afternmv == *_on half.
     const delayed = pendingArmorAction(game);
     const cancelledDon = delayed?.object === object && delayed.kind === 'wear';
-    if (delayed?.object === object || isBeingTakenOff(object))
+    if (isBeingDonned(object))
         cancelDonning();
     return { cancelledDon };
 }
@@ -1048,8 +1051,7 @@ async function changeArmorForHeroForm(mnum) {
     }
     const hornCount = monsterHornCount(mnum);
     if (hornCount && (object = worn('uarmh'))) {
-        if (isFlimsyObject(object, game) && pendingArmorAction(game)?.object !== object
-            && !isBeingTakenOff(object)) {
+        if (isFlimsyObject(object, game) && !isBeingDonned(object)) {
             await plineWithContinuation(`Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through ${ownedObjectName(object, game, { capitalized: false })}.`);
         }
         else {

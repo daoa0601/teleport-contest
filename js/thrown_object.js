@@ -4,7 +4,7 @@ import { cant_drown } from './mondata.js';
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
 import { COIN_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
-import { objectClassForType, objectSkill, BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
+import { objectClassForType, objectSkill, BOULDER, HEAVY_IRON_BALL, ROCK, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
@@ -13,6 +13,7 @@ import { isok } from './cmd.js';
 import { monsterName } from './do_name.js';
 import { artifactById } from './artifact.js';
 import { heroMoveBlockedBetween, impactDisturbsZombies } from './hack.js';
+import { snuffCandle } from './apply.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage, shipObject } from './dokick.js';
 import { currentAttribute } from './attrib.js';
@@ -21,7 +22,6 @@ import { plineWithContinuation, publishHeardMessage } from './pline.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { costlySpot, shopkeeperCatch } from './shk.js';
 import { finishInventoryRemoval } from './invent.js';
-import { endObjectBurn } from './timeout.js';
 import { cleanupTransientLight, objectShedsLight, showTransientLight } from './light.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { distantObjectName, objectName, ownedObjectName, withIndefiniteArticle } from './objnam.js';
@@ -147,21 +147,6 @@ export function prepareHeroThrownTarget(monster, random = rn2) {
         monster.mfrozen = 0;
     }
 }
-// Part of C apply.c:snuff_candle(): extinguish a free thrown candle or candelabrum.
-// Both throwit_mon_hit and the floor tail own a free thrown object.
-export async function snuffThrownCandle(object, state = game, publish = plineWithContinuation) {
-    requireLiveGame(state);
-    // C snuff_candle(): the thrown object is free, so Shk_Your is "The ".
-    const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
-    if (object.lamplit && (candle || object.otyp === CANDELABRUM_OF_INVOCATION)) {
-        const many = candle ? (object.quan ?? object.quantity ?? 1) > 1
-            : object.spe > 1;
-        if (!heroIsBlind(state)) {
-            await publish(`The ${candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
-        }
-        endObjectBurn(object, state);
-    }
-}
 // Part of C dothrow.c:throwit(): the landing sound, before
 // flooreffects() can consume the object.  Shared by thrown and fired
 // objects.
@@ -220,7 +205,7 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
         await addObjectToMonsterInventory(contactedMonster, object, state);
         return null;
     }
-    await snuffThrownCandle(object, state, publish);
+    await snuffCandle(object, state, publish);
     if (!contactedMonster && await shipObject(object, x, y, {
         state: requireInitializedGame(state), publish, random,
     })) {

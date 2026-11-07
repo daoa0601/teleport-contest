@@ -39,7 +39,7 @@ import { objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse,
     isReviver, zombieForm,
 } from './mon.js';
-import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { carryObjEffects } from './figurine_timer.js';
 import { attachFigurineTimer } from './timeout.js';
 import { isIceAt } from './dbridge.js';
 import { block_point, cansee, vision_note_blocker_change } from './vision.js';
@@ -145,7 +145,7 @@ export function curseObjectState(object: GameObject | null | undefined, state: G
     updateBlessingEffects(object, state);
     if (object.otyp === FIGURINE
         && (object.where === 'inventory' || object.where === 'minvent'))
-        attachCursedFigurineTimer(object, state);
+        carryObjEffects(object, state);
     return changed;
 }
 
@@ -1915,10 +1915,25 @@ export async function announceGlobMerge(first: GameObject, second: GameObject, s
     }
 }
 
-// Part of C do.c:flooreffects(), mkobj.c:obj_meld(): a landing glob melds
-// with a neighboring glob.
-// C flooreffects()/obj_meld(): a free glob is always absorbed by a floor
-// glob, even when the landing glob is heavier. Otherwise it remains free.
+// C mkobj.c:obj_meld()
+// The heavier glob absorbs the lighter, equal weights flip a coin, and a
+// free glob is always absorbed by a floor glob even when the free one is
+// heavier.  obj_absorb() is absorbGlob(); the caller redraws the absorbed
+// glob's square.
+export async function objMeld(
+    first: GameObject, second: GameObject,
+    { state = game, publish = plineWithContinuation, random = rn2 }: GlobMergeOptions = {},
+): Promise<GameObject> {
+    if (!(second.where === 'floor' && first.where === 'free')
+        && (first.owt > second.owt
+            || (first.owt === second.owt && random(2) !== 0)))
+        return absorbGlob(first, second, state, { publish });
+    return absorbGlob(second, first, state, { publish });
+}
+
+// Part of C do.c:flooreffects(): a landing glob melds with a neighboring
+// glob through obj_meld(); a free landing glob is always absorbed by the
+// floor glob.  Otherwise it remains free.
 export async function meldLandingGlob(glob: GameObject, x: number, y: number, {
     state = game,
     publish = plineWithContinuation,
@@ -1928,11 +1943,11 @@ export async function meldLandingGlob(glob: GameObject, x: number, y: number, {
     const nearby = nearbyMergableGlob(glob, x, y, state, random);
     if (!nearby) return null;
     await announceGlobMerge(glob, nearby, state, publish);
-    return await absorbGlob(nearby, glob, state, { publish });
+    return await objMeld(glob, nearby, { state, publish, random });
 }
 
 // Part of C do.c:flooreffects(): the globby landing loop that melds every
-// neighboring glob.
+// neighboring glob through obj_meld().
 export async function meldNearbyFloorGlobs(glob: GameObject, {
     state = game,
     publish = plineWithContinuation,
@@ -1946,16 +1961,16 @@ export async function meldNearbyFloorGlobs(glob: GameObject, {
         if (!nearby) return combined;
         await announceGlobMerge(combined, nearby, state, publish);
 
-        const equalWeight = combined.owt === nearby.owt;
-        const combinedSurvives = combined.owt > nearby.owt
-            || (equalWeight && random(2) !== 0);
-        const survivor = combinedSurvives ? combined : nearby;
-        const absorbed = combinedSurvives ? nearby : combined;
-        const oldX = absorbed.ox;
-        const oldY = absorbed.oy;
-        combined = await absorbGlob(survivor, absorbed, state, { publish });
-        if (state === game && cansee(oldX, oldY)) await newsym(oldX, oldY);
-        await maybeUnhideAt(oldX, oldY, state);
+        // The absorbed glob's square is redrawn after obj_absorb() removed
+        // it; obj_meld()'s survivor keeps its own position.
+        const spotOfCombined = { x: combined.ox, y: combined.oy };
+        const spotOfNearby = { x: nearby.ox, y: nearby.oy };
+        const survivor = await objMeld(combined, nearby, { state, publish, random });
+        const absorbedSpot = survivor === combined ? spotOfNearby : spotOfCombined;
+        combined = survivor;
+        if (state === game && cansee(absorbedSpot.x, absorbedSpot.y))
+            await newsym(absorbedSpot.x, absorbedSpot.y);
+        await maybeUnhideAt(absorbedSpot.x, absorbedSpot.y, state);
     }
 }
 

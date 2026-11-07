@@ -52,7 +52,7 @@ import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 
 import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';
-import { beginPetEating, finishPetEating } from './pet_eating.js';
+import { dogEat } from './pet_eating.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
 import { hasShopkeeperData } from './shop_types.js';
@@ -377,7 +377,9 @@ export async function tameMonster(monster: Monster, source: GameObject | null = 
     if (monster.mtame && food) {
         if (!willCatchFood(monster, food, state)) return false;
         await describeFoodCatch(monster, food, state);
-        await feedTamedMonster(monster, food, false, state);
+        // C: dog_eat expects a floor object.
+        await placeObject(food, monster.mx, monster.my, state);
+        await dogEat(monster, food, { x: monster.mx, y: monster.my }, state, false);
         return true;
     }
     if (monster.mtame && monster.mtame < 10) {
@@ -400,8 +402,10 @@ export async function tameMonster(monster: Monster, source: GameObject | null = 
 
     initializePet(monster, { state, everything: !(monster.edog || monster.mextra?.edog) });
     if (food) {
-        await feedTamedMonster(monster, food, true, state);
-        if (monster.dead || monster.mhp <= 0 || state.program_state.gameover)
+        // C defers eating until the edog extension has been set up.
+        await placeObject(food, monster.mx, monster.my, state);
+        if (await dogEat(monster, food, { x: monster.mx, y: monster.my }, state, true) === 2
+            || state.program_state.gameover)
             return true;
     }
     if (announce && canSpotMonster(monster)) {
@@ -449,13 +453,6 @@ function catchFoodName(food: GameObject, state: GameState): string {
     const name = objectName(food, state);
     const noun = food.quan === 1 ? name : pluralizeObjectNoun(food, name);
     return /^the /i.test(noun) ? noun.replace(/^The /, 'the ') : `the ${noun}`;
-}
-
-// Part of C dog.c:tamedog(): place_object() + dog_eat() of the caught food.
-async function feedTamedMonster(monster: Monster, food: GameObject, devour: boolean, state: GameState): Promise<void> {
-    await placeObject(food, monster.mx, monster.my, state);
-    const meal = beginPetEating(monster, food, { x: monster.mx, y: monster.my }, state, devour);
-    await finishPetEating(monster, meal, state);
 }
 
 // Monster level migration: departure, limbo, and arrival.

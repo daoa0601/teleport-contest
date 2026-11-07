@@ -35,7 +35,7 @@ import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountH
 import { dist2, distmin } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
-import { beginPetEating, finishPetEating } from './pet_eating.js';
+import { dogEat } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import {
@@ -745,10 +745,9 @@ async function dogInvent(
     const edible = dogFood(monster, object, random, calls, state);
     if ((edible <= CADAVER || monster.edog?.mhpmax_penalty && edible === ACCFOOD)
         && monsterCouldReachItem(monster, monster.mx, monster.my, state)) {
-        const meal = beginPetEating(monster, object,
-            { x: monster.mx, y: monster.my }, state);
-        await finishPetEating(monster, meal, state, random, calls);
-        return { result: monster.dead || monster.mhp <= 0 ? 2 : 1 };
+        const result = await dogEat(monster, object,
+            { x: monster.mx, y: monster.my }, state, false, random, calls);
+        return { result };
     }
     const carryAmount = fetchableClass ? monsterCarryAmount(monster, object, state, random) : 0;
     if (carryAmount > 0 && !object.cursed
@@ -1057,9 +1056,8 @@ export async function movePet(
         let died = false;
         if (food) {
             // C dog_move() calls dog_eat() only after mon_track_add().
-            const meal = beginPetEating(monster, food, { x: oldx, y: oldy }, state);
-            await finishPetEating(monster, meal, state, random, calls);
-            if (monster.dead || monster.mhp <= 0) died = true;
+            const result = await dogEat(monster, food, { x: oldx, y: oldy }, state, false, random, calls);
+            died = result === 2;
         }
         const movement: MonsterMovement = {
             oldx,

@@ -19,7 +19,7 @@ import { heroSpecies, heroHasNoHands, heroIsVerySmall, body_part } from './polys
 import { makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight } from './mkobj.js';
 import { learnObjectType } from './o_init.js';
-import { inventoryItemDescription, addInventoryItem, freeInventoryObject, getobj, useUpInventoryStack } from './invent.js';
+import { inventoryItemDescription, addInventoryItem, freeInventoryObject, getobj, useUpInventoryStack, splittable } from './invent.js';
 import { isBimanualObject, is_elven_weapon, isWeaponTool, isWetTowel, is_launcher, isLauncherAmmunition, isMissileObject, isPolearm, pair_of } from './object_properties.js';
 import type { WeaponCandidate } from './object_properties.js';
 import { resetBulkTakeoff } from './do_wear.js';
@@ -164,7 +164,7 @@ export async function dowield(): Promise<void> {
     if (object === game.uquiver) {
         const quantity = object.quan;
         let confirmation: string;
-        if (quantity > 1 && hasFreeBasicInventoryLetter() && splittableForQuiver(object)) {
+        if (quantity > 1 && hasFreeBasicInventoryLetter() && splittable(object)) {
             const names = makePlural(minimalObjectName(object, game));
             const answer = await promptYesNoQuit(`You have ${quantity} ${names} readied.  Wield one?`);
             if (answer === 'q') {
@@ -253,12 +253,6 @@ async function finishSplittingCarriedStack(object: GameObject): Promise<void> {
     object.nomerge = nomerge;
 }
 
-// Part of C invent.c:splittable(): reject cursed loadstones and welded weapons for quiver counts.
-function splittableForQuiver(item: GameObject): boolean {
-    return !(item?.otyp === LOADSTONE && item.cursed)
-        && !isWeldedPrimary(item);
-}
-
 // Part of C wield.c:doquiver_core(): check for a spare inventory letter before offering a split.
 function hasFreeBasicInventoryLetter(): boolean {
     return game.inventory.filter(item => item.oclass !== COIN_CLASS).length < 52;
@@ -330,7 +324,7 @@ export async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverComman
         item.corpsenm = requestedCount;
     if (item === game.uquiver) {
         // C getobj() splits before doquiver_core() notices the readied parent.
-        if (partialCount && splittableForQuiver(item)) {
+        if (partialCount && splittable(item)) {
             const split = splitCarriedStack(item, requestedCount);
             await rejoinObjectStack(item, split, game);
         }
@@ -348,7 +342,7 @@ export async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverComman
         return { item: null, spentTime: false, cancelled: false };
     }
     if (requestedCount !== null && requestedCount < initialQuantity
-        && splittableForQuiver(item)) {
+        && splittable(item)) {
         item = await splitStackForQuiver(item, requestedCount);
     }
 
@@ -375,7 +369,7 @@ export async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverComman
             : `${usePlural ? 'Those are' : 'That is'} your ${wasTwoweap ? 'second' : 'alternate'} weapon.  Ready ${usePlural ? 'them' : 'it'} instead?`;
         let readyAll = true;
         if (quantity > 1 && hasFreeBasicInventoryLetter()
-            && splittableForQuiver(item)) {
+            && splittable(item)) {
             const slotDescription = primary
                 ? `You are wielding ${quantity} ${names}.`
                 : `${wasTwoweap ? 'You are dual wielding'

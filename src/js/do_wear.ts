@@ -50,7 +50,7 @@ import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
-import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
+import { chooseInventoryObject, compactInventoryLetters, bucCategory } from './invent.js';
 import type { InventoryClassification } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
@@ -336,6 +336,19 @@ export async function removeWornItem(action: 'remove' | 'take off', itemAction =
         return;
     }
 
+    // C armor_or_accessory_off() hands armor to takeoffArmor() (C
+    // armoroff()).
+    await takeoffArmor(object, inventoryPrompt);
+}
+
+// C do_wear.c:armoroff()
+// The armor half of armor_or_accessory_off(): select_off()/cursed() have
+// already refused cursed pieces.  The delayed branch arms the afternmv
+// removal and its "You finish taking off your %s." nomovemsg; the
+// zero-delay branch runs the *_off() removal and off_msg() now
+// (finishArmorRemoval()).  inventoryPrompt is the retained getobj()
+// topline for a silent removal.
+async function takeoffArmor(object: GameObject, inventoryPrompt: string | null): Promise<void> {
     const delay = objectDelay(object.otyp);
     const isArmor = object.class === 'Armor' || object.oclass === ARMOR_CLASS;
     if (isArmor && delay > 0) {
@@ -599,6 +612,25 @@ export function isBeingTakenOff(object: GameObject, state: GameState = game): bo
     return !!slot && takeoffSlotObject(slot, state) === object;
 }
 
+// C do_wear.c:doffing()
+// Is this object currently being taken off?  The 'T'/'R' delayed removal
+// arms the pending armor action (C afternmv == *_off); the 'A' command
+// records its current takeoff slot (C takeoff.what).
+export function isBeingDoffed(object: GameObject, state: GameState = game): boolean {
+    const delayed = pendingArmorAction(state);
+    return (delayed?.kind === 'remove' && delayed.object === object)
+        || isBeingTakenOff(object, state);
+}
+
+// C do_wear.c:donning()
+// Is this object currently being put on (or taken off — C donning()
+// checks doffing() first)?  One-timer pieces never arm the wear action.
+export function isBeingDonned(object: GameObject, state: GameState = game): boolean {
+    if (isBeingDoffed(object, state)) return true;
+    const delayed = pendingArmorAction(state);
+    return delayed?.kind === 'wear' && delayed.object === object;
+}
+
 // C do_wear.c:doddoremarm(): the #takeoffall command — resume an
 // interrupted disrobing, refuse when nothing is worn, then collect the
 // selection and start the occupation.
@@ -809,8 +841,8 @@ async function betterNotTakeThatOff(object: GameObject, state: GameState = game)
         `Take off your ${armorSimpleName(object)} despite carrying a dead ${objectMonsterName(corpse)}?`);
 }
 
-// Part of C do_wear.c:canwearobj(), do_wear.c:armoroff(): the
-// is_sword()/axe/weapon noun.
+// Part of C do_wear.c:canwearobj() and do_wear.c:select_off(): the
+// is_sword()/axe/weapon noun of the wielded-obstacle messages.
 function weaponNoun(object: GameObject | null): string {
     const skill = object ? objectSkill(object.otyp) : undefined;
     return skill !== undefined && [P_SHORT_SWORD, P_BROAD_SWORD, P_LONG_SWORD, P_TWO_HANDED_SWORD, P_SABER].includes(skill)
@@ -904,21 +936,17 @@ function wornInventory(): GameObject[] {
     return game.inventory.filter(object => TAKEOFF_ORDER.some(slot => takeoffSlotObject(slot) === object));
 }
 
-// Part of C pickup.c:allow_category(): the BUC-state categorization.
-function bucCategory(object: GameObject): BucCategory {
-    if (object.oclass === COIN_CLASS) return game.flags.goldX ? 'X' : 'U';
-    return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
-}
-
 // Part of C invent.c:count_buc(): the removal-category subset — the
 // priest knowledge pass and per-status tallies for the removal-category
 // menu (query_classes in pickup.ts builds the same set for pickup menus).
+// The classifier itself is invent.ts:bucCategory().
 function wornBucCategories(worn: readonly GameObject[]): Set<BucCategory> {
     // Native count_buc() grants priest knowledge before applying is_worn().
     if (game.urole?.key === 'priest')
         for (const object of game.inventory) object.bknown = object.oclass !== COIN_CLASS;
-    return new Set(worn.map(bucCategory));
+    return new Set(worn.map(object => bucCategory(object)));
 }
+
 
 // Part of C pickup.c:allow_category(): the unpaid filter including
 // contents.
@@ -1426,9 +1454,11 @@ async function announceDisplacementLoss(object: GameObject, state: GameState = g
     await plineWithContinuation(formatFeltMessage('that monsters no longer have difficulty pinpointing your location.', state));
 }
 
-// Part of C do_wear.c:wielding_corpse(): bare hands on a petrifying weapon.
-// Losing gloves or yellow dragon armor can expose one; resolve life saving
-// before the removal continues.
+// C do_wear.c:wielding_corpse()
+// Bare hands (or bare yellow-dragon armor) on a petrifying weapon after
+// losing protection; resolve life saving before the removal continues.
+// C checks its one obj argument against uwep/uswapweap; the port walks the
+// wielded slots the same way (twoweap opens both).
 async function losePetrificationProtection(armor: GameObject, state: GameState, voluntary: boolean) {
     if (equippedObject(state, 'uarmg')) return;
     const armorSlot = armorSlotFor(armor.otyp);
@@ -2303,8 +2333,10 @@ export function ringRemovalObstacle(
     return state.uarmg && (state.u.glibTurns ?? 0) > 0 ? state.uarmg : null;
 }
 
-// Part of C do_wear.c:Ring_on(), do_wear.c:Amulet_on(): setworn() plus the
-// ring/amulet on-effects.
+// C do_wear.c:Ring_on()
+// Also C do_wear.c:Amulet_on(): setworn() plus the ring/amulet
+// on-effects, dispatched by conferred property instead of C's two
+// per-object-type switches.
 export async function wearHeroAccessory(
     object: GameObject | null | undefined, slot: AccessorySlot, state: GameState = game,
 ): Promise<PropertyName | null> {
