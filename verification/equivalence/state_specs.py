@@ -167,8 +167,8 @@ STATE_SPECS += [
     for name, native, port, js_file, c_args, record_arg, old, new in (
         ('attacktype:engulfs', 'attacktype', 'monsterCanEngulf', MONSTER_DATA,
          [CVal(z3.IntVal(AT_ENGL), INT)], True,
-         'monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_ENGL);',
-         'monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_WEAP);'),
+         'monsterHasAttackType(monster?.mnum ?? -1, AT_ENGL);',
+         'monsterHasAttackType(monster?.mnum ?? -1, AT_WEAP);'),
         ('attacktype:armed', 'attacktype', 'speciesHasWeaponAttack', 'js/mondata.js',
          [CVal(z3.IntVal(AT_WEAP), INT)], False,
          'attackType === AT_WEAP);', 'attackType === AT_MAGC);'),

@@ -34,7 +34,8 @@ import {
     monsterIsNonliving, monsterIsVampireShifter, passes_rocks, touchPetrifies, canBlnd,
 } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
-import { applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
+import { applyMonsterPassiveToObject } from './uhitm.js';
+import { captureHeroProjectileName } from './objnam.js';
 import { heroSpecies } from './polyself.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { endVoluntaryMultiTurn, roomsAt } from './hack.js';

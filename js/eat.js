@@ -2,7 +2,7 @@
 // floorfood(), and the rest of the eating mechanics.
 import { RANDOM_CLASS, WEAPON_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectPropertyName, oc_nutrition, objectDelay, objectCharged, objectUnique, AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, BEARTRAP, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION, } from './object_data.js';
-import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, fleshPetrifies, formCanBecomeStoneGolem, heroResistsStoning, heroWouldPetrifyFromFlesh, } from './mondata.js';
+import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race, monsterHasAttackType, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, fleshPetrifies, formCanBecomeStoneGolem, heroResistsStoning, heroWouldPetrifyFromFlesh, } from './mondata.js';
 import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting, setPropertyTimeout, } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName, heroIsStrangled } from './do_wear.js';
@@ -1045,7 +1045,7 @@ export async function cpostfx(mnum, { state = game, tin = null } = {}) {
             await plineWithContinuation('Oh wow!  Great stuff!');
             await makeHallucinated((hero.hallucinationTurns || 0) + 200, { state, talk: false });
         }
-        if (attacks.some(([type]) => type === AT_MAGC) || name === 'newt')
+        if (monsterHasAttackType(mnum, AT_MAGC) || name === 'newt')
             await eye_of_newt_buzz({ state });
         const property = corpse_intrinsic(mnum);
         if (property === 'strength')

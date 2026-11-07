@@ -48,7 +48,7 @@ import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { rn2, rnd } from './rng.js';
 import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttribute } from './attrib.js';
-import { encumber_msg } from './pickup.js';
+import { encumber_msg, heroIsSafeFromFatalCorpse, ST_CORPSE, ST_PETRIFIES } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName, objectMonsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty } from './properties.js';
@@ -777,7 +777,7 @@ async function betterNotTakeThatOff(object, state = game) {
     // is never safe to touch bare-handed.  Stone resistance is deliberately
     // not factored in: losing it later, without the gloves on, could prove
     // dangerous.
-    if (corpse.otyp !== CORPSE || !touchPetrifies(corpse.corpsenm))
+    if (heroIsSafeFromFatalCorpse(corpse, ST_CORPSE | ST_PETRIFIES, state))
         return false;
     return !await paranoidQuery(true, `Take off your ${armorSimpleName(object)} despite carrying a dead ${objectMonsterName(corpse)}?`);
 }

@@ -4,11 +4,11 @@
 // resist_conflict(), petrifying species and poly_when_stoned().
 import { levelHasCeiling } from './dungeon.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, MONSTER_RESISTS, MONSTER_COLOR, monsterClassSymbol, FLAMING_SPECIES, MONSTER_FLAGS3, PM_GREEN_SLIME, S_GHOST, } from './monster_data.js';
-import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP, } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RBRE, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP, } from './monster_attack_types.js';
 import { dragonFormForArmor, heroHasNoHead, heroIsBreathless, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
 import { artifactById, heroHasArtifactDefense, monsterHasArtifactDefense } from './artifact.js';
 import { currentAttribute } from './attrib.js';
-import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_ARMH, W_WEP, G_GENOD, A_CHA, } from './const.js';
+import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_ARMH, W_ARMOR, W_ACCESSORY, W_WEP, G_GENOD, A_CHA, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
 import { rn2 } from './rng.js';
@@ -19,7 +19,7 @@ import { monsterHasLineOfSightToHero, clearPath } from './vision.js';
 import { canSpotMonster } from './display.js';
 import { blindfolded, heroIsBlind, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
-import { BANANA, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BLINDING_VENOM, CORPSE, CREAM_PIE, POT_BLINDNESS } from './object_data.js';
+import { BANANA, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BLINDING_VENOM, CLOAK_OF_MAGIC_RESISTANCE, CORPSE, CREAM_PIE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, POT_BLINDNESS } from './object_data.js';
 import { FOOD_CLASS } from './objclass.js';
 import { OBJ_DESCR, objectMaterial } from './o_init.js';
 import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
@@ -806,6 +806,13 @@ const MR_ELECTRIC = 0x10;
 const MR_ACID = 0x40;
 const MR_POISON = 0x20;
 const MR_STONE = 0x80;
+const PM_BABY_GRAY_DRAGON = MONSTER_NAME.indexOf('baby gray dragon');
+// The worn armor types whose oc_oprop is ANTIMAGIC.
+const ANTIMAGIC_ARMOR = new Set([
+    CLOAK_OF_MAGIC_RESISTANCE,
+    GRAY_DRAGON_SCALE_MAIL,
+    GRAY_DRAGON_SCALES,
+]);
 const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
 const M2_DEMON = 0x00000100;
@@ -915,6 +922,28 @@ export function monsterHasStoneResistance(monster) {
 export function monsterResistsSleep(monster) {
     return !!(monsterResistanceBits(monster) & MR_SLEEP)
         || !!monster?.defendedSleep;
+}
+// C mondata.c:resists_magm(): magic (magic-missile) resistance for a
+// monster — species breath (AD_MAGM or the Chromatic Dragon's AD_RBRE),
+// baby gray dragons, a wielded artifact that defends against magic, worn
+// armor with oc_oprop ANTIMAGIC, or a carried artifact's
+// defends_when_carried() bonus. C's is_you branches serve no caller: every
+// C call site passes a monster, not &youmonst (polyself.c only mentions
+// resists_magm in a comment).
+export function monsterHasMagicResistance(monster) {
+    if (monster?.mnum === PM_BABY_GRAY_DRAGON
+        || (MONSTER_ATTACKS[monster?.mnum ?? -1] || []).some(([, damageType]) => damageType === AD_MAGM || damageType === AD_RBRE)) {
+        return true;
+    }
+    const weapon = monsterWeapon(monster);
+    if (artifactById(weapon?.oartifact)?.defense === 'magic')
+        return true;
+    return monsterInventory(monster).some((object) => {
+        if (artifactById(object?.oartifact)?.carriedDefense === 'magic')
+            return true;
+        return (ANTIMAGIC_ARMOR.has(object?.otyp)
+            && !!((object?.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_WEP)));
+    });
 }
 // C monst.h:helpless():
 // C include/monst.h:251 helpless().
@@ -1461,9 +1490,15 @@ export function monsterSpeciesSticks(mnum) {
         || (!engulfs && attacks.some(([, damageType]) => damageType === AD_WRAP))
         || attacks.some(([attackType]) => attackType === AT_HUGS);
 }
+// C mondata.c:attacktype(): does a monster type have a particular type of
+// attack? (C attacktype_fordmg(ptr, atyp, AD_ANY) restricted to the attack
+// type; the damage-type half is applied at the call sites that need it.)
+export function monsterHasAttackType(mnum, atyp) {
+    return (MONSTER_ATTACKS[mnum] || []).some(([attackType]) => attackType === atyp);
+}
 // Part of C mondata.c:attacktype(): the AT_ENGL test.
 export function monsterCanEngulf(monster) {
-    return (MONSTER_ATTACKS[monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_ENGL);
+    return monsterHasAttackType(monster?.mnum ?? -1, AT_ENGL);
 }
 // C monst.h:is_vampshifter():
 export function monsterIsVampireShifter(monster) {

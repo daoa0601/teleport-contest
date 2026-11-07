@@ -406,7 +406,8 @@ export function monsterAlignmentValue(monster: MonsterAlignmentSubject, state: G
     return questMonsterAlignment(monster.mnum, state);
 }
 
-// Part of C priest.c:mon_aligntyp(): the A_NONE/sign reduction.
+// C priest.c:mon_aligntyp(): the algn read (epri/emin/quest table, in
+// monsterAlignmentValue()) followed by the A_NONE/sign reduction.
 export function monsterAlignmentType(monster: MonsterAlignmentSubject, state: GameState = game): number {
     const alignment = monsterAlignmentValue(monster, state);
     return alignment === A_NONE ? A_NONE : Math.sign(alignment);
@@ -586,8 +587,9 @@ export async function intemple(roomno: number, state: GameState = game): Promise
     return priest;
 }
 
-// Part of C priest.c:temple_occupied(): the TEMPLE room lookup with its
-// room record.
+// C priest.c:temple_occupied(): the TEMPLE room lookup — C scans the
+// hero's u.urooms list; the port asks for the first TEMPLE-typed room
+// holding the position, and callers also reuse it for other C room tests.
 export function templeRoomAt(
     state: GameState, x: number, y: number,
 ): { room: Room | null; roomno: number } | null {

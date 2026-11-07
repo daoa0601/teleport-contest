@@ -1233,13 +1233,11 @@ export async function applyPotionMentalEffect(source: GameObject, { state = game
     return { handled: true, unknown, nothing, heroDied: !!state.program_state.gameover };
 }
 
-// C potion.c:peffect_speed().
-// C potion.c:peffect_invisibility().
-// C potion.c:peffect_object_detection().
-// C potion.c:peffect_healing().
-// C potion.c:peffect_extra_healing().
-// C potion.c:peffect_full_healing().
-// C potion.c:peffect_gain_energy().
+// C potion.c:peffects(): the otyp dispatch over every potion effect.
+// Also C potion.c:peffect_speed(), peffect_invisibility(),
+// peffect_object_detection(), peffect_healing(), peffect_extra_healing(),
+// peffect_full_healing(), peffect_gain_energy(): inlined in the switch;
+// the body and mental dispatchers below hold the remaining arms.
 export async function applyPotionEffect(source: GameObject, { state = game }: PotionEffectOptions = {}): Promise<PotionEffectResult> {
     requireLiveGame(state);
     requirePlayingGame(state);

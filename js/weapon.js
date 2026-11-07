@@ -65,7 +65,7 @@ export const SKILL_GROUPS = [
     { heading: 'Weapon Skills', first: 1, last: 27 },
     { heading: 'Spellcasting Skills', first: 28, last: 34 },
 ];
-// C weapon.c:skill_level_name()'s level names, indexed by skill level.
+// C weapon.c:skill_level_name(): the level names, indexed by skill level.
 export const SKILL_LEVEL_NAMES = [
     'Unknown', 'Unskilled', 'Basic', 'Skilled', 'Expert', 'Master', 'Grand Master',
 ];

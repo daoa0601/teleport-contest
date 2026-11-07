@@ -7,7 +7,7 @@ import { objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERA
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
 import { monsterSentenceSubject } from './sounds.js';
 import { sessionIsNight } from './calendar.js';
-import { monsterHasMagicResistance } from './trap.js';
+import { monsterHasMagicResistance } from './mondata.js';
 import { applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense, } from './artifact.js';
 import { getmattk } from './mhitu.js';
 import { heroIsPunished } from './ball.js';
@@ -62,7 +62,7 @@ import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectF
 import { munslime, munstone } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
 import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
-import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle, } from './objnam.js';
+import { captureHeroProjectileName, corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle, } from './objnam.js';
 import { stopHeroOccupation } from './allmain.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './dogmove.js';
@@ -737,14 +737,22 @@ function possessive(noun) {
     return noun.endsWith('s') ? `${noun}'` : `${noun}'s`;
 }
 const S_BLOB = 2;
-// C uhitm.c:hmon_hitmon_weapon_melee(): base damage, backstab, and weapon shattering.
-// Also C uhitm.c:hmon_hitmon_weapon(): the normal/improvised weapon choice is inlined here.
+// C uhitm.c:hmon_hitmon_weapon(): dispatch a weapon strike — improvised
+// use (a swung launcher, a missile in hand, an unmounted polearm at short
+// range, thrown ammo without its launcher) goes to the ranged branch,
+// everything else to the melee branch.  The weapon-class gate mirrors
+// hmon()'s object routing.
 export async function prepareHeroWeaponContact(monster, weapon, { mode, dieRoll, state = game, publish = plineWithContinuation }) {
     requirePlayingGame(state);
     if (weapon.oclass !== WEAPON_CLASS && weapon.oclass !== GEM_CLASS && !isWeaponTool(weapon))
         return null;
     if (isImprovisedContact(weapon, mode, state))
         return improvisedWeaponContact(monster, weapon, mode, state, publish);
+    return meleeWeaponContact(monster, weapon, { mode, dieRoll, state, publish });
+}
+// C uhitm.c:hmon_hitmon_weapon_melee(): base damage, backstab, and weapon shattering.
+async function meleeWeaponContact(monster, weapon, { mode, dieRoll, state = game, publish = plineWithContinuation }) {
+    requirePlayingGame(state);
     const result = {
         damage: rollPhysicalWeaponDamage(weapon, monster, { state }), useWeaponSkill: true,
         trainWeaponSkill: false, specialMessage: false, heroDied: false,
@@ -858,32 +866,14 @@ const PAPER = 5;
 const PHYSICAL_OBJECTS = new Set([BOULDER, HEAVY_IRON_BALL, IRON_CHAIN]);
 const SHADE_AWARE_OBJECTS = new Set([...PHYSICAL_OBJECTS, MIRROR, CLOVE_OF_GARLIC]);
 // C uhitm.c:hmon_hitmon_misc_obj()
-// Also C uhitm.c:hmon_hitmon_potion(): the potion contact branch is inlined here.
 export async function resolveHeroObjectContact(monster, object, { mode, state = game, target = { x: monster.mx, y: monster.my }, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, finishMonsterDeath = (victim, death) => finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, death), }) {
     requirePlayingGame(state);
     const contact = {
         done: false, damage: 0, getDamageBonus: true, specialMessage: false,
         dryTowel: false, silverContact: false, objectConsumed: false, heroDied: false,
     };
-    if (object.oclass === POTION_CLASS) {
-        const potion = await detachContactPotion(object, state);
-        const impact = await hitMonsterWithSupportedPotion({
-            state, monster, potion, target, publish, finishKill: finishMonsterDeath,
-            wakeMonster: wakeAttackedMonster,
-            wakeNearby: (x, y, distance) => wakeMonstersNearWithMessages(x, y, distance, state, publish),
-            resolveVapor: true,
-            distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
-        });
-        if (!impact)
-            throw new Error(`Potion contact has no effect owner for object type ${potion.otyp}`);
-        contact.objectConsumed = consumedIdentity(object);
-        contact.heroDied = !!impact.heroDied;
-        if (contact.heroDied || monster.dead || monster.mhp <= 0)
-            return { ...contact, done: true, survived: !monster.dead && monster.mhp > 0 };
-        contact.damage = monsterIsShade(monster) ? 0 : 1;
-        contact.specialMessage = true;
-        return contact;
-    }
+    if (object.oclass === POTION_CLASS)
+        return potionContact(monster, object, { state, target, publish, finishMonsterDeath });
     if (monsterIsShade(monster) && !objectCanTouchShade(object, state))
         return contact;
     switch (object.otyp) {
@@ -998,6 +988,33 @@ export async function resolveHeroObjectContact(monster, object, { mode, state = 
     }
     contact.objectConsumed = consumedIdentity(object);
     contact.heroDied = !!state.program_state.gameover;
+    return contact;
+}
+// C uhitm.c:hmon_hitmon_potion(): the potion strike — detach the bottle
+// (split or unwield, in detachContactPotion), potionhit(), then the death
+// check and the post-transformation shade damage.
+async function potionContact(monster, object, { state = game, target = { x: monster.mx, y: monster.my }, publish = plineWithContinuation, finishMonsterDeath, }) {
+    requirePlayingGame(state);
+    const potion = await detachContactPotion(object, state);
+    const impact = await hitMonsterWithSupportedPotion({
+        state, monster, potion, target, publish, finishKill: finishMonsterDeath,
+        wakeMonster: wakeAttackedMonster,
+        wakeNearby: (x, y, distance) => wakeMonstersNearWithMessages(x, y, distance, state, publish),
+        resolveVapor: true,
+        distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
+    });
+    if (!impact)
+        throw new Error(`Potion contact has no effect owner for object type ${potion.otyp}`);
+    const contact = {
+        done: false, damage: 0, getDamageBonus: true, specialMessage: false,
+        dryTowel: false, silverContact: false, objectConsumed: false, heroDied: false,
+    };
+    contact.objectConsumed = consumedIdentity(object);
+    contact.heroDied = !!impact.heroDied;
+    if (contact.heroDied || monster.dead || monster.mhp <= 0)
+        return { ...contact, done: true, survived: !monster.dead && monster.mhp > 0 };
+    contact.damage = monsterIsShade(monster) ? 0 : 1;
+    contact.specialMessage = true;
     return contact;
 }
 // C uhitm.c:shade_aware().
@@ -1250,12 +1267,6 @@ export function captureHeroPhysicalObjectName(object, state = game) {
 // Capture after clearing poison and before a death can merge/delete the object.
 export function captureUnpoisonedPhysicalObjectName(object, state = game) {
     return objectCombatName(object, { state });
-}
-// Part of C objnam.c:mshot_xname(): describe a projectile's position in a volley.
-export function captureHeroProjectileName(object, state = game, volley) {
-    const name = objectCombatName(object, { state, includeCorpseSpecies: false });
-    return volley && volley.count > 1 && volley.objectType === object.otyp
-        ? `the ${volley.index}${ordinalSuffix(volley.index)} ${name}` : name;
 }
 // C uhitm.c:hmon_hitmon_msg_hit().
 export async function showHeroPhysicalHit(monster, object, { state = game, publish = plineWithContinuation, mode, damage, destroyed, hitTextShown, target = { x: monster.mx, y: monster.my }, volley, }) {
@@ -4000,13 +4011,7 @@ export async function mhitmAdPlys(call) {
             : `You are frozen by ${monsterName(monster, { state })}!`);
         nomul(-rollOne(10), state);
         state._helplessDoneMessage = 'You can move again.';
-        state._helplessReason = {
-            monsterId: monster.m_id,
-            text: `paralyzed by ${namelessMonsterName(monster, {
-                state, article: 'a', suppressIt: true, suppressInvisible: true,
-                suppressHallucination: true, suppressSaddle: true,
-            })}`,
-        };
+        state._helplessReason = monsterHelplessnessReason(monster, state, 'paralyzed', false);
         await exerciseAttribute(A_DEX, false, state);
         return statusContinueResult(attack.damage ?? 0);
     }
@@ -5817,7 +5822,7 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
             return { resisted: true, heroDied: false };
         }
         await publish(`You are frozen by ${displayedMonsterName(monster, { state })}!`);
-        freezeHero(state, damage, passiveParalysisReason(monster, state, false));
+        freezeHero(state, damage, monsterHelplessnessReason(monster, state, 'frozen', false));
         await exerciseAttribute(A_DEX, false, state);
         return { stopped: true, heroDied: false };
     }
@@ -5846,7 +5851,7 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
         await publish(`You are frozen by ${owner} gaze!`);
         const duration = currentAttribute(A_WIS, state) > 12
             || random(4) !== 0 ? damage : 127;
-        freezeHero(state, duration, passiveParalysisReason(monster, state, true));
+        freezeHero(state, duration, monsterHelplessnessReason(monster, state, 'frozen', true));
         return { stopped: true, heroDied: false };
     }
     await publish(`${displayedMonsterName(monster, { state, capitalized: true, adjective: 'blind' })} cannot defend itself.`);
@@ -6011,13 +6016,19 @@ export function passiveDamage(level, attack, rollDice) {
 function passiveMonsterName(monster) {
     return monster.name || monsterTypeName(monster.mnum, !!monster.female);
 }
-// Part of C uhitm.c:dynamic_multi_reason(): retain an unhallucinated paralysis cause.
-function passiveParalysisReason(monster, state, gaze) {
+// C uhitm.c:dynamic_multi_reason(): the helpless reason done_in_by()
+// shows — "<verb> by <attacker>", the attacker named without visibility,
+// hallucination, saddle, or personal-name decoration; a gaze appends the
+// possessive "gaze".
+function monsterHelplessnessReason(monster, state, verb, gaze) {
     const species = namelessMonsterName(monster, {
         state, article: 'a', suppressIt: true, suppressInvisible: true,
         suppressHallucination: true, suppressSaddle: true,
     });
-    return { monsterId: monster.m_id, text: `frozen by ${gaze ? `${possessiveName(species)} gaze` : species}` };
+    return {
+        monsterId: monster.m_id,
+        text: `${verb} by ${gaze ? `${possessiveName(species)} gaze` : species}`,
+    };
 }
 // C uhitm.c:passive_obj()
 // passive_obj() also applies to the hero's current body after a missile hits.

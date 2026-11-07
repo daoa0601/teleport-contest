@@ -14,7 +14,9 @@ import type { DungeonBranch, DungeonLocation, SpecialLevelDescriptor } from './d
 import { getLine, ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showTextMenuOverlay, showMultiSelectWindow, showTextWindow } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
+import type { TtyMenuWindow } from './wintty.js';
 import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible, customizedGlyphs } from './display.js';
+import type { CustomizedGlyph } from './display.js';
 import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
@@ -1095,24 +1097,33 @@ export async function wizCustom(): Promise<void> {
     // reset_glyphmap() also clears Rogue colors unless its active set enables IBM color.
     const colorEnabled = game.flags.color !== false
         && (!rogue || rogueColorsActive());
-    for (const glyph of customizedGlyphs()) {
-        const byte = glyph.symbol.kind === 'cmap' ? cmapSymbolByte(glyph.symbol.index)
-            : objectClassSymbol(glyph.symbol.oclass).charCodeAt(0);
-        const baseColor = rogue ? glyph.rogueColor : glyph.baseColor;
-        const color = colorEnabled ? baseColor : NO_COLOR;
-        const customColor = glyph.customColor.toString(16).padStart(11, '0');
-        const unicode = glyph.unicode === null ? ''
-            : `U+${glyph.unicode.toString(16).padStart(4, '0')}`
-                + [...new TextEncoder().encode(String.fromCodePoint(glyph.unicode))]
-                    .map(byte => ` <${byte}>`).join('');
-        const text = `[${String(glyph.glyph).padStart(4, '0')}] ${glyph.id.padEnd(44)} `
-            + `'\\${String(byte).padStart(3, '0')}' ${String(color).padStart(2, '0')} ${customColor} ${unicode}`;
-        tty_add_menu(window, { identifier: glyph.glyph + 1, text });
-    }
+    for (const glyph of customizedGlyphs())
+        wizcustomCallback(window, glyph, { rogue, colorEnabled });
     // The xterm-256color terminal profile advertises 256 available colors.
     tty_end_menu(window, `#wizcustom: colorcount=256 ${symsetMenuValue()}`);
     await tty_select_menu(window, PICK_NONE);
     await tty_destroy_nhwindow(window);
     await docrt();
     game.context.move = 0;
+}
+
+// C wizcmds.c:wizcustom_callback(): one customized glyph's #wizcustom menu
+// line — the glyph id, the shown symbol's byte and color, the custom
+// color, and the unicode code point with its UTF-8 bytes.
+function wizcustomCallback(
+    window: TtyMenuWindow<number>, glyph: CustomizedGlyph,
+    { rogue, colorEnabled }: { rogue: boolean; colorEnabled: boolean },
+): void {
+    const byte = glyph.symbol.kind === 'cmap' ? cmapSymbolByte(glyph.symbol.index)
+        : objectClassSymbol(glyph.symbol.oclass).charCodeAt(0);
+    const baseColor = rogue ? glyph.rogueColor : glyph.baseColor;
+    const color = colorEnabled ? baseColor : NO_COLOR;
+    const customColor = glyph.customColor.toString(16).padStart(11, '0');
+    const unicode = glyph.unicode === null ? ''
+        : `U+${glyph.unicode.toString(16).padStart(4, '0')}`
+            + [...new TextEncoder().encode(String.fromCodePoint(glyph.unicode))]
+                .map(byte => ` <${byte}>`).join('');
+    const text = `[${String(glyph.glyph).padStart(4, '0')}] ${glyph.id.padEnd(44)} `
+        + `'\\${String(byte).padStart(3, '0')}' ${String(color).padStart(2, '0')} ${customColor} ${unicode}`;
+    tty_add_menu(window, { identifier: glyph.glyph + 1, text });
 }

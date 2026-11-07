@@ -13,7 +13,7 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import { heroHatesSilver, heroSpecies } from './polyself.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
-import { captureHeroProjectileName } from './uhitm.js';
+import { captureHeroProjectileName } from './objnam.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { ACID_VENOM } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';

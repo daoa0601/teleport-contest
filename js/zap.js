@@ -59,7 +59,7 @@ import { useUpFloorObject } from './invent.js';
 import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance, checkMonsterGearNextTurn, } from './mon.js';
 import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage, destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory, removeHeroEquipment, } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
-import { monsterHasMagicResistance } from './trap.js';
+import { monsterHasMagicResistance } from './mondata.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
 import { impossible } from './diagnostics.js';

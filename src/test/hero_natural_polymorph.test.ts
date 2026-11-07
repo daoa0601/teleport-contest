@@ -8,7 +8,7 @@ import { mhitmAdPoly } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { magic_negation } from '../js/mhitu.js';
 import { AD_POLY, AT_CLAW } from '../js/monster_attack_types.js';
-import { monsterHasMagicResistance } from '../js/trap.js';
+import { monsterHasMagicResistance } from '../js/mondata.js';
 import { AMULET_OF_LIFE_SAVING, CLOAK_OF_PROTECTION, CORPSE, DAGGER } from '../js/object_data.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { d, initRng, rn2, rnd } from '../js/rng.js';

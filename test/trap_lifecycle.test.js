@@ -1,4 +1,5 @@
-import { mintrap, connectPits, pitsAreConjoined, maketrap, dotrapAt, fillPitWithBoulderAt, deleteFloorTrap } from '../js/trap.js';
+import { mintrap, pitsAreConjoined, maketrap, dotrapAt, fillPitWithBoulderAt, deleteFloorTrap } from '../js/trap.js';
+import { connectPits, digActualHole } from '../js/dig.js';
 import { createDungeon } from './support/topology.js';
 import { requirePlayingGame, game } from '../js/gstate.js';
 import test from 'node:test';
@@ -8,7 +9,6 @@ import { rhack } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { back_to_glyph } from '../js/display.js';
 import { CLR_BLUE, NO_COLOR } from '../js/terminal.js';
-import { digActualHole } from '../js/dig.js';
 import { gameLogEvents } from '../js/pline.js';
 import { pushKey } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';

@@ -3,7 +3,7 @@ import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.
 import { objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, } from './hack.js';
-import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks } from './mondata.js';
+import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks, touchPetrifies, heroResistsStoning } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, body_part } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -36,7 +36,7 @@ import { makemonNear } from './mklev.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { waterbodyName } from './pager.js';
-import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
+import { petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { displayLiquidName, monsterName, randomDisplayMonsterName, visibleMonsterSubject } from './do_name.js';
 import { removeObjectFromMonsterInventory, removeHeroEquipment } from './worn.js';
@@ -2224,6 +2224,27 @@ function splitForTransfer(object, count, state) {
         return { object, parent: null };
     // splitObjectStack already carried the bill across the split.
     return { object: split, parent: object };
+}
+// The hack.h st_* tests u_safe_from_fatal_corpse() combines.
+export const ST_GLOVES = 0x1, ST_CORPSE = 0x2, ST_PETRIFIES = 0x4, ST_RESISTS = 0x8;
+const ST_ALL = ST_GLOVES | ST_CORPSE | ST_PETRIFIES | ST_RESISTS;
+// C pickup.c:u_safe_from_fatal_corpse(): the gloves / corpse / petrifying /
+// stone-resistance tests that make bare-handed corpse contact safe.
+export function heroIsSafeFromFatalCorpse(object, tests, state = game) {
+    if (tests & ST_GLOVES && (state.uarmg || state.u?.uarmg))
+        return true;
+    if (tests & ST_CORPSE && object?.otyp !== CORPSE)
+        return true;
+    if (tests & ST_PETRIFIES && !touchPetrifies(object?.corpsenm))
+        return true;
+    if (tests & ST_RESISTS && heroResistsStoning(state))
+        return true;
+    return false;
+}
+// Part of C pickup.c:u_safe_from_fatal_corpse(): the st_all instantiation,
+// inverted for the fatal-contact callers.
+export function handlesPetrifyingCorpseBareHanded(object) {
+    return !heroIsSafeFromFatalCorpse(object, ST_ALL);
 }
 // C pickup.c:fatal_corpse_mistake(): handling one corpse from the stack, with
 // the death reason from killer_xname() describing the whole stack.
