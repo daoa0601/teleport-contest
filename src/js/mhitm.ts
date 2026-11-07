@@ -53,7 +53,7 @@ import { cansee } from './vision.js';
 import {
     applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled,
     finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder,
-    prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject,
+    prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification,
     turnGolemToStone,
 } from './mon.js';
 import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName, monsterTypeName } from './do_name.js';
@@ -1515,7 +1515,7 @@ export async function petrifyMonsterAttacker(monster: Monster, {
     const stoneForm = await turnGolemToStone(monster, publish);
     if (stoneForm?.heroDied) return { heroDied: true };
     if (stoneForm) return { survived: true };
-    if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
+    if (visible) await publish(`${monsterName(monster, { capitalized: true })} turns to stone!`);
     if (creditHero) recordHeroKillConduct();
     return finishMonsterPetrification(monster, { ...options, publish });
 }

@@ -86,7 +86,7 @@ import { cloneHeroMonsterForm } from './mhitu.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
 import {
     angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled,
-    finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject,
+    finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch,
     removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone,
     wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages,
 } from './mon.js';
@@ -7173,7 +7173,7 @@ export async function petrifyMonsterDefender(monster: Monster, {
     if (stoneForm) return { survived: true, stopped: false, damage: 0 };
     if (monsterHasStoneResistance(monster))
         return { survived: true, stopped: false, damage: 1 };
-    if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
+    if (visible) await publish(`${monsterName(monster, { capitalized: true })} turns to stone!`);
     const result = await finishMonsterPetrification(monster, { ...options, publish });
     return { ...result, stopped: true, damage: 0 };
 }

@@ -42,7 +42,7 @@ import { gotoLevel } from './do.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { On_ladder, On_stairs, stairwayAt } from './stairs.js';
 import { addBuriedObject, createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
-import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
+import { angerWatchGuards, maybeUnhideAt, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
@@ -1075,7 +1075,7 @@ export async function digActualHole(
     } else if (madeBy && typeof madeBy === 'object'
         && canSeeMonster(madeBy)) {
         await plineWithContinuation(
-            `${monsterSubject(madeBy)} digs ${withIndefiniteArticle(trapWord)} `
+            `${monsterName(madeBy, { capitalized: true })} digs ${withIndefiniteArticle(trapWord)} `
             + `${through} the ${surfaceType}.`);
     } else if (cansee(x, y) && verbose(state)) {
         if (IS_STWALL(oldTyp)) {
@@ -1128,7 +1128,7 @@ export async function digActualHole(
                     // M1_FLY in the pinned data, so they report "flies".
                     const flying = monsterIsFlyer(victim.mnum);
                     await plineWithContinuation(
-                        `${monsterSubject(victim)} `
+                        `${monsterName(victim, { capitalized: true })} `
                         + `${flying ? 'flies' : 'floats'} over the pit.`);
                 }
             } else if (victim !== madeBy) {
@@ -1204,7 +1204,7 @@ export async function digActualHole(
                 if (!stronghold && Is_botlevel(state.u.uz)) {
                     if (canSeeMonster(victim)) {
                         await plineWithContinuation(
-                            `${monsterSubject(victim)} avoids the trap.`);
+                            `${monsterName(victim, { capitalized: true })} avoids the trap.`);
                     }
                     return;
                 }

@@ -64,7 +64,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { possessiveName } from './hacklib.js';
 import { depth, ledgerNo } from './dungeon.js';
 import {
-    releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster,
+    releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame,
     revealMonsterAppearance, wakeMonstersNearWithMessages,
 } from './mon.js';
 import { removeWornHeroItem } from './steal.js';
@@ -3213,7 +3213,7 @@ export async function grantMonsterWish(monster: Monster, {
     } : null;
     // Remove before wishing so an artifact-fatal wish cannot put the donor
     // in bones. Keep its last map projection visible until the prompt ends.
-    await removeWishGrantingMonster(monster);
+    await removeMonsterFromGame(monster);
     if (state.program_state.gameover) return;
     if (projection)
         await show_glyph_cell(mx, my, projection.ch, projection.color,

@@ -38,7 +38,7 @@ import { useUpFloorObject } from './invent.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { possessiveName } from './hacklib.js';
 import { depth, ledgerNo } from './dungeon.js';
-import { releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, } from './mon.js';
+import { releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame, revealMonsterAppearance, wakeMonstersNearWithMessages, } from './mon.js';
 import { removeWornHeroItem } from './steal.js';
 import { holdAnotherObject } from './invent.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
@@ -2955,7 +2955,7 @@ export async function grantMonsterWish(monster, { state = game, } = {}) {
     } : null;
     // Remove before wishing so an artifact-fatal wish cannot put the donor
     // in bones. Keep its last map projection visible until the prompt ends.
-    await removeWishGrantingMonster(monster);
+    await removeMonsterFromGame(monster);
     if (state.program_state.gameover)
         return;
     if (projection)

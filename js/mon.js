@@ -545,9 +545,9 @@ export function undeadToCorpse(mndx) {
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
-// Port only: iteration in fmon order; JS appends while C prepends to fmon.
-// JS stores monsters in creation order by appending to level.monsters.
-// C's makemon() prepends to fmon, so all scheduler traversals are reversed.
+// C mon.c fmon traversal (for (mtmp = fmon; mtmp; mtmp = mtmp->nmon)):
+// makemon() prepends to fmon while the port appends to level.monsters,
+// so scheduler traversals reverse the array.
 export function monstersInFmonOrder(monsters = []) {
     return Array.from(monsters).reverse();
 }
@@ -1268,7 +1268,8 @@ export async function maybeUnhideAt(x, y, state = game) {
     if (!hidden)
         await newsym(x, y);
 }
-// Port only: hero-shaped adapter for the shared hiding-place test.
+// Part of C mon.c:maybe_unhide_at(): the &gy.youmonst argument shape
+// (u.uundetected/u.utrap) for the shared hiding-place test.
 function heroHidingActor(state) {
     return {
         species: heroSpecies(state), x: state.u.ux, y: state.u.uy,
@@ -1276,7 +1277,8 @@ function heroHidingActor(state) {
         stoneResistant: heroResistsStoning(state),
     };
 }
-// Port only: monster adapter for the shared hiding-place test.
+// Part of C mon.c:maybe_unhide_at()/hideunder(): the monst argument
+// shape for the shared hiding-place test.
 function monsterHidingActor(monster, state) {
     return {
         species: monster.mnum, x: monster.mx, y: monster.my,
@@ -2045,7 +2047,9 @@ export function naturalMonsterSpeed(monster) {
     return monster.mmove !== undefined && Number.isFinite(monster.mmove)
         ? monster.mmove : MONSTER_MOVE[monster.mnum] ?? 0;
 }
-// Port only: initializes the movement fields the C struct zero-initializes.
+// Part of C makemon.c:makemon(): *mtmp = cg.zeromonst clears movement and
+// mspeed; mmove copies the species' rate.  Restored monsters replay this
+// for fields the port leaves absent.
 export function initializeMonsterMovement(monster) {
     if (!monster)
         return monster;
@@ -2081,11 +2085,15 @@ export async function consumeMonsterFloorObjects(monster, state, { originalSpeci
         died, leftLevel, heroDied: !!state.program_state.gameover,
     };
 }
-// Port only: the meal-interrupt level test; C returns between the calls.
+// Part of C monmove.c:postmov(): the "forced off the level" half of the
+// meal returns — C's meatobj()/meatcorpse() return 3 when the monster
+// migrated or was removed between the dispatches.
 function leftMealLevel(monster, { state, level }) {
     return !!monster.migrating || state.level !== level || !level.monsters.includes(monster);
 }
-// Port only: the shared meal-interrupt test (dead, game over, or gone).
+// Part of C monmove.c:postmov(): the meal dispatch guard — C's
+// meatmetal() == 2 / meatobj() >= 2 / meatcorpse() >= 2 returns, modeled
+// as interrupt checks between the port's dispatches.
 function mealInterrupted(monster, context) {
     return !!context.state.program_state.gameover || !!monster.dead || monster.mhp <= 0
         || leftMealLevel(monster, context);
@@ -2519,10 +2527,6 @@ export async function removeMonsterFromGame(monster) {
     if (game.u.usteed === monster)
         await dismountHero(DISMOUNT_GENERIC);
     return { removed: true, dropped, discarded, x, y };
-}
-// Port only: entry for a monster removed after granting a wish.
-export async function removeWishGrantingMonster(monster) {
-    return await removeMonsterFromGame(monster);
 }
 // Part of C mon.c:corpse_chance(): rolling the AT_BOOM damage.
 // ── C mon.c:corpse_chance() AT_BOOM checks and the contained
@@ -3137,7 +3141,7 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
         completedDeath: doorDeath,
     };
 }
-// Port only: reads the mvitals died counter.
+// C mvitals[mndx].died: the per-species death counter read.
 export function monsterDeathCount(mnum, state = game) {
     return state.mvitals?.[mnum]?.died ?? 0;
 }
@@ -3152,10 +3156,6 @@ export function recordMonsterDeath(monster, state = game) {
     if (mnum === PM_MAIL_DAEMON)
         vital.mvflags = (vital.mvflags ?? 0) | G_GENOD;
     return vital.died;
-}
-// Port only: whether any deaths were tallied (bones bookkeeping).
-export function hasRecordedMonsterDeaths(state = game) {
-    return (state.mvitals || []).some(vital => (vital?.died ?? 0) > 0);
 }
 // C mondead(): a dying steam vortex leaves a cloud of steam behind.
 const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');
@@ -3427,7 +3427,8 @@ async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFee
 }
 const VAMPIRE_FORMS = new Set([226, 227, 228]);
 const TORSO_ARMOR = W_ARM | W_ARMC | W_ARMU;
-// Port only: capitalized name subject for the petrification messages.
+// C Monnam(mtmp): the capitalized monster-name subject — monsterName()
+// (do_name.ts) is the mon_nam()/Monnam() port.
 export function monsterSubject(monster) {
     return monsterName(monster, { capitalized: true });
 }
@@ -5143,7 +5144,7 @@ export async function seeMonsterCloseup(monster, { photo = false, onHead = true,
         await checkExperienceLevel();
     }
 }
-// Port only: resolves a species' mvitals record.
+// Part of C mon.c:see_monster_closeup(): the mvitals[] record access.
 function speciesVitals(state, species) {
     const vitals = state.mvitals || (state.mvitals = []);
     return vitals[species] ?? (vitals[species] = { mvflags: 0, born: 0, died: 0 });

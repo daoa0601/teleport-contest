@@ -23,7 +23,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './s
 import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart, floatVsFlight } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import { levelHasCeiling, level_difficulty, specialPrototypeAt, levelAtDepth, depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain, In_quest, In_hell, } from './dungeon.js';
-import { monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance, setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape, finishHeroMonsterKill, finishHeroMonsterKillOutcome, } from './mon.js';
+import { monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, restoreShapechanger, turnGolemToStone, wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance, setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape, finishHeroMonsterKill, finishHeroMonsterKillOutcome, } from './mon.js';
 import { objectOwnershipPrefix, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig, chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt, makeAngryShopkeeper, deleteObjectContents, } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
@@ -4372,12 +4372,12 @@ export async function petrifyMonsterImmediately(monster, { creditHero = false, f
     // matters when the hero is inside this monster.
     if (!game.in_mklev && game.flags.verbose !== false
         && speed.canDescribe && canSeeMonster(monster)) {
-        const speedMessage = monsterSpeedMessage(speed, monsterSubject(monster));
+        const speedMessage = monsterSpeedMessage(speed, monsterName(monster, { capitalized: true }));
         if (speedMessage)
             await publish(speedMessage);
     }
     if (cansee(monster.mx, monster.my)) {
-        await publish(`${monsterSubject(monster)} turns to stone.`);
+        await publish(`${monsterName(monster, { capitalized: true })} turns to stone.`);
     }
     if (creditHero)
         recordHeroKillConduct();
@@ -4452,7 +4452,7 @@ export function monsterWearsGloves(monster) {
 }
 // Part of C trap.c:mselftouch(): adjust the monster subject after an introductory phrase.
 function selfTouchSubject(monster, prefix) {
-    const subject = monsterSubject(monster);
+    const subject = monsterName(monster, { capitalized: true });
     if (!prefix || monster.name)
         return subject;
     return subject.charAt(0).toLowerCase() + subject.slice(1);
