@@ -75,7 +75,7 @@ import { heroSpecies, heroFormSticks, heroIsPolymorphed, body_part, mbodypart } 
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import {
-    deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt,
+    deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrap, trapAt,
     selfTouchPetrifyingWeapons, floatHeroDown, waterDamageObject, lava_damage,
 } from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
@@ -1710,7 +1710,7 @@ export async function dodown(): Promise<boolean> {
             } else {
                 await autopickupAtHero();
                 if (!game.program_state.gameover)
-                    await dotrapAt(game.u.ux, game.u.uy, {
+                    await dotrap(trapAt(game, game.u.ux, game.u.uy), {
                         finishTeleport: finishTeleportArrival, gotoLevel, tookPlunge: true,
                     });
             }
@@ -1726,7 +1726,7 @@ export async function dodown(): Promise<boolean> {
             && (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) && trap.tseen
             && !(game.u.utrap && game.u.utraptype === TT_PIT));
         if (pit) {
-            await dotrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            await dotrap(trapAt(game, game.u.ux, game.u.uy), { gotoLevel, tookPlunge: true });
             game.context.move = 1;
             return true;
         }
@@ -1734,7 +1734,7 @@ export async function dodown(): Promise<boolean> {
             trap.tx === game.u.ux && trap.ty === game.u.uy
             && (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) && trap.tseen);
         if (hole) {
-            const result = await dotrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            const result = await dotrap(trapAt(game, game.u.ux, game.u.uy), { gotoLevel, tookPlunge: true });
             if (result.died) return false;
             game.context.move = 1;
             return true;

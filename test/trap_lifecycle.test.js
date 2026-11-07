@@ -1,4 +1,4 @@
-import { mintrap, pitsAreConjoined, maketrap, dotrapAt, fillPitWithBoulderAt, deleteFloorTrap } from '../js/trap.js';
+import { mintrap, pitsAreConjoined, maketrap, dotrap, trapAt, fillPitWithBoulderAt, deleteFloorTrap } from '../js/trap.js';
 import { connectPits, digActualHole } from '../js/dig.js';
 import { createDungeon } from './support/topology.js';
 import { requirePlayingGame, game } from '../js/gstate.js';
@@ -142,7 +142,7 @@ for (const replacement of [SPIKED_PIT, WEB]) {
         requirePlayingGame(game);
         const { ux: x, uy: y } = game.u;
         const pit = await createTrap(x, y, PIT);
-        await dotrapAt(x, y);
+        await dotrap(trapAt(game, x, y));
         assert.ok((game.u.utrap ?? 0) > 0);
         assert.equal(game.u.utraptype, TT_PIT);
         const trappedTurns = game.u.utrap;

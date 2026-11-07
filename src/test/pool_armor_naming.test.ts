@@ -11,7 +11,7 @@ import { beginObjectBurn } from '../js/timeout.js';
 import { ROBE, MUMMY_WRAPPING, RING_MAIL, LEATHER_ARMOR, OIL_LAMP, MAGIC_LAMP } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { burnArmorByFire, burnHeroArmorByFire } from '../js/trap.js';
+import { burnArmorByFire } from '../js/trap.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
@@ -25,7 +25,7 @@ for (const [type, name] of [[ROBE, 'robe'], [MUMMY_WRAPPING, 'wrapping']] as con
         await wearHeroArmor(cloak);
         const messages: string[] = [];
 
-        await burnHeroArmorByFire(game, text => { messages.push(text); }, [], () => 1);
+        await burnArmorByFire(game.u, game, text => { messages.push(text); }, [], () => 1);
 
         assert.equal(messages[0], `Your ${name} smoulders!`);
         assert.equal(cloak.oeroded, 1);
@@ -60,7 +60,7 @@ void test('a blind priest learns a burned suit\'s beatitude without seeing its n
     setHeroBlindnessTurns(10);
     const messages: string[] = [];
 
-    await burnHeroArmorByFire(game, text => { messages.push(text); }, [], () => 1);
+    await burnArmorByFire(game.u, game, text => { messages.push(text); }, [], () => 1);
 
     assert.equal(messages[0], 'Your leather armor smoulders!');
     assert.equal(suit.dknown, false);

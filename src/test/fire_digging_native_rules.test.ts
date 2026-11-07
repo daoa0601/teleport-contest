@@ -7,7 +7,7 @@ import { startHeroDigging, continueHeroDigging } from '../js/dig.js';
 import { resetInputState } from '../js/input.js';
 import { PICK_AXE, TOWEL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { burnHeroArmorByFire } from '../js/trap.js';
+import { burnArmorByFire } from '../js/trap.js';
 import { vision_reset } from '../js/vision.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { requireFixtureGame } from './support/game-state.js';
@@ -21,7 +21,7 @@ void test('fire dries a wet towel carried by the hero', async () => {
     const messages: string[] = [];
     initRng(1n);
 
-    await burnHeroArmorByFire(game, message => { messages.push(message); });
+    await burnArmorByFire(game.u, game, message => { messages.push(message); });
 
     assert.ok(game.inventory.includes(towel));
     assert.ok(towel.spe < 7, 'Fire should reduce the carried towel\'s wetness.');
