@@ -29,7 +29,7 @@ import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
 import { makeWish } from './zap.js';
 
-import { polymorphHero, heroSpecies, body_part } from './polyself.js';
+import { polymorphHero, heroSpecies, body_part, floatVsFlight } from './polyself.js';
 import { createParticularMonster } from './read.js';
 import { findit, mapMagicLevel } from './detect.js';
 import { monsterName } from './do_name.js';
@@ -976,7 +976,9 @@ async function increaseIntrinsic(
         );
     }
 
-    if (property === 'levitation' || property === 'flying') refreshMovementProperties(state);
+    // C wizcmds.c:1081-1082 — the timeout change ends with
+    // float_vs_flight() for levitation and flying.
+    if (property === 'levitation' || property === 'flying') floatVsFlight(state);
     else if (property === 'protectionFromShapeChangers') await restoreNaturalMonsterShapes(state);
     if (
         (property === 'waterWalking' || property === 'levitation' || property === 'flying') &&

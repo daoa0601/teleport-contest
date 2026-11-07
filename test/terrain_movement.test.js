@@ -5,12 +5,12 @@ import assert from 'node:assert/strict';
 import { DOOR, D_CLOSED, PIT, ROOM, STONE, TT_BEARTRAP, TT_PIT } from '../js/const.js';
 import { applyHeroLocationEffects, switchHeroTerrain } from '../js/hack.js';
 import { BOULDER } from '../js/object_data.js';
-import { grantIntrinsicProperty, refreshMovementProperties } from '../js/properties.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { floatHeroUp, resetUtrap } from '../js/trap.js';
+import { floatHeroUp, resetUtrap, setHeroTrap } from '../js/trap.js';
 for (const property of ['levitation', 'flying']) {
     void test(`${property} stops inside solid terrain and resumes after it opens`, async () => {
         await freshObjectRoom();
@@ -64,9 +64,9 @@ void test('releasing a ground trap resumes flight with feedback', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('flying', 'outside');
-    game.u.utrap = 4;
-    game.u.utraptype = TT_BEARTRAP;
-    refreshMovementProperties();
+    // C reaches the bear trap through set_utrap() (trap.c:3430), whose
+    // float_vs_flight() blocks flight for the floor hold.
+    setHeroTrap(4, TT_BEARTRAP, game);
     assert.equal(game.u.flying, false);
     await resetUtrap(true);
     assert.equal(game.u.utrap, 0);
@@ -78,9 +78,12 @@ void test('releasing a ground trap resumes flight with feedback', async () => {
 void test('same-terrain spot effects repeat blocked levitation feedback', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
-    game.u.utrap = 4;
-    game.u.utraptype = TT_BEARTRAP;
+    // C reaches this state as levitation sources caught by a floor trap:
+    // set_utrap()'s float_vs_flight() stores BLevitation|I_SPECIAL, which
+    // is what makes switch_terrain() (hack.c:3191-3196) rerun float_up()
+    // on every same-square spoteffects() call.
     grantIntrinsicProperty('levitation', 'outside');
+    setHeroTrap(4, TT_BEARTRAP, game);
     await applyHeroLocationEffects();
     assert.match(game._pending_message, /float up slightly/);
     game._pending_message = '';

@@ -134,6 +134,10 @@ export interface PropertySources {
     invoked: InvokedPropertySource | null;
     carried: CarriedPropertySource[];
     blockedByTerrain?: boolean;
+    // C blocked mask's I_SPECIAL (youprop.h:239,252): polyself.c
+    // float_vs_flight() is the only writer; every other reader sees the
+    // state left by the last call.
+    blockedByFloat?: boolean;
 }
 
 export type PropertyTimeout = typeof PROPERTY_TIMEOUT_FIELDS[PropertyName];

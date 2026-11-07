@@ -20,7 +20,7 @@ import { stopHeroOccupation } from './allmain.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Is_waterlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, } from './const.js';
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt, isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
-import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part } from './polyself.js';
+import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part, floatVsFlight } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters } from './objnam.js';
@@ -1363,7 +1363,7 @@ export async function removeHeroArmor(object, state = game, options = {}) {
             learnObjectType(object.otyp, state);
         }
         else
-            refreshMovementProperties(state);
+            floatVsFlight(state);
         delete object._levitationBeforeWear;
     }
     return removed;
@@ -1937,7 +1937,7 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
                 await applyHeroLocationEffects(undefined, { pick: false });
         }
         else
-            refreshMovementProperties(state);
+            floatVsFlight(state);
         return [];
     }
     if (object.otyp === WATER_WALKING_BOOTS) {
@@ -2390,7 +2390,7 @@ export async function wearHeroAccessory(object, slot, state = game) {
                 await applyHeroLocationEffects(undefined, { pick: false });
         }
         else
-            refreshMovementProperties(state);
+            floatVsFlight(state);
     }
     return property || null;
 }
@@ -2402,8 +2402,8 @@ async function showWornAmulet(object, state) {
 }
 // C do_wear.c:Amulet_on(): the amulet switch after setworn() — gas relief,
 // unchanging, change, strangulation, restful sleep, flight, guarding.
-// float_vs_flight()'s levitation block runs in wearHeroAccessory's
-// property grant before this switch.
+// The flying case opens with float_vs_flight() (C do_wear.c:1058), the
+// stored BFlying refresh for the freshly worn amulet.
 async function applyAmuletOnEffects(object, state, { wasFlying, wasInGas }) {
     if (object.otyp === AMULET_OF_CHANGE) {
         await changeSexFromAmulet(object, state);
@@ -2411,7 +2411,11 @@ async function applyAmuletOnEffects(object, state, { wasFlying, wasInGas }) {
     }
     let message;
     if (objectPropertyName(object.otyp) === 'flying')
-        state.context.botl = true;
+        // C do_wear.c:1058 — float_vs_flight() runs as the flying-amulet
+        // case opens: setworn() has already set the extrinsic source, and
+        // the blocked mask still holds its pre-wear value.  It also covers
+        // the disp.botl = TRUE of the new-flight branch.
+        floatVsFlight(state);
     // C potion.c:make_slimed(0): wearing unchanging cures sliming silently.
     if (object.otyp === AMULET_OF_UNCHANGING && heroIsSliming(state))
         clearHeroSliming(state);
@@ -2432,6 +2436,8 @@ async function applyAmuletOnEffects(object, state, { wasFlying, wasInGas }) {
         message = 'You are no longer bothered by the poison gas.';
     }
     else if (objectPropertyName(object.otyp) === 'flying' && state.u.flying && !wasFlying) {
+        // C do_wear.c:1059-1074 — the already_flying probe reads Flying
+        // after the float_vs_flight() above; `wasFlying` is its snapshot.
         learnObjectType(object.otyp, state);
         message = 'You are now in flight.';
     }
@@ -2533,15 +2539,15 @@ export async function removeHeroAccessory(object, state = game) {
                 learnRing(object, true, state);
         }
         else
-            refreshMovementProperties(state);
+            floatVsFlight(state);
     }
     return property;
 }
 // C do_wear.c:Amulet_off(): the amulet switch — ESP sees monsters first,
 // guarding's AC is computed while still worn, strangulation ends, and
 // flying/levitation settles after the slot is cleared.
-// C polyself.c:float_vs_flight(): the levitation-blocked flying flag is
-// reconciled inside clearHeroAccessory()'s property refresh.
+// C polyself.c:float_vs_flight(): the flying case refreshes the stored
+// BFlying mask after the early slot clear (do_wear.c:1160-1164).
 async function removeAmulet(object, state) {
     const strangled = heroIsStrangled(state);
     const flying = propertyIsActive('flying', state);
@@ -2583,15 +2589,21 @@ async function removeAmulet(object, state) {
             learnObjectType(object.otyp, state);
         }
     }
-    else if (object.otyp === AMULET_OF_FLYING && flying && !propertyIsActive('flying', state)) {
-        state.context.botl = true;
-        const overLiquid = isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state)
-            || Is_waterlevel(state.u.uz, state) || Is_airlevel(state.u.uz);
-        await plineWithContinuation(overLiquid ? 'You stop flying.' : 'You land.');
-        await applyHeroLocationEffects();
-        if (state.program_state.gameover)
-            return property;
-        learnObjectType(object.otyp, state);
+    else if (object.otyp === AMULET_OF_FLYING) {
+        // C do_wear.c:1164 — float_vs_flight() runs after the early
+        // setworn(0)/off_msg, refreshing BFlying for the removed amulet
+        // before the was_flying && !Flying test.
+        floatVsFlight(state);
+        if (flying && !propertyIsActive('flying', state)) {
+            state.context.botl = true;
+            const overLiquid = isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state)
+                || Is_waterlevel(state.u.uz, state) || Is_airlevel(state.u.uz);
+            await plineWithContinuation(overLiquid ? 'You stop flying.' : 'You land.');
+            await applyHeroLocationEffects();
+            if (state.program_state.gameover)
+                return property;
+            learnObjectType(object.otyp, state);
+        }
     }
     return property;
 }

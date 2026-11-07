@@ -712,19 +712,27 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     if (active('jumping')) can('jump', 'jumping');
     if (active('teleportation')) can('teleport', 'teleportation');
     if (active('teleportControl')) have('teleport control', 'teleportControl');
-    const trapped = (u.utrap ?? 0) > 0 && u.utraptype !== TT_PIT;
-    const levitationSources = intrinsicPropertyMask('levitation') || extrinsicPropertyMask('levitation');
-    const levitationTerrain = u._propertySources?.levitation?.blockedByTerrain;
-    if (levitationSources && (trapped || levitationTerrain))
-        message('You ', 'would levitate', 'would have levitated',
-            `${trapped ? ' if not trapped' : ''}${trapped && levitationTerrain ? ' and' : ''}${levitationTerrain ? ' if surroundings permitted' : ''}`);
-    const flightSources = intrinsicPropertyMask('flying') || extrinsicPropertyMask('flying')
-        || monsterIsFlyer(u.usteed?.mnum ?? -1);
-    if (flightSources && propertyIsBlocked('flying')) {
-        const terrain = u._propertySources?.flying?.blockedByTerrain;
+    // C insight.c:1690-1736 zeroes BLevitation/BFlying to test latent
+    // capability, then explains the stored blocked bits (I_SPECIAL is the
+    // float_vs_flight() mask, FROMOUTSIDE the terrain one).
+    const levitationRecord = u._propertySources?.levitation;
+    const levitationFloat = !!levitationRecord?.blockedByFloat;
+    const levitationTerrain = !!levitationRecord?.blockedByTerrain;
+    if (intrinsicPropertyMask('levitation') || extrinsicPropertyMask('levitation')) {
+        if (levitationFloat || levitationTerrain)
+            message('You ', 'would levitate', 'would have levitated',
+                `${levitationFloat ? ' if not trapped' : ''}${
+                    levitationFloat && levitationTerrain ? ' and' : ''}${
+                    levitationTerrain ? ' if surroundings permitted' : ''}`);
+    }
+    const flightRecord = u._propertySources?.flying;
+    const flightFloat = !!flightRecord?.blockedByFloat;
+    const flightTerrain = !!flightRecord?.blockedByTerrain;
+    if ((intrinsicPropertyMask('flying') || extrinsicPropertyMask('flying')
+        || monsterIsFlyer(u.usteed?.mnum ?? -1)) && (flightFloat || flightTerrain)) {
         const reason = propertyIsActive('levitation') ? " if you weren't levitating"
-            : trapped && !terrain ? " if you weren't trapped"
-                : terrain && !trapped ? ' if surroundings permitted' : ' if circumstances permitted';
+            : flightFloat && !flightTerrain ? " if you weren't trapped"
+                : flightTerrain && !flightFloat ? ' if surroundings permitted' : ' if circumstances permitted';
         message('You ', 'would fly', 'would have flown', reason);
     }
     if (monsterIsClinger(u.umonnum ?? -1)) {

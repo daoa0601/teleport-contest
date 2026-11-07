@@ -17,7 +17,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { planInput } from './support/planned-input.js';
 import { createDungeon } from './support/topology.js';
-import { captureLevitationState, floatHeroDown } from '../js/trap.js';
+import { captureLevitationState, floatHeroDown, setHeroTrap } from '../js/trap.js';
+import { floatVsFlight } from '../js/polyself.js';
 const POTION_END = I_SPECIAL | TIMEOUT;
 const DIAMOND = OBJECT_NAMES.indexOf('diamond');
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
@@ -62,8 +63,9 @@ void test('a bear-trap hold ends levitation without landing effects', async () =
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'potion');
     game.u.levitationTurns = 5;
-    game.u.utrap = 2;
-    game.u.utraptype = TT_BEARTRAP;
+    // C: the levitator is caught by the bear trap through set_utrap(),
+    // whose float_vs_flight() stores BLevitation|I_SPECIAL (polyself.c:144).
+    setHeroTrap(2, TT_BEARTRAP, game);
     installPagerInput(resetInputState(), {
         expected: /no longer trying to float up from the trap's jaws/,
         limit: 1,
@@ -104,6 +106,9 @@ void test('suppressed flight resumes when levitation ends', async () => {
     grantIntrinsicProperty('flying', 'outside');
     grantIntrinsicProperty('levitation', 'potion');
     game.u.levitationTurns = 5;
+    // C: the quaff's closing float_vs_flight() (potion.c:1220) stored
+    // BFlying|I_SPECIAL — levitation overrides the latent flight.
+    floatVsFlight(game);
     assert.equal(game.u.flying, false);
     installPagerInput(resetInputState(), { expected: /stopped levitating and are now flying/, limit: 1 });
 

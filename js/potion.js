@@ -46,7 +46,7 @@ import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js
 import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack, chooseInventoryObject, consumeInventoryItem, getobj, inventoryItemDescription, } from './invent.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { heroIsUnaware, blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness, } from './senses.js';
-import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero, heroIsFlaming, body_part } from './polyself.js';
+import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero, heroIsFlaming, body_part, floatVsFlight } from './polyself.js';
 import { heroCanBeSlimed, newuhs, eatmupdate, fix_petrification } from './eat.js';
 import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestruction, poly_obj, polymorphMonsterFromMagic } from './zap.js';
 import { enlightenment } from './insight.js';
@@ -1324,8 +1324,7 @@ export async function applyLevitationPotion(potion, { state = game, publish = pl
         await applyHeroLocationEffects(publish, { pick: false });
     }
     /* levitating blocks flying */
-    refreshMovementProperties(state);
-    state.context.botl = true;
+    floatVsFlight(state);
     return { nothingHappened: potionNothing };
 }
 // ---- bottlename() (C potion.c:1488) ----

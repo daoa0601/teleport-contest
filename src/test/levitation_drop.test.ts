@@ -17,6 +17,7 @@ import {
 } from '../js/properties.js';
 import { addInventoryItem } from '../js/invent.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { floatVsFlight } from '../js/polyself.js';
 import { W_ART, W_ARTI } from '../js/const.js';
 
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
@@ -27,6 +28,10 @@ async function invokedAhriman() {
     const heart = await artifactObject('The Heart of Ahriman');
     await addInventoryItem(heart, null, true);
     setInvokedProperty('levitation', heart, true, game);
+    // C artifact.c:2211 — the invocation's float_up() ends with
+    // float_vs_flight(), which stores BFlying|I_SPECIAL for the levitating
+    // hero.
+    floatVsFlight(game);
     return heart;
 }
 

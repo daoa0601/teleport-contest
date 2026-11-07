@@ -12,7 +12,7 @@ import { docrt, feel_newsym, newsym, under_water, feel_location, back_to_glyph, 
 import { impossible } from './diagnostics.js';
 import { bot } from './botl.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, pline_dir, publishHeardMessage, recordGameLogEvent, set_msg_xy, } from './pline.js';
-import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava, heroFormClings, heroHidesOnCeiling, heroIsFlying, heroHasProtectionFromShapeChangers, heroIsPolymorphed, returnHeroToHumanForm, heroIsVerySmall, heroIsAmphibious, heroMonsterForm, body_part } from './polyself.js';
+import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava, heroFormClings, heroHidesOnCeiling, heroIsFlying, heroHasProtectionFromShapeChangers, heroIsPolymorphed, returnHeroToHumanForm, heroIsVerySmall, heroIsAmphibious, heroMonsterForm, body_part, floatVsFlight } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { shopkeeperName } from './shknam.js';
@@ -41,7 +41,7 @@ import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
 import { depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain, } from './dungeon.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
-import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
+import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty, grantWornProperty, removeWornProperty, setPropertyFloatBlocked } from './properties.js';
 import { dist2, ingSuffix, upstart } from './hacklib.js';
 import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
 import { updateHeroRegions, visibleRegionAt } from './region.js';
@@ -2041,8 +2041,9 @@ export async function switchHeroTerrain(state = game) {
     }
     else if (propertyIsBlocked('flying', state)) {
         setPropertyTerrainBlocked('flying', false, state);
-        refreshMovementProperties(state);
-        state.context.botl = true;
+        // C hack.c:3204-3205 — after clearing BFlying's FROMOUTSIDE bit,
+        // float_vs_flight() refreshes I_SPECIAL (and the status line).
+        floatVsFlight(state);
         if (propertyIsActive('flying', state))
             await plineWithContinuation('You start flying.');
     }
@@ -4307,8 +4308,10 @@ export async function fallIntoSink(state = game, { publish = plineWithContinuati
     }
     hero.levitationTurns = 0; // C HLevitation--
     refreshProperty('levitation', state);
-    refreshMovementProperties(state); // C float_vs_flight()
-    state.context.botl = true;
+    // C hack.c:916-918 — the final float_vs_flight() after the forced
+    // removals ("make sure BFlying is up to date"), which also requests
+    // the status repaint.
+    floatVsFlight(state);
     return { fell: ufall, died: false };
 }
 // C hack.c:losehp(). Damage belongs to the body the hero currently occupies.
@@ -4377,31 +4380,6 @@ export const OVERLOADED = 5;
 const S_NYMPH = 14;
 const MZ_HUMAN = 2;
 const WT_HUMAN = 1450;
-// Part of C hack.c:weight_cap(): the levitation support test, ignoring
-// the carrying benefit of boots whose Boots_on callback has not run yet.
-export function levitationSupportsLoad(ignoreBoots, state = game) {
-    return !existingPropertyRecord('levitation', state)?.blockedByTerrain
-        && levitationSourceIsActive(ignoreBoots, state);
-}
-// Part of C hack.c:weight_cap(): the flight support test while pending
-// boots' levitation is removed. float_vs_flight() also restores flight;
-// query that temporary state without changing the abilities projected
-// onto the hero while the boots are actually worn.
-export function flyingSupportsLoad(ignoreBoots, state = game) {
-    if (!ignoreBoots)
-        return propertyIsActive('flying', state);
-    if (existingPropertyRecord('flying', state)?.blockedByTerrain
-        || levitationSourceIsActive(true, state))
-        return false;
-    const flying = propertySourceIsActive('flying', state);
-    const hero = state.u;
-    const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
-    if (flying && trapped)
-        return false;
-    const steedFlies = hero.usteed
-        && monsterIsFlyer(hero.usteed.mnum);
-    return flying || !!steedFlies;
-}
 // C hack.c:inv_weight().
 export function inventoryWeight(state) {
     const inventory = state.inventory || [];
@@ -4425,6 +4403,24 @@ export function inventoryWeight(state) {
 }
 // C hack.c:weight_cap().
 export function weightCapacity(state) {
+    // C saves ELevitation/BLevitation (4297), clears the pending Boots_on
+    // levitation bit with a float_vs_flight() (4303-4306), clears
+    // BLevitation's I_SPECIAL floor-trap hold for the capacity math (4309),
+    // computes with the macros reading the reduced masks, then restores both
+    // and calls float_vs_flight() again if either changed (4339-4343).
+    const dressing = pendingArmorAction(state);
+    const boots = state.uarmf ?? state.u?.uarmf ?? null;
+    const bootsPending = dressing?.kind === 'wear' && dressing.object === boots;
+    const levitationRecord = existingPropertyRecord('levitation', state);
+    const bootsLevitating = !!levitationRecord?.worn.some(source => source.slot === 'uarmf');
+    const clearedBoots = !!bootsPending && bootsLevitating;
+    const savedFloorHold = !!levitationRecord?.blockedByFloat;
+    if (clearedBoots && boots) {
+        removeWornProperty('levitation', boots, 'uarmf', state);
+        floatVsFlight(state);
+    }
+    if (savedFloorHold)
+        setPropertyFloatBlocked('levitation', false, state);
     const strength = currentStrength(state);
     const constitution = currentAttribute(A_CON, state);
     let capacity = 25 * (strength + constitution) + 50;
@@ -4447,44 +4443,32 @@ export function weightCapacity(state) {
     const steedMnum = state.u?.usteed?.mnum;
     const strongSteed = steedMnum !== undefined && Number.isInteger(steedMnum)
         && strongmonst(steedMnum);
-    const dressing = pendingArmorAction(state);
-    const bootsPending = dressing?.kind === 'wear'
-        && dressing.object === (state.uarmf ?? state.u.uarmf);
-    const levitating = levitationSupportsLoad(bootsPending, state)
-        || !bootsPending && !!(state.u.levitating || state.u.levitation || state.levitating);
-    if (levitating || Is_airlevel(state.u?.uz) || strongSteed) {
+    // Levitation still functions enough in a floor trap to enhance carrying
+    // capacity (hack.c:4307-4309, 4325), which is why the I_SPECIAL hold was
+    // cleared above; the terrain block (FROMOUTSIDE) still applies.
+    if (propertyIsActive('levitation', state) || Is_airlevel(state.u?.uz)
+        || strongSteed) {
         capacity = 1000;
     }
     else {
         capacity = Math.min(1000, capacity);
-        const flying = flyingSupportsLoad(bootsPending, state)
-            || !bootsPending && !!(state.u.flying || state.flying);
-        if (!flying) {
+        if (!propertyIsActive('flying', state)) {
             if (state.u?._woundedLegSide === 'both')
                 capacity -= 200;
             else if (state.u?._woundedLegSide)
                 capacity -= 100;
         }
     }
-    // C hack.c:weight_cap() clears the pending Boots_on levitation bit
-    // (4303-4306) and the floor-trap hold on BLevitation -- float_vs_flight()'s
-    // I_SPECIAL for a hero with levitation sources caught in a non-pit trap
-    // (polyself.c:133, 144-145) -- for the capacity math, and restores
-    // whichever bit was actually cleared with float_vs_flight()
-    // (4339-4343).  float_vs_flight() always ends with disp.botl = TRUE
-    // (polyself.c:153), so every capacity recomputation in that state --
-    // encumber_msg() opens each world turn and gethungry() runs inside it
-    // -- requests a status repaint.  allmain.c:262 suppresses time_botl
-    // while context.run is set, so during travel that botl request is what
-    // repaints the turn counter at the next flush (allmain.c:473-479,
-    // display.c:2236-2239).  BLevitation's FROMOUTSIDE bit (terrain that
-    // blocks levitation, hack.c:3190) is never cleared by weight_cap(), so
-    // it alone must not request the repaint.
-    const floorTrapHold = (state.u.utrap ?? 0) > 0 && state.u.utraptype !== TT_PIT;
-    if (floorTrapHold && propertySourceIsActive('levitation', state)
-        || bootsPending
-            && !!(existingPropertyRecord('levitation', state)?.worn.some(source => source.slot === 'uarmf')))
-        state.context.botl = true;
+    if (clearedBoots || savedFloorHold) {
+        if (clearedBoots && boots)
+            grantWornProperty('levitation', boots, 'uarmf', state);
+        // float_vs_flight() always ends with disp.botl = TRUE (polyself.c:153)
+        // so every capacity recomputation in this state — encumber_msg()
+        // opens each world turn and gethungry() runs inside it — requests a
+        // status repaint; during travel that repaint is what refreshes the
+        // turn counter (allmain.c:262, 473-479).
+        floatVsFlight(state);
+    }
     return Math.max(1, Math.min(1000, capacity));
 }
 // Part of C hack.c:inv_weight(): weight minus capacity.
