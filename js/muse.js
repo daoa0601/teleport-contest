@@ -68,7 +68,7 @@ import { awakenSoldiers } from './music.js';
 import { canDigDown, canFallThrough } from './mklev.js';
 import { stairwayAt } from './stairs.js';
 import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
-import { monsterCarriesSpecialObject } from './wizard.js';
+import { monsterCarriesSpecialObject, monsterCarriesAmulet } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';
 import { explode } from './explode.js';
 import { monsterWieldedWeapon } from './weapon.js';
@@ -316,9 +316,8 @@ async function m_tele(monster, type, seen, options, trap = null) {
     if (await reportMonsterTeleportRestriction(monster, { state, publish })) {
         if (seen && type)
             learnObjectType(type, state);
-        monsterLearnsTrap(monster, { ttyp: TELEP_TRAP });
     }
-    else if ((hasAmulet(monster) || levelIsWizardTower(state)) && !random(3)) {
+    else if ((monsterCarriesAmulet(monster) || levelIsWizardTower(state)) && !random(3)) {
         if (seen)
             await publish(`${monsterName(monster, { state, capitalized: true })} seems disoriented for a moment.`);
     }
@@ -337,11 +336,6 @@ async function m_tele(monster, type, seen, options, trap = null) {
 // Shared noteleport_level()/mon_knows_traps() condition in find_defensive() and find_offensive().
 function teleportNotKnownBlocked(monster, state) {
     return !monsterTeleportRestricted(monster, state) || !monsterKnowsTrap(monster, { ttyp: TELEP_TRAP });
-}
-// C wizard.c:mon_has_amulet(): does the monster carry the real Amulet?
-// mon_has_amulet() inventory predicate, shared by the teleport paths.
-function hasAmulet(monster) {
-    return (monster.minvent || monster.inventory || []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
 // Part of C muse.c:find_defensive(), use_defensive(): the Is_botlevel
 // test.
@@ -488,7 +482,7 @@ export function find_defensive(monster, state, { tryEscape = false, random = rn2
         if (selected?.kind === 'teleport-self' || selected?.kind === 'teleport-ray')
             continue;
         if (object.otyp === WAN_TELEPORTATION && object.spe > 0 && teleportNotKnownBlocked(monster, state))
-            selected = { kind: hasAmulet(monster) ? 'teleport-ray' : 'teleport-self', object };
+            selected = { kind: monsterCarriesAmulet(monster) ? 'teleport-ray' : 'teleport-self', object };
         if (selected?.kind === 'teleport-scroll')
             continue;
         if (object.otyp === SCR_TELEPORTATION && monster.mcansee && monsterHasEyes(monster.mnum)
@@ -655,7 +649,7 @@ export async function use_defensive(monster, choice, options) {
             await mreadmsg(monster, scroll, scrollOptions);
             if (scroll.cursed || monster.mconf) {
                 const destination = randomTeleportDepth(state, random, rollOne);
-                if (hasAmulet(monster) || In_endgame(state.u.uz)) {
+                if (monsterCarriesAmulet(monster) || In_endgame(state.u.uz)) {
                     if (seen)
                         await scrollOptions.publish(`${subject()} seems very disoriented for a moment.`);
                 }
@@ -773,7 +767,7 @@ export async function use_defensive(monster, choice, options) {
                 : ladder ? stair.up ? MIGR_LADDER_DOWN : MIGR_LADDER_UP
                     : stair.up ? MIGR_STAIRS_DOWN : MIGR_STAIRS_UP;
             if (mode === MIGR_STAIRS_DOWN && state.dungeons[state.u.uz.dnum]?.flags.hellish
-                && hasAmulet(monster) && !random(4)
+                && monsterCarriesAmulet(monster) && !random(4)
                 && state.u.uz.dlevel < (state.dungeons[state.u.uz.dnum]?.num_dunlevs ?? 0) - 3) {
                 if (seen)
                     await publish(`As ${monsterName(monster, { state })} climbs the stairs, a mysterious force momentarily surrounds ${monsterObjectPronoun(monster, { state })}...`);

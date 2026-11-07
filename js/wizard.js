@@ -100,9 +100,8 @@ export function wizardDeadOrGone(state = game, random = rn2) {
         state.u.udg_cnt = 50 + random(250);
     }
 }
-// Port only: local Amulet inventory predicate; hasAmulet in muse carries the native citation.
+// C wizard.c:mon_has_amulet() searches only the top-level inventory.
 export function monsterCarriesAmulet(monster) {
-    // C wizard.c:mon_has_amulet() searches only the top-level inventory.
     return (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
 // C wizard.c:mon_has_special() excludes objects inside carried containers.
@@ -113,9 +112,10 @@ export function monsterCarriesSpecialObject(monster, state = game) {
         || object.otyp === CANDELABRUM_OF_INVOCATION
         || object.otyp === SPE_BOOK_OF_THE_DEAD);
 }
-// Port only: local helpless-monster predicate; monsterIsHelpless carries the native macro citation.
+// C include/monst.h:helpless() (the macro), exactly `msleeping || !mcanmove`.
+// Not mondata.ts's monsterIsHelpless, which also treats mfrozen > 0 as
+// helpless; resurrect()'s scan keeps the bare macro's two terms.
 function monsterHelpless(monster) {
-    // C mon.c:helpless().
     return !monster.mcanmove || !!monster.msleeping;
 }
 // Part of C wizard.c:resurrect(): find, revive, and place an eligible migrating Wizard.
