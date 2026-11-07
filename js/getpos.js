@@ -3,7 +3,7 @@
 import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_EXPLORE, GLOC_INTERESTING, GLOC_MONS, GLOC_OBJS, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
 import { Invocation_lev } from './dungeon.js';
 import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './topl.js';
-import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph, TemporaryMapEffect } from './display.js';
+import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph, TemporaryMapEffect, usesDecSymbols } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { cmdq_add_key, cmdq_clear, cmdq_pop, readcharPoskey, takeQueuedAdjacentPosition } from './cmd.js';
@@ -35,7 +35,9 @@ const DEFAULT_GETPOS_FEATURE_SYMBOLS = new Set([
     '#', '`', '<', '>', '_', '|', '\\', '{', '}', '.', ' ',
     '^', '"', '~', '-', '/', '*', '!', ')', '(', '0', '@', '$',
 ]);
-// DECgraphics changes the active showsyms for eligible cmap entries.  C
+// DECgraphics changes the active showsyms for eligible cmap entries (dat
+// symbols DECgraphics, loaded by symbols.c:load_symset() into primary_syms
+// and copied into showsyms by switch_symbols()/assign_graphics()).  C
 // accepts both each entry's defsym and its active showsym.  These are the
 // additional input bytes introduced by the DEC set. The high bit belongs to
 // showsyms: an ordinary letter such as 's' is not the bottom-edge glyph.
@@ -44,14 +46,17 @@ const DEC_GETPOS_FEATURE_SYMBOLS = new Set([
     '\xf8', '\xf1', '\xef', '\xf3', '\xfc',
 ]);
 // Part of C getpos.c:getpos(): whether the key can match a dungeon
-// feature (the matching[] loop finding k > 0).
-export function isGetposFeatureSymbol(ch, symset = '') {
+// feature (the matching[] loop finding k > 0).  The active showsyms come
+// from the shown symbol set: on Rogue levels assign_graphics(ROGUESET)
+// installed the rogue table, so a DEC byte from a primary DECgraphics
+// choice is not a feature key there (getpos.c:1052-1061 reads
+// gs.showsyms[], not the primary symset).
+export function isGetposFeatureSymbol(ch, state = game) {
     if (typeof ch !== 'string' || ch.length !== 1)
         return false;
     if (DEFAULT_GETPOS_FEATURE_SYMBOLS.has(ch))
         return true;
-    return /^DECgraphics$/i.test(symset ?? '')
-        && DEC_GETPOS_FEATURE_SYMBOLS.has(ch);
+    return usesDecSymbols(state) && DEC_GETPOS_FEATURE_SYMBOLS.has(ch);
 }
 // C getpos.c:gather_locs_interesting(): one target-kind test over the
 // displayed glyph — monsters (minus long worm tails and warning signs),
@@ -168,7 +173,7 @@ const EFFECT_FEATURE_SYMBOLS = ['|', '-', '\\', '/', '*', '!', ')', '(', '0', '#
 // matching corridor engravings.
 function matchingGetposSymbols(key, state) {
     const matching = new Set();
-    const dec = /^DECgraphics$/i.test(state.symset ?? '');
+    const dec = usesDecSymbols(state);
     for (let index = CmapSymbol.bars; index <= CmapSymbol.goodpos; index++) {
         if (index === CmapSymbol.room || index === CmapSymbol.darkroom
             || index === CmapSymbol.corr || index === CmapSymbol.litcorr)
@@ -261,7 +266,7 @@ export function nextGetposFeature(cursor, symbol, state = game) {
 export function getposFeatureMissMessage(ch, state = game) {
     const code = ch.codePointAt(0);
     const visible = code === undefined ? '' : visibleCommandKey(code);
-    if (isGetposFeatureSymbol(ch, state.symset))
+    if (isGetposFeatureSymbol(ch, state))
         return `Can't find dungeon feature '${ch}'.`;
     const directions = [0, 6, 2, 4].map(direction => `'${visibleCommandKey(state.commandBindings.keyForDirection(direction))}'`).join(', ');
     const pick = visibleCommandKey(state.commandBindings.specialKey('getpos.pick') ?? 0);
@@ -881,7 +886,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             }
             message = getposFeatureMissMessage(ch);
             clearMessageOnExit = true;
-            if (!force && !isGetposFeatureSymbol(ch, game.symset)) {
+            if (!force && !isGetposFeatureSymbol(ch)) {
                 await pline(message.replace(/\(use .*\)/, '(aborted)'));
                 await plineWithContinuation('Done.');
                 clearMessageOnExit = false;

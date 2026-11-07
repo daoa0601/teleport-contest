@@ -23,6 +23,7 @@ import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
 import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
+import { usesDecSymbols } from './display.js';
 import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C,
     COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 
@@ -110,7 +111,7 @@ export function serializeCapture(term: Terminal | GameDisplay | null | undefined
     }
 
     const lines: string[] = [];
-    const decGraphics = /^DECgraphics$/i.test(game.symset || '');
+    const decGraphics = usesDecSymbols();
     for (const cells of grid.slice(0, lastRow + 1)) {
         const firstCol = cells.findIndex(painted);
         if (firstCol < 0) {
