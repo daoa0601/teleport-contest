@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PIT } from '../js/const.js';
-import { landFloorObject } from '../js/floor_effects.js';
+import { landFloorObject } from '../js/do.js';
 import { game } from '../js/gstate.js';
 import { ELVEN_ARROW } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

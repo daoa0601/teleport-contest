@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { LOST_DROPPED, SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { claimNextDueObjectTimer } from '../js/timeout.js';
-import { landFloorObject } from '../js/floor_effects.js';
+import { landFloorObject } from '../js/do.js';
 import { unlinkObject, meldNearbyFloorGlobs, runClaimedGlobTimer, startGlobTimeout, placeCreatedObject } from '../js/mkobj.js';
 import { GLOB_OF_BLACK_PUDDING } from '../js/object_data.js';
 import { addShopObjectToBill, billForObject, itemizedShopBill, shopOfferForObject } from '../js/shk.js';

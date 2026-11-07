@@ -44,7 +44,7 @@ import {
 } from './timeout.js';
 import { reset_faint, gethungry, morehungry, Hear_again, unfaint, eatmdone, Finish_digestion } from './eat.js';
 import { removeWornHeroItem, finishDelayedArmorTheft } from './steal.js';
-import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel } from './do.js';
+import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel, applyFloorEffects } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
 import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming, setPropertyTimeout } from './potion.js';
@@ -125,7 +125,6 @@ import { floorObjectDescription, stack_object, freeInventoryObject, delobj } fro
 
 import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';
-import { applyFloorEffects } from './floor_effects.js';
 
 
 import { autopickupAllows, autopickupAtHero } from './pickup.js';

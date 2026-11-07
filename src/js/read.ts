@@ -117,7 +117,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster, MonsterVital } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { freeHeroFromBuriedBall } from './dig.js';
-import { landFloorObject } from './floor_effects.js';
+import { landFloorObject } from './do.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { makemonNear } from './mklev.js';

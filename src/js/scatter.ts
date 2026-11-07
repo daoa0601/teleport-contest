@@ -8,7 +8,7 @@ import { deleteTrap, petrifyMonsterFromContact } from './trap.js';
 import { DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS } from './const.js';
 import { isok } from './cmd.js';
 import { canSpotMonster, newsym } from './display.js';
-import { applyFloorEffects } from './floor_effects.js';
+import { applyFloorEffects } from './do.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { unlinkObject, placeObject, splitObjectStack } from './mkobj.js';
 import type { Monster } from './monster_types.js';

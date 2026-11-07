@@ -20,7 +20,7 @@ import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto,
     finishHeroMonsterKill, finishHurtleMonsterDeath,
 } from './mon.js';
-import { woundHeroLegs, gotoLevel, scheduleLevelChange } from './do.js';
+import { woundHeroLegs, gotoLevel, scheduleLevelChange, applyFloorEffects } from './do.js';
 import {
     finishTeleportArrival, askTeleportDestination, relocateObjectRandomly, enexto, goodPosition,
     monsterTeleportRestricted,
@@ -61,7 +61,6 @@ import {
     triggerBoobyTrap, fall_through,
 } from './trap.js';
 import { artifactById } from './artifact.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, inTown, heroGoldAmount, inventoryWeight } from './hack.js';
 import { breakChestLock, maybeResetPick } from './lock.js';
 import type { GameObject, ObjectMigration } from './object_types.js';

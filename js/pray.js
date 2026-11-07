@@ -12,13 +12,12 @@ import { artifactById, artifactByName, artifactExistCount, mk_artifact, discover
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { monsterResistsEffect, reviveCorpseForHero } from './zap.js';
-import { reviveCorpseImmediately } from './do.js';
+import { reviveCorpseImmediately, landFloorObject } from './do.js';
 import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_AP_FURNITURE, M_AP_TYPE, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK, STOMACH, EYE, FOOT, LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, } from './const.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
-import { landFloorObject } from './floor_effects.js';
 import { floorObjectDescription, chooseInventoryObject, confersLuck, consumeInventoryItem, inventoryItemDescription, feelPetrifyingCorpse } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { useUpFloorObject } from './invent.js';

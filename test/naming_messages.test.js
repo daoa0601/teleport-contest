@@ -10,7 +10,7 @@ import { use_container } from '../js/pickup.js';
 import { reviveCorpseImmediately } from '../js/do.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { fireDamageObject } from '../js/trap.js';
-import { landFloorObject } from '../js/floor_effects.js';
+import { landFloorObject } from '../js/do.js';
 import { announceGlobMerge } from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { checkStrangling } from '../js/polyself.js';

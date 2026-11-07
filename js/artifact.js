@@ -2102,7 +2102,7 @@ export async function deactivateArtifactProperty(object, artifact, { state = gam
 // explicit carried source (C `ELevitation = W_ART`), so set_artifact_
 // intrinsic()'s `(ELevitation & W_ARTI)` test fails, arti_invoke() never
 // runs, no invoke downtime is rolled, and levitation survives until
-// finishLevitatingArtifactDrop().  Timeouts and intrinsics are retained.
+// finishLevitatingArtifactDrop() in do.ts.  Timeouts and intrinsics are retained.
 export function beginLevitatingArtifactDrop(object, state = game) {
     requireLiveGame(state);
     if (!object)
@@ -2132,13 +2132,6 @@ export function beginLevitatingArtifactDrop(object, state = game) {
     setInvokedProperty('levitation', null, false, state);
     setCarriedProperty('levitation', object, true, state);
     return true;
-}
-// C do.c:771 `float_down(I_SPECIAL | TIMEOUT, W_ARTI | W_ART)` after
-// hitfloor(): the pinned carried source and the retained timed bits end
-// here, and the shared landing owner reports the touchdown.
-export async function finishLevitatingArtifactDrop(state = game) {
-    requireLiveGame(state);
-    return floatHeroDown(I_SPECIAL | TIMEOUT, W_ARTI | W_ART, state);
 }
 const DEFENSES = {
     fireResistance: 'fire', coldResistance: 'cold', antimagic: 'magic',

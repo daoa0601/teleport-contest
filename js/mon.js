@@ -28,7 +28,6 @@ import { setMimicAppearance, growMonster, finishMonsterGrowth, makemonAt, newMon
 import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle, corpseName, makePlural } from './objnam.js';
 import { monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorph, dismountHero, placeMonsterOnMap } from './steed.js';
 import { thawObject } from './pickup.js';
-import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE, AD_DCAY, AD_DGST, AD_RUST, AT_BOOM, AT_ENGL, AT_GAZE } from './monster_attack_types.js';
 import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterInventory, armorThiefGone } from './steal.js';
 import { removeIntrinsicProperty } from './properties.js';
@@ -59,7 +58,7 @@ import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
-import { finishScheduledLevelChange } from './do.js';
+import { finishScheduledLevelChange, applyFloorEffects, landFloorObject } from './do.js';
 import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
 import { recordAchievement } from './insight.js';
 import { SHOP_TYPES } from './shknam.js';

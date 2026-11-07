@@ -12,34 +12,33 @@
 //         donull(), wipeoff(), dowipe(), set_wounded_legs(), heal_legs().
 import { maketrap } from './trap.js';
 import { revive, requireCorpseSpecies, isContainerLocation } from './zap.js';
-import { ILLOBJ_CLASS, RING_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
+import { ILLOBJ_CLASS, RING_CLASS, COIN_CLASS, VENOM_CLASS, POTION_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { game, requireLiveGame, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
 import { AD_POLY } from './monster_attack_types.js';
-import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH } from './const.js';
+import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH, I_SPECIAL, TIMEOUT, W_ARTI, W_ART, CORR, Luck, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
 import { gulp_blnd_check, holdingMonsterName, } from './mhitu.js';
-import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, TIN, WORM_TOOTH } from './object_data.js';
-import { makePlural, withIndefiniteArticle, ownedObjectName, verbForSubject, objectCombatName, objectDescription, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle, ownedObjectAction, definiteObjectAction } from './objnam.js';
+import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, POT_OIL, TIN, WORM_TOOTH } from './object_data.js';
+import { makePlural, withIndefiniteArticle, ownedObjectName, verbForSubject, objectCombatName, objectDescription, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle, ownedObjectAction, definiteObjectAction, definiteName, objectNameIsPlural } from './objnam.js';
 import { objectTypeKnown, oinit } from './o_init.js';
 import { billForObject, chargeAlteredUnpaidObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition, setShopResidency, fixShopDamage, dopay } from './shk.js';
-import { d, rn1, rn2, rnd } from './rng.js';
+import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
 import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, endVoluntaryMultiTurn, applyHeroLiquidEffects, SLT_ENCUMBER } from './hack.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { buryFloorObjectsAt, addBuriedObject, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
-import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, } from './display.js';
+import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, map_background, } from './display.js';
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, finishHeroMonsterKill, zombieForm, } from './mon.js';
 import { heroSpecies, heroFormSticks, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
-import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt, selfTouchPetrifyingWeapons, } from './trap.js';
+import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt, selfTouchPetrifyingWeapons, floatHeroDown, waterDamageObject, lava_damage, } from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
 import { impossible } from './diagnostics.js';
 import { waterbodyName } from './pager.js';
@@ -47,18 +46,17 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero } from './pickup.js';
 import { selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription, consumeInventoryItem, delobj, sortObjects, chooseInventoryObject, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
-import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject } from './mkobj.js';
+import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject, objectWeight, meldLandingGlob } from './mkobj.js';
 import { promptYesNo } from './query.js';
 import { tty_yn_function } from './topl.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { getLine, showMultiSelectWindow } from './windows.js';
 import { isBimanualObject, isPick } from './object_properties.js';
-import { possessiveName } from './hacklib.js';
+import { possessiveName, upstart } from './hacklib.js';
 import { heroCanReachFloor, engravingAt, make_grave, rewindEngravingsForSave, restoreEngravings } from './engrave.js';
-import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop } from './artifact.js';
-import { hitFloorWithObject } from './dothrow.js';
+import { beginLevitatingArtifactDrop } from './artifact.js';
+import { hitFloorWithObject, breakObjectAtLocation } from './dothrow.js';
 import { shipObject, containerImpactDamage, deliverMigratingObjects, impactDrop } from './dokick.js';
-import { landObjectOnAltar } from './altar_object.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { growMonster, setMonsterMalign } from './makemon.js';
 import { encumber_msg } from './pickup.js';
@@ -95,7 +93,7 @@ import { deliverSpecialLevelMessages } from './questpgr.js';
 import { descendFromLevitation } from './levitation_commands.js';
 import { do_attack, hitMonsterWithHeroObject } from './uhitm.js';
 import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer, monsterIsRider } from './mondata.js';
-import { LL_ACHIEVE, LL_DEBUG, G_GENOD, OBJECT_TIMER_KIND } from './const.js';
+import { LL_ACHIEVE, LL_DEBUG, G_GENOD, OBJECT_TIMER_KIND, LL_CONDUCT } from './const.js';
 import { rotCorpse } from './corpse_rot.js';
 import { canSeeMonster } from './display.js';
 import { riderRevivalTime, set_corpsenm } from './mkobj.js';
@@ -526,6 +524,212 @@ export async function dropRingIntoSink(object, { state = game, publish = plineWi
         await consumeInventoryItem(object, state);
     }
 }
+// Port only: cansee(x, y) for an explicit state (viz_array bit).
+function squareIsVisible(state, x, y) {
+    if (state === game)
+        return cansee(x, y);
+    if (state.blind || (state.u?.blindTurns ?? 0) > 0)
+        return false;
+    return !state.viz_array || !!((state.viz_array[y]?.[x] ?? 0) & 0x2);
+}
+// Port only: publish each queued message through the caller's publisher.
+async function publishAll(messages, publish) {
+    for (const message of messages)
+        await publish(message);
+}
+// Part of C do.c:flooreffects(): the hot-ground potion branch
+// (level.flags.temperature > 0 on room or corridor).
+async function breakPotionOnHotGround(object, x, y, state, publish, random, luckRoll) {
+    const visible = squareIsVisible(state, x, y);
+    const quantity = object.quan ?? object.quantity ?? 1;
+    if (visible) {
+        await publish(`${definiteObjectAction(object, 'heat', state)} up as ${objectNameIsPlural(object, state) ? 'they hit' : 'it hits'} the hot ground.`);
+    }
+    let survivalChance = object.blessed ? 70 : 50;
+    // C do.c:340 adds Luck * 2, so a carried luck bonus also protects
+    // handled potions (you.h:Luck).
+    if (object.invlet)
+        survivalChance += Luck(state.u) * 2;
+    if (object.otyp === POT_OIL)
+        survivalChance = 100;
+    const resists = objectResistsDestruction(object, survivalChance, 100, random);
+    if (resists)
+        return false;
+    if (visible) {
+        await publish(quantity === 1
+            ? 'It shatters from the heat!'
+            : 'They shatter from the heat!');
+    }
+    else if (!heroIsDeaf(state)) {
+        await publishHeardMessage('a shattering noise.', publish, state);
+    }
+    await breakObjectAtLocation(object, {
+        x, y, state,
+        heroCaused: false,
+        showBreakMessage: false,
+        publish,
+        random,
+        luckRandom: luckRoll,
+    });
+    return true;
+}
+// Part of C do.c:flooreffects(): the u_at(x,y) teetering_at_seen_pit() /
+// uescaped_shaft() branch.
+async function handleHeroShaftEdge(object, trap, x, y, state, publish, random) {
+    if (!trap || state.u.ux !== x || state.u.uy !== y || !trap.tseen)
+        return null;
+    if (is_pit(trap.ttyp)
+        && !(state.u?.utrap && state.u.utraptype === TT_PIT)) {
+        if (heroIsBlind(state) && !heroIsDeaf(state)) {
+            const name = definiteName(objectCombatName(object, {
+                state, includeCorpseSpecies: false,
+            }), state);
+            await publish(`You hear ${name} tumble downwards.`);
+        }
+        else {
+            await publish(`${definiteObjectAction(object, 'tumble', state)} into ${trap.madeby_u ? 'your' : 'the'} pit.`);
+        }
+        return { finished: false, object };
+    }
+    if (!is_hole(trap.ttyp))
+        return null;
+    const shipped = await shipObject(object, x, y, {
+        state: requireInitializedGame(state), publish, random,
+    });
+    return shipped ? { finished: true, object: null } : { finished: false, object };
+}
+// C do.c:flooreffects(). What happens when a free object lands on a
+// dungeon square.
+export async function applyFloorEffects(object, x, y, { state = game, publish = plineWithContinuation, random = rn2, luckRoll = rnl, verb = '', } = {}) {
+    requireLiveGame(state);
+    if (object.where !== 'free')
+        throw new Error('floor effects require a free object');
+    const level = requireGameLevel(state);
+    const location = level.at(x, y);
+    if (!location)
+        throw new RangeError(`Floor effects require a map square at (${x}, ${y}).`);
+    if (object.otyp === BOULDER
+        && await dropBoulderIntoLiquid(object, x, y, state, { publish, random })) {
+        return { finished: true, object: null };
+    }
+    const trap = state.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (object.otyp === BOULDER && trap
+        && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
+        return applyBoulderPitEffects(object, trap, x, y, { state, publish, verb });
+    }
+    if (isLavaAt(x, y, state)) {
+        const destroyed = await lava_damage(object, {
+            state, x, y,
+            publish,
+            random,
+            visible: squareIsVisible(state, x, y),
+        });
+        if (destroyed)
+            return { finished: true, object: null };
+        return { finished: false, object };
+    }
+    else if (isPoolAt(x, y, state)) {
+        const airborne = state.u.levitating || state.u.flying;
+        if ((heroIsBlind(state) || airborne) && !heroIsDeaf(state)
+            && state.u.ux === x && state.u.uy === y) {
+            if (!state.u.uinwater) {
+                if (objectWeight(object) > WT_SPLASH_THRESHOLD)
+                    await publish('Splash!');
+                else if (airborne)
+                    await publish('Plop!');
+            }
+            await map_background(x, y, false);
+            await newsym(x, y);
+        }
+        const messages = [];
+        const result = await waterDamageObject(object, messages, state, {
+            random,
+            luckRoll,
+            // C flooreffects() supplies the landing square through bhitpos.
+            position: { x, y },
+        });
+        await publishAll(messages, publish);
+        if (result === 'destroyed') {
+            await deleteObject(object, state);
+            return { finished: true, object: null };
+        }
+        return { finished: false, object };
+    }
+    const shaftLanding = await handleHeroShaftEdge(object, trap, x, y, state, publish, random);
+    if (shaftLanding)
+        return shaftLanding;
+    if (object.globby) {
+        const merged = await meldLandingGlob(object, x, y, {
+            state, publish, random,
+        });
+        if (merged)
+            return { finished: true, object: merged };
+        return { finished: false, object };
+    }
+    if (state.context?.mon_moving
+        && location?.typ === ALTAR
+        && squareIsVisible(state, x, y)) {
+        await landObjectOnAltar(object, {
+            state, monsterMoving: true, publish,
+        });
+    }
+    const hotGround = location?.typ === ROOM || location?.typ === CORR;
+    if (object.oclass === POTION_CLASS
+        && (state.level?.flags?.temperature ?? 0) > 0
+        && hotGround
+        && await breakPotionOnHotGround(object, x, y, state, publish, random, luckRoll))
+        return { finished: true, object: null };
+    return { finished: false, object };
+}
+// Part of C do.c:doaltarobj(): the landing object's doname() description
+// for the flash and land messages.
+async function altarObjectDescription(object, state) {
+    observeObjectForNaming(object, { state });
+    return state === game
+        ? await inventoryItemDescription(object)
+        : simpleObjectNameWithArticle(object, state);
+}
+// Part of C do.c:doaltarobj(): the observed BUC state becomes known
+// (C sets bknown directly here).
+function rememberBlessingOrCurse(object) {
+    object.bknown = true;
+    object.buc = object.blessed ? 'blessed'
+        : object.cursed ? 'cursed' : undefined;
+}
+// C do.c:doaltarobj()
+// What an altar reveals when an object lands on it.
+export async function landObjectOnAltar(object, { state = game, monsterMoving = !!state.context?.mon_moving, publish = plineWithContinuation, } = {}) {
+    if (heroIsBlind(state))
+        return false;
+    const coins = object.oclass === COIN_CLASS;
+    if (coins) {
+        object.blessed = false;
+        object.cursed = false;
+        object.buc = undefined;
+    }
+    else if (!monsterMoving) {
+        const conduct = state.u.uconduct || (state.u.uconduct = {});
+        if (!conduct.gnostic)
+            recordGameLogEvent(`eschewed atheism, by dropping ${await altarObjectDescription(object, state)} on an altar`, { state, flags: LL_CONDUCT });
+        conduct.gnostic = (conduct.gnostic ?? 0) + 1;
+    }
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const description = await altarObjectDescription(object, state);
+    const plural = quantity > 1;
+    const hallucinating = heroIsHallucinating(state);
+    if (object.blessed || object.cursed) {
+        const color = displayColorName(object.blessed ? 'amber' : 'black', state);
+        await publish(`There is ${withIndefiniteArticle(color)} flash as ${description} ${plural ? 'hit' : 'hits'} the altar.`);
+        if (!hallucinating)
+            rememberBlessingOrCurse(object);
+    }
+    else {
+        await publish(`${upstart(description)} ${plural ? 'land' : 'lands'} on the altar.`);
+        if (!coins)
+            rememberBlessingOrCurse(object);
+    }
+    return true;
+}
 // C do.c:canletgo(). A silent check still discovers curses.
 export async function canLetGo(object, verb = '', state = game) {
     if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) {
@@ -565,6 +769,12 @@ export async function canLetGo(object, verb = '', state = game) {
         return false;
     }
     return true;
+}
+// C do.c:drop() 766-771: the levhack tail — float_down(I_SPECIAL | TIMEOUT,
+// W_ARTI | W_ART) after hitfloor() releases the invoked levitation source.
+export async function finishLevitatingArtifactDrop(state = game) {
+    requireLiveGame(state);
+    return floatHeroDown(I_SPECIAL | TIMEOUT, W_ARTI | W_ART, state);
 }
 // C do.c:714-780 drop(): the hero drops one carried object.  Returns
 // whether a time-taking action occurred (C ECMD_TIME vs ECMD_FAIL).
@@ -734,6 +944,16 @@ export async function dropObjectAtHero(object, { impact = false, state = game, p
     }
     await encumber_msg(state, publish);
     return object;
+}
+// Part of C do.c:dropz(): the shared flooreffects() → place_object() →
+// stackobj() landing tail.
+export async function landFloorObject(object, x, y, options = {}) {
+    const state = options.state ?? game;
+    const result = await applyFloorEffects(object, x, y, options);
+    if (result.finished)
+        return result.object;
+    await placeObject(object, x, y, state);
+    return await stack_object(object, state);
 }
 // ---------------------------------------------------------------------------
 // C do.c:845-888 engulfer_digests_food(): an animal swallower instantly

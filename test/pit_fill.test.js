@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, PIT, TT_PIT, W_AMUL } from '../js/const.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
-import { applyFloorEffects } from '../js/floor_effects.js';
+import { applyFloorEffects } from '../js/do.js';
 import { game, requireGameLevel, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

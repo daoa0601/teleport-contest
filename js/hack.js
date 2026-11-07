@@ -21,7 +21,7 @@ import { heroCanReachFloor, engravingAt, wipeEngravingAt } from './engrave.js';
 import { putHeroToSleep, objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers, } from './timeout.js';
 import { reset_faint, gethungry, morehungry, Hear_again, unfaint, eatmdone, Finish_digestion } from './eat.js';
 import { removeWornHeroItem, finishDelayedArmorTheft } from './steal.js';
-import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel } from './do.js';
+import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel, applyFloorEffects } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
 import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming, setPropertyTimeout } from './potion.js';
@@ -61,7 +61,6 @@ import { objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectT
 import { floorObjectDescription, stack_object, freeInventoryObject, delobj } from './invent.js';
 import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
 import { intemple } from './priest.js';

@@ -26,7 +26,7 @@ import {
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifact.js';
 import { canSeeMonster, newsym } from './display.js';
 import { formatFeltMessage, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
-import { applyFloorEffects } from './floor_effects.js';
+import { applyFloorEffects } from './do.js';
 import { game, requireLiveGame } from './gstate.js';
 import { inventoryItemDescription, stack_object } from './invent.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';

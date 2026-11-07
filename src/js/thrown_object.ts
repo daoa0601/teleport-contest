@@ -26,7 +26,6 @@ import {
     show_glyph_cell, transientObjectGlyph, unmapObject, TemporaryMapEffect,
 } from './display.js';
 import { plineWithContinuation, publishHeardMessage } from './pline.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -50,7 +49,7 @@ import { projectileHitsIronBars } from './mthrowu.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
-import { objectNoLongerHeld } from './do.js';
+import { objectNoLongerHeld, applyFloorEffects } from './do.js';
 import { cansee } from './vision.js';
 import { rockSkipRange } from './zap.js';
 

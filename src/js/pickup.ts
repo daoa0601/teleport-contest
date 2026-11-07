@@ -33,7 +33,7 @@ import {
     freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving,
     recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse,
 } from './invent.js';
-import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
+import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero, landObjectOnAltar } from './do.js';
 import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm} from './mkobj.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
@@ -57,7 +57,6 @@ import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, 
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { touchArtifactByHero } from './artifact.js';
-import { landObjectOnAltar } from './altar_object.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { getObjectLocation } from './zap.js';
 import { makemonNear } from './mklev.js';

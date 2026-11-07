@@ -23,7 +23,7 @@ import type { AttributeIndex } from './attrib.js';
 
 import { heroIsPunished } from './ball.js';
 import { monsterResistsEffect, reviveCorpseForHero } from './zap.js';
-import { reviveCorpseImmediately } from './do.js';
+import { reviveCorpseImmediately, landFloorObject } from './do.js';
 import {
     ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM,
     DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT,
@@ -36,7 +36,6 @@ import { isok, paranoidQuery } from './cmd.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
-import { landFloorObject } from './floor_effects.js';
 import { floorObjectDescription, chooseInventoryObject, confersLuck, consumeInventoryItem, inventoryItemDescription, feelPetrifyingCorpse } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { useUpFloorObject } from './invent.js';

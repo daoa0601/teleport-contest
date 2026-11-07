@@ -3,7 +3,7 @@
 // learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
 // zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
 
-import { finishBuriedRevival } from './do.js';
+import { finishBuriedRevival, landFloorObject } from './do.js';
 import {
     RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS,
     SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS,
@@ -212,7 +212,6 @@ import { MONSTER_SIZE } from './monster_data.js';
 import { hurtleMonster, hitMonsterWithThrownObject } from './dothrow.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { setMimicAppearance } from './makemon.js';
-import { landFloorObject } from './floor_effects.js';
 import { monsterHasDrainResistance } from './mondata.js';
 import { objectUsesKnown } from './object_data.js';
 import { CORPSTAT_HISTORIC } from './const.js';

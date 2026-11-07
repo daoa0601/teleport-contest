@@ -12,7 +12,7 @@ import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto, finishHeroMonsterKill, finishHurtleMonsterDeath, } from './mon.js';
-import { woundHeroLegs, gotoLevel, scheduleLevelChange } from './do.js';
+import { woundHeroLegs, gotoLevel, scheduleLevelChange, applyFloorEffects } from './do.js';
 import { finishTeleportArrival, askTeleportDestination, relocateObjectRandomly, enexto, goodPosition, monsterTeleportRestricted, } from './teleport.js';
 import { applyHeroContactPassive, applyCaitiffPenalty, prepareAppliedWeaponAttack } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
@@ -43,7 +43,6 @@ import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './m
 import { updateMonsterRegions } from './region.js';
 import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject, activateStatueTrapAt, triggerChestTrap, triggerBoobyTrap, fall_through, } from './trap.js';
 import { artifactById } from './artifact.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, inTown, heroGoldAmount, inventoryWeight } from './hack.js';
 import { breakChestLock, maybeResetPick } from './lock.js';
 import { breakFloorObject, hurtleHero, hitMonsterWithKickedObject } from './dothrow.js';

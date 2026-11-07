@@ -26,7 +26,7 @@ import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './wintty.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, heroDirectGoldThrowRange, snuffThrownCandle } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
-import { canLetGo, dropObjectAtHero } from './do.js';
+import { canLetGo, dropObjectAtHero, landObjectOnAltar, applyFloorEffects } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { finishQuest, isQuestLeader } from './quest.js';
 import { isQuestArtifact } from './questpgr.js';
@@ -35,7 +35,6 @@ import { encumber_msg } from './pickup.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile, makeBlinded } from './potion.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { resolveGoldMonsterContact, shipObject } from './dokick.js';
-import { landObjectOnAltar } from './altar_object.js';
 import { captureHeroProjectileName, hitMonsterWithHeroObject, applyCaitiffPenalty, applyMonsterPassiveToObject, } from './uhitm.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { rayMissMessage } from './zap.js';
@@ -77,7 +76,6 @@ import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBl
 import { detachHeroGold, heroGoldObject } from './sit.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
-import { applyFloorEffects } from './floor_effects.js';
 // C dothrow.c:multishot_class_bonus(): the role-specific volley bonuses.
 // PM_NINJA shares PM_SAMURAI's YUMI+YA case through C's fallthrough; the
 // port's role keys have no ninja.

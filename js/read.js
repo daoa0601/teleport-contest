@@ -67,7 +67,7 @@ import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killG
 import { monsterResistsEffect } from './zap.js';
 import { initializePet, tameMonster } from './dog.js';
 import { freeHeroFromBuriedBall } from './dig.js';
-import { landFloorObject } from './floor_effects.js';
+import { landFloorObject } from './do.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { makemonNear } from './mklev.js';

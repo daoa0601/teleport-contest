@@ -3,9 +3,8 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { artifactObject, addInventoryObject } from './support/game-objects.js';
-import {
-    beginLevitatingArtifactDrop, finishLevitatingArtifactDrop,
-} from '../js/artifact.js';
+import { beginLevitatingArtifactDrop } from '../js/artifact.js';
+import { finishLevitatingArtifactDrop } from '../js/do.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import {

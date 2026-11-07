@@ -39,9 +39,8 @@ import { setnotworn, setworn } from './worn.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { strangeFeeling } from './potion.js';
 import { displayColorName } from './do_name.js';
-import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
+import { dropInventoryObjectAtHero, dropObjectAtHero, landObjectOnAltar } from './do.js';
 import { shipObject } from './dokick.js';
-import { landObjectOnAltar } from './altar_object.js';
 import { encumber_msg } from './pickup.js';
 import { monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
 

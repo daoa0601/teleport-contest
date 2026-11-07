@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { buryFloorObjectsAt, buryObject, unearthFloorObjectsAt } from '../js/dig.js';
 import { DB_FLOOR, DRAWBRIDGE_UP, POOL, ROOM, TT_BURIEDBALL, LEVEL_TIMER_KIND } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
-import { applyFloorEffects } from '../js/floor_effects.js';
+import { applyFloorEffects } from '../js/do.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { placeObject, remove_object } from '../js/mkobj.js';
