@@ -390,7 +390,7 @@ src/js/figurine.ts	scheduleFigurineRetry	rnd	"[""5000""]"	constant
 src/js/timeout.ts	attachFigurineTimer	rnd	"[""9000""]"	constant
 src/js/trap.ts	burnContainer	context.random	"[""chance""]"	constant
 src/js/trap.ts	fireDamageObject	random	"[""20""]"	constant
-src/js/fire_explosion.ts	explodeLitOilPotion	rollDice	"[""diluted ? 3 : 4"", ""4""]"	constant
+src/js/explode.ts	explodeLitOilPotion	rollDice	"[""diluted ? 3 : 4"", ""4""]"	constant
 src/js/trap.ts	beginMonsterFireTrap	rollDice	"[""2"", ""4""]"	constant
 src/js/trap.ts	burnHeroAndPossessions	rn2	"[""3""]"	constant
 src/js/trap.ts	finishMonsterFireTrap	random	"[""3""]"	constant

@@ -8,7 +8,7 @@ import { finishEnvironmentalMonsterDeath,
 import {mksobj, placeCreatedObject} from './mkobj.js';
 import { IRON_CHAIN } from './object_data.js';
 import { rn2 } from './rng.js';
-import { scatterFloorObjects } from './scatter.js';
+import { scatterFloorObjects } from './explode.js';
 import type { GameState } from './game_state.js';
 import type { DrawbridgeOptions } from './dbridge.js';
 

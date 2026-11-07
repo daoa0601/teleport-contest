@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { POT_FRUIT_JUICE } from '../js/object_data.js';
-import { scatterFloorObjects } from '../js/scatter.js';
+import { scatterFloorObjects } from '../js/explode.js';
 import { floorObject } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

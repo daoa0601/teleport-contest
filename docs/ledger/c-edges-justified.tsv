@@ -1123,9 +1123,9 @@ picklock	in_rooms	inlined	the shop-door check beside the damage (lock.ts)
 picklock	unblock_point	inlined	vision_note_blocker_change on the opened door (lock.ts)
 picklock	yn_function	inlined	promptYesNoQuit questions inside the occupation (lock.ts)
 scatter	alloc	n/a	scatter chain nodes are array entries
-scatter	shop_keeper	inlined	costlySpot(x, y)?.resident plus credit baseline (scatter.ts)
-scatter	sobj_at	inlined	floorPile loop over the scatter site (scatter.ts)
-scatter	unpunish	inlined	unpunishHero when the chain shatters (scatter.ts)
+scatter	shop_keeper	inlined	costlySpot(x, y)?.resident plus credit baseline (explode.ts)
+scatter	sobj_at	inlined	floorPile loop over the scatter site (explode.ts)
+scatter	unpunish	inlined	unpunishHero when the chain shatters (explode.ts)
 start_eating	bite	inlined	resume/last-bite meal prose (eat.ts)
 start_eating	done_eating	inlined	continueFoodMeal finishes the meal (eat.ts)
 start_eating	fmt_ptr	n/a	pointer text for an impossible() diagnostic

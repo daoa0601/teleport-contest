@@ -87,7 +87,7 @@ import { bot } from './botl.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject, willWeld } from './wield.js';
 import { objectShedsLight } from './light.js';
 import { snuffLitObject } from './apply.js';
-import { scatterFloorObjects } from './scatter.js';
+import { scatterFloorObjects } from './explode.js';
 import { isBimanualObject } from './object_properties.js';
 import { stopObjectTimer } from './timeout.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';

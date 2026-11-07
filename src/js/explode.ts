@@ -1,50 +1,77 @@
-// C explode.c:explode(). Floor and monster effects precede damage to the hero.
+// C explode.c:explode(), scatter(), explode_oil() and splatter_burning_oil().
+// Floor and monster effects precede damage to the hero; scattered floor
+// objects fly outward from the blast or a collapsing structure.
 
-import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS } from './objclass.js';
+import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, VENOM_CLASS, RANDOM_CLASS } from './objclass.js';
 import {
     objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP,
+    ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE,
 } from './object_data.js';
 import { monsterHasMagicResistance } from './mondata.js';
-import { burnArmorByFire, burnHeroArmorByFire, igniteItems } from './trap.js';
+import { burnArmorByFire, burnHeroArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact } from './trap.js';
 import { heroHasArtifactDefense } from './artifact.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX } from './const.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, TemporaryMapEffect } from './display.js';
+import { A_STR, BURNING, BURNING_OIL, COLNO, DOOR, D_CLOSED, D_LOCKED, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, LARGEST_INT, LOST_EXPLODING, M_AP_MONSTER, M_AP_TYPE, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, SHOPBASE, SINK, STATUE_TRAP, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, ZAP_POS } from './const.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, TemporaryMapEffect } from './display.js';
 import type { DisplayGlyph } from './display.js';
-import { formatHeardMessage, plineWithContinuation, impossible } from './pline.js';
+import { formatHeardMessage, plineWithContinuation, impossible, publishHeardMessage } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler, OrdinaryDeathOptions } from './end.js';
-import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { burnAwayHeroSlime } from './hack.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { burnAwayHeroSlime, endVoluntaryMultiTurn, roomsAt } from './hack.js';
 import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages,
-    finishHeroMonsterKillOutcome,
+    finishHeroMonsterKillOutcome, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt,
+    wakeAttackedMonster, finishHeroMonsterKill,
 } from './mon.js';
-import type { MonsterExplosionOptions } from './mon.js';
-import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL } from './monster_attack_types.js';
+import type { MonsterExplosionOptions, MonsterDeathHandler, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './mon.js';
+import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
-import { monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
+import { monsterName, randomDisplayMonsterName, monsterTypeName, displayLiquidName } from './do_name.js';
+import { possessiveName, dist2 } from './hacklib.js';
 import { monsterAtPosition } from './steed.js';
 import { propertyIsActive } from './properties.js';
-import { rn2 } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { payForShopDamage } from './shk.js';
+import { payForShopDamage, addShopObjectToBill, costlySpot } from './shk.js';
 import { cansee } from './vision.js';
-import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, monsterResistsEffect, rayDamageType } from './zap.js';
+import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, monsterResistsEffect, rayDamageType, breakStatue, fractureRock, rayHitMessage, rayMissMessage } from './zap.js';
 import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './zap.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName } from './property_types.js';
+import type { GameObject } from './object_types.js';
 
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
     monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance,
     monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterIsDemon,
-    monsterIsNonliving, monsterIsVampireShifter,
+    monsterIsNonliving, monsterIsVampireShifter, monsterObjectPronoun, monsterHasStoneResistance,
+    monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal,
+    passes_rocks, touchPetrifies, canBlnd,
 } from './mondata.js';
+import { currency, delobj, stack_object } from './invent.js';
+import { isok } from './cmd.js';
+import { applyFloorEffects } from './do.js';
+import { unlinkObject, placeObject, splitObjectStack } from './mkobj.js';
+import type { Position } from './map_types.js';
+import type { PotionHitOptions } from './potion.js';
+import { hitMonsterWithSupportedPotion } from './potion.js';
+import { applyMonsterBlindness } from './blinding_attack.js';
+import { applyMonsterPassiveToObject } from './uhitm.js';
+import { captureHeroProjectileName, verbForSubject, withIndefiniteArticle, objectCombatName, objectNameIsPlural, capitalizedDefiniteName } from './objnam.js';
+import { hitHeroWithObject } from './hero_object_hit.js';
+import { stopHeroOccupation } from './allmain.js';
+import { unpunishHero } from './read.js';
+import { findMonsterArmorClass } from './worn.js';
+import { observeObject, objectMaterial } from './o_init.js';
+import { shipObject } from './dokick.js';
+import { isPoisonableObject } from './object_properties.js';
+import { shouldMulchMissile, breakFloorObject, rangedTargetHitBonus } from './dothrow.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { endObjectBurn } from './timeout.js';
 
 export interface ExplosionOptions {
     state?: GameState;
@@ -517,6 +544,540 @@ function explosionDeathCause(type: number, objectClass: number, description: str
     }
     return { killer: description, killerFormat: ['tower of flame', 'fireball'].includes(description)
         ? KILLED_BY_AN : KILLED_BY };
+}
+
+export interface ScatterOptions {
+    state?: GameState;
+    onlyObject?: GameObject | null;
+    mayDestroy?: boolean;
+    mayFracture?: boolean;
+    mayHitHero?: boolean;
+    mayHitMonsters?: boolean;
+    heroCaused?: boolean;
+    publish?: MessagePublisher;
+    random?: (limit: number) => number;
+    rollOne?: (sides: number) => number;
+    rollDice?: (count: number, sides: number) => number;
+    finishMonsterDeath?: MonsterDeathHandler | null;
+    finishMonsterKill?: typeof finishHeroMonsterKill | null;
+}
+
+// The public entry point resolves every optional setting before objects move.
+type ScatterSettings = Required<ScatterOptions> & { force: number };
+
+interface ScatterNode extends Position {
+    object: GameObject | null;
+    dx: number;
+    dy: number;
+    range: number;
+    stopped: boolean;
+}
+
+const GLASS = 19;
+const DIRECTIONS = [
+    { dx: -1, dy: 0 },
+    { dx: -1, dy: -1 },
+    { dx: 0, dy: -1 },
+    { dx: 1, dy: -1 },
+    { dx: 1, dy: 0 },
+    { dx: 1, dy: 1 },
+    { dx: 0, dy: 1 },
+    { dx: -1, dy: 1 },
+];
+
+// Part of C explode.c:scatter(): the floor pile read.
+function floorPile(state: GameState, x: number, y: number): GameObject[] {
+    return state.level?.objects?.[x]?.[y] || [];
+}
+
+// Part of C explode.c:scatter(): the obj_extract_self removal.
+function removeFloorObject(object: GameObject, state: GameState): void {
+    unlinkObject(object, state);
+}
+
+// Part of C explode.c:scatter(): the cansee square test.
+function squareIsVisible(state: GameState, x: number, y: number): boolean {
+    return !state.blind && !((state.u.blindTurns ?? 0) > 0)
+        && (!state.viz_array || !!((state.viz_array?.[y]?.[x] ?? 0) & 0x2));
+}
+
+// Part of C explode.c:scatter(): the m_at read.
+function monsterAt(state: GameState, x: number, y: number): Monster | null {
+    return monsterAtPosition(requireGameLevel(state), x, y);
+}
+
+// Part of C explode.c:scatter(): the ZAP_POS/closed-door flight-square
+// test.
+function openFlightSquare(state: GameState, x: number, y: number): boolean {
+    if (!isok(x, y)) return false;
+    const location = state.level?.at(x, y);
+    if (!location) return false;
+    return ZAP_POS(location.typ)
+        && (location.typ !== DOOR
+            || !(location.doormask & (D_CLOSED | D_LOCKED)));
+}
+
+// Part of C mthrowu.c:ohitmon(): the killed/monkilled finish for a
+// monster killed by a scattered object.
+async function finishScatteredMonsterDeath(
+    monster: Monster, x: number, y: number, death: HeroMonsterKillOptions,
+    state: GameState, options: ScatterSettings,
+): Promise<HeroMonsterKillOutcome> {
+    if (options.heroCaused && options.finishMonsterKill) {
+        const killed = await options.finishMonsterKill(monster, x, y, death);
+        return { killed, heroDied: !!state.program_state.gameover };
+    }
+    if (options.heroCaused)
+        return finishHeroMonsterKillOutcome(monster, x, y, { ...death, publish: options.publish });
+    const finish = options.finishMonsterDeath
+        || ((victim: Monster, deathOptions: HeroMonsterKillOptions) => finishEnvironmentalMonsterDeath(victim, state, deathOptions));
+    const result = await finish(monster, {
+        ...death,
+        random: options.random,
+        publish: options.publish,
+    });
+    return { killed: !result.survived, heroDied: !!result.heroDied };
+}
+
+// Part of C mthrowu.c:drop_throw(): after a hit, an impact can mulch ammunition, ship it
+// through a gate, or expose it to the defender's passive effect before
+// floor stacking.
+async function landAfterMonsterHit(object: GameObject, node: Position, state: GameState, options: ScatterSettings): Promise<void> {
+    requirePlayingGame(state);
+    const broken = object.otyp === CREAM_PIE || object.oclass === VENOM_CLASS || object.otyp === EGG
+        || shouldMulchMissile(object, { monsterMoving: !!state.context.mon_moving });
+    if (broken) {
+        await delobj(object, state, options.random);
+        return;
+    }
+    if (await shipObject(object, node.x, node.y, { state, publish: options.publish, random: options.random })) return;
+    const actor = monsterAtPosition(state.level, node.x, node.y)
+        || (node.x === state.u.ux && node.y === state.u.uy ? state.u : null);
+    const floor = await applyFloorEffects(object, node.x, node.y, {
+        state, publish: options.publish, random: options.random, verb: 'fall',
+    });
+    if (floor.finished || state.program_state.gameover) return;
+    await placeObject(object, node.x, node.y, state);
+    if (actor) await applyMonsterPassiveToObject(actor, object, {
+        state, publish: options.publish, random: options.random,
+    });
+    if (!state.program_state.gameover) await stack_object(object, state);
+}
+
+// Part of C mthrowu.c:ohitmon(): the scatter flight's monster hit; the
+// shared port is hitMonsterWithProjectile in mthrowu.ts.
+async function hitMonster(monster: Monster, node: ScatterNode, state: GameState, options: ScatterSettings): Promise<boolean> {
+    const object = node.object;
+    if (!object) return false;
+    const visible = cansee(node.x, node.y);
+    const disguised = M_AP_TYPE(monster) !== 0 && M_AP_TYPE(monster) !== M_AP_MONSTER;
+    state.notonhead = node.x !== monster.mx || node.y !== monster.my;
+    if (visible) observeObject(object, state);
+    const threshold = 5 + findMonsterArmorClass(monster)
+        + rangedTargetHitBonus(object, monster, {
+            state, random: options.random, rollOne: options.rollOne,
+        });
+    if (threshold < options.rollOne(20)) {
+        if (visible && !disguised)
+            await options.publish(rayMissMessage(captureHeroProjectileName(object, state), monster, { ...node, state }));
+        return false;
+    }
+
+    if (object.oclass === POTION_CLASS) {
+        if (disguised) await revealMonsterAppearance(monster);
+        monster.msleeping = 0;
+        const potionOptions: PotionHitOptions = {
+            state,
+            monster,
+            potion: object,
+            target: node,
+            targetVisible: cansee(monster.mx, monster.my),
+            targetSpotted: canSpotMonster(monster),
+            resolveVapor: true,
+            distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
+            publish: options.publish,
+            wakeMonster: wakeAttackedMonster,
+            wakeNearby: (nearX, nearY, distance) =>
+                wakeMonstersNearWithMessages(nearX, nearY, distance, state, options.publish),
+            finishKill: (target, deathOptions = {}) =>
+                finishScatteredMonsterDeath(
+                    target, target.mx, target.my,
+                    deathOptions, state, options,
+                ),
+            // ohitmon() passes POTHIT_OTHER_THROW even for a hero-caused blast.
+            heroCaused: false,
+        };
+        const impact = await hitMonsterWithSupportedPotion(potionOptions);
+        if (impact?.heroDied) return true;
+        if (!impact) throw new Error(`Unsupported scattered potion ${object.otyp}`);
+        node.object = null;
+        node.stopped = true;
+        return true;
+    }
+
+    const material = objectMaterial(object, state);
+
+    const harmless = object.oclass !== RING_CLASS && (material === 20 || material === 21)
+        && passes_rocks(monster.mnum);
+    let damage = rollPhysicalWeaponDamage(object, monster, {
+        state, rollOne: options.rollOne, rollDice: options.rollDice,
+    });
+    if (object.otyp === ACID_VENOM && monsterHasAcidResistance(monster)) damage = 0;
+    if (disguised) await revealMonsterAppearance(monster);
+    monster.msleeping = 0;
+    if (visible) {
+        if (object.otyp === EGG) {
+            const species = object.corpsenm === undefined ? 'unknown' : MONSTER_NAME[object.corpsenm] ?? 'unknown';
+            const egg = object.known ? `${withIndefiniteArticle(species)} egg` : 'an egg';
+            await options.publish(`Splat!  ${monsterName(monster, { state, capitalized: true })} is hit with ${egg}!`);
+        } else {
+            await options.publish(rayHitMessage(captureHeroProjectileName(object, state), monster, {
+                ...node, state, damage,
+                ...(harmless ? { ending: ` but passes harmlessly through ${monsterObjectPronoun(monster, { state })}.` } : {}),
+            }));
+        }
+    }
+    if (object.opoisoned && isPoisonableObject(object)) {
+        if (monsterHasPoisonResistance(monster)) {
+            if (visible) await options.publish(`The poison doesn't seem to affect ${monsterName(monster, { state })}.`);
+        } else if (options.random(30) !== 0) damage += options.rollOne(6);
+        else {
+            if (visible) await options.publish('The poison was deadly...');
+            damage = monster.mhp;
+        }
+    }
+    if (material === 14 && monsterHatesSilver(monster) && visible) {
+        const flesh = !monsterIsNoncorporeal(monster) && !monsterIsAmorphous(monster);
+        const name = monsterName(monster, { state });
+        await options.publish(`The silver sears ${flesh ? `${possessiveName(name)} flesh` : name}!`);
+    }
+    if (object.otyp === ACID_VENOM && cansee(monster.mx, monster.my) && visible) {
+        await options.publish(monsterHasAcidResistance(monster)
+            ? `${monsterName(monster, { state, capitalized: true })} is unaffected.`
+            : `The ${displayLiquidName('acid', state)} burns ${monsterName(monster, { state })}!`);
+    }
+    if (object.otyp === EGG && touchPetrifies(object.corpsenm)) {
+        // ohitmon() uses minstapetrify(FALSE), even for hero-caused scatter.
+        const stone = await petrifyMonsterFromContact(monster, {
+            state, publish: options.publish, rollOne: options.rollOne,
+            finishDeath: (victim, death = {}) => finishEnvironmentalMonsterDeath(
+                victim, state, {
+                    ...death, random: options.random, publish: options.publish,
+                }),
+        });
+        if (stone.heroDied) return true;
+        if (monsterHasStoneResistance(monster)) damage = 0;
+    }
+    if (!harmless && monster.mhp > 0) {
+        monster.mhp -= damage;
+        if (monster.mhp <= 0) {
+            if (visible) {
+                const destroyed = monsterIsNonliving(monster.mnum) || monsterIsVampireShifter(monster)
+                    || !canSpotMonster(monster);
+                await options.publish(`${monsterName(monster, { state, capitalized: true })} is ${destroyed ? 'destroyed' : 'killed'}!`);
+            }
+            await finishScatteredMonsterDeath(monster, monster.mx, monster.my, {
+                showKillMessage: false,
+            }, state, options);
+            if (state.program_state.gameover) return true;
+        }
+    }
+    if (monster.mhp > 0 && canBlnd(null, { monster },
+        object.otyp === BLINDING_VENOM ? AT_SPIT : AT_WEAP, object, state)) {
+        if (visible && monster.mcansee) {
+            const cause = object.oclass === VENOM_CLASS ? 'venom' : object.otyp === CREAM_PIE ? 'pie' : objectCombatName(object, { state });
+            await options.publish(`${monsterName(monster, { state, capitalized: true })} is blinded by the ${cause}.`);
+        }
+        applyMonsterBlindness(monster, options.rollOne(25) + 20);
+    }
+    if (monster.mhp > 0 && options.heroCaused) await angerAttackedMonster(monster);
+    if (!state.program_state.gameover) await landAfterMonsterHit(object, node, state, options);
+    node.object = null;
+    node.stopped = true;
+    return true;
+}
+
+// Part of C explode.c:scatter(): the u_at hero hit branch with
+// dmgval/hitvalu/thitu.
+async function hitHero(node: ScatterNode, state: GameState, options: ScatterSettings): Promise<boolean> {
+    requirePlayingGame(state);
+    const object = node.object;
+    if (!object) return false;
+    const attack = 8 + (object.spe ?? 0)
+        + (monsterIsBig(heroSpecies(state)) ? 1 : 0);
+    if (state.multi) endVoluntaryMultiTurn(state);
+    let damage = rollPhysicalWeaponDamageAgainstHero(object, state, {
+        rollOne: options.rollOne, rollDice: options.rollDice,
+    });
+    if (state.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
+    const result = await hitHeroWithObject(object, damage, attack, {
+        state, publish: options.publish, rollOne: options.rollOne,
+        random: options.random, rollDice: options.rollDice,
+    });
+    if (result.hit) {
+        node.range -= 3;
+        if (object.oclass === POTION_CLASS) {
+            node.object = null;
+            node.stopped = true;
+        }
+        if (!result.died) await stopHeroOccupation(state, options.publish);
+    }
+    return result.hit;
+}
+
+// Part of C explode.c:scatter(): the MAY_FRACTURE boulder/statue branch.
+async function fractureObject(object: GameObject, x: number, y: number, state: GameState, options: ScatterSettings): Promise<void> {
+    const boulder = object.otyp === BOULDER;
+    if (!boulder) {
+        const statueTrap = state.level?.traps.find(trap =>
+            trap.tx === x && trap.ty === y && trap.ttyp === STATUE_TRAP);
+        if (statueTrap) deleteTrap(statueTrap, state);
+    }
+    if (squareIsVisible(state, x, y)) {
+        const name = capitalizedDefiniteName(objectCombatName(object, { state }), state);
+        const verb = boulder ? 'break' : 'crumble';
+        const action = objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb);
+        await options.publish(`${name} ${action}${boulder ? ' apart' : ''}.`);
+    } else {
+        await publishHeardMessage(boulder ? 'stone breaking.' : 'stone crumbling.', options.publish, state);
+    }
+    const fractureOptions = { state, random: options.random, publish: options.publish };
+    if (boulder) await fractureRock(object, x, y, fractureOptions);
+    else await breakStatue(object, x, y, fractureOptions);
+    await placeObject(object, x, y, state);
+    if (boulder) {
+        // Native scatter() processes all remaining boulders before the debris.
+        const nextBoulder = floorPile(state, x, y).find(candidate => candidate.otyp === BOULDER);
+        if (nextBoulder) {
+            unlinkObject(nextBoulder, state);
+            await placeObject(nextBoulder, x, y, state);
+        }
+    }
+    await newsym(x, y);
+}
+
+// Part of C explode.c:scatter(): one pile entry — splitobj, the direction
+// roll, and the range roll.
+async function prepareScatteredObject(object: GameObject, x: number, y: number, state: GameState, options: ScatterSettings): Promise<ScatterNode | null> {
+    removeFloorObject(object, state);
+    if (options.mayFracture
+        && (object.otyp === BOULDER || object.otyp === STATUE)
+        && options.random(10) !== 0) {
+        await fractureObject(object, x, y, state, options);
+        return null;
+    }
+
+    if (options.mayDestroy) {
+        const destructionRoll = options.random(10);
+        const fragile = objectMaterial(object.otyp) === GLASS
+            || object.otyp === EGG;
+        if (destructionRoll === 0 || fragile) {
+            // Native scatter() uses breaks(), even during the hero's turn.
+            // Combat credit still depends on who caused the scatter.
+            const broken = await breakFloorObject(object, {
+                state,
+                heroCaused: false,
+                publish: options.publish,
+                random: options.random,
+                rollDice: options.rollDice,
+            });
+            if (broken.destroyed) return null;
+            // A fatal vapor or oil blast ends the scatter even though the
+            // bottle itself reports not destroyed.
+            if (state.program_state?.gameover) return null;
+        }
+    }
+
+    const direction = DIRECTIONS[options.random(DIRECTIONS.length)];
+    if (!direction) throw new RangeError('Scattering selected an invalid direction.');
+    const maximumRange = Math.max(
+        1, options.force - Math.trunc((object.owt ?? 1) / 40),
+    );
+    return {
+        object,
+        x,
+        y,
+        dx: direction.dx,
+        dy: direction.dy,
+        range: options.rollOne(maximumRange),
+        stopped: false,
+    };
+}
+
+// Part of C explode.c:scatter(): taking the next object from the pile
+// with its splitobj quantity.
+function nextObjectFromPile(pile: GameObject[], state: GameState, options: ScatterSettings): { object: GameObject; lastPiece: boolean } | null {
+    const object = options.onlyObject || pile[0];
+    if (!object || !options.onlyObject && !pile.includes(object)) return null;
+    const quantity = object.quan ?? object.quantity ?? 1;
+    if (quantity <= 1) return { object, lastPiece: true };
+    const part = splitObjectStack(
+        object, options.rollOne(Math.min(quantity - 1, LARGEST_INT)), state,
+    );
+    if (!part) throw new Error(`Cannot split scattered object ${object.o_id}.`);
+    return { object: part, lastPiece: false };
+}
+
+// C explode.c:scatter().
+export async function scatterFloorObjects(
+    x: number,
+    y: number,
+    force: number,
+    {
+        state = game,
+        onlyObject = null,
+        mayDestroy = true,
+        mayFracture = true,
+        mayHitHero = true,
+        mayHitMonsters = true,
+        heroCaused = !state.context.mon_moving,
+        publish = async () => {},
+        random = rn2,
+        rollOne = rnd,
+        rollDice = d,
+        finishMonsterDeath = null,
+        finishMonsterKill = null,
+    }: ScatterOptions = {},
+): Promise<number> {
+    requireLiveGame(state);
+    const options: ScatterSettings = {
+        state, onlyObject, force, mayDestroy, mayFracture,
+        mayHitHero, mayHitMonsters, heroCaused, publish,
+        random, rollOne, rollDice, finishMonsterDeath, finishMonsterKill,
+    };
+    const shop = costlySpot(x, y, state)?.resident;
+    const creditBefore = shop?.eshk.credit ?? 0;
+    const debitBefore = shop?.eshk.debit ?? 0;
+    const loanBefore = shop?.eshk.loan ?? 0;
+    let lostGoods = false;
+    const nodes: ScatterNode[] = [];
+    const pile = floorPile(state, x, y);
+    while (onlyObject || pile.length) {
+        const candidate = onlyObject || pile[0];
+        const chain = state.uchain || state.u.uchain;
+        if (candidate && (candidate === chain || candidate === (state.uball || state.u.uball))) {
+            await publish('The chain shatters!');
+            await unpunishHero(state);
+            if (candidate === chain) {
+                if (onlyObject) break;
+                continue;
+            }
+        }
+        const next = nextObjectFromPile(pile, state, options);
+        if (!next) break;
+        const node = await prepareScatteredObject(
+            next.object, x, y, state, options,
+        );
+        if (state.program_state.gameover) return 0;
+        if (node) nodes.push(node);
+        if (onlyObject && next.lastPiece) break;
+    }
+
+    let farthest = nodes.reduce(
+        (maximum, node) => Math.max(maximum, node.range), 0,
+    );
+    while (farthest-- > 0) {
+        for (const node of nodes) {
+            if (node.stopped || node.range-- <= 0 || !node.object) continue;
+            const nextX = node.x + node.dx;
+            const nextY = node.y + node.dy;
+            if (!openFlightSquare(state, nextX, nextY)) {
+                node.stopped = true;
+                continue;
+            }
+            node.x = nextX;
+            node.y = nextY;
+            state._thrownObject = node.object;
+            state.bhitpos = { x: nextX, y: nextY };
+            const monster = monsterAt(state, nextX, nextY);
+            if (monster) {
+                if (mayHitMonsters) {
+                    node.range--;
+                    await hitMonster(monster, node, state, options);
+                }
+            } else if (state.u?.ux === nextX && state.u?.uy === nextY
+                && mayHitHero) {
+                await hitHero(node, state, options);
+            }
+            if (state.program_state?.gameover) return 0;
+            if (state.level?.at(nextX, nextY)?.typ === SINK) node.stopped = true;
+            state._thrownObject = null;
+        }
+    }
+
+    let moved = 0;
+    for (const node of nodes) {
+        if (!node.object) {
+            await newsym(node.x, node.y);
+            continue;
+        }
+        const quantity = node.object.quan ?? node.object.quantity ?? 1;
+        const object = node.object;
+        const effect = await applyFloorEffects(object, node.x, node.y, {
+            state, publish, random, verb: 'land',
+        });
+        if (!effect.finished) {
+            const heroRoom = roomsAt(state.level, state.u.ux, state.u.uy, SHOPBASE)[0];
+            if (shop && object.otyp === GOLD_PIECE && !costlySpot(node.x, node.y, state)
+                && heroRoom !== undefined && state.u.urooms?.includes(heroRoom)) {
+                await addShopObjectToBill(object, state, { ininv: false, silent: true, publish });
+                lostGoods = true;
+            }
+            await placeObject(object, node.x, node.y, state);
+            await stack_object(object, state);
+        }
+        if (node.x !== x || node.y !== y) moved += quantity;
+        await newsym(node.x, node.y);
+    }
+    await newsym(x, y);
+    if (state.u.ux === x && state.u.uy === y && state.u.uundetected
+        && monsterHidesUnder(heroSpecies(state))) await hideHeroUnder(state);
+    const originMonster = monsterAt(state, x, y);
+    if (originMonster?.mtrapped) originMonster.mtrapped = 0;
+    await maybeUnhideAt(x, y, state);
+    if (lostGoods && shop) {
+        const creditUsed = creditBefore - (shop.eshk.credit ?? 0);
+        const debitAdded = (shop.eshk.debit ?? 0) - debitBefore;
+        const loanAdded = (shop.eshk.loan ?? 0) - loanBefore;
+        const amount = creditUsed > 0 ? creditUsed : debitAdded > 0 ? debitAdded : loanAdded;
+        if (amount > 0) await publish(`Your ${creditUsed > 0
+            ? 'credit has been reduced' : 'debt has increased'} by ${amount} ${
+            currency(amount, { state })}.`);
+    }
+    return moved;
+}
+
+export interface FireExplosionOptions extends ExplosionOptions {
+    rollDice?: typeof d;
+}
+
+// C explode.c:splatter_burning_oil()
+// Extinguish before the blast so death and bones cannot retain its
+// light.
+export async function explodeLitOilPotion(potion: GameObject, x: number, y: number, {
+    state = game, heroCaused = !state.context.mon_moving, publish = plineWithContinuation,
+    random = rn2, rollDice = d,
+}: FireExplosionOptions = {}): Promise<MagicDamageResult> {
+    const diluted = !!potion.odiluted;
+    if (!potion.lamplit) {
+        await impossible('exploding unlit oil', { state });
+        await impossible(`end_burn: obj ${objectCombatName(potion, { state })} not lit`, { state });
+    } else if (!endObjectBurn(potion, state, state.moves ?? 0)) {
+        await impossible(`end_burn: obj ${objectCombatName(potion, { state })} not timed!`, { state });
+    }
+    potion.how_lost = LOST_EXPLODING;
+    return explode(x, y, 11, rollDice(diluted ? 3 : 4, 4), BURNING_OIL, EXPL_FIERY, {
+        state, heroCaused, publish, random,
+    });
+}
+
+// Part of C dothrow.c:breakobj(), uhitm.c:hmon_hitmon_misc_obj(): the
+// shared explode(x, y, -11, dmg, 0, EXPL_FIERY) pyrolisk-egg call.
+export function createFireExplosion(x: number, y: number, damage: number, {
+    state = game, heroCaused = !state.context.mon_moving, publish = plineWithContinuation, random = rn2,
+}: ExplosionOptions = {}): Promise<MagicDamageResult> {
+    // Pyrolisk eggs use the native generic object class, with a fire spell type.
+    return explode(x, y, -11, damage, RANDOM_CLASS, EXPL_FIERY, { state, heroCaused, publish, random });
 }
 
 // Part of C explode.c:mon_explodes(): the elemental branch

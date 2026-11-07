@@ -117,7 +117,7 @@ import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
 import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet } from './do_wear.js';
 import { setMonsterMalign, makemonAt } from './makemon.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
-import { explodeLitOilPotion } from './fire_explosion.js';
+import { explodeLitOilPotion } from './explode.js';
 import { objectResistsDestruction } from './zap.js';
 import {
     costlySpot, stolenValue, makeAngryShopkeeper, insideShopRoomAt, containedGold, donateGold, objectIsUnpaid,

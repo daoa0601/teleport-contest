@@ -3,7 +3,7 @@ import { changeHeroLuck } from './attrib.js';
 // Egg state changes shared by throwing and floor breakage.
 // C refs: obj.h stale_egg, uhitm.c hmon_hitmon_misc_obj(),
 // and dothrow.c breakobj().
-import { createFireExplosion } from './fire_explosion.js';
+import { createFireExplosion } from './explode.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { EGG, ROCK } from './object_data.js';
