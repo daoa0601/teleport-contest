@@ -76,7 +76,6 @@ src/js/priest.ts	priest.c
 src/js/query.ts	getline.c
 src/js/quest.ts	quest.c
 src/js/questpgr.ts	questpgr.c
-src/js/quiver.ts	wield.c
 src/js/read.ts	read.c
 src/js/rect.ts	rect.c
 src/js/region.ts	region.c
@@ -96,7 +95,6 @@ src/js/stairs.ts	stairs.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/teleport.ts	teleport.c
-src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
 src/js/topl.ts	topl.c
 src/js/topten.ts	topten.c

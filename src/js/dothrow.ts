@@ -62,7 +62,7 @@ import {
     skillName, weaponDescription,
 } from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
-import { quiverObjectClass } from './quiver.js';
+import { quiverObjectClass } from './wield.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName, simpleArmorName } from './objnam.js';
 import {
     inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore,
