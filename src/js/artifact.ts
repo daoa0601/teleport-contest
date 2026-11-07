@@ -138,7 +138,7 @@ import {
 } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm, mbodypart } from './polyself.js';
-import { heroHasDrainResistance, removeEyewear } from './do_wear.js';
+import { heroHasDrainResistance, removeEyewear, takeoffSlotObject } from './do_wear.js';
 import { game, requirePlayingGame, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { insideShopRoomAt } from './shk.js';
 import { mksobj, objectWeight, objectQuantity, isContainer, uncurseObjectState} from './mkobj.js';
@@ -1230,7 +1230,7 @@ export async function retouchHeroObject(object: GameObject, {
     }
 
     if (object.owornmask) {
-        if (slotObject('ublindf', state) === object)
+        if (takeoffSlotObject('ublindf', state) === object)
             await removeEyewear(object, { state, publish });
         else
             await removeWornHeroItem(object, state);
@@ -1290,18 +1290,18 @@ export async function retouchEquipment(dropFlag = 0, {
     if (!nested) clearBypasses(state);
     activeChecks.add(state);
     const context = { state, publish, die };
-    const hadGloves = !!slotObject('uarmg', state);
+    const hadGloves = !!takeoffSlotObject('uarmg', state);
     const oldRingCount = ringCount(state);
     try {
         if (state.u.twoweap) {
-            const secondary = slotObject('uswapwep', state);
+            const secondary = takeoffSlotObject('uswapwep', state);
             if (secondary) bypassObject(secondary, state);
             const result = await checkItem(
                 secondary, dropFlag > 0, context,
             );
             if (result.died) return result;
         }
-        const primary = slotObject('uwep', state);
+        const primary = takeoffSlotObject('uwep', state);
         if (primary) bypassObject(primary, state);
         const weapon = await checkItem(primary, dropFlag > 0, context);
         if (weapon.died) return weapon;
@@ -1320,7 +1320,7 @@ export async function retouchEquipment(dropFlag = 0, {
             const result = await checkItem(object, dropFlag === 1, context);
             if (result.died) return result;
         }
-        const gloves = slotObject('uarmg', state);
+        const gloves = takeoffSlotObject('uarmg', state);
         if (ringCount(state) !== oldRingCount && gloves?.cursed)
             uncurseObjectState(gloves);
         if (hadGloves && !gloves) {
@@ -1338,16 +1338,11 @@ export async function retouchEquipment(dropFlag = 0, {
     }
 }
 
-// Port only: equipment-slot accessor over both state shapes.
-function slotObject(slot: RetouchSlot, state: GameState): GameObject | null {
-    return state[slot] || state.u?.[slot] || null;
-}
-
 // Part of C artifact.c:retouch_equipment(): the worn-ring count around
 // the equipment pass.
 function ringCount(state: GameState): number {
-    return Number(!!slotObject('uleft', state))
-        + Number(!!slotObject('uright', state));
+    return Number(!!takeoffSlotObject('uleft', state))
+        + Number(!!takeoffSlotObject('uright', state));
 }
 
 // C artifact.c:mkot_trap_warn()
