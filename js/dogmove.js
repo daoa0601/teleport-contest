@@ -8,8 +8,8 @@ import { monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, mo
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterName, visibleMonsterSubject, monsterTypeName } from './do_name.js';
 import { observeDistantObjectForNaming, verbForSubject, withIndefiniteArticle, objectName } from './objnam.js';
-import { splitObjectStack, remove_object } from './mkobj.js';
-import { chargeAlteredUnpaidObject, unpaidObjectCost } from './shk.js';
+import { splitObjectStack, remove_object, chargeAlteredUnpaidObject } from './mkobj.js';
+import { unpaidObjectCost } from './shk.js';
 import { monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon, setMonsterApparentHeroPosition, feedBeeRoyalJelly, } from './monmove.js';
 import { mayDig } from './hack.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';

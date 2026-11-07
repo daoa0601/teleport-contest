@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { addBuriedObject } from '../js/dig.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { detectObjects } from '../js/detect.js';
@@ -9,6 +8,7 @@ import { BLACK_OPAL, SPE_DETECT_TREASURE } from '../js/object_data.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { addBuriedObject } from '../js/mkobj.js';
 
 // C detect.c:browse_map() forces autodescribe on and runs getpos(); C
 // getpos.c:auto_describe() renders do_screen_description(), whose object

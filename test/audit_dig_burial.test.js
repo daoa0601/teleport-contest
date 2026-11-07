@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { addBuriedObject, unearthFloorObjectsAt } from '../js/dig.js';
+import { unearthFloorObjectsAt } from '../js/dig.js';
+import { addBuriedObject } from '../js/mkobj.js';
 import { rhack } from '../js/cmd.js';
 import { newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';

@@ -112,8 +112,35 @@ import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
 import {
-    billDummyObject, mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject,
-    objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object,
+
+    billDummyObject,
+
+    mksobj,
+
+    objectQuantity,
+
+    rejoinObjectStack,
+
+    splitObjectStack,
+
+    unblessObjectState,
+
+    unlinkObject,
+
+    objectWeight,
+
+    isContainer,
+
+    useHornOfPlenty,
+
+    unlinkMonsterObject,
+
+    placeObject,
+
+    remove_object,
+
+    chargeAlteredUnpaidObject,
+
 } from './mkobj.js';
 import {
     is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive,
@@ -148,7 +175,7 @@ import { unpunishHero } from './read.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { mon_reflects } from './muse.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
-import { addShopDamage, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
+import { addShopDamage, carriedObjectOwner, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
 import {
     ensureHeroSkills, uwepSkillType, dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon,
     unwieldMonsterWeapon,

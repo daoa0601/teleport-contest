@@ -38,7 +38,7 @@ import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, req
 import { flyKickedObject } from './thrown_object.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
-import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
+import { addToMigration, mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { convertSecretDoor, findTrap } from './detect.js';
 import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
@@ -1522,7 +1522,7 @@ export async function kickFloorObject(x: number, y: number, {
 }
 
 type RandomBelow = (limit: number) => number;
-interface MigrationGate {
+export interface MigrationGate {
     arrival: number;
     destination: DungeonLocation;
     text: string;
@@ -1665,22 +1665,6 @@ function pileImpact(state: PlayingGameState, object: GameObject | null, x: numbe
         }
     }
     return { count, chainThere };
-}
-// C mkobj.c:add_to_migration(). The destination codes are dokick.c's
-// drop_to() overloads.
-function addToMigration(object: GameObject, gate: MigrationGate, state: PlayingGameState): void {
-    object.no_charge = false;
-    if (isContainer(object)) maybeResetPick(object, state);
-    object.where = 'migrating';
-    object.migration = {
-        destination: { ...gate.destination },
-        source: { ...(state.u?.uz || { dnum: 0, dlevel: 1 }) },
-        arrival: gate.arrival,
-    };
-    object.ox = gate.destination.dnum;
-    object.oy = gate.destination.dlevel;
-    state.migratingObjects ||= [];
-    state.migratingObjects.unshift(object);
 }
 // C dokick.c:otransit_msg().
 async function publishTransitMessage(

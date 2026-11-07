@@ -2,6 +2,7 @@
 // C ref: mkobj.c.
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, VENOM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
 import { objectBaseWeight, objectBaseCost, objectMerge, objectUsesKnown, objectMagic, getObjectClassBounds, getObjectDefinition, requireObjectData, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, POT_BOOZE, POT_SICKNESS, POT_WATER, APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, WAN_FIRE, oc_nutrition, objectPropertyName, } from './object_data.js';
+import { SHOPBASE } from './const.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { novelTitle } from './do_name.js';
 import { eating_glob, set_tin_variety } from './eat.js';
@@ -26,15 +27,16 @@ import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './
 import { rndmonstAdj } from './makemon.js';
 import { learnObjectType, objectMaterial, objectProb } from './o_init.js';
 import { nameObjectFromTopten } from './topten.js';
-import { makePlural, objectName, objectNameIsPlural, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass, erosionMatters } from './objnam.js';
+import { makePlural, objectName, objectNameIsPlural, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass, erosionMatters, simpleObjectName } from './objnam.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { assignCandyWrapper } from './read.js';
 import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks, confersLuck } from './invent.js';
 import { setMoreLuck } from './attrib.js';
 import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously, landObjectOnAltar } from './do.js';
-import { addShopObjectToBill, billForObject, costlyAdjacent, costlySpot, currentShopResident, deleteObject, findObjectOwner, objectIsCandle, objectPriceAdjustment, reconcileObjectDeletionBill, removeObjectAndContentsFromBill, retainBillObject, settleGlobAbsorptionBilling, shopResident, splitObjectBill, visitBilledShopkeepers } from './shk.js';
+import { addShopObjectToBill, billForObject, costlyAdjacent, costlySpot, currentShopResident, deleteObject, findObjectOwner, objectIsCandle, objectPriceAdjustment, reconcileObjectDeletionBill, removeObjectAndContentsFromBill, retainBillObject, settleGlobAbsorptionBilling, shopClaimsObject, shopkeeperInOwnShop, shopResident, splitObjectBill, stolenValue, visitBilledShopkeepers } from './shk.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { nearCapacity } from './hack.js';
+import { nearCapacity, roomForRoomno, roomsAt } from './hack.js';
+import { maybeResetPick } from './lock.js';
 import { encumber_msg } from './pickup.js';
 import { holdAnotherObject } from './invent.js';
 import { hitFloorWithObject } from './dothrow.js';
@@ -42,7 +44,7 @@ import { removeObjectFromMonsterInventory } from './worn.js';
 import { formatHeardMessage, formatSeenMessage, plineWithContinuation, plineWithContinuation as pline, } from './pline.js';
 import { objectLightRadius, objectShedsLight } from './light.js';
 import { getObjectLocation } from './zap.js';
-import { requireShopGame } from './shop_types.js';
+import { hasShopkeeperData, requireShopGame } from './shop_types.js';
 import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { dropCursedSecondaryWeapon } from './wield.js';
@@ -1423,6 +1425,96 @@ function linkContainerObject(container, object) {
     (container.contents ||= []).unshift(object);
     return object;
 }
+// C mkobj.c:744 alteration_verbs, index-matched to hack.h COST_*.
+const ALTERATION_VERBS = [
+    'cancel', 'drain', 'uncharge', 'unbless', 'uncurse', 'disenchant',
+    'degrade', 'dilute', 'erase', 'burn', 'neutralize', 'destroy',
+    'splatter', 'bite', 'open', 'break the lock on', 'rust', 'rot',
+    'tarnish', 'crack',
+];
+// C mkobj.c:752 costly_alteration(): possibly bill an object the hero just
+// modified.  Carried or free objects need only their unpaid flag; placed
+// objects must sit on a costly spot and be claimable by that shop.
+export async function chargeAlteredUnpaidObject(object, verb, state = game) {
+    requireLiveGame(state);
+    requireShopGame(state);
+    const alterType = ALTERATION_VERBS.indexOf(verb);
+    const alteration = ALTERATION_VERBS[alterType < 0 ? 0 : alterType];
+    const learnBknown = alteration === 'uncurse' || alteration === 'unbless';
+    const quantity = object?.quan ?? object?.quantity ?? 1;
+    const pronoun = quantity === 1 ? 'it' : 'them';
+    const demonstrative = quantity === 1 ? 'that' : 'those';
+    let ox = 0;
+    let oy = 0;
+    let roomno = 0;
+    let keeper = null;
+    if (object.where === 'inventory' || object.where === 'free') {
+        // C: OBJ_FREE catches obj_no_longer_held()'s crysknife revert.
+        if (!object.unpaid)
+            return null;
+    }
+    else {
+        // C get_obj_location(..., CONTAINED_TOO) over the root: floor
+        // yields its own coordinates, a monster-carried root its carrier's
+        // (a migrating carrier with mx 0 fails the lookup), inventory
+        // resolves to the hero, and free/buried roots fail outright -
+        // the caller then falls back to the hero (mkobj.c:776-785).
+        let top = object;
+        while (top.container)
+            top = top.container;
+        let located = false;
+        if (top.where === 'floor') {
+            ox = top.ox;
+            oy = top.oy;
+            located = true;
+        }
+        else if (top.where === 'minvent') {
+            const carrier = top.ocarry
+                || (state.level?.monsters || []).find(monster => (monster.minvent || monster.inventory || [])
+                    .includes(top));
+            if (carrier?.mx) {
+                ox = carrier.mx;
+                oy = carrier.my;
+                located = true;
+            }
+        }
+        else if (top.where === 'inventory') {
+            located = true;
+        }
+        if (!located) {
+            ox = state.u.ux;
+            oy = state.u.uy;
+        }
+        if (!costlySpot(ox, oy, state))
+            return null;
+        roomno = roomsAt(state.level, ox, oy, SHOPBASE)[0] ?? 0;
+        const resident = roomForRoomno(state.level, roomno)?.resident ?? null;
+        keeper = resident && hasShopkeeperData(resident)
+            && shopkeeperInOwnShop(resident, state) ? resident : null;
+        if (!keeper || !shopClaimsObject(object, keeper, false, state))
+            return null;
+    }
+    if (object.where === 'inventory' || object.where === 'free') {
+        if (learnBknown)
+            object.bknown = true;
+        // C verbalizes unconditionally here; only the voice is optional.
+        await plineWithContinuation(`"You ${alteration} ${demonstrative} ${simpleObjectName(object, state)}, you pay for ${pronoun}!"`);
+        return billDummyObject(object, state);
+    }
+    // C's switch has no OBJ_CONTAINED case: a contained member passes the
+    // billable gate silently and nothing is charged.
+    if (object.where !== 'floor')
+        return null;
+    if (learnBknown)
+        object.bknown = true;
+    const heroShop = state.u.ushops[0];
+    if (costlySpot(state.u.ux, state.u.uy, state) && roomno === heroShop) {
+        await plineWithContinuation(`"You ${alteration} ${demonstrative}, you pay for ${pronoun}!"`);
+        return billDummyObject(object, state);
+    }
+    // C stolen_value(obj, ox, oy, FALSE, FALSE): angry settlement, spoken.
+    return stolenValue(object, ox, oy, false, { silent: false, state, publish: plineWithContinuation });
+}
 // C mkobj.c:add_to_container():
 // C add_to_container(): the IMMEDIATE container's state decides the
 // release - an inventory- or monster-held container keeps the addition
@@ -1464,6 +1556,43 @@ export const CONTAINER_TYPES = new Set([
 // C obj.h:Is_container():
 export function isContainer(object) {
     return !!object && CONTAINER_TYPES.has(object.otyp);
+}
+// C mkobj.c:add_to_migration(). The destination codes are dokick.c's
+// drop_to() overloads.
+export function addToMigration(object, gate, state) {
+    object.no_charge = false;
+    if (isContainer(object))
+        maybeResetPick(object, state);
+    object.where = 'migrating';
+    object.migration = {
+        destination: { ...gate.destination },
+        source: { ...(state.u?.uz || { dnum: 0, dlevel: 1 }) },
+        arrival: gate.arrival,
+    };
+    object.ox = gate.destination.dnum;
+    object.oy = gate.destination.dlevel;
+    state.migratingObjects ||= [];
+    state.migratingObjects.unshift(object);
+}
+// C mkobj.c:add_to_buried().
+export function addBuriedObject(object, x, y, state = game) {
+    if (!object)
+        return object;
+    removeFloorReference(object, state);
+    object.where = 'buried';
+    object.buried = true;
+    object.ox = x;
+    object.oy = y;
+    const level = requireGameLevel(state);
+    (level.buriedObjects ??= []).unshift(object);
+    return object;
+}
+// Port only: drops an object from its floor pile for burial.
+function removeFloorReference(object, state) {
+    const pile = state.level?.objects?.[object.ox]?.[object.oy];
+    const index = pile?.indexOf(object) ?? -1;
+    if (pile && index >= 0)
+        pile.splice(index, 1);
 }
 // C mkobj.c:container_weight().  Update the container's weight, then every
 // enclosing container's, recursively (C recurses through ocontainer; the

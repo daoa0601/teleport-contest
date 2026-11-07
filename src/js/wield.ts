@@ -17,7 +17,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 
 import { makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
-import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight } from './mkobj.js';
+import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight, chargeAlteredUnpaidObject } from './mkobj.js';
 import { learnObjectType } from './o_init.js';
 import { inventoryItemDescription, addInventoryItem, freeInventoryObject, getobj, useUpInventoryStack, splittable } from './invent.js';
 import { isBimanualObject, is_elven_weapon, isWeaponTool, isWetTowel, is_launcher, isLauncherAmmunition, isMissileObject, isPolearm, pair_of } from './object_properties.js';
@@ -25,7 +25,7 @@ import type { WeaponCandidate } from './object_properties.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { readySuggestion } from './quiver.js';
 import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restrictName } from './artifact.js';
-import { objectOwnershipPrefix, insideShopRoomAt, shopResident, chargeAlteredUnpaidObject, updateUnpaidObjectPrice } from './shk.js';
+import { objectOwnershipPrefix, insideShopRoomAt, shopResident, updateUnpaidObjectPrice } from './shk.js';
 import { promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
 import type { GameState } from './game_state.js';

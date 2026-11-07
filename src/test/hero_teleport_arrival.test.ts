@@ -2,7 +2,6 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addBuriedObject } from '../js/dig.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { askTeleportDestination } from '../js/teleport.js';
@@ -26,6 +25,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
+import { addBuriedObject } from '../js/mkobj.js';
 
 void test('relocation refreshes a blind hero warning range before arrival effects', async () => {
     await freshObjectRoom({ right: 24 });

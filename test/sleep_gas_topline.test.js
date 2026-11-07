@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { OBJECT_TIMER_KIND, SLP_GAS_TRAP } from '../js/const.js';
-import { addBuriedObject } from '../js/dig.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -13,6 +12,7 @@ import { untimedCorpse } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { addBuriedObject } from '../js/mkobj.js';
 async function buryRevivingZombie(deadline) {
     const corpse = await untimedCorpse(MONSTER_NAME.indexOf('kobold zombie'));
     addBuriedObject(corpse, 13, 10);

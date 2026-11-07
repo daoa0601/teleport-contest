@@ -172,13 +172,13 @@ import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, owne
 import type { ObjectInscriptionView } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { tryCallObjectType } from './do.js';
-import { bcsign, blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj } from './mkobj.js';
+import { bcsign, blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj, chargeAlteredUnpaidObject } from './mkobj.js';
 import { askTeleportDestination, levelTeleport, teleportHero } from './teleport.js';
 import { d, rn2, rn1, rnd } from './rng.js';
 import { wipeoutText } from './engrave.js';
 import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, SHIRT_MESSAGES } from './readable_object_text.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { chargeAlteredUnpaidObject, deleteObject, updateUnpaidObjectPrice } from './shk.js';
+import { deleteObject, updateUnpaidObjectPrice } from './shk.js';
 import { dropCursedSecondaryWeapon, chwepon, objectEnchantment, setWeaponEnchantment } from './wield.js';
 import { cansee, couldsee, clearAreaCells, vision_recalc } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';

@@ -40,11 +40,11 @@ import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming
 import { heroCanReachFloor } from './engrave.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade, isPick } from './object_properties.js';
-import { startCorpseTimeout, unlinkObject, isContainer, placeObject } from './mkobj.js';
+import { startCorpseTimeout, unlinkObject, isContainer, placeObject, chargeAlteredUnpaidObject } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage, deleteObject } from './shk.js';
+import { costlySpot, currentShopResident, stolenValue, addShopDamage, deleteObject } from './shk.js';
 import { artifactById, touchArtifactByHero } from './artifact.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';

@@ -540,9 +540,31 @@ import type {
     PetrificationOptions, MonsterDeathHandler,
 } from './mon.js';
 import {
-    objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig,
-    chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt,
-    makeAngryShopkeeper, deleteObjectContents,
+
+    objectOwnershipPrefix,
+
+    sellHeroDroppedObject,
+
+    deleteObject,
+
+    addShopDamage,
+
+    shopDig,
+
+    chargeUnpaidUsage,
+
+    costlySpot,
+
+    restoreShopkeeperResidency,
+
+    stolenValue,
+
+    insideShopRoomAt,
+
+    makeAngryShopkeeper,
+
+    deleteObjectContents,
+
 } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
@@ -626,9 +648,37 @@ import {
 import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
 import {
-    billDummyObject, mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable,
-    objectIsRottable, placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack,
+
+    billDummyObject,
+
+    mksobj,
+
+    objectWeight,
+
+    unlinkObject,
+
+    mkcorpstat,
+
+    rndmonnumAdj,
+
+    objectIsFlammable,
+
+    objectIsRottable,
+
+    placeCreatedObject,
+
+    placeObject,
+
+    placeObjectSynchronously,
+
+    remove_object,
+
+    splitObjectStack,
+
     updateIceObjectTimersAt,
+
+    chargeAlteredUnpaidObject,
+
 } from './mkobj.js';
 import {
     buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt, liquidForHole,

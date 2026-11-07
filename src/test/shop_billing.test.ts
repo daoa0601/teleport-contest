@@ -15,13 +15,17 @@ import {
     CHEST, CRYSKNIFE, DAGGER, GOLD_PIECE, LARGE_BOX, OBJECT_NAMES, SACK,
     WORM_TOOTH, WAN_DIGGING,
 } from '../js/object_data.js';
-import { unlinkObject, addCreatedObjectToContainer, addObjectToContainer } from '../js/mkobj.js';
+import { unlinkObject, addCreatedObjectToContainer, addObjectToContainer, chargeAlteredUnpaidObject } from '../js/mkobj.js';
 import {
+
     addShopObjectToBill,
+
     billedPickupQuote,
-    chargeAlteredUnpaidObject,
+
     getCostOfShopItem,
-    splitObjectBill
+
+    splitObjectBill,
+
 } from '../js/shk.js';
 import { settleThrownShopObject } from '../js/dothrow.js';
 import {splitObjectStack, placeCreatedObject, placeObject} from '../js/mkobj.js';
