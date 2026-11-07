@@ -13,7 +13,7 @@ import { snuffCandle } from './apply.js';
 import { applyMonsterBlindness, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn, calcCapacity } from './hack.js';
-import { isPolearm, isLauncherAmmunition, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
+import { isPolearm, isLauncherAmmunition, is_launcher, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
 import { returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon, } from './weapon.js';
 import { willWeld } from './wield.js';
 import { heroHasFreeHand } from './engrave.js';
@@ -79,6 +79,15 @@ const LAST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of violet glass');
 // Port only: null-safe OBJ_NAME read.
 export function objectTypeName(object) {
     return object ? OBJ_NAME(object.otyp) || '' : '';
+}
+// C mthrowu.c:m_has_launcher_and_ammo(): a wielded launcher with matching
+// ammo.
+export function monsterHasLauncherAndAmmo(monster) {
+    const launcher = monsterWieldedWeapon(monster);
+    if (!launcher || !is_launcher(launcher))
+        return false;
+    const inventory = monster.minvent || monster.inventory || [];
+    return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
 }
 // C mthrowu.c:thitu(). The hero is struck by a missile thrown or shot by a
 // monster: accuracy and damage rolls, poison, blinding payload, and the

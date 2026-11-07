@@ -48,7 +48,7 @@ import { levelHasCeiling, insideWizardTower, sameDungeonLevel, canHeroRiseUp, le
 import { movePet, monsterCouldReachItem, finishMonsterEating } from './dogmove.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fightNearbyMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
-import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
+import { attackHeroWithPolearm, monsterHasLauncherAndAmmo, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero, monsterHasAvailableDistanceAttack } from './mhitu.js';
 import { swingMonsterWeapon } from './mhitm.js';
@@ -724,15 +724,6 @@ export async function readyMonsterDiggingWeapon(monster, state, x, y) {
     return (monster.weaponCheck ?? NEED_WEAPON) >= NEED_PICK_AXE
         ? wieldMonsterWeapon(monster, state)
         : false;
-}
-// C mthrowu.c:m_has_launcher_and_ammo(): a wielded launcher with matching
-// ammo.
-function monsterHasLauncherAndAmmo(monster) {
-    const launcher = monsterWieldedWeapon(monster);
-    if (!launcher || !is_launcher(launcher))
-        return false;
-    const inventory = monster.minvent || monster.inventory || [];
-    return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
 }
 // Part of C monmove.c:m_everyturn_effect(): the fog cloud's gas region.
 async function createFogEveryturnRegion(state, x, y, random = rn2) {

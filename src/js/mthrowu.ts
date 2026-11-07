@@ -20,7 +20,7 @@ import {
 } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn, calcCapacity } from './hack.js';
-import { isPolearm, isLauncherAmmunition, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
+import { isPolearm, isLauncherAmmunition, is_launcher, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
 import {
     returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
     monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon,
@@ -148,6 +148,14 @@ export function objectTypeName(object: Pick<GameObject, 'otyp'> | null | undefin
     return object ? OBJ_NAME(object.otyp) || '' : '';
 }
 
+// C mthrowu.c:m_has_launcher_and_ammo(): a wielded launcher with matching
+// ammo.
+export function monsterHasLauncherAndAmmo(monster: Monster) {
+    const launcher = monsterWieldedWeapon(monster);
+    if (!launcher || !is_launcher(launcher)) return false;
+    const inventory = monster.minvent || monster.inventory || [];
+    return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
+}
 // C mthrowu.c:thitu(). The hero is struck by a missile thrown or shot by a
 // monster: accuracy and damage rolls, poison, blinding payload, and the
 // petrifying-egg edge.
