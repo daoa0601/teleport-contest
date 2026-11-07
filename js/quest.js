@@ -16,7 +16,7 @@ import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BELL_OF_OPENING } from './obje
 import { objectCombatName, definiteName } from './objnam.js';
 import { heroIsDeaf } from './senses.js';
 import { monsterName } from './do_name.js';
-import { endVoluntaryMultiTurn } from './hack.js';
+import { nomul } from './hack.js';
 import { rn2 } from './rng.js';
 import { createPoisonGasCloud } from './region.js';
 import { deleteTrap } from './trap.js';
@@ -525,7 +525,7 @@ export async function talkQuestCharacter(monster, state = game) {
 }
 // Part of C quest.c:expulsion(): the goto scheduling and the sealed half.
 export async function scheduleQuestExpulsion(seal, state = game) {
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     state._questExpulsionPending = { seal, portal: !state.u.uevent?.qexpelled };
     if (seal) {
         const expelled = !!state.u.uevent?.qexpelled;

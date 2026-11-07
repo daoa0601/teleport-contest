@@ -6,7 +6,7 @@ import { objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTON
 import { setHeroGrip, moveMonsterNextToHero, hideHeroUnder, wakeMonstersNearWithMessages, maybeUnhideAt, revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid, finishEnvironmentalMonsterDeath, publishMonsterWake, finishHeroLiquidMonsterDeath, } from './mon.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { BURNING, CMDQ_EXTCMD, CQ_CANNED, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, Is_rogue_level, LAVAPOOL, LAVAWALL, Luck, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, A_STR, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND, HOLE, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, P_TWO_WEAPON_COMBAT, P_ISRESTRICTED, P_UNSKILLED, ROLLING_BOULDER_TRAP, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, IN_SIGHT, SHOP_DOOR_COST, PARANOID_CONFIRM, PARANOID_TRAP, TRAP_EXPLANATIONS, TRAPNUM, W_QUIVER, W_SWAPWEP, SQKY_BOARD, SLP_GAS_TRAP, RUST_TRAP, BEAR_TRAP, PIT, SPIKED_PIT, MAGIC_PORTAL, VIBRATING_SQUARE, WEB, HEADSTONE, In_endgame, is_hole, is_pit, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, MAXNROFROOMS, OROOM, DELPHI, TEMPLE, COURT, MORGUE, ZOO, BARRACKS, BEEHIVE, LEPREHALL, COCKNEST, ANTHOLE, THRONE, ACH_TOWN, RLOC_NOMSG, IS_SINK, KILLED_BY_AN, LL_CONDUCT, SWAMP, GP_ALLOW_U, FOOT, ALTAR, FOUNTAIN, GRAVE, STAIRS, SINK } from './const.js';
-import { isok, cmdq_clear, cmdq_peek, currentMulti, setMulti, xyToDirection, resetOccupations, confusePromptDirection, paranoidQuery, } from './cmd.js';
+import { isok, cmdq_clear, cmdq_peek, currentMulti, setMulti, xyToDirection, resetOccupations, confusePromptDirection, heroHasInvoluntaryDelay, paranoidQuery, } from './cmd.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain, beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
 import { docrt, feel_newsym, newsym, under_water, feel_location, back_to_glyph, glyphAt, canSpotMonster, canSenseMonster, canSeeMonster, monsterVisible, unmap_invisible, map_object, unmapObject, map_invisible, flush_screen, TemporaryMapEffect } from './display.js';
 import { bot } from './botl.js';
@@ -31,7 +31,7 @@ import { waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, eme
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, riderCannotReachMessage } from './steed.js';
 import { isRoom } from './map_types.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet, armorSimpleName, finishDelayedArmorAction } from './do_wear.js';
+import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet, armorSimpleName, finishDelayedArmorAction, takeoffSlotObject } from './do_wear.js';
 import { waterbodyName, iceDescriptionAt } from './pager.js';
 import { do_attack, prepareAppliedWeaponAttack, hasDoorAppearance, stumbleOntoMimic, resolveHeroCombatExplosion, } from './uhitm.js';
 import { heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth, } from './teleport.js';
@@ -58,7 +58,7 @@ import { hello } from './role.js';
 import { doopen } from './lock.js';
 import { heroGoldObject, heroGoldQuantity } from './sit.js';
 import { objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object, } from './mkobj.js';
-import { floorObjectDescription, stack_object, freeInventoryObject, delobj } from './invent.js';
+import { floorObjectDescription, stack_object, freeInventoryObject, delobj, objectAt } from './invent.js';
 import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
@@ -127,26 +127,26 @@ function moverockDone(sx, sy) {
 }
 // C hack.c:moverock_core(): the push loop over the pile — blind checks,
 // sokoban rules, monsters, doors, traps, liquid, and shop billing.
-// sobj_at() is boulderAt(); doorless_door() is the rogue/broken doorway
-// test in the diagonal-door rejection below.
+// sobj_at() is invent.ts:objectAt(); doorless_door() is the rogue/broken
+// doorway test in the diagonal-door rejection below.
 async function pushBoulders(sx, sy, dx, dy) {
     requirePlayingGame(game);
     const level = game.level;
     const rx = sx + dx, ry = sy + dy;
     let first = true;
-    for (let boulder = boulderAt(sx, sy); boulder; boulder = boulderAt(sx, sy)) {
+    for (let boulder = objectAt(sx, sy, BOULDER, game); boulder; boulder = objectAt(sx, sy, BOULDER, game)) {
         const glyph = glyphAt(sx, sy);
         if (heroIsBlind(game) && !(glyph?.kind === 'object' && glyph.otyp === BOULDER)) {
             await plineWithContinuation('That feels like a boulder.');
             await map_object(boulder, true);
-            endVoluntaryMultiTurn(game);
+            nomul(0, game);
             return false;
         }
         boulder.corpsenm = first ? 0 : 1;
         first = false;
         if (level.objects[sx]?.[sy]?.[0] !== boulder)
             await moveObject(boulder, sx, sy);
-        endVoluntaryMultiTurn(game);
+        nomul(0, game);
         if (game.context.nopick)
             return stepOntoBoulder(sx, sy);
         if (game.u.levitating || Is_airlevel(game.u.uz)) {
@@ -165,7 +165,7 @@ async function pushBoulders(sx, sy, dx, dy) {
         const diagonalDoor = dx && dy && target?.typ === DOOR
             && (Is_rogue_level(game.u.uz) || !!(target.doormask & ~(D_NODOOR | D_BROKEN)));
         if (!isok(rx, ry) || !target || IS_OBSTRUCTED(target.typ)
-            || target.typ === IRONBARS || diagonalDoor || boulderAt(rx, ry)) {
+            || target.typ === IRONBARS || diagonalDoor || objectAt(rx, ry, BOULDER, game)) {
             await cannotPushMessage(boulder, sx, sy);
             return cannotPush(boulder, sx, sy);
         }
@@ -196,7 +196,7 @@ async function pushBoulders(sx, sy, dx, dy) {
         if (game.program_state.gameover)
             return false;
         if (trapEffect === 'handled')
-            return !boulderAt(sx, sy);
+            return !objectAt(sx, sy, BOULDER, game);
         if (trapEffect === 'push') {
             await moveBoulder(boulder, sx, sy, rx, ry, costly);
             continue;
@@ -227,10 +227,6 @@ export function heroCouldMoveOntoBoulder(sx, sy, state = game) {
                 && IS_OBSTRUCTED(state.level?.at(sx, state.u.uy)?.typ ?? STONE));
     }
     return heroIsVerySmall(state) || !state.inventory.length || invWeight(state) <= -WT_SQUEEZABLE_INV;
-}
-// Port only: sobj_at(BOULDER, x, y) accessor over the floor pile.
-function boulderAt(x, y) {
-    return game.level?.objects[x]?.[y]?.find(object => object.otyp === BOULDER);
 }
 // Part of C mondata.h:throws_rocks(): the hero-form test (the shared port
 // is in mondata.ts).
@@ -493,13 +489,13 @@ export async function continueChewingTerrain(x, y, state) {
     if (!boulder && ((rock && !mayDig(x, y, state))
         || bars && (location.wall_info & W_NONDIGGABLE))) {
         await pline(`You hurt your teeth on the ${bars ? 'bars' : tree ? 'tree' : 'hard stone'}.`);
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
         return true;
     }
     const eatsMetal = metallivorous(heroSpecies(state));
     if (bars && eatsMetal && state.u.uhunger > 1500) {
         await pline('You are too full to eat the bars.');
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
         return true;
     }
     const samePlace = digging.chew && digging.pos.x === x && digging.pos.y === y
@@ -662,7 +658,7 @@ export async function escapeFromStickyMonster(x, y) {
     }
     if (escape > 2 && (heroHasConflict(state) || holder.mconf || !holder.mtame)) {
         await plineWithContinuation(`You cannot escape from ${name()}!`);
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
         return true;
     }
     setHeroGrip(null, state);
@@ -884,10 +880,6 @@ export async function burnAwayHeroSlime(state, publish) {
 export function heroCanSwim(state) {
     return !!(state.u?.swimming || monsterIsSwimmer(heroMonsterForm(state) ?? -1));
 }
-// Port only: resolve an equipment slot through either state field.
-function equippedObject(state, slot) {
-    return state[slot] || state.u?.[slot] || null;
-}
 // Part of C trap.c:emergency_disrobe(): the undroppable test (worn armor,
 // accessories, welded weapon, cursed loadstone, in_use).
 function canDropWhileDrowning(object, state) {
@@ -899,14 +891,14 @@ function canDropWhileDrowning(object, state) {
         'uamul', 'uleft', 'uright', 'ublindf',
         'uarm', 'uarmc', 'uarmg', 'uarmf', 'uarmu',
     ]) {
-        if (equippedObject(state, slot) === object)
+        if (takeoffSlotObject(slot, state) === object)
             return false;
     }
     if (object.cursed && [
-        equippedObject(state, 'uarmh'), equippedObject(state, 'uarms'),
+        takeoffSlotObject('uarmh', state), takeoffSlotObject('uarms', state),
     ].includes(object))
         return false;
-    const weapon = equippedObject(state, 'uwep');
+    const weapon = takeoffSlotObject('uwep', state);
     if (weapon === object && object.cursed)
         return false;
     return true;
@@ -1732,7 +1724,7 @@ export async function continueRun(g = game) {
         // whose `disp.botl |= (multi >= 0)` (hack.c:4165) marks the whole
         // status line dirty -- not just end_running()'s time_botl.
         if (await travelLookaroundStops(g)) {
-            endVoluntaryMultiTurn(g);
+            nomul(0, g);
             g.context.move = 0;
             return { attemptedMove: false, tookTime: false };
         }
@@ -1785,7 +1777,7 @@ export async function continueRun(g = game) {
     // last full render -- e.g. the silent chain-lightning Pw decrement of
     // spell.c:1087, which itself never sets disp.botl.
     if (!await lookaroundRun(state, g)) {
-        endVoluntaryMultiTurn(g);
+        nomul(0, g);
         g.context.move = 0;
         return { attemptedMove: false, tookTime: false };
     }
@@ -1966,7 +1958,7 @@ async function fightEmptyDestination(x, y) {
     }
     const manner = obstacle || solid ? explosion ? 'futilely ' : 'harmlessly ' : '';
     await pline(`You ${manner}${explosion ? 'explode at' : 'attack'} ${target}.`);
-    endVoluntaryMultiTurn(game);
+    nomul(0, game);
     if (explosion) {
         await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, 49, game);
         if ((await resolveHeroCombatExplosion(null, explosion, { state: game })).heroDied)
@@ -2862,14 +2854,14 @@ export async function waterTurbulenceStopsHero() {
     if (!swimming || !rn2(4))
         await applyWaterFriction();
     if (!hero.dx && !hero.dy) {
-        endVoluntaryMultiTurn(game);
+        nomul(0, game);
         return true;
     }
     const x = hero.ux + (hero.dx ?? 0), y = hero.uy + (hero.dy ?? 0);
     if (isok(x, y) && !isPoolAt(x, y, game) && !Is_waterlevel(hero.uz)
         && nearCapacity(game) > (swimming ? MOD_ENCUMBER : SLT_ENCUMBER)) {
         await plineWithContinuation('You are carrying too much to climb out of the water.');
-        endVoluntaryMultiTurn(game);
+        nomul(0, game);
         return true;
     }
     return false;
@@ -2987,7 +2979,7 @@ export async function confirmHeroStep(x, y, state = game) {
 // the multi, and clear the move flag.
 function cancelStep(state) {
     stopRun(state);
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     state.context.move = 0;
 }
 // C hack.c:domove().  Evaluates a successful step after all destination
@@ -3061,7 +3053,7 @@ async function rootedHeroCannotMove() {
         return false;
     const inPlace = game.u.levitating || Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
     await plineWithContinuation(`You are rooted ${inPlace ? 'in place' : 'to the ground'}.`);
-    endVoluntaryMultiTurn(game);
+    nomul(0, game);
     return true;
 }
 // C display.h:_is_safemon(). Recheck after movement effects, which can
@@ -3334,7 +3326,7 @@ async function domoveCore(dx, dy) {
                 await exerciseAttribute(A_CON, false);
         }
         // nomul(0) requests a full status update even without an active run.
-        endVoluntaryMultiTurn(game);
+        nomul(0, game);
         // carrying_too_much() returns from domove_core() without clearing
         // context.move, so the failed step still spends the hero action.
         return true;
@@ -3411,7 +3403,7 @@ async function domoveCore(dx, dy) {
                 break;
             }
             if (!found) {
-                endVoluntaryMultiTurn(game);
+                nomul(0, game);
                 // Native nomul(0) ends repetition without clearing context.move.
                 return true;
             }
@@ -3446,7 +3438,7 @@ async function domoveCore(dx, dy) {
                     else
                         await announceRunLiquid(newx, newy, game);
                 }
-                endVoluntaryMultiTurn(game);
+                nomul(0, game);
                 if (stopBeforeStep)
                     return false;
             }
@@ -3989,12 +3981,6 @@ export function nomul(value, state = game) {
     stopRun(state);
     cmdq_clear(CQ_CANNED, state);
 }
-// Port only: keep the full command count and any occupation. A timed
-// occupation may still need its final callback after the remaining multi
-// becomes zero.
-export function endVoluntaryMultiTurn(state = game) {
-    nomul(0, state);
-}
 // C hack.c:unmul()
 // The after-handler is cleared before invocation so
 // recovery can start another delay without inheriting the old completion.
@@ -4190,15 +4176,6 @@ export function maybeSmudgeEngravings(x1, y1, x2, y2) {
         wipeEngravingAt(x2, y2, rnd(5), false);
     }
 }
-// Port only: the hero's helpless state (C reads multi < 0 inline).
-function heroIsHelpless(state) {
-    return (state.multi ?? 0) < 0
-        || (state._helplessTurns ?? 0) > 0;
-}
-// Port only: the active HP field by form (C reads u.mh or u.uhp inline).
-function activeHitPointField(hero) {
-    return Upolyd(hero) ? 'mh' : 'uhp';
-}
 // C hack.c:overexertion().
 export async function checkHeroAttackOverexertion(state = game) {
     requirePlayingGame(state);
@@ -4208,14 +4185,15 @@ export async function checkHeroAttackOverexertion(state = game) {
     if ((state.moves ?? 0) % 3 !== 0
         && nearCapacity(state) >= HVY_ENCUMBER)
         await overexertHeroHp(state);
-    return heroIsHelpless(state);
+    return heroHasInvoluntaryDelay(state);
 }
 // C hack.c:overexert_hp(): heavy work costs a hit point, or the last one
 // makes the hero pass out.
 export async function overexertHeroHp(state = game) {
     requirePlayingGame(state);
-    const field = activeHitPointField(state.u);
-    const hitPoints = state.u?.[field] ?? 0;
+    // C hack.c:overexert_hp(): int *hp = (!Upolyd ? &u.uhp : &u.mh).
+    const field = Upolyd(state.u) ? 'mh' : 'uhp';
+    const hitPoints = state.u[field] ?? 0;
     if (hitPoints > 1) {
         state.u[field] = hitPoints - 1;
         state.context.botl = true;
@@ -4331,10 +4309,6 @@ export function spotChecks(x, y, oldTyp, state = game) {
 }
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 const FELL_ON_SINK = 'fell onto a sink';
-// Port only: resolve a worn slot through either state field.
-function wornAt(slot, state) {
-    return state[slot] || state.u?.[slot] || null;
-}
 // Part of C youprop.h:HFlying()/EFlying(): the hero's own flight sources
 // before the Flying macro applies the blocked mask or a flying steed.  A
 // steed therefore does not prevent the fall, and neither does flight
@@ -4371,7 +4345,7 @@ export async function fallIntoSink(state = game, { publish = plineWithContinuati
     // the live game, so a stale fixture must fail before any source stash.
     requireLiveGame(state);
     const hero = state.u;
-    let levBoots = wornAt('uarmf', state)?.otyp === LEVITATION_BOOTS;
+    let levBoots = takeoffSlotObject('uarmf', state)?.otyp === LEVITATION_BOOTS;
     // innate_lev: HLevitation & (FROMOUTSIDE | FROMFORM).  Timeout and the
     // blessed-potion at-will flag do not count.
     const innateLev = hasIntrinsicProperty('levitation', 'outside', state)
@@ -4418,9 +4392,9 @@ export async function fallIntoSink(state = game, { publish = plineWithContinuati
     // Interrupt multi-turn donning/doffing when the hero fell, or when the
     // removal below will take levitation boots off an still-floating hero.
     if (ufall || levBoots) {
-        await stopDonning(levBoots ? wornAt('uarmf', state) : null, state);
+        await stopDonning(levBoots ? takeoffSlotObject('uarmf', state) : null, state);
         // stopDonning() may have unworn partially-donned boots.
-        levBoots = wornAt('uarmf', state)?.otyp === LEVITATION_BOOTS;
+        levBoots = takeoffSlotObject('uarmf', state)?.otyp === LEVITATION_BOOTS;
     }
     // Remove worn levitation items: invoked artifact, at-will origin and
     // timeout first, then a one-turn timeout keeps Levitation true so the
@@ -4428,14 +4402,14 @@ export async function fallIntoSink(state = game, { publish = plineWithContinuati
     clearLevitationMasks(I_SPECIAL | TIMEOUT, W_ARTI, state);
     hero.levitationTurns = 1; // C HLevitation++
     refreshProperty('levitation', state);
-    const left = wornAt('uleft', state);
+    const left = takeoffSlotObject('uleft', state);
     if (left?.otyp === RIN_LEVITATION) {
         await removeHeroAccessory(left, state);
         const message = await armorOffMessage(left, state);
         if (message)
             await publish(message);
     }
-    const right = wornAt('uright', state);
+    const right = takeoffSlotObject('uright', state);
     if (right?.otyp === RIN_LEVITATION) {
         await removeHeroAccessory(right, state);
         const message = await armorOffMessage(right, state);
@@ -4443,7 +4417,7 @@ export async function fallIntoSink(state = game, { publish = plineWithContinuati
             await publish(message);
     }
     if (levBoots) {
-        const boots = wornAt('uarmf', state);
+        const boots = takeoffSlotObject('uarmf', state);
         if (!boots)
             throw new Error('The levitation boots disappeared before forced removal');
         await removeHeroArmor(boots, state);

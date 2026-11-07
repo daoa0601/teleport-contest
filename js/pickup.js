@@ -2,7 +2,7 @@
 import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
 import { objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
-import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, pickupLocationProblem, } from './hack.js';
+import { nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, pickupLocationProblem, } from './hack.js';
 import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks, touchPetrifies, heroResistsStoning } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, body_part } from './polyself.js';
@@ -106,7 +106,7 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0),
     if (!source.monster && source.objects.length
         && (game.context.run ?? 0) > 0 && game.context.run !== 8
         && !game.context.nopick)
-        endVoluntaryMultiTurn();
+        nomul(0, game);
     let attempted;
     if (game.flags.menu_style === MENU_TRADITIONAL && !game.iflags.menu_requested) {
         const result = await pickUpTraditionally(source, count);
@@ -185,7 +185,7 @@ export async function autopickupAtHero() {
         // nomul(0) also requests the status refresh for the lifting message.
         if (source.objects.length && (game.context.run ?? 0) > 0
             && game.context.run !== 8 && !game.context.nopick)
-            endVoluntaryMultiTurn();
+            nomul(0, game);
     }
     // C autopick() walks every object on the square: autopick_testobj()
     // does not exclude the punishment chain, whose class passes the
@@ -611,7 +611,7 @@ async function checkHere(source, pickedSome) {
     }
     // check_here() uses nomul(0), including its pending status refresh.
     if ((game.context.run ?? 0) > 0)
-        endVoluntaryMultiTurn();
+        nomul(0, game);
     // C check_here() flushes movement before look_here() can page a prior
     // message. The pager itself leaves pending map changes untouched.
     await flush_screen(1);

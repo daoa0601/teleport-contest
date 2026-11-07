@@ -28,7 +28,7 @@ import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware, heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js';
 import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, isBeingDonned, removeEyewear } from './do_wear.js';
-import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv, finishHeroHelplessness } from './hack.js';
+import { nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv, finishHeroHelplessness } from './hack.js';
 import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { newuhs } from './eat.js';
@@ -587,7 +587,7 @@ export async function returnHeroToHumanForm(state = game, { publish = plineWithC
         if (died)
             return { ...restored, died };
     }
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     state.context.botl = true;
     state.vision_full_recalc = 1;
     await encumber_msg(state, publish);

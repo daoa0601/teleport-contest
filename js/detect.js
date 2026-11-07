@@ -7,7 +7,7 @@ import { objectClassForType, objectMerge, BOULDER, CHEST, LARGE_BOX, LENSES, GOL
 import { requirePlayingGame, requireGameLevel, game, requireLiveGame } from './gstate.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { endVoluntaryMultiTurn, loseHeroHp, nomul, showGetposTip } from './hack.js';
+import { loseHeroHp, nomul, showGetposTip } from './hack.js';
 import { artifactById, artifactByName } from './artifact.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { canSpotMonster, canSenseMonster, currentBoulderSymbol, monsterHasWarningProjection, feel_location, flush_screen, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, see_monsters, show_glyph_cell, under_ground, under_water, unmapObject, unmap_invisible, flashGlyphAt, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, terrainCoversObjectsAt, cmapSymbolAppearance, } from './display.js';
@@ -1507,7 +1507,7 @@ async function searchAdjacentSecrets(automatic = false) {
                     continue;
                 revealSecretDoor(x, y);
                 exerciseWisdom();
-                endVoluntaryMultiTurn(game);
+                nomul(0, game);
                 // C dosearch0() maps the discovered door by touch even when
                 // its former wall position remains outside line of sight.
                 await feel_location(x, y);
@@ -1520,7 +1520,7 @@ async function searchAdjacentSecrets(automatic = false) {
                     continue;
                 revealSecretCorridor(x, y);
                 exerciseWisdom();
-                endVoluntaryMultiTurn(game);
+                nomul(0, game);
                 await feel_newsym(x, y);
                 await plineWithContinuation('You find a hidden passage.');
                 found = true;
@@ -1547,7 +1547,7 @@ async function searchAdjacentSecrets(automatic = false) {
             if (trap && !trap.tseen) {
                 if (rnl(8))
                     continue;
-                endVoluntaryMultiTurn(game);
+                nomul(0, game);
                 if (trap.ttyp === STATUE_TRAP) {
                     if (automatic)
                         return { statueTrap: { x, y } };

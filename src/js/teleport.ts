@@ -23,7 +23,7 @@ import type { HeroTrapOptions } from './trap.js';
 import { Is_botlevel, levelAtDepth, levelDepthByName, insideWizardTower, levelIsWizardTower, printDungeon, specialDisplayName, surfaceName, In_quest, In_mines, sameDungeonLevel } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { bot } from './botl.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked, endVoluntaryMultiTurn, shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt, switchHeroTerrain, finishDestinationSpotEffects } from './hack.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked, nomul, shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt, switchHeroTerrain, finishDestinationSpotEffects } from './hack.js';
 import type { SpotEffectResult } from './hack.js';
 import { findVaultGuard, noticeVaultEscape } from './vault.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters, shieldeff } from './display.js';
@@ -1567,7 +1567,7 @@ export async function teleds(x: number, y: number, state = game, {
     await newsym(oldx, oldy);
     await see_monsters();
     state.vision_full_recalc = 1;
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     const movement = { oldx, oldy, x, y };
     const arrival = await withMonsterNoticesBlocked(state, async () => {
         await vision_recalc(0);

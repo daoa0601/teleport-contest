@@ -30,7 +30,7 @@ import { objectTypeKnown, oinit } from './o_init.js';
 import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition, setShopResidency, fixShopDamage, dopay } from './shk.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
-import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, endVoluntaryMultiTurn, applyHeroLiquidEffects, SLT_ENCUMBER } from './hack.js';
+import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER } from './hack.js';
 import { buryFloorObjectsAt, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, map_background, } from './display.js';
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
@@ -1463,7 +1463,7 @@ export async function dodown() {
         const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
             || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
         await plineWithContinuation(`You are rooted ${where}.`);
-        endVoluntaryMultiTurn(game);
+        nomul(0, game);
         game.context.move = 1;
         return false;
     }
@@ -1571,7 +1571,7 @@ export async function doup() {
         const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
             || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
         await plineWithContinuation(`You are rooted ${where}.`);
-        endVoluntaryMultiTurn(game);
+        nomul(0, game);
         game.context.move = 1;
         return false;
     }

@@ -79,7 +79,7 @@ import {
 } from './trap.js';
 
 import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
-import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
+import { nomul, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
 import {
     attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker, contactIsProtected,
     paralyzeMonster, swingMonsterWeapon,
@@ -1446,7 +1446,7 @@ export async function mattacku(
     state.bhitpos = { x: state.u.ux, y: state.u.uy };
     state.notonhead = false;
     if (dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 3)
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
     if (monster.dead || monster.mhp <= 0) return { heroAttackResult: 1 };
     if ((state.underwater || state.u.uinwater)
         && !(monsterIsSwimmer(monster.mnum))) return {};
@@ -2012,7 +2012,7 @@ async function beginHeroAttackSlot(
             kind: 'hero-spell', threshold, attackType, damageType, attackIndex,
             ...(spell ? { spell: spell.key } : {}), cast: false, misdirected: true,
         };
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
         const fumble =
             recordRandom(random, calls, Math.max(1, monsterLevel * 10)) <
             (monster.mconf ? 100 : 20);

@@ -56,7 +56,7 @@ import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDropp
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
 import type { ObjectCallResult } from './do_name.js';
-import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, endVoluntaryMultiTurn, applyHeroLiquidEffects, SLT_ENCUMBER } from './hack.js';
+import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER } from './hack.js';
 import type { Trap } from './map_types.js';
 import { buryFloorObjectsAt, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import {
@@ -1686,7 +1686,7 @@ export async function dodown(): Promise<boolean> {
         const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
             || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
         await plineWithContinuation(`You are rooted ${where}.`);
-        endVoluntaryMultiTurn(game);
+        nomul(0, game);
         game.context.move = 1;
         return false;
     }
@@ -1793,7 +1793,7 @@ export async function doup(): Promise<boolean> {
         const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
             || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
         await plineWithContinuation(`You are rooted ${where}.`);
-        endVoluntaryMultiTurn(game);
+        nomul(0, game);
         game.context.move = 1;
         return false;
     }

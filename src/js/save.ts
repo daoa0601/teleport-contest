@@ -21,7 +21,7 @@ import { encodeSavedGraph } from './saved_graph.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
 import type { SavedGame } from './persistent_state_validation.js';
 import { cmdq_clear } from './cmd.js';
-import { endVoluntaryMultiTurn } from './hack.js';
+import { nomul } from './hack.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
 import { rollQuestFigureGenders } from './role.js';
 import type { PersistentState } from './state_schema.js';
@@ -112,7 +112,7 @@ export async function dosave(): Promise<void> {
     const answer = await promptYesNo('Really save?');
     clearMessageWindow();
     if (answer !== 'y') {
-        if (game.multi > 0) endVoluntaryMultiTurn(game);
+        if (game.multi > 0) nomul(0, game);
         game.context.move = 0;
         return;
     }

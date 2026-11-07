@@ -30,7 +30,7 @@ import { detachHeroGold } from './sit.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { enexto, randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
-import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
+import { nomul, heroGoldAmount } from './hack.js';
 import { mksobj, blessObjectState } from './mkobj.js';
 import { selectHandToHandWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './worn.js';
@@ -131,7 +131,7 @@ export async function demandDemonBribe(monster: Monster, state: PlayingGameState
     if (state.u.uhs === FAINTED) await reset_faint({ state });
     else {
         await stopHeroOccupation(state);
-        if ((state.multi ?? 0) > 0) endVoluntaryMultiTurn(state);
+        if ((state.multi ?? 0) > 0) nomul(0, state);
     }
     if (is_dprince(monster.mnum) && monster.minvis) {
         const unseen = !canSpotMonster(monster);

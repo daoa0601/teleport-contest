@@ -10,7 +10,7 @@ import {
 } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
 import {
-    endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount,
+    nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount,
     calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, pickupLocationProblem,
 } from './hack.js';
 import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks, touchPetrifies, heroResistsStoning } from './mondata.js';
@@ -156,7 +156,7 @@ export async function pickupAtHero(
     // suppresses moveloop's per-turn time update.
     if (!source.monster && source.objects.length
         && (game.context.run ?? 0) > 0 && game.context.run !== 8
-        && !game.context.nopick) endVoluntaryMultiTurn();
+        && !game.context.nopick) nomul(0, game);
     let attempted: boolean;
     if (game.flags.menu_style === MENU_TRADITIONAL && !game.iflags.menu_requested) {
         const result = await pickUpTraditionally(source, count);
@@ -233,7 +233,7 @@ export async function autopickupAtHero(): Promise<void> {
         // stepping onto objects, and not at all for a no-pickup move.
         // nomul(0) also requests the status refresh for the lifting message.
         if (source.objects.length && (game.context.run ?? 0) > 0
-            && game.context.run !== 8 && !game.context.nopick) endVoluntaryMultiTurn();
+            && game.context.run !== 8 && !game.context.nopick) nomul(0, game);
     }
     // C autopick() walks every object on the square: autopick_testobj()
     // does not exclude the punishment chain, whose class passes the
@@ -644,7 +644,7 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
         return { died: false };
     }
     // check_here() uses nomul(0), including its pending status refresh.
-    if ((game.context.run ?? 0) > 0) endVoluntaryMultiTurn();
+    if ((game.context.run ?? 0) > 0) nomul(0, game);
     // C check_here() flushes movement before look_here() can page a prior
     // message. The pager itself leaves pending map changes untouched.
     await flush_screen(1);

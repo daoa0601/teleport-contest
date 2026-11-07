@@ -713,7 +713,7 @@ import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifa
 import {
     burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
-    applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim,
+    applyHeroLiquidEffects, heroLocomotion, applyHeroLocationEffects, heroCanSwim,
     moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire,
     UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness,
     maybeHalfPhysicalDamage,
@@ -3899,7 +3899,7 @@ export async function dotrap(
     }: HeroTrapOptions = {},
 ): Promise<HeroTrapResult> {
     if (!trap) return { died: false, shortCircuited: false };
-    endVoluntaryMultiTurn();
+    nomul(0, game);
     requirePlayingGame(game);
     const hero = game.u;
     const pit = is_pit(trap.ttyp);
@@ -4285,7 +4285,7 @@ export async function launchRollingBoulder(start: Position, endpoint: Position, 
                 let damage = rollPhysicalWeaponDamageAgainstHero(boulder, state, { rollOne, rollDice });
                 if (state.u.halfPhysicalDamage || heroHasCarriedArtifactFlag('SPFX_HPHDAM', state))
                     damage = Math.trunc((damage + 1) / 2);
-                if (state.multi) endVoluntaryMultiTurn(state);
+                if (state.multi) nomul(0, state);
                 const hit = await hitHeroWithObject(boulder, damage, 9 + (boulder.spe ?? 0), {
                     state, publish, rollOne, killer: killerObjectName(boulder, state),
                 });
@@ -5988,7 +5988,7 @@ export async function floatHeroDown(
     }
 
     state.context.botl = true;
-    endVoluntaryMultiTurn(state); // C nomul(0)
+    nomul(0, state); // C nomul(0)
 
     if (before.flyingBlocked) {
         // controlled flight is no longer overridden by levitation
