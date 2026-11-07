@@ -2,8 +2,9 @@
 //
 // A helper whose leading comment opens with `Part of C file.c:name(): …` is
 // a counterpart of that C function even when a same-named port function
-// exists, so its calls count toward the C function's edges and argument
-// pairs, and the ledgers freeze them.
+// exists, so its calls count toward the C function's argument pairs and
+// call edges. The ledger freezes them, and a later C-side change — the
+// same regression the frozen row exists to catch — fails the check.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -32,8 +33,8 @@ function scratch(name, cFiles, port) {
     writeFileSync(join(cRoot, 'src', 'allmain.c'), 'int set_flag(int flag) { return flag; }\n');
     for (const [file, text] of Object.entries(cFiles))
         writeFileSync(join(cRoot, 'src', file), text);
-    const writePort = (text) => { writeFileSync(join(dir, 'src', 'js', 'part.ts'), text); };
-    writePort(port);
+    const writeC = (file, text) => { writeFileSync(join(cRoot, 'src', file), text); };
+    writeFileSync(join(dir, 'src', 'js', 'part.ts'), port);
     const ledger = join(dir, 'ledger.tsv');
     const run = (mode, option, expectedStatus) => {
         const result = spawnSync(process.execPath, [join(scripts, 'static-gaps.mjs'), mode, option, ledger], {
@@ -45,26 +46,29 @@ function scratch(name, cFiles, port) {
         });
         assert.equal(result.status, expectedStatus, `${mode} ${option}: ${result.error?.message ?? ''}\n${result.stdout}\n${result.stderr}`);
     };
-    return { root: dir, run, writePort };
+    return { root: dir, run, writeC };
 }
 void test('the argument ledger freezes a Part-of helper boolean', () => {
-    const portWith = (flag) => `
+    const port = `
 export function callee(flag: boolean): boolean { return flag; }
 export function caller(): boolean { return true; }
 // Part of C caller.c:caller(): the fragment that performs the call.
-export function callerCall(): boolean { return callee(${flag}); }
+export function callerCall(): boolean { return callee(true); }
 `;
+    // The C caller spells callee(TRUE); the same-named port `caller` holds
+    // none of that call — only the Part-of helper does.
+    const callerC = (flag) => '#define TRUE ((unsigned char) 1)\n#define FALSE ((unsigned char) 0)\n'
+        + 'int callee(int flag);\nstatic int caller(void) { return callee(' + flag + '); }\n';
     const world = scratch('static-gaps-partof-args-', {
         'callee.c': 'int callee(int flag) { return flag; }\n',
-        'caller.c': '#define TRUE ((unsigned char) 1)\n#define FALSE ((unsigned char) 0)\n'
-            + 'int callee(int flag);\nstatic int caller(void) { return callee(TRUE); }\n',
-    }, portWith('true'));
+        'caller.c': callerC('TRUE'),
+    }, port);
     try {
         // The helper's `callee(true)` is the port of the C caller's
         // `callee(TRUE)`, so the pair matches and freezes.
         world.run('args', '--write-ledger', 0);
         world.run('args', '--check-ledger', 0);
-        world.writePort(portWith('false'));
+        world.writeC('caller.c', callerC('FALSE'));
         world.run('args', '--check-ledger', 1);
     }
     finally {
@@ -72,21 +76,20 @@ export function callerCall(): boolean { return callee(${flag}); }
     }
 });
 void test('the edge ledger freezes a Part-of helper call', () => {
-    const portWith = (calls) => `
+    const port = `
 export function callee(): number { return 0; }
 export function caller(): void {}
 // Part of C caller.c:caller(): the fragment that performs the call.
-export function callerCall(): void { ${calls ? 'callee();' : ''} }
+export function callerCall(): void { callee(); }
 `;
-    const world = scratch('static-gaps-partof-edges-', {
-        'caller.c': 'static int callee(void) { return 0; }\n'
-            + 'static int caller(void) { return callee(); }\n',
-    }, portWith(true));
+    const callerC = (calls) => 'static int callee(void) { return 0; }\n'
+        + 'static int caller(void) { ' + (calls ? 'return callee();' : 'return 0;') + ' }\n';
+    const world = scratch('static-gaps-partof-edges-', { 'caller.c': callerC(true) }, port);
     try {
         // The C caller reaches callee only through the Part-of helper.
         world.run('edges', '--write-ledger', 0);
         world.run('edges', '--check-ledger', 0);
-        world.writePort(portWith(false));
+        world.writeC('caller.c', callerC(false));
         world.run('edges', '--check-ledger', 1);
     }
     finally {
