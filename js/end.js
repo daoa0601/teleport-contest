@@ -1090,6 +1090,9 @@ function collectFinalPossessions() {
 // invocation item and report its value and points.
 async function finalPossessionLines(possessions) {
     const lines = possessions.artifacts.map(({ object, value, points, name }) => {
+        // C discover_object(otyp, TRUE, TRUE, FALSE): the type is marked
+        // encountered and known, without the Wisdom credit.
+        recordObjectEncounter(object.otyp);
         recordObjectKnowledge(object.otyp);
         object.known = object.dknown = object.bknown = object.rknown = true;
         return `${name} (worth ${value} ${currency(value)} and ${points} points)`;

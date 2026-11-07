@@ -129,8 +129,8 @@ export async function dosave(): Promise<void> {
     // C save.c:dosave() displays WIN_MESSAGE so the "Saving..." line is
     // seen, then exit_nhwindows("Be seeing you...") tears the windows down
     // (wintty.c:tty_exit_nhwindows() -> tty_suspend_nhwindows(): settty
-    // clears the screen and raw-prints the goodbye), and nh_terminate()
-    // never returns here.
+    // clears the screen and raw-prints the goodbye), and the native
+    // nh_terminate exit that follows never re-enters the port.
     tty_exit_nhwindows('Be seeing you...');
     game.program_state.gameover = true;
     game.context.move = 0;

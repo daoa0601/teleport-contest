@@ -96,7 +96,8 @@ function tty_suspend_nhwindows(farewell) {
 }
 // C wintty.c:tty_exit_nhwindows()
 // The port marks the windows exited before the farewell (raw output
-// checks the flag), then suspends; nh_terminate() never returns here.
+// checks the flag), then suspends; the native exit path that follows (end.c
+// nh_terminate) never re-enters the windows.
 export function tty_exit_nhwindows(farewell) {
     game.program_state.windows_exited = true;
     tty_suspend_nhwindows(farewell);
