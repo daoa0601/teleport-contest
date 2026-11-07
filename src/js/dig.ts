@@ -25,7 +25,7 @@ import { canSeeMonster, feel_location, flush_screen, newsym, show_glyph_cell } f
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explode.js';
 import {
-    fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap, trapAt,
+    fireDamageChain, pitDirection, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap, trapAt,
     trapName, mintrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap,
     triggerBoobyTrap,
 } from './trap.js';
@@ -2243,6 +2243,20 @@ async function strikeUndiggable(tool: GameObject, x: number, y: number, state: G
             );
         }
     }
+}
+
+// Part of C dig.c:use_pick_axe() and dig.c:digactualhole(): the reciprocal
+// conjoined-bit connection between adjacent pits (dig.c:1264-1265 and
+// dig.c:1656-1657); C trap.c:join_adjacent_pits() is #if 0 dead code.
+export function connectPits(first: Trap, second: Trap) {
+    const direction = pitDirection(first, second);
+    if (direction < 0) return false;
+    const opposite = (direction + 4) % 8;
+    const changed = !((first.conjoined ?? 0) & (1 << direction))
+        || !((second.conjoined ?? 0) & (1 << opposite));
+    first.conjoined = (first.conjoined || 0) | (1 << direction);
+    second.conjoined = (second.conjoined || 0) | (1 << opposite);
+    return changed;
 }
 
 // C dig.c:use_pick_axe().

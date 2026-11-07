@@ -209,14 +209,21 @@ export async function ridingPreventsMovement() {
     return true;
 }
 
-// Part of C hack.c:domove_core(): the steed-position update and steed.c:exercise_steed() training.
+// Part of C hack.c:domove_core(): the steed-position update; hack.c calls
+// exercise_steed() right after moving the steed with the hero.
 // C hack.c moves the steed with the hero before resolving displacement.
-// C steed.c:exercise_steed().
 export async function moveSteedWithHero() {
     const hero = game.u;
     if (!hero.usteed) return;
     hero.usteed.mx = hero.ux;
     hero.usteed.my = hero.uy;
+    await exerciseSteed();
+}
+
+// C steed.c:exercise_steed(): many turns of riding train the riding skill.
+async function exerciseSteed(): Promise<void> {
+    const hero = game.u;
+    if (!hero.usteed) return;
     hero.urideturns = (hero.urideturns || 0) + 1;
     if (hero.urideturns >= 100) {
         hero.urideturns = 0;

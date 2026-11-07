@@ -2346,6 +2346,9 @@ function heroIronShoes() {
 // C trap.c:trapeffect_telep_trap(): the hero branch — reveal the trap and
 // jump; the monster branch is the TELEP_TRAP case of triggerMonsterTrap.
 // Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
+// Also C teleport.c:tele_trap(): the whole body after seeTrap() — the
+// in_tele_trap guard, the endgame/antimagic/noteleport refusals,
+// next_to_u(), the once/fixed-destination/random dispatch and teleds().
 async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['finishTeleport']): Promise<boolean> {
     await seeTrap(trap);
     if (game._inTeleportTrap) return false;
@@ -4055,6 +4058,12 @@ function isclearpath(trap: Trap, x: number, y: number, dx: number, dy: number, l
 
 const MZ_HUGE = 4;
 
+// C trap.c:m_easy_escape_pit(): pit fiends and MZ_HUGE bodies climb out of
+// pits without a struggle; C tests monsters and &gy.youmonst alike.
+function escapesPitEasily(mnum: number | undefined): boolean {
+    return mnum === PM_PIT_FIEND || (MONSTER_SIZE[mnum ?? -1] ?? 0) >= MZ_HUGE;
+}
+
 // C trap.c:mintrap().  m_move()'s trapped actor takes its escape roll here,
 // and postmov() calls this after a monster steps onto a trap square; source
 // effects (dig, kick, throw, zap, polymorph splits) call the same entry with
@@ -4104,8 +4113,7 @@ export async function mintrap(
             && (pit || [BEAR_TRAP, HOLE, WEB].includes(trap.ttyp))) {
             await seeTrap(trap, state);
         }
-        const climbsEasily = (MONSTER_SIZE[monster.mnum] ?? 0) >= MZ_HUGE
-            || MONSTER_NAME[monster.mnum] === 'pit fiend';
+        const climbsEasily = escapesPitEasily(monster.mnum);
 
         if (random(40) === 0 || (pit && climbsEasily)) {
             const boulder = pit && (level.objects[x]?.[y] || [])
@@ -5696,7 +5704,7 @@ export async function climbOutOfPit() {
         return;
     }
 
-    if (reduceHeroTrapDuration() <= 0 || heroEscapesPitEasily()) {
+    if (reduceHeroTrapDuration() <= 0 || escapesPitEasily(heroMonsterForm())) {
         await resetUtrap(false);
         const locomotion = game.level.flags.sokoban_rules && hero.levitating
             ? 'struggle against the air currents and float' : hero.usteed ? 'ride' : 'crawl';
@@ -5735,11 +5743,6 @@ async function fillHeroPitWithBoulder() {
     await fillPitWithBoulderAt(game.u.ux, game.u.uy);
 }
 
-// Part of C trap.c:m_easy_escape_pit(): apply easy pit escape to the hero form.
-function heroEscapesPitEasily() {
-    const form = heroMonsterForm();
-    return form === PM_PIT_FIEND || (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE;
-}
 
 // C trap.c:dofiretrap(): the flame effect shared by floor fire traps and
 // trapped containers — steam under water, the tower of flame, resistance,
@@ -8402,7 +8405,7 @@ export function pitsAreConjoined(first: Trap | null | undefined, second: Trap | 
 // Part of C trap.c:conjoined_pits(): the pit offset it derives with sgn()
 // and xytodir(); Math.sign() and the xdir/ydir table lookup are those two
 // callees inlined here.
-function pitDirection(from: Trap, to: Trap) {
+export function pitDirection(from: Trap, to: Trap) {
     const dx = Math.sign(to.tx - from.tx);
     const dy = Math.sign(to.ty - from.ty);
     return xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
@@ -9008,7 +9011,9 @@ export async function igniteItems(
     return ignited;
 }
 
-// Part of C trap.c:trap_ice_effects(): melt the ice beneath a trap.
+// C trap.c:trap_ice_effects(): melting ice frees a trapped monster and
+// removes the trap beneath it — a landmine or bear trap sinks as its
+// object; MAGIC_PORTAL and VIBRATING_SQUARE (undestroyable_trap) survive.
 export async function meltIceTrap(x: number, y: number): Promise<void> {
     const trap = requireGameLevel(game).traps.find(candidate => candidate.tx === x && candidate.ty === y);
     if (!trap) return;
@@ -9056,17 +9061,6 @@ const EROSION: Record<ErosionKind, ErosionRule> = {
     crack: { field: 'oeroded', verb: 'crack', past: 'cracked', cause: 'impact' },
 };
 
-// Part of C trap.c:join_adjacent_pits(): set reciprocal connections between adjacent pits.
-export function connectPits(first: Trap, second: Trap) {
-    const direction = pitDirection(first, second);
-    if (direction < 0) return false;
-    const opposite = (direction + 4) % 8;
-    const changed = !((first.conjoined ?? 0) & (1 << direction))
-        || !((second.conjoined ?? 0) & (1 << opposite));
-    first.conjoined = (first.conjoined || 0) | (1 << direction);
-    second.conjoined = (second.conjoined || 0) | (1 << opposite);
-    return changed;
-}
 
 // Port only: route liquid deaths through the shared death boundary.
 export async function finishLiquidDeath(options: FinishHeroDeathOptions): Promise<boolean> {
