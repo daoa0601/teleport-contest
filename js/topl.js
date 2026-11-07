@@ -2,7 +2,7 @@
 // Message-window entry points also follow win/tty/wintty.c.
 // cmd.c:doprev_message() dispatch stays in cmd.ts; cmd.c:key2txt() too.
 import { game } from './gstate.js';
-import { refreshStatusLines } from './botl.js';
+import { bot } from './botl.js';
 import { _buildScreenOutput, writeMapRow } from './wintty.js';
 import { plineWithContinuation, setTopline } from './pline.js';
 import { nhgetch } from './input.js';
@@ -40,7 +40,7 @@ export function clearMessageWindow(coveredRows) {
     if (rows > ROWNO + 1) {
         if (game._statusUpdatesDisabled)
             display.statusVisible = false;
-        refreshStatusLines();
+        bot();
     }
     display.setCursor(0, 0);
 }

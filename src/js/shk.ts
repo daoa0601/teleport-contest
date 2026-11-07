@@ -223,7 +223,7 @@ export function shopThankYouMessage(resident: Monster): string {
     const enthusiastic = !resident.eshk?.surcharge;
     const end = enthusiastic ? '!' : '.';
     if (!heroIsDeaf() && !shopkeeperIsMuted(resident))
-        return `"Thank you for shopping in ${possessive(shopkeeperName(resident))} ${typeName}${end}"`;
+        return `"Thank you for shopping in ${possessiveName(shopkeeperName(resident))} ${typeName}${end}"`;
     return `${shopkeeperName(resident, { capitalized: true })} nods${enthusiastic ? ' appreciatively' : ''} at you for shopping in ${monsterPossessive(resident, { noIt: true })} ${typeName}${end}`;
 }
 
@@ -603,8 +603,8 @@ export function removeObjectAndContentsFromBill(
     return billed;
 }
 
-// C potion.c:potionhit()'s unpaid tail and dothrow.c:check_shop_obj() both
-// settle an unpaid object the hero used up with shk.c:stolen_value(obj,
+// Part of C potion.c:potionhit()'s unpaid tail and dothrow.c:check_shop_obj():
+// both settle an unpaid object the hero used up with shk.c:stolen_value(obj,
 // u.ux, u.uy, shkp->mpeaceful, FALSE): the bill entry comes off, credit is
 // consumed by shk.c:check_credit() with its own messages, the remainder is
 // still owed, and an angry keeper is set on the hero instead.
@@ -1157,10 +1157,6 @@ export function billedPickupQuote(transaction: ShopTransaction | null, state: Ga
     }
 }
 
-// C hacklib.c:s_suffix(): the shopkeeper-name possessive.
-function possessive(name: string): string {
-    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
 
 // C shk.c:deserted_shop(). Disguised or unseen occupants leave uncertainty.
 async function describeUntendedShop(room: Room): Promise<void> {
@@ -1237,10 +1233,10 @@ export async function enterShop({ room, roomno }: ShopRoom): Promise<string | nu
     if (!shopkeeper.mpeaceful) {
         message = deaf
             ? `${shopkeeperName(shopkeeper, { capitalized: true })} seems ${['quite upset', 'ticked off', 'furious'][rn2(3)]} over your return to ${monsterPossessive(shopkeeper, { noIt: true })} ${typeName}!`
-            : `"So, ${playerName}, you dare return to ${possessive(shopkeeperName(shopkeeper))} ${typeName}?!"`;
+            : `"So, ${playerName}, you dare return to ${possessiveName(shopkeeperName(shopkeeper))} ${typeName}?!"`;
     } else if (eshk.surcharge) {
         message = deaf
-            ? `The atmosphere at ${possessive(shopkeeperName(shopkeeper))} ${typeName} seems unwelcoming.`
+            ? `The atmosphere at ${possessiveName(shopkeeperName(shopkeeper))} ${typeName} seems unwelcoming.`
             : `"Back again, ${playerName}?  I've got my eye on you."`;
     } else if (eshk.robbed) {
         message = deaf
@@ -1249,44 +1245,45 @@ export async function enterShop({ room, roomno }: ShopRoom): Promise<string | nu
     } else {
         const again = eshk.visitct ? ' again' : '';
         eshk.visitct = (eshk.visitct ?? 0) + 1;
-        message = deaf ? `You enter ${possessive(shopkeeperName(shopkeeper))} ${typeName}${again}!`
-            : `"${hello(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
+        message = deaf ? `You enter ${possessiveName(shopkeeperName(shopkeeper))} ${typeName}${again}!`
+            : `"${hello(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessiveName(shopkeeperName(shopkeeper))} ${typeName}!"`;
     }
     await plineWithContinuation(message);
-    await blockShopEntry(shopkeeper);
-    return message;
-}
-
-// C shk.c:u_entered_shop() tail. A hero already on the shop floor cannot
-// be stopped at its entrance, including one who teleported past the door.
-async function blockShopEntry(shopkeeper: Shopkeeper): Promise<void> {
-    if (insideShopRoomAt(game, game.u.ux, game.u.uy)) return;
-    const picks = game.inventory.filter(object => object.otyp === PICK_AXE).length;
-    const mattocks = game.inventory.filter(object => object.otyp === DWARVISH_MATTOCK).length;
-    const calm = !shopkeeper.eshk.surcharge;
-    const canSpeak = !heroIsDeaf(game) && !shopkeeperIsMuted(shopkeeper);
-    if (picks || mattocks) {
-        const tool = picks && mattocks ? 'digging tool' : picks ? 'pick-axe' : 'mattock';
-        const count = picks + mattocks;
-        if (!picks && mattocks && !heroIsBlind(game)) learnObjectType(DWARVISH_MATTOCK);
-        const tools = `${tool}${count > 1 ? 's' : ''}`;
-        const request = calm ? `Will you please leave your ${tools} outside?` : `Leave the ${tools} outside.`;
-        await plineWithContinuation(canSpeak
-            ? `"${request}"`
-            : `${shopkeeperName(shopkeeper, { capitalized: true })} ${calm ? 'is hesitant' : 'refuses'} to let you in with your ${tools}.`);
-    } else if (game.u.usteed) {
-        const steed = monsterName(game.u.usteed, { article: 'your' });
-        const request = calm ? `Will you please leave ${steed} outside?` : `Leave ${steed} outside.`;
-        await plineWithContinuation(canSpeak
-            ? `"${request}"`
-            : `${shopkeeperName(shopkeeper, { capitalized: true })} ${calm ? "doesn't want" : 'refuses'} to let you in while you're riding ${steed}.`);
-    } else {
-        const floorTools = game.level?.objects[game.u.ux]?.[game.u.uy];
-        if (!(game.u.fast || game.u.veryFast)
-            || !floorTools?.some(object => object.otyp === PICK_AXE || object.otyp === DWARVISH_MATTOCK)) return;
+    // can't do anything about blocking if teleported in
+    if (!insideShopRoomAt(game, game.u.ux, game.u.uy)) {
+        const picks = game.inventory.filter(object => object.otyp === PICK_AXE).length;
+        const mattocks = game.inventory.filter(object => object.otyp === DWARVISH_MATTOCK).length;
+        const calm = !shopkeeper.eshk.surcharge;
+        const canSpeak = !heroIsDeaf(game) && !shopkeeperIsMuted(shopkeeper);
+        let shouldBlock: boolean;
+        if (picks || mattocks) {
+            const tool = picks && mattocks ? 'digging tool' : picks ? 'pick-axe' : 'mattock';
+            const count = picks + mattocks;
+            if (!picks && mattocks && !heroIsBlind(game)) learnObjectType(DWARVISH_MATTOCK);
+            const tools = `${tool}${count > 1 ? 's' : ''}`;
+            const request = calm ? `Will you please leave your ${tools} outside?` : `Leave the ${tools} outside.`;
+            await plineWithContinuation(canSpeak
+                ? `"${request}"`
+                : `${shopkeeperName(shopkeeper, { capitalized: true })} ${calm ? 'is hesitant' : 'refuses'} to let you in with your ${tools}.`);
+            shouldBlock = true;
+        } else if (game.u.usteed) {
+            const steed = monsterName(game.u.usteed, { article: 'your' });
+            const request = calm ? `Will you please leave ${steed} outside?` : `Leave ${steed} outside.`;
+            await plineWithContinuation(canSpeak
+                ? `"${request}"`
+                : `${shopkeeperName(shopkeeper, { capitalized: true })} ${calm ? "doesn't want" : 'refuses'} to let you in while you're riding ${steed}.`);
+            shouldBlock = true;
+        } else {
+            const floorTools = game.level?.objects[game.u.ux]?.[game.u.uy];
+            shouldBlock = !!(game.u.fast || game.u.veryFast)
+                && !!floorTools?.some(object => object.otyp === PICK_AXE || object.otyp === DWARVISH_MATTOCK);
+        }
+        if (shouldBlock) {
+            requirePlayingGame(game);
+            await performMonsterTurn(shopkeeper, game); /* shk gets extra move */
+        }
     }
-    requirePlayingGame(game);
-    await performMonsterTurn(shopkeeper, game);
+    return message;
 }
 
 const MS_HUMANOID = 25;
@@ -1312,11 +1309,6 @@ function monsterSound(monster: Monster): number {
     return MONSTER_SOUND[monster?.mnum] ?? 0;
 }
 
-// C shk.c:muteshk()
-// A keeper who cannot speak up.
-function muteShopkeeper(monster: Monster): boolean {
-    return monsterIsHelpless(monster) || monsterSound(monster) <= MS_ANIMAL;
-}
 
 // Port only: the level damage-list accessor.
 function damageRecords(state: ShopGameState): ShopDamage[] {
@@ -1671,7 +1663,7 @@ export async function shopkeeperCatch(
         return null;
 
     if (await mnearto(keeper, x, y, state, { moveOther: true }) === 2
-        && !heroIsDeaf(state) && !muteShopkeeper(keeper))
+        && !heroIsDeaf(state) && !shopkeeperIsMuted(keeper))
         await verbalize('Out of my way, scum!');
     if (cansee(x, y)) {
         await pline(`${shopkeeperName(keeper, { state, capitalized: true })} nimbly${
@@ -1872,7 +1864,7 @@ async function getcad(
     state: ShopGameState,
 ) {
     const dugwall = dmgstr === 'dig into' || dmgstr === 'damage';
-    if (muteShopkeeper(keeper)) {
+    if (shopkeeperIsMuted(keeper)) {
         if (animal && !monsterIsHelpless(keeper))
             await publishMonsterYelp(keeper);
     } else if (pursue || uinshp || !umDist(state, x, y, 1)) {
@@ -1988,7 +1980,7 @@ export async function payForShopDamage(
         if (blocker) {
             if (!animal) {
                 if (!heroIsDeaf(state)
-                    && !muteShopkeeper(keeper)) {
+                    && !shopkeeperIsMuted(keeper)) {
                     await publishHeardMessage('an angry voice:', pline, state);
                     await verbalize('Out of my way, scum!');
                 }
@@ -2040,7 +2032,7 @@ export async function payForShopDamage(
     } else {
         if (!animal) {
             if (!heroIsDeaf(state)
-                && !muteShopkeeper(keeper)) {
+                && !shopkeeperIsMuted(keeper)) {
                 await verbalize("Oh, yes!  You'll pay!");
             } else {
                 await pline(`${shopkeeperName(keeper, { state, capitalized: true })} lunges ${monsterPossessive(keeper, { state, noIt: true })
@@ -2117,7 +2109,7 @@ async function litterScatter(
         && ((chain?.ox === x && chain?.oy === y)
             || (ball?.where === 'floor' && ball?.ox === x
                 && ball?.oy === y))) {
-        if (!heroIsDeaf(state) && !muteShopkeeper(keeper))
+        if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper))
             await verbalize('Get your junk out of my wall!');
         await unplaceBallAndChain(state);
         await placeBallAndChain(state);
@@ -2338,7 +2330,7 @@ export async function shopDig(fall: number | boolean, state: GameState = game): 
 
     if (!fall) {
         if (lang === 2 && !heroIsDeaf(state)
-            && !muteShopkeeper(keeper)) {
+            && !shopkeeperIsMuted(keeper)) {
             const address = state.flags?.female ? 'madam' : 'sir';
             if (state.u.utraptype === TT_PIT) {
                 await verbalize(
