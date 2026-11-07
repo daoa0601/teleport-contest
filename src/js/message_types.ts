@@ -52,7 +52,7 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, WARNCOUNT } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf } from './hacklib.js';
+import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visibleCommandKey } from './hacklib.js';
 
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
@@ -68,7 +68,7 @@ import {
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms,
     STONE,
 } from './const.js';
-import { visctrl, editSymset } from './options.js';
+import { editSymset } from './options.js';
 
 // C options.c:ask_do_tutorial(). Empty acceptance rebuilds the menu with
 // an explanation; a selected answer or Escape ends the question.
@@ -2669,10 +2669,10 @@ export function menuCommandKeyError(key: number): string | null {
     const letter = (key >= 65 && key <= 90) || (key >= 97 && key <= 122);
     if (key === 0 || key === 13 || key === 10 || key === 27 || key === 32
         || (key >= 48 && key <= 57) || (letter && key !== 64)) {
-        return `Reserved menu command key '${visctrl(key)}'`;
+        return `Reserved menu command key '${visibleCommandKey(key)}'`;
     }
     if (OBJECT_CLASS_SYMBOLS.slice(1).includes(character)) {
-        return `Menu command key '${visctrl(key)}' is an object class`;
+        return `Menu command key '${visibleCommandKey(key)}' is an object class`;
     }
     return null;
 }
