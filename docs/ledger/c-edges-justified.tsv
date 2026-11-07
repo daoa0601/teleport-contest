@@ -1391,7 +1391,7 @@ mon_leave	picked_container	inlined	clearNoCharge recursion (dog.ts)
 move_bc	movobj	inlined	moveObject for ball and chain (ball.ts)
 move_update	in_rooms	inlined	roomsAt membership scan (room.ts)
 movecmd	cmdbind_get	inlined	bindings.movementForKey (cmd.ts)
-moveloop	maybe_do_tutorial	inlined	askTutorial/enterTutorial (allmain.ts)
+moveloop	maybe_do_tutorial	inlined	askTutorial/maybeDoTutorial (allmain.ts)
 moveloop_core	pooleffects	inlined	heroLiquidEffects entry 'turn' (hack.ts)
 newexplevel	newuexp	inlined	newExperienceThreshold comparisons (exper.ts)
 newpw	enermod	inlined	energyModifier by role (exper.ts)
@@ -1873,9 +1873,9 @@ query_annotation	describe_level	inlined	annotationLevelDescription builds the pr
 query_annotation	find_mapseen	inlined	game._levelAnnotations keyed by dnum:dlevel replaces the mapseen list lookup (dungeon.ts queryLevelAnnotation)
 yn_function_menu	yn_menuable_resp	inlined	query.ts yn_function's menuable flag plus queryResponseMenu's per-set choice lists replace the response-set identity test
 yn_function_menu	yn_func_menu_opt	inlined	queryResponseMenu builds the (key,text,default-marker) menu entries inline (query.ts:323-325)
-parse	flush_screen	inlined	command_input.ts readCommandInput is the parse() input half and calls flush_screen(1) before reading the key; the name match found EreParser.parse in posix_regex.ts instead
-parse	readchar	inlined	readCommandInput/readCommandCount call readchar('command') (command_input.ts:18,37); the name match found EreParser.parse in posix_regex.ts instead
-parse	get_count	inlined	readCommandCount inlines get_count(GC_NOFLAGS): digit accumulation, backspace, ESC zeroing, LARGEST_INT cap (command_input.ts:33); the name match found EreParser.parse in posix_regex.ts instead
+parse	flush_screen	inlined	cmd.ts readCommandInput ports parse() and calls flush_screen(1) before reading the key; the name match found EreParser.parse in posix_regex.ts instead
+parse	readchar	inlined	readCommandInput calls readchar('command') (cmd.ts); the name match found EreParser.parse in posix_regex.ts instead
+parse	get_count	inlined	readCommandInput's local readCount inlines get_count(GC_NOFLAGS): digit accumulation, backspace, ESC zeroing, LARGEST_INT cap (cmd.ts); the name match found EreParser.parse in posix_regex.ts instead
 parse	cmdbind_get	inlined	rhack's configuredCommand(key) and the do_repeat branch (cmd.ts:454) replace parse()'s cmdbind_get() do-again binding lookup; command_repeat.ts stores each replayed count with the queue
 wiz_custom	ecname_from_fn	inlined	the unavailable-command name comes from the centralized admission gate (cmd.ts commandAllowed, C can_do_extcmd) using command.name; no per-command function-pointer lookup is needed
 wiz_custom	fill_glyphid_cache	n/a	glyphid cache only accelerates glyph-identifier lookup for the #wizcustom menu; wizCustom builds entries through customizedGlyphs() directly
