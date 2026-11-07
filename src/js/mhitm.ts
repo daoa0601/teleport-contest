@@ -1367,7 +1367,8 @@ export async function applyMonsterContactPassive(attacker: Monster, defender: Mo
         ...(death.heroDied ? { heroDied: true } : {}) };
 }
 
-// C mhitm.c:paralyze_monst():
+// Part of C mhitm.c:passivemm(): the AD_PLYS branch — floating-eye gaze
+// reflection and the gelatinous-cube freeze, ending in paralyze_monst().
 async function paralyzeAttacker(attacker: Monster, defender: Monster, duration: number, {
     state, random, publish, visible, hit,
 }: {
@@ -1502,8 +1503,9 @@ function displacementMessage(
     } way${trying ? '.' : '!'}`;
 }
 
-// C mhitm.c:mdamagem(). Touching the defender leaves no time to eat
-// a cure.
+// Part of C mhitm.c:mdamagem() and mdisplacem(): the attacker-petrification
+// sequence both functions duplicate — poly_when_stoned() golem conversion,
+// the "turns to stone!" message, then monstone().
 export async function petrifyMonsterAttacker(monster: Monster, {
     publish = plineWithContinuation,
     visible = canSeeMonster(monster),

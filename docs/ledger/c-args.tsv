@@ -8,6 +8,7 @@ apply.c	fig_transform	make_familiar	true
 apply.c	jump	reset_utrap	true
 apply.c	jump	stucksteed	false
 apply.c	use_figurine	make_familiar	false
+apply.c	use_grease	fingers_or_gloves	false;false;true;true
 apply.c	use_tinning_kit	mksobj	false+false
 apply.c	use_whip	pickup_object	true
 apply.c	use_whip	reset_utrap	true
@@ -125,12 +126,14 @@ extralev.c	makerogueghost	mksobj_at	false+false;false+false;false+false;false+fa
 extralev.c	makeroguerooms	add_room	false
 extralev.c	roguecorr	roguejoin	false;true
 fountain.c	dipfountain	angry_guards	false
+fountain.c	dipsink	fingers_or_gloves	true
 fountain.c	drinkfountain	exercise	false;false;true;true;true;true
 fountain.c	drinkfountain	fruitname	false
 fountain.c	drinkfountain	newuhs	false
 fountain.c	drinksink	exercise	true
 fountain.c	dryup	angry_guards	false
 fountain.c	sink_backs_up	exercise	true;true
+fountain.c	wash_hands	fingers_or_gloves	true
 getpos.c	getpos	lock_mouse_buttons	false;true
 hack.c	air_turbulence	exercise	false;true
 hack.c	domove_core	reset_utrap	true
@@ -144,6 +147,7 @@ hack.c	moverock_core	map_object	true
 hack.c	overexert_hp	exercise	false
 hack.c	pooleffects	back_on_ground	false
 insight.c	list_genocided	set_vanq_order	false
+insight.c	status_enlightenment	fingers_or_gloves	true
 invent.c	addinv_before	addinv_core0	true
 invent.c	delobj	delobj_core	false
 invent.c	dolook	hide_unhide_msgtypes	false;true
@@ -166,6 +170,8 @@ makemon.c	mkmonmoney	mksobj	false+false
 makemon.c	mongets	mksobj	true+false
 makemon.c	set_mimic_sym	mkobj	false
 makemon.c	unmakemon	discard_minvent	true
+mcastu.c	buzzmu	cursetxt	false
+mcastu.c	mcast_insects	monster_census	true;true
 mcastu.c	mcast_lightning	flashburn	true
 mhitu.c	gulpmu	exercise	false;false;false
 mhitu.c	gulpmu	reset_utrap	false
@@ -284,6 +290,7 @@ potion.c	peffect_sickness	poisontell	false
 potion.c	peffect_water	exercise	false;false;true;true;true
 potion.c	peffect_water	newuhs	false
 potion.c	potion_dip	exercise	false;true
+potion.c	potion_dip	fingers_or_gloves	true
 potion.c	potion_dip	mkobj	false
 potion.c	speed_up	exercise	true
 pray.c	bestow_artifact	exercise	true

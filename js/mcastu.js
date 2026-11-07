@@ -36,7 +36,7 @@ import { enexto } from './teleport.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { cansee, couldsee } from './vision.js';
 import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters, summonNastyMonsters } from './wizard.js';
-import { msummon } from './minion.js';
+import { monsterCensus, msummon } from './minion.js';
 import { dist2 } from './hacklib.js';
 import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterHasProperName, monsterIsDemon, monsterIsNonliving, monsterPerceives, eyecount } from './mondata.js';
 export const MCF_INDIRECT = 0x01;
@@ -324,9 +324,33 @@ async function mcastCloneWiz(monster, ctx) {
 }
 // C mcastu.c:mcast_summon_mons().
 async function mcastSummonMons(monster, ctx) {
-    const effect = await monsterSummonSpellEffect(monster, ctx.state);
-    if (effect.message)
-        await ctx.publish(effect.message);
+    const summoned = await summonNastyMonsters(monster);
+    // nasty() delegates to msummon(NULL), using the Wizard's demon choices.
+    const { count } = summoned.deferredDemonSummon ? await msummon() : summoned;
+    if (count > 0) {
+        let message;
+        if (monster?.iswiz) {
+            message = `"Destroy the thief, my pet${count === 1 ? '' : 's'}!"`;
+        }
+        else {
+            const one = count === 1;
+            const appearance = one ? 'A monster appears' : 'Monsters appear';
+            const heroX = ctx.state?.u?.ux ?? monster?.mux;
+            const heroY = ctx.state?.u?.uy ?? monster?.muy;
+            const wrongTarget = monster?.mux !== heroX || monster?.muy !== heroY;
+            const cannotSeeInvisible = !monsterPerceives(monster?.mnum);
+            if (heroIsInvisible(ctx.state) && cannotSeeInvisible && wrongTarget) {
+                message = `${appearance} ${one ? 'at' : 'around'} a spot near you!`;
+            }
+            else if (heroIsDisplaced(ctx.state) && wrongTarget) {
+                message = `${appearance} ${one ? 'by' : 'around'} your displaced image!`;
+            }
+            else {
+                message = `${appearance} from nowhere!`;
+            }
+        }
+        await ctx.publish(message);
+    }
 }
 // C mcastu.c:mcast_destroy_armor().
 async function mcastDestroyArmor(ctx) {
@@ -678,7 +702,8 @@ export function chooseMonsterSpell(monster, damageType, state, random, calls) {
     }
     return list[0];
 }
-// C mcastu.c:cursetxt(): choose visible pointing or an audible curse.
+// Part of C mcastu.c:cursetxt(): the pointing/audible choice, shared with
+// the deferred hero-spell attack records (mhitu.ts).
 export function monsterCurseKind(monster, undirected, state, random, calls) {
     if (canSeeMonster(monster) && couldsee(monster.mx, monster.my)) {
         if (undirected)
@@ -695,19 +720,18 @@ export function monsterCurseKind(monster, undirected, state, random, calls) {
         return 'audible';
     return null;
 }
-// Part of C mcastu.c:cursetxt(): publish the selected curse.  The kind
-// choice itself is monsterCurseKind(), shared with the deferred
-// hero-spell attack records.
-// Also C mcastu.c:is_undirected_spell(): inlined here.
-async function publishMonsterSpellFailure(monster, spell, state, random, calls) {
-    const kind = monsterCurseKind(monster, !!(spell.flags & MCF_INDIRECT), state, random, calls);
+// C mcastu.c:cursetxt(): feedback when a frustrated monster couldn't cast a
+// spell — publish the chosen pointing text or the mumbled curse.
+// Also C mcastu.c:is_undirected_spell(): inlined at the callers.
+async function publishCurseText(monster, undirected, state, random, calls, publish = plineWithContinuation) {
+    const kind = monsterCurseKind(monster, undirected, state, random, calls);
     if (kind === 'audible')
-        await plineWithContinuation('You hear a mumbled curse.', { noRepeat: true });
+        await publish('You hear a mumbled curse.', { noRepeat: true });
     else if (kind) {
         const points = kind === 'visible-undirected' ? 'all around, then curses'
             : kind === 'visible-general' ? 'and curses in your general direction'
                 : kind === 'visible-displaced' ? 'and curses at your displaced image' : 'at you, then curses';
-        await plineWithContinuation(`${canonicalMonsterName(monster, { state, capitalized: true })} points ${points}.`);
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} points ${points}.`);
     }
 }
 // Part of C mcastu.c:castmu(): the spell selection and its
@@ -722,7 +746,7 @@ export async function movementSpellSelections(monster, state, random, calls) {
             continue;
         const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
         if (!monsterLevel) {
-            await publishMonsterSpellFailure(monster, MONSTER_WIZARD_SPELLS[0], state, random, calls);
+            await publishCurseText(monster, !!(MONSTER_WIZARD_SPELLS[0].flags & MCF_INDIRECT), state, random, calls);
             continue;
         }
         const spell = chooseMonsterSpell(monster, damageType, state, random, calls);
@@ -735,7 +759,7 @@ export async function movementSpellSelections(monster, state, random, calls) {
             monsterSpellUseless(monster, spell, state, random, calls))
             continue;
         if (monster.mcan || monster.mspec_used) {
-            await publishMonsterSpellFailure(monster, spell, state, random, calls);
+            await publishCurseText(monster, !!(spell.flags & MCF_INDIRECT), state, random, calls);
             continue;
         }
         monster.mspec_used = monsterLevel < 8 ? 10 - monsterLevel : 2;
@@ -755,40 +779,6 @@ export async function movementSpellSelections(monster, state, random, calls) {
         };
     }
     return null;
-}
-// C mcastu.c:mcast_summon_mons(): the summons and the "Destroy the thief" /
-// "Monsters appear" messages.
-async function monsterSummonSpellEffect(monster, state) {
-    let effect = { count: 0, created: [], message: null };
-    const summoned = await summonNastyMonsters(monster);
-    effect = {
-        ...effect,
-        // nasty() delegates to msummon(NULL), using the Wizard's demon choices.
-        ...(summoned.deferredDemonSummon ? await msummon() : summoned),
-    };
-    if (effect.count > 0) {
-        if (monster?.iswiz) {
-            effect.message = `"Destroy the thief, my pet${effect.count === 1 ? '' : 's'}!"`;
-        }
-        else {
-            const one = effect.count === 1;
-            const appearance = one ? 'A monster appears' : 'Monsters appear';
-            const heroX = state?.u?.ux ?? monster?.mux;
-            const heroY = state?.u?.uy ?? monster?.muy;
-            const wrongTarget = monster?.mux !== heroX || monster?.muy !== heroY;
-            const cannotSeeInvisible = !monsterPerceives(monster?.mnum);
-            if (heroIsInvisible(state) && cannotSeeInvisible && wrongTarget) {
-                effect.message = `${appearance} ${one ? 'at' : 'around'} a spot near you!`;
-            }
-            else if (heroIsDisplaced(state) && wrongTarget) {
-                effect.message = `${appearance} ${one ? 'by' : 'around'} your displaced image!`;
-            }
-            else {
-                effect.message = `${appearance} from nowhere!`;
-            }
-        }
-    }
-    return effect;
 }
 // C mcastu.c:touch_of_death(). Entered from uhitm.c:mhitm_ad_deth()'s hero
 // branch and mcast_death_touch(); spellcasting gates its own immunity and
@@ -835,34 +825,6 @@ export function monsterSpellDeathReason(monster, reason) {
     }
     return killer;
 }
-// ---------------------------------------------------------------------------
-// C mcastu.c:buzzmu(). Ranged spell rays are one original attack slot.
-// ---------------------------------------------------------------------------
-const STRANGE_OBJECT = 0;
-// C mcastu.c:cursetxt(): the points-and-curses message and the mumbled
-// curse heard when the caster is unseen.
-async function curseDirectedSpell(monster, state, publish, random) {
-    if (canSeeMonster(monster)
-        && couldsee(monster.mx, monster.my)) {
-        const misplaced = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
-        const mimicking = state.u.m_ap_type === M_AP_OBJECT
-            && state.u.mappearance === STRANGE_OBJECT;
-        let pointing = 'at you, then curses';
-        if ((heroIsInvisible(state) && !monsterPerceives(monster.mnum)
-            && misplaced) || mimicking || state.u.uundetected) {
-            pointing = 'and curses in your general direction';
-        }
-        else if (heroIsDisplaced(state) && misplaced) {
-            pointing = 'and curses at your displaced image';
-        }
-        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} points ${pointing}.`);
-    }
-    else if (!(state.moves % 4) || !random(4)) {
-        const message = 'You hear a mumbled curse.';
-        if (!heroIsDeaf(state))
-            await publish(message, { noRepeat: true });
-    }
-}
 // C mcastu.c:buzzmu(): the ranged magic-ray attack slot.
 export async function resolveMonsterMagicRay(monster, attack, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, calls = [], die = finishHeroDeath, } = {}) {
     requirePlayingGame(state);
@@ -870,7 +832,7 @@ export async function resolveMonsterMagicRay(monster, attack, { state = game, pu
     if (damageType < AD_MAGM || damageType > AD_SPC2)
         return { mask: M_ATTK_MISS, heroDied: false };
     if (monster.mcan || ((monster.seen_resistance || 0) & seenResistanceForDamage(damageType))) {
-        await curseDirectedSpell(monster, state, publish, random);
+        await publishCurseText(monster, false, state, random, calls, publish);
         return { mask: M_ATTK_MISS, heroDied: false };
     }
     if (!monsterLinedUpWithPerceivedHero(monster, state, random, calls) || !random(3))
@@ -898,7 +860,7 @@ const S_SNAKE = 45;
 // C mcastu.c:mcast_insects():
 export async function summonMonsterInsects(caster, state) {
     const monsterClass = mkclassAligned(S_ANT, 0) === null ? S_SNAKE : S_ANT;
-    const oldSeen = spottedMonsterCount(state);
+    const oldSeen = monsterCensus(true, state);
     const level = caster.m_lev ?? 0;
     const quantity = Math.max(3, level < 2 ? 1 : rnd(Math.trunc(level / 2)));
     const created = [];
@@ -921,7 +883,7 @@ export async function summonMonsterInsects(caster, state) {
         await newsym(monster.mx, monster.my);
         created.push(monster);
     }
-    const newSeen = spottedMonsterCount(state);
+    const newSeen = monsterCensus(true, state);
     const seeCaster = canSeeMonster(caster) || !!(howMonsterSeen(caster) & MONSEEN_TELEPAT)
         || heroDetectsMonsters(state);
     const what = heroIsHallucinating(state) ? makePlural(randomBogusMonsterName())
@@ -953,10 +915,5 @@ export async function summonMonsterInsects(caster, state) {
             message = `${subject} summons ${what}!`;
     }
     return { count: created.length, created, message };
-}
-// C minion.c:monster_census(): the spotted count, monster_census(TRUE).
-function spottedMonsterCount(state) {
-    return state.level.monsters.filter(monster => !monster.dead && monster.mhp > 0
-        && !(monster.isgd && monster.mx === 0) && canSpotMonster(monster)).length;
 }
 //# sourceMappingURL=mcastu.js.map

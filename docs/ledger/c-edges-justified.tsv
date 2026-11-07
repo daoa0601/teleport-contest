@@ -871,7 +871,7 @@ make_stoned	delayed_killer	inlined	stoneKiller retained on re-stoning (stoning.t
 make_stoned	find_delayed_killer	inlined	stoneKiller read at the fatal timeout (stoning.ts)
 mcast_insects	is_fainted	inlined	heroIsUnaware in the heard-summons message (mcastu.ts)
 mcast_insects	mkclass	inlined	mkclassAligned species draws (mcastu.ts)
-mcast_insects	monster_census	inlined	spottedMonsterCount before and after (mcastu.ts)
+mcast_insects	monster_census	inlined	monsterCensus(true, state) before and after (mcastu.ts)
 offer_corpse	a_gname	inlined	altar god naming (sacrifice.ts)
 offer_corpse	rider_corpse_revival	inlined	reviveCorpseImmediately for rider corpses (sacrifice.ts)
 offer_corpse	u_gname	inlined	own god naming (sacrifice.ts)
@@ -1498,7 +1498,7 @@ armor_or_accessory_off	safe_typename	n/a	only in the impossible() branch for a w
 avoid_trap_andor_region	immune_to_trap	inlined	trapIsClearlyHarmless (hero_step_confirmation.ts)
 avoid_trap_andor_region	into_vs_onto	inlined	into-list matches trap.c BEAR_TRAP..WEB (hero_step_confirmation.ts)
 avoid_trap_andor_region	t_at	inlined	level.traps.find on the target square (hero_step_confirmation.ts)
-bot	do_statusline1	inlined	refreshStatusLines renders both rows from field state (display.ts)
+bot	do_statusline1	inlined	bot renders both rows from field state (botl.ts)
 bot	do_statusline2	inlined	statusLine2Fields feeds renderStatusLine2 (display.ts/status_layout.ts)
 bot	suppress_map_output	inlined	_suppressMapStatusForFlush flag (display.ts)
 Cloak_off	discover_object	inlined	learnObjectType for CLOAK_OF_INVISIBILITY (armor.ts applyCloakOffEffects)
@@ -1572,7 +1572,7 @@ make_things_fit	check_fields	inlined	width measured per abbreviation attempt (st
 make_things_fit	set_condition_length	inlined	conditionSize index picks the abbreviation table (status_layout.ts)
 minimal_monnam	fmt_ptr	n/a	diagnostic-only pointer formatting
 minimal_monnam	nextmbuf	n/a	monnam buffer pool has no port counterpart
-mkswamp	nexttodoor	inlined	swampSquareBordersDoor checks doors incl. SDOOR (mkroom.ts)
+mkswamp	nexttodoor	inlined	nexttodoor checks doors incl. SDOOR (mkroom.ts)
 mkswamp	t_at	inlined	traps.find on the swamp square (mkroom.ts)
 movebubbles	alloc	n/a	bubble contents are JS object literals (mkmaze.ts)
 movebubbles	t_at	inlined	traps.find in the inlined collection loop (mkmaze.ts movebubbles)
@@ -1895,7 +1895,7 @@ move_into_trap	into_vs_onto	inlined	the preposition list is inlined at trap.ts:3
 move_into_trap	sgn	inlined	dx/dy are computed directly and only tested for diagonal vs cardinal (trap.ts:4197-4202)
 move_into_trap	test_move	inlined	blocksMove plus blocksDiagonalDoor cover test_move(TEST_MOVE)'s passable-terrain and diagonal door tests (trap.ts:4200-4203)
 bot_via_windowport	encglyph	inlined	the gold symbol comes from activeObjectSymbols() and renders directly (botl.ts:156-157); encglyph()'s \GXXXXNNNN sequence is tty window-protocol encoding with no extra screen effect
-bot_via_windowport	evaluate_and_notify_windowport	inlined	refreshStatusLines compares the evaluated fields and hands changes to wintty's renderer through the display object (botl.ts:188-227)
+bot_via_windowport	evaluate_and_notify_windowport	inlined	bot compares the evaluated fields and hands changes to wintty's renderer through the display object (botl.ts)
 do_statusline1	rank	inlined	statusTitle calls rankOf(ulevel) directly (botl.ts:303), inlining rank()'s rank_of(u.ulevel, Role_switch, flags.female) wrapper
 do_statusline1	suppress_map_output	inlined	the saving/exited/suppress guards at botl.ts:190-191 inline suppress_map_output()
 do_statusline2	suppress_map_output	inlined	the saving/exited/suppress guards at botl.ts:190-191 inline suppress_map_output()
@@ -1957,7 +1957,7 @@ display_pickinv	prepare_perminvent	n/a	perm_invent window plumbing
 display_pickinv	update_inventory	n/a	perm_invent window plumbing
 display_pickinv	rn2_on_display_rng	n/a	display RNG plumbing
 dotypeinv	def_char_to_objclass	inlined	the class symbol table became direct class letters (invent.ts typeInventory)
-getobj_hands_txt	fingers_or_gloves	inlined	caller supplies the text: fingers(false) at the grease prompt (apply.ts)
+getobj_hands_txt	fingers_or_gloves	inlined	caller supplies the text: fingersOrGloves(false) at the grease prompt (apply.ts)
 mon_animal_list	alloc	n/a	memory allocation for the animal list; rebuilt per call (mon.ts chameleonAnimals)
 vamprises	set_msg_xy	n/a	door-smash lines anchor through formatHeardMessage/formatSeenMessage (mon.ts reviveShiftedVampire)
 autopick	alloc	n/a	memory allocation for the pick list; JS array (pickup.ts autopickupAtHero)

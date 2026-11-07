@@ -94,15 +94,23 @@ void test('configured pack order is visible in the actual inventory window, incl
     await action;
 });
 void test('pack order fills omitted classes from the previous order and forces omitted gold first', () => {
-    assert.equal(changeInventoryOrder('%)'), true);
+    const filled = changeInventoryOrder('%)');
+    assert.deepEqual(filled.errors, []);
+    game.flags.inv_order = filled.order;
     assert.match(inventoryOrderSymbols(), /^\$%\)/);
-    assert.equal(changeInventoryOrder('=)'), true);
+    const equis = changeInventoryOrder('=)');
+    assert.deepEqual(equis.errors, []);
+    game.flags.inv_order = equis.order;
     assert.match(inventoryOrderSymbols(), /^\$=\)%/);
-    assert.equal(changeInventoryOrder(')$%'), true);
+    const reordered = changeInventoryOrder(')$%');
+    assert.deepEqual(reordered.errors, []);
+    game.flags.inv_order = reordered.order;
     assert.match(inventoryOrderSymbols(), /^\)\$%/);
 });
 void test('bad pack-order entries do not discard the valid requested order', () => {
-    assert.equal(changeInventoryOrder(')%)~'), false);
+    const change = changeInventoryOrder(')%)~');
+    assert.deepEqual(change.errors, ["Duplicate object class ')'", "Not an object class '~'"]);
+    game.flags.inv_order = change.order;
     assert.match(inventoryOrderSymbols(), /^\$%\)/);
 });
 void test('the discoveries window uses the configured inventory class order', async () => {

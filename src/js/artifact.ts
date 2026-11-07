@@ -134,14 +134,6 @@ interface ArtifactAttackOptions {
     state?: GameState;
 }
 
-export interface ArtifactTouchResult {
-    allowed: boolean;
-    blasted: boolean;
-    badClass?: boolean;
-    badAlignment?: boolean;
-    bane?: boolean;
-}
-
 const S_DRAGON = 30;
 const S_OGRE = 41;
 const S_TROLL = 46;
@@ -758,9 +750,9 @@ export function artifactToHitBonus(
     return roll(artifact.attack.toHitDie);
 }
 
-// C artifact.c:artifact_hit() -> spec_dbon().  A zero damage die means "add
-// the current weapon damage again", not zero bonus.  Strength and ring damage
-// are added later by hmon_hitmon_dmg_recalc(), so callers pass only dmgval().
+// C artifact.c:spec_dbon().  A zero damage die means "add the current
+// weapon damage again", not zero bonus.  Strength and ring damage are added
+// later by hmon_hitmon_dmg_recalc(), so callers pass only dmgval().
 export function artifactDamageBonus(
     object: GameObject | null | undefined,
     defender: ArtifactDefender,
@@ -848,55 +840,6 @@ export function monsterCanTouchArtifact(
     return !targetsMonsterKind || !artifactAttackApplies(artifact, monster, { state });
 }
 
-// C artifact.c:touch_artifact() hero branch up to its blast message.
-export function resolveHeroArtifactTouch(
-    object: GameObject | null | undefined,
-    artifact: Artifact | null | undefined,
-    state: GameState = game,
-): ArtifactTouchResult {
-    if (!object?.oartifact || !artifact) {
-        return { allowed: true, blasted: false };
-    }
-    const heroRole = state.urole?.key || null;
-    const heroAlignment = state.u?.ualign?.type ?? 0;
-    const alignmentRecord = state.u?.ualign?.record ?? 0;
-    const badClass = artifact.selfWilled && !!artifact.role && artifact.role !== heroRole;
-    const bane = artifactBaneApplies(artifact, state);
-    let badAlignment =
-        artifact.restricted &&
-        artifact.alignment !== null &&
-        (artifact.alignment !== heroAlignment || alignmentRecord < 0);
-    if (!badAlignment) badAlignment = bane;
-
-    let blasted = false;
-    if (((badClass || badAlignment) && artifact.selfWilled) || (badAlignment && rn2(4) === 0)) {
-        blasted = true;
-    }
-
-    return {
-        allowed: !(badClass && badAlignment && artifact.selfWilled),
-        blasted,
-        badClass,
-        badAlignment,
-        bane,
-    };
-}
-
-// Part of C artifact.c:touch_artifact(): the hero blast damage roll.
-export function rollHeroArtifactBlast(
-    object: GameObject,
-    artifact: Artifact,
-    state: GameState = game,
-): number {
-    const antimagic = !!state.u?.antimagic;
-    let damage = d(antimagic ? 2 : 4, artifact.selfWilled ? 10 : 4);
-    if (objectMaterial(object, state) === SILVER && heroHatesSilver(state)) {
-        let silverDamage = rnd(10);
-        if (state.u?.halfPhysicalDamage) silverDamage = Math.trunc((silverDamage + 1) / 2);
-        damage += silverDamage;
-    }
-    return damage;
-}
 
 const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
 
@@ -1341,10 +1284,14 @@ export async function speakArtifact(
 }
 
 // C artifact.c:touch_artifact()
-// The visible hero transaction for touching an artifact.
-// C ref: artifact.c touch_artifact().
-
-export interface HeroArtifactTouchResult extends ArtifactTouchResult {
+// The hero branch of C's touch_artifact(); the monster branch (refusal
+// without a blast) is monsterCanTouchArtifact() above.
+export interface HeroArtifactTouchResult {
+    allowed: boolean;
+    blasted: boolean;
+    badClass?: boolean;
+    badAlignment?: boolean;
+    bane?: boolean;
     died: boolean;
     damage?: number;
 }
@@ -1369,15 +1316,36 @@ export async function touchArtifactByHero(
         die?: DeathHandler;
     } = {},
 ): Promise<HeroArtifactTouchResult> {
-    const result = resolveHeroArtifactTouch(object, artifact, state);
-    if (!artifact || !object?.oartifact) return { ...result, died: false };
+    if (!object?.oartifact || !artifact) {
+        return { allowed: true, blasted: false, died: false };
+    }
+    // C: yours = (mon == &gy.youmonst); this is the hero branch, so yours.
+    const heroRole = state.urole?.key || null;
+    const heroAlignment = state.u?.ualign?.type ?? 0;
+    const alignmentRecord = state.u?.ualign?.record ?? 0;
+    const selfWilled = artifact.selfWilled;
+    const badClass = selfWilled && !!artifact.role && artifact.role !== heroRole;
+    const bane = artifactBaneApplies(artifact, state);
+    let badAlignment =
+        artifact.restricted &&
+        artifact.alignment !== null &&
+        (artifact.alignment !== heroAlignment || alignmentRecord < 0);
+    if (!badAlignment) badAlignment = bane;
 
     let died = false;
     let damage = 0;
-    if (result.blasted) {
+    const blasted =
+        ((badClass || badAlignment) && selfWilled) || (badAlignment && rn2(4) === 0);
+    if (blasted) {
         const name = definiteName(objectCombatName(object, { state }), state);
         await publish(`You are blasted by ${name}${name.endsWith('s') ? "'" : "'s"} power!`);
-        damage = rollHeroArtifactBlast(object, artifact, state);
+        damage = d(state.u?.antimagic ? 2 : 4, selfWilled ? 10 : 4);
+        // add half (maybe quarter) of the usual silver damage bonus
+        if (objectMaterial(object, state) === SILVER && heroHatesSilver(state)) {
+            let silverDamage = rnd(10);
+            if (state.u?.halfPhysicalDamage) silverDamage = Math.trunc((silverDamage + 1) / 2);
+            damage += silverDamage;
+        }
         // C touch_artifact(): losehp(dmg, "touching <artifact>", KILLED_BY).
         died = await loseHeroHp(damage, `touching ${artifact.name}`, {
             state,
@@ -1388,7 +1356,9 @@ export async function touchArtifactByHero(
         if (!died) await exerciseAttribute(A_WIS, false, state);
     }
 
-    if (!died && !result.allowed) {
+    // can pick it up unless you're totally non-synch'd with the artifact
+    const allowed = !(badClass && badAlignment && selfWilled);
+    if (!died && !allowed) {
         const name = definiteName(objectCombatName(object, { state }), state);
         const subject = name.charAt(0).toUpperCase() + name.slice(1);
         const plural = objectNameIsPlural(object, state);
@@ -1398,7 +1368,7 @@ export async function touchArtifactByHero(
                 : `${subject} ${plural ? 'evade' : 'evades'} your grasp!`,
         );
     }
-    return { ...result, damage, died };
+    return { allowed, blasted, badClass, badAlignment, bane, damage, died };
 }
 
 // Options for the Magicbane hit below.

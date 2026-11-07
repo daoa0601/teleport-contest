@@ -429,7 +429,20 @@ async function describeSelectedPosition(
 }
 
 // C getpos.c:getpos_menu().
-async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKind): Promise<Position | null> {
+// C's gather_locs() (which applies iflags.getloc_filter) runs in the
+// caller here; spots arrive without the hero, so an empty list is C's
+// gcount < 2.  'describe' defaults to this module's do_screen_description()
+// text; dotravel() passes pager.c's lookatDescription().
+async function selectGetposMenu(
+    spots: readonly Position[],
+    kind: GetposCycleKind,
+    describe: PositionDescription = describeGetposLocation,
+): Promise<Position | null> {
+    if (!spots.length) {
+        const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting', valid: 'any valid locations' };
+        await pline(`You cannot ${game.iflags.getloc_filter === 1 ? 'see' : 'detect'} ${things[kind]}.`);
+        return null;
+    }
     const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
     const name = names[kind];
     const filter = game.iflags.getloc_filter === 1 ? ' in view' : game.iflags.getloc_filter === 2 ? ' in this area' : '';
@@ -437,8 +450,8 @@ async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKin
     try {
         await tty_start_menu(window);
         for (const spot of spots) {
-            const text = await describeGetposLocation(spot.x, spot.y);
-            if (text === null) continue;
+            const text = await describe(spot.x, spot.y);
+            if (!text) continue;
             const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
             tty_add_menu(window, { identifier: spot,
                 text: text + (coordinates ? ` ${coordinates}` : '') });
@@ -614,33 +627,17 @@ function matchesGetposCycle(kind: Exclude<GetposCycleKind, 'valid'>, x: number, 
         'dark part of a room', 'corridor', 'lit corridor'].includes(terrain);
 }
 
-// C getpos.c:getpos_menu(GLOC_INTERESTING), with GFILTER_VIEW for travel.
+// Part of C cmd.c:dotravel(): its menu_requested branch — getpos_menu(&cc,
+// GLOC_INTERESTING) with GFILTER_VIEW, gathering only visible spots, then
+// restoring the player's target filter even when no destination is selected.
 export async function selectTravelMenuPosition(describe: PositionDescription): Promise<Position | null> {
-    // cmd.c:dotravel() uses GFILTER_VIEW only for this menu, then restores
-    // the player's target filter even when no destination is selected.
     const previousFilter = game.iflags.getloc_filter ?? GFILTER_NONE;
     game.iflags.getloc_filter = GFILTER_VIEW;
     try {
         const hero = game.u;
         const spots = gatherValidLocations((x, y) => (x !== hero.ux || y !== hero.uy)
             && cansee(x, y) && matchesGetposCycle('all', x, y));
-        if (!spots.length) {
-            await pline('You cannot see anything interesting.');
-            return null;
-        }
-        const window = tty_create_nhwindow<Position>(NHW_MENU);
-        await tty_start_menu(window);
-        for (const spot of spots) {
-            const description = await describe(spot.x, spot.y);
-            if (!description) continue;
-            const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
-            tty_add_menu(window, { identifier: spot,
-                text: description + (coordinates ? ` ${coordinates}` : '') });
-        }
-        tty_end_menu(window, 'Pick an interesting thing in view for travel destination');
-        const result = await tty_select_menu(window, PICK_ONE);
-        await tty_destroy_nhwindow(window);
-        return result.selections[0]?.identifier ?? null;
+        return await selectGetposMenu(spots, 'all', describe);
     } finally {
         game.iflags.getloc_filter = previousFilter;
     }
@@ -891,14 +888,7 @@ export async function selectMapPosition({
                 if (game.iflags.getloc_usemenu) {
                     // getpos_menu gathers each time; a doorway's area
                     // follows the direction of the latest cursor movement.
-                    const spots = gatherTargets();
-                    if (!spots.length) {
-                        const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting', valid: 'any valid locations' };
-                        message = `You cannot ${game.iflags.getloc_filter === 1 ? 'see' : 'detect'} ${things[target.kind]}.`;
-                        await pline(message);
-                        continue;
-                    }
-                    const spot = await selectGetposMenu(spots, kind);
+                    const spot = await selectGetposMenu(gatherTargets(), kind);
                     if (spot) { cursor.x = spot.x; cursor.y = spot.y; }
                     continue;
                 }

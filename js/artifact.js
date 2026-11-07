@@ -591,9 +591,9 @@ export function artifactToHitBonus(object, defender, roll = rnd, { hero = false,
         return 0;
     return roll(artifact.attack.toHitDie);
 }
-// C artifact.c:artifact_hit() -> spec_dbon().  A zero damage die means "add
-// the current weapon damage again", not zero bonus.  Strength and ring damage
-// are added later by hmon_hitmon_dmg_recalc(), so callers pass only dmgval().
+// C artifact.c:spec_dbon().  A zero damage die means "add the current
+// weapon damage again", not zero bonus.  Strength and ring damage are added
+// later by hmon_hitmon_dmg_recalc(), so callers pass only dmgval().
 export function artifactDamageBonus(object, defender, baseWeaponDamage, roll = rnd, { hero = false, random = rn2, state = game } = {}) {
     const artifact = artifactById(object?.oartifact, state);
     if (!artifact?.attack)
@@ -653,45 +653,6 @@ export function monsterCanTouchArtifact(monster, object, state = game) {
     }
     const targetsMonsterKind = ['flag2', 'symbol', 'alignment'].includes(artifact.target.kind);
     return !targetsMonsterKind || !artifactAttackApplies(artifact, monster, { state });
-}
-// C artifact.c:touch_artifact() hero branch up to its blast message.
-export function resolveHeroArtifactTouch(object, artifact, state = game) {
-    if (!object?.oartifact || !artifact) {
-        return { allowed: true, blasted: false };
-    }
-    const heroRole = state.urole?.key || null;
-    const heroAlignment = state.u?.ualign?.type ?? 0;
-    const alignmentRecord = state.u?.ualign?.record ?? 0;
-    const badClass = artifact.selfWilled && !!artifact.role && artifact.role !== heroRole;
-    const bane = artifactBaneApplies(artifact, state);
-    let badAlignment = artifact.restricted &&
-        artifact.alignment !== null &&
-        (artifact.alignment !== heroAlignment || alignmentRecord < 0);
-    if (!badAlignment)
-        badAlignment = bane;
-    let blasted = false;
-    if (((badClass || badAlignment) && artifact.selfWilled) || (badAlignment && rn2(4) === 0)) {
-        blasted = true;
-    }
-    return {
-        allowed: !(badClass && badAlignment && artifact.selfWilled),
-        blasted,
-        badClass,
-        badAlignment,
-        bane,
-    };
-}
-// Part of C artifact.c:touch_artifact(): the hero blast damage roll.
-export function rollHeroArtifactBlast(object, artifact, state = game) {
-    const antimagic = !!state.u?.antimagic;
-    let damage = d(antimagic ? 2 : 4, artifact.selfWilled ? 10 : 4);
-    if (objectMaterial(object, state) === SILVER && heroHatesSilver(state)) {
-        let silverDamage = rnd(10);
-        if (state.u?.halfPhysicalDamage)
-            silverDamage = Math.trunc((silverDamage + 1) / 2);
-        damage += silverDamage;
-    }
-    return damage;
 }
 const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
 // C artifact.c:is_magic_key(). The Master Key of Thievery is magic when not
@@ -1083,15 +1044,35 @@ function heroCarries(object, state) {
 }
 // C artifact.c:touch_artifact()
 export async function touchArtifactByHero(object, artifact = artifactById(object?.oartifact), { state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
-    const result = resolveHeroArtifactTouch(object, artifact, state);
-    if (!artifact || !object?.oartifact)
-        return { ...result, died: false };
+    if (!object?.oartifact || !artifact) {
+        return { allowed: true, blasted: false, died: false };
+    }
+    // C: yours = (mon == &gy.youmonst); this is the hero branch, so yours.
+    const heroRole = state.urole?.key || null;
+    const heroAlignment = state.u?.ualign?.type ?? 0;
+    const alignmentRecord = state.u?.ualign?.record ?? 0;
+    const selfWilled = artifact.selfWilled;
+    const badClass = selfWilled && !!artifact.role && artifact.role !== heroRole;
+    const bane = artifactBaneApplies(artifact, state);
+    let badAlignment = artifact.restricted &&
+        artifact.alignment !== null &&
+        (artifact.alignment !== heroAlignment || alignmentRecord < 0);
+    if (!badAlignment)
+        badAlignment = bane;
     let died = false;
     let damage = 0;
-    if (result.blasted) {
+    const blasted = ((badClass || badAlignment) && selfWilled) || (badAlignment && rn2(4) === 0);
+    if (blasted) {
         const name = definiteName(objectCombatName(object, { state }), state);
         await publish(`You are blasted by ${name}${name.endsWith('s') ? "'" : "'s"} power!`);
-        damage = rollHeroArtifactBlast(object, artifact, state);
+        damage = d(state.u?.antimagic ? 2 : 4, selfWilled ? 10 : 4);
+        // add half (maybe quarter) of the usual silver damage bonus
+        if (objectMaterial(object, state) === SILVER && heroHatesSilver(state)) {
+            let silverDamage = rnd(10);
+            if (state.u?.halfPhysicalDamage)
+                silverDamage = Math.trunc((silverDamage + 1) / 2);
+            damage += silverDamage;
+        }
         // C touch_artifact(): losehp(dmg, "touching <artifact>", KILLED_BY).
         died = await loseHeroHp(damage, `touching ${artifact.name}`, {
             state,
@@ -1102,7 +1083,9 @@ export async function touchArtifactByHero(object, artifact = artifactById(object
         if (!died)
             await exerciseAttribute(A_WIS, false, state);
     }
-    if (!died && !result.allowed) {
+    // can pick it up unless you're totally non-synch'd with the artifact
+    const allowed = !(badClass && badAlignment && selfWilled);
+    if (!died && !allowed) {
         const name = definiteName(objectCombatName(object, { state }), state);
         const subject = name.charAt(0).toUpperCase() + name.slice(1);
         const plural = objectNameIsPlural(object, state);
@@ -1110,7 +1093,7 @@ export async function touchArtifactByHero(object, artifact = artifactById(object
             ? `${subject} ${plural ? 'are' : 'is'} beyond your control!`
             : `${subject} ${plural ? 'evade' : 'evades'} your grasp!`);
     }
-    return { ...result, damage, died };
+    return { allowed, blasted, badClass, badAlignment, bane, damage, died };
 }
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 // C artifact.c:Mb_hit(): effect index, damage dice, and every defender case.

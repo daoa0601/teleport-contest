@@ -260,18 +260,13 @@ interface VomitOptions {
 export const IRON_BARS_FOOD = Object.freeze({ kind: 'iron-bars' });
 export type FoodSelection = GameObject | typeof IRON_BARS_FOOD;
 
-// C eat.c:is_edible() reads the metallivorous() macro for the current form.
-export function heroEatsMetal(state: GameState = game): boolean {
-    return metallivorous(heroSpecies(state));
-}
-
 // C eat.c:is_edible(). Decide whether a particular object can be eaten by
 // the possibly polymorphed character; not used for monster checks.
 export function isEdibleFood(object: GameObject | null | undefined, state: GameState = game): boolean {
     if (!object || objectUnique(object.otyp)) return false;
     const form = heroSpecies(state);
     if (form === FIRE_ELEMENTAL && objectIsFlammable(object, state)) return true;
-    if (heroEatsMetal(state) && objectIsMetallic(object, state)
+    if (metallivorous(form) && objectIsMetallic(object, state)
         && (form !== RUST_MONSTER || objectIsRustprone(object, state))) return true;
     if (form === GHOUL)
         return object.otyp === CORPSE && !veganCorpse(object.corpsenm) || object.otyp === EGG;
@@ -2838,7 +2833,7 @@ export async function selectFoodToEat({ state = game }: { state?: GameState } = 
     }
     let declinedFloorFood = false;
     if (canSelectFloorFood(state)) {
-        const metallic = heroEatsMetal(state);
+        const metallic = metallivorous(heroSpecies(state));
         const hero = state.u;
         if (metallic) {
             const trap = state.level.traps.find(candidate => candidate.tx === hero.ux

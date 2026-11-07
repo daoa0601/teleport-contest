@@ -1135,7 +1135,7 @@ export function parseOptions(
         }
         if (canonical === 'packorder') {
             // optfn_packorder(): an empty value is a silent error.
-            if (optionValue) changeInventoryOrder(optionValue, result);
+            if (optionValue) result.flags.inv_order = changeInventoryOrder(optionValue, result).order;
             continue;
         }
         if (canonical === 'sortvanquished') {
@@ -3183,18 +3183,13 @@ export async function doOptions(menuRequested = false): Promise<void> {
 // C options.c:change_inv_order().
 // ---------------------------------------------------------------------------
 
-// C options.c:change_inv_order() keeps valid entries even when others are
-// bad, then fills omitted classes using their previous order. Omitted gold
-// leads.
-export function changeInventoryOrder(symbols: string, state: InventoryOrderState = game): boolean {
-    const change = planInventoryOrder(symbols, state);
-    state.flags.inv_order = change.order;
-    return change.errors.length === 0;
-}
-
-// C options.c:change_inv_order(): validate and complete an inventory
-// order.
-export function planInventoryOrder(symbols: string, state: InventoryOrderState = game): { order: number[]; errors: string[] } {
+// C options.c:change_inv_order(). Keeps valid entries even when others are
+// bad, then fills omitted classes using their previous order; omitted gold
+// leads. Returns the completed order plus the errors config_error_add()
+// would have logged; each caller owns when flags.inv_order takes the result.
+export function changeInventoryOrder(
+    symbols: string, state: InventoryOrderState = game,
+): { order: number[]; errors: string[] } {
     const previous = inventoryClassOrder(state);
     const order = symbols.includes('$') ? [] : [COIN_CLASS];
     const errors: string[] = [];

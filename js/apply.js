@@ -8,7 +8,7 @@ import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_
 import { objectClassForType, objectBaseCost, objectSkill, objectMagic, AMULET_OF_YENDOR, BAG_OF_TRICKS, BANANA, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BOULDER, BRASS_LANTERN, BULLWHIP, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CORPSE, CREAM_PIE, CREDIT_CARD, CRYSTAL_BALL, EGG, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_LAMP, MAGIC_MARKER, MAGIC_WHISTLE, MIRROR, OIL_LAMP, POT_OIL, SADDLE, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_JUMPING, SPE_NOVEL, STATUE, STETHOSCOPE, TALLOW_CANDLE, TIN, TIN_OPENER, TIN_WHISTLE, TINNING_KIT, TOUCHSTONE, TOWEL, UNICORN_HORN, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, WAX_CANDLE, } from './object_data.js';
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './sounds.js';
 import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
-import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear, heroHasSlipperyHands, heroIsStrangled, } from './do_wear.js';
+import { armorSimpleName, armorSlotFor, fingersOrGloves, heroHasFreeAction, applyEyewear, removeEyewear, heroHasSlipperyHands, heroIsStrangled, } from './do_wear.js';
 import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
 import { currentAttribute } from './attrib.js';
 import { bot } from './botl.js';
@@ -2084,7 +2084,7 @@ export async function useGrease(can) {
         return true;
     }
     const selection = await getobj('grease', greaseSuggestion, {
-        forcePrompt: true, hands: GETOBJ_SUGGEST, handsText: `your ${fingers(false)}`,
+        forcePrompt: true, hands: GETOBJ_SUGGEST, handsText: `your ${fingersOrGloves(false)}`,
     });
     // apply.c:use_grease() returns ECMD_CANCEL when getobj() is declined.
     if (selection.cancelled) {
@@ -2114,12 +2114,12 @@ export async function useGrease(can) {
         target.greased = true;
         if (can.cursed && !heroHasNoHands(game)) {
             setSlipperyHands(old + rn1(6, 10));
-            await pline(`Some of the grease gets all over your ${fingers(true)}.`);
+            await pline(`Some of the grease gets all over your ${fingersOrGloves(true)}.`);
         }
     }
     else {
         setSlipperyHands(old + rn1(11, 5));
-        await pline(`You coat your ${fingers(true)} with grease.`);
+        await pline(`You coat your ${fingersOrGloves(true)} with grease.`);
     }
     return true;
 }
@@ -2144,14 +2144,9 @@ function coveringEquipment(object) {
         return [gloves];
     return [];
 }
-// C do_wear.c:fingers_or_gloves()
-function fingers(simple) {
-    const gloves = game.uarmg;
-    return simple && gloves ? armorSimpleName(gloves, game) : makePlural(body_part(FINGER, game));
-}
 // Part of C apply.c:use_grease(): the can slipping from greasy fingers.
 async function dropGrease(can) {
-    await pline(`${definiteObjectAction(can, 'slip')} from your ${fingers(false)}.`);
+    await pline(`${definiteObjectAction(can, 'slip')} from your ${fingersOrGloves(false)}.`);
     await dropInventoryObjectAtHero(can);
 }
 const LIQUID = 1, WAX = 2, CLOTH = 6, WOOD = 8;

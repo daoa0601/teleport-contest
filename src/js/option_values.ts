@@ -2,7 +2,7 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { decodeOptionEscapes, planInventoryOrder } from './options.js';
+import { decodeOptionEscapes, changeInventoryOrder } from './options.js';
 
 
 import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
@@ -64,7 +64,7 @@ export async function setTextOption(name: string, value: string): Promise<void> 
     }
     case 'packorder': {
         if (!value) break;
-        const change = planInventoryOrder(value);
+        const change = changeInventoryOrder(value);
         for (const error of change.errors) await optionError(error);
         game.flags.inv_order = change.order;
         break;

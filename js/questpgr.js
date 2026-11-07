@@ -125,8 +125,9 @@ export async function qtPager(messageId, state = game) {
 export async function comPager(messageId, state = game) {
     return displayQuestText(await prepareQuestText(messageId, state, true), state);
 }
-// C questpgr.c:ldrname()/neminame() use the role's named species directly
-// when its name is a proper name, and with a "the" prefix otherwise.
+// Part of C questpgr.c:ldrname() and neminame(): both use the role's named
+// species directly when its name is a proper name, and with a "the" prefix
+// otherwise.
 function roleMonsterName(mnum) {
     if (mnum === undefined || !Number.isInteger(mnum))
         return '';

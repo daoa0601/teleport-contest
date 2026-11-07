@@ -956,13 +956,6 @@ function objectAcceptsSecondaryErosion(object: Pick<GameObject, 'otyp'>): boolea
     return objectIsCorrodeable(object) || objectIsRottable(object);
 }
 
-// C objnam.c:rnd_otyp_by_namedesc(): draw an object type by name or
-// description.
-// C adds xtra_prob=1 for readobjnam() so 0%-generation objects remain
-// wishable.  The draw is over total probability, not candidate count.
-export function rndObjectTypeByName(name: string, xtraProb = 1): number | null {
-    return randomTypeByDescription(name, RANDOM_CLASS, xtraProb);
-}
 
 // C objnam.c:readobjnam(): parse a wish and construct the object.
 export async function readObjectName(

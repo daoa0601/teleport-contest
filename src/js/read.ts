@@ -73,7 +73,7 @@ import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, owne
 import type { ObjectInscriptionView } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { tryCallObjectType } from './do.js';
-import { blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj } from './mkobj.js';
+import { bcsign, blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj } from './mkobj.js';
 import { askTeleportDestination, levelTeleport, teleportHero } from './teleport.js';
 import { d, rn2, rn1, rnd } from './rng.js';
 import { wipeoutText } from './engrave.js';
@@ -1380,7 +1380,7 @@ async function fireEffect(
     const blessed = !!source.blessed;
     const confused = (state.u.confusionTurns ?? 0) > 0;
     const alreadyKnown = sourceTypeKnown(source, state);
-    let damage = Math.trunc((2 * (rn1(3, 3) + 2 * blessing(source)) + 1) / 3);
+    let damage = Math.trunc((2 * (rn1(3, 3) + 2 * bcsign(source)) + 1) / 3);
     await consumeInventoryItem(source, state);
     if (!alreadyKnown) learnScrollType(SCR_FIRE, { state });
     const result = { known: false, consumed: true, heroDied: false };
@@ -1476,15 +1476,11 @@ async function cloudEffect(source: GameObject, state: PlayingGameState): Promise
             : `${source.oclass === SCROLL_CLASS ? 'The scroll crumbles with' : 'You smell'} a whiff of rotten eggs.`);
     } else {
         await createPoisonGasCloud(state, center.x, center.y,
-            15 + 10 * blessing(source), 8 + 4 * blessing(source));
+            15 + 10 * bcsign(source), 8 + 4 * bcsign(source));
     }
     return { known: true, consumed: false, heroDied: false };
 }
 
-// C mkobj.c:bcsign().
-function blessing(source: Pick<GameObject, 'blessed' | 'cursed'>): -1 | 0 | 1 {
-    return source.blessed ? 1 : source.cursed ? -1 : 0;
-}
 
 // Part of C read.c:seffect_genocide(), seffect_fire(),
 // seffect_stinking_cloud(): the already_known spell-or-typed test.

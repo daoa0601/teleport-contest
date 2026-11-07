@@ -1,5 +1,7 @@
-// C lauxlib.c:luaL_checkinteger(): accepts numbers and numeric strings, but not booleans,
-// nil, or host objects. Empty strings are not numeric Lua values.
+// Part of C lauxlib.c:luaL_checkinteger(): the binding-side form without
+// the C stack index; a bad argument raises TypeError where luaCheckInteger()
+// raises lauxlib's bad-argument error. Accepts numbers and numeric strings,
+// but not booleans, nil, or host objects; empty strings are not numeric.
 export function luaInteger(value) {
     if ((typeof value !== 'number' && typeof value !== 'string')
         || (typeof value === 'string' && value.trim() === ''))
@@ -232,14 +234,16 @@ function bitLength(value) {
 export function luaStrToNumber(text) {
     return luaStringToInteger(text) ?? luaStringToFloat(text);
 }
-// C lauxlib.c:luaL_checklstring(): a number argument coerces to its
-// string form.
+// Part of C lauxlib.c:luaL_checklstring(): the binding-side form without
+// the C stack index; a number argument coerces to its string form and a bad
+// argument raises TypeError where luaCheckString() raises the Lua error.
 export function luaString(value) {
     if (typeof value === 'string' || typeof value === 'number')
         return String(value);
     throw new TypeError('Lua argument must be a string or number');
 }
-// C lapi.c:lua_toboolean(): nil and false are false, everything else true.
+// Part of C lapi.c:lua_toboolean(): the nil/false predicate itself; the
+// interpreter's truthy() (lua/runtime.ts) unwraps multi-values first.
 export function luaTruthy(value) {
     return value != null && value !== false;
 }

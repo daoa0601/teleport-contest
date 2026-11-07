@@ -197,7 +197,7 @@ export async function mksobj(otyp, init, artif, { zombify = false } = {}) {
     return otmp;
 }
 // C mkobj.c:bcsign().
-function bcsign(otmp) {
+export function bcsign(otmp) {
     return Number(!!otmp.blessed) - Number(!!otmp.cursed);
 }
 // C mkobj.c:may_generate_eroded():
@@ -1476,8 +1476,8 @@ export function containerWeight(object, state = game) {
             containerWeight(parent, state);
     }
 }
-// C mkobj.c:unsplitobj():
-// C unsplitobj(): a failed merge leaves the split piece beside its parent.
+// Part of C mkobj.c:unsplitobj(): the pickup container-transfer wrapper —
+// only a transfer with both halves rejoinObjectStack() can merge.
 export async function restoreRejectedSplit(transfer, state) {
     if (transfer.parent)
         await rejoinObjectStack(transfer.parent, transfer.object, state);
@@ -1851,7 +1851,9 @@ function outermostContainer(object, state) {
     }
     return outer;
 }
-// C zap.c:get_obj_location():
+// Part of C zap.c:get_obj_location(): the outermost-container location the
+// glob timers read (item_on_ice() and the shrink timers want the outer
+// container's square without revive()'s flag distinctions).
 function objectLocation(object, state) {
     const outer = outermostContainer(object, state);
     if (!outer)

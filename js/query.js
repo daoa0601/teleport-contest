@@ -1,7 +1,7 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
-import { clearMessageWindow, flushPendingTopline, messageWindowMode, readChoiceNumber, rememberToplines, resetToplineClip, } from './topl.js';
+import { clearMessageWindow, flushPendingTopline, messageWindowMode, rememberToplines, resetToplineClip, } from './topl.js';
 import { flush_screen } from './display.js';
 import { pline, setTopline, truncateRawMessage } from './pline.js';
 import { game } from './gstate.js';
@@ -345,13 +345,41 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
             continue;
         if (character !== '#' && !digit)
             return finish(character);
-        // Digits are numbers only when '#' is among the allowed responses.
         if (!responses.includes('#'))
             return finish(character);
-        const number = await readChoiceNumber(character, message, readAnswer, paint);
-        if (number === null)
-            continue;
-        return number === 0n ? finish('n') : finish('#', number);
+        // The count entry: digits after '#' build yn_number; backspace
+        // erases digits (removetopl()), Escape or junk abandons the count.
+        let digits = character === '#' ? '' : character;
+        let value = digits ? BigInt(digits) : 0n;
+        paint(message + '#' + digits);
+        for (;;) {
+            const next = await readAnswer();
+            if (/^[0-9]$/.test(next)) {
+                const combined = value * 10n + BigInt(next);
+                if (combined > 9223372036854775807n)
+                    break;
+                value = combined;
+                digits += next;
+            }
+            else if (next === 'y' || ' \n\r\x1b\0'.includes(next)) {
+                if (next !== '\x1b')
+                    return value === 0n ? finish('n') : finish('#', value);
+                break;
+            }
+            else if (next === '\x7f' || next === '\b') {
+                if (!digits)
+                    break;
+                value /= 10n;
+                digits = digits.slice(0, -1);
+            }
+            else
+                break;
+            paint(message + '#' + digits);
+        }
+        // Escape, overflow, erasing the '#', or an invalid character aborts
+        // the number and returns to the same yes/no question.
+        paint(message);
+        continue;
     }
 }
 // Port only: y/n convenience wrapper.

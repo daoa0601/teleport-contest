@@ -373,7 +373,7 @@ async function makeSwamps() {
                 if (!IS_ROOM(location.typ) || location.roomno !== roomIndex + ROOMOFFSET
                     || level.objects[x]?.[y]?.length || monsterAtPosition(level, x, y)
                     || level.traps.some(trap => trap.tx === x && trap.ty === y)
-                    || swampSquareBordersDoor(x, y))
+                    || nexttodoor(x, y))
                     continue;
                 if ((x + y) % 2) {
                     deleteEngravingAt(x, y, level);
@@ -396,9 +396,9 @@ async function makeSwamps() {
     }
     return madeSwamp;
 }
-// C mkroom.c:nexttodoor():
-function swampSquareBordersDoor(x, y) {
-    const level = requireGameLevel();
+// C mkroom.c:nexttodoor().
+export function nexttodoor(x, y, state = game) {
+    const level = requireGameLevel(state);
     for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
             if (!isok(x + dx, y + dy))

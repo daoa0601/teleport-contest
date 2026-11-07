@@ -29,7 +29,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsPetrifying } from './stoning.js';
 import { artifactById } from './artifact.js';
 import { isBimanualObject } from './object_properties.js';
-import { weaponDescription } from './weapon.js';
+import { weaponDescription, weaponSkillType } from './weapon.js';
 import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
 import { getLine } from './query.js';
@@ -151,14 +151,10 @@ function statusLine2Fields(capacity: number): StatusLine2Fields | null {
 }
 
 // C botl.c:bot()
-// ── bot ──
-export async function bot() {
-    refreshStatusLines();
-}
-
-// C botl.c:bot()/bot_via_windowport(): evaluate every status field and
-// push changed ones through the windowport (wintty.ts paints them).
-export function refreshStatusLines(): void {
+// VIA_WINDOWPORT() is this port's only windowport path, so bot() runs the
+// bot_via_windowport() field evaluation directly: evaluate every status
+// field and push changed ones through the windowport (wintty.ts paints them).
+export function bot(): void {
     const display = game.nhDisplay;
     if (!display || game._statusUpdatesDisabled || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
@@ -217,7 +213,7 @@ export function reassessStatusFields(state: GameState = game): void {
 // dispatch, also run once per input by allmain.c. The status window updates
 // while map changes stay in the glyph buffer until the next flush_screen().
 export function updateStatusLines(): void {
-    if (game.context.botl || game.nhDisplay?.statusLines === null) refreshStatusLines();
+    if (game.context.botl || game.nhDisplay?.statusLines === null) bot();
     else if (game.context.time_botl) timebot();
 }
 
@@ -542,9 +538,9 @@ export function weaponStatus(state: GameState): string {
         return monsterIsHumanoid(state.u.umonnum ?? -1)
             ? 'Bare-hnds' : 'No-weapon';
     }
-    const skill = weaponSkill(weapon);
+    const skill = weaponSkillType(weapon);
     if (state.u.twoweap)
-        return state.u.usteed && (skill === P_LANCE || weaponSkill(state.uswapwep) === P_LANCE)
+        return state.u.usteed && (skill === P_LANCE || weaponSkillType(state.uswapwep ?? null) === P_LANCE)
             ? 'Dual+joust' : 'Dual-weps';
     let text: string;
     if (state.u.usteed && skill === P_LANCE) text = 'joust';
@@ -564,11 +560,6 @@ export function weaponStatus(state: GameState): string {
     return `${twoHanded ? '2H-' : ''}${text.replace(/ /g, '-')}`;
 }
 
-// C weapon.c:weapon_type()
-function weaponSkill(object: GameObject | null | undefined): number {
-    return object && [WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(object.oclass)
-        ? Math.abs(objectSkill(object.otyp)) : 0;
-}
 
 // C botl.c:armor_status()
 export function armorStatus(state: GameState): string {
