@@ -4,7 +4,9 @@ import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL
 import { objectBaseWeight, objectBaseCost, objectMerge, objectUsesKnown, objectMagic, getObjectClassBounds, getObjectDefinition, requireObjectData, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, POT_BOOZE, POT_SICKNESS, POT_WATER, APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, WAN_FIRE, oc_nutrition, objectPropertyName, } from './object_data.js';
 import { SHOPBASE } from './const.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { removeWornHeroItem } from './steal.js';
 import { novelTitle } from './do_name.js';
+import { stopHeroOccupation } from './allmain.js';
 import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { objectIsVulnerableToErosion } from './trap.js';
@@ -2020,42 +2022,19 @@ function globIceState(glob, state) {
         return 'none';
     return outer.where === 'buried' ? 'buried' : 'on-ice';
 }
-// Part of C steal.c:remove_worn_item(): clearing every hero slot the object
-// occupied; shrinking_glob_gone reaches it.
-function clearHeroEquipment(object, state) {
-    const slots = [
-        'uwep', 'uswapwep', 'uquiver',
-        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
-        'uleft', 'uright', 'uamul', 'ublindf',
-    ];
-    let removed = !!(object.owornmask || object.worn || object.wielded
-        || object.alternate || object.ready);
-    for (const slot of slots) {
-        if (state[slot] === object) {
-            state[slot] = null;
-            removed = true;
-        }
-        if (state.u?.[slot] === object) {
-            state.u[slot] = null;
-            removed = true;
-        }
-    }
-    object.owornmask = 0;
-    object.worn = false;
-    object.wielded = false;
-    object.alternate = false;
-    object.ready = false;
-    // C stop_occupation(): a worn glob vanishing interrupts the occupation.
-    if (removed)
-        state._occupation = null;
-}
 // C mkobj.c:shrinking_glob_gone(): a glob that shrank away to nothing
 // unwields/unwears itself and is removed from wherever it lives.
 async function deleteGlob(glob, state) {
     const where = glob.where;
     const x = glob.ox, y = glob.oy;
     if (where === 'inventory') {
-        clearHeroEquipment(glob, state);
+        // C mkobj.c:shrinking_glob_gone(): remove_worn_item(obj, FALSE) for a
+        // worn glob, then stop_occupation().  A wielded glob arms the
+        // "begin bashing" bare-hands notice through uwepgone().
+        if (glob.owornmask) {
+            await removeWornHeroItem(glob, state);
+            await stopHeroOccupation(state);
+        }
     }
     else if (where === 'migrating') {
         glob.owornmask = 0;

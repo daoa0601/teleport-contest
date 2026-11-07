@@ -70,7 +70,7 @@ import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { addShopDamage, carriedObjectOwner, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
 import { ensureHeroSkills, uwepSkillType, dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon, unwieldMonsterWeapon, } from './weapon.js';
 import { castSpell, knownSpell } from './spell.js';
-import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle, strikeSteed } from './steed.js';
 import { heroIsPetrifying, petrifyFromCorpseContact } from './stoning.js';
 import { ceilingName, surfaceName, canDigDown } from './dungeon.js';
@@ -1045,7 +1045,9 @@ async function showMonsterReflection(monster, object, mirror, invisible, state) 
         }
         else
             await pline(`It steals your ${mirror}!`);
-        await removeWornHeroItem(object, state);
+        // C apply.c:1163 uses setnotworn() so a stolen wielded mirror does
+        // not arm the "begin bashing with your bare hands" notice.
+        await setnotworn(object, state);
         if (state.program_state.gameover)
             return true;
         await freeInventoryObject(object, state);

@@ -130,7 +130,8 @@ async function restoreTutorialState(state) {
     state._objectCallNames = {};
     state.spells = saved.spells;
     await init_uhunger(state, plineWithContinuation);
-    state._unweapon = !state.uwep;
+    // C nhl_gamestate() restores equipment with setworn() and never resets
+    // gu.unweapon; the live value from the tutorial stays armed or cleared.
     syncBlindness(state);
     findArmorClass(state);
     delete state._tutorialState;
