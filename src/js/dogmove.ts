@@ -1,6 +1,6 @@
 import { OBJ_DESCR } from './o_init.js';
 import { OBJ_NAME } from './object_data.js';
-import { ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
+import { ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack, mattacku, presentMonsterAttackEffects } from './mhitu.js';
 import { inventoryItemDescription } from './invent.js';
@@ -33,14 +33,15 @@ import { trapAt } from './trap.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor } from './mhitm.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { dist2, distmin } from './hacklib.js';
-import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import {
-    BOULDER, SCR_MAIL, TRIPE_RATION, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE,
+    BOULDER, SCR_MAIL, TRIPE_RATION, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, CORPSE, objectDelay, oc_nutrition,
     SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
+import { obj_nutrition } from './eat.js';
 import { loseGuardianAngel } from './minion.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { updateMonsterRegions } from './region.js';
@@ -136,6 +137,47 @@ export function petDroppableObject(monster: Monster): GameObject | null {
         if (!object.owornmask && object !== weapon) return object;
     }
     return null;
+}
+
+// C dogmove.c:dog_nutrition(): nutrition a pet draws from an object,
+// including its chewing time.
+// dog_nutrition() also sets chewing time. Its denominator is the original
+// food's nutrition, before the pet-size multiplier is applied.
+export function petFoodNutrition(monster: Monster, object: GameObject): number {
+    let nutrition: number;
+    if (object.oclass === FOOD_CLASS) {
+        let delay: number;
+        if (object.otyp === CORPSE) {
+            const body = object.corpsenm === undefined ? undefined : MONSTER_BODY_META[object.corpsenm];
+            if (!body) throw new Error(`Corpse ${object.o_id} has no species nutrition`);
+            delay = 3 + (body[0] >> 6);
+            nutrition = body[1];
+        } else {
+            delay = objectDelay(object.otyp);
+            nutrition = oc_nutrition(object.otyp) ?? 0;
+        }
+        const fullNutrition = obj_nutrition(object);
+        const size = MONSTER_SIZE[monster.mnum];
+        const multiplier = size === 0 ? 8 : size === 1 ? 6
+            : size === 3 ? 4 : size === 4 ? 3 : size === 7 ? 2 : 5;
+        nutrition *= multiplier;
+        if (object.oeaten) {
+            const remaining = Math.min(object.oeaten, fullNutrition);
+            delay = Math.max(1, fullNutrition ? Math.trunc(delay * remaining / fullNutrition) : 0);
+            nutrition = Math.max(1, fullNutrition ? Math.trunc(nutrition * remaining / fullNutrition) : 0);
+        }
+        monster.meating = delay;
+    } else if (object.oclass === COIN_CLASS) {
+        // Quantity is a native long; these two results are signed ints.
+        const delay = (Math.trunc(object.quan / 2000) + 1) | 0;
+        monster.meating = delay < 0 ? 1 : delay;
+        const coinNutrition = Math.trunc(object.quan / 20) | 0;
+        nutrition = coinNutrition < 0 ? 0 : coinNutrition;
+    } else {
+        monster.meating = Math.trunc(object.owt / 20) + 1;
+        nutrition = 5 * (oc_nutrition(object.otyp) ?? 0);
+    }
+    return nutrition;
 }
 
 // Port only: type guard for the floor-chain order field.

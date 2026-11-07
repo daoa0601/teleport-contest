@@ -132,7 +132,7 @@ import {
 } from './objnam.js';
 import { stopHeroOccupation } from './allmain.js';
 import { objectAtMonsterDescription } from './pager.js';
-import { petFoodNutrition } from './pet_eating.js';
+import { petFoodNutrition } from './dogmove.js';
 import {
     formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, publishHeardMessage,
     recordGameLogEvent,

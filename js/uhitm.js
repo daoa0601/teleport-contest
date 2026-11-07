@@ -65,7 +65,7 @@ import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLaun
 import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle, } from './objnam.js';
 import { stopHeroOccupation } from './allmain.js';
 import { objectAtMonsterDescription } from './pager.js';
-import { petFoodNutrition } from './pet_eating.js';
+import { petFoodNutrition } from './dogmove.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
 import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
 import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroSlimingTimeout, splitMonster, startHeroSliming, } from './potion.js';
