@@ -72,7 +72,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { displayMessageWindow } from './topl.js';
 import { NO_COLOR } from './terminal.js';
-import { symsetMenuValue } from './options.js';
+import { symsetMenuValue } from './message_types.js';
 
 import { rumorCheck } from './rumors.js';
 import { resetUtrap } from './trap.js';

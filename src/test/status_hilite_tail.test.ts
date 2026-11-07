@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { toggleBooleanOptionPrefix } from '../js/options.js';
+import { toggleBooleanOptionPrefix } from '../js/message_types.js';
 import { describeDecor } from '../js/pickup.js';
 import type { StatusHiliteRule } from '../js/flags.js';
 import { BL_HP, BL_TITLE, BL_ALIGN, BL_TH_UPDOWN, BL_TH_ALWAYS_HILITE,

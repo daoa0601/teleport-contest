@@ -35,7 +35,7 @@ import { propertyIsActive } from './properties.js';
 import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { inventoryReport } from './invent.js';
 import { isContainer, unlinkObject, deallocateObject } from './mkobj.js';
-import { doOptions, toggleBooleanOptionPrefix } from './options.js';
+import { doOptions, toggleBooleanOptionPrefix } from './message_types.js';
 import { extFuncTabFromFunc } from './command_bindings.js';
 import { stopHeroOccupation } from './allmain.js';
 import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll } from './do_wear.js';

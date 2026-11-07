@@ -2,7 +2,7 @@
 // C ref: hacklib.c — nh_deterministic_qsort(), fuzzymatch(), swapbits(),
 // and the string/number helpers.
 
-import { game } from './gstate.js';
+
 import type { DungeonLocation } from './dungeon_types.js';
 import type { GameState } from './game_state.js';
 

@@ -33,7 +33,7 @@ import { makemon, makemonAt, setMonsterMalign } from './makemon.js';
 import { occupied } from './mkroom.js';
 import { objectProb } from './o_init.js';
 import { upstart } from './hacklib.js';
-import { addFruit } from './options.js';
+import { addFruit } from './message_types.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { nameOrc, randomOrcName, setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';

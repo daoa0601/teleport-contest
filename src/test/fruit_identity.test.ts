@@ -7,7 +7,7 @@ import { M_AP_OBJECT, M_AP_TYPE, NO_MINVENT } from '../js/const.js';
 import { deleteObject } from '../js/shk.js';
 import { mergable } from '../js/invent.js';
 
-import { addFruit, changePreferredFruit, initializeFruitRegistry } from '../js/options.js';
+import { addFruit, changePreferredFruit, initializeFruitRegistry } from '../js/message_types.js';
 import { fruitFromIndex, fruitFromName, fruitName } from '../js/objnam.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

@@ -7,7 +7,7 @@ import { initRng, enableRngLog, getRngLog } from './rng.js';
 import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './allmain.js';
-import { initializeFruitRegistry } from './options.js';
+import { initializeFruitRegistry } from './message_types.js';
 import { displayConfigurationErrors, parseNethackOptions, parseNethackrc } from './cfgfiles.js';
 import { rawPrint } from './input.js';
 import { genl_player_selection, plnamesuffix } from './role.js';

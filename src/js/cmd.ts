@@ -44,7 +44,7 @@ import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState 
 import { inventoryReport } from './invent.js';
 import { isContainer, unlinkObject, deallocateObject } from './mkobj.js';
 
-import { doOptions, toggleBooleanOptionPrefix } from './options.js';
+import { doOptions, toggleBooleanOptionPrefix } from './message_types.js';
 import type { CommandDefinition } from './command_data.js';
 import { extFuncTabFromFunc, type CommandBindings } from './command_bindings.js';
 import { stopHeroOccupation } from './allmain.js';

@@ -1,7 +1,6 @@
 // hacklib.js — Utility functions.
 // C ref: hacklib.c — nh_deterministic_qsort(), fuzzymatch(), swapbits(),
 // and the string/number helpers.
-import { game } from './gstate.js';
 /*
  * Copyright (c) 1991, 1992, 1993 The Regents of the University of California.
  * All rights reserved.

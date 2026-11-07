@@ -100,7 +100,7 @@ import { initializeSourceStartup } from './startup.js';
 import { fumaroles } from './mkmaze.js';
 import { commitPetPickup } from './dogmove.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import { askTutorial } from './options.js';
+import { askTutorial } from './message_types.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
 import { reportMonsterTeleportRestriction } from './teleport.js';
 import { clearHeroSliming } from './potion.js';

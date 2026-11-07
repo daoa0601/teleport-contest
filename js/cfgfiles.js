@@ -6,7 +6,8 @@
 // and rcfile(). Statement handlers call into options.ts (C options.c:
 // parseoptions(), parsebindings(), add_autopickup_exception()), keeping
 // C's cfgfiles.c → options.c call direction.
-import { bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException, parseOptions, visctrl, MENU_KEY_OPTIONS, } from './options.js';
+import { bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException, parseOptions, MENU_KEY_OPTIONS, } from './message_types.js';
+import { visctrl } from './options.js';
 import { mungSpaces } from './hacklib.js';
 import { parseMenuColoring } from './coloratt.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';

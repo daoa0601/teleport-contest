@@ -32,7 +32,7 @@ import { endObjectBurn, restoreLevelTimers } from './timeout.js';
 import { restoreLevelRegions, resetRegionMonsterIds } from './region.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
-import { addFruit } from './options.js';
+import { addFruit } from './message_types.js';
 import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt } from './dungeon.js';

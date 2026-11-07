@@ -2,12 +2,9 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { decodeOptionEscapes, changeInventoryOrder } from './options.js';
+import { decodeOptionEscapes } from './message_types.js';
 import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { WARNCOUNT } from './const.js';
-import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
-import { resetStatusHilites } from './botl.js';
-import { featureAlertVersion } from './extversion.js';
 // Part of C options.c:optfn_pile_limit(), optfn_menuinvertmode(),
 // optfn_suppress_alert(): echo each option's current value.
 export function textOptionValue(name) {
@@ -41,86 +38,6 @@ export function parseBoulderSymbolValue(value) {
 export function isTextOption(name) {
     return ['packorder', 'pile_limit', 'menuinvertmode', 'hilite_status', 'statuslines',
         'scores', 'suppress_alert', 'statushilites'].includes(name);
-}
-// C options.c:optfn_hilite_status(): apply a typed compound-option value.
-// Also C options.c:optfn_pile_limit(), optfn_packorder(),
-// optfn_menuinvertmode(), optfn_statuslines(), optfn_statushilites(),
-// optfn_suppress_alert(): their typed-value branches.
-// Also C options.c:parseoptions(): the 128-character option length check.
-export async function setTextOption(name, value) {
-    if (name.length + 1 + value.length > 128) {
-        await optionError('Option too long, max length is 128 characters');
-        return;
-    }
-    value = value.trimEnd();
-    switch (name) {
-        case 'pile_limit': {
-            if (!value)
-                await optionError("Missing parameter for 'pile_limit:'");
-            const limit = value ? cInteger(value) : 5;
-            game.flags.pile_limit = limit < 0 ? 5 : limit;
-            break;
-        }
-        case 'packorder': {
-            if (!value)
-                break;
-            const change = changeInventoryOrder(value);
-            for (const error of change.errors)
-                await optionError(error);
-            game.flags.inv_order = change.order;
-            break;
-        }
-        case 'menuinvertmode': {
-            if (!value)
-                break;
-            const mode = cInteger(value);
-            if (mode === 0 || mode === 1 || mode === 2)
-                game.iflags.menuinvertmode = mode;
-            else
-                await optionError(`Illegal menuinvertmode parameter '${value}'`);
-            break;
-        }
-        case 'statuslines':
-            if (!value)
-                await optionError("Missing parameter for 'statuslines:'");
-            if (cInteger(value) !== 2 && cInteger(value) !== 3)
-                await optionError(`'statuslines:${value}' is invalid; must be 2 or 3`);
-            break;
-        case 'statushilites': {
-            // optfn_statushilites(): a missing value means the 3-turn default,
-            // atol() of junk is 0 (off), and negative durations clamp to 1.
-            // In-game changes request update_all even when the value is unchanged.
-            const delta = value ? cInteger(value) : 3;
-            game.iflags.hiliteDelta = delta < 0 ? 1 : delta;
-            resetStatusHilites();
-            break;
-        }
-        case 'hilite_status': {
-            if (!value) {
-                await optionError('Value is mandatory for hilite_status');
-                break;
-            }
-            const errors = [];
-            const operations = [];
-            parseStatusHl1(value, message => errors.push(message), false, operations);
-            replayStatusHiliteOperations(operations, game.iflags);
-            for (const error of errors)
-                await optionError(error);
-            break;
-        }
-        case 'suppress_alert': {
-            const parsed = featureAlertVersion(value);
-            if (!parsed)
-                break;
-            if (parsed.future) {
-                await plineWithContinuation("You can't disable new feature alerts for future versions.");
-                break;
-            }
-            game.flags.suppress_alert = parsed.version;
-            await plineWithContinuation(`Feature change alerts disabled for NetHack ${parsed.version} features and prior.`);
-            break;
-        }
-    }
 }
 // Port only: parse an integer like the native atoi used by option handlers.
 export function cInteger(value) {

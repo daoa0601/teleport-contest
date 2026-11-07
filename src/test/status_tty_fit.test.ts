@@ -7,7 +7,7 @@ import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
-import { doOptions } from '../js/options.js';
+import { doOptions } from '../js/message_types.js';
 import { resetInputState } from '../js/input.js';
 
 function status(): string {

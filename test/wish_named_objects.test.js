@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { artifactByName } from '../js/artifact.js';
-import { addFruit } from '../js/options.js';
+import { addFruit } from '../js/message_types.js';
 import { game } from '../js/gstate.js';
 import { DAGGER, SLIME_MOLD } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';

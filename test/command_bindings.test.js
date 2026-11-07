@@ -4,7 +4,7 @@ import { CommandBindings } from '../js/command_bindings.js';
 import { pushKeys } from '../js/input.js';
 import { promptDirection } from '../js/cmd.js';
 import { selectMapPosition } from '../js/getpos.js';
-import { doOptions } from '../js/options.js';
+import { doOptions } from '../js/message_types.js';
 import {} from '../js/cfgfiles.js';
 import { startLuaCore } from './support/lua-game.js';
 import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';

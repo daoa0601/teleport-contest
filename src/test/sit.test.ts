@@ -22,7 +22,7 @@ import {
     grantIntrinsicProperty, hasIntrinsicProperty,
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { addFruit } from '../js/options.js';
+import { addFruit } from '../js/message_types.js';
 import { setHeroGoldAmount } from '../js/sit.js';
 import {
     addInventoryObject, floorArtifact, floorObject,
