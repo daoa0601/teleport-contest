@@ -13,7 +13,7 @@ import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, newsym, sen
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName, monsterTypeName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, formCanBecomeStoneGolem, monsterPossessive, monsterStagger, seenResistanceForDamage, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, heroResistsLifeDrain, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense, monsterIsShade, is_neuter, } from './mondata.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, formCanBecomeStoneGolem, monsterPossessive, monsterStagger, seenResistanceForDamage, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, heroResistsLifeDrain, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense, monsterIsShade, is_neuter, isHeroDefender, } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -101,18 +101,18 @@ export function getmattk(attacker, defender, attackIndex, previousResults, state
         && damage === attacks?.[attackIndex - 1]?.[1]) {
         return [method, AD_STUN, dice, sides];
     }
-    if (damage === AD_DREN && isHeroActor(defender, state)) {
+    if (damage === AD_DREN && isHeroDefender(defender, state)) {
         return energyDrainAttack(attack, state);
     }
     // Native youmonst.mspec_used stays zero. The hero's ability delays are
     // separate state; monster cooldowns must never suppress a hero's form.
-    if (!isHeroActor(attacker, state) && attacker.mspec_used
+    if (!isHeroDefender(attacker, state) && attacker.mspec_used
         && (method === AT_ENGL || method === AT_HUGS || damage === AD_STCK || damage === AD_POLY)) {
         if ([AD_ACID, AD_ELEC, AD_COLD, AD_FIRE].includes(damage))
             return [AT_TUCH, damage, 1, 6];
         return sides === 0 ? [AT_TUCH, AD_PHYS, 0, 0] : [AT_CLAW, AD_PHYS, 1, 6];
     }
-    if (attackIndex === 0 && !isHeroActor(attacker, state)
+    if (attackIndex === 0 && !isHeroDefender(attacker, state)
         && method === AT_WEAP && damage !== AD_PHYS
         && !(attacks?.[1]?.[0] === AT_WEAP && attacks[1][1] === AD_PHYS)) {
         const weapon = monsterWieldedWeapon(attacker);
@@ -130,20 +130,15 @@ export function getmattk(attacker, defender, attackIndex, previousResults, state
     // energy dice. Only an unmodified source slot gets the home-plane bonus.
     return isHomeElemental(attackerSpecies) ? [method, damage, dice * 2, sides] : attack;
 }
-// Port only: type guard for the hero side of the shared hero/monster
-// combat-actor union (C compares against youmonst directly).
-function isHeroActor(actor, state) {
-    return actor === state.u;
-}
 // Part of C mhitu.c:getmattk(): the attacker's permonst lookup — youmonst
 // maps to the hero's current form.
 function actorSpecies(actor, state) {
-    return isHeroActor(actor, state) ? heroSpecies(state) : actor.mnum;
+    return isHeroDefender(actor, state) ? heroSpecies(state) : actor.mnum;
 }
 // Part of C mhitu.c:getmattk(): the cold-resistance test of the lich
 // touch-downgrade branch (Cold_resistance vs resists_cold).
 function actorResistsCold(actor, state) {
-    return isHeroActor(actor, state) ? !!state.u.coldResistance : monsterHasColdResistance(actor);
+    return isHeroDefender(actor, state) ? !!state.u.coldResistance : monsterHasColdResistance(actor);
 }
 // Part of C mhitu.c:getmattk(): the AD_DREN dice adjustment that tracks
 // the defending hero's energy.
@@ -3511,20 +3506,6 @@ function engulfMissMessage(monster, state) {
     }
     // You_hear() has no monster anchor; the heard line stays unpositioned.
     return formatHeardMessage(`a ${monsterIsWhirly(monster) ? 'rushing noise' : 'splat'} nearby.`, state);
-}
-// Port only: shared naming helper for the hero's holder; C calls mon_nam at
-// each message site.
-// C names the hero's holder with mon_nam() in every message that uses it
-// (do.c drop(), trap.c float_up()/float_down(), zap.c's slow-monster
-// disrupt), so engulfing priests and minions keep their "of <god>" title,
-// shopkeepers their names, and invisible holders their "invisible".
-export function holdingMonsterName(monster, state = game) {
-    return monsterName(monster, { state });
-}
-// Port only: capitalized subject form of holdingMonsterName.
-export function holdingMonsterSubject(monster, state = game) {
-    const name = holdingMonsterName(monster, state);
-    return name.charAt(0).toUpperCase() + name.slice(1);
 }
 // C mhitu.c:expels(). An engulfer spits the hero out: the exit line names
 // the monster and its engulf damage flavor, then unstuck(), mnexto() and

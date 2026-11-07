@@ -1307,10 +1307,6 @@ export function objectsInTimerGraph(state = game) {
     }
     return objects;
 }
-// Port only: filter timer callbacks requested by the runtime scheduler.
-function allowedKind(kind, allowedKinds) {
-    return !allowedKinds || allowedKinds.has(kind);
-}
 // Part of C timeout.c:insert_timer(): order equal-deadline timers newest first.
 function precedes(left, right) {
     return !right || left.timer.deadline < right.timer.deadline
@@ -1323,7 +1319,7 @@ export function peekNextDueObjectTimer(state = game, currentTurn = state.moves ?
     for (const object of objectsInTimerGraph(state)) {
         for (const timer of timersFor(object)) {
             if (timer.deadline > currentTurn
-                || !allowedKind(timer.kind, allowedKinds))
+                || allowedKinds && !allowedKinds.has(timer.kind))
                 continue;
             // timeout.c:insert_timer() inserts a new timer before the first
             // existing timer with an equal deadline.  Equal-time callbacks
@@ -1336,7 +1332,7 @@ export function peekNextDueObjectTimer(state = game, currentTurn = state.moves ?
     }
     for (const timer of levelTimersFor(state)) {
         if (timer.deadline > currentTurn
-            || !allowedKind(timer.kind, allowedKinds))
+            || allowedKinds && !allowedKinds.has(timer.kind))
             continue;
         const candidate = {
             object: null,

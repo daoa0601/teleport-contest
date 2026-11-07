@@ -17,12 +17,12 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 
 import { makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
-import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight, chargeAlteredUnpaidObject } from './mkobj.js';
+import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight, quantity, chargeAlteredUnpaidObject } from './mkobj.js';
 import { learnObjectType } from './o_init.js';
 import { inventoryItemDescription, addInventoryItem, freeInventoryObject, getobj, useUpInventoryStack, splittable } from './invent.js';
 import { isBimanualObject, is_elven_weapon, isWeaponTool, isWetTowel, is_launcher, isLauncherAmmunition, isMissileObject, isPolearm, launcherMatchesAmmo, pair_of } from './object_properties.js';
 import type { WeaponCandidate } from './object_properties.js';
-import { resetBulkTakeoff } from './do_wear.js';
+import { resetBulkTakeoff, takeoffSlotObject } from './do_wear.js';
 import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restrictName } from './artifact.js';
 import { objectOwnershipPrefix, insideShopRoomAt, shopResident, updateUnpaidObjectPrice } from './shk.js';
 import { promptYesNoQuit } from './query.js';
@@ -227,7 +227,9 @@ export async function doready(): Promise<void> {
     await doquiverCore('ready');
 }
 
-// Port only: require a successful split of a selected inventory stack.
+// Checked split for a selected inventory stack: C's splitobj() (mkobj.c)
+// cannot fail, the JS splitObjectStack() returns null, and the wield paths
+// that rely on a successful split assert that precondition here.
 function splitCarriedStack(item: GameObject, count: number): GameObject {
     const split = splitObjectStack(item, count, game);
     if (!split) throw new Error('cannot split selected inventory stack');
@@ -574,8 +576,6 @@ async function readySelectedWeapon(weapon: GameObject | null, state: GameState):
 // Hero weapon and quiver slot changes.
 // C refs: wield.c setuwep(), setuswapwep(), setuqwep(), uwepgone().
 
-export type WeaponSlot = 'uwep' | 'uswapwep' | 'uquiver';
-
 // C wield.c:welded()
 export function isWeldedPrimary(
     object: GameObject | null | undefined, state: GameState = game,
@@ -593,11 +593,6 @@ export function setTwoWeaponCombat(enabled: boolean, state: GameState = game): v
     if (state.flags.weaponstatus) state.context.botl = true;
 }
 
-// Port only: read a weapon slot from the game and hero slot references.
-function slotObject(slot: WeaponSlot, state: GameState): GameObject | null {
-    return state[slot] || state.u?.[slot] || null;
-}
-
 // C wield.c:setuwep().  setworn() carries the slot work: two-weapon
 // cancellation, cancel_doff(), the owornmask/extrinsic bookkeeping and the
 // artifact intrinsics.  The Ogresmasher botl, the Sunsword light and the
@@ -605,7 +600,7 @@ function slotObject(slot: WeaponSlot, state: GameState): GameObject | null {
 export async function setPrimaryWeapon(
     object: GameObject | null, state: GameState = game,
 ): Promise<GameObject | null> {
-    const previous = slotObject('uwep', state);
+    const previous = takeoffSlotObject('uwep', state);
     if (previous === object) return previous; /* necessary to not set gu.unweapon */
     await setworn(object, W_WEP, state);
     // handle Ogresmasher before Sunsword; even though they can't be
@@ -631,7 +626,7 @@ export async function setPrimaryWeapon(
 export async function setSecondaryWeapon(
     object: GameObject | null, state: GameState = game,
 ): Promise<GameObject | null> {
-    const previous = slotObject('uswapwep', state);
+    const previous = takeoffSlotObject('uswapwep', state);
     await setworn(object, W_SWAPWEP, state);
     return previous;
 }
@@ -641,15 +636,13 @@ export async function setSecondaryWeapon(
 export async function setQuiverObject(
     object: GameObject | null, state: GameState = game,
 ): Promise<GameObject | null> {
-    const previous = slotObject('uquiver', state);
+    const previous = takeoffSlotObject('uquiver', state);
     await setworn(object, W_QUIVER, state);
     return previous;
 }
 
-// Port only: the obj.h oclass read with the JS type-table fallback; the C
-// ready_ok and autoquiver reads obj->oclass directly.
-// The obj.h oclass read with the type-table fallback; autoquiver()
-// (dothrow.ts) and ready_ok() below share it.
+// C obj.h oclass read (obj->oclass) with the JS type-table fallback:
+// wield.c:ready_ok() and dothrow.c:autoquiver() read obj->oclass directly.
 export function quiverObjectClass(item: GameObject): number {
     return item.oclass || objectClassForType(item.otyp);
 }
@@ -672,7 +665,7 @@ export function readySuggestion(item: GameObject, state: GameState): boolean {
 // C wield.c:uwepgone().  The light-source message precedes setworn()'s
 // removal of the warning source, and the bare-hand notice is armed.
 export async function uwepgone(state: GameState = game): Promise<void> {
-    const object = slotObject('uwep', state);
+    const object = takeoffSlotObject('uwep', state);
     if (!object) return;
     if (object.lamplit && artifactEmitsLight(object)) {
         endObjectBurn(object, state);
@@ -685,20 +678,22 @@ export async function uwepgone(state: GameState = game): Promise<void> {
 
 // C wield.c:uswapwepgone().  setworn(0, W_SWAPWEP) plus the redraw.
 export async function uswapwepgone(state: GameState = game): Promise<void> {
-    if (!slotObject('uswapwep', state)) return;
+    if (!takeoffSlotObject('uswapwep', state)) return;
     await setworn(null, W_SWAPWEP, state);
 }
 
 // C wield.c:uqwepgone().  setworn(0, W_QUIVER) plus the redraw.
 export async function uqwepgone(state: GameState = game): Promise<void> {
-    if (!slotObject('uquiver', state)) return;
+    if (!takeoffSlotObject('uquiver', state)) return;
     await setworn(null, W_QUIVER, state);
 }
 // ── Two-weapon combat (folded from two_weapon.js) ──
 // C refs: wield.c can_twoweapon(), dotwoweapon(), drop_uswapwep(),
 // untwoweapon().
 
-// Port only: apply the species two-weapon predicate to the hero's current form.
+// C mondata.h:could_twoweap() applied to the hero's current form
+// (gy.youmonst.data); wield.c:765, worn.c:462, polyself.c:252,1358 and
+// iactions.c:677 test could_twoweap(youmonst.data) directly.
 // Two-weapon anatomy follows the current body, independent of equipment.
 export function heroCanUseTwoWeapons(state: GameState = game): boolean {
     return could_twoweap(heroSpecies(state));
@@ -854,7 +849,7 @@ export async function chwepon(scroll: GameObject, amount: number, state: GameSta
         if (!heroIsBlind(state)) {
             await pline(`${ownedObjectAction(uwep, 'violently glow', state)} ${color} `
                 + `for a while and then ${
-                    objectQuantity(uwep) > 1 ? 'evaporate' : 'evaporates'}.`);
+                    quantity(uwep) > 1 ? 'evaporate' : 'evaporates'}.`);
         } else {
             await pline(`${ownedObjectAction(uwep, 'evaporate', state)}.`);
         }
@@ -902,13 +897,14 @@ export async function chwepon(scroll: GameObject, amount: number, state: GameSta
 // Part of C wield.c:chwepon(): turn worm teeth into one uncursed crysknife.
 // C chwepon worm tooth branch: fusion into one uncursed crysknife.
 async function sharpenWormTeeth(uwep: GameObject, scrollType: number | null, state: GameState) {
-    const multiple = objectQuantity(uwep) > 1;
+    const multiple = quantity(uwep) > 1;
     /* order: message, transformation, shop handling */
     await pline(`Your ${simpleonames(uwep)} `
         + `${multiple ? 'fuse, and become' : 'is'} much sharper now.`);
     uwep.otyp = CRYSKNIFE;
     uwep.oerodeproof = false;
-    renameTransformedWeapon(uwep, 'crysknife');
+    if (uwep.name !== undefined) uwep.name = 'crysknife';
+    if (uwep.plural !== undefined) uwep.plural = makePlural('crysknife');
     if (multiple) {
         uwep.quan = 1;
         uwep.quantity = 1;
@@ -924,14 +920,15 @@ async function sharpenWormTeeth(uwep: GameObject, scrollType: number | null, sta
 // Part of C wield.c:chwepon(): turn a crysknife into one worm tooth.
 // C chwepon crysknife branch: degradation back into one worm tooth.
 async function dullCrysknife(uwep: GameObject, scrollBknown: boolean | undefined, scrollType: number | null, state: GameState) {
-    const multiple = objectQuantity(uwep) > 1;
+    const multiple = quantity(uwep) > 1;
     /* order matters: message, shop handling, transformation */
     await pline(`Your ${simpleonames(uwep)} `
         + `${multiple ? 'fuse, and become' : 'is'} much duller now.`);
     await chargeAlteredUnpaidObject(uwep, 'degrade', state);
     uwep.otyp = WORM_TOOTH;
     uwep.oerodeproof = false;
-    renameTransformedWeapon(uwep, 'worm tooth');
+    if (uwep.name !== undefined) uwep.name = 'worm tooth';
+    if (uwep.plural !== undefined) uwep.plural = makePlural('worm tooth');
     if (multiple) {
         uwep.quan = 1;
         uwep.quantity = 1;
@@ -965,20 +962,9 @@ async function strangeFeelingOn(scroll: GameObject, amount: number, state: GameS
     await exerciseAttribute(A_DEX, amount >= 0, state);
 }
 
-// Port only: read a weapon stack's stored quantity.
-function objectQuantity(object: GameObject) {
-    return object.quan ?? object.quantity ?? 1;
-}
-
-// Port only: refresh cached names after a weapon changes type.
-// The inventory description reads the object's stored name for weapons,
-// so a type change must rewrite it, as other type-changing owners do.
-function renameTransformedWeapon(uwep: GameObject, name: string) {
-    if (uwep.name !== undefined) uwep.name = name;
-    if (uwep.plural !== undefined) uwep.plural = makePlural(name);
-}
-
-// Port only: read an object's stored enchantment value.
+// C obj.h spe read (obj->spe) with the JS `enchantment` alias fallback:
+// wield.c:chwepon() and read.c's enchant-weapon handling read obj->spe
+// directly.
 export function objectEnchantment(object: GameObject) {
     return object.spe ?? object.enchantment ?? 0;
 }
@@ -1004,7 +990,7 @@ function heroWieldsMagicbane(state: GameState) {
 function simpleonames(object: GameObject): string {
     const name = OBJ_NAME(object.otyp);
     if (name === null) throw new Error(`Transformed weapon type ${object.otyp} has no name`);
-    return objectQuantity(object) > 1 ? makePlural(name) : name;
+    return quantity(object) > 1 ? makePlural(name) : name;
 }
 
 // ── Wielding a tool for another command (folded from wield_tool.js) ──
@@ -1018,11 +1004,6 @@ export interface WieldToolOptions {
 export type WieldToolResult =
     | { ready: false; newlyWielded: false }
     | { ready: true; newlyWielded: boolean };
-
-// Port only: read a tool stack's stored quantity.
-function quantityOf(object: GameObject): number {
-    return object.quan ?? object.quantity ?? 1;
-}
 
 // Part of C wield.c:wield_tool(): distinguish weapons from tools in the shield refusal.
 function isWeapon(object: GameObject): boolean {
@@ -1072,7 +1053,7 @@ export async function wieldTool(
         return { ready: true, newlyWielded: false };
 
     const name = objectCombatName(object, { state, includeCorpseSpecies: false });
-    const plural = quantityOf(object) > 1 || /pair of |s of /i.test(name);
+    const plural = quantity(object) > 1 || /pair of |s of /i.test(name);
     if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) {
         await pline(
             `You can't ${verb} ${ownedObjectName(object, state, { capitalized: false })} while wearing ${

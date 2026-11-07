@@ -753,7 +753,8 @@ export async function flip_level_rnd(allowed, extras = false) {
         flp |= 2;
     await flip_level(flp, extras);
 }
-// Port only: create an object and transfer it to a special-level monster.
+// Part of C sp_lev.c:create_object(): the invent-carrying-monster branch —
+// create at a chosen square, remove_object, then the monster picks it up.
 export async function giveSpecialMonsterObject(context, monster, otyp, spe) {
     const point = await specialRandomLocation(context);
     if (!point || !monster)
@@ -884,9 +885,9 @@ export async function get_location_coord(context, coordinate, humidity, filter) 
         return await get_location(context, point, humidity, filter);
     return point;
 }
-// Port only: decode a packed special-level coordinate without the random sentinel.
-// Shared packed-coordinate form: sp_lev.h SP_COORD_PACK/SP_COORD_X/SP_COORD_Y.
-// Unlike get_location_coord, it never recognizes the random sentinel.
+// Part of C sp_lev.h SP_COORD_PACK: decode a packed special-level coordinate
+// without the random sentinel.  Unlike get_location_coord, it never
+// recognizes the random sentinel.
 export async function getPackedLocationCoord(context, coordinate, humidity, filter) {
     return await get_location(context, { x: coordinate.x & 0xff, y: coordinate.y & 0xff }, humidity, filter);
 }
@@ -2592,12 +2593,14 @@ export async function ensure_way_out() {
         floodAccessibleArea(reachable, unreachable.x, unreachable.y);
     }
 }
-// Port only: detach a generated object if it is on the floor.
+// Part of C sp_lev.c:create_object(): detach the generated object from its
+// square before the container or monster transfer.
 export function removeFloorObject(object) {
     if (object?.where === 'floor')
         remove_object(object, game);
 }
-// Port only: transfer an optional generated object into its container.
+// Part of C sp_lev.c:create_object(): the container branch —
+// add_to_container() after removing the generated object.
 export async function addToContainer(container, object) {
     if (!container || !object)
         return object;

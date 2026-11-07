@@ -41,6 +41,7 @@ import {
     monsterHatesSilver, monsterIsAnimal, monsterIsBig, monsterIsGiant, monsterIsMindless, monsterIsShade,
     monsterIsSwimmer, monsterIsThickSkinned, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver,
     monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance, touchPetrifies,
+    isHeroDefender,
 } from './mondata.js';
 import { monsterSentenceSubject } from './sounds.js';
 import { isBimanualObject, isWetTowel, type WeaponCandidate, isLauncherAmmunition } from './object_properties.js';
@@ -185,17 +186,13 @@ export interface WeaponAccuracyOptions {
     rollOne?: (sides: number) => number;
 }
 
-// Port only: distinguish a hero defender from a monster defender by identity.
-function heroTarget(defender: Hero | Monster, state: GameState): defender is Hero {
-    return defender === state.u;
-}
 // C weapon.c:hitval()
 export function weaponHitValue(object: GameObject, defender: Hero | Monster, {
     state = game, random = rn2, rollOne = rnd,
 }: WeaponAccuracyOptions = {}): number {
-    const hero = heroTarget(defender, state);
+    const hero = isHeroDefender(defender, state);
     let target: { mnum: number; mx: number; my: number; cham?: number };
-    if (heroTarget(defender, state)) {
+    if (hero) {
         requireInitializedHero(defender);
         target = { mnum: defender.umonnum, mx: defender.ux, my: defender.uy };
     } else target = defender;
@@ -296,11 +293,6 @@ function damageProfile(object: GameObject, monster: ArtifactDefender) {
     return { range, fixed, random4, random6, twoD4, twoD6 };
 }
 
-// Port only: read the object's stored enchantment value.
-function enchantment(object: GameObject): number {
-    return object.spe ?? object.enchantment ?? 0;
-}
-
 // Part of C weapon.c:dmgval(): add weapon enchantment and clamp negative damage.
 function addWeaponEnchantment(object: GameObject, damage: number): number {
     const objectClass = object.oclass || objectClassForType(object.otyp);
@@ -308,7 +300,7 @@ function addWeaponEnchantment(object: GameObject, damage: number): number {
         || (objectClass === TOOL_CLASS
             && objectSkill(object.otyp) !== 0);
     if (!weaponLike) return damage;
-    damage += enchantment(object);
+    damage += object.spe ?? object.enchantment ?? 0;
     return Math.max(0, damage);
 }
 
@@ -410,8 +402,8 @@ export function rollPhysicalWeaponDamage(
     return applyErosion(object, damage);
 }
 
-// Port only: adapt the hero's current form to the weapon-damage defender contract.
-// At native dmgval call sites using youmonst, the defender is the hero's form.
+// C weapon.c:dmgval(obj, &gy.youmonst): the form the dig.c, dothrow.c,
+// mthrowu.c, read.c, trap.c, uhitm.c and zap.c call sites use.
 export function rollPhysicalWeaponDamageAgainstHero(
     object: GameObject, state: GameState, options: PhysicalWeaponDamageOptions = {},
 ): number {
@@ -491,7 +483,8 @@ export function specialContactDamage(
     return { damage, silverMask };
 }
 
-// Port only: defender view of Hero|Monster for the mon_hates_* checks.
+// Part of C weapon.c:special_dmgval(): the defender view of Hero|Monster the
+// mon_hates_* checks read (C passes &youmonst or the monster directly).
 function contactDefender(actor: ContactActor, state: GameState): Pick<Monster, 'mnum' | 'cham'> {
     if ('mnum' in actor) return actor;
     if (actor !== state.u)
@@ -1263,12 +1256,10 @@ function attackSkillType(weapon: GameObject | null, state: GameState): number {
         ? P_TWO_WEAPON_COMBAT : weaponSkillType(weapon);
 }
 
-// Port only: read a validated proficiency from initialized hero skills.
-// C skills.h P_SKILL: the skill's current proficiency level.
+// C skills.h:P_SKILL(): the skill's current proficiency level, read through
+// the port's initialized-skill checks.
 function proficiency(skill: number, state: GameState): number {
-    const entry = ensureHeroSkills(state)?.[skill];
-    if (!entry) throw new Error(`Hero combat requires initialized skill ${skill}`);
-    return entry.skill;
+    return requiredSkill(initializedSkills(state), skill).skill;
 }
 
 // C you.h:martial_bonus(): the Monk and Samurai martial-arts roles.

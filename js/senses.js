@@ -100,6 +100,11 @@ export function heroIsHallucinating(state = game) {
     const hero = state.u;
     return !hero.hallucinationResistance && (hero.hallucinationTurns ?? 0) > 0;
 }
+// C youprop.h:Underwater (u.uinwater): the port keeps the bit in
+// u.uinwater, u.underwater, and state.underwater, so guards test all three.
+export function heroIsUnderwater(state = game) {
+    return !!(state.u.uinwater || state.underwater || state.u.underwater);
+}
 // Port only: caches the derived Deaf value on the JS game state.
 export function syncDeafness(state = game) {
     const deaf = heroIsDeaf(state);

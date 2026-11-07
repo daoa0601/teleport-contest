@@ -20,7 +20,7 @@ import { fullyIdentifyObject, freeInventoryObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './worn.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { displayLiquidName, monsterName, monsterReflexiveAction, placementMonsterName, monsterTypeName } from './do_name.js';
-import { monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks, needspick, tunnels, cant_drown, monsterIsAmorphous, monsterIsUnsolid, touchPetrifies, } from './mondata.js';
+import { monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks, needspick, tunnels, cant_drown, monsterIsAmorphous, monsterIsUnsolid, touchPetrifies, grounded, } from './mondata.js';
 import { shopkeeperName } from './shknam.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeHand } from './engrave.js';
@@ -52,14 +52,6 @@ export function riderCannotReachMessage(state = game) {
         state, article: steed.mtame ? 'your' : 'the', suppressSaddle: true,
     });
     return `You aren't skilled enough to reach from ${name}.`;
-}
-// Port only: duplicate the grounded predicate for the mounted monster.
-// The full macro port is grounded in mondata.ts.
-export function steedIsGrounded(steed, state = game) {
-    const symbol = MONSTER_SYMBOL[steed?.mnum];
-    if (monsterIsFlyer(steed?.mnum) || symbol === S_EYE || symbol === S_LIGHT)
-        return false;
-    return !monsterIsClinger(steed?.mnum) || !levelHasCeiling(state);
 }
 // Port only: read the saddle from the runtime cache or monster inventory.
 export function monsterSaddle(monster) {
@@ -736,7 +728,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
             return { dismounted: true, steed };
         }
         if (!hero.uswallow && !hero.ustuck && landing) {
-            if (steedIsGrounded(steed, state)) {
+            if (grounded(steed.mnum, state)) {
                 liquid = await dropSteedIntoLiquid(steed, state, announce);
             }
             if (!steed.dead && steed.mhp > 0) {
@@ -990,9 +982,9 @@ export function monsterAtPosition(level, x, y, state = game) {
     return level.monsters.find(monster => monsterHasMapPosition(monster, state)
         && monsterOccupiesPosition(monster, x, y)) || null;
 }
-// Port only: find a living monster head at a square while excluding an actor.
-// C m_at: the live occupant of a square, ignoring one actor and skipping
-// the dead. Movement destination scans and item-use proximity share this.
+// Part of C rm.h:m_at(): the live occupant of a square, ignoring one actor;
+// C callers write the DEADMONSTER and identity checks around m_at() inline.
+// Movement destination scans and item-use proximity share this.
 export function monsterAt(state, x, y, ignore = null) {
     return state?.level?.monsters?.find((monster) => monsterHasMapPosition(monster, state) &&
         monster !== ignore &&

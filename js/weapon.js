@@ -25,7 +25,7 @@ import { monsterCanTouchObject } from './mon.js';
 import { unlinkMonsterObject, placeObject } from './mkobj.js';
 import { adjustedMonsterLevel } from './makemon.js';
 import { monsterName } from './do_name.js';
-import { monsterPossessive as perceivedPossessivePronoun, likes_gems, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsAnimal, monsterIsBig, monsterIsGiant, monsterIsMindless, monsterIsShade, monsterIsSwimmer, monsterIsThickSkinned, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver, monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance, touchPetrifies, } from './mondata.js';
+import { monsterPossessive as perceivedPossessivePronoun, likes_gems, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsAnimal, monsterIsBig, monsterIsGiant, monsterIsMindless, monsterIsShade, monsterIsSwimmer, monsterIsThickSkinned, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver, monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance, touchPetrifies, isHeroDefender, } from './mondata.js';
 import { monsterSentenceSubject } from './sounds.js';
 import { isBimanualObject, isWetTowel, isLauncherAmmunition } from './object_properties.js';
 import { rn2, d, rnd } from './rng.js';
@@ -133,15 +133,11 @@ const S_NAGA = 40;
 const S_SNAKE = 45;
 const S_XORN = 50;
 const S_EEL = 57;
-// Port only: distinguish a hero defender from a monster defender by identity.
-function heroTarget(defender, state) {
-    return defender === state.u;
-}
 // C weapon.c:hitval()
 export function weaponHitValue(object, defender, { state = game, random = rn2, rollOne = rnd, } = {}) {
-    const hero = heroTarget(defender, state);
+    const hero = isHeroDefender(defender, state);
     let target;
-    if (heroTarget(defender, state)) {
+    if (hero) {
         requireInitializedHero(defender);
         target = { mnum: defender.umonnum, mx: defender.ux, my: defender.uy };
     }
@@ -226,10 +222,6 @@ function damageProfile(object, monster) {
     const twoD6 = large && LARGE_2D6.has(otyp);
     return { range, fixed, random4, random6, twoD4, twoD6 };
 }
-// Port only: read the object's stored enchantment value.
-function enchantment(object) {
-    return object.spe ?? object.enchantment ?? 0;
-}
 // Part of C weapon.c:dmgval(): add weapon enchantment and clamp negative damage.
 function addWeaponEnchantment(object, damage) {
     const objectClass = object.oclass || objectClassForType(object.otyp);
@@ -238,7 +230,7 @@ function addWeaponEnchantment(object, damage) {
             && objectSkill(object.otyp) !== 0);
     if (!weaponLike)
         return damage;
-    damage += enchantment(object);
+    damage += object.spe ?? object.enchantment ?? 0;
     return Math.max(0, damage);
 }
 // Part of C weapon.c:dmgval(): select classes eligible for target-specific bonuses.
@@ -321,8 +313,8 @@ export function rollPhysicalWeaponDamage(object, monster, { state = game, hero =
     damage += targetDamageBonus(object, monster, { hatesBlessings, hatesSilver, hero }, rollOne, state);
     return applyErosion(object, damage);
 }
-// Port only: adapt the hero's current form to the weapon-damage defender contract.
-// At native dmgval call sites using youmonst, the defender is the hero's form.
+// C weapon.c:dmgval(obj, &gy.youmonst): the form the dig.c, dothrow.c,
+// mthrowu.c, read.c, trap.c, uhitm.c and zap.c call sites use.
 export function rollPhysicalWeaponDamageAgainstHero(object, state, options = {}) {
     // C dmgval(obj, &youmonst) asks mon_hates_silver() about the hero's
     // current form; lycanthropy (Hate_silver) only adds the searing line.
@@ -383,7 +375,8 @@ export function specialContactDamage(attacker, defender, mask, { state = game } 
     }
     return { damage, silverMask };
 }
-// Port only: defender view of Hero|Monster for the mon_hates_* checks.
+// Part of C weapon.c:special_dmgval(): the defender view of Hero|Monster the
+// mon_hates_* checks read (C passes &youmonst or the monster directly).
 function contactDefender(actor, state) {
     if ('mnum' in actor)
         return actor;
@@ -1119,13 +1112,10 @@ function attackSkillType(weapon, state) {
             || weapon === (state.uswapwep || state.u.uswapwep))
         ? P_TWO_WEAPON_COMBAT : weaponSkillType(weapon);
 }
-// Port only: read a validated proficiency from initialized hero skills.
-// C skills.h P_SKILL: the skill's current proficiency level.
+// C skills.h:P_SKILL(): the skill's current proficiency level, read through
+// the port's initialized-skill checks.
 function proficiency(skill, state) {
-    const entry = ensureHeroSkills(state)?.[skill];
-    if (!entry)
-        throw new Error(`Hero combat requires initialized skill ${skill}`);
-    return entry.skill;
+    return requiredSkill(initializedSkills(state), skill).skill;
 }
 // C you.h:martial_bonus(): the Monk and Samurai martial-arts roles.
 function usesMartialArts(state) {

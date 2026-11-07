@@ -76,7 +76,7 @@ import {
     launchRollingBoulder, immune_to_trap, explodeLandMine, into_vs_onto, heroTeetersAtPit,
 } from './trap.js';
 import type { HeroTrapOptions, HeroLiquidOptions, LiquidEffectResult } from './trap.js';
-import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, riderCannotReachMessage } from './steed.js';
+import { dismountHero, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, riderCannotReachMessage } from './steed.js';
 import { isRoom } from './map_types.js';
 import type { Room, RoomMap, MapLocation, Position, Trap } from './map_types.js';
 
@@ -150,7 +150,7 @@ import type { Shopkeeper } from './shop_types.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 
 import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt, monsterCanFog } from './monmove.js';
-import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, monsterDigests, monsterIsFloater } from './mondata.js';
+import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, monsterDigests, monsterIsFloater, grounded } from './mondata.js';
 import { PM_FIRE_ELEMENTAL, PM_SALAMANDER } from './mklev.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 
@@ -1112,7 +1112,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
         if ((!isPoolAt(x, y, state) && !isLavaAt(x, y, state))
             || u.ustuck || airborne)
             return leftWater ? { left: true } : null;
-        if (!fromFloatDown && u.usteed && !steedIsGrounded(u.usteed, state))
+        if (!fromFloatDown && u.usteed && !grounded(u.usteed.mnum, state))
             return null;
         if (!fromFloatDown && heroHidesOnCeiling(state))
             return leftWater ? { left: true } : null;

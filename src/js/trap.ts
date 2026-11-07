@@ -700,7 +700,7 @@ import {
 import {
     buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt, liquidForHole,
 } from './dig.js';
-import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
+import { monsterAtPosition, monsterHasMapPosition, dismountHero, monsterOccupiesPosition } from './steed.js';
 import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, applyFloorEffects } from './do.js';
 import {
     hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord,
@@ -758,7 +758,6 @@ import { createPoisonGasCloud } from './region.js';
 import { stopHeroOccupation } from './allmain.js';
 import { reset_faint } from './eat.js';
 import type { GameMap } from './game.js';
-import { holdingMonsterName, holdingMonsterSubject } from './mhitu.js';
 
 // C trap.c:burnarmor()
 export async function burnArmorByFire(
@@ -5883,7 +5882,7 @@ export async function floatHeroUp(
         if (!hero.ustuck) throw new Error('A swallowed hero must have a swallowing monster.');
         await plineWithContinuation(monsterIsAnimal(hero.ustuck)
             ? `You float away from the ${surfaceName(hero.ux, hero.uy, state)}.`
-            : `You spiral up into ${holdingMonsterName(hero.ustuck, state)}.`);
+            : `You spiral up into ${monsterName(hero.ustuck, { state })}.`);
     } else if (heroIsHallucinating(state)) {
         await plineWithContinuation("Up, up, and awaaaay!  You're walking on air!");
     } else if (Is_airlevel(hero.uz)) {
@@ -5895,9 +5894,9 @@ export async function floatHeroUp(
     if (steed && !monsterIsFloater(steed.mnum)
         && !monsterIsFlyer(steed.mnum)) {
         if (levitationAtWill(state)) {
-            await plineWithContinuation(`${holdingMonsterSubject(steed, state)} magically floats up!`);
+            await plineWithContinuation(`${monsterName(steed, { state, capitalized: true })} magically floats up!`);
         } else {
-            await plineWithContinuation(`You cannot stay on ${holdingMonsterName(steed, state)}.`);
+            await plineWithContinuation(`You cannot stay on ${monsterName(steed, { state })}.`);
             await dismountHero(DISMOUNT_GENERIC, { state });
         }
     }
@@ -6043,10 +6042,10 @@ export async function floatHeroDown(
             if (heroFormSticks(state)) {
                 await plineWithContinuation(
                     `You aren't able to maintain your hold on ${
-                        holdingMonsterName(hero.ustuck, state)}.`);
+                        monsterName(hero.ustuck, { state })}.`);
             } else {
                 await plineWithContinuation(
-                    `Startled, ${holdingMonsterName(hero.ustuck, state)} can no longer hold you!`);
+                    `Startled, ${monsterName(hero.ustuck, { state })} can no longer hold you!`);
             }
             setHeroGrip(null, state);
         }
@@ -6103,7 +6102,7 @@ export async function floatHeroDown(
                     messageStart: 'As you fall, you', state,
                 });
                 if (contact.died) return 1;
-            } else if (hero.usteed && !steedIsGrounded(hero.usteed, state)) {
+            } else if (hero.usteed && !grounded(hero.usteed.mnum, state)) {
                 await plineWithContinuation(
                     'You settle more firmly in the saddle.');
             } else if (heroIsHallucinating(state)) {

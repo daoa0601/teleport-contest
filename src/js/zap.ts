@@ -400,7 +400,7 @@ import type { MapLocation, Position } from './map_types.js';
 import { monsterSpellDeathReason } from './mcastu.js';
 import { putMonsterToSleep, sleptMonst } from './mhitm.js';
 import { heroHasRemovableSpeed, u_slow_down,
-    expelHero, holdingMonsterName,
+    expelHero,
 } from './mhitu.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid, shieldMonster } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
@@ -1282,7 +1282,7 @@ export async function affectMonsterSpeed(
         }
         if (kind === 'slow' && state.u?.uswallow
             && state.u?.ustuck === monster && monsterIsWhirly(monster)) {
-            await plineWithContinuation(`You disrupt ${holdingMonsterName(monster, state)}!`);
+            await plineWithContinuation(`You disrupt ${monsterName(monster, { state })}!`);
             await plineWithContinuation('A huge hole opens up...');
             await expelHero(monster, {
                 state, random: options.random, rollOne: options.roll,

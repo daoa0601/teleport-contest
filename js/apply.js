@@ -39,7 +39,7 @@ import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunne
 import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
-import { heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout, } from './senses.js';
+import { heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroIsUnderwater, setHeroBlindnessTimeout, } from './senses.js';
 import { heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, heroIsFlying, body_part, mbodypart } from './polyself.js';
 import { heroStatusLine, monsterStatusLine } from './insight.js';
 import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification, resetUtrap, maketrap, activateStatueTrapAt, fireDamageObject, } from './trap.js';
@@ -1190,12 +1190,6 @@ function result(object, state) {
 function isCandle(object) {
     return object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
 }
-// C youprop.h:Underwater (u.uinwater): the port keeps the bit in
-// u.uinwater, u.underwater, and state.underwater, so the guard tests
-// all three.
-function inOrUnderWater(state) {
-    return !!(state.u.uinwater || state.underwater || state.u.underwater);
-}
 // Part of C apply.c:use_lamp(): the Shk_Your() capitalized pronoun
 // prefix of the lamp on/off messages.
 function lampOwner(object, state) {
@@ -1228,7 +1222,7 @@ export async function useLamp(object, { state = game } = {}) {
         endObjectBurn(object, state);
         return result(object, state);
     }
-    if (inOrUnderWater(state)) {
+    if (heroIsUnderwater(state)) {
         await plineWithContinuation(isCandle(object)
             ? "Sorry, fire and water don't mix." : 'This is not a diving lamp.');
         return result(object, state);
@@ -1283,7 +1277,7 @@ export async function useCandelabrum(object, { state = game } = {}) {
             await plineWithContinuation(`To attach candles, apply them instead of the ${objectName(object, state)}.`);
         return result(object, state);
     }
-    if (inOrUnderWater(state)) {
+    if (heroIsUnderwater(state)) {
         await plineWithContinuation('You cannot make fire under water.');
         return result(object, state);
     }
@@ -1539,7 +1533,7 @@ export async function lightCocktail(object, { state = game } = {}) {
         }
         return result(object, state);
     }
-    if (inOrUnderWater(state)) {
+    if (heroIsUnderwater(state)) {
         await plineWithContinuation('There is not enough oxygen to sustain a fire.');
         return result(object, state);
     }
