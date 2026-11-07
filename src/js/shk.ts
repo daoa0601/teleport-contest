@@ -101,7 +101,7 @@ import { pickingAt, maybeResetPick } from './lock.js';
 import { stopHeroOccupation } from './allmain.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { monsterAtPosition } from './steed.js';
-import { deleteTrap, trapAt, trapName } from './trap.js';
+import { deleteTrap, trapAt, trapName, setHeroTrap } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
 import { isQuantumBox } from './quantum_cat.js';
@@ -2052,10 +2052,10 @@ export async function payForShopDamage(
 // hero and monster.
 function removeTrap(trap: Trap, state: ShopGameState): void {
     deleteTrap(trap, state);
-    if (state.u?.utrap && state.u.ux === trap.tx && state.u.uy === trap.ty) {
-        state.u.utrap = 0;
-        state.u.utraptype = 0;
-    }
+    if (state.u?.utrap && state.u.ux === trap.tx && state.u.uy === trap.ty)
+        // Freeing a trapped hero runs the set_utrap(0, 0) path, which also
+        // refreshes the stored levitation/flying blocked masks.
+        setHeroTrap(0, 0, state);
     const caught = monsterAt(state, trap.tx, trap.ty);
     if (caught?.mtrapped) caught.mtrapped = 0;
 }

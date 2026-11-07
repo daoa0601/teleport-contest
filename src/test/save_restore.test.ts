@@ -29,6 +29,7 @@ import { SAVE_VERSION } from '../js/state_schema.js';
 import { decodeSavedGame } from '../js/persistent_state_validation.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { dropInventoryObject, runExtendedCommand } from './support/commands.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshGame } from './support/game-state.js';
 import { floorObjects } from './support/level-state.js';
@@ -155,6 +156,38 @@ void test('saves from before interface option separation report an incompatible 
     // Format 30 saved this flag after opening the options menu.
     snapshot.version = 30;
     snapshot.state._optionsInitialized = true;
+
+    assert.throws(() => decodeSavedGame(encodeSavedGraph(snapshot)), {
+        message: 'Saved game has invalid version',
+    });
+});
+
+void test('saves from before the stored float masks report an incompatible version', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.plname = 'OldFloatMask';
+    // C restore keeps u.uprops[].blocked from the save (polyself.c:113-118);
+    // the port's format 45 predates blockedByFloat, so restoring one would
+    // drop BFlying|I_SPECIAL and show a levitating flyer as Fly+Lev.
+    grantIntrinsicProperty('levitation', 'outside');
+    grantIntrinsicProperty('flying', 'outside');
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    const encoded = storage.getItem('teleport-save:oldfloatmask');
+    assert.ok(encoded);
+    const snapshot = decodeSavedGraph(encoded);
+    assert.ok(isSavedRecord(snapshot));
+    snapshot.version = 45;
+    const state = snapshot.state;
+    if (!isSavedRecord(state) || !isSavedRecord(state.u))
+        throw new Error('The save must hold the hero record');
+    const sources = state.u._propertySources;
+    if (sources !== undefined) {
+        if (!isSavedRecord(sources))
+            throw new Error('The property sources must be a record');
+        for (const record of Object.values(sources))
+            if (isSavedRecord(record)) delete record.blockedByFloat;
+    }
 
     assert.throws(() => decodeSavedGame(encodeSavedGraph(snapshot)), {
         message: 'Saved game has invalid version',

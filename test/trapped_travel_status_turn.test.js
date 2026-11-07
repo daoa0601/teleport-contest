@@ -23,6 +23,7 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { setPropertyTerrainBlocked } from '../js/properties.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { setHeroTrap } from '../js/trap.js';
 import { requireScreenRow } from './support/screen.js';
 function statusTurnText() {
     return requireScreenRow(23).map(cell => cell.ch).join('');
@@ -35,8 +36,9 @@ void test('a trapped levitating traveler repaints the turn counter at the run\'s
     game.u.sickTurns = 5;
     game.u.sickType = SICK_VOMITABLE;
     game.u.levitationTurns = 40;
-    game.u.utrap = 50;
-    game.u.utraptype = TT_BEARTRAP;
+    // The bear-trap hold arrives through set_utrap()'s float_vs_flight(),
+    // which stores BLevitation|I_SPECIAL (the state weight_cap() toggles).
+    setHeroTrap(50, TT_BEARTRAP, game);
     // Keep the turn counter off the leap-runmode refresh stride
     // (runmode_delay_output(), svm.moves % 7): its time_botl repaint is a
     // different C path from the weight_cap() one under test.

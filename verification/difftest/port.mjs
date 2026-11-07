@@ -126,7 +126,7 @@ const { freshObjectRoom } = await import('../../test/support/object-room.js');
 const { uninitializedObject } = await import('../../test/support/game-objects.js');
 const { createMonsterAt } = await import('../../test/support/monsters.js');
 const { installHeroWeaponSkills } = await import('../../test/support/hero-state.js');
-const { setHeroSpecies } = await import('../../js/polyself.js');
+const { setHeroSpecies, floatVsFlight } = await import('../../js/polyself.js');
 const stateModule = await import('../../js/gstate.js');
 const { initRng, enableRngLog, getRngLog } = await import('../../js/rng.js');
 const { isaac64_next_uint64 } = await import('../../js/isaac64.js');
@@ -210,15 +210,18 @@ async function runCase(input) {
         },
     });
     const { game } = stateModule;
+    // The serialized bits add outside sources before the body is installed,
+    // as native.c does: its set_uasmon() then runs float_vs_flight(), which
+    // stores the BLevitation/BFlying I_SPECIAL blocks.  The port's
+    // setHeroSpecies() (set_uasmon) does the same; an unpolymorphed hero only
+    // needs the float_vs_flight() step.
+    if (hero.levitating) grantIntrinsicProperty('levitation', 'outside');
+    if (hero.flying) grantIntrinsicProperty('flying', 'outside');
     if (hero.form >= 0) {
         game.u.mtimedone = 100;
         game.u.mh = game.u.mhmax = 40;
         setHeroSpecies(hero.form, game);
-    }
-    // The serialized bits add outside sources. Form intrinsics and trap/float
-    // blocks are established by the real initialization helpers on both sides.
-    if (hero.levitating) grantIntrinsicProperty('levitation', 'outside');
-    if (hero.flying) grantIntrinsicProperty('flying', 'outside');
+    } else floatVsFlight(game);
     installHeroWeaponSkills(Object.fromEntries(
         Array.from({ length: constants.P_NUM_SKILLS }, (_, skill) => [skill, constants.P_BASIC])));
     game.inventory = [];

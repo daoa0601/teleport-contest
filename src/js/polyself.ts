@@ -78,7 +78,7 @@ import {
     hitMonsterWithThrownObject,
 } from './dothrow.js';
 import { mksobj, placeCreatedObject, adjustObjectLightAfterBlessing as adjustObjectLight } from './mkobj.js';
-import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons } from './trap.js';
+import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons, setHeroTrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
@@ -90,7 +90,8 @@ import {
 import { canSeeMonster, canSpotMonster, newsym, see_monsters, set_mimic_blocking } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';
 import { is_elven_armor, isFlimsyObject } from './object_properties.js';
-import { grantIntrinsicProperty, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty } from './properties.js';
+import { grantIntrinsicProperty, propertySourceIsActive, refreshMovementProperties, refreshProperty,
+    revokeIntrinsicProperty, setPropertyFloatBlocked } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { objectLightRadius } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
@@ -307,8 +308,6 @@ export function setHeroSpecies(mnum: number, state: GameState = game) {
     if (hero.umovement && newSpeed < oldSpeed && oldSpeed > 0)
         hero.umovement = Math.trunc(hero.umovement * newSpeed / oldSpeed);
     hero.umonnum = mnum;
-    // Native set_uasmon() calls float_vs_flight(), which requests bot().
-    if (!state.program_state.restoring) state.context.botl = true;
     if (hero.protectionFromShapeChangers || state.protectionFromShapeChangers)
         hero.mcham = -1;
     else if (monsterIsVampire(mnum)) hero.mcham = mnum;
@@ -360,11 +359,43 @@ export function setHeroSpecies(mnum: number, state: GameState = game) {
     }
     syncBlindness(state);
     syncHeroInvisibility(state);
-    refreshMovementProperties(state);
+    // C set_uasmon() calls float_vs_flight() unless the game is being
+    // restored (polyself.c:117-118): while restoring, BFlying/BLevitation
+    // come from the save, so only the projections refresh.
+    if (state.program_state?.restoring) refreshMovementProperties(state);
+    else floatVsFlight(state);
     setFormSenses(mnum, state);
     // set_uasmon() reassesses status fields when the hero's body changes.
     reassessStatusFields(state);
     state.were_changes = 0;
+}
+
+// C polyself.c:float_vs_flight()
+// Levitation overrides Flying; set or clear BFlying|I_SPECIAL, and set or
+// clear BLevitation|I_SPECIAL when a floor trap holds live levitation down
+// (polyself.c:133-147).  The blocked masks are stored state (youprop.h:250):
+// this is their only writer, so between two calls every reader — the
+// status line's Fly condition (botl.c:1194), float_down() (trap.c:4036),
+// do.c:1176, potion.c:1174 and insight.c — sees the state the last call
+// left behind, even when sources or u.utrap changed since.
+export function floatVsFlight(state: GameState = game): void {
+    const hero = state.u;
+    // C: boolean stuck_in_floor = (u.utrap && u.utraptype != TT_PIT);
+    const stuckInFloor = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
+    // C: (HLevitation || ELevitation) — the steed never contributes here.
+    const levitating = propertySourceIsActive('levitation', state);
+    const flying = propertySourceIsActive('flying', state);
+    // floating overrides flight; so does being trapped in the floor
+    setPropertyFloatBlocked('flying', levitating || (flying && stuckInFloor), state);
+    // being trapped on the ground (bear trap, web, molten lava survived
+    // with fire resistance, former lava solidified via cold, tethered to a
+    // buried iron ball) overrides floating
+    setPropertyFloatBlocked('levitation', levitating && stuckInFloor, state);
+    // C ends with steed_vs_stealth() (riding blocks stealth unless
+    // hero+steed fly; modelled in propertyIsActive('stealth')) and
+    // disp.botl = TRUE (polyself.c:151-153).
+    refreshMovementProperties(state);
+    state.context.botl = true;
 }
 
 // C hack.h:MATCH_WARN_OF_MON(): does this monster trip the hero's warning?
@@ -667,7 +698,9 @@ async function finishHumanFormChange(
     // C polyman() only toggles mimic light blocking; its closing see_monsters() redraws.
     if (restored.changedSeeInvisible) set_mimic_blocking({ state });
     if (!heroCanUseTwoWeapons(state)) await stopTwoWeaponCombat(state);
-    if (hero.utrap && hero.utraptype === TT_PIT) hero.utrap = rn1(6, 2);
+    // C polyself.c:255-256 — set_utrap(rn1(6,2), TT_PIT) also runs
+    // float_vs_flight(); a pit never blocks levitation or flight.
+    if (hero.utrap && hero.utraptype === TT_PIT) setHeroTrap(rn1(6, 2), TT_PIT, state);
     if (restored.regainedSight) {
         setHeroBlindnessTimeout(1, state);
         await makeBlinded(0, { state, publish });
@@ -868,7 +901,9 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     findArmorClass(game);
     if (wasHidingUnder) await hideHeroUnder(game);
     if (game.u.utrap && game.u.utraptype === TT_PIT)
-        game.u.utrap = rn1(6, 2);
+        // C polyself.c:896-897 — set_utrap(rn1(6,2), TT_PIT) also runs
+        // float_vs_flight(); a pit never blocks levitation or flight.
+        setHeroTrap(rn1(6, 2), TT_PIT, game);
     if (wasBlind && !heroIsBlind(game)) {
         setHeroBlindnessTimeout(1, game);
         await makeBlinded(0, { state: game });

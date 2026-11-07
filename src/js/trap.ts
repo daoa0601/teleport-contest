@@ -62,7 +62,7 @@ import {
     MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, MONSTER_SOUND,
 } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
-import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart } from './polyself.js';
+import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart, floatVsFlight } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import {
     levelHasCeiling, level_difficulty, specialPrototypeAt, levelAtDepth,
@@ -1133,7 +1133,7 @@ export function setHeroTrap(turns: number, type: number, state: GameState = game
     state.context.botl = true;
     state.u.utrap = turns;
     state.u.utraptype = turns ? type : 0;
-    refreshMovementProperties(state);
+    floatVsFlight(state);
 }
 
 // C trap.c:reset_utrap(): leave the trap (set_utrap(0, 0)), optionally
@@ -5494,8 +5494,9 @@ export async function floatHeroUp(
     }
     if (wasFlying)
         await plineWithContinuation('You are no longer able to control your flight.');
-    refreshMovementProperties(state);
-    state.context.botl = true;
+    // C float_up() ends with float_vs_flight() (trap.c:4001), which also
+    // requests the status repaint.
+    floatVsFlight(state);
     await encumber_msg(state);
 }
 
@@ -5569,7 +5570,7 @@ export async function floatHeroDown(
             await plineWithContinuation(
                 `You are no longer trying to float up from the ${hold}.`);
         }
-        refreshMovementProperties(state);
+        floatVsFlight(state);
         await encumber_msg(state);
         return 0;
     }
@@ -5579,11 +5580,10 @@ export async function floatHeroDown(
 
     if (before.flyingBlocked) {
         // controlled flight is no longer overridden by levitation
-        refreshMovementProperties(state);
+        floatVsFlight(state);
         if (propertyIsActive('flying', state)) {
             await plineWithContinuation(
                 'You have stopped levitating and are now flying.');
-            refreshMovementProperties(state);
             await encumber_msg(state);
             return 1;
         }
@@ -5741,19 +5741,18 @@ export async function floatHeroDown(
 // block levitation at the same time, and only a sole floor-trap block
 // (C BLevitation == I_SPECIAL) gets feedback.
 export function captureLevitationState(state: PropertyState = game): LevitationState {
-    const hero = state.u;
-    const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
     const hasSource = propertySourceIsActive('levitation', state);
+    const record = existingPropertyRecord('levitation', state);
     return {
         // HLevitation || ELevitation
         hasSource,
         // Levitation macro: sources and not blocked
         active: propertyIsActive('levitation', state),
         // BLevitation FROMOUTSIDE: solid rock or a wall of water
-        blockedByTerrain:
-            !!existingPropertyRecord('levitation', state)?.blockedByTerrain,
-        // BLevitation I_SPECIAL: floor-trap hold over live levitation sources
-        blockedByTrap: hasSource && trapped,
+        blockedByTerrain: !!record?.blockedByTerrain,
+        // BLevitation I_SPECIAL: the stored floor-trap hold float_vs_flight()
+        // left behind (C reads the mask, not u.utrap)
+        blockedByTrap: !!record?.blockedByFloat,
         // Flying macro
         flying: propertyIsActive('flying', state),
         // BFlying: flight suppressed by levitation or a floor trap
@@ -7549,10 +7548,10 @@ function possessiveTrap(trap: Trap): string {
 // Port only: remove a trap and clear runtime hero and monster restraint state.
 function removeTrap(trap: Trap, state: GameState): void {
     deleteTrap(trap, state);
-    if (state.u?.utrap && state.u.ux === trap.tx && state.u.uy === trap.ty) {
-        state.u.utrap = 0;
-        state.u.utraptype = 0;
-    }
+    if (state.u?.utrap && state.u.ux === trap.tx && state.u.uy === trap.ty)
+        // Freeing a trapped hero runs the set_utrap(0, 0) path, which also
+        // refreshes the stored levitation/flying blocked masks.
+        setHeroTrap(0, 0, state);
     const monster = monsterAt(state, trap.tx, trap.ty);
     if (monster?.mtrapped) monster.mtrapped = 0;
 }

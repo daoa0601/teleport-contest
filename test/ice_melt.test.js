@@ -9,6 +9,7 @@ import { flush_screen } from '../js/display.js';
 import { meltIce } from '../js/zap.js';
 import { pushKeys } from '../js/input.js';
 import { BEARTRAP, BELL_OF_OPENING, BOULDER, GOLD_PIECE } from '../js/object_data.js';
+import { setHeroTrap } from '../js/trap.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { levelTimers } from '../js/timeout.js';
@@ -53,9 +54,12 @@ void test('melting a bear trap releases the hero into blocked levitation', async
     ice.typ = ICE;
     ice.icedpool = ICED_POOL;
     const trap = addTrap(game.level, BEAR_TRAP, x, y);
-    game.u.utrap = 5;
-    game.u.utraptype = TT_BEARTRAP;
+    // C: the levitator is caught by the trap through set_utrap(), whose
+    // float_vs_flight() stores BLevitation|I_SPECIAL; the ice then carries
+    // the trap (trap.c:7180-7186), and cnv_trap_obj() releases the hero
+    // (trap.c:5367) when the ice melts.
     grantIntrinsicProperty('levitation', 'outside');
+    setHeroTrap(5, TT_BEARTRAP, game);
     assert.equal(propertyIsActive('levitation'), false);
     pushKeys(' '.repeat(100));
     await meltIce(x, y);

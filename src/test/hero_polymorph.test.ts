@@ -177,10 +177,12 @@ for (const [trapType, form] of [
 void test('a slipping body escaping a web resumes blocked levitation', async () => {
     const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
+    // C: the levitation source exists first and the web's set_utrap() runs
+    // float_vs_flight(), storing BLevitation|I_SPECIAL for the hold.
+    grantIntrinsicProperty('levitation', 'outside');
     const trap = addTrap(level, WEB, game.u.ux, game.u.uy);
     await dotrap(trap);
     assert.ok((game.u.utrap ?? 0) > 0);
-    grantIntrinsicProperty('levitation', 'outside');
     assert.equal(propertyIsActive('levitation', game), false,
         'the web must block the levitation source while it holds the hero');
     const input = resetInputState();

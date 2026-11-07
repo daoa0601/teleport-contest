@@ -9,9 +9,15 @@ import { LEVITATION_BOOTS, ROCK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { MOD_ENCUMBER, nearCapacity, weightCapacity } from '../js/hack.js';
+import { setHeroTrap } from '../js/trap.js';
 void test('levitation still supports a load while the hero is stuck in the floor', async () => {
-    await freshObjectRoom({ hero: { utrap: 2, utraptype: TT_INFLOOR, uhp: 5 } });
+    await freshObjectRoom({ hero: { uhp: 5 } });
     grantIntrinsicProperty('levitation', 'outside');
+    // C reaches the floor hold through set_utrap() while levitating
+    // (dig.c's passwall mishap), whose float_vs_flight() stores
+    // BLevitation|I_SPECIAL: the hero is not floating, but weight_cap()
+    // still credits the carrying capacity (hack.c:4307-4309).
+    setHeroTrap(2, TT_INFLOOR, game);
     // This load is Stressed at ordinary capacity and Burdened with levitation.
     await addInventoryObject(ROCK, { quan: 120 });
     pushKeys(' '.repeat(5));
@@ -41,14 +47,14 @@ for (const blockedBy of ['nothing', 'terrain', 'floor trap']) {
         ? 'flight prevents wounded-leg carrying penalties during levitation boot wear'
         : `flight blocked by ${blockedBy} keeps wounded-leg carrying penalties during boot wear`;
     void test(behavior, async () => {
-        await freshObjectRoom({ hero: {
-                _woundedLegSide: 'both',
-                utrap: blockedBy === 'floor trap' ? 1 : 0,
-                utraptype: TT_INFLOOR,
-            } });
+        await freshObjectRoom({ hero: { _woundedLegSide: 'both' } });
         grantIntrinsicProperty('flying', 'outside');
         if (blockedBy === 'terrain')
             setPropertyTerrainBlocked('flying', true);
+        // C: a flying hero caught by the floor arrives through set_utrap(),
+        // whose float_vs_flight() stores BFlying|I_SPECIAL.
+        if (blockedBy === 'floor trap')
+            setHeroTrap(1, TT_INFLOOR, game);
         await addInventoryObject(LEVITATION_BOOTS, { invlet: 'a' });
         pushKeys('a     ');
         await rhack('W'.charCodeAt(0));

@@ -6,6 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { LUCKSTONE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { setPropertyTimeout } from '../js/properties.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -21,7 +22,9 @@ for (const { cursed, hitBonus, expectedHit } of [
             installPolymorphedHero('newt');
             // Levitation lets this tiny body carry a stone without the
             // encumbrance penalty masking the luck bonus under test.
-            game.u.levitating = true;
+            // weight_cap() reads the Levitation macro (sources and not the
+            // stored blocked mask), so the timeout supplies a real source.
+            setPropertyTimeout('levitation', 10);
             if (carrying)
                 await addInventoryObject(LUCKSTONE, { cursed });
             assert.equal(nearCapacity(game), 0);

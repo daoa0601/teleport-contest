@@ -307,6 +307,7 @@ function validPropertySources(value: unknown): value is PropertySources {
         invoked: nullable(validInvokedSource),
         carried: arrayOf(validCarriedSource),
         blockedByTerrain: optional(boolean),
+        blockedByFloat: optional(boolean),
     });
 }
 

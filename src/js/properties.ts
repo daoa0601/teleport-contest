@@ -97,24 +97,33 @@ export function levitationSourceIsActive(ignoreBoots: boolean, state: PropertySt
         || !!record?.worn.some(source => !ignoreBoots || source.slot !== 'uarmf');
 }
 
-// Part of C youprop.h:Levitation(), Flying(), Invis(), Clairvoyant():
-// the !blocked mask half.
+// Part of C youprop.h:Levitation(), Flying(): the !blocked mask half.
+// C BLevitation/BFlying are stored masks: FROMOUTSIDE (terrain, written by
+// setPropertyTerrainBlocked) plus I_SPECIAL (blockedByFloat, written only by
+// float_vs_flight() in polyself.js).  A mask can be stale relative to the
+// current sources and u.utrap; C's macros read the stale value and so does
+// this test.
 export function propertyIsBlocked(property: PropertyName, state: PropertyState = game) {
-    if (existingPropertyRecord(property, state)?.blockedByTerrain) return true;
+    const record = existingPropertyRecord(property, state);
+    if (record?.blockedByTerrain) return true;
     const hero = state.u;
     if (property === 'clairvoyant') return !!hero.clairvoyanceBlocked;
     if (property === 'invisible') {
         const cloak = state.uarmc || hero.uarmc;
         return cloak?.otyp === MUMMY_WRAPPING || !!hero.invisibilityBlocked || !!hero.invisBlocked;
     }
-    const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
-    const levitation = propertySourceIsActive('levitation', state);
-    if (property === 'levitation') return levitation && trapped;
-    if (property === 'flying') {
-        const flying = propertySourceIsActive('flying', state);
-        return levitation || (flying && trapped);
-    }
+    if (property === 'levitation' || property === 'flying')
+        return !!record?.blockedByFloat;
     return false;
+}
+
+// Port only: writes the blocked mask's I_SPECIAL half.  C polyself.c
+// float_vs_flight() is the sole writer; call floatVsFlight() (polyself.js)
+// instead of touching this directly.
+export function setPropertyFloatBlocked(
+    property: 'levitation' | 'flying', blocked: boolean, state: PropertyState = game,
+) {
+    propertyRecord(property, state).blockedByFloat = blocked;
 }
 
 // Port only: writes the terrain blocker on the property record.
@@ -221,10 +230,11 @@ export function refreshProperty(property: PropertyName, state: PropertyState = g
     return active;
 }
 
-// Part of C polyself.c:float_vs_flight(), steed_vs_stealth(): refreshing
-// the movement properties.
-// C float_vs_flight()/steed_vs_stealth(): movement changes can suppress an
-// ability without removing the item or body which grants it.
+// Port only: re-projects the movement properties onto the hero flags.
+// The blocked masks are NOT recomputed here: C's macros read the stored
+// BLevitation/BFlying (propertyIsBlocked), which only polyself.js
+// floatVsFlight() — C polyself.c:float_vs_flight() — and steed.c's
+// steed_vs_stealth() equivalents update.
 export function refreshMovementProperties(state: PropertyState = game) {
     for (const property of movementProperties)
         projectProperty(property, state);
@@ -302,6 +312,8 @@ function cloneLevitationRecord(record: PropertySources): PropertySources {
     };
     if (record.blockedByTerrain !== undefined)
         copy.blockedByTerrain = record.blockedByTerrain;
+    if (record.blockedByFloat !== undefined)
+        copy.blockedByFloat = record.blockedByFloat;
     return copy;
 }
 

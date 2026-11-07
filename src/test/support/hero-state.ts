@@ -11,6 +11,7 @@ import { unplaceBallAndChain } from '../../js/ball.js';
 import { swallowed } from '../../js/display.js';
 import { monsterEmitsLight, vision_recalc } from '../../js/vision.js';
 import { refreshMovementProperties } from '../../js/properties.js';
+import { setHeroTrap } from '../../js/trap.js';
 import {
     A_INT, A_WIS, P_EXPERT, P_NUM_SKILLS, TT_BURIEDBALL, W_BALL, W_CHAIN,
 } from '../../js/const.js';
@@ -181,9 +182,10 @@ export async function installHeroChainedToBuriedBall({
 } = {}) {
     const ball = await knownObject(HEAVY_IRON_BALL);
     addBuriedObject(ball, x, y);
-    game.u.utrap = turns;
-    game.u.utraptype = TT_BURIEDBALL;
-    refreshMovementProperties(game);
+    // C reaches the buried-ball tether through set_utrap() (zap.c:5670),
+    // which also runs float_vs_flight() and blocks levitation while
+    // levitation sources exist.
+    setHeroTrap(turns, TT_BURIEDBALL, game);
     return ball;
 }
 

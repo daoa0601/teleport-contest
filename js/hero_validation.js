@@ -277,6 +277,7 @@ function validPropertySources(value) {
         invoked: nullable(validInvokedSource),
         carried: arrayOf(validCarriedSource),
         blockedByTerrain: optional(boolean),
+        blockedByFloat: optional(boolean),
     });
 }
 // Port only: saved-state validation of a property's intrinsic origins.

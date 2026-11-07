@@ -10,7 +10,7 @@ import { finishOrdinaryQuit } from '../js/end.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { adjustLevelAbilities } from '../js/attrib.js';
-import { setHeroSpecies } from '../js/polyself.js';
+import { setHeroSpecies, floatVsFlight } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDFOLD, DUNCE_CAP, CORNUTHAUM, MUMMY_WRAPPING, RIN_INVISIBILITY, OBJECT_NAMES, SPEED_BOOTS, TOWEL } from '../js/object_data.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
@@ -283,6 +283,9 @@ void test('a flying mount supplies latent flight while the hero levitates', asyn
     freshGameplayRoom({ flags: { debug: true } });
     game.u.usteed = await createSaddledSteed('ki-rin');
     setPropertyTimeout('levitation', 10);
+    // C: the levitation grant's closing float_vs_flight() (potion.c:1220)
+    // stored BFlying|I_SPECIAL, which is what insight.c:1710-1722 explains.
+    floatVsFlight(game);
     assert.ok((await enlightenmentText()).includes("You would fly if you weren't levitating."));
 });
 
