@@ -733,7 +733,8 @@ export interface SpecialTrapOptions {
     victim?: boolean;
 }
 
-// Port only: create an object and transfer it to a special-level monster.
+// Part of C sp_lev.c:create_object(): the invent-carrying-monster branch —
+// create at a chosen square, remove_object, then the monster picks it up.
 export async function giveSpecialMonsterObject(
     context: SpecialLevelContext, monster: Monster | null, otyp: number, spe?: number | null,
 ): Promise<GameObject | null> {
@@ -874,9 +875,9 @@ export async function get_location_coord(context: LocationContext, coordinate: P
     return point;
 }
 
-// Port only: decode a packed special-level coordinate without the random sentinel.
-// Shared packed-coordinate form: sp_lev.h SP_COORD_PACK/SP_COORD_X/SP_COORD_Y.
-// Unlike get_location_coord, it never recognizes the random sentinel.
+// Part of C sp_lev.h SP_COORD_PACK: decode a packed special-level coordinate
+// without the random sentinel.  Unlike get_location_coord, it never
+// recognizes the random sentinel.
 export async function getPackedLocationCoord(context: LocationContext, coordinate: Position,
     humidity: number, filter?: LocationFilter): Promise<Position> {
     return await get_location(context,
@@ -2568,12 +2569,14 @@ export async function ensure_way_out() {
     }
 }
 
-// Port only: detach a generated object if it is on the floor.
+// Part of C sp_lev.c:create_object(): detach the generated object from its
+// square before the container or monster transfer.
 export function removeFloorObject(object: GameObject | null): void {
     if (object?.where === 'floor') remove_object(object, game);
 }
 
-// Port only: transfer an optional generated object into its container.
+// Part of C sp_lev.c:create_object(): the container branch —
+// add_to_container() after removing the generated object.
 export async function addToContainer(container: GameObject | null, object: GameObject | null): Promise<GameObject | null> {
     if (!container || !object) return object;
     removeFloorObject(object);
