@@ -114,7 +114,7 @@ const RESISTANCES = [
 ];
 const CANDIDATES = [...RESISTANCES, 'telepathy', 'teleportation', 'teleportControl'];
 const S_FUNGUS = 32;
-// Port only: otyp lookup by object name for the amulet/potion constants.
+// C eat.c's AMULET_*/POT_* otyp constants, resolved by name from objects[].
 const type = (name) => OBJECT_NAMES.indexOf(name);
 const ADORNMENT = type('adornment'), STRENGTH = type('gain strength');
 const CONSTITUTION = type('gain constitution'), ACCURACY = type('increase accuracy');
