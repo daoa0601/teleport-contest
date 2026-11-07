@@ -5,13 +5,15 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { WAN_FIRE } from '../js/object_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a fire zap reports enveloping steam before its hit instead of repeating evaporation feedback', async () => {
-    const level = await freshObjectRoom({ hero: { fireResistance: true, waterWalking: true, uac: 100 } });
+    const level = await freshObjectRoom({ hero: { waterWalking: true, uac: 100 } });
     requirePlayingGame(game);
+    grantIntrinsicProperty('fireResistance', 'outside');
     level.requireAt(10, 10).typ = MOAT;
     const wand = await addInventoryObject(WAN_FIRE, { spe: 2 });
     const input = resetInputState();

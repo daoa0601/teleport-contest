@@ -2,11 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/do_wear.js';
 
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { POLY_TRAP } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
 import { dotrap } from '../js/trap.js';
-import { resetInputState } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { flushPendingTopline } from '../js/topl.js';
+
 import { IRON_SHOES, KICKING_BOOTS } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
@@ -154,4 +157,23 @@ void test('an unprotected hero removes the trap before choosing a new form', asy
     ]);
 
     assert.equal(game.u.umonnum, MONSTER_NAME.indexOf('hill giant'));
+});
+
+// C do_name.c:oname() installs only the wielded W_WEP intrinsic mask
+// (do_name.c:407); naming a carried Magic Mirror of Merlin into existence
+// leaves EAntimagic unset, so the polymorph trap's gate (trap.c:2486, plain
+// Antimagic || Unchanging) lets the hero change form.
+void test('a carried mirror named into existence does not shield a polymorph trap', async () => {
+    const level = await freshObjectRoom({ gameplaySeed: 2n });
+    const artifact = artifactByName('The Magic Mirror of Merlin');
+    assert.ok(artifact !== null && artifact !== undefined);
+    const mirror = await addInventoryObject(artifact.baseType);
+    nameArtifact(mirror, artifact);
+    const trap = addTrap(level, POLY_TRAP, 10, 10);
+    pushKeys(' '.repeat(100));
+
+    await dotrap(trap);
+
+    assert.equal(level.traps.includes(trap), false, 'the trap fires and is consumed');
+    assert.ok((game.u.mtimedone ?? 0) > 0, 'the hero really changed form');
 });

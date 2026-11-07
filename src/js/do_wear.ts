@@ -74,7 +74,7 @@ import {
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling, surfaceName } from './dungeon.js';
 import { removeWornHeroItem } from './steal.js';
-import { artifactEmitsLight, heroHasArtifactDefense, setWornArtifactProperties } from './artifact.js';
+import { artifactEmitsLight, setWornArtifactProperties } from './artifact.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { d, rn2, rnd } from './rng.js';
@@ -87,7 +87,7 @@ import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.j
 import { displayColorName, displayLiquidName, monsterName, objectMonsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty } from './properties.js';
 import {
-    monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious,
+    monstersForgetHeroResistance, seenResistanceForProperty, monsterIsAmphibious,
     monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid,
     monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, heroResistsStoning, touchPetrifies, heroCanBeStrangled,
 } from './mondata.js';
@@ -1257,15 +1257,13 @@ export function heroIsDisplaced(state: GameState = game) {
         || (state?.u?.displacedTurns ?? 0) > 0;
 }
 
-// C youprop.h:Drain_resistance includes both intrinsic sources and the shield
-// currently installed by setworn().
+// C youprop.h:Drain_resistance (HDrain || EDrain).  The extrinsic word is
+// installed by setworn()'s oc_oprop pass (the shield of drain resistance,
+// do_wear.c:812), dragon_armor_handling() for black dragon armor, and
+// artifact.c:set_artifact_intrinsic() for a wielded life-drain defn;
+// set_uasmon()'s PROPSET holds the form/lycanthropy intrinsic.
 export function heroHasDrainResistance(state: GameState = game) {
-    const hero = state.u;
-    const shield = state?.uarms || hero.uarms;
-    return !!(hero.drainResistance
-        || shield?.otyp === SHIELD_OF_DRAIN_RESISTANCE
-        || heroResistsLifeDrain(state)
-        || heroHasArtifactDefense('life-drain', state));
+    return propertyIsActive('drainResistance', state);
 }
 
 // C youprop.h:Free_action includes the oc_oprop installed by either worn ring.

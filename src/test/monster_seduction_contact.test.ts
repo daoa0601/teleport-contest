@@ -4,7 +4,8 @@ import { wearHeroArmor } from '../js/do_wear.js';
 
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import type { HeroContactAttack } from '../js/monster_action_types.js';
 import { mhitm_adtyping } from '../js/uhitm.js';
@@ -325,4 +326,29 @@ void test('a fatally exhausting seduction is recorded without an article', async
 
     assert.equal(game.program_state.gameover, true);
     assert.equal(loadScoreRecords()[0]?.death, 'killed by exhaustion');
+});
+
+// C mhitu.c:2204 (doseduce's rnd(5) case 3) reads resists_drli(), not the
+// Drain_resistance macro: an intrinsic drain-resistance source
+// (HDrain_resistance) does not ward off the seduction level drain, while a
+// drained form or a defended weapon would (mondata.c:203-213).
+void test('intrinsic drain resistance does not ward off seduction level drain', async () => {
+    const level = await freshObjectRoom({ flags: { female: true }, hero: { urexp: 100 } });
+    requirePlayingGame(game);
+    level.flags.noteleport = true;
+    grantIntrinsicProperty('drainResistance', 'outside');
+    const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    incubus.female = false;
+    const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
+        damageType: AD_SSEX, hit: true, damage: 0 };
+    const messages: string[] = [];
+    pushKeys(' '.repeat(50));
+
+    await mhitm_adtyping({ adtyp: AD_SSEX, mdef: 'youmonst', context: {
+        state: game, attacker: incubus, attack,
+        publish: async message => { messages.push(message); },
+        random: sides => (sides === 35 ? 34 : sides === 5 ? 3 : 0), rollOne: () => 4 } });
+
+    assert.ok(messages.some(message => /out of shape/.test(message)));
+    assert.ok(!messages.some(message => /curious feeling/.test(message)));
 });

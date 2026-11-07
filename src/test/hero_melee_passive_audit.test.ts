@@ -5,6 +5,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { finishHeroHelplessness } from '../js/hack.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -146,7 +147,7 @@ void test('an eyeless attacker feels an acid splash without seeing its source', 
 void test('a hallucinating attacker sees acid splashes as fanciful liquids', async () => {
     await meleeRoom('newt', 'acid blob');
     game.u.hallucinationTurns = 100;
-    game.u.acidResistance = true;
+    grantIntrinsicProperty('acidResistance', 'outside');
     initRng(41n);
     let messages = '';
 

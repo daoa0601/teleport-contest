@@ -128,8 +128,6 @@ import {
 
     MONSTER_NAME,
 
-    MONSTER_RESISTS,
-
     MONSTER_SIZE,
 
     MONSTER_SYMBOL,
@@ -161,13 +159,13 @@ import {
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { HeroPoisonOptions } from './attrib.js';
-import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
+import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
 import {
     cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused,
     makeStunned, setHeroSlimingTimeout, splitMonster, startHeroSliming,
 } from './potion.js';
 import { ghodHitsu } from './priest.js';
-import { hasWornProperty, propertyIsActive } from './properties.js';
+import { propertyIsActive } from './properties.js';
 import { paranoidQuery } from './cmd.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { exclam, rayHitMessage } from './zap.js';
@@ -6579,11 +6577,6 @@ export interface HeroContactPassiveResult extends PassiveEffect {
     damage?: number;
 }
 
-const MR_FIRE = 0x01;
-const MR_COLD = 0x02;
-const MR_ELEC = 0x10;
-const MR_ACID = 0x40;
-const MR_STONE = 0x80;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const PM_STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');
 
@@ -6672,7 +6665,7 @@ async function applyAcidPassive({
             );
         }
 
-        if (heroResistsAcid(state)) {
+        if (propertyIsActive('acidResistance', state)) {
             monstersObserveHeroResistance(M_SEEN_ACID, state);
         } else {
             appliedDamage = damage;
@@ -6733,7 +6726,7 @@ async function applyStonePassive({
     const contactType = attackType === AT_MAGC ? AT_CLAW : attackType;
     if (!hit || contactIsProtected(
         contactType, wornMask, !!(state.uwep || state.u.uwep) || weaponWasDestroyed,
-    ) || heroResists(state, 'stoneResistance', MR_STONE)) {
+    ) || propertyIsActive('stoneResistance', state)) {
         return { heroDied: false };
     }
     if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
@@ -6873,7 +6866,7 @@ async function applyColdPassive(context: PassiveContext): Promise<PassiveEffect>
         monster, damage, state, publish, random, die,
     } = context;
     if (!monsterNearHero(monster, state)) return { heroDied: false };
-    if (heroResists(state, 'coldResistance', MR_COLD)) {
+    if (propertyIsActive('coldResistance', state)) {
         await shieldeff(state.u.ux, state.u.uy, state);
         await publish(formatFeltMessage('a mild chill.', state));
         monstersObserveHeroResistance(M_SEEN_COLD, state);
@@ -6906,7 +6899,7 @@ async function applyStunPassive({ damage, state, publish }: PassiveContext): Pro
 // Part of C uhitm.c:passive(): apply adjacent fire damage and resistance feedback.
 async function applyFirePassive({ monster, damage, state, publish, die }: PassiveContext): Promise<PassiveEffect> {
     if (!monsterNearHero(monster, state)) return { heroDied: false };
-    if (heroResists(state, 'fireResistance', MR_FIRE)) {
+    if (propertyIsActive('fireResistance', state)) {
         await shieldeff(state.u.ux, state.u.uy, state);
         await publish(formatFeltMessage('mildly warm.', state));
         monstersObserveHeroResistance(M_SEEN_FIRE, state);
@@ -6924,7 +6917,7 @@ async function applyFirePassive({ monster, damage, state, publish, die }: Passiv
 
 // Part of C uhitm.c:passive(): apply electric damage and resistance feedback.
 async function applyElectricPassive({ monster, damage, state, publish, die }: PassiveContext): Promise<PassiveEffect> {
-    if (heroResists(state, 'shockResistance', MR_ELEC)) {
+    if (propertyIsActive('shockResistance', state)) {
         await shieldeff(state.u.ux, state.u.uy, state);
         await publish(formatFeltMessage('a mild tingle.', state));
         monstersObserveHeroResistance(M_SEEN_ELEC, state);
@@ -6948,22 +6941,6 @@ async function damageHero(monster: Monster, amount: number, { state, publish, di
         state, publish, die: async victim => die({ killer: passiveMonsterName(victim) }),
     });
 }
-
-// Part of C uhitm.c:passive(): the elemental resist gates read
-// mondata.c's Resists_Elem(&gy.youmonst, ...) — uprops alias, worn items,
-// and the polyform's resist bits.
-function heroResists(state: GameState, property: 'acidResistance' | 'coldResistance' | 'fireResistance' | 'shockResistance' | 'stoneResistance', mask: number): boolean {
-    const hero = state.u;
-    if (hero[property] || hasWornProperty(property, state)) return true;
-    const form = heroMonsterForm(state);
-    return form != null && ((MONSTER_RESISTS[form] ?? 0) & mask) !== 0;
-}
-
-// Part of C uhitm.c:passive(): Resists_Elem(mon, ACID_RES) for AD_ACID.
-function heroResistsAcid(state: GameState): boolean {
-    return heroResists(state, 'acidResistance', MR_ACID);
-}
-
 
 // Part of C uhitm.c:passive(): select the weapon or boots exposed by contact.
 function objectTouchedByAttack(state: GameState, attackType: AttackMethod, weapon: GameObject | null): GameObject | null {

@@ -9,7 +9,6 @@ import {
 } from './object_data.js';
 import { monsterHasMagicResistance } from './mondata.js';
 import { burnArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact } from './trap.js';
-import { heroHasArtifactDefense } from './artifact.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BURNING, BURNING_OIL, COLNO, DOOR, D_CLOSED, D_LOCKED, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, LARGEST_INT, LOST_EXPLODING, M_AP_MONSTER, M_AP_TYPE, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, SHOPBASE, SINK, STATUE_TRAP, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, ZAP_POS } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, TemporaryMapEffect } from './display.js';
@@ -86,7 +85,6 @@ interface ExplosionKind {
     floor: RayFloorKind;
     items?: InventoryDamageType;
     property?: PropertyName;
-    defense?: 'magic' | 'fire' | 'cold' | 'shock' | 'poison';
     resists: (monster: Monster) => boolean;
 }
 interface ExplosionSource {
@@ -122,15 +120,15 @@ const resistanceLevels = new Map([
 const damageKinds = new Map<DamageType, ExplosionKind>([
     [AD_MAGM, {
         name: 'magical blast', floor: 'magic', property: 'antimagic',
-        defense: 'magic', resists: monsterHasMagicResistance,
+        resists: monsterHasMagicResistance,
     }],
     [AD_FIRE, {
         name: 'fireball', floor: 'fire', items: 'fire', property: 'fireResistance',
-        defense: 'fire', resists: monsterHasFireResistance,
+        resists: monsterHasFireResistance,
     }],
     [AD_COLD, {
         name: 'ball of cold', floor: 'cold', items: 'cold', property: 'coldResistance',
-        defense: 'cold', resists: monsterHasColdResistance,
+        resists: monsterHasColdResistance,
     }],
     [AD_DISN, {
         name: 'disintegration field', floor: 'disintegration',
@@ -138,11 +136,11 @@ const damageKinds = new Map<DamageType, ExplosionKind>([
     }],
     [AD_ELEC, {
         name: 'ball of lightning', floor: 'lightning', items: 'electric',
-        property: 'shockResistance', defense: 'shock', resists: monsterHasShockResistance,
+        property: 'shockResistance', resists: monsterHasShockResistance,
     }],
     [AD_DRST, {
         name: 'poison gas cloud', floor: 'poison', property: 'poisonResistance',
-        defense: 'poison', resists: monsterHasPoisonResistance,
+        resists: monsterHasPoisonResistance,
     }],
     [AD_ACID, {
         name: 'splash of acid', floor: 'acid', property: 'acidResistance',
@@ -388,8 +386,11 @@ function heroResists(damageType: DamageType, objectClass: number, state: GameSta
         return ignoresDeathField(heroSpecies(state));
     const kind = damageKinds.get(damageType);
     if (!kind) throw new Error(`Unknown explosion damage type ${damageType}`);
-    return !!kind.property && (state.u[kind.property] || propertyIsActive(kind.property, state))
-        || !!kind.defense && heroHasArtifactDefense(kind.defense, state);
+    // C explode.c:explosionmask() reads the plain macros (explode.c:39
+    // Antimagic, 43 Fire_resistance, 47 Cold_resistance, 53
+    // Disint_resistance, 57 Shock_resistance, 61 Poison_resistance,
+    // 65 Acid_resistance); AD_PHYS stays EXPL_NONE.
+    return !!kind.property && propertyIsActive(kind.property, state);
 }
 
 // C explode.c:explosionmask()

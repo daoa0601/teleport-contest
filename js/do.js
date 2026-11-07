@@ -30,7 +30,7 @@ import { objectTypeKnown, oinit } from './o_init.js';
 import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition, setShopResidency, fixShopDamage, dopay } from './shk.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
-import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER } from './hack.js';
+import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire } from './hack.js';
 import { buryFloorObjectsAt, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, map_background, } from './display.js';
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
@@ -39,7 +39,7 @@ import { heroSpecies, heroFormSticks, heroIsPolymorphed, body_part, mbodypart } 
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrap, trapAt, selfTouchPetrifyingWeapons, floatHeroDown, waterDamageObject, lava_damage, } from './trap.js';
-import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
+import { heroHasCarriedArtifactFlag } from './artifact.js';
 import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero } from './pickup.js';
@@ -212,8 +212,8 @@ export async function dropBoulderIntoLiquid(boulder, x, y, state = game, { publi
             await publish('You find yourself on dry land again!');
         }
         else if (lava && Math.abs(state.u.ux - x) <= 1 && Math.abs(state.u.uy - y) <= 1) {
-            const fireResistant = state.u.fireResistance
-                || heroHasArtifactDefense('fire', state);
+            // C do.c:132-137 reads the plain Fire_resistance macro.
+            const fireResistant = heroResistsFire(state);
             await publish(`You are hit by molten ${displayLiquidName('lava', state)}${fireResistant ? '.' : '!'}`);
             await burnAwayHeroSlime(state, publish);
             let damage = d(fireResistant ? 1 : 3, 6);

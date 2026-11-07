@@ -37,7 +37,7 @@ import {
     monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
     monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance,
     monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance,
-    heroResistsStoning, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense,
+    heroResistsStoning, heroResistsLifeDrain, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense,
     monsterIsShade, is_neuter,
 } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
@@ -3507,7 +3507,7 @@ async function seductionOutcome(context: SeductionContext): Promise<void> {
             await exerciseAttribute(attribute, false, state);
             state.context.botl = true;
         } else if (outcome === 3) {
-            if (!heroHasDrainResistance(state)) {
+            if (!heroResistsLifeDrain(state)) {
                 await publish(formatFeltMessage('out of shape.', state));
                 await loseHeroExperience('overexertion', { state, publish });
             } else await publish('You have a curious feeling...');
