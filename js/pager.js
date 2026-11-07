@@ -716,6 +716,16 @@ function adjacentToHero(x, y) {
 // ---------------------------------------------------------------------------
 // encglyph() occupies ten bytes in the native buffer, followed by eight spaces.
 const ENCODED_LOOK_PREFIX_LENGTH = 10 + 8;
+// C pager.c:is_swallow_sym(): whether the displayed symbol is one of the
+// eight swallow-border symbols, resolved through the displayed symbol set.
+function isSwallowSymbol(appearance) {
+    for (let index = 0; index < 8; index++) {
+        const swallow = swallowSymbolAppearance(index);
+        if (swallow.ch === appearance.ch && !!swallow.dec === !!appearance.dec)
+            return true;
+    }
+    return false;
+}
 // Part of C pager.c:do_screen_description(): the symbol-matching pass —
 // every meaning the displayed symbol can carry. add_cmap_descr() is the
 // cmap pass (pool, moat, trap, warning) and append_str() the " or "
@@ -749,7 +759,7 @@ function screenDescription(x, y) {
             count++;
     };
     const sameSymbol = (candidate) => candidate.ch === appearance.ch && !!candidate.dec === !!appearance.dec;
-    if (Array.from({ length: 8 }, (_, index) => swallowSymbolAppearance(index)).some(sameSymbol)) {
+    if (isSwallowSymbol(appearance)) {
         append('the interior of a monster', 'the interior of a monster');
         needLook = true;
     }

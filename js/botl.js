@@ -26,7 +26,7 @@ import { weaponDescription, weaponSkillType } from './weapon.js';
 import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
 import { getLine, showMultiSelectWindow, showTextWindow } from './windows.js';
-import { colorName, matchAttributeName, matchColorName, queryAttributeSet, queryAttributeMenu, queryColorMenu } from './coloratt.js';
+import { colorName, matchAttributeName, matchColorName, queryAttr, queryColorMenu } from './coloratt.js';
 import { fuzzyMatch } from './hacklib.js';
 import { NO_COLOR, ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from './terminal.js';
 import { classifyStatusTerrain, heroGoldAmount, nearCapacity } from './hack.js';
@@ -1627,10 +1627,8 @@ async function statusHiliteMenuAdd(origfld) {
                     }
                     // "Choose" prompts allow combining attributes; the
                     // empty criticalhp prompt is a plain PICK_ONE.
-                    const atr = behavior === BL_TH_CRITICALHP
-                        ? await queryAttributeMenu(attrqry, 0)
-                        : await queryAttributeSet(attrqry);
-                    if (atr === null || atr === -1)
+                    const atr = await queryAttr(attrqry, 0);
+                    if (atr === -1)
                         continue chooseColor;
                     if (behavior === BL_TH_CONDITION) {
                         const conds = condHilites();

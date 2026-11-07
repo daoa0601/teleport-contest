@@ -722,6 +722,17 @@ interface ScreenDescription {
     needsDetail: boolean;
 }
 
+// C pager.c:is_swallow_sym(): whether the displayed symbol is one of the
+// eight swallow-border symbols, resolved through the displayed symbol set.
+function isSwallowSymbol(appearance: { ch: string; dec?: boolean }): boolean {
+    for (let index = 0; index < 8; index++) {
+        const swallow = swallowSymbolAppearance(index);
+        if (swallow.ch === appearance.ch && !!swallow.dec === !!appearance.dec)
+            return true;
+    }
+    return false;
+}
+
 // Part of C pager.c:do_screen_description(): the symbol-matching pass —
 // every meaning the displayed symbol can carry. add_cmap_descr() is the
 // cmap pass (pool, moat, trap, warning) and append_str() the " or "
@@ -753,7 +764,7 @@ function screenDescription(x: number, y: number): ScreenDescription {
     };
     const sameSymbol = (candidate: { ch: string; dec?: boolean }): boolean =>
         candidate.ch === appearance.ch && !!candidate.dec === !!appearance.dec;
-    if (Array.from({ length: 8 }, (_, index) => swallowSymbolAppearance(index)).some(sameSymbol)) {
+    if (isSwallowSymbol(appearance)) {
         append('the interior of a monster', 'the interior of a monster');
         needLook = true;
     }
