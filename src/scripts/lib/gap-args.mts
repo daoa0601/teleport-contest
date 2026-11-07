@@ -85,7 +85,7 @@ export interface ArgRow {
     file: string;
     caller: string;
     callee: string;
-    mapping: 'name' | 'citation';
+    mapping: 'name' | 'part' | 'citation';
     infrastructure: boolean;
     // Counterpart locations (caller side, then callee side).
     port: string[];

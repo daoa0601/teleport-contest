@@ -684,7 +684,7 @@ export function monsterMovementBaseFlags(monster, state = game) {
 export function monsterCanOpenDoor(monster) {
     return !monsterHasNoHands(monster.mnum) && !monsterIsVerySmall(monster.mnum);
 }
-// Part of C mon.c:mon_allowflags(): the can_unlock local.
+// Part of C mon.c:mon_allowflags(), monmove.c:m_move(): the can_unlock local.
 export function monsterCanUnlockDoor(monster) {
     return monsterCanOpenDoor(monster) && monsterHasKey(monster, true)
         || !!monster.iswiz || monsterIsRider(monster);

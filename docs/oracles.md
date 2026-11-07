@@ -122,7 +122,16 @@ until code compares it with `<` or copies it into saved or displayed state.
 functions whose bodies live in a `.c` file) with the port. Each C function's
 port counterpart is found by name, ignoring case and underscores, by
 `docs/ledger/c-ts-aliases.tsv`, or by a `name()` citation in the comment
-above a port function. For each C callee, the edge is:
+above a port function. A helper whose leading comment opens with
+`Part of C file.c:a()[, file.c:b()]: …` is, in addition, a counterpart of
+every C function that line names (reported as `part`): it is a fragment of
+each of their bodies, so its calls and reach count for all of them even
+when a same-named port function also exists. The names a function lists on
+its own Part-of line are its origin, not callees it covers — they never
+count as the `cited` coverage of an edge between two of them — while other
+`name()` mentions in the comment block keep counting. A Part-of line is not
+an origin for `owners`, which reads only `C file.c:name()` lines. For each
+C callee, the edge is:
 - **present** when the counterpart, or a port function it calls up to two
   levels deep, names the callee (parameters included, since the port injects
   `random = rn2`);
@@ -148,8 +157,8 @@ lists.
 records the arguments spelled `TRUE` or `FALSE` — the macro spelling at the
 expansion site, not the folded 1/0, so booleans a header macro such as
 `makeknown()` adds do not count. For every (caller, callee) pair whose port
-counterparts the same name, alias and citation mapping finds, it collects
-the bare `true`/`false` literals of the counterpart calls: the
+counterparts the same name, alias, citation and Part-of mapping finds, it
+collects the bare `true`/`false` literals of the counterpart calls: the
 counterpart's own body, plus port helpers up to the same two levels, where
 a helper that counterparts a different C function owns its calls and is not
 walked through (they are compared in that function's own pair); only

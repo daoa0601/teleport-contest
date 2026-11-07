@@ -443,7 +443,8 @@ async function edges(args) {
         + `${sum(list, 'justified')} justified, ${sum(list, 'present')} present`;
     console.log('# C call edges the port counterpart does not reach\n');
     console.log(`${rows.length} C functions with a port counterpart `
-        + `(${rows.filter(row => row.mapping === 'citation').length} found by comment citation); ${unmapped.length} without one`);
+        + `(${rows.filter(row => row.mapping === 'citation').length} found by comment citation, `
+        + `${rows.filter(row => row.mapping === 'part').length} by a Part-of line); ${unmapped.length} without one`);
     console.log(`edges: ${line(rows)}`);
     console.log(`gameplay files: ${line(gameplay)}`);
     console.log('\n## Gameplay functions with the most missing edges (cited-only edges in brackets)\n');

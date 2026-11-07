@@ -272,6 +272,7 @@ call_kops	isok
 call_kops	makekops
 can_be_hatched	rn2
 can_center_spell_location	isok
+can_grapple_location	dist2
 can_grapple_location	isok
 can_make_bones	maxledgerno
 can_make_bones	no_bones_level
@@ -389,6 +390,7 @@ costly_spot	in_rooms
 costly_tin	costly_spot
 could_move_onto_boulder	inv_weight
 could_pole_mon	calc_pole_range
+could_pole_mon	dist2
 could_untrap	near_capacity
 count_contents	costly_spot
 count_feat_lastseentyp	is_drawbridge_wall
@@ -522,6 +524,7 @@ destroy_drawbridge	is_pool
 destroy_drawbridge	newsym
 destroy_drawbridge	rn2
 destroy_drawbridge	scatter
+destroy_drawbridge	spoteffects
 destroy_drawbridge	vision_recalc
 destroy_drawbridge	wake_nearto
 detect_obj_traps	flash_glyph_at
@@ -815,6 +818,7 @@ dobreathe	ubuzz
 dobuzz	closed_door
 dobuzz	d
 dobuzz	explode
+dobuzz	flashburn
 dobuzz	isok
 dobuzz	map_invisible
 dobuzz	monstseesu
@@ -996,6 +1000,7 @@ dokick	near_capacity
 dokick	rn2
 dokick	u_wipe_engr
 dokick	unmap_invisible
+dokick	yn_function
 dolook	look_here
 dolookaround	gather_locs_interesting
 dolookaround	glyph_at
@@ -1740,6 +1745,7 @@ get_shop_item	rnd
 get_table_coords_or_region	get_table_region
 get_table_montype	find_montype
 get_valid_jump_position	isok
+get_valid_polearm_position	dist2
 get_valid_polearm_position	glyph_at
 get_valid_polearm_position	isok
 getbones	fix_shop_damage
@@ -1762,6 +1768,7 @@ getobj	cmdq_add_int
 getobj	cmdq_add_key
 getobj	cmdq_clear
 getobj	cmdq_pop
+getobj	digit
 getobj	get_count
 getobj	readchar
 getobj	reassign
@@ -3370,15 +3377,18 @@ pick_familiar_pm	rndmonst_adj
 pick_familiar_pm	spell_skilltype
 pick_gend	ok_gend
 pick_gend	rn2
+pick_lock	acurr
 pick_lock	can_reach_floor
 pick_lock	feel_location
 pick_lock	hliquid
 pick_lock	is_drawbridge_wall
+pick_lock	is_magic_key
 pick_lock	is_pool
 pick_lock	lock_action
 pick_lock	reset_pick
 pick_lock	untrap
 pick_lock	update_mapseen_for
+pick_lock	yn_function
 pick_nasty	rn2
 pick_race	ok_race
 pick_race	rn2
@@ -3392,9 +3402,11 @@ pick_vibrasquare_location	occupied
 pick_vibrasquare_location	rn2
 pick_vibrasquare_location	stairway_find_dir
 picklock	exercise
+picklock	in_rooms
 picklock	lock_action
 picklock	newsym
 picklock	rn2
+picklock	yn_function
 pickup	check_here
 pickup	describe_decor
 pickup	is_lava
@@ -4206,6 +4218,7 @@ stone_to_flesh_obj	costly_spot
 stone_to_flesh_obj	in_rooms
 stone_to_flesh_obj	makemon
 stone_to_flesh_obj	newsym
+stone_to_flesh_obj	shop_keeper
 stoned_dialogue	Popeye
 stoned_dialogue	exercise
 stoned_dialogue	heal_legs
@@ -4227,6 +4240,7 @@ summonmu	rn2
 surface	hliquid
 surface	is_pool
 swallowed	swallow_to_glyph
+swim_move_danger	is_pool
 switch_terrain	float_up
 t_missile	weight
 tele_jump_ok	isok
@@ -4288,6 +4302,7 @@ throne_sit_effect	identify_pack
 throne_sit_effect	losehp
 throne_sit_effect	make_blinded
 throne_sit_effect	make_confused
+throne_sit_effect	makemon
 throne_sit_effect	makewish
 throne_sit_effect	map_background
 throne_sit_effect	newsym
@@ -4471,6 +4486,7 @@ tty_dismiss_nhwindow	erase_menu_or_text
 tty_display_file	docrt
 tty_display_nhwindow	process_menu_window
 tty_display_nhwindow	process_text_window
+tty_display_nhwindow	tty_clear_nhwindow
 tty_doprev_message	redotoplin
 tty_exit_nhwindows	tty_suspend_nhwindows
 tty_nhgetch	randomkey
@@ -4641,6 +4657,7 @@ use_mirror	make_confused
 use_mirror	nomul
 use_mirror	rn2
 use_mirror	rnd
+use_mirror	setnotworn
 use_mirror	surface
 use_royal_jelly	setnotworn
 use_stethoscope	feel_newsym
@@ -4781,6 +4798,7 @@ wiz_intrinsic	rn2
 wiz_kill	done
 wiz_kill	paranoid_query
 wiz_kill	unmap_invisible
+wiz_kill	yn_function
 wiz_level_tele	level_tele
 wiz_makemap	makemap_prepost
 wiz_makemap	mklev

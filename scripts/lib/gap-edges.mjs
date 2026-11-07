@@ -126,6 +126,94 @@ export function originCitation(firstComment) {
     const match = /^\/\/\s*(?:C\s+)?[A-Za-z0-9_]+\.[ch]:\s*([A-Za-z_][A-Za-z0-9_]*)\(\)/.exec(firstComment);
     return match?.[1] ?? null;
 }
+const PART_OF_PREFIX = /^\/\/\s*Part of C /;
+const PART_OF_FILE = /[A-Za-z0-9_]+(?:\/[A-Za-z0-9_]+)*\.[ch]/;
+const PART_OF_NAME = /[A-Za-z_][A-Za-z0-9_]*/;
+const PART_OF_WRAPPED = /^(?:[A-Za-z0-9_]+(?:\/[A-Za-z0-9_]+)*\.[ch]:)?[A-Za-z_][A-Za-z0-9_]*\(/;
+export function partOfHeader(comments) {
+    const first = comments[0];
+    if (first === undefined || !PART_OF_PREFIX.test(first))
+        return null;
+    const entries = [];
+    // Consumed [start, end) spans per comment line, blanked out at the end.
+    const spans = new Map();
+    const consume = (start, end) => {
+        const span = spans.get(line);
+        spans.set(line, span ? [span[0], end] : [start, end]);
+    };
+    let file = null;
+    let line = 0;
+    let at = first.search(/Part of C /) + 'Part of C '.length;
+    consume(0, at);
+    for (;;) {
+        const text = comments[line];
+        if (text === undefined)
+            return null;
+        while (text.charAt(at) === ' ')
+            at++;
+        const entryStart = at;
+        // The optional `file.c:` prefix; a bare name inherits the file.
+        const fileMatch = PART_OF_FILE.exec(text.slice(at));
+        if (fileMatch && text.charAt(at + fileMatch[0].length) === ':') {
+            file = fileMatch[0];
+            at += fileMatch[0].length + 1;
+        }
+        const nameMatch = PART_OF_NAME.exec(text.slice(at));
+        if (!nameMatch)
+            return null;
+        at += nameMatch[0].length;
+        // `name()` or `name(args)`: a simple argument list only.
+        const close = text.indexOf(')', at);
+        if (text.charAt(at) !== '(' || close === -1 || /[(,:]/.test(text.slice(at + 1, close)))
+            return null;
+        at = close + 1;
+        if (file === null)
+            return null;
+        entries.push({ file, name: nameMatch[0] });
+        while (text.charAt(at) === ' ')
+            at++;
+        if (text.startsWith(':', at)) {
+            consume(entryStart, at + 1);
+            const masked = comments.map((comment, index) => {
+                const span = spans.get(index);
+                return span ? comment.slice(0, span[0]) + ' '.repeat(span[1] - span[0]) + comment.slice(span[1])
+                    : comment;
+            });
+            return { entries, masked };
+        }
+        // A comma before the colon separates entries (`/` and `and` name
+        // alternatives too); the colon must follow an entry. Spaces are
+        // already skipped, so `and` is tested without its leading one.
+        const wrapped = text.startsWith(',', at);
+        if (wrapped)
+            at++;
+        else if (text.startsWith('/', at))
+            at++;
+        else if (text.startsWith('and ', at))
+            at += 'and '.length;
+        else
+            return null;
+        while (text.charAt(at) === ' ')
+            at++;
+        if (at < text.length) {
+            consume(entryStart, at);
+            continue;
+        }
+        // The list wraps onto the next comment line, but only when this one
+        // ended with a comma: a line that simply stops is not a list.
+        if (!wrapped)
+            return null;
+        const next = comments[line + 1];
+        if (next === undefined)
+            return null;
+        const stripped = next.replace(/^\/\/\s*/, '');
+        if (!PART_OF_WRAPPED.test(stripped))
+            return null;
+        consume(entryStart, text.length);
+        line++;
+        at = next.length - stripped.length;
+    }
+}
 // `name(` or `name()` in comment text, normalized.
 function citations(comments) {
     const names = new Set();
@@ -173,19 +261,35 @@ export function portIndex(root) {
         if (isPortSource(root, source))
             collect(source);
     const byCitation = new Map();
-    for (const fns of byName.values()) {
-        for (const fn of fns) {
-            for (const name of citations(leadingComments(fn)))
-                byCitation.set(name, [...(byCitation.get(name) ?? []), fn]);
-        }
-    }
     const byOrigin = new Map();
+    const byPart = new Map();
+    // The `Part of C` header when the comment block opens with one: its
+    // names attribute the function to C functions and, being its origin,
+    // stop counting as its citations.
+    const headers = new Map();
+    const headerOf = (fn, comments) => {
+        const known = headers.get(fn);
+        if (known !== undefined)
+            return known;
+        const header = partOfHeader(comments);
+        headers.set(fn, header);
+        return header;
+    };
     for (const fns of byName.values()) {
         for (const fn of fns) {
-            const origin = originCitation(leadingComments(fn)[0]);
+            const comments = leadingComments(fn);
+            const header = headerOf(fn, comments);
+            for (const name of citations(header ? header.masked : comments)) {
+                byCitation.set(name, [...(byCitation.get(name) ?? []), fn]);
+            }
+            const origin = originCitation(comments[0]);
             if (origin) {
                 const key = normalizedName(origin);
                 byOrigin.set(key, [...(byOrigin.get(key) ?? []), fn]);
+            }
+            for (const entry of header?.entries ?? []) {
+                const key = normalizedName(entry.name);
+                byPart.set(key, [...(byPart.get(key) ?? []), { fn, file: entry.file }]);
             }
         }
     }
@@ -243,7 +347,11 @@ export function portIndex(root) {
             visit(parameter);
         if (fn.body)
             visit(fn.body);
-        const cited = citations([...leadingComments(fn), ...commentsIn(fn.body?.getFullText() ?? '')]);
+        // The Part-of header's own names are the function's origin, not
+        // callees it covers, so they are blanked out of its citations.
+        const comments = leadingComments(fn);
+        const header = headerOf(fn, comments);
+        const cited = citations([...(header ? header.masked : comments), ...commentsIn(fn.body?.getFullText() ?? '')]);
         const entry = { names, raw, cited, callees, calls };
         direct.set(fn, entry);
         return entry;
@@ -279,7 +387,7 @@ export function portIndex(root) {
     };
     const callsOf = (fn) => directOf(fn).calls;
     const calleesOf = (fn) => [...directOf(fn).callees];
-    return { byName, byCitation, byOrigin, reach, callsOf, calleesOf, locate };
+    return { byName, byCitation, byOrigin, byPart, reach, callsOf, calleesOf, locate };
 }
 export function readAliases(path) {
     const aliases = new Map();
@@ -314,10 +422,15 @@ function readJustified(path) {
 }
 // The port functions that counterpart a C function: the same name ignoring
 // case and underscores (with the origin-citation file disambiguating C files
-// that define names that normalize alike), the c-ts-aliases.tsv entries, or
-// — only when no same-named port function exists — a leading-comment
-// citation of the C name. `ownOriginOnly` reads only a comment block that
-// opens with the port's own `C file.c:name()` citation (the owners view).
+// that define names that normalize alike), a `Part of C` header naming it,
+// the c-ts-aliases.tsv entries, or — only when no same-named port function
+// exists — a leading-comment citation of the C name. A Part-of helper is a
+// fragment of the C function's body, so it counterparts every C function
+// its header names even when a same-named port function also exists, and
+// the entry's file keeps same-normalizing C functions apart. `ownOriginOnly`
+// reads only a comment block that opens with the port's own
+// `C file.c:name()` citation (the owners view, where a Part-of line is not
+// an origin).
 export function counterpartsOf(index, aliases, caller, file, ownOriginOnly = false) {
     // Two C files can define names that normalize alike: a port function
     // whose comment block opens with muse.c's `mbhit()` is not
@@ -333,11 +446,14 @@ export function counterpartsOf(index, aliases, caller, file, ownOriginOnly = fal
             ...(aliases.get(caller) ?? []).flatMap(name => index.byName.get(normalizedName(name)) ?? [])])];
     const portNames = (cName) => [cName, ...(aliases.get(cName) ?? [])].map(normalizedName);
     const citationIndex = ownOriginOnly ? index.byOrigin : index.byCitation;
+    const partFns = ownOriginOnly ? [] : [...new Set((index.byPart.get(normalizedName(caller)) ?? [])
+            .filter(entry => entry.file === file || baseName(entry.file) === file)
+            .map(entry => entry.fn))];
     // A citation counts when the C name itself has no same-named port
     // function; an alias adds counterparts but never hides a citation.
-    const fns = [...new Set([...byName,
+    const fns = [...new Set([...byName, ...partFns,
             ...(ownName.length ? [] : portNames(caller).flatMap(name => citationIndex.get(name) ?? []).filter(portsCaller))])];
-    return { fns, mapping: byName.length ? 'name' : 'citation' };
+    return { fns, mapping: byName.length ? 'name' : partFns.length ? 'part' : 'citation' };
 }
 export async function compareEdges(root, tree, cacheDir, definedIn, ownOriginOnly = false) {
     const graph = await cCallGraph(tree, cacheDir, definedIn);

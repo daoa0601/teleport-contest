@@ -555,7 +555,7 @@ async function openClosedDoor(door, x, y) {
     await feel_newsym(x, y);
     vision_note_blocker_change(x, y);
 }
-// Part of C lock.c:doopen(): the locked-door branch — autounlock key,
+// Part of C lock.c:doopen_indir(): the locked-door branch — autounlock key,
 // kick (canned dokick) and force offers.
 async function openLockedDoor(x, y) {
     await pline('This door is locked.');

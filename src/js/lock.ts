@@ -588,7 +588,7 @@ async function openClosedDoor(door: MapLocation, x: number, y: number): Promise<
     vision_note_blocker_change(x, y);
 }
 
-// Part of C lock.c:doopen(): the locked-door branch — autounlock key,
+// Part of C lock.c:doopen_indir(): the locked-door branch — autounlock key,
 // kick (canned dokick) and force offers.
 async function openLockedDoor(x: number, y: number): Promise<boolean> {
     await pline('This door is locked.');
