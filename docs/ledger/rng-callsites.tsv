@@ -93,9 +93,9 @@ src/js/artifact.ts	mk_artifact	rn2	"[""2""]"	constant
 src/js/artifact.ts	mk_artifact	rn2	"[""3""]"	constant
 src/js/artifact.ts	mk_artifact	rn2	"[""4""]"	constant
 src/js/artifact.ts	mk_artifact	rn2	"[""choices.length""]"	guarded
-src/js/artifact.ts	resolveHeroArtifactTouch	rn2	"[""4""]"	constant
-src/js/artifact.ts	rollHeroArtifactBlast	d	"[""antimagic ? 2 : 4"", ""artifact.selfWilled ? 10 : 4""]"	constant
-src/js/artifact.ts	rollHeroArtifactBlast	rnd	"[""10""]"	constant
+src/js/artifact.ts	touchArtifactByHero	rn2	"[""4""]"	constant
+src/js/artifact.ts	touchArtifactByHero	d	"[""antimagic ? 2 : 4"", ""selfWilled ? 10 : 4""]"	constant
+src/js/artifact.ts	touchArtifactByHero	rnd	"[""10""]"	constant
 src/js/attrib.ts	accumulateAttributeExercise	rn2	"[""19""]"	constant
 src/js/attrib.ts	accumulateAttributeExercise	rn2	"[""2""]"	constant
 src/js/attrib.ts	adjustAttribute	rn2	"[""excess + 1""]"	unproved
