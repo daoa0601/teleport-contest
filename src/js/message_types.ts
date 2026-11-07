@@ -955,7 +955,13 @@ export function parseOptions(
         }
         if (canonical === 'packorder') {
             // optfn_packorder(): an empty value is a silent error.
-            if (optionValue) result.flags.inv_order = changeInventoryOrder(optionValue, result).order;
+            // change_inv_order() logs each bad entry through
+            // config_error_add() while keeping the valid ones.
+            if (optionValue) {
+                const change = changeInventoryOrder(optionValue, result);
+                for (const error of change.errors) addError(error);
+                result.flags.inv_order = change.order;
+            }
             continue;
         }
         if (canonical === 'sortvanquished') {
