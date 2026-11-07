@@ -800,22 +800,6 @@ export async function stopTwoWeaponCombat(state: GameState = game): Promise<void
     setTwoWeaponCombat(false, state);
 }
 
-// C wield.c:drop_uswapwep() and do.c:dropx(): announce before extraction,
-// then handle shipping and altar contact before placing the dropped weapon.
-export async function dropCursedAlternateWeapon(object: GameObject, state: GameState): Promise<void> {
-    await plineWithContinuation(`Your left ${body_part(HAND, state)} spasms and drops ${
-        ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
-    await freeInventoryObject(object, state);
-    if (!state.u.uswallow) {
-        const initialized = requireInitializedGame(state);
-        if (await shipObject(object, state.u.ux, state.u.uy, {
-            state: initialized, publish: plineWithContinuation,
-        })) return;
-        if (state.level?.at(state.u.ux, state.u.uy)?.typ === ALTAR)
-            await landObjectOnAltar(object, { state });
-    }
-    await dropObjectAtHero(object, { state });
-}
 
 // ── Weapon enchantment (folded from enchant_weapon.js) ──
 

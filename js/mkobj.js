@@ -45,7 +45,7 @@ import { getObjectLocation } from './zap.js';
 import { requireShopGame } from './shop_types.js';
 import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
-import { dropCursedAlternateWeapon } from './wield.js';
+import { dropCursedSecondaryWeapon } from './wield.js';
 import { is_male, is_neuter, monsterIsFemale, monsterIsHuman, monsterIsRider } from './mondata.js';
 const G_NOGEN = 0x0200;
 const LIQUID = 1;
@@ -115,7 +115,7 @@ export async function curseObject(object, { state = game } = {}) {
     const oldLight = objectLightRadius(object, state);
     const changed = curseObjectState(object, state);
     if (object && object === (state.uswapwep || state.u.uswapwep) && state.u.twoweap)
-        await dropCursedAlternateWeapon(object, state);
+        await dropCursedSecondaryWeapon(object, state);
     if (object && changed && !wasCursed && object.oclass === SPBOOK_CLASS)
         await bookCursed(object, { state });
     if (object?.lamplit)
