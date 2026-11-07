@@ -15,7 +15,7 @@ import {
     finishHeroLiquidMonsterDeath,
 } from './mon.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
-import { BURNING, CMDQ_EXTCMD, CQ_CANNED, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, Is_rogue_level, LAVAPOOL, LAVAWALL, Luck, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, A_STR, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND, HOLE, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, P_TWO_WEAPON_COMBAT, P_ISRESTRICTED, P_UNSKILLED, ROLLING_BOULDER_TRAP, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, IN_SIGHT, SHOP_DOOR_COST, PARANOID_CONFIRM, PARANOID_TRAP, TRAP_EXPLANATIONS, TRAPNUM, W_QUIVER, W_SWAPWEP, SQKY_BOARD, SLP_GAS_TRAP, RUST_TRAP, BEAR_TRAP, PIT, SPIKED_PIT, MAGIC_PORTAL, VIBRATING_SQUARE, WEB, HEADSTONE, In_endgame, is_hole, is_pit, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, MAXNROFROOMS, OROOM, DELPHI, TEMPLE, COURT, MORGUE, ZOO, BARRACKS, BEEHIVE, LEPREHALL, COCKNEST, ANTHOLE, THRONE, ACH_TOWN, RLOC_NOMSG, IS_SINK, KILLED_BY_AN, LL_CONDUCT, SWAMP, GP_ALLOW_U, FOOT } from './const.js';
+import { BURNING, CMDQ_EXTCMD, CQ_CANNED, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, Is_rogue_level, LAVAPOOL, LAVAWALL, Luck, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, A_STR, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND, HOLE, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, P_TWO_WEAPON_COMBAT, P_ISRESTRICTED, P_UNSKILLED, ROLLING_BOULDER_TRAP, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, IN_SIGHT, SHOP_DOOR_COST, PARANOID_CONFIRM, PARANOID_TRAP, TRAP_EXPLANATIONS, TRAPNUM, W_QUIVER, W_SWAPWEP, SQKY_BOARD, SLP_GAS_TRAP, RUST_TRAP, BEAR_TRAP, PIT, SPIKED_PIT, MAGIC_PORTAL, VIBRATING_SQUARE, WEB, HEADSTONE, In_endgame, is_hole, is_pit, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, MAXNROFROOMS, OROOM, DELPHI, TEMPLE, COURT, MORGUE, ZOO, BARRACKS, BEEHIVE, LEPREHALL, COCKNEST, ANTHOLE, THRONE, ACH_TOWN, RLOC_NOMSG, IS_SINK, KILLED_BY_AN, LL_CONDUCT, SWAMP, GP_ALLOW_U, FOOT, ALTAR, FOUNTAIN, GRAVE, STAIRS, SINK } from './const.js';
 import {
     isok, cmdq_clear, cmdq_peek, currentMulti, setMulti, xyToDirection, resetOccupations, confusePromptDirection,
     paranoidQuery,
@@ -72,10 +72,10 @@ import {
     resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt,
     igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt,
     triggerBoobyTrap, selfTouchPetrifyingWeapons, drown, lava_effects, heroCanLiveUnderwater, finishLiquidDeath,
-    launchRollingBoulder, immune_to_trap, explodeLandMine, into_vs_onto,
+    launchRollingBoulder, immune_to_trap, explodeLandMine, into_vs_onto, heroTeetersAtPit,
 } from './trap.js';
 import type { HeroTrapOptions, HeroLiquidOptions, LiquidEffectResult } from './trap.js';
-import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
+import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, riderCannotReachMessage } from './steed.js';
 import { isRoom } from './map_types.js';
 import type { Room, RoomMap, MapLocation, Position, Trap } from './map_types.js';
 
@@ -139,7 +139,7 @@ import type { Monster } from './monster_types.js';
 import type { PropertyState, PropertyName } from './property_types.js';
 import type { Hero } from './hero_types.js';
 import type { GameMap } from './game.js';
-import { dist2, ingSuffix, upstart } from './hacklib.js';
+import { dist2, ingSuffix, upstart, possessiveName } from './hacklib.js';
 
 import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
 import { updateHeroRegions, visibleRegionAt } from './region.js';
@@ -149,7 +149,8 @@ import type { Shopkeeper } from './shop_types.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 
 import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt, monsterCanFog } from './monmove.js';
-import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
+import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, monsterDigests, monsterIsFloater } from './mondata.js';
+import { PM_FIRE_ELEMENTAL, PM_SALAMANDER } from './mklev.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
@@ -2547,6 +2548,145 @@ function furniturePresent(room: Room, furniture: number): boolean {
         }
     }
     return false;
+}
+
+export interface PickupLocationProblem {
+    messages: string[];
+    spendsTurn: boolean;
+}
+interface PickupLocationOptions {
+    state?: GameState;
+    objects: readonly GameObject[];
+    monster?: Monster | null;
+}
+
+// Part of C hack.c:pickup_checks(): does the hero stay dry above liquid?
+function heroStaysAboveLiquid(state: GameState): boolean {
+    const hero = state.u || {};
+    const form = heroMonsterForm(state);
+    const floater = form !== null && monsterIsFloater(form);
+    const flying = heroIsFlying(state);
+    const breathless = hero.breathless || (form !== null && monsterIsBreathless(form));
+    return heroHasWaterWalking(state) || floater || heroFormClings(state)
+        || (flying && !breathless);
+}
+
+// Part of C hack.c:pickup_checks(): likes_lava exemption for lava squares
+// (heroLikesLava, the shared polyself.ts port).
+
+// Part of C hack.c:pickup_checks(): the nothing-to-pick-up message per
+// terrain type.
+function emptyFloorMessage(location: MapLocation | null | undefined, state: GameState): string {
+    if (location?.typ === THRONE)
+        return `It must weigh${location.looted ? ' almost' : ''} a ton!`;
+    if (location?.typ === SINK)
+        return 'The plumbing connects it to the floor.';
+    if (location?.typ === GRAVE)
+        return "You don't need a gravestone.  Yet.";
+    if (location?.typ === FOUNTAIN)
+        return `You could drink the ${displayLiquidName('water', state)}...`;
+    if (location?.typ === DOOR && location.doormask === D_ISOPEN)
+        return "It won't come off the hinges.";
+    if (location?.typ === ALTAR)
+        return 'Moving the altar would be a very bad idea.';
+    if (location?.typ === STAIRS)
+        return 'The stairs are solidly affixed.';
+    return 'There is nothing here to pick up.';
+}
+
+// Part of C hack.c:pickup_checks(): the trap under the hero's square.
+function trapAtHero(state: GameState): Trap | null {
+    return state.level?.traps?.find(trap =>
+        trap.tx === state.u?.ux && trap.ty === state.u?.uy) || null;
+}
+
+// Part of C hack.c:pickup_checks(): the cannot-reach-the-floor message.
+function reachMessage(state: GameState, trap: Trap | null): string {
+    if (heroTeetersAtPit(state, trap))
+        return 'You cannot reach the bottom of the pit.';
+    if (state.u.usteed && (state.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC)
+        return riderCannotReachMessage(state);
+    if (heroIsBlind(state)) return 'You cannot reach anything here.';
+    const surface = trap?.ttyp === HOLE ? 'edge of the hole'
+        : trap?.ttyp === TRAPDOOR ? 'trap door'
+            : surfaceName(state.u?.ux, state.u?.uy, state);
+    return `You cannot reach the ${surface}.`;
+}
+
+// C hack.c:pickup_checks(): the pre-menu refusals — swallowed, on water or
+// lava, empty squares, and an unreachable floor.
+export function pickupLocationProblem({
+    state = game,
+    objects,
+    monster = null,
+}: PickupLocationOptions): PickupLocationProblem | null {
+    if (monster) {
+        if (objects.length) return null;
+        if (monsterDigests(monster)) {
+            return {
+                messages: [
+                    `You pick up ${possessiveName(monsterName(monster, { state }))} tongue.`,
+                    "But it's kind of slimy, so you drop it.",
+                ],
+                spendsTurn: true,
+            };
+        }
+        const sense = heroIsBlind(state) ? 'feel' : 'see';
+        return {
+            messages: [`You don't ${sense} anything in here to pick up.`],
+            spendsTurn: true,
+        };
+    }
+
+    const location = state.level?.at?.(state.u?.ux, state.u?.uy);
+    if (isPoolAt(state.u.ux, state.u.uy, state)) {
+        if (heroStaysAboveLiquid(state)) {
+            return {
+                messages: [`You cannot dive into the ${displayLiquidName('water', state)} to pick things up.`],
+                spendsTurn: false,
+            };
+        }
+        if (!(state.underwater || state.u?.uinwater)) {
+            return {
+                messages: [
+                    "You can't even see the bottom, let alone pick up something.",
+                ],
+                spendsTurn: false,
+            };
+        }
+    }
+    if (isLavaAt(state.u.ux, state.u.uy, state)) {
+        if (heroStaysAboveLiquid(state)) {
+            return {
+                messages: ["You can't reach the bottom to pick things up."],
+                spendsTurn: false,
+            };
+        }
+        if (!heroLikesLava(state)) {
+            return {
+                messages: [
+                    'You would burn to a crisp trying to pick things up.',
+                ],
+                spendsTurn: false,
+            };
+        }
+    }
+
+    if (!objects.length) {
+        return {
+            messages: [emptyFloorMessage(location, state)],
+            spendsTurn: false,
+        };
+    }
+
+    const trap = trapAtHero(state);
+    const unreachable = !heroCanReachFloor(state, {
+        checkPit: !!trap && is_pit(trap.ttyp),
+    });
+    return unreachable ? {
+        messages: [reachMessage(state, trap)],
+        spendsTurn: false,
+    } : null;
 }
 
 // C hack.c:spoteffects(TRUE) also applies when expulsion or a body change leaves

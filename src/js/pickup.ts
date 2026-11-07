@@ -11,7 +11,7 @@ import {
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
 import {
     endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount,
-    calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity,
+    calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, pickupLocationProblem,
 } from './hack.js';
 import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks, touchPetrifies, heroResistsStoning } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -54,7 +54,6 @@ import { hideHeroUnder, finishEnvironmentalMonsterDeath,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome,
 } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, SELL_DELIBERATE, SELL_DONTSELL, currentShopResident, stolenValue, sellHeroDroppedObject, warnAboutRemovedPick, deleteObject } from './shk.js';
-import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { touchArtifactByHero } from './artifact.js';
 import { isQuantumBox } from './quantum_cat.js';
