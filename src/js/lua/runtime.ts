@@ -2,7 +2,7 @@ import { parseLua } from './parser.js';
 import { LuaTraceback } from './traceback.js';
 import { luaChunkId } from './syntax_error.js';
 import { LuaArgumentError } from './errors.js';
-import { luaInteger, luaNumberValue } from './arguments.js';
+import { luaInteger, luaNumberValue, luaTruthy } from './arguments.js';
 import type {
     AssignmentTarget, BinaryExpression, BinaryOperator, Expression,
     FunctionExpression, Statement, UnaryExpression, UnaryOperator,
@@ -193,8 +193,7 @@ function first(value: LuaResult): LuaValue {
 
 // C lapi.c:lua_toboolean(): false only for nil and false.
 function truthy(value: LuaResult): boolean {
-    value = first(value);
-    return value !== null && value !== false;
+    return luaTruthy(first(value));
 }
 
 // C lapi.c:lua_type(): classifies a value; the name strings come from
