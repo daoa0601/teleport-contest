@@ -258,7 +258,9 @@ function inGehennom(state) {
 function fruitNamePlural(state) {
     return makePlural(state.fruitName || FRUIT_DEFAULT);
 }
-// C do.c:403-455 polymorph_sink(), shared shape with the fountain owner.
+// C do.c:polymorph_sink()
+// The whole sink-to-fountain/throne/altar/grave transformation; do.ts and
+// fountain.ts share this shape from their C callers.
 export async function polymorphSink(state, publish) {
     const { ux, uy } = state.u;
     const level = requireGameLevel(state);
@@ -1113,7 +1115,7 @@ export async function objectNoLongerHeld(object, state = game) {
         revertCrysknife(member);
     }
 }
-// C do.c:doddrop(): the multiple-drop command. C do.c:menu_drop(): the
+// C do.c:doddrop(): the #droptype command. C do.c:menu_drop(): the
 // menu-driven drop pass. C do.c:menudrop_split(): splitting a counted
 // stack before dropping its share. C do.c:count_justpicked() and
 // C do.c:find_justpicked(): the justPicked drop path.
@@ -1130,68 +1132,93 @@ export async function dropMultipleObjects() {
         setSellDisposition(SELL_DELIBERATE);
     try {
         const style = game.flags.menu_style ?? MENU_FULL;
-        let matches = (_object) => true;
-        if (style === MENU_TRADITIONAL || style === MENU_COMBINATION) {
-            // ggetobj() returns 0 for Escape. doddrop() stops there, but
-            // menu_drop() continues to its item menu with no class filter.
-            const selected = await traditionalDropCategories(style === MENU_COMBINATION)
-                ?? (style === MENU_COMBINATION
-                    ? { categories: [], all: false, menu: false, requireUnpaid: false } : null);
-            if (!selected)
-                return ECMD_OK;
-            matches = object => matchesCategories(object, selected.categories);
-            if (selected.menu) {
-                if (selected.all || !selected.categories.length)
-                    matches = () => true;
-            }
-            else if (style === MENU_TRADITIONAL || selected.all) {
-                const result = await dropTraditionally(selected);
-                // doddrop() returns askchain()'s sum directly in traditional
-                // mode; menu_drop() converts that sum into a command flag.
-                if (style === MENU_TRADITIONAL)
-                    return result;
-                return result ? ECMD_TIME : ECMD_OK;
-            }
-            else if (!selected.categories.length
-                && !((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL)) {
-                // C allow_category() rejects an empty combination-menu filter.
-                return ECMD_OK;
-            }
-        }
-        else if (style === MENU_FULL) {
-            const categories = await dropCategories();
-            matches = object => categories.matchers.some(match => match(object));
-            if (categories.autoSelect)
-                return await dropAllMatching(matches) ? ECMD_TIME : ECMD_OK;
-            const picked = game.inventory.filter(object => object.pickup_prev);
-            const single = picked.length === 1 ? picked[0] : null;
-            if (categories.justPickedCount !== undefined && single)
-                return await dropCount(single, categories.justPickedCount) ? ECMD_TIME : ECMD_OK;
-        }
-        const selected = await chooseDroppedObjects(game.inventory.filter(matches));
-        if (!selected.length)
+        if (style !== MENU_TRADITIONAL)
+            return await menuDrop(ECMD_OK, null);
+        // doddrop(): ggetobj("drop", drop, 0, FALSE, NULL) owns the
+        // traditional pick; a result below -1 (the 'm' answer) continues
+        // into menu_drop() with that retry value.
+        const selected = await traditionalDropCategories(false);
+        if (!selected)
             return ECMD_OK;
-        let dropped = false;
-        bypassObjectList(game.inventory, true);
-        try {
-            for (const selection of selected) {
-                const object = selection.value;
-                if (!game.inventory.includes(object) || !object.bypass)
-                    continue;
-                dropped = await dropCount(object, selection.count) || dropped;
-                if (game.program_state.gameover)
-                    break;
-            }
-        }
-        finally {
-            bypassObjectList(game.inventory, false);
-        }
-        return dropped ? ECMD_TIME : ECMD_OK;
+        if (selected.menu)
+            return await menuDrop(selected.all || !selected.categories.length ? -2 : -3, selected);
+        return await dropTraditionally(selected);
     }
     finally {
         if (inShop)
             setSellDisposition(SELL_NORMAL);
     }
+}
+// C do.c:menu_drop()
+// The menu-driven drop pass: retry carries doddrop()'s traditional 'm'
+// answer (-2 with 'a' or no filter, -3 filtered), selection its chosen
+// categories (C registers them via add_valid_menu_class()).  The
+// query_category(), ggetobj() and query_objlist() passes are the
+// dropCategories(), traditionalDropCategories() and chooseDroppedObjects()
+// helpers; dropAllMatching() is the bypass-rescan autopick loop and
+// dropCount() the menudrop_split() share.
+async function menuDrop(retry, selection) {
+    const style = game.flags.menu_style ?? MENU_FULL;
+    let matches = (_object) => true;
+    if (retry) {
+        // menu_drop(retry): all_categories = (retry == -2) — the matcher
+        // carries the categories C would have registered globally.
+        if (selection) {
+            matches = object => matchesCategories(object, selection.categories);
+            if (selection.all || !selection.categories.length)
+                matches = () => true;
+        }
+    }
+    else if (style === MENU_FULL) {
+        const categories = await dropCategories();
+        matches = object => categories.matchers.some(match => match(object));
+        if (categories.autoSelect)
+            return await dropAllMatching(matches) ? ECMD_TIME : ECMD_OK;
+        const picked = game.inventory.filter(object => object.pickup_prev);
+        const single = picked.length === 1 ? picked[0] : null;
+        if (categories.justPickedCount !== undefined && single)
+            return await dropCount(single, categories.justPickedCount) ? ECMD_TIME : ECMD_OK;
+    }
+    else if (style === MENU_COMBINATION) {
+        // ggetobj("drop", drop, 0, TRUE, &ggoresults): 0 for Escape keeps
+        // the empty class filter, askchain() finishing with 'a' sets
+        // ALL_FINISHED, and 'm' falls through to the item menu.
+        const selected = await traditionalDropCategories(true)
+            ?? { categories: [], all: false, menu: false, requireUnpaid: false };
+        matches = object => matchesCategories(object, selected.categories);
+        if (selected.menu) {
+            if (selected.all || !selected.categories.length)
+                matches = () => true;
+        }
+        else if (selected.all) {
+            const result = await dropTraditionally(selected);
+            return result ? ECMD_TIME : ECMD_OK;
+        }
+        else if (!selected.categories.length
+            && !((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL)) {
+            // C allow_category() rejects an empty combination-menu filter.
+            return ECMD_OK;
+        }
+    }
+    const selected = await chooseDroppedObjects(game.inventory.filter(matches));
+    if (!selected.length)
+        return ECMD_OK;
+    let dropped = false;
+    bypassObjectList(game.inventory, true);
+    try {
+        for (const pick of selected) {
+            const object = pick.value;
+            if (!game.inventory.includes(object) || !object.bypass)
+                continue;
+            dropped = await dropCount(object, pick.count) || dropped;
+            if (game.program_state.gameover)
+                break;
+        }
+    }
+    finally {
+        bypassObjectList(game.inventory, false);
+    }
+    return dropped ? ECMD_TIME : ECMD_OK;
 }
 // Part of C do.c:menu_drop(): the query_category() category prompt.
 async function dropCategories() {
