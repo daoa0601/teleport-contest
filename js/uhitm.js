@@ -62,7 +62,7 @@ import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectF
 import { munslime, munstone } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
 import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
-import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle, } from './objnam.js';
+import { captureHeroProjectileName, corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle, } from './objnam.js';
 import { stopHeroOccupation } from './allmain.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './dogmove.js';
@@ -1250,12 +1250,6 @@ export function captureHeroPhysicalObjectName(object, state = game) {
 // Capture after clearing poison and before a death can merge/delete the object.
 export function captureUnpoisonedPhysicalObjectName(object, state = game) {
     return objectCombatName(object, { state });
-}
-// Part of C objnam.c:mshot_xname(): describe a projectile's position in a volley.
-export function captureHeroProjectileName(object, state = game, volley) {
-    const name = objectCombatName(object, { state, includeCorpseSpecies: false });
-    return volley && volley.count > 1 && volley.objectType === object.otyp
-        ? `the ${volley.index}${ordinalSuffix(volley.index)} ${name}` : name;
 }
 // C uhitm.c:hmon_hitmon_msg_hit().
 export async function showHeroPhysicalHit(monster, object, { state = game, publish = plineWithContinuation, mode, damage, destroyed, hitTextShown, target = { x: monster.mx, y: monster.my }, volley, }) {

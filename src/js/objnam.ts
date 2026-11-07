@@ -40,9 +40,10 @@ import {
 
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterTypeName } from './monster_data.js';
-import { possessiveName } from './hacklib.js';
+import { ordinalSuffix, possessiveName } from './hacklib.js';
 import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutrition } from './eat.js';
 import { isBimanualObject, is_boots, is_gloves, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, is_damageable, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
+import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
 import { isBeingDoffed, isBeingDonned, armorSimpleName, objectIsHardHelmet } from './do_wear.js';
@@ -223,7 +224,7 @@ export function preferredFruitName(state: GameState): string {
     return state.fruitName;
 }
 
-// C objnam.c:xname()
+// C objnam.c:xname_flags(), entered through its xname() wrapper:
 // The visible name without inventory annotations.  Unlike doname(),
 // this omits quantity, beatitude, enchantment, and article.
 // Also C objnam.c:xcalled(): inlined as the "<class> called <name>"
@@ -335,6 +336,16 @@ export function objectCombatName(object: GameObject, {
     let name = objectName(object, state);
     if ((object.quan ?? object.quantity ?? 1) !== 1) name = pluralizeObjectNoun(object, name);
     return name.replace(/^the /iu, '');
+}
+
+// C objnam.c:mshot_xname(): xname() output augmented for multishot missile
+// feedback — "the Nth arrow" when this object is part of a volley.
+export function captureHeroProjectileName(
+    object: GameObject, state: GameState = game, volley?: HeroProjectileVolley,
+): string {
+    const name = objectCombatName(object, { state, includeCorpseSpecies: false });
+    return volley && volley.count > 1 && volley.objectType === object.otyp
+        ? `the ${volley.index}${ordinalSuffix(volley.index)} ${name}` : name;
 }
 
 // C objnam.c:killer_xname()/bare_artifactname(). Death causes describe the
@@ -1851,7 +1862,7 @@ function parseWishClass(search: WishSearch, state: GameState): WishLookup | null
     return null;
 }
 
-// Part of C objnam.c:readobjnam_postparse2(): the class ranges,
+// C objnam.c:readobjnam_postparse2(): the class ranges,
 // " stone"/" gem", and the "glass" family before a general name search;
 // C's postparse2 is also the armor retry target, even with a class
 // selected.

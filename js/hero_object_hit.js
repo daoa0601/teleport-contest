@@ -8,7 +8,7 @@ import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroHatesSilver, heroSpecies } from './polyself.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
-import { captureHeroProjectileName } from './uhitm.js';
+import { captureHeroProjectileName } from './objnam.js';
 import { ACID_VENOM } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';

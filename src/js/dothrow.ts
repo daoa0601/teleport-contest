@@ -76,8 +76,9 @@ import type { PotionWakeMonster, PotionWakeNearby } from './potion.js';
 import { dist2 , possessiveName } from './hacklib.js';
 import { resolveGoldMonsterContact, shipObject } from './dokick.js';
 import {
-    captureHeroProjectileName, hitMonsterWithHeroObject, applyCaitiffPenalty, applyMonsterPassiveToObject,
+    hitMonsterWithHeroObject, applyCaitiffPenalty, applyMonsterPassiveToObject,
 } from './uhitm.js';
+import { captureHeroProjectileName } from './objnam.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { rayMissMessage } from './zap.js';
 import type { Position , MapLocation, Trap } from './map_types.js';

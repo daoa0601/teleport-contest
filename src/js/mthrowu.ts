@@ -48,7 +48,8 @@ import {
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
 import { holdAnotherObject, stack_object } from './invent.js';
-import { rejectMonsterShadeContact, applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
+import { rejectMonsterShadeContact, applyMonsterPassiveToObject } from './uhitm.js';
+import { captureHeroProjectileName } from './objnam.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
@@ -911,14 +912,17 @@ export function resolveMonsterCombatSpit(
     return spitAtTarget(source, target, attack, options);
 }
 
-// Part of C mthrowu.c:spitmu(): dispatch for the hero target.
+// C mthrowu.c:spitmu(): C spitmu() is spitmm() with &gy.youmonst as the
+// target, so the dispatch is the whole function.
 export function resolveMonsterSpitAtHero(
     source: Monster, attack: AttackTuple, options: MonsterSpitOptions,
 ): Promise<MonsterSpitResult> {
     return spitAtTarget(source, null, attack, options);
 }
 
-// Part of C mthrowu.c:spitmm(), spitmu(): the shared spit body.
+// C mthrowu.c:spitmm(): the body — mcan dry rattle, line-up, venom type,
+// hit roll, "spits venom!", the projectile, and pet hunger. A null target
+// is C's utarg (&gy.youmonst) case, which reads mux/muy as the target.
 async function spitAtTarget(source: Monster, target: Monster | null, attack: AttackTuple, {
     state, random = rn2, rollOne = rnd, publish = plineWithContinuation,
 }: MonsterSpitOptions): Promise<MonsterSpitResult> {

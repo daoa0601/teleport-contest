@@ -126,7 +126,8 @@ import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
 import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import {
-    corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName,
+    captureHeroProjectileName, corpseName, makePlural, minimalObjectName, objectCombatName,
+    objectHasPersonalName, objectName,
     observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject,
     withIndefiniteArticle,
 } from './objnam.js';
@@ -1686,14 +1687,6 @@ export function captureUnpoisonedPhysicalObjectName(object: GameObject, state: G
     return objectCombatName(object, { state });
 }
 
-// Part of C objnam.c:mshot_xname(): describe a projectile's position in a volley.
-export function captureHeroProjectileName(
-    object: GameObject, state: GameState = game, volley?: HeroProjectileVolley,
-): string {
-    const name = objectCombatName(object, { state, includeCorpseSpecies: false });
-    return volley && volley.count > 1 && volley.objectType === object.otyp
-        ? `the ${volley.index}${ordinalSuffix(volley.index)} ${name}` : name;
-}
 
 // C uhitm.c:hmon_hitmon_msg_hit().
 export async function showHeroPhysicalHit(monster: Monster, object: GameObject | null, {
