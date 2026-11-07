@@ -3,15 +3,16 @@ import { OBJ_NAME } from './object_data.js';
 import { ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack, mattacku, presentMonsterAttackEffects } from './mhitu.js';
-import { inventoryItemDescription } from './invent.js';
+import { currency, inventoryItemDescription } from './invent.js';
 import {
     monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, monsterCarryAmount,
-    checkMonsterGearNextTurn, finishEnvironmentalMonsterDeath,
+    checkMonsterGearNextTurn, finishEnvironmentalMonsterDeath, consumeMonsterObject,
 } from './mon.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterName, visibleMonsterSubject, monsterTypeName } from './do_name.js';
-import { observeDistantObjectForNaming, verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { observeDistantObjectForNaming, verbForSubject, withIndefiniteArticle, objectName } from './objnam.js';
 import { splitObjectStack, remove_object} from './mkobj.js';
+import { chargeAlteredUnpaidObject, unpaidObjectCost } from './shk.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Hero } from './hero_types.js';
@@ -24,7 +25,7 @@ import type {
 import type { PetRangedTarget, PetTargetOptions } from './pet_ranged_types.js';
 import {
     monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon,
-    setMonsterApparentHeroPosition,
+    setMonsterApparentHeroPosition, feedBeeRoyalJelly,
 } from './monmove.js';
 import { mayDig } from './hack.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
@@ -35,11 +36,11 @@ import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountH
 import { dist2, distmin } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
-import { dogEat } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import {
     BOULDER, SCR_MAIL, TRIPE_RATION, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, CORPSE, objectDelay, oc_nutrition,
+    LUMP_OF_ROYAL_JELLY,
     SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
 import { obj_nutrition } from './eat.js';
 import { loseGuardianAngel } from './minion.js';
@@ -50,11 +51,11 @@ import {
     ALLOW_M, ALLOW_TRAPS, ALLOW_U, COLNO, D_CLOSED, D_LOCKED, DISMOUNT_THROWN, IS_DOOR, IS_OBSTRUCTED, IS_ROOM,
     Is_rogue_level, MAGIC_PORTAL, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED, MMOVE_NOTHING, M_ATTK_AGR_DIED,
     M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, DISMOUNT_POLY, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING,
-    M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, NEED_WEAPON, xdir, ydir, W_ARMS,
+    M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, NEED_WEAPON, G_GENOD, xdir, ydir, W_ARMS,
 } from './const.js';
 import { isok } from './cmd.js';
 import { AT_BREA } from './monster_attack_types.js';
-import { canSeeMonster, canSpotMonster, glyphAt, newsym } from './display.js';
+import { canSeeMonster, canSpotMonster, glyphAt, monsterVisible, newsym } from './display.js';
 import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import { stopHeroOccupation } from './allmain.js';
 import { wieldMonsterWeapon } from './weapon.js';
@@ -178,6 +179,151 @@ export function petFoodNutrition(monster: Monster, object: GameObject): number {
         nutrition = 5 * (oc_nutrition(object.otyp) ?? 0);
     }
     return nutrition;
+}
+
+export interface PetMeal {
+    object: GameObject;
+    from: Position;
+    devour: boolean;
+    royalJelly: boolean;
+}
+
+const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
+const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
+const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
+
+
+// Part of C dogmove.c:dog_eat(), muse.c:mon_consume_unstone(): extend the
+// pet's hunger deadline and clear its confusion.
+// Stoning cures share the deadline and confusion rules, but deliberately do
+// not restore starvation HP, shorten flight, or reward ordinary feeding.
+export function extendPetHungerDeadline(monster: Monster, nutrition: number, state: GameState): void {
+    const dog = monster.edog;
+    if (!dog) throw new Error(`Pet ${monster.m_id} has no feeding state`);
+    dog.hungrytime = Math.max(dog.hungrytime, state.moves) + nutrition;
+    monster.mconf = 0;
+}
+
+// Part of C dogmove.c:dog_eat(): the prologue bookkeeping before the meal
+// is announced (devour, starving recovery, jelly, stack split).
+export function beginPetEating(
+    monster: Monster, object: GameObject, from: Position,
+    state: GameState = game, devour = false,
+): PetMeal {
+    const dog = monster.edog;
+    if (!dog || !monster.mtame || monster.isminion)
+        throw new Error(`Monster ${monster.m_id} is not an ordinary pet`);
+    let nutrition = petFoodNutrition(monster, object);
+    if (devour) {
+        if ((monster.meating ?? 0) > 1)
+            monster.meating = Math.trunc((monster.meating ?? 0) / 2);
+        if (nutrition > 1) nutrition = Math.trunc(nutrition * 3 / 4);
+    }
+    extendPetHungerDeadline(monster, nutrition, state);
+    monster.mhpmax += dog.mhpmax_penalty;
+    dog.mhpmax_penalty = 0;
+    if (monster.mflee && (monster.mfleetim ?? 0) > 1)
+        monster.mfleetim = Math.trunc((monster.mfleetim ?? 0) / 2);
+    if (monster.mtame < 20) monster.mtame++;
+
+    const royalJelly = monster.mnum === PM_KILLER_BEE
+        && object.otyp === LUMP_OF_ROYAL_JELLY
+        && (!!((state.mvitals?.[PM_QUEEN_BEE]?.mvflags ?? 0) & G_GENOD)
+            || !state.level?.monsters.some(candidate => candidate.mnum === PM_QUEEN_BEE
+                && !candidate.dead && candidate.mhp > 0));
+    return { object: royalJelly ? object : splitMealObject(object, state), from, devour, royalJelly };
+}
+
+// Part of C dogmove.c:dog_eat(): split one unit from a food stack.
+function splitMealObject(object: GameObject, state: GameState): GameObject {
+    if (object.oclass !== FOOD_CLASS || object.quan <= 1) return object;
+    const split = splitObjectStack(object, 1, state);
+    if (!split) throw new Error(`Pet meal ${object.o_id} could not split one food item`);
+    // dog_eat's unit stays beside the stack until its message is acknowledged.
+    return split;
+}
+
+// Part of C dogmove.c:dog_eat(): the pool-visibility meal message block.
+async function describePetMeal(monster: Monster, meal: PetMeal, state: GameState): Promise<void> {
+    if (isPoolAt(monster.mx, monster.my, state) && !state.underwater) return;
+    const sawPet = cansee(meal.from.x, meal.from.y) && monsterVisible(monster);
+    const seesObject = cansee(monster.mx, monster.my);
+    if (!sawPet && !seesObject) return;
+    const seesPet = sawPet || canSpotMonster(monster);
+    observeDistantObjectForNaming(meal.object, state);
+    const food = await inventoryItemDescription(meal.object);
+    if (seesPet) {
+        const subject = monsterName(monster, {
+            state, article: 'your', capitalized: true, suppressIt: true,
+        });
+        if (tunnels(monster.mnum))
+            await plineWithContinuation(`${subject} digs in.`);
+        else await plineWithContinuation(`${subject} ${meal.devour ? 'devours' : 'eats'} ${food}.`);
+    } else await plineWithContinuation(`It ${meal.devour ? 'devours' : 'eats'} ${food}.`);
+}
+
+// Part of C dogmove.c:dog_eat(): the meal tail (rust-monster disgust,
+// apport reward, unpaid cost, consumption).
+export async function finishPetEating(
+    monster: Monster, meal: PetMeal, state: GameState = game,
+    random: RandomBelow = rn2, calls: MonsterCallLog = [],
+): Promise<void> {
+    if (meal.from.x !== monster.mx || meal.from.y !== monster.my) {
+        await newsym(meal.from.x, meal.from.y);
+        await newsym(monster.mx, monster.my);
+    }
+    const object = meal.object;
+    if (meal.royalJelly && await feedBeeRoyalJelly(monster, object, state)) {
+        return;
+    }
+    const previousPriceSuppression = state.iflags.suppress_price;
+    if (object.unpaid) state.iflags.suppress_price = true;
+    let chargedName = '';
+    try {
+        await describePetMeal(monster, meal, state);
+        if (object.unpaid) chargedName = objectName(object, state);
+    } finally {
+        if (previousPriceSuppression === undefined) delete state.iflags.suppress_price;
+        else state.iflags.suppress_price = previousPriceSuppression;
+    }
+    if (monster.mnum === PM_RUST_MONSTER && object.oerodeproof) {
+        if (object.unpaid) await chargeAlteredUnpaidObject(object, 'degrade', state);
+        object.oerodeproof = false;
+        monster.mstun = 1;
+        if (canSeeMonster(monster)) {
+            observeDistantObjectForNaming(object, state);
+            if (state.flags.verbose) await plineWithContinuation(
+                `${monsterName(monster, { state, capitalized: true })} spits ${await inventoryItemDescription(object)} out in disgust!`,
+            );
+        }
+        return;
+    }
+    if (dogFood(monster, object, random, calls, state) === DOGFOOD && object.invlet) {
+        const dog = monster.edog;
+        if (!dog) throw new Error(`Pet ${monster.m_id} has no feeding state`);
+        const elapsed = dog.dropdist + state.moves - dog.droptime;
+        if (elapsed <= 0) throw new Error(`Pet ${monster.m_id} has no elapsed apport reward interval`);
+        dog.apport += Math.trunc(200 / elapsed);
+    }
+    if (object.unpaid) {
+        const cost = await unpaidObjectCost(object, state, 'contents');
+        await plineWithContinuation(`That ${chargedName} will cost you ${cost} ${currency(cost, { state })}.`);
+    }
+    await consumeMonsterObject(monster, object, state);
+}
+
+// C dogmove.c:dog_eat()
+// A pet eats one thing: the prologue bookkeeping (beginPetEating()), the
+// meal message and tail (finishPetEating()), and C's DEADMONSTER() result
+// — 2 when the meal killed the pet, 1 otherwise.
+export async function dogEat(
+    monster: Monster, object: GameObject, from: Position,
+    state: GameState = game, devour = false,
+    random: RandomBelow = rn2, calls: MonsterCallLog = [],
+): Promise<1 | 2> {
+    const meal = beginPetEating(monster, object, from, state, devour);
+    await finishPetEating(monster, meal, state, random, calls);
+    return monster.dead || monster.mhp <= 0 ? 2 : 1;
 }
 
 // Port only: type guard for the floor-chain order field.

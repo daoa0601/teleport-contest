@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { beginPetEating, finishPetEating } from '../js/pet_eating.js';
+import { beginPetEating, finishPetEating } from '../js/dogmove.js';
 import { initializePet } from '../js/dog.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';

@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/do.js';
 import { TRIPE_RATION } from '../js/object_data.js';
-import { beginPetEating, finishPetEating } from '../js/pet_eating.js';
+import { beginPetEating, finishPetEating } from '../js/dogmove.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { heroTeleportRestricted } from '../js/teleport.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

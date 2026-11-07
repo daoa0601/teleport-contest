@@ -8,7 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { LUMP_OF_ROYAL_JELLY } from '../js/object_data.js';
-import { beginPetEating, finishPetEating } from '../js/pet_eating.js';
+import { beginPetEating, finishPetEating } from '../js/dogmove.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjectQuantityAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

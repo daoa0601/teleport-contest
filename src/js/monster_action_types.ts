@@ -1,5 +1,5 @@
 import type { finishEnvironmentalMonsterDeath, MonsterDeathHandler, MonsterFormChange, MonsterHideUnder } from './mon.js';
-import type { PetMeal } from './pet_eating.js';
+import type { PetMeal } from './dogmove.js';
 import type { WereChange } from './were.js';
 import type { MessagePublisher } from './pline.js';
 import type { reassessMonsterArmor } from './mon.js';

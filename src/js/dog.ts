@@ -23,7 +23,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { publishMonsterYelp, publishMonsterGrowl } from './sounds.js';
 import { sessionIsNight } from './calendar.js';
 import { releaseMonsterLeash } from './apply.js';
-import { finishMonsterEating } from './dogmove.js';
+import { finishMonsterEating, dogEat } from './dogmove.js';
 import { monsterName, setMonsterGivenName, monsterTypeName } from './do_name.js';
 import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';
 import { cansee, monsterEmitsLight, vision_recalc } from './vision.js';
@@ -58,7 +58,6 @@ import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 
 import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';
-import { dogEat } from './pet_eating.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
 import { hasShopkeeperData } from './shop_types.js';

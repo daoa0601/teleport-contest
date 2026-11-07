@@ -6,13 +6,12 @@ import { initializePet, catchUpMonster, deliverMigratingMonsters, migrateMonster
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { GOLD_PIECE } from '../js/object_data.js';
-import { beginPetEating, finishPetEating } from '../js/pet_eating.js';
 import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { beginMonsterMealMimicry } from '../js/dogmove.js';
+import { beginMonsterMealMimicry, beginPetEating, finishPetEating } from '../js/dogmove.js';
 
 async function pet(species = 'little dog', x = 11, y = 10) {
     const monster = await createMonsterAt(species, x, y, NO_MINVENT);
