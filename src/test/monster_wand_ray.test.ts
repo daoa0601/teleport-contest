@@ -11,6 +11,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { mbhit } from '../js/muse.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, POT_WATER, ROCK, WAN_STRIKING,
@@ -403,4 +404,22 @@ void test('undead turning stuns the actual undead hero form and revives carried 
     assert.ok((game.u.stunnedTurns ?? 0) > 0);
     assert.equal(game.u.mh, 40);
     assert.equal(objectTypeKnown(wand, options.state), true);
+});
+
+// C do_name.c:oname() installs only the wielded W_WEP intrinsic mask
+// (do_name.c:407); naming a carried Magic Mirror of Merlin into existence
+// leaves EAntimagic unset, so muse.c's mbhitm() striking gate (muse.c:1612,
+// plain Antimagic) lets the wand hit the hero.
+void test('a carried mirror named into existence does not turn a striking wand boing', async () => {
+    const { source, wand, options, messages } = await wandRoom(WAN_STRIKING, 10, 10);
+    const artifact = artifactByName('The Magic Mirror of Merlin');
+    assert.ok(artifact !== null && artifact !== undefined);
+    const mirror = await addInventoryObject(artifact.baseType);
+    nameArtifact(mirror, artifact);
+
+    await mbhit(source, wand, options);
+
+    assert.equal(game.u.uhp, 32);
+    assert.ok(messages.includes('The wand hits you!'));
+    assert.ok(!messages.includes('Boing!'));
 });

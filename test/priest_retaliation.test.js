@@ -10,6 +10,7 @@ import { setPrimaryWeapon } from '../js/wield.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { A_DEX, ALTAR, AM_SHRINE, Align2amask, M_SEEN_ELEC, M_SEEN_REFL, NO_MINVENT, ROOMOFFSET, STRAT_WAITFORU, TEMPLE, W_ARM, } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { throwInventoryObject, kickDirection } from './support/commands.js';
 import { placeCreatedObject } from '../js/mkobj.js';
@@ -112,8 +113,9 @@ void test('Half_spell_damage protects against shrine lightning', async () => {
     assert.equal(protectedLoss, Math.ceil(unprotectedLoss / 2));
 });
 void test('shock resistance prevents damage but not shrine-lightning blindness', async () => {
-    const { priest } = await temple({ hero: { shockResistance: true } });
+    const { priest } = await temple();
     requirePlayingGame(game);
+    grantIntrinsicProperty('shockResistance', 'outside');
     initRng(1n);
     await wakeMonster(priest, { attacked: true });
     assert.equal(game.u.uhp, 100);
@@ -172,8 +174,10 @@ void test('shrine lightning wakes a bystander without anger or wait-strategy cle
 });
 void test('monsters remember shrine-lightning resistance and forget a resistance that fails', async () => {
     for (const resistant of [false, true]) {
-        const { priest } = await temple({ hero: { shockResistance: resistant } });
+        const { priest } = await temple();
         requirePlayingGame(game);
+        if (resistant)
+            grantIntrinsicProperty('shockResistance', 'outside');
         priest.my = 11;
         priest.seen_resistance = M_SEEN_ELEC | M_SEEN_REFL;
         initRng(1n);

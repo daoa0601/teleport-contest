@@ -2,6 +2,7 @@ import { objectTypeKnown } from '../js/o_init.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { pushKeys } from '../js/input.js';
 import { MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { mksobj } from '../js/mkobj.js';
@@ -81,7 +82,7 @@ void test('a fire horn shoots a ray and spends one charge', async () => {
 void test('cold resistance protects against a frost horn aimed at yourself', async () => {
     freshGameplayRoom();
     requirePlayingGame(game);
-    game.u.coldResistance = true;
+    grantIntrinsicProperty('coldResistance', 'outside');
     game.u.uhp = game.u.uhpmax = 100;
     const horn = await instrument(FROST_HORN, 1);
     pushKeys('y .          ');

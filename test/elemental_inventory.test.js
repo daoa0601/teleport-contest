@@ -127,15 +127,14 @@ for (const lifesaving of [false, true]) {
         }
     });
 }
-for (const artifactName of ['Frost Brand', 'Fire Brand', 'The Mitre of Holiness']) {
-    void test(`${artifactName} protects carried potions from elemental destruction`, async () => {
+for (const artifactName of ['Frost Brand', 'Fire Brand']) {
+    void test(`${artifactName} wielded protects carried potions from elemental destruction`, async () => {
         await freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
         const artifact = artifactByName(artifactName);
         assert.ok(artifact !== null && artifact !== undefined);
         const item = await addInventoryObject(artifact.baseType);
         nameArtifact(item, artifact);
-        if (artifactName !== 'The Mitre of Holiness')
-            await setPrimaryWeapon(item);
+        await setPrimaryWeapon(item);
         const potion = await addInventoryObject(POT_HEALING, { quan: 40, quantity: 40 });
         pushKeys(' '.repeat(100));
         initRng(2n);
@@ -144,6 +143,23 @@ for (const artifactName of ['Frost Brand', 'Fire Brand', 'The Mitre of Holiness'
         assert.equal(potion.quan, 40);
     });
 }
+// C do_name.c:oname() installs only the wielded W_WEP intrinsic mask
+// (do_name.c:407); naming a carried Mitre of Holiness into existence leaves
+// EFire_resistance unset, so u_adtyp_resistance_obj() (zap.c:5687, extrinsic
+// & (W_ARMOR | W_ACCESSORY | W_WEP | W_ART)) grants no inventory protection
+// and the carried potions boil.
+void test('a carried Mitre of Holiness named into existence does not protect potions', async () => {
+    await freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 }, uhp: 200, uhpmax: 200 } });
+    const artifact = artifactByName('The Mitre of Holiness');
+    assert.ok(artifact !== null && artifact !== undefined);
+    const mitre = await addInventoryObject(artifact.baseType);
+    nameArtifact(mitre, artifact);
+    const potion = await addInventoryObject(POT_HEALING, { quan: 40, quantity: 40 });
+    pushKeys(' '.repeat(100));
+    initRng(2n);
+    await destroyFireInventory(5);
+    assert.ok(potion.quan < 40 || potion.where === 'gone');
+});
 void test('intrinsic cold resistance does not protect carried potions like a wielded Frost Brand', async () => {
     await freshObjectRoom();
     requireFixtureGame(game);
@@ -192,8 +208,9 @@ for (const eyesWorn of [false, true]) {
 }
 for (const lifesaving of [false, true]) {
     void test(`ordinary items are destroyed before losing levitation ${lifesaving ? 'and life saving lets the ring finish crumbling' : 'causes a fatal fall'}`, async () => {
-        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 40, shockResistance: true } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 40 } });
         requireFixtureGame(game);
+        grantIntrinsicProperty('shockResistance', 'outside');
         const ring = await addInventoryObject(OBJECT_NAMES.indexOf('levitation'));
         await wearHeroAccessory(ring, 'uleft');
         pushKeys(' ');
@@ -226,22 +243,30 @@ void test('hallucination changes the Book glow color without damaging the Book',
     assert.equal(book.where, 'inventory');
     assert.ok(messages.some(message => /glows a strange (?!dark red)[^,]+, but remains intact/.test(message)));
 });
-for (const artifactName of ['Fire Brand', 'The Mitre of Holiness']) {
-    void test(`${artifactName} still resists burning-paper damage when inventory protection fails`, async () => {
+for (const [artifactName, wielded] of [
+    ['Fire Brand', true], ['The Mitre of Holiness', false],
+]) {
+    void test(`${artifactName} ${wielded ? 'wielded shields carried scrolls and their bearer' : 'named while carried shields neither scrolls nor bearer'}`, async () => {
         await freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
         requireFixtureGame(game);
         const artifact = artifactByName(artifactName);
         assert.ok(artifact !== null && artifact !== undefined);
         const item = await addInventoryObject(artifact.baseType);
         nameArtifact(item, artifact);
-        if (artifactName === 'Fire Brand')
+        if (wielded)
             await setPrimaryWeapon(item);
-        const scroll = await addInventoryObject(SCR_IDENTIFY);
+        const scroll = await addInventoryObject(SCR_IDENTIFY, { quan: 5, quantity: 5 });
         pushKeys(' '.repeat(100));
-        initRng(679n);
+        initRng(1n);
         await destroyFireInventory(5);
-        assert.equal(scroll.where, 'gone', 'the 99% inventory protection has actually failed');
-        assert.equal(game.u.uhp, 40, 'artifact fire resistance still prevents secondary paper damage');
+        if (wielded) {
+            assert.equal(scroll.quan, 5, 'the wielded artifact still grants the 99% protection');
+            assert.equal(game.u.uhp, 40);
+        }
+        else {
+            assert.ok(scroll.quan < 5 || scroll.where === 'gone', 'the Mitre leaves the extrinsic word unset, so the scrolls burn');
+            assert.ok(game.u.uhp < 40, 'plain Fire_resistance stays false without the wielded defn');
+        }
     });
 }
 for (const sight of ['sighted', 'blind', 'hallucinating']) {

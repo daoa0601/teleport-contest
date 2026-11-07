@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { LAVAPOOL, POOL, ROOM, WATER, W_AMUL } from '../js/const.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { dropBoulderIntoLiquid } from '../js/do.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
@@ -164,4 +165,28 @@ void test('a water wall can swallow a boulder that would fill an ordinary pool',
         assert.equal(requireGameLevel().requireAt(12, 10).typ, type === POOL ? ROOM : WATER);
         assert.equal(boulder.where, 'gone');
     }
+});
+
+// C do_name.c:oname() installs only the wielded W_WEP intrinsic mask
+// (do_name.c:407); naming a carried Mitre of Holiness into existence leaves
+// EFire_resistance unset, so boulder_hits_pool()'s splash gate (do.c:132-137,
+// plain Fire_resistance) burns the adjacent hero with the full 3d6.
+void test('a lava splash scalds a hero carrying a fire artifact named into existence', async () => {
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    requirePlayingGame(game);
+    const artifact = artifactByName('The Mitre of Holiness');
+    assert.ok(artifact !== null && artifact !== undefined);
+    const mitre = await addInventoryObject(artifact.baseType);
+    nameArtifact(mitre, artifact);
+    requireGameLevel().requireAt(11, 10).typ = LAVAPOOL;
+    const boulder = await knownObject(BOULDER);
+    const messages: string[] = [];
+    initRng(1n);
+
+    await dropBoulderIntoLiquid(boulder, 11, 10, game, {
+        publish: async text => { messages.push(text); },
+    });
+
+    assert.ok(messages.some(text => /You are hit by molten lava!$/.test(text)));
+    assert.ok(game.u.uhp <= 97 && game.u.uhp >= 82, `expected 3d6 lava damage, got ${100 - game.u.uhp}`);
 });

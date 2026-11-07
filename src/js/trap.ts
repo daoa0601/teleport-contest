@@ -709,7 +709,7 @@ import {
 } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
+import { artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import {
     burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
@@ -3620,11 +3620,8 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
     }
 
     await seeTrap(trap);
-    if (
-        hero.antimagic ||
-        propertyIsActive('antimagic', game) ||
-        heroHasArtifactDefense('magic', game)
-    ) {
+    // C trap.c:2351 reads the plain Antimagic macro.
+    if (propertyIsActive('antimagic', game)) {
         const damage = implosionDamage();
         const hitPoints = heroIsPolymorphed(game) ? (hero.mh ?? 1) : (hero.uhp ?? 1);
         const feeling =
@@ -3794,8 +3791,8 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
         }
         return;
     }
-    if (propertyIsActive('antimagic', game) || heroHasArtifactDefense('magic', game)
-        || heroIsUnchanging(game)) {
+    // C trap.c:2486 reads the plain Antimagic macro.
+    if (propertyIsActive('antimagic', game) || heroIsUnchanging(game)) {
         await shieldeff(game.u.ux, game.u.uy);
         await plineWithContinuation(formatFeltMessage('momentarily different.'));
         return;

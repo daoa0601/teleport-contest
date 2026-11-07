@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_INT, NO_MINVENT, WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';
 import { hitMonsterWithRay, zapRayWithObject } from '../js/zap.js';
@@ -97,8 +98,9 @@ void test('a vertical magic missile hits the hero and respects half spell damage
 });
 
 void test('a vertical death wand cannot kill a hero protected by magic resistance', async () => {
-    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 100, antimagic: true, dx: 0, dy: 0, dz: 1 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 100, dx: 0, dy: 0, dz: 1 } });
     requirePlayingGame(game);
+    grantIntrinsicProperty('antimagic', 'outside');
     installPagerInput(resetInputState(), { expected: /death.*hits you|You aren.t affected/i, limit: 2 });
 
     await zapRayWithObject(await knownObject(WAN_DEATH));

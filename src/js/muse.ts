@@ -37,7 +37,7 @@ import {
     POLY_TRAP, QBUFSZ, RLOC_MSG, SCORR, SDOOR, SHOPBASE, STAIRS, STRAT_WAITFORU, TELEP_TRAP, TEMPLE,
     WAND_BACKFIRE_CHANCE, W_ARM, W_ARMF, W_ARMG, W_ARMH, W_WEP, WEB, W_NONDIGGABLE, ZAP_POS, W_AMUL, W_ARMS, HAND,
 } from './const.js';
-import { heroHasArtifactDefense, weaponReflects } from './artifact.js';
+import { weaponReflects } from './artifact.js';
 import { monsterHasMagicResistance } from './mondata.js';
 import { fillPitWithBoulderAt, mintrap, seeTrap, trapAt, trapName, heroIsUnconscious, maketrap } from './trap.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
@@ -1044,7 +1044,7 @@ async function mbhitm(target: Monster | null, context: WandRayContext): Promise<
         revealInvisible = true;
         let learned = false;
         if (!target) {
-            if (state.u.antimagic || propertyIsActive('antimagic', state) || heroHasArtifactDefense('magic', state)) {
+            if (propertyIsActive('antimagic', state)) {
                 monstersObserveHeroResistance(M_SEEN_MAGR, state);
                 await shieldeff(state.u.ux, state.u.uy, state);
                 await publish('Boing!');

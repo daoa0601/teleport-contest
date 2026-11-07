@@ -1,5 +1,6 @@
 import { objectTypeKnown } from '../js/o_init.js';
 import { createDungeon } from './support/topology.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,7 +40,7 @@ void test('force bolt damages a monster in its path', async () => {
 void test('magic resistance bounces a self-zapped wand of striking', async () => {
     freshGameplayRoom();
     requireFixtureGame(game);
-    game.u.antimagic = true;
+    grantIntrinsicProperty('antimagic', 'outside');
     const startingHitPoints = game.u.uhp;
     const wand = await chargedWand(WAN_STRIKING, { charges: 2 });
     game.inventory = [wand];

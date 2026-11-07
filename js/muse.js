@@ -13,7 +13,7 @@ import { OBJ_DESCR } from './o_init.js';
 import { heroHasInvoluntaryDelay, setMulti, isok } from './cmd.js';
 import { nomul, loseHeroHp, roomsAt } from './hack.js';
 import { BEAR_TRAP, BOLT_LIM, CORR, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, FIRE_TRAP, G_GONE, HOLE, In_endgame, In_sokoban, IS_AIR, IS_DOOR, IS_DRAWBRIDGE, IS_FURNITURE, IS_OBSTRUCTED, is_hole, is_pit, ismnum, LADDER, MFAST, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MM_NOMSG, MON_OFFMAP, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NORMAL_SPEED, P_DAGGER, P_KNIFE, PIT, PLNMSG_enum, PLNMSG_UNKNOWN, POLY_TRAP, QBUFSZ, RLOC_MSG, SCORR, SDOOR, SHOPBASE, STAIRS, STRAT_WAITFORU, TELEP_TRAP, TEMPLE, WAND_BACKFIRE_CHANCE, W_ARM, W_ARMF, W_ARMG, W_ARMH, W_WEP, WEB, W_NONDIGGABLE, ZAP_POS, W_AMUL, W_ARMS, HAND, } from './const.js';
-import { heroHasArtifactDefense, weaponReflects } from './artifact.js';
+import { weaponReflects } from './artifact.js';
 import { monsterHasMagicResistance } from './mondata.js';
 import { fillPitWithBoulderAt, mintrap, seeTrap, trapAt, trapName, heroIsUnconscious, maketrap } from './trap.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
@@ -1071,7 +1071,7 @@ async function mbhitm(target, context) {
             revealInvisible = true;
             let learned = false;
             if (!target) {
-                if (state.u.antimagic || propertyIsActive('antimagic', state) || heroHasArtifactDefense('magic', state)) {
+                if (propertyIsActive('antimagic', state)) {
                     monstersObserveHeroResistance(M_SEEN_MAGR, state);
                     await shieldeff(state.u.ux, state.u.uy, state);
                     await publish('Boing!');

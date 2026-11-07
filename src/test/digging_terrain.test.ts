@@ -1,6 +1,7 @@
 import { GameMap } from '../js/game.js';
 import type { Trap } from '../js/map_types.js';
 import { floorObjectsAt } from './support/level-state.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -364,7 +365,7 @@ void test('a shielded hero teaches observers her magic resistance', async () => 
     const level = heroRoom();
     requireFixtureGame(game);
     game.u.uhp = game.u.uhpmax = 1000;
-    game.u.antimagic = true;
+    grantIntrinsicProperty('antimagic', 'outside');
     const observer = await createMonsterAt('giant ant', 12, 10);
     observer.mhp = observer.mhpmax = 1000;
     level.traps.push({

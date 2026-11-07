@@ -56,7 +56,7 @@ import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDropp
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
 import type { ObjectCallResult } from './do_name.js';
-import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER } from './hack.js';
+import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire } from './hack.js';
 import type { Trap } from './map_types.js';
 import { buryFloorObjectsAt, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import {
@@ -78,7 +78,7 @@ import {
     deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrap, trapAt,
     selfTouchPetrifyingWeapons, floatHeroDown, waterDamageObject, lava_damage,
 } from './trap.js';
-import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
+import { heroHasCarriedArtifactFlag } from './artifact.js';
 import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero } from './pickup.js';
@@ -334,8 +334,8 @@ export async function dropBoulderIntoLiquid(boulder: GameObject | null, x: numbe
             state.vision_full_recalc = 1;
             await publish('You find yourself on dry land again!');
         } else if (lava && Math.abs(state.u.ux - x) <= 1 && Math.abs(state.u.uy - y) <= 1) {
-            const fireResistant = state.u.fireResistance
-                || heroHasArtifactDefense('fire', state);
+            // C do.c:132-137 reads the plain Fire_resistance macro.
+            const fireResistant = heroResistsFire(state);
             await publish(`You are hit by molten ${displayLiquidName('lava', state)}${fireResistant ? '.' : '!'}`);
             await burnAwayHeroSlime(state, publish);
             let damage = d(fireResistant ? 1 : 3, 6);

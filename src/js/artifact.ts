@@ -777,13 +777,8 @@ function resistanceAttackApplies(
         if (damageType === 'shock')
             return !(heroState.shockResistance || monsterHasShockResistance(currentForm));
         if (damageType === 'life-drain')
-            return !(
-                heroHasDrainResistance(state) ||
-                monsterHasDrainResistance(currentForm) ||
-                (heroState.ulycn !== undefined &&
-                    Number.isInteger(heroState.ulycn) &&
-                    heroState.ulycn >= 0)
-            );
+            // C artifact.c:1052: the hero branch reads plain Drain_resistance.
+            return !heroHasDrainResistance(state);
         if (damageType === 'stun' || damageType === 'magic') return !heroState.antimagic;
         return false;
     }

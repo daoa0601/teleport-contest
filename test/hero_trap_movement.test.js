@@ -228,6 +228,28 @@ void test('wielding Magicbane turns an anti-magic field into an implosion', asyn
     assert.ok(game.u.uen < 20);
     assert.ok(game.u.uenmax < 20);
 });
+// C do_name.c:oname() installs only the wielded W_WEP intrinsic mask
+// (do_name.c:407); naming a carried Magic Mirror of Merlin into existence
+// leaves EAntimagic unset, so trapeffect_anti_magic()'s gate (trap.c:2351,
+// plain Antimagic) skips the implosion and only drains energy.
+void test('a carried mirror named into existence does not implode an anti-magic field', async () => {
+    const level = await freshObjectRoom({
+        hero: { uen: 20, uenmax: 20 },
+    });
+    requireFixtureGame(game);
+    const artifact = artifactByName('The Magic Mirror of Merlin');
+    assert.ok(artifact !== null && artifact !== undefined);
+    const mirror = await addInventoryObject(artifact.baseType);
+    nameArtifact(mirror, artifact);
+    const trap = addTrap(level, ANTI_MAGIC, 11, 10, { tseen: false });
+    const hitPoints = game.u.uhp;
+    initRng(8203n);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(trap.tseen, true);
+    assert.equal(game.u.uhp, hitPoints);
+    assert.ok(game.u.uen < 20);
+    assert.ok(game.u.uenmax < 20);
+});
 void test('stepping on a statue trap releases its monster', async () => {
     const level = freshGameplayRoom();
     requireFixtureGame(game);

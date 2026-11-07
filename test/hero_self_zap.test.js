@@ -336,4 +336,20 @@ void test('probe status describes engulfment and omits the outside gas cloud', a
     assert.match(status, /engulfed by the fog cloud/);
     assert.doesNotMatch(status, /in a cloud of vapor/);
 });
+// C do_name.c:oname() installs only the wielded W_WEP intrinsic mask
+// (do_name.c:407); the carried W_ART mask is installed when the artifact
+// enters inventory (invent.c:991). Naming a carried Magic Mirror of Merlin
+// into existence therefore leaves EAntimagic unset, and zapyourself()'s
+// Antimagic gate (zap.c:2793) does not bounce the missiles.
+void test('naming a carried magic-defense artifact does not bounce a self-zap', async () => {
+    await room();
+    requireFixtureGame(game);
+    const artifact = artifactByName('The Magic Mirror of Merlin');
+    assert.ok(artifact !== null && artifact !== undefined);
+    const mirror = await addInventoryObject(artifact.baseType);
+    nameArtifact(mirror, artifact);
+    const result = await zapHeroWithObject(await carryWand(WAN_MAGIC_MISSILE));
+    assert.ok(result.damage >= 4 && result.damage <= 24);
+    assert.equal(result.heroDied, false);
+});
 //# sourceMappingURL=hero_self_zap.test.js.map
