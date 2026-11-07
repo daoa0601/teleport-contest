@@ -23,7 +23,7 @@ import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part, floatVsFlight } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
-import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters } from './objnam.js';
+import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
@@ -1618,48 +1618,6 @@ export async function disintegrateWornArmor(armor, { state = game, publish = pli
     }
     await stopHeroOccupation(state, publish);
     return true;
-}
-// C objnam.c:suit_simple_name(), objnam.c:cloak_simple_name(),
-// objnam.c:helm_simple_name(), objnam.c:gloves_simple_name(),
-// objnam.c:boots_simple_name(), objnam.c:shield_simple_name(),
-// objnam.c:shirt_simple_name().
-export function simpleArmorName(armor, slot, state) {
-    const name = OBJ_NAME(armor.otyp);
-    if (!name)
-        throw new RangeError(`Missing name for armor type ${armor.otyp}`);
-    const appearance = OBJ_DESCR(armor.otyp, state)
-        || name;
-    const known = objectTypeKnown(armor, state);
-    switch (slot) {
-        case 'uarm':
-            if (name.endsWith('dragon scale mail'))
-                return 'dragon mail';
-            if (name.endsWith('dragon scales'))
-                return 'dragon scales';
-            if (name.endsWith(' mail'))
-                return 'mail';
-            return name.endsWith(' jacket') ? 'jacket' : 'suit';
-        case 'uarmc':
-            if (name === 'robe')
-                return 'robe';
-            if (name === 'mummy wrapping')
-                return 'wrapping';
-            if (name === 'alchemy smock')
-                return known && armor.dknown ? 'smock' : 'apron';
-            return 'cloak';
-        case 'uarmh': return objectIsHardHelmet(armor) ? 'helm' : 'hat';
-        case 'uarmu': return 'shirt';
-        case 'uarmg':
-            return armor.dknown && (known ? name : appearance).includes('gauntlets')
-                ? 'gauntlets' : 'gloves';
-        case 'uarmf':
-            return armor.dknown && (appearance.includes('shoes') || known && name.includes('shoes'))
-                ? 'shoes' : 'boots';
-        case 'uarms':
-            if (armor.otyp === SHIELD_OF_REFLECTION)
-                return armor.dknown ? 'silver shield' : 'smooth shield';
-            return 'shield';
-    }
 }
 // Part of C hack.h:ARM_BONUS(): the objects[].a_ac base.
 export function armorBaseBonus(otyp) {

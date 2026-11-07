@@ -16,7 +16,7 @@ import {
 } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
-import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled, removeHeroAccessory } from './do_wear.js';
+import { ringRemovalObstacle, disintegrateWornArmor, clearHeroStrangulation, heroIsStrangled, removeHeroAccessory } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, mk_artifact, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
@@ -66,7 +66,7 @@ import type { HeroMonsterKillOptions } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle, simpleArmorName } from './objnam.js';
 import { isWeaponTool, isBimanualObject } from './object_properties.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './o_init.js';
 import { deleteObject } from './shk.js';

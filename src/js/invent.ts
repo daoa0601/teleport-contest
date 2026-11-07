@@ -29,7 +29,7 @@ import {
     DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD,
 } from './object_data.js';
 import {
-    pair_of, isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo,
+    pair_of, isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, launcherMatchesAmmo,
     isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition,
 } from './object_properties.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn, removeHeroEquipment } from './worn.js';
@@ -40,7 +40,7 @@ import {
     killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural,
     withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName,
     objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, objectNeedsFullIdentification,
-    observeObjectForNaming, simpleObjectName, singularObjectName, erosionMatters,
+    observeObjectForNaming, simpleObjectName, singularObjectName, erosionMatters, objectUsesCharges,
 } from './objnam.js';
 import {
     rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, placeObject,

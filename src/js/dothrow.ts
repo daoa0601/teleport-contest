@@ -51,7 +51,7 @@ import {
 } from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
 import { quiverObjectClass } from './quiver.js';
-import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName } from './objnam.js';
+import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName, simpleArmorName } from './objnam.js';
 import {
     inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore,
     stack_object, fullyIdentifyObject, addInventoryItem,
@@ -101,7 +101,7 @@ import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterSentenceSubject } from './sounds.js';
 import { displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
-import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet, simpleArmorName } from './do_wear.js';
+import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet } from './do_wear.js';
 import { setMonsterMalign, makemonAt } from './makemon.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';

@@ -7,7 +7,7 @@ import { RANDOM_CLASS, WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTIO
 import { objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
-import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled, removeHeroAccessory } from './do_wear.js';
+import { ringRemovalObstacle, disintegrateWornArmor, clearHeroStrangulation, heroIsStrangled, removeHeroAccessory } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, mk_artifact, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import { heroIsPunished } from './ball.js';
@@ -41,7 +41,7 @@ import { displayColorName, monsterName } from './do_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterIsRider, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount, heroCanChant, } from './mondata.js';
 import { wakeMonstersNearWithMessages, finishHeroMonsterKill } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
-import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle, simpleArmorName } from './objnam.js';
 import { isWeaponTool, isBimanualObject } from './object_properties.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './o_init.js';
 import { deleteObject } from './shk.js';
