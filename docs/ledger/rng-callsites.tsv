@@ -1545,7 +1545,6 @@ src/js/dokick.ts	rollKickDamage	rnd	"[""damage""]"	unproved
 src/js/dokick.ts	tryKickEvasion	rn2	"[""clumsy ? 3 : 4""]"	constant
 src/js/dokick.ts	tryKickEvasion	rn2	"[""martial ? 5 : 3""]"	constant
 src/js/dokick.ts	tryKickReel	rn2	"[""3""]"	constant
-src/js/mcastu.ts	curseDirectedSpell	random	"[""4""]"	constant
 src/js/mcastu.ts	resolveMonsterMagicRay	random	"[""3""]"	constant
 src/js/mon.ts	respondToImmediateMagic	random	"[""10""]"	constant
 src/js/mon.ts	respondToImmediateMagic	random	"[""13""]"	constant
@@ -1955,16 +1954,16 @@ src/js/potion.ts	randomBottleName	select	"[""names.length""]"	unproved
 src/js/potion.ts	restoreBaseAttributes	rn2	"[""6""]"	constant
 src/js/potion.ts	dipInOil	d	"[""2"", ""10""]"	constant
 src/js/potion.ts	fillLamp	d	"[""6"", ""6""]"	constant
-src/js/potion.ts	applyPotionMentalEffect	rn1	"[""200"", ""250 - 125 * blessing(source)""]"	constant
-src/js/potion.ts	applyPotionMentalEffect	rn1	"[""7"", ""16 - 8 * blessing(source)""]"	constant
+src/js/potion.ts	applyPotionMentalEffect	rn1	"[""200"", ""250 - 125 * bcsign(source)""]"	constant
+src/js/potion.ts	applyPotionMentalEffect	rn1	"[""7"", ""16 - 8 * bcsign(source)""]"	constant
 src/js/potion.ts	applyPotionMentalEffect	rn2	"[""A_MAX""]"	constant
 src/js/potion.ts	boozeEffect	d	"[""2 + (state.u.uhs || 0)"", ""8""]"	unproved
 src/js/potion.ts	boozeEffect	rnd	"[""15""]"	constant
-src/js/potion.ts	hallucinationEffect	rn1	"[""200"", ""600 - 300 * blessing(source)""]"	constant
+src/js/potion.ts	hallucinationEffect	rn1	"[""200"", ""600 - 300 * bcsign(source)""]"	constant
 src/js/potion.ts	hallucinationEffect	rn2	"[""3""]"	constant
 src/js/potion.ts	hallucinationEffect	rn2	"[""6""]"	constant
-src/js/potion.ts	paralysisEffect	rn1	"[""10"", ""25 - 12 * blessing(source)""]"	constant
-src/js/potion.ts	sleepingEffect	rn1	"[""10"", ""25 - 12 * blessing(source)""]"	constant
+src/js/potion.ts	paralysisEffect	rn1	"[""10"", ""25 - 12 * bcsign(source)""]"	constant
+src/js/potion.ts	sleepingEffect	rn1	"[""10"", ""25 - 12 * bcsign(source)""]"	constant
 src/js/potion.ts	mixPotions	rnd	"[""8""]"	constant
 src/js/potion.ts	mixPotions	rnd	"[""9""]"	constant
 src/js/potion.ts	mixPotions	rnd	"[""Math.min(count, 8) - 2""]"	guarded
