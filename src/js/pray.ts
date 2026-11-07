@@ -547,10 +547,10 @@ export async function doturn(state: GameState = game, {
 // altar furniture supplies the mask from its disguise (mcorpsenm);
 // otherwise an altar tile supplies its altarmask, and anything else is 0.
 export function altarmaskAt(x: number, y: number, state: GameState = game): number {
+    if (!isok(x, y)) return 0;
     const level = state.level;
-    if (!level) return 0;
-    const location = level.at(x, y);
-    if (!location) return 0;
+    const location = level?.at(x, y);
+    if (!level || !location) return 0;
     const monster = monsterAtPosition(level, x, y, state);
     if (monster && M_AP_TYPE(monster) === M_AP_FURNITURE
         && monster.mappearance === CmapSymbol.altar)
