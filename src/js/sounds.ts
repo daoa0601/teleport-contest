@@ -49,7 +49,7 @@ import { DEATH_QUOTES } from './death_quotes.js';
 import { doseduce } from './mhitu.js';
 import { selectTributePassage } from './novel_tribute.js';
 import { could_seduce } from './seduction_compatibility.js';
-import { talkToPriest } from './priest_talk.js';
+import { talkToPriest } from './priest.js';
 import { aggravateMonsters, publishMonsterCuss } from './wizard.js';
 import { AT_TUCH, AD_SSEX } from './monster_attack_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
