@@ -597,33 +597,3 @@ function wrapStoredToplines(message: string, columns: number): string {
     return wrapped;
 }
 
-// C topl.c:tty_yn_function(): numeric response entry.
-// Also C topl.c:removetopl(): inlined here when erasing digits or abandoning the count.
-export async function readChoiceNumber(
-    first: string, prompt: string, readAnswer: () => Promise<string>, paint: (text: string) => void,
-): Promise<bigint | null> {
-    let digits = first === '#' ? '' : first;
-    let value = digits ? BigInt(digits) : 0n;
-    paint(prompt + '#' + digits);
-    for (;;) {
-        const character = await readAnswer();
-        if (/^[0-9]$/.test(character)) {
-            const next = value * 10n + BigInt(character);
-            if (next > 9223372036854775807n) break;
-            value = next;
-            digits += character;
-        } else if (character === 'y' || ' \n\r\x1b\0'.includes(character)) {
-            if (character !== '\x1b') return value;
-            break;
-        } else if (character === '\x7f' || character === '\b') {
-            if (!digits) break;
-            value /= 10n;
-            digits = digits.slice(0, -1);
-        } else break;
-        paint(prompt + '#' + digits);
-    }
-    // Escape, overflow, erasing the '#', or an invalid character aborts the
-    // number and returns to the same yes/no question without that character.
-    paint(prompt);
-    return null;
-}
