@@ -19,7 +19,8 @@ import { formatFeltMessage, formatHeardMessage, pline as syncPline, plineWithCon
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
 import { impossible } from './diagnostics.js';
 import { lightDamage } from './zap.js';
-import { lightHitsGremlin, objectLightRadius, snuffLightSource } from './light.js';
+import { objectLightRadius, snuffLightSource } from './light.js';
+import { lightHitsGremlin } from './uhitm.js';
 import { snuffLitObject } from './apply.js';
 import { impactArtifactLight } from './potion.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';

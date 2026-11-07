@@ -167,34 +167,6 @@ export async function snuffMonsterInventoryLights(defender, state, publish) {
         endObjectBurn(object, state);
     }
 }
-// C uhitm.c:light_hits_gremlin(): the implementation.
-export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
-    const dx = monster.mx - game.u.ux;
-    const dy = monster.my - game.u.uy;
-    if (!heroIsDeaf(game) && dx * dx + dy * dy <= 90) {
-        const reaction = damage > monster.mhp / 2
-            ? 'wails in agony' : 'cries out in pain';
-        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} ${reaction}!`);
-    }
-    else if (canSeeMonster(monster)) {
-        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} recoils from the light!`);
-    }
-    monster.mhp -= damage;
-    await wakeMonstersNearWithMessages(monster.mx, monster.my, 30);
-    if (monster.mhp <= 0) {
-        if (finishMonsterKill)
-            return finishMonsterKill(monster, monster.mx, monster.my);
-        if (game.context.mon_moving)
-            return finishMonsterKilled(monster, game, {
-                cause: null, damageType: AD_BLND,
-            });
-        return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my);
-    }
-    else if (cansee(monster.mx, monster.my)
-        && !canSpotMonster(monster)) {
-        await map_invisible(monster.mx, monster.my);
-    }
-}
 // C light.c:show_transient_light(). A thrown or kicked lit object lights its
 // flight; a null object is an camera flash lighting one square.
 export async function showTransientLight(object, x, y, state = game) {

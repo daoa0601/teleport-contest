@@ -37,9 +37,6 @@ import { monsterDigests, monsterIsWhirly } from './mondata.js';
 // Only message delivery is observed; display callbacks may return input status.
 type Publish = (message: string) => unknown;
 type RandomBelow = (limit: number) => number;
-type LightDeathOutcome = MonsterDeathResult | HeroMonsterKillOutcome;
-export type FinishMonsterKill = (monster: Monster, x: number, y: number) =>
-    boolean | LightDeathOutcome | void | Promise<boolean | LightDeathOutcome | void>;
 
 export interface IgniteItemsOptions {
     state?: GameState;
@@ -210,42 +207,6 @@ export async function snuffMonsterInventoryLights(
     }
 }
 
-// C uhitm.c:light_hits_gremlin(): the gremlin's cry or recoil, damage,
-// wake, and death.
-export function lightHitsGremlin(
-    monster: Monster, damage: number,
-): Promise<LightDeathOutcome | void>;
-// C uhitm.c:light_hits_gremlin(): the overload with a kill handler.
-export function lightHitsGremlin(
-    monster: Monster, damage: number, finishMonsterKill: FinishMonsterKill,
-): Promise<boolean | LightDeathOutcome | void>;
-// C uhitm.c:light_hits_gremlin(): the implementation.
-export async function lightHitsGremlin(
-    monster: Monster, damage: number,
-    finishMonsterKill?: FinishMonsterKill,
-): Promise<boolean | LightDeathOutcome | void> {
-    const dx = monster.mx - game.u.ux;
-    const dy = monster.my - game.u.uy;
-    if (!heroIsDeaf(game) && dx * dx + dy * dy <= 90) {
-        const reaction = damage > monster.mhp / 2
-            ? 'wails in agony' : 'cries out in pain';
-        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} ${reaction}!`);
-    } else if (canSeeMonster(monster)) {
-        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} recoils from the light!`);
-    }
-    monster.mhp -= damage;
-    await wakeMonstersNearWithMessages(monster.mx, monster.my, 30);
-    if (monster.mhp <= 0) {
-        if (finishMonsterKill) return finishMonsterKill(monster, monster.mx, monster.my);
-        if (game.context.mon_moving) return finishMonsterKilled(monster, game, {
-            cause: null, damageType: AD_BLND,
-        });
-        return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my);
-    } else if (cansee(monster.mx, monster.my)
-        && !canSpotMonster(monster)) {
-        await map_invisible(monster.mx, monster.my);
-    }
-}
 
 // C light.c:show_transient_light(). A thrown or kicked lit object lights its
 // flight; a null object is an camera flash lighting one square.
