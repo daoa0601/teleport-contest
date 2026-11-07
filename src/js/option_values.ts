@@ -64,8 +64,9 @@ export async function setTextOption(name: string, value: string): Promise<void> 
     }
     case 'packorder': {
         if (!value) break;
-        const errors = changeInventoryOrder(value);
-        for (const error of errors) await optionError(error);
+        const change = changeInventoryOrder(value);
+        for (const error of change.errors) await optionError(error);
+        game.flags.inv_order = change.order;
         break;
     }
     case 'menuinvertmode': {
