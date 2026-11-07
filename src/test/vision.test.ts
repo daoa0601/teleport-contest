@@ -9,7 +9,8 @@ import { pushKeys } from '../js/input.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { teleds } from '../js/teleport.js';
-import { cansee, couldsee, unset_seenv, visibleCellsFrom, vision_recalc, vision_reset } from '../js/vision.js';
+import { cansee, couldsee, visibleCellsFrom, vision_recalc, vision_reset } from '../js/vision.js';
+import { unset_seenv } from '../js/display.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('visibility from a square stops behind a wall and at its range limit', async () => {

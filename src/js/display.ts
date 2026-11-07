@@ -31,10 +31,10 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.
 import { drawbridgeUnderlyingType, isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { heroWarnsOfMonster } from './polyself.js';
 import { artifactWarningFeedback } from './artifact.js';
-import { cansee, couldsee, mimicBlocksLight, set_seenv, vision_note_blocker_change, vision_recalc } from './vision.js';
+import { cansee, couldsee, mimicBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { describeMapLocation } from './pager.js';
 import { glyphToCmapSymbol } from './getpos.js';
-import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, IS_STWALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_MASK, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, TIMEOUT, Upolyd, ismnum } from './const.js';
+import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, IS_STWALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, WM_MASK, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, TIMEOUT, Upolyd, ismnum } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
@@ -3051,6 +3051,32 @@ export function set_wall_state(): void {
     for (let x = 0; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) xy_set_wall_state(x, y);
     }
+}
+
+// C display.c:seenv_matrix; vision.c shares it through an extern.
+const seenv_matrix = [
+    [SV2, SV1,   SV0],
+    [SV3, SVALL, SV7],
+    [SV4, SV5,   SV6],
+] as const;
+
+// C display.c:set_seenv(). Touch records the same angle as physical sight.
+export function set_seenv(location: MapLocation, fromX: number, fromY: number, x: number, y: number): void {
+    location.seenv |= seenVector(Math.sign(x - fromX), Math.sign(fromY - y));
+}
+
+// Part of C display.c:set_seenv(): select the viewing-angle bit for an adjacent direction.
+function seenVector(dx: number, dy: number): number {
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1)
+        throw new RangeError(`Seen direction (${dx}, ${dy}) must be adjacent.`);
+    return seenv_matrix[dy < 0 ? 0 : dy > 0 ? 2 : 1][dx < 0 ? 0 : dx > 0 ? 2 : 1];
+}
+
+// C display.c:unset_seenv(). The caller supplies the origin or an adjacent cell.
+export function unset_seenv(location: MapLocation, fromX: number, fromY: number, x: number, y: number): void {
+    const dx = x - fromX;
+    const dy = fromY - y;
+    location.seenv &= ~seenVector(dx, dy);
 }
 
 // Part of C display.c:wall_angle(): straight-wall and corner visibility.
