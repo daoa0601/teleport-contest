@@ -47,7 +47,7 @@ import {
 import { impossible } from './diagnostics.js';
 import type { PropertyObject, WornPropertySlot, PropertyName, PropertyState } from './property_types.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
-import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
+import { dipFountain, dipSink, drinkFountain, drinkSink, washHands, floatingAbove } from './fountain.js';
 import type { DipTarget } from './fountain.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible, grantHeroSeeInvisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
@@ -90,7 +90,6 @@ import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestructi
 import { enlightenment } from './insight.js';
 import type { InventoryClassification } from './invent.js';
 import { gotoLevel, doup } from './do.js';
-import { floatingAbove } from './levitation_commands.js';
 import { objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';

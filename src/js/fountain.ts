@@ -11,7 +11,7 @@ import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, curre
 import {
     A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, ENL_GAMEINPROGRESS, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE,
     MAGICENLIGHTENMENT, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING,
-    ARM, HAND, FACE, HEAD, LL_ARTIFACT,
+    ARM, HAND, FACE, HEAD, LL_ARTIFACT, TT_INFLOOR, TT_LAVA,
 } from './const.js';
 import { monsterHasMapPosition } from './steed.js';
 import { canSpotMonster, glyphAt, newsym } from './display.js';
@@ -37,7 +37,7 @@ import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasNoLimbs } from './mondata.js';
-import { level_difficulty } from './dungeon.js';
+import { level_difficulty, surfaceName } from './dungeon.js';
 import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER, } from './object_data.js';
 import { promptYesNo } from './query.js';
 import { rnd, rn1, rn2 } from './rng.js';
@@ -46,7 +46,6 @@ import { mintrap, waterDamageChain, waterDamageObject, deleteFloorTrap } from '.
 import type { WaterDamageOutcome } from './trap.js';
 import { cansee, clearAreaCells, couldsee } from './vision.js';
 import { objectLightRadius } from './light.js';
-import { floatingAbove } from './levitation_commands.js';
 import { morehungry, newuhs, vomit } from './eat.js';
 import { enlightenment } from './insight.js';
 import { detectMonsters } from './detect.js';
@@ -70,6 +69,22 @@ import { inTown, loseHeroHp, heroGoldAmount } from './hack.js';
 
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
+
+// C fountain.c:floating_above().  Stuck in the floor overrides the
+// usual wording and always names the surface.
+export async function floatingAbove(
+    what: string, state: GameState = game, publish: MessagePublisher = plineWithContinuation,
+): Promise<void> {
+    const hero = state.u;
+    if (hero.utrap && (hero.utraptype === TT_INFLOOR
+        || hero.utraptype === TT_LAVA)) {
+        await publish(`You are trapped in the ${
+            surfaceName(hero.ux, hero.uy, state)}.`);
+        return;
+    }
+    await publish(`You are floating high above the ${what}.`);
+}
+
 
 // C fountain.c:dryup().
 export async function dryFountainAt(x: number, y: number, {

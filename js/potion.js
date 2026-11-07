@@ -25,7 +25,7 @@ import { restorationLeavesTrouble } from './apply.js';
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, ENL_GAMEINPROGRESS, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MAGICENLIGHTENMENT, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT, FACE, HEAD, HAND, LEG, LL_CONDUCT, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
-import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
+import { dipFountain, dipSink, drinkFountain, drinkSink, washHands, floatingAbove } from './fountain.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible, grantHeroSeeInvisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { tameMonster } from './dog.js';
@@ -52,7 +52,6 @@ import { heroCanBeSlimed, newuhs, eatmupdate, fix_petrification } from './eat.js
 import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestruction, poly_obj, polymorphMonsterFromMagic } from './zap.js';
 import { enlightenment } from './insight.js';
 import { gotoLevel, doup } from './do.js';
-import { floatingAbove } from './levitation_commands.js';
 import { objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';
