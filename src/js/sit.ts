@@ -27,7 +27,7 @@ import { identifyPack, useUpFloorObject } from './invent.js';
 import { removeWornHeroItem } from './steal.js';
 import { encumber_msg, markJustPicked } from './pickup.js';
 import { heroIsDeaf, heroIsHallucinating, heroIsBlind } from './senses.js';
-import { curseObject, unblessObjectState, adjustObjectLightAfterBlessing, mksobj, set_corpsenm, objectWeight, splitObjectStack, unlinkObject, createObjectBase, nextIdent } from './mkobj.js';
+import { curseObject, unblessObjectState, adjustObjectLightAfterBlessing, mksobj, set_corpsenm, objectWeight, quantity, splitObjectStack, unlinkObject, createObjectBase, nextIdent } from './mkobj.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { SPE_REMOVE_CURSE, CHEST, CORPSE, CREAM_PIE, EGG, GOLD_PIECE, LARGE_BOX, TOWEL, WATER_WALKING_BOOTS, oc_nutrition } from './object_data.js';
 import { makePlural, verbForSubject, definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
@@ -100,10 +100,6 @@ function formIsHumanoid() {
         || monsterIsHumanoid(heroMonsterForm(game) ?? -1);
 }
 
-// Port only: read object quantities from the runtime representation.
-function objectQuantity(object: GameObject): number {
-    return object?.quan ?? object?.quantity ?? 1;
-}
 
 // Part of C sit.c:dosit(), sit.c:lay_an_egg(): check the current form's aquatic egg laying.
 function waterEggLayer() {
@@ -136,7 +132,8 @@ export async function takeHeroGold(state: GameState = game): Promise<void> {
     if (lostMoney) state.context.botl = true;
 }
 
-// Port only: read a nonnegative carried coin quantity.
+// Part of C hack.c:money_cnt(): the carried coin stack's quantity read,
+// clamped nonnegative.
 export function heroGoldQuantity(object: GameObject | null | undefined): number {
     return Math.max(0, Math.trunc(
         object?.quan ?? object?.quantity ?? 0,
@@ -160,7 +157,7 @@ function normalizeGoldObject(object: GameObject, amount = heroGoldQuantity(objec
     return object;
 }
 
-// Port only: find the hero's coin stack in the inventory array.
+// Part of C hack.c:money_cnt(): the COIN_CLASS scan of the inventory.
 export function heroGoldObject(state: Pick<GameState, 'inventory'>): GameObject | null {
     return (state?.inventory || []).find(object =>
         object?.otyp === GOLD_PIECE || object?.oclass === COIN_CLASS) || null;
@@ -274,7 +271,9 @@ async function removeThrone(x: number, y: number): Promise<void> {
     await newsym_force(x, y);
 }
 
-// Port only: publish shared attribute changes and refresh carrying capacity.
+// Port only: publish shared attribute changes and refresh carrying capacity
+// (C sit.c calls adjattrib() directly; the message tail is the port's
+// shared attribute reporting).
 async function announceAttributeChange(attribute: number, amount: number, conditional: boolean) {
     const result = adjustAttribute(attribute, amount, game);
     if (conditional && !result.changed) return result;
@@ -659,7 +658,7 @@ async function layEgg(): Promise<boolean> {
 async function sitOnObject(object: GameObject): Promise<void> {
     if (MONSTER_SYMBOL[heroMonsterForm(game) ?? -1] === S_DRAGON
         && object.oclass === COIN_CLASS) {
-        const wealth = objectQuantity(object) + heroGoldAmount(game);
+        const wealth = quantity(object) + heroGoldAmount(game);
         const meager = wealth < (game.u?.ulevel ?? 1) * 1000 ? 'meager ' : '';
         await pline(`You coil up around your ${meager}hoard.`);
         return;
