@@ -28,7 +28,7 @@ import { BOULDER, GOLD_PIECE, ROCK, TIN_WHISTLE } from './object_data.js';
 import { simpleObjectTypeName } from './objnam.js';
 import { fractureRock } from './zap.js';
 import { rn2 } from './rng.js';
-import { angerMonster, removeMonsterFromGame, sendMonsterToLimbo, moveMonsterNextToHero } from './mon.js';
+import { angerMonster, removeMonsterFromGame, sendMonsterToLimbo, moveMonsterNextToHero, pickGoldAtGuard } from './mon.js';
 import { releaseMonsterInventory } from './steal.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
@@ -866,18 +866,8 @@ function nextCorridorSquare(guard, state) {
 }
 // C invent.c:g_at()
 // The gold stack on a square, if any; C invent.c:g_at() inline.
-function goldAt(x, y, state) {
+export function goldAt(x, y, state) {
     return requireGameLevel(state).objects[x]?.[y]?.find(object => object.otyp === GOLD_PIECE);
-}
-// Part of C mon.c:mpickgold(): transfer the guard's floor gold to its inventory.
-async function pickGoldAtGuard(guard, state) {
-    const gold = goldAt(guard.mx, guard.my, state);
-    if (!gold)
-        return;
-    unlinkObject(gold, state);
-    await linkObjectToMonsterInventory(guard, gold, { state });
-    if (cansee(guard.mx, guard.my))
-        await newsym(guard.mx, guard.my);
 }
 // C vault.c:gd_pick_corridor_gold()
 async function pickCorridorGold(guard, x, y, state, random) {

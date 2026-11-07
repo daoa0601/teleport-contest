@@ -278,8 +278,9 @@ export async function removeWornItem(action, itemAction = false) {
         game.context.move = 1;
         return;
     }
-    // C armor_or_accessory_off() hands armor to armoroff().
-    await armoroff(object, inventoryPrompt);
+    // C armor_or_accessory_off() hands armor to takeoffArmor() (C
+    // armoroff()).
+    await takeoffArmor(object, inventoryPrompt);
 }
 // C do_wear.c:armoroff()
 // The armor half of armor_or_accessory_off(): select_off()/cursed() have
@@ -288,7 +289,7 @@ export async function removeWornItem(action, itemAction = false) {
 // zero-delay branch runs the *_off() removal and off_msg() now
 // (finishArmorRemoval()).  inventoryPrompt is the retained getobj()
 // topline for a silent removal.
-async function armoroff(object, inventoryPrompt) {
+async function takeoffArmor(object, inventoryPrompt) {
     const delay = objectDelay(object.otyp);
     const isArmor = object.class === 'Armor' || object.oclass === ARMOR_CLASS;
     if (isArmor && delay > 0) {

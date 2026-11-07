@@ -34,7 +34,7 @@ import { isAccessibleAt } from './monmove.js';
 import { couldsee } from './vision.js';
 import type { GameObject } from './object_types.js';
 import { searchSpecial } from './mkroom.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { wakeMonstersNearWithMessages, livingResidents } from './mon.js';
 import { priestIsInOwnTemple, monsterAlignmentType } from './priest.js';
 import { findVaultGuard } from './vault.js';
 import { rn1, rn2, rnd } from './rng.js';
@@ -241,13 +241,6 @@ async function templePriestSound(priest: Monster, state: PlayingGameState, hallu
     return true;
 }
 
-// Part of C mon.c:get_iter_mons(): enumerate living floor monsters for ambient sounds.
-function livingResidents(state: PlayingGameState): Monster[] {
-    // C get_iter_mons() tests mstate, not square occupancy: a mounted steed
-    // remains on fmon with MON_FLOOR even though the hero shares its square.
-    return [...state.level.monsters].reverse().filter(monster =>
-        !monster.dead && monster.mhp > 0 && (monster.mstate ?? MON_FLOOR) === MON_FLOOR);
-}
 
 // C sounds.c:mon_in_room()
 function monInRoom(monster: Monster, type: number, state: PlayingGameState): boolean {
