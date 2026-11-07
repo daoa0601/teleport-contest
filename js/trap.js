@@ -46,7 +46,7 @@ import { recordHeroKillConduct, finishHeroDeath, beginHeroLifeSaving, completeHe
 import { loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
 import { billDummyObject, mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable, placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack, updateIceObjectTimersAt, chargeAlteredUnpaidObject, } from './mkobj.js';
 import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt, liquidForHole, } from './dig.js';
-import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
+import { monsterAtPosition, monsterHasMapPosition, dismountHero, monsterOccupiesPosition } from './steed.js';
 import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, applyFloorEffects } from './do.js';
 import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
@@ -4658,7 +4658,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
                 if (contact.died)
                     return 1;
             }
-            else if (hero.usteed && !steedIsGrounded(hero.usteed, state)) {
+            else if (hero.usteed && !grounded(hero.usteed.mnum, state)) {
                 await plineWithContinuation('You settle more firmly in the saddle.');
             }
             else if (heroIsHallucinating(state)) {

@@ -700,7 +700,7 @@ import {
 import {
     buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt, liquidForHole,
 } from './dig.js';
-import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
+import { monsterAtPosition, monsterHasMapPosition, dismountHero, monsterOccupiesPosition } from './steed.js';
 import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, applyFloorEffects } from './do.js';
 import {
     hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord,
@@ -6102,7 +6102,7 @@ export async function floatHeroDown(
                     messageStart: 'As you fall, you', state,
                 });
                 if (contact.died) return 1;
-            } else if (hero.usteed && !steedIsGrounded(hero.usteed, state)) {
+            } else if (hero.usteed && !grounded(hero.usteed.mnum, state)) {
                 await plineWithContinuation(
                     'You settle more firmly in the saddle.');
             } else if (heroIsHallucinating(state)) {
