@@ -12,7 +12,7 @@ import { mksobj, objectWeight } from './mkobj.js';
 import { deleteObject, chargeUnpaidUsage } from './shk.js';
 import { useHeroSkill, ensureHeroSkills, initializedSkills, requiredSkill } from './weapon.js';
 import { recordObjectKnowledge, learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
-import { findArmorClass } from './do_wear.js';
+import { findArmorClass, takeoffSlotObject } from './do_wear.js';
 import { canSeeMonster, canSpotMonster, flush_screen, shieldeff, map_invisible, zapdir_to_glyph, TemporaryMapEffect, } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, novelTitle } from './do_name.js';
 import { explode } from './explode.js';
@@ -343,7 +343,7 @@ export async function continueSpellbookStudy({ state = game } = {}) {
     if (index >= MAX_SPELLS)
         await impossible('Too many spells memorized!', { state });
     else {
-        const quoted = typeKnown(type, state) ? `"${OBJ_NAME(type)}"` : `the "${OBJ_NAME(type)}" spell`;
+        const quoted = objectTypeKnown({ otyp: type }, state) ? `"${OBJ_NAME(type)}"` : `the "${OBJ_NAME(type)}" spell`;
         const studied = book.spestudied || 0;
         const remembered = spells[index];
         if (studied >= (alreadyKnown ? MAX_STUDIES + 1 : MAX_STUDIES)) {
@@ -525,10 +525,6 @@ function readingDelay(type) {
     if (level <= 6 && level >= 5)
         return -level * delay;
     return level === 7 ? -8 * delay : null;
-}
-// Port only: query object-type discovery by type index.
-function typeKnown(type, state) {
-    return objectTypeKnown({ otyp: type }, state);
 }
 // Part of C spell.c:study_book(): become helpless after failed or confused reading.
 function delayReading(delay, state) {
@@ -813,7 +809,7 @@ export async function rejectCasting(state = game) {
     else if (!heroCanChant(state)) {
         await plineWithContinuation('You are unable to chant the incantation.');
     }
-    else if (!heroHasFreeHand(state) && wornObject('uwep', state)?.otyp !== QUARTERSTAFF) {
+    else if (!heroHasFreeHand(state) && takeoffSlotObject('uwep', state)?.otyp !== QUARTERSTAFF) {
         await plineWithContinuation('Your arms are not free to cast!');
     }
     else
@@ -829,7 +825,8 @@ export function currentSpellKnowledge(spell, state = game) {
         return 0;
     return Math.max(0, spell.know - Math.max(0, state.moves - 1));
 }
-// Port only: read the hero's current skill for a spell category.
+// C skills.h:P_SKILL() over spell.c:spell_skilltype(): the hero's current
+// skill for a spell category.
 export function liveSpellSkill(otyp, state = game) {
     const skills = ensureHeroSkills(state);
     return skills?.[spellSkillType(otyp, state)]?.skill ?? P_ISRESTRICTED;
@@ -851,7 +848,7 @@ export function percentSuccess(spell, state = game) {
     else
         chance += Math.min(20, Math.trunc(15 * -difficulty / level));
     chance = Math.max(0, Math.min(120, chance));
-    const shield = wornObject('uarms', state);
+    const shield = takeoffSlotObject('uarms', state);
     if (shield && objectWeight(shield) > objectBaseWeight(SMALL_SHIELD))
         chance = Math.trunc(chance / (OBJ_NAME(type) === role.special ? 2 : 4));
     chance = Math.trunc(chance * (20 - castingPenalty) / 15) - castingPenalty;
@@ -861,20 +858,20 @@ export function percentSuccess(spell, state = game) {
 function innateCastingPenalty(type, state) {
     const role = state.urole.spellcasting;
     const paladin = state.urole.key === 'knight' && spellSkillType(type, state) === P_CLERIC_SPELL;
-    const suit = wornObject('uarm', state);
-    const robe = wornObject('uarmc', state)?.otyp === ROBE;
+    const suit = takeoffSlotObject('uarm', state);
+    const robe = takeoffSlotObject('uarmc', state)?.otyp === ROBE;
     let penalty = role.base;
     if (suit && objectIsMetallic(suit, state) && !paladin)
         penalty += robe ? Math.trunc(role.armor / 2) : role.armor;
     else if (robe)
         penalty -= role.armor;
-    if (wornObject('uarms', state))
+    if (takeoffSlotObject('uarms', state))
         penalty += role.shield;
-    if (wornObject('uwep', state)?.otyp === QUARTERSTAFF)
+    if (takeoffSlotObject('uwep', state)?.otyp === QUARTERSTAFF)
         penalty -= 3;
     if (!paladin) {
         for (const [slot, amount] of [['uarmh', 4], ['uarmg', 6], ['uarmf', 2]]) {
-            if (objectIsMetallic(wornObject(slot, state), state))
+            if (objectIsMetallic(takeoffSlotObject(slot, state), state))
                 penalty += amount;
         }
     }
@@ -883,10 +880,6 @@ function innateCastingPenalty(type, state) {
     if (HEALING_BONUS_SPELLS.has(type))
         penalty += role.healing;
     return Math.min(20, penalty);
-}
-// Port only: read an equipment slot from the runtime hero aliases.
-function wornObject(slot, state) {
-    return state[slot] || state.u[slot];
 }
 // Part of C spell.c:spelleffects_check(): reduce spell hunger cost for wizard intelligence.
 function castingNutritionCost(energy, state) {

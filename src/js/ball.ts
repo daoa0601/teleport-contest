@@ -24,7 +24,7 @@ import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { woundHeroLegs } from './do.js';
 import { fillPitWithBoulderAt, resetUtrap } from './trap.js';
-import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp, nearCapacity, SLT_ENCUMBER, weightCapacity } from './hack.js';
+import { nomul, applyHeroLocationEffects, moveObject, loseHeroHp, nearCapacity, SLT_ENCUMBER, weightCapacity } from './hack.js';
 import { hitMonsterWithHeroObject } from './uhitm.js';
 import { findMonsterArmorClass, removeHeroEquipment } from './worn.js';
 import { objectName, ownedObjectName } from './objnam.js';
@@ -668,7 +668,7 @@ export async function beginBallAndChainMove(targetX: number, targetY: number, {
         await plineWithContinuation(state.inventory.length
             ? 'You cannot carry all that and also drag the heavy iron ball.'
             : 'You cannot drag the heavy iron ball.');
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
         return {
             // drag_ball() leaves context.move set when the load stops it.
             ...plan, blocked: true, consumedTurn: true,
@@ -737,7 +737,7 @@ async function jerkHeroBackToChain(plan: BallChainMove, state: GameState): Promi
         state.u.uy = chain.oy;
         await newsym(state.u.ux0, state.u.uy0);
     }
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     plan.control = BC_BALL;
     plan.ballx = chain.ox;
     plan.bally = chain.oy;

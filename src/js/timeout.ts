@@ -24,7 +24,7 @@ import { advanceSpellProtection } from './spell.js';
 import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { PropertyName } from './property_types.js';
-import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
+import { applyHeroLocationEffects, nomul, invWeight } from './hack.js';
 import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt,
     finishHeroMonsterKill,
 } from './mon.js';
@@ -130,10 +130,10 @@ export async function petrificationDialogue({
 
     if (turns === 5) {
         removeHeroSpeed(state);
-        if (state.multi > 0) endVoluntaryMultiTurn(state);
+        if (state.multi > 0) nomul(0, state);
     } else if (turns === 4) {
         if (!Popeye('stoned', state)) await stopHeroOccupation(state, publish);
-        if (state.multi > 0) endVoluntaryMultiTurn(state);
+        if (state.multi > 0) nomul(0, state);
     } else if (turns === 3) {
         await stopHeroOccupation(state, publish);
         nomul(-3, state);
@@ -172,7 +172,7 @@ export async function vomitingDialogue({
     }
     if (nextTurns === 6 || nextTurns === 9) {
         await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
-        if (state.multi > 0) endVoluntaryMultiTurn(state);
+        if (state.multi > 0) nomul(0, state);
     }
 
     // vomiting_texts[], with "confused"/"can't seem to" adjusted when the
@@ -405,7 +405,7 @@ export async function slimeDialogue({
     if (stage === 3) {
         removeHeroSpeed(state);
         if (!Popeye('slimed', state)) await stopHeroOccupation(state, publish);
-        if (state.multi > 0) endVoluntaryMultiTurn(state);
+        if (state.multi > 0) nomul(0, state);
     } else if (stage === 2
         && hero.deafTurns !== undefined && hero.deafTurns > 0
         && hero.deafTurns < 5) {

@@ -19,7 +19,7 @@ import type { MessagePublisher } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler, OrdinaryDeathOptions } from './end.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { burnAwayHeroSlime, endVoluntaryMultiTurn, roomsAt } from './hack.js';
+import { burnAwayHeroSlime, nomul, roomsAt } from './hack.js';
 import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages,
     finishHeroMonsterKillOutcome, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt,
@@ -805,7 +805,7 @@ async function hitHero(node: ScatterNode, state: GameState, options: ScatterSett
     if (!object) return false;
     const attack = 8 + (object.spe ?? 0)
         + (monsterIsBig(heroSpecies(state)) ? 1 : 0);
-    if (state.multi) endVoluntaryMultiTurn(state);
+    if (state.multi) nomul(0, state);
     let damage = rollPhysicalWeaponDamageAgainstHero(object, state, {
         rollOne: options.rollOne, rollDice: options.rollDice,
     });

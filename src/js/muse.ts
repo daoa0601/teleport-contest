@@ -27,7 +27,7 @@ import {
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { OBJ_DESCR } from './o_init.js';
 import { heroHasInvoluntaryDelay, setMulti, isok } from './cmd.js';
-import { endVoluntaryMultiTurn, loseHeroHp, roomsAt } from './hack.js';
+import { nomul, loseHeroHp, roomsAt } from './hack.js';
 import {
     BEAR_TRAP, BOLT_LIM, CORR, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, FIRE_TRAP,
     G_GONE, HOLE, In_endgame, In_sokoban, IS_AIR, IS_DOOR, IS_DRAWBRIDGE, IS_FURNITURE, IS_OBSTRUCTED, is_hole,
@@ -1058,7 +1058,7 @@ async function mbhitm(target: Monster | null, context: WandRayContext): Promise<
                 learned = true;
             } else await publish('The wand misses you.');
             await stopHeroOccupation(state);
-            endVoluntaryMultiTurn(state);
+            nomul(0, state);
         } else if (monsterHasMagicResistance(target)) {
             await shieldeff(target.mx, target.my, state);
             await publish('Boing!');

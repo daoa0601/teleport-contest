@@ -40,7 +40,7 @@ import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { bot } from './botl.js';
 import { burnArmorByFire, trapAt, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately, resetUtrap, } from './trap.js';
 import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
-import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
+import { nomul, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker, contactIsProtected, paralyzeMonster, swingMonsterWeapon, } from './mhitm.js';
 import { msummon } from './minion.js';
 import { isWereMonster, isHumanWereMonster, transformWereMonster, summonWerePack, counterWereSpecies } from './were.js';
@@ -1312,7 +1312,7 @@ export async function mattacku(monster, state, random, rollOne, rollDice, calls)
     state.bhitpos = { x: state.u.ux, y: state.u.uy };
     state.notonhead = false;
     if (dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 3)
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
     if (monster.dead || monster.mhp <= 0)
         return { heroAttackResult: 1 };
     if ((state.underwater || state.u.uinwater)
@@ -1868,7 +1868,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 kind: 'hero-spell', threshold, attackType, damageType, attackIndex,
                 ...(spell ? { spell: spell.key } : {}), cast: false, misdirected: true,
             };
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
         const fumble = recordRandom(random, calls, Math.max(1, monsterLevel * 10)) <
             (monster.mconf ? 100 : 20);
         if (fumble) {

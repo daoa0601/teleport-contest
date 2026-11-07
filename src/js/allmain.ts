@@ -1,7 +1,7 @@
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
 import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot, In_hell } from './dungeon.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
 import { recorderLocalEpochSeconds, fixedCalendar, sessionIsNight } from './calendar.js';
 import { pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent } from './pline.js';
 import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, promptYesNo, rhack,  dolookaround } from './cmd.js';
@@ -624,7 +624,7 @@ async function finishMoveloopPreamble() {
 async function interruptCountedActivity(message: string): Promise<void> {
     const game = requireInitializedGame();
     if (!(game.multi > 0) || game.context.travel || game.context.run) return;
-    endVoluntaryMultiTurn(game);
+    nomul(0, game);
     if (game.flags?.verbose !== false && game._lastPlineMessage !== message) {
         await plineWithContinuation(message);
     }
@@ -821,7 +821,7 @@ export async function stopHeroOccupation(
         state.context.botl = true;
     }
     if (occupation || (state.multi ?? 0) >= 0)
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
     cmdq_clear(CQ_CANNED, state);
 }
 

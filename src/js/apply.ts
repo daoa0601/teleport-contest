@@ -73,7 +73,7 @@ import {
 import type { GameState, PlayingGameState } from './game_state.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
+import { heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
 import { distmin, possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import {
@@ -373,7 +373,7 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
         return spentTime;
     }
     if (direction.dz) {
-        if (hero.uinwater || game.underwater) await hear('faint splashing.');
+        if (hero.uinwater || game.underwater) await publishHeardMessage('faint splashing.', pline);
         else if (direction.dz < 0 || !heroCanReachFloor(game, { checkPit: true })) {
             const destination = direction.dz < 0 ? ceilingName(hero.ux, hero.uy)
                 : heroCanReachFloor(game) ? 'bottom of the pit' : surfaceName(hero.ux, hero.uy);
@@ -381,13 +381,13 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
         } else {
             const corpse = await diagnoseFloorObjects(hero.ux, hero.uy);
             if (corpse.found) spentTime ||= corpse.spentTime;
-            else if (Is_stronghold(hero.uz)) await hear('the crackling of hellfire.');
+            else if (Is_stronghold(hero.uz)) await publishHeardMessage('the crackling of hellfire.', pline);
             else await pline(`The ${surfaceName(hero.ux, hero.uy)} seems healthy enough.`);
         }
         return spentTime;
     }
     if (object.cursed && !rn2(2)) {
-        await hear('your heart beat.');
+        await publishHeardMessage('your heart beat.', pline);
         return spentTime;
     }
     // Native does a second confdir() after its cursed-heartbeat branch.
@@ -398,7 +398,7 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
     }
     const x = hero.ux + (hero.dx ?? 0), y = hero.uy + (hero.dy ?? 0);
     if (!isok(x, y)) {
-        await hear('a faint typing noise.');
+        await publishHeardMessage('a faint typing noise.', pline);
         return false;
     }
     const monster = monsterAtPosition(game.level, x, y);
@@ -412,7 +412,7 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
     const location = game.level.requireAt(x, y);
     if (location.typ === SDOOR || location.typ === SCORR) {
         const door = location.typ === SDOOR;
-        await hear(`a hollow sound.  This must be a secret ${door ? 'door' : 'passage'}!`);
+        await publishHeardMessage(`a hollow sound.  This must be a secret ${door ? 'door' : 'passage'}!`, pline);
         if (door) convertSecretDoor(location);
         else { location.typ = CORR; location.flags = 0; location.doormask = 0; }
         vision_note_blocker_change(x, y);
@@ -424,12 +424,6 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
     return spentTime || floor.spentTime;
 }
 
-// Port only: module-local You_hear adapter (formats the line for a deaf
-// or unconscious hero).
-async function hear(sound: string): Promise<void> {
-    const message = formatHeardMessage(sound);
-    if (message) await pline(message);
-}
 
 // Part of C apply.c:use_stethoscope(): the monster-revelation and status-report branch.
 // Also C mkobj.c:init_dummyobj(): inlined here (the name-formatting dummy
@@ -480,7 +474,7 @@ async function diagnoseFloorObjects(x: number, y: number): Promise<{ found: bool
         if (object.otyp === CORPSE && one) {
             diagnosis = `${corpsePronoun(object, species)}'s dead`;
         }
-        await hear(`a voice say, "${diagnosis}, Jim."`);
+    await publishHeardMessage(`a voice say, "${diagnosis}, Jim."`, pline);
         return { found: true, spentTime: true };
     }
     if (object.otyp === CORPSE) {
@@ -1247,13 +1241,14 @@ function result(object: GameObject | null, state: GameState): AppliedLightResult
     return { spentTime: true, heroDied: !!state.program_state?.gameover, object };
 }
 
-// Port only: candle-type test shared by the apply light family.
+// C obj.h:Is_candle()
 function isCandle(object: GameObject) {
     return object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
 }
 
-// Port only: shared in-or-under-water guard for the bell/lamp family
-// (C tests Underwater and u.uinwater inline at each site).
+// C youprop.h:Underwater (u.uinwater): the port keeps the bit in
+// u.uinwater, u.underwater, and state.underwater, so the guard tests
+// all three.
 function inOrUnderWater(state: GameState) {
     return !!(state.u.uinwater || state.underwater || state.u.underwater);
 }
@@ -1263,11 +1258,6 @@ function inOrUnderWater(state: GameState) {
 function lampOwner(object: GameObject, state: GameState) {
     const owner = carriedObjectOwner(object, state);
     return owner.charAt(0).toUpperCase() + owner.slice(1); // C Shk_Your().
-}
-
-// Port only: the() definite-name wrapper for the light family messages.
-function theName(object: GameObject, state: GameState) {
-    return definiteObjectAction(object, null, state);
 }
 
 // Part of C apply.c:use_lamp(), apply.c:use_candle(): the verbalize()
@@ -1315,7 +1305,7 @@ export async function useLamp(object: GameObject, { state = game }: { state?: Ga
             await plineWithContinuation(`The lamp spills and covers your ${fingers} with oil.`);
             setSlipperyHands((state.u.glibTurns ?? 0) + d(2, 10), state);
         } else await plineWithContinuation(heroIsBlind(state) ? 'Nothing seems to happen.'
-            : `${theName(object, state)} ${objectQuantity(object) === 1 ? 'flickers' : 'flicker'} for a moment, then ${objectQuantity(object) === 1 ? 'dies' : 'die'}.`);
+            : `${definiteObjectAction(object, null, state)} ${objectQuantity(object) === 1 ? 'flickers' : 'flicker'} for a moment, then ${objectQuantity(object) === 1 ? 'dies' : 'die'}.`);
         return result(object, state);
     }
     if (lamp) {
@@ -1360,8 +1350,8 @@ export async function useCandelabrum(object: GameObject, { state = game }: { sta
     }
     if (object.spe < 7) {
         await plineWithContinuation(`There ${object.spe === 1 ? 'is' : 'are'} only ${object.spe} ${candles} in the ${objectName(object, state)}.`);
-        if (!heroIsBlind(state)) await plineWithContinuation(`${object.spe === 1 ? 'It is' : 'They are'} lit.  ${theName(object, state)} shines dimly.`);
-    } else await plineWithContinuation(`${theName(object, state)}'s ${candles} burn${heroIsBlind(state) ? '.' : ' brightly!'}`);
+        if (!heroIsBlind(state)) await plineWithContinuation(`${object.spe === 1 ? 'It is' : 'They are'} lit.  ${definiteObjectAction(object, null, state)} shines dimly.`);
+    } else await plineWithContinuation(`${definiteObjectAction(object, null, state)}'s ${candles} burn${heroIsBlind(state) ? '.' : ' brightly!'}`);
     if (!isInvocationPosition(state.u.ux, state.u.uy, state) || heroIsOnStairs(state)) {
         await plineWithContinuation(`The ${candles} ${object.spe === 1 ? 'is' : 'are'} being rapidly consumed!`);
         object.age = Math.trunc((object.age + 1) / 2);
@@ -1371,8 +1361,8 @@ export async function useCandelabrum(object: GameObject, { state = game }: { sta
         }
     } else {
         if (object.spe === 7) await plineWithContinuation(heroIsBlind(state)
-            ? `${theName(object, state)} radiates a strange warmth!`
-            : `${theName(object, state)} glows with a strange light!`);
+            ? `${definiteObjectAction(object, null, state)} radiates a strange warmth!`
+            : `${definiteObjectAction(object, null, state)} glows with a strange light!`);
         object.known = true;
     }
     beginObjectBurn(object, state);
@@ -1407,7 +1397,7 @@ export async function useCandle(object: GameObject, { state = game }: { state?: 
         await announcePurchase(`You ${candelabrum.lamplit ? 'burn' : 'use'} ${pronoun}, you bought ${pronoun}!`);
     }
     if (count < 7 && candelabrum.spe === 7)
-        await plineWithContinuation(`${theName(candelabrum, state)} now has seven${candelabrum.lamplit ? ' lit' : ''} candles attached.`);
+        await plineWithContinuation(`${definiteObjectAction(candelabrum, null, state)} now has seven${candelabrum.lamplit ? ' lit' : ''} candles attached.`);
     if (candelabrum.lamplit) state.vision_full_recalc = 1;
     await useUpInventoryStack(object, state);
     candelabrum.owt = objectWeight(candelabrum);
@@ -3660,20 +3650,16 @@ export async function usePolearm(
     return { spentTime: !freehit };
 }
 
-// Port only: prompt adapter passing the pick-axe direction query through.
-async function pickAxeDirection(prompt: string): Promise<{ dx: number; dy: number; dz: number } | null> {
-    return promptDirection(`${prompt} `);
-}
 
 // Part of C apply.c:doapply(): the PICK_AXE case, wiring the dig.c
 // use_pick_axe() port to the apply dispatch.
 async function applyPickAxe(item: GameObject): Promise<void> {
     const result = await usePickAxe(item, {
         state: game,
+        readDirection: (prompt: string) => promptDirection(`${prompt} `),
         ensureWielded: () => wieldTool(
             item, 'swing', { swapWeapons: doswapweapon }, game,
         ),
-        readDirection: pickAxeDirection,
         payShopkeeper: dopay,
         attackMonster: (monster, struckAt, permission) => do_attack(
             monster, struckAt.x, struckAt.y, { permission },
@@ -4257,7 +4243,7 @@ async function discardBrokenWand(state: GameState) {
     const wand = state._currentWand;
     state._currentWand = null;
     if (wand) await delobj(wand, state);
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
 }
 
 // Part of C apply.c:do_break_wand(): the per-square object-pile zap of

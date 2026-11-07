@@ -24,7 +24,7 @@ import { rndcurse } from './sit.js';
 import { returnHeroToHumanForm, body_part, heroSpecies } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, plineWithContinuation } from './pline.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { endVoluntaryMultiTurn, nomul, loseHeroHp } from './hack.js';
+import { nomul, loseHeroHp } from './hack.js';
 import { d, rn2, rnd } from './rng.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { monsterName as canonicalMonsterName, randomBogusMonsterName, monsterTypeName } from './do_name.js';
@@ -762,7 +762,7 @@ export async function movementSpellSelections(monster, state, random, calls) {
             continue;
         }
         monster.mspec_used = monsterLevel < 8 ? 10 - monsterLevel : 2;
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
         const fumble = recordRandom(random, calls, Math.max(1, monsterLevel * 10)) <
             (monster.mconf ? 100 : 20);
         if (fumble) {
@@ -836,7 +836,7 @@ export async function resolveMonsterMagicRay(monster, attack, { state = game, pu
     }
     if (!monsterLinedUpWithPerceivedHero(monster, state, random, calls) || !random(3))
         return { mask: M_ATTK_MISS, heroDied: false };
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     if (canSeeMonster(monster)) {
         await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} zaps you with a ${displayRayName(damageType, 'wand', { state, random })}!`);
     }

@@ -229,10 +229,10 @@ export function timebot() {
 export function experienceRankIndex(level) {
     return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
 }
-// Port only: the Role_switch species number C keeps as a global.
-// C include/you.h Role_switch (gu.urole.mnum): the hero's role as a player
-// monster species number. Roles store the 0-based mnum, so the species
-// number is SPECIAL_PM + 1 + mnum, as u_init.ts computes for u.umonster.
+// C include/you.h:Role_switch (gu.urole.mnum): the hero's role as a player
+// monster species number. C's roles store the PM_ species index directly;
+// this port's roles store a 0-based mnum, so the species number is
+// SPECIAL_PM + 1 + mnum, as u_init.ts computes for u.umonster.
 export function roleSwitch(state) {
     return state.urole ? SPECIAL_PM + 1 + state.urole.mnum : -1;
 }
@@ -1949,7 +1949,8 @@ function cAtoi(text) {
     const match = /^[+-]?\d+/.exec(text.trim());
     return match ? Number.parseInt(match[0], 10) : 0;
 }
-// Port only: strip the given characters from a string.
+// C hacklib.c:stripchars(): remove the given characters (botl.c:2941 reads
+// the threshold number with "%<>=+" stripped).
 function stripChars(text, remove) {
     return [...text].filter(character => !remove.includes(character)).join('');
 }

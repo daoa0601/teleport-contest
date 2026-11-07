@@ -17,7 +17,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
 import { cmdq_clear } from './cmd.js';
-import { endVoluntaryMultiTurn } from './hack.js';
+import { nomul } from './hack.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
 import { rollQuestFigureGenders } from './role.js';
 import { resolveDungeonIdentities } from './dungeon.js';
@@ -96,7 +96,7 @@ export async function dosave() {
     clearMessageWindow();
     if (answer !== 'y') {
         if (game.multi > 0)
-            endVoluntaryMultiTurn(game);
+            nomul(0, game);
         game.context.move = 0;
         return;
     }

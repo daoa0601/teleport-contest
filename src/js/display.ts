@@ -111,7 +111,8 @@ export function shownSymbolSet(state: GameState = game) {
     };
 }
 
-// Port only: DECgraphics symset test.
+// C sym.h:SYMHANDLING(H_DEC): the shown set's handling test, modeled by
+// symset name in this port.
 function usesDecSymbols(): boolean {
     const symbols = shownSymbolSet();
     return !symbols.rogue && /^DECgraphics$/i.test(symbols.name ?? '');
@@ -1550,12 +1551,6 @@ export async function map_engraving(engraving: Engraving | null | undefined, sho
         await show_glyph_cell(engraving.x, engraving.y, ch, CLR_BRIGHT_BLUE, false, 0, glyph);
 }
 
-// Port only: m_at() lookup including dying actors.
-function monsterAtMapCell(x: number, y: number) {
-    // Native m_at() retains a dying actor until remove_monster(), including
-    // a vision refresh while its death announcement awaits acknowledgment.
-    return game.level ? monsterAtPosition(game.level, x, y) : null;
-}
 
 // C display.c:_map_location(). This direct mapper intentionally bypasses
 // line of sight, but object observation and cloud visibility keep their gates.
@@ -1603,7 +1598,7 @@ export async function feel_location(x: number, y: number) {
     if (suppressMapOutput()) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
-    const monster = monsterAtMapCell(x, y);
+    const monster = monsterAtPosition(requireGameLevel(), x, y);
     if (loc.remembered_glyph?.kind === 'invisible' && monster) return;
     if (restrictedUnderwaterView() && !underwaterTerrain(x, y)) return;
     set_seenv(loc, game.u.ux, game.u.uy, x, y);
@@ -2176,7 +2171,7 @@ export async function newsym(x: number, y: number) {
     // C reveals the map symbol before living and object overlays are chosen.
     if (physicallyVisible && engraving) engraving.erevealed = true;
 
-    const monster = monsterAtMapCell(x, y);
+    const monster = monsterAtPosition(requireGameLevel(), x, y);
     const region = physicallyVisible ? visibleMapRegionAt(x, y) : null;
     if (region && (ACCESSIBLE(loc.typ) || isPoolOrLavaAt(x, y))
         && !monsterOverridesMapRegion(monster, x, y)) {
@@ -2596,7 +2591,7 @@ export async function redrawMap() {
             // modal window clears the physical map. Hero memory owns only
             // cells outside current sight; it must not erase actors, objects,
             // or traps which did not move while the modal was open.
-            const monster = monsterAtMapCell(x, y);
+            const monster = monsterAtPosition(game.level, x, y);
             if (cansee(x, y) || (monster
                 && (monsterProjectionAtCell(monster, x, y)
                     || !isWormTail(monster, x, y) && monsterHasWarningProjection(monster)))) {
@@ -2829,7 +2824,8 @@ export function customizedGlyphs(): CustomizedGlyph[] {
     return [...glyphs.values()].sort((left, right) => left.glyph - right.glyph);
 }
 
-// Port only: applies the customsymbol/customcolor flags to one glyph.
+// Part of C glyphs.c:apply_customizations(): applies the
+// customsymbol/customcolor flags to one glyph.
 function customize(glyphs: Map<number, CustomizedGlyph>, glyph: GlyphDefinition,
     unicode: number | null, color: number): void {
     const appliedUnicode = game.flags.customsymbols === false ? null : unicode;
@@ -2911,7 +2907,8 @@ function objectGlyphs(otyp: number): GlyphDefinition[] {
     }));
 }
 
-// Port only: glyph id name for a monster (human_* were-forms).
+// Part of C glyphs.c:parse_id(): the monster glyph id name, from the
+// monsdump enum names in include/monsters.h (human_* were-forms).
 function monsterGlyphName(name: string, mnum: number): string {
     const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
     // monsters.h enum names distinguish human were-creatures from animal forms.

@@ -97,7 +97,7 @@ import {
 } from './const.js';
 import { isok, setMulti, paranoidQuery } from './cmd.js';
 import { PanicTermination } from './panic_termination.js';
-import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
+import { nomul, heroGoldAmount } from './hack.js';
 import {
     achievementEntries, recordAchievement, finalConductLines, listGenocided, setVanqOrder, enlightenment,
     vanquishedLines, vanquishedTypeCount,
@@ -1098,7 +1098,7 @@ export async function doquit() {
         // cancels voluntary repetition, and releases prayer/sleep only
         // after multi has reached zero. Involuntary delays remain active.
         clearMessageWindow();
-        if (game.multi > 0) endVoluntaryMultiTurn(game);
+        if (game.multi > 0) nomul(0, game);
         if ((game.multi ?? 0) === 0) {
             game.u.invulnerable = false;
             game.u.usleep = 0;

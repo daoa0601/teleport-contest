@@ -12,7 +12,7 @@ import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, SHI
 import { formatHeardMessage, plineWithContinuation, impossible, publishHeardMessage } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { burnAwayHeroSlime, endVoluntaryMultiTurn, roomsAt } from './hack.js';
+import { burnAwayHeroSlime, nomul, roomsAt } from './hack.js';
 import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster, finishHeroMonsterKill, } from './mon.js';
 import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
@@ -726,7 +726,7 @@ async function hitHero(node, state, options) {
     const attack = 8 + (object.spe ?? 0)
         + (monsterIsBig(heroSpecies(state)) ? 1 : 0);
     if (state.multi)
-        endVoluntaryMultiTurn(state);
+        nomul(0, state);
     let damage = rollPhysicalWeaponDamageAgainstHero(object, state, {
         rollOne: options.rollOne, rollDice: options.rollDice,
     });

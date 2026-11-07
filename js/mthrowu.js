@@ -12,7 +12,7 @@ import { currentAttribute, currentStrength, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifact.js';
 import { snuffCandle } from './apply.js';
 import { applyMonsterBlindness, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
-import { endVoluntaryMultiTurn, calcCapacity } from './hack.js';
+import { nomul, calcCapacity } from './hack.js';
 import { isPolearm, isLauncherAmmunition, is_launcher, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
 import { returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon, } from './weapon.js';
 import { willWeld } from './wield.js';
@@ -282,7 +282,7 @@ async function launchVolley(source, weapon, target, state, { random = rn2, rollO
         if (shot.heroDied || source.mhp <= 0 || source.dead)
             break;
     }
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     return { attempted: true, madeAttack: true,
         source, missileStack: weapon, volley, launched, shots,
         heroDied: !!state.program_state.gameover };
@@ -650,7 +650,7 @@ export async function throwMonsterProjectile(source, object, { state = game, dx,
             }
             else if (point.x === state.u.ux && point.y === state.u.uy) {
                 if (state.multi)
-                    endVoluntaryMultiTurn(state);
+                    nomul(0, state);
                 shot.heroTarget = true;
                 shot.target = null;
                 if (await catchUnicornGift(missile, context)
@@ -895,7 +895,7 @@ async function spitAtTarget(source, target, attack, { state, random = rn2, rollO
     });
     if (flight.heroDied)
         return { nativeResult: M_ATTK_HIT, heroDied: true };
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     if (source.mtame && !source.isminion) {
         const pet = source.edog ?? source.mextra?.edog;
         if (!pet)
@@ -996,7 +996,7 @@ export async function resolveMonsterCombatBreath(source, target, attack, { state
     });
     if (ray.heroDied)
         return { nativeResult: M_ATTK_HIT, heroDied: true };
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     source.mspec_used = 8 + random(18);
     if (source.mtame && !source.isminion) {
         const pet = source.edog || source.mextra?.edog;
@@ -1078,7 +1078,7 @@ export async function resolveMonsterBreathAtHero(monster, attack, { state, rando
         return { nativeResult: M_ATTK_HIT, heroDied: true };
     // C mthrowu.c:1128: nomul(0) — a breath never spends the hero's next
     // movement ration.
-    endVoluntaryMultiTurn(state);
+    nomul(0, state);
     // C mthrowu.c:1131-1133: breath runs out sometimes; a monster whose
     // target fell asleep keeps its charge.
     if (!random(3))

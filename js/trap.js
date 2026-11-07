@@ -51,7 +51,7 @@ import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, a
 import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
-import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, maybeHalfPhysicalDamage, } from './hack.js';
+import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, maybeHalfPhysicalDamage, } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { displayMessageWindow } from './topl.js';
 import { abusePet, tameMonster, makePetWary } from './dog.js';
@@ -2685,7 +2685,7 @@ async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, 
 export async function dotrap(trap, { finishTeleport = null, gotoLevel = null, viaSitting = false, failedUntrap = false, forceTrap = false, forceBungle = false, noWebMessage = false, tookPlunge = false, recursiveTrap = false, } = {}) {
     if (!trap)
         return { died: false, shortCircuited: false };
-    endVoluntaryMultiTurn();
+    nomul(0, game);
     requirePlayingGame(game);
     const hero = game.u;
     const pit = is_pit(trap.ttyp);
@@ -3020,7 +3020,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
                 if (state.u.halfPhysicalDamage || heroHasCarriedArtifactFlag('SPFX_HPHDAM', state))
                     damage = Math.trunc((damage + 1) / 2);
                 if (state.multi)
-                    endVoluntaryMultiTurn(state);
+                    nomul(0, state);
                 const hit = await hitHeroWithObject(boulder, damage, 9 + (boulder.spe ?? 0), {
                     state, publish, rollOne, killer: killerObjectName(boulder, state),
                 });
@@ -4549,7 +4549,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
         return 0;
     }
     state.context.botl = true;
-    endVoluntaryMultiTurn(state); // C nomul(0)
+    nomul(0, state); // C nomul(0)
     if (before.flyingBlocked) {
         // controlled flight is no longer overridden by levitation
         floatVsFlight(state);

@@ -13,7 +13,7 @@ import { clearHeroStrangulation, advanceDisplacementTimeout } from './do_wear.js
 import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle, } from './objnam.js';
 import { advanceSpellProtection } from './spell.js';
 import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
+import { applyHeroLocationEffects, nomul, invWeight } from './hack.js';
 import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt, finishHeroMonsterKill, } from './mon.js';
 import { deferredDecor } from './pickup.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
@@ -91,13 +91,13 @@ export async function petrificationDialogue({ state = game, publish = plineWithC
     if (turns === 5) {
         removeHeroSpeed(state);
         if (state.multi > 0)
-            endVoluntaryMultiTurn(state);
+            nomul(0, state);
     }
     else if (turns === 4) {
         if (!Popeye('stoned', state))
             await stopHeroOccupation(state, publish);
         if (state.multi > 0)
-            endVoluntaryMultiTurn(state);
+            nomul(0, state);
     }
     else if (turns === 3) {
         await stopHeroOccupation(state, publish);
@@ -135,7 +135,7 @@ export async function vomitingDialogue({ state = game, publish = pline, rollDice
     if (nextTurns === 6 || nextTurns === 9) {
         await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
         if (state.multi > 0)
-            endVoluntaryMultiTurn(state);
+            nomul(0, state);
     }
     // vomiting_texts[], with "confused"/"can't seem to" adjusted when the
     // matching condition already holds.
@@ -342,7 +342,7 @@ export async function slimeDialogue({ state = game, publish = plineWithContinuat
         if (!Popeye('slimed', state))
             await stopHeroOccupation(state, publish);
         if (state.multi > 0)
-            endVoluntaryMultiTurn(state);
+            nomul(0, state);
     }
     else if (stage === 2
         && hero.deafTurns !== undefined && hero.deafTurns > 0
