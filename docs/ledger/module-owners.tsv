@@ -5,7 +5,6 @@ src/js/artifact.ts	artifact.c
 src/js/attrib.ts	attrib.c
 src/js/ball.ts	ball.c
 src/js/botl.ts	botl.c
-src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
 src/js/cfgfiles.ts	cfgfiles.c
 src/js/coloratt.ts	coloratt.c
@@ -18,20 +17,16 @@ src/js/dogmove.ts	dogmove.c
 src/js/dokick.ts	dokick.c
 src/js/dothrow.ts	dothrow.c
 src/js/dungeon.ts	dungeon.c
-src/js/earthquake.ts	music.c
 src/js/eat.ts	eat.c
 src/js/engrave.ts	engrave.c
 src/js/exper.ts	exper.c
 src/js/explode.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
-src/js/figurine.ts	apply.c
-src/js/fire_explosion.ts	explode.c
 src/js/fountain.ts	fountain.c
 src/js/game_state.ts	decl.c
 src/js/hack.ts	hack.c
 src/js/hacklib.ts	hacklib.c
-src/js/hero_displacement.ts	do_wear.c
 src/js/input.ts	wintty.c
 src/js/insight.ts	insight.c
 src/js/isaac64.ts	isaac64.c
@@ -43,7 +38,6 @@ src/js/lua/lifecycle.ts	nhlua.c
 src/js/lua/messages.ts	nhlua.c
 src/js/lua/nhlobj.ts	nhlobj.c
 src/js/makemon.ts	makemon.c
-src/js/map_object_description.ts	pager.c
 src/js/mcastu.ts	mcastu.c
 src/js/message_types.ts	options.c
 src/js/mhitm.ts	mhitm.c
@@ -67,7 +61,6 @@ src/js/options.ts	symbols.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pickup.ts	pickup.c
-src/js/pickup_location.ts	hack.c
 src/js/pline.ts	pline.c
 src/js/polyself.ts	polyself.c
 src/js/potion.ts	potion.c
@@ -83,7 +76,6 @@ src/js/rng.ts	rnd.c
 src/js/role.ts	role.c
 src/js/rumors.ts	rumors.c
 src/js/save.ts	save.c
-src/js/scatter.ts	explode.c
 src/js/senses.ts	detect.c
 src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
