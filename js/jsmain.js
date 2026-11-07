@@ -9,7 +9,7 @@ import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './allmain.js';
 import { initializeFruitRegistry } from './options.js';
 import { displayConfigurationErrors, parseNethackOptions, parseNethackrc } from './cfgfiles.js';
-import { rawPrint } from './pline.js';
+import { rawPrint } from './input.js';
 import { genl_player_selection, plnamesuffix } from './role.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';

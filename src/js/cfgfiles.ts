@@ -24,7 +24,8 @@ import { game } from './gstate.js';
 import { CommandBindings } from './command_bindings.js';
 import { C_ATR_INVERSE } from './color_attr.js';
 import { cutConfigBytes } from './coloratt.js';
-import { rawPrint, rawPrintf, truncatePlineMessage } from './pline.js';
+import { rawPrintf, truncatePlineMessage } from './pline.js';
+import { rawPrint } from './input.js';
 import { getret } from './wintty.js';
 import { rn2 } from './rng.js';
 import {

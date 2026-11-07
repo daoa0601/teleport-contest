@@ -15,7 +15,7 @@ import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './a
 import { initializeFruitRegistry } from './options.js';
 import { displayConfigurationErrors, parseNethackOptions, parseNethackrc } from './cfgfiles.js';
 import type { NethackConfiguration } from './cfgfiles.js';
-import { rawPrint } from './pline.js';
+import { rawPrint } from './input.js';
 import { genl_player_selection, plnamesuffix } from './role.js';
 import type { ParsedCharacterName } from './role.js';
 import { GameDisplay } from './game_display.js';
