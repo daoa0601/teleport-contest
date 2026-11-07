@@ -9,7 +9,7 @@ import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands,
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription, makePlural, withIndefiniteArticle, wishedObjectPresentation, ownedObjectAction, definiteObjectAction, ownedObjectQuestion, corpseName, killerObjectName, } from './objnam.js';
-import { autokey, autoUnlockFlags, pickLock, isForceableWeapon } from './lock.js';
+import { autokey, autoUnlockFlags, pickLock, isForceableWeapon, changeBoxLockByMagic } from './lock.js';
 import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND } from './const.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
@@ -57,7 +57,6 @@ import { isBimanualObject } from './object_properties.js';
 import { stopObjectTimer } from './timeout.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType } from './mkroom.js';
 import { makemonAt, useBagOfTricks } from './makemon.js';
 // Part of C pickup.c:query_classes(): the pickup class menu's heading

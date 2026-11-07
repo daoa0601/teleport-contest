@@ -54,7 +54,7 @@ import {
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { waterbodyName } from './pager.js';
-import { resetPick, changeDoorByMagic } from './lock.js';
+import { resetPick, changeDoorByMagic, changeBoxLockByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount, resistsBlnd } from './mondata.js';
 import {
@@ -143,7 +143,6 @@ import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponComb
 import { releaseObjectLeash } from './apply.js';
 import { vegetarianCorpse } from './food_traits.js';
 import { updateInventoryPresentation } from './invent.js';
-import { changeBoxLockByMagic } from './box_magic.js';
 import { shopkeeperName } from './shknam.js';
 import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
 import { setArtifactOrigin } from './artifact.js';
