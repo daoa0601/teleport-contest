@@ -928,34 +928,36 @@ export function recordDiscoveredRoom(
     return true;
 }
 
-// Port only: Lua-table validation for dungeon.lua fields.
-// The Lua runtime supplies the data. This module owns dungeon.c's placement
-// and branch construction rules.
+// Part of C dungeon.c:init_dungeon(): the lua_istable() checks that reject
+// a non-table dungeon entry. The Lua runtime supplies the data; this module
+// owns dungeon.c's placement and branch construction rules.
 function definitionRecord(value: unknown, path: string): Record<string, unknown> {
     if (!value || typeof value !== 'object' || Array.isArray(value))
         throw new TypeError(`${path} must be a Lua table with named fields`);
     return Object.fromEntries(Object.entries(value));
 }
 
-// Port only: Lua-array validation for dungeon.lua fields.
+// Part of C dungeon.c:init_dungeon_levels()/init_dungeon_branches():
+// iterating the levels and branches Lua arrays, nil treated as empty.
 function definitionArray(value: unknown, path: string): unknown[] {
     if (value === undefined || value === null) return [];
     if (!Array.isArray(value)) throw new TypeError(`${path} must be a Lua array`);
     return value;
 }
 
-// Port only: string-field validation for dungeon.lua.
+// Part of C nhlua.c:get_table_str() (required string fields).
 function definitionString(value: unknown, path: string): string {
     if (typeof value !== 'string') throw new TypeError(`${path} must be a string`);
     return value;
 }
 
-// Port only: optional string field.
+// Part of C nhlua.c:get_table_str_opt() as dungeon.c reads optional strings.
 function optionalDefinitionString(value: unknown, path: string): string | undefined {
     return value == null ? undefined : definitionString(value, path);
 }
 
-// Port only: integer-field validation for dungeon.lua.
+// Part of C nhlua.c:get_table_int() and get_table_int_opt() with their
+// fallback values, as dungeon.c reads integer fields.
 function definitionInteger(value: unknown, path: string, fallback?: number): number {
     if (value == null && fallback !== undefined) return fallback;
     if (typeof value !== 'number' || !Number.isSafeInteger(value))
@@ -963,7 +965,7 @@ function definitionInteger(value: unknown, path: string, fallback?: number): num
     return value;
 }
 
-// Port only: dungeon-flag name validation.
+// Part of C dungeon.c:get_dgn_flags(): one flag name from the Lua table.
 function definitionFlag(value: unknown, path: string): DungeonFlag {
     switch (value) {
         case 'town': case 'hellish': case 'mazelike': case 'roguelike': case 'unconnected':
@@ -972,7 +974,7 @@ function definitionFlag(value: unknown, path: string): DungeonFlag {
     }
 }
 
-// Port only: flag-list validation.
+// Part of C dungeon.c:get_dgn_flags(): the flags field as one name or a list.
 function definitionFlags(value: unknown, path: string): DungeonFlag[] {
     if (value == null) return [];
     if (typeof value === 'string') return [definitionFlag(value, path)];
@@ -980,7 +982,8 @@ function definitionFlags(value: unknown, path: string): DungeonFlag[] {
         .map((flag, index) => definitionFlag(flag, `${path}[${index + 1}]`));
 }
 
-// Port only: alignment-name validation.
+// Part of C dungeon.c:791: dgnaligns2i[get_table_option(L, "alignment", ...)]
+// — the alignment name read.
 function definitionAlignment(value: unknown, path: string): DungeonAlignment {
     if (value == null) return 'unaligned';
     if (typeof value !== 'string') throw new TypeError(`${path} must be an alignment name`);
@@ -991,7 +994,8 @@ function definitionAlignment(value: unknown, path: string): DungeonAlignment {
     }
 }
 
-// Port only: branch-type name validation.
+// Part of C dungeon.c:897: brtypes2i[get_table_option(L, "branchtype", ...)]
+// — the branch-type name read.
 function definitionBranchType(value: unknown, path: string): BranchDefinitionType {
     if (value == null) return 'stair';
     if (typeof value !== 'string') throw new TypeError(`${path} must be a branch type name`);
@@ -1001,7 +1005,8 @@ function definitionBranchType(value: unknown, path: string): BranchDefinitionTyp
     }
 }
 
-// Port only: up/down direction validation.
+// Part of C dungeon.c:899: brdirstr2i[get_table_option(L, "direction", ...)]
+// — the up/down direction read.
 function definitionBranchUp(value: unknown, path: string): boolean {
     if (value == null || value === 'down') return false;
     if (value === 'up') return true;

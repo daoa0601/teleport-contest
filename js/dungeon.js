@@ -864,15 +864,16 @@ export function recordDiscoveredRoom(roomIndex, { state = game } = {}) {
     recordMappedOverviewState({ discoveredRoom: roomIndex, state });
     return true;
 }
-// Port only: Lua-table validation for dungeon.lua fields.
-// The Lua runtime supplies the data. This module owns dungeon.c's placement
-// and branch construction rules.
+// Part of C dungeon.c:init_dungeon(): the lua_istable() checks that reject
+// a non-table dungeon entry. The Lua runtime supplies the data; this module
+// owns dungeon.c's placement and branch construction rules.
 function definitionRecord(value, path) {
     if (!value || typeof value !== 'object' || Array.isArray(value))
         throw new TypeError(`${path} must be a Lua table with named fields`);
     return Object.fromEntries(Object.entries(value));
 }
-// Port only: Lua-array validation for dungeon.lua fields.
+// Part of C dungeon.c:init_dungeon_levels()/init_dungeon_branches():
+// iterating the levels and branches Lua arrays, nil treated as empty.
 function definitionArray(value, path) {
     if (value === undefined || value === null)
         return [];
@@ -880,17 +881,18 @@ function definitionArray(value, path) {
         throw new TypeError(`${path} must be a Lua array`);
     return value;
 }
-// Port only: string-field validation for dungeon.lua.
+// Part of C nhlua.c:get_table_str() (required string fields).
 function definitionString(value, path) {
     if (typeof value !== 'string')
         throw new TypeError(`${path} must be a string`);
     return value;
 }
-// Port only: optional string field.
+// Part of C nhlua.c:get_table_str_opt() as dungeon.c reads optional strings.
 function optionalDefinitionString(value, path) {
     return value == null ? undefined : definitionString(value, path);
 }
-// Port only: integer-field validation for dungeon.lua.
+// Part of C nhlua.c:get_table_int() and get_table_int_opt() with their
+// fallback values, as dungeon.c reads integer fields.
 function definitionInteger(value, path, fallback) {
     if (value == null && fallback !== undefined)
         return fallback;
@@ -898,7 +900,7 @@ function definitionInteger(value, path, fallback) {
         throw new TypeError(`${path} must be an integer`);
     return value;
 }
-// Port only: dungeon-flag name validation.
+// Part of C dungeon.c:get_dgn_flags(): one flag name from the Lua table.
 function definitionFlag(value, path) {
     switch (value) {
         case 'town':
@@ -910,7 +912,7 @@ function definitionFlag(value, path) {
         default: throw new TypeError(`${path} is not a dungeon flag`);
     }
 }
-// Port only: flag-list validation.
+// Part of C dungeon.c:get_dgn_flags(): the flags field as one name or a list.
 function definitionFlags(value, path) {
     if (value == null)
         return [];
@@ -919,7 +921,8 @@ function definitionFlags(value, path) {
     return definitionArray(value, path)
         .map((flag, index) => definitionFlag(flag, `${path}[${index + 1}]`));
 }
-// Port only: alignment-name validation.
+// Part of C dungeon.c:791: dgnaligns2i[get_table_option(L, "alignment", ...)]
+// — the alignment name read.
 function definitionAlignment(value, path) {
     if (value == null)
         return 'unaligned';
@@ -935,7 +938,8 @@ function definitionAlignment(value, path) {
         default: throw new TypeError(`${path} is not a dungeon alignment`);
     }
 }
-// Port only: branch-type name validation.
+// Part of C dungeon.c:897: brtypes2i[get_table_option(L, "branchtype", ...)]
+// — the branch-type name read.
 function definitionBranchType(value, path) {
     if (value == null)
         return 'stair';
@@ -949,7 +953,8 @@ function definitionBranchType(value, path) {
         default: throw new TypeError(`${path} is not a dungeon branch type`);
     }
 }
-// Port only: up/down direction validation.
+// Part of C dungeon.c:899: brdirstr2i[get_table_option(L, "direction", ...)]
+// — the up/down direction read.
 function definitionBranchUp(value, path) {
     if (value == null || value === 'down')
         return false;
