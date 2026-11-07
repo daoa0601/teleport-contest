@@ -45,7 +45,7 @@ import { findMonsterArmorClass } from './worn.js';
 import { ACCFOOD, dogFood } from './pet_food.js';
 import { tameMonster } from './dog.js';
 import { flyBoomerang } from './zap.js';
-import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
+import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition, monsterAt } from './steed.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, glyphAt, map_invisible, transientObjectGlyph } from './display.js';
 import { goodPosition, randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
 import { mintrap, petrifyMonsterImmediately, erodeObject, resolveImmediatePetrification, petrifyMonsterFromContact, trapName, dotrap } from './trap.js';
@@ -329,14 +329,6 @@ export async function dofire() {
 // through endmultishot(FALSE) without the announcement; the throw loop
 // registers the shared volley object here by reference.
 let activeVolley = null;
-// Port only: register the in-flight volley (C's gm.m_shot global).
-function beginHeroVolley(volley) {
-    activeVolley = volley;
-}
-// Port only: clear the in-flight volley (C's gm.m_shot global).
-function finishHeroVolley() {
-    activeVolley = null;
-}
 // C dothrow.c:endmultishot().
 export async function endmultishot(verbose, volley = activeVolley, state = game) {
     if (!volley || volley.index >= volley.count)
@@ -355,7 +347,8 @@ export async function endmultishot(verbose, volley = activeVolley, state = game)
     // Keep the count live so remaining contact messages see the limit.
     volley.count = volley.index;
 }
-// Port only: death-context adapter for throwit()'s swallowed-projectile kill.
+// Part of C dothrow.c:throwit()/thitmonst(): the swallowed projectile
+// kill's death context (xkilled() of the struck engulfer).
 async function finishOrdinarySwallowedThrowKill(monster, projectile, options = {}) {
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
         ...options,
@@ -365,7 +358,8 @@ async function finishOrdinarySwallowedThrowKill(monster, projectile, options = {
         },
     });
 }
-// Port only: death-context adapter for the swallowed egg/venom/potion kill.
+// Part of C dothrow.c:throwit()/thitmonst(): the swallowed egg/venom/potion
+// kill's death context.
 async function finishOrdinarySwallowedConsumedKill(monster, kind, death = {}) {
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
         ...death,
@@ -374,7 +368,7 @@ async function finishOrdinarySwallowedConsumedKill(monster, kind, death = {}) {
         },
     });
 }
-// Port only: death-context adapter for the map-potion kill.
+// Part of C dothrow.c:throwit(): the map-potion kill's death context.
 async function finishOrdinaryMapPotionKill(monster, death = {}) {
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, death);
 }
@@ -573,9 +567,9 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
         count: volleyCount, index: 1, objectType: item.otyp,
         shooting: launcherMatchesAmmo(item, game.uwep),
     };
-    // end.c:savelife() truncates m_shot so a life-saved hero fires no
-    // further missiles; the loop reads the shared volley for that cut.
-    beginHeroVolley(volley);
+    // C gm.m_shot: the in-flight volley the loop registers by reference;
+    // end.c:savelife() truncates it through endmultishot(FALSE).
+    activeVolley = volley;
     try {
         for (; volley.index <= volley.count; volley.index++) {
             const stopVolley = await throwSelectedUnit(item, dx, dy, volley);
@@ -587,7 +581,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
         }
     }
     finally {
-        finishHeroVolley();
+        activeVolley = null;
     }
     game.context.move = 1;
 }
@@ -691,7 +685,8 @@ export async function reportHeroThrownMiss(monster, object, { state = game, publ
     else
         await publish(rayMissMessage(name, monster, { ...target, state }));
 }
-// Port only: admission checks for the map-selected potion throw.
+// Part of C dothrow.c:throwit(): the map-potion admission
+// (!u.uswallow && oclass == POTION_CLASS), with the port's option checks.
 function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, dx, dy, }) {
     if (state.u?.uswallow || objectClass !== POTION_CLASS
         || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
@@ -700,12 +695,8 @@ function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, 
         return false;
     return true;
 }
-// Port only: dist2() from the hero.
-function distanceFromHero(state, x, y) {
-    return dist2(state.u.ux, state.u.uy, x, y);
-}
-// Port only: adapter passing distance and visibility into the shared potion
-// hit.
+// Part of C dothrow.c:throwit()'s potion impact: passes the caller-side
+// dist2() and cansee() into the shared potion hit (potion.ts).
 function hitMonsterWithThrownPotion({ state, monster, potion, wakeMonster, wakeNearby, finishKill, publish, }) {
     return hitMonsterWithSupportedPotion({
         state,
@@ -717,7 +708,7 @@ function hitMonsterWithThrownPotion({ state, monster, potion, wakeMonster, wakeN
         publish,
         targetVisible: cansee(monster.mx, monster.my),
         resolveVapor: true,
-        distance: distanceFromHero(state, monster.mx, monster.my),
+        distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
     });
 }
 // Part of C dothrow.c:throwit(): the potion-at-a-monster throw selected on
@@ -839,13 +830,6 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
 const S_EYE = 5;
 const S_LIGHT = 25;
 const PM_GRID_BUG = 116;
-// Port only: m_at() lookup excluding one monster.
-function monsterAt(state, x, y, ignoredMonster) {
-    return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
-        monster !== ignoredMonster && !monster.dead
-        && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
-}
 // Part of C dothrow.c:mhurtle_step(): the silent stoning finisher
 // (minstapetrify(TRUE)).
 // Both hurtle collision paths supply a silent death handler after the trap
@@ -1726,11 +1710,6 @@ export async function settleThrownShopObject(object, x, y, state = game, publish
     }
     return true;
 }
-// Port only: the hero's polymorphed species or null.
-function heroForm() {
-    requirePlayingGame(game);
-    return Upolyd(game.u) ? game.u.umonnum : null;
-}
 // Part of C dothrow.c:hurtle_step(): the sobj_at(BOULDER) check.
 function floorBoulder(x, y) {
     return (game.level?.objects?.[x]?.[y] || [])
@@ -1861,7 +1840,7 @@ async function collideWithMonster(monster, x, y, options) {
         if (result.died)
             return;
     }
-    const form = heroForm();
+    const form = heroMonsterForm();
     if (form !== null && touchPetrifies(form) && !monsterWearsTorsoArmor(monster)) {
         await petrifyMonsterFromContact(monster, {
             creditHero: true,
@@ -1922,6 +1901,9 @@ async function triggerLandingTrap(trap, options, remaining) {
         || game.u.ux !== before.x || game.u.uy !== before.y;
 }
 // Port only: forwards the hurtle owner's teleport callbacks to dotrap().
+// The port's dotrap() takes them as options where C's callers rely on
+// globals (drown() -> teleds() -> spoteffects() chain); nothing in C
+// corresponds to this plumbing.
 // drown() relocates a hero who crawls out or is rescued through teleds(),
 // whose spoteffects() covers the room, trap, and look-here at the landing.
 function hurtleTrapOptions(options) {
@@ -2129,8 +2111,9 @@ export function projectileKind(object) {
         return 'missile';
     return null;
 }
-// Port only: removes a mulched projectile from every object list.
-// C frees a mulched projectile. Remove it from every JavaScript object list.
+// Part of C dothrow.c:thitmonst(): obfree() of a mulched projectile
+// (dothrow.c:2220-2224) — the port marks the object gone on every list
+// instead of freeing it.
 export function destroyMulchedProjectile(object) {
     if (!object)
         return;
@@ -2405,7 +2388,11 @@ async function showReturnFlight(object, impact, state) {
     await captureThrownObjectFlight(object, path, state, glyph);
 }
 const PM_AIR_ELEMENTAL = 154;
-// Port only: s_suffix()-style possessive.
+// C hacklib.c:s_suffix(mon_nam(mon)) at dothrow.c:2297 and 2676: the
+// engulfer's possessive in the vanish messages.  Kept private (not the
+// shared possessiveName()) because this copy tests the trailing s
+// case-insensitively and omits the it/you cases; switching would change
+// messages for monsters named "It" or ending in a capital S.
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
