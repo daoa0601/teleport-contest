@@ -5,7 +5,7 @@ import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { monsterAtPosition } from '../js/steed.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

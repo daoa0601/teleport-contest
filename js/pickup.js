@@ -9,14 +9,14 @@ import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands,
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription, makePlural, withIndefiniteArticle, wishedObjectPresentation, ownedObjectAction, definiteObjectAction, ownedObjectQuestion, corpseName, killerObjectName, } from './objnam.js';
-import { autokey, autoUnlockFlags, pickLock, isForceableWeapon } from './lock.js';
-import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND } from './const.js';
+import { autokey, autoUnlockFlags, pickLock, isForceableWeapon, changeBoxLockByMagic } from './lock.js';
+import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND, MM_ADJACENTOK, MM_NOMSG, NO_MINVENT, FOOT } from './const.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, } from './invent.js';
-import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
-import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout } from './mkobj.js';
+import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero, landObjectOnAltar } from './do.js';
+import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm } from './mkobj.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
-import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, newsym_force } from './display.js';
+import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, newsym_force, canSpotMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { getLine, showMultiSelectWindow, showDisclosureOverlay, showChoiceWindow, showTextWindow } from './windows.js';
 import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';
@@ -30,13 +30,15 @@ import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, 
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { touchArtifactByHero } from './artifact.js';
-import { landObjectOnAltar } from './altar_object.js';
-import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
+import { isQuantumBox } from './quantum_cat.js';
+import { getObjectLocation } from './zap.js';
+import { makemonNear } from './mklev.js';
+import { addExperience, checkExperienceLevel } from './exper.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { waterbodyName } from './pager.js';
 import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayLiquidName, monsterName, randomDisplayMonsterName, visibleMonsterSubject } from './do_name.js';
 import { removeObjectFromMonsterInventory, removeHeroEquipment } from './worn.js';
 import { holdAnotherObject } from './invent.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
@@ -44,7 +46,7 @@ import { rn2, rnd, d } from './rng.js';
 import { tipWornHelmet } from './sounds.js';
 import { reviveCorpseImmediately } from './do.js';
 import { exerciseAttribute } from './attrib.js';
-import { heroIsBlind, heroIsUnaware } from './senses.js';
+import { heroIsBlind, heroIsUnaware, heroIsHallucinating } from './senses.js';
 import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage, triggerChestTrap } from './trap.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { containerContents } from './end.js';
@@ -57,9 +59,8 @@ import { isBimanualObject } from './object_properties.js';
 import { stopObjectTimer } from './timeout.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType } from './mkroom.js';
-import { makemonAt, useBagOfTricks } from './makemon.js';
+import { makemonAt, useBagOfTricks, setMonsterMalign } from './makemon.js';
 // Part of C pickup.c:query_classes(): the pickup class menu's heading
 // order.
 export function pickupClassOrder() {
@@ -2045,6 +2046,77 @@ export async function loseMagicBagItem(object, held, state = game, silent = fals
         ? await stolenValue(object, state.u.ux, state.u.uy, keeper.mpeaceful, { state, silent: true }) : 0;
     await deleteObject(object, state);
     return loss;
+}
+const HOUSECAT = MONSTER_NAME.indexOf('housecat');
+const CAT_NAME = "Schroedinger's Cat";
+// C pickup.c:observe_quantum_cat(): shared by opening and final disclosure.
+export async function observeQuantumCat(box, { makeCat = true, showMessage = true, state = game, } = {}) {
+    if (!isQuantumBox(box))
+        return false;
+    const alive = rn2(2) === 0;
+    if (box.where === 'inventory') {
+        box.ox = state.u.ux;
+        box.oy = state.u.uy;
+    }
+    else if (box.where === 'minvent') {
+        const location = getObjectLocation(box, state);
+        if (!location)
+            throw new Error('A carried quantum box requires its monster location');
+        box.ox = location.x;
+        box.oy = location.y;
+    }
+    const corpse = box.contents?.[0];
+    if (alive) {
+        // Final disclosure leaves a living cat in the box for the summary.
+        if (!makeCat)
+            return true;
+        const besideHero = !state.in_mklev
+            && box.ox === state.u.ux && box.oy === state.u.uy;
+        const occupied = requireGameLevel(state).monsters.some(monster => monsterHasMapPosition(monster, state) &&
+            !monster.dead && monster.mx === box.ox && monster.my === box.oy);
+        const create = besideHero || occupied ? makemonNear : makemonAt;
+        const cat = await create(HOUSECAT, box.ox, box.oy, NO_MINVENT | MM_ADJACENTOK | MM_NOMSG);
+        if (!cat)
+            return true;
+        cat.mpeaceful = 1;
+        setMonsterMalign(cat, state);
+        if (showMessage) {
+            if (!canSpotMonster(cat)) {
+                await pline(`You think something brushed your ${body_part(FOOT)}.`);
+            }
+            else {
+                const subject = visibleMonsterSubject(cat);
+                await pline(`${subject} inside the box is still alive!`);
+            }
+        }
+        cat.name = CAT_NAME;
+        if (corpse)
+            await deleteObject(corpse, state);
+        box.owt = objectWeight(box);
+        box.spe = 0;
+        if (!state.context.mon_moving) {
+            addExperience(10, 20, state);
+            await checkExperienceLevel();
+        }
+    }
+    else {
+        box.spe = 0;
+        if (showMessage) {
+            const subject = heroIsHallucinating(state)
+                ? randomDisplayMonsterName() : 'housecat';
+            await pline(`The ${subject} inside the box is dead!`);
+        }
+        if (corpse) {
+            corpse.age = state.moves;
+            set_corpsenm(corpse, HOUSECAT);
+            (corpse.oextra ||= {}).oname = CAT_NAME;
+            if (!state.context.mon_moving) {
+                addExperience(20, 10, state);
+                await checkExperienceLevel();
+            }
+        }
+    }
+    return true;
 }
 // C pickup.c:boh_loss(): a cursed bag of holding sometimes tosses a
 // carried item; pickup.c:is_boh_item_gone() is the 1-in-13 roll.

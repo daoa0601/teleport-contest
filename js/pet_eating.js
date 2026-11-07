@@ -18,53 +18,10 @@ import { G_GENOD } from './const.js';
 import { isPoolAt } from './dbridge.js';
 import { cansee } from './vision.js';
 import { tunnels } from './mondata.js';
+import { petFoodNutrition } from './dogmove.js';
 const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
 const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
 const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
-// C dogmove.c:dog_nutrition(): nutrition a pet draws from an object,
-// including its chewing time.
-// dog_nutrition() also sets chewing time. Its denominator is the original
-// food's nutrition, before the pet-size multiplier is applied.
-export function petFoodNutrition(monster, object) {
-    let nutrition;
-    if (object.oclass === FOOD_CLASS) {
-        let delay;
-        if (object.otyp === CORPSE) {
-            const body = object.corpsenm === undefined ? undefined : MONSTER_BODY_META[object.corpsenm];
-            if (!body)
-                throw new Error(`Corpse ${object.o_id} has no species nutrition`);
-            delay = 3 + (body[0] >> 6);
-            nutrition = body[1];
-        }
-        else {
-            delay = objectDelay(object.otyp);
-            nutrition = oc_nutrition(object.otyp) ?? 0;
-        }
-        const fullNutrition = obj_nutrition(object);
-        const size = MONSTER_SIZE[monster.mnum];
-        const multiplier = size === 0 ? 8 : size === 1 ? 6
-            : size === 3 ? 4 : size === 4 ? 3 : size === 7 ? 2 : 5;
-        nutrition *= multiplier;
-        if (object.oeaten) {
-            const remaining = Math.min(object.oeaten, fullNutrition);
-            delay = Math.max(1, fullNutrition ? Math.trunc(delay * remaining / fullNutrition) : 0);
-            nutrition = Math.max(1, fullNutrition ? Math.trunc(nutrition * remaining / fullNutrition) : 0);
-        }
-        monster.meating = delay;
-    }
-    else if (object.oclass === COIN_CLASS) {
-        // Quantity is a native long; these two results are signed ints.
-        const delay = (Math.trunc(object.quan / 2000) + 1) | 0;
-        monster.meating = delay < 0 ? 1 : delay;
-        const coinNutrition = Math.trunc(object.quan / 20) | 0;
-        nutrition = coinNutrition < 0 ? 0 : coinNutrition;
-    }
-    else {
-        monster.meating = Math.trunc(object.owt / 20) + 1;
-        nutrition = 5 * (oc_nutrition(object.otyp) ?? 0);
-    }
-    return nutrition;
-}
 // Part of C dogmove.c:dog_eat(), muse.c:mon_consume_unstone(): extend the
 // pet's hunger deadline and clear its confusion.
 // Stoning cures share the deadline and confusion rules, but deliberately do

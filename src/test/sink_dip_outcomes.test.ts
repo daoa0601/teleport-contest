@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { POT_ACID, POT_FRUIT_JUICE, POT_LEVITATION,
     POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

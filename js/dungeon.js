@@ -5,7 +5,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER, FOOT } from './const.js';
-import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, Is_stronghold, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './windows.js';
 import { SHOP_TYPES } from './shknam.js';
 import { altarmaskAt, deityName } from './pray.js';
@@ -211,6 +211,24 @@ export function Is_botlevel(uz) {
         return false;
     const dun = game?.dungeons?.[lev.dnum];
     return !!dun && lev.dlevel === dun.num_dunlevs;
+}
+// C dungeon.c:Can_dig_down():
+// C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
+// flag is only one of the gates: bottom levels and the invocation level also
+// reject holes, while the Castle is an explicit exception because its
+// trapdoors lead into the Valley.
+export function canDigDown(uz = game.u.uz) {
+    // C dungeon.c:Can_dig_down() pairs the current level's hard-floor flag
+    // with the destination depth checks in the level argument.
+    if (!uz)
+        return false;
+    return !game.level?.flags?.hardfloor
+        && !Is_botlevel(uz)
+        && !Invocation_lev(uz);
+}
+// C dungeon.c:Can_fall_thru():
+export function canFallThrough(uz = game.u.uz) {
+    return canDigDown(uz) || (uz !== undefined && Is_stronghold(uz));
 }
 // C dungeon.c:Can_rise_up(). Branch-top ascent requires its real up stair.
 export function canHeroRiseUp(x, y, { state = game } = {}) {

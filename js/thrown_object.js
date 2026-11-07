@@ -18,7 +18,6 @@ import { containerImpactDamage, shipObject } from './dokick.js';
 import { currentAttribute } from './attrib.js';
 import { canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym, show_glyph_cell, transientObjectGlyph, unmapObject, TemporaryMapEffect, } from './display.js';
 import { plineWithContinuation, publishHeardMessage } from './pline.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { costlySpot, shopkeeperCatch } from './shk.js';
 import { finishInventoryRemoval } from './invent.js';
@@ -36,7 +35,7 @@ import { projectileHitsIronBars } from './mthrowu.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
-import { objectNoLongerHeld } from './do.js';
+import { objectNoLongerHeld, applyFloorEffects } from './do.js';
 import { cansee } from './vision.js';
 import { rockSkipRange } from './zap.js';
 // Port only: read an object's runtime class with a metadata fallback.

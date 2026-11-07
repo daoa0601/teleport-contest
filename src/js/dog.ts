@@ -47,7 +47,7 @@ import {
     monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid,
     regenerates, speciesHasWeaponAttack,
 } from './mondata.js';
-import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo, resolveMonsterLiquid, finishLiquidDeathForCurrentMover } from './mon.js';
+import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo, resolveMonsterLiquid, finishLiquidDeathForCurrentMover, nearHero } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 
@@ -985,14 +985,6 @@ export async function collectLevelFollowers(state: GameState = game, petsOnly = 
         }
     }
     return followers;
-}
-
-// C mon.c:monnear().
-function nearHero(monster: Monster, state: GameState): boolean {
-    const dx = monster.mx - state.u.ux;
-    const dy = monster.my - state.u.uy;
-    const distance = dx * dx + dy * dy;
-    return distance < 3 && !(distance === 2 && monster.mnum === PM_GRID_BUG);
 }
 
 // Part of C dog.c:keepdogs(): the stay-behind branch (eating, trapped,

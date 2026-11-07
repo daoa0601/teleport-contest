@@ -65,13 +65,7 @@ export function isBimanualObject(object: ObjectCandidate): boolean {
         && !!objectBimanual(object.otyp);
 }
 
-// C objnam.c:doname() displays charges for wands and charged non-weapon tools.
-export function objectUsesCharges(object: ObjectCandidate): boolean {
-    if (!object) return false;
-    return objectClass(object) === WAND_CLASS
-        || (objectClass(object) === TOOL_CLASS && !isWeaponTool(object)
-            && !!objectCharged(object.otyp));
-}
+
 
 // C obj.h:is_missile().
 export function isMissileObject(object: ObjectCandidate): boolean {

@@ -43,7 +43,7 @@ import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
 import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
 import { init_rect, rnd_rect } from './rect.js';
-import { Is_botlevel, depth as depth_of_level, dungeonDepth, inducedAlignment, is_branchlev, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot } from './dungeon.js';
+import { Is_botlevel, depth as depth_of_level, dungeonDepth, inducedAlignment, is_branchlev, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot, canFallThrough } from './dungeon.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, oc_level } from './object_data.js';
 import { MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { nhgetch } from './input.js';
@@ -134,93 +134,6 @@ const POLY_TRAP = 22;
 export const VIBRATING_SQUARE = 23;
 const TRAPPED_DOOR = 24;
 const TRAPPED_CHEST = 25;
-// C dungeon.c:Can_dig_down()
-// ── Hero digging/falling predicates (C ref: dungeon.c) ──
-// C dungeon.c:Can_dig_down():
-// C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
-// flag is only one of the gates: bottom levels and the invocation level also
-// reject holes, while the Castle is an explicit exception because its
-// trapdoors lead into the Valley.
-export function canDigDown(uz = game.u.uz) {
-    // C dungeon.c:Can_dig_down() pairs the current level's hard-floor flag
-    // with the destination depth checks in the level argument.
-    if (!uz)
-        return false;
-    return !game.level?.flags?.hardfloor
-        && !Is_botlevel(uz)
-        && !Invocation_lev(uz);
-}
-// C dungeon.c:Can_fall_thru():
-export function canFallThrough(uz = game.u.uz) {
-    return canDigDown(uz) || (uz !== undefined && Is_stronghold(uz));
-}
-// C mhitu.c:cloneu()
-// The actor is a fresh makemon birth rather than a copy of youmonst: it owns
-// ordinary placement, HP, gender, attitude, and identity RNG before cloneu()
-// replaces its level/HP and initializes a named tame companion.
-// Also C dog.c:initedog(): the everything=TRUE pet initialization is inlined here.
-export async function cloneHeroMonsterForm(state = game) {
-    if (state !== game)
-        throw new Error('hero clone owner requires live game state');
-    const u = state.u;
-    if (typeof u.mh !== 'number' || typeof u.mhmax !== 'number')
-        return null;
-    if (Number.isFinite(u.mh) && Number.isFinite(u.mhmax)
-        && u.mh > u.mhmax)
-        u.mh = u.mhmax;
-    const mnum = u.umonnum;
-    if (typeof mnum !== 'number' || !Number.isInteger(mnum))
-        return null;
-    const vitalFlags = state.mvitals?.[mnum]?.mvflags ?? 0;
-    if (!Number.isFinite(u.mh)
-        || !Number.isFinite(u.mhmax) || u.mh <= 1
-        || (vitalFlags & (G_EXTINCT | G_GENOD)))
-        return null;
-    const clone = await makemonNear(mnum, u.ux, u.uy, NO_MINVENT | MM_EDOG | MM_NOMSG, true);
-    if (!clone)
-        return null;
-    const name = state.plname || 'player';
-    const edog = {
-        parentmid: clone.m_id,
-        droptime: 0,
-        dropdist: 10000,
-        apport: u.acurr?.a?.[A_CHA] ?? 3,
-        whistletime: 0,
-        hungrytime: (state.moves ?? 0) + 1000,
-        ogoal: { x: -1, y: -1 },
-        abuse: 0,
-        revivals: 0,
-        mhpmax_penalty: 0,
-        killed_by_u: 0,
-    };
-    clone.mcloned = 1;
-    setMonsterGivenName(clone, name);
-    clone.m_lev = MONSTER_LEVEL[mnum] ?? clone.m_lev;
-    clone.mtame = Math.max(is_domestic(mnum) ? 10 : 5, clone.mtame ?? 0);
-    clone.mpeaceful = 1;
-    clone.mavenge = 0;
-    clone.mleashed = 0;
-    clone.meating = 0;
-    clone.pet = true;
-    clone.minvent = [];
-    clone.inventory = clone.minvent;
-    clone.hasInventory = false;
-    clone.edog = edog;
-    clone.mextra ??= {};
-    clone.mextra.edog = edog;
-    setMonsterMalign(clone, state);
-    clone.mhpmax = u.mhmax;
-    clone.mhp = Math.trunc(u.mh / 2);
-    u.mh -= clone.mhp;
-    state.context.botl = true;
-    // C cloneu() never redraws the clone's square after taming it: the glyph
-    // cached by makemon()'s newsym() (warning digit for a blind warned hero,
-    // hostile monster glyph otherwise) stays until something else redraws it.
-    if (!u.uconduct)
-        u.uconduct = {};
-    u.uconduct.pets = (u.uconduct.pets ?? 0) + 1;
-    return clone;
-}
 // Part of C makemon.c:makemon(): adapter for nearby placement through teleport.c:enexto() before monster construction.
 // C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().
 export async function makemonNear(mnum, centerX, centerY, flags = 0, requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy) {

@@ -5,7 +5,7 @@
 // stumble_on_door_mimic(), doopen()/doopen_indir(), obstructed(), doclose(),
 // boxlock(), doorlock().
 import { WEAPON_CLASS, TOOL_CLASS, POTION_CLASS, WAND_CLASS, ROCK_CLASS } from './objclass.js';
-import { objectSkill, BAG_OF_TRICKS, CHEST, LARGE_BOX, CORPSE, ICE_BOX, CREDIT_CARD, LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT, oc_wldam, } from './object_data.js';
+import { objectSkill, OBJ_NAME, BAG_OF_TRICKS, CHEST, LARGE_BOX, CORPSE, ICE_BOX, CREDIT_CARD, LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, WAN_POLYMORPH, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT, SPE_POLYMORPH, oc_wldam, } from './object_data.js';
 import { currency, stack_object } from './invent.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { CQ_CANNED, A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level, FINGER } from './const.js';
@@ -1016,6 +1016,36 @@ function lockPickChance(tool, box, state) {
     if (box?.cursed)
         chance = Math.trunc(chance / 2);
     return chance;
+}
+// C lock.c:boxlock()
+export async function changeBoxLockByMagic(box, source, { state = game } = {}) {
+    const effect = OBJ_NAME(source.otyp);
+    if (effect === 'locking' || effect === 'wizard lock') {
+        if (box.olocked)
+            return false;
+        await pline('Klunk!');
+        box.olocked = true;
+        box.obroken = false;
+        box.lknown = state.urole?.key === 'wizard';
+        return true;
+    }
+    if (effect === 'opening' || effect === 'knock') {
+        if (!box.olocked) {
+            box.obroken = false;
+            return false;
+        }
+        await pline('Klick!');
+        box.olocked = false;
+        box.lknown = state.urole?.key === 'wizard';
+        return true;
+    }
+    if (source.otyp === WAN_POLYMORPH || source.otyp === SPE_POLYMORPH) {
+        if (state._lockAttempt?.container === box)
+            resetPick(state);
+        if (state._occupation?.key === 'pick-lock' && state._occupation.container === box)
+            state._occupation = null;
+    }
+    return false;
 }
 // C lock.c:doorlock()/obstructed(). Traversal owns wand discovery, billable
 // shop damage, drawbridge effects, and the decision to target a door.

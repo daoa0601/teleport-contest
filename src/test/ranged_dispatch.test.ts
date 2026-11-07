@@ -12,7 +12,7 @@ import {
     GOLD_PIECE, OBJECT_NAMES, ROCK, SMALL_SHIELD,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';

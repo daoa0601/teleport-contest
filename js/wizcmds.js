@@ -43,9 +43,9 @@ import { objectNeedsFullIdentification, observeObjectForNaming } from './objnam.
 import { setPaidShopkeeper } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
 import { flip_level, flip_level_rnd } from './sp_lev.js';
-import { makeDeaf, startHeroSickness, makeHallucinated, makeStunned, makeBlinded, setHeroSlimingTimeout, setHeroPetrificationTimeout, setSlipperyHands } from './potion.js';
+import { makeDeaf, startHeroSickness, makeHallucinated, makeStunned, makeBlinded, setHeroSlimingTimeout, setHeroPetrificationTimeout, setSlipperyHands, setPropertyTimeout } from './potion.js';
 import { makeHeroVomiting } from './potion.js';
-import { propertyIsActive, propertyTimeout, refreshMovementProperties, setPropertyTimeout } from './properties.js';
+import { propertyIsActive, propertyTimeout, refreshMovementProperties } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain } from './ball.js';
 import { maybeResetPick } from './lock.js';
@@ -60,7 +60,6 @@ import { displayMessageWindow } from './topl.js';
 import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './message_types.js';
 import { rumorCheck } from './rumors.js';
-import { resetUtrap } from './trap.js';
 import { monsterIsNonliving, heroHasOlfaction } from './mondata.js';
 // C wizcmds.c:wiz_wish().
 export async function wizWish() {

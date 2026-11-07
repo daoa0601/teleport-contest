@@ -3,7 +3,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { landFloorObject } from '../js/floor_effects.js';
+import { landFloorObject } from '../js/do.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import {unlinkObject, addCreatedObjectToContainer, placeCreatedObject, meldNearbyFloorGlobs} from '../js/mkobj.js';
 import { learnObjectType } from '../js/o_init.js';

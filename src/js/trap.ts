@@ -133,7 +133,8 @@ import {
     triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds,
     teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth,
 } from './teleport.js';
-import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
+import { countLevelFeatures, makemonNear } from './mklev.js';
+import { canFallThrough } from './dungeon.js';
 import {
     displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName,
     monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName,
@@ -155,15 +156,14 @@ import {
     buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt, liquidForHole,
 } from './dig.js';
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
-import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid } from './do.js';
+import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, applyFloorEffects } from './do.js';
 import {
     hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord,
     propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill,
-    grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, setPropertyTimeout,
+    grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty,
 } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import {
     burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
@@ -179,7 +179,7 @@ import { abusePet, tameMonster, makePetWary } from './dog.js';
 import { heroCanReachFloor, deleteEngravingAt } from './engrave.js';
 import type { DirectionSelection } from './cmd.js';
 import { beginBallAndChainMove, finishBallAndChainMove, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { checkHeroLeashes, bringLeashedFollowers, releaseAllMonsterLeashes } from './apply.js';
+import { checkHeroLeashes, bringLeashedFollowers, releaseAllMonsterLeashes, splashLitObject } from './apply.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic, applyMonsterPassiveToObject } from './uhitm.js';
 import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
@@ -188,7 +188,7 @@ import type { HeroHurtleOptions } from './dothrow.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import {
     splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster,
-    makeHallucinated, makeStunned,
+    makeHallucinated, makeStunned, setPropertyTimeout,
 } from './potion.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';
@@ -1941,75 +1941,6 @@ function carriedByHero(object: GameObject, state: GameState): boolean {
     return (state.inventory || []).includes(object);
 }
 
-// Part of C apply.c:splash_lit(): decide whether the hero's lantern is submerged.
-function heroLanternIsDunked(state: GameState): boolean {
-    if (!isPoolAt(state.u.ux, state.u.uy, state)) return false;
-    return Is_waterlevel(state.u.uz)
-        || !(state.u?.levitating || state.levitating
-            || heroIsFlying(state) || heroHasWaterWalking(state));
-}
-
-// C apply.c:splash_lit()
-// Also C apply.c:snuff_lit(): snuff the splashed light source.
-// Each message precedes end_burn, so the darkened view waits for the next
-// flush instead of preceding the message.
-export async function splashLitObject(object: GameObject | null | undefined, publish: MessagePublisher, state = game): Promise<boolean> {
-    if (!object?.lamplit) return false;
-    // snuff_lit() handles flames and lanterns, not magical light sources.
-    if (![OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN, POT_OIL,
-        TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION].includes(object.otyp))
-        return false;
-    const carried = carriedByHero(object, state);
-    let dunkedLantern = false;
-    if (object.otyp === BRASS_LANTERN) {
-        let visible = false, audible = false, snuff = true;
-        if (carried) {
-            visible = !heroIsBlind(state);
-            audible = !heroIsDeaf(state);
-            dunkedLantern = heroLanternIsDunked(state);
-            snuff = false;
-        } else if (object.where === 'minvent' && object.ocarry
-            && monsterIsHumanoid(object.ocarry.mnum)) {
-            const carrier = object.ocarry;
-            const position = getObjectLocation(object, state);
-            visible = !!position && cansee(position.x, position.y);
-            audible = couldsee(carrier.mx, carrier.my)
-                && (carrier.mx - state.u.ux) ** 2 + (carrier.my - state.u.uy) ** 2 < 25;
-            dunkedLantern = isPoolAt(carrier.mx, carrier.my, state)
-                && (!monsterFliesOrFloats(carrier) || Is_waterlevel(state.u.uz));
-            snuff = false;
-        }
-        if (visible || audible) {
-            const action = audible && visible
-                ? 'crackles and flickers'
-                : audible ? 'crackles' : 'flickers';
-            await publish(`${ownedObjectName(object, state)} ${action}.`);
-        }
-        if (!dunkedLantern && !snuff) return false;
-    }
-
-    const position = getObjectLocation(object, state);
-    const visible = object.where === 'minvent'
-        ? !!position && cansee(position.x, position.y) : !heroIsBlind(state);
-    if (visible) {
-        const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
-        if (candle || object.otyp === CANDELABRUM_OF_INVOCATION) {
-            const many = candle ? object.quan > 1 : object.spe > 1;
-            await publish(`${objectOwnershipPrefix(object, state, { capitalized: true })}${
-                candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
-        } else {
-            const plural = objectNameIsPlural(object, state);
-            await publish(`${ownedObjectName(object, state)} ${plural ? 'go' : 'goes'} out!`);
-        }
-    }
-    if (!endObjectBurn(object, state, state.moves ?? 0))
-        object.lamplit = false;
-    if (dunkedLantern) {
-        const age = object.age ?? 0;
-        object.age = age - (age > 200 ? 100 : Math.trunc(age / 2));
-    }
-    return true;
-}
 
 type TrapEquipmentSlot = 'uarm' | 'uarmc' | 'uarmf' | 'uarmg' | 'uarmh'
     | 'uarms' | 'uarmu' | 'uwep' | 'uswapwep';

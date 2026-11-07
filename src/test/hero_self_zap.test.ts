@@ -17,7 +17,7 @@ import { game } from '../js/gstate.js';
 import { zapHeroWithObject } from '../js/zap.js';
 
 import { heroHasRemovableSpeed } from '../js/mhitu.js';
-import { speedUpHero } from '../js/potion.js';
+import { speedUpHero, setPropertyTimeout } from '../js/potion.js';
 import { heroStatusLine } from '../js/insight.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_LEVEL, MONSTER_NAME } from '../js/monster_data.js';
@@ -28,7 +28,7 @@ import {
     WAN_MAGIC_MISSILE, WAN_OPENING, WAN_PROBING, WAN_SLEEP, WAN_SLOW_MONSTER,
     WAN_SPEED_MONSTER, WAN_STRIKING,
 } from '../js/object_data.js';
-import { grantIntrinsicProperty, hasIntrinsicProperty, propertyTimeout, setPropertyTimeout } from '../js/properties.js';
+import { grantIntrinsicProperty, hasIntrinsicProperty, propertyTimeout } from '../js/properties.js';
 import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { heroIsBlind } from '../js/senses.js';
 import { makeBlinded } from '../js/potion.js';

@@ -24,6 +24,7 @@ import { applyHeroLocationEffects, loseHeroHp, maybeHalfPhysicalDamage, nearCapa
 import { restorationLeavesTrouble } from './apply.js';
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, ENL_GAMEINPROGRESS, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MAGICENLIGHTENMENT, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT, FACE, HEAD, HAND, LEG, LL_CONDUCT, } from './const.js';
 import { impossible } from './diagnostics.js';
+import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible, grantHeroSeeInvisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
@@ -56,7 +57,8 @@ import { objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { cloneHeroMonsterForm } from './mhitu.js';
 import { mkobj, bcsign, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack, adjustObjectLightAfterBlessing } from './mkobj.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount, monsterStagger } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
@@ -66,7 +68,7 @@ import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, d
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, recordGameLogEvent, } from './pline.js';
-import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty } from './properties.js';
 import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, updateUnpaidObjectPrice, deleteObject } from './shk.js';
@@ -81,6 +83,17 @@ import { applyHeroWaterVaporChange, applyHeroWereChange, purifyHeroLycanthropy, 
 import { aggravateMonsters } from './wizard.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
+// C potion.c:set_itimeout(): generic property timeout write.
+// C set_itimeout() changes only TIMEOUT, leaving all permanent and extrinsic
+// sources intact. Display, landing, and status messages belong to effect owners.
+export function setPropertyTimeout(property, turns, state = game) {
+    if (!Number.isFinite(turns))
+        throw new RangeError(`Invalid ${property} timeout ${turns}`);
+    const timeout = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
+    state.u[PROPERTY_TIMEOUT_FIELDS[property]] = timeout;
+    refreshProperty(property, state);
+    return timeout;
+}
 // C potion.c:make_confused().
 export async function makeConfused(turns, { state = game, talk = true, publish = plineWithContinuation, } = {}) {
     const old = state.u.confusionTurns ?? 0;

@@ -2,7 +2,7 @@
 // C refs: hack.c:test_move(), findtravelpath(), lookaround(), domove(), pooleffects().
 import { WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_DESCR, objectTypeKnown } from './o_init.js';
-import { objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, } from './object_data.js';
+import { objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL, WATER_WALKING_BOOTS, CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, } from './object_data.js';
 import { setHeroGrip, moveMonsterNextToHero, hideHeroUnder, wakeMonstersNearWithMessages, maybeUnhideAt, revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid, finishEnvironmentalMonsterDeath, publishMonsterWake, finishHeroLiquidMonsterDeath, } from './mon.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { BURNING, CMDQ_EXTCMD, CQ_CANNED, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, Is_rogue_level, LAVAPOOL, LAVAWALL, Luck, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, A_STR, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, In_mines, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND, HOLE, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, P_TWO_WEAPON_COMBAT, P_ISRESTRICTED, P_UNSKILLED, ROLLING_BOULDER_TRAP, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, IN_SIGHT, SHOP_DOOR_COST, PARANOID_CONFIRM, PARANOID_TRAP, TRAP_EXPLANATIONS, TRAPNUM, W_QUIVER, W_SWAPWEP, SQKY_BOARD, SLP_GAS_TRAP, RUST_TRAP, BEAR_TRAP, PIT, SPIKED_PIT, MAGIC_PORTAL, VIBRATING_SQUARE, WEB, HEADSTONE, In_endgame, is_hole, is_pit, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, MAXNROFROOMS, Invocation_lev, OROOM, DELPHI, TEMPLE, COURT, MORGUE, ZOO, BARRACKS, BEEHIVE, LEPREHALL, COCKNEST, ANTHOLE, THRONE, ACH_TOWN, RLOC_NOMSG, IS_SINK, KILLED_BY_AN, LL_CONDUCT, SWAMP, GP_ALLOW_U, FOOT } from './const.js';
@@ -21,10 +21,10 @@ import { heroCanReachFloor, engravingAt, wipeEngravingAt } from './engrave.js';
 import { putHeroToSleep, objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers, } from './timeout.js';
 import { reset_faint, gethungry, morehungry, Hear_again, unfaint, eatmdone, Finish_digestion } from './eat.js';
 import { removeWornHeroItem, finishDelayedArmorTheft } from './steal.js';
-import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel } from './do.js';
+import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel, applyFloorEffects } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
-import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming } from './potion.js';
+import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming, setPropertyTimeout } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData, monsterTypeName } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
@@ -32,7 +32,7 @@ import { waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, eme
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet, armorSimpleName, finishDelayedArmorAction } from './do_wear.js';
+import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet, armorSimpleName, finishDelayedArmorAction } from './do_wear.js';
 import { waterbodyName, iceDescriptionAt } from './pager.js';
 import { do_attack, prepareAppliedWeaponAttack, hasDoorAppearance, stumbleOntoMimic, resolveHeroCombatExplosion, } from './uhitm.js';
 import { heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth, } from './teleport.js';
@@ -41,13 +41,13 @@ import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
 import { depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain, } from './dungeon.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
-import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty, grantWornProperty, removeWornProperty, setPropertyFloatBlocked } from './properties.js';
+import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty, grantWornProperty, removeWornProperty, setPropertyFloatBlocked } from './properties.js';
 import { dist2, ingSuffix, upstart } from './hacklib.js';
 import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
 import { updateHeroRegions, visibleRegionAt } from './region.js';
 import { requireShopGame } from './shop_types.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
+import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt, monsterCanFog } from './monmove.js';
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
@@ -61,7 +61,6 @@ import { objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectT
 import { floorObjectDescription, stack_object, freeInventoryObject, delobj } from './invent.js';
 import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
 import { intemple } from './priest.js';
@@ -782,6 +781,35 @@ export function badRock(mdat, x, y, state = game) {
     const canPass = monsterPassesWalls(mdat)
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
     return cannotTunnel && !canPass;
+}
+// C hack.c:cant_squeeze_thru(): the monster branch, whose only caller is
+// mon.c:mfndpos (mon.ts).
+export function monsterCannotSqueezeThrough(monster, state) {
+    if (monsterPassesWalls(monster.mnum))
+        return false;
+    const flexible = (monsterIsAmorphous({ mnum: monster?.mnum }) || monsterIsSlithy(monster?.mnum)) ||
+        monsterIsWhirly(monster) ||
+        monsterIsNoncorporeal(monster) ||
+        monsterCanFog(monster, state);
+    if (monsterIsBig(monster.mnum) && !flexible)
+        return true;
+    return currentMonsterLoad(monster) > WT_TOOMUCH_DIAGONAL;
+}
+// C hack.c:Known_wwalking().
+export function heroKnowsWaterWalking(state = game) {
+    const hero = state.u;
+    const boots = state?.uarmf || hero.uarmf;
+    const typeKnown = boots && objectTypeKnown(boots, state);
+    return !hero.usteed && boots?.otyp === WATER_WALKING_BOOTS && !!typeKnown;
+}
+// C hack.c:Known_lwalking().
+export function heroKnowsLavaWalking(state = game) {
+    if (!heroKnowsWaterWalking(state))
+        return false;
+    const hero = state.u;
+    const boots = state?.uarmf || hero.uarmf;
+    const fireResistant = hero.fireResistance;
+    return !!fireResistant && !!boots?.oerodeproof && !!boots.rknown;
 }
 // Part of C hack.c:cant_squeeze_thru(): the youmonst branch, which reads
 // the hero's wall-passing property rather than the species flag, weighs

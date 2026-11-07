@@ -1,9 +1,9 @@
 // apply.js — Apply/use-tool command and the apply.c tool ports.
 // C ref: apply.c doapply(), dorub(), dojump(), do_break_wand(), use_trap(),
-// use_whip(), the use_*() tool functions, snuff_lit()/snuff_candle() and
-// unfixable_trouble_count(). The splash/catch helpers stay in light.ts with
-// the burning-object owners; the apply.ts <-> light.ts import cycle is
-// function-body-only.
+// use_whip(), the use_*() tool functions, snuff_lit()/snuff_candle(),
+// splash_lit() and unfixable_trouble_count(). The catch helper stays in
+// light.ts with the burning-object owners; the apply.ts <-> light.ts import
+// cycle is function-body-only.
 
 import {
     WEAPON_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS,
@@ -26,7 +26,7 @@ import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from '
 import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
 import {
     armorSimpleName, armorSlotFor, fingersOrGloves, heroHasFreeAction, applyEyewear, removeEyewear,
-    heroHasSlipperyHands, heroIsStrangled,
+    heroHasSlipperyHands, heroIsStrangled, heroHasWaterWalking,
 } from './do_wear.js';
 import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
 import { currentAttribute } from './attrib.js';
@@ -77,7 +77,7 @@ import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import {
     setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
-    moveMonsterNextToHero,
+    moveMonsterNextToHero, monsterFliesOrFloats,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
 } from './mon.js';
 import {
@@ -91,7 +91,7 @@ import {
     heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating,
     setHeroBlindnessTimeout,
 } from './senses.js';
-import { heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
+import { heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, heroIsFlying, body_part, mbodypart } from './polyself.js';
 import { heroStatusLine, monsterStatusLine } from './insight.js';
 import {
     dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification,
@@ -111,7 +111,6 @@ import { pickLock } from './lock.js';
 import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
-import { canDigDown } from './mklev.js';
 import {
     billDummyObject, mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject,
     objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object,
@@ -158,7 +157,7 @@ import { castSpell, knownSpell } from './spell.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle, strikeSteed } from './steed.js';
 import { handlesPetrifyingCorpseBareHanded, heroIsPetrifying, petrifyFromCorpseContact } from './stoning.js';
-import { ceilingName, surfaceName } from './dungeon.js';
+import { ceilingName, surfaceName, canDigDown } from './dungeon.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import type { DirectionSelection } from './cmd.js';
 import { summonUndead } from './undead_summoning.js';
@@ -1392,6 +1391,76 @@ export async function snuffLitObject(
         }
     }
     endObjectBurn(object, state);
+    return true;
+}
+
+// Part of C apply.c:splash_lit(): decide whether the hero's lantern is submerged.
+function heroLanternIsDunked(state: GameState): boolean {
+    if (!isPoolAt(state.u.ux, state.u.uy, state)) return false;
+    return Is_waterlevel(state.u.uz)
+        || !(state.u?.levitating || state.levitating
+            || heroIsFlying(state) || heroHasWaterWalking(state));
+}
+
+// C apply.c:splash_lit()
+// Also C apply.c:snuff_lit(): snuff the splashed light source.
+// Each message precedes end_burn, so the darkened view waits for the next
+// flush instead of preceding the message.
+export async function splashLitObject(object: GameObject | null | undefined, publish: MessagePublisher, state = game): Promise<boolean> {
+    if (!object?.lamplit) return false;
+    // snuff_lit() handles flames and lanterns, not magical light sources.
+    if (![OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN, POT_OIL,
+        TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION].includes(object.otyp))
+        return false;
+    const carried = (state.inventory || []).includes(object);
+    let dunkedLantern = false;
+    if (object.otyp === BRASS_LANTERN) {
+        let visible = false, audible = false, snuff = true;
+        if (carried) {
+            visible = !heroIsBlind(state);
+            audible = !heroIsDeaf(state);
+            dunkedLantern = heroLanternIsDunked(state);
+            snuff = false;
+        } else if (object.where === 'minvent' && object.ocarry
+            && monsterIsHumanoid(object.ocarry.mnum)) {
+            const carrier = object.ocarry;
+            const position = getObjectLocation(object, state);
+            visible = !!position && cansee(position.x, position.y);
+            audible = couldsee(carrier.mx, carrier.my)
+                && (carrier.mx - state.u.ux) ** 2 + (carrier.my - state.u.uy) ** 2 < 25;
+            dunkedLantern = isPoolAt(carrier.mx, carrier.my, state)
+                && (!monsterFliesOrFloats(carrier) || Is_waterlevel(state.u.uz));
+            snuff = false;
+        }
+        if (visible || audible) {
+            const action = audible && visible
+                ? 'crackles and flickers'
+                : audible ? 'crackles' : 'flickers';
+            await publish(`${ownedObjectName(object, state)} ${action}.`);
+        }
+        if (!dunkedLantern && !snuff) return false;
+    }
+
+    const position = getObjectLocation(object, state);
+    const visible = object.where === 'minvent'
+        ? !!position && cansee(position.x, position.y) : !heroIsBlind(state);
+    if (visible) {
+        const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
+        if (candle || object.otyp === CANDELABRUM_OF_INVOCATION) {
+            const many = candle ? object.quan > 1 : object.spe > 1;
+            await publish(`${objectOwnershipPrefix(object, state, { capitalized: true })}${
+                candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
+        } else {
+            const plural = objectNameIsPlural(object, state);
+            await publish(`${ownedObjectName(object, state)} ${plural ? 'go' : 'goes'} out!`);
+        }
+    }
+    if (!endObjectBurn(object, state, state.moves ?? 0))
+        object.lamplit = false;
+    if (dunkedLantern) {
+        const age = object.age ?? 0;
+        object.age = age - (age > 200 ? 100 : Math.trunc(age / 2));
+    }
     return true;
 }
 

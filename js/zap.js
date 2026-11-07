@@ -2,7 +2,7 @@
 // C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), destroy_items(),
 // learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
 // zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
-import { finishBuriedRevival } from './do.js';
+import { finishBuriedRevival, landFloorObject } from './do.js';
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, } from './objclass.js';
 import { objectClassForType, objectMerge, objectMagic, objectCharged, objectDirection, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, TIN, BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING, objectPropertyName, } from './object_data.js';
 import { mimicHitMessage } from './mon.js';
@@ -19,7 +19,7 @@ import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom, currentAttribut
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
 import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, set_msg_dir, } from './pline.js';
 import { waterbodyName } from './pager.js';
-import { resetPick, changeDoorByMagic } from './lock.js';
+import { resetPick, changeDoorByMagic, changeBoxLockByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount, resistsBlnd } from './mondata.js';
 import { setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue, } from './trap.js';
@@ -38,7 +38,7 @@ import { buryFloorObjectsAt, formatDraftMessage, zapDigWithObject } from './dig.
 import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
-import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass, erosionMatters } from './objnam.js';
+import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass, erosionMatters, simpleArmorName } from './objnam.js';
 import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, placeObject, isContainer, remove_object, sweepFloorPile, } from './mkobj.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
@@ -79,7 +79,6 @@ import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponComb
 import { releaseObjectLeash } from './apply.js';
 import { vegetarianCorpse } from './food_traits.js';
 import { updateInventoryPresentation } from './invent.js';
-import { changeBoxLockByMagic } from './box_magic.js';
 import { shopkeeperName } from './shknam.js';
 import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
 import { setArtifactOrigin } from './artifact.js';
@@ -90,7 +89,7 @@ import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, In_mines, Luck, MOAT, M_AP_MONSTER, M
 import { unearthFloorObjectsAt } from './dig.js';
 import { canSenseMonster, canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, zapdir_to_glyph, TemporaryMapEffect } from './display.js';
 import { namelessMonsterName } from './do_name.js';
-import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance, simpleArmorName } from './do_wear.js';
+import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance } from './do_wear.js';
 import { finishMonsterEating } from './dogmove.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { encumber_msg } from './pickup.js';
@@ -106,7 +105,7 @@ import { mergeObjectStacks } from './invent.js';
 import { monsterSpellDeathReason } from './mcastu.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { heroHasRemovableSpeed, u_slow_down, expelHero, holdingMonsterName, } from './mhitu.js';
-import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid } from './mon.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid, shieldMonster } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
@@ -142,7 +141,6 @@ import { MONSTER_SIZE } from './monster_data.js';
 import { hurtleMonster, hitMonsterWithThrownObject } from './dothrow.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { setMimicAppearance } from './makemon.js';
-import { landFloorObject } from './floor_effects.js';
 import { monsterHasDrainResistance } from './mondata.js';
 import { objectUsesKnown } from './object_data.js';
 import { CORPSTAT_HISTORIC } from './const.js';
@@ -798,12 +796,6 @@ async function drainMonster(monster, attackLevel, state) {
         if (canSeeMonster(monster))
             await plineWithContinuation(`${monsterName(monster, { capitalized: true })} suddenly seems weaker!`);
     }
-}
-// C mon.c:shieldeff_mon()
-async function shieldMonster(monster, state) {
-    await shieldeff(monster.mx, monster.my, state);
-    if (cansee(monster.mx, monster.my))
-        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
 }
 // Part of C zap.c:bhitm(): the stone-to-flesh monster branch.
 // Also C mkobj.c:stone_object_type(): the mimicked-object type test is inlined here.

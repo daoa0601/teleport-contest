@@ -5,7 +5,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { prepareHeroBarehandContact } from '../js/uhitm.js';
 import { recalculateHeroPhysicalDamage } from '../js/uhitm.js';
 import { rhack } from '../js/cmd.js';
-import { specialContactDamage } from '../js/contact_damage.js';
+import { specialContactDamage } from '../js/weapon.js';
 import { A_STR, P_BARE_HANDED_COMBAT, P_BASIC, P_EXPERT, P_RIDING, P_UNSKILLED, W_ARM, W_ARMC, W_ARMG, W_ARMU, W_RINGL, W_RINGR, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

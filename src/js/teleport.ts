@@ -66,8 +66,7 @@ import type { MonsterCallLog, MonsterRelocation, MonsterTeleportTrapEvent } from
 import { publishMonsterYelp } from './sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { isHomeElemental } from './makemon.js';
-import { reviveCorpseImmediately } from './do.js';
-import { applyFloorEffects } from './floor_effects.js';
+import { reviveCorpseImmediately, applyFloorEffects } from './do.js';
 import { unlinkObject, placeObject, mksobj} from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { flush_screen } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';

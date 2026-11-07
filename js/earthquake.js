@@ -11,7 +11,7 @@ import { finishMonsterLiquidDeath, resolveMonsterLiquid, wakeMonster, finishHero
 import { heroLiquidEffects, loseHeroHp, roomsAt, finishDestinationSpotEffects } from './hack.js';
 import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
 import { remove_object, updateIceObjectTimersAt } from './mkobj.js';
-import { applyFloorEffects } from './floor_effects.js';
+import { applyFloorEffects } from './do.js';
 import { BOULDER } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { rnl, rnd, rn2 } from './rng.js';

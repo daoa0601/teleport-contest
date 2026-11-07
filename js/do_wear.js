@@ -14,16 +14,16 @@ import { ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL
 import { objectDelay, objectSkill, objectCharged, GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP, objectClassForType, objectPropertyName, a_ac, OBJ_NAME, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AKLYS, TOWEL, BLINDFOLD, BATTLE_AXE, OBJECT_NAMES, } from './object_data.js';
 import { game, requireLiveGame } from './gstate.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
-import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery } from './cmd.js';
+import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery, cmdq_pop, commandResultFailed } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects, finishHeroHelplessness } from './hack.js';
 import { stopHeroOccupation } from './allmain.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
-import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Is_waterlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, } from './const.js';
+import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Is_waterlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, CMDQ_KEY, } from './const.js';
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt, isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part, floatVsFlight } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
-import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters } from './objnam.js';
+import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
@@ -36,7 +36,7 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { yn_function } from './cmd.js';
 import { objectOwnershipPrefix } from './shk.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, isEyesOfTheOverworld, syncBlindness } from './senses.js';
-import { makeHallucinated, setSlipperyHands, showInvisibilityMessage, toggleBlindness } from './potion.js';
+import { makeHallucinated, setSlipperyHands, showInvisibilityMessage, toggleBlindness, setPropertyTimeout } from './potion.js';
 import { newsym, see_monsters, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, refreshInvisibleMonsters } from './display.js';
 import { objectResistsDestruction } from './zap.js';
 import { erodeObject, objectIsVulnerableToErosion, resolveImmediatePetrification, captureLevitationState, floatHeroUp, floatHeroDown, selfTouchPetrifyingWeapons, } from './trap.js';
@@ -51,7 +51,7 @@ import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttr
 import { encumber_msg } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName, objectMonsterName } from './do_name.js';
-import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
+import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty } from './properties.js';
 import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious, monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, heroResistsStoning, touchPetrifies, heroCanBeStrangled, } from './mondata.js';
 import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';
 import { experienceRankIndex } from './botl.js';
@@ -1185,22 +1185,6 @@ export function heroHasWaterWalking(state = game) {
     return !!(hero.waterWalking
         || boots?.otyp === WATER_WALKING_BOOTS);
 }
-// C hack.c:Known_wwalking().
-export function heroKnowsWaterWalking(state = game) {
-    const hero = state.u;
-    const boots = state?.uarmf || hero.uarmf;
-    const typeKnown = boots && objectTypeKnown(boots, state);
-    return !hero.usteed && boots?.otyp === WATER_WALKING_BOOTS && !!typeKnown;
-}
-// C hack.c:Known_lwalking().
-export function heroKnowsLavaWalking(state = game) {
-    if (!heroKnowsWaterWalking(state))
-        return false;
-    const hero = state.u;
-    const boots = state?.uarmf || hero.uarmf;
-    const fireResistant = hero.fireResistance;
-    return !!fireResistant && !!boots?.oerodeproof && !!boots.rknown;
-}
 // Part of C do_wear.c:Gloves_on()/Cloak_on()/Boots_on(): these callbacks
 // distinguish the physical worn property from the observable feedback
 // which identifies the shuffled object type.
@@ -1634,48 +1618,6 @@ export async function disintegrateWornArmor(armor, { state = game, publish = pli
     }
     await stopHeroOccupation(state, publish);
     return true;
-}
-// C objnam.c:suit_simple_name(), objnam.c:cloak_simple_name(),
-// objnam.c:helm_simple_name(), objnam.c:gloves_simple_name(),
-// objnam.c:boots_simple_name(), objnam.c:shield_simple_name(),
-// objnam.c:shirt_simple_name().
-export function simpleArmorName(armor, slot, state) {
-    const name = OBJ_NAME(armor.otyp);
-    if (!name)
-        throw new RangeError(`Missing name for armor type ${armor.otyp}`);
-    const appearance = OBJ_DESCR(armor.otyp, state)
-        || name;
-    const known = objectTypeKnown(armor, state);
-    switch (slot) {
-        case 'uarm':
-            if (name.endsWith('dragon scale mail'))
-                return 'dragon mail';
-            if (name.endsWith('dragon scales'))
-                return 'dragon scales';
-            if (name.endsWith(' mail'))
-                return 'mail';
-            return name.endsWith(' jacket') ? 'jacket' : 'suit';
-        case 'uarmc':
-            if (name === 'robe')
-                return 'robe';
-            if (name === 'mummy wrapping')
-                return 'wrapping';
-            if (name === 'alchemy smock')
-                return known && armor.dknown ? 'smock' : 'apron';
-            return 'cloak';
-        case 'uarmh': return objectIsHardHelmet(armor) ? 'helm' : 'hat';
-        case 'uarmu': return 'shirt';
-        case 'uarmg':
-            return armor.dknown && (known ? name : appearance).includes('gauntlets')
-                ? 'gauntlets' : 'gloves';
-        case 'uarmf':
-            return armor.dknown && (appearance.includes('shoes') || known && name.includes('shoes'))
-                ? 'shoes' : 'boots';
-        case 'uarms':
-            if (armor.otyp === SHIELD_OF_REFLECTION)
-                return armor.dknown ? 'silver shield' : 'smooth shield';
-            return 'shield';
-    }
 }
 // Part of C hack.h:ARM_BONUS(): the objects[].a_ac base.
 export function armorBaseBonus(otyp) {
@@ -2916,5 +2858,27 @@ export async function objectWearMessage(object, state = game) {
     const name = objectHasPersonalName(object, state) ? `the ${noun}` : withIndefiniteArticle(noun);
     const how = object.otyp === TOWEL ? ` around your ${body_part(HEAD, state)}` : '';
     return `You are now wearing ${name}${how}.`;
+}
+// C do_wear.c:remarm_swapwep(). The one cmdq_pop() — CQ_REPEAT during a
+// do-again replay, CQ_CANNED otherwise — must yield the '-' item-action
+// key (do_wear.c:3067-3080). Every other popped entry, or an empty queue,
+// fails ECMD_FAIL; rhack() then clears both queues for that result. The
+// success path resets a pending 'A', unwields uswapwep, and reports.
+const HANDS_ITEM_KEY = '-'.charCodeAt(0);
+// C do_wear.c:remarm_swapwep()
+export async function remarmSwapwep() {
+    const cmdq = cmdq_pop();
+    const key = cmdq?.typ === CMDQ_KEY ? cmdq.key : undefined;
+    if (key !== HANDS_ITEM_KEY || !game.uswapwep) {
+        commandResultFailed();
+        game.context.move = 0;
+        return;
+    }
+    resetBulkTakeoff();
+    const twoweap = game.u.twoweap;
+    await setSecondaryWeapon(null, game);
+    await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
+        : 'You no longer have a second weapon readied.');
+    game.context.move = 1;
 }
 //# sourceMappingURL=do_wear.js.map

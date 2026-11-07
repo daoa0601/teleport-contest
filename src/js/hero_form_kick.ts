@@ -1,6 +1,6 @@
 // Native dokick.c:kick_monster(): a form's kick slots replace ordinary kicking.
 import { M_ATTK_DEF_DIED, M_ATTK_MISS, Upolyd, W_ARMF } from './const.js';
-import { specialContactDamage } from './contact_damage.js';
+import { specialContactDamage } from './weapon.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss, applyHeroContactPassive, resolveHeroNaturalDamage } from './uhitm.js';

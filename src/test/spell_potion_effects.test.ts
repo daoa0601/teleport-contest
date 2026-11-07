@@ -20,8 +20,9 @@ import {
 } from '../js/object_data.js';
 import {
     levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty,
-    hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, setPropertyTimeout,
+    hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout,
 } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { heroDetectsMonsters } from '../js/senses.js';
 
 import { castSpell } from '../js/spell.js';

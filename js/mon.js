@@ -14,7 +14,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE, IN_SIGHT, MMOVE_DIED, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, STOMACH, LL_ACHIEVE, LL_KILLEDPET, LL_UMONST, } from './const.js';
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters, flashGlyphAt, transientMonsterGlyph, shieldeff } from './display.js';
 import { splitMonster } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
@@ -28,7 +28,6 @@ import { setMimicAppearance, growMonster, finishMonsterGrowth, makemonAt, newMon
 import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle, corpseName, makePlural } from './objnam.js';
 import { monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorph, dismountHero, placeMonsterOnMap } from './steed.js';
 import { thawObject } from './pickup.js';
-import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE, AD_DCAY, AD_DGST, AD_RUST, AT_BOOM, AT_ENGL, AT_GAZE } from './monster_attack_types.js';
 import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterInventory, armorThiefGone } from './steal.js';
 import { removeIntrinsicProperty } from './properties.js';
@@ -39,7 +38,7 @@ import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } f
 import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
-import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, pickFormFromClass, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
@@ -54,12 +53,12 @@ import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
-import { badRock, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects } from './hack.js';
+import { badRock, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects, monsterCannotSqueezeThrough } from './hack.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
-import { finishScheduledLevelChange } from './do.js';
+import { finishScheduledLevelChange, applyFloorEffects, landFloorObject } from './do.js';
 import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
 import { recordAchievement } from './insight.js';
 import { SHOP_TYPES } from './shknam.js';
@@ -99,7 +98,7 @@ import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { simpleObjectTypeName } from './objnam.js';
 import { RLOC_NONE, Is_astralevel, Is_waterlevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
-import { isHomeElemental } from './makemon.js';
+import { isHomeElemental, pickFormFromClass } from './makemon.js';
 import { AD_STCK, AT_HUGS } from './monster_attack_types.js';
 import { docrt } from './display.js';
 import { placeBallAndChain } from './ball.js';
@@ -944,18 +943,6 @@ export function monsterCarryAmount(monster, object, state = game, random = rn2) 
 // Part of C mon.c:can_carry(): the boolean form.
 export function monsterCanCarryObject(monster, object, state = game, random = rn2) {
     return monsterCarryAmount(monster, object, state, random) > 0;
-}
-// C hack.c:cant_squeeze_thru():
-function monsterCannotSqueezeThrough(monster, state) {
-    if (monsterPassesWalls(monster.mnum))
-        return false;
-    const flexible = (monsterIsAmorphous({ mnum: monster?.mnum }) || monsterIsSlithy(monster?.mnum)) ||
-        monsterIsWhirly(monster) ||
-        monsterIsNoncorporeal(monster) ||
-        monsterCanFog(monster, state);
-    if (monsterIsBig(monster.mnum) && !flexible)
-        return true;
-    return currentMonsterLoad(monster) > WT_TOOMUCH_DIAGONAL;
 }
 // C mon.c:mfndpos(). Scan x first, then y; finding the real hero updates
 // perception before later squares are classified against the apparent hero.
@@ -5175,5 +5162,37 @@ export function validVampireShiftForm(base, form) {
         && (form === PM_VAMPIRE_BAT
             || form === PM_FOG_CLOUD
             || (form === PM_WOLF && base !== PM_VAMPIRE));
+}
+// C mon.c:monnear(): whether a monster is near a position (two steps for
+// grid bugs).  The hero-side wrapper in dog.ts passes the hero's square.
+export function nearHero(monster, state) {
+    const dx = monster.mx - state.u.ux;
+    const dy = monster.my - state.u.uy;
+    const distance = dx * dx + dy * dy;
+    return distance < 3 && !(distance === 2 && monster.mnum === PM_GRID_BUG);
+}
+// C mon.c:flash_mon().
+export async function flashCreatedMonster(monster) {
+    let count = couldsee(monster.mx, monster.my) ? 8 : 4;
+    if (game.flags.sparkle === false)
+        count /= 2;
+    const row = game.viz_array?.[monster.my];
+    const saved = row?.[monster.mx];
+    if (!row || saved === undefined)
+        throw new Error('A created monster needs its visibility cell');
+    row[monster.mx] = saved | 3;
+    try {
+        await flashGlyphAt(monster.mx, monster.my, transientMonsterGlyph(monster), count);
+    }
+    finally {
+        row[monster.mx] = saved;
+        await newsym(monster.mx, monster.my);
+    }
+}
+// C mon.c:shieldeff_mon()
+export async function shieldMonster(monster, state) {
+    await shieldeff(monster.mx, monster.my, state);
+    if (cansee(monster.mx, monster.my))
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
 }
 //# sourceMappingURL=mon.js.map

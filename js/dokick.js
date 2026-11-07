@@ -12,15 +12,14 @@ import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto, finishHeroMonsterKill, finishHurtleMonsterDeath, } from './mon.js';
-import { woundHeroLegs, gotoLevel, scheduleLevelChange } from './do.js';
+import { woundHeroLegs, gotoLevel, scheduleLevelChange, applyFloorEffects } from './do.js';
 import { finishTeleportArrival, askTeleportDestination, relocateObjectRandomly, enexto, goodPosition, monsterTeleportRestricted, } from './teleport.js';
 import { applyHeroContactPassive, applyCaitiffPenalty, prepareAppliedWeaponAttack } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { deleteEngravingAt, wipeHeroEngraving, disturbGrave } from './engrave.js';
 import { displayColorName, displayLiquidName, monsterName, nameOrc } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
-import { heroHasMartialKick } from './kick_rules.js';
-import { useHeroSkill } from './weapon.js';
+import { useHeroSkill, specialContactDamage } from './weapon.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
@@ -36,16 +35,13 @@ import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
 import { bringLeashedFollowers } from './apply.js';
 import { displayMessageWindow } from './topl.js';
-import { canFallThrough } from './mklev.js';
 import { stairwayAt, stairway_find_from } from './stairs.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META, MONSTER_FLAGS2 } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './region.js';
-import { specialContactDamage } from './contact_damage.js';
 import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject, activateStatueTrapAt, triggerChestTrap, triggerBoobyTrap, fall_through, } from './trap.js';
 import { artifactById } from './artifact.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, inTown, heroGoldAmount, inventoryWeight } from './hack.js';
 import { breakChestLock, maybeResetPick } from './lock.js';
 import { breakFloorObject, hurtleHero, hitMonsterWithKickedObject } from './dothrow.js';
@@ -58,11 +54,18 @@ import { hasShopkeeperData } from './shop_types.js';
 import { hiddenGold } from './vault.js';
 import { finishMonsterEating } from './dogmove.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import { ceilingName, dungeonDepth, surfaceName } from './dungeon.js';
+import { ceilingName, dungeonDepth, surfaceName, canFallThrough } from './dungeon.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { shopkeeperName } from './shknam.js';
 import { objectResistsDestruction } from './zap.js';
 import { is_mercenary, likes_gold, monsterCanTeleport, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterIsBig, monsterIsClinger, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsSlithy, monsterIsThickSkinned, touchPetrifies, heroResistsStoning, } from './mondata.js';
+// C dokick.c:martial(): the macro combining martial_bonus(),
+// is_bigfoot(), and kicking boots.
+export function heroHasMartialKick(state = game) {
+    return state.urole?.key === 'monk' || state.urole?.key === 'samurai'
+        || state.u.umonnum === MONSTER_NAME.indexOf('sasquatch')
+        || (state.uarmf || state.u.uarmf)?.otyp === KICKING_BOOTS;
+}
 // C dokick.c:kick_ouch().
 async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');

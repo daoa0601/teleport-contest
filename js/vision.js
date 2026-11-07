@@ -13,6 +13,7 @@ import { objectsInTimerGraph } from './timeout.js';
 import { isMoatAt, isPoolAt } from './dbridge.js';
 import { isRoom } from './map_types.js';
 import { monsterPerceives } from './mondata.js';
+import { set_seenv } from './display.js';
 // Port only: local mimic-light predicate; appearanceBlocksLight carries the native macro citation.
 export function mimicBlocksLight(monster) {
     if (monster.mappearance === undefined)
@@ -105,18 +106,6 @@ function doLightSources(level, couldSee) {
         }
     }
 }
-// C ref: vision.c seenv_matrix
-const seenv_matrix = [
-    [SV2, SV1, SV0],
-    [SV3, SVALL, SV7],
-    [SV4, SV5, SV6],
-];
-// C display.c:unset_seenv(). The caller supplies the origin or an adjacent cell.
-export function unset_seenv(location, fromX, fromY, x, y) {
-    const dx = x - fromX;
-    const dy = fromY - y;
-    location.seenv &= ~seenVector(dx, dy);
-}
 // Circle data for range limits (C vision.c:27-70)
 const circle_data = [
     /*  0*/ 0,
@@ -164,16 +153,6 @@ function visionValue(values, index) {
     if (value === undefined)
         throw new RangeError(`Vision index ${index} is outside ${values.length} entries.`);
     return value;
-}
-// Part of C display.c:set_seenv(): select the viewing-angle bit for an adjacent direction.
-function seenVector(dx, dy) {
-    if (Math.abs(dx) > 1 || Math.abs(dy) > 1)
-        throw new RangeError(`Seen direction (${dx}, ${dy}) must be adjacent.`);
-    return seenv_matrix[dy < 0 ? 0 : dy > 0 ? 2 : 1][dx < 0 ? 0 : dx > 0 ? 2 : 1];
-}
-// C display.c:set_seenv(). Touch records the same angle as physical sight.
-export function set_seenv(location, fromX, fromY, x, y) {
-    location.seenv |= seenVector(Math.sign(x - fromX), Math.sign(fromY - y));
 }
 // Part of C vision.c:right_side(), vision.c:left_side(), vision.c:view_from(): mark a visible span or visit its cells.
 function mark_visible_range(output, row, left, right) {

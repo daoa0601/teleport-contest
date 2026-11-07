@@ -38,7 +38,7 @@ import { monsterEmitsLight, block_point, visionCellBlocksLight } from './vision.
 import { objectAtMonsterDescription } from './pager.js';
 import { depth as depth_of_level, level_difficulty, sameDungeonLevel, specialLevelAt } from './dungeon.js';
 import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth, removeMonsterFromGame } from './mon.js';
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { beginObjectBurn, stopObjectTimer } from './timeout.js';
 import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, addCreatedObjectToContainer, nextIdent, objectWeight, discardMonsterInventory } from './mkobj.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
@@ -275,6 +275,40 @@ export function mkclassAligned(monsterClass: number, spc = 0, atyp = A_NONE): nu
 // C makemon.c:mkclass(): thin wrapper delegating to mkclass_aligned.
 export function mkclass(monsterClass: number, spc = 0): number | null {
     return mkclassAligned(monsterClass, spc, A_NONE);
+}
+
+// C makemon.c:mkclass_poly(): choose by generation frequency, allowing
+// extinction but excluding genocide, placeholders, and specially
+// generated monsters.
+export function pickFormFromClass(monsterClass: number): number {
+    requirePlayingGame(game);
+    const S_LICH = 38;
+    const G_FREQ = 0x0007, G_HELL = 0x0400, G_NOHELL = 0x0800, G_UNIQ = 0x1000;
+    const first = MONSTER_SYMBOL.indexOf(monsterClass);
+    if (first < 0 || first >= SPECIAL_PM) return -1;
+    const members = [];
+    let mask = G_NOGEN | G_UNIQ;
+    const inHell = !!game.dungeons?.[game.u.uz.dnum]?.flags?.hellish;
+    if (rn2(9) || monsterClass === S_LICH)
+        mask |= inHell ? G_NOHELL : G_HELL;
+    let total = 0;
+    for (let mnum = 0; mnum < SPECIAL_PM; mnum++) {
+        if (MONSTER_SYMBOL[mnum] !== monsterClass
+            || ((MONSTER_GENO[mnum] ?? 0) & mask)
+            || ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD)
+            || PLACEHOLDER_MONSTERS.has(mnum)
+            || MONSTER_NAME[mnum] === 'mail daemon') continue;
+        const frequency = (MONSTER_GENO[mnum] ?? 0) & G_FREQ;
+        members.push({ mnum, frequency });
+        total += frequency;
+    }
+    if (!total) return -1;
+    let choice = rnd(total);
+    for (const { mnum, frequency } of members) {
+        choice -= frequency;
+        if (choice <= 0) return mnum;
+    }
+    throw new Error('Polymorph class selection exhausted its generation weights');
 }
 
 // C makemon.c:align_shift() caches Is_special(&u.uz) until svm.moves

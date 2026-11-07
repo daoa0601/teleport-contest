@@ -51,7 +51,7 @@ import {
 } from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
 import { quiverObjectClass } from './quiver.js';
-import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName } from './objnam.js';
+import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName, simpleArmorName } from './objnam.js';
 import {
     inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore,
     stack_object, fullyIdentifyObject, addInventoryItem,
@@ -64,7 +64,7 @@ import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLand
 import type { ProjectileFlight } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster , angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult, FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './mon.js';
-import { canLetGo, dropObjectAtHero } from './do.js';
+import { canLetGo, dropObjectAtHero, landObjectOnAltar, applyFloorEffects } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
 import type { RoleKey, RaceName } from './role.js';
 import { finishQuest, isQuestLeader } from './quest.js';
@@ -75,7 +75,6 @@ import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySup
 import type { PotionWakeMonster, PotionWakeNearby } from './potion.js';
 import { dist2 , possessiveName } from './hacklib.js';
 import { resolveGoldMonsterContact, shipObject } from './dokick.js';
-import { landObjectOnAltar } from './altar_object.js';
 import {
     captureHeroProjectileName, hitMonsterWithHeroObject, applyCaitiffPenalty, applyMonsterPassiveToObject,
 } from './uhitm.js';
@@ -102,7 +101,7 @@ import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterSentenceSubject } from './sounds.js';
 import { displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
-import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet, simpleArmorName } from './do_wear.js';
+import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet } from './do_wear.js';
 import { setMonsterMalign, makemonAt } from './makemon.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
@@ -134,7 +133,6 @@ import {
 import { detachHeroGold, heroGoldObject } from './sit.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
-import { applyFloorEffects } from './floor_effects.js';
 import type { HeroTrapOptions } from './trap.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { LevelChangeOptions } from './do.js';

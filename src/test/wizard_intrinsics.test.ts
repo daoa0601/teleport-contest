@@ -14,8 +14,8 @@ import {
     grantIntrinsicProperty,
     propertyIsActive,
     propertyTimeout,
-    setPropertyTimeout,
 } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

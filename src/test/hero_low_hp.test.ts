@@ -4,7 +4,7 @@ import { races } from '../js/role.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { loseHeroHp } from '../js/hack.js';

@@ -5,7 +5,8 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
-import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from '../js/properties.js';
+import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('wearing fumbling gauntlets starts a timeout and removing them ends their fumbling', async () => {

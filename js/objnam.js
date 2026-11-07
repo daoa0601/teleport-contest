@@ -23,7 +23,7 @@ import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutr
 import { isBimanualObject, is_boots, is_gloves, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, is_damageable, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
-import { isBeingTakenOff, pendingArmorAction, armorSimpleName } from './do_wear.js';
+import { isBeingTakenOff, pendingArmorAction, armorSimpleName, objectIsHardHelmet } from './do_wear.js';
 import { equipmentLightDescription } from './light.js';
 import { beginObjectBurn, scheduleObjectTimer, stopLevelTimer } from './timeout.js';
 import { OBJECT_CLASS_SYMBOLS, docrt, feel_newsym, canOverwriteTerrain } from './display.js';
@@ -35,7 +35,8 @@ import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
 import { iceDescriptionAt, waterbodyName } from './pager.js';
 import { deleteEngravingAt, make_grave } from './engrave.js';
 import { fireDamageChain, deleteTrap, trapName, waterDamageObject, objectIsVulnerableToErosion, resetUtrap, maketrap } from './trap.js';
-import { canFallThrough, countLevelFeatures } from './mklev.js';
+import { countLevelFeatures } from './mklev.js';
+import { canFallThrough } from './dungeon.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { propertyIsActive } from './properties.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
@@ -3050,6 +3051,57 @@ export async function paymentObjectDescription(object, quantity, { state = game,
             delete state.iflags.suppress_price;
         else
             state.iflags.suppress_price = suppress_price;
+    }
+}
+// C objnam.c:doname() displays charges for wands and charged non-weapon tools.
+export function objectUsesCharges(object) {
+    if (!object)
+        return false;
+    const oclass = object.oclass ?? objectClassForType(object.otyp);
+    return oclass === WAND_CLASS
+        || (oclass === TOOL_CLASS && !isWeaponTool(object)
+            && !!objectCharged(object.otyp));
+}
+// C objnam.c:suit_simple_name(), objnam.c:cloak_simple_name(),
+// objnam.c:helm_simple_name(), objnam.c:gloves_simple_name(),
+// objnam.c:boots_simple_name(), objnam.c:shield_simple_name(),
+// objnam.c:shirt_simple_name().
+export function simpleArmorName(armor, slot, state) {
+    const name = OBJ_NAME(armor.otyp);
+    if (!name)
+        throw new RangeError(`Missing name for armor type ${armor.otyp}`);
+    const appearance = OBJ_DESCR(armor.otyp, state)
+        || name;
+    const known = objectTypeKnown(armor, state);
+    switch (slot) {
+        case 'uarm':
+            if (name.endsWith('dragon scale mail'))
+                return 'dragon mail';
+            if (name.endsWith('dragon scales'))
+                return 'dragon scales';
+            if (name.endsWith(' mail'))
+                return 'mail';
+            return name.endsWith(' jacket') ? 'jacket' : 'suit';
+        case 'uarmc':
+            if (name === 'robe')
+                return 'robe';
+            if (name === 'mummy wrapping')
+                return 'wrapping';
+            if (name === 'alchemy smock')
+                return known && armor.dknown ? 'smock' : 'apron';
+            return 'cloak';
+        case 'uarmh': return objectIsHardHelmet(armor) ? 'helm' : 'hat';
+        case 'uarmu': return 'shirt';
+        case 'uarmg':
+            return armor.dknown && (known ? name : appearance).includes('gauntlets')
+                ? 'gauntlets' : 'gloves';
+        case 'uarmf':
+            return armor.dknown && (appearance.includes('shoes') || known && name.includes('shoes'))
+                ? 'shoes' : 'boots';
+        case 'uarms':
+            if (armor.otyp === objects.SHIELD_OF_REFLECTION)
+                return armor.dknown ? 'silver shield' : 'smooth shield';
+            return 'shield';
     }
 }
 // C objnam.c:doname_base(). Inventory and floor feedback share the same

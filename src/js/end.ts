@@ -11,10 +11,10 @@ import {
 } from './object_data.js';
 import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
-import { encumber_msg } from './pickup.js';
-import { cureHeroSickness } from './potion.js';
+import { encumber_msg, observeQuantumCat } from './pickup.js';
+import { cureHeroSickness, setPropertyTimeout } from './potion.js';
 import { parseDisclosureSettings } from './message_types.js';
-import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { removeIntrinsicProperty } from './properties.js';
 import { endmultishot } from './dothrow.js';
 import {
     BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum,
@@ -57,7 +57,7 @@ import {
     observeObjectForNaming,
 } from './objnam.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
-import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
+import { isQuantumBox } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './dungeon.js';
 import { hiddenGold, payVaultGuardOnExit } from './vault.js';
 import { init_uhunger } from './eat.js';

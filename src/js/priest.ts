@@ -13,26 +13,26 @@ import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName, hallucinatedDeityName } from './pray.js';
 
-import { nomul, checkSpecialRoom, roomForRoomno, roomsAt } from './hack.js';
+import { nomul, checkSpecialRoom, roomForRoomno, roomsAt, heroGoldAmount, monsterGoldAmount } from './hack.js';
 import { recordAchievement } from './insight.js';
 import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
-import { formatFeltMessage, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, recordGameLogEvent } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { exerciseAttribute } from './attrib.js';
+import { exerciseAttribute, adjustHeroAlignment } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';
 import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
 import { couldSeeFromHero, couldsee } from './vision.js';
-import { d, rn2 } from './rng.js';
+import { d, rn1, rn2 } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
-import { A_NEUTRAL, A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NOTONL, ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER, SPINE } from './const.js';
-import { ensureMinionData } from './minion.js';
+import { A_NEUTRAL, A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NOTONL, ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER, SPINE, LL_CONDUCT } from './const.js';
+import { ensureMinionData, offerGoldToMonster } from './minion.js';
 import { dist2, pointsOnline } from './hacklib.js';
 import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, wakeMonster } from './mon.js';
 import { breakMonsterBoulder, moveMonsterAggress } from './monmove.js';
 import { mattacku } from './mhitu.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
-import { shopkeeperInOwnShop } from './shk.js';
+import { shopkeeperInOwnShop, moneyToHero } from './shk.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsDisplaced } from './do_wear.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -48,7 +48,10 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, ROBE } from './object_data.js';
 import { xdir, ydir } from './mklev.js';
-import { is_minion, monsterPerceives, resistConflict } from './mondata.js';
+import { is_minion, monsterPerceives, resistConflict, monsterPossessive } from './mondata.js';
+import { currency } from './invent.js';
+import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, propertyTimeout } from './properties.js';
+import { setPropertyTimeout } from './potion.js';
 import { body_part } from './polyself.js';
 
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
@@ -144,6 +147,112 @@ export function forgetTempleEntry(priest: Monster): void {
     if (!priest.ispriest || !shrine)
         throw new Error('Temple entry memory requires a priest with shrine data.');
     shrine.intone_time = shrine.enter_time = shrine.peaceful_time = shrine.hostile_time = 0;
+}
+
+// C priest.c:priest_talk(). Payments and property changes follow the dialogue.
+export async function talkToPriest(priest: Monster, state: PlayingGameState): Promise<void> {
+    const coaligned = state.u.ualign.type === monsterAlignmentType(priest);
+    const strayed = state.u.ualign.record < 0;
+    const shrine = priest.epri ?? priest.mextra?.epri;
+    const conduct = state.u.uconduct ||= {};
+    const previousConsultations = conduct.gnostic ?? 0;
+    conduct.gnostic = previousConsultations + 1;
+    if (!previousConsultations)
+        recordGameLogEvent(`rejected atheism by consulting with ${monsterName(priest, { state })}`, { state, flags: LL_CONDUCT });
+
+    if (priest.mflee || !priest.ispriest && coaligned && strayed) {
+        await pline(`${monsterName(priest, { capitalized: true, state })} doesn't want anything to do with you!`);
+        priest.mpeaceful = 0;
+        return;
+    }
+    if (!priestIsInOwnTemple(priest, state) || !priestHasShrine(priest, state)
+        || !priest.mpeaceful || priest.msleeping || !priest.mcanmove) {
+        if (priest.msleeping || !priest.mcanmove) {
+            const name = monsterName(priest, { capitalized: true, state });
+            await pline(`${name} breaks out of ${monsterPossessive(priest, { state })} reverie!`);
+            priest.mfrozen = priest.msleeping = 0;
+            priest.mcanmove = 1;
+        }
+        priest.mpeaceful = 0;
+        const messages = [
+            "Thou wouldst have words, eh?  I'll give thee a word or two!",
+            'Talk?  Here is what I have to say!', 'Pilgrim, I would speak no longer with thee.',
+        ];
+        const message = messages[rn2(3)];
+        if (!message) throw new RangeError('Priest reply is outside its message table');
+        await speak(message);
+        return;
+    }
+    if (!heroGoldAmount(state)) {
+        if (coaligned && !strayed) {
+            const money = monsterGoldAmount(priest);
+            const name = () => monsterName(priest, { capitalized: true, state });
+            if (money > 0) {
+                const bits = heroIsHallucinating(state) ? currency(money, { state }) : money === 1 ? 'bit' : 'bits';
+                await pline(`${name()} gives you ${money === 1 ? 'one' : 'two'} ${bits} for an ale.`);
+                await moneyToHero(priest, Math.min(money, 2), state);
+            } else await pline(`${name()} preaches the virtues of poverty.`);
+            await exerciseAttribute(A_WIS, true, state);
+        } else await pline(`${monsterName(priest, { capitalized: true, state })} is not interested.`);
+        return;
+    }
+
+    const suggested = (state.u.ulevelpeak || 1) * rn1(101, 150 + (shrine?.cheapskate_count ?? 0) * 40);
+    const quantity = Math.max(1, Math.trunc(heroGoldAmount(state) / (suggested * 3)));
+    const prompt = `How much will you offer (suggested: ${suggested * quantity} or ${suggested * quantity * 2})?`;
+    const name = monsterName(priest, { capitalized: true, state });
+    await pline(`${name} asks you for a contribution for the temple${state.flags.debug ? ` (base ${suggested})` : ''}.`);
+    const offer = await offerGoldToMonster(priest, prompt, state);
+    if (!offer) {
+        await speak('Thou shalt regret thine action!');
+        if (coaligned) adjustHeroAlignment(-1, state);
+        if (shrine) shrine.cheapskate_count = (shrine.cheapskate_count ?? 0) + 1;
+    } else if (offer < suggested * quantity) {
+        if (heroGoldAmount(state) > offer * 2) {
+            await speak('Cheapskate.');
+            if (shrine) shrine.cheapskate_count = (shrine.cheapskate_count ?? 0) + 1;
+        } else {
+            await speak('I thank thee for thy contribution.');
+            await exerciseAttribute(A_WIS, true, state);
+        }
+    } else if (offer < suggested * quantity * 2) {
+        await speak('Thou art indeed a pious individual.');
+        if (heroGoldAmount(state) < offer * 2 && coaligned && state.u.ualign.record <= -4)
+            adjustHeroAlignment(1, state);
+        await speak('I bestow upon thee a blessing.');
+        const duration = Math.trunc(500 * offer / suggested);
+        setPropertyTimeout('clairvoyant', propertyTimeout('clairvoyant', state) + rn1(duration, duration), state);
+    } else if (offer < suggested * quantity * 3) {
+        let previousProtection = state.u.ublessed ?? 0;
+        if (!hasPermanentIntrinsicProperty('protection', state)) {
+            grantIntrinsicProperty('protection', 'outside', state);
+            previousProtection = -1;
+        }
+        for (let remaining = offer; remaining >= 2 * suggested; remaining -= 2 * suggested) {
+            const protection = state.u.ublessed ?? 0;
+            if (!protection) state.u.ublessed = rn1(3, 2);
+            else if (protection < 20 && (protection < 9 || !rn2(protection))) state.u.ublessed = protection + 1;
+        }
+        // C find_ac() applies the reward at the next command boundary,
+        // after the priest's reply has finished.
+        state._armorClassDirty = true;
+        await speak((state.u.ublessed ?? 0) > previousProtection
+            ? 'Thou hast been rewarded for thy devotion.' : 'Thy selfless generosity is deeply appreciated.');
+    } else {
+        await speak('Thy selfless generosity is deeply appreciated.');
+        if (heroGoldAmount(state) < offer * 2 && coaligned) {
+            if (strayed && state.moves - (state.u.ucleansed ?? 0) > 5000) {
+                state.u.ualign.record = 0;
+                state.u.ucleansed = state.moves;
+            } else adjustHeroAlignment(2, state);
+        }
+    }
+}
+
+// Part of C priest.c:priest_talk(): the quoted speech lines C routes
+// through verbalize.
+async function speak(text: string): Promise<void> {
+    await pline(`"${text}"`);
 }
 
 // C priest.c:mk_roamer()

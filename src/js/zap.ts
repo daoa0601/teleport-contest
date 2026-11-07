@@ -3,7 +3,7 @@
 // learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
 // zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
 
-import { finishBuriedRevival } from './do.js';
+import { finishBuriedRevival, landFloorObject } from './do.js';
 import {
     RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS,
     SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS,
@@ -54,7 +54,7 @@ import {
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { waterbodyName } from './pager.js';
-import { resetPick, changeDoorByMagic } from './lock.js';
+import { resetPick, changeDoorByMagic, changeBoxLockByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount, resistsBlnd } from './mondata.js';
 import {
@@ -78,7 +78,7 @@ import { buryFloorObjectsAt, formatDraftMessage, zapDigWithObject } from './dig.
 import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
-import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass, erosionMatters } from './objnam.js';
+import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass, erosionMatters, simpleArmorName } from './objnam.js';
 import {
     objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm,
     replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, placeObject,
@@ -114,6 +114,7 @@ import {
     changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance,
     checkMonsterGearNextTurn,
 } from './mon.js';
+
 import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, MonsterSelfTouchResult } from './mon.js';
 import {
     setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed,
@@ -143,7 +144,6 @@ import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponComb
 import { releaseObjectLeash } from './apply.js';
 import { vegetarianCorpse } from './food_traits.js';
 import { updateInventoryPresentation } from './invent.js';
-import { changeBoxLockByMagic } from './box_magic.js';
 import { shopkeeperName } from './shknam.js';
 import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
 import { setArtifactOrigin } from './artifact.js';
@@ -156,7 +156,7 @@ import type { MonsterAttack } from './data_types.js';
 import { unearthFloorObjectsAt } from './dig.js';
 import { canSenseMonster, canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, zapdir_to_glyph, TemporaryMapEffect } from './display.js';
 import { namelessMonsterName } from './do_name.js';
-import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance, simpleArmorName } from './do_wear.js';
+import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance } from './do_wear.js';
 import { finishMonsterEating } from './dogmove.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { encumber_msg } from './pickup.js';
@@ -175,10 +175,10 @@ import { putMonsterToSleep } from './mhitm.js';
 import { heroHasRemovableSpeed, u_slow_down,
     expelHero, holdingMonsterName,
 } from './mhitu.js';
-import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid } from './mon.js';
-import type { MonsterLiquidDeathResult } from './mon.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid, shieldMonster } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
+import type { MonsterLiquidDeathResult } from './mon.js';
 import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterTypeName } from './monster_data.js';
@@ -213,7 +213,6 @@ import { MONSTER_SIZE } from './monster_data.js';
 import { hurtleMonster, hitMonsterWithThrownObject } from './dothrow.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { setMimicAppearance } from './makemon.js';
-import { landFloorObject } from './floor_effects.js';
 import { monsterHasDrainResistance } from './mondata.js';
 import { objectUsesKnown } from './object_data.js';
 import { CORPSTAT_HISTORIC } from './const.js';
@@ -1287,13 +1286,6 @@ async function drainMonster(monster: Monster, attackLevel: number, state: Playin
         monster.m_lev--;
         if (canSeeMonster(monster)) await plineWithContinuation(`${monsterName(monster, { capitalized: true })} suddenly seems weaker!`);
     }
-}
-
-// C mon.c:shieldeff_mon()
-async function shieldMonster(monster: Monster, state: PlayingGameState) {
-    await shieldeff(monster.mx, monster.my, state);
-    if (cansee(monster.mx, monster.my))
-        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
 }
 
 // Part of C zap.c:bhitm(): the stone-to-flesh monster branch.

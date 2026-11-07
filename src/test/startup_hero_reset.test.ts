@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { currentConductLines } from '../js/insight.js';
-import { propertyIsActive, setPropertyTimeout } from '../js/properties.js';
+import { propertyIsActive } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { heroIsHallucinating } from '../js/senses.js';
 import { uInitMisc } from '../js/u_init.js';
 import { prepareHeroStartup } from './support/startup.js';

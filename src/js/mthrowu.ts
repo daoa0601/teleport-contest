@@ -44,7 +44,6 @@ import {
     canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph,
     TemporaryMapEffect,
 } from './display.js';
-import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
 import { holdAnotherObject, stack_object } from './invent.js';
@@ -73,7 +72,7 @@ import {
 import { monsterSentenceSubject } from './sounds.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
-import { dropObjectAtHero } from './do.js';
+import { dropObjectAtHero, applyFloorEffects, landFloorObject } from './do.js';
 import {
     makePlural, withIndefiniteArticle, verbForSubject, definiteName, definiteObjectAction, killerObjectName,
     objectCombatName, objectHasPersonalName, observeObjectForNaming, simpleObjectName,

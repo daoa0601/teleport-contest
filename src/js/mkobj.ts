@@ -39,7 +39,8 @@ import { objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse,
     isReviver, zombieForm,
 } from './mon.js';
-import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
+import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { attachFigurineTimer } from './timeout.js';
 import { isIceAt } from './dbridge.js';
 import { block_point, cansee, vision_note_blocker_change } from './vision.js';
 import { newsym } from './display.js';
@@ -66,14 +67,13 @@ import { attachEggHatchTimer } from './timeout.js';
 import { assignCandyWrapper } from './read.js';
 import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks, confersLuck } from './invent.js';
 import { setMoreLuck } from './attrib.js';
-import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously } from './do.js';
+import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously, landObjectOnAltar } from './do.js';
 import { addShopObjectToBill, billForObject, costlyAdjacent, costlySpot, currentShopResident, deleteObject, findObjectOwner, objectIsCandle, objectPriceAdjustment, reconcileObjectDeletionBill, removeObjectAndContentsFromBill, retainBillObject, settleGlobAbsorptionBilling, shopResident, splitObjectBill, visitBilledShopkeepers } from './shk.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nearCapacity } from './hack.js';
 import { encumber_msg } from './pickup.js';
 import { holdAnotherObject } from './invent.js';
 import { hitFloorWithObject } from './dothrow.js';
-import { landObjectOnAltar } from './altar_object.js';
 import { removeObjectFromMonsterInventory } from './worn.js';
 import {
     formatHeardMessage, formatSeenMessage, plineWithContinuation, plineWithContinuation as pline,
@@ -85,7 +85,7 @@ import { requireShopGame } from './shop_types.js';
 import type { ShopTransaction } from './shop_types.js';
 import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
-import { dropCursedAlternateWeapon } from './wield.js';
+import { dropCursedSecondaryWeapon } from './wield.js';
 import { is_male, is_neuter, monsterIsFemale, monsterIsHuman, monsterIsRider } from './mondata.js';
 
 const G_NOGEN = 0x0200;
@@ -159,7 +159,7 @@ export async function curseObject(
     const oldLight = objectLightRadius(object, state);
     const changed = curseObjectState(object, state);
     if (object && object === (state.uswapwep || state.u.uswapwep) && state.u.twoweap)
-        await dropCursedAlternateWeapon(object, state);
+        await dropCursedSecondaryWeapon(object, state);
     if (object && changed && !wasCursed && object.oclass === SPBOOK_CLASS)
         await bookCursed(object, { state });
     if (object?.lamplit) await adjustObjectLightAfterBlessing(object, oldLight, state);

@@ -38,7 +38,8 @@ import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC 
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor, } from './worn.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, monsterStagger, isHeroDefender, resistsBlnd, } from './mondata.js';
 import { teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, teleds, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds, teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth, } from './teleport.js';
-import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
+import { countLevelFeatures, makemonNear } from './mklev.js';
+import { canFallThrough } from './dungeon.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName, } from './do_name.js';
 import { munstone } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, removeHeroEquipment } from './worn.js';
@@ -47,10 +48,9 @@ import { loseHeroExperience, addExperience, checkExperienceLevel } from './exper
 import { billDummyObject, mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable, placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack, updateIceObjectTimersAt, } from './mkobj.js';
 import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt, liquidForHole, } from './dig.js';
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
-import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid } from './do.js';
-import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, setPropertyTimeout, } from './properties.js';
+import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, applyFloorEffects } from './do.js';
+import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
-import { applyFloorEffects } from './floor_effects.js';
 import { heroHasArtifactDefense, artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
@@ -58,13 +58,13 @@ import { displayMessageWindow } from './topl.js';
 import { abusePet, tameMonster, makePetWary } from './dog.js';
 import { heroCanReachFloor, deleteEngravingAt } from './engrave.js';
 import { beginBallAndChainMove, finishBallAndChainMove, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { checkHeroLeashes, bringLeashedFollowers, releaseAllMonsterLeashes } from './apply.js';
+import { checkHeroLeashes, bringLeashedFollowers, releaseAllMonsterLeashes, splashLitObject } from './apply.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic, applyMonsterPassiveToObject } from './uhitm.js';
 import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster, makeHallucinated, makeStunned, } from './potion.js';
+import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster, makeHallucinated, makeStunned, setPropertyTimeout, } from './potion.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';
@@ -1507,77 +1507,6 @@ async function trapeffectRustTrap(mtmp, trap, { state = game, movement, roll = r
 // Port only: test membership in the runtime hero inventory array.
 function carriedByHero(object, state) {
     return (state.inventory || []).includes(object);
-}
-// Part of C apply.c:splash_lit(): decide whether the hero's lantern is submerged.
-function heroLanternIsDunked(state) {
-    if (!isPoolAt(state.u.ux, state.u.uy, state))
-        return false;
-    return Is_waterlevel(state.u.uz)
-        || !(state.u?.levitating || state.levitating
-            || heroIsFlying(state) || heroHasWaterWalking(state));
-}
-// C apply.c:splash_lit()
-// Also C apply.c:snuff_lit(): snuff the splashed light source.
-// Each message precedes end_burn, so the darkened view waits for the next
-// flush instead of preceding the message.
-export async function splashLitObject(object, publish, state = game) {
-    if (!object?.lamplit)
-        return false;
-    // snuff_lit() handles flames and lanterns, not magical light sources.
-    if (![OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN, POT_OIL,
-        TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION].includes(object.otyp))
-        return false;
-    const carried = carriedByHero(object, state);
-    let dunkedLantern = false;
-    if (object.otyp === BRASS_LANTERN) {
-        let visible = false, audible = false, snuff = true;
-        if (carried) {
-            visible = !heroIsBlind(state);
-            audible = !heroIsDeaf(state);
-            dunkedLantern = heroLanternIsDunked(state);
-            snuff = false;
-        }
-        else if (object.where === 'minvent' && object.ocarry
-            && monsterIsHumanoid(object.ocarry.mnum)) {
-            const carrier = object.ocarry;
-            const position = getObjectLocation(object, state);
-            visible = !!position && cansee(position.x, position.y);
-            audible = couldsee(carrier.mx, carrier.my)
-                && (carrier.mx - state.u.ux) ** 2 + (carrier.my - state.u.uy) ** 2 < 25;
-            dunkedLantern = isPoolAt(carrier.mx, carrier.my, state)
-                && (!monsterFliesOrFloats(carrier) || Is_waterlevel(state.u.uz));
-            snuff = false;
-        }
-        if (visible || audible) {
-            const action = audible && visible
-                ? 'crackles and flickers'
-                : audible ? 'crackles' : 'flickers';
-            await publish(`${ownedObjectName(object, state)} ${action}.`);
-        }
-        if (!dunkedLantern && !snuff)
-            return false;
-    }
-    const position = getObjectLocation(object, state);
-    const visible = object.where === 'minvent'
-        ? !!position && cansee(position.x, position.y) : !heroIsBlind(state);
-    if (visible) {
-        const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
-        if (candle || object.otyp === CANDELABRUM_OF_INVOCATION) {
-            const many = candle ? object.quan > 1 : object.spe > 1;
-            await publish(`${objectOwnershipPrefix(object, state, { capitalized: true })}${candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
-        }
-        else {
-            const plural = objectNameIsPlural(object, state);
-            await publish(`${ownedObjectName(object, state)} ${plural ? 'go' : 'goes'} out!`);
-        }
-    }
-    if (!endObjectBurn(object, state, state.moves ?? 0))
-        object.lamplit = false;
-    if (dunkedLantern) {
-        const age = object.age ?? 0;
-        object.age = age - (age > 200 ? 100 : Math.trunc(age / 2));
-    }
-    return true;
 }
 // Port only: resolve a hero equipment slot across runtime aliases.
 function heroObject(slot) {

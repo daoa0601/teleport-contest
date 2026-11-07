@@ -104,7 +104,7 @@ import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fig
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero } from './mhitu.js';
+import { advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero, monsterHasAvailableDistanceAttack } from './mhitu.js';
 import { swingMonsterWeapon } from './mhitm.js';
 import type { ExpelHeroOptions } from './mhitu.js';
 import { isPick, isPolearm, is_cloak, is_gloves, is_shirt, is_launcher, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
@@ -120,7 +120,7 @@ import { shopkeeperName } from './shknam.js';
 
 import { heroGoldObject } from './sit.js';
 import { canLetGo } from './do.js';
-import { canFallThrough } from './mklev.js';
+import { canFallThrough } from './dungeon.js';
 import { getTrack, hasTrack } from './track.js';
 import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween } from './worm.js';
@@ -917,22 +917,6 @@ function monsterHasLauncherAndAmmo(monster: Monster) {
     const inventory = monster.minvent || monster.inventory || [];
     return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
 }
-
-// C mhitu.c:ranged_attk_available(): an unresisted spit, breath, gaze, or
-// magic bolt.
-// mhitu.c:ranged_attk_available() excludes effects the hero has resisted.
-// Also C mondata.c:get_atkdam_type(): inlined here for random breath attacks.
-function monsterHasAvailableDistanceAttack(monster: Monster, random: RandomBelow) {
-    for (const [method, damage] of MONSTER_ATTACKS[monster.mnum] ?? []) {
-        if (![AT_SPIT, AT_BREA, AT_MAGC, AT_GAZE].includes(method)) continue;
-        const damageType = damage === AD_RBRE ? AD_MAGM + random(8) : damage;
-        if (damageType >= 0 && !((monster.seen_resistance ?? 0) & seenResistanceForDamage(damageType)))
-            return true;
-    }
-    return false;
-}
-
-
 // Part of C monmove.c:m_everyturn_effect(): the fog cloud's gas region.
 async function createFogEveryturnRegion(
     state: PlayingGameState,

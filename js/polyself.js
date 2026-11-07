@@ -14,7 +14,7 @@ import { cansee, couldsee, monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone, heroCanUseTwoWeapons, stopTwoWeaponCombat } from './wield.js';
 import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, ARM, EYE, FINGER, FINGERTIP, FOOT, G_GENOD, HAIR, HAND, HANDED, HEAD, I_SPECIAL, In_endgame, LEG, M_AP_NOTHING, M_AP_OBJECT, NECK, NO_PART, NOSE, STR18, STR19, TOE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, STRANGE_OBJECT, LL_CONDUCT, LL_MINORAC, } from './const.js';
-import { corpseName, verbForSubject, makePlural, withIndefiniteArticle, minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
+import { corpseName, verbForSubject, makePlural, withIndefiniteArticle, minimalObjectName, ownedObjectName, simpleObjectName, simpleArmorName } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { finishHeroDeath } from './end.js';
@@ -27,7 +27,7 @@ import { character_race, races } from './role.js';
 import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware, heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js';
-import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName, isBeingTakenOff, removeEyewear } from './do_wear.js';
+import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, isBeingTakenOff, removeEyewear } from './do_wear.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv, finishHeroHelplessness } from './hack.js';
 import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { displayLiquidName, monsterName } from './do_name.js';
@@ -66,7 +66,7 @@ import { dropInventoryObjectAtHero } from './do.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './read.js';
 import { handleRidingAfterFormChange } from './steed.js';
-import { golemHitPoints, isHomeElemental } from './makemon.js';
+import { golemHitPoints, isHomeElemental, pickFormFromClass } from './makemon.js';
 import { expelHero } from './mhitu.js';
 const G_FREQ = 0x0007;
 const G_NOGEN = 0x0200;
@@ -1547,41 +1547,6 @@ async function chooseHeroForm({ forced, dragon, lycanthrope }) {
     } while (--tries > 0);
     await plineWithContinuation("That's enough tries!");
     return { mnum, random: true };
-}
-// C makemon.c:mkclass_poly(): choose by generation frequency, allowing
-// extinction but excluding genocide, placeholders, and specially
-// generated monsters.
-export function pickFormFromClass(monsterClass) {
-    requirePlayingGame(game);
-    const first = MONSTER_SYMBOL.indexOf(monsterClass);
-    if (first < 0 || first >= SPECIAL_PM)
-        return -1;
-    const members = [];
-    let mask = G_NOGEN | G_UNIQ;
-    const inHell = !!game.dungeons?.[game.u.uz.dnum]?.flags?.hellish;
-    if (rn2(9) || monsterClass === S_LICH)
-        mask |= inHell ? G_NOHELL : G_HELL;
-    let total = 0;
-    for (let mnum = 0; mnum < SPECIAL_PM; mnum++) {
-        if (MONSTER_SYMBOL[mnum] !== monsterClass
-            || ((MONSTER_GENO[mnum] ?? 0) & mask)
-            || ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD)
-            || PLACEHOLDER_MONSTERS.has(mnum)
-            || MONSTER_NAME[mnum] === 'mail daemon')
-            continue;
-        const frequency = (MONSTER_GENO[mnum] ?? 0) & G_FREQ;
-        members.push({ mnum, frequency });
-        total += frequency;
-    }
-    if (!total)
-        return -1;
-    let choice = rnd(total);
-    for (const { mnum, frequency } of members) {
-        choice -= frequency;
-        if (choice <= 0)
-            return mnum;
-    }
-    throw new Error('Polymorph class selection exhausted its generation weights');
 }
 // Part of C polyself.c:polyself(): the form's name and article in the
 // refusal.

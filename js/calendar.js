@@ -7,16 +7,6 @@ export function recorderLocalHour(datetime) {
         timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit',
     }).format(new Date(epoch * 1000)));
 }
-// C mhitu.c:ld() uses calendar.c:yyyymmdd(0), after localtime()
-// normalizes the fixed clock's inherited daylight saving offset.
-export function recorderIsLeapDay(datetime) {
-    const epoch = recorderLocalEpochSeconds(datetime) || Date.now() / 1000;
-    const parts = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York', month: '2-digit', day: '2-digit',
-    }).formatToParts(new Date(epoch * 1000));
-    return parts.some(part => part.type === 'month' && part.value === '02')
-        && parts.some(part => part.type === 'day' && part.value === '29');
-}
 // C calendar.c:getlt(): localtime(getnow()).  getnow() inherits the recording
 // clock's New York DST offset, while localtime() applies the fixed date's own offset,
 // so a time near midnight can fall on the neighboring calendar day.

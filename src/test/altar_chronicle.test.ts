@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { ALTAR } from '../js/const.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { landObjectOnAltar } from '../js/altar_object.js';
+import { landObjectOnAltar } from '../js/do.js';
 import { DAGGER, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { W_ARMC } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { MUMMY_WRAPPING } from '../js/object_data.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 

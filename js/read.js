@@ -19,7 +19,8 @@ import { formatFeltMessage, formatHeardMessage, pline as syncPline, plineWithCon
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
 import { impossible } from './diagnostics.js';
 import { lightDamage } from './zap.js';
-import { lightHitsGremlin, objectLightRadius, snuffLightSource } from './light.js';
+import { objectLightRadius, snuffLightSource } from './light.js';
+import { lightHitsGremlin } from './uhitm.js';
 import { snuffLitObject } from './apply.js';
 import { impactArtifactLight } from './potion.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -62,11 +63,11 @@ import { recordLiteracy } from './literacy.js';
 import { promptYesNo } from './query.js';
 import { getLine } from './windows.js';
 import { readOrdinaryObject } from './readable_objects.js';
-import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome, } from './mon.js';
+import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome, flashCreatedMonster, } from './mon.js';
 import { monsterResistsEffect } from './zap.js';
 import { initializePet, tameMonster } from './dog.js';
 import { freeHeroFromBuriedBall } from './dig.js';
-import { landFloorObject } from './floor_effects.js';
+import { landFloorObject } from './do.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { makemonNear } from './mklev.js';
@@ -2389,24 +2390,6 @@ function canHideCreatedMonster(monster) {
     return monsterIsHider(monster.mnum) && symbol !== 13
         || monsterHidesUnder(monster.mnum) && !!game.level?.objects[monster.mx]?.[monster.my]?.length
         || symbol === 57 && isPoolAt(monster.mx, monster.my);
-}
-// C mon.c:flash_mon().
-async function flashCreatedMonster(monster) {
-    let count = couldsee(monster.mx, monster.my) ? 8 : 4;
-    if (game.flags.sparkle === false)
-        count /= 2;
-    const row = game.viz_array?.[monster.my];
-    const saved = row?.[monster.mx];
-    if (!row || saved === undefined)
-        throw new Error('A created monster needs its visibility cell');
-    row[monster.mx] = saved | 3;
-    try {
-        await flashGlyphAt(monster.mx, monster.my, transientMonsterGlyph(monster), count);
-    }
-    finally {
-        row[monster.mx] = saved;
-        await newsym(monster.mx, monster.my);
-    }
 }
 // ---------------------------------------------------------------------------
 // Readable garment and wrapper text. C refs: read.c tshirt_text(),

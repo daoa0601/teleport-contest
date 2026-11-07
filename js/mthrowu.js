@@ -25,7 +25,6 @@ import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOO
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph, TemporaryMapEffect, } from './display.js';
-import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
 import { holdAnotherObject, stack_object } from './invent.js';
@@ -46,7 +45,7 @@ import { monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monst
 import { monsterSentenceSubject } from './sounds.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
-import { dropObjectAtHero } from './do.js';
+import { dropObjectAtHero, applyFloorEffects, landFloorObject } from './do.js';
 import { makePlural, withIndefiniteArticle, verbForSubject, definiteName, definiteObjectAction, killerObjectName, objectCombatName, objectHasPersonalName, observeObjectForNaming, simpleObjectName, } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';

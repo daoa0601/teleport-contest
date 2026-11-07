@@ -3,7 +3,7 @@ import test from 'node:test';
 import { flushPendingTopline } from '../js/topl.js';
 import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { setPropertyTimeout } from '../js/potion.js';
 import { scheduleObjectTimer } from '../js/timeout.js';
 import { EGG } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

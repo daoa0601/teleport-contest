@@ -1,39 +1,13 @@
-// figurine_timer.js — C carry_obj_effects()/attach_fig_transform_timeout().
-import { G_GENOD, OBJECT_TIMER_KIND } from './const.js';
+// figurine_timer.js — the cursed-carried-figurine branch of C invent.c
+// carry_obj_effects(); attach_fig_transform_timeout() lives in timeout.ts
+// with its timeout.c owner.
 import { game } from './gstate.js';
-import { FIGURINE } from './object_data.js';
-import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
-import { rnd } from './rng.js';
-import { monsterYoungerForm } from './mondata.js';
-// Part of C mon.c:dead_species(): the egg=true genocided-species gate the
-// figurine attach sites apply; the shared port is eggSpeciesIsDead() in mon.ts.
-function figurineSpeciesGenocided(figurine, state) {
-    const mnum = figurine?.corpsenm;
-    if (typeof mnum !== 'number' || !Number.isInteger(mnum) || mnum < 0)
-        return true;
-    const younger = monsterYoungerForm(mnum);
-    return !!((state.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD)
-        || !!((state.mvitals?.[younger]?.mvflags ?? 0) & G_GENOD);
-}
+import { attachFigurineTimer } from './timeout.js';
 // Part of C invent.c:carry_obj_effects(): the cursed-carried-figurine branch
 // that attaches the transform timer.
 export function attachCursedFigurineTimer(figurine, state = game) {
     if (!figurine?.cursed)
         return null;
     return attachFigurineTimer(figurine, state);
-}
-// C timeout.c:attach_fig_transform_timeout().
-// Also C invent.c:carry_obj_effects(), mkobj.c:set_corpsenm(): the
-// corpsenm/dead_species gates live at those C call sites.
-// set_corpsenm() can also attach a timer to an uncursed carried figurine.
-export function attachFigurineTimer(figurine, state = game) {
-    if (!figurine || figurine.otyp !== FIGURINE
-        || figurineSpeciesGenocided(figurine, state))
-        return null;
-    // Native attachment removes an earlier deadline before choosing the new
-    // one.  scheduleObjectTimer() also defends against duplicates, but this
-    // preserves the source mutation boundary around the RNG draw.
-    stopObjectTimer(figurine, OBJECT_TIMER_KIND.FIG_TRANSFORM);
-    return scheduleObjectTimer(figurine, OBJECT_TIMER_KIND.FIG_TRANSFORM, (state.moves ?? 0) + rnd(9000) + 200, state);
 }
 //# sourceMappingURL=figurine_timer.js.map

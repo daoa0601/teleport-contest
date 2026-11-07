@@ -69,6 +69,7 @@ src/js/persistent_state_validation.ts	save.c
 src/js/pickup.ts	pickup.c
 src/js/pickup_location.ts	hack.c
 src/js/pline.ts	pline.c
+src/js/polyself.ts	polyself.c
 src/js/potion.ts	potion.c
 src/js/pray.ts	pray.c
 src/js/priest.ts	priest.c

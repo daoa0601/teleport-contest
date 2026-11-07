@@ -72,7 +72,7 @@ import { relocateMonsterTo, enexto } from './teleport.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { PropertyName } from './property_types.js';
 import { roomForRoomno } from './hack.js';
-import { likes_gold, likes_gems, likes_objs, likes_magic, monsterHidesUnder, monsterIsUndead } from './mondata.js';
+import { likes_gold, likes_gems, likes_objs, likes_magic, monsterHidesUnder, monsterIsUndead, giveHeroResistancesToMonster } from './mondata.js';
 
 // C bones.c:can_make_bones()/no_bones_level(). Dungeon topology owns which
 // levels can leave bones; the depth trial still runs in wizard and explore mode.
@@ -380,16 +380,6 @@ function sanitizeMonsterName(monster: Monster): void {
     setMonsterGivenName(monster, sanitized);
 }
 
-const HERO_RESISTANCES = Object.freeze([
-    ['fireResistance', 0x01],
-    ['coldResistance', 0x02],
-    ['sleepResistance', 0x04],
-    ['disintegrationResistance', 0x08],
-    ['shockResistance', 0x10],
-    ['poisonResistance', 0x20],
-    ['acidResistance', 0x40],
-    ['stoneResistance', 0x80],
-] satisfies Array<readonly [PropertyName, number]>);
 
 // Part of C bones.c:savebones(): the EBONES role index lookup.
 function roleIndex(state: GameState): number {
@@ -402,16 +392,6 @@ function raceIndex(state: GameState): number {
     const index = races.findIndex(race =>
         race.noun === state.urace?.noun);
     return index < 0 ? 0 : index;
-}
-
-// C mondata.c:give_u_to_m_resistances()
-export function giveHeroResistancesToMonster(monster: Monster, state: GameState = game): number {
-    let inherited = 0;
-    for (const [property, bit] of HERO_RESISTANCES) {
-        if (hasPermanentIntrinsicProperty(property, state)) inherited |= bit;
-    }
-    monster.mintrinsics = (monster.mintrinsics ?? 0) | inherited;
-    return inherited;
 }
 
 // Part of C bones.c:savebones(): the new monster block — level, HP,
