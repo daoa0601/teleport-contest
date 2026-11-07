@@ -5,8 +5,7 @@ import {
     W_ARMH, W_ARMS, W_ARMU, W_BALL, W_CHAIN, W_QUIVER, W_RINGL, W_RINGR,
     W_SWAPWEP, W_TOOL, W_WEP,
 } from './const.js';
-import { impossible } from './diagnostics.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, impossible } from './pline.js';
 import { carryObjEffects } from './figurine_timer.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';

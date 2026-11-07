@@ -5,8 +5,7 @@ import { BOULDER, CORPSE, SACK } from '../js/object_data.js';
 import { objectTimers, scheduleObjectTimer, stopObjectTimer } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { disturbBuriedZombies, impactDisturbsZombies } from '../js/hack.js';
-import { addBuriedObject } from '../js/dig.js';
-import { placeCreatedObject } from '../js/mkobj.js';
+import { placeCreatedObject, addBuriedObject } from '../js/mkobj.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function buriedZombieAt(x, y, deadline, state = game) {

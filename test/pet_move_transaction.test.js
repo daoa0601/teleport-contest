@@ -3,11 +3,11 @@ import test from 'node:test';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { DAGGER, TRIPE_RATION } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 // C dogmove.c:dog_move() runs dog_invent() inside the pet's own movement
 // transaction: the visible "picks up" line is awaited there, and
 // obj_extract_self() plus mpickobj() follow it before the move returns.

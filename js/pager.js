@@ -1,17 +1,17 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/do_screen_description()/checkfile()/dohelp().
 import { ROCK_CLASS } from './objclass.js';
-import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED, def_warnsyms, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LAVAPOOL, LAVAWALL, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, MOAT, PIT, POOL, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WATER, WEB, } from './const.js';
+import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED, def_warnsyms, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LAVAPOOL, LAVAWALL, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, MOAT, PIT, POOL, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WATER, WEB, } from './const.js';
 import { canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol, swallowSymbolAppearance, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange, OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS, } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';
-import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { makePlural, simpleObjectName, withIndefiniteArticle, singularObjectName } from './objnam.js';
 import { visibleRegionAt } from './region.js';
 import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.js';
-import { surfaceName } from './dungeon.js';
+import { surfaceName, In_hell } from './dungeon.js';
 import { trapName } from './trap.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, promptDirection, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
@@ -29,7 +29,7 @@ import { warningSymbols } from './message_types.js';
 import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { CmapSymbol, cmapToGlyph, glyphIsCmapC, glyphIsCmapZap, glyphToWarning } from './glyph_numbers.js';
-import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonsterName } from './do_name.js';
+import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { dist2, visibleCommandKey } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';

@@ -48,7 +48,6 @@ import { japaneseItemName } from './objnam.js';
 import { setHeroSpecies } from './polyself.js';
 import { seeMonsterCloseup } from './mon.js';
 import { setMonsterGivenName } from './do_name.js';
-import { impossible } from './diagnostics.js';
 import { setMonsterMalign } from './makemon.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { enexto_gpflags } from './teleport.js';
@@ -80,6 +79,7 @@ import { newMonsterHitPoints } from './makemon.js';
 import { invWeight } from './hack.js';
 import { objectWeight, nextIdent} from './mkobj.js';
 import { initAttributes, varyInitAttr } from './attrib.js';
+import { impossible } from './pline.js';
 
 interface InitialInventoryEntry {
     typ: number;

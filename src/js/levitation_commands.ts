@@ -1,14 +1,15 @@
-// C ref: do.c dodown() levitation branch (1146-1202) and fountain.c
-// floating_above().  The '>' command owner calls this before its stair
-// lookup and maps spentTurn to context.move.
+// C ref: do.c dodown() levitation branch (1146-1202).  The '>' command
+// owner calls this before its stair lookup and maps spentTurn to
+// context.move.
 
-import { I_SPECIAL, Is_airlevel, Is_waterlevel, TT_INFLOOR, TT_LAVA, TIMEOUT, W_ARTI } from './const.js';
+import { I_SPECIAL, Is_airlevel, Is_waterlevel, TIMEOUT, W_ARTI } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isPoolAt } from './dbridge.js';
 import type { GameState } from './game_state.js';
 import type { Stairway } from './map_types.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
+import { floatingAbove } from './fountain.js';
 import { glyphAt } from './display.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource, propertyIsBlocked } from './properties.js';
 import { artifactById } from './artifact.js';
@@ -54,20 +55,6 @@ function refreshLevitationArtifactCooldowns(state: GameState): void {
     }
 }
 
-// C fountain.c:21-32 floating_above().  Stuck in the floor overrides the
-// usual wording and always names the surface.
-export async function floatingAbove(
-    what: string, state: GameState = game, publish: MessagePublisher = plineWithContinuation,
-): Promise<void> {
-    const hero = state.u;
-    if (hero.utrap && (hero.utraptype === TT_INFLOOR
-        || hero.utraptype === TT_LAVA)) {
-        await publish(`You are trapped in the ${
-            surfaceName(hero.ux, hero.uy, state)}.`);
-        return;
-    }
-    await publish(`You are floating high above the ${what}.`);
-}
 
 // Part of C do.c:dodown(): the whole '>' levitation-descent block —
 // float_down(I_SPECIAL | TIMEOUT, W_ARTI), the latent-levitation note,

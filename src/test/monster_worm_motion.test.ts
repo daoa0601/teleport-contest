@@ -10,10 +10,10 @@ import { adjustMonsterSpeed } from '../js/worn.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { teleds } from '../js/teleport.js';
 import { monsterAtPosition } from '../js/steed.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 async function headOnlyWorm() {
     await freshObjectRoom({ left: 8, right: 20, top: 10, bottom: 10,

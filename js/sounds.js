@@ -12,11 +12,11 @@ import { plineWithContinuation, plineWithContinuation as pline, publishHeardMess
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { nomul, heroGoldAmount, roomForRoomno, stopRun } from './hack.js';
 import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
-import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
-import { monsterName, novelTitle, randomDisplayMonsterName } from './do_name.js';
-import { monsterPossessive, sameMonsterRace, carnivorous, herbivorous, is_dwarf, is_elf, is_gnome, is_lord, is_mercenary, is_minion, is_prince, likes_magic, monsterHasEyes, monsterIsAnimal, monsterIsFlyer, monsterIsHelpless, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, monsterPerceives, } from './mondata.js';
+import { monsterName, novelTitle, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
+import { monsterPossessive, sameMonsterRace, carnivorous, herbivorous, is_dwarf, is_elf, is_gnome, is_lord, is_mercenary, is_minion, is_prince, likes_magic, monsterHasEyes, monsterIsAnimal, monsterIsFlyer, monsterIsHelpless, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, monsterPerceives, monsterIsEel, } from './mondata.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { STATUE, SPE_NOVEL, GOLD_PIECE } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
@@ -540,6 +540,25 @@ export async function begForFood(monster, state) {
             capitalized: true, state,
         })} seems famished.`);
     }
+}
+// C sounds.c:cry_sound(): the hatchling cry used by the mommy/daddy message.
+export function hatchlingCry(mnum) {
+    const sound = MONSTER_SOUND[mnum] ?? 0;
+    if (sound === 9)
+        return 'hiss';
+    if (sound === 3 || sound === 5)
+        return 'growl';
+    if (sound === 8)
+        return 'chirp';
+    if (sound === 10)
+        return 'buzz';
+    if (sound === 7)
+        return 'screech';
+    if (sound === 11)
+        return 'grunt';
+    if (sound === 21)
+        return 'mumble';
+    return monsterIsEel(mnum) ? 'gurgle' : 'chitter';
 }
 // C sounds.c:domonnoise(). A true result spends a chat turn even if quiet.
 export async function publishMonsterNoise(monster, state = game) {

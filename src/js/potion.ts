@@ -44,10 +44,9 @@ import {
     POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT,
     FACE, HEAD, HAND, LEG, LL_CONDUCT,
 } from './const.js';
-import { impossible } from './diagnostics.js';
 import type { PropertyObject, WornPropertySlot, PropertyName, PropertyState } from './property_types.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
-import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
+import { dipFountain, dipSink, drinkFountain, drinkSink, washHands, floatingAbove } from './fountain.js';
 import type { DipTarget } from './fountain.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible, grantHeroSeeInvisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
@@ -90,7 +89,6 @@ import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestructi
 import { enlightenment } from './insight.js';
 import type { InventoryClassification } from './invent.js';
 import { gotoLevel, doup } from './do.js';
-import { floatingAbove } from './levitation_commands.js';
 import { objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';
@@ -99,7 +97,7 @@ import type { MapLocation, Position, Stairway } from './map_types.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { makemonNear } from './mklev.js';
 import { cloneHeroMonsterForm } from './mhitu.js';
-import { mkobj, bcsign, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack, adjustObjectLightAfterBlessing } from './mkobj.js';
+import { mkobj, bcsign, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack, adjustObjectLightAfterBlessing, chargeAlteredUnpaidObject } from './mkobj.js';
 import type { MonsterFormChange, MonsterSelfTouchResult } from './mon.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount, monsterStagger } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
@@ -116,13 +114,23 @@ import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';
 import {
-    formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, recordGameLogEvent,
+
+    formatFeltMessage,
+
+    plineWithContinuation,
+
+    plineWithContinuation as pline,
+
+    recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty } from './properties.js';
 import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
-import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, updateUnpaidObjectPrice, deleteObject } from './shk.js';
+import { chargeUnpaidObjectAsDebt, chargeUnpaidUsage, updateUnpaidObjectPrice, deleteObject } from './shk.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { heroIsPetrifying } from './stoning.js';
 import { waterbodyName } from './pager.js';

@@ -5,7 +5,6 @@ import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { monsterAtPosition } from '../js/steed.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
@@ -13,6 +12,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { runMonsterAction } from '../js/mon.js';
 async function conflictRoom(attackerSpecies, defenderSpecies = 'orc') {
     await freshObjectRoom({ flags: { verbose: true }, hero: { ulevel: 30 } });
     requirePlayingGame(game);

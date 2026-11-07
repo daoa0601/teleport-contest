@@ -23,7 +23,7 @@ import type {
 } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import {
     canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, monsterVisible, newsym,
 } from './display.js';
@@ -56,7 +56,7 @@ import {
     prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject,
     turnGolemToStone,
 } from './mon.js';
-import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName } from './do_name.js';
+import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, dist2, distmin } from './hacklib.js';
 import {
     exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt,

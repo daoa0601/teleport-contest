@@ -6,13 +6,12 @@ import { encumber_msg } from './pickup.js';
 import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, LEG, HAND } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import type { DirectionVector } from './const.js';
-import { impossible } from './diagnostics.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster, MonsterPosition } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, impossible } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { levitationAtWill, refreshMovementProperties, propertyIsActive } from './properties.js';
 import { canSpotMonster, newsym } from './display.js';
@@ -20,7 +19,7 @@ import { finishMonsterKilled,
     finishHeroMonsterKill,
 } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { releaseMonsterLeash } from './apply.js';
 import { BOULDER, SADDLE, } from './object_data.js';
@@ -28,7 +27,7 @@ import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject, freeInventoryObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './worn.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
-import { displayLiquidName, monsterName, monsterReflexiveAction } from './do_name.js';
+import { displayLiquidName, monsterName, monsterReflexiveAction, placementMonsterName, monsterTypeName } from './do_name.js';
 import {
     monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger, monsterIsFlyer,
     monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks, needspick, tunnels, cant_drown,
@@ -1020,18 +1019,6 @@ export async function placeMonsterOnMap(monster: Monster, x: number, y: number, 
     placeMonsterAt(monster, x, y, state);
 }
 
-// C do_name.c:minimal_monnam()
-// C minimal_monnam(): diagnostics describe the real species and attitude,
-// independently of the hero's sight, hallucination, or the monster's name.
-function placementMonsterName(monster: Monster, checkLocation: boolean, state: GameState): string {
-    if (checkLocation && monster.mnum === MONSTER_NAME.indexOf('long worm') && monster.mx
-        && state.level && monsterAtPosition(state.level, monster.mx, monster.my, state) !== monster)
-        return `${monsterTypeName(MONSTER_NAME.indexOf('long worm tail'), !!monster.female)} <${monster.mx},${monster.my}>`;
-    const attitude = monster.mtame ? 'tame ' : monster.mpeaceful ? 'peaceful ' : '';
-    const shape = monster.cham !== undefined && monster.cham !== NON_PM
-        ? `{${monsterTypeName(monster.cham, !!monster.female)}}` : '';
-    return `${attitude}${monsterTypeName(monster.mnum, !!monster.female)} <${monster.mx},${monster.my}>${shape}`;
-}
 
 // Part of C steed.c:place_monster(): commit coordinates, occupancy and floor state.
 // Commit a map-slot assignment. The monster chain retains an overwritten

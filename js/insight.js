@@ -18,15 +18,15 @@ import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { expiredFatally } from './timeout.js';
 import { gameLogEvents, pline, recordGameLogEvent } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWindow, ATR_NONE, showInventoryWindow } from './windows.js';
-import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
+import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
 import { fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL, } from './object_data.js';
 import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponDescription, weaponSkillType, } from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, ordinalSuffix, upstart } from './hacklib.js';
-import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL } from './monster_data.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings, heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying, heroMonsterForm, heroPassesWalls, body_part, mbodypart, heroSpecies } from './polyself.js';
 import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';
@@ -54,7 +54,7 @@ import { rankOf, roleSwitch } from './botl.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsPetrifying } from './stoning.js';
-import { depth, endgameLevelName, levelHasCeiling, surfaceName, ceilingName } from './dungeon.js';
+import { depth, endgameLevelName, levelHasCeiling, surfaceName, ceilingName, In_quest } from './dungeon.js';
 import { is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal, monsterIsClinger, monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterHasEyes } from './mondata.js';
 // Part of C hack.h:plur(): local singular/plural picker (the shared port
 // is plur() in end.ts).

@@ -61,7 +61,7 @@ import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js'
 import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, isBeingDonned, removeEyewear } from './do_wear.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv, finishHeroHelplessness } from './hack.js';
 import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { newuhs } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling, surfaceName } from './dungeon.js';
@@ -83,9 +83,37 @@ import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import {
-    FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL,
-    MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME,
-    S_GHOST, SPECIAL_PM, monsterTypeName,
+
+    FLAMING_SPECIES,
+
+    MONSTER_ATTACKS,
+
+    MONSTER_EXPERIENCE_META,
+
+    MONSTER_FLAGS2,
+
+    MONSTER_GENO,
+
+    MONSTER_LEVEL,
+
+    MONSTER_MOVE,
+
+    MONSTER_NAME,
+
+    MONSTER_RESISTS,
+
+    MONSTER_SIZE,
+
+    MONSTER_SOUND,
+
+    MONSTER_SYMBOL,
+
+    PM_GREEN_SLIME,
+
+    S_GHOST,
+
+    SPECIAL_PM,
+
 } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters, set_mimic_blocking } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';

@@ -7,12 +7,12 @@ import { NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { LEASH, RIN_CONFLICT } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 void test('a pet driven by Conflict breaks its leash and attacks the hero\'s current body', async () => {
     await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10, flags: { verbose: false } });

@@ -2114,7 +2114,7 @@ src/js/read.ts	randomlyBlessOrCurse	rn2	"[""2""]"	constant
 src/js/read.ts	randomlyBlessOrCurse	rn2	"[""2""]"	constant
 src/js/read.ts	scrollEffect	rn2	"[""73""]"	constant
 src/js/read.ts	scrollEffect	rnd	"[""4""]"	constant
-src/js/selvar.ts	random_wdir	rn2	"[""4""]"	constant
+src/js/sp_lev.ts	random_wdir	rn2	"[""4""]"	constant
 src/js/selvar.ts	selection_do_gradient	rn2	"[""spread""]"	constant
 src/js/selvar.ts	selection_do_randline	rn2	"[""roughness""]"	guarded
 src/js/selvar.ts	selection_do_randline	rn2	"[""roughness""]"	guarded

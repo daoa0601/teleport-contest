@@ -16,7 +16,7 @@ import { noticeAllMonsters } from './hack.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { objectLightRadius } from './light.js';
+import { objectLightRadius, doLightSources } from './light.js';
 import { objectsInTimerGraph } from './timeout.js';
 import { isMoatAt, isPoolAt } from './dbridge.js';
 import type { GameMap } from './game.js';
@@ -59,76 +59,8 @@ export function monsterEmitsLight(mnum: number | undefined): boolean {
         || LIGHT_EMITTING_MONSTERS.has(mnum);
 }
 
-// Port only: derive moving light sources from live monsters and objects instead of a native light list.
-function mobileLightSources(level: GameMap): (Position & { range: number })[] {
-    const monsters = [...(level?.monsters || [])];
-    const sources = monsters.filter(monster =>
-        !monster.dead && !monster.lightRemoved && !monster.mburied
-        && monster.mx > 0 && monsterEmitsLight(monster.mnum))
-        .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
-    if (game.u.formLightRange)
-        sources.push({ x: game.u.ux, y: game.u.uy, range: game.u.formLightRange });
-    const addObjectLight = (object: GameObject, x: number, y: number): void => {
-        const range = objectLightRadius(object);
-        if (range) sources.push({ x, y, range });
-    };
-    for (let x = 1; x < COLNO; x++)
-        for (let y = 0; y < ROWNO; y++)
-            for (const object of level?.objects?.[x]?.[y] || [])
-                addObjectLight(object, x, y);
-    for (const object of game.inventory || [])
-        addObjectLight(object, game.u.ux, game.u.uy);
-    for (const monster of monsters) {
-        if (monster.dead || monster.mx < 1) continue;
-        for (const object of monster.minvent || monster.inventory || [])
-            addObjectLight(object, monster.mx, monster.my);
-    }
-
-    sources.push(...(game._transientLights || []));
-    return sources;
-}
-
-// C light.c:any_light_source(). The monster pass must request a refresh even
-// when the hero stays still: a monster can move its own light or a lit object.
-export function hasLightSources(): boolean {
-    // Sources in containers, underground, or in transit still exist even
-    // when get_obj_location()/get_mon_location() cannot expose their light.
-    return !!game._transientLights?.length
-        || !!game.u.formLightRange
-        || [...(game.level?.monsters ?? []), ...(game._migratingMonsters ?? [])]
-            .some(monster => !monster.dead && !monster.lightRemoved && monsterEmitsLight(monster.mnum))
-        || objectsInTimerGraph(game).some(object => objectLightRadius(object) > 0);
-}
-
-// C light.c:do_light_sources()
-function doLightSources(level: GameMap, couldSee: Uint8Array[]): void {
-    let atHeroRange = 0;
-    for (const source of mobileLightSources(level)) {
-        const atHero = source.x === game.u.ux && source.y === game.u.uy;
-        if (atHero) {
-            if (atHeroRange >= source.range) continue;
-            atHeroRange = source.range;
-        }
-        const limits = visionValue(circle_start, source.range);
-        for (let y = Math.max(0, source.y - source.range);
-            y <= Math.min(ROWNO - 1, source.y + source.range); y++) {
-            const offset = visionValue(circle_data, limits + Math.abs(y - source.y));
-            for (let x = Math.max(1, source.x - offset);
-                x <= Math.min(COLNO - 1, source.x + offset); x++) {
-                if (atHero ? ((couldSee[y]?.[x] ?? 0) & COULD_SEE)
-                    : ((source.x === x && source.y === y)
-                        || clearPath(source.x, source.y, x, y))) {
-                    const row = visionRow(couldSee, y);
-                    row[x] = visionValue(row, x) | TEMP_LIT;
-                }
-            }
-        }
-    }
-}
-
-
 // Circle data for range limits (C vision.c:27-70)
-const circle_data = [
+export const circle_data = [
     /*  0*/ 0,
     /*  1*/ 1, 1,
     /*  3*/ 2, 2, 1,
@@ -147,7 +79,7 @@ const circle_data = [
     /*120*/ 15, 15, 15, 15, 14, 14, 14, 13, 13, 12, 11, 10, 9, 8, 6, 3,
     /*136*/ 16,
 ];
-const circle_start = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120];
+export const circle_start = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120];
 
 // Vision state arrays
 const viz_clear = Array.from({ length: ROWNO }, () => new Int8Array(COLNO));
@@ -184,7 +116,7 @@ interface VisionScan {
 // Port only: validate a row in the dense vision tables.
 // Dense vision tables have fixed native dimensions. A missing entry is a
 // broken scan boundary, so report it instead of treating it as a dark cell.
-function visionRow<Row extends VisionRow>(rows: readonly Row[], row: number): Row {
+export function visionRow<Row extends VisionRow>(rows: readonly Row[], row: number): Row {
     const value = rows[row];
     if (value === undefined)
         throw new RangeError(`Vision row ${row} is outside ${rows.length} rows.`);
@@ -192,7 +124,7 @@ function visionRow<Row extends VisionRow>(rows: readonly Row[], row: number): Ro
 }
 
 // Port only: validate a numeric vision-table index.
-function visionValue(values: ArrayLike<number>, index: number): number {
+export function visionValue(values: ArrayLike<number>, index: number): number {
     const value = values[index];
     if (value === undefined)
         throw new RangeError(`Vision index ${index} is outside ${values.length} entries.`);

@@ -7,7 +7,6 @@ import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, LEASH, ROCK } from '../js/object_data.js';
 import { applyPetHunger } from '../js/dogmove.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
@@ -16,6 +15,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 async function pet(species = 'little dog', x = 12, y = 10) {
     const monster = await createMonsterAt(species, x, y, NO_MINVENT);
     initializePet(monster);

@@ -35,23 +35,133 @@ import { explode } from './explode.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove, heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 
 import {
-    A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, CORR, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD,
-    G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
-    In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Is_waterlevel, Luck, M_SEEN_FIRE,
+
+    A_CON,
+
+    A_STR,
+
+    A_WIS,
+
+    ACCESSIBLE,
+
+    COLNO,
+
+    CORR,
+
+    D_CLOSED,
+
+    D_LOCKED,
+
+    DOOR,
+
+    EXPL_FIERY,
+
+    G_EXTINCT,
+
+    G_GENOD,
+
+    G_NOCORPSE,
+
+    G_GONE,
+
+    GETOBJ_DOWNPLAY,
+
+    GETOBJ_EXCLUDE,
+
+    GETOBJ_EXCLUDE_SELECTABLE,
+
+    GETOBJ_SUGGEST,
+
+    In_endgame,
+
+    IS_AIR,
+
+    IS_OBSTRUCTED,
+
+    Is_earthlevel,
+
+    Is_rogue_level,
+
+    Is_waterlevel,
+
+    Luck,
+
+    M_SEEN_FIRE,
+
     MM_EDOG,
-    MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT,
-    ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR,
-    HAND, HEAD, LEG, STOMACH, LL_CONDUCT, LL_GENOCIDE,
+
+    MM_FEMALE,
+
+    MM_MALE,
+
+    MM_MINVIS,
+
+    MM_NOEXCLAM,
+
+    MM_NOMSG,
+
+    NO_MINVENT,
+
+    PLNMSG_TOWER_OF_FLAME,
+
+    POLY_REVERT,
+
+    ROWNO,
+
+    SDOOR,
+
+    SPE_LIM,
+
+    TT_BURIEDBALL,
+
+    Upolyd,
+
+    W_ARMH,
+
+    W_ART,
+
+    W_ARTI,
+
+    W_BALL,
+
+    W_CHAIN,
+
+    WT_IRON_BALL_INCR,
+
+    HAND,
+
+    HEAD,
+
+    LEG,
+
+    STOMACH,
+
+    LL_CONDUCT,
+
+    LL_GENOCIDE,
+
 } from './const.js';
 import { canSpotMonster, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
 import { isok } from './cmd.js';
 import {
-    formatFeltMessage, formatHeardMessage, pline as syncPline, plineWithContinuation,
-    plineWithContinuation as pline, recordGameLogEvent,
+
+    formatFeltMessage,
+
+    formatHeardMessage,
+
+    pline as syncPline,
+
+    plineWithContinuation,
+
+    plineWithContinuation as pline,
+
+    recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
-import { impossible } from './diagnostics.js';
 import { lightDamage } from './zap.js';
 import { objectLightRadius, snuffLightSource } from './light.js';
 import { lightHitsGremlin } from './uhitm.js';
@@ -66,7 +176,7 @@ import { sokobanGuilt } from './trap.js';
 import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription, chooseInventoryObject } from './invent.js';
 import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
 import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity, roomForRoomno, maybeHalfPhysicalDamage } from './hack.js';
-import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition, monsterHasMapPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
 import { artifactEmitsLight } from './artifact.js';
@@ -74,13 +184,13 @@ import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, owne
 import type { ObjectInscriptionView } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { tryCallObjectType } from './do.js';
-import { bcsign, blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj } from './mkobj.js';
+import { bcsign, blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj, chargeAlteredUnpaidObject } from './mkobj.js';
 import { askTeleportDestination, levelTeleport, teleportHero } from './teleport.js';
 import { d, rn2, rn1, rnd } from './rng.js';
 import { wipeoutText } from './engrave.js';
 import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, SHIRT_MESSAGES } from './readable_object_text.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { chargeAlteredUnpaidObject, deleteObject, updateUnpaidObjectPrice } from './shk.js';
+import { deleteObject, updateUnpaidObjectPrice } from './shk.js';
 import { dropCursedSecondaryWeapon, chwepon, objectEnchantment, setWeaponEnchantment } from './wield.js';
 import { cansee, couldsee, clearAreaCells, vision_recalc } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
@@ -92,7 +202,7 @@ import { createPoisonGasCloud } from './region.js';
 import { burnAwayHeroSlime, endObjectBurn } from './timeout.js';
 import { loseHeroSpellMemory, studyBook } from './spell.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { ceilingName, levelHasCeiling } from './dungeon.js';
+import { ceilingName, levelHasCeiling, In_quest } from './dungeon.js';
 import {
     MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
     nameToMonster, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,
@@ -119,7 +229,7 @@ import type { Position } from './map_types.js';
 import { freeHeroFromBuriedBall } from './dig.js';
 import { landFloorObject } from './do.js';
 import { possessiveName, upstart } from './hacklib.js';
-import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { makemonNear } from './mklev.js';
 import { greatestErosion, isWeaponTool } from './object_properties.js';
 import { questMonsterSound } from './role_monsters.js';
@@ -1177,24 +1287,6 @@ export async function removeCurseEffect({
     return changed;
 }
 
-// C sit.c:316 calls seffects() with a zeroobj spell source on the stack. It
-// has no inventory identity or creation effects, but still passes through
-// seffects' Wisdom gain. throne.c's confused blessed remove curse and
-// trap.c's magic trap use the same entry.
-export async function applyRemoveCurseSpell({
-    state = game, blessed = false, cursed = false,
-}: Pick<RemoveCurseOptions, 'state' | 'blessed' | 'cursed'> = {}): Promise<ScrollEffectResult> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    await exerciseScrollWisdom(SPE_REMOVE_CURSE, state);
-    await removeCurseEffect({
-        source: { otyp: SPE_REMOVE_CURSE, blessed, cursed },
-        state,
-        publish: plineWithContinuation,
-    });
-    return { known: false, consumed: false, heroDied: !!state.program_state.gameover };
-}
-
 // C read.c:maybe_tame().
 async function maybeTame(monster: Monster, source: GameObject, state: PlayingGameState): Promise<number> {
     const wasTame = monster.mtame ?? 0;
@@ -1649,7 +1741,7 @@ export async function applyScrollEffects(source: GameObject, {
 }
 
 // Part of C read.c:seffects(): the magic-source Wisdom exercise.
-async function exerciseScrollWisdom(otyp: number, state: PlayingGameState): Promise<void> {
+export async function exerciseScrollWisdom(otyp: number, state: PlayingGameState): Promise<void> {
     if (objectMagic(otyp)) await exerciseAttribute(A_WIS, true, state);
 }
 

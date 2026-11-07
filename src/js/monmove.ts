@@ -36,7 +36,7 @@ import {
 } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig, switchHeroTerrain } from './hack.js';
 import type { Monster } from './monster_types.js';
-import { impossible, panic } from './diagnostics.js';
+import { panic } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position, MapLocation, Trap } from './map_types.js';
@@ -51,7 +51,7 @@ import { watchDigging, digMonsterTunnel, diggingTimeToHole, buryObject } from '.
 import { heroIsHallucinating, heroIsDeaf, heroIsUnaware } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasHalfSpellDamage } from './zap.js';
-import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName  } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
@@ -87,7 +87,17 @@ import { dropMonsterObject } from './steal.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
 import {
-    formatHeardMessage, formatSeenMessage, plineWithContinuation, publishHeardMessage,
+
+    formatHeardMessage,
+
+    formatSeenMessage,
+
+    plineWithContinuation,
+
+    publishHeardMessage,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroSpecies, heroFormSticks, dragonFormForArmor, heroHasProtectionFromShapeChangers } from './polyself.js';
@@ -102,7 +112,7 @@ import {
 import { movePet, monsterCouldReachItem, finishMonsterEating } from './dogmove.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fightNearbyMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
-import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
+import { attackHeroWithPolearm, monsterHasLauncherAndAmmo, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero, monsterHasAvailableDistanceAttack } from './mhitu.js';
 import { swingMonsterWeapon } from './mhitm.js';
@@ -113,7 +123,7 @@ import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced } from './do_wear.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject } from './do_name.js';
+import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject, monsterTypeName } from './do_name.js';
 import { dist2, distmin } from './hacklib.js';
 
 import { shopkeeperName } from './shknam.js';
@@ -909,14 +919,6 @@ export async function readyMonsterDiggingWeapon(
         : false;
 }
 
-// C mthrowu.c:m_has_launcher_and_ammo(): a wielded launcher with matching
-// ammo.
-function monsterHasLauncherAndAmmo(monster: Monster) {
-    const launcher = monsterWieldedWeapon(monster);
-    if (!launcher || !is_launcher(launcher)) return false;
-    const inventory = monster.minvent || monster.inventory || [];
-    return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
-}
 // Part of C monmove.c:m_everyturn_effect(): the fog cloud's gas region.
 async function createFogEveryturnRegion(
     state: PlayingGameState,
@@ -3041,98 +3043,6 @@ export async function moveMonsterAfterTrap(
             dochugContext,
         );
     return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
-}
-
-// C mon.c:movemon_singlemon(): one monster's scheduled turn in the movemon
-// pass.
-export async function runMonsterAction(
-    monster: Monster,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-    rollDice: RollDice = d,
-    rollOne: RollOne = rnd,
-): Promise<MonsterAction> {
-    const calls = DISCARDED_CALL_LOG;
-    // C mon.c:movemon_singlemon() debits movement before restrap().
-    // These early returns belong only to is_hider() (M1_HIDE): a cobra
-    // with M1_CONCEAL remains active after hiding beneath an object and
-    // can spend another movement ration in this same movemon() pass.
-    const restrapped = await attemptMonsterRestrap(monster, state, { random, calls });
-    const isHider = !!(monsterIsHider(monster?.mnum));
-    if (
-        isHider &&
-        (restrapped ||
-            M_AP_TYPE(monster) === M_AP_FURNITURE ||
-            M_AP_TYPE(monster) === M_AP_OBJECT ||
-            monster.mundetected)
-    ) {
-        return {
-            monster,
-            calls,
-            movement: {
-                oldx: monster.mx,
-                oldy: monster.my,
-                x: monster.mx,
-                y: monster.my,
-                moved: false,
-                hidden: true,
-            },
-        };
-    }
-    // Eels get one pre-dochug opportunity to hide again.  A stranded eel
-    // still owns the 1-in-4 probe, but hideunder() fails on dry terrain.
-    const eel = monsterIsEel(monster.mnum);
-    const nextToHero =
-        distmin(monster.mx, monster.my, state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my) <=
-        1;
-    if (
-        eel &&
-        !monster.mundetected &&
-        (monster.mflee || !nextToHero) &&
-        !canSeeMonster(monster) &&
-        recordRandom(random, calls, 4) === 0 &&
-        await hideMonsterUnder(monster, state)
-    ) {
-        return {
-            monster,
-            calls,
-            movement: {
-                oldx: monster.mx,
-                oldy: monster.my,
-                x: monster.mx,
-                y: monster.my,
-                moved: false,
-                hidden: true,
-            },
-        };
-    }
-    // C movemon_singlemon(): a successful fightm bypasses dochug entirely.
-    // m_canseeu uses hero invisibility and underwater state, not monster eyes.
-    const inSight =
-        !state?.viz_array || !!((state.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
-    const heroInvisible = heroIsInvisible(state);
-    const perceivesInvisible = monsterPerceives(monster.mnum);
-    if (
-        heroHasConflict(state) &&
-        !monster.iswiz &&
-        (!heroInvisible || perceivesInvisible) &&
-        !state.u.uinwater &&
-        couldSeeFromHero(state, monster.mx, monster.my) &&
-        inSight &&
-        dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= BOLT_LIM * BOLT_LIM
-    ) {
-        const conflictFight = await fightNearbyMonster(
-            monster,
-            state,
-            random,
-            rollDice,
-            rollOne,
-            calls,
-        );
-        if (conflictFight?.heroDied || conflictFight?.consumed)
-            return { monster, calls, conflictFight };
-    }
-    return beginMonsterDochug(monster, state, random, rollDice, rollOne);
 }
 
 // C monmove.c:dochug(): the phase-one entry (arrival, wait masks, quest

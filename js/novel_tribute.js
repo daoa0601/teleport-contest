@@ -6,8 +6,8 @@ import { putMessageHistory } from './topl.js';
 import { rn2 } from './rng.js';
 import { NOVEL_PASSAGES } from './tribute_data.js';
 import { showTextMenuOverlay } from './windows.js';
-import { In_quest, PANICLOG, PATCHLEVEL, VERSION_MAJOR, VERSION_MINOR } from './const.js';
-import { specialLevelAt } from './dungeon.js';
+import { PANICLOG, PATCHLEVEL, VERSION_MAJOR, VERSION_MINOR } from './const.js';
+import { specialLevelAt, In_quest } from './dungeon.js';
 import { PanicTermination } from './panic_termination.js';
 // C files.c:set_bonesfile_name(): special levels keep their identity when
 // dungeon generation changes their depth; quest bones also belong to a role.

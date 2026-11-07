@@ -7,11 +7,11 @@ import { moveloop_core } from '../js/allmain.js';
 import { pushKeys } from '../js/input.js';
 import { msummon } from '../js/minion.js';
 import { MONSTER_FLAGS2 } from '../js/monster_data.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom, freshTurnRoom } from './support/playable-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 const M2_DEMON = 0x00000100;
 

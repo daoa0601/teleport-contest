@@ -17,11 +17,83 @@ import { parseDisclosureSettings } from './message_types.js';
 import { removeIntrinsicProperty } from './properties.js';
 import { endmultishot } from './dothrow.js';
 import {
-    BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum,
-    A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BASICENLIGHTENMENT, BURNING, CHOKING, DIED,
-    ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, MAGICENLIGHTENMENT, PANICKED, PICK_ONE, QUIT,
-    STARVING, STONING, TRICKED, In_endgame, In_quest,
-    Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd, LL_CONDUCT,
+
+    BUFSZ,
+
+    MGIVENNAME,
+
+    M_AP_MONSTER,
+
+    M_AP_TYPE,
+
+    PARANOID_DIE,
+
+    PARANOID_QUIT,
+
+    PLNMSG_OK_DONT_DIE,
+
+    ismnum,
+
+    A_CON,
+
+    A_WIS,
+
+    ACH_BLND,
+
+    ACH_NUDE,
+
+    ACH_UWIN,
+
+    ASCENDED,
+
+    BASICENLIGHTENMENT,
+
+    BURNING,
+
+    CHOKING,
+
+    DIED,
+
+    ENL_GAMEOVERALIVE,
+
+    ENL_GAMEOVERDEAD,
+
+    ESCAPED,
+
+    GENOCIDED,
+
+    MAGICENLIGHTENMENT,
+
+    PANICKED,
+
+    PICK_ONE,
+
+    QUIT,
+
+    STARVING,
+
+    STONING,
+
+    TRICKED,
+
+    In_endgame,
+
+    Is_astralevel,
+
+    Is_knox_level,
+
+    KILLED_BY,
+
+    KILLED_BY_AN,
+
+    NO_KILLER_PREFIX,
+
+    TT_LAVA,
+
+    Upolyd,
+
+    LL_CONDUCT,
+
 } from './const.js';
 import { isok, setMulti, paranoidQuery } from './cmd.js';
 import { PanicTermination } from './panic_termination.js';
@@ -33,7 +105,7 @@ import {
 import { game, requireInitializedGame } from './gstate.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { heroFormSticks } from './polyself.js';
-import { monsterName } from './do_name.js';
+import { monsterName, monsterTypeName } from './do_name.js';
 import { scheduleLevelChange } from './do.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';
@@ -48,7 +120,7 @@ import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.
 import type { TextPage } from './windows.js';
 import type { TextMenuLine } from './wintty.js';
 import { artifactById } from './artifact.js';
-import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
 import { NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj, isContainer, placeObjectSynchronously } from './mkobj.js';
@@ -58,7 +130,7 @@ import {
 } from './objnam.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox } from './quantum_cat.js';
-import { deepestLevelReached, depth } from './dungeon.js';
+import { deepestLevelReached, depth, In_quest } from './dungeon.js';
 import { hiddenGold, payVaultGuardOnExit } from './vault.js';
 import { init_uhunger } from './eat.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';

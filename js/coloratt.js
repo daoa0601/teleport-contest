@@ -95,6 +95,12 @@ export function matchAttributeName(text, addError) {
     addError?.(`Unknown text attribute '${cutConfigBytes(text, 50)}'`);
     return -1;
 }
+// Part of C coloratt.c:query_attr(): the ATR_* to HL_* bit map used by
+// PICK_ANY results.
+const ATR_TO_HL = new Map([
+    [0, HL_NONE], [1, HL_BOLD], [2, HL_DIM], [3, HL_ITALIC],
+    [4, HL_ULINE], [5, HL_BLINK], [7, HL_INVERSE],
+]);
 // C coloratt.c:query_attr(): the attribute menu.  A prompt whose first six
 // characters are "Choose" (case-insensitive) takes PICK_ANY so several
 // attributes can combine into HL_* bits (HL_NONE alone for "none"), with
@@ -104,10 +110,6 @@ export function matchAttributeName(text, addError) {
 // where an accepted empty pick keeps dflt_attr and a second entry behind
 // the default wins over it.  Escape (or an accepted empty PICK_ANY)
 // returns -1.
-const ATR_TO_HL = new Map([
-    [0, HL_NONE], [1, HL_BOLD], [2, HL_DIM], [3, HL_ITALIC],
-    [4, HL_ULINE], [5, HL_BLINK], [7, HL_INVERSE],
-]);
 export async function queryAttr(prompt, dfltAttr) {
     const allowMany = prompt !== null && prompt.slice(0, 6).toLowerCase() === 'choose';
     const picks = await showMultiSelectWindow({

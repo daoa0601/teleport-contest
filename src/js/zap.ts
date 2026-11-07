@@ -31,17 +31,199 @@ import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './dete
 import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
 import { chooseInventoryObject, stack_object } from './invent.js';
 import {
-    GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_MAGIC, CORR, DBWALL, D_CLOSED,
-    D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, ENL_GAMEINPROGRESS, EXPL_MAGICAL, HEADSTONE, HOLE,
-    IS_FURNITURE, Is_airlevel,
-    Invocation_lev, LEVEL_TELEP, MAGICENLIGHTENMENT, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR,
-    TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR,
-    G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER,
-    W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN,
-    SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL,
-    IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR,
-    TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, HEAD,
-    FACE, FOOT, ARM, EYE, LL_CONDUCT, LL_ARTIFACT, LL_WISH,
+
+    GETOBJ_EXCLUDE,
+
+    GETOBJ_SUGGEST,
+
+    PLNMSG_ENVELOPED_IN_GAS,
+
+    ZAP_POS,
+
+    ANTI_MAGIC,
+
+    CORR,
+
+    DBWALL,
+
+    D_CLOSED,
+
+    D_LOCKED,
+
+    DOOR,
+
+    DRAWBRIDGE_DOWN,
+
+    ENGRAVE,
+
+    ENL_GAMEINPROGRESS,
+
+    EXPL_MAGICAL,
+
+    HEADSTONE,
+
+    HOLE,
+
+    IS_FURNITURE,
+
+    Is_airlevel,
+
+    LEVEL_TELEP,
+
+    MAGICENLIGHTENMENT,
+
+    MAGIC_PORTAL,
+
+    MAGIC_TRAP,
+
+    POLY_TRAP,
+
+    SCORR,
+
+    TELEP_TRAP,
+
+    TRAPDOOR,
+
+    TRAP_EXPLODE,
+
+    VIBRATING_SQUARE,
+
+    A_CON,
+
+    A_CHA,
+
+    W_ARMH,
+
+    A_WIS,
+
+    W_ARMG,
+
+    A_DEX,
+
+    A_STR,
+
+    A_INT,
+
+    W_RING,
+
+    W_ARMOR,
+
+    G_GENOD,
+
+    MAX_OIL_IN_FLASK,
+
+    MAX_SPELL_STUDY,
+
+    MM_NOMSG,
+
+    NO_MINVENT,
+
+    W_AMUL,
+
+    W_ART,
+
+    W_ARTI,
+
+    W_QUIVER,
+
+    W_RINGL,
+
+    W_RINGR,
+
+    W_SWAPWEP,
+
+    W_TOOL,
+
+    W_WEP,
+
+    COLNO,
+
+    DB_FLOOR,
+
+    DB_ICE,
+
+    DB_UNDER,
+
+    DRAWBRIDGE_UP,
+
+    FOUNTAIN,
+
+    SHOP_BARS_COST,
+
+    SHOP_DOOR_COST,
+
+    D_BROKEN,
+
+    D_NODOOR,
+
+    HWALL,
+
+    ICE,
+
+    ICED_MOAT,
+
+    ICED_POOL,
+
+    IRONBARS,
+
+    IS_WALL,
+
+    IS_WATERWALL,
+
+    Is_rogue_level,
+
+    Is_waterlevel,
+
+    ismnum,
+
+    LAVAWALL,
+
+    PIT,
+
+    POOL,
+
+    ROOM,
+
+    ROWNO,
+
+    SDOOR,
+
+    TT_INFLOOR,
+
+    TT_LAVA,
+
+    Upolyd,
+
+    VWALL,
+
+    WEB,
+
+    W_NONDIGGABLE,
+
+    SHOPBASE,
+
+    BOLT_LIM,
+
+    LEVEL_TIMER_KIND,
+
+    OBJECT_TIMER_KIND,
+
+    HEAD,
+
+    FACE,
+
+    FOOT,
+
+    ARM,
+
+    EYE,
+
+    LL_CONDUCT,
+
+    LL_ARTIFACT,
+
+    LL_WISH,
+
 } from './const.js';
 import { isok } from './cmd.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
@@ -50,7 +232,21 @@ import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom, currentAttribut
 import type { AttributeIndex } from './attrib.js';
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
 import {
-    formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, set_msg_dir,
+
+    formatFeltMessage,
+
+    pline,
+
+    plineWithContinuation,
+
+    publishHeardMessage,
+
+    recordGameLogEvent,
+
+    set_msg_dir,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { waterbodyName } from './pager.js';
@@ -62,7 +258,7 @@ import {
     openFallingTrap, openHoldingTrap, sokobanGuilt, igniteItems, resetUtrap, maketrap,
     deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue,
 } from './trap.js';
-import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, mungSpaces } from './hacklib.js';
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor, isEyewear, wearEyewear } from './do_wear.js';
@@ -80,9 +276,41 @@ import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass, erosionMatters, simpleArmorName } from './objnam.js';
 import {
-    objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm,
-    replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, placeObject,
-    isContainer, remove_object, sweepFloorPile,
+
+    objectQuantity,
+
+    splitObjectStack,
+
+    mksobj,
+
+    unblessObjectState,
+
+    uncurseObjectState,
+
+    mkobj,
+
+    set_corpsenm,
+
+    replaceObject,
+
+    unlinkObject,
+
+    objectWeight,
+
+    updateIceObjectTimersAt,
+
+    placeCreatedObject,
+
+    placeObject,
+
+    isContainer,
+
+    remove_object,
+
+    sweepFloorPile,
+
+    chargeAlteredUnpaidObject,
+
 } from './mkobj.js';
 import {
     MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL,
@@ -97,7 +325,7 @@ import { stopHeroOccupation } from './allmain.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './cmd.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
-import { chargeUnpaidUsage, addShopDamage, payForShopDamage, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
+import { chargeUnpaidUsage, addShopDamage, payForShopDamage, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
 import { hasIntrinsicProperty, hasTimedProperty, hasWornProperty } from './properties.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
@@ -127,8 +355,7 @@ import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
 import type { HeroMonsterKillOptions, HeroLiquidMonsterDeathOutcome, HeroMonsterDeathContext } from './mon.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
 import type { MonsterHitPointRandom } from './makemon.js';
-import { impossible } from './diagnostics.js';
-import { recordMappedOverviewState, ceilingName, surfaceName } from './dungeon.js';
+import { recordMappedOverviewState, ceilingName, surfaceName, In_mines, Invocation_lev } from './dungeon.js';
 import { forceDescribeDecor } from './pickup.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving } from './engrave.js';
 import { addExperience } from './exper.js';
@@ -151,7 +378,7 @@ import { heroIsPunished } from './ball.js';
 
 import { dropBoulderIntoLiquid } from './do.js';
 import { xyToDirection } from './cmd.js';
-import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, In_mines, Luck, MOAT, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NHW_MENU, NON_PM, PICK_ONE, PLNMSG_OBJ_GLOWS, P_BASIC, P_EXPERT, P_SKILLED, STONE, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMS, W_ARMU } from './const.js';
+import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, Luck, MOAT, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NHW_MENU, NON_PM, PICK_ONE, PLNMSG_OBJ_GLOWS, P_BASIC, P_EXPERT, P_SKILLED, STONE, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMS, W_ARMU } from './const.js';
 import type { MonsterAttack } from './data_types.js';
 import { unearthFloorObjectsAt } from './dig.js';
 import { canSenseMonster, canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, zapdir_to_glyph, TemporaryMapEffect } from './display.js';
@@ -181,7 +408,7 @@ import { wornMonsterLifeSaver } from './mon.js';
 import type { MonsterLiquidDeathResult } from './mon.js';
 import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS } from './monster_data.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects, monsterReflectsRay } from './muse.js';
 import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
 import type { ToplineOptions } from './pline.js';

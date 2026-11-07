@@ -40,7 +40,7 @@ import { isok } from './cmd.js';
 import type { MonsterAttack } from './data_types.js';
 import { isPoolAt } from './dbridge.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, glyphAt, map_invisible, map_location, newsym, senseWithTelepathy, shieldeff, show_glyph_cell, transientMonsterGlyph, unmap_invisible } from './display.js';
-import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName, visibleMonsterSubject } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName, visibleMonsterSubject, monsterTypeName } from './do_name.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeAction, objectIsHardHelmet, some_armor } from './do_wear.js';
 import { abusePet, tameMonster } from './dog.js';
 import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, willMonsterHurtle } from './dothrow.js';
@@ -115,8 +115,29 @@ import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY,
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
 import type { MonsterCombatEffectContext, MonsterCombatEffectResult } from './monster_combat_effect_types.js';
 import {
-    MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS,
-    MONSTER_SIZE, MONSTER_SYMBOL, PM_GREEN_SLIME, monsterTypeName, requireMonsterData,
+
+    MONSTER_ATTACKS,
+
+    MONSTER_BODY_META,
+
+    MONSTER_GENO,
+
+    MONSTER_LEVEL,
+
+    MONSTER_MOVE,
+
+    MONSTER_NAME,
+
+    MONSTER_RESISTS,
+
+    MONSTER_SIZE,
+
+    MONSTER_SYMBOL,
+
+    PM_GREEN_SLIME,
+
+    requireMonsterData,
+
 } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';

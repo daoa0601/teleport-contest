@@ -7,7 +7,6 @@ import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { AT_BREA } from '../js/monster_attack_types.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { GOLD_PIECE, RIN_CONFLICT } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { initRng } from '../js/rng.js';
@@ -16,6 +15,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { maketrap } from '../js/trap.js';
+import { runMonsterAction } from '../js/mon.js';
 for (const peaceful of [false, true]) {
     void test(`a blocked ${peaceful ? 'peaceful' : 'hostile'} monster can attack the hero under Conflict`, async () => {
         let attacked = false;

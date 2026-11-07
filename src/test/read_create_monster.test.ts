@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { glyphAt } from '../js/display.js';
-import { randomDisplayMonsterIdentity, randomDisplayMonsterName } from '../js/do_name.js';
+import { randomDisplayMonsterIdentity, randomDisplayMonsterName, monsterTypeName } from '../js/do_name.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from '../js/monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { SCR_CREATE_MONSTER } from '../js/object_data.js';
 import { withIndefiniteArticle } from '../js/objnam.js';
 

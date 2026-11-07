@@ -13,17 +13,63 @@
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
 import {
-    BUFSZ, COLNO, CORPSTAT_INIT, DEFUNCT_MONSTER, DELPHI, DISMOUNT_BONES, G_NOCORPSE,
-    GRAVE, HEADSTONE, HOLE, Invocation_lev, Is_oracle_level,
-    LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, MON_FLOOR, NON_PM, NO_MINVENT,
-    PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROWNO, STONE, TRICKED, Upolyd,
+
+    BUFSZ,
+
+    COLNO,
+
+    CORPSTAT_INIT,
+
+    DEFUNCT_MONSTER,
+
+    DELPHI,
+
+    DISMOUNT_BONES,
+
+    G_NOCORPSE,
+
+    GRAVE,
+
+    HEADSTONE,
+
+    HOLE,
+
+    Is_oracle_level,
+
+    LEAVESTATUE,
+
+    MAGIC_PORTAL,
+
+    MM_NONAME,
+
+    MON_FLOOR,
+
+    NON_PM,
+
+    NO_MINVENT,
+
+    PARANOID_BONES,
+
+    PL_NSIZ,
+
+    RLOC_NOMSG,
+
+    ROOM,
+
+    ROWNO,
+
+    STONE,
+
+    TRICKED,
+
+    Upolyd,
+
 } from './const.js';
 import { GameMap } from './game.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, impossible } from './pline.js';
 import { flush_screen, newsym } from './display.js';
 import { nhgetch } from './input.js';
-import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { DTHSZ, formatKiller } from './topten.js';
@@ -45,7 +91,7 @@ import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngraving
 import { addFruit } from './message_types.js';
 import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
-import { specialLevelAt } from './dungeon.js';
+import { specialLevelAt, Invocation_lev } from './dungeon.js';
 import { bonesLevelId, bonesStorageKey, deleteBonesLevel } from './novel_tribute.js';
 import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE } from './object_data.js';
 import type { GameObject } from './object_types.js';

@@ -31,7 +31,19 @@ import type { GameObject } from './object_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js';
 import {
-    MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_LEVEL, monsterTypeName, MONSTER_ALIGNMENT,
+
+    MONSTER_MOVE,
+
+    MONSTER_SIZE,
+
+    MONSTER_SYMBOL,
+
+    MONSTER_NAME,
+
+    MONSTER_LEVEL,
+
+    MONSTER_ALIGNMENT,
+
 } from './monster_data.js';
 import { artifactById, artifactToHitBonus } from './artifact.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm, body_part } from './polyself.js';
@@ -100,7 +112,7 @@ import { rn2, rnd, d, rnl } from './rng.js';
 import { updateMonsterRegions , updateHeroRegions } from './region.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterSentenceSubject } from './sounds.js';
-import { displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
+import { displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
 import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet } from './do_wear.js';
 import { setMonsterMalign, makemonAt } from './makemon.js';

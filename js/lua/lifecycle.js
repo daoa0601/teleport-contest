@@ -1,7 +1,6 @@
-import { COLNO, ROWNO } from '../const.js';
+import { AIR, CLOUD, COLNO, CORR, CROSSWALL, DOOR, FOUNTAIN, HWALL, ICE, IRONBARS, LAVAPOOL, LAVAWALL, MATCH_WALL, MAX_TYPE, MOAT, POOL, ROOM, ROWNO, SCORR, SDOOR, SINK, STONE, THRONE, TREE, VWALL, WATER, } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
 import { commandKeyDescription } from '../cmd.js';
-import { impossible } from '../diagnostics.js';
 import { applyNethackrc } from '../cfgfiles.js';
 import { rn2 } from '../rng.js';
 import { changeTutorialState } from '../tutorial_state.js';
@@ -11,6 +10,7 @@ import { luaInteger } from './arguments.js';
 import { LuaHeroTable } from './hero.js';
 import { createObjectApi } from './nhlobj.js';
 import { LuaState, LuaTable, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
+import { impossible } from '../pline.js';
 export class LuaGameState extends LuaState {
     objects;
     sid;
@@ -256,6 +256,37 @@ function luaSource(filename) {
     return source;
 }
 let activeLifecycle = new LuaLifecycle();
+const MAP_CHAR_TYPES = {
+    ' ': STONE,
+    '#': CORR,
+    '.': ROOM,
+    '-': HWALL,
+    '|': VWALL,
+    '+': DOOR,
+    A: AIR,
+    C: CLOUD,
+    S: SDOOR,
+    H: SCORR,
+    '{': FOUNTAIN,
+    '\\': THRONE,
+    K: SINK,
+    '}': MOAT,
+    P: POOL,
+    L: LAVAPOOL,
+    Z: LAVAWALL,
+    I: ICE,
+    W: WATER,
+    T: TREE,
+    F: IRONBARS,
+    x: MAX_TYPE,
+    B: CROSSWALL,
+    w: MATCH_WALL,
+};
+// C nhlua.c:splev_chr2typ(): the map character type table; an unmatched
+// character has no type (C INVALID_TYPE).
+export function mapCharacterType(character) {
+    return character === undefined ? undefined : MAP_CHAR_TYPES[character];
+}
 // Port only: bind the process-wide active Lua lifecycle.
 export function bindLuaLifecycle(lifecycle) {
     if (!(lifecycle instanceof LuaLifecycle))

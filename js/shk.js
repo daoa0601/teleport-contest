@@ -8,11 +8,10 @@
 // customer, and hero.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE, } from './object_data.js';
-import { impossible } from './diagnostics.js';
 import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
-import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, verbalize, } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, verbalize, impossible, } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam.js';
 import { hello } from './role.js';
@@ -668,13 +667,6 @@ export function reconcileObjectDeletionBill(object, mergeInto, state = game) {
     keeper.eshk.billct = keeper.eshk.bill.length;
     return 'merged';
 }
-// C mkobj.c:744 alteration_verbs, index-matched to hack.h COST_*.
-const ALTERATION_VERBS = [
-    'cancel', 'drain', 'uncharge', 'unbless', 'uncurse', 'disenchant',
-    'degrade', 'dilute', 'erase', 'burn', 'neutralize', 'destroy',
-    'splatter', 'bite', 'open', 'break the lock on', 'rust', 'rot',
-    'tarnish', 'crack',
-];
 // C shk.c:globby_bill_fixup(). Globs transfer prices and ownership before
 // absorption; ordinary stack quantity consolidation is not applicable.
 export async function settleGlobAbsorptionBilling(absorber, absorbed, state = game, { publish = plineWithContinuation } = {}) {
@@ -756,89 +748,6 @@ export async function settleGlobAbsorptionBilling(absorber, absorbed, state = ga
         const ending = keeper.mpeaceful ? 's.' : ' stinking batch!';
         await publish(`"You owe me ${money(amount)} for my ${name} that you ${action} with your${ending}"`);
     }
-}
-// C mkobj.c:752 costly_alteration(): possibly bill an object the hero just
-// modified.  Carried or free objects need only their unpaid flag; placed
-// objects must sit on a costly spot and be claimable by that shop.
-export async function chargeAlteredUnpaidObject(object, verb, state = game) {
-    requireLiveGame(state);
-    requireShopGame(state);
-    const alterType = ALTERATION_VERBS.indexOf(verb);
-    const alteration = ALTERATION_VERBS[alterType < 0 ? 0 : alterType];
-    const learnBknown = alteration === 'uncurse' || alteration === 'unbless';
-    const quantity = object?.quan ?? object?.quantity ?? 1;
-    const pronoun = quantity === 1 ? 'it' : 'them';
-    const demonstrative = quantity === 1 ? 'that' : 'those';
-    let ox = 0;
-    let oy = 0;
-    let roomno = 0;
-    let keeper = null;
-    if (object.where === 'inventory' || object.where === 'free') {
-        // C: OBJ_FREE catches obj_no_longer_held()'s crysknife revert.
-        if (!object.unpaid)
-            return null;
-    }
-    else {
-        // C get_obj_location(..., CONTAINED_TOO) over the root: floor
-        // yields its own coordinates, a monster-carried root its carrier's
-        // (a migrating carrier with mx 0 fails the lookup), inventory
-        // resolves to the hero, and free/buried roots fail outright -
-        // the caller then falls back to the hero (mkobj.c:776-785).
-        let top = object;
-        while (top.container)
-            top = top.container;
-        let located = false;
-        if (top.where === 'floor') {
-            ox = top.ox;
-            oy = top.oy;
-            located = true;
-        }
-        else if (top.where === 'minvent') {
-            const carrier = top.ocarry
-                || (state.level?.monsters || []).find(monster => (monster.minvent || monster.inventory || [])
-                    .includes(top));
-            if (carrier?.mx) {
-                ox = carrier.mx;
-                oy = carrier.my;
-                located = true;
-            }
-        }
-        else if (top.where === 'inventory') {
-            located = true;
-        }
-        if (!located) {
-            ox = state.u.ux;
-            oy = state.u.uy;
-        }
-        if (!costlySpot(ox, oy, state))
-            return null;
-        roomno = roomsAt(state.level, ox, oy, SHOPBASE)[0] ?? 0;
-        const resident = roomForRoomno(state.level, roomno)?.resident ?? null;
-        keeper = resident && hasShopkeeperData(resident)
-            && shopkeeperInOwnShop(resident, state) ? resident : null;
-        if (!keeper || !shopClaimsObject(object, keeper, false, state))
-            return null;
-    }
-    if (object.where === 'inventory' || object.where === 'free') {
-        if (learnBknown)
-            object.bknown = true;
-        // C verbalizes unconditionally here; only the voice is optional.
-        await plineWithContinuation(`"You ${alteration} ${demonstrative} ${simpleObjectName(object, state)}, you pay for ${pronoun}!"`);
-        return billDummyObject(object, state);
-    }
-    // C's switch has no OBJ_CONTAINED case: a contained member passes the
-    // billable gate silently and nothing is charged.
-    if (object.where !== 'floor')
-        return null;
-    if (learnBknown)
-        object.bknown = true;
-    const heroShop = state.u.ushops[0];
-    if (costlySpot(state.u.ux, state.u.uy, state) && roomno === heroShop) {
-        await plineWithContinuation(`"You ${alteration} ${demonstrative}, you pay for ${pronoun}!"`);
-        return billDummyObject(object, state);
-    }
-    // C stolen_value(obj, ox, oy, FALSE, FALSE): angry settlement, spoken.
-    return stolenValue(object, ox, oy, false, { silent: false, state, publish: plineWithContinuation });
 }
 // C shk.c:unpaid_cost(). The root keeps its agreed bill price; contents
 // use the current shop valuation, and a partially used stack uses its live count.

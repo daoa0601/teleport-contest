@@ -14,7 +14,6 @@ import { isok } from './cmd.js';
 import { currency } from './invent.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
 import { convertSecretDoor } from './detect.js';
-import { impossible } from './diagnostics.js';
 import { impactDrop } from './dokick.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { displayLiquidName, monsterName } from './do_name.js';
@@ -34,7 +33,7 @@ import { delobj } from './invent.js';
 import { gotoLevel } from './do.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { On_ladder, On_stairs, stairwayAt } from './stairs.js';
-import { createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
+import { addBuriedObject, createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
@@ -42,7 +41,7 @@ import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ow
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
 import { greatestErosion, isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
 import { stopHeroOccupation } from './allmain.js';
-import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, impossible } from './pline.js';
 import { heroIsFlying, body_part, mbodypart } from './polyself.js';
 import { altarWrath, altarmaskAt, desecrateAltar } from './pray.js';
 import { punishHero, unpunishHero } from './read.js';
@@ -1611,19 +1610,7 @@ function clearTerrainFlags(location) {
     location.icedpool = 0;
     location.emptygrave = 0;
 }
-// C mkobj.c:add_to_buried().
-export function addBuriedObject(object, x, y, state = game) {
-    if (!object)
-        return object;
-    removeFloorReference(object, state);
-    object.where = 'buried';
-    object.buried = true;
-    object.ox = x;
-    object.oy = y;
-    const level = requireGameLevel(state);
-    (level.buriedObjects ??= []).unshift(object);
-    return object;
-}
+// ---------------------------------------------------------------------------
 // C dig.c:bury_objs().
 export async function buryFloorObjectsAt(x, y, state = game, { publish = plineWithContinuation, } = {}) {
     const level = requireGameLevel(state);
@@ -1688,13 +1675,6 @@ export async function buryObject(object, state = game, { publish = plineWithCont
     scheduleBuriedRot(object, underIce, state);
     addBuriedObject(object, x, y, state);
     return { outcome: 'buried', next };
-}
-// Port only: drops an object from its floor pile for burial.
-function removeFloorReference(object, state) {
-    const pile = state.level?.objects?.[object.ox]?.[object.oy];
-    const index = pile?.indexOf(object) ?? -1;
-    if (pile && index >= 0)
-        pile.splice(index, 1);
 }
 // Part of C dig.c:bury_an_obj(): the ROT_ORGANIC start_timer.
 function scheduleBuriedRot(object, underIce, state) {

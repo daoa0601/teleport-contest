@@ -3,10 +3,10 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 void test('a water demon summons another demon in vapor during its attack', async () => {
     const level = await freshObjectRoom();

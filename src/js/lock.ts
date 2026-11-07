@@ -29,7 +29,7 @@ import { recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { heroPassesWalls, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 import { rnl, rn2 } from './rng.js';
-import { formatHeardMessage, pline, plineWithContinuation } from './pline.js';
+import { formatHeardMessage, pline, plineWithContinuation, impossible } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { ForceLockOccupation, PickLockOccupation } from './occupation_types.js';
@@ -40,11 +40,11 @@ import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming
 import { heroCanReachFloor } from './engrave.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade, isPick } from './object_properties.js';
-import { startCorpseTimeout, unlinkObject, isContainer, placeObject } from './mkobj.js';
+import { startCorpseTimeout, unlinkObject, isContainer, placeObject, chargeAlteredUnpaidObject } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage, deleteObject } from './shk.js';
+import { costlySpot, currentShopResident, stolenValue, addShopDamage, deleteObject } from './shk.js';
 import { artifactById, touchArtifactByHero } from './artifact.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -55,7 +55,6 @@ import { possessiveName } from './hacklib.js';
 import { heroIsUnaware } from './senses.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { stopHeroOccupation } from './allmain.js';
-import { impossible } from './diagnostics.js';
 import { roomsAt } from './hack.js';
 
 // C lock.c:doforce().

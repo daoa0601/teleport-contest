@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { addBuriedObject } from '../js/dig.js';
 import { MM_NOWAIT, NO_MINVENT, PIT } from '../js/const.js';
 import { reviveCorpseImmediately } from '../js/do.js';
 import { glyphAt } from '../js/display.js';
-import {placeCreatedObject} from '../js/mkobj.js';
+import { placeCreatedObject, addBuriedObject } from '../js/mkobj.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';

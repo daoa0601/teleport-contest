@@ -22,7 +22,7 @@ import {
 } from './object_data.js';
 import {
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER,
-    M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND,
+    M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, NON_PM, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND,
     LL_ARTIFACT, LL_CONDUCT, CORPSTAT_FEMALE, MD_PAD_BOGONS,
 } from './const.js';
 import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition } from './cmd.js';
@@ -43,14 +43,13 @@ import {
     pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, verbForSubject,
     withIndefiniteArticle, type CorpseNameView,
 } from './objnam.js';
-import { impossible } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
-import { pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
+import { pline, plineWithContinuation, recordGameLogEvent, impossible } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { glyphIsSwallow } from './glyph_numbers.js';
 import { selectMapPosition } from './getpos.js';
 import { heroBeautyDescription } from './apply.js';
-import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { priestName } from './priest.js';
@@ -197,6 +196,47 @@ export function randomGhostName(state: GameState = game): string {
 
 const G_NOGEN = 0x0200;
 const BOGUSMONSIZE = 100;
+
+// C do_name.c:minimal_monnam()
+// C minimal_monnam(): diagnostics describe the real species and attitude,
+// independently of the hero's sight, hallucination, or the monster's name.
+export function placementMonsterName(monster: Monster, checkLocation: boolean, state: GameState): string {
+    if (checkLocation && monster.mnum === MONSTER_NAME.indexOf('long worm') && monster.mx
+        && state.level && monsterAtPosition(state.level, monster.mx, monster.my, state) !== monster)
+        return `${monsterTypeName(MONSTER_NAME.indexOf('long worm tail'), !!monster.female)} <${monster.mx},${monster.my}>`;
+    const attitude = monster.mtame ? 'tame ' : monster.mpeaceful ? 'peaceful ' : '';
+    const shape = monster.cham !== undefined && monster.cham !== NON_PM
+        ? `{${monsterTypeName(monster.cham, !!monster.female)}}` : '';
+    return `${attitude}${monsterTypeName(monster.mnum, !!monster.female)} <${monster.mx},${monster.my}>${shape}`;
+}
+
+// C refs: permonst.mname/fname/neutral and pmname().  The generated name
+// vector stores NetHack's neutral name; NAMS() species select the male or
+// female form from the monster instance at presentation time.
+const GENDERED_MONSTER_NAMES = new Map<number, readonly [male: string, female: string]>([
+    [46, ['dwarf lord', 'dwarf lady']],
+    [47, ['dwarf king', 'dwarf queen']],
+    [61, ['kobold lord', 'kobold lady']],
+    [166, ['gnome lord', 'gnome lady']],
+    [168, ['gnome king', 'gnome queen']],
+    [204, ['ogre lord', 'ogre lady']],
+    [205, ['ogre king', 'ogre queen']],
+    [227, ['vampire lord', 'vampire lady']],
+    [268, ['elf-lord', 'elf-lady']],
+    [269, ['Elvenking', 'Elvenqueen']],
+    [275, ['priest', 'priestess']],
+    [276, ['high priest', 'high priestess']],
+    [290, ['incubus', 'succubus']],
+    [333, ['caveman', 'cavewoman']],
+    [337, ['priest', 'priestess']],
+]);
+
+// C do_name.c:pmname(): pick a species' male or female display name.
+export function monsterTypeName(mnum: number, female = false): string {
+    const genderedNames = GENDERED_MONSTER_NAMES.get(mnum);
+    if (genderedNames) return genderedNames[female ? 1 : 0];
+    return MONSTER_NAME[mnum] || 'monster';
+}
 
 // C do_name.c:obj_pmname(): object gender describes the depicted creature,
 // independently of any saved traits used when a corpse revives.

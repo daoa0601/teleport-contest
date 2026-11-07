@@ -5,8 +5,8 @@
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER, FOOT } from './const.js';
-import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, Is_stronghold, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
+import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER, FOOT } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, Is_stronghold, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './windows.js';
 import { SHOP_TYPES } from './shknam.js';
 import { altarmaskAt, deityName } from './pray.js';
@@ -30,13 +30,13 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import type { GameState } from './game_state.js';
 
 import { MONSTER_NAME } from './monster_data.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, impossible } from './pline.js';
 import { roomForIndex, roomsAt, switchHeroTerrain } from './hack.js';
 import { place_lregion } from './mkmaze.js';
 import { formatKiller } from './topten.js';
 import type { BranchDefinition, BranchDefinitionType, Dungeon, DungeonAlignment, DungeonBranch, DungeonBranchType, DungeonDefinition, DungeonFlag, DungeonLocation, LevelRangeDefinition, SpecialLevelDefinition, SpecialLevelDescriptor, OverviewFlags, OverviewRecord } from './dungeon_types.js';
 import { isok } from './cmd.js';
-import { impossible, panic } from './diagnostics.js';
+import { panic } from './diagnostics.js';
 import { displayLiquidName } from './do_name.js';
 import { onQuestStart } from './quest.js';
 import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
@@ -184,6 +184,9 @@ export function levelIsWizardTower(state: GameState = game): boolean {
     const prototype = state._activeSpecialLevel?.prototype;
     return prototype !== undefined && WIZARD_TOWER_LEVELS.has(prototype);
 }
+
+// C dungeon.c:In_V_tower()
+export function In_V_tower(uz?: DungeonLocation | null): boolean { return (uz ?? game?.u?.uz)?.dnum === game?.tower_dnum; }
 
 // C dungeon.c:On_W_tower_level(): the destination form of the tower test.
 export function wizardTowerLevelAt(dnum: number, dlevel: number): boolean {
@@ -334,6 +337,13 @@ export function levelAtDepth(
     return { dnum, dlevel };
 }
 
+// C dungeon.c:In_quest()
+export function In_quest(uz?: DungeonLocation | null): boolean { return (uz ?? game?.u?.uz)?.dnum === game?.quest_dnum; }
+
+// C dungeon.c:In_mines()
+export function In_mines(uz?: DungeonLocation | null): boolean { return (uz ?? game?.u?.uz)?.dnum === game?.mines_dnum; }
+
+
 
 // C dungeon.c:find_hell(): the gateway to Gehennom is the Valley of the
 // Dead's first level.
@@ -341,6 +351,21 @@ export function find_hell(): DungeonLocation {
     const valley = game.valley_level;
     if (!valley) throw new Error('find_hell: the dungeon graph has no Valley of the Dead');
     return { dnum: valley.dnum, dlevel: 1 };
+}
+
+// C dungeon.c:In_hell()
+export function In_hell(uz?: DungeonLocation | null, state: Pick<GameState, 'u' | 'dungeons'> = game): boolean {
+    const lev = uz ?? state?.u?.uz;
+    return !!lev && !!state.dungeons[lev.dnum]?.flags.hellish;
+}
+
+// C dungeon.c:Invocation_lev()
+export function Invocation_lev(uz?: DungeonLocation | null, state: Pick<GameState, 'u' | 'valley_level' | 'dungeons'> = game): boolean {
+    const lev = uz ?? state?.u?.uz;
+    if (!lev) return false;
+    const dungeon = state?.dungeons?.[lev.dnum];
+    return !!dungeon && In_hell(lev, state)
+        && lev.dlevel === dungeon.num_dunlevs - 1;
 }
 
 // C dungeon.c:level_difficulty().

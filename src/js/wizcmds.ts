@@ -3,7 +3,7 @@
 // wiz_kill()/wiz_telekinesis()/wiz_where()/wiz_level_tele()/wiz_level_change()/
 // wiz_map()/wiz_identify()/wiz_show_nhuuid().
 
-import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_mines, In_quest, In_sokoban, In_V_tower, IN_SIGHT, Invocation_lev, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_ANY, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
+import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_sokoban, IN_SIGHT, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_ANY, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -35,9 +35,9 @@ import { makeWish } from './zap.js';
 import { polymorphHero, heroSpecies, body_part, floatVsFlight } from './polyself.js';
 import { createParticularMonster } from './read.js';
 import { findit, mapMagicLevel } from './detect.js';
-import { monsterName } from './do_name.js';
+import { monsterName, monsterTypeName } from './do_name.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
-import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath, killGenocidedMonsters, purgeDeadMonsters, removeMonsterFromGame, restoreNaturalMonsterShapes, smellUnseenMonster,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
 } from './mon.js';
@@ -49,7 +49,7 @@ import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip, checkSpecialRoom } from './hack.js';
-import { Is_botlevel, depth, dungeonDepth, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
+import { Is_botlevel, depth, dungeonDepth, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot, In_quest, In_mines, In_V_tower, Invocation_lev } from './dungeon.js';
 import { unlinkObject, deallocateObject } from './mkobj.js';
 import { objectTypeKnown } from './o_init.js';
 import { reassignInventoryLetters } from './invent.js';

@@ -8,7 +8,7 @@ import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M
 import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, AD_SPC2 } from './monster_attack_types.js';
 import { recordRandom } from './monster_action_types.js';
 import type { HeroSpellAttack, MonsterCallLog, MonsterSpell, MonsterSpellEffect, MonsterSpellName, MovementSpellCast, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
-import { MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js';
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen } from './display.js';
@@ -36,7 +36,7 @@ import type { PlayingGameState, GameState } from './game_state.js';
 import type { MonsterAttack } from './data_types.js';
 import type { Monster } from './monster_types.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
-import { monsterName as canonicalMonsterName, randomBogusMonsterName } from './do_name.js';
+import { monsterName as canonicalMonsterName, randomBogusMonsterName, monsterTypeName } from './do_name.js';
 import { makemonNear } from './mklev.js';
 import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { makemonAt, mkclassAligned, setMonsterMalign } from './makemon.js';

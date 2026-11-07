@@ -9,7 +9,6 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { AD_FIRE } from '../js/monster_attack_types.js';
 import { monsterName } from '../js/do_name.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { makeBlinded } from '../js/potion.js';
@@ -21,6 +20,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 async function wormWithOnlyTailVisible() {
     await freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10,

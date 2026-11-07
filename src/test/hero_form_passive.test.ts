@@ -6,13 +6,13 @@ import assert from 'node:assert/strict';
 import { NO_MINVENT, W_AMUL, W_ARMG, W_ARMS } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, LEATHER_GLOVES, SHIELD_OF_REFLECTION, STATUE } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 async function freshAttack(form: string, hitPoints = 40) {
     await freshObjectRoom({ flags: { verbose: false } });

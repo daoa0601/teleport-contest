@@ -20,21 +20,422 @@ import {
     KICKING_BOOTS, objectPropertyName, AMULET_OF_LIFE_SAVING,
 } from './object_data.js';
 import {
-    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL,
-    MAGIC_TRAP, MMOVE_DIED, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP,
-    SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM,
-    W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, TRAPNUM, TRAP_EXPLANATIONS,
-    Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir,
-    M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN,
-    D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL,
-    M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, DISMOUNT_GENERIC, IS_ROOM,
-    Is_airlevel, W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR,
-    IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR,
-    SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING,
-    IS_WATERWALL, PLNMSG_BACK_ON_GROUND, A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL,
-    IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF, CORPSTAT_HISTORIC, MM_ADJACENTOK,
-    MM_NOTAIL, MM_NOWAIT, NO_MINVENT, M_SEEN_ELEC, FAINTED, WATER, Is_earthlevel, In_sokoban, W_QUIVER,
-    In_endgame, LAVAPOOL, HEAD, ARM, FOOT, LEG, SPINE, HAND, FINGER, LL_DUMP, LL_MINORAC,
+
+
+    ANTI_MAGIC,
+
+
+    ARROW_TRAP,
+
+
+    BEAR_TRAP,
+
+
+    DART_TRAP,
+
+
+    FIRE_TRAP,
+
+
+    HOLE,
+
+
+    LANDMINE,
+
+
+    LEVEL_TELEP,
+
+
+    MAGIC_PORTAL,
+
+
+    MAGIC_TRAP,
+
+
+    MMOVE_DIED,
+
+
+    PIT,
+
+
+    POLY_TRAP,
+
+
+    ROCKTRAP,
+
+
+    ROLLING_BOULDER_TRAP,
+
+
+    RUST_TRAP,
+
+
+    SLP_GAS_TRAP,
+
+
+    SQKY_BOARD,
+
+
+    SPIKED_PIT,
+
+
+    STATUE_TRAP,
+
+
+    TELEP_TRAP,
+
+
+    TRAPDOOR,
+
+
+    VIBRATING_SQUARE,
+
+
+    WEB,
+
+
+    Is_waterlevel,
+
+
+    W_ARM,
+
+
+    W_ARMC,
+
+
+    W_ARMF,
+
+
+    W_ARMG,
+
+
+    W_ARMH,
+
+
+    W_ARMS,
+
+
+    W_ARMU,
+
+
+    W_SWAPWEP,
+
+
+    W_WEP,
+
+
+    is_pit,
+
+
+    TRAPNUM,
+
+
+    TRAP_EXPLANATIONS,
+
+
+    Upolyd,
+
+
+    TT_BEARTRAP,
+
+
+    TT_BURIEDBALL,
+
+
+    TT_INFLOOR,
+
+
+    TT_LAVA,
+
+
+    TT_PIT,
+
+
+    TT_WEB,
+
+
+    xdir,
+
+
+    ydir,
+
+
+    M_SEEN_FIRE,
+
+
+    is_hole,
+
+
+    SHOPBASE,
+
+
+    A_CON,
+
+
+    A_DEX,
+
+
+    A_STR,
+
+
+    A_WIS,
+
+
+    DISMOUNT_FELL,
+
+
+    DOOR,
+
+
+    D_BROKEN,
+
+
+    D_ISOPEN,
+
+
+    D_NODOOR,
+
+
+    D_TRAPPED,
+
+
+    GETOBJ_DOWNPLAY,
+
+
+    GETOBJ_EXCLUDE,
+
+
+    GETOBJ_SUGGEST,
+
+
+    MAXULEV,
+
+
+    WT_TOOMUCH_DIAGONAL,
+
+
+    M_SEEN_SLEEP,
+
+
+    VAULT,
+
+
+    Is_stronghold,
+
+
+    MGIVENNAME,
+
+
+    KILLED_BY,
+
+
+    STONING,
+
+
+    DISMOUNT_GENERIC,
+
+
+    IS_ROOM,
+
+
+    Is_airlevel,
+
+
+    W_SADDLE,
+
+
+    CORR,
+
+
+    DB_FLOOR,
+
+
+    DB_UNDER,
+
+
+    DRAWBRIDGE_UP,
+
+
+    D_CLOSED,
+
+
+    D_LOCKED,
+
+
+    FOUNTAIN,
+
+
+    IS_AIR,
+
+
+    IS_DOOR,
+
+
+    IS_FURNITURE,
+
+
+    IS_WALL,
+
+
+    Is_knox_level,
+
+
+    LEVEL_TIMER_KIND,
+
+
+    MM_NOCOUNTBIRTH,
+
+
+    MM_NOMSG,
+
+
+    ROOM,
+
+
+    SCORR,
+
+
+    SDOOR,
+
+
+    SHOP_HOLE_COST,
+
+
+    SINK,
+
+
+    STONE,
+
+
+    ZAP_POS,
+
+
+    TRAPPED_DOOR,
+
+
+    TRAPPED_CHEST,
+
+
+    BURNING,
+
+
+    DISSOLVED,
+
+
+    DROWNING,
+
+
+    IS_WATERWALL,
+
+
+    PLNMSG_BACK_ON_GROUND,
+
+
+    A_CHA,
+
+
+    BOLT_LIM,
+
+
+    COULD_SEE,
+
+
+    IRONBARS,
+
+
+    IS_OBSTRUCTED,
+
+
+    IS_STWALL,
+
+
+    IS_TREE,
+
+
+    Luck,
+
+
+    M_AP_MONSTER,
+
+
+    MIGR_RANDOM,
+
+
+    W_ACCESSORY,
+
+
+    W_ARMOR,
+
+
+    WT_ELF,
+
+
+    CORPSTAT_HISTORIC,
+
+
+    MM_ADJACENTOK,
+
+
+    MM_NOTAIL,
+
+
+    MM_NOWAIT,
+
+
+    NO_MINVENT,
+
+
+    M_SEEN_ELEC,
+
+
+    FAINTED,
+
+
+    WATER,
+
+
+    Is_earthlevel,
+
+
+    In_sokoban,
+
+
+    W_QUIVER,
+
+
+    In_endgame,
+
+
+    LAVAPOOL,
+
+
+    HEAD,
+
+
+    ARM,
+
+
+    FOOT,
+
+
+    LEG,
+
+
+    SPINE,
+
+
+    HAND,
+
+
+    FINGER,
+
+
+    LL_DUMP,
+
+
+    LL_MINORAC,
+
+
 } from './const.js';
 import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import {
@@ -58,15 +459,73 @@ import type { IgniteItemsOptions } from './light.js';
 import { iceDescriptionAt, waterbodyName } from './pager.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import {
-    MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE,
-    MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, MONSTER_SOUND,
+
+    MONSTER_ALIGNMENT,
+
+    MONSTER_ATTACKS,
+
+    MONSTER_BODY_META,
+
+    MONSTER_GENO,
+
+    MONSTER_LEVEL,
+
+    MONSTER_MOVE,
+
+    MONSTER_NAME,
+
+    MONSTER_SIZE,
+
+    MONSTER_SYMBOL,
+
+    MONSTER_SOUND,
+
 } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart, floatVsFlight } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import {
-    levelHasCeiling, level_difficulty, specialPrototypeAt, levelAtDepth,
-    depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain,
+
+
+    levelHasCeiling,
+
+
+    level_difficulty,
+
+
+    specialPrototypeAt,
+
+
+    levelAtDepth,
+
+
+    depth,
+
+
+    dungeonDepth,
+
+
+    find_hell,
+
+
+    surfaceName,
+
+
+    ceilingName,
+
+
+    placeHeroOnLevel,
+
+
+    updateLastSeenTerrain,
+
+
+    In_quest,
+
+
+    In_hell,
+
+
 } from './dungeon.js';
 import {
     monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt,
@@ -81,9 +540,31 @@ import type {
     PetrificationOptions, MonsterDeathHandler,
 } from './mon.js';
 import {
-    objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig,
-    chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt,
-    makeAngryShopkeeper, deleteObjectContents,
+
+    objectOwnershipPrefix,
+
+    sellHeroDroppedObject,
+
+    deleteObject,
+
+    addShopDamage,
+
+    shopDig,
+
+    chargeUnpaidUsage,
+
+    costlySpot,
+
+    restoreShopkeeperResidency,
+
+    stolenValue,
+
+    insideShopRoomAt,
+
+    makeAngryShopkeeper,
+
+    deleteObjectContents,
+
 } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
@@ -97,13 +578,29 @@ import {
     destroyFireMonsterInventory, heroHasHalfSpellDamage, meltIce, monsterResistsEffect, poly_obj,
     restoreMonsterTraits, destroyElectricInventory, fractureRock,
 } from './zap.js';
-import { impossible } from './diagnostics.js';
 import { d, rnl, rn2, rnd, rn2Display, rn1 } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import type { MintrapOptions, MonsterMovement, MonsterMovementAction, MonsterRollingBoulderEvent, MonsterTrapEvent, MonsterTrapResumeOptions, PublishMonsterMessage, RollDice, RollOne, MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import {
-    plineWithContinuation, pline, set_msg_xy, formatSeenMessage, formatFeltMessage, formatHeardMessage,
-    publishHeardMessage, recordGameLogEvent,
+
+    plineWithContinuation,
+
+    pline,
+
+    set_msg_xy,
+
+    formatSeenMessage,
+
+    formatFeltMessage,
+
+    formatHeardMessage,
+
+    publishHeardMessage,
+
+    recordGameLogEvent,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -137,9 +634,27 @@ import {
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { canFallThrough } from './dungeon.js';
 import {
-    displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName,
-    monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName,
+
+    displayColorName,
+
+    displayLiquidName,
+
+    monsterName,
+
+    monsterName as canonicalMonsterName,
+
+    monsterName as perceivedMonsterName,
+
+    objectMonsterName,
+
+    randomDisplayMonsterName,
+
+    setMonsterGivenName,
+
     randomColorName,
+
+    monsterTypeName,
+
 } from './do_name.js';
 import { munstone } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, removeHeroEquipment } from './worn.js';
@@ -149,9 +664,37 @@ import {
 import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
 import {
-    billDummyObject, mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable,
-    objectIsRottable, placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack,
+
+    billDummyObject,
+
+    mksobj,
+
+    objectWeight,
+
+    unlinkObject,
+
+    mkcorpstat,
+
+    rndmonnumAdj,
+
+    objectIsFlammable,
+
+    objectIsRottable,
+
+    placeCreatedObject,
+
+    placeObject,
+
+    placeObjectSynchronously,
+
+    remove_object,
+
+    splitObjectStack,
+
     updateIceObjectTimersAt,
+
+    chargeAlteredUnpaidObject,
+
 } from './mkobj.js';
 import {
     buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt, liquidForHole,
@@ -203,7 +746,8 @@ import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { onQuestStart, markQuestLeaderAlive } from './quest.js';
-import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
+import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
+import { applyRemoveCurseSpell } from './sit.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus } from './dothrow.js';

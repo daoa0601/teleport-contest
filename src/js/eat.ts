@@ -43,10 +43,9 @@ import {
     W_ARMOR, W_NONDIGGABLE, W_RING, W_SADDLE, W_TOOL, FINGER, LIGHT_HEADED, STOMACH, NOSE, LL_CONDUCT,
 } from './const.js';
 import { reviveCorpseImmediately } from './do.js';
-import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
+import { displayColorName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
@@ -71,7 +70,7 @@ import { putHeroToSleep } from './timeout.js';
 import { changeHeroSex, heroIsBreathless, heroSpecies, heroHasNoHands, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, polymonHero, polymorphHero, returnHeroToHumanForm, heroIsSlimeproof, heroFormClings, heroIsFlying, body_part } from './polyself.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
-import { mksobj, objectQuantity, splitObjectStack, objectWeight, objectIsFlammable, objectIsRottable } from './mkobj.js';
+import { mksobj, objectQuantity, splitObjectStack, objectWeight, objectIsFlammable, objectIsRottable, chargeAlteredUnpaidObject } from './mkobj.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import type { MonsterDeathHandler } from './mon.js';
@@ -80,8 +79,27 @@ import type { HeroContactAttack } from './monster_action_types.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_attack_types.js';
 import {
-    MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL,
-    MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, PM_GREEN_SLIME,
+
+    MONSTER_ATTACKS,
+
+    MONSTER_BODY_META,
+
+    MONSTER_CONVEYS,
+
+    MONSTER_FLAGS1,
+
+    MONSTER_GENO,
+
+    MONSTER_LEVEL,
+
+    MONSTER_NAME,
+
+    MONSTER_SYMBOL,
+
+    requireMonsterData,
+
+    PM_GREEN_SLIME,
+
 } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
@@ -89,8 +107,23 @@ import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import type { FoodMeal, FoodOccupation, NonfoodMeal, PreparedFoodObject, TinOpening } from './occupation_types.js';
 import {
-    pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation,
-    recordGameLogEvent, formatFeltMessage, publishHeardMessage,
+
+    pline as immediatePline,
+
+    pline1,
+
+    plineWithContinuation as pline,
+
+    plineWithContinuation,
+
+    recordGameLogEvent,
+
+    formatFeltMessage,
+
+    publishHeardMessage,
+
+    impossible,
+
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { altarWrath } from './pray.js';
@@ -100,7 +133,7 @@ import { unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { readCookieFortune } from './rumors.js';
-import { SELL_DONTSELL, SELL_NORMAL, chargeAlteredUnpaidObject, costlySpot, setSellDisposition } from './shk.js';
+import { SELL_DONTSELL, SELL_NORMAL, costlySpot, setSellDisposition } from './shk.js';
 import { dismountHero } from './steed.js';
 import { surfaceName } from './dungeon.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';

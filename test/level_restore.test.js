@@ -10,7 +10,7 @@ import { gotoLevel } from '../js/do.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, hideMonsterUnder } from '../js/mon.js';
 import { RIN_PROTECTION_FROM_SHAPE_CHANGERS, ROCK, TRIPE_RATION } from '../js/object_data.js';
-import { beginPetEating, finishPetEating } from '../js/pet_eating.js';
+import { beginPetEating, finishPetEating } from '../js/dogmove.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

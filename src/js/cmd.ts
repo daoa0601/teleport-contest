@@ -52,7 +52,7 @@ import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff,
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
-import { completeExtendedCommand, promptChoice } from './query.js';
+import { completeExtendedCommand, editExtendedCommand, promptChoice } from './query.js';
 import { tty_yn_function } from './topl.js';
 import { getLine, showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
@@ -60,7 +60,21 @@ import type { TerminalCell } from './terminal.js';
 import { promptYesNo } from './query.js';
 import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js';
 import {
-    pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy, truncateRawMessage,
+
+    pline,
+
+    plineWithContinuation,
+
+    setTopline,
+
+    pline_xy,
+
+    set_msg_xy,
+
+    truncateRawMessage,
+
+    impossible,
+
 } from './pline.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
@@ -99,7 +113,7 @@ import { doenhance } from './weapon.js';
 import { dopay } from './shk.js';
 import { dokick } from './dokick.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { FUZZER_IMPOSSIBLE_CONTINUE, impossible } from './diagnostics.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { heroCanReachFloor } from './engrave.js';
 import { CmapSymbol, GlyphOffset, monnumToGlyph, objnumToGlyph } from './glyph_numbers.js';
@@ -1789,148 +1803,6 @@ async function readExtendedCommand(): Promise<ExtendedCommandInput> {
         await showExtendedCommandList();
         lastExecuted = selected;
     }
-}
-
-// C getline.c:tty_get_ext_cmd()
-// Also C getline.c:hooked_tty_getlin(): completion-aware line editing is inlined here
-// TTY's extended-command line editor redraws the prompt at every input
-// boundary. Completion expands visually while typed input advances the cursor.
-// Also C cmd.c:extcmd_initiator(): inlined here (the '#' initiator key).
-async function editExtendedCommand(): Promise<NativeCommand | null> {
-    let command = '';
-    let completion: string | null = null;
-    const initiator = visibleCommandKey(game.commandBindings.keyForCommand('#'));
-    // custompline(SUPPRESS_HISTORY) files the line before the prompt, then
-    // the loop head makes the "# " line the current topline. show_topl()'s
-    // addtopl() ends TOPLINE_SPECIAL_PROMPT as soon as it draws the prompt.
-    await setTopline(`${initiator} `);
-    game._toplines = `${initiator} `;
-    game._pending_message = initiator;
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(initiator.length + 1, 0);
-
-    const redrawCommand = async () => {
-        const displayedCommand = completion || command;
-        game._toplines = command ? `${initiator} ${displayedCommand}` : `${initiator} `;
-        game._pending_message = command
-            ? `${initiator} ${displayedCommand}` : initiator;
-        await flush_screen(1);
-        const display = game.nhDisplay;
-        const columns = display?.cols ?? COLNO;
-        // A message-window getlin can physically wrap past the right edge.
-        // tty's continuation begins at column 1; once wrapping starts it
-        // clears that message row rather than exposing the map below it.
-        if (display?.grid && game._pending_message.length >= columns) {
-            display.clearRow(1);
-            const continuation = game._pending_message.slice(columns);
-            for (let index = 0; index < continuation.length; index++)
-                display.setCell(1 + index, 1, continuation.charAt(index), NO_COLOR, 0);
-        }
-        // NEWAUTOCOMP leaves the insertion pointer immediately after the
-        // physically typed prefix, not after its displayed suffix.
-        const insertion = command.length + initiator.length + 1;
-        if (insertion > columns - 1)
-            display?.setCursor(insertion - (columns - 1), 1);
-        else
-            display?.setCursor(insertion, 0);
-    };
-
-    let doprev = false;
-    for (;;) {
-        const key = await nhgetch();
-        if (key === 16) {
-            // C win/tty/getline.c hooked_tty_getlin(): the "#" editor
-            // browses history with ^P like any getlin, with inread clear
-            // so full/combination modes page their windows. A wrapped
-            // editor line pages on its first recall too.
-            const mode = messageWindowMode();
-            if (mode === 's' || (mode === 'c' && !doprev)) {
-                if (!doprev) await doprevMessage(false);
-                await doprevMessage(false);
-                doprev = true;
-            } else {
-                await doprevMessage(false);
-                doprev = false;
-                game._messageHistoryCursor = null;
-                // `*bufp = 0` drops the auto-completed suffix before repainting.
-                completion = null;
-                await redrawCommand();
-            }
-            continue;
-        }
-        if (doprev) {
-            // The first ordinary key after single-mode browsing only
-            // repaints the prompt; the key itself is still processed.
-            game._messageHistoryCursor = null;
-            doprev = false;
-            completion = null;
-            await redrawCommand();
-        }
-        if (key === 27) {
-            // tty_getlin(): Escape first clears non-empty input; only Escape
-            // at an already empty prompt cancels the extended command.
-            if (command) {
-                command = '';
-                completion = null;
-                await redrawCommand();
-                continue;
-            }
-            game._pending_message = '';
-            game._retained_message = '';
-            game._toplines = '';
-            // getline.c:213 leaves TOPLINE_NON_EMPTY behind its prompt.
-            game._promptOwnsTopline = false;
-            game.nhDisplay?.clearRow(0);
-            game.context.move = 0;
-            return null;
-        }
-        if (key === 10 || key === 13) break;
-        if (key === 8 || key === 127) {
-            if (command) {
-                command = command.slice(0, -1);
-                completion = null;
-                await redrawCommand();
-            }
-            continue;
-        }
-        if (key === 21) {
-            // The tty kill character clears both typed text and completion.
-            if (command) {
-                command = '';
-                completion = null;
-                await redrawCommand();
-            }
-            continue;
-        }
-        const ch = String.fromCharCode(key);
-        if (key < 32 || key === 127 || command.length >= COLNO) continue;
-        command += ch;
-        completion = completeExtendedCommand(command);
-        await redrawCommand();
-    }
-
-    // tty_getlin() clears its message window on return. The completed
-    // editor is not an unread message for a later cls() to acknowledge.
-    game._pending_message = '';
-    game._retained_message = '';
-    game._toplines = '';
-    game._promptOwnsTopline = false;
-    game.nhDisplay?.clearRow(0);
-    const normalizedCommand = (completion || command)
-        .trim()
-        .replace(/\s+/g, ' ')
-        .toLowerCase();
-    if (!normalizedCommand) {
-        game._pending_message = '';
-        game.nhDisplay?.clearRow(0);
-        game.nhDisplay?.setCursor(game.u.ux - 1, game.u.uy + 1);
-        game.context.move = 0;
-        return null;
-    }
-    const selected = extcmdsMatch(normalizedCommand,
-        { ignoreAutocomplete: true, exactMatch: true })[0];
-    if (!selected) await pline(`${initiator}${normalizedCommand.slice(0, 60)}: unknown extended command.`);
-    return selected ?? null;
 }
 
 // ── Extended-command list and autocomplete (C cmd.c:doextlist(),

@@ -11,7 +11,6 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { moveloop_core } from '../js/allmain.js';
@@ -20,6 +19,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { loseHeroHp } from '../js/hack.js';
+import { runMonsterAction } from '../js/mon.js';
 
 function visibleScreen(): string {
     return requireGameDisplay().grid

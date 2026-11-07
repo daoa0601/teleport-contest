@@ -8,13 +8,13 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt, monsterAtPosition } from '../js/steed.js';
 import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 async function createWormWithTail(head, tail) {
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', head.x, head.y, MM_ANGRY | NO_MINVENT | MM_NOTAIL);

@@ -18,13 +18,13 @@ import type {
 import type { MessagePublisher } from './pline.js';
 import type { rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, impossible } from './pline.js';
 import { LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM, TT_BURIEDBALL, W_ACCESSORY, W_ARMG, W_ARMOR, W_BALL, W_CHAIN, W_WEAPONS, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN, RLOC_MSG, SHOPBASE, W_SADDLE, FOOT, HAND } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 
-import { monsterName } from './do_name.js';
+import { monsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_SYMBOL } from './monster_data.js';
 import {
     makePlural, definiteName, objectName, objectNameIsPlural, observeDistantObjectForNaming,
     observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, simpleObjectName,
@@ -33,7 +33,6 @@ import { AD_SITM } from './monster_attack_types.js';
 import { isBimanualObject } from './object_properties.js';
 import { inventoryItemDescription, finishInventoryRemoval, freeInventoryObject, inventoryItem } from './invent.js';
 import { heroIsBlind, heroIsUnaware } from './senses.js';
-import { impossible } from './diagnostics.js';
 import { rn2 } from './rng.js';
 import { carryObjEffects } from './figurine_timer.js';
 import { objectShedsLight, snuffLightSource } from './light.js';

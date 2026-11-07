@@ -3,8 +3,7 @@
 
 import { MAX_NUM_WORMS, MHPMAX, NORMAL_SPEED, xdir, ydir } from './const.js';
 import { canSpotMonster, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
-import { impossible } from './diagnostics.js';
+import { plineWithContinuation, impossible } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { cloneMonster } from './makemon.js';

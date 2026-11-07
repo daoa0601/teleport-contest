@@ -5,13 +5,13 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { M_ATTK_AGR_DIED, MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { runMonsterAction } from '../js/mon.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function conflictExplosionRoom(species) {
     await freshObjectRoom({ hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });

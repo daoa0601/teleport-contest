@@ -17,7 +17,7 @@ import { consumeHallucinatedMenuObjectGlyph, transientMonsterGlyph, flush_screen
 import { formatStrength } from './botl.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './topl.js';
 import { showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin } from './wintty.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, impossible } from './pline.js';
 import { getLine, showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import { nhgetch } from './input.js';
 import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, getCount, GC_SAVEHIST, GC_ECHOFIRST, GC_CONDHIST, ynSingleKey, yn_function } from './cmd.js';
@@ -48,7 +48,7 @@ import { visibleRegionAt } from './region.js';
 import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion } from './trap.js';
 import { heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem, } from './mondata.js';
 import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
-import { impossible, panic } from './diagnostics.js';
+import { panic } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
 import { currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill, stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer, doinvbill, } from './shk.js';
 import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';

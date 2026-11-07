@@ -7,9 +7,8 @@
 import { deleteTrap } from './trap.js';
 import { DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_SOUTH, DB_UNDER, DB_WEST, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, ICE, ICED_MOAT, IS_DRAWBRIDGE, IS_WALL, Is_stronghold, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, WATER, W_NONDIGGABLE, STONE, CRUSHING, KILLED_BY_AN, NO_KILLER_PREFIX, IS_WATERWALL } from './const.js';
 import { isok } from './cmd.js';
-import { impossible } from './diagnostics.js';
 import { newsym, canSeeMonster, canSpotMonster } from './display.js';
-import { formatSeenMessage, plineWithContinuation, publishHeardMessage } from './pline.js';
+import { formatSeenMessage, plineWithContinuation, publishHeardMessage, impossible } from './pline.js';
 import { dropBoulderIntoLiquid } from './do.js';
 import { scatterDrawbridgeDebris } from './drawbridge_debris.js';
 import { game, requireGameLevel } from './gstate.js';

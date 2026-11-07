@@ -20,7 +20,7 @@ import {
 } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn, calcCapacity } from './hack.js';
-import { isPolearm, isLauncherAmmunition, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
+import { isPolearm, isLauncherAmmunition, is_launcher, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
 import {
     returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
     monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon,
@@ -40,7 +40,6 @@ import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_KNIFE, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_NONDIGGABLE, W_WEP, WT_IRON_BALL_INCR, ARM, HAND, FOOT } from './const.js';
 import { isok } from './cmd.js';
-import { impossible } from './diagnostics.js';
 import {
     canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph,
     TemporaryMapEffect,
@@ -91,7 +90,7 @@ import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { formatHeardMessage, plineWithContinuation, publishHeardMessage, set_msg_xy } from './pline.js';
+import { formatHeardMessage, plineWithContinuation, publishHeardMessage, set_msg_xy, impossible } from './pline.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
@@ -148,6 +147,14 @@ export function objectTypeName(object: Pick<GameObject, 'otyp'> | null | undefin
     return object ? OBJ_NAME(object.otyp) || '' : '';
 }
 
+// C mthrowu.c:m_has_launcher_and_ammo(): a wielded launcher with matching
+// ammo.
+export function monsterHasLauncherAndAmmo(monster: Monster) {
+    const launcher = monsterWieldedWeapon(monster);
+    if (!launcher || !is_launcher(launcher)) return false;
+    const inventory = monster.minvent || monster.inventory || [];
+    return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
+}
 // C mthrowu.c:thitu(). The hero is struck by a missile thrown or shot by a
 // monster: accuracy and damage rolls, poison, blinding payload, and the
 // petrifying-egg edge.

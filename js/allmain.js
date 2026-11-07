@@ -1,6 +1,6 @@
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
-import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot } from './dungeon.js';
+import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot, In_hell } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
 import { recorderLocalEpochSeconds, fixedCalendar, sessionIsNight } from './calendar.js';
 import { pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent } from './pline.js';
@@ -8,7 +8,7 @@ import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCo
 import { getLine } from './windows.js';
 import { doStorms } from './timeout.js';
 import { rewindEngravingsForSave, engravingAt, wipeEngravingAt, readEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './mon.js';
+import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, runMonsterAction, } from './mon.js';
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
@@ -22,7 +22,7 @@ import { clearSplitObjects, unlinkObject } from './mkobj.js';
 import { tryCallObjectType } from './do.js';
 import { observeBucForNaming, verbForSubject, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { observeObject, recordObjectEncounter, learnObjectType } from './o_init.js';
-import { A_CURRENT, A_ORIGINAL, CQ_CANNED, CQ_REPEAT, ESCAPED, G_NOCORPSE, In_endgame, In_hell, MON_FLOOR, PLNMSG_MON_TAKES_OFF_ITEM, RLOC_NOMSG, WATER, RLOC_MSG, LOST_STOLEN, MMOVE_DIED, NORMAL_SPEED, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_ARMOR, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, LL_ACHIEVE, } from './const.js';
+import { A_CURRENT, A_ORIGINAL, CQ_CANNED, CQ_REPEAT, ESCAPED, G_NOCORPSE, In_endgame, MON_FLOOR, PLNMSG_MON_TAKES_OFF_ITEM, RLOC_NOMSG, WATER, RLOC_MSG, LOST_STOLEN, MMOVE_DIED, NORMAL_SPEED, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_ARMOR, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, LL_ACHIEVE, } from './const.js';
 import { pendingArmorAction, heroHasFreeAction, heroIsDisplaced, stopDonning, applyStartingArmorEffects, findArmorClass, erodeWornArmor, isBeingTakenOff, heroHasSlipperyHands, slipFromSlipperyHands } from './do_wear.js';
 import { dosounds } from './sounds.js';
 import { warnWithMasterKey, applyArtifactHit, findArtifact } from './artifact.js';
@@ -48,7 +48,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { openHoldingTrap, igniteItems, petrifyMonsterImmediately, burnHeroArmorByFire, sinkHeroIntoLava, activateStatueTrapAt, } from './trap.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
 import { loseHeroExperience } from './exper.js';
-import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction } from './monmove.js';
+import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug } from './monmove.js';
 import { isWeldedPrimary } from './wield.js';
 import { finishInventoryRemoval } from './invent.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -66,7 +66,8 @@ import { resolveMonsterGaze, completeHeroAttackSlot, mattacku, missmu, resolveMo
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import { canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, curs_on_u } from './display.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, rememberToplines, appendSuppressedTopline, resetToplineClip } from './topl.js';
-import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level } from './vision.js';
+import { hasLightSources } from './light.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';

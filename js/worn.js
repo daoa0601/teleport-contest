@@ -12,7 +12,7 @@
 import { WEAPON_CLASS } from './objclass.js';
 import { MFAST, MSLOW, NON_PM } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
-import { MONSTER_EXPERIENCE_META, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, } from './monster_data.js';
+import { MONSTER_EXPERIENCE_META, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
 import { naturalMonsterSpeed } from './mon.js';
 import { objectDelay, objectPropertyName, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, CORNUTHAUM, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, SADDLE, } from './object_data.js';
 import { canSeeMonster, newsym } from './display.js';
@@ -34,7 +34,7 @@ import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
 import { cansee, vision_recalc } from './vision.js';
 import { surfaceName } from './dungeon.js';
-import { displayColorName, monsterName } from './do_name.js';
+import { displayColorName, monsterName, monsterTypeName } from './do_name.js';
 import { dismountHero, heroCanRideSteed, monsterCanBeSaddled } from './steed.js';
 import { possessiveName } from './hacklib.js';
 import { rnl } from './rng.js';

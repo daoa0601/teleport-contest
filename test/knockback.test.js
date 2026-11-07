@@ -6,7 +6,6 @@ import { D_CLOSED, D_ISOPEN, D_NODOOR, DOOR, HOLE, LAVAPOOL, NO_MINVENT, PIT, W_
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CLUB, CORPSE, DAGGER, LOADSTONE, STATUE } from '../js/object_data.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -18,7 +17,7 @@ import { hurtleMonster } from '../js/dothrow.js';
 import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { finishHeroMonsterKillOutcome } from '../js/mon.js';
+import { finishHeroMonsterKillOutcome, runMonsterAction } from '../js/mon.js';
 async function freshGiantFight() {
     await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
     requireFixtureGame(game);

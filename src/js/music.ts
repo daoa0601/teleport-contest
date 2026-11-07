@@ -4,9 +4,33 @@
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, syncDeafness } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
-    A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower,
-    Is_astralevel, KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK,
+
+    A_DEX,
+
+    A_WIS,
+
+    COLNO,
+
+    In_endgame,
+
+    In_sokoban,
+
+    Is_astralevel,
+
+    KILLED_BY,
+
+    M_AP_FURNITURE,
+
+    M_AP_OBJECT,
+
+    M_AP_TYPE,
+
+    ROWNO,
+
+    STRAT_WAITMASK,
+
 } from './const.js';
+import { In_V_tower } from './dungeon.js';
 import { canSeeMonster, newsym, shieldeff } from './display.js';
 import { formatFeltMessage, pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';

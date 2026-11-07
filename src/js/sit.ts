@@ -8,13 +8,15 @@ import { eggTypeFromParent } from './mon.js';
 import { objectMaterial, observeObject } from './o_init.js';
 import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, FOOT } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { plineWithContinuation as pline, formatFeltMessage } from './pline.js';
+import { plineWithContinuation, plineWithContinuation as pline, formatFeltMessage } from './pline.js';
 
-import { game, requireInitializedGame } from './gstate.js';
+import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
 import { waterDamageObject, dotrap } from './trap.js';
+import { exerciseScrollWisdom, removeCurseEffect } from './read.js';
+import type { RemoveCurseOptions, ScrollEffectResult } from './read.js';
 import type { HeroTrapOptions } from './trap.js';
 import { throneSitEffect } from './throne.js';
 import type { ThroneOptions } from './throne.js';
@@ -28,7 +30,7 @@ import { markJustPicked } from './pickup.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { mksobj, set_corpsenm, objectWeight, splitObjectStack, unlinkObject, createObjectBase, nextIdent } from './mkobj.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
-import { CHEST, CORPSE, CREAM_PIE, EGG, GOLD_PIECE, LARGE_BOX, TOWEL, WATER_WALKING_BOOTS, oc_nutrition } from './object_data.js';
+import { SPE_REMOVE_CURSE, CHEST, CORPSE, CREAM_PIE, EGG, GOLD_PIECE, LARGE_BOX, TOWEL, WATER_WALKING_BOOTS, oc_nutrition } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import {
@@ -459,4 +461,22 @@ export async function dosit({
         await pline(`Having fun sitting on the ${surfaceName(x, y)}?`);
     }
     game.context.move = 1;
+}
+
+// C sit.c:special_throne_effect(): its case 10 sends seffects() a zeroobj
+// SPE_REMOVE_CURSE spellbook with temporary confusion, so the fake spell
+// has no inventory identity or creation effects but still passes through
+// seffects' Wisdom gain. trap.c:4440's magic trap uses the same entry.
+export async function applyRemoveCurseSpell({
+    state = game, blessed = false, cursed = false,
+}: Pick<RemoveCurseOptions, 'state' | 'blessed' | 'cursed'> = {}): Promise<ScrollEffectResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    await exerciseScrollWisdom(SPE_REMOVE_CURSE, state);
+    await removeCurseEffect({
+        source: { otyp: SPE_REMOVE_CURSE, blessed, cursed },
+        state,
+        publish: plineWithContinuation,
+    });
+    return { known: false, consumed: false, heroDied: !!state.program_state.gameover };
 }

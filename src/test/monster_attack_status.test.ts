@@ -5,12 +5,12 @@ import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { BOULDER } from '../js/object_data.js';
 import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { runMonsterAction } from '../js/mon.js';
 
 function statusLine() {
     return requireScreenRow(23).map(cell => cell.ch).join('');

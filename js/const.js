@@ -2876,9 +2876,6 @@ export function engulfing_u(mon) { return !!game?.u?.uswallow && game.u.ustuck =
 export function ismnum(pm) {
     return typeof pm === 'number' && Number.isInteger(pm) && pm >= LOW_PM && pm < MONSTER_NAME.length;
 }
-// C dungeon.c:In_quest()
-// ── Level classification predicates (C: dungeon.h macros) ──
-export function In_quest(uz) { return (uz ?? game?.u?.uz)?.dnum === game?.quest_dnum; }
 // C dungeon.h:In_endgame()
 export function In_endgame(uz) {
     const level = uz ?? game?.u?.uz;
@@ -2920,12 +2917,8 @@ export function Is_airlevel(uz) {
         && level.dnum === specialLevel.dnum
         && level.dlevel === specialLevel.dlevel;
 }
-// C dungeon.c:In_mines()
-export function In_mines(uz) { return (uz ?? game?.u?.uz)?.dnum === game?.mines_dnum; }
 // C dungeon.h:In_sokoban()
 export function In_sokoban(uz) { return (uz ?? game?.u?.uz)?.dnum === game?.sokoban_dnum; }
-// C dungeon.c:In_V_tower()
-export function In_V_tower(uz) { return (uz ?? game?.u?.uz)?.dnum === game?.tower_dnum; }
 // C dungeon.h:Is_stronghold()
 export function Is_stronghold(uz) {
     const level = uz ?? game?.u?.uz;
@@ -2943,20 +2936,6 @@ export function Is_valley(uz) {
     return !!specialLevel
         && level?.dnum === specialLevel.dnum
         && level?.dlevel === specialLevel.dlevel;
-}
-// C dungeon.c:In_hell()
-export function In_hell(uz, state = game) {
-    const lev = uz ?? state?.u?.uz;
-    return !!lev && !!state.dungeons[lev.dnum]?.flags.hellish;
-}
-// C dungeon.c:Invocation_lev()
-export function Invocation_lev(uz, state = game) {
-    const lev = uz ?? state?.u?.uz;
-    if (!lev)
-        return false;
-    const dungeon = state?.dungeons?.[lev.dnum];
-    return !!dungeon && In_hell(lev, state)
-        && lev.dlevel === dungeon.num_dunlevs - 1;
 }
 // C dungeon.h:Is_rogue_level()
 export function Is_rogue_level(uz, state = game) {

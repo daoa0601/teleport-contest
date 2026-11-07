@@ -5,12 +5,12 @@ import { NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { RIN_CONFLICT, TRIPE_RATION } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 void test('a conflicted pet attacks its master instead of eating food beneath the hero', async () => {
     await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10, flags: { verbose: false } });
     requirePlayingGame(game);

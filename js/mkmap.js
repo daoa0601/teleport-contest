@@ -2,13 +2,13 @@
 // C ref: mkmap.c.
 import { COLNO, ICE, ICED_MOAT, ICED_POOL, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LAVAPOOL, MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, ROWNO, SDOOR, SHARED, STONE, TREE } from './const.js';
 import { isok } from './cmd.js';
-import { impossible } from './diagnostics.js';
 import { game, requireGameLevel } from './gstate.js';
 import { depth } from './dungeon.js';
 import { dig_corridor, wallify_map } from './sp_lev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
 import { isRoom } from './map_types.js';
+import { impossible } from './pline.js';
 // C mkmap.c:init_map().
 // C mkmap.c:init_fill().
 // C mkmap.c:get_map().

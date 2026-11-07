@@ -4,13 +4,13 @@ import test from 'node:test';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
 import { punishHero } from '../js/read.js';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { APPLE } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runMonsterAction } from '../js/mon.js';
 
 // C mhitu.c:875-876 — mattacku()'s AT_BREA case awaits breamu(), so the
 // breath line, dobuzz() and its whole tail complete inside the monster's
