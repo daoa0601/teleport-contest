@@ -78,7 +78,7 @@ import { artifactEmitsLight, setWornArtifactProperties } from './artifact.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { d, rn2, rnd } from './rng.js';
-import type { PropertyName, WornPropertySlot } from './property_types.js';
+import type { PropertyName } from './property_types.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttribute } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
@@ -1184,7 +1184,8 @@ export async function reportCoveredEquipment(object: GameObject): Promise<boolea
     return true;
 }
 
-// Port only: worn accessory/armor slot lists.
+// Part of C do_wear.c:count_worn_stuff(): the armor and accessory slot
+// lists, counting only the outermost torso layer.
 export function accessibleEquipment(accessory: boolean, state: GameState = game): GameObject[] {
     const objects = accessory
         ? [state.uleft, state.uright, state.uamul, state.ublindf]
@@ -1363,14 +1364,14 @@ export async function wearHeroArmor(
 // wield is resolved.
 export async function removeHeroArmor(object: GameObject, state: GameState = game, options: ArmorRemovalOptions = {}) {
     const slot = armorSlotFor(object.otyp);
-    if (!slot || equippedObject(state, slot) !== object) return false;
+    if (!slot || takeoffSlotObject(slot, state) !== object) return false;
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
     const pending = pendingArmorAction(state);
     const cancelledDon = options.cancelledDon
         ?? (pending?.kind === 'wear' && pending.object === object);
-    const losingGloves = equippedObject(state, 'uarmg') === object;
+    const losingGloves = takeoffSlotObject('uarmg', state) === object;
     if (pending?.object === object) {
         cancelDonning(state);
     }
@@ -1459,13 +1460,13 @@ async function announceDisplacementLoss(object: GameObject, state: GameState = g
 // C checks its one obj argument against uwep/uswapweap; the port walks the
 // wielded slots the same way (twoweap opens both).
 async function losePetrificationProtection(armor: GameObject, state: GameState, voluntary: boolean) {
-    if (equippedObject(state, 'uarmg')) return;
+    if (takeoffSlotObject('uarmg', state)) return;
     const armorSlot = armorSlotFor(armor.otyp);
     if (!armorSlot) return;
     const slots: readonly ('uwep' | 'uswapwep')[] = state.u.twoweap
         ? ['uwep', 'uswapwep'] : ['uwep'];
     for (const slot of slots) {
-        const weapon = equippedObject(state, slot);
+        const weapon = takeoffSlotObject(slot, state);
         if (weapon?.otyp !== CORPSE || !touchPetrifies(weapon.corpsenm)
             || heroResistsStoning(state)) continue;
         await plineWithContinuation(`You ${armorSlot === 'uarmg' ? 'now wield' : 'are wielding'} ${corpseName(weapon, { includeArticle: true })} `
@@ -1495,8 +1496,8 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
 }: ArmorRemovalOptions = {}) {
     const slot = armorSlotFor(object?.otyp);
     if (!slot) return false;
-    if (equippedObject(state, slot) === object) cancelSlotTakeoff(slot, state);
-    if (equippedObject(state, slot) === object && !cancelledDon)
+    if (takeoffSlotObject(slot, state) === object) cancelSlotTakeoff(slot, state);
+    if (takeoffSlotObject(slot, state) === object && !cancelledDon)
         adjustArmorAttributeBonus(object, -objectEnchantment(object), state);
     const wasShining = object.lamplit && artifactEmitsLight(object);
     if (embeddedSkin) {
@@ -1562,10 +1563,10 @@ export function wornArmorInDestroyOrder(state: GameState = game) {
 // C do_wear.c:some_armor(). Only the outer torso layer is exposed; each
 // other occupied slot has its own chance to replace the current choice.
 export function some_armor(state: GameState = game, random: (range: number) => number = rn2) {
-    let armor = equippedObject(state, 'uarmc')
-        || equippedObject(state, 'uarm') || equippedObject(state, 'uarmu');
+    let armor = takeoffSlotObject('uarmc', state)
+        || takeoffSlotObject('uarm', state) || takeoffSlotObject('uarmu', state);
     for (const slot of ['uarmh', 'uarmg', 'uarmf', 'uarms'] as const) {
-        const candidate = equippedObject(state, slot);
+        const candidate = takeoffSlotObject(slot, state);
         if (candidate && (!armor || random(4) === 0)) armor = candidate;
     }
     return armor;
@@ -1575,9 +1576,9 @@ export function some_armor(state: GameState = game, random: (range: number) => n
 // including the subtraction immediately before its *_off() transition.
 export function adjustArmorAttributeBonus(object: GameObject | null | undefined, amount: number, state: GameState = game) {
     if (!object) return;
-    const attributes: AttributeIndex[] = object === equippedObject(state, 'uarmg')
+    const attributes: AttributeIndex[] = object === takeoffSlotObject('uarmg', state)
         && object.otyp === GAUNTLETS_OF_DEXTERITY ? [A_DEX]
-        : object === equippedObject(state, 'uarmh')
+        : object === takeoffSlotObject('uarmh', state)
             && object.otyp === HELM_OF_BRILLIANCE ? [A_INT, A_WIS] : [];
     if (!attributes.length) return;
     state.context.botl = true;
@@ -1648,7 +1649,7 @@ export async function disintegrateWornArmor(armor: GameObject, {
     state = game, publish = plineWithContinuation,
 }: ArmorDestructionOptions = {}) {
     const slot = armorSlotFor(armor.otyp);
-    if (!slot || equippedObject(state, slot) !== armor
+    if (!slot || takeoffSlotObject(slot, state) !== armor
         || objectResistsDestruction(armor, 0, 90)) return false;
     armor.in_use = true;
     const noun = simpleArmorName(armor, slot, state);
@@ -1773,7 +1774,7 @@ async function applyHelmetOnEffects(object: GameObject, state: GameState): Promi
             await changeHeroAlignment(opposite, 'helmOn', state);
             if (state.program_state.gameover) return;
         }
-        const helmet = equippedObject(state, 'uarmh');
+        const helmet = takeoffSlotObject('uarmh', state);
         if (helmet && !helmet.cursed) {
             const blind = heroIsBlind(state);
             observeObjectForNaming(helmet, { state });
@@ -2133,11 +2134,6 @@ export async function removeArmorProperties(
     }
 }
 
-// Port only: object in a worn property slot.
-function equippedObject(state: GameState, slot: WornPropertySlot): GameObject | null | undefined {
-    if (Object.prototype.hasOwnProperty.call(state, slot)) return state[slot];
-    return state.u?.[slot] || null;
-}
 
 // Part of C do_wear.c:find_ac(): the protection ring bonus.
 function protectionItemBonus(object: GameObject | null | undefined, expectedType: number) {
@@ -2154,15 +2150,15 @@ export function projectedArmorClass(state: GameState = game) {
         : typeof hero.baseArmorClass === 'number' && Number.isInteger(hero.baseArmorClass) ? hero.baseArmorClass : 10;
 
     for (const slot of ARMOR_SLOTS)
-        armorClass -= armorBonus(equippedObject(state, slot));
+        armorClass -= armorBonus(takeoffSlotObject(slot, state));
 
     armorClass -= protectionItemBonus(
-        equippedObject(state, 'uleft'), RIN_PROTECTION,
+        takeoffSlotObject('uleft', state), RIN_PROTECTION,
     );
     armorClass -= protectionItemBonus(
-        equippedObject(state, 'uright'), RIN_PROTECTION,
+        takeoffSlotObject('uright', state), RIN_PROTECTION,
     );
-    if (equippedObject(state, 'uamul')?.otyp === AMULET_OF_GUARDING)
+    if (takeoffSlotObject('uamul', state)?.otyp === AMULET_OF_GUARDING)
         armorClass -= 2;
 
     if (hasIntrinsicProperty('protection', null, state))
@@ -2692,10 +2688,6 @@ function learnRing(ring: GameObject, observable: boolean, state: GameState): voi
         ring.known = true;
 }
 
-// Port only: ublindf accessor.
-function currentEyewear(): GameObject | null {
-    return game.ublindf || game.u?.ublindf || null;
-}
 
 // Part of C do_wear.c:Blindf_on(), do_wear.c:already_wearing2(): the
 // eyewear nouns.
@@ -2751,7 +2743,7 @@ export async function wearEyewear(object: GameObject | null | undefined, { check
         );
         return false;
     }
-    const worn = currentEyewear();
+    const worn = takeoffSlotObject('ublindf', game);
     if (worn) {
         await announceOccupiedSlot(object, worn);
         return false;
@@ -2822,7 +2814,7 @@ export async function removeEyewear(object: GameObject | null = null, {
 
 // Part of C apply.c:doapply(): the BLINDFOLD/LENSES toggle branch.
 export async function applyEyewear(object: GameObject): Promise<boolean> {
-    const worn = currentEyewear();
+    const worn = takeoffSlotObject('ublindf', game);
     if (worn === object) {
         // apply.c:doapply()'s BLINDFOLD/LENSES branch runs do_wear.c
         // cursed() before Blindf_off(): a cursed worn item refuses with
@@ -2852,10 +2844,6 @@ export function heroHasSlipperyHands(state: GameState): boolean {
     return !!state.u.glib || (state.u.glibTurns ?? 0) > 0;
 }
 
-// Port only: slip/slips verb.
-function slipVerb(plural: boolean): string {
-    return plural ? 'slip' : 'slips';
-}
 
 // C do_wear.c:glibr().
 export async function slipFromSlipperyHands(
@@ -2895,7 +2883,7 @@ export async function slipFromSlipperyHands(
         const quantity = secondary.quan ?? 1;
         otherWeapon = isSword(secondary) ? 'sword' : weaponDescription(secondary);
         if (quantity > 1) otherWeapon = makePlural(otherWeapon);
-        await publish(`Your ${otherWeapon} ${slipped ? 'also ' : ''}${slipVerb(quantity > 1)} from your ${
+        await publish(`Your ${otherWeapon} ${slipped ? 'also ' : ''}${quantity > 1 ? 'slip' : 'slips'} from your ${
             rightHanded ? 'left ' : 'right '}${body_part(HAND, state)}.`);
         slipped++;
         wasTwoWeapon = true;
@@ -2919,7 +2907,7 @@ export async function slipFromSlipperyHands(
     if (isBimanualObject(primary)) hand = makePlural(hand);
     else if (wasTwoWeapon) which = rightHanded ? 'right ' : 'left ';
     await publish(`${kind.startsWith('corpse') ? 'The' : 'Your'} ${otherWeapon ? 'other ' : ''}${kind} ${
-        slipped ? 'also ' : ''}${slipVerb(plural)} from your ${which}${hand}.`);
+        slipped ? 'also ' : ''}${plural ? 'slip' : 'slips'} from your ${which}${hand}.`);
     await setPrimaryWeapon(null, state);
     cmdq_clear(CQ_CANNED, state);
     if (await canLetGo(primary, '', state)) await dropInventoryObjectAtHero(primary, { state, publish });
