@@ -8,7 +8,7 @@ import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firel
 import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './windows.js';
 import { SHOP_TYPES } from './shknam.js';
-import { deityName } from './pray.js';
+import { altarmaskAt, deityName } from './pray.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { questLeaderName } from './questpgr.js';
 import { ATR_INVERSE, addMenuHeading } from './windows.js';
@@ -652,11 +652,7 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
             learnOverviewStructure(flags, x, y, state);
             if (location.lastseentyp !== ALTAR)
                 continue;
-            const monster = monsterAtPosition(level, x, y);
-            const mask = monster && M_AP_TYPE(monster) === M_AP_FURNITURE
-                && monster.mappearance === CmapSymbol.altar
-                ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0
-                : location.typ === ALTAR ? location.flags : 0;
+            const mask = altarmaskAt(x, y, state);
             // C altarmask_at(): a mimic's altar disguise outranks terrain.
             const alignment = Is_astralevel(state.u.uz) && location.seenv !== 255
                 || !(mask & AM_MASK) ? null : Amask2align(mask & AM_MASK);

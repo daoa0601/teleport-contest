@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PARANOID_PRAY, MENU_FULL, MENU_TRADITIONAL, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from '../js/const.js';
 import { parseNethackOptions, parseNethackrc } from '../js/cfgfiles.js';
+import { AMULET_CLASS, ARMOR_CLASS, COIN_CLASS, WEAPON_CLASS } from '../js/objclass.js';
 const PLAY = 'OPTIONS=name:Traveler,!legacy,!tutorial,!autopickup';
 function fileErrors(rc) {
     return parseNethackrc(rc).configErrors[0]?.errors ?? [];
@@ -353,5 +354,18 @@ void test('a condition prefix without a name reports the short-option error', ()
 });
 void test('bind_key parameter complaints surface from BINDINGS lines', () => {
     assert.deepEqual(errorMessages('BINDINGS=h:toggle'), ["'toggle' requires a parameter"]);
+});
+void test('packorder config parsing reports each invalid class entry', () => {
+    // C options.c:change_inv_order() logs one config_error_add() line per
+    // bad or duplicate entry and still applies the valid classes; strchr on
+    // the remainder flags the first of a duplicate pair.
+    assert.deepEqual(errorMessages('OPTIONS=packorder:)X])'), ["Duplicate object class ')'",
+        "Not an object class 'X'",
+        "Object class ']' not allowed"]);
+    const good = parseNethackrc('OPTIONS=packorder:[');
+    assert.deepEqual(good.configErrors[0]?.errors ?? [], []);
+    // change_inv_order() prepends gold when '$' is not specified, then
+    // fills omitted classes from the previous (default) order.
+    assert.deepEqual(good.flags.inv_order?.slice(0, 4), [COIN_CLASS, ARMOR_CLASS, AMULET_CLASS, WEAPON_CLASS]);
 });
 //# sourceMappingURL=options_parse_errors.test.js.map

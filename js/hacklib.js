@@ -209,7 +209,8 @@ export function pointsOnline(x0, y0, x1, y1) {
     const dy = y0 - y1;
     return !dx || !dy || dy === dx || dy === -dx;
 }
-// C hacklib.c:visctrl()
+// C hacklib.c:visctrl(): the one port every caller shares, including the
+// options.c illegal_menu_cmd_key() and parsebindings() diagnostics.
 export function visibleCommandKey(code) {
     code &= 255;
     if (code >= 128)

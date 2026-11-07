@@ -13,7 +13,7 @@ import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHer
 import { heroIsPunished } from './ball.js';
 import { monsterResistsEffect, reviveCorpseForHero } from './zap.js';
 import { reviveCorpseImmediately } from './do.js';
-import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK, STOMACH, EYE, FOOT, LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, } from './const.js';
+import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_AP_FURNITURE, M_AP_TYPE, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK, STOMACH, EYE, FOOT, LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, } from './const.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
@@ -30,6 +30,8 @@ import { angerTemplePriest } from './priest.js';
 import { makeConfused, makeHallucinated, makeStunned, makeBlinded, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming } from './potion.js';
 import { healHeroLegs } from './do.js';
 import { resetUtrap, announceTerrainRescue, animateStatue } from './trap.js';
+import { monsterAtPosition } from './steed.js';
+import { CmapSymbol } from './glyph_numbers.js';
 import { currentHungerState, init_uhunger } from './eat.js';
 import { demonLord, summonMinion } from './minion.js';
 import { setMonsterMalign } from './makemon.js';
@@ -504,6 +506,22 @@ export async function doturn(state = game, { finishMonsterKill = finishHeroMonst
     state._helplessReason = 'trying to turn the monsters';
     state._helplessDoneMessage = 'You can move again.';
     state.context.move = 1;
+}
+// C pray.c:altarmask_at(): the altar mask at (x, y). A monster mimicking
+// altar furniture supplies the mask from its disguise (mcorpsenm);
+// otherwise an altar tile supplies its altarmask, and anything else is 0.
+export function altarmaskAt(x, y, state = game) {
+    if (!isok(x, y))
+        return 0;
+    const level = state.level;
+    const location = level?.at(x, y);
+    if (!level || !location)
+        return 0;
+    const monster = monsterAtPosition(level, x, y, state);
+    if (monster && M_AP_TYPE(monster) === M_AP_FURNITURE
+        && monster.mappearance === CmapSymbol.altar)
+        return monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0;
+    return location.typ === ALTAR ? location.flags ?? 0 : 0;
 }
 // ---------------------------------------------------------------------------
 // God names (align_gname, halu_gname, align_gtitle)

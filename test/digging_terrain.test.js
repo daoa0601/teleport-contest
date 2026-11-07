@@ -3,7 +3,8 @@ import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, M_SEEN_MAGR, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, FOUNTAIN, GRAVE, HOLE, ICE, LADDER, LAVAPOOL, MOAT, PIT, POOL, ROOM, STAIRS, STONE, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, LEVEL_TIMER_KIND } from '../js/const.js';
+import { ALTAR, AM_CHAOTIC, AM_LAWFUL, AM_SANCTUM, DIGCHECK_FAIL_ALTAR, M_AP_FURNITURE, M_SEEN_MAGR, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_BOULDER, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, FOUNTAIN, GRAVE, HOLE, ICE, LADDER, LAVAPOOL, MOAT, PIT, POOL, ROOM, STAIRS, STONE, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, LEVEL_TIMER_KIND } from '../js/const.js';
+import { CmapSymbol } from '../js/glyph_numbers.js';
 import { digCheck, digCheckFailMessage, digHole, digUpGrave, liquidFlow, } from '../js/dig.js';
 import { spotChecks } from '../js/hack.js';
 import { game } from '../js/gstate.js';
@@ -52,6 +53,28 @@ void test('dig_check rejects boulders, nondiggable walls, stairs and portals', a
         launch: { x: 0, y: 0 },
     });
     assert.equal(digCheck('you', 13, 10), DIGCHECK_FAIL_UNDESTROYABLETRAP);
+});
+// C dig.c:dig_check() with madeby == BY_OBJECT (a broken wand of digging,
+// apply.c:4045) tests the mask through pray.c:altarmask_at(), so an
+// altar-mimicking monster's disguise (makemon.c:2538 stores the alignment
+// mask in mcorpsenm) outranks the tile — and no wakeup() runs there to
+// reveal it first. A disguise never carries AM_SANCTUM, so the wand digs
+// a sanctum altar it could not otherwise touch.
+void test('a broken wand digs a sanctum altar hidden under an altar mimic', async () => {
+    const level = heroRoom();
+    requireFixtureGame(game);
+    const altar = level.requireAt(11, 10);
+    altar.typ = ALTAR;
+    altar.altarmask = AM_LAWFUL | AM_SANCTUM;
+    altar.flags = AM_LAWFUL | AM_SANCTUM;
+    assert.equal(digCheck('object', 11, 10), DIGCHECK_FAIL_ALTAR);
+    const mimic = await createMonsterAt('giant mimic', 11, 10);
+    mimic.m_ap_type = M_AP_FURNITURE;
+    mimic.mappearance = CmapSymbol.altar;
+    mimic.mcorpsenm = AM_CHAOTIC;
+    assert.equal(digCheck('object', 11, 10), DIGCHECK_PASSED);
+    // The hero's own digging still refuses the altar regardless of the mask.
+    assert.equal(digCheck('you', 11, 10), DIGCHECK_FAIL_ALTAR);
 });
 void test('dig_check limits a hard floor to pits and trap destruction', () => {
     heroRoom();
