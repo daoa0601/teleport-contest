@@ -298,6 +298,10 @@ function occupant(x, y, state) {
     return monsterAtPosition(state.level, x, y)
         || (state.u.ux === x && state.u.uy === y ? state.u.usteed ?? null : null);
 }
+// C explode.c:explosionmask() results, as the port's per-cell shield bits.
+const EXPL_NONE = 0;
+const EXPL_MON = 1;
+const EXPL_HERO = 2;
 // Part of C explode.c:explosionmask(): the AD_DISN WAND_CLASS test
 // (nonliving(m->data) || is_demon(m->data)).
 function ignoresDeathField(mnum) {
@@ -314,6 +318,17 @@ function heroResists(damageType, objectClass, state) {
         throw new Error(`Unknown explosion damage type ${damageType}`);
     return !!kind.property && (state.u[kind.property] || propertyIsActive(kind.property, state))
         || !!kind.defense && heroHasArtifactDefense(kind.defense, state);
+}
+// C explode.c:explosionmask()
+// One target's shield outcome: EXPL_HERO for the hero's square, EXPL_MON
+// for a resisting monster.  C takes a single monster pointer that may be
+// &gy.youmonst; the hero port is not a Monster, so the hero and monster
+// resistance switches stay heroResists()/monsterResists() and this restores
+// C's one-question shape.
+function explosionMask(target, damageType, objectClass, state) {
+    if (target === 'hero')
+        return heroResists(damageType, objectClass, state) ? EXPL_HERO : EXPL_NONE;
+    return monsterResists(target, damageType, objectClass) ? EXPL_MON : EXPL_NONE;
 }
 // Part of C explode.c:explosionmask(): the monster branch of the shield test.
 function monsterResists(monster, damageType, objectClass) {
@@ -333,13 +348,13 @@ async function explosionCells(x, y, damageType, objectClass, style, state) {
             const cx = x + dx, cy = y + dy;
             if (cx < 1 || cx >= COLNO || cy < 0 || cy >= ROWNO)
                 continue;
-            let shield = 0;
-            if (state.u.ux === cx && state.u.uy === cy && heroResists(damageType, objectClass, state))
-                shield |= 2;
+            let shield = EXPL_NONE;
+            if (state.u.ux === cx && state.u.uy === cy)
+                shield |= explosionMask('hero', damageType, objectClass, state);
             const monster = occupant(cx, cy, state);
             const living = monster && monster.mhp > 0;
-            if (living && monsterResists(monster, damageType, objectClass))
-                shield |= 1;
+            if (living)
+                shield |= explosionMask(monster, damageType, objectClass, state);
             if (living && cansee(cx, cy) && !canSpotMonster(monster))
                 await map_invisible(cx, cy);
             else if (!living)

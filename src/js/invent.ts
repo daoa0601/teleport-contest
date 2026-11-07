@@ -3070,7 +3070,10 @@ async function showItemActionMenu(item: GameObject) {
     });
 }
 
-// Part of C iactions.c:itemactions(): the selection entry over the menu.
+// C iactions.c:itemactions()
+// The action-choice entry for one item: the menu window
+// (showItemActionMenu()), the contextual rows (itemActionEntries()), and
+// the selection the caller replays as queued keys.
 export async function inventoryActionForObject(item: GameObject): Promise<InventoryAction | null> {
     const key = await showItemActionMenu(item);
     return key === 0 ? null : { key: inventoryActionKey(key), item };
