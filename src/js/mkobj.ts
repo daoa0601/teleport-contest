@@ -39,7 +39,8 @@ import { objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse,
     isReviver, zombieForm,
 } from './mon.js';
-import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
+import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { attachFigurineTimer } from './timeout.js';
 import { isIceAt } from './dbridge.js';
 import { block_point, cansee, vision_note_blocker_change } from './vision.js';
 import { newsym } from './display.js';

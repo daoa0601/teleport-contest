@@ -42,6 +42,7 @@ import { isPoolAt, isIceAt, isPoolOrLavaAt } from './dbridge.js';
 import { ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FULL_MOON, G_GENOD, GENOCIDED, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND, M_AP_MONSTER, MV_KNOWS_EGG, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE, PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_ALL, SICK_NONVOMITABLE, STONING, TIMEOUT, TURNED_SLIME, W_SADDLE, NECK, HAND, FOOT } from './const.js';
 import {
     AMULET_OF_STRANGULATION, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, FEDORA,
+    FIGURINE,
     GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL,
     ROCK, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
@@ -92,6 +93,7 @@ import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './dungeon.js';
 import {
     heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm, heroResistsStoning, touchPetrifies,
+    monsterYoungerForm,
 } from './mondata.js';
 import { encumber_msg } from './pickup.js';
 
@@ -1215,6 +1217,33 @@ export function attachEggHatchTimer(egg: GameObject, remaining = 0): void {
 // C timeout.c:kill_egg(): prevent an egg from ever hatching.
 export function killEgg(egg: GameObject | null | undefined): void {
     stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
+}
+
+// Part of C mon.c:dead_species(): the egg=true genocided-species gate the
+// figurine attach sites apply; the shared port is eggSpeciesIsDead() in mon.ts.
+function figurineSpeciesGenocided(figurine: GameObject, state: GameState): boolean {
+    const mnum = figurine?.corpsenm;
+    if (typeof mnum !== 'number' || !Number.isInteger(mnum) || mnum < 0) return true;
+    const younger = monsterYoungerForm(mnum);
+    return !!((state.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD)
+        || !!((state.mvitals?.[younger]?.mvflags ?? 0) & G_GENOD);
+}
+
+// C timeout.c:attach_fig_transform_timeout().
+// Also C invent.c:carry_obj_effects(), mkobj.c:set_corpsenm(): the
+// corpsenm/dead_species gates live at those C call sites.
+// set_corpsenm() can also attach a timer to an uncursed carried figurine.
+export function attachFigurineTimer(figurine: GameObject | null | undefined, state: GameState = game): ObjectTimer | null {
+    if (!figurine || figurine.otyp !== FIGURINE
+        || figurineSpeciesGenocided(figurine, state)) return null;
+    // Native attachment removes an earlier deadline before choosing the new
+    // one.  scheduleObjectTimer() also defends against duplicates, but this
+    // preserves the source mutation boundary around the RNG draw.
+    stopObjectTimer(figurine, OBJECT_TIMER_KIND.FIG_TRANSFORM);
+    return scheduleObjectTimer(
+        figurine, OBJECT_TIMER_KIND.FIG_TRANSFORM,
+        (state.moves ?? 0) + rnd(9000) + 200, state,
+    );
 }
 
 // Saveable object and level-position timer ordering (folded from
