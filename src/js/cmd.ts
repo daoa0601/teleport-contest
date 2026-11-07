@@ -48,7 +48,7 @@ import { doOptions, toggleBooleanOptionPrefix } from './message_types.js';
 import type { CommandDefinition } from './command_data.js';
 import { extFuncTabFromFunc, type CommandBindings } from './command_bindings.js';
 import { stopHeroOccupation } from './allmain.js';
-import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll } from './do_wear.js';
+import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll, remarmSwapwep } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
@@ -814,7 +814,7 @@ function enqueueInventoryAction(action: InventoryAction | null): void {
         cmdq_add_ec(CQ_CANNED, item === game.uwep ? 'dowield'
             : item === game.uswapwep ? 'remarm_swapwep'
                 : item === game.uquiver ? 'dowieldquiver' : 'donull');
-        cmdq_add_key(CQ_CANNED, HANDS_ITEM_KEY);
+        cmdq_add_key(CQ_CANNED, '-'.charCodeAt(0));
         return;
     }
     let extraKey: number | null = null;
@@ -1417,31 +1417,6 @@ export async function dolookaround(): Promise<void> {
     game.context.move = 0;
 }
 
-
-
-// C do_wear.c:remarm_swapwep(). The one cmdq_pop() — CQ_REPEAT during a
-// do-again replay, CQ_CANNED otherwise — must yield the '-' item-action
-// key (do_wear.c:3067-3080). Every other popped entry, or an empty queue,
-// fails ECMD_FAIL; rhack() then clears both queues for that result. The
-// success path resets a pending 'A', unwields uswapwep, and reports.
-const HANDS_ITEM_KEY = '-'.charCodeAt(0);
-
-// C do_wear.c:remarm_swapwep()
-async function remarmSwapwep(): Promise<void> {
-    const cmdq = cmdq_pop();
-    const key = cmdq?.typ === CMDQ_KEY ? cmdq.key : undefined;
-    if (key !== HANDS_ITEM_KEY || !game.uswapwep) {
-        commandResultFailed();
-        game.context.move = 0;
-        return;
-    }
-    resetBulkTakeoff();
-    const twoweap = game.u.twoweap;
-    await setSecondaryWeapon(null, game);
-    await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
-        : 'You no longer have a second weapon readied.');
-    game.context.move = 1;
-}
 
 
 // C cmd.c:enter_explore_mode(). The pinned build's sysconf ships

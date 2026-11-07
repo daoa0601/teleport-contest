@@ -28,7 +28,7 @@ import {
 import { game, requireLiveGame } from './gstate.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery } from './cmd.js';
+import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery, cmdq_pop, commandResultFailed } from './cmd.js';
 import type { ArmorCompletion } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects, finishHeroHelplessness } from './hack.js';
 import { stopHeroOccupation } from './allmain.js';
@@ -40,7 +40,7 @@ import {
     W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Is_waterlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL,
     W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD,
     P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL,
-    SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC,
+    SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, CMDQ_KEY,
 } from './const.js';
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,  isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
 
@@ -2923,4 +2923,28 @@ export async function objectWearMessage(object: GameObject, state: GameState = g
     const name = objectHasPersonalName(object, state) ? `the ${noun}` : withIndefiniteArticle(noun);
     const how = object.otyp === TOWEL ? ` around your ${body_part(HEAD, state)}` : '';
     return `You are now wearing ${name}${how}.`;
+}
+
+// C do_wear.c:remarm_swapwep(). The one cmdq_pop() — CQ_REPEAT during a
+// do-again replay, CQ_CANNED otherwise — must yield the '-' item-action
+// key (do_wear.c:3067-3080). Every other popped entry, or an empty queue,
+// fails ECMD_FAIL; rhack() then clears both queues for that result. The
+// success path resets a pending 'A', unwields uswapwep, and reports.
+const HANDS_ITEM_KEY = '-'.charCodeAt(0);
+
+// C do_wear.c:remarm_swapwep()
+export async function remarmSwapwep(): Promise<void> {
+    const cmdq = cmdq_pop();
+    const key = cmdq?.typ === CMDQ_KEY ? cmdq.key : undefined;
+    if (key !== HANDS_ITEM_KEY || !game.uswapwep) {
+        commandResultFailed();
+        game.context.move = 0;
+        return;
+    }
+    resetBulkTakeoff();
+    const twoweap = game.u.twoweap;
+    await setSecondaryWeapon(null, game);
+    await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
+        : 'You no longer have a second weapon readied.');
+    game.context.move = 1;
 }
