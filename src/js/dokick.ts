@@ -35,7 +35,7 @@ import { useHeroSkill, specialContactDamage } from './weapon.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
-import { flyKickedObject, snuffThrownCandle } from './thrown_object.js';
+import { flyKickedObject } from './thrown_object.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
 import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
@@ -45,7 +45,7 @@ import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
 import { makemonAt } from './makemon.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
-import { bringLeashedFollowers } from './apply.js';
+import { bringLeashedFollowers, snuffCandle } from './apply.js';
 import { displayMessageWindow } from './topl.js';
 import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -1430,7 +1430,7 @@ export async function kickFloorObject(x: number, y: number, {
     remove_object(moving, state);
     state._kickedObject = moving;
     try {
-        await snuffThrownCandle(moving, state, publish);
+        await snuffCandle(moving, state, publish);
         await newsym(x, y);
         requirePlayingGame(state);
         const flight = await flyKickedObject({

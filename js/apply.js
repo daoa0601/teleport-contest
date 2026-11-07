@@ -1,9 +1,9 @@
 // apply.js — Apply/use-tool command and the apply.c tool ports.
 // C ref: apply.c doapply(), dorub(), dojump(), do_break_wand(), use_trap(),
 // use_whip(), the use_*() tool functions, snuff_lit()/snuff_candle(),
-// splash_lit() and unfixable_trouble_count(). The catch helper stays in
-// light.ts with the burning-object owners; the apply.ts <-> light.ts import
-// cycle is function-body-only.
+// splash_lit(), catch_lit() and unfixable_trouble_count(). The catch helper
+// stays in light.ts with the burning-object owners; the apply.ts <-> light.ts
+// import cycle is function-body-only.
 import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectClassForType, objectBaseCost, objectSkill, objectMagic, AMULET_OF_YENDOR, BAG_OF_TRICKS, BANANA, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BOULDER, BRASS_LANTERN, BULLWHIP, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CORPSE, CREAM_PIE, CREDIT_CARD, CRYSTAL_BALL, EGG, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_LAMP, MAGIC_MARKER, MAGIC_WHISTLE, MIRROR, OIL_LAMP, POT_OIL, SADDLE, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_JUMPING, SPE_NOVEL, STATUE, STETHOSCOPE, TALLOW_CANDLE, TIN, TIN_OPENER, TIN_WHISTLE, TINNING_KIT, TOUCHSTONE, TOWEL, UNICORN_HORN, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, WAX_CANDLE, } from './object_data.js';
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './sounds.js';
@@ -47,7 +47,7 @@ import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, 
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { stack_object } from './invent.js';
-import { CANDLE_TYPES, LIGHT_TYPES, transformMagicLampToOilLamp } from './light.js';
+import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, transformMagicLampToOilLamp } from './light.js';
 import { lightRoom } from './read.js';
 import { finishTeleportArrival, askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet, } from './teleport.js';
 import { pickLock } from './lock.js';
@@ -1364,23 +1364,97 @@ export async function useCandle(object, { state = game } = {}) {
     candelabrum.owt = objectWeight(candelabrum);
     return result(remainder, state);
 }
-// C apply.c:snuff_lit()/snuff_candle(). Callers keep the object in its
-// native ownership phase: in_container() has already removed it from inventory.
-export async function snuffLitObject(object, state = game, publish = plineWithContinuation) {
-    if (!object.lamplit || !LIGHT_TYPES.has(object.otyp))
+// C apply.c:catch_lit()
+// One object catches fire from an external source: the ignitable() and
+// get_obj_location() gate, the out-of-fuel and cursed-lamp refusals, the
+// Yname2() catch report (visibility is the caller's ignite_items()
+// context: OBJ_INVENT or cansee(x,y)), the potion-of-oil discovery, the
+// unpaid-use bill, then begin_burn().
+export async function catchLit(object, { state = game, publish = async () => { }, random = rn2, visible = true } = {}) {
+    if (!getObjectLocation(object, state))
         return false;
+    if (!catchesFire(object, random))
+        return false;
+    const plural = (object.quan ?? object.quantity ?? 1) > 1;
+    const blind = heroIsBlind(state);
+    if (visible) {
+        const name = lightSourceName(object, state);
+        // C catch_lit() names the source with Yname2(): shop, carrier, or your/the.
+        const prefix = objectOwnershipPrefix(object, state);
+        await publish(blind
+            ? `${prefix}${name} ${plural ? 'feel' : 'feels'} warm.`
+            : `${prefix}${name} ${plural ? 'catch' : 'catches'} light!`);
+    }
+    // C catch_lit() credits discovery even when the fire is unseen.
+    if (object.otyp === POT_OIL)
+        learnObjectType(POT_OIL, state);
+    // C catch_lit(): an unpaid source that catches while carried is billed
+    // for its use on top of its price.
+    if (object.where === 'inventory' && object.unpaid
+        && costlySpot(state.u.ux, state.u.uy, state)) {
+        await chargeUnpaidUsage(object, { state });
+        await publish(`"That's in addition to the cost of ${ownedObjectName(object, state, { capitalized: false })} ${plural ? 'themselves' : 'itself'}, of course."`);
+        await billDummyObject(object, state);
+    }
+    return beginObjectBurn(object, state, state.moves ?? 0);
+}
+// Part of C apply.c:catch_lit(): decide whether an object can catch light.
+function catchesFire(object, random) {
+    if (!object || object.lamplit || object.in_use
+        || !LIGHT_TYPES.has(object.otyp)
+        || object.otyp === BRASS_LANTERN)
+        return false;
+    if ((object.otyp === MAGIC_LAMP
+        || object.otyp === CANDELABRUM_OF_INVOCATION)
+        && (object.spe ?? 0) <= 0)
+        return false;
+    if (TIMED_LIGHT_TYPES.has(object.otyp) && (object.age ?? 0) <= 0)
+        return false;
+    if (object.otyp === CANDELABRUM_OF_INVOCATION && object.cursed)
+        return false;
+    return !([OIL_LAMP, MAGIC_LAMP].includes(object.otyp)
+        && object.cursed && random(2) === 0);
+}
+// Part of C apply.c:catch_lit(): name the ignited light source.
+function lightSourceName(object, state) {
+    observeObjectForNaming(object, { state });
+    const name = objectName(object, state);
+    const quantity = object.quan ?? object.quantity ?? 1;
+    return quantity > 1 ? makePlural(name) : name;
+}
+// C apply.c:snuff_candle()
+// Extinguish a lit candle or candelabrum: Shk_Your()'s owner prefix
+// (carriedObjectOwner()), the OBJ_MINVENT cansee() visibility rule, then
+// end_burn(). snuff_lit()'s candle tail and the drop/throw/kick/put-in-box
+// callers land here.
+export async function snuffCandle(object, state = game, publish = plineWithContinuation) {
+    const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
+    if ((!candle && object.otyp !== CANDELABRUM_OF_INVOCATION) || !object.lamplit)
+        return false;
+    const many = candle ? object.quan > 1 : object.spe > 1;
     const location = getObjectLocation(object, state);
     const visible = object.where === 'minvent'
         ? !!location && cansee(location.x, location.y) : !heroIsBlind(state);
     if (visible) {
-        if (CANDLE_TYPES.has(object.otyp)) {
-            const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
-            const many = candelabrum ? object.spe > 1 : object.quan > 1;
-            await publish(`${carriedObjectOwner(object, state)} ${candelabrum ? "candelabrum's " : ''}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
-        }
-        else {
-            await publish(`${ownedObjectName(object, state)} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out!`);
-        }
+        await publish(`${carriedObjectOwner(object, state)} ${candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
+    }
+    endObjectBurn(object, state);
+    return true;
+}
+// C apply.c:snuff_lit()
+// Also C apply.c:snuff_candle(): the candle tail calls it. Callers keep the
+// object in its native ownership phase: in_container() has already removed
+// it from inventory.
+export async function snuffLitObject(object, state = game, publish = plineWithContinuation) {
+    if (!object.lamplit || !LIGHT_TYPES.has(object.otyp))
+        return false;
+    if (CANDLE_TYPES.has(object.otyp))
+        return snuffCandle(object, state, publish);
+    const location = getObjectLocation(object, state);
+    const visible = object.where === 'minvent'
+        ? !!location && cansee(location.x, location.y) : !heroIsBlind(state);
+    if (visible) {
+        await publish(`${ownedObjectName(object, state)} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out!`);
     }
     endObjectBurn(object, state);
     return true;
@@ -2961,12 +3035,18 @@ export function couldPoleMonster(weapon, { state = game } = {}) {
     const distance = distu(remembered.mx, remembered.my, state);
     return distance <= max && distance >= min;
 }
-// Part of C apply.c:snickersnee_used_dist_attk(): the ART_SNICKERSNEE
-// test.
-// C obj.h u_wield_art(ART_SNICKERSNEE), via the same id lookup
-// object_properties.js uses for is_pole().
+// C obj.h u_wield_art(ART_SNICKERSNEE): the artifact id lookup
+// snickersnee_used_dist_attk() and use_pole() share.
 function isArtifactSnickersnee(object) {
     return artifactById(object?.oartifact)?.name === 'Snickersnee';
+}
+// C apply.c:snickersnee_used_dist_attk()
+// Was Snickersnee used to attack at distance this turn already?
+function snickersneeUsedDistanceAttack(object, state) {
+    return !!object
+        && object === (state.uwep || state.u?.uwep)
+        && isArtifactSnickersnee(object)
+        && state.context?.snickersneeTurn === (state.moves ?? 0);
 }
 // Part of C apply.c:use_pole(): the obstacle wording of the
 // "uselessly attack" message.
@@ -3072,8 +3152,7 @@ export async function usePolearm(object, { state = game, ensureWielded, autohit 
         rememberPolearmTarget(monster, state);
         // C apply.c:snickersnee_used_dist_attk(): the wielded Snickersnee
         // already spent its distant strike this turn.
-        if (isArtifactSnickersnee(object) &&
-            state.context?.snickersneeTurn === (state.moves ?? 0)) {
+        if (snickersneeUsedDistanceAttack(object, state)) {
             await syncPline("The blade doesn't reach there!");
             return { spentTime: false, failure: true };
         }

@@ -46,7 +46,7 @@ import { eating_dangerous_corpse, Popeye, morehungry, vomit } from './eat.js';
 import { removeWornHeroItem } from './steal.js';
 import { captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification, } from './trap.js';
 import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
-import { runClaimedFigurineTimer, finishFigurineTimer } from './figurine.js';
+import { figTransform } from './figurine.js';
 import { meltIce } from './zap.js';
 import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
 import { objectWeight, runClaimedGlobTimer, finishGlobTimer } from './mkobj.js';
@@ -2055,14 +2055,8 @@ export async function runObjectTimer(claimed, currentTurn) {
             await plineWithContinuation(event.message);
         return finishGlobTimer(event, game, currentTurn);
     }
-    if (kind === OBJECT_TIMER_KIND.FIG_TRANSFORM) {
-        const event = await runClaimedFigurineTimer(claimed, game, currentTurn);
-        for (const message of event?.waterMessages || [])
-            await plineWithContinuation(message);
-        if (event?.message)
-            await plineWithContinuation(event.message);
-        return await finishFigurineTimer(event, game);
-    }
+    if (kind === OBJECT_TIMER_KIND.FIG_TRANSFORM)
+        return await figTransform(claimed, game, currentTurn);
     if (kind === OBJECT_TIMER_KIND.REVIVE_MON || kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
         const event = await runClaimedCorpseRevivalTimer(claimed, game, currentTurn);
         for (const message of event?.messages || [])

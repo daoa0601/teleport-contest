@@ -1,7 +1,8 @@
 // Cursed figurines which come to life on their own.
 // C refs: apply.c:fig_transform() and dog.c:make_familiar()/initedog().
 
-import { formatFeltMessage, formatSeenMessage } from './pline.js';
+import { formatFeltMessage, formatSeenMessage, plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { makeFamiliar } from './dog.js';
 import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
@@ -331,4 +332,20 @@ export async function finishFigurineTimer<T extends FigurineTimerEvent | null | 
     event.finishPending = false;
     event.finished = true;
     return event;
+}
+
+// C apply.c:fig_transform()
+// The whole timer callback: runClaimedFigurineTimer() ports the body up to
+// the presentation message, the messages publish here (C pline()/You_see()
+// run before the figurine is freed), and finishFigurineTimer() ports the
+// free-and-redraw tail.
+export async function figTransform(
+    claimed: DueObjectTimer | null | undefined, state: GameState = game,
+    currentTurn: number = state.moves ?? 0,
+    publish: MessagePublisher = plineWithContinuation,
+): Promise<FigurineTimerEvent | null | undefined> {
+    const event = await runClaimedFigurineTimer(claimed, state, currentTurn);
+    for (const message of event?.waterMessages || []) await publish(message);
+    if (event?.message) await publish(event.message);
+    return await finishFigurineTimer(event, state);
 }

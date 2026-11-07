@@ -58,9 +58,9 @@ import {
 } from './invent.js';
 import { objectMaterial, objectTypeKnown } from './o_init.js';
 import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously } from './mkobj.js';
-import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
+import { applyPolearm, applyTool, couldPoleMonster, snuffCandle } from './apply.js';
 import { snapshotMenuUnderlay } from './wintty.js';
-import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget , heroDirectGoldThrowRange, snuffThrownCandle } from './thrown_object.js';
+import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget , heroDirectGoldThrowRange } from './thrown_object.js';
 import type { ProjectileFlight } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster , angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult, FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './mon.js';
@@ -3183,7 +3183,7 @@ export async function resolveGenericSwallowedThrow({
 
         // throwit_mon_hit() runs snuff_candle() before thitmonst() consumes
         // its d20 targeting roll (dothrow.c:1490-1492, 2152).
-        await snuffThrownCandle(thrown, state);
+        await snuffCandle(thrown, state);
         rnd(20);
         const wake = await wakeMonster(engulfer);
         if (wake.heroDied) return true;
@@ -3347,7 +3347,7 @@ export async function throwOrdinaryObject({
             if (flight.contact.isshk && thrown.where === 'minvent'
                 && thrown.ocarry === flight.contact)
                 return { ...flight, consumed: true };
-            await snuffThrownCandle(thrown, state);
+            await snuffCandle(thrown, state);
             const contact = await hitMonsterWithThrownObject(
                 flight.contact, thrown, {
                     state, target: { x: flight.x, y: flight.y },

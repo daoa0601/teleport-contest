@@ -141,7 +141,7 @@ import { bot } from './botl.js';
 import { isWeaponTool, isBimanualObject, isPoisonableObject, objectIsMetallic } from './object_properties.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './mon.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
-import { releaseObjectLeash } from './apply.js';
+import { releaseObjectLeash, snuffCandle } from './apply.js';
 import { vegetarianCorpse } from './food_traits.js';
 import { updateInventoryPresentation } from './invent.js';
 import { shopkeeperName } from './shknam.js';
@@ -230,7 +230,6 @@ import { seeMonsterCloseup } from './mon.js';
 import { SINK, xdir, ydir } from './const.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { snuffThrownCandle } from './thrown_object.js';
 import { CLR_BROWN } from './terminal.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import type { ProjectileFlight } from './thrown_object.js';
@@ -3966,7 +3965,7 @@ export async function flyBoomerang(
                     flight.stoppedBy = 'monster';
                     break;
                 }
-                await snuffThrownCandle(object, state);
+                await snuffCandle(object, state);
                 const hit = await hitMonsterWithThrownObject(monster, object, {
                     state, target: { x, y }, ...(volley ? { volley } : {}),
                 });

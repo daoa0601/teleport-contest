@@ -23,7 +23,7 @@ import { useHeroSkill, specialContactDamage } from './weapon.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
-import { flyKickedObject, snuffThrownCandle } from './thrown_object.js';
+import { flyKickedObject } from './thrown_object.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
 import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
@@ -33,7 +33,7 @@ import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
 import { makemonAt } from './makemon.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
-import { bringLeashedFollowers } from './apply.js';
+import { bringLeashedFollowers, snuffCandle } from './apply.js';
 import { displayMessageWindow } from './topl.js';
 import { stairwayAt, stairway_find_from } from './stairs.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META, MONSTER_FLAGS2 } from './monster_data.js';
@@ -1336,7 +1336,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
     remove_object(moving, state);
     state._kickedObject = moving;
     try {
-        await snuffThrownCandle(moving, state, publish);
+        await snuffCandle(moving, state, publish);
         await newsym(x, y);
         requirePlayingGame(state);
         const flight = await flyKickedObject({
