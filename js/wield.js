@@ -1,6 +1,6 @@
 // wield.js — Wield, quiver, and weapon-swap commands.
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
-// doswapweapon(), dotwoweapon(), and finish_splitting().
+// doswapweapon(), dotwoweapon(), finish_splitting(), and ready_ok().
 import { WEAPON_CLASS, TOOL_CLASS, SCROLL_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectClassForType, objectSkill, LENSES, LOADSTONE, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, BATTLE_AXE, CORPSE, WORM_TOOTH, } from './object_data.js';
@@ -14,9 +14,8 @@ import { makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNami
 import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight, chargeAlteredUnpaidObject } from './mkobj.js';
 import { learnObjectType } from './o_init.js';
 import { inventoryItemDescription, addInventoryItem, freeInventoryObject, getobj, useUpInventoryStack, splittable } from './invent.js';
-import { isBimanualObject, is_elven_weapon, isWeaponTool, isWetTowel, is_launcher, isLauncherAmmunition, isMissileObject, isPolearm, pair_of } from './object_properties.js';
+import { isBimanualObject, is_elven_weapon, isWeaponTool, isWetTowel, is_launcher, isLauncherAmmunition, isMissileObject, isPolearm, launcherMatchesAmmo, pair_of } from './object_properties.js';
 import { resetBulkTakeoff } from './do_wear.js';
-import { readySuggestion } from './quiver.js';
 import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restrictName } from './artifact.js';
 import { objectOwnershipPrefix, insideShopRoomAt, shopResident, updateUnpaidObjectPrice } from './shk.js';
 import { promptYesNoQuit } from './query.js';
@@ -611,6 +610,28 @@ export async function setQuiverObject(object, state = game) {
     const previous = slotObject('uquiver', state);
     await setworn(object, W_QUIVER, state);
     return previous;
+}
+// Port only: the obj.h oclass read with the JS type-table fallback; the C
+// ready_ok and autoquiver reads obj->oclass directly.
+// The obj.h oclass read with the type-table fallback; autoquiver()
+// (dothrow.ts) and ready_ok() below share it.
+export function quiverObjectClass(item) {
+    return item.oclass || objectClassForType(item.otyp);
+}
+// C wield.c:ready_ok(). The empty-quiver choice stays in the caller.
+export function readySuggestion(item, state) {
+    const quantity = item.quantity ?? item.quan ?? 1;
+    if (item === state.uwep
+        || (item === state.uswapwep && state.u?.twoweap)) {
+        return quantity > 1;
+    }
+    if (isLauncherAmmunition(item)) {
+        return launcherMatchesAmmo(item, state.uwep)
+            || launcherMatchesAmmo(item, state.uswapwep);
+    }
+    if (is_launcher(item))
+        return false;
+    return [WEAPON_CLASS, COIN_CLASS].includes(quiverObjectClass(item));
 }
 // C wield.c:uwepgone().  The light-source message precedes setworn()'s
 // removal of the warning source, and the bare-hand notice is armed.

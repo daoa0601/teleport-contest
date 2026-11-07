@@ -21,7 +21,7 @@ import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, 
 import { burnHeroArmorByFire, igniteItems } from './trap.js';
 import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { discoverHeroReflectionSource, ureflects } from './muse.js';
-import { rndcurse } from './throne.js';
+import { rndcurse } from './sit.js';
 import { returnHeroToHumanForm, body_part, heroSpecies } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, plineWithContinuation } from './pline.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';

@@ -61,7 +61,7 @@ import { amuletTurn, intervene, publishMonsterCuss } from './wizard.js';
 import { grantAmuletWish } from './wish.js';
 import { changeHeroLuck, checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength, periodicTurnExercise } from './attrib.js';
 import { encumber_msg } from './pickup.js';
-import { rndcurse } from './throne.js';
+import { rndcurse } from './sit.js';
 import { resolveMonsterGaze, completeHeroAttackSlot, mattacku, missmu, resolveMonsterSelfExplosion } from './mhitu.js';
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import { canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, curs_on_u } from './display.js';

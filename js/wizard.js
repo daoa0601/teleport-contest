@@ -11,7 +11,7 @@ import { monsterAlignmentType, priestIsInOwnTemple } from './priest.js';
 import { BOLT_LIM, In_endgame, Is_astralevel, Is_rogue_level, MAGIC_PORTAL, M_AP_MONSTER, MM_NOMSG, MM_NOWAIT, RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR, STRAT_PLAYER, STRAT_WAITFORU, STRAT_WAITMASK } from './const.js';
 import { isok } from './cmd.js';
 import { msummon } from './minion.js';
-import { rndcurse } from './throne.js';
+import { rndcurse } from './sit.js';
 import { dungeonBuildsUp, insideWizardTower } from './dungeon.js';
 import { monsterIsHelpless, is_minion } from './mondata.js';
 import { mksobj, linkObjectToMonsterInventory, remove_object } from './mkobj.js';

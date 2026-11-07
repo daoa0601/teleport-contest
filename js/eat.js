@@ -58,7 +58,7 @@ import { SELL_DONTSELL, SELL_NORMAL, costlySpot, setSellDisposition } from './sh
 import { dismountHero } from './steed.js';
 import { surfaceName } from './dungeon.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
-import { attrcurse } from './throne.js';
+import { attrcurse } from './sit.js';
 import { flushPendingTopline } from './topl.js';
 import { vaultGdWatching } from './vault.js';
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';

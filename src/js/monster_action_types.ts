@@ -7,7 +7,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Position, Trap } from './map_types.js';
-import type { rndcurse } from './throne.js';
+import type { rndcurse } from './sit.js';
 import type { finishMonsterAttackDeath, DeathHandler } from './end.js';
 import type { MonsterBreathResult, MonsterSpitResult } from './mthrowu.js';
 import type { MonsterOffensivePhase, MonsterOffensiveResult } from './monster_offensive_types.js';

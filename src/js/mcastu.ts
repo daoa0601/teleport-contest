@@ -25,7 +25,7 @@ import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttac
 import type { DeathHandler } from './end.js';
 import { discoverHeroReflectionSource, ureflects } from './muse.js';
 
-import { rndcurse } from './throne.js';
+import { rndcurse } from './sit.js';
 import { returnHeroToHumanForm, body_part, heroSpecies } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';

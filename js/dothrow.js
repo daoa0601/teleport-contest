@@ -17,7 +17,7 @@ import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHe
 import { isWeldedPrimary, setQuiverObject, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat, doquiverCore } from './wield.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, STRAT_WAITMASK, Luck, W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG, HAND, EYE, HEAD, FACE, FOOT, ARM, } from './const.js';
 import { weaponHitValue, weaponSkillHitBonus, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills, skillName, weaponDescription, } from './weapon.js';
-import { quiverObjectClass } from './quiver.js';
+import { quiverObjectClass } from './wield.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName, simpleArmorName } from './objnam.js';
 import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore, stack_object, fullyIdentifyObject, addInventoryItem, } from './invent.js';
 import { objectMaterial, objectTypeKnown } from './o_init.js';

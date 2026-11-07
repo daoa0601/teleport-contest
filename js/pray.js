@@ -58,7 +58,7 @@ import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroS
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { attrcurse, rndcurse } from './throne.js';
+import { attrcurse, rndcurse } from './sit.js';
 import { safe_teleds } from './teleport.js';
 import { cansee, couldsee } from './vision.js';
 import { flushPendingTopline } from './topl.js';

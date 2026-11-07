@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';
-import { rndcurse } from '../js/throne.js';
+import { rndcurse } from '../js/sit.js';
 import { removeCurseEffect } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { FOUNTAIN } from '../js/const.js';

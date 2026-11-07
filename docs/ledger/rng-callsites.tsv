@@ -2246,32 +2246,32 @@ src/js/teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
 src/js/teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
 src/js/teleport.ts	readLevelRequest	rnl	"[""5""]"	constant
 src/js/trap.ts	floatHeroDown	rnd	"[""2""]"	constant
-src/js/throne.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	unproved
-src/js/throne.ts	normalThroneEffect	rn1	"[""100"", ""250""]"	constant
-src/js/throne.ts	normalThroneEffect	rn1	"[""4"", ""3""]"	constant
-src/js/throne.ts	normalThroneEffect	rn1	"[""7"", ""16""]"	constant
-src/js/throne.ts	normalThroneEffect	rn2	"[""5""]"	constant
-src/js/throne.ts	normalThroneEffect	rn2	"[""5""]"	constant
-src/js/throne.ts	normalThroneEffect	rn2	"[""A_MAX""]"	constant
-src/js/throne.ts	normalThroneEffect	rn2	"[""A_MAX""]"	constant
-src/js/throne.ts	normalThroneEffect	rnd	"[""10""]"	constant
-src/js/throne.ts	normalThroneEffect	rnd	"[""2""]"	constant
-src/js/throne.ts	normalThroneEffect	rnd	"[""30""]"	constant
-src/js/throne.ts	normalThroneEffect	rnd	"[""30""]"	constant
-src/js/throne.ts	normalThroneEffect	rnd	"[""6""]"	constant
-src/js/throne.ts	rndcurse	rn2	"[""10""]"	constant
-src/js/throne.ts	rndcurse	rn2	"[""20""]"	constant
-src/js/throne.ts	rndcurse	rn2	"[""4""]"	constant
-src/js/throne.ts	rndcurse	rnd	"[""inventoryCount""]"	unproved
-src/js/throne.ts	rndcurse	rnd	"[""sides""]"	constant
-src/js/throne.ts	specialThroneEffect	rn1	"[""101"", ""100""]"	constant
-src/js/throne.ts	specialThroneEffect	rn2	"[""5""]"	constant
-src/js/throne.ts	specialThroneEffect	rnd	"[""16""]"	constant
-src/js/throne.ts	specialThroneEffect	rnd	"[""80""]"	constant
-src/js/throne.ts	summonCourt	rnd	"[""10""]"	constant
-src/js/throne.ts	throneSitEffect	rn2	"[""3""]"	constant
-src/js/throne.ts	throneSitEffect	rnd	"[""13""]"	constant
-src/js/throne.ts	throneSitEffect	rnd	"[""6""]"	constant
+src/js/sit.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	unproved
+src/js/sit.ts	normalThroneEffect	rn1	"[""100"", ""250""]"	constant
+src/js/sit.ts	normalThroneEffect	rn1	"[""4"", ""3""]"	constant
+src/js/sit.ts	normalThroneEffect	rn1	"[""7"", ""16""]"	constant
+src/js/sit.ts	normalThroneEffect	rn2	"[""5""]"	constant
+src/js/sit.ts	normalThroneEffect	rn2	"[""5""]"	constant
+src/js/sit.ts	normalThroneEffect	rn2	"[""A_MAX""]"	constant
+src/js/sit.ts	normalThroneEffect	rn2	"[""A_MAX""]"	constant
+src/js/sit.ts	normalThroneEffect	rnd	"[""10""]"	constant
+src/js/sit.ts	normalThroneEffect	rnd	"[""2""]"	constant
+src/js/sit.ts	normalThroneEffect	rnd	"[""30""]"	constant
+src/js/sit.ts	normalThroneEffect	rnd	"[""30""]"	constant
+src/js/sit.ts	normalThroneEffect	rnd	"[""6""]"	constant
+src/js/sit.ts	rndcurse	rn2	"[""10""]"	constant
+src/js/sit.ts	rndcurse	rn2	"[""20""]"	constant
+src/js/sit.ts	rndcurse	rn2	"[""4""]"	constant
+src/js/sit.ts	rndcurse	rnd	"[""inventoryCount""]"	unproved
+src/js/sit.ts	rndcurse	rnd	"[""sides""]"	constant
+src/js/sit.ts	specialThroneEffect	rn1	"[""101"", ""100""]"	constant
+src/js/sit.ts	specialThroneEffect	rn2	"[""5""]"	constant
+src/js/sit.ts	specialThroneEffect	rnd	"[""16""]"	constant
+src/js/sit.ts	specialThroneEffect	rnd	"[""80""]"	constant
+src/js/sit.ts	summonCourt	rnd	"[""10""]"	constant
+src/js/sit.ts	throneSitEffect	rn2	"[""3""]"	constant
+src/js/sit.ts	throneSitEffect	rnd	"[""13""]"	constant
+src/js/sit.ts	throneSitEffect	rnd	"[""6""]"	constant
 src/js/throw_state.ts	applyThrowSlip	rn2	"[""3""]"	constant
 src/js/throw_state.ts	applyThrowSlip	rn2	"[""3""]"	constant
 src/js/throw_state.ts	applyThrowSlip	rn2	"[""7""]"	constant
