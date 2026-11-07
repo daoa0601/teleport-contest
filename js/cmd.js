@@ -833,7 +833,7 @@ async function runCommandHandler(binding) {
         await doPermanentInventory();
     }
     else if (key === 127) { // Delete: overview of known terrain.
-        await doTerrainOverview();
+        await terrainCommand();
     }
     else if (key === 27) { // Escape cancels without producing a message.
         game.context.move = 0;
@@ -1010,10 +1010,6 @@ export async function terrainCommand() {
         }
     }
     game.context.move = 0;
-}
-// Port only: alias wrapper over terrainCommand() for the command table.
-async function doTerrainOverview() {
-    await terrainCommand();
 }
 // C cmd.c:here_cmd_menu(): inlined here (there_cmd_menu at the hero's own
 // square with CLICK_1; C doherecmdmenu() is this function's own name).
@@ -1607,8 +1603,9 @@ async function enterExploreMode() {
     }
     game.context.move = 0;
 }
-// Port only: null the port's cached victual/tin/spbook pointers when
-// their object leaves the level.
+// Part of C save.c:saveobjchn(): the release_data() block that releases a
+// level-owned object — victual/tin/spbook keep their o_id so the pointer
+// can be restored on reload, then dealloc_obj().
 function freeLevelObject(object) {
     for (const content of [...(object.contents ?? [])])
         freeLevelObject(content);
@@ -1752,7 +1749,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['perminv', doPermanentInventory],
     ['vanquished', doVanquished],
     ['genocided', doGenocided],
-    ['terrain', doTerrainOverview],
+    ['terrain', terrainCommand],
     ['retravel', dotravelTarget],
     ['redraw', redrawCommand],
     ['optionsfull', () => doOptions(!game.iflags.menu_requested)],
@@ -2830,7 +2827,9 @@ const impairedDirections = [
 ];
 // Top-line key prompts used by commands which can pause for input.
 // C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
-// Port only: paint the pending key prompt on the topline.
+// Part of C cmd.c:yn_function(): paint the pending key prompt on the
+// topline (C's tty_yn_function() shows the question via
+// custompline(SUPPRESS_HISTORY) and reads the answer key).
 async function paintKeyPrompt(message, cursorOffset = 0) {
     await setTopline(message);
     await flush_screen(1);
