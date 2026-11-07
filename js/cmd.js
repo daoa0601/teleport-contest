@@ -2707,10 +2707,10 @@ export function cmdq_add_userinput(q, state = game) {
 export function cmdq_add_int(q, val, state = game) {
     state.command_queue[q].push({ typ: CMDQ_INT, intval: val });
 }
-// C cmd.c:cmd_from_ecname()
-// Resolve a command by name for producers which hold the visible name
-// (act_on_act(), domouseaction()); the queue stores the handler's first
-// table entry, exactly like ext_func_tab_from_func().
+// Port only: resolve an extended-command name to its table entry. C's
+// act_on_act() and domouseaction() hold the ext_func_tab pointer directly;
+// the TS menu selections carry the visible name, so this stands in for that
+// pointer at every cmdq_add_ec() call.
 function commandByName(name) {
     const command = NATIVE_COMMANDS.find(candidate => candidate.name === name);
     if (!command)
@@ -2875,9 +2875,8 @@ export async function getCount(inkey, maxcount, gcFlags, inputState = 'other') {
         putMessageHistory(`Count: ${accepted} ${keyText(key)}`);
     return { key, count: accepted };
 }
-// C cmd.c:get_count()
-// C parse() collects the repeat count through get_count((char *) 0, '\0',
-// LARGEST_INT, &gc.command_count, GC_NOFLAGS) in command input state.
+// Part of C cmd.c:parse(): its get_count((char *) 0, '\0', LARGEST_INT,
+// &gc.command_count, GC_NOFLAGS) call, run in command input state.
 async function readCommandCount() {
     const { key, count } = await getCount(0, BigInt(NATIVE_COMMAND_CONSTANTS.LARGEST_INT), GC_NOFLAGS, 'command');
     return { key, count: Number(count) };
