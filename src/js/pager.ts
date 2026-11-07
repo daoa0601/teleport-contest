@@ -1,5 +1,5 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
-// C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
+// C refs: pager.c dowhatis()/doquickwhatis()/do_look()/do_screen_description()/checkfile()/dohelp().
 
 import { ROCK_CLASS } from './objclass.js';
 import {
@@ -45,6 +45,7 @@ import {
 } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { monsterAtPosition } from './steed.js';
+import { altarmaskAt } from './pray.js';
 import { heroIsPolymorphed, heroFormSticks, heroSpecies } from './polyself.js';
 import { selectInventoryObject } from './invent.js';
 import { typedSymbolDescription } from './look_symbols.js';
@@ -131,10 +132,8 @@ export function iceDescriptionAt(x: number, y: number, { state = game, probing =
 // supplies the same firstmatch to #lookaround and show_glyph()'s
 // accessibility notice.
 export async function describeMapLocation(x: number, y: number): Promise<string> {
-    const screen = screenDescription(x, y, '');
-    return screen.needsDetail
-        ? await farlookLocationDescription(x, y) || screen.firstMatch
-        : screen.firstMatch;
+    const look = await doScreenDescription(x, y);
+    return look.found ? look.firstMatch : '';
 }
 
 // Part of C pager.c:do_look(): the from_screen tail shared by every
@@ -172,21 +171,14 @@ async function lookFromScreen(quick = true): Promise<void> {
             // checkfile() question or the next picker acknowledges that prose.
             game._pending_message = '';
             game._retained_message = '';
-            const basic = screenDescription(cursor.x, cursor.y, '');
-            const description = basic.needsDetail ? await farlookLocationDescription(cursor.x, cursor.y) : '';
-            const glyph = glyphAt(cursor.x, cursor.y);
-            const monster = basic.needsDetail && glyph?.kind === 'monster' && game.level
-                && !farlookDescribesHero(cursor.x, cursor.y)
-                ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
-            const seen = monster ? monsterSeenDescription(monster) : '';
-            const screen = basic.needsDetail ? screenDescription(cursor.x, cursor.y, description) : basic;
-            await plineWithContinuation(screen.count ? screen.text
-                + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
-            if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
+            const look = await doScreenDescription(cursor.x, cursor.y);
+            await plineWithContinuation(look.found ? look.outStr
+                : "I've never heard of such things.");
+            if (look.found === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
                 && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false)) {
-                await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
-                if (monster) await offerMonsterSupplement(monster,
-                    encyclopediaSupplementalName(screen.firstMatch), cursor.pickType === LOOK_VERBOSE);
+                await offerFarlookInformation(look.firstMatch, cursor.pickType === LOOK_VERBOSE);
+                if (look.supplement) await offerMonsterSupplement(look.supplement,
+                    encyclopediaSupplementalName(look.firstMatch), cursor.pickType === LOOK_VERBOSE);
             }
             if (quick || cursor.pickType === LOOK_ONCE) break;
         }
@@ -661,8 +653,7 @@ export function unseenCreatureDescription(): string {
 }
 
 // Part of C pager.c:do_screen_description(): the glyph-feature
-// description; also inlines C pray.c:altarmask_at() — the mimic-aware
-// altar mask lookup.
+// description, with pray.c:altarmask_at() for the altar alignment.
 export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata): string {
     if (glyph.kind === 'trap') return displayedTrapDescription(glyph.trapType, x, y);
     if (glyph.kind === 'invisible') return unseenCreatureDescription();
@@ -680,11 +671,7 @@ export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata
     if (!location) return 'unexplored area';
     if (glyph.terrainName === 'altar') {
         // pray.c:altarmask_at() gives the disguise priority over terrain.
-        const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
-        const mask = monster && M_AP_TYPE(monster) === M_AP_FURNITURE
-            && monster.mappearance === CmapSymbol.altar
-            ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0
-            : location.typ === ALTAR ? location.flags : 0;
+        const mask = altarmaskAt(x, y);
         const alignment = Amask2align(mask);
         const distant = Is_astralevel(game.u.uz) && !adjacentToHero(x, y)
             && !!(mask & AM_SANCTUM);
@@ -727,26 +714,34 @@ function adjacentToHero(x: number, y: number): boolean {
 // encglyph() occupies ten bytes in the native buffer, followed by eight spaces.
 const ENCODED_LOOK_PREFIX_LENGTH = 10 + 8;
 
-interface ScreenDescription { text: string; count: number; firstMatch: string; needsDetail: boolean }
+interface ScreenDescription {
+    prefix: string;
+    text: string;
+    count: number;
+    firstMatch: string;
+    needsDetail: boolean;
+}
 
-// C pager.c:do_screen_description(): every meaning the displayed symbol can
-// carry. add_cmap_descr() is the cmap pass (pool, moat, trap, warning) and
-// append_str() the " or " appends with their already-present check.
-export function screenDescription(x: number, y: number, description: string): ScreenDescription {
+// Part of C pager.c:do_screen_description(): the symbol-matching pass —
+// every meaning the displayed symbol can carry. add_cmap_descr() is the
+// cmap pass (pool, moat, trap, warning) and append_str() the " or "
+// appends with their already-present check. doScreenDescription() below
+// adds C's detailed-look pass on top.
+function screenDescription(x: number, y: number): ScreenDescription {
     const glyph = lookGlyphAt(x, y);
     const location = game.level?.at(x, y);
     const appearance = location?.disp_glyph
         ? { ch: location.disp_ch, dec: location.disp_decgfx }
         : location?.remembered_glyph;
-    if (!glyph || !appearance) return { text: description, count: 0, firstMatch: '', needsDetail: false };
+    if (!glyph || !appearance) return { prefix: '', text: '', count: 0, firstMatch: '', needsDetail: false };
     const symbol = appearance.dec ? `\x0e${appearance.ch}\x0f` : appearance.ch;
     const prefix = `${symbol}        `;
-    const submerged = (game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz);
+    const submerged = (game.u.uinwater || game.u.underwater) && !Is_waterlevel(game.u.uz);
     const distant = Math.abs(x - game.u.ux) > 1 || Math.abs(y - game.u.uy) > 1;
     const detectionOnly = ((game.iflags.terrainmode ?? 0) & (TER_DETECT | TER_MAP)) === TER_DETECT;
     if ((game.u.uswallow || submerged) && distant
         || detectionOnly && glyph.glyph === cmapToGlyph(CmapSymbol.stone))
-        return { text: prefix + 'unreconnoitered', count: 1, firstMatch: 'unreconnoitered', needsDetail: false };
+        return { prefix, text: 'unreconnoitered', count: 1, firstMatch: 'unreconnoitered', needsDetail: false };
 
     const meanings: string[] = [];
     let count = 0, firstMatch = '', needLook = false, hitTrap = false, skippedVenom = false;
@@ -848,17 +843,51 @@ export function screenDescription(x: number, y: number, description: string): Sc
         break;
     }
     if (skippedVenom && count < 2) append('a splash of venom', 'splash of venom');
-    let text = count > 4 ? 'can be many things' : meanings.join(' or ');
     const needsDetail = count > 1 || needLook;
-    if (needsDetail) {
-        firstMatch = description || firstMatch;
+    return { prefix, text: count > 4 ? 'can be many things' : meanings.join(' or '),
+        count, firstMatch, needsDetail };
+}
+
+export interface ScreenLook {
+    found: number;
+    outStr: string;
+    firstMatch: string;
+    supplement: Monster | null;
+}
+
+// C pager.c:do_screen_description() with looked=TRUE, sym=0 — the form
+// every map caller uses: getpos's autodescribe and target menus
+// (getpos.c:649,700), do_look's cursor picks below (pager.c:1917),
+// #lookaround (cmd.c:1360), and the glyph accessibility notice
+// (display.c:2068). The symbol pass above collects every meaning of the
+// displayed symbol; this function adds C's detailed pass (pager.c
+// 1591-1624): lookat()'s description replaces *firstmatch and is
+// parenthesized in out_str with any quoted engraving, the "[seen: ...]"
+// suffix from lookat()'s monbuf is appended, found collapses to 1, and
+// the monster behind the glyph comes back for the encyclopedia
+// supplement (C's for_supplement out argument). The looked=FALSE
+// typed-symbol spelling of the same C function is typedSymbolDescription()
+// (look_symbols.ts).
+export async function doScreenDescription(x: number, y: number): Promise<ScreenLook> {
+    const screen = screenDescription(x, y);
+    let { count: found, firstMatch } = screen;
+    let text = screen.text;
+    let supplement: Monster | null = null;
+    if (screen.needsDetail) {
+        const detail = await farlookLocationDescription(x, y);
+        const glyph = glyphAt(x, y);
+        supplement = glyph?.kind === 'monster' && game.level && !farlookDescribesHero(x, y)
+            ? monsterAtPosition(game.level, x, y) : null;
+        const seen = supplement ? monsterSeenDescription(supplement) : '';
+        firstMatch = detail || firstMatch;
         if (firstMatch) {
             text += ` (${firstMatch}${quotedEngraving(x, y, firstMatch)})`;
-            count = 1;
+            found = 1;
         }
+        if (seen) text += ` [seen: ${seen}]`;
     }
     const literal = text.slice(0, BUFSZ - 1 - ENCODED_LOOK_PREFIX_LENGTH);
-    return { text: prefix + decodeMixedLiteral(literal), count, firstMatch, needsDetail };
+    return { found, outStr: screen.prefix + decodeMixedLiteral(literal), firstMatch, supplement };
 }
 
 // Part of C pager.c:lookat(): the hero-priority gate — the sensed hero at

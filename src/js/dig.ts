@@ -55,7 +55,7 @@ import type { DiggingOccupation } from './occupation_types.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroIsFlying, body_part, mbodypart } from './polyself.js';
-import { altarWrath, desecrateAltar } from './pray.js';
+import { altarWrath, altarmaskAt, desecrateAltar } from './pray.js';
 import { punishHero, unpunishHero } from './read.js';
 import { autopickupAtHero } from './pickup.js';
 import { angerTemplePriest } from './priest.js';
@@ -782,7 +782,7 @@ export function digCheck(madeBy: DiggingActor, x: number, y: number, state: Game
         return DIGCHECK_FAIL_THRONE;
     } else if (IS_ALTAR(location.typ)
         && (madeBy !== 'object'
-            || ((location.flags ?? 0) & AM_SANCTUM) !== 0)) {
+            || (altarmaskAt(x, y, state) & AM_SANCTUM) !== 0)) {
         return DIGCHECK_FAIL_ALTAR;
     } else if (Is_airlevel(state.u?.uz)) {
         return DIGCHECK_FAIL_AIRLEVEL;

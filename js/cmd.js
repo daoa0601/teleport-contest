@@ -27,7 +27,7 @@ import { wizTimeoutQueue } from './timeout.js';
 import { continueSpellbookStudy } from './spell.js';
 import { CTRL_P, clearMessageWindow, flushPendingTopline, messageWindowMode, putMessageHistory, redotoplin, renderKeyPrompt, showMessageHistoryWindow, stepHistoryBack } from './topl.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
+import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation } from './pager.js';
 import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
 import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
 import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip, checkSpecialRoom } from './hack.js';

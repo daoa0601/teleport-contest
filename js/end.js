@@ -1064,6 +1064,7 @@ async function finalPossessionLines(possessions) {
             const object = await mksobj(type, false, false);
             object.known = object.dknown = true;
             object.quan = count;
+            recordObjectEncounter(type);
             recordObjectKnowledge(type);
             const name = objectName(object);
             lines.push(`${prefix} ${count === 1 ? name : makePlural(name)} (worth ${worth} ${currency(2)}),`);

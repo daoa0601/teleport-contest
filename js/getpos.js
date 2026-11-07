@@ -11,7 +11,7 @@ import { BOULDER, ROCK } from './object_data.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cansee } from './vision.js';
-import { coordinateDescription, farlookLocationDescription, screenDescription } from './pager.js';
+import { coordinateDescription, doScreenDescription } from './pager.js';
 import { isValidTravelTarget } from './hack.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './wintty.js';
 import { visibleCommandKey } from './hacklib.js';
@@ -406,11 +406,8 @@ async function selectGetposMenu(spots, kind, describe = describeGetposLocation) 
 // text for one spot. getpos_menu() describes the displayed glyph even when
 // the caller only supplied a validity rule, such as spell or polearm targeting.
 export async function describeGetposLocation(x, y) {
-    const screen = screenDescription(x, y, '');
-    if (!screen.count)
-        return null;
-    return screen.needsDetail
-        ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
+    const look = await doScreenDescription(x, y);
+    return look.found ? look.firstMatch : null;
 }
 // C getpos.c:auto_describe(), also used by cmd.c:doclicklook().
 export async function autoDescribePosition(x, y) {

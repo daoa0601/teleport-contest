@@ -12,8 +12,7 @@ import {
     bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException,
     parseOptions, MENU_KEY_OPTIONS,
 } from './message_types.js';
-import { visctrl } from './options.js';
-import { mungSpaces } from './hacklib.js';
+import { mungSpaces, visibleCommandKey } from './hacklib.js';
 import { parseMenuColoring } from './coloratt.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';
@@ -262,7 +261,7 @@ function handleConfigStatement(
                 const illegal = menuCommandKeyError(code);
                 if (illegal) {
                     addError(illegal);
-                    addError(`Bad menu key ${visctrl(code)}:${command}`);
+                    addError(`Bad menu key ${visibleCommandKey(code)}:${command}`);
                 } else if (!result.commandBindings.bindMenuKey(code, command))
                     addRawError('out of menu map space.', false);
                 continue;

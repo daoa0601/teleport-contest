@@ -8,7 +8,7 @@ import { requireGameDisplay, game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { APPLE, FOOD_RATION, LEASH } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
-import { screenDescription } from '../js/pager.js';
+import { doScreenDescription } from '../js/pager.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
@@ -242,8 +242,8 @@ void test('a farlook description is clipped by screen cells, not raw bytes', asy
     // floor square west of the hero: the glyph prefix plus the resolved description.
     game.symset = 'DECgraphics';
     await newsym(game.u.ux - 1, game.u.uy);
-    const detail = await farlookLocationDescription(game.u.ux - 1, game.u.uy);
-    const described = screenDescription(game.u.ux - 1, game.u.uy, detail).text;
+    const detail = await doScreenDescription(game.u.ux - 1, game.u.uy);
+    const described = detail.outStr;
     assert.ok(described.includes('\x0e'),
         'the farlook description must carry the mixed glyph prefix');
     await pline(described);

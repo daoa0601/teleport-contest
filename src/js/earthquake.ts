@@ -2,13 +2,13 @@
 // C ref: music.c do_earthquake() and do_pit().
 
 import { monsterAtPosition } from './steed.js';
-import { desecrateAltar } from './pray.js';
+import { altarmaskAt, desecrateAltar } from './pray.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME, DOOR, D_NODOOR, FOUNTAIN, GRAVE, LAVAPOOL, PIT, ROOM, ROWNO, NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit } from './const.js';
 import { newsym } from './display.js';
 import { plineWithContinuation, publishHeardMessage } from './pline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import type { MapLocation, Trap } from './map_types.js';
+import type { Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { finishMonsterLiquidDeath, resolveMonsterLiquid, wakeMonster, finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './mon.js';
@@ -291,8 +291,8 @@ async function wakeMonsterForEarthquake(monster: Monster | null): Promise<boolea
 }
 
 // Part of C music.c:do_earthquake(): align_str(Amask2align()) for the altar case.
-function altarName(location: MapLocation): string {
-    const alignment = Amask2align(location.flags & AM_MASK);
+function altarName(mask: number): string {
+    const alignment = Amask2align(mask & AM_MASK);
     return alignment > 0 ? 'lawful'
         : alignment < 0 ? 'chaotic' : alignment === 0 ? 'neutral' : 'unaligned';
 }
@@ -313,11 +313,13 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === ALTAR) {
-        const mask = location.flags;
+        // music.c:do_earthquake() reads the mask through altarmask_at(),
+        // so an altar-mimicking monster's disguise outranks the tile.
+        const mask = altarmaskAt(x, y);
         if (mask & AM_SANCTUM) return false;
         if (cansee(x, y)) {
             await plineWithContinuation(
-                `The ${altarName(location)} altar falls into a chasm.`,
+                `The ${altarName(mask)} altar falls into a chasm.`,
             );
         }
         await desecrateAltar(false, Amask2align(mask & AM_MASK));

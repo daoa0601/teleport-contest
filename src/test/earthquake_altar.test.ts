@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { ALTAR, AM_SANCTUM } from '../js/const.js';
+import { ALTAR, AM_CHAOTIC, AM_LAWFUL, AM_SANCTUM, M_AP_FURNITURE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import { flushPendingTopline } from '../js/topl.js';
+import { CmapSymbol } from '../js/glyph_numbers.js';
 import { DRUM_OF_EARTHQUAKE } from '../js/object_data.js';
+import { createEarthquake } from '../js/earthquake.js';
+import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
@@ -48,3 +52,30 @@ for (const high of [false, true]) {
         }
     });
 }
+
+// C music.c:do_earthquake() wakes every monster before shaking its square,
+// and mon.c wakeup() runs seemimic() on a mimicking monster, so an altar
+// mimic loses its disguise before shakeTerrain reads the mask through
+// pray.c:altarmask_at(). The sanctum altar under it stays preserved.
+void test('an earthquake reveals an altar mimic before reading the altar mask', async () => {
+    const input = freshTurnRoom({ hero: {
+        levitating: true, shockResistance: true, disintegrationResistance: true,
+    } });
+    const altar = game.level?.requireAt(10, 11);
+    assert.ok(altar);
+    altar.typ = ALTAR;
+    altar.altarmask = AM_LAWFUL | AM_SANCTUM;
+    altar.flags = AM_LAWFUL | AM_SANCTUM;
+    const mimic = await createMonsterAt('giant mimic', 10, 11);
+    mimic.m_ap_type = M_AP_FURNITURE;
+    mimic.mappearance = CmapSymbol.altar;
+    mimic.mcorpsenm = AM_CHAOTIC;
+    const expected = /chasm|altar|desecrate|noticed|voice|beam|charged|destroy|falls|mimic|scream|shaking|thunderous/i;
+    installPagerInput(input, { expected, limit: 200 });
+
+    await createEarthquake(13);
+    await flushPendingTopline();
+
+    assert.equal(mimic.m_ap_type, 0, 'wakeup() must reveal the mimic first');
+    assert.equal(altar.typ, ALTAR, 'the revealed mask is the sanctum tile again');
+});

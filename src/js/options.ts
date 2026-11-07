@@ -1,6 +1,5 @@
 // options.js — the option-table strays that are not options.c:
-// hacklib.c visctrl() (the diagnostics spelling; hacklib.js holds the
-// command-key twin) and symbols.c:do_symset() with its symbol-set list.
+// symbols.c:do_symset() with its symbol-set list.
 
 import { game } from './gstate.js';
 import { reglyphSymbolSet } from './display.js';
@@ -8,18 +7,6 @@ import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
 import { PICK_ONE, Is_rogue_level } from './const.js';
 
-// Part of C options.c:illegal_menu_cmd_key(): the hacklib.c visctrl
-// spelling of a reserved byte.
-// C hacklib.c visctrl(): how diagnostics name a control or meta byte.
-export function visctrl(code: number): string {
-    let text = '';
-    if (code > 0x7f) text += 'M-';
-    const c = code & 0x7f;
-    if (c < 0x20) text += `^${String.fromCharCode(c | 0x40)}`;
-    else if (c === 0x7f) text += '^?';
-    else text += String.fromCharCode(c);
-    return text;
-}
 
 // dat/symbols `start:` entries in file order with their `Description:` and
 // `Restrictions:` lines, minus MACgraphics whose H_MAC handling both
