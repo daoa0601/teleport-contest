@@ -2279,18 +2279,13 @@ function scheduleFigurineRetry(figurine, carrier, currentTurn, state) {
         carrier,
     };
 }
-// Part of C hacklib.c:s_suffix(): local possessive for the "pack" phrase;
-// the general port is possessiveName() in hacklib.ts.
-function possessive(noun) {
-    return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
-}
 // Part of C apply.c:fig_transform(): the OBJ_MINVENT "%s pack|empty water|
 // thin air" carrier description (canseemon + wormno + is_pool).
 function monsterCarrierDescription(monster, state) {
     if (canSeeMonster(monster)
         && (!monster.wormno || cansee(monster.mx, monster.my))) {
         const owner = monsterName(monster, { state, article: 'a' });
-        return `${possessive(owner)} pack`;
+        return `${possessiveName(owner)} pack`;
     }
     return isPoolAt(monster.mx, monster.my, state) ? 'empty water' : 'thin air';
 }

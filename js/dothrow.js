@@ -2388,14 +2388,6 @@ async function showReturnFlight(object, impact, state) {
     await captureThrownObjectFlight(object, path, state, glyph);
 }
 const PM_AIR_ELEMENTAL = 154;
-// C hacklib.c:s_suffix(mon_nam(mon)) at dothrow.c:2297 and 2676: the
-// engulfer's possessive in the vanish messages.  Kept private (not the
-// shared possessiveName()) because this copy tests the trailing s
-// case-insensitively and omits the it/you cases; switching would change
-// messages for monsters named "It" or ending in a capital S.
-function possessive(name) {
-    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
 // C dothrow.c:swallowit(). The engulfer picks the object up (steal.c
 // mpickobj() clears gt.thrownobj); a thrown chained ball only ends the
 // throw without being handed over.
@@ -2656,7 +2648,7 @@ export async function resolveSwallowedFoodThrow({ state = game, item, objectClas
             const name = monsterName(engulfer, { state });
             // C dothrow.c:2298 prints Tobjnam(obj, "vanish"); xname() of a
             // corpse is just "corpse", without the species.
-            await plineWithContinuation(`${definiteObjectAction(thrown, 'vanish', state)} into ${trail ? possessive(name) : name}${trail}.`);
+            await plineWithContinuation(`${definiteObjectAction(thrown, 'vanish', state)} into ${trail ? possessiveName(name) : name}${trail}.`);
         }
         if (state.u.uswallow) {
             const currentEngulfer = state.u.ustuck;
@@ -2709,7 +2701,7 @@ export async function resolveGenericSwallowedThrow({ state = game, item, objectC
         const trail = monsterDigests(engulfer)
             ? ' entrails' : whirly ? ' currents' : '';
         const destination = trail
-            ? `${possessive(targetName)}${trail}` : targetName;
+            ? `${possessiveName(targetName)}${trail}` : targetName;
         await plineWithContinuation(`${definiteObjectAction(thrown, 'vanish', state)} into ${destination}.`);
         await swallowit(engulfer, thrown, state, false);
         state.context.move = 1;

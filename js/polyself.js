@@ -414,9 +414,12 @@ export function heroIsAmphibious(state = game) {
     return !!state.u.magicalBreathing
         || monsterIsAmphibious(heroSpecies(state));
 }
-// C youprop.h:Passes_walls().
+// C youprop.h:Passes_walls() = HPasses_walls || EPasses_walls. The form
+// term lives in the intrinsic: polyself.c:set_uasmon() PROPSETs
+// PASSES_WALLS from passes_walls(mdat), which setHeroSpecies() mirrors as
+// the 'form' intrinsic origin, so the projected flag is the whole macro.
 export function heroPassesWalls(state = game) {
-    return !!state.u.passesWalls || monsterPassesWalls(heroSpecies(state));
+    return !!state.u.passesWalls;
 }
 const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
 const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');

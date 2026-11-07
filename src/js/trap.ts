@@ -714,7 +714,7 @@ import {
     burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
     applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim,
-    moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense,
+    moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire,
     UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness,
     maybeHalfPhysicalDamage,
 } from './hack.js';
@@ -3652,10 +3652,6 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
     );
 }
 
-// Part of C trap.c:trapeffect_anti_magic(): test wall-passing protection against compression.
-function heroPassesWallsForAntiMagic() {
-    return !!game.u?.passesWalls || monsterPassesWalls(heroSpecies());
-}
 
 // Part of C trap.c:trapeffect_anti_magic(): test the wielded artifact's magic defense.
 function heroWieldsMagicbane() {
@@ -3683,7 +3679,7 @@ function implosionDamage() {
     }
     if (heroWieldsMagicbane()) damage += rnd(4);
     if (heroCarriesNonQuestMagicDefense()) damage += rnd(4);
-    if (heroPassesWallsForAntiMagic()) damage = Math.trunc((damage + 3) / 4);
+    if (heroPassesWalls(game)) damage = Math.trunc((damage + 3) / 4);
     return damage;
 }
 
@@ -3702,10 +3698,6 @@ interface VibratingSquareFinishOptions {
     publish?: MessagePublisher;
 }
 
-// Port only: form a possessive monster-message subject.
-function possessive(subject: string) {
-    return /s$/iu.test(subject) ? `${subject}'` : `${subject}'s`;
-}
 
 // C trap.c:trapeffect_dart_trap()
 // The dart twin of the arrow trap: the hero branch — the 1-in-15
@@ -5636,7 +5628,7 @@ export async function finishMonsterVibratingSquare(
         const subject = monsterName(monster, { state });
         const location = event.wholeBody
             ? subject
-            : `${possessive(subject)} ${makePlural(
+            : `${possessiveName(subject)} ${makePlural(
                   mbodypart(monster.mnum, FOOT).replace(/^rear /u, ''),
               )}`;
         await publish(formatSeenMessage(`a strange vibration beneath ${location}.`));
@@ -6275,7 +6267,7 @@ export async function triggerHeroFireTrap(
 
     if (underwater) {
         await publish(`A cascade of steamy bubbles erupts from the ${source}!`);
-        if (heroResistsFire()) await publish('You are uninjured.');
+        if (heroResistsFire(game)) await publish('You are uninjured.');
         else if (
             await loseHeroHp(rnd(3), 'boiling water', {
                 publish,
@@ -6289,7 +6281,7 @@ export async function triggerHeroFireTrap(
     await publish(`A tower of flame ${box ? 'bursts' : 'erupts'} from the ${source}!`);
 
     let damage = originalDamage;
-    if (heroResistsFire()) {
+    if (heroResistsFire(game)) {
         await shieldeff(hero.ux, hero.uy);
         monstersObserveHeroResistance(M_SEEN_FIRE);
         damage = rn2(2);
@@ -6343,12 +6335,6 @@ const PM_PAPER_GOLEM = 250;
 const PM_LEATHER_GOLEM = 253;
 const PM_WOOD_GOLEM = 254;
 
-// Port only kept: hack.ts:heroResistsFire() reads only the u.fireResistance
-// alias; C trap.c:dofiretrap() gates on Fire_resistance and this adds the
-// wielded artifact defense term (artifact.c:defends), so they differ.
-function heroResistsFire() {
-    return !!game.u.fireResistance || heroHasArtifactDefense('fire');
-}
 
 // Part of C trap.c:dofiretrap(): reduce the burning hero form's maximum health.
 function reduceMonsterFormMaximumHitPoints(hero: InitializedHero, damage: number) {
@@ -7781,7 +7767,7 @@ async function tryDisarm(trap: Trap, {
     const here = trap.tx === state.u.ux && trap.ty === state.u.uy;
     const boulder = (state.level?.objects?.[trap.tx]?.[trap.ty] || [])
         .some(object => object.otyp === BOULDER);
-    if (boulder && !heroPassesWallsForUntrap(state) && !here) {
+    if (boulder && !heroPassesWalls(state) && !here) {
         await publish('There is a boulder in your way.');
         return 0;
     }
@@ -7841,15 +7827,6 @@ async function tryDisarm(trap: Trap, {
     return 1;
 }
 
-// Port only kept: C youprop.h:Passes_walls() reads only the uprops alias,
-// and polyself.ts:heroPassesWalls() also tests a stale form species when
-// not polymorphed; this gate keeps the form term polymorph-only.
-function heroPassesWallsForUntrap(state: GameState): boolean {
-    if (state.u.passesWalls) return true;
-    const form = (state.u.mtimedone ?? 0) > 0 ? state.u.umonnum : null;
-    return form !== null && form !== undefined && Number.isInteger(form)
-        && monsterPassesWalls(form);
-}
 
 // Part of C trap.c:try_disarm(): injure a held monster or become entangled on failed rescue.
 async function failMonsterRescue(monster: Monster, trap: Trap, {
@@ -9058,7 +9035,7 @@ export async function lava_effects(options: LavaContext): Promise<EnteredLiquid>
                 break lavaOutcome;
             }
 
-            const fireResistant = heroResistsFireWithoutArtifactDefense(state);
+            const fireResistant = heroResistsFire(state);
             const waterWalkingBeforeBootsBurn = heroHasWaterWalking(state);
             const survives = fireResistant
                 || (waterWalkingBeforeBootsBurn && damage < (hero.uhp ?? 0));
@@ -9214,7 +9191,7 @@ export async function lava_effects(options: LavaContext): Promise<EnteredLiquid>
                 if (!rescue) {
                     // C lava_effects(): two recoveries without a landing give the hero
                     // five turns to find another way out before the lava becomes fatal again.
-                    if (!heroResistsFireWithoutArtifactDefense(state)) setPropertyTimeout('fireResistance', 5, state);
+                    if (!heroResistsFire(state)) setPropertyTimeout('fireResistance', 5, state);
                     if (!heroHasWaterWalking(state)) setPropertyTimeout('waterWalking', 5, state);
                     rescue = { entered: true, moved: false, died: false };
 
@@ -9334,7 +9311,7 @@ export async function sinkHeroIntoLava({
     if (hero.invulnerable || hero.uinvulnerable)
         return { sank: false, died: false };
 
-    if (!heroResistsFireWithoutArtifactDefense(state))
+    if (!heroResistsFire(state))
         hero.uhp = Math.trunc(((hero.uhp ?? 1) + 2) / 3);
     hero.utrap -= 1 << 8;
     if (hero.utrap < 1 << 8) {
