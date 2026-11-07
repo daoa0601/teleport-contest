@@ -63,14 +63,17 @@ src/js/music.ts	music.c
 src/js/novel_tribute.ts	files.c
 src/js/objnam.ts	objnam.c
 src/js/option_editors.ts	options.c
+src/js/options.ts	symbols.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pickup.ts	pickup.c
 src/js/pickup_location.ts	hack.c
+src/js/pline.ts	pline.c
 src/js/polyself.ts	polyself.c
 src/js/potion.ts	potion.c
 src/js/pray.ts	pray.c
 src/js/priest.ts	priest.c
+src/js/query.ts	getline.c
 src/js/quest.ts	quest.c
 src/js/questpgr.ts	questpgr.c
 src/js/quiver.ts	wield.c
@@ -86,6 +89,7 @@ src/js/senses.ts	detect.c
 src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c
+src/js/sounds.ts	sounds.c
 src/js/sp_lev.ts	sp_lev.c
 src/js/spell.ts	spell.c
 src/js/stairs.ts	stairs.c

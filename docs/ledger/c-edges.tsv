@@ -1,9 +1,11 @@
 # caller	callee — C call edges the port counterpart reaches (static-gaps.mjs edges)
 Amulet_off	drown
+Amulet_off	float_vs_flight
 Amulet_off	hliquid
 Amulet_off	see_monsters
 Amulet_off	setworn
 Amulet_off	spoteffects
+Amulet_on	float_vs_flight
 Amulet_on	newsym
 Amulet_on	rnd
 Amulet_on	setworn
@@ -12,10 +14,12 @@ Blindf_off	gulp_blnd_check
 Blindf_off	setworn
 Blindf_off	toggle_blindness
 Boots_off	float_down
+Boots_off	float_vs_flight
 Boots_off	is_pool
 Boots_off	setworn
 Boots_off	spoteffects
 Boots_on	float_up
+Boots_on	float_vs_flight
 Boots_on	rnd
 Boots_on	spoteffects
 Cloak_off	newsym
@@ -45,6 +49,7 @@ On_stairs_dn	stairway_at
 On_stairs_up	stairway_at
 RND	isaac64_next_uint64
 Ring_off_or_gone	float_down
+Ring_off_or_gone	float_vs_flight
 Ring_off_or_gone	learnring
 Ring_off_or_gone	newsym
 Ring_off_or_gone	see_monsters
@@ -1183,6 +1188,7 @@ dosearch0	visible_region_at
 doset_simple	flush_screen
 dosinkfall	acurr
 dosinkfall	exercise
+dosinkfall	float_vs_flight
 dosinkfall	losehp
 dosinkfall	rn2
 dosinkfall	rnd
@@ -1629,6 +1635,7 @@ flip_visuals	back_to_glyph
 float_down	dismount_steed
 float_down	drown
 float_down	encumber_msg
+float_down	float_vs_flight
 float_down	is_lava
 float_down	is_pool
 float_down	lava_effects
@@ -1641,6 +1648,7 @@ float_down	surface
 float_up	dismount_steed
 float_up	encumber_msg
 float_up	fill_pit
+float_up	float_vs_flight
 float_up	reset_utrap
 float_up	spoteffects
 float_up	surface
@@ -3323,6 +3331,7 @@ peffect_invisibility	newsym
 peffect_invisibility	rn2
 peffect_levitation	doup
 peffect_levitation	float_up
+peffect_levitation	float_vs_flight
 peffect_levitation	losehp
 peffect_levitation	rn2
 peffect_levitation	rnd
@@ -4013,7 +4022,9 @@ set_trap	maketrap
 set_trap	rnl
 set_trap	trapname
 set_twall	check_pos
+set_uasmon	float_vs_flight
 set_ulycn	set_uasmon
+set_utrap	float_vs_flight
 set_wall	check_pos
 set_wall_state	xy_set_wall_state
 set_wallprop_in_selection	selection_iterate
@@ -4250,6 +4261,7 @@ surface	is_pool
 swallowed	swallow_to_glyph
 swim_move_danger	is_pool
 switch_terrain	float_up
+switch_terrain	float_vs_flight
 t_missile	weight
 tele_jump_ok	isok
 tele_to_rnd_pet	dist2
@@ -4777,6 +4789,7 @@ water_turbulence	nomul
 weapon_insight	skill_name
 weight_cap	acurr
 weight_cap	acurrstr
+weight_cap	float_vs_flight
 welcome	l_nhcore_call
 welcome	print_level_annotation
 wielding_corpse	instapetrify
@@ -4797,6 +4810,7 @@ wiz_force_cham_form	mkclass_poly
 wiz_fuzzer	paranoid_query
 wiz_fuzzer	yn_function
 wiz_intrinsic	docrt
+wiz_intrinsic	float_vs_flight
 wiz_intrinsic	make_blinded
 wiz_intrinsic	make_deaf
 wiz_intrinsic	make_hallucinated
