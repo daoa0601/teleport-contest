@@ -20,7 +20,7 @@ import { heroMoveBlockedBetween, impactDisturbsZombies } from './hack.js';
 import { snuffCandle } from './apply.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage, shipObject } from './dokick.js';
-import { currentAttribute } from './attrib.js';
+import { currentAttribute, currentStrength } from './attrib.js';
 import {
     canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym,
     show_glyph_cell, transientObjectGlyph, unmapObject, TemporaryMapEffect,
@@ -100,12 +100,8 @@ interface PhysicalFlightOptions extends ProjectileFlightOptions {
 }
 
 
-// Port only: read an object's runtime class with a metadata fallback.
-function objectClass(object: GameObject): number {
-    return object?.oclass || objectClassForType(object?.otyp);
-}
-
-// Port only: resolve a living mapped monster at a projectile square.
+// Part of C zap.c:bhit(): m_at(x, y) plus the DEADMONSTER test C's callers
+// add at the flight square.
 function liveMonsterAt(state: GameState, x: number, y: number): Monster | null {
     if (!state.level) return null;
     const monster = monsterAtPosition(state.level, x, y);
@@ -113,7 +109,8 @@ function liveMonsterAt(state: GameState, x: number, y: number): Monster | null {
         && !monster.dead && monster.mhp > 0 ? monster : null;
 }
 
-// Port only: find a web in the runtime trap array.
+// Part of C zap.c:bhit(): the t_at(x, y) read tested for WEB at the
+// flight square, over the port's runtime trap array.
 function webAt(state: GameState, x: number, y: number): Trap | null {
     return (state.level?.traps || []).find(trap =>
         trap?.ttyp === WEB
@@ -139,23 +136,13 @@ function projectileMonsterAt(state: GameState, object: GameObject, x: number, y:
     return monster;
 }
 
-// Port only: duplicate the strength conversion for projectile range.
-// The full native port is currentStrength in attrib.ts.
-function heroThrowStrength(state: GameState): number {
-    let strength = currentAttribute(A_STR, state);
-    if (strength <= 18) strength = Math.max(strength, 3);
-    else if (strength <= 121) strength = 19 + Math.trunc(strength / 50);
-    else strength = Math.min(strength, 125) - 100;
-    return strength;
-}
-
 // Part of C dothrow.c:throw_gold(): compute the whole purse's range.
 // C throw_gold: the whole purse uses the thrown-object formula without
 // throwit's minimum of one, so a heavy purse can fail to leave the hero.
 export function heroDirectGoldThrowRange(
     object: GameObject, state: GameState = game,
 ): number {
-    return Math.trunc(heroThrowStrength(state) / 2)
+    return Math.trunc(currentStrength(state) / 2)
         - Math.trunc((object.owt ?? 1) / 40);
 }
 
@@ -167,7 +154,7 @@ export function heroThrowTrajectory(
     const crossbowing = launched && launcher !== null && launcher !== undefined
         && objectSkill(launcher.otyp) === P_CROSSBOW;
     const unweightedRange = Math.trunc(
-        (crossbowing ? 18 : heroThrowStrength(state)) / 2,
+        (crossbowing ? 18 : currentStrength(state)) / 2,
     );
     // Balls are easy to throw or at least roll: the iron ball divides its
     // weight by 100 rather than 40, and a ball still chained to the hero
@@ -183,7 +170,7 @@ export function heroThrowTrajectory(
     if (range < 1) range = 1;
     if (isLauncherAmmunition(object)) {
         if (launched) range = crossbowing ? BOLT_LIM : range + 1;
-        else if (objectClass(object) !== GEM_CLASS)
+        else if ((object.oclass || objectClassForType(object.otyp)) !== GEM_CLASS)
             range = Math.trunc(range / 2);
     }
 
