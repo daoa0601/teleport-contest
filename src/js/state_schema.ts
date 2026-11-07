@@ -3,7 +3,10 @@
 
 import type { GameContext, GameState } from './game_state.js';
 
-export const SAVE_VERSION = 45;
+// Format 46 added PropertySources.blockedByFloat (C u.uprops[].blocked's
+// I_SPECIAL, written by float_vs_flight()); saves without it would restore
+// levitation/flying as unblocked.
+export const SAVE_VERSION = 46;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
