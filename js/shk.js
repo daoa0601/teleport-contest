@@ -3068,7 +3068,7 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
             let still = '';
             if (creditUse) {
                 if (resident.eshk.credit) {
-                    await publish(`You have ${moneyAmount(resident.eshk.credit, state)} credit remaining.`);
+                    await publish(`You have ${moneyAmount(resident.eshk.credit, game)} credit remaining.`);
                     return value;
                 }
                 else if (!value) {
@@ -3077,7 +3077,7 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
                 }
                 still = 'still ';
             }
-            let owed = `${still}owe ${shopkeeperName(resident)} ${moneyAmount(value, state)}`;
+            let owed = `${still}owe ${shopkeeperName(resident)} ${moneyAmount(value, game)}`;
             if (uCount) {
                 owed += ` for ${wasUnpaid ? 'it and ' : ''}${cCount > uCount ? 'some of ' : ''}its contents`;
             }
