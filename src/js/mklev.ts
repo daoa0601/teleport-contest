@@ -819,7 +819,7 @@ async function maybePlaceKnoxPortal(x: number, y: number): Promise<boolean> {
 
     if (onKnoxSourceEnd) branch.end2 = { ...here };
     else branch.end1 = { ...here };
-    await placeBranchAt(branch, x, y);
+    await place_branch(branch, x, y);
     return true;
 }
 
@@ -1566,10 +1566,18 @@ function find_branch_room(mp: Position): Room | null {
     return croom;
 }
 
-// C mklev.c:place_branch(): placement at known coordinates.
-export async function placeBranchAt(branchp: DungeonBranch | null, x: number, y: number): Promise<void> {
+// C mklev.c:place_branch().  Return immediately if there is no branch to
+// make or we have already made one; a special level can name an SSTAIR spot
+// as a favored site, which is why this can be called twice.
+export async function place_branch(branchp: DungeonBranch | null, x = 0, y = 0): Promise<void> {
     const g = game;
     if (!branchp || g.made_branch) return;
+    if (!x) { /* find random coordinates for branch */
+        const mp = { x: 0, y: 0 };
+        find_branch_room(mp);
+        x = mp.x;
+        y = mp.y;
+    }
     const on_end1 = branchp.end1?.dnum === g.u?.uz?.dnum
         && branchp.end1?.dlevel === g.u?.uz?.dlevel;
     const dest = on_end1 ? branchp.end2 : branchp.end1;
@@ -1585,16 +1593,9 @@ export async function placeBranchAt(branchp: DungeonBranch | null, x: number, y:
         stairway_add(x, y, goes_up, false,
             dest);
     }
+    // Set made_branch even without a stairwell: there is only one branch
+    // per level, so a failed placement would fail again on the next call.
     g.made_branch = true;
-}
-
-// C mklev.c:place_branch(): the random-coordinate form via find_branch_room.
-export async function place_branch(branchp: DungeonBranch | null): Promise<void> {
-    const g = game;
-    if (!branchp || g.made_branch) return;
-    const mp = { x: 0, y: 0 };
-    find_branch_room(mp);
-    await placeBranchAt(branchp, mp.x, mp.y);
 }
 
 // C mklev.c:makelevel() marks the entrance after placing a room level's
