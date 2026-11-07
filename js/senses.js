@@ -76,10 +76,10 @@ export function setHeroBlindnessTurns(turns, state = game) {
         state.vision_full_recalc = 1;
     return { blind, regainedSight: wasBlind && !blind };
 }
-// C potion.c:set_itimeout(): the HBlinded timeout write alone.
-// C set_itimeout(&HBlinded, turns) alone: callers such as polymon() and
-// wipeoff() adjust the timeout before make_blinded() announces the change,
-// so the next message must not yet redraw the map for the new sight.
+// Part of C potion.c:set_itimeout(): the HBlinded instance, which also
+// syncs the derived Blind flag. Callers such as polymon() and wipeoff()
+// adjust the timeout before make_blinded() announces the change, so the
+// next message must not yet redraw the map for the new sight.
 export function setHeroBlindnessTimeout(turns, state = game) {
     state.u.blindTurns = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
     return syncBlindness(state);

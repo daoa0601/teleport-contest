@@ -97,7 +97,7 @@ import type { CloneOptions } from './makemon.js';
 import type { MapLocation, Position, Stairway } from './map_types.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
-import { mkobj, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack, adjustObjectLightAfterBlessing } from './mkobj.js';
+import { mkobj, bcsign, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack, adjustObjectLightAfterBlessing } from './mkobj.js';
 import type { MonsterFormChange, MonsterSelfTouchResult } from './mon.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount, monsterStagger } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
@@ -237,7 +237,8 @@ export function heroIsSick(state = game) {
     return !!state.u?.sick || (state.u?.sickTurns ?? 0) > 0;
 }
 
-// C potion.c:make_sick(): the cure half without its message.
+// Part of C potion.c:make_sick(): the cure half (xtime == 0) without its
+// message, as called by non-verbose native callers.
 export function cureHeroSickness(state = game, type = SICK_ALL) {
     const hero = state.u;
     const currentType = hero.sickType ?? 0;
@@ -256,9 +257,10 @@ export function cureHeroSickness(state = game, type = SICK_ALL) {
     return true;
 }
 
-// C potion.c:make_sick(): the cure half with its message.
-// Native make_sick(0, ..., talk, type): the type mask changes before the
-// cure message; the timeout and delayed cause remain until that line returns.
+// Part of C potion.c:make_sick(): the cure half (xtime == 0) with its
+// message. Native make_sick(0, ..., talk, type): the type mask changes
+// before the cure message; the timeout and delayed cause remain until that
+// line returns.
 export async function cureHeroSicknessWithMessages(state = game, type = SICK_ALL, publish: MessagePublisher = plineWithContinuation) {
     const hero = state.u;
     const currentType = hero.sickType ?? 0;
@@ -584,7 +586,6 @@ export interface QuaffResult {
     cancelled: boolean;
 }
 
-// C potion.c:drink_ok().
 // C potion.c:dodrink().
 export async function quaff({ state = game }: PotionEffectOptions = {}): Promise<QuaffResult> {
     requireLiveGame(state);
@@ -616,9 +617,8 @@ export async function quaff({ state = game }: PotionEffectOptions = {}): Promise
         }
     }
     // drink_ok() reports a declined floor source as GETOBJ_EXCLUDE_NONINVENT.
-    let source = await chooseInventoryObject('drink', object =>
-        object.oclass === POTION_CLASS ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE,
-    { hands: declinedSource ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
+    let source = await chooseInventoryObject('drink', drinkOK,
+        { hands: declinedSource ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
     if (!source) return { ...outcome(false, state), cancelled: true };
     if (source.owornmask) {
         if (objectQuantity(source) > 1) {
@@ -722,7 +722,7 @@ async function hallucinationEffect(source: GameObject, state: PlayingGameState) 
         || propertyIsActive('hallucinationResistance', state)) return true;
     const nothing = heroIsHallucinating(state);
     await makeHallucinated((state.u.hallucinationTurns || 0)
-        + rn1(200, 600 - 300 * blessing(source)), { state });
+        + rn1(200, 600 - 300 * bcsign(source)), { state });
     if (source.blessed && !rn2(3) || !source.cursed && !rn2(6)) {
         await pline('You perceive yourself...');
         await flushPendingTopline();
@@ -788,10 +788,6 @@ async function drinkWater(source: GameObject, state: PlayingGameState) {
     return !!state.program_state.gameover;
 }
 
-// C mkobj.c:bcsign().
-function blessing(source: GameObject) {
-    return source.blessed ? 1 : source.cursed ? -1 : 0;
-}
 
 // C potion.c:peffect_booze().
 async function boozeEffect(source: GameObject, state: PlayingGameState) {
@@ -805,7 +801,7 @@ async function boozeEffect(source: GameObject, state: PlayingGameState) {
     if (!source.odiluted) await healHero(1, 0, { state });
     // peffect_booze adds nutrition directly; it does not call lesshungry's
     // fullness/choking checks, even when drunk on a full stomach.
-    state.u.uhunger = (state.u.uhunger ?? 900) + 10 * (2 + blessing(source));
+    state.u.uhunger = (state.u.uhunger ?? 900) + 10 * (2 + bcsign(source));
     await newuhs(false, { state });
     await exerciseAttribute(A_WIS, false, state);
     if (source.cursed) {
@@ -930,7 +926,7 @@ async function paralysisEffect(source: GameObject, state: PlayingGameState) {
         await pline(`Your ${makePlural(body_part(FOOT, state))} are frozen to the ${
             surfaceName(state.u.ux, state.u.uy, state)}!`);
     }
-    const turns = rn1(10, 25 - 12 * blessing(source));
+    const turns = rn1(10, 25 - 12 * bcsign(source));
     nomul(-turns, state);
     state._helplessReason = 'frozen by a potion';
     state._helplessDoneMessage = 'You can move again.';
@@ -946,7 +942,7 @@ async function sleepingEffect(source: GameObject, state: PlayingGameState) {
     } else {
         await pline('You suddenly fall asleep!');
         monstersForgetHeroResistance(M_SEEN_SLEEP, state);
-        await putHeroToSleep(rn1(10, 25 - 12 * blessing(source)), { state });
+        await putHeroToSleep(rn1(10, 25 - 12 * bcsign(source)), { state });
     }
 }
 
@@ -1189,7 +1185,7 @@ export async function applyPotionMentalEffect(source: GameObject, { state = game
             await pline('Huh, What?  Where am I?');
         }
         await makeConfused((state.u.confusionTurns || 0)
-            + rn1(7, 16 - 8 * blessing(source)), { state, talk: false });
+            + rn1(7, 16 - 8 * bcsign(source)), { state, talk: false });
         break;
     case POT_GAIN_ABILITY:
         if (source.cursed) {
@@ -1213,7 +1209,7 @@ export async function applyPotionMentalEffect(source: GameObject, { state = game
             && (!!state.u.permaBlind || !!state.u.blindTurns || hasIntrinsicProperty('blinded', null, state)
                 || hasWornProperty('blinded', state));
         await makeBlinded((state.u.blindTurns || 0)
-            + rn1(200, 250 - 125 * blessing(source)), { state, talk: !blind });
+            + rn1(200, 250 - 125 * bcsign(source)), { state, talk: !blind });
         break;
     }
     default:
@@ -2769,8 +2765,10 @@ function dipClassification(object: GameObject): InventoryClassification {
     return coveringEquipment(object).length ? GETOBJ_EXCLUDE_INACCESS : GETOBJ_SUGGEST;
 }
 
-// C potion.c:drink_ok(): the dip-into potion filter.
-function potionClassification(object: GameObject): InventoryClassification {
+// C potion.c:drink_ok(): the potion filter shared by dodrink() and dodip().
+// C's Null-object branch (drink_ok_extra) is supplied by callers through
+// chooseInventoryObject's hands option instead.
+function drinkOK(object: GameObject): InventoryClassification {
     return object.oclass === POTION_CLASS ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE;
 }
 
@@ -2837,7 +2835,7 @@ export async function dip({
         declinedSource = true;
     }
     // drink_ok() reports a declined floor source as GETOBJ_EXCLUDE_NONINVENT.
-    const potion = await chooseInventoryObject(`dip ${target} into`, potionClassification, {
+    const potion = await chooseInventoryObject(`dip ${target} into`, drinkOK, {
         hands: declinedSource ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE,
     });
     if (!potion) { game.context.move = 0; return 'cancelled'; }
@@ -2887,7 +2885,7 @@ export async function dipInto(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const potion = await chooseInventoryObject('dip', potionClassification);
+    const potion = await chooseInventoryObject('dip', drinkOK);
     if (!potion) {
         // potion.c:dip_into() returns ECMD_CANCEL when the potion getobj()
         // is declined.
@@ -3131,7 +3129,7 @@ async function dipInOil(object: GameObject, potion: GameObject): Promise<boolean
     if (potion.lamplit) {
         await fireDamageObject(object, { force: true, x: game.u.ux, y: game.u.uy, publish: pline });
     } else if (potion.cursed) {
-        await pline(`The potion spills and covers your ${fingersOrGloves()} with oil.`);
+        await pline(`The potion spills and covers your ${fingersOrGloves(true)} with oil.`);
         setPropertyTimeout('glib', (game.u.glibTurns ?? 0) + d(2, 10));
     } else if (object.oclass !== WEAPON_CLASS && !isWeaponTool(object)) return false;
     else if ((!objectIsVulnerableToErosion(object, 'rust') && !objectIsVulnerableToErosion(object, 'corrosion'))
