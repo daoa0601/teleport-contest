@@ -20,6 +20,7 @@ import { askTeleportDestination, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
 import { nhgetch, nh_poskey, MAP_CLICK_KEY, inputGate } from './input.js';
+import { visibleCommandKey } from './hacklib.js';
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish, makemapRemoveMons } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
@@ -34,14 +35,15 @@ import { propertyIsActive } from './properties.js';
 import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { inventoryReport } from './invent.js';
 import { isContainer, unlinkObject, deallocateObject } from './mkobj.js';
-import { doOptions, toggleBooleanOptionPrefix } from './options.js';
+import { doOptions, toggleBooleanOptionPrefix } from './message_types.js';
 import { extFuncTabFromFunc } from './command_bindings.js';
 import { stopHeroOccupation } from './allmain.js';
 import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
-import { completeExtendedCommand, getLine, promptChoice, tty_yn_function } from './query.js';
-import { showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
+import { completeExtendedCommand, promptChoice } from './query.js';
+import { tty_yn_function } from './topl.js';
+import { getLine, showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import { promptYesNo } from './query.js';
 import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js';
@@ -63,7 +65,7 @@ import { heroCanUseUnicornHorn } from './unicorn_horn.js';
 import { doread } from './read.js';
 import { eatfood, doeat, opentin } from './eat.js';
 import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
-import { doextversion, NATIVE_VERSION } from './extversion.js';
+import { doextversion, doversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, revealTerrain } from './detect.js';
 import { continueWipingFace, donull, dowipe, dodrop, dropMultipleObjects } from './do.js';
 import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
@@ -81,7 +83,8 @@ import { doenhance } from './weapon.js';
 import { dopay } from './shk.js';
 import { dokick } from './dokick.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE, impossible } from './diagnostics.js';
+import { paniclog } from './novel_tribute.js';
 import { heroCanReachFloor } from './engrave.js';
 import { CmapSymbol, GlyphOffset, monnumToGlyph, objnumToGlyph } from './glyph_numbers.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
@@ -91,7 +94,7 @@ import { cansee, couldsee, vision_reset_new_level } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
 import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 import { finishHeroMonsterKill } from './mon.js';
-export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
+export { promptYesNo, promptYesNoQuit } from './query.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // Part of C cmd.c:movecmd(): the vi-movement key test.
@@ -2420,14 +2423,6 @@ async function dotravelTarget() {
     else if (!game._runState && game.context.run === 8)
         arriveTravel(game);
 }
-// C version.c:doversion()
-async function doversion() {
-    if (game.iflags.menu_requested)
-        await doextversion();
-    else
-        await pline(NATIVE_VERSION);
-    game.context.move = 0;
-}
 // C cmd.c:count_bind_keys()
 // ── Key-binding menus (C cmd.c:handler_rebind_keys*(), count_bind_keys(),
 //    get_changed_key_binds()) ────────────────────────────────────────────
@@ -2952,17 +2947,6 @@ export function promptedDirectionKey(key, bindings) {
         || key === bindings.specialKey('getdir.self2'))
         return '.';
     return movementDirectionKey(key, bindings);
-}
-// C hacklib.c:visctrl()
-export function visibleCommandKey(code) {
-    code &= 255;
-    if (code >= 128)
-        return `M-${visibleCommandKey(code & 127)}`;
-    if (code < 32)
-        return `^${String.fromCharCode(code + 64)}`;
-    if (code === 127)
-        return '^?';
-    return String.fromCharCode(code);
 }
 // C cmd.c:cmd_from_ecname().
 export function commandKeyDescription(command, bindings) {

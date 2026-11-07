@@ -3,7 +3,8 @@ import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { monsterGrowlSound, publishMonsterNoise, sessionIsNight } from '../js/sounds.js';
+import { monsterGrowlSound, publishMonsterNoise } from '../js/sounds.js';
+import { sessionIsNight } from '../js/calendar.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

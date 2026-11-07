@@ -1833,7 +1833,7 @@ src/js/objnam.ts	readObjectName	rn2	"[""wishClasses.length""]"	constant
 src/js/objnam.ts	rndClass	rn2	"[""last - first + 1""]"	guarded
 src/js/objnam.ts	rndClass	rnd	"[""total""]"	unproved
 src/js/cfgfiles.ts	chooseRandomPart	rn2	"[""parts""]"	guarded
-src/js/options.ts	addFruit	rnd	"[""127""]"	constant
+src/js/message_types.ts	addFruit	rnd	"[""127""]"	constant
 src/js/mkmaze.ts	stolen_booty	rn2	"[""10""]"	constant
 src/js/mkmaze.ts	stolen_booty	rn2	"[""10""]"	constant
 src/js/mkmaze.ts	stolen_booty	rn2	"[""2""]"	constant

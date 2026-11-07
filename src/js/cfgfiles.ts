@@ -7,11 +7,12 @@
 // parseoptions(), parsebindings(), add_autopickup_exception()), keeping
 // C's cfgfiles.c → options.c call direction.
 
-import type { ConfigurationSettings, OptionParseState } from './options.js';
+import type { ConfigurationSettings, OptionParseState } from './message_types.js';
 import {
     bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException,
-    parseOptions, visctrl, MENU_KEY_OPTIONS,
-} from './options.js';
+    parseOptions, MENU_KEY_OPTIONS,
+} from './message_types.js';
+import { visctrl } from './options.js';
 import { mungSpaces } from './hacklib.js';
 import { parseMenuColoring } from './coloratt.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';
@@ -24,7 +25,8 @@ import { game } from './gstate.js';
 import { CommandBindings } from './command_bindings.js';
 import { C_ATR_INVERSE } from './color_attr.js';
 import { cutConfigBytes } from './coloratt.js';
-import { rawPrint, rawPrintf, truncatePlineMessage } from './pline.js';
+import { rawPrintf, truncatePlineMessage } from './pline.js';
+import { rawPrint } from './input.js';
 import { getret } from './wintty.js';
 import { rn2 } from './rng.js';
 import {

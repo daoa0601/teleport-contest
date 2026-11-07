@@ -2,9 +2,10 @@
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
 import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
-import { recorderLocalEpochSeconds, fixedCalendar } from './calendar.js';
+import { recorderLocalEpochSeconds, fixedCalendar, sessionIsNight } from './calendar.js';
 import { pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent } from './pline.js';
-import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, getLine, promptYesNo, rhack,  dolookaround } from './cmd.js';
+import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, promptYesNo, rhack,  dolookaround } from './cmd.js';
+import { getLine } from './windows.js';
 import type { MessagePublisher } from './pline.js';
 
 import { doStorms } from './timeout.js';
@@ -39,7 +40,7 @@ import {
     Is_airlevel, Is_waterlevel, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, LL_ACHIEVE,
 } from './const.js';
 import { pendingArmorAction, heroHasFreeAction, heroIsDisplaced, stopDonning, applyStartingArmorEffects, findArmorClass, erodeWornArmor, isBeingTakenOff, heroHasSlipperyHands, slipFromSlipperyHands } from './do_wear.js';
-import { dosounds, sessionIsNight } from './sounds.js';
+import { dosounds } from './sounds.js';
 import { warnWithMasterKey, applyArtifactHit, findArtifact } from './artifact.js';
 import { isPoolAt } from './dbridge.js';
 import { consumeMonsterItem } from './mthrowu.js';
@@ -99,7 +100,7 @@ import { initializeSourceStartup } from './startup.js';
 import { fumaroles } from './mkmaze.js';
 import { commitPetPickup } from './dogmove.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import { askTutorial } from './options.js';
+import { askTutorial } from './message_types.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
 import { reportMonsterTeleportRestriction } from './teleport.js';
 import { clearHeroSliming } from './potion.js';

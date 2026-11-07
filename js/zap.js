@@ -117,7 +117,7 @@ import { corpseName, distantObjectName, minimalObjectName, readObjectName, singu
 import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterForm, heroSpecies, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { clearHeroSliming, healHero, makeBlinded, makeStunned, speedUpHero } from './potion.js';
 import { propertyIsActive } from './properties.js';
-import { getLine } from './query.js';
+import { getLine } from './windows.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { liveSpellSkill } from './spell.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';

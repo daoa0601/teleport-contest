@@ -10,7 +10,7 @@ import { heroIsBlind, heroIsDeaf, heroIsUnaware } from './senses.js';
 import {
     displayMessageWindow, rememberToplines, replaceTopline, updateTopline,
 } from './topl.js';
-import { nhgetch } from './input.js';
+import { nhgetch, rawPrint, writeRawText } from './input.js';
 import { BUFSZ, LL_NONE, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
@@ -255,36 +255,7 @@ export function rawPrintf(message: string): void {
     if (!game.program_state.beyond_savefile_load) game.earlyRawMessages += 2;
 }
 
-// C wintty.c:tty_raw_print()
-// C win/tty/wintty.c:tty_raw_print().
-export function rawPrint(message: string) {
-    writeRawText(`${message}\n`);
-}
 
-// Part of C wintty.c:tty_raw_print(): the character-level terminal writer
-// (cursor, scroll, tab stops).
-function writeRawText(text: string) {
-    const display = game.nhDisplay;
-    if (!display) return;
-    for (const ch of text) {
-        if (ch === '\r') {
-            display.setCursor(0, display.cursorRow);
-        } else if (ch === '\n') {
-            const row = display.cursorRow + 1;
-            if (row >= display.rows) display.scrollUp();
-            display.setCursor(0, Math.min(row, display.rows - 1));
-        } else if (ch === '\t') {
-            // tty_raw_print() leaves tabs for the terminal's eight-column stops.
-            const nextTab = display.cursorCol + 8 - display.cursorCol % 8;
-            display.setCursor(Math.min(nextTab, display.cols - 1), display.cursorRow);
-        } else {
-            if (display.cursorCol >= display.cols) writeRawText('\n');
-            display.setCell(display.cursorCol, display.cursorRow, ch, NO_COLOR, 0);
-            display.setCursor(display.cursorCol + 1, display.cursorRow);
-        }
-    }
-    display.flush();
-}
 
 // Part of C end.c:panic(): "Oops..." window-exit preamble, with
 // win/tty/wintty.c:getret(); the full port is diagnostics.ts:panic().

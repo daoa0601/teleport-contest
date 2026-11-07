@@ -13,6 +13,7 @@ import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { cureHeroSickness } from './potion.js';
+import { parseDisclosureSettings } from './message_types.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { endmultishot } from './dothrow.js';
 import {
@@ -718,43 +719,7 @@ export const DISCLOSURE_CATEGORIES = ['i', 'a', 'v', 'g', 'c', 'o'] as const;
 type DisclosureCategory = (typeof DISCLOSURE_CATEGORIES)[number];
 export type DisclosureDefault = 'y' | 'n' | 'a';
 
-// C options.c:optfn_disclose(): parse the "disclose" option string into
-// per-category settings (the TS game stores it as flags.disclose).
-export function parseDisclosureSettings(raw: unknown): Record<string, string> {
-    const settings: Record<string, string> = {
-        i: '', a: '', v: '', g: '', c: '', o: '',
-    };
-    // An unset option leaves the zero-initialized defaults: ask, answer no.
-    if (raw === undefined || raw === null) return settings;
-    const text = String(raw).trim();
-    if (text === '' || text.toLowerCase() === 'all') {
-        for (const category of DISCLOSURE_CATEGORIES) settings[category] = 'y';
-        return settings;
-    }
-    if (text.toLowerCase() === 'none') {
-        for (const category of DISCLOSURE_CATEGORIES) settings[category] = '-';
-        return settings;
-    }
-    let prefix: string | null = null;
-    for (const character of text) {
-        const code = character.toLowerCase();
-        if (code === ' ') continue;
-        const resolved = code === 'k' ? 'v' : code === 'd' ? 'o' : code;
-        const category = DISCLOSURE_CATEGORIES.find(entry => entry === resolved);
-        if (category) {
-            let value = prefix ?? '+';
-            if (prefix && category !== 'v' && category !== 'g') {
-                if (prefix === '?') value = 'y';
-                else if (prefix === '#') value = '+';
-            }
-            settings[category] = value;
-            prefix = null;
-        } else if (['y', 'n', '?', '+', '-', '#'].includes(code)) {
-            prefix = code;
-        }
-    }
-    return settings;
-}
+
 
 // Part of C end.c:should_query_disclose_option(): reads the parsed
 // end_disclose settings for one disclosure category.

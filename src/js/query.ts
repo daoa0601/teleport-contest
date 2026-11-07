@@ -1,68 +1,32 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 
-import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
+import { COLNO } from './const.js';
 import {
     clearMessageWindow, flushPendingTopline, messageWindowMode,
     rememberToplines, resetToplineClip,
 } from './topl.js';
 import { flush_screen } from './display.js';
-import { pline, setTopline, truncateRawMessage } from './pline.js';
+import { setTopline } from './pline.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { readchar, cmdq_pop } from './cmd.js';
+import { cmdq_pop, doprevMessage } from './cmd.js';
 import type { CommandDirection } from './input.js';
 import { NO_COLOR } from './terminal.js';
 import { CMDQ_KEY } from './const.js';
-import { doprevMessage, keyText } from './cmd.js';
-import { visibleCommandKey } from './cmd.js';
-import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
+
+
+import { FUZZER_IMPOSSIBLE_CONTINUE, impossible } from './diagnostics.js';
+import { paniclog } from './novel_tribute.js';
 import { showChoiceWindow } from './windows.js';
 import { availableExtendedCommands, commandAutocompletes, yn_function } from './cmd.js';
 
-interface LineInputOptions {
+export interface LineInputOptions {
     suppressStatus?: boolean;
     inMenu?: boolean;
 }
 
-// C windows.c:getlin(): core line input; owns the command queue.
-export async function getLine(
-    prompt: string,
-    accepts: (character: string, key: number) => boolean = ch => /^[0-9+-]$/.test(ch),
-    options: LineInputOptions = {},
-): Promise<string | null> {
-    // C windows.c:getlin(): queued CMDQ_KEY entries answer without any tty
-    // prompt and are echoed as pline("%s %s", query, buf). The first
-    // non-key entry stops the drain and is discarded; '\n' ends the
-    // answer (windows.c:1875-1893).
-    const queuedKeys: number[] = [];
-    let queued = false;
-    for (;;) {
-        const entry = cmdq_pop();
-        if (!entry || entry.typ !== CMDQ_KEY) break;
-        queued = true;
-        if (entry.key === 10) break;
-        queuedKeys.push(entry.key);
-    }
-    if (queued) {
-        // The C buffer ends at its first NUL for both the echo and callers.
-        const joined = String.fromCharCode(...queuedKeys);
-        const text = joined.includes('\0') ? joined.slice(0, joined.indexOf('\0')) : joined;
-        await pline(`${prompt} ${text}`);
-        // C getlin() leaves "\033" in the buffer; callers cancel on it, the
-        // same cancellation the typed path reports as null.
-        return text.charCodeAt(0) === 27 ? null : text;
-    }
-    // windows.c:getlin() disables bot() through tty's prompt cleanup.
-    // Covered status rows stay blank until a later status update.
-    const statusUpdatesDisabled = game._statusUpdatesDisabled ?? false;
-    game._statusUpdatesDisabled = true;
-    try {
-        return await tty_getlin(prompt, accepts, options);
-    } finally {
-        game._statusUpdatesDisabled = statusUpdatesDisabled;
-    }
-}
+
 
 // C getline.c:tty_getlin()
 // Also C getline.c:hooked_tty_getlin(): line editing is inlined here
@@ -216,23 +180,7 @@ export async function tty_getlin(
     }
 }
 
-// Part of C topl.c:tty_yn_function(): paints the question line and
-// cursor on the tty.
-function renderChoicePrompt(message: string): void {
-    const display = game.nhDisplay;
-    if (!display) return;
-    const width = display.cols - 1;
-    for (let row = 0; row * width < message.length; row++) {
-        display.clearRow(row);
-        display.putstr(0, row, message.slice(row * width, (row + 1) * width), NO_COLOR);
-    }
-    const length = message.length;
-    display.setCursor(length ? (length - 1) % width + 1 : 0,
-        length ? Math.floor((length - 1) / width) : 0);
-    // show_topl() draws the prompt through addtopl(), ending
-    // TOPLINE_SPECIAL_PROMPT before any answer is typed (topl.c:428).
-    game._promptOwnsTopline = false;
-}
+
 
 // Port only: typed choice wrapper over yn_function for JS callers.
 // tty_yn_function behavior: Escape prefers quit, then no; whitespace
@@ -249,7 +197,7 @@ export async function promptChoice<Choice extends string>(
     return choices.find(choice => choice === result.answer) ?? defaultAnswer;
 }
 
-export interface TtyPromptAnswer { answer: string; count: bigint }
+
 
 // C getline.c:ext_cmd_getlin_hook().
 // Also C cmd.c:extcmds_match(): inlined here (the case-insensitive prefix
@@ -263,126 +211,7 @@ export function completeExtendedCommand(prefix: string): string | null {
 }
 
 
-// C topl.c:tty_yn_function().
-// Native tty_yn_function returns the answer and sets yn_number. Keep the
-// number in the result so each suspended question owns its own answer.
-export async function tty_yn_function(
-    query: string, responses: string | null, defaultAnswer = '',
-    visibleChoices = responses?.split('\x1b')[0] ?? '',
-): Promise<TtyPromptAnswer> {
-    game._ynNumber = 0n;
-    const question = query.length >= QBUFSZ
-        ? `${query.slice(0, QBUFSZ - 4)}...` : query;
-    const choices = visibleChoices.split('\x1b')[0] ?? '';
-    const message = responses === null ? `${question} `
-        : `${question} [${choices}]${defaultAnswer ? ` (${defaultAnswer})` : ''} `;
-    const preserveCase = responses === null || /[A-Z]/.test(responses);
-    const readAnswer = async () => {
-        // readchar() returns a signed C char; strings represent its byte.
-        const key = (await readchar()) & 255;
-        return String.fromCharCode(!preserveCase && key >= 65 && key <= 90 ? key + 32 : key);
-    };
-    if (!game._suppressMessagesUntilInput) await flushPendingTopline();
-    game._suppressMessagesUntilInput = false;
-    await setTopline(message);
-    await flush_screen(1);
-    renderChoicePrompt(message);
-    // custompline(SUPPRESS_HISTORY) drew the question through
-    // show_topl()'s addtopl(), which already ended TOPLINE_SPECIAL_PROMPT;
-    // an unread wrapped question pages on recall like any other line.
-    let displayed = message;
-    let coveredRows = (game.nhDisplay?.cursorRow ?? 0) + 1;
-    const paint = (text: string) => {
-        // Removing a wrapped count must erase its old rows as well as
-        // repainting the shorter prompt. Cleanup still owns those rows.
-        for (let row = 1; row < coveredRows; row++) game.nhDisplay?.clearRow(row);
-        displayed = text;
-        renderChoicePrompt(text);
-        coveredRows = Math.max(coveredRows, (game.nhDisplay?.cursorRow ?? 0) + 1);
-    };
-    const finish = (answer: string, count = 0n): TtyPromptAnswer => {
-        game._ynNumber = count;
-        // clean_up rewrites gt.toplines with the answered question; the
-        // recorded answer names the key like C key2txt().
-        game._toplines = message + (count ? `#${count}` : keyText(answer.charCodeAt(0)));
-        game._promptOwnsTopline = false;
-        // Native cleanup marks the question seen even when fuzzer input
-        // bypasses tty_nhgetch(). Keep a one-line question visible.
-        game._pending_message = '';
-        game._retained_message = displayed;
-        if (coveredRows > 1) clearMessageWindow(coveredRows);
-        return { answer, count };
-    };
-    if (responses === null) return finish(await readAnswer());
-    let doprev = false;
-    for (;;) {
-        const character = await readAnswer();
-        if (character === '\x10') {
-            if (messageWindowMode() !== 's') {
-                // Full, combination, and reverse page the window with
-                // inread clear, then repaint the question.
-                await doprevMessage(false);
-                clearMessageWindow();
-                game._messageHistoryCursor = null;
-                await setTopline(message);
-                await flush_screen(1);
-                renderChoicePrompt(message);
-            } else {
-                // Two recalls initially: gt.toplines holds the question
-                // prompt, so the first press already shows one entry back.
-                if (!doprev) await doprevMessage(true);
-                await doprevMessage(true);
-                doprev = true;
-            }
-            continue;
-        }
-        if (doprev) {
-            // The key typed after single-mode browsing is discarded and the
-            // question repainted, exactly like tty_yn_function().
-            clearMessageWindow();
-            game._messageHistoryCursor = null;
-            doprev = false;
-            await setTopline(message);
-            await flush_screen(1);
-            renderChoicePrompt(message);
-            continue;
-        }
-        if (character === '\x1b') return finish(responses.includes('q') ? 'q'
-            : responses.includes('n') ? 'n' : defaultAnswer);
-        // strchr(quitchars, q) also matches the string's terminating NUL.
-        if (' \n\r\0'.includes(character)) return finish(defaultAnswer);
-        const digit = /^[0-9]$/.test(character);
-        if (!responses.includes(character) && !(digit && responses.includes('#'))) continue;
-        if (character !== '#' && !digit) return finish(character);
-        if (!responses.includes('#')) return finish(character);
-        // The count entry: digits after '#' build yn_number; backspace
-        // erases digits (removetopl()), Escape or junk abandons the count.
-        let digits = character === '#' ? '' : character;
-        let value = digits ? BigInt(digits) : 0n;
-        paint(message + '#' + digits);
-        for (;;) {
-            const next = await readAnswer();
-            if (/^[0-9]$/.test(next)) {
-                const combined = value * 10n + BigInt(next);
-                if (combined > 9223372036854775807n) break;
-                value = combined;
-                digits += next;
-            } else if (next === 'y' || ' \n\r\x1b\0'.includes(next)) {
-                if (next !== '\x1b') return value === 0n ? finish('n') : finish('#', value);
-                break;
-            } else if (next === '\x7f' || next === '\b') {
-                if (!digits) break;
-                value /= 10n;
-                digits = digits.slice(0, -1);
-            } else break;
-            paint(message + '#' + digits);
-        }
-        // Escape, overflow, erasing the '#', or an invalid character aborts
-        // the number and returns to the same yes/no question.
-        paint(message);
-        continue;
-    }
-}
+
 
 
 // Port only: y/n convenience wrapper.

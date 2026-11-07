@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { doOptions } from '../js/options.js';
+import { doOptions } from '../js/message_types.js';
 import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_GREEN, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { GameDisplay } from '../js/game_display.js';

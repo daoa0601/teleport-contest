@@ -116,3 +116,9 @@ export function fixedCalendar(datetime?: string | null) {
     const moonphase = (Math.floor(((((diy + epact) * 6) + 11) % 177) / 22)) & 7;
     return { moonphase, friday13: weekday === 5 && day === 13 };
 }
+
+// C calendar.c:night()
+export function sessionIsNight(datetime: string | null | undefined): boolean {
+    const hour = recorderLocalHour(datetime);
+    return hour < 6 || hour > 21;
+}

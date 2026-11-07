@@ -6,7 +6,10 @@ import { clearMessageWindow, flushPendingTopline } from './topl.js';
 import { docrt, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS, MENU_ITEMFLAGS_SKIPINVERT } from './const.js';
+import { NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS, MENU_ITEMFLAGS_SKIPINVERT, CMDQ_KEY } from './const.js';
+import { pline } from './pline.js';
+import { cmdq_pop } from './cmd.js';
+import { tty_getlin } from './query.js';
 import { compressStr, dmore, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow } from './wintty.js';
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;
@@ -82,6 +85,43 @@ export function getMenuColoring(text) {
         if (rule.regex.test(text))
             return rule;
     return null;
+}
+// C windows.c:getlin(): core line input; owns the command queue.
+export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
+    // C windows.c:getlin(): queued CMDQ_KEY entries answer without any tty
+    // prompt and are echoed as pline("%s %s", query, buf). The first
+    // non-key entry stops the drain and is discarded; '\n' ends the
+    // answer (windows.c:1875-1893).
+    const queuedKeys = [];
+    let queued = false;
+    for (;;) {
+        const entry = cmdq_pop();
+        if (!entry || entry.typ !== CMDQ_KEY)
+            break;
+        queued = true;
+        if (entry.key === 10)
+            break;
+        queuedKeys.push(entry.key);
+    }
+    if (queued) {
+        // The C buffer ends at its first NUL for both the echo and callers.
+        const joined = String.fromCharCode(...queuedKeys);
+        const text = joined.includes('\0') ? joined.slice(0, joined.indexOf('\0')) : joined;
+        await pline(`${prompt} ${text}`);
+        // C getlin() leaves "\033" in the buffer; callers cancel on it, the
+        // same cancellation the typed path reports as null.
+        return text.charCodeAt(0) === 27 ? null : text;
+    }
+    // windows.c:getlin() disables bot() through tty's prompt cleanup.
+    // Covered status rows stay blank until a later status update.
+    const statusUpdatesDisabled = game._statusUpdatesDisabled ?? false;
+    game._statusUpdatesDisabled = true;
+    try {
+        return await tty_getlin(prompt, accepts, options);
+    }
+    finally {
+        game._statusUpdatesDisabled = statusUpdatesDisabled;
+    }
 }
 // Port only: adapt inventory sections and counted selections to the tty menu API.
 // Build an inventory menu with the native tty window owner.

@@ -1,6 +1,6 @@
 // input.js — The single boundary for NetHack key input.
 // C refs: win/tty/wintty.c:tty_nhgetch(), win/tty/getline.c.
-import { KEY_BINDINGS } from './terminal.js';
+import { KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
 import { rn1, rn2, rnd } from './rng.js';
@@ -130,6 +130,41 @@ export function pushKey(key) {
 // Port only: queue one or many keys into the active gate.
 export function pushKeys(keys) {
     activeInputGate.feed(keys);
+}
+// C wintty.c:tty_raw_print()
+// C win/tty/wintty.c:tty_raw_print().
+export function rawPrint(message) {
+    writeRawText(`${message}\n`);
+}
+// Part of C wintty.c:tty_raw_print(): the character-level terminal writer
+// (cursor, scroll, tab stops).
+export function writeRawText(text) {
+    const display = game.nhDisplay;
+    if (!display)
+        return;
+    for (const ch of text) {
+        if (ch === '\r') {
+            display.setCursor(0, display.cursorRow);
+        }
+        else if (ch === '\n') {
+            const row = display.cursorRow + 1;
+            if (row >= display.rows)
+                display.scrollUp();
+            display.setCursor(0, Math.min(row, display.rows - 1));
+        }
+        else if (ch === '\t') {
+            // tty_raw_print() leaves tabs for the terminal's eight-column stops.
+            const nextTab = display.cursorCol + 8 - display.cursorCol % 8;
+            display.setCursor(Math.min(nextTab, display.cols - 1), display.cursorRow);
+        }
+        else {
+            if (display.cursorCol >= display.cols)
+                writeRawText('\n');
+            display.setCell(display.cursorCol, display.cursorRow, ch, NO_COLOR, 0);
+            display.setCursor(display.cursorCol + 1, display.cursorRow);
+        }
+    }
+    display.flush();
 }
 // C wintty.c:tty_nhgetch()
 export async function nhgetch(inputState = 'other') {

@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
-import { toggleBooleanOptionPrefix } from '../js/options.js';
+import { toggleBooleanOptionPrefix } from '../js/message_types.js';
 import { applyNethackrc } from '../js/cfgfiles.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';

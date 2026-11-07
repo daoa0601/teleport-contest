@@ -22,6 +22,7 @@ import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './i
 import type { InventoryAction } from './invent.js';
 import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
 import { nhgetch, nh_poskey, MAP_CLICK_KEY, inputGate } from './input.js';
+import { visibleCommandKey } from './hacklib.js';
 
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish, makemapRemoveMons } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
@@ -43,7 +44,7 @@ import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState 
 import { inventoryReport } from './invent.js';
 import { isContainer, unlinkObject, deallocateObject } from './mkobj.js';
 
-import { doOptions, toggleBooleanOptionPrefix } from './options.js';
+import { doOptions, toggleBooleanOptionPrefix } from './message_types.js';
 import type { CommandDefinition } from './command_data.js';
 import { extFuncTabFromFunc, type CommandBindings } from './command_bindings.js';
 import { stopHeroOccupation } from './allmain.js';
@@ -51,8 +52,9 @@ import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff,
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
-import { completeExtendedCommand, getLine, promptChoice, tty_yn_function } from './query.js';
-import { showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
+import { completeExtendedCommand, promptChoice } from './query.js';
+import { tty_yn_function } from './topl.js';
+import { getLine, showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
 import { promptYesNo } from './query.js';
@@ -78,7 +80,7 @@ import { heroCanUseUnicornHorn } from './unicorn_horn.js';
 import { doread } from './read.js';
 import { eatfood, doeat, opentin } from './eat.js';
 import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
-import { doextversion, NATIVE_VERSION } from './extversion.js';
+import { doextversion, doversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, revealTerrain } from './detect.js';
 import { continueWipingFace, donull, dowipe, dodrop, dropMultipleObjects } from './do.js';
 
@@ -97,7 +99,8 @@ import { doenhance } from './weapon.js';
 import { dopay } from './shk.js';
 import { dokick } from './dokick.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE, impossible } from './diagnostics.js';
+import { paniclog } from './novel_tribute.js';
 import { heroCanReachFloor } from './engrave.js';
 import { CmapSymbol, GlyphOffset, monnumToGlyph, objnumToGlyph } from './glyph_numbers.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
@@ -106,14 +109,14 @@ import { floorObjectDescription } from './invent.js';
 import { cansee, couldsee, vision_reset_new_level } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
 import type { Selection } from './selvar.js';
-import type { TtyPromptAnswer } from './query.js';
+import type { TtyPromptAnswer } from './topl.js';
 import type { CharacterInput, CommandDirection, InputState } from './input.js';
 import type { Hero } from './hero_types.js';
 import type { TextPage } from './windows.js';
 import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 import { finishHeroMonsterKill } from './mon.js';
 
-export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
+export { promptYesNo, promptYesNoQuit } from './query.js';
 
 // Direction deltas: y u k
 //                   h . l
@@ -2252,12 +2255,7 @@ async function dotravelTarget(): Promise<void> {
     else if (!game._runState && game.context.run === 8) arriveTravel(game);
 }
 
-// C version.c:doversion()
-async function doversion(): Promise<void> {
-    if (game.iflags.menu_requested) await doextversion();
-    else await pline(NATIVE_VERSION);
-    game.context.move = 0;
-}
+
 
 // ── Command, repeat-queue, and result types ──────────────────────────────
 
@@ -2868,14 +2866,7 @@ export function promptedDirectionKey(key: number, bindings: CommandBindings): st
     return movementDirectionKey(key, bindings);
 }
 
-// C hacklib.c:visctrl()
-export function visibleCommandKey(code: number): string {
-    code &= 255;
-    if (code >= 128) return `M-${visibleCommandKey(code & 127)}`;
-    if (code < 32) return `^${String.fromCharCode(code + 64)}`;
-    if (code === 127) return '^?';
-    return String.fromCharCode(code);
-}
+
 
 // C cmd.c:cmd_from_ecname().
 export function commandKeyDescription(command: string, bindings: CommandBindings): string {

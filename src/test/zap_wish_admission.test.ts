@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { addFruit } from '../js/options.js';
+import { addFruit } from '../js/message_types.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER, ROCK, SLIME_MOLD, WAN_WISHING } from '../js/object_data.js';

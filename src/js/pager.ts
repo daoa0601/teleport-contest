@@ -34,13 +34,13 @@ import type { GlyphMetadata } from './display.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
     cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings,
-    visibleCommandKey, promptDirection, restoreCommandMap, showExtendedCommandList,
+    promptDirection, restoreCommandMap, showExtendedCommandList,
 } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
-import { getLine, promptYesNo } from './query.js';
+import { promptYesNo } from './query.js';
 import { selectMapPosition } from './getpos.js';
 import {
-    decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
+    getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
     type PageLocalMultiSelectItem,
 } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
@@ -48,12 +48,12 @@ import { monsterAtPosition } from './steed.js';
 import { heroIsPolymorphed, heroFormSticks, heroSpecies } from './polyself.js';
 import { selectInventoryObject } from './invent.js';
 import { typedSymbolDescription } from './look_symbols.js';
-import { warningSymbols } from './options.js';
+import { warningSymbols } from './message_types.js';
 import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { CmapSymbol, cmapToGlyph, glyphIsCmapC, glyphIsCmapZap, glyphToWarning } from './glyph_numbers.js';
 import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonsterName } from './do_name.js';
-import { dist2 } from './hacklib.js';
+import { dist2, visibleCommandKey } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { cansee, couldsee } from './vision.js';
@@ -62,7 +62,7 @@ import { detectedTrapDisguise } from './detect.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
-import { option_help } from './options.js';
+import { option_help } from './message_types.js';
 import { doextversion } from './extversion.js';
 import { shouldShowGetposTip, showGetposTip } from './hack.js';
 import { levelTimers } from './timeout.js';

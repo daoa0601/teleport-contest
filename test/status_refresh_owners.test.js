@@ -11,7 +11,7 @@ import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { CLOAK_OF_PROTECTION, ROCK, SPE_HASTE_SELF } from '../js/object_data.js';
-import { getLine } from '../js/query.js';
+import { getLine } from '../js/windows.js';
 import { castSpell } from '../js/spell.js';
 import { Terminal } from '../js/terminal.js';
 import { addInventoryObject } from './support/game-objects.js';

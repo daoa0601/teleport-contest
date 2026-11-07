@@ -19,7 +19,7 @@ import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, mintrap, reset
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';
-import { addFruit } from './options.js';
+import { addFruit } from './message_types.js';
 import { set_tin_variety } from './eat.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './steed.js';
 import { nameObjectFromTopten } from './topten.js';

@@ -5,7 +5,7 @@
 import { COIN_CLASS } from './objclass.js';
 import { game, requireGameLevel, requireLiveGame, requireInitializedGame } from './gstate.js';
 import { isRoom } from './map_types.js';
-import { getLine } from './query.js';
+import { getLine } from './windows.js';
 import { deleteEngravingAt, make_grave } from './engrave.js';
 import { newsym, canSpotMonster, map_invisible, map_location, monsterVisible, xy_set_wall_state } from './display.js';
 import { formatSeenMessage, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage, } from './pline.js';

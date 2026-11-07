@@ -27,7 +27,7 @@ import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import type { GameObject } from './object_types.js';
 import { objectCombatName, objectNameIsPlural, simpleObjectName } from './objnam.js';
 import { heroHasNoHands, body_part } from './polyself.js';
-import { getLine } from './query.js';
+import { getLine } from './windows.js';
 import { rn1, rn2, rnl } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner, chargeUnpaidUsage, deleteObject } from './shk.js';

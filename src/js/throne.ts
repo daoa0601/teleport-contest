@@ -45,7 +45,8 @@ import {
 import { syncHeroInvisibility } from './hero_invisibility.js';
 
 import { heroIsPolymorphed, polymorphHero, body_part, heroSpecies } from './polyself.js';
-import { getLine, promptYesNo } from './query.js';
+import { promptYesNo } from './query.js';
+import { getLine } from './windows.js';
 import { applyRemoveCurseSpell, doGenocide, GENOCIDE_ON_THRONE } from './read.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { monsterSaddle } from './steed.js';

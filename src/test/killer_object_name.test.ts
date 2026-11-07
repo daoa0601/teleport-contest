@@ -3,7 +3,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { changePreferredFruit } from '../js/options.js';
+import { changePreferredFruit } from '../js/message_types.js';
 import { killerObjectName, objectName } from '../js/objnam.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {

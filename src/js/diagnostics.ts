@@ -1,8 +1,10 @@
 // Nonfatal impossible() reports and the Engine-local panic boundary.
-// C refs: pline.c:impossible(), files.c:paniclog(), end.c:panic().
-import { BUFSZ, PANICLOG, PATCHLEVEL, VERSION_MAJOR, VERSION_MINOR } from './const.js';
-import { beginPanicOutput, plineWithContinuation, rawPrint, rawPrintf } from './pline.js';
+// C refs: pline.c:impossible(), end.c:panic().
+import { BUFSZ } from './const.js';
+import { beginPanicOutput, plineWithContinuation, rawPrintf } from './pline.js';
+import { rawPrint } from './input.js';
 import { game, requireLiveGame } from './gstate.js';
+import { paniclog } from './novel_tribute.js';
 import { saveErrorGame } from './save.js';
 import { PanicTermination } from './panic_termination.js';
 import type { GameState } from './game_state.js';
@@ -23,39 +25,9 @@ function diagnosticReason(reason: string): string {
     return new TextDecoder().decode(bytes.subarray(0, BUFSZ - 1));
 }
 
-// Part of C files.c:paniclog(): yyyymmdd+hhmmss timestamp (calendar.c) of the record.
-function diagnosticDateTime(state: GameState): string {
-    if (state.datetime) return state.datetime;
-    const now = new Date();
-    return [now.getFullYear(), now.getMonth() + 1, now.getDate(),
-        now.getHours(), now.getMinutes(), now.getSeconds()]
-        .map((value, index) => String(value).padStart(index ? 2 : 4, '0')).join('');
-}
 
-// C files.c:paniclog(): Web Storage record in place of the paniclog append.
-// Web Storage retains semantic records. Native's Unix uid and paniclog header
-// are not available in a browser; do not fabricate a native header.
-export function paniclog(type: 'panic' | 'impossible' | 'yn debug', reason: string, state: GameState = game): void {
-    if (state.program_state.in_paniclog) return;
-    state.program_state.in_paniclog = true;
-    try {
-        const storage = state.storage;
-        if (storage?.getItem && storage?.setItem) {
-            const record = {
-                type, reason, datetime: diagnosticDateTime(state),
-                version: `${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}`,
-                player: state.plname || null,
-                playmode: state.flags?.debug ? 'D' : state.flags?.explore ? 'X' : '-',
-            };
-            storage.setItem(PANICLOG, (storage.getItem(PANICLOG) || '')
-                + JSON.stringify(record) + '\n');
-        }
-    } catch (error) {
-        if (error instanceof PanicTermination) throw error;
-        // Like a failed native log-file open, storage failure is nonfatal.
-    }
-    state.program_state.in_paniclog = false;
-}
+
+
 
 // C pline.c:impossible().
 export async function impossible(reason: string, { state = game }: { state?: GameState } = {}): Promise<void> {

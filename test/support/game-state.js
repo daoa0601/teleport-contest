@@ -6,7 +6,7 @@ import { resetInputState } from '../../js/input.js';
 import { races, roles } from '../../js/role.js';
 import { initializeHeroSpecies } from '../../js/u_init.js';
 import { initializeMonsterVitals } from '../../js/allmain.js';
-import { initializeFruitRegistry } from '../../js/options.js';
+import { initializeFruitRegistry } from '../../js/message_types.js';
 import { DEFAULT_TEST_DATETIME } from './calendar.js';
 import { initializeHeroRoomMembership } from '../../js/u_init.js';
 export function requireFixtureGame(state) {

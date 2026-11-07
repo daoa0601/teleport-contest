@@ -7,8 +7,10 @@ import { _buildScreenOutput, writeMapRow } from './wintty.js';
 import { plineWithContinuation, setTopline } from './pline.js';
 import type { ToplineOptions } from './pline.js';
 import { nhgetch } from './input.js';
-import { COLNO, ROWNO, MAX_MSG_HISTORY, PICK_NONE, PICK_ONE } from './const.js';
+import { COLNO, ROWNO, MAX_MSG_HISTORY, PICK_NONE, PICK_ONE, QBUFSZ } from './const.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
+import { readchar, keyText, doprevMessage } from './cmd.js';
+import { flush_screen } from './display.js';
 import { showDisclosureOverlay } from './windows.js';
 
 interface ToplineCell { ch: string; dec: boolean }
@@ -200,6 +202,147 @@ export function rememberToplines(): void {
     game._messageHistoryWriteIndex = (game._messageHistoryWriteIndex + 1) % capacity;
     game._toplines = '';
     game._messageHistoryCursor = null;
+}
+
+// Part of C win/tty/topl.c:tty_yn_function(): paints the question line and
+// cursor on the tty.
+function renderChoicePrompt(message: string): void {
+    const display = game.nhDisplay;
+    if (!display) return;
+    const width = display.cols - 1;
+    for (let row = 0; row * width < message.length; row++) {
+        display.clearRow(row);
+        display.putstr(0, row, message.slice(row * width, (row + 1) * width), NO_COLOR);
+    }
+    const length = message.length;
+    display.setCursor(length ? (length - 1) % width + 1 : 0,
+        length ? Math.floor((length - 1) / width) : 0);
+    // show_topl() draws the prompt through addtopl(), ending
+    // TOPLINE_SPECIAL_PROMPT before any answer is typed (topl.c:428).
+    game._promptOwnsTopline = false;
+}
+
+export interface TtyPromptAnswer { answer: string; count: bigint }
+
+// C win/tty/topl.c:tty_yn_function().
+// Native tty_yn_function returns the answer and sets yn_number. Keep the
+// number in the result so each suspended question owns its own answer.
+export async function tty_yn_function(
+    query: string, responses: string | null, defaultAnswer = '',
+    visibleChoices = responses?.split('\x1b')[0] ?? '',
+): Promise<TtyPromptAnswer> {
+    game._ynNumber = 0n;
+    const question = query.length >= QBUFSZ
+        ? `${query.slice(0, QBUFSZ - 4)}...` : query;
+    const choices = visibleChoices.split('\x1b')[0] ?? '';
+    const message = responses === null ? `${question} `
+        : `${question} [${choices}]${defaultAnswer ? ` (${defaultAnswer})` : ''} `;
+    const preserveCase = responses === null || /[A-Z]/.test(responses);
+    const readAnswer = async () => {
+        // readchar() returns a signed C char; strings represent its byte.
+        const key = (await readchar()) & 255;
+        return String.fromCharCode(!preserveCase && key >= 65 && key <= 90 ? key + 32 : key);
+    };
+    if (!game._suppressMessagesUntilInput) await flushPendingTopline();
+    game._suppressMessagesUntilInput = false;
+    await setTopline(message);
+    await flush_screen(1);
+    renderChoicePrompt(message);
+    // custompline(SUPPRESS_HISTORY) drew the question through
+    // show_topl()'s addtopl(), which already ended TOPLINE_SPECIAL_PROMPT;
+    // an unread wrapped question pages on recall like any other line.
+    let displayed = message;
+    let coveredRows = (game.nhDisplay?.cursorRow ?? 0) + 1;
+    const paint = (text: string) => {
+        // Removing a wrapped count must erase its old rows as well as
+        // repainting the shorter prompt. Cleanup still owns those rows.
+        for (let row = 1; row < coveredRows; row++) game.nhDisplay?.clearRow(row);
+        displayed = text;
+        renderChoicePrompt(text);
+        coveredRows = Math.max(coveredRows, (game.nhDisplay?.cursorRow ?? 0) + 1);
+    };
+    const finish = (answer: string, count = 0n): TtyPromptAnswer => {
+        game._ynNumber = count;
+        // clean_up rewrites gt.toplines with the answered question; the
+        // recorded answer names the key like C key2txt().
+        game._toplines = message + (count ? `#${count}` : keyText(answer.charCodeAt(0)));
+        game._promptOwnsTopline = false;
+        // Native cleanup marks the question seen even when fuzzer input
+        // bypasses tty_nhgetch(). Keep a one-line question visible.
+        game._pending_message = '';
+        game._retained_message = displayed;
+        if (coveredRows > 1) clearMessageWindow(coveredRows);
+        return { answer, count };
+    };
+    if (responses === null) return finish(await readAnswer());
+    let doprev = false;
+    for (;;) {
+        const character = await readAnswer();
+        if (character === '\x10') {
+            if (messageWindowMode() !== 's') {
+                // Full, combination, and reverse page the window with
+                // inread clear, then repaint the question.
+                await doprevMessage(false);
+                clearMessageWindow();
+                game._messageHistoryCursor = null;
+                await setTopline(message);
+                await flush_screen(1);
+                renderChoicePrompt(message);
+            } else {
+                // Two recalls initially: gt.toplines holds the question
+                // prompt, so the first press already shows one entry back.
+                if (!doprev) await doprevMessage(true);
+                await doprevMessage(true);
+                doprev = true;
+            }
+            continue;
+        }
+        if (doprev) {
+            // The key typed after single-mode browsing is discarded and the
+            // question repainted, exactly like tty_yn_function().
+            clearMessageWindow();
+            game._messageHistoryCursor = null;
+            doprev = false;
+            await setTopline(message);
+            await flush_screen(1);
+            renderChoicePrompt(message);
+            continue;
+        }
+        if (character === '\x1b') return finish(responses.includes('q') ? 'q'
+            : responses.includes('n') ? 'n' : defaultAnswer);
+        // strchr(quitchars, q) also matches the string's terminating NUL.
+        if (' \n\r\0'.includes(character)) return finish(defaultAnswer);
+        const digit = /^[0-9]$/.test(character);
+        if (!responses.includes(character) && !(digit && responses.includes('#'))) continue;
+        if (character !== '#' && !digit) return finish(character);
+        if (!responses.includes('#')) return finish(character);
+        // The count entry: digits after '#' build yn_number; backspace
+        // erases digits (removetopl()), Escape or junk abandons the count.
+        let digits = character === '#' ? '' : character;
+        let value = digits ? BigInt(digits) : 0n;
+        paint(message + '#' + digits);
+        for (;;) {
+            const next = await readAnswer();
+            if (/^[0-9]$/.test(next)) {
+                const combined = value * 10n + BigInt(next);
+                if (combined > 9223372036854775807n) break;
+                value = combined;
+                digits += next;
+            } else if (next === 'y' || ' \n\r\x1b\0'.includes(next)) {
+                if (next !== '\x1b') return value === 0n ? finish('n') : finish('#', value);
+                break;
+            } else if (next === '\x7f' || next === '\b') {
+                if (!digits) break;
+                value /= 10n;
+                digits = digits.slice(0, -1);
+            } else break;
+            paint(message + '#' + digits);
+        }
+        // Escape, overflow, erasing the '#', or an invalid character aborts
+        // the number and returns to the same yes/no question.
+        paint(message);
+        continue;
+    }
 }
 
 // Part of C topl.c:tty_putmsghistory(): the non-restoring message insertion path.

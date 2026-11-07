@@ -11,7 +11,7 @@ import { nhgetch } from './input.js';
 import { rn2 } from './rng.js';
 import { NO_COLOR } from './terminal.js';
 import { withIndefiniteArticle } from './objnam.js';
-import { rawPrint } from './pline.js';
+import { rawPrint } from './input.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './wintty.js';
 import { ensureQuestStatus } from './quest.js';
 import { is_male, is_neuter, monsterIsFemale } from './mondata.js';

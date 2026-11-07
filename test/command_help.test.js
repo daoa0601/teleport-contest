@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { option_help } from '../js/options.js';
+import { option_help } from '../js/message_types.js';
 import { freshTurnRoom } from './support/playable-room.js';
 void test('whatdoes describes the command currently bound to the requested key', async () => {
     const input = freshTurnRoom();

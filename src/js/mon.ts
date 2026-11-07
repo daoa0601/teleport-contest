@@ -138,7 +138,7 @@ import type { GameMap } from './game.js';
 import { inventoryItemDescription, delobj, stack_object } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
 import { addExperience, awardMonsterExperience, checkExperienceLevel, monsterExperience } from './exper.js';
-import { getLine } from './query.js';
+import { getLine } from './windows.js';
 import { coordinateDescription } from './pager.js';
 import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';

@@ -12,7 +12,7 @@ import { AMULET_OF_LIFE_SAVING, ARROW, BAG_OF_TRICKS, BOW, CORPSE, DAGGER, DART,
 import { lootObjectName } from '../js/invent.js';
 import { learnObjectType } from '../js/o_init.js';
 import { recordObjectCall } from '../js/do_name.js';
-import { changeInventoryOrder } from '../js/options.js';
+import { changeInventoryOrder } from '../js/message_types.js';
 import {} from '../js/cfgfiles.js';
 import { inventoryOrderSymbols, inventorySortMode, lootSortMode, sortObjects } from '../js/invent.js';
 import { dodiscovered } from '../js/o_init.js';

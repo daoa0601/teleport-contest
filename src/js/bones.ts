@@ -14,7 +14,7 @@ import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
 import {
     BUFSZ, COLNO, CORPSTAT_INIT, DEFUNCT_MONSTER, DELPHI, DISMOUNT_BONES, G_NOCORPSE,
-    GRAVE, HEADSTONE, HOLE, In_quest, Invocation_lev, Is_oracle_level,
+    GRAVE, HEADSTONE, HOLE, Invocation_lev, Is_oracle_level,
     LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, MON_FLOOR, NON_PM, NO_MINVENT,
     PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROWNO, STONE, TRICKED, Upolyd,
 } from './const.js';
@@ -42,10 +42,11 @@ import { endObjectBurn, restoreLevelTimers } from './timeout.js';
 import { restoreLevelRegions, resetRegionMonsterIds } from './region.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
-import { addFruit } from './options.js';
+import { addFruit } from './message_types.js';
 import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt } from './dungeon.js';
+import { bonesLevelId, bonesStorageKey, deleteBonesLevel } from './novel_tribute.js';
 import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE } from './object_data.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -499,22 +500,8 @@ export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, sta
 
 const BONES_VERSION = 20;
 
-// C files.c:set_bonesfile_name(): special levels keep their identity when
-// dungeon generation changes their depth; quest bones also belong to a role.
-function bonesLevelId(location: DungeonLocation | undefined = game.u.uz): string {
-    if (!location) throw new Error('Bones require an initialized dungeon location');
-    const tag = game.dungeons[location.dnum]?.bonetag;
-    if (!tag) return '';
-    const role = In_quest(location) ? game.urole?.filecode : '0';
-    if (role === undefined) throw new Error('Quest bones require an initialized role');
-    const special = specialLevelAt(location);
-    return `${tag}${role}.${special ? special.bonetag ?? '' : location.dlevel}`;
-}
 
-// Port only: browser-storage key for a bones level (C names a bones file).
-function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
-    return `teleport-bones:${bonesLevelId(level)}`;
-}
+
 
 // Port only: storage probe standing in for C's open_bonesfile()
 // existence check.
@@ -522,20 +509,7 @@ export function bonesLevelExists(level: DungeonLocation | undefined = game.u.uz)
     return game.storage?.getItem(bonesStorageKey(level)) != null;
 }
 
-// C files.c:delete_bonesfile()
-export function deleteBonesLevel(): boolean {
-    const storage = game.storage;
-    if (!storage) return false;
-    try {
-        const key = bonesStorageKey();
-        // Native unlink fails if another game has already consumed these bones.
-        if (storage.getItem(key) === null) return false;
-        storage.removeItem(key);
-        return storage.getItem(key) === null;
-    } catch (_error) {
-        return false;
-    }
-}
+
 
 // Part of C bones.c:getbones(), bones.c:savebones(): the wizard y_n()
 // prompts with their screen flush.

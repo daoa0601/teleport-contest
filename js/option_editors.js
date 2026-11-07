@@ -1,7 +1,7 @@
 // Interactive compound options. C refs: options.c:handler_*().
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
-import { visibleCommandKey } from './cmd.js';
+import { visibleCommandKey } from './hacklib.js';
 import { autoUnlockFlags } from './lock.js';
 import { statusVersion } from './version.js';
 import { statusConditionOptions, condMenu } from './botl.js';

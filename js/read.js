@@ -59,7 +59,8 @@ import { MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistan
 import { addExperience } from './exper.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import { recordLiteracy } from './literacy.js';
-import { getLine, promptYesNo } from './query.js';
+import { promptYesNo } from './query.js';
+import { getLine } from './windows.js';
 import { readOrdinaryObject } from './readable_objects.js';
 import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome, } from './mon.js';
 import { monsterResistsEffect } from './zap.js';

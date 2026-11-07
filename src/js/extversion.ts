@@ -1,5 +1,6 @@
 // extversion.js — Extended compile/runtime version disclosure.
-// C refs: version.c:doextversion(), mdlib.c:do_runtime_info().
+// C refs: version.c:doversion(), doextversion(), get_feature_notice_ver(),
+// mdlib.c:do_runtime_info().
 //
 // Keep this separate from version.js: const.js imports that build-metadata
 // leaf, while this interactive command depends on display and window layers.
@@ -7,6 +8,8 @@
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
+import { pline } from './pline.js';
+import { cInteger } from './option_values.js';
 
 export const NATIVE_VERSION = 'MacOS NetHack Version 5.0.0 - last build May  2 2026 12:00:00.';
 
@@ -51,6 +54,13 @@ const VERSION_PAGE_2 = [
     '--More--',
 ];
 
+// C version.c:doversion()
+export async function doversion(): Promise<void> {
+    if (game.iflags.menu_requested) await doextversion();
+    else await pline(NATIVE_VERSION);
+    game.context.move = 0;
+}
+
 // C version.c:doextversion(): show the version and license text pages.
 export async function doextversion() {
     // version.c substitutes :LUAVERSION:/:LUACOPYRIGHT: lazily. The first
@@ -71,4 +81,22 @@ export async function doextversion() {
     game._pending_message = '';
     game._retained_message = '';
     game.context.move = 0;
+}
+
+// C version.c:get_feature_notice_ver()
+// Validates the first two components,
+// then reads the patch component with atoi. hack.h stores them in bit fields.
+export function featureAlertVersion(value: string): { version: string; future: boolean } | null {
+    const parts = value.match(/^(\d*)\.(\d*)\.(.*)$/);
+    if (!parts) return null;
+    const major = cInteger(parts[1] ?? '');
+    const minor = cInteger(parts[2] ?? '');
+    const patch = cInteger(parts[3] ?? '');
+    if (![major, minor, patch].every(Number.isSafeInteger)) return null;
+    const encoded = BigInt.asUintN(64, BigInt(major) << 24n | BigInt(minor) << 16n | BigInt(patch) << 8n);
+    if (!encoded) return null;
+    return {
+        version: `${encoded >> 24n}.${encoded >> 16n & 255n}.${encoded >> 8n & 255n}`,
+        future: encoded > 5n << 24n,
+    };
 }

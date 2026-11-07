@@ -6,7 +6,7 @@ import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { applyNethackrc } from '../js/cfgfiles.js';
-import { setTextOption } from '../js/option_values.js';
+import { setTextOption } from '../js/message_types.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { capturedScreen, requireScreenRow, screenText } from './support/screen.js';

@@ -2,7 +2,7 @@
 // C ref: hacklib.c — nh_deterministic_qsort(), fuzzymatch(), swapbits(),
 // and the string/number helpers.
 
-import { game } from './gstate.js';
+
 import type { DungeonLocation } from './dungeon_types.js';
 import type { GameState } from './game_state.js';
 
@@ -189,6 +189,12 @@ export function ingSuffix(verb: string): string {
     }
     return stem + 'ing' + particle;
 }
+// C hacklib.c:highc()
+export const uppercase = (key: number): number => key >= 97 && key <= 122 ? key - 32 : key;
+
+// C hacklib.c:lowc(): ASCII lowercasing of one byte.
+export const asciiLower = (code: number): number => code >= 65 && code <= 90 ? code + 32 : code;
+
 // C hacklib.c:upstart(). Convert the first character to uppercase.
 export function upstart(text: string): string {
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
@@ -207,6 +213,15 @@ export function pointsOnline(x0: number, y0: number, x1: number, y1: number) {
     const dx = x0 - x1;
     const dy = y0 - y1;
     return !dx || !dy || dy === dx || dy === -dx;
+}
+
+// C hacklib.c:visctrl()
+export function visibleCommandKey(code: number): string {
+    code &= 255;
+    if (code >= 128) return `M-${visibleCommandKey(code & 127)}`;
+    if (code < 32) return `^${String.fromCharCode(code + 64)}`;
+    if (code === 127) return '^?';
+    return String.fromCharCode(code);
 }
 
 // C hacklib.c:ordin().
@@ -235,6 +250,24 @@ export function mungSpaces(bytes: Uint8Array): Uint8Array {
     return new Uint8Array(out);
 }
 
+
+// C hacklib.c:str_start_is(): case-insensitive leading-substring test.
+// C hacklib.c str_start_is(name, value, TRUE): the value is a leading
+// substring of the name, case-insensitively; an empty value matches.
+export function ciPrefixOf(name: string, value: string): boolean {
+    return value.length <= name.length
+        && name.slice(0, value.length).toLowerCase() === value.toLowerCase();
+}
+
+// C hacklib.c:strncmpi(): case-insensitive prefix comparison.
+// C hacklib.c lowc()/strncmpi() over a leading run of the element.
+export function asciiNameEqual(name: string, element: string, length: number): boolean {
+    if (length > name.length) return false;
+    for (let i = 0; i < length; i++) {
+        if (asciiLower(name.charCodeAt(i)) !== asciiLower(element.charCodeAt(i))) return false;
+    }
+    return true;
+}
 
 // C hacklib.c:fuzzymatch(): compare while skipping ' ', '-', '_' and
 // folding case.
