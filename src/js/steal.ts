@@ -41,7 +41,7 @@ import { heroSpecies, body_part, mbodypart } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { randomMonsterRelocation, relocateObjectRandomly, reportMonsterTeleportRestriction } from './teleport.js';
 import { openHoldingTrap, petrifyMonsterImmediately } from './trap.js';
-import { armorSimpleName, armorSlotFor, stopDonning, isBeingTakenOff, pendingArmorAction, removeHeroArmor, removeHeroAccessory, removeEyewear } from './do_wear.js';
+import { armorSimpleName, armorSlotFor, stopDonning, isBeingDoffed, removeHeroArmor, removeHeroAccessory, removeEyewear } from './do_wear.js';
 import { detachHeroGold } from './sit.js';
 import { isWeldedPrimary, uwepgone, uswapwepgone, uqwepgone } from './wield.js';
 import { unpunishHero } from './read.js';
@@ -281,9 +281,8 @@ export async function stealFromHero(
         if (animal && object.cursed) return refuse();
         releaseObjectLeash(object, game);
     }
-    const previousDelay = pendingArmorAction(game);
-    const removingThisArmor = previousDelay?.kind === 'remove' && previousDelay.object === object;
-    const wasDoffing = removingThisArmor || isBeingTakenOff(object, game);
+    // C do_wear.c:doffing(): the delayed removal or the 'A' takeoff slot.
+    const wasDoffing = isBeingDoffed(object, game);
     // C stop_donning() captures -multi only after cancel_don() has already
     // zeroed it, so steal()'s olddelay is always 0: interrupting a doff
     // never shortens the seduction delay nor disarms the patience roll.
