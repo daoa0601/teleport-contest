@@ -25,8 +25,8 @@ import {
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './sounds.js';
 import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
 import {
-    armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear, heroHasSlipperyHands,
-    heroIsStrangled,
+    armorSimpleName, armorSlotFor, fingersOrGloves, heroHasFreeAction, applyEyewear, removeEyewear,
+    heroHasSlipperyHands, heroIsStrangled,
 } from './do_wear.js';
 import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
 import { currentAttribute } from './attrib.js';
@@ -2133,7 +2133,7 @@ export async function useGrease(can: GameObject): Promise<boolean> {
         return true;
     }
     const selection = await getobj('grease', greaseSuggestion, {
-        forcePrompt: true, hands: GETOBJ_SUGGEST, handsText: `your ${fingers(false)}`,
+        forcePrompt: true, hands: GETOBJ_SUGGEST, handsText: `your ${fingersOrGloves(false)}`,
     });
     // apply.c:use_grease() returns ECMD_CANCEL when getobj() is declined.
     if (selection.cancelled) { commandResultCancelled(); return false; }
@@ -2158,11 +2158,11 @@ export async function useGrease(can: GameObject): Promise<boolean> {
         target.greased = true;
         if (can.cursed && !heroHasNoHands(game)) {
             setSlipperyHands(old + rn1(6, 10));
-            await pline(`Some of the grease gets all over your ${fingers(true)}.`);
+            await pline(`Some of the grease gets all over your ${fingersOrGloves(true)}.`);
         }
     } else {
         setSlipperyHands(old + rn1(11, 5));
-        await pline(`You coat your ${fingers(true)} with grease.`);
+        await pline(`You coat your ${fingersOrGloves(true)} with grease.`);
     }
     return true;
 }
@@ -2185,15 +2185,10 @@ function coveringEquipment(object: GameObject): GameObject[] {
     return [];
 }
 
-// C do_wear.c:fingers_or_gloves()
-function fingers(simple: boolean): string {
-    const gloves = game.uarmg;
-    return simple && gloves ? armorSimpleName(gloves, game) : makePlural(body_part(FINGER, game));
-}
 
 // Part of C apply.c:use_grease(): the can slipping from greasy fingers.
 async function dropGrease(can: GameObject) {
-    await pline(`${definiteObjectAction(can, 'slip')} from your ${fingers(false)}.`);
+    await pline(`${definiteObjectAction(can, 'slip')} from your ${fingersOrGloves(false)}.`);
     await dropInventoryObjectAtHero(can);
 }
 

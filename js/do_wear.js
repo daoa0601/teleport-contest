@@ -186,8 +186,8 @@ async function putOnAccessoryObject(object) {
 }
 // C ref: objnam.c armor_simple_name() and category helpers.  Delayed armor
 // nomovemsg deliberately uses a short category noun, not xname()/doname().
-// C do_wear.c:off_msg()
-// The Armor_off()/off_msg() completion.  Delayed removal calls this from
+// Part of C do_wear.c:armoroff(): the zero-delay branch, which runs the
+// *_off() removal and then off_msg().  Delayed removal calls this from
 // allmain only after negative multi has reached zero; zero-delay armor
 // can use the same state owner immediately.
 export async function finishArmorRemoval(object, { silent = false } = {}) {
@@ -2206,8 +2206,11 @@ export function armorSimpleName(object, state = game) {
     return actualName;
 }
 // C do_wear.c:fingers_or_gloves().
-export function fingersOrGloves() {
-    return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(body_part(FINGER));
+// Plural "fingers" or optionally "gloves".
+export function fingersOrGloves(checkGloves) {
+    return (checkGloves && game.uarmg)
+        ? armorSimpleName(game.uarmg) /* "gloves" or "gauntlets" */
+        : makePlural(body_part(FINGER)); /* "fingers" */
 }
 // C do_wear.c:off_msg().
 export async function armorOffMessage(object, state = game) {
