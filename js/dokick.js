@@ -19,7 +19,7 @@ import { AT_KICK } from './monster_attack_types.js';
 import { deleteEngravingAt, wipeHeroEngraving, disturbGrave } from './engrave.js';
 import { displayColorName, displayLiquidName, monsterName, nameOrc } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
-import { useHeroSkill } from './weapon.js';
+import { useHeroSkill, specialContactDamage } from './weapon.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
@@ -41,7 +41,6 @@ import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './region.js';
-import { specialContactDamage } from './contact_damage.js';
 import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject, activateStatueTrapAt, triggerChestTrap, triggerBoobyTrap, fall_through, } from './trap.js';
 import { artifactById } from './artifact.js';
 import { applyFloorEffects } from './floor_effects.js';

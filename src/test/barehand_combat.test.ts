@@ -8,7 +8,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { prepareHeroBarehandContact } from '../js/uhitm.js';
 import { recalculateHeroPhysicalDamage } from '../js/uhitm.js';
 import { rhack } from '../js/cmd.js';
-import { specialContactDamage } from '../js/contact_damage.js';
+import { specialContactDamage } from '../js/weapon.js';
 import {
     A_STR,
     P_BARE_HANDED_COMBAT,

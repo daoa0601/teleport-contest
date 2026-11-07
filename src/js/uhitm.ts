@@ -37,7 +37,6 @@ import {
     W_ARMS, HAND, LEG, STOMACH, LL_CONDUCT,
 } from './const.js';
 import { isok } from './cmd.js';
-import { specialContactDamage } from './contact_damage.js';
 import type { MonsterAttack } from './data_types.js';
 import { isPoolAt } from './dbridge.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, glyphAt, map_invisible, map_location, newsym, senseWithTelepathy, shieldeff, show_glyph_cell, transientMonsterGlyph, unmap_invisible } from './display.js';
@@ -60,7 +59,7 @@ import { dist2, ordinalSuffix, possessiveName, upstart } from './hacklib.js';
 import { dropObjectAtHero, woundHeroLegs } from './do.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
 import { releaseHeroFromMonster, finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome, isZombieMaker } from './mon.js';
-import { heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact } from './hero_form_contact.js';
+import { heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled } from './hero_form_contact.js';
 import type { FinishHeroMonsterDeath, HeroMonsterKillOptions, MonsterDeathResult, HeroMonsterKillOutcome } from './mon.js';
 import { setHeroGrip } from './mon.js';
 import { holdAnotherObject } from './invent.js';
@@ -168,7 +167,7 @@ import type { ErosionKind, ErosionResult, ErosionOptions } from './trap.js';
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './invent.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
-import { drainHeroWeaponSkills, dryTowel, ensureHeroSkills, heroAttackBonus, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, useHeroSkill, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './weapon.js';
+import { drainHeroWeaponSkills, dryTowel, ensureHeroSkills, heroAttackBonus, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, specialContactDamage, showHeroSilverContact, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, useHeroSkill, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './weapon.js';
 import { applyHeroWereChange, isHumanWereMonster, isWereMonster, revertHeroWereForm, setHeroLycanthropy, wereChange } from './were.js';
 import { isTwoWeaponObject, setPrimaryWeapon, setTwoWeaponCombat, uwepgone } from './wield.js';
 import { cutWorm } from './worm.js';

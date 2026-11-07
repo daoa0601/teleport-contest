@@ -18,7 +18,7 @@ import { OBJ_NAME, oc_wldam, oc_wsdam,
     oc_hitbon,
 } from './object_data.js';
 import { bypassObject } from './worn.js';
-import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, AKLYS_LIM, A_STR, A_DEX, P_AXE, P_PICK_AXE, Upolyd, WT_IRON_BALL_INCR, P_FLAIL, MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, STR18, HAND } from './const.js';
+import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_RINGL, W_RINGR, W_WEP, AKLYS_LIM, A_STR, A_DEX, P_AXE, P_PICK_AXE, Upolyd, WT_IRON_BALL_INCR, P_FLAIL, MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, STR18, HAND } from './const.js';
 import {
     definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming,
     observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular,
@@ -425,6 +425,117 @@ export function rollPhysicalWeaponDamageAgainstHero(
         { ...options, state, hero: true, hatesSilver: monsterSpeciesHatesSilver(species) },
     );
 }
+
+export interface SpecialContactDamageOptions {
+    state?: GameState;
+}
+
+export interface SpecialContactDamageResult {
+    damage: number;
+    silverMask: number;
+}
+
+type ContactActor = Hero | Monster;
+type ArmorSlot = 'uarm' | 'uarmc' | 'uarmh' | 'uarms' | 'uarmg' | 'uarmf' | 'uarmu';
+type RingContact = readonly [selected: boolean, slot: 'uleft' | 'uright', mask: number];
+
+const ARMOR_SLOTS = new Map<number, ArmorSlot>([
+    [W_ARM, 'uarm'], [W_ARMC, 'uarmc'], [W_ARMH, 'uarmh'],
+    [W_ARMS, 'uarms'], [W_ARMG, 'uarmg'], [W_ARMF, 'uarmf'], [W_ARMU, 'uarmu'],
+]);
+const STRANGE_OBJECT = 0;
+
+// C weapon.c:special_dmgval(): blessed and/or silver damage for non-weapon hit.
+export function specialContactDamage(
+    attacker: ContactActor, defender: ContactActor, mask: number,
+    { state = game }: SpecialContactDamageOptions = {},
+): SpecialContactDamageResult {
+    const left = !!(mask & W_RINGL);
+    const right = !!(mask & W_RINGR);
+    const target = contactDefender(defender, state);
+    let armor = null;
+    if (mask & (W_ARMC | W_ARM | W_ARMU)) {
+        for (const layer of [W_ARMC, W_ARM, W_ARMU]) {
+            if (!(mask & layer)) continue;
+            armor = wornArmor(attacker, layer, state);
+            if (armor) {
+                mask = layer;
+                break;
+            }
+        }
+    } else if (mask & (W_ARMG | W_RINGL | W_RINGR)) {
+        armor = wornArmor(attacker, W_ARMG, state);
+        mask = armor ? W_ARMG : 0;
+    } else armor = wornArmor(attacker, mask, state);
+
+    let damage = 0;
+    let silverMask = 0;
+    if (armor) {
+        if (armor.blessed && monsterHatesBlessings(target)) damage += rnd(4);
+        if (objectMaterial(armor, state) === SILVER && monsterHatesSilver(target)) {
+            damage += rnd(20);
+            silverMask = mask;
+        }
+    } else if ((left || right) && attacker === state.u) {
+        const rings: readonly RingContact[] = [
+            [left, 'uleft', W_RINGL], [right, 'uright', W_RINGR],
+        ];
+        for (const [selected, slot, ringMask] of rings) {
+            const ring = state[slot] || state.u[slot];
+            if (selected && ring && objectMaterial(ring, state) === SILVER
+                && monsterHatesSilver(target)) {
+                if (!silverMask) damage += rnd(20);
+                silverMask |= ringMask;
+            }
+        }
+    }
+    return { damage, silverMask };
+}
+
+// Port only: defender view of Hero|Monster for the mon_hates_* checks.
+function contactDefender(actor: ContactActor, state: GameState): Pick<Monster, 'mnum' | 'cham'> {
+    if ('mnum' in actor) return actor;
+    if (actor !== state.u)
+        throw new Error('Contact damage requires the hero from its game state.');
+    const body: Pick<Monster, 'mnum' | 'cham'> = { mnum: heroSpecies(state) };
+    if (state.u.mcham !== undefined) body.cham = state.u.mcham;
+    return body;
+}
+
+// Part of C worn.c:which_armor(): hero-slot and monster-inventory armor lookup.
+function wornArmor(actor: ContactActor, mask: number, state: GameState): GameObject | null {
+    if (actor !== state.u) {
+        if (!('mnum' in actor))
+            throw new Error('Contact damage requires the hero from its game state.');
+        return (actor.minvent || []).find(object =>
+            (object.owornmask || 0) & mask) || null;
+    }
+    const slot = ARMOR_SLOTS.get(mask);
+    return slot ? state[slot] || state.u[slot] || null : null;
+}
+
+// C weapon.c:silver_sears(): the hero's silver rings searing the target.
+export async function showHeroSilverContact(
+    monster: Monster, silverMask: number,
+    { state = game, publish = plineWithContinuation }: {
+        state?: GameState; publish?: MessagePublisher;
+    } = {},
+): Promise<void> {
+    if (!(silverMask & (W_RINGL | W_RINGR))) return;
+    const left = state.uleft || state.u.uleft;
+    const right = state.uright || state.u.uright;
+    const leftType = left && (silverMask & W_RINGL) ? left.otyp : STRANGE_OBJECT;
+    const rightType = right && (silverMask & W_RINGR) ? right.otyp : STRANGE_OBJECT;
+    const leftKnown = !!left?.dknown;
+    const rightKnown = !!right?.dknown;
+    const leftSilver = objectMaterial(leftType, state) === SILVER && leftKnown;
+    const rightSilver = objectMaterial(rightType, state) === SILVER && rightKnown;
+    const both = (leftType === rightType && leftKnown === rightKnown) || (leftSilver && rightSilver);
+    const material = leftSilver || rightSilver ? 'silver '
+        : both ? '' : silverMask & W_RINGL ? 'left ' : 'right ';
+    await publish(`Your ${material}ring${both ? 's sear' : ' sears'} ${monsterName(monster, { state })}!`);
+}
+
 
 // C weapon.c:oselect()
 // C oselect(): keep inventory order among items of the same type.
