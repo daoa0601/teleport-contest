@@ -13,7 +13,7 @@ import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, newsym, sen
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName, monsterTypeName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, formCanBecomeStoneGolem, monsterPossessive, monsterStagger, seenResistanceForDamage, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, heroResistsLifeDrain, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense, monsterIsShade, is_neuter, isHeroDefender, } from './mondata.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, formCanBecomeStoneGolem, monsterPossessive, monsterStagger, seenResistanceForDamage, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, heroResistsStoning, heroResistsLifeDrain, touchPetrifies, canBlnd, resistsBlnd, defended, monsterIsShade, is_neuter, isHeroDefender, } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -3577,10 +3577,6 @@ export async function diseasemu(monster, state, publish, random) {
 // ---------------------------------------------------------------------------
 // Active monster self-explosions. Native mhitu.c:explmu(), explode.c:mon_explodes().
 // ---------------------------------------------------------------------------
-const selfExplosionDefense = new Map([
-    [AD_FIRE, 'fire'], [AD_COLD, 'cold'], [AD_ELEC, 'shock'],
-    [AD_BLND, 'blindness'], [AD_HALU, 'hallucination'],
-]);
 // Part of C mhitu.c:explmu(): removing the spent exploder.
 async function removeExploder(monster, state, publish) {
     return finishEnvironmentalMonsterDeath(monster, state, {
@@ -3594,7 +3590,9 @@ export async function resolveMonsterSelfExplosion(monster, attack, { foundHero, 
         return { mask: M_ATTK_MISS, heroDied: false };
     const [, damageType, dice, sides] = attack;
     let damage = d(dice, sides);
-    let unaffected = monsterWieldsOrWearsDefense(monster, selfExplosionDefense.get(damageType), state);
+    // C mhitu.c:1604: defended(mtmp, (int) mattk->adtyp) takes the numeric
+    // attack type directly.
+    let unaffected = defended(monster, damageType, state);
     let killSource = true;
     if (foundHero) {
         await publish(`${monsterName(monster, { state, capitalized: true })} explodes!`);

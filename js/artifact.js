@@ -20,9 +20,9 @@ import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCom
 import { d, rnd, rn2, rnz } from './rng.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
-import { ensureHeroSkills, monsterWieldedWeapon } from './weapon.js';
+import { ensureHeroSkills } from './weapon.js';
 import { monsterAlignmentType } from './priest.js';
-import { monsterHasAttackType, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance, is_dlord, is_dprince, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsDemon, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterSpeciesSticks, } from './mondata.js';
+import { defended, monsterHasAttackType, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance, is_dlord, is_dprince, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsDemon, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterSpeciesSticks, } from './mondata.js';
 import { see_monsters, glyphAt, canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff } from './display.js';
 import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive, refreshProperty, setInvokedProperty, clearLevitationMasks, restoreLevitationSources, stashLevitationSources } from './properties.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
@@ -52,7 +52,7 @@ import { chooseObjectToCharge, rechargeObject } from './read.js';
 import { doBlindingRay } from './zap.js';
 import { castSpell, spellSkillType } from './spell.js';
 import { possessiveName, upstart } from './hacklib.js';
-import { AT_MAGC } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_COLD, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PLYS, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_MAGC } from './monster_attack_types.js';
 import { dismountHero, monsterSaddle } from './steed.js';
 import { dropInventoryObjectAtHero } from './do.js';
 import { hitFloorWithObject } from './dothrow.js';
@@ -462,40 +462,55 @@ export async function mk_artifact(source, maxGiftValue, adjustSpe, state = game)
     }
     return object;
 }
-// C artifact.c:defends(): the artifact's own defn field resists this
-// damage type.  C also converts dragon scale mail to scales by color here;
-// that table lives with the dragon-armor property map in do_wear.ts and
-// mondata.c:defended().
-// get_artifact() is the caller's artifactById().
-function defendedByArtifact(artifact, damageType) {
-    return artifact?.defense === damageType;
-}
-// C artifact.c:defends_when_carried(): the artifact's cary field resists
-// this damage type while merely carried.
-function carriedArtifactDefends(inventory, damageType, state) {
-    return (inventory || []).some((object) => artifactById(object?.oartifact, state)?.carriedDefense === damageType);
-}
-// Part of C artifact.c:defends(), artifact.c:defends_when_carried(): the
-// wielded-or-carried defense query.
-function artifactDefenseApplies(defender, damageType, hero, state) {
-    if (!hero && !defender)
+// C artifact.c:defends(): does this one object's artifact defn field resist
+// the damage type, or does its dragon armor match the color switch
+// (artifact.c:651-680, dragon scale mail converted to scales)?  Combat
+// callers holding the numeric attack type pass it unchanged; the number is
+// normalized through QUERY_FOR_DAMAGE below.
+const QUERY_FOR_DAMAGE = {
+    [AD_MAGM]: 'magic', [AD_FIRE]: 'fire', [AD_COLD]: 'cold', [AD_ELEC]: 'shock',
+    [AD_DRST]: 'poison', [AD_DRLI]: 'life-drain', [AD_WERE]: 'lycanthropy',
+    [AD_BLND]: 'blindness', [AD_HALU]: 'hallucination', [AD_DISE]: 'disease',
+    [AD_SLEE]: 'sleep', [AD_PLYS]: 'paralysis', [AD_DISN]: 'disintegration',
+    [AD_SLOW]: 'slow', [AD_ACID]: 'acid', [AD_STON]: 'stone',
+};
+// C artifact.c:defends(): the dragon-scale half of the color switch, as the
+// adult dragon species each damage type's scales belong to.  Dragon scales
+// and dragon scale mail of one color share the conversion (polyself.ts
+// dragonFormForArmor()); no entry means the default arm of the C switch.
+const DRAGON_DEFENDING = {
+    magic: MONSTER_NAME.indexOf('gray dragon'),
+    hallucination: MONSTER_NAME.indexOf('gold dragon'),
+    fire: MONSTER_NAME.indexOf('red dragon'),
+    cold: MONSTER_NAME.indexOf('white dragon'),
+    poison: MONSTER_NAME.indexOf('green dragon'),
+    disease: MONSTER_NAME.indexOf('green dragon'),
+    sleep: MONSTER_NAME.indexOf('orange dragon'),
+    paralysis: MONSTER_NAME.indexOf('orange dragon'),
+    disintegration: MONSTER_NAME.indexOf('black dragon'),
+    'life-drain': MONSTER_NAME.indexOf('black dragon'),
+    shock: MONSTER_NAME.indexOf('blue dragon'),
+    electric: MONSTER_NAME.indexOf('blue dragon'),
+    lightning: MONSTER_NAME.indexOf('blue dragon'),
+    slow: MONSTER_NAME.indexOf('blue dragon'),
+    acid: MONSTER_NAME.indexOf('yellow dragon'),
+    stone: MONSTER_NAME.indexOf('yellow dragon'),
+};
+export function defends(adtyp, object, state = game) {
+    const damageType = typeof adtyp === 'number' ? QUERY_FOR_DAMAGE[adtyp] : adtyp;
+    if (!object || damageType == null)
         return false;
-    const weapon = hero ? state.uwep || state.u?.uwep : monsterWieldedWeapon(defender);
-    if (defendedByArtifact(artifactById(weapon?.oartifact, state), damageType)) {
-        return true;
-    }
-    const inventory = hero ? state.inventory : defender?.minvent || defender?.inventory;
-    return carriedArtifactDefends(inventory, damageType, state);
+    const artifact = artifactById(object.oartifact, state);
+    if (artifact)
+        return artifact.defense === damageType;
+    return dragonFormForArmor(object) === DRAGON_DEFENDING[damageType];
 }
-// Part of C artifact.c:defends(), artifact.c:defends_when_carried(): the
-// hero entry (uwep plus inventory).
-export function heroHasArtifactDefense(damageType, state = game) {
-    return artifactDefenseApplies(null, damageType, true, state);
-}
-// Part of C artifact.c:defends(), artifact.c:defends_when_carried(): the
-// monster entry (weapon plus minvent).
-export function monsterHasArtifactDefense(monster, damageType, state = game) {
-    return artifactDefenseApplies(monster, damageType, false, state);
+// C artifact.c:defends_when_carried(): does this one object's artifact cary
+// field resist the damage type while the object is merely carried?
+export function defendsWhenCarried(adtyp, object, state = game) {
+    const damageType = typeof adtyp === 'number' ? QUERY_FOR_DAMAGE[adtyp] : adtyp;
+    return damageType != null
+        && artifactById(object?.oartifact, state)?.carriedDefense === damageType;
 }
 // Part of C artifact.c:set_artifact_intrinsic(): querying a carried cspfx
 // through the property source it installs.
@@ -508,7 +523,9 @@ function resistanceAttackApplies(artifact, defender, { hero, random, state }) {
     if (!artifact.attack)
         return false;
     const damageType = artifact.attack.damageType;
-    if (artifactDefenseApplies(defender, damageType, hero, state))
+    // C artifact.c:1036: defended(mtmp, weap->attk.adtyp) — the wielded
+    // weapon's defn and worn dragon scales, not any carried cary artifact.
+    if (defended(hero ? { youmonst: true } : defender, damageType, state))
         return false;
     if (hero) {
         const heroState = state.u || {};

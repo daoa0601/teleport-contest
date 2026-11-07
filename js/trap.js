@@ -50,7 +50,7 @@ import { monsterAtPosition, monsterHasMapPosition, dismountHero, monsterOccupies
 import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, applyFloorEffects } from './do.js';
 import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
-import { artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
+import { artifactById, defendsWhenCarried, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, maybeHalfPhysicalDamage, } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { displayMessageWindow } from './topl.js';
@@ -2047,7 +2047,9 @@ export async function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne
     const weapon = monsterWeapon(monster);
     if (artifactById(weapon?.oartifact)?.name === 'Magicbane')
         damage += rollOne(4);
-    if (monsterInventory(monster).some((object) => artifactById(object?.oartifact)?.carriedDefense === 'magic')) {
+    if (
+    // C trap.c:2425: o->oartifact && defends_when_carried(AD_MAGM, o)
+    monsterInventory(monster).some((object) => defendsWhenCarried('magic', object, state))) {
         damage += rollOne(4);
     }
     if (monsterPassesWalls(monster.mnum))
@@ -2479,9 +2481,12 @@ function heroWieldsMagicbane() {
 }
 // Part of C trap.c:trapeffect_anti_magic(): detect carried non-quest magic defense.
 function heroCarriesNonQuestMagicDefense() {
+    // C trap.c:2365-2367: o->oartifact && !is_quest_artifact(otmp)
+    // && defends_when_carried(AD_MAGM, otmp)
     return (game.inventory || []).some((object) => {
         const artifact = artifactById(object?.oartifact);
-        return artifact && !artifact.questArtifact && artifact.carriedDefense === 'magic';
+        return !!artifact && !artifact.questArtifact
+            && defendsWhenCarried('magic', object, game);
     });
 }
 // Part of C trap.c:trapeffect_anti_magic(): roll and reduce hero compression damage.

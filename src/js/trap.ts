@@ -709,7 +709,7 @@ import {
 } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
+import { artifactById, defendsWhenCarried, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import {
     burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
@@ -3074,9 +3074,8 @@ export async function applyMonsterAntiMagicTrap(
     const weapon = monsterWeapon(monster);
     if (artifactById(weapon?.oartifact)?.name === 'Magicbane') damage += rollOne(4);
     if (
-        monsterInventory(monster).some(
-            (object) => artifactById(object?.oartifact)?.carriedDefense === 'magic',
-        )
+        // C trap.c:2425: o->oartifact && defends_when_carried(AD_MAGM, o)
+        monsterInventory(monster).some((object) => defendsWhenCarried('magic', object, state))
     ) {
         damage += rollOne(4);
     }
@@ -3656,9 +3655,12 @@ function heroWieldsMagicbane() {
 
 // Part of C trap.c:trapeffect_anti_magic(): detect carried non-quest magic defense.
 function heroCarriesNonQuestMagicDefense() {
+    // C trap.c:2365-2367: o->oartifact && !is_quest_artifact(otmp)
+    // && defends_when_carried(AD_MAGM, otmp)
     return (game.inventory || []).some((object) => {
         const artifact = artifactById(object?.oartifact);
-        return artifact && !artifact.questArtifact && artifact.carriedDefense === 'magic';
+        return !!artifact && !artifact.questArtifact
+            && defendsWhenCarried('magic', object, game);
     });
 }
 

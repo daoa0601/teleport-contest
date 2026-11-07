@@ -16,8 +16,7 @@ import { monsterSentenceSubject } from './sounds.js';
 import { sessionIsNight } from './calendar.js';
 import { monsterHasMagicResistance } from './mondata.js';
 import {
-    applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject,
-    monsterHasArtifactDefense,
+    applyArtifactHit, artifactById, artifactEmitsLight, defends, findArtifact, isPermanentlyPoisonedObject,
 } from './artifact.js';
 import { getmattk } from './mhitu.js';
 import { heroIsPunished } from './ball.js';
@@ -93,7 +92,7 @@ import {
 import { paralyzeMonster } from './mhitm.js';
 import type { MonsterDeathHandler, MonsterDefenderPetrificationResult, PetrificationOptions } from './mon.js';
 import {
-    is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance,
+    is_neuter, defended, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance,
     monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance,
     monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep,
     monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous,
@@ -105,7 +104,7 @@ import {
     monsterIsBig, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
     monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver,
     monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies,
-    isHeroDefender, canBlnd, resistsBlnd, monsterStagger,
+    isHeroDefender, canBlnd, resistsBlnd, resistsBlndByArtifact, monsterStagger,
 } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
@@ -2238,7 +2237,7 @@ export async function mhitmAdFire(call: MhitmAdFireCall): Promise<MhitmAdFireRes
                 heroDied: death.heroDied };
         }
         let damage = context.damage;
-        if (monsterHasFireResistance(defender) || monsterCombatDefense(defender, AD_FIRE, state)) {
+        if (monsterHasFireResistance(defender) || defended(defender, AD_FIRE, state)) {
             if (seen)
                 await publish(`The fire doesn't seem to burn ${monsterName(defender, { state })}!`);
             await shieldeff(defender.mx, defender.my, state);
@@ -2317,7 +2316,7 @@ export async function mhitmAdCold(call: MhitmAdColdCall): Promise<MhitmAdElement
         if (!blind)
             await publish(`${monsterName(mdef, { state, capitalized: true })} is covered in frost!`);
         let damage = call.context.damage;
-        if (monsterHasColdResistance(mdef) || monsterCombatDefense(mdef, AD_COLD, state)) {
+        if (monsterHasColdResistance(mdef) || defended(mdef, AD_COLD, state)) {
             await shieldeff(mdef.mx, mdef.my, state);
             if (!blind)
                 await publish(`The frost doesn't chill ${monsterName(mdef, { state })}!`);
@@ -2379,7 +2378,7 @@ export async function mhitmAdCold(call: MhitmAdColdCall): Promise<MhitmAdElement
         if (seen)
             await publish(`${monsterName(defender, { state, capitalized: true })} is covered in frost!`);
         let damage = context.damage;
-        if (monsterHasColdResistance(defender) || monsterCombatDefense(defender, AD_COLD, state)) {
+        if (monsterHasColdResistance(defender) || defended(defender, AD_COLD, state)) {
             if (seen)
                 await publish(`The frost doesn't seem to chill ${monsterName(defender, { state })}!`);
             await shieldeff(defender.mx, defender.my, state);
@@ -2410,7 +2409,7 @@ export async function mhitmAdElec(call: MhitmAdElecCall): Promise<MhitmAdElement
         if (!blind)
             await publish(`${monsterName(mdef, { state, capitalized: true })} is zapped!`);
         let damage = call.context.damage;
-        if (monsterHasShockResistance(mdef) || monsterCombatDefense(mdef, AD_ELEC, state)) {
+        if (monsterHasShockResistance(mdef) || defended(mdef, AD_ELEC, state)) {
             if (!blind)
                 await publish(`The zap doesn't shock ${monsterName(mdef, { state })}!`);
             await applyMonsterGolemEffects(mdef, AD_ELEC, damage, { state, publish });
@@ -2472,7 +2471,7 @@ export async function mhitmAdElec(call: MhitmAdElecCall): Promise<MhitmAdElement
         if (seen)
             await publish(`${monsterName(defender, { state, capitalized: true })} gets zapped!`);
         let damage = context.damage;
-        if (monsterHasShockResistance(defender) || monsterCombatDefense(defender, AD_ELEC, state)) {
+        if (monsterHasShockResistance(defender) || defended(defender, AD_ELEC, state)) {
             if (seen)
                 await publish(`The zap doesn't shock ${monsterName(defender, { state })}!`);
             await shieldeff(defender.mx, defender.my, state);
@@ -2580,7 +2579,7 @@ export async function mhitmAdDrli(call: MhitmAdDrliCall): Promise<MhitmAdStatusR
         // gate applies even to the call mhitm_ad_deth() redirects here
         // (no hero form carries AD_DETH).
         if (random(3) || monsterHasDrainResistance(mdef)
-            || monsterHasArtifactDefense(mdef, 'life-drain', state))
+            || defended(mdef, AD_DRLI, state))
             return naturalContinueResult(call.context.damage, state);
         // mhitm_mgc_atk_negated(magr, mdef, TRUE): the hero cannot be
         // cancelled, so the rn2(10) probe always runs.
@@ -2636,7 +2635,7 @@ export async function mhitmAdDrli(call: MhitmAdDrliCall): Promise<MhitmAdStatusR
         if (isDeath
             || (random(3) === 0
                 && !(monsterHasDrainResistance(defender)
-                    || monsterCombatDefense(defender, AD_DRLI, state))
+                    || defended(defender, AD_DRLI, state))
                 && !await mhitm_mgc_atk_negated(attacker, defender, {
                     state, visible, random, publish, verbose: true,
                 }))) {
@@ -3292,7 +3291,7 @@ export async function mhitmAdAcid(call: MhitmAdAcidCall): Promise<MhitmAdStatusR
         const monster = call.defender;
         const { state } = call.context;
         let damage = call.context.damage;
-        if (monsterHasAcidResistance(monster) || monsterHasArtifactDefense(monster, 'acid', state))
+        if (monsterHasAcidResistance(monster) || defended(monster, AD_ACID, state))
             damage = 0;
         return naturalContinueResult(damage, state);
     } else if ('mdef' in call) {
@@ -3320,7 +3319,7 @@ export async function mhitmAdAcid(call: MhitmAdAcidCall): Promise<MhitmAdStatusR
         if (attacker.mcan) return damageResult(0);
         const { state, visible, publish, random } = context;
         const resisted = monsterHasAcidResistance(defender)
-            || monsterCombatDefense(defender, AD_ACID, state);
+            || defended(defender, AD_ACID, state);
         if (visible && canSeeMonster(defender)) {
             const subject = monsterName(defender, { state, capitalized: true });
             const liquid = displayLiquidName('acid', state);
@@ -3846,7 +3845,7 @@ export async function mhitmAdDise(call: MhitmAdDiseCall): Promise<MhitmAdStatusR
         const { defender, context } = call;
         let damage = context.damage;
         if (MONSTER_SYMBOL[defender.mnum] === S_FUNGUS || defender.mnum === PM_GHOUL
-            || monsterCombatDefense(defender, AD_DISE, context.state)) {
+            || defended(defender, AD_DISE, context.state)) {
             damage = 0;
         }
         return damageResult(damage);
@@ -4300,7 +4299,11 @@ export async function mhitm_ad_drin(call: MhitmAdDrinCall): Promise<HeroNaturalE
         const hero = state.u;
         const baseDamage = attack.damage;
         if (baseDamage === undefined) throw new Error('Brain drain requires rolled contact damage');
-        if (!monsterHasHead({ mnum: heroSpecies(state) })) {
+        // C uhitm.c:3225 guards the hero's brains with defends(AD_DRIN, uwep)
+        // before the head check; no artifact's defn is AD_DRIN, so the term
+        // never fires, but it stays for the C shape.
+        if (defends(AD_DRIN, state.uwep || hero.uwep, state)
+            || !monsterHasHead({ mnum: heroSpecies(state) })) {
             await publish("You don't seem harmed.");
             attack.skipBrainDrain = true;
             return { ...effectResult(attack.damage ?? baseDamage, M_ATTK_MISS, !!attack.heroDied),
@@ -4795,7 +4798,7 @@ export async function mhitmAdSlee(call: MhitmAdSleeCall): Promise<MhitmAdStatusR
         const { state, publish, rollOne } = context;
         if (!(monster.msleeping || await mhitm_mgc_atk_negated(context.state.u, monster, { ...context, verbose: false }))) {
             const duration = rollOne(10);
-            if (monsterResistsSleep(monster) || monsterHasArtifactDefense(monster, 'sleep', state)) {
+            if (monsterResistsSleep(monster) || defended(monster, AD_SLEE, state)) {
                 await shieldeff(monster.mx, monster.my, state);
             } else if (await putMonsterToSleep(monster, duration)) {
                 if (!heroIsBlind(state)) await publish(`${subject(monster, context)} is put to sleep by you!`);
@@ -4884,7 +4887,7 @@ export async function mhitmAdSlow(call: MhitmAdSlowCall): Promise<MhitmAdStatusR
         const { attacker, defender, context } = call;
         const { state, publish, visible, random } = context;
         const blocked = await mhitm_mgc_atk_negated(attacker, defender, { state, visible, publish, random, verbose: false });
-        if (!monsterCombatDefense(defender, AD_SLOW, state) && !blocked && defender.mspeed !== MSLOW) {
+        if (!defended(defender, AD_SLOW, state) && !blocked && defender.mspeed !== MSLOW) {
             const speed = adjustMonsterSpeed(defender, -1);
             // mon_adjust_speed() announces the change before mhitm_ad_slow() does.
             const message = canSeeMonster(defender)
@@ -4963,7 +4966,7 @@ export async function mhitmAdWere(call: MhitmAdWereCall): Promise<HeroNaturalEff
         if (!(random(4) !== 0 || state.u.ulycn !== -1
             || heroHasProtectionFromShapeChangers(state))) {
             const weapon = state.uwep || state.u.uwep;
-            if (!(artifactById(weapon?.oartifact, state)?.defense === 'lycanthropy')
+            if (!defends(AD_WERE, weapon, state)
                 && !await mhitm_mgc_atk_negated(monster, state.u, { state, publish, random, verbose: true })) {
                 await publish('You feel feverish.', { urgent: true });
                 await exerciseAttribute(A_CON, false, state);
@@ -5012,7 +5015,7 @@ function clearWaiting(monster: Monster): void {
 
 // Part of C mhitm.c:sleep_monst(): apply sleep after species and equipment resistance.
 async function sleepContact(defender: Monster, duration: number, context: MonsterCombatEffectContext): Promise<boolean> {
-    if (monsterResistsSleep(defender) || monsterCombatDefense(defender, AD_SLEE, context.state)) {
+    if (monsterResistsSleep(defender) || defended(defender, AD_SLEE, context.state)) {
         await shieldeff(defender.mx, defender.my, context.state);
         return false;
     }
@@ -7330,7 +7333,7 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
             }
         }
         else if (visible) {
-            if (monsterHasArtifactDefense(monster, 'blindness', state))
+            if (resistsBlndByArtifact({ monster }, state))
                 await shieldeff(monster.mx, monster.my, state);
             if (state.flags.verbose) {
                 await plineWithContinuation(state.level.requireAt(monster.mx, monster.my).lit
