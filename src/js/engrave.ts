@@ -76,7 +76,7 @@ import { exceedsActionCapacity } from './hack.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';
 import {
-    monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, resistsBlnd,
+    monsterHasAttackType, monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, resistsBlnd,
 } from './mondata.js';
 
 type EngravingStore = Pick<GameMap, 'engravings'>;
@@ -519,8 +519,7 @@ export function heroCanReachFloor(
 // Part of C engrave.c:can_reach_floor(): u.ustuck holding the hero with an
 // AT_HUGS attack while the hero's own form does not stick.
 function holderHugs(holder: Monster): boolean {
-    return (MONSTER_ATTACKS[holder?.mnum] || [])
-        .some(([attackType]) => attackType === AT_HUGS);
+    return monsterHasAttackType(holder?.mnum ?? -1, AT_HUGS);
 }
 
 // Part of C engrave.c:can_reach_floor(): P_SKILL(P_RIDING).

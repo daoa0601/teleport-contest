@@ -119,7 +119,8 @@ import {
 } from './worn.js';
 import {
     monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance,
-    monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless,
+    monsterHasMagicResistance, monsterHasStoneResistance, monstersForgetHeroResistance,
+    monstersObserveHeroResistance, monsterIsHelpless,
     monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests,
     monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger,
     monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving,
@@ -1230,28 +1231,6 @@ function monsterWeapon(monster: Monster) {
     );
 }
 
-// Part of C mondata.c:resists_magm(): combine monster species and equipment magic resistance.
-export function monsterHasMagicResistance(monster: Monster) {
-    if (
-        monster?.mnum === PM_BABY_GRAY_DRAGON ||
-        (MONSTER_ATTACKS[monster?.mnum] || []).some(
-            ([, damageType]) => damageType === AD_MAGM || damageType === AD_RBRE,
-        )
-    ) {
-        return true;
-    }
-
-    const weapon = monsterWeapon(monster);
-    if (artifactById(weapon?.oartifact)?.defense === 'magic') return true;
-    return monsterInventory(monster).some((object) => {
-        const artifact = artifactById(object?.oartifact);
-        if (artifact?.carriedDefense === 'magic') return true;
-        return (
-            MAGIC_RESISTANCE_ARMOR.has(object?.otyp) &&
-            !!((object?.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_WEP))
-        );
-    });
-}
 
 // C trap.c:trapeffect_arrow_trap(): the monster branch — the missile's
 // to-hit and material message against the trapped monster.
@@ -3099,12 +3078,6 @@ interface MonsterAntiMagicOptions {
     state?: GameState;
 }
 
-const PM_BABY_GRAY_DRAGON = MONSTER_NAME.indexOf('baby gray dragon');
-const MAGIC_RESISTANCE_ARMOR = new Set([
-    CLOAK_OF_MAGIC_RESISTANCE,
-    GRAY_DRAGON_SCALE_MAIL,
-    GRAY_DRAGON_SCALES,
-]);
 
 // Part of C trap.c:trapeffect_anti_magic(): the hero branch (the monster
 // branch applyMonsterAntiMagicTrap() holds the citation) —

@@ -7,7 +7,7 @@ import { objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERA
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
 import { monsterSentenceSubject } from './sounds.js';
 import { sessionIsNight } from './calendar.js';
-import { monsterHasMagicResistance } from './trap.js';
+import { monsterHasMagicResistance } from './mondata.js';
 import { applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense, } from './artifact.js';
 import { getmattk } from './mhitu.js';
 import { heroIsPunished } from './ball.js';

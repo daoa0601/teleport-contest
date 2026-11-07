@@ -15,6 +15,7 @@ import { objectPropertyName, oc_nutrition,
     } from './object_data.js';
 import {
     heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race,
+    monsterHasAttackType,
     carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName,
     monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead,
     monsterPerceives, fleshPetrifies, formCanBecomeStoneGolem, heroResistsStoning, heroWouldPetrifyFromFlesh,
@@ -1185,7 +1186,7 @@ export async function cpostfx(mnum: number, { state = game, tin = null }: Corpse
             await plineWithContinuation('Oh wow!  Great stuff!');
             await makeHallucinated((hero.hallucinationTurns || 0) + 200, { state, talk: false });
         }
-        if (attacks.some(([type]) => type === AT_MAGC) || name === 'newt')
+        if (monsterHasAttackType(mnum, AT_MAGC) || name === 'newt')
             await eye_of_newt_buzz({ state });
         const property = corpse_intrinsic(mnum);
         if (property === 'strength')

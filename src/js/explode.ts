@@ -4,7 +4,8 @@ import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_
 import {
     objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP,
 } from './object_data.js';
-import { monsterHasMagicResistance, burnArmorByFire, burnHeroArmorByFire, igniteItems } from './trap.js';
+import { monsterHasMagicResistance } from './mondata.js';
+import { burnArmorByFire, burnHeroArmorByFire, igniteItems } from './trap.js';
 import { heroHasArtifactDefense } from './artifact.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX } from './const.js';

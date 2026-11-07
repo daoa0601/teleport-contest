@@ -14,7 +14,7 @@ import {
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
 import { monsterSentenceSubject } from './sounds.js';
 import { sessionIsNight } from './calendar.js';
-import { monsterHasMagicResistance } from './trap.js';
+import { monsterHasMagicResistance } from './mondata.js';
 import {
     applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject,
     monsterHasArtifactDefense,

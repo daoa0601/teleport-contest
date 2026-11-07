@@ -48,7 +48,7 @@ import { impossible } from './diagnostics.js';
 import { exceedsActionCapacity } from './hack.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';
-import { monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, resistsBlnd, } from './mondata.js';
+import { monsterHasAttackType, monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, resistsBlnd, } from './mondata.js';
 const RUBOUTS = new Map([
     ['A', '^'],
     ['B', 'Pb['],
@@ -434,8 +434,7 @@ export function heroCanReachFloor(state = game, { checkPit = false } = {}) {
 // Part of C engrave.c:can_reach_floor(): u.ustuck holding the hero with an
 // AT_HUGS attack while the hero's own form does not stick.
 function holderHugs(holder) {
-    return (MONSTER_ATTACKS[holder?.mnum] || [])
-        .some(([attackType]) => attackType === AT_HUGS);
+    return monsterHasAttackType(holder?.mnum ?? -1, AT_HUGS);
 }
 // Part of C engrave.c:can_reach_floor(): P_SKILL(P_RIDING).
 function ridingSkill(state) {

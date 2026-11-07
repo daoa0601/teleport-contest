@@ -19,10 +19,10 @@ import { recordObjectEncounter, objectMaterial, objectTypeKnown } from './o_init
 import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming, killerObjectName, ownedObjectName, simpleObjectTypeName } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
 import { questMonsterAlignment } from './role_monsters.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { ensureHeroSkills, monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './priest.js';
-import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance, is_dlord, is_dprince, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsDemon, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterSpeciesSticks, } from './mondata.js';
+import { monsterHasAttackType, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance, is_dlord, is_dprince, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsDemon, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterSpeciesSticks, } from './mondata.js';
 import { see_monsters, glyphAt, canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff } from './display.js';
 import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive, refreshProperty, setInvokedProperty, clearLevitationMasks, restoreLevitationSources, stashLevitationSources } from './properties.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
@@ -1192,7 +1192,7 @@ export async function applyMagicbaneHit(object, defender, damage, bonusApplied, 
                 targetName = describeTarget();
             if (monster.mnum === PM_CLAY_GOLEM)
                 monster.mhp = 1;
-            if (!attacker && (MONSTER_ATTACKS[monster.mnum] || []).some(([attackType]) => attackType === AT_MAGC)) {
+            if (!attacker && monsterHasAttackType(monster.mnum, AT_MAGC)) {
                 state.u.uenmax = (state.u.uenmax ?? 0) + 1;
                 state.u.uenpeak = Math.max(state.u.uenpeak ?? 0, state.u.uenmax);
                 state.u.uen = (state.u.uen ?? 0) + 1;

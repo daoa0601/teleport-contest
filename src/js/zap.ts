@@ -122,7 +122,7 @@ import {
     removeObjectFromMonsterInventory, removeHeroEquipment,
 } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
-import { monsterHasMagicResistance } from './trap.js';
+import { monsterHasMagicResistance } from './mondata.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
 import type { HeroMonsterKillOptions, HeroLiquidMonsterDeathOutcome, HeroMonsterDeathContext } from './mon.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
