@@ -40,7 +40,7 @@ import { displayMessageWindow } from './topl.js';
 import { wipeoutText } from './engrave.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { artifactByName, nameArtifact, setWieldedArtifactProperties } from './artifact.js';
-import { withMapObject } from './map_object_description.js';
+import { withMapObject } from './pager.js';
 import { heroFormHidesUnderObjects, body_part } from './polyself.js';
 import { rn2, rn2Display } from './rng.js';
 import { monsterAtPosition } from './steed.js';

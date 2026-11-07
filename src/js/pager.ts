@@ -96,6 +96,8 @@ import {
 
     ROWNO,
 
+    DOOR, IS_WALL,
+
     SCORR,
 
     STONE,
@@ -132,6 +134,8 @@ import {
 
     WEB,
 
+    D_CLOSED, D_LOCKED, M_AP_F_DKNOWN, SDOOR,
+
 } from './const.js';
 import {
     canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol,
@@ -141,17 +145,17 @@ import {
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { objectAtMapDescription } from './map_object_description.js';
 import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { makePlural, simpleObjectName, withIndefiniteArticle, singularObjectName } from './objnam.js';
+import { makePlural, simpleObjectName, withIndefiniteArticle, singularObjectName, objectDescription, distantObjectName, minimalObjectName } from './objnam.js';
 import { visibleRegionAt } from './region.js';
-import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.js';
+import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt, isLavaAt } from './dbridge.js';
 import { surfaceName, In_hell } from './dungeon.js';
 import { trapName } from './trap.js';
 import type { FeatureOptions } from './invent.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster } from './monster_types.js';
+import type { GameObject } from './object_types.js';
 import type { GlyphMetadata } from './display.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
@@ -172,7 +176,7 @@ import { heroIsPolymorphed, heroFormSticks, heroSpecies } from './polyself.js';
 import { selectInventoryObject } from './invent.js';
 import { typedSymbolDescription } from './look_symbols.js';
 import { warningSymbols } from './message_types.js';
-import { BOULDER } from './object_data.js';
+import { BOULDER, objectClassForType, APPLE, BANANA, CORPSE, EUCALYPTUS_LEAF, GOLD_PIECE, LEASH, ORANGE, PEAR, SLIME_MOLD, STATUE, OBJ_NAME } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { CmapSymbol, cmapToGlyph, glyphIsCmapC, glyphIsCmapZap, glyphToWarning } from './glyph_numbers.js';
 import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
@@ -188,7 +192,10 @@ import { HELP_FILES } from './help_files.js';
 import { option_help } from './message_types.js';
 import { doextversion } from './extversion.js';
 import { shouldShowGetposTip, showGetposTip } from './hack.js';
-import { levelTimers } from './timeout.js';
+import { levelTimers, stopObjectTimers } from './timeout.js';
+import { mkobj, mksobj, deallocateObject } from './mkobj.js';
+import { observeObject } from './o_init.js';
+import { costlySpot } from './shk.js';
 import { is_orc, monsterDigests, monsterHidesUnder, monsterIsClinger, monsterIsFlyer, monsterIsHider } from './mondata.js';
 
 // C pager.c:waterbody_name(). The liquid name is chosen before a caller
@@ -560,6 +567,109 @@ export async function objectAtMonsterDescription(
         ? level.at(monster.mx, monster.my)?.remembered_glyph ?? null
         : glyphAt(monster.mx, monster.my, state);
     return objectAtMapDescription(monster.mx, monster.my, glyph, state, 'hidden');
+}
+
+const STRANGE_OBJECT = 0;
+
+// C pager.c:look_at_object(): the displayed object's name (distant_name over
+// doname_with_price) plus its placement suffix — buried, tree, stone, wall,
+// door, water, lava.
+export async function objectAtMapDescription(
+    x: number, y: number, glyph: GlyphMetadata | null,
+    state: GameState = game, style: 'hidden' | 'farlook' = 'farlook',
+): Promise<string> {
+    return await withMapObject(x, y, glyph, async (object, temporary) => {
+        if (style === 'hidden') {
+            const noun = minimalObjectName(object, state);
+            return object.quan === 1 ? withIndefiniteArticle(noun) : makePlural(noun);
+        }
+        const withPrice = object.dknown;
+        const description = await distantObjectName(object, async item => item.otyp === STRANGE_OBJECT ? 'strange object'
+            : await objectDescription(item, { state, withPrice, vagueQuantity: true }), state);
+        return description + placementSuffix(temporary ? null : object, x, y, state);
+    }, state) ?? 'something';
+}
+
+// C pager.c:object_from_map(): lends the caller the real object or a
+// temporary sample, freeing only the sample.
+// object_from_map lends the caller either a real object or a temporary
+// sample. Only the sample is freed after the caller finishes using it.
+export async function withMapObject<T>(
+    x: number, y: number, glyph: GlyphMetadata | null,
+    use: (object: GameObject, temporary: boolean) => T | Promise<T>,
+    state: GameState = game,
+): Promise<T | null> {
+    if (glyph?.kind !== 'object') return null;
+    const level = requireGameLevel(state);
+    const monster = monsterAtPosition(level, x, y);
+    const mimic = monster && M_AP_TYPE(monster) === M_AP_OBJECT
+        && monster.mappearance === glyph.otyp ? monster : null;
+    const realObject = mimic ? null
+        : level.objects[x]?.[y]?.find(object => object.otyp === glyph.otyp)
+            ?? level.buriedObjects?.find(object => object.otyp === glyph.otyp
+                && object.ox === x && object.oy === y);
+    const temporary = !realObject;
+    const object = realObject ?? (OBJ_NAME(glyph.otyp)
+        ? await mksobj(glyph.otyp, false, false)
+        : await mkobj(objectClassForType(glyph.otyp), false));
+    try {
+        if (temporary) {
+            stopObjectTimers(object, state);
+            if (object.otyp === GOLD_PIECE) object.quan = 2;
+            const represented = mimic?.mcorpsenm;
+            if (object.otyp === SLIME_MOLD) {
+                const fruit = represented !== undefined && represented >= 0
+                    ? represented : state.context.current_fruit;
+                if (fruit === undefined) throw new Error('Map object description requires fruit history');
+                object.spe = fruit;
+            } else if (represented !== undefined && represented >= 0) {
+                object.corpsenm = represented;
+            } else if ((object.otyp === CORPSE || object.otyp === STATUE)
+                && glyph.corpsenm !== undefined) {
+                object.corpsenm = glyph.corpsenm;
+            }
+            if (object.otyp === LEASH) object.leashmon = 0;
+            object.where = 'floor';
+            object.ox = x;
+            object.oy = y;
+            object.no_charge = object.otyp === STRANGE_OBJECT && !!costlySpot(x, y, state);
+        }
+        const adjacent = Math.abs(x - state.u.ux) <= 1 && Math.abs(y - state.u.uy) <= 1;
+        if (adjacent && !heroIsBlind(state) && !heroIsHallucinating(state)
+            && (temporary || object.where === 'floor') && !state.iflags.terrainmode)
+            observeObject(object, state);
+        if (temporary && mimic
+            && (object.dknown || ((mimic.m_ap_type ?? 0) & M_AP_F_DKNOWN))) {
+            mimic.m_ap_type = (mimic.m_ap_type ?? 0) | M_AP_F_DKNOWN;
+            observeObject(object, state);
+        }
+        return await use(object, temporary);
+    } finally {
+        if (temporary) {
+            object.where = 'free';
+            deallocateObject(object, state);
+        }
+    }
+}
+
+// Part of C pager.c:look_at_object(): the placement-suffix tail — buried,
+// tree, stone, wall, door, water, lava.
+function placementSuffix(object: GameObject | null, x: number, y: number, state: GameState): string {
+    const level = requireGameLevel(state);
+    const location = level.requireAt(x, y);
+    if (object?.where === 'buried') return ' (buried)';
+    if (location.typ === TREE || level.flags.arboreal && location.typ === STONE) {
+        const fruit = object && [APPLE, ORANGE, PEAR, BANANA, EUCALYPTUS_LEAF].includes(object.otyp);
+        return fruit ? ' dangling in a tree' : ' stuck in a tree';
+    }
+    if (location.typ === STONE || location.typ === SCORR) return ' embedded in stone';
+    if (IS_WALL(location.typ) || location.typ === SDOOR) return ' embedded in a wall';
+    if (location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED)))
+    // C closed_door(): a closed or locked door holds the embedded object.
+        return ' embedded in a door';
+    if (isPoolAt(x, y, state)) return ' in water';
+    if (isLavaAt(x, y, state)) return ' in molten lava';
+    return '';
 }
 
 // C pager.c:dowhatdoes().
