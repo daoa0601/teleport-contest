@@ -179,8 +179,11 @@ function applyKickPassive(monster, hit) {
         weapon: game.uarmf || game.u?.uarmf || null,
     });
 }
-// Part of C dokick.c:kick_monster(): the live-target path, using maybe_kick_monster() admission and kickdmg() effects.
-// C refs: dokick.c:maybe_kick_monster(), kick_monster(), kickdmg().
+// C dokick.c:kick_monster()
+// The live-target kick: maybe_kick_monster()'s admission, the levitation
+// miss, the hidden-target reveal, the poly'd kick attacks
+// (kickWithMonsterForm()), the encumbrance/clumsy roll (prepareKick()),
+// the evasion dance (tryKickEvasion()) and kickdmg()'s damage pass.
 // Form-specific attacks share the command admission rules. Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
 async function kickLiveMonster(monster, x, y) {
@@ -257,19 +260,33 @@ async function kickLiveMonster(monster, x, y) {
         game.context.move = 1;
         return true;
     }
+    const outcome = await kickdmg(monster, kick.clumsy, martial, x, y);
+    if (outcome.heroDied && !outcome.moveTaken)
+        return true;
+    game.context.move = 1;
+    return true;
+}
+// C dokick.c:kickdmg()
+// Damage for a kick that connected when not poly'd into a kicking form:
+// the base roll (prepareKickDamage()), the shade pass-through, the
+// seemimic()/check_caitiff() reveals (revealMonsterAppearance(),
+// applyCaitiffPenalty()), the pet abuse, the martial roll
+// (rollKickDamage()), the reel (tryKickReel()), the passive counterattack
+// and the kill, then the skill use.  moveTaken records whether C's flow
+// still consumed the move after a hero death.
+async function kickdmg(monster, clumsy, martial, x, y) {
     const preparedDamage = prepareKickDamage(monster, {
-        clumsy: kick.clumsy,
+        clumsy,
     });
     if (preparedDamage.passesThroughShade) {
         await plineWithContinuation('The kick passes harmlessly through.');
-        game.context.move = 1;
-        return true;
+        return { heroDied: false, moveTaken: true };
     }
     await revealMonsterAppearance(monster);
     await applyCaitiffPenalty(monster);
     const petReaction = await abuseKickedPet(monster, preparedDamage.potentialDamage);
     if (petReaction.heroDied)
-        return true;
+        return { heroDied: true, moveTaken: false };
     const damage = await rollKickDamage(preparedDamage, { martial });
     if (damage.damage > 0)
         monster.mhp -= damage.damage;
@@ -279,11 +296,10 @@ async function kickLiveMonster(monster, x, y) {
         nameMonster: actor => monsterName(actor, { capitalized: true }),
     });
     if (reel?.heroDied)
-        return true;
+        return { heroDied: true, moveTaken: false };
     const passive = await applyKickPassive(monster, true);
     if (passive.heroDied) {
-        game.context.move = 1;
-        return true;
+        return { heroDied: true, moveTaken: true };
     }
     if ((monster.mhp ?? 1) <= 0 && !reel?.dead) {
         await finishHeroMonsterKill(monster, monster.mx, monster.my, {
@@ -296,8 +312,7 @@ async function kickLiveMonster(monster, x, y) {
     }
     if (damage.trainSkill)
         await useHeroSkill(35);
-    game.context.move = 1;
-    return true;
+    return { heroDied: false, moveTaken: true };
 }
 // ---------------------------------------------------------------------------
 // C dokick.c:ghitm(). A thrown or kicked purse a greedy monster catches.
@@ -646,11 +661,10 @@ export async function kickDoor(x, y, average, responses) {
         await witnessDoorKick(x, y, false);
     }
 }
-// Part of C dokick.c:dokick(): the watchman response to door damage.
-// Also C mon.c:get_iter_mons_xy(): inlined here for the first watchman witness.
-// Also C dokick.c:watchman_thief_arrest(): inlined here for a broken door.
-// Also C dokick.c:watchman_door_damage(): inlined here as the D_WARNED
-// warning or vandal-arrest branch.
+// Part of C dokick.c:kick_door(): the watchman response to door damage.
+// Also C mon.c:get_iter_mons(), mon.c:get_iter_mons_xy(): the first watch
+// witness whose predicate fires; both C walkers stop at the same
+// is_watch()+mpeaceful+couldsee() monster.
 async function witnessDoorKick(x, y, broken) {
     requirePlayingGame(game);
     if (!inTown(game.level, x, y))
@@ -659,19 +673,38 @@ async function witnessDoorKick(x, y, broken) {
         && monster.mpeaceful && couldsee(monster.mx, monster.my));
     if (!witness)
         return;
-    const door = game.level.requireAt(x, y);
-    if (broken || ((door.looted ?? 0) & D_WARNED)) {
-        await watchmanYells(witness, broken ? "Halt, thief!  You're under arrest!"
-            : "Halt, vandal!  You're under arrest!");
+    if (broken)
+        await watchmanThiefArrest(witness);
+    else
+        await watchmanDoorDamage(witness, x, y);
+}
+// C dokick.c:watchman_thief_arrest()
+async function watchmanThiefArrest(monster) {
+    if (!isWatch(monster) || !couldsee(monster.mx, monster.my)
+        || !monster.mpeaceful)
+        return false;
+    await watchmanYells(monster, "Halt, thief!  You're under arrest!");
+    await angerWatchGuards(false);
+    return true;
+}
+// C dokick.c:watchman_door_damage()
+async function watchmanDoorDamage(monster, x, y) {
+    if (!isWatch(monster) || !monster.mpeaceful
+        || !couldsee(monster.mx, monster.my))
+        return false;
+    const door = requireGameLevel(game).requireAt(x, y);
+    if ((door.looted ?? 0) & D_WARNED) {
+        await watchmanYells(monster, "Halt, vandal!  You're under arrest!");
         await angerWatchGuards(false);
     }
     else {
-        await watchmanYells(witness, 'Hey, stop damaging that door!');
+        await watchmanYells(monster, 'Hey, stop damaging that door!');
         door.looted = (door.looted ?? 0) | D_WARNED;
     }
+    return true;
 }
 // Part of C dokick.c:watchman_thief_arrest(), dokick.c:watchman_door_damage():
-// the watchman's yell (verbalize()).
+// the watchman's yell (mon_yells()/verbalize()).
 async function watchmanYells(monster, shout) {
     const name = monsterName(monster, { article: 'a', capitalized: true });
     if (heroIsDeaf()) {
@@ -1426,24 +1459,42 @@ function inEndgame(state) {
 function onStronghold(state) {
     return sameLevel(state.u?.uz, state.stronghold_level);
 }
-// Part of C dokick.c:drop_to(): the MIGR_RANDOM case — stronghold drops go to
-// the valley, endgame and bottom levels go nowhere.
-function trapDestination(state) {
-    if (onStronghold(state))
-        return state.valley_level || null;
-    if (inEndgame(state) || onBottomLevel(state))
-        return null;
-    return levelBelow(state);
+// C dokick.c:drop_to()
+// Destination for the MIGR_xxx choice down_gate() produced: the stronghold
+// drops into the valley, the endgame and bottom levels go nowhere (null),
+// stairs and ladders follow their stairway, and MIGR_NOWHERE is null.
+function dropTo(loc, x, y, state) {
+    if (loc === MIGR_RANDOM) {
+        // trap door or hole
+        if (onStronghold(state))
+            return state.valley_level || null;
+        if (inEndgame(state) || onBottomLevel(state))
+            return null;
+        return levelBelow(state);
+    }
+    if (loc === MIGR_STAIRS_UP || loc === MIGR_LADDER_UP || loc === MIGR_SSTAIRS) {
+        const stair = stairwayAt(state, x, y);
+        return stair?.tolev || levelBelow(state);
+    }
+    // MIGR_NOWHERE: y==0 means "nowhere", in which case x doesn't matter.
+    return null;
 }
 // C dokick.c:down_gate().
-// Also C dokick.c:drop_to(): inlined here for stairs and ladders; the
-// MIGR_RANDOM destination is selected by trapDestination() above.
+// Also C dokick.c:drop_to(): each gate kind resolves its destination
+// through dropTo(); gate_str is the port's text.
 function downwardGate(state, x, y) {
     if (onQuestStart(state) && !okToQuest(state))
         return null;
     const stair = stairwayAt(state, x, y);
     if (stair && !stair.up) {
-        const destination = stair.tolev || levelBelow(state);
+        // down_gate() distinguishes MIGR_STAIRS_UP from MIGR_SSTAIRS by the
+        // stair's target dnum.
+        const toDnum = stair.tolev?.dnum ?? state.u?.uz?.dnum;
+        const loc = stair.isladder ? MIGR_LADDER_UP
+            : toDnum === state.u?.uz?.dnum ? MIGR_STAIRS_UP : MIGR_SSTAIRS;
+        const destination = dropTo(loc, x, y, state);
+        if (!destination)
+            return null;
         if (stair.isladder) {
             return {
                 arrival: MIGR_LADDER_UP,
@@ -1452,8 +1503,7 @@ function downwardGate(state, x, y) {
             };
         }
         return {
-            arrival: destination.dnum === state.u?.uz?.dnum
-                ? MIGR_STAIRS_UP : MIGR_SSTAIRS,
+            arrival: loc,
             destination,
             text: 'down the stairs',
         };
@@ -1461,7 +1511,7 @@ function downwardGate(state, x, y) {
     const trap = trapAt(state, x, y);
     if (!trap || !trap.tseen || !is_hole(trap.ttyp))
         return null;
-    const destination = trapDestination(state);
+    const destination = dropTo(MIGR_RANDOM, x, y, state);
     if (!destination)
         return null;
     return {
