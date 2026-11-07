@@ -64,7 +64,7 @@ import { heroCanUseUnicornHorn } from './unicorn_horn.js';
 import { doread } from './read.js';
 import { eatfood, doeat, opentin } from './eat.js';
 import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
-import { doextversion, NATIVE_VERSION } from './extversion.js';
+import { doextversion, doversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, revealTerrain } from './detect.js';
 import { continueWipingFace, donull, dowipe, dodrop, dropMultipleObjects } from './do.js';
 import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
@@ -2421,14 +2421,6 @@ async function dotravelTarget() {
     // C's restored run value and let screen flushes own time updates.
     else if (!game._runState && game.context.run === 8)
         arriveTravel(game);
-}
-// C version.c:doversion()
-async function doversion() {
-    if (game.iflags.menu_requested)
-        await doextversion();
-    else
-        await pline(NATIVE_VERSION);
-    game.context.move = 0;
 }
 // C cmd.c:count_bind_keys()
 // ── Key-binding menus (C cmd.c:handler_rebind_keys*(), count_bind_keys(),

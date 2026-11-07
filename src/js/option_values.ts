@@ -10,6 +10,7 @@ import { WARNCOUNT } from './const.js';
 import { parseStatusHl1, replayStatusHiliteOperations, type StatusHiliteOperation } from './botl.js';
 import { resetStatusHilites } from './botl.js';
 
+import { featureAlertVersion } from './extversion.js';
 // Part of C options.c:optfn_pile_limit(), optfn_menuinvertmode(),
 // optfn_suppress_alert(): echo each option's current value.
 export function textOptionValue(name: string): string | null {
@@ -141,20 +142,4 @@ export function parsePickupTypes(value: string): { symbols: string; invalid: boo
     return { symbols, invalid };
 }
 
-// C version.c:get_feature_notice_ver()
-// Validates the first two components,
-// then reads the patch component with atoi. hack.h stores them in bit fields.
-export function featureAlertVersion(value: string): { version: string; future: boolean } | null {
-    const parts = value.match(/^(\d*)\.(\d*)\.(.*)$/);
-    if (!parts) return null;
-    const major = cInteger(parts[1] ?? '');
-    const minor = cInteger(parts[2] ?? '');
-    const patch = cInteger(parts[3] ?? '');
-    if (![major, minor, patch].every(Number.isSafeInteger)) return null;
-    const encoded = BigInt.asUintN(64, BigInt(major) << 24n | BigInt(minor) << 16n | BigInt(patch) << 8n);
-    if (!encoded) return null;
-    return {
-        version: `${encoded >> 24n}.${encoded >> 16n & 255n}.${encoded >> 8n & 255n}`,
-        future: encoded > 5n << 24n,
-    };
-}
+

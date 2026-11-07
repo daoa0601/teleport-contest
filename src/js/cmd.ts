@@ -79,7 +79,7 @@ import { heroCanUseUnicornHorn } from './unicorn_horn.js';
 import { doread } from './read.js';
 import { eatfood, doeat, opentin } from './eat.js';
 import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
-import { doextversion, NATIVE_VERSION } from './extversion.js';
+import { doextversion, doversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, revealTerrain } from './detect.js';
 import { continueWipingFace, donull, dowipe, dodrop, dropMultipleObjects } from './do.js';
 
@@ -2254,12 +2254,7 @@ async function dotravelTarget(): Promise<void> {
     else if (!game._runState && game.context.run === 8) arriveTravel(game);
 }
 
-// C version.c:doversion()
-async function doversion(): Promise<void> {
-    if (game.iflags.menu_requested) await doextversion();
-    else await pline(NATIVE_VERSION);
-    game.context.move = 0;
-}
+
 
 // ── Command, repeat-queue, and result types ──────────────────────────────
 
