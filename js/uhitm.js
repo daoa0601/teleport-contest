@@ -718,17 +718,9 @@ export async function showBarehandSilverHit(monster, hit, { state = game } = {})
     if (!spotted)
         target = target.charAt(0).toUpperCase() + target.slice(1);
     if (!monsterIsNoncorporeal(monster) && !monsterIsAmorphous(monster))
-        target = `${possessive(target)} flesh`;
+        target = `${possessiveName(target)} flesh`;
     await plineWithContinuation(spotted
         ? `Your silver ring sears ${target}!` : `${target} is seared!`);
-}
-// Port only kept: hacklib.ts:possessiveName() (C s_suffix) turns "it" into
-// "its"; this contact subject can be an unseen monster's "it", where the
-// port historically prints "it's", so the two are not interchangeable.
-function possessive(noun) {
-    if (noun.toLowerCase() === 'it')
-        return `${noun}s`;
-    return noun.endsWith('s') ? `${noun}'` : `${noun}'s`;
 }
 const S_BLOB = 2;
 // C uhitm.c:hmon_hitmon_weapon(): dispatch a weapon strike — improvised
@@ -1010,7 +1002,7 @@ async function potionContact(monster, object, { state = game, target = { x: mons
 export function objectCanTouchShade(object, state = game) {
     return !!object && (SHADE_AWARE_OBJECTS.has(object.otyp) || objectMaterial(object, state) === SILVER);
 }
-// Port only kept: C frees consumed objects; the runtime marks them 'gone'
+// Port only: C frees consumed objects; the runtime marks them 'gone'
 // or 'onbill' instead, so consumption is recognized from where.
 function consumedIdentity(object) {
     return object.where === 'gone' || object.where === 'onbill';
@@ -5760,7 +5752,7 @@ async function applyStonePassive({ monster, hit, attackType, weaponWasDestroyed,
 }
 // Part of C uhitm.c:passive(): resolve passive magic missiles and observed resistance.
 async function applyMagicMissilePassive({ monster, damage, state, publish, die, }) {
-    if (heroResistsMagic(state)) {
+    if (propertyIsActive('antimagic', state)) {
         await shieldeff(state.u.ux, state.u.uy, state);
         monstersObserveHeroResistance(M_SEEN_MAGR, state);
         await publish('A hail of magic missiles narrowly misses you!');
@@ -5914,7 +5906,7 @@ async function applyElectricPassive({ monster, damage, state, publish, die }) {
     });
     return { appliedDamage: damage, heroDied };
 }
-// Port only kept: adapts the passive die handler into mdamageu()'s death
+// Port only: adapts the passive die handler into mdamageu()'s death
 // boundary (the injected killer naming is resume plumbing).
 async function damageHero(monster, amount, { state, publish, die }) {
     if (!die)
@@ -5936,21 +5928,6 @@ function heroResists(state, property, mask) {
 // Part of C uhitm.c:passive(): Resists_Elem(mon, ACID_RES) for AD_ACID.
 function heroResistsAcid(state) {
     return heroResists(state, 'acidResistance', MR_ACID);
-}
-// Port only kept: C uhitm.c:passive()'s AD_MAGM gate reads Antimagic only;
-// this adds the polyform AD_MAGM/baby-gray-dragon terms, so it is not the
-// Antimagic macro and mondata.ts:monsterHasMagicResistance() also differs.
-function heroResistsMagic(state) {
-    const hero = state.u;
-    if (hero.antimagic
-        || hasWornProperty('antimagic', state))
-        return true;
-    const form = heroMonsterForm(state);
-    if (form == null)
-        return false;
-    const name = MONSTER_NAME[form];
-    return name === 'baby gray dragon'
-        || (MONSTER_ATTACKS[form] || []).some(attack => attack[1] === AD_MAGM);
 }
 // Part of C uhitm.c:passive(): select the weapon or boots exposed by contact.
 function objectTouchedByAttack(state, attackType, weapon) {
@@ -6003,7 +5980,7 @@ export function passiveDamage(level, attack, rollDice) {
         return rollDice(level + 1, sides);
     return 0;
 }
-// Port only kept: names the passive attacker for the injected die handler
+// Port only: names the passive attacker for the injected die handler
 // (the shared monsterName import keeps its own name).
 function passiveMonsterName(monster) {
     return monster.name || monsterTypeName(monster.mnum, !!monster.female);

@@ -193,7 +193,7 @@ import { useCrystalBall } from './detect.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
 import { doBlindingRay } from './zap.js';
 import { castSpell, spellSkillType } from './spell.js';
-import { upstart } from './hacklib.js';
+import { possessiveName, upstart } from './hacklib.js';
 import { AT_MAGC } from './monster_attack_types.js';
 import { dismountHero, monsterSaddle } from './steed.js';
 import { dropInventoryObjectAtHero } from './do.js';
@@ -1902,12 +1902,6 @@ function observeArtifactObject(object: GameObject, state: GameState) {
     recordObjectEncounter(object.otyp, state);
 }
 
-// Part of C artifact.c:artifact_hit(): the possessive forms of the drain
-// messages.
-function possessiveTarget(target: string) {
-    if (target === 'it') return 'its';
-    return target.endsWith('s') ? `${target}'` : `${target}'s`;
-}
 
 // Part of C artifact.c:artifact_hit(): the Vorpal/Tsurugi beheading
 // branch.
@@ -1993,7 +1987,7 @@ async function applyBeheading(
         return { damage: 0, specialMessage: !attacker || visible, attackStopped: true };
     }
     if (monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster)) {
-        await publish(`Vorpal Blade slices through ${possessiveTarget(describeTarget())} ${mbodypart(monster.mnum, NECK)}.`);
+        await publish(`Vorpal Blade slices through ${possessiveName(describeTarget())} ${mbodypart(monster.mnum, NECK)}.`);
         return { damage, specialMessage: true };
     }
 

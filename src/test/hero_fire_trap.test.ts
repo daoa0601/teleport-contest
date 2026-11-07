@@ -187,3 +187,24 @@ void test('crawling out of melted ice onto another fire trap does not trigger it
     // a same-type trap reached by the nested teleds().
     assert.equal(text.match(/A tower of flame erupts/g)?.length, 1, text);
 });
+
+// C do_name.c:oname() installs only the wielded W_WEP intrinsic mask
+// (do_name.c:407); the carried W_ART mask is installed when the artifact
+// enters inventory (invent.c:991). Naming a carried Mitre of Holiness into
+// existence therefore leaves EFire_resistance unset, and dofiretrap()'s
+// Fire_resistance gate (trap.c:4255) burns the hero anyway.
+void test('naming a carried fire-defense artifact does not protect from a fire trap', async () => {
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    requireFixtureGame(game);
+    const artifact = artifactByName('Mitre of Holiness');
+    assert.ok(artifact !== null && artifact !== undefined);
+    const mitre = await addInventoryObject(artifact.baseType);
+    nameArtifact(mitre, artifact);
+    pushKeys(' '.repeat(100));
+    initRng(1n);
+
+    await triggerHeroFireTrap();
+
+    assert.ok(game.u.uhpmax < 100);
+    assert.ok(game.u.uhp < 100);
+});

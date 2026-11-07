@@ -9,6 +9,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { vision_recalc } from '../js/vision.js';
 void test('a monster turn names the giant in lowercase beneath its vibrating feet', async () => {
     const input = freshTurnRoom();
@@ -59,5 +60,20 @@ void test('an unseen monster makes the nearby ground vibrate', async () => {
     });
     assert.equal(trap.tseen, true);
     assert.equal(messages[0], 'You see the ground vibrate nearby.');
+});
+// C trap.c:2747 builds the location with s_suffix(mon_nam(mtmp)), and
+// hacklib.c:s_suffix() tests the trailing character against a lowercase
+// 's' only: a monster named "BobS" keeps the full "'s" ending.
+void test('a named monster ending in a capital S keeps the full possessive', async () => {
+    const { monster } = await freshMonsterTrapRoom(VIBRATING_SQUARE, {
+        monster: { species: 'giant' },
+    });
+    requirePlayingGame(game);
+    setMonsterGivenName(monster, 'BobS');
+    const messages = [];
+    await mintrap(monster, game, {
+        publish: async (message) => messages.push(message),
+    });
+    assert.match(messages[0] ?? '', /beneath BobS's feet/);
 });
 //# sourceMappingURL=monster_vibrating_square_trap.test.js.map

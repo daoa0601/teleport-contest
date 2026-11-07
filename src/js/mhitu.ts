@@ -1258,7 +1258,7 @@ export async function passiveum(monster: Monster, oldForm: number, attackType: n
             }
             const reflection = mon_reflects(monster, state);
             if (reflection) {
-                await publish(`Your gaze is reflected by ${possessive(monster)} ${reflection.noun}.`);
+                await publish(`Your gaze is reflected by ${possessiveName(monsterName(monster, { state }))} ${reflection.noun}.`);
                 if (reflection.object && ['shield', 'amulet'].includes(reflection.noun))
                     learnObjectType(reflection.object.otyp, state);
                 return { attackerStopped: false };
@@ -1293,7 +1293,7 @@ export async function passiveum(monster: Monster, oldForm: number, attackType: n
                 const formLevel = MONSTER_LEVEL[state.u.umonnum];
                 if (formLevel !== undefined && state.u.mhmax > (formLevel + 1) * 8) {
                     const clone = await splitHeroMonsterForm(state);
-                    if (clone) await publish(`You multiply from ${possessive(monster)} heat!`);
+                    if (clone) await publish(`You multiply from ${possessiveName(monsterName(monster, { state }))} heat!`);
                 }
             }
         }
@@ -1366,12 +1366,6 @@ async function assess_dmg(
     return { attackerDied: died, attackerStopped: died, damage };
 }
 
-// Port only: possessive of the attacker's display name for the passiveum
-// reflection messages; s_suffix's port is possessiveName.
-function possessive(monster: Monster) {
-    const name = visibleMonsterSubject(monster).replace(/^The /u, 'the ');
-    return name === 'It' ? 'its' : name.endsWith('s') ? `${name}'` : `${name}'s`;
-}
 
 // C mhitu.c:summonmu(): monsters summon help for their fight against the
 // hero. mattacku()'s caller gate — not cancelled, not a shapechanger,

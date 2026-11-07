@@ -3,7 +3,7 @@
 // async continuation split; attach_egg_hatch_timeout() lives in timeout.ts.
 
 import { formatFeltMessage, formatSeenMessage } from './pline.js';
-import { ingSuffix } from './hacklib.js';
+import { ingSuffix, possessiveName } from './hacklib.js';
 import { G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './dbridge.js';
@@ -109,18 +109,13 @@ function inventoryHatchMessage(mnum: number, count: number, visible: boolean, st
     return formatSeenMessage(`${newborn} ${motion} out of your pack!`, state);
 }
 
-// Part of C hacklib.c:s_suffix(): local possessive for the hatch "pack"
-// phrase; the general port is possessiveName() in hacklib.ts.
-function possessive(noun: string): string {
-    return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
-}
 
 // Part of C timeout.c:hatch_egg(): the OBJ_MINVENT "%s pack" carrier
 // description (C: Sprintf(carriedby, "%s pack", s_suffix(a_monnam(mon2)))).
 function monsterPackName(monster: Monster): string {
-    if (monster.name) return `${possessive(monster.name)} pack`;
+    if (monster.name) return `${possessiveName(monster.name)} pack`;
     const species = monsterTypeName(monster.mnum, !!monster.female);
-    return `${possessive(withIndefiniteArticle(species))} pack`;
+    return `${possessiveName(withIndefiniteArticle(species))} pack`;
 }
 
 // Part of C zap.c:get_obj_location(): resolves egg->ocarry for the

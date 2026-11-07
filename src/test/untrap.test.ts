@@ -20,6 +20,7 @@ import {
 } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 
 const CLOSED_DOOR_APPEARANCE = 15;
 
@@ -120,6 +121,37 @@ void test('a boulder fills a pit after its monster is pulled out', async () => {
     assert.equal(monster.mtrapped, 0);
     assert.equal(level.traps.includes(trap), false);
     assert.equal(boulder.where, 'gone');
+    assert.equal(game.context.move, 1);
+});
+
+// C trap.c:5456: a boulder on the trap square blocks untrapping unless the
+// hero passes walls; Passes_walls (youprop.h:286) carries the form term in
+// its intrinsic via polyself.c:set_uasmon() PROPSET(PASSES_WALLS).
+void test('a boulder on the trap blocks a human hero from untrapping', async () => {
+    const level = await freshObjectRoom({ role: 'ranger' });
+    requirePlayingGame(game);
+    const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
+    await floorObject(BOULDER, 11, 10);
+    pushKeys('untrap\nl');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game._pending_message, 'There is a boulder in your way.');
+    assert.equal(level.traps.includes(trap), true);
+    assert.equal(game.context.move, 0);
+});
+
+void test('a polymorphed xorn reaches past a boulder to untrap', async () => {
+    const level = await freshObjectRoom({ role: 'ranger' });
+    requirePlayingGame(game);
+    installPolymorphedHero('xorn', { hitPoints: 40, maxHitPoints: 40 });
+    const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
+    await floorObject(BOULDER, 11, 10);
+    pushKeys('untrap\nl' + ' '.repeat(20));
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.notEqual(game._pending_message, 'There is a boulder in your way.');
     assert.equal(game.context.move, 1);
 });
 

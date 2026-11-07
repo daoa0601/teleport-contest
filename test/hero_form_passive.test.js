@@ -12,6 +12,10 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runMonsterAction } from '../js/mon.js';
+import { setMonsterGivenName } from '../js/do_name.js';
+import { passiveum } from '../js/mhitu.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { AT_WEAP } from '../js/monster_attack_types.js';
 async function freshAttack(form, hitPoints = 40) {
     await freshObjectRoom({ flags: { verbose: false } });
     installPolymorphedHero(form, { hitPoints });
@@ -85,4 +89,23 @@ for (const reflected of [false, true]) {
         assert.equal((attacker.mfrozen ?? 0) > 0, !reflected);
     });
 }
+// C mhitu.c hands mon_reflects() the format "Your gaze is reflected by %s
+// %s.", and muse.c:mon_reflects() fills the first %s with
+// s_suffix(mon_nam(mon)); hacklib.c:s_suffix("It") is "Its", preserving
+// the given name's capital I.
+void test('a monster named "It" reflects the gaze with the capital possessive Its', async () => {
+    await freshObjectRoom({ flags: { verbose: false } });
+    requireFixtureGame(game);
+    installPolymorphedHero('floating eye', { hitPoints: 40 });
+    const attacker = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    attacker.mpeaceful = false;
+    setMonsterGivenName(attacker, 'It');
+    await equipMonsterObject(attacker, await knownObject(SHIELD_OF_REFLECTION), W_ARMS);
+    const messages = [];
+    await passiveum(attacker, MONSTER_NAME.indexOf('floating eye'), AT_WEAP, {
+        random: () => 1,
+        publish: message => { messages.push(message); },
+    });
+    assert.ok(messages.includes('Your gaze is reflected by Its shield.'), `messages: ${messages.join(' | ')}`);
+});
 //# sourceMappingURL=hero_form_passive.test.js.map
