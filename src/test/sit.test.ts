@@ -15,7 +15,6 @@ import { requireScreenRow } from './support/screen.js';
 import {
     CLUB, CORPSE, CREAM_PIE, SLIME_MOLD, WHITE_DRAGON_SCALE_MAIL,
 } from '../js/object_data.js';
-import { attrcurse, rndcurse } from '../js/throne.js';
 import { applyArmorOnEffects } from '../js/do_wear.js';
 
 import {
@@ -23,7 +22,7 @@ import {
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addFruit } from '../js/message_types.js';
-import { setHeroGoldAmount } from '../js/sit.js';
+import { attrcurse, rndcurse, setHeroGoldAmount } from '../js/sit.js';
 import {
     addInventoryObject, floorArtifact, floorObject,
 } from './support/game-objects.js';

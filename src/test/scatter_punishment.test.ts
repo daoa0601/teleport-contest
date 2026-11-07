@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { scatterFloorObjects } from '../js/scatter.js';
+import { scatterFloorObjects } from '../js/explode.js';
 import { installPunishedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 

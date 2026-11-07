@@ -6,13 +6,12 @@
 // hero_sleep.js, hero_strangulation.js, levitation_timeout.js,
 // timeout_queue.js, timeout_warnings.js, storms.js, timer_effects.js,
 // timeout_luck.js, and timeout_body.js.
-import { castMonsterSpellRay } from './breath_ray.js';
+import { castMonsterSpellRay } from './mthrowu.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
 import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, setPropertyTimeout, } from './potion.js';
-import { clearHeroStrangulation } from './do_wear.js';
+import { clearHeroStrangulation, advanceDisplacementTimeout } from './do_wear.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle, } from './objnam.js';
 import { advanceSpellProtection } from './spell.js';
-import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
 import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt, finishHeroMonsterKill, } from './mon.js';
@@ -46,7 +45,7 @@ import { eating_dangerous_corpse, Popeye, morehungry, vomit } from './eat.js';
 import { removeWornHeroItem } from './steal.js';
 import { captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification, } from './trap.js';
 import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
-import { figTransform } from './figurine.js';
+import { figTransform } from './apply.js';
 import { meltIce } from './zap.js';
 import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
 import { objectWeight, runClaimedGlobTimer, finishGlobTimer } from './mkobj.js';

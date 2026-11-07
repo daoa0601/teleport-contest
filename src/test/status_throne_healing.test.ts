@@ -5,7 +5,7 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { throneSitEffect } from '../js/throne.js';
+import { throneSitEffect } from '../js/sit.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 

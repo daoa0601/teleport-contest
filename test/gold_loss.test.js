@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { throneSitEffect } from '../js/throne.js';
+import { throneSitEffect } from '../js/sit.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { nearCapacity, heroGoldAmount } from '../js/hack.js';

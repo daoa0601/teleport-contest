@@ -8,7 +8,7 @@ import { OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { attrcurse } from '../js/throne.js';
+import { attrcurse } from '../js/sit.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

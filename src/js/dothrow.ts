@@ -62,7 +62,7 @@ import {
     skillName, weaponDescription,
 } from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
-import { quiverObjectClass } from './quiver.js';
+import { quiverObjectClass } from './wield.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName, simpleArmorName } from './objnam.js';
 import {
     inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore,
@@ -117,7 +117,7 @@ import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
 import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet } from './do_wear.js';
 import { setMonsterMalign, makemonAt } from './makemon.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
-import { explodeLitOilPotion } from './fire_explosion.js';
+import { explodeLitOilPotion } from './explode.js';
 import { objectResistsDestruction } from './zap.js';
 import {
     costlySpot, stolenValue, makeAngryShopkeeper, insideShopRoomAt, containedGold, donateGold, objectIsUnpaid,

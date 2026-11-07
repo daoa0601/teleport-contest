@@ -13,9 +13,8 @@ import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { castMonsterSpellRay } from './breath_ray.js';
+import { castMonsterSpellRay, monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { displayRayName } from './zap.js';
-import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { currentAttribute, loseHeroStrength } from './attrib.js';
 import { clearHeroSliming, makeBlinded } from './potion.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
@@ -25,7 +24,7 @@ import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttac
 import type { DeathHandler } from './end.js';
 import { discoverHeroReflectionSource, ureflects } from './muse.js';
 
-import { rndcurse } from './throne.js';
+import { rndcurse } from './sit.js';
 import { returnHeroToHumanForm, body_part, heroSpecies } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';

@@ -8,7 +8,7 @@ import { LANDMINE, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { ROCK } from '../js/object_data.js';
-import { scatterFloorObjects } from '../js/scatter.js';
+import { scatterFloorObjects } from '../js/explode.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';

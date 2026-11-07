@@ -11,7 +11,7 @@ import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { applyHeroContactPassive } from '../js/uhitm.js';
 import { fixPrayerTrouble, Trouble } from '../js/pray.js';
-import { throneSitEffect } from '../js/throne.js';
+import { throneSitEffect } from '../js/sit.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

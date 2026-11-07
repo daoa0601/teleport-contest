@@ -12,7 +12,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { breatheFromMonster } from '../js/breath_ray.js';
+import { breatheFromMonster } from '../js/mthrowu.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';

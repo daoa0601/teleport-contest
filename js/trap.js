@@ -77,7 +77,7 @@ import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { applyRemoveCurseSpell } from './sit.js';
 import { projectileHitsIronBars } from './mthrowu.js';
-import { scatterFloorObjects } from './scatter.js';
+import { scatterFloorObjects } from './explode.js';
 import { rangedTargetHitBonus } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
 import { createPoisonGasCloud } from './region.js';

@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { DAGGER } from '../js/object_data.js';
-import { scatterFloorObjects } from '../js/scatter.js';
+import { scatterFloorObjects } from '../js/explode.js';
 import { floorObject } from './support/game-objects.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { addTrap } from './support/level-state.js';

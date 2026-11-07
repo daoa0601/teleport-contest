@@ -3,7 +3,7 @@
 import { POTION_CLASS } from './objclass.js';
 
 import { formatFeltMessage, plineWithContinuation } from './pline.js';
-import { explodeLitOilPotion } from './fire_explosion.js';
+import { explodeLitOilPotion } from './explode.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 
 import { tryCallObjectType } from './do.js';

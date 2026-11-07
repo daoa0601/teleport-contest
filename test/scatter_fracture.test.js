@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { BOULDER, STATUE, ROCK } from '../js/object_data.js';
-import { scatterFloorObjects } from '../js/scatter.js';
+import { scatterFloorObjects } from '../js/explode.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('scattering a named statue leaves unnamed ordinary rock fragments', async () => {

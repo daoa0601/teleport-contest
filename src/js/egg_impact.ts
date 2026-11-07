@@ -4,7 +4,7 @@ import { changeHeroLuck } from './attrib.js';
 // C refs: obj.h stale_egg, uhitm.c hmon_hitmon_misc_obj(),
 // and dothrow.c breakobj().
 
-import { createFireExplosion } from './fire_explosion.js';
+import { createFireExplosion } from './explode.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

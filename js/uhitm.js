@@ -83,7 +83,7 @@ import { addObjectToMonsterInventory, stealFromHero, stealHeroGold, stealHeroQue
 import { dismountHero, monsterAtPosition } from './steed.js';
 import { heroIsPetrifying, startHeroPetrification } from './stoning.js';
 import { askTeleportDestination, goodPosition, heroControlsTeleport, randomMonsterRelocation, reportMonsterTeleportRestriction, teleportHero, teleportMonsterByHero } from './teleport.js';
-import { attrcurse } from './throne.js';
+import { attrcurse } from './sit.js';
 import { burnAwayHeroSlime, putHeroToSleep } from './timeout.js';
 import { damageObjectWithAcid, erodeObject, mintrap, heroIsUnconscious, igniteItems, monsterSelfTouch, petrifyMonsterFromContact, resolveImmediatePetrification, } from './trap.js';
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';

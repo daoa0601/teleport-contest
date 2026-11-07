@@ -5,7 +5,7 @@ import { objectPropertyName, oc_nutrition, objectDelay, objectCharged, objectUni
 import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race, monsterHasAttackType, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, fleshPetrifies, formCanBecomeStoneGolem, heroResistsStoning, heroWouldPetrifyFromFlesh, } from './mondata.js';
 import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, heroIsSick, heroIsSliming, startHeroSliming, makeHeroVomiting, setPropertyTimeout, } from './potion.js';
 import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
-import { removeHeroAccessory, armorSimpleName, heroIsStrangled } from './do_wear.js';
+import { removeHeroAccessory, armorSimpleName, heroIsStrangled, gainCorpseDisplacement } from './do_wear.js';
 import { stopHeroOccupation } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
@@ -29,7 +29,6 @@ import { nomul, loseHeroHp, chewIronBars, stopRun, exceedsActionCapacity, nearCa
 import { possessiveName } from './hacklib.js';
 import { heroAcidBreathAttack, hitHeroWithRay, meltIce } from './zap.js';
 import { hasNonArtifactConflict } from './hero_conflict.js';
-import { gainCorpseDisplacement } from './hero_displacement.js';
 import { removeWornHeroItem } from './steal.js';
 import { freeInventoryObject, useUpInventoryStack, addInventoryItem, chooseInventoryObject, consumeInventoryItem, inventoryItemDescription, feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
@@ -58,7 +57,7 @@ import { SELL_DONTSELL, SELL_NORMAL, costlySpot, setSellDisposition } from './sh
 import { dismountHero } from './steed.js';
 import { surfaceName } from './dungeon.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
-import { attrcurse } from './throne.js';
+import { attrcurse } from './sit.js';
 import { flushPendingTopline } from './topl.js';
 import { vaultGdWatching } from './vault.js';
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';

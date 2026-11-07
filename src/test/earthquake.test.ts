@@ -7,7 +7,7 @@ import {
     COLNO, DOOR, D_CLOSED, D_NODOOR, MOAT, PIT, ROOM, ROWNO, STONE,
     TT_PIT, W_AMUL,
 } from '../js/const.js';
-import { createEarthquake } from '../js/earthquake.js';
+import { createEarthquake } from '../js/music.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { heroIsPolymorphed } from '../js/polyself.js';

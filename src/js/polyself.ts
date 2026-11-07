@@ -72,7 +72,7 @@ import { randomExperience } from './exper.js';
 import { rankOf, roleSwitch } from './botl.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { heroCanSeeInvisible } from './mcastu.js';
-import { breatheInDirection } from './breath_ray.js';
+import { breatheInDirection } from './mthrowu.js';
 import {
     hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp,
     hitMonsterWithThrownObject,

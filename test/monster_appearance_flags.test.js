@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_AP_F_DKNOWN, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, } from '../js/const.js';
-import { createEarthquake } from '../js/earthquake.js';
-import { breatheInDirection } from '../js/breath_ray.js';
+import { createEarthquake } from '../js/music.js';
+import { breatheInDirection } from '../js/mthrowu.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { removeMonsterFromGame } from '../js/mon.js';

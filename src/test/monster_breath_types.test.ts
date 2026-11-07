@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { breathWeaponName } from '../js/breath_ray.js';
+import { breathWeaponName } from '../js/mthrowu.js';
 import { AD_SPC1, AD_SPC2 } from '../js/monster_attack_types.js';
 
 for (const { damageType, name } of [

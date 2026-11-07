@@ -47,7 +47,7 @@ import { breakChestLock, maybeResetPick } from './lock.js';
 import { breakFloorObject, hurtleHero, hitMonsterWithKickedObject } from './dothrow.js';
 import { inventoryItemDescription, delobj, currency, stack_object } from './invent.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
-import { scatterFloorObjects } from './scatter.js';
+import { scatterFloorObjects } from './explode.js';
 import { objectMaterial } from './o_init.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { hasShopkeeperData } from './shop_types.js';
@@ -1775,7 +1775,6 @@ async function deliverAtPassage(object, migration, state, position, publish, ran
         await newsym(position.x, position.y);
         return;
     }
-    const { scatterFloorObjects } = await import('./scatter.js');
     await scatterFloorObjects(position.x, position.y, rollOne(2), {
         state,
         onlyObject: landed,
