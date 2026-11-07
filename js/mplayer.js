@@ -265,4 +265,13 @@ function unusedDeveloperName() {
     }
     return null;
 }
+// C mplayer.c:mplayer_talk()
+export function playerMonsterReply(monster, state) {
+    const sameRole = monster.mnum === MONSTER_NAME.indexOf('archeologist') + state.urole.mnum;
+    const messages = sameRole ? [
+        "I can't win, and neither will you!", "You don't deserve to win!",
+        'Mine should be the honor, not yours!',
+    ] : ['The low-life wants to talk, eh?', 'Fight, scum!', 'Here is what I have to say!'];
+    return `Talk? -- ${messages[rn2(3)]}`;
+}
 //# sourceMappingURL=mplayer.js.map

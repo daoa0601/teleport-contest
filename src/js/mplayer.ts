@@ -22,6 +22,7 @@ import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { rankOf } from './botl.js';
 import { monsterAtPosition } from './steed.js';
 import type { Monster } from './monster_types.js';
+import type { PlayingGameState } from './game_state.js';
 import { monsterMightThrowWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './worn.js';
 import { rnd_offensive_item, rnd_defensive_item, rnd_misc_item } from './muse.js';
@@ -249,4 +250,14 @@ function unusedDeveloperName(): string | null {
         if (!used) return name;
     }
     return null;
+}
+
+// C mplayer.c:mplayer_talk()
+export function playerMonsterReply(monster: Monster, state: PlayingGameState): string {
+    const sameRole = monster.mnum === MONSTER_NAME.indexOf('archeologist') + state.urole.mnum;
+    const messages = sameRole ? [
+        "I can't win, and neither will you!", "You don't deserve to win!",
+        'Mine should be the honor, not yours!',
+    ] : ['The low-life wants to talk, eh?', 'Fight, scum!', 'Here is what I have to say!'];
+    return `Talk? -- ${messages[rn2(3)]}`;
 }

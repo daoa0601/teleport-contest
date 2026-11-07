@@ -56,6 +56,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import { shopkeeperInOwnShop, quoteShopGoods, chatWithShopkeeper } from './shk.js';
 import { cansee } from './vision.js';
 import type { Monster } from './monster_types.js';
+import { playerMonsterReply } from './mplayer.js';
 
 const S_ANT = 1;
 const MS_ANIMAL = 17;
@@ -991,15 +992,6 @@ function nurseReply(state: PlayingGameState): string {
         return state.urole.key === 'healer' ? "Doc, I can't help you unless you cooperate."
             : 'Please undress so I can examine you.';
     return state.uarmu || hero.uarmu ? 'Take off your shirt, please.' : "Relax, this won't hurt a bit.";
-}
-
-// C mplayer.c:mplayer_talk()
-function playerMonsterReply(monster: Monster, state: PlayingGameState): string {
-    const sameRole = monster.mnum === MONSTER_NAME.indexOf('archeologist') + state.urole.mnum;
-    return `Talk? -- ${select(sameRole ? [
-        "I can't win, and neither will you!", "You don't deserve to win!",
-        'Mine should be the honor, not yours!',
-    ] : ['The low-life wants to talk, eh?', 'Fight, scum!', 'Here is what I have to say!'])}`;
 }
 
 // Part of C sounds.c:domonnoise(): vampire conversation by attitude, form and time.
