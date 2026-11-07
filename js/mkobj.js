@@ -967,8 +967,7 @@ export function updateIceObjectTimersAt(x, y, state = game, { includeBuried = fa
         }
     }
 }
-// Port only: placement precondition — C place_object panics on a non-free
-// object.
+// Part of C mkobj.c:place_object(): the "obj not free" panic precondition.
 function assertFreeFloorObject(object) {
     if (object.where !== 'free')
         throw new Error(`floor placement requires a free object, got ${object.where}`);
@@ -1057,8 +1056,8 @@ export function remove_object(object, state = game) {
     updateCorpseIceTimer(object, object.ox, object.oy, false, state);
     return object;
 }
-// Port only: split one unit from a floor stack; C inlines this idiom at
-// each extraction call site.
+// C splitobj(obj, 1L) followed by extraction, the idiom each C floor-pile
+// caller (pickup.c/steal.c) inlines to take one unit from a stack.
 export function detachFloorObjectUnit(object, state) {
     const quantity = objectQuantity(object);
     if (quantity <= 1) {
@@ -1587,7 +1586,9 @@ export function addBuriedObject(object, x, y, state = game) {
     (level.buriedObjects ??= []).unshift(object);
     return object;
 }
-// Port only: drops an object from its floor pile for burial.
+// Part of C mkobj.c:add_to_buried() callers: obj_extract_self() drops the
+// object from its floor pile before burial (C's add_to_buried takes a
+// free object).
 function removeFloorReference(object, state) {
     const pile = state.level?.objects?.[object.ox]?.[object.oy];
     const index = pile?.indexOf(object) ?? -1;
@@ -1855,8 +1856,8 @@ export async function absorbGlob(survivor, incoming, state = game, { publish = p
     deallocateObject(incoming, state);
     return survivor;
 }
-// Port only: the glob otyp-range test; C stores the globby flag on the
-// object.
+// C obj->globby (mkobj.c:956 sets it for the GLOB_OF_GRAY_OOZE..
+// GLOB_OF_BLACK_PUDDING range): the port's otyp-range form of the flag.
 function isGlobType(otyp) {
     return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
 }
