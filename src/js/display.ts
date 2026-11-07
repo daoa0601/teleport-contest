@@ -111,13 +111,16 @@ export function shownSymbolSet(state: GameState = game) {
     };
 }
 
-// C sym.h:SYMHANDLING(H_DEC) over gs.symset[gc.currentgraphics] (symbols.c
-// assign_graphics() sets currentgraphics from the level, switch_symbols()
-// copies a picked set into showsyms): the shown set's handling test, modeled
-// by the shown set's name in this port.
+// C sym.h:SYMHANDLING(H_DEC) over gs.symset[gc.currentgraphics]: the shown
+// set's handling test.  DECgraphics declares `Handling: DEC` and loads into
+// either slot — the roguesymset option never checks `Restrictions: primary`
+// (options.c:3553-3566 -> read_sym_file), so a Rogue level whose rogue set
+// is DECgraphics also carries the DEC handling.  assign_graphics()
+// (symbols.c:233/246) picks the slot from the level; switch_symbols()
+// (symbols.c:257-260) copies a picked primary set into showsyms without
+// changing currentgraphics.
 export function usesDecSymbols(state: GameState = game): boolean {
-    const symbols = shownSymbolSet(state);
-    return !symbols.rogue && /^DECgraphics$/i.test(symbols.name ?? '');
+    return /^DECgraphics$/i.test(shownSymbolSet(state).name ?? '');
 }
 
 // Port only: the active set's object-class symbol table.

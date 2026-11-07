@@ -1014,7 +1014,7 @@ export function writeMapCell(display: GameDisplay, x: number, y: number,
     const name = shownSymbolSet().name?.toLowerCase() ?? '';
     const byteGlyph = !loc.disp_decgfx && ROGUE_SYMSETS[name]?.ibm === true;
     display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR,
-        loc.disp_attr ?? 0, frameColor, byteGlyph);
+        loc.disp_attr ?? 0, frameColor, byteGlyph, loc.disp_decgfx === true);
 }
 
 // Part of C win/tty/wintty.c:tty_clear_nhwindow(): the NHW_MAP/NHW_BASE

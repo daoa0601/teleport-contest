@@ -128,7 +128,7 @@ export function replaceTopline(msg) {
         for (const [row, line] of toplineRows(msg, display.cols, { splitWords: false }).entries()) {
             display.clearRow(row);
             for (const [column, cell] of line.entries())
-                display.setCell(column, row, cell.ch, NO_COLOR, 0);
+                display.setCell(column, row, cell.ch, NO_COLOR, 0, cell.dec);
         }
     }
 }
@@ -493,7 +493,7 @@ export function showUnrememberedTopline(message, { flushPending = false } = {}) 
     for (const [row, line] of lines.entries()) {
         display.clearRow(row);
         for (const [column, cell] of line.entries())
-            display.setCell(column, row, cell.ch, NO_COLOR, 0);
+            display.setCell(column, row, cell.ch, NO_COLOR, 0, cell.dec);
     }
 }
 // Part of C topl.c:topl_putsym(): key queries wrap without a More prompt.
@@ -508,7 +508,7 @@ export function renderKeyPrompt(message, cursorOffset = 0) {
     for (const [row, line] of lines.entries()) {
         display.clearRow(row);
         for (const [column, cell] of line.entries())
-            display.setCell(column, row, cell.ch, NO_COLOR, 0);
+            display.setCell(column, row, cell.ch, NO_COLOR, 0, cell.dec);
     }
     const lastLine = lines.at(-1) ?? lines[0];
     display.setCursor(lastLine.length + cursorOffset, lines.length - 1);
@@ -546,7 +546,7 @@ export async function pageTopline(message, { urgent = false, dismissKey, rawGlyp
         for (const [row, line] of lines.entries()) {
             display.clearRow(row);
             for (const [col, cell] of line.entries())
-                display.setCell(col, row, rawGlyphs && cell.dec ? ' ' : cell.ch, NO_COLOR, 0);
+                display.setCell(col, row, rawGlyphs && cell.dec ? ' ' : cell.ch, NO_COLOR, 0, !rawGlyphs && cell.dec);
         }
         display.setCursor(finalLine.length, lines.length - 1);
     }

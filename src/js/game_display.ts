@@ -21,6 +21,13 @@ export class GameDisplay {
     // wintty.c:g_putch() records byte glyphs with their high bit cleared.
     // termcap.c:nomux_putch() leaves a cell alone for control characters.
     private readonly capturedMapCells = new Map<number, TerminalCell>();
+    // win/tty/wintty.c:g_putch() (3758-3763) shifts every high-bit glyph
+    // byte into the terminal's alternate font — graph_on()/SO before the
+    // byte with its high bit stripped, graph_off()/SI when the run ends —
+    // whichever symbol set produced it.  Map cells carry that shift through
+    // loc.disp_decgfx and topline cells through their \x0e markers; the
+    // serializer reverses it per cell from this provenance set.
+    private readonly altFontCells = new Set<number>();
     // update_topl() keeps accepting logical text while WIN_STOP hides output.
     stoppedTopline: string | null = null;
     // Displaying an empty WIN_MESSAGE can leave its answered question painted.
@@ -58,6 +65,11 @@ export class GameDisplay {
         return this.grid.map((cells, row) => cells.map((cell, col) =>
             this.capturedMapCells.get(row * this.cols + col) ?? cell));
     }
+    // True when the cell's glyph byte reached g_putch() with its high bit
+    // set, so the recorded stream wraps it in the alternate-font shift.
+    altFontAt(col: number, row: number): boolean {
+        return this.altFontCells.has(row * this.cols + col);
+    }
     get cursorCol() { return this.terminal.cursorCol; }
     set cursorCol(v: number) { this.terminal.cursorCol = v; }
     get cursorRow() { return this.terminal.cursorRow; }
@@ -70,24 +82,33 @@ export class GameDisplay {
     set flags(v: TerminalFlags | undefined) { this.terminal.flags = v; }
 
     // Display methods
-    setCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number) {
-        this.capturedMapCells.delete(row * this.cols + col);
+    setCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number, altFont = false) {
+        const index = row * this.cols + col;
+        this.capturedMapCells.delete(index);
+        if (altFont) this.altFontCells.add(index);
+        else this.altFontCells.delete(index);
         this.clearMapFrames(col, row, 1);
         this.terminal.setCell(col, row, ch, color, attr);
     }
     // The terminal adapter stores foregrounds and text attributes. Map frame
     // colors belong to the map window and take precedence over pet/inverse
     // highlighting, as tty_print_glyph() does.
-    setMapCell(col: number, row: number, ch: string, color: TerminalColor, attr: number, frameColor: number | null, byteGlyph = false) {
+    setMapCell(col: number, row: number, ch: string, color: TerminalColor, attr: number, frameColor: number | null, byteGlyph = false, altFont = false) {
         const index = row * this.cols + col;
         const current = this.capturedMapCells.get(index) ?? this.grid[row]?.[col];
         const previous = current ? { ...current } : undefined;
         const code = byteGlyph ? ch.charCodeAt(0) & 0x7f : ch.charCodeAt(0);
-        this.setCell(col, row, ch, color, frameColor === null ? attr : 0);
-        if (code < 32 && previous) this.capturedMapCells.set(index, previous);
-        else if (byteGlyph) this.capturedMapCells.set(index, {
-            ch: String.fromCharCode(code), color, attr: frameColor === null ? attr : 0,
-        });
+        this.setCell(col, row, ch, color, frameColor === null ? attr : 0, altFont);
+        if (code < 32 && previous) {
+            this.capturedMapCells.set(index, previous);
+            // The control glyph leaves the previous recorded cell visible,
+            // keeping its alternate-font shift with it.
+        } else if (byteGlyph) {
+            this.altFontCells.delete(index);
+            this.capturedMapCells.set(index, {
+                ch: String.fromCharCode(code), color, attr: frameColor === null ? attr : 0,
+            });
+        }
         const span = this.spans?.[row]?.[col];
         if (!span) return;
         if (frameColor !== null) {
@@ -103,6 +124,7 @@ export class GameDisplay {
     setCursor(col: number, row: number) { return this.terminal.setCursor(col, row); }
     clearScreen() {
         this.capturedMapCells.clear();
+        this.altFontCells.clear();
         this.repaintScreen();
     }
     // The browser rebuilds its grid on each flush; the tty recorder only
@@ -125,10 +147,15 @@ export class GameDisplay {
     scrollUp() {
         this.terminal.scrollUp();
         this.mapFrameCells.clear();
-        const moved = [...this.capturedMapCells];
+        const movedCells = [...this.capturedMapCells];
         this.capturedMapCells.clear();
-        for (const [index, cell] of moved) {
+        for (const [index, cell] of movedCells) {
             if (index >= this.cols) this.capturedMapCells.set(index - this.cols, cell);
+        }
+        const movedAltFont = [...this.altFontCells];
+        this.altFontCells.clear();
+        for (const index of movedAltFont) {
+            if (index >= this.cols) this.altFontCells.add(index - this.cols);
         }
     }
     moveCursor(x: number, y: number) { return this.terminal.moveCursor(x, y); }
@@ -157,8 +184,11 @@ export class GameDisplay {
     captureForShell() { return this.terminal.captureForShell(); }
 
     private clearCapturedMapCells(col: number, row: number, length: number): void {
-        for (let c = Math.max(0, col); c < Math.min(this.cols, col + length); c++)
-            this.capturedMapCells.delete(row * this.cols + c);
+        for (let c = Math.max(0, col); c < Math.min(this.cols, col + length); c++) {
+            const index = row * this.cols + c;
+            this.capturedMapCells.delete(index);
+            this.altFontCells.delete(index);
+        }
     }
 
     private clearMapFrames(col: number, row: number, length: number): void {

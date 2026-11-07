@@ -17,6 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { gotoLevel } from '../js/do.js';
+import { serializeCapture } from '../js/jsmain.js';
 
 // dat/symbols `start:` sets that a Rogue level can display layer their
 // S_ entries over the base rogue set (symbols.c:load_symset() →
@@ -100,6 +101,26 @@ void test('AmigaFont uses the tty alternate font unless eight_bit_tty is enabled
     await flush_screen(1);
 
     assert.equal(requireScreenCell(11, 11).ch, 'A', 'g_putch() strips the high bit of the Amiga wall');
+});
+
+// win/tty/wintty.c:g_putch() (3758-3763) shifts every high-bit glyph byte
+// into the alternate font — graph_on() before the byte with its high bit
+// stripped, graph_off() after the run — whichever set produced it.  The
+// recorded stream therefore wraps the AmigaFont beam in \x0e/\x0f even
+// while a DECgraphics primary set is loaded.
+void test('an AmigaFont rogue beam records its alternate-font shift beside a DECgraphics primary set', async () => {
+    await rogueLevel();
+    applyNethackrc('OPTIONS=symset:DECgraphics');
+    applyNethackrc('OPTIONS=roguesymset:AmigaFont');
+    const beam = zapdir_to_glyph(1, 0, 0);
+    await show_glyph_cell(11, 9, beam.ch, beam.color, beam.decgfx, 0, beam);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 10).ch, 'p',
+        'g_putch() strips the high bit of the AmigaFont beam');
+
+    const row = serializeCapture(requireGameDisplay()).split('\n')[10] ?? '';
+    assert.ok(row.includes('\x0ep\x0f'),
+        `the captured beam keeps its alternate-font shift: ${JSON.stringify(row)}`);
 });
 
 void test('plain as the rogue set redraws wall corners as plus', async () => {

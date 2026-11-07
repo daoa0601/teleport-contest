@@ -16,7 +16,6 @@ import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
 import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
-import { usesDecSymbols } from './display.js';
 import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C, COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 const UNICODE_TO_DEC = new Map(Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]));
 // Port only: serialize semantic terminal cells back into the tty wire form
@@ -71,8 +70,7 @@ export function serializeCapture(term) {
             lastRow = row;
     }
     const lines = [];
-    const decGraphics = usesDecSymbols();
-    for (const cells of grid.slice(0, lastRow + 1)) {
+    for (const [row, cells] of grid.slice(0, lastRow + 1).entries()) {
         const firstCol = cells.findIndex(painted);
         if (firstCol < 0) {
             lines.push('');
@@ -124,7 +122,8 @@ export function serializeCapture(term) {
             line += transition(fg, attr, nextFg, nextAttr);
             fg = nextFg;
             attr = nextAttr;
-            const decChar = decGraphics ? UNICODE_TO_DEC.get(cell.ch) : null;
+            const decChar = term instanceof GameDisplay && term.altFontAt(col, row)
+                ? UNICODE_TO_DEC.get(cell.ch) ?? cell.ch : null;
             const nextDec = decChar != null;
             if (nextDec !== dec) {
                 line += nextDec ? '\x0e' : '\x0f';
