@@ -28,7 +28,7 @@ import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFrom
 import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';
-import { beginPetEating, finishPetEating } from './pet_eating.js';
+import { dogEat } from './pet_eating.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
 import { hasShopkeeperData } from './shop_types.js';
@@ -428,8 +428,7 @@ function catchFoodName(food, state) {
 // Part of C dog.c:tamedog(): place_object() + dog_eat() of the caught food.
 async function feedTamedMonster(monster, food, devour, state) {
     await placeObject(food, monster.mx, monster.my, state);
-    const meal = beginPetEating(monster, food, { x: monster.mx, y: monster.my }, state, devour);
-    await finishPetEating(monster, meal, state);
+    await dogEat(monster, food, { x: monster.mx, y: monster.my }, state, devour);
 }
 // C include/monflag.h M1 flags used by mon_catchup_elapsed_time().
 // C dog.c mon_arrive()'s `when` argument.

@@ -146,4 +146,13 @@ export async function finishPetEating(monster, meal, state = game, random = rn2,
     }
     await consumeMonsterObject(monster, object, state);
 }
+// C dogmove.c:dog_eat()
+// A pet eats one thing: the prologue bookkeeping (beginPetEating()), the
+// meal message and tail (finishPetEating()), and C's DEADMONSTER() result
+// — 2 when the meal killed the pet, 1 otherwise.
+export async function dogEat(monster, object, from, state = game, devour = false, random = rn2, calls = []) {
+    const meal = beginPetEating(monster, object, from, state, devour);
+    await finishPetEating(monster, meal, state, random, calls);
+    return monster.dead || monster.mhp <= 0 ? 2 : 1;
+}
 //# sourceMappingURL=pet_eating.js.map

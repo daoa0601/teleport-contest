@@ -52,7 +52,7 @@ import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 
 import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';
-import { beginPetEating, finishPetEating } from './pet_eating.js';
+import { dogEat } from './pet_eating.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
 import { hasShopkeeperData } from './shop_types.js';
@@ -454,8 +454,7 @@ function catchFoodName(food: GameObject, state: GameState): string {
 // Part of C dog.c:tamedog(): place_object() + dog_eat() of the caught food.
 async function feedTamedMonster(monster: Monster, food: GameObject, devour: boolean, state: GameState): Promise<void> {
     await placeObject(food, monster.mx, monster.my, state);
-    const meal = beginPetEating(monster, food, { x: monster.mx, y: monster.my }, state, devour);
-    await finishPetEating(monster, meal, state);
+    await dogEat(monster, food, { x: monster.mx, y: monster.my }, state, devour);
 }
 
 // Monster level migration: departure, limbo, and arrival.
