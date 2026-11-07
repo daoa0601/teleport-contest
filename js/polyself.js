@@ -66,7 +66,7 @@ import { dropInventoryObjectAtHero } from './do.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './read.js';
 import { handleRidingAfterFormChange } from './steed.js';
-import { golemHitPoints, isHomeElemental } from './makemon.js';
+import { golemHitPoints, isHomeElemental, pickFormFromClass } from './makemon.js';
 import { expelHero } from './mhitu.js';
 const G_FREQ = 0x0007;
 const G_NOGEN = 0x0200;
@@ -1547,41 +1547,6 @@ async function chooseHeroForm({ forced, dragon, lycanthrope }) {
     } while (--tries > 0);
     await plineWithContinuation("That's enough tries!");
     return { mnum, random: true };
-}
-// C makemon.c:mkclass_poly(): choose by generation frequency, allowing
-// extinction but excluding genocide, placeholders, and specially
-// generated monsters.
-export function pickFormFromClass(monsterClass) {
-    requirePlayingGame(game);
-    const first = MONSTER_SYMBOL.indexOf(monsterClass);
-    if (first < 0 || first >= SPECIAL_PM)
-        return -1;
-    const members = [];
-    let mask = G_NOGEN | G_UNIQ;
-    const inHell = !!game.dungeons?.[game.u.uz.dnum]?.flags?.hellish;
-    if (rn2(9) || monsterClass === S_LICH)
-        mask |= inHell ? G_NOHELL : G_HELL;
-    let total = 0;
-    for (let mnum = 0; mnum < SPECIAL_PM; mnum++) {
-        if (MONSTER_SYMBOL[mnum] !== monsterClass
-            || ((MONSTER_GENO[mnum] ?? 0) & mask)
-            || ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD)
-            || PLACEHOLDER_MONSTERS.has(mnum)
-            || MONSTER_NAME[mnum] === 'mail daemon')
-            continue;
-        const frequency = (MONSTER_GENO[mnum] ?? 0) & G_FREQ;
-        members.push({ mnum, frequency });
-        total += frequency;
-    }
-    if (!total)
-        return -1;
-    let choice = rnd(total);
-    for (const { mnum, frequency } of members) {
-        choice -= frequency;
-        if (choice <= 0)
-            return mnum;
-    }
-    throw new Error('Polymorph class selection exhausted its generation weights');
 }
 // Part of C polyself.c:polyself(): the form's name and article in the
 // refusal.

@@ -91,7 +91,7 @@ import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } f
 import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
-import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, pickFormFromClass, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
@@ -163,7 +163,7 @@ import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { simpleObjectTypeName } from './objnam.js';
 import { RLOC_NONE, Is_astralevel, Is_waterlevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
-import { isHomeElemental } from './makemon.js';
+import { isHomeElemental, pickFormFromClass } from './makemon.js';
 import { AD_STCK, AT_HUGS } from './monster_attack_types.js';
 import { docrt } from './display.js';
 import { placeBallAndChain } from './ball.js';
