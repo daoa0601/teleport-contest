@@ -529,7 +529,7 @@ import {
 } from './dungeon.js';
 import {
     monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt,
-    finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone,
+    finishMonsterKilled, finishMonsterPetrification, restoreShapechanger, turnGolemToStone,
     wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance,
     setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome,
@@ -5777,12 +5777,12 @@ export async function petrifyMonsterImmediately(monster: Monster, {
     // matters when the hero is inside this monster.
     if (!game.in_mklev && game.flags.verbose !== false
         && speed.canDescribe && canSeeMonster(monster)) {
-        const speedMessage = monsterSpeedMessage(speed, monsterSubject(monster));
+        const speedMessage = monsterSpeedMessage(speed, monsterName(monster, { capitalized: true }));
         if (speedMessage) await publish(speedMessage);
     }
     if (cansee(monster.mx, monster.my)) {
         await publish(
-            `${monsterSubject(monster)} turns to stone.`,
+            `${monsterName(monster, { capitalized: true })} turns to stone.`,
         );
     }
     if (creditHero) recordHeroKillConduct();
@@ -5880,7 +5880,7 @@ export function monsterWearsGloves(monster: Monster): boolean {
 
 // Part of C trap.c:mselftouch(): adjust the monster subject after an introductory phrase.
 function selfTouchSubject(monster: Monster, prefix: string): string {
-    const subject = monsterSubject(monster);
+    const subject = monsterName(monster, { capitalized: true });
     if (!prefix || monster.name) return subject;
     return subject.charAt(0).toLowerCase() + subject.slice(1);
 }

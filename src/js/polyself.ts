@@ -44,7 +44,6 @@ import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { PropertyName } from './property_types.js';
 import type { HeroCoordinates } from './hero_types.js';
-import type { DungeonLocation } from './dungeon_types.js';
 import { flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { heroBreathAttack, hitHeroWithRay, destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
@@ -64,7 +63,7 @@ import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroS
 import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { newuhs } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { levelHasCeiling, surfaceName } from './dungeon.js';
+import { levelHasCeiling, surfaceName, sameDungeonLevel } from './dungeon.js';
 import { heroHidingStatus } from './insight.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
@@ -244,7 +243,8 @@ export async function applyHeroGolemEffects(damageType: DamageType, damage: numb
     await exerciseAttribute(A_STR, true, state);
 }
 
-// Port only: the polymorphed hero's species (C youmonst.data).
+// C gy.youmonst.data: the polymorphed hero's form, or null when the hero
+// is not polymorphed (heroSpecies() is the always-present species).
 export function heroMonsterForm(state = game): number | null {
     if (!heroIsPolymorphed(state)) return null;
     const form = state.u.umonnum;
@@ -257,23 +257,24 @@ export function heroIsFlying(state = game) {
     return !!state.u?.flying;
 }
 
-// Port only: the hero form's clinger test (mondata.h is_clinger).
+// C mondata.h:is_clinger(gy.youmonst.data).
 export function heroFormClings(state = game) {
     return monsterIsClinger(heroMonsterForm(state) ?? -1);
 }
 
-// Port only: the hero form's hides-under test (mondata.h hides_under).
+// C mondata.h:hides_under(gy.youmonst.data).
 export function heroFormHidesUnderObjects(state = game) {
     return monsterHidesUnder(heroMonsterForm(state) ?? -1);
 }
 
-// Port only: the hero form's hider test (mondata.h is_hider).
+// C mondata.h:is_hider(gy.youmonst.data).
 export function heroFormHidesWithoutCover(state = game) {
     return monsterIsHider(heroMonsterForm(state) ?? -1);
 }
 
-// Port only: does the hiding hero cling to the ceiling (flying, or a
-// non-mimic clinger)?
+// C u.uundetected && ceiling_hider(gy.youmonst.data): the hiding hero
+// clings to the ceiling (engrave.c:203, trap.c:638 pair the flag with
+// mondata.h:ceiling_hider()).
 export function heroHidesOnCeiling(state = game) {
     const form = heroMonsterForm(state);
     if (form == null || !state.u?.uundetected
@@ -282,23 +283,23 @@ export function heroHidesOnCeiling(state = game) {
         || (heroFormClings(state) && MONSTER_SYMBOL[form] !== S_MIMIC);
 }
 
-// Port only: the hero form's no-hands test (mondata.h nohands).
+// C mondata.h:nohands(gy.youmonst.data).
 export function heroHasNoHands(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && monsterHasNoHands(form);
 }
 
-// Port only: the hero form's notake test (mondata.h notake).
+// C mondata.h:notake(gy.youmonst.data).
 export function heroCannotTake(state = game) {
     return notake(heroMonsterForm(state) ?? -1);
 }
 
-// Port only: the hero form's nolimbs test (mondata.h nolimbs).
+// C mondata.h:nolimbs(gy.youmonst.data).
 export function heroHasNoLimbs(state = game) {
     return monsterHasNoLimbs(heroMonsterForm(state) ?? -1);
 }
 
-// Port only: the hero form's verysmall test (mondata.h verysmall).
+// C mondata.h:verysmall(gy.youmonst.data).
 export function heroIsVerySmall(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && monsterIsVerySmall(form);
@@ -453,7 +454,7 @@ function setFormSenses(mnum: number, state: GameState) {
     else revokeIntrinsicProperty('warnOfMonster', 'form', state);
 }
 
-// Port only: the hero's current species number (C youmonst.data).
+// C gy.youmonst.data: the hero's current species number.
 // C youmonst.data always describes u.umonnum, including the unpolymorphed
 // role body. Racial rules use urace separately; a human Monk is herbivorous.
 export function heroSpecies(state: GameState = game) {
@@ -489,14 +490,14 @@ export function changeHeroSex(state: GameState = game) {
     }
 }
 
-// Port only: the hero's silver hatred (mondata.h hates_silver over ulycn
-// and the current form).
+// C youprop.h:Hate_silver(): u.ulycn >= LOW_PM || hates_silver(youmonst.data).
 export function heroHatesSilver(state: GameState) {
     if ((state.u.ulycn ?? -1) >= 0) return true;
     return monsterSpeciesHatesSilver(heroSpecies(state));
 }
 
-// Port only: the hero form's headless test.
+// C !has_head(gy.youmonst.data): the hero form's headless test
+// (artifact.c:1625, do_wear.c:2324).
 export function heroHasNoHead(state: GameState) {
     return Upolyd(state.u)
         && !monsterHasHead({ mnum: heroSpecies(state) });
@@ -522,7 +523,7 @@ export function heroPassesWalls(state: GameState = game) {
 const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
 const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
 
-// Port only: the hero form's likes_lava test (mondata.h likes_lava).
+// C mondata.h:likes_lava(gy.youmonst.data): fire elementals and salamanders.
 export function heroLikesLava(state: GameState = game) {
     const hero = state.u;
     if (!Upolyd(hero)) return false;
@@ -546,7 +547,7 @@ export function heroIsNoncorporeal(state: GameState = game): boolean {
     return form !== null && MONSTER_SYMBOL[form] === S_GHOST;
 }
 
-// Port only: is the hero polymorphed into a green slime?
+// C gy.youmonst.data == &mons[PM_GREEN_SLIME].
 export function heroIsGreenSlime(state: GameState = game): boolean {
     return heroMonsterForm(state) === PM_GREEN_SLIME;
 }
@@ -2859,9 +2860,10 @@ export function mbodypart(mnum: number, part: number): string {
     return tablePart(animal_parts, part);
 }
 
-// Port only: the permonst index modeling youmonst.data for body_part.
-// The permonst index of the hero's current body, this port's model of
-// youmonst.data: u.umonnum when polymorphed, the saved role body otherwise.
+// Part of C polyself.c:body_part(): resolving gy.youmonst.data —
+// u.umonnum when polymorphed, the saved role body otherwise, with a
+// PM_HUMAN fallback so part names stay available in partially initialized
+// states.
 function currentHeroMonsterNumber(state: GameState): number {
     const current = state.u.umonnum;
     if (typeof current === 'number' && Number.isInteger(current)) return current;
@@ -3030,20 +3032,17 @@ function petrifyingCorpseCover(objects: readonly GameObject[]) {
     return count === 1 ? withIndefiniteArticle(corpse) : `${corpse}s`;
 }
 
-// Port only: same-dungeon-level comparison.
-function sameLevel(left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined) {
-    return !!left && !!right
-        && left.dnum === right.dnum && left.dlevel === right.dlevel;
-}
 
-// Part of C polyself.c:dohide(): the Is_airlevel comparison.
+// C dungeon.c:on_level(): the Is_airlevel comparison, via the shared
+// sameDungeonLevel() (dungeon.ts).
 function isAirLevel(state: GameState) {
-    return sameLevel(state.u.uz, state.air_level);
+    return sameDungeonLevel(state.u.uz, state.air_level);
 }
 
-// Part of C polyself.c:dohide(): the Is_waterlevel comparison.
+// C dungeon.c:on_level(): the Is_waterlevel comparison, via the shared
+// sameDungeonLevel() (dungeon.ts).
 function isWaterLevel(state: GameState) {
-    return sameLevel(state.u.uz, state.water_level);
+    return sameDungeonLevel(state.u.uz, state.water_level);
 }
 
 // C polyself.c:dohide()

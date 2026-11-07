@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { MM_NOGRP, NO_MINVENT, PIT, TT_PIT, W_WEP } from '../js/const.js';
 import { artifactObject, floorObject } from './support/game-objects.js';
 import { mksobj, set_corpsenm } from '../js/mkobj.js';
-import { removeMonsterFromGame, removeWishGrantingMonster } from '../js/mon.js';
+import { removeMonsterFromGame } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { resetInputState } from '../js/input.js';
@@ -115,7 +115,7 @@ void test('wish departure leaves protected identities and removes ordinary cargo
         await equipMonsterObject(monster, quest, W_WEP);
         await addObjectToMonsterInventory(monster, foreignQuest, game);
         await addObjectToMonsterInventory(monster, ordinary, game);
-        await removeWishGrantingMonster(monster);
+        await removeMonsterFromGame(monster);
 
         assert.ok(floorObjectsAt(game.level, 11, 10).includes(invocation));
         assert.ok(floorObjectsAt(game.level, 11, 10).includes(quest));
@@ -143,7 +143,7 @@ void test('Rider corpses survive departure as floor identities', async () => {
     const rider = await mksobj(CORPSE, true, false);
     set_corpsenm(rider, 311);
     await addObjectToMonsterInventory(monster, rider, game);
-    await removeWishGrantingMonster(monster);
+    await removeMonsterFromGame(monster);
 
     assert.equal(floorObjectsAt(game.level, 12, 9)[0], rider);
     assert.equal(rider.where, 'floor');

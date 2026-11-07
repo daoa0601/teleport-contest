@@ -21,7 +21,7 @@ import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
 import { splitMonster } from './potion.js';
 import { createElementalMonsterExplosion } from './explode.js';
 import { cansee } from './vision.js';
-import { applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder, prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject, turnGolemToStone, } from './mon.js';
+import { applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder, prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, turnGolemToStone, } from './mon.js';
 import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, dist2, distmin } from './hacklib.js';
 import { exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, } from './steed.js';
@@ -1273,7 +1273,7 @@ export async function petrifyMonsterAttacker(monster, { publish = plineWithConti
     if (stoneForm)
         return { survived: true };
     if (visible)
-        await publish(`${monsterSubject(monster)} turns to stone!`);
+        await publish(`${monsterName(monster, { capitalized: true })} turns to stone!`);
     if (creditHero)
         recordHeroKillConduct();
     return finishMonsterPetrification(monster, { ...options, publish });

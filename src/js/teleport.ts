@@ -17,9 +17,10 @@ import { showPagedPickOneMenu } from './windows.js';
 import { addInventoryItem } from './invent.js';
 import { finishHeroDeath } from './end.js';
 import { dist2, distmin } from './hacklib.js';
+import { within_bounded_area } from './rect.js';
 import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
-import { Is_botlevel, levelAtDepth, levelDepthByName, insideWizardTower, levelIsWizardTower, printDungeon, specialDisplayName, surfaceName, In_quest, In_mines } from './dungeon.js';
+import { Is_botlevel, levelAtDepth, levelDepthByName, insideWizardTower, levelIsWizardTower, printDungeon, specialDisplayName, surfaceName, In_quest, In_mines, sameDungeonLevel } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { bot } from './botl.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, endVoluntaryMultiTurn, shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt, switchHeroTerrain, finishDestinationSpotEffects } from './hack.js';
@@ -153,7 +154,8 @@ const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_SALAMANDER = 329;
 
-// Port only: find a ring across the runtime equipment aliases.
+// Part of C youprop.h:Teleportation()/Teleport_control(): the E<Prop>
+// W_RING half, resolved from the worn rings across the equipment aliases.
 function wornRing(state: GameState, objectType: number) {
     return [
         state?.uleft, state?.uright,
@@ -484,10 +486,10 @@ export function collect_coords(
     return coords;
 }
 
-// Port only: test membership in a runtime rectangle.
+// C dungeon.h:within_bounded_area(): the bounded-area test over the port's
+// Rectangle record (rect.ts within_bounded_area() is the scalar port).
 function inside(area: Rectangle | null | undefined, x: number, y: number) {
-    return area && x >= area.lx && x <= area.hx
-        && y >= area.ly && y <= area.hy;
+    return !!area && within_bounded_area(x, y, area.lx, area.ly, area.hx, area.hy);
 }
 
 // C teleport.c:tele_jump_ok().
@@ -664,7 +666,8 @@ export async function teleportHero({
     return { moved: true, died, movement, arrival };
 }
 
-// Port only: read the hero's runtime stun flag and timeout.
+// C youprop.h:Stunned() as teleport.c:872/1190 reads it: the projected
+// stun flag or its timeout.
 function heroIsStunned(state: GameState) {
     return !!(state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0);
 }
@@ -951,7 +954,8 @@ export async function levelTeleport({ state = game,
             await teleportToNowhere(state);
             return;
         }
-        if (atKnox(state) && newDepth > 0) {
+        // C dungeon.h:Is_knox(): the explicit-state form of Is_knox_level().
+        if (sameDungeonLevel(state.u.uz, state.knox_level) && newDepth > 0) {
             await plineWithContinuation(shudder);
             return;
         }
@@ -1066,7 +1070,8 @@ export function randomTeleportDepth(state: GameState = game, random = rn2, rollO
     const hero = state.u;
     const current = depth(hero.uz, state.dungeons);
     const dungeon = dungeonAt(state, hero.uz.dnum);
-    if (!random(5) || atKnox(state) || In_endgame(hero.uz)) return current;
+    // C dungeon.h:Is_knox(): the explicit-state form of Is_knox_level().
+    if (!random(5) || sameDungeonLevel(state.u.uz, state.knox_level) || In_endgame(hero.uz)) return current;
     let minimum = 1;
     let maximum = dungeon.depth_start + dungeon.num_dunlevs - 1;
     if (In_quest(hero.uz)) {
@@ -1088,17 +1093,6 @@ export function randomTeleportDepth(state: GameState = game, random = rn2, rollO
     return destination;
 }
 
-// Port only: duplicate the Fort Ludios location test for an explicit game state.
-// The full macro port is Is_knox_level in const.ts.
-function atKnox(state: GameState): boolean {
-    return sameLevel(state.u.uz, state.knox_level);
-}
-
-// Port only: compare optional runtime dungeon locations.
-// This duplicates sameDungeonLevel in dungeon.ts for teleport destinations.
-function sameLevel(left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined): boolean {
-    return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
-}
 
 // Part of C teleport.c:level_tele(): clamp and resolve the requested dungeon depth.
 async function destinationAtDepth(requested: number, state: PlayingGameState): Promise<DungeonLocation | null> {
@@ -1121,7 +1115,7 @@ async function destinationAtDepth(requested: number, state: PlayingGameState): P
     }
     if (In_quest(hero.uz)) requested = Math.max(requested, depth(requiredSpecialLevel(state, 'x-strt')));
     const destination = levelAtDepth(requested, { state });
-    if (sameLevel(destination, hero.uz) && requested !== depth(hero.uz)) {
+    if (sameDungeonLevel(destination, hero.uz) && requested !== depth(hero.uz)) {
         await plineWithContinuation(`You can't get there from ${requested > deepest ? 'anywhere' : 'here'}.`);
         return null;
     }
@@ -1389,7 +1383,8 @@ export async function teleportHeroToRandomPet(state = game) {
             || (pet.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
         if (rn2(++count) === 0) selected = pet;
     }
-    if (!selected || distanceToHero(selected, state) <= 1) return false;
+    // C distmin(pet->mx, pet->my, u.ux, u.uy).
+    if (!selected || distmin(selected.mx, selected.my, state.u.ux, state.u.uy) <= 1) return false;
     const x = selected.mx + rn2(3) - 1;
     const y = selected.my + rn2(3) - 1;
     if (!heroTeleportDestinationOk(x, y, { state })) return false;
@@ -1423,13 +1418,6 @@ export async function clearFixedTeleportDestination(
     };
 }
 
-// Port only: compute a monster's grid distance to the hero.
-export function distanceToHero(monster: Monster, state: GameState) {
-    return Math.max(
-        Math.abs(monster.mx - state.u.ux),
-        Math.abs(monster.my - state.u.uy),
-    );
-}
 
 // C teleport.c:teleport_pet()
 // C teleport_pet(): feedback may wait for input while the leash is attached.
@@ -1877,14 +1865,16 @@ export async function teleportMonsterByHero(monster: Monster, {
     return !!await randomMonsterRelocation(monster, { state, flags: RLOC_MSG });
 }
 
-// Port only: read the dungeon name for an optional level location.
+// C dungeons[u.uz.dnum].dname: the dungeon name for a level location.
 // Magic portals under the hero.
 // C ref: teleport.c domagicportal.
 function dungeonName(level: DungeonLocation | undefined) {
     return level ? game.dungeons[level.dnum]?.dname ?? '' : '';
 }
 
-// Port only: recognize the tutorial dungeon in the runtime graph.
+// C dungeon.h:In_tutorial(): the tutorial-dungeon test; the port has no
+// tutorial_dnum global, so domagicportal matches the dungeon name
+// (teleport.c:1476-1477).
 function isTutorialLevel(level: DungeonLocation | undefined) {
     return dungeonName(level) === 'The Tutorial';
 }

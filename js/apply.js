@@ -32,7 +32,7 @@ import { doBlindingRay, getObjectLocation, releaseHold, zapHeroWithObject, begin
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
-import { possessiveName } from './hacklib.js';
+import { distmin, possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import { setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, monsterFliesOrFloats, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting, heroIsSick, heroIsSliming, } from './potion.js';
@@ -48,7 +48,7 @@ import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { stack_object } from './invent.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, transformMagicLampToOilLamp } from './light.js';
 import { lightRoom } from './read.js';
-import { finishTeleportArrival, askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet, } from './teleport.js';
+import { finishTeleportArrival, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet, } from './teleport.js';
 import { pickLock } from './lock.js';
 import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -784,7 +784,8 @@ export function heroNextToLeashedFollowers() {
 // Part of C apply.c:mleashed_next2u(): the enexto() relocation of one
 // leashed follower.
 async function moveLeashedMonsterNextToHero(monster, state, random) {
-    if (distanceToHero(monster, state) <= 1)
+    // C distmin(mtmp->mx, mtmp->my, u.ux, u.uy) > 1.
+    if (distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1)
         return;
     const oldx = monster.mx;
     const oldy = monster.my;
@@ -805,7 +806,8 @@ export async function bringLeashedFollowers(state = game, random = rn2) {
         if (!monster?.mleashed || (monster.mhp ?? 1) <= 0)
             continue;
         await moveLeashedMonsterNextToHero(monster, state, random);
-        if (distanceToHero(monster, state) <= 1)
+        // C apply.c:next_to_u(): distmin(mtmp, you) <= 1.
+        if (distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1)
             continue;
         const leash = leashAttachedToMonster(monster, state);
         if (!leash || leash.cursed)

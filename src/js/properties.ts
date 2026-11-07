@@ -15,12 +15,14 @@ import { monsterIsFlyer, monsterIsSwimmer } from './mondata.js';
 const permanentOrigins: readonly IntrinsicOrigin[] = ['role', 'experience', 'race', 'outside'];
 const movementProperties: readonly PropertyName[] = ['levitation', 'flying', 'swimming', 'stealth'];
 
-// Port only: the TIMEOUT half of a property's intrinsic mask.
+// C youprop.h H<Prop> & TIMEOUT: the timed half of u.uprops[prop].intrinsic
+// (prop.h TIMEOUT bits), stored in the per-property hero turn field.
 export function propertyTimeout(property: PropertyName, state: PropertyState = game): number {
     return state.u[PROPERTY_TIMEOUT_FIELDS[property]] ?? 0;
 }
 
-// Port only: lazily creates the property-source record.
+// C you.h:u.uprops[prop] lvalue: the property's struct prop slot, which the
+// port materializes on first write instead of pre-allocating LAST_PROP slots.
 function propertyRecord(property: PropertyName, state: PropertyState = game): PropertySources {
     const hero = state.u;
     if (!hero._propertySources) hero._propertySources = {};
@@ -36,35 +38,32 @@ function propertyRecord(property: PropertyName, state: PropertyState = game): Pr
     return record;
 }
 
-// Port only: nullable read of the property-source record.
+// C you.h:u.uprops[prop] read: the property's struct prop slot, or null
+// when the port has never materialized it.
 export function existingPropertyRecord(property: PropertyName, state: PropertyState = game): PropertySources | null {
     return state.u?._propertySources?.[property] || null;
 }
 
-// Port only: tests a property's timed component.
-function timedSourceIsActive(property: PropertyName, hero: PropertyHero): boolean {
-    return (hero[PROPERTY_TIMEOUT_FIELDS[property]] ?? 0) > 0;
-}
-
-// Port only: exported timed-source test.
+// C youprop.h (H<Prop> & TIMEOUT) != 0: exported timed-source test.
 export function hasTimedProperty(property: PropertyName, state: PropertyState = game): boolean {
-    return timedSourceIsActive(property, state.u);
+    return propertyTimeout(property, state) > 0;
 }
 
-// Port only: tests the intrinsic (non-timed) source set.
+// C youprop.h H<Prop> & ~TIMEOUT: any non-timed intrinsic bit (FROMEXPER,
+// FROMRACE, FROMOUTSIDE, FROMFORM or I_SPECIAL) is set.
 function intrinsicSourceIsActive(record: PropertySources | null): boolean {
     return Object.keys(record?.intrinsic || {}).length > 0;
 }
 
-// Port only: any-source test across the record's masks.
+// C youprop.h H<Prop> || E<Prop>: any live source, before the blocked-mask
+// test the per-property macros apply.
 export function propertySourceIsActive(property: PropertyName, state: PropertyState): boolean {
-    const hero = state.u;
     const record = existingPropertyRecord(property, state);
     return intrinsicSourceIsActive(record)
         || (record?.worn.length ?? 0) > 0
         || !!record?.invoked
         || (record?.carried.length ?? 0) > 0
-        || timedSourceIsActive(property, hero);
+        || propertyTimeout(property, state) > 0;
 }
 
 // Part of C youprop.h:Levitation(): the HLevitation||ELevitation half,
@@ -80,7 +79,7 @@ export function hasRawLevitationSource(state: PropertyState = game) {
 export function levitationSourceIsActive(ignoreBoots: boolean, state: PropertyState): boolean {
     const record = existingPropertyRecord('levitation', state);
     return intrinsicSourceIsActive(record) || !!record?.invoked
-        || !!record?.carried.length || timedSourceIsActive('levitation', state.u)
+        || !!record?.carried.length || propertyTimeout('levitation', state) > 0
         || !!record?.worn.some(source => !ignoreBoots || source.slot !== 'uarmf');
 }
 
@@ -104,27 +103,30 @@ export function propertyIsBlocked(property: PropertyName, state: PropertyState =
     return false;
 }
 
-// Port only: writes the blocked mask's I_SPECIAL half.  C polyself.c
-// float_vs_flight() is the sole writer; call floatVsFlight() (polyself.js)
-// instead of touching this directly.
+// C prop.h blocked mask's I_SPECIAL half (B<Prop> |= / &= ~I_SPECIAL):
+// written by polyself.c:float_vs_flight() and, for the carrying-capacity
+// computation, by hack.c:weight_cap().
 export function setPropertyFloatBlocked(
     property: 'levitation' | 'flying', blocked: boolean, state: PropertyState = game,
 ) {
     propertyRecord(property, state).blockedByFloat = blocked;
 }
 
-// Port only: writes the terrain blocker on the property record.
+// Part of C hack.c:switch_terrain(): the B<Prop> FROMOUTSIDE writes
+// (hack.c:3190-3205), refreshed through the projection.
 export function setPropertyTerrainBlocked(property: PropertyName, blocked: boolean, state: PropertyState = game) {
     propertyRecord(property, state).blockedByTerrain = blocked;
     refreshProperty(property, state);
 }
 
-// Port only: evaluates a property's youprop.h macro from its record.
+// C youprop.h: evaluates one property's macro — H<Prop> || E<Prop>, with
+// Levitation/Flying/Invisibility/Clairvoyance further gated by B<Prop> —
+// plus the steed terms Flying/Swimming/Stealth carry in youprop.h.
 export function propertyIsActive(property: PropertyName, state: PropertyState = game): boolean {
     const hero = state.u;
     // C Strangled is the intrinsic timeout, not the amulet's worn property.
     // Wearing the amulet does not strangle an immune body.
-    if (property === 'strangled') return timedSourceIsActive(property, hero);
+    if (property === 'strangled') return propertyTimeout(property, state) > 0;
     // C Free_action reads the extrinsic mask even when a wizard sets its timer.
     if (property === 'freeAction') {
         const sources = existingPropertyRecord(property, state);
@@ -142,14 +144,15 @@ export function propertyIsActive(property: PropertyName, state: PropertyState = 
     return true;
 }
 
-// Port only: other-source test used when dropping one source.
+// C youprop.h H<Prop> || (E<Prop> & ~W_ARTI): any source except the invoked
+// artifact — the test artifact.c:arti_invoke() (levitation), eat.c
+// gethungry() (conflict) and the mirroring checks apply to their property.
 export function propertyHasOtherSources(property: PropertyName, state: PropertyState = game) {
-    const hero = state.u;
     const record = existingPropertyRecord(property, state);
     return intrinsicSourceIsActive(record)
         || (record?.worn.length ?? 0) > 0
         || (record?.carried.length ?? 0) > 0
-        || timedSourceIsActive(property, hero);
+        || propertyTimeout(property, state) > 0;
 }
 
 // C youprop.h:Lev_at_will().
@@ -280,9 +283,9 @@ export function setCarriedProperty(
     refreshProperty(property, state);
 }
 
-// Port only: the W_ART carried-source test.
-// Argument order follows hasIntrinsicProperty(property, origin, state):
-// the optional object narrows the check to one carried artifact.
+// C youprop.h E<Prop> & W_ART: carried-artifact source test.  The optional
+// object narrows it to one carried artifact (artifact.c:set_artifact_intrinsic()
+// drops a single W_ART bit); argument order follows hasIntrinsicProperty().
 export function hasCarriedProperty(property: PropertyName, object: PropertyObject | null = null, state: PropertyState = game) {
     const carried = existingPropertyRecord(property, state)?.carried || [];
     if (!object) return carried.length > 0;
@@ -341,7 +344,7 @@ export function restoreLevitationSources(stash: StashedLevitationSources, state:
     return hero;
 }
 
-// Port only: the W_ARTI invoked-source test.
+// C youprop.h E<Prop> & W_ARTI: invoked-artifact source test.
 export function hasInvokedProperty(property: PropertyName, state: PropertyState = game) {
     return !!existingPropertyRecord(property, state)?.invoked;
 }
@@ -359,14 +362,15 @@ export function setInvokedProperty(
     return refreshProperty(property, state);
 }
 
-// Port only: grants an intrinsic origin on the record.
+// C youprop.h H<Prop> |= <bit>: grant one intrinsic origin
+// (FROMEXPER/FROMRACE/FROMOUTSIDE/FROMFORM/I_SPECIAL).
 export function grantIntrinsicProperty(property: PropertyName, origin: IntrinsicOrigin, state: PropertyState = game) {
     const record = propertyRecord(property, state);
     record.intrinsic[origin] = true;
     refreshProperty(property, state);
 }
 
-// Port only: revokes an intrinsic origin from the record.
+// C youprop.h H<Prop> &= ~<bit>: drop one intrinsic origin.
 export function revokeIntrinsicProperty(property: PropertyName, origin: IntrinsicOrigin, state: PropertyState = game) {
     const record = propertyRecord(property, state);
     const removed = !!record.intrinsic[origin];
@@ -375,7 +379,7 @@ export function revokeIntrinsicProperty(property: PropertyName, origin: Intrinsi
     return removed;
 }
 
-// Port only: drops every intrinsic origin from the record.
+// C youprop.h H<Prop> &= TIMEOUT: drop every intrinsic bit, keep the timer.
 export function removeIntrinsicProperty(property: PropertyName, state: PropertyState = game) {
     const record = propertyRecord(property, state);
     const removed = Object.keys(record.intrinsic).length > 0;
@@ -384,7 +388,7 @@ export function removeIntrinsicProperty(property: PropertyName, state: PropertyS
     return removed;
 }
 
-// Port only: adds a worn (extrinsic W_*) source to the record.
+// C youprop.h E<Prop> |= W_<slot>: add a worn extrinsic source.
 export function grantWornProperty(
     property: PropertyName, object: PropertyObject | null, slot: WornPropertySlot, state: PropertyState = game,
 ) {
@@ -403,7 +407,7 @@ export function grantWornProperty(
     refreshProperty(property, state);
 }
 
-// Port only: removes a worn source from the record.
+// C youprop.h E<Prop> &= ~W_<slot>: remove a worn extrinsic source.
 export function removeWornProperty(
     property: PropertyName, object: PropertyObject | null, slot: WornPropertySlot, state: PropertyState = game,
 ) {
@@ -419,7 +423,8 @@ export function removeWornProperty(
     return record.worn.length !== oldLength;
 }
 
-// Port only: intrinsic-origin test.
+// C youprop.h H<Prop> & <bit>: intrinsic-origin test, or any non-timed
+// intrinsic bit when origin is null (H<Prop> & ~TIMEOUT).
 export function hasIntrinsicProperty(
     property: PropertyName, origin: IntrinsicOrigin | null = null, state: PropertyState = game,
 ) {
@@ -445,15 +450,12 @@ export function removePermanentIntrinsicProperty(property: PropertyName, state: 
     return refreshProperty(property, state);
 }
 
-// Port only: the extrinsic worn-source test.
+// C youprop.h E<Prop> & W_<worn slots>: worn extrinsic test; W_ART and
+// W_ARTI are tracked separately as carried/invoked sources.
 export function hasWornProperty(property: PropertyName, state: PropertyState = game) {
     return (existingPropertyRecord(property, state)?.worn.length ?? 0) > 0;
 }
 
-// Port only: first worn source of a property.
-export function firstWornPropertySource(property: PropertyName, state: PropertyState = game) {
-    return existingPropertyRecord(property, state)?.worn[0] || null;
-}
 
 // Port only: whether an object grants the property while worn.
 export function wornObjectGrantsProperty(object: PropertyObject, property: PropertyName, state: PropertyState = game) {
