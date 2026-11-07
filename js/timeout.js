@@ -6,7 +6,7 @@
 // hero_sleep.js, hero_strangulation.js, levitation_timeout.js,
 // timeout_queue.js, timeout_warnings.js, storms.js, timer_effects.js,
 // timeout_luck.js, and timeout_body.js.
-import { castMonsterSpellRay } from './breath_ray.js';
+import { castMonsterSpellRay } from './mthrowu.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
 import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, setPropertyTimeout, } from './potion.js';
 import { clearHeroStrangulation } from './do_wear.js';

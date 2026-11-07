@@ -11,9 +11,8 @@ import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { castMonsterSpellRay } from './breath_ray.js';
+import { castMonsterSpellRay, monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { displayRayName } from './zap.js';
-import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { currentAttribute, loseHeroStrength } from './attrib.js';
 import { clearHeroSliming, makeBlinded } from './potion.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';

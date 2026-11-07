@@ -20,7 +20,7 @@ import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, recordGameLogEvent } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { exerciseAttribute, adjustHeroAlignment } from './attrib.js';
-import { castMonsterSpellRay } from './breath_ray.js';
+import { castMonsterSpellRay } from './mthrowu.js';
 import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
 import { couldSeeFromHero, couldsee } from './vision.js';
 import { d, rn1, rn2 } from './rng.js';

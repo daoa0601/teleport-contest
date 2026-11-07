@@ -1787,7 +1787,7 @@ characteristics_enlightenment	enlght_out	inlined	characteristicEnlightenmentLine
 create_worm_tail	alloc	n/a	initializeUnplacedMonsterWormBody uses managed segment objects and a separate head instead of a C allocation chain
 do_oname	rnd_on_display_rng	inlined	nameIndividualObject uses rn2Display(2) plus one for the inscription scuff count (do_name.ts)
 do_oname	undiscovered_artifact	inlined	objectNameIsPlural checks the Eyes discovery before choosing this/these in the naming prompt (objnam.ts)
-dobreathe	ubuzz	inlined	breatheInDirection passes the breath ray type, attack dice and hero origin through castNativeRay (breath_ray.ts)
+dobreathe	ubuzz	inlined	breatheInDirection passes the breath ray type, attack dice and hero origin through castNativeRay (mthrowu.ts)
 docallcmd	cmdq_pop	inlined	doname reads the repeat or canned queue and clears a non-key entry before selecting a naming category (cmd.ts)
 dogaze	yn_function	inlined	confirmPeacefulGaze calls promptYesNo, then promptChoice and query.ts yn_function beyond the two-call reach limit
 domenucontrols	show_menu_controls	inlined	menuControlsHelp formats the native dolist=FALSE table using the current menu bindings (pager_help.ts)
