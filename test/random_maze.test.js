@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACCESSIBLE, COLNO, CORR, FIRE_TRAP, Invocation_lev, MAGIC_PORTAL, PANICLOG, ROOM, ROWNO, STAIRS, VIBRATING_SQUARE, } from '../js/const.js';
+import { ACCESSIBLE, COLNO, CORR, FIRE_TRAP, MAGIC_PORTAL, PANICLOG, ROOM, ROWNO, STAIRS, VIBRATING_SQUARE, } from '../js/const.js';
+import { Invocation_lev } from '../js/dungeon.js';
 import { GameDisplay } from '../js/game_display.js';
 import { dungeonFeatureSentenceAt } from '../js/invent.js';
 import { game, requireGameLevel, requireGameDisplay } from '../js/gstate.js';

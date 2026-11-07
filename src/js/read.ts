@@ -35,13 +35,111 @@ import { explode } from './explode.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove, heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 
 import {
-    A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, CORR, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD,
-    G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
-    In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Is_waterlevel, Luck, M_SEEN_FIRE,
+
+    A_CON,
+
+    A_STR,
+
+    A_WIS,
+
+    ACCESSIBLE,
+
+    COLNO,
+
+    CORR,
+
+    D_CLOSED,
+
+    D_LOCKED,
+
+    DOOR,
+
+    EXPL_FIERY,
+
+    G_EXTINCT,
+
+    G_GENOD,
+
+    G_NOCORPSE,
+
+    G_GONE,
+
+    GETOBJ_DOWNPLAY,
+
+    GETOBJ_EXCLUDE,
+
+    GETOBJ_EXCLUDE_SELECTABLE,
+
+    GETOBJ_SUGGEST,
+
+    In_endgame,
+
+    IS_AIR,
+
+    IS_OBSTRUCTED,
+
+    Is_earthlevel,
+
+    Is_rogue_level,
+
+    Is_waterlevel,
+
+    Luck,
+
+    M_SEEN_FIRE,
+
     MM_EDOG,
-    MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT,
-    ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR,
-    HAND, HEAD, LEG, STOMACH, LL_CONDUCT, LL_GENOCIDE,
+
+    MM_FEMALE,
+
+    MM_MALE,
+
+    MM_MINVIS,
+
+    MM_NOEXCLAM,
+
+    MM_NOMSG,
+
+    NO_MINVENT,
+
+    PLNMSG_TOWER_OF_FLAME,
+
+    POLY_REVERT,
+
+    ROWNO,
+
+    SDOOR,
+
+    SPE_LIM,
+
+    TT_BURIEDBALL,
+
+    Upolyd,
+
+    W_ARMH,
+
+    W_ART,
+
+    W_ARTI,
+
+    W_BALL,
+
+    W_CHAIN,
+
+    WT_IRON_BALL_INCR,
+
+    HAND,
+
+    HEAD,
+
+    LEG,
+
+    STOMACH,
+
+    LL_CONDUCT,
+
+    LL_GENOCIDE,
+
 } from './const.js';
 import { canSpotMonster, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
 import { isok } from './cmd.js';
@@ -92,7 +190,7 @@ import { createPoisonGasCloud } from './region.js';
 import { burnAwayHeroSlime, endObjectBurn } from './timeout.js';
 import { loseHeroSpellMemory, studyBook } from './spell.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { ceilingName, levelHasCeiling } from './dungeon.js';
+import { ceilingName, levelHasCeiling, In_quest } from './dungeon.js';
 import {
     MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
     nameToMonster, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,

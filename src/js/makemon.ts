@@ -23,7 +23,7 @@ import {
 } from './object_data.js';
 import { armorBonus } from './do_wear.js';
 import { artifactByName, nameArtifact } from './artifact.js';
-import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines, In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, BOLT_LIM, MM_NOEXCLAM, MM_NOMSG, OBJECT_TIMER_KIND } from './const.js';
+import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_endgame, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, BOLT_LIM, MM_NOEXCLAM, MM_NOMSG, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './display.js';
@@ -36,7 +36,7 @@ import { verbForSubject, withIndefiniteArticle, rndClass } from './objnam.js';
 import { visibleRegionAt } from './region.js';
 import { monsterEmitsLight, block_point, visionCellBlocksLight } from './vision.js';
 import { objectAtMonsterDescription } from './pager.js';
-import { depth as depth_of_level, level_difficulty, sameDungeonLevel, specialLevelAt } from './dungeon.js';
+import { depth as depth_of_level, level_difficulty, sameDungeonLevel, specialLevelAt, In_quest, In_mines, In_V_tower, In_hell } from './dungeon.js';
 import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth, removeMonsterFromGame } from './mon.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { beginObjectBurn, stopObjectTimer } from './timeout.js';

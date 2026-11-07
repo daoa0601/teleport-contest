@@ -46,12 +46,55 @@ import { block_point, cansee, vision_note_blocker_change } from './vision.js';
 import { newsym } from './display.js';
 import { heroCanReachFloor } from './engrave.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
-import { depth as depth_of_level, level_difficulty, surfaceName } from './dungeon.js';
+import { depth as depth_of_level, level_difficulty, surfaceName, In_quest } from './dungeon.js';
 import {
-    ALTAR, A_NONE, ICE, IRONBARS, In_quest, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE,
-    MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE,
-    CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND, LARGEST_INT,
+
+    ALTAR,
+
+    A_NONE,
+
+    ICE,
+
+    IRONBARS,
+
+    Is_airlevel,
+
+    Is_rogue_level,
+
+    Is_waterlevel,
+
+    G_GONE,
+
+    G_NOCORPSE,
+
+    MON_DETACH,
+
+    MON_FLOOR,
+
+    ROT_AGE,
+
+    TROLL_REVIVE_CHANCE,
+
+    RANDOM_TIN,
+
+    MAX_OIL_IN_FLASK,
+
+    CORPSTAT_FEMALE,
+
+    CORPSTAT_MALE,
+
+    CORPSTAT_NEUTER,
+
+    CORPSTAT_INIT,
+
+    CORPSTAT_SPE_VAL,
+
+    OBJECT_TIMER_KIND,
+
+    LARGEST_INT,
+
     PLNMSG_OBJ_GLOWS,
+
 } from './const.js';
 import { isok } from './cmd.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';

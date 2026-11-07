@@ -3,7 +3,8 @@
 // bribe(), lose_guardian_angel(), and gain_guardian_angel().
 import { artifactById } from './artifact.js';
 import { deityName } from './pray.js';
-import { A_CHA, A_NONE, FAINTED, In_endgame, In_hell, LL_UMONST, MM_ADJACENTOK, MM_EMIN, MM_NOMSG, NON_PM, RLOC_MSG, STRAT_APPEARMSG, W_ARMS } from './const.js';
+import { A_CHA, A_NONE, FAINTED, In_endgame, LL_UMONST, MM_ADJACENTOK, MM_EMIN, MM_NOMSG, NON_PM, RLOC_MSG, STRAT_APPEARMSG, W_ARMS } from './const.js';
+import { In_hell } from './dungeon.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { cleanupTransientLight, showTransientLight } from './light.js';

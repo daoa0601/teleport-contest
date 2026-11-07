@@ -6,9 +6,9 @@
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, } from './objclass.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
-import { CORR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DUST, HEALTHY_TIN, In_mines, IS_ROOM, MM_ESHK, PL_NSIZ, ROOM, RLOC_NOMSG, ROOMOFFSET, SDOOR, SHOPBASE, } from './const.js';
+import { CORR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DUST, HEALTHY_TIN, IS_ROOM, MM_ESHK, PL_NSIZ, ROOM, RLOC_NOMSG, ROOMOFFSET, SDOOR, SHOPBASE, } from './const.js';
 import { convertSecretDoor } from './detect.js';
-import { specialLevelAt } from './dungeon.js';
+import { specialLevelAt, In_mines } from './dungeon.js';
 import { insideShopRoomAt } from './shk.js';
 import { newsym } from './display.js';
 import { heroIsHallucinating } from './senses.js';

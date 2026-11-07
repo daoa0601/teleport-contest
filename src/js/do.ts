@@ -27,7 +27,7 @@ import type { MessagePublisher } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
 import { AD_POLY } from './monster_attack_types.js';
-import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH, I_SPECIAL, TIMEOUT, W_ARTI, W_ART, CORR, Luck, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
+import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH, I_SPECIAL, TIMEOUT, W_ARTI, W_ART, CORR, Luck, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
 import { gulp_blnd_check,
@@ -101,10 +101,71 @@ import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './minion.js';
 import { randomMonsterRelocation, enexto, safe_teleds, finishTeleportArrival } from './teleport.js';
 import {
-    placeHeroOnLevel, depth, dungeonBuildsUp, dungeonDepth, endgameLevelName, initOverviewRecord,
-    level_difficulty, markOverviewUnreachable, recordMappedOverviewState, recordOverviewBranch,
-    specialPrototypeAt, u_on_rndspot, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt,
-    ledgerNo, surfaceName, next_level, prev_level,
+
+
+    placeHeroOnLevel,
+
+
+    depth,
+
+
+    dungeonBuildsUp,
+
+
+    dungeonDepth,
+
+
+    endgameLevelName,
+
+
+    initOverviewRecord,
+
+
+    level_difficulty,
+
+
+    markOverviewUnreachable,
+
+
+    recordMappedOverviewState,
+
+
+    recordOverviewBranch,
+
+
+    specialPrototypeAt,
+
+
+    u_on_rndspot,
+
+
+    insideWizardTower,
+
+
+    levelIsWizardTower,
+
+
+    wizardTowerLevelAt,
+
+
+    ledgerNo,
+
+
+    surfaceName,
+
+
+    next_level,
+
+
+    prev_level,
+
+
+    In_quest,
+
+
+    In_hell,
+
+
 } from './dungeon.js';
 import {
     is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls,

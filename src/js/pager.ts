@@ -3,13 +3,135 @@
 
 import { ROCK_CLASS } from './objclass.js';
 import {
-    A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED,
-    D_BROKEN, D_TRAPPED, def_warnsyms, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel,
-    Is_rogue_level, Is_waterlevel, is_hole, is_pit, LAVAPOOL, LAVAWALL, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE,
-    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL,
-    MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, MOAT, PIT, POOL, ROCKTRAP, ROWNO, SCORR, STONE,
-    STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST,
-    TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WATER, WEB,
+
+    A_NONE,
+
+    ALTAR,
+
+    AM_SANCTUM,
+
+    Amask2align,
+
+    BEAR_TRAP,
+
+    BOLT_LIM,
+
+    BUFSZ,
+
+    CMDQ_KEY,
+
+    COLNO,
+
+    CORR,
+
+    CQ_CANNED,
+
+    D_BROKEN,
+
+    D_TRAPPED,
+
+    def_warnsyms,
+
+    DRAWBRIDGE_UP,
+
+    GRAVE,
+
+    HOLE,
+
+    ICE,
+
+    Is_airlevel,
+
+    Is_astralevel,
+
+    Is_rogue_level,
+
+    Is_waterlevel,
+
+    is_hole,
+
+    is_pit,
+
+    LAVAPOOL,
+
+    LAVAWALL,
+
+    LEVEL_TIMER_KIND,
+
+    LOOK_ONCE,
+
+    LOOK_QUICK,
+
+    LOOK_VERBOSE,
+
+    M_AP_FURNITURE,
+
+    M_AP_MONSTER,
+
+    M_AP_OBJECT,
+
+    M_AP_TYPE,
+
+    MONSEEN_DETECT,
+
+    MONSEEN_INFRAVIS,
+
+    MONSEEN_NORMAL,
+
+    MONSEEN_SEEINVIS,
+
+    MONSEEN_TELEPAT,
+
+    MONSEEN_WARNMON,
+
+    MONSEEN_XRAYVIS,
+
+    MOAT,
+
+    PIT,
+
+    POOL,
+
+    ROCKTRAP,
+
+    ROWNO,
+
+    SCORR,
+
+    STONE,
+
+    STRAT_WAITMASK,
+
+    TER_DETECT,
+
+    TER_MAP,
+
+    TER_MON,
+
+    TER_OBJ,
+
+    TREE,
+
+    TRAP_EXPLANATIONS,
+
+    TRAPPED_CHEST,
+
+    TRAPPED_DOOR,
+
+    TT_BURIEDBALL,
+
+    TT_INFLOOR,
+
+    TT_LAVA,
+
+    Upolyd,
+
+    VIBRATING_SQUARE,
+
+    WATER,
+
+    WEB,
+
 } from './const.js';
 import {
     canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol,
@@ -24,7 +146,7 @@ import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS2, MONSTER_N
 import { makePlural, simpleObjectName, withIndefiniteArticle, singularObjectName } from './objnam.js';
 import { visibleRegionAt } from './region.js';
 import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.js';
-import { surfaceName } from './dungeon.js';
+import { surfaceName, In_hell } from './dungeon.js';
 import { trapName } from './trap.js';
 import type { FeatureOptions } from './invent.js';
 import type { GameState } from './game_state.js';
