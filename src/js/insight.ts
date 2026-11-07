@@ -30,9 +30,9 @@ import {
 } from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, ordinalSuffix, upstart } from './hacklib.js';
-import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL } from './monster_data.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings, heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying, heroMonsterForm, heroPassesWalls, body_part, mbodypart, heroSpecies } from './polyself.js';
 import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';

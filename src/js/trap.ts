@@ -58,8 +58,27 @@ import type { IgniteItemsOptions } from './light.js';
 import { iceDescriptionAt, waterbodyName } from './pager.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import {
-    MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE,
-    MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, MONSTER_SOUND,
+
+    MONSTER_ALIGNMENT,
+
+    MONSTER_ATTACKS,
+
+    MONSTER_BODY_META,
+
+    MONSTER_GENO,
+
+    MONSTER_LEVEL,
+
+    MONSTER_MOVE,
+
+    MONSTER_NAME,
+
+    MONSTER_SIZE,
+
+    MONSTER_SYMBOL,
+
+    MONSTER_SOUND,
+
 } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart, floatVsFlight } from './polyself.js';
@@ -137,9 +156,27 @@ import {
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { canFallThrough } from './dungeon.js';
 import {
-    displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName,
-    monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName,
+
+    displayColorName,
+
+    displayLiquidName,
+
+    monsterName,
+
+    monsterName as canonicalMonsterName,
+
+    monsterName as perceivedMonsterName,
+
+    objectMonsterName,
+
+    randomDisplayMonsterName,
+
+    setMonsterGivenName,
+
     randomColorName,
+
+    monsterTypeName,
+
 } from './do_name.js';
 import { munstone } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, removeHeroEquipment } from './worn.js';

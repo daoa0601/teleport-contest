@@ -62,7 +62,7 @@ import {
     openFallingTrap, openHoldingTrap, sokobanGuilt, igniteItems, resetUtrap, maketrap,
     deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue,
 } from './trap.js';
-import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, mungSpaces } from './hacklib.js';
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor, isEyewear, wearEyewear } from './do_wear.js';
@@ -181,7 +181,7 @@ import { wornMonsterLifeSaver } from './mon.js';
 import type { MonsterLiquidDeathResult } from './mon.js';
 import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS } from './monster_data.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects, monsterReflectsRay } from './muse.js';
 import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
 import type { ToplineOptions } from './pline.js';

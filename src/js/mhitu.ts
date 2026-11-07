@@ -26,7 +26,7 @@ import type { MessagePublisher } from './pline.js';
 import { displayMessageWindow } from './topl.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
 import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
-import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName } from './do_name.js';
+import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, displayLiquidName, monsterTypeName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import {
     monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
@@ -40,7 +40,7 @@ import {
     heroResistsStoning, touchPetrifies, canBlnd, resistsBlnd, monsterWieldsOrWearsDefense,
     monsterIsShade, is_neuter,
 } from './mondata.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, objectIsHardHelmet, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';

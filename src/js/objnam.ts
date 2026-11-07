@@ -28,7 +28,7 @@ import type { Artifact } from './artifact.js';
 import { objectOwnershipPrefix, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { impossible } from './diagnostics.js';
-import { displayColorName, lookupNovelTitle, monsterName, objectMonsterName } from './do_name.js';
+import { displayColorName, lookupNovelTitle, monsterName, objectMonsterName, monsterTypeName } from './do_name.js';
 import { currency } from './invent.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
@@ -39,7 +39,7 @@ import {
 } from './mkobj.js';
 
 import { plineWithContinuation } from './pline.js';
-import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterTypeName } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol } from './monster_data.js';
 import { ordinalSuffix, possessiveName } from './hacklib.js';
 import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutrition } from './eat.js';
 import { isBimanualObject, is_boots, is_gloves, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, is_damageable, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';

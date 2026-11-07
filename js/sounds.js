@@ -12,10 +12,10 @@ import { plineWithContinuation, plineWithContinuation as pline, publishHeardMess
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { nomul, heroGoldAmount, roomForRoomno, stopRun } from './hack.js';
 import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
-import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
-import { monsterName, novelTitle, randomDisplayMonsterName } from './do_name.js';
+import { monsterName, novelTitle, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { monsterPossessive, sameMonsterRace, carnivorous, herbivorous, is_dwarf, is_elf, is_gnome, is_lord, is_mercenary, is_minion, is_prince, likes_magic, monsterHasEyes, monsterIsAnimal, monsterIsFlyer, monsterIsHelpless, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, monsterPerceives, } from './mondata.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { STATUE, SPE_NOVEL, GOLD_PIECE } from './object_data.js';

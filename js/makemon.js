@@ -26,8 +26,8 @@ import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMo
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
 import { tameMonster } from './dog.js';
-import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterTypeName, requireMonsterData, } from './monster_data.js';
-import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
+import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, requireMonsterData, } from './monster_data.js';
+import { monsterName, randomGhostName, setMonsterGivenName, monsterTypeName } from './do_name.js';
 import { monsterSubjectPronoun, setMonsterSpecies, always_peaceful, monsterIsAlwaysHostile, race_peaceful, race_hostile, is_minion, is_male, is_prince, is_shapeshifter, monsterIsAmorphous, monsterIsFemale, monsterIsFlyer, monsterIsGolem, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsSwimmer, monsterIsWhirly, monsterOlderForm, monsterThrowsRocks, speciesHasWeaponAttack, is_neuter, is_ndemon, is_dprince, is_lord, extra_nasty, strongmonst, is_dwarf, likes_gold, likes_gems, monsterIsDemon, monsterIsGiant, } from './mondata.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { setMonsterPermanentInvisibility } from './worn.js';

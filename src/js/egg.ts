@@ -58,7 +58,8 @@ export interface HatchedEgg {
 export type EggHatchEvent = SterileEgg | MisplacedEgg | UnhatchedEgg | HatchedEgg;
 
 import { makemonNear } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
+import { monsterTypeName } from './do_name.js';
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 

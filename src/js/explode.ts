@@ -25,8 +25,8 @@ import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wa
 import type { MonsterExplosionOptions } from './mon.js';
 import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { monsterName, randomDisplayMonsterName } from './do_name.js';
+import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
+import { monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterAtPosition } from './steed.js';
 import { propertyIsActive } from './properties.js';

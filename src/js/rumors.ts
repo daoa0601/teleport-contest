@@ -10,7 +10,7 @@ import type { Monster } from './monster_types.js';
 
 import { moneyToMonster } from './shk.js';
 import { currency } from './invent.js';
-import { monsterName } from './do_name.js';
+import { monsterName, monsterTypeName } from './do_name.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
 import { exerciseWisdom } from './attrib.js';
@@ -21,7 +21,7 @@ import { showTextWindow } from './windows.js';
 import { flushPendingTopline } from './topl.js';
 import { ORACLE_TEXT } from './oracle_data.js';
 import { heroGoldAmount } from './hack.js';
-import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
 import { monsterHasProperName } from './mondata.js';
 
 // C rumors.c:doconsult(). Refusals are free; payment commits a turn even

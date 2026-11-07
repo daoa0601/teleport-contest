@@ -33,7 +33,7 @@ import {
 import { game, requireInitializedGame } from './gstate.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { heroFormSticks } from './polyself.js';
-import { monsterName } from './do_name.js';
+import { monsterName, monsterTypeName } from './do_name.js';
 import { scheduleLevelChange } from './do.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';
@@ -48,7 +48,7 @@ import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.
 import type { TextPage } from './windows.js';
 import type { TextMenuLine } from './wintty.js';
 import { artifactById } from './artifact.js';
-import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
 import { NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj, isContainer, placeObjectSynchronously } from './mkobj.js';

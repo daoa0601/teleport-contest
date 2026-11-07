@@ -24,9 +24,9 @@ import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GA
 import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponDescription, weaponSkillType, } from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, ordinalSuffix, upstart } from './hacklib.js';
-import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL } from './monster_data.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings, heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying, heroMonsterForm, heroPassesWalls, body_part, mbodypart, heroSpecies } from './polyself.js';
 import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';

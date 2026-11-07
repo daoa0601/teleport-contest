@@ -49,7 +49,7 @@ import {
 } from './dig.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, howMonsterSeen, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
 import type { GlyphMetadata } from './display.js';
-import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName, monsterTypeName } from './do_name.js';
 import {
     attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTimers, stopLevelTimer, stopObjectTimer,
 } from './timeout.js';
@@ -126,7 +126,7 @@ import { wakeAttackedMonster } from './mon.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
 import type { RandomBelow } from './monster_action_types.js';
 import { AD_BLND, AT_ENGL, AT_WEAP } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import {

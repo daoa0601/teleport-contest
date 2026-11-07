@@ -16,7 +16,7 @@ import { reviveCorpseImmediately } from './do.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
+import { displayColorName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
@@ -45,7 +45,7 @@ import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_p
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, PM_GREEN_SLIME, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, PM_GREEN_SLIME, } from './monster_data.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import { pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation, recordGameLogEvent, formatFeltMessage, publishHeardMessage, } from './pline.js';

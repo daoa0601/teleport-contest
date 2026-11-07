@@ -12,7 +12,7 @@ import { levitationAtWill, refreshMovementProperties, propertyIsActive } from '.
 import { canSpotMonster, newsym } from './display.js';
 import { finishMonsterKilled, finishHeroMonsterKill, } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { releaseMonsterLeash } from './apply.js';
 import { BOULDER, SADDLE, } from './object_data.js';
@@ -20,7 +20,7 @@ import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject, freeInventoryObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './worn.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
-import { displayLiquidName, monsterName, monsterReflexiveAction } from './do_name.js';
+import { displayLiquidName, monsterName, monsterReflexiveAction, placementMonsterName, monsterTypeName } from './do_name.js';
 import { monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks, needspick, tunnels, cant_drown, monsterIsAmorphous, monsterIsUnsolid, touchPetrifies, } from './mondata.js';
 import { shopkeeperName } from './shknam.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
@@ -953,18 +953,6 @@ export async function placeMonsterOnMap(monster, x, y, state = game) {
             + ` mstates:${otherState} ${monsterState} on ${levelName}?`, { state });
     }
     placeMonsterAt(monster, x, y, state);
-}
-// C do_name.c:minimal_monnam()
-// C minimal_monnam(): diagnostics describe the real species and attitude,
-// independently of the hero's sight, hallucination, or the monster's name.
-function placementMonsterName(monster, checkLocation, state) {
-    if (checkLocation && monster.mnum === MONSTER_NAME.indexOf('long worm') && monster.mx
-        && state.level && monsterAtPosition(state.level, monster.mx, monster.my, state) !== monster)
-        return `${monsterTypeName(MONSTER_NAME.indexOf('long worm tail'), !!monster.female)} <${monster.mx},${monster.my}>`;
-    const attitude = monster.mtame ? 'tame ' : monster.mpeaceful ? 'peaceful ' : '';
-    const shape = monster.cham !== undefined && monster.cham !== NON_PM
-        ? `{${monsterTypeName(monster.cham, !!monster.female)}}` : '';
-    return `${attitude}${monsterTypeName(monster.mnum, !!monster.female)} <${monster.mx},${monster.my}>${shape}`;
 }
 // Part of C steed.c:place_monster(): commit coordinates, occupancy and floor state.
 // Commit a map-slot assignment. The monster chain retains an overwritten

@@ -54,33 +54,6 @@ export const PM_MAIL_DAEMON = 314;
 export const MONSTER_NAME: readonly string[] = ["giant ant","killer bee","soldier ant","fire ant","giant beetle","queen bee","acid blob","quivering blob","gelatinous cube","chickatrice","cockatrice","pyrolisk","jackal","fox","coyote","werejackal","little dog","dingo","dog","large dog","wolf","werewolf","winter wolf cub","warg","winter wolf","hell hound pup","hell hound","gas spore","floating eye","freezing sphere","flaming sphere","shocking sphere","kitten","housecat","jaguar","lynx","panther","large cat","tiger","displacer beast","gremlin","gargoyle","winged gargoyle","hobbit","dwarf","bugbear","dwarf leader","dwarf ruler","mind flayer","master mind flayer","manes","homunculus","imp","lemure","quasit","tengu","blue jelly","spotted jelly","ochre jelly","kobold","large kobold","kobold leader","kobold shaman","leprechaun","small mimic","large mimic","giant mimic","wood nymph","water nymph","mountain nymph","goblin","hobgoblin","orc","hill orc","Mordor orc","Uruk-hai","orc shaman","orc-captain","rock piercer","iron piercer","glass piercer","rothe","mumak","leocrotta","wumpus","titanothere","baluchitherium","mastodon","sewer rat","giant rat","rabid rat","wererat","rock mole","woodchuck","cave spider","centipede","giant spider","scorpion","lurker above","trapper","pony","white unicorn","gray unicorn","black unicorn","horse","warhorse","fog cloud","dust vortex","ice vortex","energy vortex","steam vortex","fire vortex","baby long worm","baby purple worm","long worm","purple worm","grid bug","xan","yellow light","black light","zruty","couatl","Aleax","Angel","ki-rin","Archon","bat","giant bat","raven","vampire bat","plains centaur","forest centaur","mountain centaur","baby gray dragon","baby gold dragon","baby silver dragon","baby red dragon","baby white dragon","baby orange dragon","baby black dragon","baby blue dragon","baby green dragon","baby yellow dragon","gray dragon","gold dragon","silver dragon","red dragon","white dragon","orange dragon","black dragon","blue dragon","green dragon","yellow dragon","stalker","air elemental","fire elemental","earth elemental","water elemental","lichen","brown mold","yellow mold","green mold","red mold","shrieker","violet fungus","gnome","gnome leader","gnomish wizard","gnome ruler","giant","stone giant","hill giant","fire giant","frost giant","ettin","storm giant","titan","minotaur","jabberwock","Keystone Kop","Kop Sergeant","Kop Lieutenant","Kop Kaptain","lich","demilich","master lich","arch-lich","kobold mummy","gnome mummy","orc mummy","dwarf mummy","elf mummy","human mummy","ettin mummy","giant mummy","red naga hatchling","black naga hatchling","golden naga hatchling","guardian naga hatchling","red naga","black naga","golden naga","guardian naga","ogre","ogre leader","ogre tyrant","gray ooze","brown pudding","green slime","black pudding","quantum mechanic","genetic engineer","rust monster","disenchanter","garter snake","snake","water moccasin","python","pit viper","cobra","troll","ice troll","rock troll","water troll","Olog-hai","umber hulk","vampire","vampire leader","Vlad the Impaler","barrow wight","wraith","Nazgul","xorn","monkey","ape","owlbear","yeti","carnivorous ape","sasquatch","kobold zombie","gnome zombie","orc zombie","dwarf zombie","elf zombie","human zombie","ettin zombie","ghoul","giant zombie","skeleton","straw golem","paper golem","rope golem","gold golem","leather golem","wood golem","flesh golem","clay golem","stone golem","glass golem","iron golem","human","wererat","werejackal","werewolf","elf","Woodland-elf","Green-elf","Grey-elf","elf-noble","elven monarch","doppelganger","shopkeeper","guard","prisoner","Oracle","aligned cleric","high cleric","soldier","sergeant","nurse","lieutenant","captain","watchman","watch captain","Medusa","Wizard of Yendor","Croesus","ghost","shade","water demon","amorous demon","horned devil","erinys","barbed devil","marilith","vrock","hezrou","bone devil","ice devil","nalfeshnee","pit fiend","sandestin","balrog","Juiblex","Yeenoghu","Orcus","Geryon","Dispater","Baalzebub","Asmodeus","Demogorgon","Death","Pestilence","Famine","mail daemon","djinni","jellyfish","piranha","shark","giant eel","electric eel","kraken","newt","gecko","iguana","baby crocodile","lizard","chameleon","crocodile","salamander","long worm tail","archeologist","barbarian","cave dweller","healer","knight","monk","cleric","ranger","rogue","samurai","tourist","valkyrie","wizard","Lord Carnarvon","Pelias","Shaman Karnov","Hippocrates","King Arthur","Grand Master","Arch Priest","Orion","Master of Thieves","Lord Sato","Twoflower","Norn","Neferet the Green","Minion of Huhetotl","Thoth Amon","Chromatic Dragon","Cyclops","Ixoth","Master Kaen","Nalzok","Scorpius","Master Assassin","Ashikaga Takauji","Lord Surtur","Dark One","student","chieftain","neanderthal","attendant","page","abbot","acolyte","hunter","thug","ninja","roshi","guide","warrior","apprentice"];
 // END GENERATED MONSTER NAME DATA
 
-// C refs: permonst.mname/fname/neutral and pmname().  The generated name
-// vector stores NetHack's neutral name; NAMS() species select the male or
-// female form from the monster instance at presentation time.
-const GENDERED_MONSTER_NAMES = new Map<number, readonly [male: string, female: string]>([
-    [46, ['dwarf lord', 'dwarf lady']],
-    [47, ['dwarf king', 'dwarf queen']],
-    [61, ['kobold lord', 'kobold lady']],
-    [166, ['gnome lord', 'gnome lady']],
-    [168, ['gnome king', 'gnome queen']],
-    [204, ['ogre lord', 'ogre lady']],
-    [205, ['ogre king', 'ogre queen']],
-    [227, ['vampire lord', 'vampire lady']],
-    [268, ['elf-lord', 'elf-lady']],
-    [269, ['Elvenking', 'Elvenqueen']],
-    [275, ['priest', 'priestess']],
-    [276, ['high priest', 'high priestess']],
-    [290, ['incubus', 'succubus']],
-    [333, ['caveman', 'cavewoman']],
-    [337, ['priest', 'priestess']],
-]);
-
-// C do_name.c:pmname(): pick a species' male or female display name.
-export function monsterTypeName(mnum: number, female = false): string {
-    const genderedNames = GENDERED_MONSTER_NAMES.get(mnum);
-    if (genderedNames) return genderedNames[female ? 1 : 0];
-    return MONSTER_NAME[mnum] || 'monster';
-}
 
 const M1_FLY = 0x00000001;
 const M1_AMPHIBIOUS = 0x00000200;

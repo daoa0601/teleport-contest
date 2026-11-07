@@ -23,7 +23,7 @@ import { resetPick, changeDoorByMagic, changeBoxLockByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount, resistsBlnd } from './mondata.js';
 import { setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue, } from './trap.js';
-import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, mungSpaces } from './hacklib.js';
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor, isEyewear, wearEyewear } from './do_wear.js';
@@ -110,7 +110,7 @@ import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegr
 import { wornMonsterLifeSaver } from './mon.js';
 import { closedDoor, makeMonsterFlee, dissolveBars } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS } from './monster_data.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects, monsterReflectsRay } from './muse.js';
 import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
 import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterForm, heroSpecies, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';

@@ -22,9 +22,9 @@ import { plineWithContinuation } from './pline.js';
 import { LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM, TT_BURIEDBALL, W_ACCESSORY, W_ARMG, W_ARMOR, W_BALL, W_CHAIN, W_WEAPONS, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN, RLOC_MSG, SHOPBASE, W_SADDLE, FOOT, HAND } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 
-import { monsterName } from './do_name.js';
+import { monsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_SYMBOL } from './monster_data.js';
 import {
     makePlural, definiteName, objectName, objectNameIsPlural, observeDistantObjectForNaming,
     observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, simpleObjectName,

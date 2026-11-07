@@ -33,7 +33,7 @@ import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava, heroFormCl
 import { heroHasConflict } from './hero_conflict.js';
 
 import type { RunState, TravelRunState } from './cmd.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { shopkeeperName } from './shknam.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, recordHeroKillConduct } from './end.js';
 import type { DeathHandler, FinishHeroDeathOptions, KillerFormat } from './end.js';
@@ -48,7 +48,7 @@ import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel, applyFloor
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
 import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming, setPropertyTimeout } from './potion.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import {

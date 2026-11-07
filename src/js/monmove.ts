@@ -51,7 +51,7 @@ import { watchDigging, digMonsterTunnel, diggingTimeToHole, buryObject } from '.
 import { heroIsHallucinating, heroIsDeaf, heroIsUnaware } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasHalfSpellDamage } from './zap.js';
-import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName  } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
@@ -113,7 +113,7 @@ import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced } from './do_wear.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject } from './do_name.js';
+import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject, monsterTypeName } from './do_name.js';
 import { dist2, distmin } from './hacklib.js';
 
 import { shopkeeperName } from './shknam.js';

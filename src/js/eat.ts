@@ -46,7 +46,7 @@ import { reviveCorpseImmediately } from './do.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
+import { displayColorName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
@@ -80,8 +80,27 @@ import type { HeroContactAttack } from './monster_action_types.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_attack_types.js';
 import {
-    MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL,
-    MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, PM_GREEN_SLIME,
+
+    MONSTER_ATTACKS,
+
+    MONSTER_BODY_META,
+
+    MONSTER_CONVEYS,
+
+    MONSTER_FLAGS1,
+
+    MONSTER_GENO,
+
+    MONSTER_LEVEL,
+
+    MONSTER_NAME,
+
+    MONSTER_SYMBOL,
+
+    requireMonsterData,
+
+    PM_GREEN_SLIME,
+
 } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';

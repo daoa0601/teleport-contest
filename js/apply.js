@@ -20,7 +20,7 @@ import { useCrystalBall, convertSecretDoor, findit, openit } from './detect.js';
 import { impossible } from './diagnostics.js';
 import { digActualHole, digCheck, liquidFlow, liquidForHole, watchDigging, freeHeroFromBuriedBall, usePickAxe, } from './dig.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, howMonsterSeen, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
-import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName, monsterTypeName } from './do_name.js';
 import { attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTimers, stopLevelTimer, stopObjectTimer, } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
@@ -58,7 +58,7 @@ import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy,
 import { wakeAttackedMonster } from './mon.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
 import { AD_BLND, AT_ENGL, AT_WEAP } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject, } from './object_properties.js';
 import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, singularObjectName, withIndefiniteArticle, } from './objnam.js';

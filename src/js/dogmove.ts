@@ -9,7 +9,7 @@ import {
     checkMonsterGearNextTurn, finishEnvironmentalMonsterDeath,
 } from './mon.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { monsterName, visibleMonsterSubject } from './do_name.js';
+import { monsterName, visibleMonsterSubject, monsterTypeName } from './do_name.js';
 import { observeDistantObjectForNaming, verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { splitObjectStack, remove_object} from './mkobj.js';
 import type { Monster } from './monster_types.js';
@@ -33,7 +33,7 @@ import { trapAt } from './trap.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor } from './mhitm.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { dist2, distmin } from './hacklib.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
 import { dogEat } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';

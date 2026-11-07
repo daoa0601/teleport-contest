@@ -45,11 +45,37 @@ import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
 import { tameMonster } from './dog.js';
 import {
-    MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL,
-    MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol,
-    monsterTypeName, requireMonsterData,
+
+    MONSTER_ALIGNMENT,
+
+    MONSTER_CLASS_SYMBOLS,
+
+    MONSTER_COLOR,
+
+    MONSTER_DIFFICULTY,
+
+    MONSTER_GENO,
+
+    MONSTER_LEVEL,
+
+    MONSTER_MOVE,
+
+    MONSTER_NAME,
+
+    MONSTER_RESISTS,
+
+    MONSTER_SOUND,
+
+    MONSTER_SYMBOL,
+
+    SPECIAL_PM,
+
+    monsterClassSymbol,
+
+    requireMonsterData,
+
 } from './monster_data.js';
-import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
+import { monsterName, randomGhostName, setMonsterGivenName, monsterTypeName } from './do_name.js';
 import {
     monsterSubjectPronoun, setMonsterSpecies, always_peaceful, monsterIsAlwaysHostile, race_peaceful,
     race_hostile, is_minion, is_male, is_prince, is_shapeshifter, monsterIsAmorphous, monsterIsFemale,
