@@ -343,7 +343,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     };
 // C nhlsel.c:l_selection_filter_percent(): keep points with that chance.
     const filterPercent = (self: LuaValue, percent: LuaValue) => wrap(
-        selectionValue(self).percentage(luaInt(percent)),
+        selectionValue(self).percentageFilter(luaInt(percent)),
     );
 // C nhlsel.c:l_selection_filter_mapchar(): keep points whose map character
 // and lighting match.

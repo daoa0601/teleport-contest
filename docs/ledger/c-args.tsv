@@ -252,6 +252,7 @@ music.c	do_play_instrument	exercise	true
 nhlobj.c	l_obj_new_readobjnam	mkobj	false
 nhlobj.c	l_obj_new_readobjnam	mksobj	true+false
 o_init.c	discover_object	exercise	true
+objnam.c	readobjnam_postparse1	wishymatch	true
 objnam.c	readobjnam_postparse3	wishymatch	true
 objnam.c	rnd_otyp_by_namedesc	wishymatch	false;false;false;false;true
 objnam.c	wishymatch	wishymatch	true;true

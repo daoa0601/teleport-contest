@@ -3735,6 +3735,7 @@ readobjnam	wizterrainwish
 readobjnam	yn_function
 readobjnam_postparse1	rn2
 readobjnam_postparse1	tin_variety_txt
+readobjnam_postparse1	trapname
 readobjnam_postparse2	rn2
 readobjnam_postparse2	rnd_class
 readobjnam_preparse	rn2

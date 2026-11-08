@@ -598,7 +598,7 @@ export class SpecialSelection {
     }
 
     // C selvar.c:selection_filter_percent().
-    percentage(percent: number) {
+    percentageFilter(percent: number) {
         return new SpecialSelection(selection_filter_percent(
             this.selection, percent,
         ));
