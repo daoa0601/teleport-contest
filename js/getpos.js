@@ -290,9 +290,10 @@ export function isGetposPickCharacter(ch) {
 // existing glyph buffer; recalculating sight here would discover warnings or
 // erase unseen-monster memory in the middle of a turn.
 export async function paintGetposCursor(cursor, message, markedSpots = null, { flushPending = false } = {}) {
-    if (message !== null) {
+    if (message !== null && !game._suppressMessagesUntilInput) {
         game._pending_message = message;
-        // auto_describe()'s custompline repaints the row.
+        // auto_describe()'s custompline repaints the row; show_topl()'s
+        // WIN_STOP gate keeps the unremembered line off a stopped screen.
         resetToplineClip();
     }
     // display.c:tmp_at() with DISP_BEAM shows the glyph only on squares the

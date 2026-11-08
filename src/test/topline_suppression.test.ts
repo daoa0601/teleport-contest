@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { flushPendingTopline, moreUntilDismissed } from '../js/topl.js';
+import { paintGetposCursor } from '../js/getpos.js';
 import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
@@ -56,4 +57,31 @@ void test('death after Escape preserves the death line and suppressed prose in r
     await rhack(16);
     assert.equal(toplText(), 'A bell rings.  The giant hits!',
         'the previous entry includes the hit suppressed after Escape');
+});
+
+
+// C win/tty/topl.c:show_topl() (topl.c:150-153): the WIN_STOP gate covers
+// SUPPRESS_HISTORY output too — getpos autodescribe goes through
+// tty_putstr's remember_topl() + show_topl() pair, so after Escape at a
+// --More-- the unremembered line also stays off the screen.
+void test('suppressed autodescribe prose stays off the top line', async () => {
+    await freshObjectRoom();
+    const input = resetInputState();
+    input.feed('\x1b');
+    await moreUntilDismissed('You hear a jackal barking in the corridor.');
+    assert.equal(game._suppressMessagesUntilInput, true, 'Escape must suppress output');
+
+    await paintGetposCursor({ x: 5, y: 5 }, 'a boulder named blort',
+        null, { flushPending: true });
+    await flush_screen(1);
+    assert.equal(toplText(), '',
+        'show_topl keeps SUPPRESS_HISTORY lines hidden under WIN_STOP');
+
+    input.feed(' ');
+    await nhgetch();
+    await paintGetposCursor({ x: 5, y: 5 }, 'a boulder named blort',
+        null, { flushPending: true });
+    await flush_screen(1);
+    assert.equal(toplText(), 'a boulder named blort',
+        'the unremembered line shows again once input resumes');
 });
