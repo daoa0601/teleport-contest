@@ -1767,6 +1767,43 @@ class ExecutorTests(unittest.TestCase):
                       params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
                       loops=bad_loops)
 
+    def test_coalesced_draw_branches_still_cover(self):
+        """Coverage must also strip draw bounds nested under Or.
+
+        Both arms of the post-loop draw branch return the same constant, so
+        coalesce_returns merges them into one path whose condition is an Or
+        with the draw's legality bound nested inside each arm. The bound
+        filter used to miss those, and a witness making R_core illegal
+        everywhere then rejected this equivalent pair as uncovered
+        (R_core[0..2] = -1,-1,-1 in the model). The bounds are now stripped
+        structurally, wherever they sit in the condition.
+        """
+        c = ('extern unsigned long long isaac64_next_uint64(void *);\n'
+             'struct { long rng_state; } rnglist[1];\n'
+             'int example(int x) {\n'
+             '    int i = 0;\n'
+             '    while (i < x) { i = i + 1; }\n'
+             '    if (isaac64_next_uint64(&rnglist[0].rng_state) % 2u == 0u) return 7;\n'
+             '    return 7;\n'
+             '}')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) { i = i + 1; }\n'
+              '    if (Number(isaac64_next_uint64(game.coreCtx) % 2n) === 0) return 7;\n'
+              '    return 7;\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            del pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']), pos['core'] == 0]
+
+        loops = {('c', 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',)),
+            ('js', 'example', 0): LoopSpec(
+                invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',))}
+        self.equivalent(c, js, params=[('x', INT)],
+                        pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
+
 
 
 if __name__ == '__main__':

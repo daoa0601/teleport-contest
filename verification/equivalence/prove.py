@@ -239,6 +239,27 @@ def _local_draw_bound(world, entry, local_set):
         return None
     return term
 
+def _strip_local_draw_bounds(world, term, local_set):
+    """Remove local draw-legality bounds wherever they sit in the term.
+
+    coalesce_returns and the bounded-state join wrap whole path conditions
+    in Or, so a bound is not always a top-level conjunct. Stripping
+    preserves the surrounding structure: a bound becomes True, an And drops
+    its True children, and an Or containing one collapses to True. Every
+    removed conjunct is implied by a legal stream, so the stripped
+    condition is equivalent to the original on legal streams."""
+    if _local_draw_bound(world, term, local_set) is not None:
+        return z3.BoolVal(True)
+    if not (z3.is_and(term) or z3.is_or(term)):
+        return term
+    parts = [_strip_local_draw_bounds(world, child, local_set) for child in term.children()]
+    if z3.is_or(term) and any(z3.is_true(part) for part in parts):
+        return z3.BoolVal(True)
+    parts = [part for part in parts if not z3.is_true(part)]
+    if not parts:
+        return z3.BoolVal(True)
+    return z3.And(*parts) if z3.is_and(term) else z3.Or(*parts)
+
 
 def _uncovered(world, paths, obligations):
     """(result, solver): 'skipped' when the check cannot be made sound,
@@ -282,8 +303,9 @@ def _uncovered(world, paths, obligations):
         for term in _stream_applications(world, pc):
             if not any(v in local_set for v in _free_constants(term)):
                 bounds += [term >= 0, term < U64]
-        kept = [entry for entry in path.pc
-                if _local_draw_bound(world, entry, local_set) is None]
+        kept = [entry for entry in
+                (_strip_local_draw_bounds(world, e, local_set) for e in path.pc)
+                if not z3.is_true(entry)]
         body = z3.Not(z3.And(*kept)) if kept else z3.BoolVal(False)
         clauses.append(z3.ForAll(locals_, body) if locals_ else body)
     solver = z3.Solver()
