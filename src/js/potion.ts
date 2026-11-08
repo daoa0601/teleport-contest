@@ -1161,6 +1161,30 @@ export async function applyPotionBodyEffect(source: GameObject, { state = game }
     return { handled: true, unknown, nothing: false, heroDied };
 }
 
+// C potion.c:peffect_gain_ability(): a cursed potion tastes foul; fixed
+// abilities do nothing; otherwise blessed increases every attribute and
+// an uncursed one tries up to A_MAX times to find one that can still
+// grow — only the last attempt (or a blessed potion) reports the
+// "already as high as it can get" refusal, which is increaseAttribute()'s
+// msgflg below.
+async function peffectGainAbility(
+    source: GameObject, state: PlayingGameState,
+): Promise<{ unknown: number; nothing: boolean }> {
+    if (source.cursed) {
+        await pline('Ulch!  That potion tasted foul!');
+        return { unknown: 1, nothing: false };
+    }
+    if (state.u.fixedAbilities || propertyIsActive('sustainAbility', state))
+        return { unknown: 0, nothing: true };
+    for (let attempt = 0; attempt < A_MAX; attempt++) {
+        const attribute = source.blessed ? attempt : rn2(A_MAX);
+        const change = await increaseAttribute(attribute,
+            !!source.blessed || attempt === A_MAX - 1, state);
+        if (change.changed && !source.blessed) break;
+    }
+    return { unknown: 0, nothing: false };
+}
+
 // C potion.c:peffect_enlightenment().
 // C potion.c:peffect_confusion().
 // C potion.c:peffect_gain_ability().
@@ -1209,22 +1233,12 @@ export async function applyPotionMentalEffect(source: GameObject, { state = game
         await makeConfused((state.u.confusionTurns || 0)
             + rn1(7, 16 - 8 * bcsign(source)), { state, talk: false });
         break;
-    case POT_GAIN_ABILITY:
-        if (source.cursed) {
-            await pline('Ulch!  That potion tasted foul!');
-            unknown = 1;
-        } else if (state.u.fixedAbilities
-            || propertyIsActive('sustainAbility', state)) {
-            nothing = true;
-        } else {
-            for (let attempt = 0; attempt < A_MAX; attempt++) {
-                const attribute = source.blessed ? attempt : rn2(A_MAX);
-                const change = await increaseAttribute(attribute,
-                    !!source.blessed || attempt === A_MAX - 1, state);
-                if (change.changed && !source.blessed) break;
-            }
-        }
+    case POT_GAIN_ABILITY: {
+        const gainAbility = await peffectGainAbility(source, state);
+        unknown = gainAbility.unknown;
+        nothing = gainAbility.nothing;
         break;
+    }
     case POT_BLINDNESS: {
         const blind = heroIsBlind(state);
         nothing = blind || blindnessBlocked(state)
