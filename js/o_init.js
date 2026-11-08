@@ -8,7 +8,7 @@ import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, POTI
 import { objectClassForType, objectBaseMaterial, oc_color, objectUsesKnown, objectUnique, objectMagic, OBJECT_BASES, POT_WATER, HELMET, LEATHER_GLOVES, CLOAK_OF_PROTECTION, CLOAK_OF_DISPLACEMENT, SPEED_BOOTS, LEVITATION_BOOTS, FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, requireObjectData, ARROW as FIRST_OBJECT, OBJ_NAME, } from './object_data.js';
 import { game } from './gstate.js';
 import { artifactInfoLines, discoveredArtifacts } from './artifact.js';
-import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
+import { ATR_INVERSE, addMenuHeading } from './windows.js';
 import { rn2 } from './rng.js';
 import { ledgerNo, maxLedgerNo } from './dungeon.js';
 import { clearMessageWindow } from './topl.js';
@@ -20,7 +20,7 @@ import { OBJECT_CLASS_LABELS, classifyLoot, inventoryClassOrder } from './invent
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
 import { priceQuoteSuffix } from './shk.js';
 import { armorPresentationName } from './objnam.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, showTextWindow } from './wintty.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
 import { repriceDiscoveredGems } from './shk.js';

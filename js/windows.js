@@ -1,5 +1,5 @@
-// Native menu callers and tty text windows (windows.c).
-// The wintty.c menu port itself lives in wintty.ts.
+// Native menu callers and tty text pages (windows.c).
+// The wintty.c menu and text-window ports live in wintty.ts.
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, flushPendingTopline } from './topl.js';
@@ -10,7 +10,7 @@ import { NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_
 import { pline } from './pline.js';
 import { cmdq_pop } from './cmd.js';
 import { tty_getlin } from './query.js';
-import { compressStr, dmore, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow } from './wintty.js';
+import { compressStr, dmore, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow, textWindowRows } from './wintty.js';
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;
 // C windows.c:decode_mixed(), for the literal portions of putmixed() lines.
@@ -373,73 +373,6 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
         await tty_destroy_nhwindow(window);
     }
 }
-// C wintty.c:tty_putstr(): the NHW_TEXT branch — buffer text rows and
-// flush full text-window pages. The native tty_putstr buffers empty rows
-// too, and flushes at terminal height minus its footer; a trailing blank
-// can therefore own a page. The NHW_MESSAGE branch is the topline owner
-// (tty_topline.ts) and the NHW_MENU branch is wintty.ts's menuLayout.
-export async function showTextWindow(lines) {
-    const d = display();
-    if (!d)
-        return 27;
-    if (d.rows < 2 || d.cols < 2)
-        throw new RangeError('A text window requires a content row and a pager row');
-    const pageSize = d.rows - 1;
-    let page = [];
-    let key = 32;
-    const displayPage = async () => {
-        while (page.length < pageSize)
-            page.push('');
-        key = await readTextPage({ lines: [...page, '--More--'], cursor: [8, pageSize] });
-        page = [];
-    };
-    try {
-        for await (const entry of lines) {
-            const line = typeof entry === 'string' ? { text: entry } : entry;
-            for (const row of textWindowRows(line.text, d.cols)) {
-                // tty_putstr flushes a full page before buffering the new row.
-                // Its caller has already computed this line at that boundary.
-                if (key === 27)
-                    continue;
-                if (page.length === pageSize)
-                    await displayPage();
-                if (key !== 27)
-                    page.push({ ...line, text: row });
-            }
-        }
-        // A cancelled window ignores more rows, but the producer still runs:
-        // pager.c's look lists continue applying observation side effects.
-        if (key !== 27)
-            await displayPage();
-        return key;
-    }
-    finally {
-        d.statusVisible = false;
-        await docrt();
-        await flush_screen(1);
-    }
-}
-// Part of C wintty.c:tty_putstr(): compress spaces and wrap text to the window width.
-function textWindowRows(text, columns) {
-    // tty_putstr() undoes topline wrapping and compresses spaces before
-    // splitting the whole string again for the text window's width.
-    const rows = [];
-    let line = compressStr(text, columns);
-    while (line.length >= columns) {
-        let split = columns - 1;
-        while (split > 0 && line.charAt(split) !== ' ')
-            split--;
-        if (!split)
-            break;
-        rows.push(line.slice(0, split));
-        line = line.slice(split + 1);
-    }
-    // tty text rendering truncates an indivisible oversized word; unlike
-    // topline messages, its text-window renderer does not wrap at the
-    // final column.
-    rows.push(line.slice(0, columns - 1));
-    return rows;
-}
 // Port only: display supplied full-screen text pages and restore the game display.
 // Display one or more full-screen tty text pages.  Each page has
 // `{ lines, cursor }`; a line is either a string or `{ text, attr }`.
@@ -470,7 +403,7 @@ export async function showTextPages(pages, { validKeys = [27, 32, 10, 13] } = {}
 // Port only: paint a supplied text page and wait for an allowed key.
 // Displaying an intermediate NHW_TEXT page leaves it active. Only its
 // window's owner restores the map when the complete window is dismissed.
-async function readTextPage(page, validKeys = [27, 32, 10, 13]) {
+export async function readTextPage(page, validKeys = [27, 32, 10, 13]) {
     const d = display();
     if (!d)
         return 27;

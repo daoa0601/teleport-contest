@@ -1,5 +1,7 @@
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
+// The symbols.c symbol-set tables and the get_othersym() boulder lookup
+// live in symbols.ts.
 import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, MAXOCLASSES, } from './objclass.js';
 import { objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, oc_color, OBJ_NAME, getObjectDefinition, } from './object_data.js';
 import { pline_xy } from './pline.js';
@@ -17,6 +19,7 @@ import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph, detectedMonnumToGly
 import { isok } from './cmd.js';
 import { cmapToType } from './mkroom.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
+import { shownSymbolSet, activeRogueSymset, currentBoulderSymbol, BLANK_SYMBOL, ROGUE_SYMSETS, rogueFurnitureSymbols } from './symbols.js';
 import { drawbridgeUnderlyingType, isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { heroWarnsOfMonster } from './polyself.js';
 import { artifactWarningFeedback } from './artifact.js';
@@ -37,13 +40,6 @@ const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
     '+', '/', '*', '*', '`', '0', '_', '.'];
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
-// Port only: the currently shown symbol set (rogue or primary).
-export function shownSymbolSet(state = game) {
-    const rogue = Is_rogue_level(state.u?.uz, state);
-    return state.shownSymbols ?? {
-        rogue, name: (rogue ? state.rogueSymset : state.symset) ?? null,
-    };
-}
 // C sym.h:SYMHANDLING(H_DEC) over gs.symset[gc.currentgraphics]: the shown
 // set's handling test.  DECgraphics declares `Handling: DEC` and loads into
 // either slot — the roguesymset option never checks `Restrictions: primary`
@@ -71,22 +67,6 @@ export function activeObjectSymbols() {
 // Port only: object-class symbol lookup.
 export function objectClassSymbol(index) {
     return activeObjectSymbols()[index] ?? '';
-}
-// C symbols.c:get_othersym(): the SYM_BOULDER lookup for the active symbol
-// set — the active set's override, else the default rock-class symbol (the
-// port computes the effective symbol on demand where C materializes
-// showsyms[SYM_OFF_X + SYM_BOULDER]; the SYM_NOTHING default is inlined at
-// its one use in reglyphSymbolSet below, and no port site reads
-// SYM_UNEXPLORED or SYM_INVISIBLE).  optfn_boulder() fills both sets'
-// overrides, while the BOULDER= statement (cfgfiles.c) only fills the
-// primary one. A named primary selection can display that slot on Rogue.
-export function currentBoulderSymbol(state = game) {
-    if (shownSymbolSet(state).rogue) {
-        const set = activeRogueSymset(state);
-        return state.rogueBoulderSym
-            || (set?.blank ? BLANK_SYMBOL : '`');
-    }
-    return state.boulderSym || '`';
 }
 const TELEPATHY_RANGE = 8 * 8; // BOLT_LIM squared
 const HELM_OF_TELEPATHY = 100;
@@ -846,137 +826,10 @@ function heroDisplayGlyph() {
         : { ...glyph, ch: game.flags.showrace ? glyph.ch
                 : monsterClassSymbol(HUMAN_CLASS_INDEX) || '@', color: CLR_WHITE };
 }
-// symbols.c:init_rogue_symbols() changes ordinary stairs and open doorways.
-// Branch stairs retain their default symbols.
-const rogueFurnitureSymbols = new Map([
-    [CmapSymbol.ndoor, '+'], [CmapSymbol.vodoor, '+'], [CmapSymbol.hodoor, '+'],
-    [CmapSymbol.upstair, '%'], [CmapSymbol.dnstair, '%'],
-]);
-const ROGUE_DOUBLE_WALLS = new Map([
-    [CmapSymbol.vwall, '\u00ba'], [CmapSymbol.hwall, '\u00cd'],
-    [CmapSymbol.tlcorn, '\u00c9'], [CmapSymbol.trcorn, '\u00bb'],
-    [CmapSymbol.blcorn, '\u00c8'], [CmapSymbol.brcorn, '\u00bc'],
-    [CmapSymbol.crwall, '\u00ce'], [CmapSymbol.tuwall, '\u00ca'],
-    [CmapSymbol.tdwall, '\u00cb'], [CmapSymbol.tlwall, '\u00b9'], [CmapSymbol.trwall, '\u00cc'],
-    [CmapSymbol.ndoor, '\u00ce'], [CmapSymbol.vodoor, '\u00ce'], [CmapSymbol.hodoor, '\u00ce'],
-    [CmapSymbol.room, '\u00fa'], [CmapSymbol.corr, '\u00b1'], [CmapSymbol.litcorr, '\u00b2'],
-    [CmapSymbol.engrcorr, '\u00b1'],
-    [CmapSymbol.upstair, '\u00f0'], [CmapSymbol.dnstair, '\u00f0'],
-    [CmapSymbol.brupstair, '\u00f0'], [CmapSymbol.brdnstair, '\u00f0'],
-]);
-// The three IBMgraphics sets share these S_ entries; their doorway,
-// corridor and floor replacements differ in dat/symbols.
-const IBM_COMMON_SYMBOLS = new Map([
-    [CmapSymbol.vwall, '\xb3'], [CmapSymbol.hwall, '\xc4'],
-    [CmapSymbol.tlcorn, '\xda'], [CmapSymbol.trcorn, '\xbf'],
-    [CmapSymbol.blcorn, '\xc0'], [CmapSymbol.brcorn, '\xd9'],
-    [CmapSymbol.crwall, '\xc5'], [CmapSymbol.tuwall, '\xc1'],
-    [CmapSymbol.tdwall, '\xc2'], [CmapSymbol.tlwall, '\xb4'], [CmapSymbol.trwall, '\xc3'],
-    [CmapSymbol.engroom, '\xee'],
-    [CmapSymbol.vbeam, '\xb3'], [CmapSymbol.hbeam, '\xc4'],
-    [CmapSymbol.swallowTopLeft + 3, '\xb3'], [CmapSymbol.swallowTopLeft + 4, '\xb3'],
-    [CmapSymbol.explosionTopLeft + 3, '\xb3'], [CmapSymbol.explosionTopLeft + 5, '\xb3'],
-]);
-export const ROGUE_SYMSETS = {
-    plain: { cmap: new Map([
-            [CmapSymbol.tlcorn, '+'], [CmapSymbol.trcorn, '+'],
-            [CmapSymbol.blcorn, '+'], [CmapSymbol.brcorn, '+'],
-            [CmapSymbol.crwall, '+'], [CmapSymbol.tuwall, '+'],
-            [CmapSymbol.tdwall, '+'], [CmapSymbol.tlwall, '+'], [CmapSymbol.trwall, '+'],
-        ]) },
-    blank: { blank: true },
-    ibmgraphics: {
-        ibm: true,
-        cmap: new Map([...IBM_COMMON_SYMBOLS,
-            [CmapSymbol.ndoor, '\xfa'], [CmapSymbol.vodoor, '\xfe'], [CmapSymbol.hodoor, '\xfe'],
-            [CmapSymbol.bars, '\xf0'], [CmapSymbol.tree, '\xf1'], [CmapSymbol.room, '\xfa'],
-            [CmapSymbol.corr, '\xb0'], [CmapSymbol.litcorr, '\xb1'], [CmapSymbol.engrcorr, '\xb0'],
-            [CmapSymbol.fountain, '\xf4'], [CmapSymbol.sink, '\xf4'],
-            [CmapSymbol.pool, '\xf7'], [CmapSymbol.ice, '\xfa'],
-            [CmapSymbol.lava, '\xf7'], [CmapSymbol.lavawall, '\xf7'],
-            [CmapSymbol.vodbridge, '\xfa'], [CmapSymbol.hodbridge, '\xfa'], [CmapSymbol.water, '\xf7'],
-        ]),
-    },
-    ibmgraphics_1: { ibm: true, cmap: IBM_COMMON_SYMBOLS },
-    ibmgraphics_2: {
-        ibm: true,
-        cmap: new Map([...IBM_COMMON_SYMBOLS,
-            [CmapSymbol.vodoor, '\xfe'], [CmapSymbol.hodoor, '\xfe'],
-            [CmapSymbol.corr, '\xb0'], [CmapSymbol.litcorr, '\xb1'], [CmapSymbol.engrcorr, '\xb0'],
-        ]),
-    },
-    amigafont: { cmap: new Map([
-            [CmapSymbol.stone, ' '], [CmapSymbol.vwall, '\xc0'], [CmapSymbol.hwall, '\xc1'],
-            [CmapSymbol.tlcorn, '\xc2'], [CmapSymbol.trcorn, '\xc3'],
-            [CmapSymbol.blcorn, '\xc4'], [CmapSymbol.brcorn, '\xc5'], [CmapSymbol.crwall, '\xc6'],
-            [CmapSymbol.tuwall, '\xd8'], [CmapSymbol.tdwall, '\xd6'],
-            [CmapSymbol.tlwall, '\xd7'], [CmapSymbol.trwall, '\xd5'],
-            [CmapSymbol.ndoor, '\xd9'], [CmapSymbol.vodoor, '\x91'], [CmapSymbol.hodoor, '\x92'],
-            [CmapSymbol.vcdoor, '\x93'], [CmapSymbol.hcdoor, '\x94'],
-            [CmapSymbol.bars, '#'], [CmapSymbol.tree, '#'], [CmapSymbol.room, '.'], [CmapSymbol.darkroom, ' '],
-            [CmapSymbol.corr, '\xe5'], [CmapSymbol.litcorr, '\xe5'],
-            [CmapSymbol.upstair, '<'], [CmapSymbol.dnstair, '>'],
-            [CmapSymbol.upladder, '<'], [CmapSymbol.dnladder, '>'], [CmapSymbol.altar, '_'],
-            [CmapSymbol.grave, '\\'], [CmapSymbol.throne, '#'], [CmapSymbol.sink, '{'], [CmapSymbol.fountain, '}'],
-            [CmapSymbol.pool, '*'], [CmapSymbol.ice, '}'], [CmapSymbol.lava, '*'],
-            [CmapSymbol.vodbridge, '*'], [CmapSymbol.hodbridge, '#'],
-            [CmapSymbol.vcdbridge, '#'], [CmapSymbol.hcdbridge, '.'], [CmapSymbol.air, '#'], [CmapSymbol.cloud, '}'],
-            [CmapSymbol.vbeam, '\xf1'], [CmapSymbol.hbeam, '\xf0'],
-            [CmapSymbol.lslant, '\xf2'], [CmapSymbol.rslant, '\xf3'],
-            [CmapSymbol.digbeam, '*'], [CmapSymbol.flashbeam, '!'],
-            [CmapSymbol.boomleft, '{'], [CmapSymbol.boomright, '}'],
-            ...['@', '&', '*', '#'].map((ch, index) => [CmapSymbol.shieldFirst + index, ch]),
-            ...['\xf4', '\xf5', '\xf6', '\xf7', '\xef', '\xf8', '\xf9', '\xfa']
-                .map((ch, index) => [CmapSymbol.swallowTopLeft + index, ch]),
-            ...['\xe6', '\xea', '\xe7', '\xec', '\xd4', '\xed', '\xe8', '\xeb', '\xe9']
-                .map((ch, index) => [CmapSymbol.explosionTopLeft + index, ch]),
-        ]) },
-    rogueibm: {
-        ibm: true,
-        cmap: ROGUE_DOUBLE_WALLS,
-        objectClasses: {
-            [WEAPON_CLASS]: ')', [AMULET_CLASS]: ',', [FOOD_CLASS]: ':',
-            [POTION_CLASS]: '\u00ad', [SCROLL_CLASS]: '?', [SPBOOK_CLASS]: '+',
-            [WAND_CLASS]: '\u00e7',
-        },
-    },
-    rogueepyx: {
-        ibm: true,
-        cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
-        objectClasses: {
-            [WEAPON_CLASS]: '\x18', [ARMOR_CLASS]: '[', [RING_CLASS]: '=',
-            [AMULET_CLASS]: '\x0c', [TOOL_CLASS]: '(', [FOOD_CLASS]: '\x05',
-            [POTION_CLASS]: '\u00ad', [SCROLL_CLASS]: '\x0e', [SPBOOK_CLASS]: '+',
-            [WAND_CLASS]: '\u00e7', [COIN_CLASS]: '\x0f', [GEM_CLASS]: '\x0f',
-            [ROCK_CLASS]: '`', [BALL_CLASS]: '0', [CHAIN_CLASS]: '_',
-            [VENOM_CLASS]: '.',
-        },
-        trapSymbol: '\x04',
-        humanSymbol: '\x01',
-        color: true,
-    },
-    roguewindows: {
-        ibm: true,
-        cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
-        objectClasses: {
-            [WEAPON_CLASS]: ')', [AMULET_CLASS]: ',', [FOOD_CLASS]: ':',
-            [POTION_CLASS]: '\u00ad', [SCROLL_CLASS]: '?', [SPBOOK_CLASS]: '+',
-            [WAND_CLASS]: '\u00e7',
-        },
-    },
-};
-const BLANK_SYMBOL = '\x1a';
 const BLANK_OBJECT_SYMBOLS = ROGUE_OBJECT_SYMBOLS.map(() => BLANK_SYMBOL);
 const ROGUE_SYMSET_OBJECT_TABLES = Object.fromEntries(Object.entries(ROGUE_SYMSETS)
     .filter(([, set]) => set.objectClasses !== undefined)
     .map(([name, set]) => [name, ROGUE_OBJECT_SYMBOLS.map((symbol, index) => set.objectClasses?.[index] ?? symbol)]));
-// Port only: the named Rogue symbol set (C's loaded rogue showsyms).
-function activeRogueSymset(state = game) {
-    const shown = shownSymbolSet(state);
-    if (!shown.rogue || !shown.name)
-        return null;
-    return ROGUE_SYMSETS[shown.name.toLowerCase()] ?? null;
-}
 // Port only: rogue-set cmap symbol override.
 function rogueCmapSymbol(set, symbol) {
     if (!set)

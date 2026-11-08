@@ -18,8 +18,8 @@ import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeComm
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNo } from './query.js';
 import { selectMapPosition, coordinateDescription } from './getpos.js';
-import { displayPagerText, expandTabs } from './wintty.js';
-import { getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
+import { displayPagerText, expandTabs, showTextWindow } from './wintty.js';
+import { getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { monsterAtPosition } from './steed.js';
 import { altarmaskAt } from './pray.js';

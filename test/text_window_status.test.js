@@ -15,7 +15,7 @@ import { recordAchievement } from '../js/insight.js';
 import { ACH_SHOP } from '../js/const.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
-import { showTextWindow } from '../js/windows.js';
+import { showTextWindow } from '../js/wintty.js';
 void test('a streaming text window keeps its page visible while producing the next page', async () => {
     const input = freshTurnRoom();
     let previousPage = '';

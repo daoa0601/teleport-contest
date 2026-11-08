@@ -31,8 +31,8 @@ import { isok } from './cmd.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
 import { l_register_des, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, MONSTER_CLASS_SYMBOLS, TRAP_TYPES } from './lua/des.js';
 import type { DesOptions, DesObjectOptions, DesMonsterOptions, DesSelectionOptions, DesOperations, MonsterAppearance, LuaPoint, LuaRegion } from './lua/des.js';
-import { LuaTable, objectToLuaTable, luaTableToArray, luaCheckString, luaCheckInteger, luaType } from './lua/runtime.js';
-import { currentLuaLifecycle } from './lua/lifecycle.js';
+import { LuaTable, objectToLuaTable, luaTableToArray, luaCheckString } from './lua/runtime.js';
+import { currentLuaLifecycle, startTimerAt } from './lua/lifecycle.js';
 import type { LuaBindings, LuaGameState } from './lua/lifecycle.js';
 import { discardMonsterInventory } from './mkobj.js';
 import { dropSpecialMonsterObjects } from './steal.js';
@@ -44,7 +44,7 @@ import { mineralize } from './mklev.js';
 import { countLevelFeatures } from './mklev.js';
 import { wallification } from './mkmaze.js';
 import { createSelectionApi, unwrapSelection } from './lua/nhlsel.js';
-import { luaInteger, luaString, luaToInteger, luaNumberValue } from './lua/arguments.js';
+import { luaInteger, luaString } from './lua/arguments.js';
 import { buryObject } from './dig.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { rnd_rect, get_rect, split_rects } from './rect.js';
@@ -79,7 +79,7 @@ import { is_dwarf, is_gnome, is_male, is_shapeshifter, monsterHasStoneResistance
 import { roomForIndex, roomsAt } from './hack.js';
 import { PanicTermination } from './panic_termination.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
+import { NethackLuaError } from './lua/errors.js';
 import { swapDirectionBits } from './hacklib.js';
 import { impossible } from './pline.js';
 
@@ -3537,50 +3537,6 @@ export function lspo_non_passwall(selection: SpecialSelection | null): void {
     set_wallprop_in_selection(selection ?? new SpecialSelection().negate(), W_NONPASSWALL);
 }
 
-// nhlua.c:nhl_get_timertype() takes luaL_checkoption over timeout_funcs'
-// timer names, in timeout.h order; timer_is_pos() admits only melt-ice.
-const LEVEL_TIMER_TYPE_NAMES = [
-    'rot-organic', 'rot-corpse', 'revive-mon', 'zombify-mon',
-    'burn-obj', 'hatch-egg', 'fig-transform', 'shrink-glob', 'melt-ice',
-];
-
-// Part of C nhlua.c:nhl_get_xy_params(): the x/y parameter read — two
-// integers, or one table through sp_lev.c:get_coord() (x/y fields or a
-// two-entry array); reached by nhl_timer_start_at() after the timer type
-// and delay were popped.
-function luaTimerCoordinates(args: readonly LuaValue[]): { x: number; y: number } {
-    if (args.length === 4)
-        return { x: luaToInteger(args[0]), y: luaToInteger(args[1]) };
-    if (args.length === 3 && args[0] instanceof LuaTable) {
-        const table = args[0];
-        const x = table.get('x');
-        if (x != null) {
-            // get_coord() converts x with luaL_checkinteger before it
-            // looks for y at all.
-            const xValue = luaCheckInteger(-1, x);
-            const y = table.get('y');
-            if (y == null) throw new NethackLuaError('Not a coordinate');
-            return { x: xValue, y: luaCheckInteger(-1, y) };
-        }
-        if (table.length() !== 2) throw new NethackLuaError('Not a coordinate');
-        return { x: luaTimerArrayEntry(table, 1), y: luaTimerArrayEntry(table, 2) };
-    }
-    throw new NethackLuaError('nhl_timer_start_at: Wrong args');
-}
-
-// C sp_lev.c:get_table_intarray_entry()
-// Numbers and numeric strings
-// convert with lua_tointeger laxness, everything else raises nhl_error.
-// The C message hardcodes entry number 1 for both positions.
-function luaTimerArrayEntry(table: LuaTable, entry: number): number {
-    const value = table.get(entry);
-    const converted = luaNumberValue(value);
-    if (converted === null)
-        throw new NethackLuaError(
-            `Array entry #1 is ${luaType(value)}, expected number`);
-    return luaToInteger(converted);
-}
-
 // C sp_lev.c:sp_level_coder_init(). Create the per-level room, inventory, and map state.
 // Also C sp_lev.c:create_des_coder(): the lazy coder allocation; every Lua
 // session builds its coder state directly here.
@@ -3674,48 +3630,6 @@ function sp_level_coder_init() {
             }
         },
     );
-    // C nhlua.c:nhl_timer_start_at(): register a level timer at a map
-    // position; only melt-ice is a position timer (timer_is_pos()).
-    // Kept a local closure because it reads this scope's room coordinates
-    // when translating the caller's relative position.
-    const startTimerAt = (...args: LuaValue[]) => {
-        // nhl_get_timertype() takes luaL_checkoption over every
-        // timeout_funcs entry at stack index -2, so a bad name is
-        // lauxlib's argument error carrying that index; only melt-ice is
-        // a position timer (timer_is_pos()).
-        const timerIndex = -2;
-        if (args.length === 1) {
-            // With one argument, stack index -2 holds the called
-            // function itself. With none, C reads its caller's frame;
-            // this interpreter cannot reproduce that invalid access
-            // without Lua's VM stack.
-            throw new LuaArgumentError(timerIndex,
-                'string expected, got function');
-        }
-        const timerName = luaCheckString(timerIndex, args[args.length - 2]);
-        const timerType = LEVEL_TIMER_TYPE_NAMES.indexOf(timerName);
-        if (timerType < 0)
-            throw new LuaArgumentError(timerIndex, `invalid option '${timerName}'`);
-        const when = luaToInteger(args[args.length - 1]);
-        const point = luaTimerCoordinates(args);
-        if (timerType !== LEVEL_TIMER_TYPE_NAMES.indexOf('melt-ice')) return;
-        // nhl_timer_start_at() and cvt_to_abscoord() store signed 16-bit
-        // coordxy values. Narrow before addition so large Lua integers
-        // retain their low bits, then narrow the sum.
-        const relativeX = (point.x << 16) >> 16;
-        const relativeY = (point.y << 16) >> 16;
-        const timerX = ((roomScope.context.xstart + relativeX) << 16) >> 16;
-        const timerY = ((roomScope.context.ystart + relativeY) << 16) >> 16;
-        if (!isok(timerX, timerY)) return;
-        const deadline = (game.moves ?? 0) + when;
-        stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
-        scheduleLevelTimer(
-            timerX, timerY,
-            LEVEL_TIMER_KIND.MELT_ICE_AWAY,
-            deadline,
-            game,
-        );
-    };
     const bindings: LuaBindings = {
         nh: {
             debug_themerm: (...args: LuaValue[]) => {
@@ -3736,8 +3650,10 @@ function sp_level_coder_init() {
                     throw new NethackLuaError('level_difficulty should not have any args');
                 return level_difficulty();
             },
-            // C nhlua.c:nhl_timer_start_at() is startTimerAt() above.
-            start_timer_at: startTimerAt,
+            // nhl_timer_start_at() is startTimerAt() in lua/lifecycle.ts;
+            // the binding reads this scope's room coordinates at call time.
+            start_timer_at: (...args: LuaValue[]) =>
+                startTimerAt(roomScope.context.xstart, roomScope.context.ystart, args),
         },
         des: l_register_des(operations, selectionApi.wrap),
         selection: selectionApi.bindings,

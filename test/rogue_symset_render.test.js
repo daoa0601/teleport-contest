@@ -44,9 +44,9 @@ void test('the Blank rogue symbol set blanks walls, stairs and coins', async () 
     await newsym(13, 10);
     await newsym(14, 10);
     await flush_screen(1);
-    assert.equal(rogueCell(12, 10)?.ch, '\x1a');
-    assert.equal(rogueCell(13, 10)?.ch, '\x1a');
-    assert.equal(rogueCell(14, 10)?.ch, '\x1a');
+    assert.equal(rogueCell(12, 10)?.ch, ' ');
+    assert.equal(rogueCell(13, 10)?.ch, ' ');
+    assert.equal(rogueCell(14, 10)?.ch, ' ');
     void level;
 });
 void test('RogueIBM draws double-line walls and Greek-Xi stairs', async () => {
@@ -165,7 +165,7 @@ void test('Blank blanks fountains and unseen stone as well', async () => {
     fountain.typ = FOUNTAIN;
     await newsym(14, 10);
     await flush_screen(1);
-    assert.equal(rogueCell(14, 10)?.ch, '\x1a');
+    assert.equal(rogueCell(14, 10)?.ch, ' ');
 });
 void test('a female hero is also yellow under RogueEpyx colors', async () => {
     await rogueLevel();
@@ -215,8 +215,8 @@ void test('Blank blanks every trap symbol including the vibrating square', async
     await newsym(14, 10);
     await newsym(15, 10);
     await flush_screen(1);
-    assert.equal(rogueCell(14, 10)?.ch, '\x1a');
-    assert.equal(rogueCell(15, 10)?.ch, '\x1a');
+    assert.equal(rogueCell(14, 10)?.ch, ' ');
+    assert.equal(rogueCell(15, 10)?.ch, ' ');
 });
 void test('RogueEpyx blanks neither the vibrating square nor plain walls', async () => {
     const level = await rogueLevel();

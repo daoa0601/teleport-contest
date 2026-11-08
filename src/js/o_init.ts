@@ -20,7 +20,7 @@ import {
 } from './object_data.js';
 import { game } from './gstate.js';
 import { artifactInfoLines, discoveredArtifacts } from './artifact.js';
-import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
+import { ATR_INVERSE, addMenuHeading } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
 import { rn2 } from './rng.js';
 import { ledgerNo, maxLedgerNo } from './dungeon.js';
@@ -34,7 +34,8 @@ import { OBJECT_CLASS_SYMBOLS } from './display.js';
 import { priceQuoteSuffix } from './shk.js';
 import { armorPresentationName } from './objnam.js';
 
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu,
+    tty_start_menu, showTextWindow } from './wintty.js';
 import type { GameObject } from './object_types.js';
 import type { DiscoverySortMode } from './flags.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

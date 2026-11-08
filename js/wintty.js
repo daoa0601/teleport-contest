@@ -6,7 +6,7 @@
 //   tty_clear_nhwindow(WIN_MESSAGE)/tty_create_nhwindow(NHW_MESSAGE)/
 //   tty_display_nhwindow(WIN_MESSAGE)   -> topl.ts (topl.c module)
 //   tty_putstr()   -> updateTopline (topl.ts, NHW_MESSAGE) and
-//                     showTextWindow (windows.ts, NHW_TEXT)
+//                     showTextWindow (wintty.ts, NHW_TEXT)
 //   tty_putmixed() -> the mixed-glyph decode paths in topl.ts
 //   g_putch()      -> the captured glyph cells in game_display.ts/display.ts
 //   tty_raw_print()/tty_raw_print_bold() -> pline.ts rawPrint, end.ts scores
@@ -15,8 +15,9 @@
 //   tty_display_file() -> pager.ts displayHelpFile (imports the cmd map)
 //   process_text_window() pages putstr()-filled NHW_MENU windows below;
 //                            the NHW_TEXT window and its incremental
-//                            tty_putstr() page flush live in windows.ts
-//                            (showTextWindow/readTextPage)
+//                            tty_putstr() page flush are showTextWindow
+//                            and textWindowRows below; the shared page
+//                            painter readTextPage stays in windows.ts
 import { game } from './gstate.js';
 import { clipToplineToColumn, clearMessageWindow, decodeMixedTopline, flushPendingTopline, pageTopline, updateTopline } from './topl.js';
 import { plineWithContinuation } from './pline.js';
@@ -26,10 +27,10 @@ import { NO_COLOR, ATR_INVERSE, ATR_BOLD, ATR_UNDERLINE, CLR_GRAY, DEC_TO_UNICOD
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
 import { statusConditionBit, bot, repadWithDashes } from './botl.js';
 import { displayMessageWindow } from './topl.js';
-import { showTextWindow } from './windows.js';
 import { restoreCommandMap } from './cmd.js';
-import { docrt, flush_screen, row_refresh, ROGUE_SYMSETS, shownSymbolSet } from './display.js';
-import { getMenuColoring, menuitem_invert_test } from './windows.js';
+import { docrt, flush_screen, row_refresh } from './display.js';
+import { ROGUE_SYMSETS, shownSymbolSet } from './symbols.js';
+import { getMenuColoring, menuitem_invert_test, readTextPage } from './windows.js';
 import { nhgetch } from './input.js';
 import { tty_getlin } from './query.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
@@ -635,6 +636,73 @@ export function compressStr(text, columns) {
     const compressed = text.replace(/[ \n]+/g, ' ').replace(/^ /, '').slice(0, BUFSZ - 1);
     return compressed.length === BUFSZ - 1 || compressed.endsWith(' ')
         ? compressed.slice(0, -1) : compressed;
+}
+// C wintty.c:tty_putstr(): the NHW_TEXT branch — buffer text rows and
+// flush full text-window pages. The native tty_putstr buffers empty rows
+// too, and flushes at terminal height minus its footer; a trailing blank
+// can therefore own a page. The NHW_MESSAGE branch is the topline owner
+// (tty_topline.ts) and the NHW_MENU branch is wintty.ts's menuLayout.
+export async function showTextWindow(lines) {
+    const d = display();
+    if (!d)
+        return 27;
+    if (d.rows < 2 || d.cols < 2)
+        throw new RangeError('A text window requires a content row and a pager row');
+    const pageSize = d.rows - 1;
+    let page = [];
+    let key = 32;
+    const displayPage = async () => {
+        while (page.length < pageSize)
+            page.push('');
+        key = await readTextPage({ lines: [...page, '--More--'], cursor: [8, pageSize] });
+        page = [];
+    };
+    try {
+        for await (const entry of lines) {
+            const line = typeof entry === 'string' ? { text: entry } : entry;
+            for (const row of textWindowRows(line.text, d.cols)) {
+                // tty_putstr flushes a full page before buffering the new row.
+                // Its caller has already computed this line at that boundary.
+                if (key === 27)
+                    continue;
+                if (page.length === pageSize)
+                    await displayPage();
+                if (key !== 27)
+                    page.push({ ...line, text: row });
+            }
+        }
+        // A cancelled window ignores more rows, but the producer still runs:
+        // pager.c's look lists continue applying observation side effects.
+        if (key !== 27)
+            await displayPage();
+        return key;
+    }
+    finally {
+        d.statusVisible = false;
+        await docrt();
+        await flush_screen(1);
+    }
+}
+// Part of C wintty.c:tty_putstr(): compress spaces and wrap text to the window width.
+export function textWindowRows(text, columns) {
+    // tty_putstr() undoes topline wrapping and compresses spaces before
+    // splitting the whole string again for the text window's width.
+    const rows = [];
+    let line = compressStr(text, columns);
+    while (line.length >= columns) {
+        let split = columns - 1;
+        while (split > 0 && line.charAt(split) !== ' ')
+            split--;
+        if (!split)
+            break;
+        rows.push(line.slice(0, split));
+        line = line.slice(split + 1);
+    }
+    // tty text rendering truncates an indivisible oversized word; unlike
+    // topline messages, its text-window renderer does not wrap at the
+    // final column.
+    rows.push(line.slice(0, columns - 1));
+    return rows;
 }
 // Part of C wintty.c:tty_add_menu(): prefix selectable text with its selector and marker.
 export function selectableMenuText(key, text, marker = '-') {

@@ -11,9 +11,10 @@ import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { DungeonBranch, DungeonLocation, SpecialLevelDescriptor } from './dungeon_types.js';
-import { getLine, ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showTextMenuOverlay, showMultiSelectWindow, showTextWindow } from './windows.js';
+import { getLine, ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showTextMenuOverlay, showMultiSelectWindow } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu,
+    tty_start_menu, showTextWindow } from './wintty.js';
 import type { TtyMenuWindow } from './wintty.js';
 import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible } from './display.js';
 import { customizedGlyphs } from './glyphs.js';

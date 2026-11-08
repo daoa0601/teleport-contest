@@ -20,13 +20,14 @@ import {
     SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB,
 } from '../const.js';
 import { game } from '../gstate.js';
-import { LuaTable, luaValueToJs } from './runtime.js';
+import { LuaTable, luaValueToJs, luaType } from './runtime.js';
 import type { LuaHostObject, LuaValue } from './runtime.js';
 import type { GameState } from '../game_state.js';
 import type { SpecialSelection } from '../selvar.js';
 
 import { unwrapSelection } from './nhlsel.js';
-import { luaInteger } from './arguments.js';
+import { luaInteger, luaNumberValue, luaToInteger } from './arguments.js';
+import { NethackLuaError } from './errors.js';
 import { OBJECT_CLASS_SYMBOLS } from '../display.js';
 
 export interface LuaPoint { x: number; y: number }
@@ -353,6 +354,19 @@ export function get_coord(value: unknown, y: unknown = null): LuaPoint | null {
         && Number.isInteger(value.x) && Number.isInteger(value.y))
         return { x: value.x, y: value.y };
     return null;
+}
+
+// C sp_lev.c:get_table_intarray_entry()
+// Numbers and numeric strings
+// convert with lua_tointeger laxness, everything else raises nhl_error.
+// The C message hardcodes entry number 1 for both positions.
+export function luaTimerArrayEntry(table: LuaTable, entry: number): number {
+    const value = table.get(entry);
+    const converted = luaNumberValue(value);
+    if (converted === null)
+        throw new NethackLuaError(
+            `Array entry #1 is ${luaType(value)}, expected number`);
+    return luaToInteger(converted);
 }
 
 // C sp_lev.c:get_table_objclass(): the def_char_to_objclass()

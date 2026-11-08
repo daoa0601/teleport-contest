@@ -14,6 +14,7 @@ src/js/command_bindings.ts	cmd.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
 src/js/dig.ts	dig.c
+src/js/display.ts	display.c
 src/js/do.ts	do.c
 src/js/do_name.ts	do_name.c
 src/js/do_wear.ts	do_wear.c
@@ -99,11 +100,13 @@ src/js/shk.ts	shk.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c
 src/js/sounds.ts	sounds.c
+src/js/sp_lev.ts	sp_lev.c
 src/js/spell.ts	spell.c
 src/js/stairs.ts	stairs.c
 src/js/starting_equipment.ts	u_init.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
+src/js/symbols.ts	symbols.c
 src/js/teleport.ts	teleport.c
 src/js/timeout.ts	timeout.c
 src/js/topl.ts	topl.c
@@ -118,6 +121,7 @@ src/js/vision.ts	vision.c
 src/js/weapon.ts	weapon.c
 src/js/were.ts	were.c
 src/js/wield.ts	wield.c
+src/js/windows.ts	windows.c
 src/js/wintty.ts	wintty.c
 src/js/wizard.ts	wizard.c
 src/js/wizcmds.ts	wizcmds.c

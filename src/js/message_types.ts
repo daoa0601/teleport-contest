@@ -40,9 +40,10 @@ import { OBJECT_NAMES, getObjectClassBounds } from './object_data.js';
 import type { Fruit, GameState } from './game_state.js';
 import { bot, checkGoldSymbol, reassessStatusFields } from './botl.js';
 import {
-    currentBoulderSymbol, docrt, flush_screen,
+    docrt, flush_screen,
     reglyph_darkroom, reglyphBoulderSymbols,
 } from './display.js';
+import { currentBoulderSymbol } from './symbols.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { vision_recalc } from './vision.js';
