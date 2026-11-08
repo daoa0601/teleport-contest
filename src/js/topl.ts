@@ -124,7 +124,7 @@ export async function showMessageHistoryWindow(
 // inread set, which forces the single-message branch exactly like
 // ttyDisplay->inread does; they manage their own repainting around the
 // call. Takes no game time and draws no randomness.
-export async function doprevMessage(inread = false): Promise<void> {
+export async function ttyDoprevMessage(inread = false): Promise<void> {
     const mode = messageWindowMode();
     if (mode !== 's' && !inread) {
         if (mode === 'f') {
@@ -338,7 +338,7 @@ export async function tty_yn_function(
             if (messageWindowMode() !== 's') {
                 // Full, combination, and reverse page the window with
                 // inread clear, then repaint the question.
-                await doprevMessage(false);
+                await ttyDoprevMessage(false);
                 clearMessageWindow();
                 game._messageHistoryCursor = null;
                 await setTopline(message);
@@ -347,8 +347,8 @@ export async function tty_yn_function(
             } else {
                 // Two recalls initially: gt.toplines holds the question
                 // prompt, so the first press already shows one entry back.
-                if (!doprev) await doprevMessage(true);
-                await doprevMessage(true);
+                if (!doprev) await ttyDoprevMessage(true);
+                await ttyDoprevMessage(true);
                 doprev = true;
             }
             continue;

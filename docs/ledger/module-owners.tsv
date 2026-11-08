@@ -25,6 +25,7 @@ src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/fountain.ts	fountain.c
 src/js/game_state.ts	decl.c
+src/js/glyphs.ts	glyphs.c
 src/js/hack.ts	hack.c
 src/js/hacklib.ts	hacklib.c
 src/js/input.ts	wintty.c

@@ -33,7 +33,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import { continueSpellbookStudy } from './spell.js';
-import { clearMessageWindow, doprevMessage, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './topl.js';
+import { clearMessageWindow, ttyDoprevMessage, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './topl.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation } from './pager.js';
 import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
@@ -684,7 +684,7 @@ async function runCommandHandler(binding: CommandBinding): Promise<void> {
     if (binding.command?.handler === 'doprev_message') {
         // Ctrl-P: doprev_message(), a GENERALCMD redisplay that follows the
         // binding rather than one raw key.
-        await doprevMessage();
+        await ttyDoprevMessage();
         game.context.move = 0;
         return;
     }

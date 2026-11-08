@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { doprevMessage } from '../js/topl.js';
+import { ttyDoprevMessage } from '../js/topl.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
@@ -58,7 +58,7 @@ void test('travel autodescribe at an invisible unsensed hero shows the floor', a
 void test('previous-message recall renders an encoded glyph byte as a blank', async () => {
     await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await pline('\x0e\u00fe\x0f        a doorway or the floor of a room');
-    await doprevMessage();
+    await ttyDoprevMessage();
     assert.equal(requireScreenCell(0, 0).ch, ' ');
 });
 // The full-screen repaint at the next input boundary rebuilds row 0 from
@@ -68,7 +68,7 @@ void test('previous-message recall renders an encoded glyph byte as a blank', as
 void test('screen repaint after glyph recall leaves the glyph cell blank', async () => {
     await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await pline('\x0e\u00fe\x0f        a doorway or the floor of a room');
-    await doprevMessage();
+    await ttyDoprevMessage();
     await flush_screen(1);
     assert.equal(requireScreenCell(0, 0).ch, ' ');
     assert.match(toplineText(), /^ {9}a doorway or the floor of a room *$/);
@@ -79,7 +79,7 @@ void test('travel prompt joins the instructions line in message recall', async (
     const input = freshTurnRoom({ flags: { tips: false, verbose: true } });
     input.feed('_\x1b');
     await moveloop_core();
-    await doprevMessage();
+    await ttyDoprevMessage();
     assert.match(toplineText(), /Where do you want to travel to\?  \(For instructions type a '\?'\)/);
 });
 // C hack.c:domove_core() runs the shared destination-monster block on

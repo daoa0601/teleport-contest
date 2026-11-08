@@ -21,7 +21,7 @@ import { FUZZER_IMPOSSIBLE_CONTINUE } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { showChoiceWindow } from './windows.js';
 import { extcmdsMatch, yn_function } from './cmd.js';
-import { doprevMessage } from './topl.js';
+import { ttyDoprevMessage } from './topl.js';
 import type { NativeCommand } from './cmd.js';
 import { visibleCommandKey } from './hacklib.js';
 
@@ -124,13 +124,13 @@ export async function tty_getlin(
             // and repaint the prompt with the typed text.
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
-                if (!doprev) await doprevMessage(false);
-                await doprevMessage(false);
+                if (!doprev) await ttyDoprevMessage(false);
+                await ttyDoprevMessage(false);
                 doprev = true;
                 game._toplines = `${prompt} ${value}`;
                 continue;
             }
-            await doprevMessage(false);
+            await ttyDoprevMessage(false);
             doprev = false;
             game._messageHistoryCursor = null;
             game._pending_message = `${prompt} ${value}`;
@@ -266,11 +266,11 @@ export async function editExtendedCommand(): Promise<NativeCommand | null> {
             // editor line pages on its first recall too.
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
-                if (!doprev) await doprevMessage(false);
-                await doprevMessage(false);
+                if (!doprev) await ttyDoprevMessage(false);
+                await ttyDoprevMessage(false);
                 doprev = true;
             } else {
-                await doprevMessage(false);
+                await ttyDoprevMessage(false);
                 doprev = false;
                 game._messageHistoryCursor = null;
                 // `*bufp = 0` drops the auto-completed suffix before repainting.
