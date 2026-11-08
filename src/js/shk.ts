@@ -3395,7 +3395,7 @@ function updateBillAfterPurchase(
     }
 }
 
-// Part of C shk.c:dopayobj(): the safe_qbuf pay question.
+// C shk.c:dopayobj(): the safe_qbuf() pay question; the which/itemize/unseen flow runs in buyShopBillItem() above.
 // C dopayobj(): safe_qbuf() reserves the price and question before shortening
 // the doname() description. Keep the same object for equipment annotations,
 // and restore the temporary naming fields before asking for input.

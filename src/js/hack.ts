@@ -961,7 +961,7 @@ function heroStaysAboveWater(state: GameState, location: MapLocation | null) {
     return heroHasWaterWalking(state) && location?.typ !== WATER;
 }
 
-// Part of C youprop.h:Fire_resistance().
+// C youprop.h:Fire_resistance().
 export function heroResistsFire(state: GameState) {
     const hero = state.u;
     return !!(hero.fireResistance);
@@ -975,7 +975,7 @@ export async function burnAwayHeroSlime(state: GameState, publish: MessagePublis
     return true;
 }
 
-// Part of C youprop.h:Swimming(), mondata.h:is_swimmer(): the hero can
+// C youprop.h:Swimming(), mondata.h:is_swimmer(): the hero can
 // move through water.
 export function heroCanSwim(state: GameState) {
     return !!(state.u?.swimming || monsterIsSwimmer(heroMonsterForm(state) ?? -1));
@@ -4479,7 +4479,7 @@ const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 const FELL_ON_SINK = 'fell onto a sink';
 
 
-// Part of C youprop.h:HFlying()/EFlying(): the hero's own flight sources
+// C youprop.h:HFlying()/EFlying(): the hero's own flight sources
 // before the Flying macro applies the blocked mask or a flying steed.  A
 // steed therefore does not prevent the fall, and neither does flight
 // overridden by levitation.

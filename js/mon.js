@@ -2635,8 +2635,9 @@ export function levelAllowsMonsterDeathDrops(monster, state = game, random = rn2
     const undead = monsterIsUndead(monster.mnum);
     return !(state.level?.flags?.graveyard && undead && random(3));
 }
-// Part of C mon.c:mondied(), mon.c:xkilled(): the accessible-or-pool square
-// test that guards the make_corpse call.
+// C mon.c:mondied(): the accessible-or-pool square test guarding the
+// make_corpse() call (xkilled()'s port shares it); the death flow itself
+// is the mondead/mondied ports around finishMonsterLiquidDeath() below.
 export function monsterDeathSquareAllowsObjects(x, y, state = game) {
     return isAccessibleAt(x, y, state) || isPoolAt(x, y, state);
 }

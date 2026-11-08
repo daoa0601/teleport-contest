@@ -1666,11 +1666,11 @@ async function rubRoyalJelly(jelly: GameObject) {
     return used;
 }
 
-// Part of C apply.c:dorub(): the rub command; light.ts:transformMagicLampToOilLamp() contains the extracted conversion.
-// C refs: apply.c:dorub(), invent.c:getobj(), wield.c:wield_tool(), and
-// cmd.c:CQ_CANNED.  Selecting an unwielded lamp does not rub it immediately:
-// wield_tool() installs it, consumes one action, and queues dorub plus the
-// inventory letter for the next hero command boundary.
+// C apply.c:dorub(): the #rub command.
+// C refs: invent.c:getobj(), wield.c:wield_tool(), and cmd.c:CQ_CANNED.
+// Selecting an unwielded lamp does not rub it immediately: wield_tool()
+// installs it, consumes one action, and queues dorub plus the inventory
+// letter for the next hero command boundary.
 export async function dorub() {
     if (heroHasNoHands(game)) {
         await syncPline("You aren't able to rub anything without hands.");

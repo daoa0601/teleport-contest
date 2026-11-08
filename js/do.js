@@ -1207,7 +1207,9 @@ async function menuDrop(retry, selection) {
     }
     return dropped ? ECMD_TIME : ECMD_OK;
 }
-// Part of C do.c:menu_drop(): the query_category() category prompt.
+// C pickup.c:query_category(): menu_drop()'s category prompt; the
+// traditional and combination branches use traditionalDropCategories()
+// below.
 async function dropCategories() {
     // The multi-select window's own dismissal restores the screen: C's
     // select_menu() runs the whole windowport call with bot_disabled, so
@@ -1303,8 +1305,9 @@ function matchesCategories(object, categories) {
         && (!categories.includes('u') || hasUnpaid(object))
         && (!categories.includes('P') || !!object.pickup_prev);
 }
-// Part of C pickup.c:query_category(): the traditional/combination
-// "kinds of thing" drop prompt (with pickup.c's ggetobj() letters).
+// C pickup.c:ggetobj(): the traditional/combination drop prompt of
+// do_drop()'s branches, with ggetobj()'s letters; the MENU_FULL
+// branch's query_category() menu is dropCategories().
 async function traditionalDropCategories(combo) {
     const classes = [...new Set(game.inventory.map(object => object.oclass))];
     const statuses = new Set(game.inventory.map(bucCategory));

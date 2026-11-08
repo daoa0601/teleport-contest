@@ -1619,10 +1619,11 @@ function isRogueShowraceHeroGlyph(glyph, x, y) {
     const heroGlyphNumber = monnumToGlyph(game.urace.mnum, game.flags.female ? FEMALE : MALE);
     return glyph.glyph === heroGlyphNumber;
 }
-// Part of C display.c:reset_glyphmap(): the RogueEpyx color gate.
+// C display.c:reset_glyphmap(): the RogueEpyx color gate —
 // HAS_ROGUE_IBM_GRAPHICS with nocolor cleared (only RogueEpyx declares
-// `Color: Yes`) keeps color on the Rogue level through cmap_to_roguecolor()
-// and the object/monster branches of reset_glyphmap().
+// `Color: Yes`), as the glyphmap rows' per-level reset computes it.  The
+// cmap_to_roguecolor() rows are rogueLevelGlyphColor() below; the
+// object/monster colors resolve lazily through objectColor().
 export function rogueColorsActive() {
     const set = activeRogueSymset();
     return Is_rogue_level(game.u?.uz) && game.flags.color !== false

@@ -972,9 +972,11 @@ function matchesCategories(object: GameObject, categories: readonly Category[]):
         && (!categories.includes('P') || !!object.pickup_prev);
 }
 
-// Part of C do_wear.c:menu_remarm(): the removal-category menu; also
-// inlines C pickup.c:count_categories() as the single-category skip
-// below (one class and no special filter needs no menu).
+// C pickup.c:query_category(): the category menu menu_remarm()'s
+// MENU_FULL branch opens with, including the BUC/unpaid/just-picked
+// special rows; also inlines C pickup.c:count_categories() as the
+// single-category skip below (one class and no special filter needs no
+// menu).
 async function categoryMenu(): Promise<Category[]> {
     const worn = wornInventory();
     const classes = inventoryClassOrder().filter(oclass => worn.some(object => object.oclass === oclass));
@@ -1017,7 +1019,9 @@ async function categoryMenu(): Promise<Category[]> {
     return selected;
 }
 
-// Part of C pickup.c:query_category(): the removal-category prompt.
+// C pickup.c:ggetobj(): the removal-category prompt of menu_remarm()'s
+// traditional and combination branches; the MENU_FULL branch's
+// query_category() menu is categoryMenu() above.
 async function traditionalCategories(combo: boolean, selectOff: SelectOff): Promise<Category[] | null> {
     const worn = wornInventory();
     const classes = [...new Set(worn.map(object => object.oclass))];
@@ -1736,8 +1740,10 @@ function dragonArmorColor(object: GameObject): keyof typeof DRAGON_ARMOR_EXTRA_P
     }
 }
 
-// Part of C do_wear.c:dragon_armor_handling(): the suit's oc_oprop and the
-// Very_fast gate.
+// C do_wear.c:dragon_armor_handling(): the per-color extrinsic arms —
+// the suit's oc_oprop set through the worn-property machinery and the
+// Very_fast gate.  The blue speed-up/slow-down lines and gold/red/yellow
+// effects run in applyArmorOnEffects() above and removeHeroArmor().
 function grantArmorProperty(object: GameObject, state: GameState, property: PropertyName) {
     const hero = state.u;
     grantWornProperty(property, object, 'uarm', state);

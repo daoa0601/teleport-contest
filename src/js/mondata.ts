@@ -923,7 +923,7 @@ export function monsterResistanceBits(monster: ResistantMonster | null | undefin
         | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
 }
 
-// Part of C mondata.c:Resists_Elem(): the artifact defense halves — a
+// C mondata.c:Resists_Elem(): the artifact defense halves — a
 // wielded artifact's defends() (mondata.c:175) and any carried artifact's
 // defends_when_carried() (mondata.c:194).
 function monsterArtifactDefends(monster: ResistantMonster | null | undefined, element: 'fire' | 'cold' | 'shock' | 'poison'): boolean {
@@ -1061,19 +1061,19 @@ const SUBJECT_PRONOUNS: readonly [string, string, string, string] = ['he', 'she'
 const OBJECT_PRONOUNS: readonly [string, string, string, string] = ['him', 'her', 'it', 'them'];
 const PRONOUN_G_UNIQ = 0x1000;
 
-// Part of C you.h:mhis(): the possessive pronoun through pronoun_gender,
+// C you.h:mhis(): the possessive pronoun through pronoun_gender(),
 // like its mhe()/mhim() siblings below. Hallucination precedes visibility
 // and sex and uses the core RNG.
 export function monsterPossessive(monster: Monster, { state = game, random = rn2, noIt = false }: PronounOptions = {}): string {
     return POSSESSIVE_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
 }
 
-// Part of C you.h:mhe(): the subject pronoun through pronoun_gender.
+// C you.h:mhe(): the subject pronoun through pronoun_gender().
 export function monsterSubjectPronoun(monster: Monster, { state = game, noIt = false }: Pick<PronounOptions, 'state' | 'noIt'> = {}): string {
     return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state, noIt })];
 }
 
-// Part of C you.h:mhim(): the object pronoun through pronoun_gender.
+// C you.h:mhim(): the object pronoun through pronoun_gender().
 // The same perceived gender, in the object case.
 export function monsterObjectPronoun(monster: Monster, { state = game, random = rn2, noIt = false }: PronounOptions = {}): string {
     return OBJECT_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];

@@ -576,7 +576,7 @@ function knowsClass(oclass: number, role: RoleKey): void {
     }
 }
 
-// Part of C u_init.c:u_init_role(): the role-specific discovery knowledge.
+// C u_init.c:u_init_role(): the role-specific discovery knowledge (the knows_object() calls of the role switch); the per-role inventory draws run in uInitInventoryAttrs() below.
 function initializeRolePreknowledge(role: RoleKey): void {
     const pauper = !!game.u?.uroleplay?.pauper;
     if (role === 'archeologist') {
@@ -1012,7 +1012,7 @@ const PAUPER_PREKNOWLEDGE = new Map([
     ['samurai', FOOD_RATION],
 ]);
 
-// Part of C u_init.c:pauper_reinit(): the role's one retained object discovery.
+// C u_init.c:pauper_reinit(): the role's one retained object discovery; the skill reset and the two replacement weapon slots run in the u_init() flow.
 function applyPauperPreknowledge(role: RoleKey | undefined): void {
     if (!role || !game.u?.uroleplay?.pauper) return;
     const otyp = PAUPER_PREKNOWLEDGE.get(role);

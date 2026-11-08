@@ -67,7 +67,7 @@ export function propertySourceIsActive(property: PropertyName, state: PropertySt
         || propertyTimeout(property, state) > 0;
 }
 
-// Part of C youprop.h:Levitation(): the HLevitation||ELevitation half,
+// C youprop.h:Levitation(): the HLevitation||ELevitation half,
 // ignoring the blocked mask.
 // C HLevitation || ELevitation: any live levitation source, worn, invoked,
 // carried (W_ART) or timed, independent of the blocked mask.

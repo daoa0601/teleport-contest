@@ -5,7 +5,7 @@ import { FLINT, ROCK, SPE_BLANK_PAPER, TIN_OPENER, } from './object_data.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isWeaponTool, } from './object_properties.js';
 import { learnInitialSpell } from './spell.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from './wield.js';
-// Part of C u_init.c:ini_inv_use_obj(): equip starting items and learn starting spells after discovery.
+// C u_init.c:ini_inv_use_obj(): equip starting items and learn starting spells after discovery.
 export async function useStartingItem(item, state) {
     const weapon = state.uwep || state.u.uwep;
     const shield = state.uarms || state.u.uarms;

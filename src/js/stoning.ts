@@ -16,7 +16,7 @@ import {
     PM_STONE_GOLEM, touchPetrifies, fleshPetrifies, heroResistsStoning, formCanBecomeStoneGolem,
 } from './mondata.js';
 
-// Part of C youprop.h:Stoned(): read the runtime petrification timeout.
+// C youprop.h:Stoned(): read the runtime petrification timeout.
 export function heroIsPetrifying(state: GameState = game): boolean {
     return !!state.u?.stoned || (state.u?.stonedTurns ?? 0) > 0;
 }

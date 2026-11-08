@@ -462,7 +462,7 @@ async function acknowledgeHelmetTip({ monster, visible, unseen, statue, x, y }: 
         : 'Nothing happens.');
 }
 
-// Part of C sounds.c:responsive_mon_at(): test whether the target monster can respond.
+// C sounds.c:responsive_mon_at(): test whether the target monster can respond.
 function canAcknowledgeTip(monster: Monster, x: number, y: number): boolean {
     return !monsterIsHelpless(monster) && !!monster.mcansee && monsterHasEyes(monster.mnum)
         && (!heroIsInvisible(game) || monsterPerceives(monster.mnum))

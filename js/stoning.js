@@ -9,7 +9,7 @@ import { CORPSE, EGG } from './object_data.js';
 import { polymonHero } from './polyself.js';
 import { resolveImmediatePetrification } from './trap.js';
 import { PM_STONE_GOLEM, touchPetrifies, fleshPetrifies, heroResistsStoning, formCanBecomeStoneGolem, } from './mondata.js';
-// Part of C youprop.h:Stoned(): read the runtime petrification timeout.
+// C youprop.h:Stoned(): read the runtime petrification timeout.
 export function heroIsPetrifying(state = game) {
     return !!state.u?.stoned || (state.u?.stonedTurns ?? 0) > 0;
 }
