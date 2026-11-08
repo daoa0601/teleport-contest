@@ -12,7 +12,8 @@ import { clearrolefilter, createCharacterFilters, setrolefilter } from './role.j
 import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './role.js';
 import { NATIVE_COMMANDS } from './command_data.js';
 import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAutocomplete } from './cmd.js';
-import { displayHelpFile, displayPagerText } from './pager.js';
+import { displayHelpFile } from './pager.js';
+import { displayPagerText } from './wintty.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { rn2, rnd } from './rng.js';

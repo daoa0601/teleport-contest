@@ -84,8 +84,8 @@ import type { BonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { hideMonsterOnRestore, hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape, restoreMonsterInventoryOwnership } from './mon.js';
 import {
-    repairBonesConnections, restoreLevelChains, restoreMonsterWormHeads,
-    validMonsterWormBodies,
+    repairBonesConnections, resetObjectAttachedMonsterIds, restoreLevelChains,
+    restoreMonsterWormHeads, validMonsterWormBodies,
 } from './restore.js';
 import { restoreLevelPetHistory } from './restore.js';
 import { endObjectBurn, restoreLevelTimers } from './timeout.js';
@@ -608,7 +608,7 @@ function bonesFloorObjects(level: GameMap): GameObject[] {
 
 // Part of C bones.c:savebones(), bones.c:getbones(): the recursive
 // contents walk over every saved or restored chain.
-function eachObjectInBonesGraph(level: GameMap, visit: (object: GameObject) => void): void {
+export function eachObjectInBonesGraph(level: GameMap, visit: (object: GameObject) => void): void {
     const walk = (object: GameObject): void => {
         if (!object) return;
         visit(object);
@@ -892,11 +892,6 @@ function shiftBonesDestinations(payload: BonesPayload, location: DungeonLocation
     }
 }
 
-// Part of C restore.c:lookup_id_mapping()
-function remappedMonsterId(oldId: number | undefined, monsterIds: ReadonlyMap<number, number>): number | undefined {
-    return oldId !== undefined && Number.isInteger(oldId) ? monsterIds.get(oldId) : undefined;
-}
-
 // Part of C restore.c:restobjchn(): the ocontainer back-pointer repair.
 function repairContainedObjects(container: GameObject): void {
     for (const object of container.contents || []) {
@@ -904,39 +899,6 @@ function repairContainedObjects(container: GameObject): void {
         object.where = 'contained';
         delete object.carrierMid;
         repairContainedObjects(object);
-    }
-}
-
-// Part of C restore.c:reset_oattached_mids(): walk the restored object
-// graph and remap each ghostly omid (and the port's leashmon), zeroing
-// any omonst — a dead owner's pet is no longer peaceful or tame.
-function resetObjectAttachedMonsterIds(level: GameMap, monsterIds: ReadonlyMap<number, number>): void {
-    eachObjectInBonesGraph(level, object =>
-        repairObjectMonsterIds(object, monsterIds));
-}
-
-// Part of C restore.c:reset_oattached_mids(): ghostly omonst zeroing and
-// omid remap; the port also remaps leashmon.
-function repairObjectMonsterIds(object: GameObject, monsterIds: ReadonlyMap<number, number>): void {
-    const extra = object.oextra;
-    const omid = extra?.omid;
-    if (omid && extra) {
-        const newId = remappedMonsterId(omid, monsterIds);
-        if (newId) extra.omid = newId;
-        else delete extra.omid;
-    }
-    if (object.omid) {
-        const newId = remappedMonsterId(object.omid, monsterIds);
-        if (newId) object.omid = newId;
-        else delete object.omid;
-    }
-    if (object.leashmon) {
-        object.leashmon = remappedMonsterId(object.leashmon, monsterIds) || 0;
-    }
-    if (object.oextra?.omonst) {
-        object.oextra.omonst.m_id = 0;
-        object.oextra.omonst.mpeaceful = 0;
-        object.oextra.omonst.mtame = 0;
     }
 }
 

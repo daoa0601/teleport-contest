@@ -25,6 +25,9 @@ import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEM
 import { NO_COLOR, ATR_INVERSE, ATR_BOLD, ATR_UNDERLINE, CLR_GRAY, DEC_TO_UNICODE } from './terminal.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
 import { statusConditionBit, bot, repadWithDashes } from './botl.js';
+import { displayMessageWindow } from './topl.js';
+import { showTextWindow } from './windows.js';
+import { restoreCommandMap } from './cmd.js';
 import { docrt, flush_screen, row_refresh, ROGUE_SYMSETS, shownSymbolSet } from './display.js';
 import { getMenuColoring, menuitem_invert_test } from './windows.js';
 import { nhgetch } from './input.js';
@@ -443,6 +446,25 @@ function groupAccelerators(rows, how) {
         return new Set();
     return new Set(rows.filter(row => row.group && (row.group !== row.key || row.group === '$')
         && (how === PICK_ANY || counts.get(row.group) === 1)).map(row => row.group));
+}
+// C wintty.c:tty_display_file(): show the collected text window
+// and page through it (reached through the winprocs.h display_file
+// dispatch macro). The file reading itself is pager.c's display port
+// (pager.ts displayHelpFile).
+// tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
+// stays on the bottom row even when the text fits on a short last page.
+export async function displayPagerText(lines) {
+    await displayMessageWindow();
+    await showTextWindow(lines);
+    await restoreCommandMap();
+}
+// Part of C wintty.c:tty_display_file(): expand tabs to eight-column
+// stops.
+export function expandTabs(line) {
+    let text = '';
+    for (const ch of line)
+        text += ch === '\t' ? ' '.repeat(8 - text.length % 8) : ch;
+    return text;
 }
 // C wintty.c:process_text_window()
 // A window tty_putstr() filled and display_nhwindow() showed without

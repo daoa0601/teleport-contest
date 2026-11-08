@@ -9,6 +9,7 @@
 // getlev().
 import { game, requireLiveGame } from './gstate.js';
 import { saveKey } from './save.js';
+import { eachObjectInBonesGraph } from './bones.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
 import { requireInitializedHero } from './hero_types.js';
 import { rollQuestFigureGenders } from './role.js';
@@ -739,6 +740,46 @@ export function restoreObjectPetHistory(objects, elapsed) {
         if (object.oextra?.omonst)
             restoreMonsterPetHistory(object.oextra.omonst, elapsed);
         restoreObjectPetHistory(object.contents ?? [], elapsed);
+    }
+}
+// C restore.c:lookup_id_mapping(): the id_map lookup (the port stores the
+// mapping as a Map instead of C's bucket chain).
+function remappedMonsterId(oldId, monsterIds) {
+    return oldId !== undefined && Number.isInteger(oldId) ? monsterIds.get(oldId) : undefined;
+}
+// C restore.c:reset_oattached_mids(): walk the restored object
+// graph and remap each ghostly omid (and the port's leashmon), zeroing
+// any omonst — a dead owner's pet is no longer peaceful or tame.
+// Bones loading is the only caller (bones.ts getbones()).
+export function resetObjectAttachedMonsterIds(level, monsterIds) {
+    eachObjectInBonesGraph(level, object => repairObjectMonsterIds(object, monsterIds));
+}
+// Part of C restore.c:reset_oattached_mids(): ghostly omonst zeroing and
+// omid remap; the port also remaps leashmon.
+function repairObjectMonsterIds(object, monsterIds) {
+    const extra = object.oextra;
+    const omid = extra?.omid;
+    if (omid && extra) {
+        const newId = remappedMonsterId(omid, monsterIds);
+        if (newId)
+            extra.omid = newId;
+        else
+            delete extra.omid;
+    }
+    if (object.omid) {
+        const newId = remappedMonsterId(object.omid, monsterIds);
+        if (newId)
+            object.omid = newId;
+        else
+            delete object.omid;
+    }
+    if (object.leashmon) {
+        object.leashmon = remappedMonsterId(object.leashmon, monsterIds) || 0;
+    }
+    if (object.oextra?.omonst) {
+        object.oextra.omonst.m_id = 0;
+        object.oextra.omonst.mpeaceful = 0;
+        object.oextra.omonst.mtame = 0;
     }
 }
 //# sourceMappingURL=restore.js.map

@@ -17,7 +17,8 @@ import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAu
 import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import type { MenuColoringRule } from './coloratt.js';
 import type { ConfigurationErrorReport } from './cfgfiles.js';
-import { displayHelpFile, displayPagerText } from './pager.js';
+import { displayHelpFile } from './pager.js';
+import { displayPagerText } from './wintty.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { rn2, rnd } from './rng.js';

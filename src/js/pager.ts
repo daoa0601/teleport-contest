@@ -166,6 +166,7 @@ import {
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNo } from './query.js';
 import { selectMapPosition, coordinateDescription } from './getpos.js';
+import { displayPagerText, expandTabs } from './wintty.js';
 import {
     getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
     type PageLocalMultiSelectItem,
@@ -1438,25 +1439,6 @@ export async function displayHelpFile(name: string, keyHelp = false): Promise<vo
         : lines.map(expandTabs);
     if (content.length) await displayPagerText(content);
     game.context.move = 0;
-}
-
-// Part of C wintty.c:tty_display_file(): show the collected text window
-// and page through it (reached through the winprocs.h display_file
-// dispatch macro).
-// tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
-// stays on the bottom row even when the text fits on a short last page.
-export async function displayPagerText(lines: Iterable<string> | AsyncIterable<string>): Promise<void> {
-    await displayMessageWindow();
-    await showTextWindow(lines);
-    await restoreCommandMap();
-}
-
-// Part of C wintty.c:tty_display_file(): expand tabs to eight-column
-// stops.
-function expandTabs(line: string): string {
-    let text = '';
-    for (const ch of line) text += ch === '\t' ? ' '.repeat(8 - text.length % 8) : ch;
-    return text;
 }
 
 // C pager.c:docontact(): the contact information text.
