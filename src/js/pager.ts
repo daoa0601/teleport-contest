@@ -1433,19 +1433,12 @@ export async function identifyTrap(): Promise<void> {
         await pline(`That is ${withIndefiniteArticle(trapName(trap.ttyp))}${made}${trap.madeby_u ? ' by you' : ''}.`);
     } else await pline("I can't see a trap there.");
 }
-// ---------------------------------------------------------------------------
-// C pager.c:dispfile_*, docontact(), domenucontrols().
-// ---------------------------------------------------------------------------
-
 // C wintty.c:tty_display_file()
 // C pager.c:dispfile_help(), dispfile_shelp(), dispfile_optionfile(),
 // dispfile_optmenu(), dispfile_license(), dispfile_debughelp(), and
 // dispfile_usagehelp(): the per-file help commands share this display port.
 // C pager.c:whatdoes_help(): the keyHelp pass over KEYHELP drops comments
 // and indentation.
-
-// C pager.c:dispfile_help(): display one help file through the shared
-// file window.
 export async function displayHelpFile(name: string, keyHelp = false): Promise<void> {
     clearMessageWindow();
     // C display_file() reads the file into an NHW_TEXT window; the pager
