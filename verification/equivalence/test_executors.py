@@ -11,6 +11,7 @@ import z3
 
 from cfront import CFront
 from csym import CElement, CPtr
+import core
 from jssym import V, parse_module
 from prove import REPO, check, recorder_dir
 from core import LoopSpec
@@ -1556,6 +1557,303 @@ class ExecutorTests(unittest.TestCase):
                   '    return x;\n}')
         scoped_body = parse_module(scoped.encode())[0]['example'].child_by_field_name('body')
         self.assertEqual(_assigned(scoped_body), {'x'})
+
+    def test_unhavoced_loop_write_cannot_close_a_claim(self):
+        """End-to-end discrimination for a modification-scan miss.
+
+        The JS port really returns 1 for x >= 1 while C returns 0. With the
+        loop-modified local left at its entry value at the modeled loop exit
+        (any future hole in the havoc scan, simulated here by dropping 'v'
+        from jssym._assigned), the modeled JS return becomes 0 as well and
+        the claim used to close as PROVED over a state the real loop can
+        never be in. The executor must fail closed on the unlisted write
+        instead of proving through the narrowing.
+        """
+        c = ('int example(int x) { int i = 0, v = 0; '
+             'while (i < x) { v = 3; i = i + 1; } return 0; }')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    let v = 0;\n'
+              '    while (i < x) {\n'
+              '        v = 3;\n'
+              '        i = i + 1;\n'
+              '    }\n'
+              '    return v > 0 ? 1 : 0;\n'
+              '}')
+
+        def silent(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x'])]
+
+        loops = {('js', 'example', 0): LoopSpec(
+            silent, lambda view, entry: entry['x'] - view['i'], streams=())}
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=loops)
+
+        import jssym
+        real_assigned = jssym._assigned
+
+        def without_v(node):
+            return real_assigned(node) - {'v'}
+
+        jssym._assigned = without_v
+        try:
+            self.rejected(c, js, reason='outside the havoc set', **domain)
+        finally:
+            jssym._assigned = real_assigned
+        # With the scan intact the havoc makes the silent invariant too weak
+        # to pin the return, so the real difference is found.
+        self.rejected(c, js, reason='outputs differ', **domain)
+
+    def test_uncovered_input_region_cannot_close_a_claim(self):
+        """A loop-exit narrowing that drops an input region must not prove.
+
+        The invariant ties v to i, which the real loop satisfies, but the
+        un-havoced head pins v to its entry value 0, so the modeled exit
+        state is feasible only for x == 0. The x >= 1 region, where the JS
+        port really returns 99 against C's x, used to pass vacuously because
+        no path pair covered it; claim comparison must reject the uncovered
+        region rather than tolerate it.
+        """
+        c = ('int example(int x) { int i = 0, v = 0; '
+             'while (i < x) { v = v + 1; i = i + 1; } return v; }')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    let v = 0;\n'
+              '    while (i < x) {\n'
+              '        v = v + 1;\n'
+              '        i = i + 1;\n'
+              '    }\n'
+              '    return v > 2 ? 99 : v;\n'
+              '}')
+
+        def ties_v_to_i(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']),
+                    view['v'] == view['i']]
+
+        loops = {('js', 'example', 0): LoopSpec(
+            ties_v_to_i, lambda view, entry: entry['x'] - view['i'], streams=())}
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=loops)
+
+        import jssym
+        real_assigned = jssym._assigned
+
+        def without_v(node):
+            return real_assigned(node) - {'v'}
+
+        jssym._assigned = without_v
+        try:
+            self.rejected(c, js, reason='outside the havoc set', **domain)
+        finally:
+            jssym._assigned = real_assigned
+        self.rejected(c, js, reason='outputs differ', **domain)
+
+    def test_dropped_path_cannot_close_a_claim(self):
+        """The pairwise comparison alone tolerates an uncovered side.
+
+        Equality queries only constrain the region covered by both path
+        sets, so a claim whose C execution dropped the x > 2 branch (any
+        executor path loss; simulated by pruning one branch arm) used to
+        prove vacuously over the missing region even though the JavaScript
+        returns 2 where C returns 1. Coverage of the input domain by each
+        side's paths is now part of the claim.
+        """
+        c = 'int example(int x) { if (x > 2) return 1; return 0; }'
+        js = 'function example(x) { if (x > 2) return 2; return 0; }'
+        real_branch = core.Machine.branch
+
+        def dropping_branch(self, path, cond):
+            out = real_branch(self, path, cond)
+            if self.side == 'c' and z3.simplify(cond).eq(z3.simplify(z3.Int('x') > 2)):
+                return [pair for pair in out if not pair[1]]
+            return out
+
+        core.Machine.branch = dropping_branch
+        try:
+            self.rejected(c, js, reason='do not cover the input domain',
+                          params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5])
+        finally:
+            core.Machine.branch = real_branch
+        self.rejected(c, js, reason='outputs differ',
+                      params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5])
+
+    def test_annotated_loop_cannot_lose_a_global_state_write(self):
+        """Fail closed when the loop body writes global state.
+
+        The havoc set only covers locals, so a loop whose body writes a
+        global through a call would leave the modeled exit state claiming
+        the global kept its entry value. The annotation machinery must
+        reject that claim instead of proving through the lost write.
+        """
+        c = ('struct s { int g; };\n'
+             'struct s st;\n'
+             'static void bump(void) { st.g = st.g + 1; }\n'
+             'int example(int x) { int i = 0; '
+             'while (i < x) { bump(); i = i + 1; } return st.g; }')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) {\n'
+              '        i = i + 1;\n'
+              '    }\n'
+              '    return i;\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x'])]
+
+        loops = {('c', 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=())}
+        self.rejected(c, js, reason='writes global state st.g, which annotations do not havoc',
+                      params=[('x', INT)], state=[('st.g', INT, None)],
+                      pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
+
+        # Without an annotation the same loop unrolls and the write is kept:
+        # the claim then fails on the observable difference, not on modeling.
+        self.rejected(c, js, reason='final st.g differs from its entry value',
+                      params=[('x', INT)], state=[('st.g', INT, None)],
+                      pre=lambda s: [s['x'] >= 1, s['x'] <= 5])
+
+    def test_annotated_loop_followed_by_a_draw_still_covers(self):
+        """Coverage must not reject a legal annotated loop plus a draw.
+
+        Both loops keep the core position at zero, so the draw after the
+        loop reads R_core(pos) with a locally havoced position. The coverage
+        clause used to guard that term's legality with an implication, and a
+        witness making R_core illegal everywhere vacated every clause, so
+        this equivalent pair was rejected as "paths do not cover the input
+        domain" with negative draws in the model. A draw's legality bound
+        over a local position is implied by the stream domain and is now
+        dropped from the clause instead of guarded.
+        """
+        c = ('extern unsigned long long isaac64_next_uint64(void *);\n'
+             'struct { long rng_state; } rnglist[1];\n'
+             'int example(int x) {\n'
+             '    int i = 0;\n'
+             '    while (i < x) { i = i + 1; }\n'
+             '    return (int) (isaac64_next_uint64(&rnglist[0].rng_state) % 10u);\n'
+             '}')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) { i = i + 1; }\n'
+              '    return Number(isaac64_next_uint64(game.coreCtx) % 10n);\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            del pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']), pos['core'] == 0]
+
+        loops = {('c', 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',)),
+            ('js', 'example', 0): LoopSpec(
+                invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',))}
+        self.equivalent(c, js, params=[('x', INT)],
+                        pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
+
+        # A genuinely uncovered region is still found with local positions
+        # in play: pinning the loop counter below x removes every exit path
+        # for x >= 1.
+        def broken(view, entry, pos, pos0):
+            del pos0
+            return [z3.And(view['i'] >= 0, view['i'] < entry['x']), pos['core'] == 0]
+
+        bad_loops = {('c', 'example', 0): LoopSpec(
+            broken, lambda view, entry: entry['x'] - view['i'], streams=('core',)),
+            ('js', 'example', 0): LoopSpec(
+                broken, lambda view, entry: entry['x'] - view['i'], streams=('core',))}
+        self.rejected(c, js, reason='do not cover the input domain',
+                      params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=bad_loops)
+
+    def test_coalesced_draw_branches_still_cover(self):
+        """Coverage must also strip draw bounds nested under Or.
+
+        Both arms of the post-loop draw branch return the same constant, so
+        coalesce_returns merges them into one path whose condition is an Or
+        with the draw's legality bound nested inside each arm. The bound
+        filter used to miss those, and a witness making R_core illegal
+        everywhere then rejected this equivalent pair as uncovered
+        (R_core[0..2] = -1,-1,-1 in the model). The bounds are now stripped
+        structurally, wherever they sit in the condition.
+        """
+        c = ('extern unsigned long long isaac64_next_uint64(void *);\n'
+             'struct { long rng_state; } rnglist[1];\n'
+             'int example(int x) {\n'
+             '    int i = 0;\n'
+             '    while (i < x) { i = i + 1; }\n'
+             '    if (isaac64_next_uint64(&rnglist[0].rng_state) % 2u == 0u) return 7;\n'
+             '    return 7;\n'
+             '}')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) { i = i + 1; }\n'
+              '    if (Number(isaac64_next_uint64(game.coreCtx) % 2n) === 0) return 7;\n'
+              '    return 7;\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            del pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']), pos['core'] == 0]
+
+        loops = {('c', 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',)),
+            ('js', 'example', 0): LoopSpec(
+                invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',))}
+        self.equivalent(c, js, params=[('x', INT)],
+                        pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
+
+    def test_joined_draw_branches_preserve_coverage(self):
+        # Joining simplifies and flattens draw bounds into the branch guard.
+        # Coverage still ranges over legal uint64 draws at every position.
+        c = ('extern unsigned long long isaac64_next_uint64(void *);\n'
+             'struct { long rng_state; } rnglist[1];\n'
+             'int example(int x) {\n'
+             '    int i = 0;\n'
+             '    while (i < x) { i = i + 1; }\n'
+             '    if (x == 0)\n'
+             '        return (int) (isaac64_next_uint64(&rnglist[0].rng_state) % 10u);\n'
+             '    return (int) (isaac64_next_uint64(&rnglist[0].rng_state) % 10u);\n'
+             '}')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) { i = i + 1; }\n'
+              '    if (x === 0)\n'
+              '        return Number(isaac64_next_uint64(game.coreCtx) % 10n);\n'
+              '    return Number(isaac64_next_uint64(game.coreCtx) % 10n);\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            return [view['i'] >= 0, view['i'] <= entry['x'], pos['core'] == pos0['core']]
+
+        def joined(world, front, modules):
+            world.join_paths = True
+
+        loops = {(side, 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',))
+            for side in ('c', 'js')}
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=loops, configure=joined)
+        self.equivalent(c, js, **domain)
+        self.rejected(c, js.replace('% 10n', '% 11n'),
+                      reason='outputs differ', **domain)
+
+        # Removing an input branch must still leave the claim unproved after
+        # stripping the legality bounds. The branch condition is not a bound.
+        real_branch = core.Machine.branch
+
+        def dropping_input_branch(self, path, cond):
+            out = real_branch(self, path, cond)
+            if self.side == 'c' and z3.eq(z3.simplify(cond), z3.IntVal(0) == z3.Int('x')):
+                return [pair for pair in out if not pair[1]]
+            return out
+
+        core.Machine.branch = dropping_input_branch
+        try:
+            self.rejected(c, js, reason='do not cover the input domain', **domain)
+        finally:
+            core.Machine.branch = real_branch
 
 
 
