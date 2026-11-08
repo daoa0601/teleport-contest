@@ -212,32 +212,25 @@ def _free_constants(formula) -> set:
     return found
 
 def _local_draw_bound(world, entry, local_set):
-    """The stream term when this path condition is exactly a draw's legality
-    bound t >= 0 ∧ t < 2**64 over one locally-positioned stream term.
+    """The stream term when this condition is one of its uint64 bounds.
 
-    A legal stream satisfies that bound at every position, so the coverage
-    question may drop the conjunct: keeping it would let a witness pick an
-    illegal value at that position and vacate the clause for a claim that is
-    genuinely covered."""
-    if not (z3.is_and(entry) and entry.num_args() == 2):
-        return None
-    low, high = entry.arg(0), entry.arg(1)
-    if not z3.is_ge(low):
-        low, high = high, low
-    if not (z3.is_ge(low) and z3.is_lt(high)):
-        return None
-    term, zero = low.arg(0), low.arg(1)
-    same, limit = high.arg(0), high.arg(1)
-    if not (z3.is_int_value(zero) and zero.as_long() == 0
-            and z3.is_int_value(limit) and limit.as_long() == U64
-            and z3.eq(term, same)):
+    Joining can flatten the original pair and simplify t < 2**64 to
+    Not(2**64 <= t). Match each bound in either form. A legal stream
+    satisfies each at every position, so coverage may drop it without
+    dropping any program branch condition."""
+    if not (z3.is_ge(entry) or z3.is_lt(entry)
+            or (z3.is_not(entry) and z3.is_le(entry.arg(0)))):
         return None
     mentioned = _stream_applications(world, entry)
-    if len(mentioned) != 1 or not z3.eq(next(iter(mentioned)), term):
+    if len(mentioned) != 1:
         return None
+    term = next(iter(mentioned))
     if any(v not in local_set for v in _free_constants(term)):
         return None
-    return term
+    condition = z3.simplify(entry)
+    if any(z3.eq(condition, z3.simplify(bound)) for bound in (term >= 0, term < U64)):
+        return term
+    return None
 
 def _strip_local_draw_bounds(world, term, local_set):
     """Remove local draw-legality bounds wherever they sit in the term.

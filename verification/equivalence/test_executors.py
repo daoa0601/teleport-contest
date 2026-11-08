@@ -1804,6 +1804,57 @@ class ExecutorTests(unittest.TestCase):
         self.equivalent(c, js, params=[('x', INT)],
                         pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
 
+    def test_joined_draw_branches_preserve_coverage(self):
+        # Joining simplifies and flattens draw bounds into the branch guard.
+        # Coverage still ranges over legal uint64 draws at every position.
+        c = ('extern unsigned long long isaac64_next_uint64(void *);\n'
+             'struct { long rng_state; } rnglist[1];\n'
+             'int example(int x) {\n'
+             '    int i = 0;\n'
+             '    while (i < x) { i = i + 1; }\n'
+             '    if (x == 0)\n'
+             '        return (int) (isaac64_next_uint64(&rnglist[0].rng_state) % 10u);\n'
+             '    return (int) (isaac64_next_uint64(&rnglist[0].rng_state) % 10u);\n'
+             '}')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) { i = i + 1; }\n'
+              '    if (x === 0)\n'
+              '        return Number(isaac64_next_uint64(game.coreCtx) % 10n);\n'
+              '    return Number(isaac64_next_uint64(game.coreCtx) % 10n);\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            return [view['i'] >= 0, view['i'] <= entry['x'], pos['core'] == pos0['core']]
+
+        def joined(world, front, modules):
+            world.join_paths = True
+
+        loops = {(side, 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',))
+            for side in ('c', 'js')}
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=loops, configure=joined)
+        self.equivalent(c, js, **domain)
+        self.rejected(c, js.replace('% 10n', '% 11n'),
+                      reason='outputs differ', **domain)
+
+        # Removing an input branch must still leave the claim unproved after
+        # stripping the legality bounds. The branch condition is not a bound.
+        real_branch = core.Machine.branch
+
+        def dropping_input_branch(self, path, cond):
+            out = real_branch(self, path, cond)
+            if self.side == 'c' and z3.eq(z3.simplify(cond), z3.IntVal(0) == z3.Int('x')):
+                return [pair for pair in out if not pair[1]]
+            return out
+
+        core.Machine.branch = dropping_input_branch
+        try:
+            self.rejected(c, js, reason='do not cover the input domain', **domain)
+        finally:
+            core.Machine.branch = real_branch
+
 
 
 if __name__ == '__main__':
