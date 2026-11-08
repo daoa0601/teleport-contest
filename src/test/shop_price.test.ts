@@ -9,7 +9,8 @@ import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { shopObjectUnitCost } from '../js/shk.js';
 import { splitObjectStack } from '../js/mkobj.js';
 
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import {
     FOOD_RATION, LONG_SWORD, SCR_IDENTIFY, WAN_FIRE,
     WORTHLESS_PIECE_OF_RED_GLASS,

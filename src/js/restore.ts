@@ -3,13 +3,39 @@
 // (restoreGame() with the restgamestate() refusal dialogue) stays in save.ts
 // beside the save.c side, and the restobjchn()/getlev() bones clock shift
 // stays in bones.ts beside its object traversal helpers.
-// C refs: restore.c inven_inuse(), restmon(), rest_stairs(), getlev(), and
+// C refs: restore.c inven_inuse(), restmon(), rest_stairs(), getlev(),
+// dorecover()/restgamestate() (restoreGame), and
 // restore_msghistory(); mon.c hide_monst(), whose only native caller is
 // getlev().
 
 import { game, requireLiveGame } from './gstate.js';
+import { saveKey } from './save.js';
+import { eachObjectInBonesGraph } from './bones.js';
+import type { RestoreStorage } from './save.js';
+import { decodeSavedGame } from './persistent_state_validation.js';
+import { requireInitializedHero } from './hero_types.js';
+import { rollQuestFigureGenders } from './role.js';
+import { recorderRestoredTime } from './calendar.js';
+import { resolveDungeonIdentities } from './dungeon.js';
+import { oinit } from './o_init.js';
+import { restoreScheduledLevelChange } from './do.js';
+import { restore_waterlevel } from './mkmaze.js';
+import { restoreLevelRegions } from './region.js';
+import { restoreSavedLightSources } from './light.js';
+import { restoreSavedTimers } from './timeout.js';
+import { restoreEngravings } from './engrave.js';
+import { promptYesNo } from './query.js';
+import { displayMessageWindow } from './topl.js';
+import { reglyphSymbolSet } from './display.js';
+import { vision_reset_new_level } from './vision.js';
+import { weaponNeedsBashingMessage } from './wield.js';
+import { resetErinys } from './monster_data.js';
+import { restoreMonsterInventoryOwnership } from './mon.js';
+import { restorePersistentState } from './state_schema.js';
+import type { PersistentState } from './state_schema.js';
+import { cmdq_clear } from './cmd.js';
 import { rememberToplines } from './topl.js';
-import { plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { consumeInventoryItem } from './invent.js';
 import { objectName, pluralizeObjectNoun } from './objnam.js';
 import { deleteTrap } from './trap.js';
@@ -21,8 +47,9 @@ import { isok } from './cmd.js';
 import {
     AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, ismnum, MAGIC_PORTAL, M_AP_FURNITURE,
     M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM,
+    CQ_CANNED, CQ_REPEAT, M_AP_NOTHING, Upolyd,
 } from './const.js';
-import { SLIME_MOLD } from './object_data.js';
+import { GRAPPLING_HOOK, PICK_AXE, SLIME_MOLD } from './object_data.js';
 import { validSavedHeroAlignment } from './character_validation.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
 import { validSavedLightSourcePosition } from './light_validation.js';
@@ -36,6 +63,7 @@ import type {
     SavedMonsterTraits, ShopBillEntry, ShopkeeperData, VaultGuardData, WormSegment,
 } from './monster_types.js';
 import type { GameMap } from './game.js';
+import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Position, Stairway } from './map_types.js';
@@ -485,3 +513,325 @@ export function restoreMessageHistory(saved: readonly string[]): void {
         game._toplines = message;
     }
 }
+
+// Part of C restore.c:getlev(): one level's monster restore.
+function restoreLevelMonsters(level: GameMap, moves: number): void {
+    restoreLevelPetHistory(level, 0);
+    restoreEngravings(level, moves);
+    if (!validMonsterWormBodies(level)) throw new Error('Invalid saved worm bodies');
+    restoreMonsterWormHeads(level);
+    for (const monster of level.monsters) restoreMonsterInventoryOwnership(monster);
+}
+
+// Part of C restore.c:dorecover(): monster restore across levels,
+// migrations, and the steed.
+function restoreSavedMonsters(state: PersistentState): void {
+    if (state.level) restoreLevelMonsters(state.level, state.moves);
+    for (const cached of state._levelCache?.values() ?? []) {
+        restoreLevelMonsters(cached.level, state.moves);
+        restoreObjectPetHistory(cached.billObjects ?? [], 0);
+    }
+    for (const monster of state._migratingMonsters || []) {
+        restoreMonsterPetHistory(monster, 0);
+        restoreObjectPetHistory(monster.minvent || monster.inventory || [], 0);
+        restoreMonsterInventoryOwnership(monster);
+    }
+    if (state.u.usteed) {
+        restoreMonsterPetHistory(state.u.usteed, 0);
+        restoreMonsterInventoryOwnership(state.u.usteed);
+    }
+    restoreObjectPetHistory([
+        ...state.inventory, ...state.migratingObjects ?? [], ...state.billObjects ?? [],
+    ], 0);
+}
+
+// C restore.c:restgamestate() reports its refusal through You() and returns
+// FALSE; dorecover() then waits for the message to be dismissed and discards
+// the save file. The synchronous restoreGame() can only report the refusal,
+// so the caller completes that dialogue through dismissUnhealthyRestore().
+let restoreRefusal: 'unhealthy' | null = null;
+let retainedSave: { storage: RestoreStorage; key: string } | null = null;
+
+// C unixmain.c:main(): the wizard/explore save-retention question after
+// recovery. C unixmain.c asks after dorecover()'s welcome; ordinary games
+// consume their file inside dorecover(), while wizard and explore games
+// may keep it.
+export async function askKeepRestoredSave(): Promise<void> {
+    const restored = retainedSave;
+    retainedSave = null;
+    if (!restored) return;
+    if (await promptYesNo('Do you want to keep the save file?') === 'n')
+        restored.storage.removeItem?.(restored.key);
+}
+
+// Port only: reports the deferred unhealthy-restore refusal.
+export function restoreRefusedAsUnhealthy(): boolean {
+    return restoreRefusal === 'unhealthy';
+}
+
+// Part of C restore.c:dorecover(): the unhealthy-refusal message, wait,
+// and file discard.
+export async function dismissUnhealthyRestore(
+    name: string | null | undefined,
+    storage: RestoreStorage | null | undefined = game.storage,
+): Promise<void> {
+    if (restoreRefusal !== 'unhealthy') return;
+    restoreRefusal = null;
+    await pline('You were not healthy enough to survive restoration.');
+    await displayMessageWindow();
+    storage?.removeItem?.(saveKey(name));
+}
+
+// C restore.c:dorecover().
+// Also C restore.c:restgamestate(): inlined here.
+export async function restoreGame(
+    name: string | null | undefined,
+    storage: RestoreStorage | null | undefined = game.storage,
+): Promise<boolean> {
+    restoreRefusal = null;
+    retainedSave = null;
+    if (!storage?.getItem) return false;
+    const key = saveKey(name);
+    try {
+        const encoded = storage.getItem(key);
+        if (!encoded) return false;
+        const snapshot = decodeSavedGame(encoded);
+        if (!snapshot.state.level || !snapshot.state.urole || !snapshot.state.urace)
+            return false;
+        requireInitializedHero(snapshot.state.u);
+        // C restgamestate() reads the saved flags and runs role_init()
+        // before it reads the hero, so the quest gender rolls are spent
+        // even when the save is then refused; installing the snapshot
+        // afterwards overwrites the rolled values, as Sfi_q_score() does.
+        rollQuestFigureGenders(snapshot.state.urole, { ldrgend: 0, nemgend: 0 });
+        // C restgamestate() refuses a save whose hero was not healthy enough
+        // to survive restoration, and dorecover() then waits for the message
+        // to be dismissed before discarding the save file and starting over.
+        // restoreGame() is synchronous, so the caller owns that dialogue.
+        const savedHero = snapshot.state.u;
+        if ((savedHero.uhp ?? 0) <= 0
+            && (!Upolyd(savedHero) || (savedHero.mh ?? 0) <= 0)) {
+            restoreRefusal = 'unhealthy';
+            return false;
+        }
+        restoreSavedMonsters(snapshot.state);
+        // C dorecover() refills the tty recall ring after the game state;
+        // capture this session's messages before the snapshot replaces them.
+        const sessionHistory = game._messageHistory;
+        const sessionToplines = game._toplines;
+        // C restgamestate() reads ubirthday back from its local-time text.
+        const birthday = snapshot.state.ubirthday === undefined
+            ? undefined : recorderRestoredTime(snapshot.state.ubirthday);
+        restorePersistentState(game, snapshot.state);
+        if (birthday !== undefined) game.ubirthday = birthday;
+        resetRestoredInstanceState();
+        resetErinys(game.u.ualign?.abuse ?? 0);
+        resolveDungeonIdentities(game);
+        // C restnames() reloads objects[].oc_prob as saved; those gem
+        // probabilities are always oinit()'s values for the saved u.uz.
+        oinit();
+        game._messageHistory = sessionHistory;
+        game._toplines = sessionToplines;
+        restoreMessageHistory(snapshot.state._messageHistory ?? []);
+        restoreScheduledLevelChange();
+        restore_waterlevel();
+        // restgamestate() rebuilds the first-use reminder from the restored
+        // weapon, treating applied tools conservatively as improvised weapons.
+        const weapon = game.uwep || game.u.uwep;
+        game._unweapon = weaponNeedsBashingMessage(weapon, game)
+            || weapon?.otyp === PICK_AXE || weapon?.otyp === GRAPPLING_HOOK;
+        game.multi = 0;
+        game.warn_obj_cnt = 0;
+        game._magicKeyTrapWarningCount = 0;
+        game._monsterSwallower = null;
+        game._monsterEngulf = null;
+        game._commandCount = 0;
+        game._commandKey = 0;
+        cmdq_clear(CQ_REPEAT);
+        game._inDoAgain = false;
+        game._movementAttempt = null;
+        game._occupation = null;
+        game._lockAttempt = null;
+        game._runState = null;
+        game._heroTimePending = false;
+        game._kickedLoc = null;
+        cmdq_clear(CQ_CANNED);
+        game._afterMove = null;
+        game._armorTheft = null;
+        game.context.move = 0;
+        // Saved flags govern future resets; the current Space binding still
+        // belongs to this process until an option change reconciles it.
+        game.commandBindings.setRestOnSpace(!!game.flags?.rest_on_space, { initial: true });
+        game._emptyShops = [];
+        game._shopFollowMessageTurn = 0;
+        game.program_state = { something_worth_saving: true };
+        game.fmon = game.level?.monsters[0] ?? null;
+        game.fruits?.reverse(); // C loadfruitchn() prepends saved entries.
+        game.stairs = restoreLevelChains(snapshot.state.level, game.stairs);
+        await restoreLevelRegions(game, 0);
+        // C restores the hero's carried and migrating lights while reading
+        // the game state (restore.c:655) and then pushes the current
+        // level's own batch back in front while loading the level
+        // (restore.c:1145); each batch returns reversed from its saved
+        // newest-first order.
+        restoreSavedLightSources(game);
+        restoreSavedTimers(game);
+        // dorecover() assigns Rogue symbols again before the first redraw.
+        reglyphSymbolSet();
+        // C restore.c:dorecover() rebuilds transient vision after loading the
+        // level. No old sight bits may suppress its first terrain repaint.
+        vision_reset_new_level();
+        game.vision_full_recalc = 1;
+        if (game.flags.debug || game.flags.explore || game.discover)
+            retainedSave = { storage, key };
+        else storage.removeItem?.(key);
+        return true;
+    } catch (error) {
+        if (error instanceof PanicTermination) throw error;
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`Unable to restore game: ${message}`);
+        return false;
+    }
+}
+
+// Port only: clears process-scoped globals when restoring into live state.
+// C starts a restored game in a new process. These values belong to decl.c
+// instance globals or function statics, rather than the saved context or hero.
+// Clear them here too when callers restore into the existing live state.
+function resetRestoredInstanceState(): void {
+    // restgamestate() rebuilds youmonst from the saved species; its disguise
+    // belongs to that unsaved monster structure, not the saved native u.
+    game.u.m_ap_type = M_AP_NOTHING;
+    game.u.mappearance = 0;
+    game._lastInvNr = 51; // decl.c starts the rotating letter order before 'a'.
+    game._heroActionSeq = game.moves * 8; // restgamestate() recalculates hero_seq.
+    game._encumbranceLevel = 0;
+    // Resuming skips the new-game branch of moveloop_preamble().
+    game._moveloopStarted = true;
+    delete game._lastPushedBoulder;
+    delete game._lastBoulderPushMove;
+    delete game._farMonsterNoise;
+    delete game._monsterNoiseTime;
+    delete game._prevDecorType;
+    delete game._bubbleTraversalUp;
+    delete game._rndmonstAlignment;
+    delete game._rndmonstAlignmentMove;
+    delete game._monsterGenerationOrder;
+    delete game._runtimeVersionInfoInitialized;
+    delete game.shownSymbols;
+
+    // A panic save can interrupt helplessness. Native multi, its completion
+    // message, and its callback are all unsaved, including prayer/digestion data.
+    delete game._helplessTurns;
+    delete game._helplessReason;
+    delete game._helplessDoneMessage;
+    delete game._digestedMonsterSpecies;
+    delete game._mimicMealMessage;
+    delete game._prayerAlignment;
+    delete game._prayerTrouble;
+    delete game._prayerOutcome;
+
+    delete game._bonesSaved;
+    delete game._characterPickerUsed;
+    delete game._initialPwBonus;
+    delete game._lastDemigodAggravation;
+    delete game._lastDemigodNasty;
+    delete game._preserveLeadingStyledBlanks;
+    delete game._restoredBones;
+    delete game._specialLevelPrototype;
+    delete game._startingEffectsApplied;
+    delete game._tutorialDeclined;
+    delete game.in_mklev;
+    delete game.in_mk_themerooms;
+    delete game.made_branch;
+    delete game.smeq;
+    delete game.splev_align;
+    delete game.targetX;
+    delete game.targetY;
+    delete game.vault_x;
+    delete game.vault_y;
+    delete game.were_changes;
+    // Instance options (symset, nethackrc, preferred_pet, tutorial_set_in_config)
+    // retain the values parsed for the current process before restore.
+}
+
+// ---------------------------------------------------------------------------
+// C save.c:savemon() and restore.c:restmon(): saved pet extensions.
+// ---------------------------------------------------------------------------
+
+// Part of C restore.c:restmon(): the pet fix across a level's monsters
+// and objects.
+export function restoreLevelPetHistory(level: GameMap, elapsed: number): void {
+    for (const monster of level.monsters) {
+        restoreMonsterPetHistory(monster, elapsed);
+        restoreObjectPetHistory(monster.minvent || monster.inventory || [], elapsed);
+    }
+    for (const column of level.objects)
+        for (const pile of column ?? []) restoreObjectPetHistory(pile ?? [], elapsed);
+    restoreObjectPetHistory(level.buriedObjects ?? [], elapsed);
+}
+
+// Part of C restore.c:restmon(): the edog fields (droptime, hungrytime,
+// apport) of one restored monster's mextra.
+export function restoreMonsterPetHistory(monster: Monster | SavedMonsterTraits, elapsed: number): void {
+    const pet = monster.edog || monster.mextra?.edog;
+    if (!pet) return;
+    // Only these two pet times are saved relative to moves. Whistle time
+    // remains absolute, and catch-up separately reduces tameness.
+    pet.droptime += elapsed;
+    pet.hungrytime += elapsed;
+    if (pet.apport <= 0) pet.apport = 1;
+    monster.edog = pet;
+    if (monster.mextra) monster.mextra.edog = pet;
+    else monster.mextra = { edog: pet };
+}
+
+// Part of C restore.c:restmon(): the edog fix applied to pets saved
+// inside objects.
+export function restoreObjectPetHistory(objects: readonly GameObject[], elapsed: number): void {
+    for (const object of objects) {
+        if (object.oextra?.omonst) restoreMonsterPetHistory(object.oextra.omonst, elapsed);
+        restoreObjectPetHistory(object.contents ?? [], elapsed);
+    }
+}
+
+// C restore.c:lookup_id_mapping(): the id_map lookup (the port stores the
+// mapping as a Map instead of C's bucket chain).
+function remappedMonsterId(oldId: number | undefined, monsterIds: ReadonlyMap<number, number>): number | undefined {
+    return oldId !== undefined && Number.isInteger(oldId) ? monsterIds.get(oldId) : undefined;
+}
+
+// C restore.c:reset_oattached_mids(): walk the restored object
+// graph and remap each ghostly omid (and the port's leashmon), zeroing
+// any omonst — a dead owner's pet is no longer peaceful or tame.
+// Bones loading is the only caller (bones.ts getbones()).
+export function resetObjectAttachedMonsterIds(level: GameMap, monsterIds: ReadonlyMap<number, number>): void {
+    eachObjectInBonesGraph(level, object =>
+        repairObjectMonsterIds(object, monsterIds));
+}
+
+// Part of C restore.c:reset_oattached_mids(): ghostly omonst zeroing and
+// omid remap; the port also remaps leashmon.
+function repairObjectMonsterIds(object: GameObject, monsterIds: ReadonlyMap<number, number>): void {
+    const extra = object.oextra;
+    const omid = extra?.omid;
+    if (omid && extra) {
+        const newId = remappedMonsterId(omid, monsterIds);
+        if (newId) extra.omid = newId;
+        else delete extra.omid;
+    }
+    if (object.omid) {
+        const newId = remappedMonsterId(object.omid, monsterIds);
+        if (newId) object.omid = newId;
+        else delete object.omid;
+    }
+    if (object.leashmon) {
+        object.leashmon = remappedMonsterId(object.leashmon, monsterIds) || 0;
+    }
+    if (object.oextra?.omonst) {
+        object.oextra.omonst.m_id = 0;
+        object.oextra.omonst.mpeaceful = 0;
+        object.oextra.omonst.mtame = 0;
+    }
+}
+

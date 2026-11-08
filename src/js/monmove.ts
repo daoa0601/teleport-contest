@@ -36,7 +36,7 @@ import {
 } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig, switchHeroTerrain } from './hack.js';
 import type { Monster } from './monster_types.js';
-import { panic } from './diagnostics.js';
+import { panic } from './end.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position, MapLocation, Trap } from './map_types.js';
@@ -60,7 +60,7 @@ import { hasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from 
 
 import type { MonsterConsumptionOptions, MonsterDeathResult } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
-import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
+import { ACCFOOD, MANFOOD, dogFood } from './dog.js';
 import {
     canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotion, seenResistanceForDamage,
     monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive,

@@ -3,7 +3,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_GENOD, MV_KNOWS_EGG, OBJECT_TIMER_KIND } from '../js/const.js';
-import { finishEggHatchTimer, runClaimedEggHatchTimer, } from '../js/egg.js';
+import { finishEggHatchTimer, runClaimedEggHatchTimer, } from '../js/timeout.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

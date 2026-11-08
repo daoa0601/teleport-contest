@@ -5,7 +5,8 @@ import { ensureQuestStatus } from '../js/quest.js';
 import { convertQuestLine } from '../js/questpgr.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { rollQuestFigureGenders } from '../js/role.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 const cases = [

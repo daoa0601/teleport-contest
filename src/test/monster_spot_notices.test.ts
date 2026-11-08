@@ -18,7 +18,8 @@ import {
 } from '../js/const.js';
 import { canSeeMonster, docrt } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

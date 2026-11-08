@@ -4,7 +4,7 @@
 import { game, requireLiveGame } from './gstate.js';
 import { flush_screen } from './display.js';
 import { vision_recalc } from './vision.js';
-import { coordinateDescription } from './pager.js';
+import { coordinateDescription } from './getpos.js';
 import { messageTypeFor } from './message_types.js';
 import { heroIsBlind, heroIsDeaf, heroIsUnaware } from './senses.js';
 import {
@@ -14,7 +14,8 @@ import { nhgetch, rawPrint, writeRawText } from './input.js';
 import { BUFSZ, LL_NONE, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
-import { diagnosticReason, fuzzerMode, panic } from './diagnostics.js';
+import { diagnosticReason, fuzzerMode } from './diagnostics.js';
+import { panic } from './end.js';
 import { paniclog } from './novel_tribute.js';
 import { FUZZER_IMPOSSIBLE_PANIC } from './diagnostics.js';
 import type { Position } from './map_types.js';
@@ -109,9 +110,9 @@ export async function plineWithContinuation(msg: string, {
     }
     const length = new TextEncoder().encode(msg).length;
     if (length > 5 * BUFSZ - 1) {
-        // diagnostics.js statically imports this module; a static import
-        // back would be a load cycle, so panic() is fetched lazily.
-        const { panic } = await import('./diagnostics.js');
+        // end.js statically imports this module; a static import back would
+        // be a load cycle, so panic() is fetched lazily.
+        const { panic } = await import('./end.js');
         await panic(`pline attempting to print ${length} characters!`);
     }
     msg = truncatePlineMessage(msg);

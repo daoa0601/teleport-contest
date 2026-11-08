@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { sanitizeName } from '../js/bones_name.js';
+import { sanitizeName } from '../js/bones.js';
 import { game } from '../js/gstate.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 void test('bones names replace control characters with full stops', () => {
@@ -15,4 +15,4 @@ void test('printable high-bit name characters follow the eight-bit input option'
     game.iflags.wc_eight_bit_input = true;
     assert.equal(sanitizeName('caf\u00e9'), 'caf\u00e9', 'an eight-bit tty keeps printable eight-bit characters');
 });
-//# sourceMappingURL=bones_name.test.js.map
+//# sourceMappingURL=bones_sanitize_name.test.js.map

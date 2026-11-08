@@ -165,7 +165,8 @@ import {
 } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNo } from './query.js';
-import { selectMapPosition } from './getpos.js';
+import { selectMapPosition, coordinateDescription } from './getpos.js';
+import { displayPagerText, expandTabs } from './wintty.js';
 import {
     getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
     type PageLocalMultiSelectItem,
@@ -1372,21 +1373,6 @@ function listHeading(kind: LookListKind, nearby: boolean, mode: string): string 
     return `${name} currently shown near ${mode === 'c' ? canSpotHeroSelf() ? 'you' : 'your position' : coordinateDescription(game.u.ux, game.u.uy, mode)}:`;
 }
 
-// C getpos.c:coord_desc(): map, screen, or compass coordinates.
-export function coordinateDescription(x: number, y: number, mode: string): string {
-    if (mode === 'n') return '';
-    if (mode === 'm') return `<${x},${y}>`;
-    if (mode === 's') return `[${String(y + 2).padStart(2, '0')},${String(x).padStart(2, '0')}]`;
-    const dx = x - game.u.ux, dy = y - game.u.uy;
-    if (!dx && !dy) return '(here)';
-    if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1)
-        return `(${dy ? dy > 0 ? 'south' : 'north' : ''}${dx ? dx > 0 ? 'east' : 'west' : ''})`;
-    const full = mode === 'f';
-    const parts = [dy ? `${Math.abs(dy)}${dy > 0 ? full ? 'south' : 's' : full ? 'north' : 'n'}` : '',
-        dx ? `${Math.abs(dx)}${dx > 0 ? full ? 'east' : 'e' : full ? 'west' : 'w'}` : ''].filter(Boolean);
-    return `(${parts.join(',')})`;
-}
-
 // Part of C pager.c:look_all(), look_traps(), look_engrs(): the raw glyph
 // symbol column.
 function mapSymbolAt(x: number, y: number): string {
@@ -1453,25 +1439,6 @@ export async function displayHelpFile(name: string, keyHelp = false): Promise<vo
         : lines.map(expandTabs);
     if (content.length) await displayPagerText(content);
     game.context.move = 0;
-}
-
-// Part of C wintty.c:tty_display_file(): show the collected text window
-// and page through it (reached through the winprocs.h display_file
-// dispatch macro).
-// tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
-// stays on the bottom row even when the text fits on a short last page.
-export async function displayPagerText(lines: Iterable<string> | AsyncIterable<string>): Promise<void> {
-    await displayMessageWindow();
-    await showTextWindow(lines);
-    await restoreCommandMap();
-}
-
-// Part of C wintty.c:tty_display_file(): expand tabs to eight-column
-// stops.
-function expandTabs(line: string): string {
-    let text = '';
-    for (const ch of line) text += ch === '\t' ? ' '.repeat(8 - text.length % 8) : ch;
-    return text;
 }
 
 // C pager.c:docontact(): the contact information text.

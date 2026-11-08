@@ -25,8 +25,9 @@ import {
     M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, NON_PM, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND,
     LL_ARTIFACT, LL_CONDUCT, CORPSTAT_FEMALE, MD_PAD_BOGONS,
 } from './const.js';
-import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition } from './cmd.js';
-import { OBJ_DESCR } from './o_init.js';
+import { cmdq_clear, cmdq_pop } from './cmd.js';
+import { takeQueuedAdjacentPosition } from './getpos.js';
+import { OBJ_DESCR, appearanceRange } from './o_init.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { renameDiscoveredType, recordObjectEncounter, rememberType, objectTypeKnown } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
@@ -887,34 +888,6 @@ function restrictedArtifactName(object: GameObject, artifact: Artifact): boolean
     if (!description || !other) return false;
     const [low, high] = appearanceRange(object);
     return description === other || artifact.baseType >= low && artifact.baseType <= high;
-}
-
-// C o_init.c:obj_shuffle_range()
-// Includes the fixed-description exceptions.
-function appearanceRange(object: GameObject): readonly [number, number] {
-    const type = object.otyp;
-    const armorRanges = [
-        [HELMET, OBJECT_NAMES.indexOf('helm of telepathy')],
-        [LEATHER_GLOVES, OBJECT_NAMES.indexOf('gauntlets of dexterity')],
-        [CLOAK_OF_PROTECTION, CLOAK_OF_DISPLACEMENT], [SPEED_BOOTS, LEVITATION_BOOTS],
-    ];
-    if (object.oclass === ARMOR_CLASS) {
-        for (const [low, high] of armorRanges)
-            if (low !== undefined && high !== undefined && type >= low && type <= high)
-                return [low, high];
-    }
-    let low = OBJECT_BASES[object.oclass] ?? type;
-    let high = (OBJECT_BASES[object.oclass + 1] ?? type + 1) - 1;
-    if (object.oclass === POTION_CLASS) high = POT_WATER - 1;
-    else if ([AMULET_CLASS, SCROLL_CLASS, SPBOOK_CLASS].includes(object.oclass)) {
-        high = low;
-        while (objectClassForType(high) === object.oclass
-            && !objectUnique(high) && objectMagic(high)) high++;
-        high--;
-    } else if (![RING_CLASS, WAND_CLASS, VENOM_CLASS].includes(object.oclass)) {
-        low = high = type;
-    }
-    return type >= low && type <= high ? [low, high] : [type, type];
 }
 
 // ---------------------------------------------------------------------------

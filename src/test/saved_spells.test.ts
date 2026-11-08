@@ -5,7 +5,8 @@ import { resetInputState } from '../js/input.js';
 import {
     CLUB, OBJECT_NAMES, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FORCE_BOLT,
 } from '../js/object_data.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { selectSpellToCast } from '../js/spell.js';

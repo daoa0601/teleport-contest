@@ -336,10 +336,10 @@ src/js/eat.ts	bounded_increase	rnd	"[""Math.abs(amount)""]"	guarded
 src/js/eat.ts	eataccessory	d	"[""10"", ""20""]"	constant
 src/js/eat.ts	eataccessory	rn2	"[""object.oclass === 4 ? 3 : 5""]"	constant
 src/js/eat.ts	eataccessory	rnd	"[""100""]"	constant
-src/js/egg.ts	attachEggHatchTimer	rnd	"[""age""]"	guarded
-src/js/egg.ts	finishEggHatchTimer	rnd	"[""12""]"	constant
-src/js/egg.ts	runClaimedEggHatchTimer	rn2	"[""2""]"	constant
-src/js/egg.ts	runClaimedEggHatchTimer	rnd	"[""quantity""]"	unproved
+src/js/timeout.ts	attachEggHatchTimer	rnd	"[""age""]"	guarded
+src/js/timeout.ts	finishEggHatchTimer	rnd	"[""12""]"	constant
+src/js/timeout.ts	runClaimedEggHatchTimer	rn2	"[""2""]"	constant
+src/js/timeout.ts	runClaimedEggHatchTimer	rnd	"[""quantity""]"	unproved
 src/js/egg_impact.ts	explodePyroliskEggAt	rollDice	"[""3"", ""6""]"	constant
 src/js/mon.ts	hatchableEggSpecies	rn2	"[""77""]"	constant
 src/js/mkmaze.ts	changeBubbleDirection	rn2	"[""3""]"	constant

@@ -7,8 +7,7 @@
 // restobjchn()/getlev() clock shift (restoreBonesClock) used only by bones;
 // files.c set_bonesfile_name(). The other restore.c getlev() ports, including
 // branch connection repair, live in restore.ts. Payload
-// validation lives in bones_validation.ts and name sanitization in
-// bones_name.ts.
+// validation lives in bones_validation.ts.
 
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
@@ -80,16 +79,15 @@ import { nhgetch } from './input.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { DTHSZ, formatKiller } from './topten.js';
-import { sanitizeName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import type { BonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { hideMonsterOnRestore, hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape, restoreMonsterInventoryOwnership } from './mon.js';
 import {
-    repairBonesConnections, restoreLevelChains, restoreMonsterWormHeads,
-    validMonsterWormBodies,
+    repairBonesConnections, resetObjectAttachedMonsterIds, restoreLevelChains,
+    restoreMonsterWormHeads, validMonsterWormBodies,
 } from './restore.js';
-import { restoreLevelPetHistory } from './save.js';
+import { restoreLevelPetHistory } from './restore.js';
 import { endObjectBurn, restoreLevelTimers } from './timeout.js';
 import { restoreLevelRegions, resetRegionMonsterIds } from './region.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency, shopkeeperInOwnShop } from './shk.js';
@@ -99,7 +97,9 @@ import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, m
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt, Invocation_lev } from './dungeon.js';
 import { bonesLevelId, bonesStorageKey, deleteBonesLevel, openBonesFile } from './novel_tribute.js';
-import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, EGG, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, TIN, WAX_CANDLE, objectUsesKnown } from './object_data.js';
+import { BOOMERANG, BOW, CORPSE, ELVEN_BOW, ICE_BOX, MUMMY_WRAPPING, ORCISH_BOW, SLIME_MOLD, STATUE, YUMI, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, EGG, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, TIN, WAX_CANDLE, objectUsesKnown } from './object_data.js';
+import { definiteName, objectCombatName } from './objnam.js';
+import type { InterfaceFlags } from './flags.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Fruit, GameState } from './game_state.js';
@@ -126,6 +126,12 @@ import type { PropertyName } from './property_types.js';
 import { roomForRoomno } from './hack.js';
 import { likes_gold, likes_gems, likes_objs, likes_magic, monsterHidesUnder, monsterIsUndead, giveHeroResistancesToMonster } from './mondata.js';
 
+
+// C bones.c:fix_ghostly_obj(): the asymmetrical weapons that need a
+// handedness adjustment.
+const HANDED_WEAPONS = new Set([
+    BOW, ELVEN_BOW, ORCISH_BOW, YUMI, BOOMERANG,
+]);
 
 const G_UNIQ = 0x1000;
 // C bones.c:can_make_bones()/no_bones_level(). Dungeon topology owns which
@@ -423,6 +429,38 @@ async function fixupOracle(oracle: Monster): Promise<boolean> {
     return true;
 }
 
+// C bones.c:sanitize_name(): while loading bones, strip text that could
+// disrupt display. High-bit control bytes are still controls; printable
+// high-bit characters follow the tty eight-bit input option. The port's
+// bones names are UTF-8-decoded strings, so this masks per character; the
+// fruit option's byte buffer is masked per byte in options.ts
+// (sanitizeFruitCopy), which is where C's caller actually sees bytes.
+export function sanitizeName(
+    name: string | null | undefined,
+    iflags: Pick<InterfaceFlags, 'wc_eight_bit_input'> = game.iflags,
+): string {
+    return [...String(name || '')].map(character => {
+        const code = character.charCodeAt(0);
+        const lowBits = code & 127;
+        if (lowBits < 32 || lowBits === 127) return '.';
+        if (code > 127 && !iflags.wc_eight_bit_input) return '_';
+        return character;
+    }).join('');
+}
+
+// C bones.c:fix_ghostly_obj(): the ghostly pickup notice; returns the
+// handedness adjustment message. This is called when a marked object from
+// a bones file is picked up.
+export function finishGhostlyPickup(object: GameObject | null | undefined, state: GameState): string | null {
+    if (!object?.ghostly) return null;
+    object.ghostly = false;
+    if (!HANDED_WEAPONS.has(object.otyp)) return null;
+
+    const noun = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
+    const hand = state?.u?.rightHanded === false ? 'left' : 'right';
+    return `You make adjustments to ${noun} to suit your ${hand} hand.`;
+}
+
 // Part of C bones.c:getbones(): sanitize_name() over a restored
 // monster's given name.
 function sanitizeMonsterName(monster: Monster): void {
@@ -570,7 +608,7 @@ function bonesFloorObjects(level: GameMap): GameObject[] {
 
 // Part of C bones.c:savebones(), bones.c:getbones(): the recursive
 // contents walk over every saved or restored chain.
-function eachObjectInBonesGraph(level: GameMap, visit: (object: GameObject) => void): void {
+export function eachObjectInBonesGraph(level: GameMap, visit: (object: GameObject) => void): void {
     const walk = (object: GameObject): void => {
         if (!object) return;
         visit(object);
@@ -854,11 +892,6 @@ function shiftBonesDestinations(payload: BonesPayload, location: DungeonLocation
     }
 }
 
-// Part of C restore.c:lookup_id_mapping()
-function remappedMonsterId(oldId: number | undefined, monsterIds: ReadonlyMap<number, number>): number | undefined {
-    return oldId !== undefined && Number.isInteger(oldId) ? monsterIds.get(oldId) : undefined;
-}
-
 // Part of C restore.c:restobjchn(): the ocontainer back-pointer repair.
 function repairContainedObjects(container: GameObject): void {
     for (const object of container.contents || []) {
@@ -866,39 +899,6 @@ function repairContainedObjects(container: GameObject): void {
         object.where = 'contained';
         delete object.carrierMid;
         repairContainedObjects(object);
-    }
-}
-
-// Part of C restore.c:reset_oattached_mids(): walk the restored object
-// graph and remap each ghostly omid (and the port's leashmon), zeroing
-// any omonst — a dead owner's pet is no longer peaceful or tame.
-function resetObjectAttachedMonsterIds(level: GameMap, monsterIds: ReadonlyMap<number, number>): void {
-    eachObjectInBonesGraph(level, object =>
-        repairObjectMonsterIds(object, monsterIds));
-}
-
-// Part of C restore.c:reset_oattached_mids(): ghostly omonst zeroing and
-// omid remap; the port also remaps leashmon.
-function repairObjectMonsterIds(object: GameObject, monsterIds: ReadonlyMap<number, number>): void {
-    const extra = object.oextra;
-    const omid = extra?.omid;
-    if (omid && extra) {
-        const newId = remappedMonsterId(omid, monsterIds);
-        if (newId) extra.omid = newId;
-        else delete extra.omid;
-    }
-    if (object.omid) {
-        const newId = remappedMonsterId(object.omid, monsterIds);
-        if (newId) object.omid = newId;
-        else delete object.omid;
-    }
-    if (object.leashmon) {
-        object.leashmon = remappedMonsterId(object.leashmon, monsterIds) || 0;
-    }
-    if (object.oextra?.omonst) {
-        object.oextra.omonst.m_id = 0;
-        object.oextra.omonst.mpeaceful = 0;
-        object.oextra.omonst.mtame = 0;
     }
 }
 

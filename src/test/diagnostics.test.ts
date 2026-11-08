@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { PANICLOG } from '../js/const.js';
-import { panic } from '../js/diagnostics.js';
+import { panic } from '../js/end.js';
 import { PanicTermination } from '../js/panic_termination.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { flush_screen } from '../js/display.js';
@@ -16,7 +16,8 @@ import { GameDisplay } from '../js/game_display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { Engine } from '../js/jsmain.js';
-import { hasErrorSave, restoreGame, saveGame } from '../js/save.js';
+import { hasErrorSave, saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { LEASH } from '../js/object_data.js';

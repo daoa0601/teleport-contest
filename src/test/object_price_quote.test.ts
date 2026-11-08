@@ -8,7 +8,8 @@ import { POT_HEALING, POT_WATER } from '../js/object_data.js';
 import { recordObjectKnowledge } from '../js/u_init.js';
 import { recordObjectPriceQuote } from '../js/shk.js';
 
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 

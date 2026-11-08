@@ -6,7 +6,8 @@ import { DOOR, D_CLOSED, PIT, ROOM, STONE, TT_BEARTRAP, TT_PIT } from '../js/con
 import { applyHeroLocationEffects, switchHeroTerrain } from '../js/hack.js';
 import { BOULDER } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

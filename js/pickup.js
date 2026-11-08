@@ -27,7 +27,7 @@ import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { hideHeroUnder, finishEnvironmentalMonsterDeath, finishHeroMonsterKill, finishHeroMonsterKillOutcome, } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, SELL_DELIBERATE, SELL_DONTSELL, currentShopResident, stolenValue, sellHeroDroppedObject, warnAboutRemovedPick, deleteObject } from './shk.js';
-import { finishGhostlyPickup } from './bones_object.js';
+import { finishGhostlyPickup } from './bones.js';
 import { touchArtifactByHero } from './artifact.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { getObjectLocation } from './zap.js';
@@ -1764,9 +1764,9 @@ function menuBucCategory(object) {
         return 'C';
     return 'U';
 }
-// C pickup.c:query_category(): the category menu's choices.
-// C pickup.c:query_category(), for menu_loot's ALL_TYPES/UNPAID/BUCX/
-// CHOOSE_ALL/JUSTPICKED flags. Special filters stay out of menu inversion.
+// Part of C pickup.c:query_category(): the category menu's choices for
+// menu_loot's ALL_TYPES/UNPAID/BUCX/CHOOSE_ALL/JUSTPICKED flags. Special
+// filters stay out of menu inversion.
 async function categoryChoices(objects) {
     const groups = objectsByClass(objects);
     const showAll = groups.length > 1;
@@ -1853,8 +1853,10 @@ function categoryMatcher(filters) {
         });
     };
 }
-// Part of C pickup.c:query_category(): the category menu and its
-// autoselect paranoia check.
+// C pickup.c:query_category(): the category menu, its single-category
+// shortcut, and the autoselect paranoia check (verify_All). menu_drop()
+// and menu_loot() pass CHOOSE_ALL|JUSTPICKED; do_wear.c's menu_remarm()
+// keeps its own WORN_TYPES shape beside its caller.
 export async function chooseObjectCategories(title, objects) {
     if (game.flags.menu_style !== undefined && game.flags.menu_style !== MENU_FULL)
         return { matchers: [() => true], autoSelect: false };

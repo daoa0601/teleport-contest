@@ -5,7 +5,7 @@
 // Fisher-Yates description/color shuffles.  Other startup owners remain
 // partial; the implementation below is the source of truth.
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectBaseMaterial, oc_color, objectUsesKnown, objectUnique, FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, requireObjectData, ARROW as FIRST_OBJECT, OBJ_NAME, } from './object_data.js';
+import { objectClassForType, objectBaseMaterial, oc_color, objectUsesKnown, objectUnique, objectMagic, OBJECT_BASES, POT_WATER, HELMET, LEATHER_GLOVES, CLOAK_OF_PROTECTION, CLOAK_OF_DISPLACEMENT, SPEED_BOOTS, LEVITATION_BOOTS, FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, requireObjectData, ARROW as FIRST_OBJECT, OBJ_NAME, } from './object_data.js';
 import { game } from './gstate.js';
 import { artifactInfoLines, discoveredArtifacts } from './artifact.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
@@ -633,5 +633,35 @@ export function discoverObject(otyp, markKnown, markEncountered, creditHero, sta
 // credits Wisdom once. Restoring saved knowledge does not grant that credit.
 export function learnObjectType(otyp, state = game) {
     discoverObject(otyp, true, true, true, state);
+}
+// C o_init.c:obj_shuffle_range()
+// Includes the fixed-description exceptions.
+export function appearanceRange(object) {
+    const type = object.otyp;
+    const armorRanges = [
+        [HELMET, OBJECT_NAMES.indexOf('helm of telepathy')],
+        [LEATHER_GLOVES, OBJECT_NAMES.indexOf('gauntlets of dexterity')],
+        [CLOAK_OF_PROTECTION, CLOAK_OF_DISPLACEMENT], [SPEED_BOOTS, LEVITATION_BOOTS],
+    ];
+    if (object.oclass === ARMOR_CLASS) {
+        for (const [low, high] of armorRanges)
+            if (low !== undefined && high !== undefined && type >= low && type <= high)
+                return [low, high];
+    }
+    let low = OBJECT_BASES[object.oclass] ?? type;
+    let high = (OBJECT_BASES[object.oclass + 1] ?? type + 1) - 1;
+    if (object.oclass === POTION_CLASS)
+        high = POT_WATER - 1;
+    else if ([AMULET_CLASS, SCROLL_CLASS, SPBOOK_CLASS].includes(object.oclass)) {
+        high = low;
+        while (objectClassForType(high) === object.oclass
+            && !objectUnique(high) && objectMagic(high))
+            high++;
+        high--;
+    }
+    else if (![RING_CLASS, WAND_CLASS, VENOM_CLASS].includes(object.oclass)) {
+        low = high = type;
+    }
+    return type >= low && type <= high ? [low, high] : [type, type];
 }
 //# sourceMappingURL=o_init.js.map

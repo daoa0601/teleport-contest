@@ -7,7 +7,8 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { CLUB, ROCK, SACK } from '../js/object_data.js';
 import type { GameObject } from '../js/object_types.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 
 import { addInventoryObject, knownObject } from './support/game-objects.js';

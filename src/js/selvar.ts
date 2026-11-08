@@ -1,8 +1,5 @@
 // selvar.js — map selections used by the Lua level API.
-// C refs: src/selvar.c and src/nhlsel.c. sp_lev.c's
-// floodfillchk_match_under()/set_floodfillchk_match_under() live in
-// sp_lev.ts; this module imports them for l_selection_flood() below
-// (the cycle is function-body-only).
+// C refs: src/selvar.c. The nhlsel.c Lua entry points live in lua/nhlsel.ts.
 
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
@@ -10,7 +7,7 @@ import { newsym_force } from './display.js';
 import { NethackLuaError } from './lua/errors.js';
 import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL } from './const.js';
 import { isok } from './cmd.js';
-import { match_maptyps, random_wdir, set_floodfillchk_match_under } from './sp_lev.js';
+import { match_maptyps, random_wdir } from './sp_lev.js';
 import { mapCharacterType } from './lua/lifecycle.js';
 
 import type { Room } from './map_types.js';
@@ -178,63 +175,6 @@ export function selection_filter_percent(selection: Selection | null, percent: n
             if (selection_getpoint(x, y, selection)
                 && rn2(100) < percent)
                 selection_setpoint(x, y, result, 1);
-    return result;
-}
-
-// Part of C nhlsel.c:l_selection_numpoints(): counts selected points within the bounds.
-export function selection_numpoints(selection: Selection): number {
-    let count = 0;
-    const bounds = selection_getbounds(selection);
-    for (let x = bounds.lx; x <= bounds.hx; x++)
-        for (let y = bounds.ly; y <= bounds.hy; y++)
-            if (selection_getpoint(x, y, selection)) count++;
-    return count;
-}
-
-// Part of C nhlsel.c:l_selection_and(), l_selection_or(),
-// l_selection_xor(), l_selection_sub(): the shared bounds-union cell loop.
-function selection_binary(left: Selection, right: Selection, operation: (left: number, right: number) => number): Selection {
-    selection_recalc_bounds(left);
-    selection_recalc_bounds(right);
-    const bounds = {
-        lx: Math.min(left.bounds.lx, right.bounds.lx),
-        ly: Math.min(left.bounds.ly, right.bounds.ly),
-        hx: Math.max(left.bounds.hx, right.bounds.hx),
-        hy: Math.max(left.bounds.hy, right.bounds.hy),
-    };
-    const result = selection_new();
-    for (let x = bounds.lx; x <= bounds.hx; x++)
-        for (let y = bounds.ly; y <= bounds.hy; y++)
-            selection_setpoint(x, y, result, operation(
-                selection_getpoint(x, y, left),
-                selection_getpoint(x, y, right),
-            ));
-    return result;
-}
-
-// C nhlsel.c:l_selection_and().
-export function selection_and(left: Selection, right: Selection) {
-    return selection_binary(left, right, (a, b) => a & b);
-}
-
-// C nhlsel.c:l_selection_or().
-export function selection_or(left: Selection, right: Selection) {
-    const result = selection_binary(left, right, (a, b) => a | b);
-    selection_recalc_bounds(result);
-    return result;
-}
-
-// C nhlsel.c:l_selection_xor().
-export function selection_xor(left: Selection, right: Selection) {
-    const result = selection_binary(left, right, (a, b) => a ^ b);
-    selection_recalc_bounds(result);
-    return result;
-}
-
-// C nhlsel.c:l_selection_sub().
-export function selection_sub(left: Selection, right: Selection) {
-    const result = selection_binary(left, right, (a, b) => (a ^ b) & a);
-    selection_recalc_bounds(result);
     return result;
 }
 
@@ -647,10 +587,6 @@ export class SpecialSelection {
         return new SpecialSelection(selection_clone(this.selection));
     }
 
-    numPoints() {
-        return selection_numpoints(this.selection);
-    }
-
     bounds() {
         return selection_getbounds(this.selection);
     }
@@ -658,30 +594,6 @@ export class SpecialSelection {
     negate() {
         return new SpecialSelection(selection_not(
             selection_clone(this.selection),
-        ));
-    }
-
-    union(other: SpecialSelection) {
-        return new SpecialSelection(selection_or(
-            this.selection, other.selection,
-        ));
-    }
-
-    intersect(other: SpecialSelection) {
-        return new SpecialSelection(selection_and(
-            this.selection, other.selection,
-        ));
-    }
-
-    xor(other: SpecialSelection) {
-        return new SpecialSelection(selection_xor(
-            this.selection, other.selection,
-        ));
-    }
-
-    subtract(other: SpecialSelection) {
-        return new SpecialSelection(selection_sub(
-            this.selection, other.selection,
         ));
     }
 
@@ -727,130 +639,3 @@ export class SpecialSelection {
     }
 }
 
-// Part of C sp_lev.c:get_location_coord(): the relative-to-absolute
-// adjustment for selection coordinates.
-function absolute(context: SelectionArea, x: number, y: number): Coordinate {
-    return {
-        x: (context._room?.lx ?? context.xstart) + (x & 0xff),
-        y: (context._room?.ly ?? context.ystart) + (y & 0xff),
-    };
-}
-
-// C nhlsel.c:l_selection_fillrect(): with get_location_coord resolution.
-export function specialSelectionFillRect(context: SelectionArea, x1: number, y1: number, x2: number, y2: number) {
-    const selection = selection_new();
-    const start = absolute(context, x1, y1);
-    const end = absolute(context, x2, y2);
-    if (start.x === end.x) {
-        for (let y = start.y; y <= end.y; y++)
-            selection_setpoint(start.x, y, selection, 1);
-    } else {
-        for (let y = start.y; y <= end.y; y++)
-            selection_do_line(start.x, y, end.x, y, selection);
-    }
-    return new SpecialSelection(selection);
-}
-
-// C nhlsel.c:l_selection_line(): with get_location_coord resolution.
-export function specialSelectionLine(context: SelectionArea, x1: number, y1: number, x2: number, y2: number) {
-    const selection = selection_new();
-    const start = absolute(context, x1, y1);
-    const end = absolute(context, x2, y2);
-    selection_do_line(start.x, start.y, end.x, end.y, selection);
-    return new SpecialSelection(selection);
-}
-
-// C nhlsel.c:l_selection_rect(): with get_location_coord resolution.
-export function specialSelectionRect(context: SelectionArea, x1: number, y1: number, x2: number, y2: number) {
-    const selection = selection_new();
-    const start = absolute(context, x1, y1);
-    const end = absolute(context, x2, y2);
-    selection_do_line(start.x, start.y, end.x, start.y, selection);
-    selection_do_line(start.x, start.y, start.x, end.y, selection);
-    selection_do_line(end.x, start.y, end.x, end.y, selection);
-    selection_do_line(start.x, end.y, end.x, end.y, selection);
-    return new SpecialSelection(selection);
-}
-
-// Port only: unclear origin, selects the context area squares of one
-// terrain type.
-export function specialSelectionOfTerrain(context: SelectionArea, typ: number) {
-    const selection = selection_new();
-    for (let x = 0; x < context.width; x++)
-        for (let y = 0; y < context.height; y++)
-            if (game.level?.at?.(
-                context.xstart + x, context.ystart + y,
-            )?.typ === typ)
-                selection_setpoint(
-                    context.xstart + x, context.ystart + y, selection, 1,
-                );
-    return new SpecialSelection(selection);
-}
-
-// C nhlsel.c:l_selection_flood(): with get_location_coord resolution.
-// The Lua flood operation matches the starting square's terrain.
-export function specialSelectionFloodFill(context: SelectionArea, x: number, y: number, diagonals = false) {
-    const start = absolute(context, x, y);
-    if (!isok(start.x, start.y)) return new SpecialSelection();
-    const terrain = game.level?.at?.(start.x, start.y)?.typ;
-    return new SpecialSelection().floodFill(
-        start.x, start.y, diagonals,
-        set_floodfillchk_match_under(terrain),
-    );
-}
-
-// C nhlsel.c:l_selection_match(): the map fragment match. The fragment
-// parse and mapfrag_error()'s odd-dimension and valid-center checks are
-// inlined above; mapfrag_free() has no port (no owned buffer).
-export function specialSelectionMatch(fragment: string) {
-    const data = (fragment.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
-    const rows = data.split('\n');
-    if (rows.at(-1) === '') rows.pop();
-    if (rows.length > MAP_Y_LIM + 1) throw new NethackLuaError('mapfragment error');
-    const width = Math.max(0, ...rows.map(row => row.length));
-    if (!(width % 2) || !(rows.length % 2))
-        throw new NethackLuaError('mapfragment needs to have odd height and width');
-    const xRadius = Math.trunc(width / 2);
-    const yRadius = Math.trunc(rows.length / 2);
-    // mapfrag_get() indexes the original buffer with a fixed row stride.
-    const terrainAt = (x: number, y: number) =>
-        mapCharacterType(data[y * (width + 1) + x]) ?? INVALID_TYPE;
-    const center = terrainAt(xRadius, yRadius);
-    if (center === INVALID_TYPE || center === MAX_TYPE)
-        throw new NethackLuaError('mapfragment center must be valid terrain');
-
-    const selection = selection_new();
-    for (let y = 0; y <= ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            let matched = true;
-            for (let offsetX = -xRadius;
-                offsetX <= xRadius && matched; offsetX++) {
-                for (let offsetY = -yRadius;
-                    offsetY <= yRadius; offsetY++) {
-                    const expected = terrainAt(offsetX + xRadius, offsetY + yRadius);
-                    const actual = isok(x + offsetX, y + offsetY)
-                        ? game.level?.at?.(x + offsetX, y + offsetY)?.typ
-                        : STONE;
-                    if (!match_maptyps(expected, actual ?? STONE)) {
-                        matched = false;
-                        break;
-                    }
-                }
-            }
-            selection_setpoint(x, y, selection, matched ? 1 : 0);
-        }
-    }
-    selection_recalc_bounds(selection);
-    return new SpecialSelection(selection);
-}
-
-// C nhlsel.c:l_selection_randline().
-export function specialSelectionRandLine(
-    x1: number, y1: number, x2: number, y2: number, roughness: number, recursion = 12,
-    result = new SpecialSelection(),
-) {
-    selection_do_randline(
-        x1, y1, x2, y2, roughness, recursion, result.selection,
-    );
-    return result;
-}

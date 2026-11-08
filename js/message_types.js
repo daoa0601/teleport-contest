@@ -12,7 +12,8 @@ import { clearrolefilter, createCharacterFilters, setrolefilter } from './role.j
 import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './role.js';
 import { NATIVE_COMMANDS } from './command_data.js';
 import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAutocomplete } from './cmd.js';
-import { displayHelpFile, displayPagerText } from './pager.js';
+import { displayHelpFile } from './pager.js';
+import { displayPagerText } from './wintty.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { rn2, rnd } from './rng.js';
@@ -1410,7 +1411,7 @@ export function changePreferredFruit(name, state = game) {
 // run bones.c:sanitize_name() over each byte of the native buffer — control
 // bytes become '.', and a high byte is masked to '_' unless the tty accepts
 // eight-bit input, which keeps the byte itself. The port's bones names are
-// decoded strings (sanitizeName in bones_name.ts masks those per character);
+// decoded strings (sanitizeName in bones.ts masks those per character);
 // the fruit option still sees the raw UTF-8 bytes here.
 function sanitizeFruitCopy(name, iflags) {
     const bytes = new TextEncoder().encode(name).subarray(0, FRUIT_NAME_BYTES);

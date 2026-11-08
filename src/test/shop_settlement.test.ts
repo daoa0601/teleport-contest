@@ -10,7 +10,8 @@ import { setHeroGoldAmount } from '../js/sit.js';
 import { unlinkObject, addObjectToContainer } from '../js/mkobj.js';
 import { buryObject } from '../js/dig.js';
 import { CHEST, DAGGER, POT_HEALING } from '../js/object_data.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import {
     addShopObjectToBill,
     settleShopkeepersOnExit,

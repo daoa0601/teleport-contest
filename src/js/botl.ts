@@ -9,7 +9,7 @@ import {
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
 import { currentHungerState } from './eat.js';
-import { renderStatusLine2, writeStatusLines, hitpointBar, conditionStyle } from './wintty.js';
+import { renderStatusLine2, writeStatusLines, hitpointBar, hitpointBarFill, conditionStyle } from './wintty.js';
 import { statusVersion } from './extversion.js';
 import { criticallyLowHp } from './pray.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BL_AC, BL_ALIGN, BL_ARMOR, BL_ATTCLR_MAX, BL_CAP, BL_CH, BL_CHARACTERISTICS, BL_CONDITION, BL_CO, BL_DX, BL_ENE, BL_ENEMAX, BL_EXP, BL_FLUSH, BL_GOLD, BL_HP, BL_HD, BL_HPMAX, BL_HUNGER, BL_IN, BL_LEVELDESC, BL_WI, BL_MASK_BAREH, BL_MASK_BLIND, BL_MASK_BUSY, BL_MASK_CONF, BL_MASK_DEAF, BL_MASK_ELF_IRON, BL_MASK_FLY, BL_MASK_FOODPOIS, BL_MASK_GLOWHANDS, BL_MASK_GRAB, BL_MASK_HALLU, BL_MASK_HELD, BL_MASK_HOLDING, BL_MASK_ICY, BL_MASK_INLAVA, BL_MASK_LEV, BL_MASK_PARLYZ, BL_MASK_RIDE, BL_MASK_SLEEPING, BL_MASK_SLIME, BL_MASK_SLIPPERY, BL_MASK_STONE, BL_MASK_STRNGL, BL_MASK_STUN, BL_MASK_SUBMERGED, BL_MASK_TERMILL, BL_MASK_TETHERED, BL_MASK_TRAPPED, BL_MASK_UNCONSC, BL_MASK_WOUNDEDL, BL_SCORE, BL_STR, BL_TH_ALWAYS_HILITE, BL_TH_CONDITION, BL_TH_CRITICALHP, BL_TH_NONE, BL_TH_TEXTMATCH, BL_TH_UPDOWN, BL_TH_VAL_ABSOLUTE, BL_TH_VAL_PERCENTAGE, BL_TIME, BL_TITLE, BL_VERS, BL_WEAPON, BL_TERRAIN, BL_XP, CLR_MAX, COLNO, EQ_VALUE, GE_VALUE, GT_VALUE, HL_ATTCLR_BLINK, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_INVERSE, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, ICE, In_endgame, Is_knox_level, LARGEST_INT, LE_VALUE, LT_VALUE, MAXBLSTATS, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, NO_LTEQGT, P_LANCE, P_MORNING_STAR, P_POLEARMS, P_QUARTERSTAFF, P_SABER, P_SHORT_SWORD, P_UNICORN_HORN, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_LAVA, TXT_VALUE, Upolyd, MAX_TYPE } from './const.js';
@@ -605,20 +605,6 @@ export function statusTerrain(state: GameState): string {
     if (state.iflags.terrain_typ === undefined || state.iflags.terrain_typ === MAX_TYPE)
         classifyStatusTerrain(state);
     return descriptions[state.iflags.terrain_typ ?? MAX_TYPE] ?? '';
-}
-
-// C wintty.c:status_update(): tty_status_update()'s bar_pos computation
-// for the hitpoint bar — the number of lit cells in the fixed
-// thirty-character bar (botl.c:percentage() feeding wintty.c:5220-5229).
-// Dead heroes light nothing; a nonzero health fraction keeps one cell
-// even above the display cap.
-export function hitpointBarFill(hp: number, maximum: number): number {
-    const health = Math.max(0, hp);
-    let percent = maximum ? Math.trunc(100 * health / maximum) : 0;
-    if (health && !percent) percent = 1;
-    if (percent >= 100) return 30;
-    if (!percent) return 0;
-    return Math.max(1, Math.min(29, Math.trunc(30 * percent / 100)));
 }
 
 // ── botl.c:get_hilite(), eval_notify_windowport_field(), status_eval_next_unhilite() ──

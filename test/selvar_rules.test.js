@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { SpecialSelection, selection_force_newsyms, selection_do_gradient, selection_new, selection_getpoint, selection_numpoints, } from '../js/selvar.js';
+import { SpecialSelection, selection_force_newsyms, selection_do_gradient, selection_new, selection_getpoint, } from '../js/selvar.js';
+import { selection_numpoints } from '../js/lua/nhlsel.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('selection redraw moves the flush cursor even when the selected glyph has not changed', async () => {

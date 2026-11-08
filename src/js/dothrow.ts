@@ -97,7 +97,7 @@ import type { Position , MapLocation, Trap } from './map_types.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { cutWorm } from './worm.js';
 import { findMonsterArmorClass } from './worn.js';
-import { ACCFOOD, dogFood } from './pet_food.js';
+import { ACCFOOD, dogFood } from './dog.js';
 import { tameMonster } from './dog.js';
 import { flyBoomerang } from './zap.js';
 import type { BoomerangFlight } from './zap.js';

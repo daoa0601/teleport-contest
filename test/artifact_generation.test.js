@@ -6,7 +6,8 @@ import { A_NONE } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { mksobj, placeCreatedObject } from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 async function generateArtifactOfType(otyp) {

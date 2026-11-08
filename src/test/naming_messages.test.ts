@@ -4,7 +4,7 @@ import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, triggerChestTrap
 import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
 import { beginMonsterBearTrap, finishMonsterBearTrap } from '../js/trap.js';
 import { heroBlindingObjectHitMessage } from '../js/blinding_attack.js';
-import { finishGhostlyPickup } from '../js/bones_object.js';
+import { finishGhostlyPickup } from '../js/bones.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DBWALL, DB_MOAT, DB_NORTH, DRAWBRIDGE_UP, MSLOW, PIT, ROCKTRAP, SLP_GAS_TRAP,
     VIBRATING_SQUARE, WEB,

@@ -11,7 +11,8 @@ import { nameToMonster } from '../js/mondata.js';
 import {
     RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, WAN_POLYMORPH,
 } from '../js/object_data.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { wearPolymorphControlRing } from './support/hero-state.js';
 import { memoryStorage } from './support/memory-storage.js';

@@ -8,7 +8,8 @@ import { rndClass } from '../js/objnam.js';
 import { init_objects } from '../js/o_init.js';
 import { DILITHIUM_CRYSTAL, LUCKSTONE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshSpecialLevel } from './support/special-level.js';
 void test('object initialization resets gem rarity before the first level is built', () => {

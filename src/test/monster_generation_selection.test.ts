@@ -20,7 +20,8 @@ import {
 import { STATUE } from '../js/object_data.js';
 import { removeMonsterFromGame } from '../js/mon.js';
 import { initRng } from '../js/rng.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';

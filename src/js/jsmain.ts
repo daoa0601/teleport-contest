@@ -20,7 +20,8 @@ import { genl_player_selection, plnamesuffix } from './role.js';
 import type { ParsedCharacterName } from './role.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
-import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
+import { askAboutPanicSave, hasErrorSave } from './save.js';
+import { dismissUnhealthyRestore, restoreGame, restoreRefusedAsUnhealthy } from './restore.js';
 import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C,

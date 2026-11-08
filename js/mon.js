@@ -78,7 +78,7 @@ import { inventoryItemDescription, delobj, stack_object, goldAt } from './invent
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
 import { addExperience, awardMonsterExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { getLine } from './windows.js';
-import { coordinateDescription } from './pager.js';
+import { coordinateDescription } from './getpos.js';
 import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
 import { createPhysicalMonsterExplosion } from './explode.js';

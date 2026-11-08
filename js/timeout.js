@@ -7,60 +7,57 @@
 // timeout_queue.js, timeout_warnings.js, storms.js, timer_effects.js,
 // timeout_luck.js, and timeout_body.js.
 import { castMonsterSpellRay } from './mthrowu.js';
-import { runClaimedCorpseRevivalTimer } from './do.js';
-import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, setPropertyTimeout, } from './potion.js';
-import { clearHeroStrangulation, advanceDisplacementTimeout } from './do_wear.js';
-import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle, } from './objnam.js';
+import { gotoLevel, healHeroLegs, runClaimedCorpseRevivalTimer } from './do.js';
+import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, setPropertyTimeout } from './potion.js';
+import { advanceDisplacementTimeout, clearHeroStrangulation } from './do_wear.js';
+import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle } from './objnam.js';
 import { advanceSpellProtection } from './spell.js';
-import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { applyHeroLocationEffects, nomul, invWeight } from './hack.js';
-import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt, finishHeroMonsterKill, } from './mon.js';
-import { deferredDecor } from './pickup.js';
-import { d, rnd, rn1, rn2 } from './rng.js';
-import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removeIntrinsicProperty, } from './properties.js';
+import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { applyHeroLocationEffects, invWeight, nomul } from './hack.js';
+import { deferredDecor, encumber_msg } from './pickup.js';
+import { d, rn1, rn2, rnd } from './rng.js';
+import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removeIntrinsicProperty } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
-import { healHeroLegs } from './do.js';
-import { isPoolAt, isIceAt, isPoolOrLavaAt } from './dbridge.js';
-import { ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FULL_MOON, G_GENOD, GENOCIDED, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND, M_AP_MONSTER, MV_KNOWS_EGG, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE, PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SIZEOF_TIMER_ELEMENT, STONING, TIMEOUT, TURNED_SLIME, W_SADDLE, NECK, HAND, FOOT } from './const.js';
-import { AMULET_OF_STRANGULATION, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, FEDORA, FIGURINE, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
-import { confersLuck } from './invent.js';
+import { isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
+import { ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FOOT, FULL_MOON, GENOCIDED, G_GENOD, HAND, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND, MV_KNOWS_EGG, M_AP_MONSTER, NECK, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE, PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SIZEOF_TIMER_ELEMENT, STONING, TIMEOUT, TURNED_SLIME, W_SADDLE, G_EXTINCT, MM_NOMSG, NO_MINVENT } from './const.js';
+import { AMULET_OF_STRANGULATION, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, FEDORA, EGG, FIGURINE, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, ROCK, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
+import { confersLuck, useUpInventoryStack } from './invent.js';
 import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
 import { isWereMonster, revertHeroWereForm } from './were.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
-import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
-import { dismountHero } from './steed.js';
+import { displayColorName, monsterName, monsterTypeName, randomDisplayMonsterName } from './do_name.js';
+import { dismountHero, monsterAtPosition } from './steed.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.js';
-import { extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenSlime, heroIsPolymorphed, heroIsUnchanging, heroSpecies, polymonHero, returnHeroToHumanForm, body_part } from './polyself.js';
+import { body_part, extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenSlime, heroIsPolymorphed, heroIsUnchanging, heroSpecies, polymonHero, returnHeroToHumanForm } from './polyself.js';
 import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
-import { gotoLevel } from './do.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './allmain.js';
 import { finishHeroDeath } from './end.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
-import { canSpotMonster, newsym, see_monsters, refreshHeroSeeing } from './display.js';
-import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage, } from './pline.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
+import { canSeeMonster, canSpotMonster, newsym, refreshHeroSeeing, see_monsters } from './display.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
-import { eating_dangerous_corpse, Popeye, morehungry, vomit } from './eat.js';
+import { Popeye, eating_dangerous_corpse, morehungry, vomit } from './eat.js';
 import { removeWornHeroItem } from './steal.js';
-import { captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification, } from './trap.js';
-import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
+import { captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification } from './trap.js';
 import { figTransform } from './apply.js';
-import { meltIce } from './zap.js';
-import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
-import { objectWeight, runClaimedGlobTimer, finishGlobTimer } from './mkobj.js';
-import { useUpInventoryStack } from './invent.js';
+import { getObjectLocation, meltIce } from './zap.js';
+import { runClaimedObjectRotTimer } from './dig.js';
+import { finishBuriedZombieTimer, makemonNear } from './mklev.js';
+import { finishGlobTimer, objectWeight, runClaimedGlobTimer } from './mkobj.js';
 import { carriedObjectOwner, deleteObject } from './shk.js';
-import { possessiveName } from './hacklib.js';
-import { getObjectLocation } from './zap.js';
+import { ingSuffix, possessiveName } from './hacklib.js';
 import { artifactEmitsLight } from './artifact.js';
 import { cansee } from './vision.js';
 import { heroIsSurroundedByRock } from './pray.js';
 import { heroIsInDangerousRegion, visibleRegionLines } from './region.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './dungeon.js';
-import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm, heroResistsStoning, touchPetrifies, monsterYoungerForm, } from './mondata.js';
-import { encumber_msg } from './pickup.js';
+import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm, heroResistsStoning, touchPetrifies, monsterHasNoLimbs, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterYoungerForm } from './mondata.js';
+import { tameMonster } from './dog.js';
+import { hatchlingCry } from './sounds.js';
+import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt, finishHeroMonsterKill, hideMonsterUnder, } from './mon.js';
 // C timeout.c:stoned_dialogue().
 export async function petrificationDialogue({ state = game, publish = plineWithContinuation, } = {}) {
     const hero = state.u;
@@ -2093,5 +2090,263 @@ async function announceBuriedRevival(event) {
 export function timerStats(state = game) {
     const count = queuedTimers(state).length;
     return { header: `timers, size ${SIZEOF_TIMER_ELEMENT}`, count, size: count * SIZEOF_TIMER_ELEMENT };
+}
+const G_UNIQ = 0x1000;
+const S_EYE = 5;
+const S_DRAGON = 30;
+const S_LIGHT = 25;
+// Part of C timeout.c:hatch_egg(): the OBJ_FLOOR "You_see %s hatch." message.
+function floorHatchMessage(mnum, count, state) {
+    const name = monsterTypeName(mnum);
+    return formatSeenMessage(count > 1 ? `some ${makePlural(name)} hatch.` : `${withIndefiniteArticle(name)} hatch.`, state);
+}
+// Part of C mondata.c:locomotion(): hatch-message copy of the motion-verb
+// mapping; C hatch_egg() calls locomotion(mon->data, "drop"). The general
+// port is monsterLocomotion() in mondata.ts.
+function hatchLocomotion(mnum) {
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === S_EYE || symbol === S_LIGHT)
+        return 'float';
+    if (monsterIsFlyer(mnum))
+        return 'fly';
+    if (monsterIsSlithy(mnum))
+        return 'slither';
+    if (monsterIsAmorphous({ mnum }))
+        return 'ooze';
+    if ((MONSTER_MOVE[mnum] ?? 0) === 0)
+        return 'wiggle';
+    if (monsterHasNoLimbs(mnum))
+        return 'crawl';
+    return 'drop';
+}
+// Part of C timeout.c:hatch_egg(): the OBJ_INVENT You_feel/You_see
+// "out of your pack!" message.
+function inventoryHatchMessage(mnum, count, visible, state) {
+    const motion = hatchLocomotion(mnum);
+    if (!visible)
+        return formatFeltMessage(`something ${motion} from your pack!`, state);
+    const name = monsterTypeName(mnum);
+    const newborn = count > 1
+        ? `some ${makePlural(name)}`
+        : withIndefiniteArticle(name);
+    return formatSeenMessage(`${newborn} ${motion} out of your pack!`, state);
+}
+// Part of C timeout.c:hatch_egg(): the OBJ_MINVENT "%s pack" carrier
+// description (C: Sprintf(carriedby, "%s pack", s_suffix(a_monnam(mon2)))).
+function monsterPackName(monster) {
+    if (monster.name)
+        return `${possessiveName(monster.name)} pack`;
+    const species = monsterTypeName(monster.mnum, !!monster.female);
+    return `${possessiveName(withIndefiniteArticle(species))} pack`;
+}
+// Part of C zap.c:get_obj_location(): resolves egg->ocarry for the
+// OBJ_MINVENT case (JS also stores a carrierMid fallback).
+function eggCarrier(egg, state) {
+    if (egg.ocarry)
+        return egg.ocarry;
+    return (state.level?.monsters || []).find(monster => monster.m_id === egg.carrierMid
+        || (monster.minvent || monster.inventory || []).includes(egg));
+}
+// Part of C zap.c:get_obj_location(): the INVENT/FLOOR/MINVENT cases
+// hatch_egg() relies on; migrating/contained/buried eggs return null.
+function hatchLocation(egg, state) {
+    if (egg.where === 'floor')
+        return { kind: 'floor', x: egg.ox, y: egg.oy, carrier: null };
+    if (egg.where === 'inventory') {
+        return {
+            kind: 'inventory',
+            x: state.u?.ux,
+            y: state.u?.uy,
+            carrier: null,
+        };
+    }
+    if (egg.where === 'minvent') {
+        const carrier = eggCarrier(egg, state);
+        if (carrier?.mx) {
+            return {
+                kind: 'minvent',
+                x: carrier.mx,
+                y: carrier.my,
+                carrier,
+            };
+        }
+    }
+    return null;
+}
+// Part of C timeout.c:hatch_egg(): the OBJ_MINVENT "out of %s!" message
+// with the knows_egg result for a visible vs unseen carrier.
+function monsterInventoryHatchMessage(mnum, count, carrier, x, y, state) {
+    const name = monsterTypeName(mnum);
+    const newborn = count > 1
+        ? `some ${makePlural(name)}`
+        : withIndefiniteArticle(name);
+    const carrierIsVisible = canSeeMonster(carrier)
+        && (!carrier.wormno || cansee(carrier.mx, carrier.my));
+    let source;
+    if (carrierIsVisible) {
+        source = monsterPackName(carrier);
+    }
+    else if (isPoolAt(x, y, state)) {
+        source = 'empty water';
+    }
+    else {
+        source = 'thin air';
+    }
+    return {
+        message: formatSeenMessage(`${newborn} ${hatchLocomotion(mnum)} out of ${source}!`, state),
+        knowsEgg: carrierIsVisible,
+    };
+}
+// C timeout.c:hatch_egg() reads the youprop.h Deaf macro inline for the
+// hatch messages; heroIsDeaf() is the shared macro port in senses.ts.
+// Part of C timeout.c:hatch_egg(): the "yours" pline, "%s %s %s like
+// \"%s%s\"" with ing_suffix(cry_sound(mon)).
+function parentHatchMessage(mnum, count, egg, state) {
+    const subject = count > 1 ? 'Their' : 'Its';
+    const description = (MONSTER_SOUND[mnum] ?? 0) === 0
+        || heroIsDeaf(state)
+        ? 'seems' : 'sounds';
+    const parent = state.flags?.female ? 'mommy' : 'daddy';
+    const punctuation = egg.spe ? '.' : '?';
+    return `${subject} ${ingSuffix(hatchlingCry(mnum))} ${description} like "${parent}${punctuation}"`;
+}
+// C timeout.c:hatch_egg(): the monster-creating half of the timer
+// callback, split so the caller can publish the hatch message before the
+// finishing phase runs.
+// C creates the monsters and reduces the egg stack before it prints the hatch
+// message. The caller prints that message before finishEggHatchTimer() updates
+// knowledge, schedules the remaining eggs, or removes the empty stack.
+export async function runClaimedEggHatchTimer(claimed, state = game, currentTurn = state.moves) {
+    if (!claimed || claimed.timer?.kind !== OBJECT_TIMER_KIND.HATCH_EGG)
+        return null;
+    const egg = claimed.object;
+    if (!egg || egg.otyp !== EGG)
+        return null;
+    const species = egg.corpsenm ?? -1;
+    if (species < 0) {
+        return { egg, sterile: true, hatched: 0, finishPending: false };
+    }
+    const inInventory = egg.where === 'inventory';
+    const yours = !!egg.spe
+        || (!state.flags?.female && inInventory && rn2(2) === 0);
+    const silent = claimed.timer.deadline !== currentTurn;
+    const location = hatchLocation(egg, state);
+    if (!location) {
+        return {
+            egg, sterile: false, cannotHatchHere: true,
+            hatched: 0, finishPending: false,
+        };
+    }
+    const { x, y } = location;
+    const quantity = egg.quan ?? egg.quantity ?? 1;
+    if (!Number.isInteger(quantity) || quantity < 1)
+        throw new Error('HATCH_EGG requires a positive egg quantity');
+    const mnum = monsterYoungerForm(species);
+    const visible = !silent && cansee(x, y);
+    const desired = rnd(quantity);
+    const unavailable = !!((MONSTER_GENO[mnum] ?? 0) & G_UNIQ)
+        || !!((state.mvitals?.[mnum]?.mvflags ?? 0)
+            & (G_GENOD | G_EXTINCT));
+    if (unavailable) {
+        return {
+            egg, x, y, mnum, sterile: false, unavailable: true,
+            desired, hatched: 0, finishPending: false,
+        };
+    }
+    let lastMonster = null;
+    let hatched = 0;
+    for (let index = 0; index < desired; index++) {
+        const monster = await makemonNear(mnum, x, y, NO_MINVENT | MM_NOMSG, false);
+        if (!monster)
+            break;
+        const inventoryDragon = inInventory
+            && MONSTER_SYMBOL[mnum] === S_DRAGON;
+        if ((yours && !silent) || inventoryDragon) {
+            if (await tameMonster(monster)
+                && inInventory && !inventoryDragon)
+                monster.mtame = 20;
+        }
+        lastMonster = monster;
+        // C breaks before the for-loop decrement when this birth reaches
+        // extinction. Its hatch count therefore excludes that last newborn.
+        if ((state.mvitals?.[mnum]?.mvflags ?? 0) & G_EXTINCT)
+            break;
+        hatched++;
+    }
+    if (!lastMonster) {
+        return {
+            egg, x, y, mnum, sterile: false, desired, hatched: 0,
+            finishPending: false,
+        };
+    }
+    egg.quan = quantity - hatched;
+    egg.quantity = egg.quan;
+    let message = null;
+    let knowsEgg = false;
+    if (location.kind === 'floor' && visible) {
+        message = floorHatchMessage(mnum, hatched, state);
+        knowsEgg = true;
+    }
+    else if (location.kind === 'inventory') {
+        message = inventoryHatchMessage(mnum, hatched, visible, state);
+        knowsEgg = true;
+    }
+    else if (location.kind === 'minvent' && visible) {
+        const presentation = monsterInventoryHatchMessage(mnum, hatched, location.carrier, lastMonster.mx, lastMonster.my, state);
+        message = presentation.message;
+        knowsEgg = presentation.knowsEgg;
+    }
+    let followupMessage = null;
+    if (location.kind === 'inventory') {
+        if (yours) {
+            followupMessage = parentHatchMessage(mnum, hatched, egg, state);
+        }
+        else if (MONSTER_SYMBOL[mnum] === S_DRAGON
+            && !heroIsDeaf(state)) {
+            followupMessage = '"Gleep!"';
+        }
+    }
+    return {
+        egg, x, y, mnum, monster: lastMonster, carrier: location.carrier,
+        desired, hatched, message, followupMessage,
+        learnPending: visible && knowsEgg,
+        redraw: location.kind === 'floor' && visible,
+        finishPending: true,
+    };
+}
+// Part of C timeout.c:hatch_egg(): the tail of the timer callback, after
+// the message: learn the egg type, reschedule or free the stack, redraw.
+// Also C timeout.c:learn_egg_type(): inlined here (MV_KNOWS_EGG update).
+export async function finishEggHatchTimer(event, state = game, currentTurn = state.moves) {
+    if (!event?.finishPending || !event.egg)
+        return event;
+    const egg = event.egg;
+    const carried = egg.where === 'inventory';
+    if (event.learnPending) {
+        if (!Array.isArray(state.mvitals))
+            state.mvitals = [];
+        const adult = monsterOlderForm(event.mnum);
+        const vital = state.mvitals[adult]
+            || (state.mvitals[adult] = { mvflags: 0, born: 0, died: 0 });
+        vital.mvflags = (vital.mvflags ?? 0) | MV_KNOWS_EGG;
+    }
+    if ((egg.quan ?? 0) > 0) {
+        scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, currentTurn + rnd(12), state);
+        egg.owt = objectWeight(egg);
+    }
+    else if (carried) {
+        await useUpInventoryStack(egg, state);
+    }
+    else {
+        await deleteObject(egg, state);
+        const monster = state.level && monsterAtPosition(state.level, event.x, event.y);
+        if (monster && !await hideMonsterUnder(monster, state) && cansee(event.x, event.y))
+            event.redraw = true;
+    }
+    if (event.redraw)
+        await newsym(event.x, event.y);
+    event.finishPending = false;
+    event.finished = true;
+    return event;
 }
 //# sourceMappingURL=timeout.js.map

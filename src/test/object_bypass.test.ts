@@ -7,7 +7,8 @@ import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL } from '../
 import { hitFloorPileWithWand } from '../js/zap.js';
 
 import { CLUB, DAGGER, POT_WATER, ROCK, STATUE, WAN_CANCELLATION, WAN_STRIKING } from '../js/object_data.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { breakWand } from '../js/apply.js';
 import { destroyInventoryByElement, destroyFireMonsterInventory } from '../js/zap.js';
 import { addInventoryObject, chargedWand } from './support/game-objects.js';

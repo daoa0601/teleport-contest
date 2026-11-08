@@ -11,7 +11,8 @@ import { attackMonsterWithMonster } from '../js/mhitm.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { monsterDistressEvents } from '../js/mon.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { monsterFliesOrFloats } from '../js/mon.js';
 
 import { mlevel_tele_trap } from '../js/teleport.js';

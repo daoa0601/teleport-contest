@@ -33,7 +33,7 @@ import { rn2, rnd } from './rng.js';
 import { newsym } from './display.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { isIceAt, drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
-import { sanitizeName } from './bones_name.js';
+import { sanitizeName } from './bones.js';
 import { goodPosition } from './teleport.js';
 import { artifactByName } from './artifact.js';
 import {

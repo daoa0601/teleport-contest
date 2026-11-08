@@ -17,7 +17,8 @@ import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAu
 import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import type { MenuColoringRule } from './coloratt.js';
 import type { ConfigurationErrorReport } from './cfgfiles.js';
-import { displayHelpFile, displayPagerText } from './pager.js';
+import { displayHelpFile } from './pager.js';
+import { displayPagerText } from './wintty.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { rn2, rnd } from './rng.js';
@@ -1430,7 +1431,7 @@ interface FruitNameSettings {
 // run bones.c:sanitize_name() over each byte of the native buffer — control
 // bytes become '.', and a high byte is masked to '_' unless the tty accepts
 // eight-bit input, which keeps the byte itself. The port's bones names are
-// decoded strings (sanitizeName in bones_name.ts masks those per character);
+// decoded strings (sanitizeName in bones.ts masks those per character);
 // the fruit option still sees the raw UTF-8 bytes here.
 function sanitizeFruitCopy(name: string, iflags?: Pick<InterfaceFlags, 'wc_eight_bit_input'>): string {
     const bytes = new TextEncoder().encode(name).subarray(0, FRUIT_NAME_BYTES);

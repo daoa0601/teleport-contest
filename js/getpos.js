@@ -1,19 +1,19 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_EXPLORE, GLOC_INTERESTING, GLOC_MONS, GLOC_OBJS, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
+import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_EXPLORE, GLOC_INTERESTING, GLOC_MONS, GLOC_OBJS, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, CMDQ_DIR, } from './const.js';
 import { Invocation_lev } from './dungeon.js';
 import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './topl.js';
 import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph, TemporaryMapEffect, usesDecSymbols } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { cmdq_add_key, cmdq_clear, cmdq_pop, readcharPoskey, takeQueuedAdjacentPosition } from './cmd.js';
+import { cmdq_add_key, cmdq_clear, cmdq_pop, readcharPoskey } from './cmd.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { glyphToCmapSymbol } from './glyphs.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cansee } from './vision.js';
-import { coordinateDescription, doScreenDescription } from './pager.js';
+import { doScreenDescription } from './pager.js';
 import { isValidTravelTarget } from './hack.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './wintty.js';
 import { visibleCommandKey } from './hacklib.js';
@@ -583,6 +583,59 @@ export async function selectTravelMenuPosition(describe) {
     finally {
         game.iflags.getloc_filter = previousFilter;
     }
+}
+// C getpos.c:coord_desc(): map, screen, or compass coordinates.
+export function coordinateDescription(x, y, mode) {
+    if (mode === 'n')
+        return '';
+    if (mode === 'm')
+        return `<${x},${y}>`;
+    if (mode === 's')
+        return `[${String(y + 2).padStart(2, '0')},${String(x).padStart(2, '0')}]`;
+    const dx = x - game.u.ux, dy = y - game.u.uy;
+    if (!dx && !dy)
+        return '(here)';
+    if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1)
+        return `(${dy ? dy > 0 ? 'south' : 'north' : ''}${dx ? dx > 0 ? 'east' : 'west' : ''})`;
+    const full = mode === 'f';
+    const parts = [dy ? `${Math.abs(dy)}${dy > 0 ? full ? 'south' : 's' : full ? 'north' : 'n'}` : '',
+        dx ? `${Math.abs(dx)}${dx > 0 ? full ? 'east' : 'e' : full ? 'west' : 'w'}` : ''].filter(Boolean);
+    return `(${parts.join(',')})`;
+}
+// C getpos.c:dxdy_to_dist_descr(): the full-direction form the port needs
+// (insight.c and pager.c callers pass TRUE; cmd.c:directionname() is
+// inlined here as DIRECTION_NAMES, the eight directionname() strings).
+export function distanceDescription(dx, dy) {
+    if (!dx && !dy)
+        return 'here';
+    const direction = DIRECTION_NAMES.find(entry => entry.dx === dx && entry.dy === dy);
+    if (direction)
+        return direction.name;
+    const vertical = dy ? `${Math.abs(dy)}${dy > 0 ? 'south' : 'north'}${dx ? ',' : ''}` : '';
+    return `${vertical}${dx ? `${Math.abs(dx)}${dx > 0 ? 'east' : 'west'}` : ''}`;
+}
+const DIRECTION_NAMES = [
+    { dx: -1, dy: 0, name: 'west' }, { dx: -1, dy: -1, name: 'northwest' },
+    { dx: 0, dy: -1, name: 'north' }, { dx: 1, dy: -1, name: 'northeast' },
+    { dx: 1, dy: 0, name: 'east' }, { dx: 1, dy: 1, name: 'southeast' },
+    { dx: 0, dy: 1, name: 'south' }, { dx: -1, dy: 1, name: 'southwest' },
+];
+// C getpos.c:812-826: getpos()'s one cmdq_pop() answers a horizontal
+// CMDQ_DIR with the spot next to the hero; every other queued entry — a
+// key, a vertical direction, the user-input placeholder, or a queued
+// extended command — drops that entry, clears CQ_CANNED, and returns -1.
+// The whole queued fast path is skipped while a do-again replay owns the
+// input (getpos.c:814), so undefined hands the caller its cursor loop.
+export function takeQueuedAdjacentPosition() {
+    if (game._inDoAgain)
+        return undefined;
+    const entry = cmdq_pop();
+    if (!entry)
+        return undefined;
+    if (entry.typ === CMDQ_DIR && entry.dirz === 0)
+        return { x: game.u.ux + entry.dirx, y: game.u.uy + entry.diry };
+    cmdq_clear(CQ_CANNED);
+    return null;
 }
 // C getpos.c:getpos(): the cursor-position loop (also see the file banner).
 // Also C getpos.c:getpos_toggle_hilite_state(): inlined here (the '$' key

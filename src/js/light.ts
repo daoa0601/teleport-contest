@@ -209,8 +209,9 @@ export function restoreLevelLightSources(state: GameState = game): void {
     restoreLightBatch(lights, state);
 }
 
-// C restore.c:655 reloads the global batch while reading the game state,
-// then getlev() pushes the current level's batch in front of it.
+// C light.c:restore_light_sources() reloads the global batch while reading
+// the game state (called at restore.c:655), then getlev() pushes the
+// current level's batch in front of it.
 export function restoreSavedLightSources(state: GameState = game): void {
     const lights = objectLightEntries(
         objectsInTimerGraph(state).filter(lightObjectIsGlobal), state);

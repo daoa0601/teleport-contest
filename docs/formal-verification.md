@@ -697,7 +697,7 @@ deleted, as is the folded food-selection module's private `objectIsFlammable`),
 immunity (trap.c `immune_to_trap`), dig.c rot-on-burial, mon.c
 `meatmetal`/`meatobj`, monmove.c `gelcube_digests`, eat.c `rottenfood`
 and the rust-monster smell/admission branches, dog.c `dogfood`
-(pet_food.js), eat.c `edible` (eat.js), do_wear.c
+(dog.ts), eat.c `edible` (eat.js), do_wear.c
 `hard_helmet` and `obj_erode_type`, dothrow.c `breakobj`'s crack branch,
 insight.c's spell-casting suit, spell.c's per-slot `metallic()` helper
 (deleted), steed.c's stiff armor, zap.c's ring-shock gloves, mthrowu.c's

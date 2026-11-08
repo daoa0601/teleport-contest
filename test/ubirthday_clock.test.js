@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 const FIXED_DATETIME = '20250101120000';
 // Independent statement of the pinned recorder's C rule: the fixed winter
 // calendar '2025-01-01 12:00:00' is interpreted as New York wall time

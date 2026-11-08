@@ -6,7 +6,8 @@ import { game } from '../js/gstate.js';
 import { mkclassAligned } from '../js/makemon.js';
 import { MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 

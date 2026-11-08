@@ -24,7 +24,8 @@ import { changeMonsterForm, finishEnvironmentalMonsterDeath, removeMonsterFromGa
 import { monsterAtPosition } from '../js/steed.js';
 import { AMULET_OF_LIFE_SAVING, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { teleportMonsterFromTrap } from '../js/teleport.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

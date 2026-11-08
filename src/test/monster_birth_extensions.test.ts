@@ -7,7 +7,8 @@ import { game } from '../js/gstate.js';
 import { setMonsterMalign } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 void test('MM_EMIN gives the caller an unassigned minion record', async () => {

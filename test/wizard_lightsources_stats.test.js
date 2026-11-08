@@ -9,7 +9,8 @@ import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { beginObjectBurn } from '../js/timeout.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { mklev } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
@@ -311,7 +312,7 @@ void test('#stats counts retained oextra and mextra allocations', async () => {
     const lamp = await addInventoryObject(OIL_LAMP);
     // A bare omid (a corpse's ghost id, bones.ts:369) means C's oextra is
     // allocated; a cleared name leaves the record behind
-    // (bones_object.ts).  C wizcmds.c:1121-1122 and 1235-1236 count the
+    // (bones.ts).  C wizcmds.c:1121-1122 and 1235-1236 count the
     // allocations regardless of what they still hold.
     lamp.omid = 7;
     const box = await addInventoryObject(LARGE_BOX);

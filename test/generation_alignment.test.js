@@ -5,7 +5,8 @@ import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL } from '../js/const.js';
 import { inducedAlignment, init_dungeons } from '../js/dungeon.js';
 import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { freshGame } from './support/game-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 async function loadDungeonGraph() {

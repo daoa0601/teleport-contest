@@ -77,7 +77,7 @@ import { addExperience, checkExperienceLevel } from './exper.js';
 import { runDueTimers, restoreLevelTimers, objectTimers, scheduleObjectTimer } from './timeout.js';
 import { restoreLevelChains, restoreMonsterCover, restoreMonsterWormHeads } from './restore.js';
 import { hideMonsterOnRestore } from './mon.js';
-import { restoreLevelPetHistory, restoreObjectPetHistory } from './save.js';
+import { restoreLevelPetHistory, restoreObjectPetHistory } from './restore.js';
 import { restoreLevelLightSources } from './light.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -93,7 +93,7 @@ import { descendFromLevitation } from './levitation_commands.js';
 import { do_attack, hitMonsterWithHeroObject } from './uhitm.js';
 import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer, monsterIsRider } from './mondata.js';
 import { LL_ACHIEVE, LL_DEBUG, G_GENOD, OBJECT_TIMER_KIND, LL_CONDUCT } from './const.js';
-import { rotCorpse } from './corpse_rot.js';
+import { rotCorpse } from './dig.js';
 import { canSeeMonster } from './display.js';
 import { riderRevivalTime, set_corpsenm } from './mkobj.js';
 import { corpseName as corpseObjectName, capitalizedDefiniteName } from './objnam.js';
@@ -1207,9 +1207,9 @@ async function menuDrop(retry, selection) {
     }
     return dropped ? ECMD_TIME : ECMD_OK;
 }
-// C pickup.c:query_category(): menu_drop()'s category prompt; the
-// traditional and combination branches use traditionalDropCategories()
-// below.
+// Part of C do.c:menu_drop(): the query_category() call of the MENU_FULL
+// branch; the traditional and combination branches use
+// traditionalDropCategories() below.
 async function dropCategories() {
     // The multi-select window's own dismissal restores the screen: C's
     // select_menu() runs the whole windowport call with bot_disabled, so
@@ -1305,9 +1305,11 @@ function matchesCategories(object, categories) {
         && (!categories.includes('u') || hasUnpaid(object))
         && (!categories.includes('P') || !!object.pickup_prev);
 }
-// C pickup.c:ggetobj(): the traditional/combination drop prompt of
-// do_drop()'s branches, with ggetobj()'s letters; the MENU_FULL
-// branch's query_category() menu is dropCategories().
+// Part of C do.c:doddrop() and do.c:menu_drop(): the ggetobj("drop", ...)
+// specialization of the traditional and combination branches, with
+// ggetobj()'s letters (the prompt loop is invent.c:ggetobj(); the
+// inventory.ts identify dialog holds that port); the MENU_FULL branch's
+// query_category() menu is dropCategories().
 async function traditionalDropCategories(combo) {
     const classes = [...new Set(game.inventory.map(object => object.oclass))];
     const statuses = new Set(game.inventory.map(bucCategory));
