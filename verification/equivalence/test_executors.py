@@ -1337,6 +1337,24 @@ class ExecutorTests(unittest.TestCase):
         self.rejected('int example(int typ) { return typ == 23; }', js,
                       **domain, reason='outputs differ')
 
+    def test_for_of_var_binding_survives_an_enclosing_block(self):
+        # `var` is function-scoped: even when the loop sits inside a nested
+        # block, the binding outlives that block and a module binding of the
+        # same name stays untouched.
+        js = ('const item = 23;\n'
+              'function example(typ) {\n'
+              '    {\n'
+              '        for (var item of [0]) {\n'
+              '        }\n'
+              '    }\n'
+              '    return typ === item;\n'
+              '}')
+        domain = dict(params=[('typ', INT)], pre=lambda s: [s['typ'] >= 0, s['typ'] <= 30])
+        self.equivalent('int example(int typ) { return typ == 0; }', js, **domain)
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      **domain, reason='outputs differ')
+
+
     def test_for_of_assignment_to_a_module_binding_is_rejected(self):
         # A bare assignment target writes module state (`let flag`), which
         # the executor cannot model; it must refuse rather than bind a local.

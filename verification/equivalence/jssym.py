@@ -141,11 +141,25 @@ class JSExec:
         self.module_env = module_env
         self.stack = []
         self.local_names = []
+        self.frame_vars = []
         self.resolving = set()
         self.literal_values = modules.literal_values if isinstance(modules, Modules) else {}
 
     def where(self, node) -> str:
         return f'{self.stack[-1][1]}:{node.start_point[0] + 1}'
+
+    def _close_frame_aware(self, outer, paths):
+        """Close a block or loop scope. Function-scoped (`var`) names that
+        this frame's for...of loops bound survive the block, as in
+        JavaScript; everything else behaves as _close_scope."""
+        keep = self.frame_vars[-1] if self.frame_vars else frozenset()
+        if not keep:
+            return _close_scope(outer, paths)
+        for p in paths:
+            for name in [k for k in p.env
+                         if k not in outer and k not in keep]:
+                del p.env[name]
+        return paths
 
     @staticmethod
     def merge_value(guard, a, b):
@@ -207,11 +221,13 @@ class JSExec:
         path.env.update(locals)
         self.stack.append((name, label, {}))
         self.local_names.append(set(locals))
+        self.frame_vars.append(set())
         try:
             results = self.eval(path, candidates[0].child_by_field_name('value'))
         finally:
             self.stack.pop()
             self.local_names.pop()
+            self.frame_vars.pop()
         out = []
         for p, value in results:
             p.ret = value
@@ -258,6 +274,7 @@ class JSExec:
             elif pattern.type == 'array_pattern':
                 declared.update(c.text.decode() for c in pattern.named_children if c.type == 'identifier')
         self.local_names.append(declared)
+        self.frame_vars.append(set())
         try:
             paths = [p]
             for i, prm in enumerate(params):
@@ -273,6 +290,7 @@ class JSExec:
         finally:
             self.stack.pop()
             self.local_names.pop()
+            self.frame_vars.pop()
         results = []
         for q in outs:
             value = q.ret if q.returned else UNDEF
@@ -335,7 +353,7 @@ class JSExec:
             for c in n.named_children:
                 paths = seq(paths, lambda p, c=c: self.exec(p, c))
                 paths = self.join(paths)
-            return _close_scope(outer, paths)
+            return self._close_frame_aware(outer, paths)
         if t in ('lexical_declaration', 'variable_declaration'):
             paths = [path]
             for d in n.named_children:
@@ -460,7 +478,7 @@ class JSExec:
                 [(_, other)] = results
                 matches.append(self._equal(value, other))
             out.extend(self.m.switch(p, matches, statements, self.exec))
-        return _close_scope(outer, out)
+        return self._close_frame_aware(outer, out)
 
     def _for(self, path, n):
         cond = n.child_by_field_name('condition')
@@ -476,7 +494,7 @@ class JSExec:
         if increment is not None and increment.type == 'empty_statement':
             increment = None
         paths = seq(paths, lambda p: self._loop(p, n, cond, increment))
-        return _close_scope(outer, paths)
+        return self._close_frame_aware(outer, paths)
 
     def _for_of(self, path, n):
         """for...of over one array: bind each element in order and run the
@@ -520,6 +538,10 @@ class JSExec:
             raise Unsupported(f'JavaScript for...of writes the non-local binding {name} at {self.where(n)}')
         body = n.child_by_field_name('body')
         outer = set(path.env)
+        if declared and kind == 'var':
+            # The binding is function-scoped: remember it so enclosing
+            # blocks keep it alive past their own scope close.
+            self.frame_vars[-1].add(name)
         out = []
         for p, collection in self.eval(path, n.child_by_field_name('right')):
             if collection.kind != 'array':
@@ -550,7 +572,7 @@ class JSExec:
             if not p.returned:
                 p.broken = False
         if declared and kind in ('const', 'let'):
-            return _close_scope(outer, out)
+            return self._close_frame_aware(outer, out)
         return out
 
     def _loop(self, path, n, cond, update):
@@ -649,12 +671,14 @@ class JSExec:
             path.frames.append({})
             self.stack.append(('<constant>', label, {}))
             self.local_names.append(set())
+            self.frame_vars.append(set())
             obligations_before = len(self.m.obligations)
             try:
                 results = self.eval(path, constants[name])
             finally:
                 self.stack.pop()
                 self.local_names.pop()
+                self.frame_vars.pop()
                 path.frames.pop()
                 self.resolving.remove(key)
             if len(results) != 1:
