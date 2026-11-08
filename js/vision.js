@@ -2,8 +2,11 @@
 // C ref: vision.c Algorithm C shadow-casting.
 import { monsterHasMapPosition } from './steed.js';
 import { game } from './gstate.js';
-import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
-import { newsym } from './display.js';
+import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
+import { canSeeMonster, monsterVisible, newsym, seeMonsterWithInfrared, senseWithTelepathy, set_seenv, } from './display.js';
+import { wormKnown } from './worm.js';
+import { heroDetectsMonsters } from './senses.js';
+import { heroWarnsOfMonster } from './polyself.js';
 import { noticeAllMonsters } from './hack.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
@@ -13,7 +16,6 @@ import { objectsInTimerGraph } from './timeout.js';
 import { isMoatAt, isPoolAt } from './dbridge.js';
 import { isRoom } from './map_types.js';
 import { monsterPerceives } from './mondata.js';
-import { set_seenv } from './display.js';
 // C monst.h:is_lightblocker_mappear(): mimic appearances that block vision/light
 // (is_obj_mappear(BOULDER), or furniture walls/doors/tree). A mimic with no
 // saved mappearance blocks nothing.
@@ -996,6 +998,33 @@ export function couldsee(x, y) {
 export function monsterHasLineOfSightToHero(monster, state = game) {
     return (!heroIsInvisible(state) || monsterPerceives(monster.mnum))
         && !state.u.uinwater && couldsee(monster.mx, monster.my);
+}
+// C vision.c:howmonseen(). Direct sight matters to effects such as mirrors;
+// detecting an actor does not imply that either creature can see a reflection.
+export function howMonsterSeen(monster) {
+    const visible = canSeeMonster(monster);
+    const hero = game.u;
+    let ways = 0;
+    if ((monster.wormno ? wormKnown(monster)
+        : cansee(monster.mx, monster.my) && couldsee(monster.mx, monster.my))
+        && monsterVisible(monster) && !monster.minvis)
+        ways |= MONSEEN_NORMAL;
+    if (visible && monster.minvis)
+        ways |= MONSEEN_SEEINVIS;
+    const seesInvisible = hero.seeInvisible || (hero.seeInvisibleTurns ?? 0) > 0;
+    if ((!monster.minvis || seesInvisible) && seeMonsterWithInfrared(monster))
+        ways |= MONSEEN_INFRAVIS;
+    if (senseWithTelepathy(monster))
+        ways |= MONSEEN_TELEPAT;
+    const range = hero.xray_range ?? -1;
+    if (visible && range > 0
+        && (monster.mx - hero.ux) ** 2 + (monster.my - hero.uy) ** 2 <= range ** 2)
+        ways |= MONSEEN_XRAYVIS;
+    if (heroDetectsMonsters())
+        ways |= MONSEEN_DETECT;
+    if (heroWarnsOfMonster(monster))
+        ways |= MONSEEN_WARNMON;
+    return ways;
 }
 // C vision.h:couldsee(): state-aware read for callers that run against
 // either the live game or a focused unit state. Focused unit states omit

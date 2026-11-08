@@ -139,33 +139,6 @@ export function canSeeMonster(monster) {
     return monster.wormno ? wormKnown(monster) && monsterVisible(monster)
         : canPhysicallyProjectMonster(monster, monster.mx, monster.my);
 }
-// C vision.c:howmonseen(). Direct sight matters to effects such as mirrors;
-// detecting an actor does not imply that either creature can see a reflection.
-export function howMonsterSeen(monster) {
-    const visible = canSeeMonster(monster);
-    const hero = game.u;
-    let ways = 0;
-    if ((monster.wormno ? wormKnown(monster)
-        : cansee(monster.mx, monster.my) && couldsee(monster.mx, monster.my))
-        && monsterVisible(monster) && !monster.minvis)
-        ways |= MONSEEN_NORMAL;
-    if (visible && monster.minvis)
-        ways |= MONSEEN_SEEINVIS;
-    const seesInvisible = hero.seeInvisible || (hero.seeInvisibleTurns ?? 0) > 0;
-    if ((!monster.minvis || seesInvisible) && seeMonsterWithInfrared(monster))
-        ways |= MONSEEN_INFRAVIS;
-    if (senseWithTelepathy(monster))
-        ways |= MONSEEN_TELEPAT;
-    const range = hero.xray_range ?? -1;
-    if (visible && range > 0
-        && (monster.mx - hero.ux) ** 2 + (monster.my - hero.uy) ** 2 <= range ** 2)
-        ways |= MONSEEN_XRAYVIS;
-    if (heroDetectsMonsters())
-        ways |= MONSEEN_DETECT;
-    if (heroWarnsOfMonster(monster))
-        ways |= MONSEEN_WARNMON;
-    return ways;
-}
 // Part of C display.c:newsym(): the worm-tail test.
 function isWormTail(monster, x, y) {
     return !!monster?.wormno && (x !== monster.mx || y !== monster.my);

@@ -47,7 +47,7 @@ import { useCrystalBall, convertSecretDoor, findit, openit } from './detect.js';
 import {
     digActualHole, digCheck, liquidFlow, liquidForHole, watchDigging, freeHeroFromBuriedBall, usePickAxe,
 } from './dig.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, howMonsterSeen, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
 import type { GlyphMetadata } from './display.js';
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName, monsterTypeName } from './do_name.js';
 import {
@@ -206,7 +206,7 @@ import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import type { DirectionSelection } from './cmd.js';
 import { summonUndead } from './undead_summoning.js';
 import { summonVaultGuardSoon } from './vault.js';
-import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
+import { cansee, couldsee, howMonsterSeen, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { wieldTool, doswapweapon } from './wield.js';
 import type { WieldToolResult } from './wield.js';
 import { setnotworn, adjustMonsterSpeed } from './worn.js';

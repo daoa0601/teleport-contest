@@ -9,7 +9,7 @@ import { recordRandom } from './monster_action_types.js';
 import { MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js';
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { castMonsterSpellRay, monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { displayRayName } from './zap.js';
@@ -33,7 +33,7 @@ import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHall
 import { makemonAt, mkclassAligned, setMonsterMalign } from './makemon.js';
 import { enexto } from './teleport.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { cansee, couldsee } from './vision.js';
+import { cansee, couldsee, howMonsterSeen } from './vision.js';
 import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters, summonNastyMonsters } from './wizard.js';
 import { monsterCensus, msummon } from './minion.js';
 import { dist2 } from './hacklib.js';
