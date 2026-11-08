@@ -11,7 +11,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_WIS, MONSEEN_INFRAVIS, MONSEEN_NORMAL, NO_MINVENT, W_AMUL, W_ARMS } from '../js/const.js';
 import { speakArtifact } from '../js/artifact.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
-import { howMonsterSeen } from '../js/display.js';
+import { howMonsterSeen } from '../js/vision.js';
 import { resetInputState } from '../js/input.js';
 import { useMirror } from '../js/apply.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

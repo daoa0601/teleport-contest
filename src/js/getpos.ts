@@ -392,9 +392,10 @@ export async function paintGetposCursor(cursor: Position, message: string | null
     markedSpots: readonly Position[] | null = null,
     { flushPending = false }: { flushPending?: boolean } = {},
 ): Promise<TemporaryMapEffect | null> {
-    if (message !== null) {
+    if (message !== null && !game._suppressMessagesUntilInput) {
         game._pending_message = message;
-        // auto_describe()'s custompline repaints the row.
+        // auto_describe()'s custompline repaints the row; show_topl()'s
+        // WIN_STOP gate keeps the unremembered line off a stopped screen.
         resetToplineClip();
     }
     // display.c:tmp_at() with DISP_BEAM shows the glyph only on squares the

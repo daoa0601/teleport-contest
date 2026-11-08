@@ -25,7 +25,7 @@ import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFla
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
 import { continueSpellbookStudy } from './spell.js';
-import { CTRL_P, clearMessageWindow, flushPendingTopline, messageWindowMode, putMessageHistory, redotoplin, renderKeyPrompt, showMessageHistoryWindow, stepHistoryBack } from './topl.js';
+import { clearMessageWindow, ttyDoprevMessage, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './topl.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation } from './pager.js';
 import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
@@ -662,7 +662,7 @@ async function runCommandHandler(binding) {
     if (binding.command?.handler === 'doprev_message') {
         // Ctrl-P: doprev_message(), a GENERALCMD redisplay that follows the
         // binding rather than one raw key.
-        await doprevMessage();
+        await ttyDoprevMessage();
         game.context.move = 0;
         return;
     }
@@ -3369,64 +3369,6 @@ export function randomKey(inputState) {
 export function resetFuzzerCommandState() {
     fuzzerCommandIndex = 0;
     lastFuzzerCommand = 0;
-}
-// ── #prevmsg (C cmd.c:doprev_message()) ─────────────────────────────────
-// C cmd.c:doprev_message() -> win/tty/topl.c:tty_doprev_message(). The
-// prompt owners call this with inread set, which forces the single-message
-// branch exactly like ttyDisplay->inread does; they manage their own
-// repainting around the call. Takes no game time and draws no randomness.
-export async function doprevMessage(inread = false) {
-    const mode = messageWindowMode();
-    if (mode !== 's' && !inread) {
-        if (mode === 'f') {
-            // Full: the window lists the ring oldest-first with the pending
-            // topline last, and the walk cursor restarts.
-            game._messageHistoryCursor = null;
-            await showMessageHistoryWindow({ reversed: false });
-        }
-        else if (mode === 'c') {
-            // Combination: the first two recalls page single lines (the
-            // pending topline, then the newest remembered one), unless
-            // maxrow wrapped to zero. Only a single-line step in this call
-            // sets dismiss_more to ^P for the window's pager too.
-            let acceptCtrlP = false;
-            for (;;) {
-                const cursor = game._messageHistoryCursor;
-                let morc;
-                const newestSavedLine = cursor === game._messageHistory.length - 1
-                    && game._messageHistoryWriteIndex > 0;
-                if (cursor === null || newestSavedLine) {
-                    acceptCtrlP = true;
-                    morc = await redotoplin(cursor === null
-                        ? game._toplines : game._messageHistory[cursor] ?? '');
-                    stepHistoryBack();
-                }
-                else {
-                    game._messageHistoryCursor = null;
-                    morc = await showMessageHistoryWindow({ reversed: false, acceptCtrlP });
-                }
-                if (morc !== CTRL_P)
-                    break;
-            }
-        }
-        else {
-            // Reversed: the pending topline leads, then the ring newest-first.
-            game._messageHistoryCursor = null;
-            await showMessageHistoryWindow({ reversed: true });
-        }
-    }
-    else if (mode === 's') {
-        // Single: each ^P walks one entry further back, wrapping to the
-        // pending topline again after the oldest displayed entry.
-        for (;;) {
-            const cursor = game._messageHistoryCursor;
-            const morc = await redotoplin(cursor === null
-                ? game._toplines : game._messageHistory[cursor] ?? '');
-            stepHistoryBack();
-            if (morc !== CTRL_P)
-                break;
-        }
-    }
 }
 // ── Key help (C cmd.c:key2extcmddesc(), dokeylist(), help_dir()) ──────────
 // C misc_keys[] supplies descriptions to both key help and the bindings list.

@@ -13,7 +13,8 @@ import { CMDQ_KEY } from './const.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { showChoiceWindow } from './windows.js';
-import { doprevMessage, extcmdsMatch, yn_function } from './cmd.js';
+import { extcmdsMatch, yn_function } from './cmd.js';
+import { ttyDoprevMessage } from './topl.js';
 import { visibleCommandKey } from './hacklib.js';
 // C getline.c:tty_getlin()
 // Also C getline.c:hooked_tty_getlin(): line editing is inlined here
@@ -105,13 +106,13 @@ export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMe
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
                 if (!doprev)
-                    await doprevMessage(false);
-                await doprevMessage(false);
+                    await ttyDoprevMessage(false);
+                await ttyDoprevMessage(false);
                 doprev = true;
                 game._toplines = `${prompt} ${value}`;
                 continue;
             }
-            await doprevMessage(false);
+            await ttyDoprevMessage(false);
             doprev = false;
             game._messageHistoryCursor = null;
             game._pending_message = `${prompt} ${value}`;
@@ -246,12 +247,12 @@ export async function editExtendedCommand() {
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
                 if (!doprev)
-                    await doprevMessage(false);
-                await doprevMessage(false);
+                    await ttyDoprevMessage(false);
+                await ttyDoprevMessage(false);
                 doprev = true;
             }
             else {
-                await doprevMessage(false);
+                await ttyDoprevMessage(false);
                 doprev = false;
                 game._messageHistoryCursor = null;
                 // `*bufp = 0` drops the auto-completed suffix before repainting.

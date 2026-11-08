@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { doprevMessage } from '../js/cmd.js';
+import { ttyDoprevMessage } from '../js/topl.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
@@ -70,7 +70,7 @@ void test('previous-message recall renders an encoded glyph byte as a blank', as
     await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await pline('\x0e\u00fe\x0f        a doorway or the floor of a room');
 
-    await doprevMessage();
+    await ttyDoprevMessage();
 
     assert.equal(requireScreenCell(0, 0).ch, ' ');
 });
@@ -82,7 +82,7 @@ void test('previous-message recall renders an encoded glyph byte as a blank', as
 void test('screen repaint after glyph recall leaves the glyph cell blank', async () => {
     await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await pline('\x0e\u00fe\x0f        a doorway or the floor of a room');
-    await doprevMessage();
+    await ttyDoprevMessage();
 
     await flush_screen(1);
 
@@ -97,7 +97,7 @@ void test('travel prompt joins the instructions line in message recall', async (
     input.feed('_\x1b');
     await moveloop_core();
 
-    await doprevMessage();
+    await ttyDoprevMessage();
 
     assert.match(toplineText(), /Where do you want to travel to\?  \(For instructions type a '\?'\)/);
 });

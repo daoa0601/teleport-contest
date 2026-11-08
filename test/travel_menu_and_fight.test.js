@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
-import { doprevMessage } from '../js/cmd.js';
+import { ttyDoprevMessage } from '../js/topl.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/do_wear.js';
@@ -19,8 +19,8 @@ void test('travel to a queued position shows only the travel question', async ()
     queueCannedKeys('_');
     queueCannedDir(0, 0);
     await rhack(0);
-    await doprevMessage();
-    await doprevMessage();
+    await ttyDoprevMessage();
+    await ttyDoprevMessage();
     assert.equal(toplineText(), 'Where do you want to travel to?');
 });
 // C hack.c:domove_core(): the shared destination-monster block runs

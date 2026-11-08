@@ -138,10 +138,11 @@ import {
 
 } from './const.js';
 import {
-    canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol,
+    canSpotHeroSelf, cmapSymbolAppearance, glyphAt, monsterClassSymbol, objectClassSymbol,
     swallowSymbolAppearance, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange,
     OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS,
 } from './display.js';
+import { cansee, couldsee, howMonsterSeen } from './vision.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -183,7 +184,6 @@ import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonste
 import { dist2, visibleCommandKey } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
-import { cansee, couldsee } from './vision.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { detectedTrapDisguise } from './detect.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';

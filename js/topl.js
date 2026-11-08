@@ -1,6 +1,7 @@
 // Message history and physical topline: C win/tty/topl.c.
 // Message-window entry points also follow win/tty/wintty.c.
-// cmd.c:doprev_message() dispatch stays in cmd.ts; cmd.c:key2txt() too.
+// cmd.c:doprev_message() only dispatches to tty_doprev_message() below;
+// cmd.c:key2txt() stays in cmd.ts.
 import { game } from './gstate.js';
 import { bot } from './botl.js';
 import { _buildScreenOutput, writeMapRow } from './wintty.js';
@@ -8,7 +9,7 @@ import { plineWithContinuation, setTopline } from './pline.js';
 import { nhgetch } from './input.js';
 import { COLNO, ROWNO, MAX_MSG_HISTORY, PICK_NONE, PICK_ONE, QBUFSZ } from './const.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
-import { readchar, keyText, doprevMessage } from './cmd.js';
+import { readchar, keyText } from './cmd.js';
 import { flush_screen } from './display.js';
 import { showDisclosureOverlay } from './windows.js';
 // Part of C wintty.c:tty_clear_nhwindow(): the WIN_MESSAGE branch.
@@ -104,6 +105,66 @@ export async function showMessageHistoryWindow({ reversed, acceptCtrlP }) {
         extraDismissKey: acceptCtrlP ? CTRL_P : null,
         skipPendingPager: !!game._promptOwnsTopline,
     });
+}
+// C win/tty/topl.c:tty_doprev_message(): the recall dispatcher over
+// iflags.prevmsg_window. The port's #prevmsg entry point; C cmd.c's
+// doprev_message() is only the windowport dispatch, so the whole body has
+// its home here beside the recall ring. The prompt owners call this with
+// inread set, which forces the single-message branch exactly like
+// ttyDisplay->inread does; they manage their own repainting around the
+// call. Takes no game time and draws no randomness.
+export async function ttyDoprevMessage(inread = false) {
+    const mode = messageWindowMode();
+    if (mode !== 's' && !inread) {
+        if (mode === 'f') {
+            // Full: the window lists the ring oldest-first with the pending
+            // topline last, and the walk cursor restarts.
+            game._messageHistoryCursor = null;
+            await showMessageHistoryWindow({ reversed: false });
+        }
+        else if (mode === 'c') {
+            // Combination: the first two recalls page single lines (the
+            // pending topline, then the newest remembered one), unless
+            // maxrow wrapped to zero. Only a single-line step in this call
+            // sets dismiss_more to ^P for the window's pager too.
+            let acceptCtrlP = false;
+            for (;;) {
+                const cursor = game._messageHistoryCursor;
+                let morc;
+                const newestSavedLine = cursor === game._messageHistory.length - 1
+                    && game._messageHistoryWriteIndex > 0;
+                if (cursor === null || newestSavedLine) {
+                    acceptCtrlP = true;
+                    morc = await redotoplin(cursor === null
+                        ? game._toplines : game._messageHistory[cursor] ?? '');
+                    stepHistoryBack();
+                }
+                else {
+                    game._messageHistoryCursor = null;
+                    morc = await showMessageHistoryWindow({ reversed: false, acceptCtrlP });
+                }
+                if (morc !== CTRL_P)
+                    break;
+            }
+        }
+        else {
+            // Reversed: the pending topline leads, then the ring newest-first.
+            game._messageHistoryCursor = null;
+            await showMessageHistoryWindow({ reversed: true });
+        }
+    }
+    else if (mode === 's') {
+        // Single: each ^P walks one entry further back, wrapping to the
+        // pending topline again after the oldest displayed entry.
+        for (;;) {
+            const cursor = game._messageHistoryCursor;
+            const morc = await redotoplin(cursor === null
+                ? game._toplines : game._messageHistory[cursor] ?? '');
+            stepHistoryBack();
+            if (morc !== CTRL_P)
+                break;
+        }
+    }
 }
 // Part of C topl.c:redotoplin(): Install and repaint a physical topline.
 export function replaceTopline(msg) {
@@ -266,7 +327,7 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
             if (messageWindowMode() !== 's') {
                 // Full, combination, and reverse page the window with
                 // inread clear, then repaint the question.
-                await doprevMessage(false);
+                await ttyDoprevMessage(false);
                 clearMessageWindow();
                 game._messageHistoryCursor = null;
                 await setTopline(message);
@@ -277,8 +338,8 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
                 // Two recalls initially: gt.toplines holds the question
                 // prompt, so the first press already shows one entry back.
                 if (!doprev)
-                    await doprevMessage(true);
-                await doprevMessage(true);
+                    await ttyDoprevMessage(true);
+                await ttyDoprevMessage(true);
                 doprev = true;
             }
             continue;
@@ -476,7 +537,7 @@ export function toplineRows(message, columns, { splitWords = true } = {}) {
     }
     return lines;
 }
-// Part of C topl.c:show_topl(): used for SUPPRESS_HISTORY prose such as getpos
+// C topl.c:show_topl(): show a SUPPRESS_HISTORY line such as getpos
 // autodescribe: addtopl() wraps at the last column without update_topl()'s
 // word splitting, and its extra rows never ask for --More--.
 export function showUnrememberedTopline(message, { flushPending = false } = {}) {
@@ -484,6 +545,12 @@ export function showUnrememberedTopline(message, { flushPending = false } = {}) 
     // top line into the recall history, then shows the unremembered text.
     if (flushPending)
         rememberToplines();
+    // show_topl() (topl.c:150-153) hides the line while WIN_STOP is active
+    // without the urgent one-shot NOSTOP; Escape at --More-- sets the stop
+    // and urgent output clears it (pline.ts), so only the stop is tested
+    // here.  The flag stays set, exactly as show_topl's suppressed return.
+    if (game._suppressMessagesUntilInput)
+        return;
     const display = game.nhDisplay;
     if (!display?.grid)
         return;
@@ -496,7 +563,8 @@ export function showUnrememberedTopline(message, { flushPending = false } = {}) 
             display.setCell(column, row, cell.ch, NO_COLOR, 0, cell.dec);
     }
 }
-// Part of C topl.c:topl_putsym(): key queries wrap without a More prompt.
+// Part of C topl.c:tty_yn_function(): the key prompt paints its rows the
+// way show_topl's addtopl() does — hard topl_putsym() wrapping, no More.
 // Return the rows covered so tty_yn_function's cleanup can restore the map.
 // Also C topl.c:putsyms(): inlined here to write the prompt's cells.
 export function renderKeyPrompt(message, cursorOffset = 0) {

@@ -3,8 +3,8 @@ import test from 'node:test';
 import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
-import { doprevMessage, promptKey } from '../js/cmd.js';
-import { displayMessageWindow } from '../js/topl.js';
+import { promptKey } from '../js/cmd.js';
+import { ttyDoprevMessage, displayMessageWindow } from '../js/topl.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 
@@ -33,8 +33,8 @@ void test('repeated individual messages stay suppressed after tty joins earlier 
     await pline('The echo fades.');
     await flush_screen(1);
     assert.equal(topline(), 'The echo fades.');
-    await doprevMessage();
-    await doprevMessage();
+    await ttyDoprevMessage();
+    await ttyDoprevMessage();
     assert.equal(topline(), 'The door opens.  A bell rings.');
 });
 
@@ -56,11 +56,11 @@ void test('recall keeps joined prose and the answered prompt in their display or
     await pline('The wand glows.');
     await flush_screen(1);
     assert.equal(topline(), 'The wand glows.');
-    await doprevMessage();
-    await doprevMessage();
+    await ttyDoprevMessage();
+    await ttyDoprevMessage();
     assert.equal(topline(), 'In what direction? l');
-    await doprevMessage();
+    await ttyDoprevMessage();
     assert.equal(topline(), 'The door opens.  A bell rings.');
-    await doprevMessage();
+    await ttyDoprevMessage();
     assert.equal(topline(), 'The wand glows.');
 });
