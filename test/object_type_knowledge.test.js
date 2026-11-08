@@ -5,7 +5,6 @@ import { NO_MINVENT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { fullyIdentifyObject, inventoryItemDescription } from '../js/invent.js';
-import { transformMagicLampToOilLamp } from '../js/light.js';
 import { mksobj } from '../js/mkobj.js';
 import { applyMonsterPassiveToObject } from '../js/uhitm.js';
 import { cancelObjectMagic } from '../js/zap.js';
@@ -62,17 +61,24 @@ void test('a failed rub lets a blind hero smell the smoke', async () => {
 for (const oilKnown of [false, true]) {
     void test(`a converted magic lamp uses the ${oilKnown ? 'known oil type' : 'oil appearance and call name'}`, async () => {
         await freshObjectRoom();
-        const lamp = await mksobj(MAGIC_LAMP, false, false);
+        requirePlayingGame(game);
+        const lamp = await addInventoryObject(MAGIC_LAMP, {
+            spe: 1, age: 200, invlet: 'a', wielded: true, owornmask: W_WEP,
+        });
         fullyIdentifyObject(lamp);
-        lamp.blessed = true;
         recordObjectCall(MAGIC_LAMP, 'wish giver');
         recordObjectCall(OIL_LAMP, 'refill');
         if (oilKnown)
             recordObjectKnowledge(OIL_LAMP);
-        transformMagicLampToOilLamp(lamp, 1200);
+        game.uwep = game.u.uwep = lamp;
+        // An ordinary, non-wishing djinni keeps this command self-contained.
+        initRng(39n);
+        resetInputState().feed('rub\na    ');
+        await rhack('#'.charCodeAt(0));
+        assert.equal(lamp.otyp, OIL_LAMP);
         assert.equal(objectName(lamp), oilKnown ? 'oil lamp' : 'lamp called refill');
         assert.equal(await inventoryItemDescription(lamp), oilKnown
-            ? 'a blessed oil lamp' : 'a blessed lamp called refill');
+            ? 'an uncursed oil lamp (wielded)' : 'an uncursed lamp called refill (wielded)');
         const otherMagicLamp = await mksobj(MAGIC_LAMP, false, false);
         otherMagicLamp.dknown = true;
         assert.equal(objectName(otherMagicLamp), 'magic lamp');

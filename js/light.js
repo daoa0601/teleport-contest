@@ -499,21 +499,4 @@ export async function wizLightSources() {
     state._retained_message = '';
     state.context.move = 0;
 }
-// Part of C apply.c:dorub(): performs this type change before the released djinni can
-// grant a fatal wish.  A lit magic lamp already has a light source but no
-// timer; once it becomes an oil lamp, begin_burn(..., TRUE) attaches the
-// ordinary fuel timer while preserving that light-source identity.
-export function transformMagicLampToOilLamp(object, oilAge, state = game, currentTurn = state.moves ?? 0) {
-    if (object?.otyp !== MAGIC_LAMP || !Number.isFinite(oilAge)
-        || oilAge <= 0)
-        return false;
-    object.otyp = OIL_LAMP;
-    object.name = 'oil lamp';
-    object.plural = 'oil lamps';
-    object.spe = 0;
-    object.age = oilAge;
-    if (object.lamplit)
-        beginObjectBurn(object, state, currentTurn);
-    return true;
-}
 //# sourceMappingURL=light.js.map
