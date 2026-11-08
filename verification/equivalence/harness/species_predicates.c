@@ -470,3 +470,60 @@ verification_cvt_adtyp_to_mseenres(uchar adtyp)
 {
     return cvt_adtyp_to_mseenres(adtyp);
 }
+
+/* fv-equivalence-batch-15: further mondata.h macros and mondata.c helpers
+ * over one species row. */
+int verification_is_mind_flayer(struct permonst *ptr)
+{
+    return is_mind_flayer(ptr);
+}
+
+int verification_telepathic(struct permonst *ptr)
+{
+    return telepathic(ptr);
+}
+
+int verification_likes_lava(struct permonst *ptr)
+{
+    return likes_lava(ptr);
+}
+
+int verification_is_wooden(struct permonst *ptr)
+{
+    return is_wooden(ptr);
+}
+
+int verification_hates_light(struct permonst *ptr)
+{
+    return hates_light(ptr);
+}
+
+int verification_weirdnonliving(struct permonst *ptr)
+{
+    return weirdnonliving(ptr);
+}
+
+int verification_corpse_eater(struct permonst *ptr)
+{
+    return corpse_eater(ptr);
+}
+
+int verification_slimeproof(struct permonst *ptr)
+{
+    return slimeproof(ptr);
+}
+
+int verification_is_bat(struct permonst *ptr)
+{
+    return is_bat(ptr);
+}
+
+int verification_is_reviver(struct permonst *ptr)
+{
+    return is_reviver(ptr);
+}
+
+int verification_olfaction(struct permonst *ptr)
+{
+    return olfaction(ptr);
+}

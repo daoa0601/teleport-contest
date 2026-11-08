@@ -1767,6 +1767,67 @@ class ExecutorTests(unittest.TestCase):
                       params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
                       loops=bad_loops)
 
+    def test_source_level_draw_bound_after_loop_still_covers(self):
+        """A bound the source itself puts on a local-position draw.
+
+        Stripping a draw's legality bounds is syntactic: a comparison the
+        program makes against 2**64-1 (always true for a legal draw) is not
+        one of the stripped forms, so it stayed in the clause. The coverage
+        witness then chose an out-of-domain R_core, falsified that conjunct
+        for every local, and reported this equivalent pair as uncovered
+        (R_core[0..2] = 2**64,... in the model). A guard implication cannot
+        fix this (the witness keeps an illegal stream function and vacates
+        it), so the stream's legality now enters the coverage query as an
+        axiom over the stream function itself.
+        """
+        c = ('extern unsigned long long isaac64_next_uint64(void *);\n'
+             'struct { long rng_state; } rnglist[1];\n'
+             'int example(int x) {\n'
+             '    int i = 0;\n'
+             '    while (i < x) { i = i + 1; }\n'
+             '    if (x == 0) return 7;\n'
+             '    unsigned long long v = isaac64_next_uint64(&rnglist[0].rng_state);\n'
+             '    if (v <= 18446744073709551615ull) return 7;\n'
+             '    return 7;\n'
+             '}')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) { i = i + 1; }\n'
+              '    if (x === 0) return 7;\n'
+              '    const v = isaac64_next_uint64(game.coreCtx);\n'
+              '    if (v <= 18446744073709551615n) return 7;\n'
+              '    return 7;\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            del pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']), pos['core'] == 0]
+
+        loops = {(side, 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',))
+            for side in ('c', 'js')}
+        self.equivalent(c, js, params=[('x', INT)],
+                        pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
+
+        # The stream axiom must not hide a real hole: with the draw
+        # condition in the clause, dropping an input branch (x == 0) must
+        # still leave the claim unproved.
+        real_branch = core.Machine.branch
+
+        def dropping_input_branch(self, path, cond):
+            out = real_branch(self, path, cond)
+            if self.side == 'c' and z3.eq(z3.simplify(cond), z3.IntVal(0) == z3.Int('x')):
+                return [pair for pair in out if not pair[1]]
+            return out
+
+        core.Machine.branch = dropping_input_branch
+        try:
+            self.rejected(c, js, reason='do not cover the input domain',
+                          params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                          loops=loops)
+        finally:
+            core.Machine.branch = real_branch
+
     def test_coalesced_draw_branches_still_cover(self):
         """Coverage must also strip draw bounds nested under Or.
 

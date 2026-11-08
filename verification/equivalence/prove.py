@@ -267,7 +267,13 @@ def _uncovered(world, paths, obligations):
     path condition mentions without local symbols is bounded to
     [0, 2**64) in the query, and a draw's legality bound over a
     locally-positioned term is dropped from the clause because a legal
-    stream implies it at every position. Inputs where a dropped-path
+    stream implies it at every position. Stripping is syntactic, so a
+    condition the program itself puts on a locally positioned draw (a
+    tautological bound such as draw <= 2**64-1 written in the source) can
+    survive; for those streams the legality instead enters the query as an
+    axiom over the stream function (uint64 at every position), which every
+    real input satisfies, so no witness can choose an illegal draw.
+    Inputs where a dropped-path
     obligation (an assert branch, a thrown path) is violated are excluded:
     those inputs fail the claim through the obligation itself, and the
     claim is only sound when the remaining region is covered. Domain
@@ -289,6 +295,7 @@ def _uncovered(world, paths, obligations):
     domain.update(world.js_state.values())
     dropped = [ob for ob in obligations if ob.drop]
     bounds, clauses = [], [z3.Not(z3.And(*ob.pc, z3.Not(ob.cond))) for ob in dropped]
+    local_streams = set()
     for path in paths:
         pc = z3.And(*path.pc)
         locals_ = [v for v in _free_constants(pc) if v not in domain]
@@ -300,10 +307,29 @@ def _uncovered(world, paths, obligations):
                 (_strip_local_draw_bounds(world, e, local_set) for e in path.pc)
                 if not z3.is_true(entry)]
         body = z3.Not(z3.And(*kept)) if kept else z3.BoolVal(False)
+        kept_terms = _stream_applications(world, z3.And(*kept)) if kept else set()
+        local_draws = [t for t in kept_terms
+                       if any(v in local_set for v in _free_constants(t))]
+        # A condition the program itself puts on a locally positioned draw
+        # (a tautological bound such as draw <= 2**64-1 written in the
+        # source, or any form the syntactic strip misses) survives in the
+        # clause. Guarding it with an implication would let the witness
+        # pick an out-of-domain stream value and vacate the clause, so the
+        # legality of that stream enters as an axiom over the function
+        # instead: a real input's stream is uint64 at every position.
+        local_streams.update(t.decl().name() for t in local_draws)
         clauses.append(z3.ForAll(locals_, body) if locals_ else body)
+
+    def stream_axiom(fn):
+        position = z3.Int(f'legal!{fn.name()}')
+        return z3.ForAll([position], z3.And(fn(position) >= 0, fn(position) < U64))
+
+
+    axioms = [stream_axiom(fn) for fn in world.streams.values()
+              if fn.name() in local_streams]
     solver = z3.Solver()
     solver.set('timeout', 120_000)
-    solver.add(*world.pre, *bounds, *clauses)
+    solver.add(*world.pre, *bounds, *axioms, *clauses)
     result = solver.check()
     return result, solver
 
