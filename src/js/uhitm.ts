@@ -12,7 +12,6 @@ import {
     IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_NAMES, TOWEL, YA, YUMI,
 } from './object_data.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
-import { monsterSentenceSubject } from './sounds.js';
 import { sessionIsNight } from './calendar.js';
 import { monsterHasMagicResistance } from './mondata.js';
 import {
@@ -137,7 +136,8 @@ import {
 
 } from './monster_data.js';
 import type { Monster } from './monster_types.js';
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
+import { findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
+import { destroyObjectFromMonsterInventory } from './mthrowu.js';
 import { munslime, munstone } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
@@ -4993,7 +4993,7 @@ export async function mhitm_ad_phys(call: MhitmAdPhysCall): Promise<HeroNaturalE
                 const poisoned = (attack.roll ?? 0) <= 5
                     && (weapon.opoisoned || isPermanentlyPoisonedObject(weapon));
                 if (weapon.otyp === CORPSE && touchPetrifies(weapon.corpsenm)) {
-                    await publish(`${monsterSentenceSubject(monster)} hits you with the ${MONSTER_NAME[weapon.corpsenm ?? -1]} corpse.`);
+                    await publish(`${visibleMonsterSubject(monster)} hits you with the ${MONSTER_NAME[weapon.corpsenm ?? -1]} corpse.`);
                     if (await startHeroPetrificationFromMonster(monster, state)) {
                         attack.damage = 0;
                         attack.effect = 'petrifying-corpse';

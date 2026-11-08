@@ -192,7 +192,7 @@ import { enlightenment } from './insight.js';
 import { chooseInventoryObject, freeInventoryObject } from './invent.js';
 import { useCrystalBall } from './detect.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
-import { doBlindingRay } from './zap.js';
+import { bringLeashedFollowers, doBlindingRay } from './apply.js';
 import { castSpell, spellSkillType } from './spell.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU,
@@ -205,7 +205,6 @@ import { removeWornHeroItem } from './steal.js';
 import { depth, surfaceName, In_quest, In_hell } from './dungeon.js';
 import { gotoLevel } from './do.js';
 import { levelTeleport, teleportMonsterByHero } from './teleport.js';
-import { bringLeashedFollowers } from './apply.js';
 import { showPagedPickOneMenu } from './windows.js';
 import { throwOrdinaryObject, resolveSwallowedEggPieOrVenomThrow } from './dothrow.js';
 import { holdAnotherObject } from './invent.js';

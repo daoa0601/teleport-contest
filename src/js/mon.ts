@@ -66,7 +66,7 @@ import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters, flashGlyphAt, transientMonsterGlyph, shieldeff } from './display.js';
 import { splitMon } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, requireMonsterData } from './monster_data.js';
-import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName } from './do_name.js';
+import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2, distmin, ordinalSuffix, pointsOnline } from './hacklib.js';
 import {
     monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars,
@@ -109,7 +109,7 @@ import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { hasLightSources } from './light.js';
-import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
+import { publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { insideWizardTower, sameDungeonLevel, level_difficulty, levelHasCeiling, surfaceName } from './dungeon.js';
@@ -263,12 +263,12 @@ export async function applyMonsterGolemEffects(monster: Monster, damageType: num
     if (slow && monster.mspeed !== MSLOW) {
         const change = adjustMonsterSpeed(monster, -1);
         if (!state.in_mklev && change.changed && change.canDescribe && canSeeMonster(monster)) {
-            const message = monsterSpeedMessage(change, monsterSentenceSubject(monster), state);
+            const message = monsterSpeedMessage(change, visibleMonsterSubject(monster), state);
             if (message) await publish(message);
         }
     }
     if (healing && healMonster(monster, healing) && cansee(monster.mx, monster.my))
-        await publish(`${monsterSentenceSubject(monster)} seems healthier.`);
+        await publish(`${visibleMonsterSubject(monster)} seems healthier.`);
 }
 
 // Part of C mon.c:dead_species(): the mvitals test.

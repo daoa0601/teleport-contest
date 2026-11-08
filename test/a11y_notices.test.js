@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { zapDigWithObject } from '../js/dig.js';
 import { flush_screen, newsym, newsym_force } from '../js/display.js';
 import { pline } from '../js/pline.js';
-import { doBlindingRay } from '../js/zap.js';
+import { doBlindingRay } from '../js/apply.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { chooseInventoryObject } from '../js/invent.js';

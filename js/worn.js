@@ -43,6 +43,7 @@ import { deleteObject } from './shk.js';
 import { placeObject, unlinkMonsterObject } from './mkobj.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 import { resolveImmediatePetrification } from './trap.js';
+import { destroyObjectFromMonsterInventory } from './mthrowu.js';
 const WORN_SLOTS = [
     { slot: 'uarm', mask: W_ARM, label: 'uarm', propertySlot: 'uarm' },
     { slot: 'uarmc', mask: W_ARMC, label: 'uarmc', propertySlot: 'uarmc' },
@@ -911,14 +912,6 @@ export async function removeObjectFromMonsterInventory(monster, object, state = 
     object.alternate = false;
     object.ready = false;
     return true;
-}
-// C mthrowu.c:m_useupall(): extract_from_minvent() followed by obfree();
-// mkobj.c:discard_minvent() destroys a monster's worn or carried objects
-// the same way.
-export async function destroyObjectFromMonsterInventory(monster, object, state = game, options = {}) {
-    if (!await removeObjectFromMonsterInventory(monster, object, state, options))
-        return false;
-    return await deleteObject(object, state);
 }
 // C worn.c:find_mac()
 // trap.c wearing_iron_shoes() tests the boots' material, so iron kicking

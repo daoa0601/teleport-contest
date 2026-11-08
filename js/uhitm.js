@@ -5,7 +5,6 @@
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_NAMES, TOWEL, YA, YUMI, } from './object_data.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
-import { monsterSentenceSubject } from './sounds.js';
 import { sessionIsNight } from './calendar.js';
 import { monsterHasMagicResistance } from './mondata.js';
 import { applyArtifactHit, artifactById, artifactEmitsLight, defends, findArtifact, isPermanentlyPoisonedObject, } from './artifact.js';
@@ -58,7 +57,8 @@ import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMo
 import { recordRandom } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DRDX, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, PM_GREEN_SLIME, requireMonsterData, } from './monster_data.js';
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
+import { findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
+import { destroyObjectFromMonsterInventory } from './mthrowu.js';
 import { munslime, munstone } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
 import { greatestErosion, isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
@@ -4148,7 +4148,7 @@ export async function mhitm_ad_phys(call) {
                 const poisoned = (attack.roll ?? 0) <= 5
                     && (weapon.opoisoned || isPermanentlyPoisonedObject(weapon));
                 if (weapon.otyp === CORPSE && touchPetrifies(weapon.corpsenm)) {
-                    await publish(`${monsterSentenceSubject(monster)} hits you with the ${MONSTER_NAME[weapon.corpsenm ?? -1]} corpse.`);
+                    await publish(`${visibleMonsterSubject(monster)} hits you with the ${MONSTER_NAME[weapon.corpsenm ?? -1]} corpse.`);
                     if (await startHeroPetrificationFromMonster(monster, state)) {
                         attack.damage = 0;
                         attack.effect = 'petrifying-corpse';

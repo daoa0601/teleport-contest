@@ -797,6 +797,16 @@ export function sameDungeonLevel(
     return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
 
+// C dungeon.c:on_level(): the Is_airlevel comparison.
+export function isAirLevel(state: GameState) {
+    return sameDungeonLevel(state.u.uz, state.air_level);
+}
+
+// C dungeon.c:on_level(): the Is_waterlevel comparison.
+export function isWaterLevel(state: GameState) {
+    return sameDungeonLevel(state.u.uz, state.water_level);
+}
+
 // C dungeon.c:Is_branchlev(). A hero whose level is not yet placed matches
 // no branch, rather than the dungeon origin.
 export function is_branchlev(

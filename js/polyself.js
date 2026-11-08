@@ -33,7 +33,7 @@ import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroS
 import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { newuhs } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { levelHasCeiling, surfaceName, sameDungeonLevel } from './dungeon.js';
+import { levelHasCeiling, surfaceName, sameDungeonLevel, isAirLevel, isWaterLevel } from './dungeon.js';
 import { heroHidingStatus } from './insight.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
@@ -2647,16 +2647,6 @@ function petrifyingCorpseCover(objects) {
     // the top object's own quantity already pluralized the corpse name.
     const corpse = corpseName(first);
     return count === 1 ? withIndefiniteArticle(corpse) : `${corpse}s`;
-}
-// C dungeon.c:on_level(): the Is_airlevel comparison, via the shared
-// sameDungeonLevel() (dungeon.ts).
-function isAirLevel(state) {
-    return sameDungeonLevel(state.u.uz, state.air_level);
-}
-// C dungeon.c:on_level(): the Is_waterlevel comparison, via the shared
-// sameDungeonLevel() (dungeon.ts).
-function isWaterLevel(state) {
-    return sameDungeonLevel(state.u.uz, state.water_level);
 }
 // C polyself.c:dohide()
 export async function useHeroHide({ state = game, publish = plineWithContinuation, die = finishHeroDeath, refresh = newsym, } = {}) {

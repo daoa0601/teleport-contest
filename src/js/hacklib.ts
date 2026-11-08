@@ -175,6 +175,12 @@ export function dist2(x1: number, y1: number, x2: number, y2: number) {
     return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
 }
 
+// C hacklib.c:stripchars(): remove the given characters (botl.c:2941 reads
+// the threshold number with "%<>=+" stripped).
+export function stripChars(text: string, remove: string): string {
+    return [...text].filter(character => !remove.includes(character)).join('');
+}
+
 
 // C ref: rn2(x) already in rng.js — re-export not needed
 

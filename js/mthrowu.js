@@ -21,7 +21,7 @@ import { mswings_verb } from './mhitu.js';
 import { rangedTargetHitBonus, shouldMulchMissile, breakFloorObject, breakObjectAtLocation, harmlessMissile } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
 import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject, objectIsFlammable, splitObjectStack, objectWeight, placeObject, } from './mkobj.js';
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
+import { findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
 import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_KNIFE, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_NONDIGGABLE, W_WEP, WT_IRON_BALL_INCR, ARM, HAND, FOOT } from './const.js';
 import { isok } from './cmd.js';
 import { canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph, TemporaryMapEffect, } from './display.js';
@@ -40,10 +40,9 @@ import { finishHeroDeathAfterMonsterMessage } from './end.js';
 import { recordRandom } from './monster_action_types.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import { MONSTER_NAME, MONSTER_SIZE, requireMonsterData } from './monster_data.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayLiquidName, monsterName, visibleMonsterSubject } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import { monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc, is_prince, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks, touchPetrifies, canBlnd, } from './mondata.js';
-import { monsterSentenceSubject } from './sounds.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
 import { dropObjectAtHero, applyFloorEffects, landFloorObject } from './do.js';
@@ -1143,7 +1142,7 @@ export async function attackHeroWithPolearm(monster, weapon, state = game, { pub
         const description = objectHasPersonalName(weapon, state)
             ? definiteName(name, state) : withIndefiniteArticle(name);
         const verb = mswings_verb(weapon, distance <= 2, random);
-        await publish(`${monsterSentenceSubject(monster)} ${verb} ${description}.`);
+        await publish(`${visibleMonsterSubject(monster)} ${verb} ${description}.`);
     }
     let damage = Math.max(1, rollPhysicalWeaponDamageAgainstHero(weapon, state, { rollOne }));
     if (state.u.halfPhysicalDamage)
@@ -1222,6 +1221,14 @@ export function monsterLinedUpWithHero(source, state, random = rn2) {
 // A polymorphed hero's concealment test precedes the geometric line check.
 export function monsterLinedUpWithPerceivedHero(monster, state, random, calls) {
     return monsterLinedUpWithHero(monster, state, range => recordRandom(random, calls, range));
+}
+// C mthrowu.c:m_useupall(): extract_from_minvent() followed by obfree();
+// mkobj.c:discard_minvent() destroys a monster's worn or carried objects
+// the same way.
+export async function destroyObjectFromMonsterInventory(monster, object, state = game, options = {}) {
+    if (!await removeObjectFromMonsterInventory(monster, object, state, options))
+        return false;
+    return await deleteObject(object, state);
 }
 // C mthrowu.c:m_useup(): remove one item from a monster's inventory,
 // preserving the remaining stack's identity.

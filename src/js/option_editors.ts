@@ -4,7 +4,7 @@ import { plineWithContinuation } from './pline.js';
 import { visibleCommandKey } from './hacklib.js';
 import { autoUnlockFlags } from './lock.js';
 
-import { statusVersion } from './version.js';
+import { statusVersion } from './extversion.js';
 import { statusConditionOptions, condMenu } from './botl.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import {

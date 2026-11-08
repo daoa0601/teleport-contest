@@ -72,6 +72,7 @@ import { deleteObject } from './shk.js';
 import { placeObject, unlinkMonsterObject } from './mkobj.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 import { resolveImmediatePetrification } from './trap.js';
+import { destroyObjectFromMonsterInventory } from './mthrowu.js';
 
 // C worn.c worn[]: every hero equipment slot, in the native order that
 // setworn()/setnotworn() walk them.
@@ -976,17 +977,6 @@ export async function removeObjectFromMonsterInventory(
     object.alternate = false;
     object.ready = false;
     return true;
-}
-
-// C mthrowu.c:m_useupall(): extract_from_minvent() followed by obfree();
-// mkobj.c:discard_minvent() destroys a monster's worn or carried objects
-// the same way.
-export async function destroyObjectFromMonsterInventory(
-    monster: Monster, object: GameObject, state: GameState = game,
-    options: MonsterObjectRemovalOptions = {},
-): Promise<boolean> {
-    if (!await removeObjectFromMonsterInventory(monster, object, state, options)) return false;
-    return await deleteObject(object, state);
 }
 
 // C worn.c:find_mac()

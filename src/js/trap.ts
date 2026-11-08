@@ -612,9 +612,10 @@ import type { GameObject } from './object_types.js';
 import type { Position, Trap, MapLocation } from './map_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_SLEE, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import {
-    removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot,
+    removeObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot,
     applyMonsterEquipmentProperties, initializeMonsterArmor,
 } from './worn.js';
+import { projectileHitsIronBars, destroyObjectFromMonsterInventory } from './mthrowu.js';
 import {
     monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, defended,
     monsterHasMagicResistance, monsterHasStoneResistance, monstersForgetHeroResistance,
@@ -748,7 +749,6 @@ import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibili
 import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { applyRemoveCurseSpell } from './sit.js';
-import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './explode.js';
 import { rangedTargetHitBonus } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';

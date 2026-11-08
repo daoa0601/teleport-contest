@@ -43,7 +43,7 @@ import {
     monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance, touchPetrifies,
     isHeroDefender,
 } from './mondata.js';
-import { monsterSentenceSubject } from './sounds.js';
+import { visibleMonsterSubject } from './do_name.js';
 import { isBimanualObject, isWetTowel, type WeaponCandidate, isLauncherAmmunition } from './object_properties.js';
 import { rn2, d, rnd } from './rng.js';
 import { cansee, couldsee } from './vision.js';
@@ -728,7 +728,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster: Monster, state:
         if (cansee(monster.mx, monster.my)) {
             observeDistantObjectForNaming(weapon, state);
             const description = await inventoryItemDescription(weapon);
-            await publish(`${monsterSentenceSubject(monster)} drops ${description}.`);
+            await publish(`${visibleMonsterSubject(monster)} drops ${description}.`);
             await newsym(monster.mx, monster.my);
         }
         // C possibly_unwield(): raw extraction after setmnotwielded(),

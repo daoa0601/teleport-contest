@@ -101,14 +101,14 @@ import { makePlural, verbForSubject, withIndefiniteArticle, definiteName, distan
 import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile} from './mkobj.js';
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel, ceilingName, surfaceName, canDigDown, canFallThrough } from './dungeon.js';
 
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './worn.js';
+import { findMonsterArmorClass, wornInSlot } from './worn.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 
 import { dropBoulderOnHero, dropBoulderOnMonster } from './read.js';
 import { beginObjectBurn } from './timeout.js';
 import { lightDamage } from './zap.js';
-import { throwMonsterProjectile, blockingTerrain, monsterLinedUpWithHero, consumeMonsterItem } from './mthrowu.js';
+import { throwMonsterProjectile, blockingTerrain, monsterLinedUpWithHero, consumeMonsterItem, destroyObjectFromMonsterInventory } from './mthrowu.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { makeBlinded } from './potion.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
