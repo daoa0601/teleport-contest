@@ -47,7 +47,7 @@ import {
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
 import { holdAnotherObject, stack_object } from './invent.js';
-import { rejectMonsterShadeContact, applyMonsterPassiveToObject } from './uhitm.js';
+import { shadeMiss, applyMonsterPassiveToObject } from './uhitm.js';
 import { captureHeroProjectileName } from './objnam.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
@@ -684,10 +684,10 @@ export async function throwMonsterProjectile(source: Monster, object: GameObject
             if (cansee(point.x, point.y)) observeObject(missile, state);
             const monster = monsterAtPosition(state.level, point.x, point.y);
             if (monster) {
-                const shadeMiss = await rejectMonsterShadeContact(source, monster, missile, {
+                const missedShade = await shadeMiss(source, monster, missile, {
                     state, visible: true, thrown: true, publish, rollOne, rollDice,
                 });
-                if (!shadeMiss && await hitMonsterWithProjectile(monster, shot, range, context)) break;
+                if (!missedShade && await hitMonsterWithProjectile(monster, shot, range, context)) break;
             } else if (point.x === state.u.ux && point.y === state.u.uy) {
                 if (state.multi) nomul(0, state);
                 shot.heroTarget = true;

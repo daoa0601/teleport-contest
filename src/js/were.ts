@@ -9,7 +9,7 @@ import {
     setHeroSpecies, heroCanControlPolymorph, heroHasProtectionFromShapeChangers, heroIsPolymorphed,
     heroIsUnchanging, heroMonsterForm, polymonHero, returnHeroToHumanForm,
 } from './polyself.js';
-import { splitHeroMonsterForm } from './potion.js';
+import { splitMon } from './potion.js';
 import { makemonAt } from './makemon.js';
 import { adjustMonsterClothingAfterPolymorph } from './worn.js';
 import { canSeeMonster, newsym } from './display.js';
@@ -173,7 +173,7 @@ export async function applyHeroWaterVaporChange({
     requirePlayingGame(state);
     const u = state.u;
     if (u.umonnum === PM_GREMLIN) {
-        const clone = await splitHeroMonsterForm(state);
+        const clone = await splitMon({ hero: state });
         if (clone) await publish('You multiply!');
         return {
             kind: clone ? 'cloned' : 'clone-suppressed',

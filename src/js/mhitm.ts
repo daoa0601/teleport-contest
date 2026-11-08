@@ -47,7 +47,7 @@ import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './worn.js';
 import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
-import { splitMonster } from './potion.js';
+import { splitMon } from './potion.js';
 import { createElementalMonsterExplosion } from './explode.js';
 import { cansee } from './vision.js';
 import {
@@ -75,7 +75,7 @@ import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCom
 import { trapAt, mintrap, damageObjectWithAcid, erodeObject } from './trap.js';
 import {
     applyMonsterCombatBlindness, mhitm_adtyping, passiveAttack, passiveDamage,
-    rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback,
+    shadeMiss, mhitm_ad_phys, mhitm_knockback,
     effectResult, erodeArmor,
 } from './uhitm.js';
 import { mon_reflects } from './muse.js';
@@ -545,7 +545,7 @@ export async function prepareMonsterCombatContact(
 ): Promise<'contact' | 'shade-miss'> {
     await revealAttackingMonsters(aggressor, defender, visible);
     const compatibility = aggressor.mcan ? 0 : could_seduce(aggressor, defender, attack, state);
-    if (!compatibility && await rejectMonsterShadeContact(aggressor, defender, weapon, {
+    if (!compatibility && await shadeMiss(aggressor, defender, weapon, {
         state, visible, publish, rollOne, rollDice,
     })) return 'shade-miss';
     if (!visible) {
@@ -1341,8 +1341,8 @@ export async function applyMonsterContactPassive(attacker: Monster, defender: Mo
                     const healing = Math.trunc(damage / 2);
                     healMonster(defender, healing, healing);
                     if (defender.mhpmax > (defender.m_lev + 1) * 8) {
-                        await splitMonster(defender, state,
-                            { monsterMoving: true, random, heatSource: attacker, publish });
+                        await splitMon({ monster: defender, heatSource: attacker }, state,
+                            { monsterMoving: true, random, publish });
                     }
                 }
             }
