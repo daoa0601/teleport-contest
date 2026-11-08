@@ -38,7 +38,7 @@ import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, req
 import { flyKickedObject } from './thrown_object.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
-import { addToMigration, mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
+import { addToMigration, mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, objectQuantity, quantity, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { convertSecretDoor, findTrap } from './detect.js';
 import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
@@ -371,19 +371,13 @@ const MERCENARY_BASE_BRIBE = new Map([
     [PM_CAPTAIN, 750],
 ]);
 
-// Port only: gold object quan accessor.
-function goldQuantity(object: GameObject | null | undefined): number {
-    return Math.max(0, Math.trunc(
-        object?.quan ?? object?.quantity ?? 0,
-    ));
-}
 
 // Part of C dokick.c:ghitm(): the miss() message.
 async function missGold(monster: Monster, gold: GameObject, state: GameState): Promise<void> {
     const name = objectCombatName(gold, { state });
     const spotted = cansee(monster.mx, monster.my) || canSpotMonster(monster);
     const target = state.flags.verbose !== false && spotted ? monsterName(monster, { state }) : 'it';
-    await pline(`The ${name} ${goldQuantity(gold) === 1 ? 'misses' : 'miss'} ${target}.`);
+    await pline(`The ${name} ${objectQuantity(gold) === 1 ? 'misses' : 'miss'} ${target}.`);
 }
 
 // Part of C dokick.c:ghitm(): the shopkeeper credit/robbed branch.
@@ -465,13 +459,13 @@ export async function resolveGoldMonsterContact({
     }
     if (monster.mcanmove === 0 || monster.mcanmove === false) {
         if (canSeeMonster(monster))
-            await pline(`The ${objectCombatName(gold, { state })} harmlessly ${goldQuantity(gold) === 1 ? 'hits' : 'hit'} ${monsterName(monster, { state })}.`);
+            await pline(`The ${objectCombatName(gold, { state })} harmlessly ${objectQuantity(gold) === 1 ? 'hits' : 'hit'} ${monsterName(monster, { state })}.`);
         else await missGold(monster, gold, state);
         return false;
     }
 
     const wasSleeping = !!monster.msleeping;
-    const value = goldQuantity(gold) * objectBaseCost(gold.otyp);
+    const value = objectQuantity(gold) * objectBaseCost(gold.otyp);
     monster.msleeping = 0;
     await finishMonsterEating(monster, state);
     if (!monster.isgd && rn2(4) === 0)
@@ -1287,11 +1281,8 @@ export interface KickObjectOptions {
     random?: typeof rn2;
     rollOne?: typeof rnd;
 }
-// Port only: object quan accessor.
-function quantity(object: GameObject) {
-    return object.quan ?? object.quantity ?? 1;
-}
-// Port only: per-unit weight of a stacked object.
+// Part of C dokick.c:really_kick_object(): the save-quan, weight-at-one,
+// restore step C performs inline for kicked non-gold stacks.
 function unitWeight(object: GameObject) {
     if (quantity(object) === 1) return objectWeight(object);
     return objectWeight({ ...object, quan: 1, quantity: 1 });
