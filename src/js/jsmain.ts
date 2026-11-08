@@ -172,8 +172,11 @@ export function serializeCapture(term: Terminal | GameDisplay | null | undefined
             line += decChar ?? cell.ch;
             col++;
         }
-        if (dec) line += '\x0f';
+        // The recorder emits the row's final SGR reset first and closes the
+        // alternate-font run after it (termcap.c nomux_capture_screen:
+        // end-of-line color/attr reset, then `if (in_dec) \017`).
         line += transition(fg, attr, 39, 0);
+        if (dec) line += '\x0f';
         lines.push(line);
     }
     return lines.join('\n');
