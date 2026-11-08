@@ -30,6 +30,15 @@ export function bonesLevelId(location: DungeonLocation | undefined = game.u.uz):
 export function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${bonesLevelId(level)}`;
 }
+
+// C files.c:open_bonesfile(): open the level's bones record. C builds the
+// bones file name, uncompresses the file (no effect when absent), and hands
+// back an NHFILE whose nullness the caller tests; the port reads the storage
+// record built from the same name and returns the encoded payload, null
+// when the level has no bones.
+export function openBonesFile(level: DungeonLocation | undefined = game.u.uz): string | null {
+    return game.storage?.getItem(bonesStorageKey(level)) ?? null;
+}
 // C files.c:delete_bonesfile()
 export function deleteBonesLevel(): boolean {
     const storage = game.storage;

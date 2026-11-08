@@ -92,7 +92,7 @@ import { addFruit } from './message_types.js';
 import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt, Invocation_lev } from './dungeon.js';
-import { bonesLevelId, bonesStorageKey, deleteBonesLevel } from './novel_tribute.js';
+import { bonesLevelId, bonesStorageKey, deleteBonesLevel, openBonesFile } from './novel_tribute.js';
 import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE } from './object_data.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -307,7 +307,7 @@ export async function createBonesFromDeath(
         )) return false;
     }
     clearBypasses();
-    if (bonesLevelExists()) {
+    if (openBonesFile() != null) {
         if (!game.flags?.debug) return false;
         const replace = await promptDeathQuestion(
             'Bones file already exists.  Replace it?',
@@ -525,15 +525,6 @@ export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, sta
 }
 
 const BONES_VERSION = 20;
-
-
-
-
-// Part of C bones.c:open_bonesfile(): the bones-file existence probe,
-// against the port's bones storage keys.
-export function bonesLevelExists(level: DungeonLocation | undefined = game.u.uz): boolean {
-    return game.storage?.getItem(bonesStorageKey(level)) != null;
-}
 
 
 
@@ -900,8 +891,9 @@ export async function getbones(): Promise<boolean> {
     const location = game.u.uz;
     if (!location || !levelAllowsBones(location)) return false;
 
-    const encoded = game.storage?.getItem(bonesStorageKey());
+    const encoded = openBonesFile();
     if (!encoded) return false;
+
 
     let payload: BonesPayload | null = null;
     try {
