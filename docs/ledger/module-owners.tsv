@@ -34,6 +34,7 @@ src/js/jsmain.ts	wintty.c
 src/js/light.ts	light.c
 src/js/lock.ts	lock.c
 src/js/lua/des.ts	sp_lev.c
+src/js/lua/hero.ts	nhlua.c
 src/js/lua/lifecycle.ts	nhlua.c
 src/js/lua/messages.ts	nhlua.c
 src/js/lua/nhlobj.ts	nhlobj.c

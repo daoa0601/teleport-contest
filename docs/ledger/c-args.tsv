@@ -362,6 +362,7 @@ sit.c	dosit	exercise	false;false
 sit.c	lay_an_egg	mksobj	false+false
 sit.c	special_throne_effect	exercise	false
 sit.c	special_throne_effect	map_background	false
+sit.c	throne_sit_effect	adjattrib	false;false
 sit.c	throne_sit_effect	exercise	false
 sit.c	throne_sit_effect	identify_pack	false
 sit.c	throne_sit_effect	map_background	false
