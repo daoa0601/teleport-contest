@@ -213,8 +213,9 @@ export function fruitFromName(name, { exact = false, state = game } = {}) {
     }
     return result;
 }
-// C gf.ffruit: the per-game fruit chain; the name only exists after
-// options initialization, so naming before that is a port error.
+// Port only: the per-game fruit chain (C's gf.ffruit list); the name only
+// exists after options initialization, so naming before that is a port
+// error.
 export function fruitRegistry(state) {
     if (!state.fruits)
         throw new Error('Fruit registry has not been initialized');

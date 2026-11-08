@@ -335,7 +335,6 @@ export function mapCharacterType(character: string | undefined): number | undefi
 }
 
 // Port only: bind the process-wide active Lua lifecycle.
-
 export function bindLuaLifecycle(lifecycle: LuaLifecycle): void {
     if (!(lifecycle instanceof LuaLifecycle))
         throw new TypeError('bindLuaLifecycle requires a LuaLifecycle');

@@ -7559,8 +7559,9 @@ export async function meltIceTrap(x, y) {
         deleteTrap(trap);
     }
 }
-// The C contact-petrification idiom: munstone() cure first, else
-// minstapetrify() (uhitm.c, mthrowu.c, muse.c callers).
+// Port only: the C contact-petrification idiom — munstone() cure first,
+// else minstapetrify() — shared by the uhitm.c, mthrowu.c, and muse.c
+// callers.
 export async function petrifyMonsterFromContact(monster, { creditHero = false, finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, } = {}) {
     const cure = await munstone(monster, {
         byHero: creditHero, publish, rollOne, state,

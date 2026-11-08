@@ -1876,6 +1876,9 @@ export interface ExtcmdsMatchOptions {
     noOneCharCommand?: boolean;
 }
 
+// C cmd.c:extcmds_match(): find the available extended-command entries
+// matching a prefix (or all of them for a null findstr), for windowport
+// autocompletion.
 export function extcmdsMatch(findstr: string | null, options: ExtcmdsMatchOptions = {}): NativeCommand[] {
     const { ignoreAutocomplete = false, exactMatch = false, noOneCharCommand = false } = options;
     const needle = findstr?.toLowerCase();

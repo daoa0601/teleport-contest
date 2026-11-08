@@ -347,7 +347,7 @@ const definitions: readonly ConditionDefinition[] = [
 const defaultMask = definitions.reduce((mask, condition, index) =>
     condition.enabled ? mask | (1 << index) : mask, 0);
 
-// Port-only: map a condition's display text back to its bit.  C passes the
+// Port only: map a condition's display text back to its bit.  C passes the
 // condition mask straight to wintty.c:status_update()'s BL_CONDITION case;
 // this port's status line carries display texts, so the bit is re-derived
 // when a condition is painted.

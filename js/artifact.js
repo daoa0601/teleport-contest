@@ -473,7 +473,7 @@ const QUERY_FOR_DAMAGE = {
     [AD_SLEE]: 'sleep', [AD_PLYS]: 'paralysis', [AD_DISN]: 'disintegration',
     [AD_SLOW]: 'slow', [AD_ACID]: 'acid', [AD_STON]: 'stone',
 };
-// C artifact.c:defends(): the dragon-scale half of the color switch, as the
+// artifact.c:defends(): the dragon-scale half of the color switch, as the
 // adult dragon species each damage type's scales belong to.  Dragon scales
 // and dragon scale mail of one color share the conversion (polyself.ts
 // dragonFormForArmor()); no entry means the default arm of the C switch.
@@ -495,6 +495,10 @@ const DRAGON_DEFENDING = {
     acid: MONSTER_NAME.indexOf('yellow dragon'),
     stone: MONSTER_NAME.indexOf('yellow dragon'),
 };
+// C artifact.c:defends().
+// Does this object's artifact or dragon-scale material defend against the
+// damage type?  The dragon-scale half of the color switch reads the table
+// above; no entry means the default arm of the C switch.
 export function defends(adtyp, object, state = game) {
     const damageType = typeof adtyp === 'number' ? QUERY_FOR_DAMAGE[adtyp] : adtyp;
     if (!object || damageType == null)

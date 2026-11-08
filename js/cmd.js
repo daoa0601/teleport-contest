@@ -2001,6 +2001,9 @@ export async function changeCommandAutocompletions() {
             setCommandAutocomplete(command.name, selected.has(command));
     }
 }
+// C cmd.c:extcmds_match(): find the available extended-command entries
+// matching a prefix (or all of them for a null findstr), for windowport
+// autocompletion.
 export function extcmdsMatch(findstr, options = {}) {
     const { ignoreAutocomplete = false, exactMatch = false, noOneCharCommand = false } = options;
     const needle = findstr?.toLowerCase();
