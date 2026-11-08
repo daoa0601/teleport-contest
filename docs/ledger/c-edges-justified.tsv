@@ -476,7 +476,7 @@ gain_guardian_angel	mk_roamer	inlined	guardian angel creation with roamer flags 
 gem_learned	find_oid	inlined	bill object lookup by o_id (shk.ts)
 generate_stairs_find_room	alloc	n/a	room index array is a plain array (mklev.ts)
 genl_outrip	alloc	n/a	tombstone lines are strings
-genl_ourip	center	inlined	tombstoneLine centers name/gold/year (rip.ts)
+genl_outrip	center	inlined	tombstoneLine centers name/gold/year (rip.ts)
 genl_outrip	yyyymmdd	inlined	tombstoneYear (rip.ts)
 get_cost	acurr	inlined	strength factor in the price (shk.ts shopGetPrice)
 get_cost	getprice	inlined	base price table (shk.ts shopGetPrice)
