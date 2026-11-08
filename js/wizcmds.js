@@ -1181,7 +1181,11 @@ function sizeMonst(monster, inclWsegs) {
     const hasGuard = !!monster.isgd;
     const hasPriest = !!monster.ispriest;
     const hasShopkeeper = !!monster.isshk;
-    const hasMinion = !!monster.isminion;
+    // wizcmds.c:1245 sizes the emin component by its allocation: msummon
+    // demons get EMIN through MM_EMIN without isminion (minion.c:148-160),
+    // and every isminion site allocates it too (minion.c:154,224,234;
+    // makemon.c:1418-1422).
+    const hasMinion = monster.emin !== undefined || monster.mextra?.emin !== undefined;
     const hasPetData = !!monster.edog || !!monster.mextra?.edog;
     const hasBones = !!monster.mextra?.ebones;
     // C wizcmds.c:1235-1236 counts the mextra allocation whenever it
@@ -1331,10 +1335,12 @@ function miscStats(lines, state, totals) {
     if (regions.count || regions.size)
         row(regions.header, regions.count, regions.size);
     // C svk.killer.next: one struct kinfo per installed delayed killer.  The
-    // port records the stoned and slimed killers on the hero
-    // (potion.c:make_stoned()/make_slimed()); no sick killer is modeled.
+    // port records the stoned, slimed and sick killers on the hero
+    // (potion.c:make_stoned()/make_slimed(), and make_sick() at
+    // potion.c:178-188 whose delayed_killer(SICK,...) record is u.sickCause).
     const killers = Number(state.u.stoneKiller !== undefined)
-        + Number(state.u.slimeKiller !== undefined);
+        + Number(state.u.slimeKiller !== undefined)
+        + Number(state.u.sickCause !== undefined);
     if (killers)
         row(`delayed killer${killers === 1 ? '' : 's'}, size ${SIZEOF_KINFO}`, killers, killers * SIZEOF_KINFO);
     const bonesHistory = level.bonesInfo?.length ?? 0;

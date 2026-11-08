@@ -4,7 +4,7 @@ import { LARGE_BOX, OIL_LAMP } from '../js/object_data.js';
 import { SIZEOF_OEXTRA } from '../js/const.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { createGasCloudSelection, regionStats, restoreLevelRegions, runLevelRegions } from '../js/region.js';
+import { createGasCloudSelection, regionStats, restoreLevelRegions, runLevelRegions, updateMonsterRegions } from '../js/region.js';
 import { lightSourceRecords, restoreLevelLightSources } from '../js/light.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -309,4 +309,57 @@ void test('#stats excludes a null oextra like the unallocated pointer', async ()
     const rows = await statsWindowRows();
     assert.ok(rows.includes(statsRow('invent', 1, 112)),
         `invent row missing from:\n${rows.join('\n')}`);
+});
+
+void test('#stats sizes a region\'s retained monster-id capacity', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    const newt = await createMonsterAt('newt', 9, 9);
+    // A founding monster joined through add_mon_to_reg(): its id array
+    // holds MONST_INC = 5 slots (region.c:174-184).
+    await createGasCloudSelection(game, [{ x: 9, y: 9 }, { x: 10, y: 9 }], 4, 0);
+    const cloud = game.level?.regions[0];
+    assert.ok(cloud, 'the cloud must join the level');
+    assert.deepEqual([cloud.monsterIds, cloud.maxMonst], [[newt.m_id], 5]);
+    // The monster walks out; remove_mon_from_reg() (region.c:192-202) never
+    // shrinks the capacity that region_stats() sizes (region.c:919).
+    updateMonsterRegions(newt, game, { x: 14, y: 12 });
+    assert.deepEqual(cloud.monsterIds, []);
+
+    const rows = await statsWindowRows();
+    // 10 region slots + 2 cells + 5 id slots.
+    assert.ok(rows.includes(statsRow('regions, size 96+8*rect+N', 1, 10 * 96 + 2 * 8 + 5 * 4)),
+        `retained monster-id capacity missing from:\n${rows.join('\n')}`);
+
+    // A level reload resets max_monst to the restored membership
+    // (rest_regions(), region.c:873).
+    await restoreLevelRegions(game, 0);
+    const reloaded = await statsWindowRows();
+    assert.ok(reloaded.includes(statsRow('regions, size 96+8*rect+N', 1, 96 + 2 * 8)),
+        `rest capacity missing from:\n${reloaded.join('\n')}`);
+});
+
+void test('#stats sizes an allocated emin record without isminion', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    const demon = await createMonsterAt('newt', 12, 10);
+    // msummon demons get EMIN through MM_EMIN without isminion
+    // (minion.c:148-160); wizcmds.c:1245 sizes the allocation.
+    demon.emin = { parentmid: demon.m_id, min_align: 0, renegade: 0 };
+
+    const rows = await statsWindowRows();
+    assert.ok(rows.includes(statsRow('fmon', 1, 192 + 64 + 8)),
+        `emin-sized fmon row missing from:\n${rows.join('\n')}`);
+});
+
+void test('#stats counts the sick delayed killer alongside stoned and slimed', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    // make_sick() installs delayed_killer(SICK,...) (potion.c:178-188); the
+    // port's record is u.sickCause.
+    game.u.sickCause = 'food poisoning';
+
+    const rows = await statsWindowRows();
+    assert.ok(rows.includes(statsRow('delayed killer, size 272', 1, 272)),
+        `sick delayed-killer row missing from:\n${rows.join('\n')}`);
 });

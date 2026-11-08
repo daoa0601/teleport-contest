@@ -3,7 +3,7 @@
 // create_gas_cloud_selection().
 
 import { isPoolAt } from './dbridge.js';
-import { M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, SIZEOF_NHRECT, SIZEOF_NHREGION, SIZEOF_UNSIGNED, Upolyd, EYE, LUNG } from './const.js';
+import { MONST_INC, M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, SIZEOF_NHRECT, SIZEOF_NHREGION, SIZEOF_UNSIGNED, Upolyd, EYE, LUNG } from './const.js';
 import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { formatFeltMessage, formatSeenMessage, plineWithContinuation, impossible } from './pline.js';
@@ -156,6 +156,9 @@ async function makeGasCloud(
         ttl,
         cells: orderedCells,
         monsterIds: [...monsterIds],
+        // Each founding monster joined through add_mon_to_reg(), which
+        // grows the id array in MONST_INC steps (region.c:174-184).
+        maxMonst: monsterIds.size ? Math.ceil(monsterIds.size / MONST_INC) * MONST_INC : 0,
         heroInside: orderedCells.some(cell => cell.x === state.u.ux && cell.y === state.u.uy),
     };
     // C region.c:289-298 add_region(): the region array grows in tens and
@@ -284,7 +287,13 @@ export function updateMonsterRegions(monster: Monster, state: GameState = game,
     for (const region of requireGameLevel(state).regions) {
         const index = region.monsterIds.indexOf(monster.m_id);
         if (regionContains(region, position.x, position.y)) {
-            if (index < 0) region.monsterIds.push(monster.m_id);
+            // C region.c:174-184 add_mon_to_reg(): the id array grows in
+            // MONST_INC steps and removals never shrink it.
+            if (index < 0) {
+                if ((region.maxMonst ?? region.monsterIds.length) <= region.monsterIds.length)
+                    region.maxMonst = (region.maxMonst ?? region.monsterIds.length) + MONST_INC;
+                region.monsterIds.push(monster.m_id);
+            }
         } else if (index >= 0) {
             removeRegionMonster(region, index);
         }
@@ -587,6 +596,9 @@ export async function restoreLevelRegions(state: GameState, elapsed: number): Pr
     // session grew.
     (state._regionCapacity ||= new WeakMap()).set(level, level.regions.length);
     const regions = level.regions;
+    // C rest_regions() (region.c:873) also resets each region's monster-id
+    // capacity to its restored membership.
+    for (const region of regions) region.maxMonst = region.monsterIds.length;
     for (const region of [...regions].reverse()) {
         if (region.ttl < 0) continue;
         region.ttl = Math.max(0, region.ttl - elapsed);
@@ -695,9 +707,11 @@ export async function runLevelRegions(state: GameState | null | undefined, {
 // sizes max_regions NhRegion slots (add_region() grows the array in tens,
 // region.c:289-298), plus each region's rectangle list (a gas cloud holds one
 // NhRect per cell, region.c:1298-1302), its enter/leave message texts, and
-// its monster-id capacity (add_mon_to_reg() grows in fives, region.c:174-183
-// and region.h MONST_INC).  The port's clouds carry the cells and ids but no
-// message texts.
+// its monster-id capacity (add_mon_to_reg() grows max_monst in MONST_INC
+// steps, region.c:174-183; region_stats() sizes that retained capacity,
+// region.c:919).  An untracked capacity is the state rest_regions()
+// leaves it in: the restored membership count (region.c:873).  The port's
+// clouds carry the cells and ids but no message texts.
 export function regionStats(state: GameState = game): { header: string; count: number; size: number } {
     const level = state.level;
     const regions = level?.regions ?? [];
@@ -705,8 +719,7 @@ export function regionStats(state: GameState = game): { header: string; count: n
     let size = (level ? regionCapacity(level, state) : 0) * SIZEOF_NHREGION;
     for (const region of regions) {
         size += region.cells.length * SIZEOF_NHRECT;
-        size += (region.monsterIds.length ? Math.ceil(region.monsterIds.length / 5) * 5 : 0)
-            * SIZEOF_UNSIGNED;
+        size += (region.maxMonst ?? region.monsterIds.length) * SIZEOF_UNSIGNED;
     }
     return {
         header: `regions, size ${SIZEOF_NHREGION}+${SIZEOF_NHRECT}*rect+N`,
