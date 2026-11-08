@@ -6,7 +6,7 @@ import {
     setArtifactOrigin, uncreateArtifact,
 } from '../js/artifact.js';
 import { A_NONE } from '../js/const.js';
-import { prepareBonesObjectForRestore } from '../js/bones_object.js';
+import { resetobjs } from '../js/bones.js';
 import { grantPrayerFavor } from '../js/pray.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -82,7 +82,7 @@ void test('restoring an artifact from bones replaces its previous wish origin', 
     assert.ok(result && !result.noWish);
     initializeArtifacts();
 
-    prepareBonesObjectForRestore(result.object);
+    resetobjs([result.object], true);
 
     assert.match(dumpLine('Magicbane'), /\[exists; bones\]$/);
 });

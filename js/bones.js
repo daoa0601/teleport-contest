@@ -11,7 +11,8 @@
 // bones_name.ts.
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
-import { BUFSZ, COLNO, CORPSTAT_INIT, DEFUNCT_MONSTER, DELPHI, DISMOUNT_BONES, G_NOCORPSE, GRAVE, HEADSTONE, HOLE, Is_oracle_level, LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, MON_FLOOR, NON_PM, NO_MINVENT, PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROWNO, STONE, TRICKED, Upolyd, } from './const.js';
+import { FOOD_CLASS } from './objclass.js';
+import { BUFSZ, COLNO, CORPSTAT_INIT, DEFUNCT_MONSTER, DELPHI, DISMOUNT_BONES, G_NOCORPSE, GRAVE, HEADSTONE, HOLE, Is_oracle_level, LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, MON_FLOOR, NON_PM, NO_MINVENT, OBJECT_TIMER_KIND, PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, STONE, TRICKED, Upolyd, } from './const.js';
 import { GameMap } from './game.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation, impossible } from './pline.js';
@@ -20,7 +21,6 @@ import { nhgetch } from './input.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { DTHSZ, formatKiller } from './topten.js';
-import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones_object.js';
 import { sanitizeName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
@@ -29,18 +29,18 @@ import { repairBonesConnections, restoreLevelChains, restoreMonsterWormHeads, va
 import { restoreLevelPetHistory } from './save.js';
 import { endObjectBurn, restoreLevelTimers } from './timeout.js';
 import { restoreLevelRegions, resetRegionMonsterIds } from './region.js';
-import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
+import { fixShopDamage, pacifyShopkeeper, setShopResidency, shopkeeperInOwnShop } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { addFruit } from './message_types.js';
-import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
+import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously, set_corpsenm } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt, Invocation_lev } from './dungeon.js';
 import { bonesLevelId, bonesStorageKey, deleteBonesLevel, openBonesFile } from './novel_tribute.js';
-import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE } from './object_data.js';
+import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, EGG, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, TIN, WAX_CANDLE, objectUsesKnown } from './object_data.js';
 import { clearBypasses } from './worn.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { dismountHero, monsterHasMapPosition } from './steed.js';
-import { artifactEmitsLight } from './artifact.js';
+import { artifactById, artifactEmitsLight, nameArtifact } from './artifact.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { makemonAt, peaceMinded, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
 import { initializeMonsterArmor } from './worn.js';
@@ -48,7 +48,7 @@ import { releaseAllMonsterLeashes } from './apply.js';
 import { setMonsterGivenName } from './do_name.js';
 import { MONSTER_ALIGNMENT, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM } from './monster_data.js';
 import { objectNoLongerHeldSynchronously } from './do.js';
-import { unpunishHero } from './read.js';
+import { unpunishHero, revivalReplacement, PM_DOPPELGANGER } from './read.js';
 import { depth, is_branchlev, ledgerNo, maxLedgerNo } from './dungeon.js';
 import { isRoom } from './map_types.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
@@ -57,6 +57,7 @@ import { relocateMonsterTo, enexto } from './teleport.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { roomForRoomno } from './hack.js';
 import { likes_gold, likes_gems, likes_objs, likes_magic, monsterHidesUnder, monsterIsUndead, giveHeroResistancesToMonster } from './mondata.js';
+const G_UNIQ = 0x1000;
 // C bones.c:can_make_bones()/no_bones_level(). Dungeon topology owns which
 // levels can leave bones; the depth trial still runs in wizard and explore mode.
 export function canMakeBones(state = game, random = rn2) {
@@ -499,41 +500,175 @@ function eachObjectInBonesGraph(level, visit) {
     };
     eachTopLevelBonesObject(level, walk);
 }
-// Part of C bones.c:resetobjs(): the pass over one object chain (monster
-// invent, floor, buried) for bones save and restore.
+// C bones.c:resetobjs(): the pass over one object chain (monster invent,
+// floor, buried) for bones save and restore, with both per-object branches
+// inline in the C statement order.
 // Also C bones.c:set_ghostly_objlist(): inlined here (the ghostly flag);
 // the hero invent marking in createBonesFromDeath() is the same helper.
-function resetBonesObjectList(objects, mode, ghostly = mode === 'save') {
+export function resetobjs(objects, restore, ghostly = !restore) {
     const kept = [];
     for (const object of objects || []) {
-        object.contents = resetBonesObjectList(object.contents, mode, false);
+        object.contents = resetobjs(object.contents, restore, false);
         for (const content of object.contents)
             content.container = object;
         if (object.in_use)
             continue;
         if (ghostly)
             object.ghostly = true;
-        kept.push(mode === 'save'
-            ? prepareBonesObjectForSave(object) : prepareBonesObjectForRestore(object));
+        if (restore) {
+            /* artifact bookkeeping needs to be done during restore; other
+               fixups are done while saving */
+            if (object.oartifact) {
+                const artifact = artifactById(object.oartifact, game);
+                if (!artifact || artifact.questArtifact
+                    || !nameArtifact(object, artifact, { origin: 'bones', state: game })) {
+                    // prevent duplicate--revert to ordinary obj
+                    object.oartifact = 0;
+                    object.artifact = false;
+                    delete object.oname;
+                    if (object.oextra)
+                        delete object.oextra.oname;
+                }
+            }
+            else {
+                if (object.oname)
+                    object.oname = sanitizeName(object.oname);
+                if (object.oextra?.oname) {
+                    object.oextra.oname = sanitizeName(object.oextra.oname);
+                }
+            }
+            /* 3.6.3: set no_charge for partly eaten food in shop;
+               all other items become goods for sale if in a shop */
+            if (object.oclass === FOOD_CLASS && (object.oeaten ?? 0) > 0) {
+                let top = object;
+                const visited = new Set();
+                while (top?.where === 'contained' && top.container
+                    && !visited.has(top)) {
+                    visited.add(top);
+                    top = top.container;
+                }
+                // can't use costly_spot() since its result depends upon the
+                // hero's location: inside_shop() plus a tended shop.
+                let inStaffedShop = false;
+                if (top?.where === 'floor') {
+                    const location = game.level?.at?.(top.ox, top.oy);
+                    if (location && !location.edge && location.roomno >= ROOMOFFSET) {
+                        const room = roomForRoomno(game.level, location.roomno);
+                        inStaffedShop = !!room && room.rtype >= SHOPBASE
+                            && shopkeeperInOwnShop(room.resident, game);
+                    }
+                }
+                object.no_charge = inStaffedShop;
+            }
+        }
+        else { /* saving */
+            /* do not zero out o_ids for ghost levels anymore */
+            if (objectUsesKnown(object.otyp))
+                object.known = false;
+            for (const key of ['dknown', 'bknown', 'rknown', 'lknown', 'cknown', 'tknown'])
+                object[key] = false;
+            object.invlet = null;
+            object.no_charge = false;
+            object.how_lost = 0;
+            object.pickup_prev = false;
+            /* strip user-supplied names; statue, novel, and special corpse
+               names are left intact */
+            if (!(!!(object.oartifact || object.artifact)
+                || object.otyp === STATUE
+                || object.otyp === SPE_NOVEL
+                || (object.otyp === CORPSE
+                    && object.corpsenm !== undefined && object.corpsenm >= SPECIAL_PM))) {
+                delete object.oname;
+                if (object.oextra)
+                    delete object.oextra.oname;
+            }
+            // Port only: drop cached presentation fields so the receiving
+            // game rebuilds them.
+            for (const key of [
+                'name', 'plural', 'class', 'enchantment', 'buc',
+            ])
+                delete object[key];
+            if (object.otyp === SCR_MAIL) {
+                // delivered in-game via external event (0) becomes
+                // from bones or wishing (1); hand-written mail keeps 2.
+                if (object.spe === 0)
+                    object.spe = 1;
+            }
+            else if (object.otyp === EGG) {
+                object.spe = 0; /* not "laid by you" in next game */
+            }
+            else if (object.otyp === TIN && object.corpsenm !== undefined
+                && (MONSTER_GENO[object.corpsenm] ?? 0) & G_UNIQ) {
+                object.corpsenm = -1;
+            }
+            else if (object.otyp === CORPSE || object.otyp === STATUE) {
+                // Discard incarnation details of unique monsters,
+                // shopkeepers, temple priests, and vault guards in order
+                // to prevent corpse revival or statue reanimation.
+                if (object.oextra?.omonst && object.corpsenm !== undefined) {
+                    const replacement = revivalReplacement(object.corpsenm, null, false);
+                    if (replacement !== null) {
+                        delete object.oextra.omonst;
+                        // for corpses of uniques, force the transformation
+                        // now rather than wait until a revive attempt
+                        if (replacement === PM_DOPPELGANGER && object.otyp === CORPSE)
+                            set_corpsenm(object, replacement);
+                    }
+                }
+            }
+            else if (object.o_id === game.context.achieveo?.mines_prize_oid
+                || object.o_id === game.context.achieveo?.soko_prize_oid) {
+                object.nomerge = false;
+            }
+            else if (object.otyp === AMULET_OF_YENDOR) {
+                object.otyp = FAKE_AMULET_OF_YENDOR;
+                curseObjectState(object);
+            }
+            else if (object.otyp === CANDELABRUM_OF_INVOCATION) {
+                object.objectTimers = (object.objectTimers || []).filter(timer => timer.kind !== OBJECT_TIMER_KIND.BURN_OBJECT);
+                object.timed = object.objectTimers.length;
+                object.lamplit = false;
+                object.otyp = WAX_CANDLE;
+                object.age = 50;
+                if (object.spe > 0)
+                    object.quan = object.quantity = object.spe;
+                else
+                    object.quantity = object.quan;
+                object.spe = 0;
+                object.owt = objectWeight(object);
+                curseObjectState(object);
+            }
+            else if (object.otyp === BELL_OF_OPENING) {
+                object.otyp = BELL;
+                curseObjectState(object);
+            }
+            else if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
+                object.otyp = SPE_BLANK_PAPER;
+                curseObjectState(object);
+            }
+            delete object.buc;
+        }
+        kept.push(object);
     }
     return kept;
 }
 // Part of C bones.c:savebones(), bones.c:getbones(): the resetobjs()
 // passes over minvent, fobj, and buried.
 function resetBonesObjects(level, mode) {
+    const restore = mode === 'restore';
     for (const monster of [...level.monsters].reverse()) {
-        const inventory = resetBonesObjectList(monster.minvent || monster.inventory, mode);
+        const inventory = resetobjs(monster.minvent || monster.inventory, restore);
         monster.minvent = monster.inventory = inventory;
         monster.hasInventory = inventory.length > 0;
     }
-    const retained = new Set(resetBonesObjectList(bonesFloorObjects(level), mode));
+    const retained = new Set(resetobjs(bonesFloorObjects(level), restore));
     for (const column of level.objects) {
         if (!column)
             continue;
         for (let y = 0; y < column.length; y++)
             column[y] = (column[y] ?? []).filter(object => retained.has(object));
     }
-    level.buriedObjects = resetBonesObjectList(level?.buriedObjects, mode);
+    level.buriedObjects = resetobjs(level?.buriedObjects, restore);
 }
 // C bones.c:savebones()
 // savebones()/resetobjs(FALSE): the persistent payload owns the level
