@@ -185,7 +185,6 @@ random_teleport_level	randomTeleportDepth
 lev_by_name	levelDepthByName
 thiefdead	armorThiefGone
 mon_leaving_level	detachMonsterFromLevel
-make_corpse	createMonsterRemains
 pick_familiar_pm	familiarSpecies
 roguename	roguePlayerName
 maybe_finish_sokoban	finishSokobanIfSolved

@@ -959,7 +959,7 @@ async function categoryMenu() {
     restoreMap(underlay);
     return selected;
 }
-// Part of C invent.c:query_category(): the removal-category prompt.
+// Part of C pickup.c:query_category(): the removal-category prompt.
 async function traditionalCategories(combo, selectOff) {
     const worn = wornInventory();
     const classes = [...new Set(worn.map(object => object.oclass))];

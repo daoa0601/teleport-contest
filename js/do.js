@@ -1303,7 +1303,7 @@ function matchesCategories(object, categories) {
         && (!categories.includes('u') || hasUnpaid(object))
         && (!categories.includes('P') || !!object.pickup_prev);
 }
-// Part of C invent.c:query_category(): the traditional/combination
+// Part of C pickup.c:query_category(): the traditional/combination
 // "kinds of thing" drop prompt (with pickup.c's ggetobj() letters).
 async function traditionalDropCategories(combo) {
     const classes = [...new Set(game.inventory.map(object => object.oclass))];
