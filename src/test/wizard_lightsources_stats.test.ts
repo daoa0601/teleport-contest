@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { LARGE_BOX, OIL_LAMP } from '../js/object_data.js';
 import { SIZEOF_OEXTRA } from '../js/const.js';
 import { beginObjectBurn } from '../js/timeout.js';
+import { restoreGame, saveGame } from '../js/save.js';
 import { createGasCloudSelection, regionStats, restoreLevelRegions, runLevelRegions } from '../js/region.js';
 import { lightSourceRecords, restoreLevelLightSources } from '../js/light.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
@@ -11,6 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
+import { memoryStorage } from './support/memory-storage.js';
 import type { GameObject } from '../js/object_types.js';
 
 // Each wizard window waits for a dismiss key; capture the screen at every
@@ -81,6 +83,37 @@ void test('#lightsources shows <none> without light sources', async () => {
     assert.ok(firstScreen, 'the listing must render a screen');
     assert.match(firstScreen.join('\n'), /<none>/);
     assert.doesNotMatch(firstScreen.join('\n'), /location range flags/);
+});
+
+void test('#lightsources restores the hero form light ahead of a lamp lit later', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    resetInputState();
+    await runExtendedCommand('polyself', 'gold dragon\n                        ');
+    assert.equal(game.u.formLightRange, 2);
+    resetInputState();
+    const lamp = await addInventoryObject(OIL_LAMP);
+    assert.equal(beginObjectBurn(lamp, game), true);
+    game.plname = 'Formlight';
+    const storage = memoryStorage();
+
+    assert.equal(await saveGame(storage), true);
+    assert.equal(await restoreGame('Formlight', storage), true);
+    const screens = captureScreens();
+    await runExtendedCommand('lightsources', ' ');
+
+    const screen = screens.find(rows => rows.some(row => row.includes('Mobile light sources:')));
+    assert.ok(screen, 'the restored light listing must render');
+    const sources = screen.filter(row => /0x[0-9a-f]{4}  (you|obj)  /.test(row));
+    assert.equal(sources.length, 2, `expected the form and lamp lights:\n${screen.join('\n')}`);
+    // C light.c:16-17 keeps youmonst.mx at 0; maybe_write_ls():586 uses
+    // "is_global = !mon_is_local(ls->id.a_monst)".  restore_light_sources()
+    // (:490-491) prepends each saved entry: "ls->next = gl.light_base;
+    // gl.light_base = ls;", reversing the global batch, hero included.
+    // do_light_sources():198-203 keeps LSF_SHOW on both: radius 2 first,
+    // then radius 3.  A lamp-first traversal suppresses the hero's flag.
+    assert.match(sources[0] ?? '', /10,10 {4}2 {3}0x0001 {2}you {2}0x1/);
+    assert.match(sources[1] ?? '', /10,10 {4}3 {3}0x0001 {2}obj {2}0x[0-9a-f]+/);
 });
 
 void test('#stats reports the reference build\'s memory table', async () => {

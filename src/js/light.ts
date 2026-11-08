@@ -194,7 +194,7 @@ function objectLightEntries(
 // (light.c:452-453 saves a monster's source with its level when
 // mon_is_local(), mx > 0).  Migrating monsters (mx 0) stay in the global
 // batch, and the hero's youmonst.mx is pinned to 0 (light.c:16-17), so the
-// hero's light never leaves the list.
+// hero's light stays in the list during a level change.
 export function restoreLevelLightSources(state: GameState = game): void {
     const lights = objectLightEntries(
         objectsInTimerGraph(state).filter(object => !lightObjectIsGlobal(object)), state);
@@ -214,6 +214,14 @@ export function restoreLevelLightSources(state: GameState = game): void {
 export function restoreSavedLightSources(state: GameState = game): void {
     const lights = objectLightEntries(
         objectsInTimerGraph(state).filter(lightObjectIsGlobal), state);
+    // youmonst.mx is always 0 (light.c:16-17), so maybe_write_ls():586
+    // includes the hero: "is_global = !mon_is_local(ls->id.a_monst)".
+    if (state.u.formLightRange) {
+        lights.push({
+            seq: state.u.formLightSeq ?? 0,
+            restamp: serial => { state.u.formLightSeq = serial; },
+        });
+    }
     // The global batch keeps the migrating monsters' lights (mx 0).
     for (const monster of state._migratingMonsters ?? []) {
         if (monster.dead || monster.lightRemoved || !monsterEmitsLight(monster.mnum)) continue;
