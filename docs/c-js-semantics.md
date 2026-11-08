@@ -122,8 +122,11 @@ the port must not imitate them. `win/tty/termcap.c:nomux_capture_screen()`
 writes into `static char nomux_out[24 * 256]` without a bounds check. A
 `#terrain` full-map screen of 6,256 bytes overflowed it, so the cursor
 reports and final screens of session 34cf457b are corrupt from that step on.
-Fix it in `nethack-c/patches/006-nomux-capture.patch` and re-record; the
-port is not at fault.
+The patch now sizes the buffer for the worst case (`24 * (80 * 32 + 16)`:
+per cell at most three attribute SGRs, one foreground SGR, a shift byte and
+the character), so recorders built after that change capture these screens
+whole. Sessions recorded with an older recorder keep the corruption; re-record
+them. The port is not at fault.
 
 ## Static-gap reports: what is not a missing branch
 

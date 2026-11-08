@@ -251,7 +251,7 @@ diff -urN -x *.bak a/win/tty/termcap.c b/win/tty/termcap.c
 +    return 37;
 +}
 +
-+static char nomux_out[24 * 256];
++static char nomux_out[24 * (80 * 32 + 16)]; /* per cell <= 3 attr SGRs + fg SGR + SO/SI + ch */
 +char *nomux_capture_screen(void) {
 +    char *p = nomux_out;
 +    int row, col, end, cur_fg, cur_attr;
