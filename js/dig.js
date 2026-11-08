@@ -52,7 +52,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { addShopDamage, costlySpot, deleteObject, makeAngryShopkeeper, payForShopDamage, shopDig, stolenValue } from './shk.js';
 import { shopkeeperName } from './shknam.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { monsterHasMapPosition } from './steed.js';
+import { monsterAt, monsterHasMapPosition } from './steed.js';
 import { randomMonsterRelocation, teleportPetVictim } from './teleport.js';
 import { Is_botlevel, ceilingName, depth, levelHasCeiling, levelAtDepth, surfaceName, canDigDown } from './dungeon.js';
 import { CLR_WHITE } from './terminal.js';
@@ -92,12 +92,6 @@ const DIG_ACTIONS = [
 ];
 // C dig.c d_target[] for "You hit the <target>..." messages.
 const DIG_TARGETS = ['', 'rock', 'statue', 'boulder', 'door', 'tree'];
-// Port only: m_at() lookups with the call sites' MON_AT()/DEADMONSTER()
-// checks.
-function monsterAt(x, y, state) {
-    return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
-        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y) || null;
-}
 // C dig.c:pick_can_reach()
 // Whether a pick can reach a statue or boulder that sits in (or beside)
 // a pit.
@@ -229,7 +223,7 @@ async function mkcavepos(x, y, dist, waslit, rockit, state) {
             return;
         if (trapAt(state, x, y))
             return;
-        const monster = monsterAt(x, y, state);
+        const monster = monsterAt(state, x, y);
         if (monster && !monsterPassesWalls(monster.mnum)) {
             // C rloc(mtmp, RLOC_NOMSG): relocate without a message.
             await randomMonsterRelocation(monster, { state, flags: RLOC_NOMSG });
@@ -932,7 +926,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
     // BY_OBJECT means the hero broke a wand, so blame her for it.
     const herosFault = madeByYou || madeByObject;
     let wontFall = heroIsAirborne(state);
-    const victim = monsterAt(x, y, state);
+    const victim = monsterAt(state, x, y);
     if (atYou && hero.utrap) {
         if (hero.utraptype === TT_BURIEDBALL) {
             await buriedBallToPunishment(state);
@@ -1177,7 +1171,7 @@ export async function liquidFlow(x, y, typ, trap, fillMessage, { state = game } 
         });
     }
     else {
-        const monster = monsterAt(x, y, state);
+        const monster = monsterAt(state, x, y);
         if (monster) {
             await resolveMonsterLiquid(monster, state, {
                 announce: plineWithContinuation,
