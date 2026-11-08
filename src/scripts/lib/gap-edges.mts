@@ -2,12 +2,14 @@
 //
 // For each C function with a port counterpart (the same name ignoring case
 // and underscores, or an entry in docs/ledger/c-ts-aliases.tsv), every C function it calls
-// should be reachable from the counterpart: named in its body, or in the
-// body of a port function it calls, up to REACH_DEPTH calls deep (code that
-// the port moved into a helper still counts). A missing edge is a place to
-// audit: a check, effect or roll that C performs on that path and the port
-// does not. Names alone cannot prove an edge correct; sessions, ledgers and
-// proofs still do that.
+// should be reachable from the counterpart: named in its body, in the body
+// of a port function it calls, up to REACH_DEPTH calls deep (code that the
+// port moved into a helper still counts), or called through a port whose
+// own first-line citation names the C function (`trapAt`, whose comment
+// block opens with `// C trap.c:t_at()`, reaches `t_at`). A missing edge is
+// a place to audit: a check, effect or roll that C performs on that path
+// and the port does not. Names alone cannot prove an edge correct;
+// sessions, ledgers and proofs still do that.
 
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
@@ -130,8 +132,11 @@ export interface PortIndex {
     // the C file the header states, so names that normalize alike across C
     // files stay separate.
     byPart: Map<string, { fn: PortFunction; file: string }[]>;
-    // Identifiers, and names cited in comments, within REACH_DEPTH calls.
-    reach: (fn: PortFunction) => { names: Set<string>; raw: Set<string>; cited: Set<string> };
+    // Identifiers, names cited in comments, and — keyed by normalized C
+    // name — the first-line origins of resolved callees, within
+    // REACH_DEPTH calls.
+    reach: (fn: PortFunction) => { names: Set<string>; raw: Set<string>; cited: Set<string>;
+        origins: Map<string, ReachedOrigin[]> };
     // Resolved calls of one port function's own body and parameters.
     callsOf: (fn: PortFunction) => PortCall[];
     calleesOf: (fn: PortFunction) => readonly PortFunction[];
@@ -165,6 +170,20 @@ export function originCitation(firstComment: string | undefined): string | null 
     const match = /^\/\/\s*(?:C\s+)?[A-Za-z0-9_]+\.[ch]:\s*([A-Za-z_][A-Za-z0-9_]*)\(\)/.exec(firstComment);
     return match?.[1] ?? null;
 }
+
+// The `file.c:` prefix of a first-line origin citation, `trap.c` in
+// `// C trap.c:t_at()`; the file an origin name is defined in, which keeps
+// C files that define names normalizing apart (`muse.c`'s `mbhit` is not
+// `artifact.c`'s `Mb_hit`) from matching each other's origins.
+export function originCitationFile(firstComment: string | undefined): string | undefined {
+    if (!firstComment) return undefined;
+    return /^\/\/\s*(?:C\s+)?([A-Za-z0-9_]+\.[ch]):/.exec(firstComment)?.[1];
+}
+
+// The C function a port function counterparts through its own first-line
+// citation: calling the port counts as calling the C function, so a caller
+// whose port calls `trapAt` above `// C trap.c:t_at()` reaches `t_at`.
+export interface ReachedOrigin { name: string; file: string }
 
 // One `file.c:name()` entry of a `Part of C` header.
 export interface PartOfEntry { file: string; name: string }
@@ -329,7 +348,7 @@ export function portIndex(root: string): PortIndex {
         }
     }
 
-    const direct = new Map<PortFunction, { names: Set<string>; raw: Set<string>; cited: Set<string>; callees: Set<PortFunction>; calls: PortCall[] }>();
+    const direct = new Map<PortFunction, { names: Set<string>; raw: Set<string>; cited: Set<string>; callees: Set<PortFunction>; calls: PortCall[]; origins: Map<string, ReachedOrigin[]> }>();
     const asPortFunction = (declaration: ts.Declaration | undefined): PortFunction | null => {
         if (!declaration) return null;
         if (ts.isFunctionDeclaration(declaration) || ts.isMethodDeclaration(declaration)) return declaration.body ? declaration : null;
@@ -339,13 +358,32 @@ export function portIndex(root: string): PortIndex {
         }
         return null;
     };
-    const directOf = (fn: PortFunction): { names: Set<string>; raw: Set<string>; cited: Set<string>; callees: Set<PortFunction>; calls: PortCall[] } => {
+    // A port function's own first-line origin, memoized so every call site
+    // of one callee shares the record; `Part of C` headers and prose
+    // mentions are not origins (originCitation reads the first line only).
+    const originMemos = new Map<PortFunction, ReachedOrigin | null>();
+    const originOf = (fn: PortFunction): ReachedOrigin | null => {
+        const known = originMemos.get(fn);
+        if (known !== undefined) return known;
+        const first = leadingComments(fn)[0];
+        const name = originCitation(first);
+        const file = originCitationFile(first);
+        const origin = name !== null && file !== undefined ? { name, file } : null;
+        originMemos.set(fn, origin);
+        return origin;
+    };
+    const directOf = (fn: PortFunction): { names: Set<string>; raw: Set<string>; cited: Set<string>;
+        callees: Set<PortFunction>; calls: PortCall[]; origins: Map<string, ReachedOrigin[]> } => {
         const known = direct.get(fn);
         if (known) return known;
         const names = new Set<string>();
         const raw = new Set<string>();
         const callees = new Set<PortFunction>();
         const calls: PortCall[] = [];
+        // The C origins of the resolved callees, keyed by normalized C
+        // name: a port that calls a cited port under its TS name still
+        // calls the C function that port counterparts.
+        const origins = new Map<string, ReachedOrigin[]>();
         const visit = (node: ts.Node): void => {
             if (ts.isIdentifier(node)) { names.add(normalizedName(node.text)); raw.add(node.text); }
             else if (ts.isCallExpression(node)) {
@@ -364,6 +402,11 @@ export function portIndex(root: string): PortIndex {
                 for (const callee of resolved) {
                     calls.push({ node, callee });
                     if (callee !== fn) callees.add(callee);
+                    const origin = originOf(callee);
+                    if (!origin) continue;
+                    const key = normalizedName(origin.name);
+                    const reached = origins.get(key) ?? [];
+                    if (!reached.includes(origin)) origins.set(key, [...reached, origin]);
                 }
             }
             ts.forEachChild(node, visit);
@@ -377,14 +420,16 @@ export function portIndex(root: string): PortIndex {
         const comments = leadingComments(fn);
         const header = headerOf(fn, comments);
         const cited = citations([...(header ? header.masked : comments), ...commentsIn(fn.body?.getFullText() ?? '')]);
-        const entry = { names, raw, cited, callees, calls };
+        const entry = { names, raw, cited, callees, calls, origins };
         direct.set(fn, entry);
         return entry;
     };
-    const reach = (fn: PortFunction): { names: Set<string>; raw: Set<string>; cited: Set<string> } => {
+    const reach = (fn: PortFunction): { names: Set<string>; raw: Set<string>; cited: Set<string>;
+        origins: Map<string, ReachedOrigin[]> } => {
         const names = new Set<string>();
         const raw = new Set<string>();
         const cited = new Set<string>();
+        const origins = new Map<string, ReachedOrigin[]>();
         const seen = new Set<PortFunction>();
         let frontier: PortFunction[] = [fn];
         for (let depth = 0; depth <= REACH_DEPTH && frontier.length; depth++) {
@@ -396,11 +441,12 @@ export function portIndex(root: string): PortIndex {
                 for (const name of entry.names) names.add(name);
                 for (const name of entry.cited) cited.add(name);
                 for (const name of entry.raw) raw.add(name);
+                for (const [key, reached] of entry.origins) origins.set(key, [...(origins.get(key) ?? []), ...reached]);
                 next.push(...entry.callees);
             }
             frontier = next;
         }
-        return { names, raw, cited };
+        return { names, raw, cited, origins };
     };
     const locate = (fn: PortFunction): string => {
         const source = fn.getSourceFile();
@@ -460,7 +506,7 @@ export function counterpartsOf(index: PortIndex, aliases: ReadonlyMap<string, st
     const portsCaller = (fn: PortFunction): boolean => {
         const first = leadingComments(fn)[0];
         const origin = originCitation(first);
-        const originFile = first === undefined ? undefined : /^\/\/\s*(?:C\s+)?([A-Za-z0-9_]+\.[ch]):/.exec(first)?.[1];
+        const originFile = originCitationFile(first);
         return !origin || origin === caller || normalizedName(origin) !== normalizedName(caller) || originFile === file;
     };
     const ownName = (index.byName.get(normalizedName(caller)) ?? []).filter(portsCaller);
@@ -515,18 +561,26 @@ export async function compareEdges(root: string, tree: CSourceTree, cacheDir: st
         const counterparts = counterpartsOf(index, aliases, caller, file, ownOriginOnly);
         if (!counterparts.fns.length) { unmapped.push({ file, function: caller }); continue; }
         const reached = new Set<string>(), cited = new Set<string>(), rawWords: string[][] = [];
+        const origins = new Map<string, ReachedOrigin[]>();
         for (const fn of counterparts.fns) {
             const reach = index.reach(fn);
             for (const name of reach.names) reached.add(name);
             for (const name of reach.cited) cited.add(name);
             for (const name of reach.raw) rawWords.push(words(name));
+            for (const [key, list] of reach.origins) origins.set(key, [...(origins.get(key) ?? []), ...list]);
         }
         const row: EdgeRow = { file, function: caller, mapping: counterparts.mapping,
             port: counterparts.fns.map(index.locate), present: [], cited: [], justified: [], missing: [], infrastructure: INFRASTRUCTURE_FILES.has(file) };
         for (const callee of [...callees].sort()) {
             if (HELPER_CALLEES.has(callee)) continue;
             const names = portNames(callee);
-            if (names.some(name => reached.has(name))) row.present.push(callee);
+            // A callee reached through a cited port counts when the origin
+            // names it exactly (one C symbol) or names its defining C file:
+            // muse.c's `mbhit` is not artifact.c's `Mb_hit`.
+            const calleeFile = graph.fileOf.get(callee) ?? '?';
+            const throughCitedPort = (origins.get(normalizedName(callee)) ?? [])
+                .some(origin => origin.name === callee || origin.file === calleeFile);
+            if (throughCitedPort || names.some(name => reached.has(name))) row.present.push(callee);
             else if (justified.has(`${caller}\t${callee}`)) row.justified.push(callee);
             else if (names.some(name => cited.has(name)) || rawWords.some(portWords => wordMatch(words(callee), portWords))) {
                 row.cited.push(callee);
