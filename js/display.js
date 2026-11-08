@@ -283,8 +283,8 @@ export async function see_nearby_objects() {
         }
     }
 }
-// Part of C display.c:map_glyphinfo(): the object color with corpse and
-// generic rows.
+// Part of C display.c:reset_glyphmap(): the obj_color() and mon_color()
+// rows for object, corpse and statue glyphs.
 export function objectColor(object) {
     if (typeof object.color === 'number' && Number.isInteger(object.color))
         return object.color;
@@ -781,7 +781,8 @@ function objectIsPiletop(object) {
     return Array.isArray(pile) && pile[0] === object && pile.length > 1
         && (object.otyp !== BOULDER || pile[1]?.otyp === BOULDER);
 }
-// Part of C display.c:map_glyphinfo(): the hilite_pile inverse attribute.
+// Part of C wintty.c:tty_print_glyph(): the hilite_pile inverse attribute
+// (MG_OBJPILE).
 function objectGlyphAttr(glyph) {
     const useInverse = game.flags?.use_inverse !== false
         && game.iflags?.wc_inverse !== false
@@ -1674,6 +1675,29 @@ function rogueLevelGlyphColor(glyph, x, y) {
         return cmapToRogueColor(glyphNumber - GlyphOffset.cmapB + CmapSymbol.grave);
     return NO_COLOR;
 }
+// C display.c:map_glyphinfo(): the per-cell color resolution when a glyph
+// reaches the map.  The port resolves each glyph's character and table color
+// where the glyph is built (the per-kind resolvers stand in for glyphmap[]),
+// so map_glyphinfo's own statements run at paint time: the hero tweaks of its
+// is_you branch, and the Rogue-level rules reset_glyphmap() precomputed into
+// the table (the RogueEpyx color tables, else the GMAP_ROGUELEVEL clear that
+// only the showrace highlight survives).
+function mapGlyphInfo(glyph, nextGlyph, x, y, color) {
+    if (!Is_rogue_level(game.u?.uz))
+        return color;
+    // HAS_ROGUE_IBM_GRAPHICS with `Color: Yes` keeps the level's colors
+    // through reset_glyphmap()'s rogue rows; the hero's own glyph turns
+    // yellow there whatever its sex (display.c:2624-2627).
+    if (rogueColorsActive()) {
+        const rogueColor = rogueLevelGlyphColor(nextGlyph, x, y);
+        if (rogueColor !== null)
+            return rogueColor;
+    }
+    // reset_glyphmap() clears every other color on the Rogue level
+    // (GMAP_ROGUELEVEL); map_glyphinfo()'s showrace tweak recolors the
+    // hero's own glyph HI_DOMESTIC even after that clear.
+    return isRogueShowraceHeroGlyph(glyph, x, y) ? color : NO_COLOR;
+}
 // C display.c:show_glyph().
 export async function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr = 0, glyph = null) {
     if (suppressMapOutput() || x === 0)
@@ -1703,19 +1727,7 @@ export async function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false
             && !(glyphIsMonster(old) || game.flags.spot_monsters && glyphIsMonster(nextGlyph.glyph))
             && (x !== game.u.ux || y !== game.u.uy);
     }
-    // display.c:reset_glyphmap() clears every color on the Rogue level
-    // (GMAP_ROGUELEVEL) unless the loaded rogue set declares IBM handling
-    // with `Color: Yes` (RogueEpyx); then the Rogue color tables apply and
-    // the hero turns yellow instead of the showrace highlight.
-    if (Is_rogue_level(game.u?.uz)) {
-        if (rogueColorsActive()) {
-            const rogueColor = rogueLevelGlyphColor(nextGlyph, x, y);
-            if (rogueColor !== null)
-                color = rogueColor;
-        }
-        else if (!isRogueShowraceHeroGlyph(glyph, x, y))
-            color = NO_COLOR;
-    }
+    color = mapGlyphInfo(glyph, nextGlyph, x, y, color);
     // reset_glyphmap() marks a corridor engraving which shares '#'
     // with corridors; tty_print_glyph() makes that glyph inverse.
     if (nextGlyph.glyph === cmapToGlyph(CmapSymbol.engrcorr) && ch === '#'

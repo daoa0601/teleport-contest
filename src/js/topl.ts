@@ -475,13 +475,18 @@ export function toplineRows(
     return lines;
 }
 
-// Part of C topl.c:show_topl(): used for SUPPRESS_HISTORY prose such as getpos
+// C topl.c:show_topl(): show a SUPPRESS_HISTORY line such as getpos
 // autodescribe: addtopl() wraps at the last column without update_topl()'s
 // word splitting, and its extra rows never ask for --More--.
 export function showUnrememberedTopline(message: string, { flushPending = false } = {}): void {
     // C tty_putstr(ATR_NOHISTORY) first moves whatever is pending on the
     // top line into the recall history, then shows the unremembered text.
     if (flushPending) rememberToplines();
+    // show_topl() (topl.c:150-153) hides the line while WIN_STOP is active
+    // without the urgent one-shot NOSTOP; Escape at --More-- sets the stop
+    // and urgent output clears it (pline.ts), so only the stop is tested
+    // here.  The flag stays set, exactly as show_topl's suppressed return.
+    if (game._suppressMessagesUntilInput) return;
     const display = game.nhDisplay;
     if (!display?.grid) return;
     // show_topl() repaints the row from home().
@@ -494,7 +499,8 @@ export function showUnrememberedTopline(message: string, { flushPending = false 
     }
 }
 
-// Part of C topl.c:topl_putsym(): key queries wrap without a More prompt.
+// Part of C topl.c:tty_yn_function(): the key prompt paints its rows the
+// way show_topl's addtopl() does — hard topl_putsym() wrapping, no More.
 // Return the rows covered so tty_yn_function's cleanup can restore the map.
 // Also C topl.c:putsyms(): inlined here to write the prompt's cells.
 export function renderKeyPrompt(message: string, cursorOffset = 0): number {
