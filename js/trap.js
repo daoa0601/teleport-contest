@@ -33,9 +33,9 @@ import { d, rnl, rn2, rnd, rn2Display, rn1 } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { plineWithContinuation, pline, set_msg_xy, formatSeenMessage, formatFeltMessage, formatHeardMessage, publishHeardMessage, recordGameLogEvent, impossible, } from './pline.js';
 import { requireInitializedHero } from './hero_types.js';
-import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
+import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_SLEE, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor, } from './worn.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasMagicResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, monsterStagger, isHeroDefender, resistsBlnd, } from './mondata.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, defended, monsterHasMagicResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, monsterStagger, isHeroDefender, resistsBlnd, } from './mondata.js';
 import { teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, teleds, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds, teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth, } from './teleport.js';
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { canFallThrough } from './dungeon.js';
@@ -50,7 +50,7 @@ import { monsterAtPosition, monsterHasMapPosition, dismountHero, monsterOccupies
 import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, applyFloorEffects } from './do.js';
 import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
-import { artifactById, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
+import { artifactById, defendsWhenCarried, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, maybeHalfPhysicalDamage, } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { displayMessageWindow } from './topl.js';
@@ -955,18 +955,21 @@ export function monsterTrapIsHarmless(monster, trap, state) {
                 [94, 96].includes(monster.mnum) ||
                 whirly);
         case SLP_GAS_TRAP:
-            return monsterResistsSleep(monster);
+            // C trap.c:1134
+            return monsterResistsSleep(monster) || defended(monster, AD_SLEE, state);
         case RUST_TRAP:
             return monster.mnum !== PM_IRON_GOLEM;
         case FIRE_TRAP:
-            return monsterHasFireResistance(monster);
+            // C trap.c:1142
+            return monsterHasFireResistance(monster) || defended(monster, AD_FIRE, state);
         case PIT:
         case SPIKED_PIT:
         case HOLE:
         case TRAPDOOR:
             return monsterIsClinger(monster.mnum) && !sokoban;
         case ANTI_MAGIC:
-            return monsterHasMagicResistance(monster);
+            // C trap.c:1174
+            return monsterHasMagicResistance(monster) || defended(monster, AD_MAGM, state);
         case STATUE_TRAP:
         case MAGIC_TRAP:
         case VIBRATING_SQUARE:
@@ -2047,7 +2050,9 @@ export async function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne
     const weapon = monsterWeapon(monster);
     if (artifactById(weapon?.oartifact)?.name === 'Magicbane')
         damage += rollOne(4);
-    if (monsterInventory(monster).some((object) => artifactById(object?.oartifact)?.carriedDefense === 'magic')) {
+    if (
+    // C trap.c:2425: o->oartifact && defends_when_carried(AD_MAGM, o)
+    monsterInventory(monster).some((object) => defendsWhenCarried('magic', object, state))) {
         damage += rollOne(4);
     }
     if (monsterPassesWalls(monster.mnum))
@@ -2479,9 +2484,12 @@ function heroWieldsMagicbane() {
 }
 // Part of C trap.c:trapeffect_anti_magic(): detect carried non-quest magic defense.
 function heroCarriesNonQuestMagicDefense() {
+    // C trap.c:2365-2367: o->oartifact && !is_quest_artifact(otmp)
+    // && defends_when_carried(AD_MAGM, otmp)
     return (game.inventory || []).some((object) => {
         const artifact = artifactById(object?.oartifact);
-        return artifact && !artifact.questArtifact && artifact.carriedDefense === 'magic';
+        return !!artifact && !artifact.questArtifact
+            && defendsWhenCarried('magic', object, game);
     });
 }
 // Part of C trap.c:trapeffect_anti_magic(): roll and reduce hero compression damage.

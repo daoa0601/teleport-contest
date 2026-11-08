@@ -14,7 +14,7 @@ import { chooseInventoryObject, stack_object } from './invent.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, ENL_GAMEINPROGRESS, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel, LEVEL_TELEP, MAGICENLIGHTENMENT, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR, G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, HEAD, FACE, FOOT, ARM, EYE, LL_CONDUCT, LL_ARTIFACT, LL_WISH, } from './const.js';
 import { isok } from './cmd.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
-import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifact.js';
+import { heroHasCarriedArtifactFlag, artifactById, defends, defendsWhenCarried } from './artifact.js';
 import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom, currentAttribute, poisonHero } from './attrib.js';
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
 import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, set_msg_dir, impossible, } from './pline.js';
@@ -53,13 +53,13 @@ import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { chargeUnpaidUsage, addShopDamage, payForShopDamage, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasTimedProperty, hasWornProperty } from './properties.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
+import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2, AD_DRLI } from './monster_attack_types.js';
 import { showInventoryWindow } from './windows.js';
 import { useUpFloorObject } from './invent.js';
 import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance, checkMonsterGearNextTurn, } from './mon.js';
 import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, removeObjectFromMonsterInventory, removeHeroEquipment, } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
-import { monsterHasMagicResistance } from './mondata.js';
+import { defended, monsterHasMagicResistance, resistsBlndByArtifact } from './mondata.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
 import { recordMappedOverviewState, ceilingName, surfaceName, In_mines, Invocation_lev } from './dungeon.js';
@@ -1505,8 +1505,9 @@ export async function drainObjectEnchantment(object, { random = rn2, byHero = fa
     if (!objectCharged(object.otyp)
         && ![WEAPON_CLASS, ARMOR_CLASS].includes(object.oclass) && !weaponTool)
         return false;
-    const artifact = artifactById(object.oartifact);
-    if (artifact?.defense === 'life-drain' || artifact?.carriedDefense === 'life-drain'
+    // C zap.c:1392: defends(AD_DRLI, obj) || defends_when_carried(AD_DRLI,
+    // obj); dragon armor of the matching color resists through defends().
+    if (defends(AD_DRLI, object, state) || defendsWhenCarried(AD_DRLI, object, state)
         || objectResistsDestruction(object, 10, 90, random))
         return false;
     if (byHero)
@@ -2840,7 +2841,7 @@ export async function flashBurn(duration, viaLightning = false, { state = game, 
             await publish('Your vision clears.');
         return true;
     }
-    if (!viaLightning && heroHasArtifactDefense('blindness', state)) {
+    if (!viaLightning && resistsBlndByArtifact({ youmonst: true }, state)) {
         await shieldeff(state.u.ux, state.u.uy, state);
         return true;
     }
@@ -3677,7 +3678,8 @@ async function damageRayMonster(monster, nativeType, dice, { state, publish, ran
     }
     else if (damageType === AD_ELEC) {
         sourceDamage = spellDamage(rollDice(dice, 6));
-        hit.resisted = monsterHasShockResistance(monster);
+        hit.resisted = monsterHasShockResistance(monster)
+            || defended(monster, AD_ELEC, state);
         hit.damage = hit.resisted ? 0 : sourceDamage;
         if (!inside && dice > 2 && !resistsBlnd({ monster }, state)) {
             monster.mcansee = 0;
@@ -3878,17 +3880,19 @@ export function rayDamageType(type) {
 }
 // Part of C zap.c:zhitm(): select the target monster's resistance for the ray element.
 function rayResistance(monster, damageType, state) {
+    // C zap.c:zhitm(): every elemental case is resists_X(mon) ||
+    // defended(mon, AD_X) — the dragon-scales/wielded-artifact term
+    // (zap.c:4252, 4261, 4279, 4367, 4374).
     if (damageType === AD_MAGM)
-        return monsterHasMagicResistance(monster);
+        return monsterHasMagicResistance(monster) || defended(monster, AD_MAGM, state);
     if (damageType === AD_FIRE)
-        return monsterHasFireResistance(monster);
+        return monsterHasFireResistance(monster) || defended(monster, AD_FIRE, state);
     if (damageType === AD_COLD)
-        return monsterHasColdResistance(monster);
+        return monsterHasColdResistance(monster) || defended(monster, AD_COLD, state);
     if (damageType === AD_DRST)
-        return monsterHasPoisonResistance(monster)
-            || artifactById(monsterWieldedWeapon(monster)?.oartifact, state)?.defense === 'poison';
+        return monsterHasPoisonResistance(monster) || defended(monster, AD_DRST, state);
     if (damageType === AD_ACID)
-        return monsterHasAcidResistance(monster);
+        return monsterHasAcidResistance(monster) || defended(monster, AD_ACID, state);
     return false;
 }
 // C zap.c:zhitu().

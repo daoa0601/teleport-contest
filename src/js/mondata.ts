@@ -53,8 +53,8 @@ import {
     AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP,
 } from './monster_attack_types.js';
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
-import { dragonFormForArmor, heroHasNoHead, heroIsBreathless, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
-import { artifactById, heroHasArtifactDefense, monsterHasArtifactDefense } from './artifact.js';
+import { heroHasNoHead, heroIsBreathless, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
+import { artifactById, defends, defendsWhenCarried } from './artifact.js';
 import type { ArtifactDefender, ArtifactDefenseQuery } from './artifact.js';
 import { currentAttribute } from './attrib.js';
 import {
@@ -326,75 +326,35 @@ export function resolveMonsterClass(value: string): MonsterClassMatch {
     return { monsterClass: mnum < 0 ? 0 : (MONSTER_SYMBOL[mnum] ?? 0), mnum };
 }
 
-// Native mondata.c:defended() and artifact.c:defends(). This is the
-// wielded-weapon/dragon-body check; innate and carried resistances are separate.
-const ARTIFACT_DEFENSE: Partial<Record<DamageType, ArtifactDefense | null>> = {
-    [AD_PHYS]: null, [AD_DRLI]: 'life-drain', [AD_DRST]: 'poison',
-    [AD_MAGM]: 'magic', [AD_COLD]: 'cold', [AD_FIRE]: 'fire',
-    [AD_WERE]: 'lycanthropy', [AD_BLND]: 'blindness',
-};
-const DRAGON_DEFENSE: Partial<Record<DamageType, number>> = {
-    [AD_MAGM]: MONSTER_NAME.indexOf('gray dragon'),
-    [AD_HALU]: MONSTER_NAME.indexOf('gold dragon'),
-    [AD_FIRE]: MONSTER_NAME.indexOf('red dragon'),
-    [AD_COLD]: MONSTER_NAME.indexOf('white dragon'),
-    [AD_DRST]: MONSTER_NAME.indexOf('green dragon'),
-    [AD_DISE]: MONSTER_NAME.indexOf('green dragon'),
-    [AD_SLEE]: MONSTER_NAME.indexOf('orange dragon'),
-    [AD_PLYS]: MONSTER_NAME.indexOf('orange dragon'),
-    [AD_DISN]: MONSTER_NAME.indexOf('black dragon'),
-    [AD_DRLI]: MONSTER_NAME.indexOf('black dragon'),
-    [AD_ELEC]: MONSTER_NAME.indexOf('blue dragon'),
-    [AD_SLOW]: MONSTER_NAME.indexOf('blue dragon'),
-    [AD_ACID]: MONSTER_NAME.indexOf('yellow dragon'),
-    [AD_STON]: MONSTER_NAME.indexOf('yellow dragon'),
-};
+// C mondata.c:defended(): is 'mon' — the hero or a monster — protected
+// against damage type 'adtyp' via a wielded artifact's defn or dragon
+// scales, worn as body armor or implicit in an adult dragon's own body?
+// Unlike artifact.c:defends_when_carried(), items that merely defend while
+// carried do not count.  'adtyp' accepts the numeric attack type or the
+// artifact query spelling; artifact.c:defends() normalizes the number.
 const FIRST_DRAGON = MONSTER_NAME.indexOf('gray dragon');
 const LAST_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
 
-// Part of C mondata.c:defended(): the damage-type form.
-export function monsterCombatDefense(
-    monster: Monster, damageType: DamageType, state: GameState = game,
+export function defended(
+    mon: ArtifactDefender | { readonly youmonst: true },
+    adtyp: DamageType | ArtifactDefenseQuery,
+    state: GameState = game,
 ): boolean {
-    const artifact = artifactById(monsterWieldedWeapon(monster)?.oartifact, state);
-    const defense = ARTIFACT_DEFENSE[damageType];
-    if (artifact && defense !== undefined && (artifact.defense ?? null) === defense) return true;
-    const armor = (monster.minvent ?? monster.inventory ?? [])
-        .find(object => (object.owornmask ?? 0) & W_ARM);
-    const dragon = monster.mnum >= FIRST_DRAGON && monster.mnum <= LAST_DRAGON
-        ? monster.mnum : dragonFormForArmor(armor);
-    return dragon !== null && dragon === DRAGON_DEFENSE[damageType];
-}
+    const isYou = 'youmonst' in mon;
+    /* is 'mon' wielding an artifact that protects against 'adtyp'? */
+    const weapon = isYou ? state.uwep || state.u?.uwep : monsterWieldedWeapon(mon);
+    if (weapon?.oartifact && defends(adtyp, weapon, state)) return true;
 
-// C mondata.c:defended() — explmu()'s base immunity test for the exploding
-// monster itself: a wielded artifact that defends against the damage type,
-// or dragon scales — worn as body armor, or implicit in an adult dragon's
-// own body. Unlike artifact.c's carries-defense helpers, items that merely
-// defend while carried do not count.
-const SCALE_DEFENDING_DRAGON: Partial<Record<NonNullable<ArtifactDefenseQuery>, string>> = {
-    fire: 'red dragon',
-    cold: 'white dragon',
-    shock: 'blue dragon',
-    hallucination: 'gold dragon',
-};
-
-// C mondata.c:defended(): the artifact-defense-query form.
-export function monsterWieldsOrWearsDefense(
-    monster: ArtifactDefender | null | undefined,
-    damageType: ArtifactDefenseQuery,
-    state: GameState,
-): boolean {
-    if (!monster || damageType == null) return false;
-    const weapon = monsterWieldedWeapon(monster);
-    if (artifactById(weapon?.oartifact, state)?.defense === damageType) return true;
-    const dragonName = SCALE_DEFENDING_DRAGON[damageType];
-    if (!dragonName) return false;
-    const defender = MONSTER_NAME.indexOf(dragonName);
-    if (defender < 0) return false;
-    if (monster.mnum === defender) return true; /* an adult dragon is its own suit */
-    const worn = (monster.minvent || monster.inventory || [])
-        .find(object => ((object.owornmask ?? 0) & W_ARM) !== 0);
-    return dragonFormForArmor(worn) === defender;
+    /* if 'mon' is an adult dragon it is its own suit of scales; a poly'd
+       hero gains nothing from embedded uskin scales beyond being a dragon */
+    const mnum = isYou ? heroSpecies(state) : mon.mnum;
+    const armor = mnum >= FIRST_DRAGON && mnum <= LAST_DRAGON
+        ? { otyp: GRAY_DRAGON_SCALES + (mnum - FIRST_DRAGON) }
+        : isYou ? state.uarm || state.u?.uarm
+          : (mon.minvent ?? mon.inventory ?? [])
+              .find(object => ((object.owornmask ?? 0) & W_ARM) !== 0);
+    /* is 'mon' wearing dragon scales that protect against 'adtyp'? */
+    return armor !== null && armor !== undefined && defends(adtyp, armor, state);
 }
 
 /** One side of C's can_blnd()/resists_blnd() monst argument: &gy.youmonst
@@ -425,9 +385,21 @@ export function resistsBlnd(mdef: BlindCombatant, state: GameState = game): bool
         damage === AD_BLND && (method === AT_EXPL || method === AT_GAZE)))
         return true;
     /* Sunsword, and artifacts that defend while carried */
-    return 'youmonst' in mdef
-        ? heroHasArtifactDefense('blindness', state)
-        : monsterHasArtifactDefense(mdef.monster, 'blindness', state);
+    return resistsBlndByArtifact(mdef, state);
+}
+
+// C mondata.c:resists_blnd_by_arti(): a wielded artifact that defends
+// against light-induced blindness (Sunsword) or any carried artifact that
+// defends against it while carried.
+export function resistsBlndByArtifact(mdef: BlindCombatant, state: GameState = game): boolean {
+    const weapon = 'youmonst' in mdef
+        ? state.uwep || state.u?.uwep
+        : monsterWieldedWeapon(mdef.monster);
+    if (weapon?.oartifact && defends('blindness', weapon, state)) return true;
+    const inventory = 'youmonst' in mdef
+        ? state.inventory
+        : mdef.monster.minvent ?? mdef.monster.inventory;
+    return (inventory || []).some(object => defendsWhenCarried('blindness', object, state));
 }
 
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
@@ -925,9 +897,6 @@ const M2_WERE = 0x00000004;
 const M2_DEMON = 0x00000100;
 const M2_STALK = 0x01000000;
 const PM_DEATH = 311;
-const PM_BLACK_DRAGON = MONSTER_NAME.indexOf('black dragon');
-const PM_GRAY_DRAGON = MONSTER_NAME.indexOf('gray dragon');
-const PM_YELLOW_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
 
 // C mtmp->minvent: the monster inventory list; the port also accepts the
 // restored 'inventory' spelling.
@@ -952,11 +921,13 @@ export function monsterResistanceBits(monster: ResistantMonster | null | undefin
         | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
 }
 
-// Part of C mondata.c:Resists_Elem(): the artifact defense halves.
+// Part of C mondata.c:Resists_Elem(): the artifact defense halves — a
+// wielded artifact's defends() (mondata.c:175) and any carried artifact's
+// defends_when_carried() (mondata.c:194).
 function monsterArtifactDefends(monster: ResistantMonster | null | undefined, element: 'fire' | 'cold' | 'shock' | 'poison'): boolean {
-    return artifactById(monsterWieldedWeapon(monster)?.oartifact)?.defense === element
-        || monsterInventory(monster).some(object =>
-            artifactById(object?.oartifact)?.carriedDefense === element);
+    const weapon = monsterWieldedWeapon(monster);
+    return (weapon?.oartifact && defends(element, weapon))
+        || monsterInventory(monster).some(object => defendsWhenCarried(element, object));
 }
 
 // C monst.h:resists_fire():
@@ -990,12 +961,7 @@ export function monsterHasDrainResistance(monster: ResistantMonster | null | und
     return (monsterIsUndead(monster.mnum) || is_were(monster.mnum) || monsterIsDemon(monster.mnum))
         || monster?.mnum === PM_DEATH
         || monsterIsVampireShifter(monster)
-        || artifactById(monsterWieldedWeapon(monster)?.oartifact)?.defense === 'life-drain'
-        || (monster.mnum >= PM_GRAY_DRAGON && monster.mnum <= PM_YELLOW_DRAGON
-            ? monster.mnum === PM_BLACK_DRAGON
-            : monsterWearsOneOf(monster, [
-                BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES,
-            ], W_ARM));
+        || defended(monster, AD_DRLI);
 }
 
 // Part of C mondata.c:resists_drli(): the youmonst form.
@@ -1005,15 +971,9 @@ export function heroResistsLifeDrain(state: GameState = game): boolean {
     const hero = state.u;
     const form: ResistantMonster = { mnum: heroSpecies(state) };
     if (hero.mcham !== undefined) form.cham = hero.mcham;
-    const armor = state.uarm || hero.uarm;
-    const weapon = state.uwep || hero.uwep;
-    const dragonBody = form.mnum >= PM_GRAY_DRAGON && form.mnum <= PM_YELLOW_DRAGON;
     return monsterHasDrainResistance(form)
         || (typeof hero.ulycn === 'number' && Number.isInteger(hero.ulycn) && hero.ulycn >= 0)
-        || (!dragonBody
-            && armor !== null && armor !== undefined
-            && [BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES].includes(armor.otyp))
-        || artifactById(weapon?.oartifact)?.defense === 'life-drain';
+        || defended({ youmonst: true }, AD_DRLI, state);
 }
 
 // C monst.h:resists_acid():
@@ -1058,9 +1018,9 @@ export function monsterHasMagicResistance(monster: ResistantMonster | null | und
     }
 
     const weapon = monsterWieldedWeapon(monster);
-    if (artifactById(weapon?.oartifact)?.defense === 'magic') return true;
+    if (weapon?.oartifact && defends('magic', weapon)) return true;
     return monsterInventory(monster).some((object) => {
-        if (artifactById(object?.oartifact)?.carriedDefense === 'magic') return true;
+        if (defendsWhenCarried('magic', object)) return true;
         return (
             ANTIMAGIC_ARMOR.has(object?.otyp)
             && !!((object?.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_WEP))

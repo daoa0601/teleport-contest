@@ -154,7 +154,7 @@ import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, mo
 import { PM_FIRE_ELEMENTAL, PM_SALAMANDER } from './mklev.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 
-import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
+import { artifactById, defends, defendsWhenCarried, heroHasCarriedArtifactFlag } from './artifact.js';
 import { isWeaponTool, isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import {
     applyPickAxeDirection, diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext,
@@ -2979,8 +2979,15 @@ export function checkSlipperyIce(): void {
         const appearance = boots && (OBJ_DESCR(boots.otyp));
 
         const symbol = MONSTER_SYMBOL[skater.mnum];
+        // C hack.c:2402 reads resists_cold(iceskater): for the hero that is
+        // Resists_Elem(&youmonst, COLD_RES) — the property bits above plus
+        // a wielded artifact's defends() and any carried artifact's
+        // defends_when_carried() (mondata.c:174-195).
         const coldSkater = hero.usteed ? monsterHasColdResistance(hero.usteed)
-            : propertyIsActive('coldResistance', game) || heroHasArtifactDefense('cold', game);
+            : propertyIsActive('coldResistance', game)
+                || defends('cold', game.uwep || hero.uwep, game)
+                || (game.inventory || []).some(
+                    object => defendsWhenCarried('cold', object, game));
         if (appearance === 'snow boots' || coldSkater
             || propertyIsActive('flying', game) || symbol === 5 || symbol === 25
             || monsterIsClinger(skater.mnum) || monsterIsWhirly(skater)) {

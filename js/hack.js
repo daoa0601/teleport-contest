@@ -50,7 +50,7 @@ import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt, mo
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, monsterDigests, monsterIsFloater, grounded } from './mondata.js';
 import { PM_FIRE_ELEMENTAL, PM_SALAMANDER } from './mklev.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
-import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
+import { artifactById, defends, defendsWhenCarried, heroHasCarriedArtifactFlag } from './artifact.js';
 import { isWeaponTool, isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { applyPickAxeDirection, diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, } from './dig.js';
 import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
@@ -2877,8 +2877,14 @@ export function checkSlipperyIce() {
         const boots = game.uarmf ?? hero.uarmf;
         const appearance = boots && (OBJ_DESCR(boots.otyp));
         const symbol = MONSTER_SYMBOL[skater.mnum];
+        // C hack.c:2402 reads resists_cold(iceskater): for the hero that is
+        // Resists_Elem(&youmonst, COLD_RES) — the property bits above plus
+        // a wielded artifact's defends() and any carried artifact's
+        // defends_when_carried() (mondata.c:174-195).
         const coldSkater = hero.usteed ? monsterHasColdResistance(hero.usteed)
-            : propertyIsActive('coldResistance', game) || heroHasArtifactDefense('cold', game);
+            : propertyIsActive('coldResistance', game)
+                || defends('cold', game.uwep || hero.uwep, game)
+                || (game.inventory || []).some(object => defendsWhenCarried('cold', object, game));
         if (appearance === 'snow boots' || coldSkater
             || propertyIsActive('flying', game) || symbol === 5 || symbol === 25
             || monsterIsClinger(skater.mnum) || monsterIsWhirly(skater)) {

@@ -227,7 +227,7 @@ import {
 } from './const.js';
 import { isok } from './cmd.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
-import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifact.js';
+import { heroHasCarriedArtifactFlag, artifactById, defends, defendsWhenCarried } from './artifact.js';
 import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom, currentAttribute, poisonHero } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
@@ -328,7 +328,7 @@ import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { chargeUnpaidUsage, addShopDamage, payForShopDamage, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasTimedProperty, hasWornProperty } from './properties.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
+import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2, AD_DRLI } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventorySection } from './windows.js';
@@ -350,7 +350,7 @@ import {
     removeObjectFromMonsterInventory, removeHeroEquipment,
 } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
-import { monsterHasMagicResistance } from './mondata.js';
+import { defended, monsterHasMagicResistance, resistsBlndByArtifact } from './mondata.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
 import type { HeroMonsterKillOptions, HeroLiquidMonsterDeathOutcome, HeroMonsterDeathContext } from './mon.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
@@ -2236,8 +2236,9 @@ export async function drainObjectEnchantment(object: GameObject | null | undefin
     if (!objectCharged(object.otyp)
         && ![WEAPON_CLASS, ARMOR_CLASS].includes(object.oclass) && !weaponTool)
         return false;
-    const artifact = artifactById(object.oartifact);
-    if (artifact?.defense === 'life-drain' || artifact?.carriedDefense === 'life-drain'
+    // C zap.c:1392: defends(AD_DRLI, obj) || defends_when_carried(AD_DRLI,
+    // obj); dragon armor of the matching color resists through defends().
+    if (defends(AD_DRLI, object, state) || defendsWhenCarried(AD_DRLI, object, state)
         || objectResistsDestruction(object, 10, 90, random)) return false;
     if (byHero) await chargeAlteredUnpaidObject(object, 'drain', state);
     object.spe--;
@@ -3501,7 +3502,7 @@ export async function flashBurn(duration: number, viaLightning = false, {
         if (!heroIsBlind(state)) await publish('Your vision clears.');
         return true;
     }
-    if (!viaLightning && heroHasArtifactDefense('blindness', state)) {
+    if (!viaLightning && resistsBlndByArtifact({ youmonst: true }, state)) {
         await shieldeff(state.u.ux, state.u.uy, state);
         return true;
     }
@@ -4301,7 +4302,8 @@ async function damageRayMonster(monster: Monster, nativeType: number, dice: numb
         }
     } else if (damageType === AD_ELEC) {
         sourceDamage = spellDamage(rollDice(dice, 6));
-        hit.resisted = monsterHasShockResistance(monster);
+        hit.resisted = monsterHasShockResistance(monster)
+            || defended(monster, AD_ELEC, state);
         hit.damage = hit.resisted ? 0 : sourceDamage;
         if (!inside && dice > 2 && !resistsBlnd({ monster }, state)) {
             monster.mcansee = 0;
@@ -4517,12 +4519,19 @@ export function rayDamageType(type: number): DamageType {
 
 // Part of C zap.c:zhitm(): select the target monster's resistance for the ray element.
 function rayResistance(monster: Monster, damageType: DamageType, state: GameState) {
-    if (damageType === AD_MAGM) return monsterHasMagicResistance(monster);
-    if (damageType === AD_FIRE) return monsterHasFireResistance(monster);
-    if (damageType === AD_COLD) return monsterHasColdResistance(monster);
-    if (damageType === AD_DRST) return monsterHasPoisonResistance(monster)
-        || artifactById(monsterWieldedWeapon(monster)?.oartifact, state)?.defense === 'poison';
-    if (damageType === AD_ACID) return monsterHasAcidResistance(monster);
+    // C zap.c:zhitm(): every elemental case is resists_X(mon) ||
+    // defended(mon, AD_X) — the dragon-scales/wielded-artifact term
+    // (zap.c:4252, 4261, 4279, 4367, 4374).
+    if (damageType === AD_MAGM)
+        return monsterHasMagicResistance(monster) || defended(monster, AD_MAGM, state);
+    if (damageType === AD_FIRE)
+        return monsterHasFireResistance(monster) || defended(monster, AD_FIRE, state);
+    if (damageType === AD_COLD)
+        return monsterHasColdResistance(monster) || defended(monster, AD_COLD, state);
+    if (damageType === AD_DRST)
+        return monsterHasPoisonResistance(monster) || defended(monster, AD_DRST, state);
+    if (damageType === AD_ACID)
+        return monsterHasAcidResistance(monster) || defended(monster, AD_ACID, state);
     return false;
 }
 

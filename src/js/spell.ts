@@ -64,8 +64,9 @@ import { wakeMonster, monstersInFmonOrder,
 } from './mon.js';
 import {
     monsterHasShockResistance, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter,
-    monsterIsWhirly, eyecount, heroCanChant,
+    monsterIsWhirly, eyecount, heroCanChant, defended,
 } from './mondata.js';
+import { AD_ELEC } from './monster_attack_types.js';
 import { MONSTER_ALIGNMENT, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { definiteObjectAction, makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectIsMetallic } from './object_properties.js';
@@ -1402,7 +1403,10 @@ async function propagateLightning(queue: LightningStep[], painted: TemporaryMapE
     if (!open) return;
     const monster = monsterAtPosition(state.level, x, y);
     if (monster?.mpeaceful) return;
-    const strength = monster ? monsterHasShockResistance(monster) ? 0 : 3 : zap.strength;
+    // C spell.c:975: !resists_elec(mon) && !defended(mon, AD_ELEC)
+    const strength = monster
+        ? monsterHasShockResistance(monster) || defended(monster, AD_ELEC, state) ? 0 : 3
+        : zap.strength;
     if (!monster && !strength) return;
     if (queue.some(queued => queued.x === x && queued.y === y)) return;
     queue.push({ direction: zap.direction, x, y, strength });
