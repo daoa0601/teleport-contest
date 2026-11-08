@@ -203,10 +203,6 @@ function fountainActorGone(mnum) {
 function fountainActorIndefiniteName(monster) {
     return monsterName(monster, { article: 'a' });
 }
-// Port only: capitalized monster-name adapter for mintrap()'s messages.
-function fountainActorVisibleSubject(monster) {
-    return monsterName(monster, { capitalized: true });
-}
 // Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
 // the t_at(mtmp->mx, mtmp->my) test.
 function fountainTrapAt(monster) {
@@ -220,7 +216,7 @@ async function triggerFountainTrap(monster) {
     // first half, so the completion runs unconditionally as in C's single
     // mintrap() call (fountain.c:55).
     await mintrap(monster, state, {
-        describeMonster: fountainActorVisibleSubject,
+        describeMonster: monster => monsterName(monster, { capitalized: true }),
         publish: plineWithContinuation,
     });
     return { heroDied: !!state.program_state.gameover };
@@ -569,13 +565,10 @@ export async function washHands() {
     const result = game.uarmg ? await waterDamageObject(game.uarmg, [], game, { force: true, publish: pline }) : 'nothing';
     return glib && result === 'nothing' ? 'greased' : result;
 }
-// Port only: resolve a lazy message part.
-function resolvedLiquidName(liquidName) {
-    return typeof liquidName === 'function' ? liquidName() : liquidName;
-}
-// Port only: resolve a lazy message part.
-function resolvedArmName(armName) {
-    return typeof armName === 'function' ? armName() : armName;
+// Port only: resolve a lazy message part (names computed only when the
+// message that uses them is printed).
+function resolvedPart(part) {
+    return typeof part === 'function' ? part() : part;
 }
 // Part of C fountain.c:dipfountain(): the fate 26 and 27 strange-feeling
 // messages.
@@ -583,7 +576,7 @@ export function resolveDippedSensationFate({ fate, armName = 'arm' }) {
     if (fate === 26) {
         return {
             handled: true,
-            message: `A strange tingling runs up your ${resolvedArmName(armName)}.`,
+            message: `A strange tingling runs up your ${resolvedPart(armName)}.`,
         };
     }
     if (fate === 27) {
@@ -635,7 +628,7 @@ export async function applyDippedCoinFate({ fate, loc, dungeonLevels = 1, dungeo
     loc.looted = (loc.looted ?? 0) | 1;
     await createGold(effect.quantity);
     const message = effect.showMessage
-        ? dippedCoinMessage(resolvedLiquidName(liquidName))
+        ? dippedCoinMessage(resolvedPart(liquidName))
         : '';
     exerciseWisdom();
     await repaint();
