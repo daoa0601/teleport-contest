@@ -4,8 +4,8 @@ import { LARGE_BOX, OIL_LAMP } from '../js/object_data.js';
 import { SIZEOF_OEXTRA } from '../js/const.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { createGasCloudSelection, regionStats, restoreLevelRegions, runLevelRegions, updateMonsterRegions } from '../js/region.js';
-import { lightSourceRecords, restoreLevelLightSources } from '../js/light.js';
+import { createGasCloudSelection, restoreLevelRegions, runLevelRegions, updateMonsterRegions } from '../js/region.js';
+import { restoreLevelLightSources } from '../js/light.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -158,20 +158,31 @@ async function statsWindowRows() {
     return screens.filter(rows => rows[23]?.trimEnd() === '--More--')
         .flatMap(rows => rows.slice(0, 23).map(row => row.trimEnd()));
 }
+// Run #lightsources and return its printed source rows, newest first, in
+// the window's own order (the data rows of light.c:953's listing).
+async function lightsourcesWindowRows() {
+    const screens = captureScreens();
+    await runExtendedCommand('lightsources', ' ');
+    const windowScreens = screens.filter(rows => rows.some(row => row.includes('Mobile light sources:')));
+    const window = windowScreens[0];
+    assert.ok(window, 'the listing must render a window');
+    return window.filter(row => /^ *\d+, *\d+ +\d/.test(row));
+}
 void test('#lightsources orders sources by registration across kinds', async () => {
     await freshLitLampRoom();
     const olderVortex = await createMonsterAt('fire vortex', 12, 10);
     // C light.c:83-90 prepends every registration: the newborn's light was
-    // registered after the lamp's, so the monster line leads the listing.
-    let records = lightSourceRecords(game);
-    assert.equal(records[0]?.kind, 'mon');
-    assert.equal(records[1]?.kind, 'obj');
+    // registered after the lamp's, so the monster line leads the listing
+    // (light.c:953's row format "  %2d,%2d   %2d   0x%04x  %s  %s").
+    let rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', / 12,10 {4}1 {3}0x0001 {2}mon {2}0x[0-9a-f]+/);
+    assert.match(rows[1] ?? '', / 10,10 {4}3 {3}0x0001 {2}obj {2}0x[0-9a-f]+/);
     // A still newer registration takes the head.
     const newerVortex = await createMonsterAt('fire vortex', 13, 10);
-    records = lightSourceRecords(game);
-    assert.equal(records[0]?.idText, `0x${newerVortex.m_id.toString(16)}`);
-    assert.equal(records[1]?.idText, `0x${olderVortex.m_id.toString(16)}`);
-    assert.equal(records[2]?.kind, 'obj');
+    rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', new RegExp(`13,10 {4}1 {3}0x0001 {2}mon {2}0x${newerVortex.m_id.toString(16)}`));
+    assert.match(rows[1] ?? '', new RegExp(`12,10 {4}1 {3}0x0001 {2}mon {2}0x${olderVortex.m_id.toString(16)}`));
+    assert.match(rows[2] ?? '', / 10,10 {4}3 {3}0x0001 {2}obj {2}0x[0-9a-f]+/);
 });
 void test('#lightsources clears the coordinates of unlocatable sources', async () => {
     const lamp = await freshLitLampRoom();
@@ -188,11 +199,9 @@ void test('#lightsources clears the coordinates of unlocatable sources', async (
     // light.c:373) still prints "mon".
     const vortex = await createMonsterAt('fire vortex', 12, 10);
     vortex.mburied = 1;
-    const records = lightSourceRecords(game);
-    const lampRecord = records.find(record => record.kind === 'obj' && record.idText === `0x${lamp.o_id.toString(16)}`);
-    assert.deepEqual([lampRecord?.x, lampRecord?.y, lampRecord?.show], [0, 0, false]);
-    const vortexRecord = records.find(record => record.kind === 'mon');
-    assert.deepEqual([vortexRecord?.x, vortexRecord?.y, vortexRecord?.show], [0, 0, false]);
+    const listing = (await lightsourcesWindowRows()).join('\n');
+    assert.match(listing, new RegExp(`0, 0 {4}3 {3}0x0000 {2}obj {2}0x${lamp.o_id.toString(16)}`));
+    assert.match(listing, new RegExp(`0, 0 {4}1 {3}0x0000 {2}mon {2}0x${vortex.m_id.toString(16)}`));
 });
 void test('#stats counts retained oextra and mextra allocations', async () => {
     await freshObjectRoom({ flags: { debug: true } });
@@ -235,33 +244,38 @@ void test('a level reload reverses its monster light batch ahead of older lights
     const vortex = await createMonsterAt('fire vortex', 12, 10);
     const lamp = await addInventoryObject(OIL_LAMP);
     assert.equal(beginObjectBurn(lamp, game), true);
-    // The lamp was lit after the newborn, so it currently leads.
-    assert.equal(lightSourceRecords(game)[0]?.kind, 'obj');
+    // The lamp was lit after the newborn, so it currently leads the
+    // listing.
+    let rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', /10,10 {4}3 {3}0x0001 {2}obj/);
     // C light.c:487-491: restore_light_sources() pushes each saved entry
     // back onto the front of light_base, so the level's batch — its
     // resident monsters included (light.c:452-453 saves a monster's source
     // with its level when mon_is_local()) — returns ahead of the hero's
     // carried lights that never left the list.
     restoreLevelLightSources(game);
-    const records = lightSourceRecords(game);
-    assert.equal(records[0]?.idText, `0x${vortex.m_id.toString(16)}`);
-    assert.equal(records[1]?.kind, 'obj');
+    rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', new RegExp(`12,10 {4}1 {3}0x0001 {2}mon {2}0x${vortex.m_id.toString(16)}`));
+    assert.match(rows[1] ?? '', /10,10 {4}3 {3}0x0001 {2}obj/);
 });
 void test('#stats records a restored region capacity even without a live allocation', async () => {
     await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
-    // A level whose regions arrived from a save (not through add_region())
-    // has no capacity entry yet; rest_regions() (region.c:814-815) still
-    // records max_regions for it.
-    const level = game.level;
-    assert.ok(level, 'the fixture must install a level');
-    level.regions.push({ kind: 'gas-cloud', visible: true, damage: 0, ttl: 1,
-        cells: [{ x: 9, y: 9 }], monsterIds: [], heroInside: false });
-    await restoreLevelRegions(game, 0);
-    // Expiry later removes the region; the recorded capacity remains.
-    level.regions.length = 0;
-    const stats = regionStats(game);
-    assert.deepEqual([stats.count, stats.size], [0, 96]);
+    // A cloud saved with the game loses the session's allocation
+    // bookkeeping on reload (gm.max_regions is runtime-only); rest_regions()
+    // (region.c:814-815) still records the restored count for the level.
+    await createGasCloudSelection(game, [{ x: 9, y: 9 }], 1, 0);
+    game.plname = 'Regioncap';
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(await restoreGame('Regioncap', storage), true);
+    // Two turns age the ttl-1 cloud to expiry; region_stats() (region.c:910)
+    // still sizes the restored slot.
+    await runLevelRegions(game);
+    await runLevelRegions(game);
+    assert.equal(game.level?.regions.length, 0);
+    const rows = await statsWindowRows();
+    assert.ok(rows.includes(statsRow('regions, size 96+8*rect+N', 0, 96)), `restored-capacity row missing from:\n${rows.join('\n')}`);
 });
 void test('#stats excludes a null oextra like the unallocated pointer', async () => {
     await freshObjectRoom({ flags: { debug: true } });
@@ -277,16 +291,12 @@ void test('#stats sizes a region\'s retained monster-id capacity', async () => {
     await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const newt = await createMonsterAt('newt', 9, 9);
-    // A founding monster joined through add_mon_to_reg(): its id array
-    // holds MONST_INC = 5 slots (region.c:174-184).
+    // The founding newt joined through add_mon_to_reg(), leaving
+    // MONST_INC = 5 id slots (region.c:174-184); walking out never shrinks
+    // them (remove_mon_from_reg(), region.c:192-202), and region_stats()
+    // sizes that retained capacity (region.c:919).
     await createGasCloudSelection(game, [{ x: 9, y: 9 }, { x: 10, y: 9 }], 4, 0);
-    const cloud = game.level?.regions[0];
-    assert.ok(cloud, 'the cloud must join the level');
-    assert.deepEqual([cloud.monsterIds, cloud.maxMonst], [[newt.m_id], 5]);
-    // The monster walks out; remove_mon_from_reg() (region.c:192-202) never
-    // shrinks the capacity that region_stats() sizes (region.c:919).
     updateMonsterRegions(newt, game, { x: 14, y: 12 });
-    assert.deepEqual(cloud.monsterIds, []);
     const rows = await statsWindowRows();
     // 10 region slots + 2 cells + 5 id slots.
     assert.ok(rows.includes(statsRow('regions, size 96+8*rect+N', 1, 10 * 96 + 2 * 8 + 5 * 4)), `retained monster-id capacity missing from:\n${rows.join('\n')}`);
@@ -306,13 +316,16 @@ void test('#stats sizes an allocated emin record without isminion', async () => 
     const rows = await statsWindowRows();
     assert.ok(rows.includes(statsRow('fmon', 1, 192 + 64 + 8)), `emin-sized fmon row missing from:\n${rows.join('\n')}`);
 });
-void test('#stats counts the sick delayed killer alongside stoned and slimed', async () => {
+void test('#stats counts every installed delayed killer', async () => {
     await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
-    // make_sick() installs delayed_killer(SICK,...) (potion.c:178-188); the
-    // port's record is u.sickCause.
+    // make_sick() installs delayed_killer(SICK,...) (potion.c:178-188; the
+    // port's record is u.sickCause), and a polymorphed hero who genocides
+    // their own species installs delayed_killer(POLYMORPH,...)
+    // (read.c:2984-2985; the port's record is the genocide cause).
     game.u.sickCause = 'food poisoning';
+    game._polymorphGenocideCause = 'scroll';
     const rows = await statsWindowRows();
-    assert.ok(rows.includes(statsRow('delayed killer, size 272', 1, 272)), `sick delayed-killer row missing from:\n${rows.join('\n')}`);
+    assert.ok(rows.includes(statsRow('delayed killers, size 272', 2, 544)), `delayed-killer row missing from:\n${rows.join('\n')}`);
 });
 //# sourceMappingURL=wizard_lightsources_stats.test.js.map

@@ -1337,10 +1337,14 @@ function miscStats(lines, state, totals) {
     // C svk.killer.next: one struct kinfo per installed delayed killer.  The
     // port records the stoned, slimed and sick killers on the hero
     // (potion.c:make_stoned()/make_slimed(), and make_sick() at
-    // potion.c:178-188 whose delayed_killer(SICK,...) record is u.sickCause).
+    // potion.c:178-188 whose delayed_killer(SICK,...) record is u.sickCause),
+    // and the polymorph killer for a hero who genocided their own species
+    // (read.c:2984-2985, delayed_killer(POLYMORPH,...)), held until
+    // rehumanization in _polymorphGenocideCause.
     const killers = Number(state.u.stoneKiller !== undefined)
         + Number(state.u.slimeKiller !== undefined)
-        + Number(state.u.sickCause !== undefined);
+        + Number(state.u.sickCause !== undefined)
+        + Number(state._polymorphGenocideCause !== undefined);
     if (killers)
         row(`delayed killer${killers === 1 ? '' : 's'}, size ${SIZEOF_KINFO}`, killers, killers * SIZEOF_KINFO);
     const bonesHistory = level.bonesInfo?.length ?? 0;
