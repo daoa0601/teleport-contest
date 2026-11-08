@@ -33,7 +33,7 @@ import { callObjectType, displayColorName, displayLiquidName, monsterName, objec
 import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire } from './hack.js';
 import { buryFloorObjectsAt, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, map_background, } from './display.js';
-import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
+import { cansee, canseeFromHero, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, finishHeroMonsterKill, zombieForm, } from './mon.js';
 import { heroSpecies, heroFormSticks, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
@@ -525,23 +525,10 @@ export async function dropRingIntoSink(object, { state = game, publish = plineWi
         await consumeInventoryItem(object, state);
     }
 }
-// Port only: cansee(x, y) for an explicit state (viz_array bit).
-function squareIsVisible(state, x, y) {
-    if (state === game)
-        return cansee(x, y);
-    if (state.blind || (state.u?.blindTurns ?? 0) > 0)
-        return false;
-    return !state.viz_array || !!((state.viz_array[y]?.[x] ?? 0) & 0x2);
-}
-// Port only: publish each queued message through the caller's publisher.
-async function publishAll(messages, publish) {
-    for (const message of messages)
-        await publish(message);
-}
 // Part of C do.c:flooreffects(): the hot-ground potion branch
 // (level.flags.temperature > 0 on room or corridor).
 async function breakPotionOnHotGround(object, x, y, state, publish, random, luckRoll) {
-    const visible = squareIsVisible(state, x, y);
+    const visible = canseeFromHero(state, x, y);
     const quantity = object.quan ?? object.quantity ?? 1;
     if (visible) {
         await publish(`${definiteObjectAction(object, 'heat', state)} up as ${objectNameIsPlural(object, state) ? 'they hit' : 'it hits'} the hot ground.`);
@@ -623,7 +610,7 @@ export async function applyFloorEffects(object, x, y, { state = game, publish = 
             state, x, y,
             publish,
             random,
-            visible: squareIsVisible(state, x, y),
+            visible: canseeFromHero(state, x, y),
         });
         if (destroyed)
             return { finished: true, object: null };
@@ -649,7 +636,8 @@ export async function applyFloorEffects(object, x, y, { state = game, publish = 
             // C flooreffects() supplies the landing square through bhitpos.
             position: { x, y },
         });
-        await publishAll(messages, publish);
+        for (const message of messages)
+            await publish(message);
         if (result === 'destroyed') {
             await deleteObject(object, state);
             return { finished: true, object: null };
@@ -669,7 +657,7 @@ export async function applyFloorEffects(object, x, y, { state = game, publish = 
     }
     if (state.context?.mon_moving
         && location?.typ === ALTAR
-        && squareIsVisible(state, x, y)) {
+        && canseeFromHero(state, x, y)) {
         await landObjectOnAltar(object, {
             state, monsterMoving: true, publish,
         });
