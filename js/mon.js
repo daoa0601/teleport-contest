@@ -40,7 +40,7 @@ import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInve
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
-import { cansee, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
+import { cansee, couldSeeFromHero, couldsee, mimicBlocksLight, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { hasLightSources, registerMonsterLightSource } from './light.js';
 import { publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
@@ -1868,17 +1868,6 @@ export function angerAttackedMonster(monster) {
 // C mon.c:seemimic(). Reveal a monster that is imitating another monster,
 // furniture, or an object.
 // ---------------------------------------------------------------------------
-// C monst.h:is_lightblocker_mappear():
-function appearanceBlocksLight(type, appearance) {
-    if (type === M_AP_OBJECT)
-        return appearance === BOULDER;
-    if (type !== M_AP_FURNITURE)
-        return false;
-    return (appearance >= 0 && appearance < 12)
-        || appearance === 15 || appearance === 16 || appearance === 18
-        || appearance === TREE || appearance === SDOOR
-        || appearance === DOOR || IS_WALL(appearance);
-}
 // C mon.c:seemimic():
 export async function revealMonsterAppearance(monster, { includeMonsterDisguise = true, } = {}) {
     const type = M_AP_TYPE(monster);
@@ -1888,7 +1877,7 @@ export async function revealMonsterAppearance(monster, { includeMonsterDisguise 
             revealed: false, type, appearance, lightBlocker: false,
         };
     }
-    const lightBlocker = appearanceBlocksLight(type, appearance);
+    const lightBlocker = mimicBlocksLight(monster);
     const corpsenm = monster.mcorpsenm
         ?? monster.mextra?.mcorpsenm ?? null;
     monster.m_ap_type = 0;
