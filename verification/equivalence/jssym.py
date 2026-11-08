@@ -98,13 +98,36 @@ def _descendants(node):
         yield from _descendants(c)
 
 
+_FUNCTION_SCOPES = ('function_declaration', 'function_expression',
+                    'generator_function_declaration', 'generator_function',
+                    'arrow_function', 'method_definition')
+
+# Constructs with their own var environment (class bodies, static blocks)
+# or with dynamic scope (with, eval), plus labeled function declarations:
+# the hoisting scan does not model any of them, so a claimed function
+# containing one anywhere is rejected instead of risking a wrong hoisting
+# decision on statements the executor may never even execute.
+_UNSCANNED_SCOPES = ('class', 'class_declaration', 'class_static_block',
+                     'with_statement')
+
+
 def _function_descendants(node):
-    """Visit this function's statements without entering nested functions."""
+    """Visit this function's statements without entering nested functions.
+    Fails closed on constructs the scan does not model."""
     for child in node.named_children:
-        if child.type in ('function_declaration', 'function_expression',
-                          'generator_function_declaration', 'generator_function',
-                          'arrow_function', 'method_definition'):
+        if child.type in _FUNCTION_SCOPES:
             continue
+        if child.type in _UNSCANNED_SCOPES:
+            raise Unsupported(f'JavaScript {child.type} inside a claimed function')
+        if child.type == 'labeled_statement':
+            statement = child.child_by_field_name('body')
+            if statement is not None and statement.type == 'function_declaration':
+                raise Unsupported('JavaScript labeled function declaration '
+                                  'inside a claimed function')
+        if child.type == 'call_expression' \
+                and child.child_by_field_name('function').type == 'identifier' \
+                and child.child_by_field_name('function').text == b'eval':
+            raise Unsupported('JavaScript eval inside a claimed function')
         yield child
         yield from _function_descendants(child)
 

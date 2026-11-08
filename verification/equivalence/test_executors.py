@@ -1384,6 +1384,43 @@ class ExecutorTests(unittest.TestCase):
         self.equivalent('int example(int typ) { return typ != 0; }', js,
                         params=[('typ', INT)])
 
+    def test_for_of_var_hoisting_does_not_enter_class_static_blocks(self):
+        # A class static block has its own var environment: the loop's `var
+        # item` must not hoist into the function, where it would shadow the
+        # module `const item = 23` from entry and fabricate `item ===
+        # undefined`. The scan fails closed on the class instead.
+        js = ('const item = 23;\n'
+              'function example(typ) {\n'
+              '    if (typ === 999) {\n'
+              '        class Holder {\n'
+              '            static {\n'
+              '                for (var item of [0]) {\n'
+              '                }\n'
+              '            }\n'
+              '        }\n'
+              '    }\n'
+              '    return typ === 23 && item === undefined;\n'
+              '}')
+        domain = dict(params=[('typ', INT)],
+                      pre=lambda s: [s['typ'] >= -128, s['typ'] <= 127])
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      **domain, reason='inside a claimed function')
+
+    def test_for_of_var_hoisting_rejects_unmodeled_scope_constructs(self):
+        for construct in (
+            'const C = class { static { for (var q of [1]) {} } };',
+            'with (typ) { }',
+            'eval(typ);',
+            'lab: function inner() { for (var z of [2]) {} }',
+        ):
+            js = ('function example(typ) {\n    ' + construct +
+                  '\n    return typ;\n}')
+            with self.subTest(construct=construct):
+                self.rejected('int example(int typ) { return typ; }', js,
+                              params=[('typ', INT)],
+                              pre=lambda s: [s['typ'] >= -5, s['typ'] <= 5],
+                              reason='inside a claimed function')
+
     def test_callback_var_is_rejected_before_a_read_can_use_an_outer_binding(self):
         callbacks = (
             '[0].some(x => { return typ === item; for (var item of [1]) {} })',
