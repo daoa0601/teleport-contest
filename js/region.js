@@ -477,8 +477,9 @@ async function removeGasCloud(region, state) {
         if (cansee(cell.x, cell.y))
             await newsym(cell.x, cell.y);
 }
-// Part of C region.c:rest_regions(): elapsed-time decay and removal of
-// expired clouds.
+// C region.c:rest_regions(): elapsed-time decay and removal of expired
+// clouds; the saved-format reading itself belongs to the saved-graph
+// codec.
 // C rest_regions() removes expired clouds without running their expiry callback.
 // Time spent on another level reduces a finite lifetime, never its damage.
 export async function restoreLevelRegions(state, elapsed) {

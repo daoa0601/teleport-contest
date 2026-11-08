@@ -1383,12 +1383,18 @@ async function earthEffect(source, options) {
     return result;
 }
 // C read.c:seffect_stinking_cloud().
-// C read.c:do_stinking_cloud().
 async function cloudEffect(source, state) {
     const alreadyKnown = sourceTypeKnown(source, state);
     if (!alreadyKnown)
         await pline('You have found a scroll of stinking cloud!');
-    const center = await chooseCenter(`Where do you want to center the ${alreadyKnown ? 'stinking ' : ''}cloud?`, state);
+    await do_stinking_cloud(source, state, alreadyKnown);
+    return { known: true, consumed: false, heroDied: false };
+}
+// C read.c:do_stinking_cloud(): pick the cloud center (chooseCenter()
+// below is the getpos() with can_center_cloud()'s valid-position
+// highlights), then create the gas cloud or report the refusal.
+async function do_stinking_cloud(source, state, mentionStinking) {
+    const center = await chooseCenter(`Where do you want to center the ${mentionStinking ? 'stinking ' : ''}cloud?`, state);
     if (!center)
         await pline('Never mind.');
     else if (!canCenterCloud(center.x, center.y, state)) {
@@ -1398,7 +1404,6 @@ async function cloudEffect(source, state) {
     else {
         await createPoisonGasCloud(state, center.x, center.y, 15 + 10 * bcsign(source), 8 + 4 * bcsign(source));
     }
-    return { known: true, consumed: false, heroDied: false };
 }
 // Part of C read.c:seffect_genocide(), seffect_fire(),
 // seffect_stinking_cloud(): the already_known spell-or-typed test.
@@ -1568,6 +1573,22 @@ export async function exerciseScrollWisdom(otyp, state) {
     if (objectMagic(otyp))
         await exerciseAttribute(A_WIS, true, state);
 }
+// C read.c:seffect_genocide(): an unknown type announces the scroll of
+// genocide; a blessed one runs do_class_genocide(), anything else
+// do_genocide() with the (!cursed | 2*confused) how flag.
+// sourceTypeKnown() above is its already_known spell-or-typed test.
+async function seffectGenocide(source, state, hooks) {
+    if (!sourceTypeKnown(source, state))
+        await plineWithContinuation('You have found a scroll of genocide!');
+    if (source.blessed)
+        await doClassGenocide(hooks.finishHeroDeath
+            ? { finishHeroDeath: hooks.finishHeroDeath } : {});
+    else
+        await doGenocide(Number(!source.cursed)
+            | (2 * Number((state.u.confusionTurns ?? 0) > 0)), hooks.finishHeroDeath
+            ? { finishHeroDeath: hooks.finishHeroDeath } : {});
+    return { known: true };
+}
 // C read.c:seffect_blank_paper().
 // C read.c:seffect_create_monster().
 // C read.c:seffect_genocide().
@@ -1624,16 +1645,7 @@ async function scrollEffect(source, state, hooks) {
             return applyLightScrollEffect(source, hooks.finishMonsterKill
                 ? { finishMonsterKill: hooks.finishMonsterKill } : {});
         case SCR_GENOCIDE:
-            if (source.oclass !== SPBOOK_CLASS && !objectTypeKnown(source, state))
-                await plineWithContinuation('You have found a scroll of genocide!');
-            if (source.blessed)
-                await doClassGenocide(hooks.finishHeroDeath
-                    ? { finishHeroDeath: hooks.finishHeroDeath } : {});
-            else
-                await doGenocide(Number(!source.cursed)
-                    | (2 * Number((state.u.confusionTurns ?? 0) > 0)), hooks.finishHeroDeath
-                    ? { finishHeroDeath: hooks.finishHeroDeath } : {});
-            return { known: true };
+            return seffectGenocide(source, state, hooks);
         case SCR_CHARGING:
             return chargingEffect(source, state);
         case SCR_TELEPORTATION:

@@ -976,7 +976,9 @@ function clearMonsterMapSquare(monster, x, y) {
         }
     }
 }
-// Part of C rm.h:m_at(): resolve a square's occupant from the runtime monster array.
+// C rm.h:m_at(): resolve a square's occupant from the runtime monster
+// array.  This is the one m_at() owner; dig/shk/zap reach it through
+// this export.
 // Occupancy ends at unlink/off-map placement, not at zero hit points.
 export function monsterAtPosition(level, x, y, state = game) {
     return level.monsters.find(monster => monsterHasMapPosition(monster, state)
