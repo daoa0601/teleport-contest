@@ -92,12 +92,12 @@ export function cloakSimpleName(object, state) {
             ? 'smock' : 'apron';
     return 'cloak';
 }
-// C objnam.c:helm_simple_name().
-// Soft headgear is a "hat"; everything that protects like the hard-helmet
-// messages is a "helm".
 const SOFT_HEADGEAR = {
     'elven leather helm': true, fedora: true, cornuthaum: true, 'dunce cap': true,
 };
+// C objnam.c:helm_simple_name().
+// Soft headgear is a "hat"; everything that protects like the hard-helmet
+// messages is a "helm".
 export function helmSimpleName(object) {
     const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
     return SOFT_HEADGEAR[actualName] ? 'hat' : 'helm';

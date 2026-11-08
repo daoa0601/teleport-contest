@@ -227,17 +227,8 @@ export function makeEngravingAt(
     return engraving;
 }
 
-// Port only: positional adapter for make_engr_at() callers written against
-// the C signature; makeEngravingAt() is the port.
-export function make_engr_at(
-    x: number, y: number, text: string, pristine: string | null,
-    epoch: number, engr_type: number,
-    options: { nowipeout?: boolean; guardobjects?: boolean } | undefined = undefined,
-) {
-    return makeEngravingAt(
-        x, y, text, pristine, epoch, engr_type, options,
-    );
-}
+// make_engr_at() callers above pass the C signature straight through to
+// makeEngravingAt(), the port.
 
 // C engrave.c:make_grave().  The caller is responsible for newsym(x, y).
 export function make_grave(x: number, y: number, text: string | null): void {
@@ -246,7 +237,7 @@ export function make_grave(x: number, y: number, text: string | null): void {
     if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapped) return;
     if (!setLevelTerrainType(x, y, GRAVE)) return;
     const epitaph = text ?? getRndLine(RANDOM_EPITAPHS, MD_PAD_RUMORS, rn2);
-    make_engr_at(x, y, epitaph, null, 0, HEADSTONE);
+    makeEngravingAt(x, y, epitaph, null, 0, HEADSTONE);
 }
 
 // C engrave.c:wipeout_text()

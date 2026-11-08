@@ -7,6 +7,7 @@ import { ingSuffix, possessiveName } from './hacklib.js';
 import { G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './dbridge.js';
+import { heroIsDeaf } from './senses.js';
 
 import { useUpInventoryStack } from './invent.js';
 import { deleteObject } from './shk.js';
@@ -179,12 +180,8 @@ function monsterInventoryHatchMessage(
     };
 }
 
-// Port only: Deaf state check for the hatch messages (C reads the Deaf
-// macro inline in hatch_egg()).
-function heroIsDeaf(state: GameState): boolean {
-    return !!(state.deaf || state.u?.deaf
-        || (state.u?.deafTurns ?? 0) > 0);
-}
+// C timeout.c:hatch_egg() reads the youprop.h Deaf macro inline for the
+// hatch messages; heroIsDeaf() is the shared macro port in senses.ts.
 
 // Part of C timeout.c:hatch_egg(): the "yours" pline, "%s %s %s like
 // \"%s%s\"" with ing_suffix(cry_sound(mon)).

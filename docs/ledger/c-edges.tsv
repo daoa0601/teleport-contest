@@ -1,10 +1,12 @@
 # caller	callee — C call edges the port counterpart reaches (static-gaps.mjs edges)
+Amulet_off	discover_object
 Amulet_off	drown
 Amulet_off	float_vs_flight
 Amulet_off	hliquid
 Amulet_off	see_monsters
 Amulet_off	setworn
 Amulet_off	spoteffects
+Amulet_on	discover_object
 Amulet_on	float_vs_flight
 Amulet_on	newsym
 Amulet_on	rnd
@@ -13,28 +15,36 @@ Armor_off	setworn
 Blindf_off	gulp_blnd_check
 Blindf_off	setworn
 Blindf_off	toggle_blindness
+Boots_off	discover_object
 Boots_off	float_down
 Boots_off	float_vs_flight
 Boots_off	is_pool
 Boots_off	setworn
 Boots_off	spoteffects
+Boots_on	discover_object
 Boots_on	float_up
 Boots_on	float_vs_flight
 Boots_on	rnd
 Boots_on	spoteffects
+Cloak_off	discover_object
 Cloak_off	newsym
 Cloak_off	setworn
+Cloak_on	discover_object
 Cloak_on	newsym
 Finish_digestion	cpostfx
+Gloves_off	discover_object
 Gloves_off	encumber_msg
 Gloves_off	setworn
+Gloves_on	discover_object
 Gloves_on	rnd
+H2Opotion_dip	discover_object
 H2Opotion_dip	water_damage
 Hear_again	make_deaf
 Hear_again	rn2
 Helmet_off	see_monsters
 Helmet_off	setworn
 Helmet_on	acurr
+Helmet_on	discover_object
 Helmet_on	see_monsters
 Mb_hit	make_confused
 Mb_hit	make_stunned
@@ -64,6 +74,7 @@ able_to_loot	hliquid
 able_to_loot	is_pool
 abon	acurr
 accessible	closed_door
+accessory_or_armor_on	discover_object
 accessory_or_armor_on	nomul
 accessory_or_armor_on	setworn
 accessory_or_armor_on	yn_function
@@ -182,6 +193,7 @@ background_enlightenment	midnight
 background_enlightenment	night
 background_enlightenment	rank_of
 bad_location	occupied
+bagotricks	discover_object
 bagotricks	makemon
 bagotricks	rn2
 bagotricks	rnd
@@ -199,6 +211,7 @@ beehive_mon_sound	mon_in_room
 beehive_mon_sound	rn2
 bestow_artifact	align_gname
 bestow_artifact	discover_artifact
+bestow_artifact	discover_object
 bestow_artifact	exercise
 bestow_artifact	godvoice
 bestow_artifact	mk_artifact
@@ -247,6 +260,7 @@ break_armor	surface
 breaksink	newsym
 breathwep_name	rnd_hallublast
 broken_wand_explode	discard_broken_wand
+broken_wand_explode	discover_object
 broken_wand_explode	explode
 build_room	create_room
 build_room	create_subroom
@@ -330,6 +344,7 @@ check_special_room	isok
 check_special_room	record_achievement
 check_special_room	rn2
 check_special_room	search_special
+check_strangling	discover_object
 checkfile	yn_function
 choke	adjalign
 choke	done
@@ -346,6 +361,7 @@ choose_passage	rn2
 choose_random_part	rn2
 choose_tip_container_menu	tipcontainer
 choose_trapnote	rn2
+chwepon	discover_object
 chwepon	encumber_msg
 chwepon	exercise
 chwepon	rn2
@@ -505,6 +521,7 @@ cursetxt	rn2
 d	RND
 dbon	acurr
 deadbook	d
+deadbook	discover_object
 deadbook	makemon
 deadbook	record_achievement
 deadbook	rn2
@@ -634,6 +651,7 @@ disclose	list_genocided
 disclose	should_query_disclose_option
 disclose	yn_function
 disco_typename	Japanese_item_name
+discover_object	Japanese_item_name
 discover_object	exercise
 disintegrate_arm	surface
 disintegrate_cursed_armor	rn2
@@ -685,6 +703,7 @@ do_break_wand	d
 do_break_wand	dig_check
 do_break_wand	digactualhole
 do_break_wand	discard_broken_wand
+do_break_wand	discover_object
 do_break_wand	explode
 do_break_wand	fill_pit
 do_break_wand	fillholetyp
@@ -732,6 +751,7 @@ do_improvisation	awaken_monsters
 do_improvisation	calm_nymphs
 do_improvisation	charm_monsters
 do_improvisation	charm_snakes
+do_improvisation	discover_object
 do_improvisation	exercise
 do_improvisation	getdir
 do_improvisation	improvised_notes
@@ -743,6 +763,7 @@ do_look	cmdq_clear
 do_look	cmdq_pop
 do_loot_cont	autokey
 do_loot_cont	cmdq_add_ec
+do_loot_cont	discover_object
 do_loot_cont	losehp
 do_loot_cont	pick_lock
 do_loot_cont	rnd
@@ -1164,6 +1185,7 @@ doride	mount_steed
 doride	yn_function
 dorub	cmdq_add_ec
 dorub	cmdq_add_key
+dorub	discover_object
 dorub	getobj
 dorub	rn2
 dorub	use_royal_jelly
@@ -1429,6 +1451,7 @@ eataccessory	adjattrib
 eataccessory	bounded_increase
 eataccessory	choke
 eataccessory	d
+eataccessory	discover_object
 eataccessory	float_up
 eataccessory	newsym
 eataccessory	rehumanize
@@ -1643,6 +1666,7 @@ flip_level	unplacebc
 flip_level	vision_reset
 flip_level_rnd	flip_level
 flip_level_rnd	rn2
+flip_through_book	discover_object
 flip_visuals	back_to_glyph
 float_down	dismount_steed
 float_down	drown
@@ -1803,6 +1827,7 @@ gettrack	distmin
 ghost_from_bottle	makemon
 ghost_from_bottle	nomul
 ghost_from_bottle	rndmonnam
+give_spell	discover_object
 give_spell	force_learn_spell
 give_spell	known_spell
 give_spell	newsym
@@ -1942,6 +1967,8 @@ hold_potion	near_capacity
 hole_destination	dng_bottom
 hole_destination	rn2
 home_shk	mnearto
+hooked_tty_getlin	tty_doprev_message
+hornoplenty	discover_object
 hornoplenty	encumber_msg
 hornoplenty	rn2
 hornoplenty	rnd_class
@@ -1993,6 +2020,7 @@ ini_inv	trquan
 ini_inv_adjust_obj	rn2
 ini_inv_adjust_obj	rne
 ini_inv_adjust_obj	trquan
+ini_inv_use_obj	discover_object
 ini_inv_use_obj	setuqwep
 ini_inv_use_obj	setuswapwep
 ini_inv_use_obj	setuwep
@@ -2245,9 +2273,12 @@ lay_an_egg	morehungry
 lay_an_egg	weight
 learn	confused_book
 learn	cursed_book
+learn	discover_object
 learn	exercise
 learn	nomul
 learn	rn2
+learnring	discover_object
+learnscrolltyp	discover_object
 leppie_stash	in_rooms
 leppie_stash	rn2
 lesshungry	choke
@@ -2274,6 +2305,7 @@ lift_object	calc_capacity
 lift_object	near_capacity
 lift_object	yn_function
 light_cocktail	costly_spot
+light_cocktail	discover_object
 light_cocktail	shop_keeper
 linedup	blocking_terrain
 linedup	clear_path
@@ -2449,6 +2481,7 @@ m_cure_self	d
 m_detach	dismount_steed
 m_detach	mon_leaving_level
 m_detach	thiefdead
+m_dowear_type	discover_object
 m_dowear_type	vision_recalc
 m_initgrp	makemon
 m_initgrp	rnd
@@ -2480,8 +2513,10 @@ m_search_items	in_rooms
 m_search_items	rn2
 m_sees_sleepy_soldier	isok
 m_slips_free	rn2
+m_tele	discover_object
 m_tele	rn2
 magic_map_background	back_to_glyph
+magic_whistled	discover_object
 magic_whistled	fill_pit
 magic_whistled	newsym
 make_blinded	toggle_blindness
@@ -2553,6 +2588,8 @@ makemap_prepost	vision_reset
 makemap_remove_mons	makemap_unmakemon
 makemon	can_saddle
 makemon	isok
+makemon	m_initinv
+makemon	m_initweap
 makemon	mkobj_at
 makemon	newsym
 makemon	next_ident
@@ -2662,11 +2699,13 @@ mbag_explodes	rn2
 mbag_item_gone	costly_spot
 mbag_item_gone	shop_keeper
 mbhit	destroy_drawbridge
+mbhit	discover_object
 mbhit	fhito_loc
 mbhit	in_rooms
 mbhit	isok
 mbhit	map_invisible
 mbhitm	d
+mbhitm	discover_object
 mbhitm	in_rooms
 mbhitm	losehp
 mbhitm	map_invisible
@@ -3059,6 +3098,7 @@ moverock_core	sokoban_guilt
 moverock_core	surface
 movobj	maybe_unhide_at
 movobj	newsym
+mplayhorn	discover_object
 mreadmsg	map_invisible
 msummon	dlord
 msummon	dprince
@@ -3072,6 +3112,7 @@ msummon	show_transient_light
 mu_maybe_destroy_web	newsym
 muse_newcham_mon	rndmonst
 muse_unslime	d
+muse_unslime	discover_object
 muse_unslime	explode
 muse_unslime	green_mon
 muse_unslime	mplayhorn
@@ -3237,6 +3278,7 @@ oinit	setgemprobs
 okdoor	bydoor
 okdoor	isok
 one_characteristic	acurr
+onquest	on_start
 open_drawbridge	newsym
 openholdingtrap	reset_utrap
 openholdingtrap	reward_untrap
@@ -3454,6 +3496,7 @@ pickup	query_classes
 pickup	unconscious
 pickup	yn_function
 pickup_checks	hliquid
+pickup_checks	is_lava
 pickup_checks	is_pool
 pickup_checks	surface
 pickup_prinv	near_capacity
@@ -3567,6 +3610,7 @@ postmov	vision_recalc
 pot_acid_damage	setnotworn
 potion_dip	H2Opotion_dip
 potion_dip	d
+potion_dip	discover_object
 potion_dip	exercise
 potion_dip	explode
 potion_dip	fingers_or_gloves
@@ -3719,6 +3763,7 @@ regen_pw	rn2
 region_safety	d
 region_safety	make_blinded
 region_safety	safe_teleds
+rehumanize	discover_object
 rehumanize	done
 rehumanize	encumber_msg
 rehumanize	nomul
@@ -3804,6 +3849,7 @@ rider_corpse_revival	exercise
 rigid_role_checks	randrole_filtered
 rloc_to_core	check_special_room
 rloc_to_core	costly_spot
+rloc_to_core	discover_object
 rloc_to_core	dist2
 rloc_to_core	docrt
 rloc_to_core	maybe_unhide_at
@@ -4090,6 +4136,7 @@ ship_object	rn2
 shk_embellish	rn2
 shk_fixes_damage	dist2
 shk_fixes_damage	find_damage
+shk_names_obj	discover_object
 shk_owns	costly_spot
 shk_owns	shop_keeper
 shkinit	good_shopdoor
@@ -4286,6 +4333,7 @@ swim_move_danger	is_pool
 switch_terrain	float_up
 switch_terrain	float_vs_flight
 t_missile	weight
+target_on	which_arti
 tele_jump_ok	isok
 tele_to_rnd_pet	dist2
 tele_to_rnd_pet	isok
@@ -4406,7 +4454,9 @@ tmp_at	newsym
 tmp_at	tether_glyph
 toggle_blindness	see_monsters
 toggle_blindness	vision_recalc
+toggle_displacement	discover_object
 toggle_menu_curr	set_item_state
+toggle_stealth	discover_object
 toggle_stealth	learnring
 topten	outheader
 toss_up	ceiling
@@ -4544,6 +4594,7 @@ tty_select_menu	tty_display_nhwindow
 tty_start_menu	tty_clear_nhwindow
 tty_yn_function	digit
 tty_yn_function	readchar
+tty_yn_function	tty_doprev_message
 u_adtyp_resistance_obj	adtyp_to_prop
 u_calc_moveamt	rn2
 u_can_engrave	cant_reach_floor
@@ -4559,6 +4610,7 @@ u_collide_m	dist2
 u_collide_m	rn2
 u_collide_m	u_on_newpos
 u_entered_shop	Hello
+u_entered_shop	discover_object
 u_entered_shop	in_rooms
 u_entered_shop	record_achievement
 u_entered_shop	rn2
@@ -4605,6 +4657,7 @@ u_simple_floortyp	is_waterwall
 u_slow_down	exercise
 uasmon_maxStr	character_race
 ubuzz	dobuzz
+ucatchgem	discover_object
 uchangealign	adjalign
 uchangealign	make_confused
 uchangealign	retouch_equipment
@@ -4659,6 +4712,7 @@ unturn_you	make_stunned
 unturn_you	rnd
 update_lastseentyp	cmap_to_type
 uqwepgone	setworn
+use_bell	discover_object
 use_bell	findit
 use_bell	makemon
 use_bell	mkclass
@@ -4719,6 +4773,7 @@ use_stethoscope	recalc_block_point
 use_stethoscope	rn2
 use_stethoscope	surface
 use_stethoscope	unmap_invisible
+use_stone	discover_object
 use_stone	getobj
 use_tinning_kit	costly_spot
 use_tinning_kit	in_rooms
@@ -4800,6 +4855,7 @@ watch_on_duty	is_digging
 watch_on_duty	rn2
 watchman_door_damage	angry_guards
 watchman_thief_arrest	angry_guards
+water_damage	discover_object
 water_damage	hliquid
 water_damage	isok
 water_damage	rn2

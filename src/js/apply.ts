@@ -110,6 +110,7 @@ import {
 } from './teleport.js';
 import { pickLock } from './lock.js';
 import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
+import { makeUndeadNear } from './mkroom.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
 import {
@@ -191,7 +192,7 @@ import { propertyIsActive } from './properties.js';
 import { unpunishHero } from './read.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { mon_reflects } from './muse.js';
-import { d, rn1, rn2, rnd, rnl } from './rng.js';
+import { d, rn1, rn2, rnd, rnl, shuffleIntArray } from './rng.js';
 import { addShopDamage, carriedObjectOwner, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
 import {
     ensureHeroSkills, uwepSkillType, dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon,
@@ -204,7 +205,6 @@ import { heroIsPetrifying, petrifyFromCorpseContact } from './stoning.js';
 import { ceilingName, surfaceName, canDigDown } from './dungeon.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import type { DirectionSelection } from './cmd.js';
-import { summonUndead } from './undead_summoning.js';
 import { summonVaultGuardSoon } from './vault.js';
 import { cansee, couldsee, howMonsterSeen, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { wieldTool, doswapweapon } from './wield.js';
@@ -1200,7 +1200,7 @@ export async function useBell(object: GameObject, { state = game }: { state?: Ga
             if (object.cursed) await plineWithContinuation('Nothing happens.');
             else await openit(state);
         } else if (object.cursed) {
-            await summonUndead({ x: state.u.ux, y: state.u.uy }, { state, flags: NO_MINVENT });
+            await makeUndeadNear(state.u.ux, state.u.uy, { state, flags: NO_MINVENT });
             wake = true;
         } else if (invoking) {
             await plineWithContinuation(`${bellAction(object, 'issue', state)} an unsettling shrill sound...`);
@@ -2253,7 +2253,7 @@ export async function useUnicornHorn({
         await publish('Nothing happens.');
         return { used: true, spentTime: true, caused: null, cured: [] };
     }
-    if (troubles.length > 1) shuffleTroubles(troubles, random);
+    if (troubles.length > 1) shuffleIntArray(troubles, troubles.length, random);
 
     const maximum = rollDice(2, object?.blessed ? 4 : 2);
     const cureCount = Math.min(troubles.length, random(maximum));
@@ -2269,18 +2269,8 @@ export async function useUnicornHorn({
     return { used: true, spentTime: true, caused: null, cured };
 }
 
-// C rnd.c:shuffle_int_array()
-function shuffleTroubles(values: HornTrouble[], random: typeof rn2) {
-    for (let index = values.length - 1; index > 0; index--) {
-        const other = random(index + 1);
-        if (other === index) continue;
-        const currentValue = values[index];
-        const otherValue = values[other];
-        if (!currentValue || !otherValue)
-            throw new RangeError('Unicorn horn shuffleTroubles selected a missing condition.');
-        [values[index], values[other]] = [otherValue, currentValue];
-    }
-}
+// rnd.c:shuffle_int_array() lives in rng.ts; the horn shuffles its trouble
+// list through it.
 
 type FigurineLocation = Position & (
     { carrier: 'inventory'; monsterCarrier: null }

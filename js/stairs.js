@@ -6,7 +6,7 @@
 // On_stairs, On_ladder, On_stairs_up, On_stairs_dn, known_branch_stairs,
 // stairs_description.
 import { game } from './gstate.js';
-import { dungeonDepth, placeHeroOnLevel, u_on_rndspot } from './dungeon.js';
+import { dungeonDepth, placeHeroOnLevel, u_on_rndspot, sameDungeonLevel } from './dungeon.js';
 // C stairs.c:stairway_add()
 export function stairway_add(x, y, up, isladder, dest) {
     const node = {
@@ -33,7 +33,7 @@ export function stairwayAt(state, x, y) {
 // C stairs.c:stairway_find()
 export function stairway_find(state, fromdlev) {
     for (let stair = state.stairs; stair; stair = stair.next) {
-        if (sameLevel(stair.tolev, fromdlev))
+        if (sameDungeonLevel(stair.tolev, fromdlev))
             return stair;
     }
     return null;
@@ -41,7 +41,7 @@ export function stairway_find(state, fromdlev) {
 // C stairs.c:stairway_find_from()
 export function stairway_find_from(state, fromdlev, isladder) {
     for (let stair = state.stairs; stair; stair = stair.next) {
-        if (sameLevel(stair.tolev, fromdlev) && stair.isladder === isladder)
+        if (sameDungeonLevel(stair.tolev, fromdlev) && stair.isladder === isladder)
             return stair;
     }
     return null;
@@ -126,10 +126,8 @@ export function known_branch_stairs(sway, state) {
     return sway !== null && sway.tolev.dnum !== (state.u.uz?.dnum ?? 0)
         && sway.u_traversed;
 }
-// Port only: compare optional runtime level locations for stair lookup.
-function sameLevel(left, right) {
-    return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
-}
+// Level comparisons go through dungeon.ts sameDungeonLevel()
+// (C dungeon.c:on_level()).
 // C stairs.c:stairs_description(). Describes staircase 'sway' based on
 // whether the hero knows the destination.
 export function stairwayDescription(stairway, state) {
@@ -144,7 +142,7 @@ export function stairwayDescription(stairway, state) {
         if (!stairway.u_traversed)
             return `${noun} ${direction}`;
         const localDepth = destination.dnum === state.quest_dnum
-            || sameLevel(destination, state.knox_level);
+            || sameDungeonLevel(destination, state.knox_level);
         const depth = localDepth ? destination.dlevel
             : dungeonDepth(destination.dnum, destination.dlevel, state.dungeons);
         return `${noun} ${direction} to level ${depth}`;
@@ -153,7 +151,7 @@ export function stairwayDescription(stairway, state) {
         if (!state.u.uhave?.amulet)
             return `${noun} up out of the dungeon`;
         const elemental = [state.earth_level, state.air_level, state.fire_level, state.water_level]
-            .some(level => sameLevel(destination, level));
+            .some(level => sameDungeonLevel(destination, level));
         return `branch ${noun} up to ${elemental ? 'the Elemental Planes' : 'the end game'}`;
     }
     const descriptor = state.dungeons[destination.dnum];

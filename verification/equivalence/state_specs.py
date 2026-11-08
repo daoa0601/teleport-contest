@@ -40,8 +40,8 @@ STATE_JS_FILES = (
     'js/mon.js', 'js/monmove.js', 'js/hack.js', 'js/mkobj.js',
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
     'js/cmd.js', 'js/mondata.js', 'js/objnam.js', 'js/o_init.js',
-    'js/object_properties.js', 'js/glyph_numbers.js', 'js/getpos.js',
-    'js/display.js', 'js/senses.js', 'js/objclass.js',
+    'js/object_properties.js', 'js/glyph_numbers.js', 'js/glyphs.js', 'js/getpos.js',
+    'js/display.js', 'js/senses.js', 'js/objclass.js', 'js/dothrow.js',
 )
 
 
@@ -1051,15 +1051,16 @@ STATE_SPECS += [
          mutants=[(OBJ_FILE, '[LUCKSTONE, LOADSTONE, FLINT, TOUCHSTONE].includes(object.otyp);',
                    '[LUCKSTONE, LOADSTONE, FLINT].includes(object.otyp);')]),
     Spec('throwing_weapon:tables', 'throwing_weapon', 'isThrowingWeapon', [],
-         js_file=OBJ_FILE, state=OBJECT_STATE,
+         js_file='js/dothrow.js', state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
             'dothrow.c:throwing_weapon composes is_missile, is_spear, is_blade, is_sword and the oc_dir PIERCE bit with the two special otyps; the port\'s skill >= P_DAGGER && skill < P_SHORT_SWORD equals is_blade && !is_sword because P_SHORT_SWORD <= P_SABER',
+            'the port lives in dothrow.js beside its C owner',
          ),
          require_counterexamples=True, configure=classed_object_state('obj'),
          arguments=object_predicate_arguments('obj'),
-         probes=[('oclass correspondence omitted (pinned dagger)',
+         probes=[('eclass correspondence omitted (pinned dagger)',
                   unrelated(lambda s: [s['obj.otyp'] == 34], 'obj.oclass'))],
-         mutants=[(OBJ_FILE, '|| object.otyp === WAR_HAMMER\n        || object.otyp === AKLYS;',
+         mutants=[('js/dothrow.js', '|| object.otyp === WAR_HAMMER\n        || object.otyp === AKLYS;',
                    '|| object.otyp === WAR_HAMMER;')]),
     Spec('is_multigen:tables', 'verification_is_multigen', 'isMultiGeneratedWeapon', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
@@ -1727,6 +1728,7 @@ STATE_SPECS += [
 # table drift between the two sides fails the proofs outright.
 GLYPH_FILE = 'js/glyph_numbers.js'
 GETPOS_FILE = 'js/getpos.js'
+GLYPHS_FILE = 'js/glyphs.js'
 DISPLAY_FILE = 'js/display.js'
 
 # The port's terrain decoder is null outside the cmap span (display.ts and
@@ -2086,15 +2088,16 @@ STATE_SPECS += [
          mutants=[(GLYPH_FILE, 'return symbol - CmapSymbol.vwall + wallOffset;',
                    'return symbol - CmapSymbol.vwall + wallOffset + 1;')]),
     Spec('glyph_to_cmap', 'glyph_to_cmap', 'glyphToCmapSymbol',
-         [('glyph', LONG)], js_file=GETPOS_FILE,
+         [('glyph', LONG)], js_file=GLYPHS_FILE,
          assumptions=GLYPH_ASSUMPTIONS + (
              'glyphs.c:glyph_to_cmap decodes every terrain glyph: the five wall ranges map back onto S_vwall..S_trwall, cmap A onto S_ndoor.., the altar range onto S_altar, cmap B onto S_grave.., the zap beams modulo four and cmap C onto S_digbeam..',
              'the port decodes terrain only: it returns null where C returns MAXPCHARS or a swallow/explosion symbol, and its callers (getpos feature search, display terrain memory) treat null as no dungeon symbol; the domain is the cmap span GLYPH_CMAP_STONE_OFF..GLYPH_SWALLOW_OFF, restated numerically above because the probe must be able to leave it',
+             'the port lives in glyphs.js beside its C owner',
          ), require_counterexamples=True,
          pre=lambda s: [s['glyph'] >= GLYPH_CMAP_STONE_BOUND,
                         s['glyph'] < GLYPH_SWALLOW_BOUND],
          probes=[('swallow glyphs are terrain to C and null to the port',
                   lambda s: [s['glyph'] == GLYPH_SWALLOW_BOUND])],
-         mutants=[(GETPOS_FILE, 'return (glyph - GlyphOffset.zap) % 4 + 74;',
+         mutants=[(GLYPHS_FILE, 'return (glyph - GlyphOffset.zap) % 4 + 74;',
                    'return (glyph - GlyphOffset.zap) % 4 + 75;')]),
 ]

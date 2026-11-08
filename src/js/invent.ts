@@ -30,8 +30,9 @@ import {
 } from './object_data.js';
 import {
     pair_of, isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, launcherMatchesAmmo,
-    isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition,
+    isBlade, isPolearm, isLauncherAmmunition,
 } from './object_properties.js';
+import { isThrowingWeapon } from './dothrow.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn, removeHeroEquipment } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';

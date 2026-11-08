@@ -546,12 +546,8 @@ function setGemProbabilities(ledger: number): void {
     }
 }
 
-// Port only: live per-game oc_material read after o_init.c shuffle
-// permutes materials.
-// Per-game object material after unidentified object classes are shuffled.
-// C refs: o_init.c shuffle() and objects[].oc_material.
-// Port only: live per-game oc_material read after o_init.c shuffle
-// permutes materials.
+// Port only: live per-game oc_material read after o_init.c shuffle()
+// permutes materials; C reads objects[otyp].oc_material in place.
 export function objectMaterial(
     objectOrType: number | Pick<GameObject, 'otyp'> | null | undefined,
     state: Pick<GameState, 'objectMaterials'> = game,

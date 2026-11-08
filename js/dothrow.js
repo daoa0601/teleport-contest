@@ -4,18 +4,18 @@
 // thitmonst(), walk_path(), and throwing_weapon(); throw_obj()'s per-missile
 // handoff to the flight owners.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, FOOD_CLASS, BALL_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, objectMagic, objectUnique, AKLYS, AMULET_OF_YENDOR, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, FAKE_AMULET_OF_YENDOR, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, RUBBER_HOSE, OBJ_NAME, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, } from './object_data.js';
+import { objectClassForType, objectSkill, objectBaseDirection, objectMagic, objectUnique, AKLYS, AMULET_OF_YENDOR, BOOMERANG, BOULDER, WAR_HAMMER, BULLWHIP, CORPSE, EGG, SLING, FAKE_AMULET_OF_YENDOR, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, RUBBER_HOSE, OBJ_NAME, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
-import { isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isThrowingWeapon, isAxe, isWetTowel, launcherMatchesAmmo, objectIsCrackable, } from './object_properties.js';
+import { isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isAxe, isWetTowel, launcherMatchesAmmo, objectIsCrackable, objectClass, } from './object_properties.js';
 import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
 import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok, promptDirection } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
 import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_LEVEL, MONSTER_ALIGNMENT, } from './monster_data.js';
-import { artifactById, artifactToHitBonus } from './artifact.js';
+import { artifactById, artifactToHitBonus, applyArtifactHit } from './artifact.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm, body_part } from './polyself.js';
 import { isWeldedPrimary, setQuiverObject, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat, doquiverCore } from './wield.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, STRAT_WAITMASK, Luck, W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG, HAND, EYE, HEAD, FACE, FOOT, ARM, } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHORT_SWORD, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, STRAT_WAITMASK, Luck, W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG, HAND, EYE, HEAD, FACE, FOOT, ARM, } from './const.js';
 import { weaponHitValue, weaponSkillHitBonus, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills, skillName, weaponDescription, } from './weapon.js';
 import { quiverObjectClass } from './wield.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName, simpleArmorName } from './objnam.js';
@@ -68,7 +68,6 @@ import { AT_WEAP } from './monster_attack_types.js';
 import { propertyIsActive } from './properties.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { finishHeroDeath } from './end.js';
-import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
@@ -1163,6 +1162,23 @@ function baseRangedHitThreshold(monster, weapon, state, random) {
         : state.urace.name === 'elf';
     return threshold + (targetIsOrc && heroIsElf ? 1 : 0);
 }
+// C dothrow.c:throwing_weapon(). Return true for a weapon meant to be
+// thrown; excludes ammo. The port's skill >= P_DAGGER && skill < P_SHORT_SWORD
+// equals C's is_blade && !is_sword because P_SHORT_SWORD <= P_SABER.
+export function isThrowingWeapon(object) {
+    if (!object)
+        return false;
+    const kind = objectClass(object);
+    const skill = objectSkill(object.otyp);
+    const piercingDaggerOrKnife = kind === WEAPON_CLASS
+        && skill >= P_DAGGER && skill < P_SHORT_SWORD
+        && (objectBaseDirection(object.otyp) & 1) !== 0;
+    return isMissileObject(object)
+        || (kind === WEAPON_CLASS && skill === P_SPEAR)
+        || piercingDaggerOrKnife
+        || object.otyp === WAR_HAMMER
+        || object.otyp === AKLYS;
+}
 // Part of C dothrow.c:thitmonst(): the launcher and weapon bonus.
 function throwingHitBonus(monster, weapon, state) {
     if (isLauncherAmmunition(weapon)) {
@@ -2207,7 +2223,7 @@ export async function tossObjectUp(object, { state = game, publish = plineWithCo
     let damage = rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne });
     let artifactMessage = false;
     if (object.oartifact && !harmless) {
-        const artifact = await hitHeroWithFallingArtifact(object, damage, {
+        const artifact = await applyArtifactHit(object, 'hero', damage, {
             state, publish, random, rollOne, dieRoll: random(18) + 2,
         });
         if (artifact.heroDied)
@@ -2348,7 +2364,7 @@ export async function finishReturningThrow({ state, object, impact, impaired, tw
             ? `${definiteObjectAction(object, 'hit', state)} your ${arm}!`
             : `${definiteObjectAction(object, 'fly', state)} back toward you, hitting your ${arm}!`);
         if (object.oartifact) {
-            const hit = await hitHeroWithFallingArtifact(object, damage, {
+            const hit = await applyArtifactHit(object, 'hero', damage, {
                 state, publish: plineWithContinuation, random: rn2, rollOne: rnd, dieRoll: 0,
             });
             if (hit.heroDied)

@@ -3278,17 +3278,19 @@ interface SplitOptions extends CloneOptions {
     publish?: MessagePublisher;
 }
 
+// split_mon()'s second argument: whose heat made the monster divide.
+export type SplitMonTarget = { hero: GameState } | {
+    monster: Monster;
+    heatSource?: SplitOptions['heatSource'];
+};
+
 // C potion.c:split_mon().
 // One entry for a black pudding or gremlin dividing under heat: C tests
 // mon == &gy.youmonst and formats the heat reason before cloning.  The
 // hero half (splitHeroMonsterForm(); its callers own the "You multiply"
 // line) and the monster half (splitMonster(), which announces a spotted
-// division itself) stay separate, and the union below names the actor C
+// division itself) stay separate, and the union above names the actor C
 // compared.
-export type SplitMonTarget = { hero: GameState } | {
-    monster: Monster;
-    heatSource?: SplitOptions['heatSource'];
-};
 export async function splitMon(
     target: SplitMonTarget, state: GameState = game,
     options: Omit<SplitOptions, 'heatSource'> = {},

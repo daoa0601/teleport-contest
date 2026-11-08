@@ -15,7 +15,7 @@ import { holdAnotherObject } from './invent.js';
 import { consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { recordLiteracy } from './literacy.js';
-import { mksobj } from './mkobj.js';
+import { mksobj, bcsign } from './mkobj.js';
 import {
     getObjectClassBounds, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL,
 } from './object_data.js';
@@ -114,7 +114,7 @@ export async function useMagicMarker(pen: GameObject): Promise<boolean> {
         return true;
     }
     const actualcost = rn1(basecost / 2, basecost / 2);
-    const curseval = blessingSign(pen) + blessingSign(paper);
+    const curseval = bcsign(pen) + bcsign(paper);
     exerciseWisdom(true);
     if (pen.spe < actualcost) {
         pen.spe = 0;
@@ -235,10 +235,7 @@ async function writingCost(object: GameObject): Promise<number> {
     }
 }
 
-// Port only: read the blessing sign for a writing ingredient.
-function blessingSign(object: GameObject): number {
-    return object.blessed ? 1 : object.cursed ? -1 : 0;
-}
+// The curseval terms read mkobj.ts bcsign() (C mkobj.c:bcsign()).
 
 // Part of C write.c:dowrite(): attempt a novel and optionally tear up the paper.
 async function tryWritingNovel(paper: GameObject): Promise<void> {

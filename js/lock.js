@@ -22,7 +22,7 @@ import { recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { heroPassesWalls, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 import { rnl, rn2 } from './rng.js';
-import { formatHeardMessage, pline, plineWithContinuation, impossible } from './pline.js';
+import { pline, plineWithContinuation, impossible, publishHeardMessage } from './pline.js';
 import { consumeInventoryItem, delobj, inventoryItemDescription } from './invent.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { objectMaterial } from './o_init.js';
@@ -30,7 +30,7 @@ import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming
 import { heroCanReachFloor } from './engrave.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade, isPick } from './object_properties.js';
-import { startCorpseTimeout, unlinkObject, isContainer, placeObject, chargeAlteredUnpaidObject } from './mkobj.js';
+import { startCorpseTimeout, unlinkObject, isContainer, placeObject, chargeAlteredUnpaidObject, objectQuantity } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -210,10 +210,8 @@ function forceWeaponFailure(weapon) {
         : plural ? 'with those' : 'with that';
     return `You can't force anything ${description} weapon${plural ? 's' : ''}.`;
 }
-// Port only: obj->quan accessor.
-function objectQuantity(object) {
-    return object?.quan ?? object?.quantity ?? 1;
-}
+// obj->quan reads go through mkobj.ts objectQuantity() over the port's
+// dual quan/quantity fields.
 // Part of C lock.c:forcelock(): the blade-break roll
 // (rn2(1000 - spe) vs 992 - greatest_erosion * 10, cursed and
 // obj_resists survive).
@@ -1077,7 +1075,7 @@ export async function changeDoorByMagic(source, x, y, { state = game } = {}) {
             if (visible)
                 await plineWithContinuation('A cloud of dust springs up in the older, more primitive doorway.');
             else
-                await publishHeard('a swoosh.', state);
+                await publishHeardMessage('a swoosh.', plineWithContinuation, state);
             if (await doorObstructed(x, y, quietly, state)) {
                 if (visible)
                     await plineWithContinuation('The cloud quickly dissipates.');
@@ -1145,7 +1143,7 @@ export async function changeDoorByMagic(source, x, y, { state = game } = {}) {
                         await plineWithContinuation('KABOOM!!  You see a door explode.');
                     else if (!heroIsDeaf(state)) {
                         const dx = x - state.u.ux, dy = y - state.u.uy;
-                        await publishHeard(`a ${dx * dx + dy * dy > 49 ? 'distant' : 'nearby'} explosion.`, state);
+                        await publishHeardMessage(`a ${dx * dx + dy * dy > 49 ? 'distant' : 'nearby'} explosion.`, plineWithContinuation, state);
                     }
                 }
             }
@@ -1160,7 +1158,7 @@ export async function changeDoorByMagic(source, x, y, { state = game } = {}) {
                 if ((saw || sees) && !heroIsUnaware(state))
                     await plineWithContinuation('The door crashes open!');
                 else if (!heroIsDeaf(state))
-                    await publishHeard('a crashing sound.', state);
+                    await publishHeardMessage('a crashing sound.', plineWithContinuation, state);
             }
             if (state.vision_full_recalc)
                 await vision_recalc(0);
@@ -1208,12 +1206,7 @@ export async function doorObstructed(x, y, quietly, state) {
     }
     return false;
 }
-// Port only: publish through You_hear() semantics.
-async function publishHeard(text, state) {
-    const message = formatHeardMessage(text, state);
-    if (message)
-        await plineWithContinuation(message);
-}
+// You_hear() calls publish through pline.ts publishHeardMessage().
 // C lock.c:stumble_on_door_mimic(): check the disguise itself, even when
 // the hero senses the monster.
 // lock.c checks the disguise itself, even when the hero senses the monster.

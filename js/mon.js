@@ -945,6 +945,10 @@ export function monsterCarryAmount(monster, object, state = game, random = rn2) 
 export function monsterCanCarryObject(monster, object, state = game, random = rn2) {
     return monsterCarryAmount(monster, object, state, random) > 0;
 }
+// C mon.c:m_poisongas_ok().
+// Would this actor be OK in poison gas?  Does not check for actual gas at
+// the location.  The halves stay in region.ts (heroGasTolerance(),
+// monsterGasTolerance(), the species tests they share).
 export function mPoisongasOk(target, state = game) {
     return 'hero' in target
         ? heroGasTolerance(target.hero)

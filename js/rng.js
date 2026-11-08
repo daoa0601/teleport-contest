@@ -134,4 +134,19 @@ export function rnz(i) {
         _rngLog.push(`rnz(${i})=${x}`);
     return x;
 }
+// C rnd.c:shuffle_int_array(). Randomize the first count entries of the
+// list in place, from the top down, skipping no-op swaps.
+export function shuffleIntArray(values, count, random = rn2) {
+    for (let index = count - 1; index > 0; index--) {
+        const other = random(index + 1);
+        if (other === index)
+            continue;
+        const current = values[index];
+        const swap = values[other];
+        if (current === undefined || swap === undefined)
+            throw new RangeError(`shuffle_int_array selected a missing entry ${other}.`);
+        values[index] = swap;
+        values[other] = current;
+    }
+}
 //# sourceMappingURL=rng.js.map
