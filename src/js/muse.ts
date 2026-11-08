@@ -135,7 +135,8 @@ import type { GameObject } from './object_types.js';
 import type { MonsterOffensiveChoice, MonsterOffensiveOptions, MonsterOffensiveResult } from './monster_offensive_types.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { exerciseWisdom } from './attrib.js';
-import { recordObjectKnowledge } from './o_init.js';
+
+import { recordObjectKnowledge } from './u_init.js';
 import { buzz, dobuzz, hitMonsterWithRay } from './zap.js';
 import type { NativeRayOptions } from './zap.js';
 import { hitObjectWithWand } from './zap.js';

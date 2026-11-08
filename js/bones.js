@@ -400,10 +400,10 @@ export function completeBonesMonster(monster, state = game) {
     monster.mextra.ebones = ebones;
     return monster;
 }
-// C restore.c:restmonchn(): bones monster-chain restore — restmonchn()'s
-// ghostly propagate and restshk()/restpriest() reassignment,
-// getlev()'s peaceful/malign/hide pass, getbones()'s sanitize_name and
-// defunct purge.
+// Part of C bones.c:getbones(): the bones monster-chain admission —
+// restore.c:restmonchn()'s ghostly propagate and restshk()/restpriest()
+// reassignment, getlev()'s peaceful/malign/hide pass, and getbones()'s own
+// sanitize_name and defunct purge.
 export async function restoreBonesMonsters(level, state) {
     // C restmonchn() admits the complete chain before getbones() starts
     // purging it. Inventory drops during purge must not affect admission
@@ -770,8 +770,8 @@ export function saveBonesLevel(deathCause = '', when = recorderLocalEpochSeconds
         return false;
     }
 }
-// C save.c:save_stairs(): destinations are stored relative to the saved
-// level; restore re-adds depth on load. save_stairs()/savetrapchn()
+// Part of C save.c:save_stairs(): destinations are stored relative to the
+// saved level; restore re-adds depth on load. save_stairs()/savetrapchn()
 // store same-dungeon destinations relative to the saved level;
 // rest_stairs()/getlev() add the receiving level's depth. Only the
 // bones copy is shifted; live and cached maps retain absolute depths.
@@ -786,7 +786,7 @@ function shiftBonesDestinations(payload, location, adjustment) {
             trap.dst = { ...destination, dlevel: destination.dlevel + adjustment };
     }
 }
-// C restore.c:lookup_id_mapping()
+// Part of C restore.c:lookup_id_mapping()
 function remappedMonsterId(oldId, monsterIds) {
     return oldId !== undefined && Number.isInteger(oldId) ? monsterIds.get(oldId) : undefined;
 }
@@ -799,9 +799,9 @@ function repairContainedObjects(container) {
         repairContainedObjects(object);
     }
 }
-// C restore.c:reset_oattached_mids(): walk the restored object graph and
-// remap each ghostly omid (and the port's leashmon), zeroing any omonst —
-// a dead owner's pet is no longer peaceful or tame.
+// Part of C restore.c:reset_oattached_mids(): walk the restored object
+// graph and remap each ghostly omid (and the port's leashmon), zeroing
+// any omonst — a dead owner's pet is no longer peaceful or tame.
 function resetObjectAttachedMonsterIds(level, monsterIds) {
     eachObjectInBonesGraph(level, object => repairObjectMonsterIds(object, monsterIds));
 }
@@ -929,8 +929,9 @@ function restoreBonesFloorOrder(level) {
     // Those drops must precede every object already in the bones chain.
     game._fobjSerial = newestOrder;
 }
-// C restore.c:restobjchn()/getlev() and timeout.c:restore_timers(). Bones
-// arrive immediately after the old hero's death, on the new hero's clock.
+// Part of C restore.c:restobjchn(), getlev(), timeout.c:restore_timers():
+// Bones arrive immediately after the old hero's death, on the new hero's
+// clock.
 function restoreBonesClock(level, savedAt) {
     const adjustment = game.moves - savedAt;
     restoreLevelPetHistory(level, adjustment);

@@ -10,7 +10,7 @@ import { runSegment } from '../js/jsmain.js';
 import { dodiscovered } from '../js/o_init.js';
 import { SADDLE } from '../js/object_data.js';
 import { monsterSaddle } from '../js/steed.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function startKnight(options = '') {

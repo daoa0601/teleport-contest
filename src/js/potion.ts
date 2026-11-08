@@ -108,7 +108,8 @@ import {
     objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction,
     ownedObjectName, simpleObjectName, fruitName,
 } from './objnam.js';
-import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
+import { learnObjectType, observeObject, recordObjectEncounter, objectTypeKnown } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';

@@ -191,7 +191,7 @@ function matchingGetposSymbols(key, state) {
     }
     return matching;
 }
-// C glyphs.c:glyph_to_cmap() lives in glyphs.ts; the getpos scans below
+// glyph_to_cmap() (glyphs.c) lives in glyphs.ts; the getpos scans below
 // read it through that import.
 // C getpos.c:known_vibrating_square_at(): only the genuine invocation
 // position counts, and only once the trap itself is known.

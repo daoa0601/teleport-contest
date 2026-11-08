@@ -21,6 +21,7 @@ import {
     objectToLuaTable,
 } from './runtime.js';
 import { impossible } from '../pline.js';
+import { game } from '../gstate.js';
 
 export interface LuaBindings extends LuaHostObject {
     nh?: LuaHostObject;
@@ -344,5 +345,11 @@ export function bindLuaLifecycle(lifecycle: LuaLifecycle): void {
 // Port only: the process-wide active Lua lifecycle.
 export function currentLuaLifecycle(): LuaLifecycle {
     return activeLifecycle;
+}
+
+// C nhlua.c:l_nhcore_init(): entry adapter; LuaLifecycle.startCore()
+// initializes the core.
+export async function l_nhcore_init(): Promise<void> {
+    await currentLuaLifecycle().startCore(game);
 }
 

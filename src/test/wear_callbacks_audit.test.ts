@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyTimeout } from '../js/properties.js';
 import type { GameObject } from '../js/object_types.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 
 import { makeHallucinated } from '../js/potion.js';
 import { objectTypeKnown } from '../js/o_init.js';

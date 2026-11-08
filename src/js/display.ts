@@ -140,7 +140,7 @@ export function objectClassSymbol(index: number): string {
     return activeObjectSymbols()[index] ?? '';
 }
 
-// C symbols.c:get_othersym(): the SYM_BOULDER lookup for the active
+// Part of C symbols.c:get_othersym(): the SYM_BOULDER lookup for the active
 // symbol set — the active set's override, else the default rock-class
 // symbol.  optfn_boulder() fills both sets' overrides, while the
 // BOULDER= statement (cfgfiles.c) only fills the primary one. A named
@@ -453,11 +453,12 @@ export function reglyph_darkroom(): void {
     }
 }
 
-// C symbols.c:switch_symbols(): re-resolve memory characters after a
-// primary-set change — reset_glyphmap(gm_symchange), which
-// assign_graphics() also runs.  Object classes differ on Rogue, and
-// terrain characters and branch wall colors also depend on the selected
-// set.
+// Part of C display.c:reset_glyphmap(): re-resolve memory characters after
+// a symbol-set change — the gm_symchange pass symbols.c:assign_graphics()
+// runs once it has copied the selected set; symbols.c:switch_symbols()
+// copies without resetting, and its callers assign next.  Object classes
+// differ on Rogue, and terrain characters and branch wall colors also
+// depend on the selected set.
 export function reglyphSymbolSet(): void {
     if (!game.level) return;
     for (let x = 1; x < COLNO; x++) {
@@ -1122,8 +1123,9 @@ const decFurnitureSymbols = new Map<number, string>([
     [CmapSymbol.explosionTopLeft + 5, 'x'], [CmapSymbol.explosionTopLeft + 7, 's'],
 ]);
 
-// C symbols.c:assign_graphics(): selects the active dungeon symbols.
-// DEC characters retain their alternate font so they do not match ASCII
+// Part of C display.c:map_glyphinfo(): the cmap symbol for the active set —
+// the showsyms lookup over what symbols.c:assign_graphics() selected.  DEC
+// characters retain their alternate font so they do not match ASCII
 // letters.
 export function cmapSymbolAppearance(symbol: number): { ch: string; dec: boolean } {
     const defaultSymbol = MAP_SYMBOLS[symbol]?.ch ?? DEFAULT_EFFECT_SYMBOLS.get(symbol);
@@ -1569,8 +1571,8 @@ export async function map_location(x: number, y: number, show = true) {
 
 // C display.c:feel_newsym(). Known terrain changes update memory by touch
 // when the hero is blind.
-export async function feel_newsym(x: number, y: number) {
-    if (heroIsBlind()) await feel_location(x, y);
+export async function feel_newsym(x: number, y: number, state: GameState = game) {
+    if (heroIsBlind(state)) await feel_location(x, y);
     else await newsym(x, y);
 }
 

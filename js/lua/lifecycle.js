@@ -11,6 +11,7 @@ import { LuaHeroTable } from './hero.js';
 import { createObjectApi } from './nhlobj.js';
 import { LuaState, LuaTable, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
 import { impossible } from '../pline.js';
+import { game } from '../gstate.js';
 export class LuaGameState extends LuaState {
     objects;
     sid;
@@ -299,5 +300,10 @@ export function bindLuaLifecycle(lifecycle) {
 // Port only: the process-wide active Lua lifecycle.
 export function currentLuaLifecycle() {
     return activeLifecycle;
+}
+// C nhlua.c:l_nhcore_init(): entry adapter; LuaLifecycle.startCore()
+// initializes the core.
+export async function l_nhcore_init() {
+    await currentLuaLifecycle().startCore(game);
 }
 //# sourceMappingURL=lifecycle.js.map

@@ -6,7 +6,7 @@ import { runSegment } from '../js/jsmain.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/do_name.js';
 import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 async function start(role, options) {

@@ -12,12 +12,12 @@ import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attr
 import { A_CHA, A_CON, A_INT, A_LAWFUL, A_STR, A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, COLNO, CORR, COULD_SEE, DBWALL, DB_LAVA, DB_MOAT, DB_UNDER, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, HOLE, IN_SIGHT, IRONBARS, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, IS_TREE, IS_WALL, Is_airlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, KILLED_BY, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, MON_OFFMAP, MOAT, OBJECT_TIMER_KIND, PIT, POOL, RLOC_NOMSG, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, SHOP_WALL_COST, SINK, STONE, THRONE, TRAPDOOR, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, Upolyd, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, xdir, ydir, FOOT, HEAD, STOMACH } from './const.js';
 import { isok } from './cmd.js';
 import { currency } from './invent.js';
-import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
+import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isMoatAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { convertSecretDoor } from './detect.js';
 import { impactDrop } from './dokick.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { canSeeMonster, feel_location, flush_screen, newsym, show_glyph_cell } from './display.js';
+import { canSeeMonster, feel_location, feel_newsym, flush_screen, newsym, show_glyph_cell } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explode.js';
 import { fireDamageChain, pitDirection, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap, trapAt, trapName, mintrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap, triggerBoobyTrap, } from './trap.js';
@@ -194,14 +194,6 @@ function maybeHalfPhysical(damage, state) {
     return state.u.halfPhysicalDamage
         ? Math.ceil(damage / 2) : damage;
 }
-// Part of C display.c:feel_newsym(): local copy; the owner is display.ts.
-async function feelNewsym(x, y, state) {
-    // C display.c feel_newsym(): blind heroes feel the changed location.
-    if (heroIsBlind(state))
-        await feel_location(x, y);
-    else
-        await newsym(x, y);
-}
 // C dig.c:rm_waslit()
 function rmWasLit(state) {
     const hero = state.u;
@@ -248,7 +240,7 @@ async function mkcavepos(x, y, dist, waslit, rockit, state) {
     if (visibilityRow)
         visibilityRow[x] = dist < 3 ? (IN_SIGHT | COULD_SEE) : COULD_SEE;
     location.typ = rockit ? STONE : ROOM;
-    await feelNewsym(x, y, state);
+    await feel_newsym(x, y, state);
 }
 // C dig.c:mkcavearea()
 // The Earth plane's collapsing/created cave.
@@ -594,7 +586,7 @@ export async function continueHeroDigging(state = game) {
         }
         if (!cleanedUp) {
             vision_note_blocker_change(dpx, dpy);
-            await feelNewsym(dpx, dpy, state);
+            await feel_newsym(dpx, dpy, state);
             if (digtxt && !digging.quiet)
                 await pline(digtxt);
             if (dmgtxt)
@@ -652,10 +644,6 @@ function boulderAt(x, y, state) {
 // Part of C dig.c:digactualhole(): the level.objects[x][y] pile accesses.
 function pileAt(x, y, state) {
     return state.level?.objects?.[x]?.[y] || [];
-}
-// Part of C dig.c:dig_check(), dig.c:dighole(): the is_pool_or_lava() test.
-function isPoolOrLava(x, y, state) {
-    return isPoolAt(x, y, state) || isLavaAt(x, y, state);
 }
 // Part of C dig.c:digactualhole(): the Levitation || Flying test.
 function heroIsAirborne(state) {
@@ -726,7 +714,7 @@ export function digCheck(madeBy, x, y, state = game) {
     else if (boulderAt(x, y, state)) {
         return DIGCHECK_FAIL_BOULDER;
     }
-    else if (madeBy === 'object' && (trap || isPoolOrLava(x, y, state))) {
+    else if (madeBy === 'object' && (trap || isPoolOrLavaAt(x, y, state))) {
         return DIGCHECK_FAIL_OBJ_POOL_OR_TRAP;
     }
     return DIGCHECK_PASSED;
@@ -835,7 +823,7 @@ export async function digHole({ pitOnly = false, byMagic = false, coordinate = n
         deleteTrap(trap, state);
         await newsym(digX, digY);
     }
-    else if (isPoolOrLava(digX, digY, state)) {
+    else if (isPoolOrLavaAt(digX, digY, state)) {
         await plineWithContinuation(`The ${liquidName(isLavaAt(digX, digY, state) ? LAVAPOOL : POOL, state)} sloshes furiously for a moment, then subsides.`);
         await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
     }
@@ -1136,7 +1124,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
 }
 // C dig.c:liquid_flow().  The caller has already changed the terrain type.
 export async function liquidFlow(x, y, typ, trap, fillMessage, { state = game } = {}) {
-    if (!isPoolOrLava(x, y, state))
+    if (!isPoolOrLavaAt(x, y, state))
         return;
     requirePlayingGame(state);
     if (trap)

@@ -193,7 +193,9 @@ module that already ports exactly one C file, so a module that was
 single-owner and gains a function from another C file fails the check.
 A consolidation that deletes modules or moves ownership on purpose only
 regenerates the ledger: `node scripts/static-gaps.mjs owners --write-ledger
-docs/ledger/module-owners.tsv`.
+docs/ledger/module-owners.tsv`. That write refuses to drop a row whose
+module still exists — a lost single owner must be reviewed and pass
+`--allow-owner-loss`; deleted-module rows are dropped without the flag.
 
 `screens RUN_DIR` reads a finished `triage-holdout` run. It charges each
 screen-only first difference to the C function whose literal appears on the

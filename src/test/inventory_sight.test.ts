@@ -13,7 +13,7 @@ import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { changeTutorialState } from '../js/tutorial_state.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { learnUnseenInventory } from '../js/invent.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { CLUB, SACK } from '../js/object_data.js';
 import { removeCurseEffect } from '../js/read.js';
 import { makeWish } from '../js/zap.js';

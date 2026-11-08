@@ -11,7 +11,7 @@ import { applyMonsterPassiveToObject } from '../js/uhitm.js';
 import { cancelObjectMagic } from '../js/zap.js';
 import { CLUB, LEATHER_ARMOR, MAGIC_LAMP, OIL_LAMP, POT_HEALING, POT_WATER } from '../js/object_data.js';
 import { recordObjectCall } from '../js/do_name.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 
 import { objectNeedsFullIdentification, objectName } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';

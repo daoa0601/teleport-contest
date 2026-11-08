@@ -20,7 +20,7 @@ import {
 } from '../js/object_data.js';
 import { parseNethackrc } from '../js/cfgfiles.js';
 import { roles } from '../js/role.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import {
     completeHeroStartup, prepareHeroStartup,
 } from './support/startup.js';

@@ -11,7 +11,7 @@ import { monsterName, setMonsterGivenName } from '../js/do_name.js';
 import { monsterPossessive } from '../js/mondata.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { shopkeeperName } from '../js/shknam.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';

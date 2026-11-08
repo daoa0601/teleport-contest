@@ -15,7 +15,7 @@ import { setPropertyTimeout } from '../js/potion.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { objectTypeKnown } from '../js/o_init.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';

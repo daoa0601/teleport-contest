@@ -75,7 +75,7 @@ import { petFoodNutrition, extendPetHungerDeadline } from './dogmove.js';
 import { displayMessageWindow } from './topl.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { exerciseWisdom } from './attrib.js';
-import { recordObjectKnowledge } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import { buzz, dobuzz, hitMonsterWithRay } from './zap.js';
 import { hitObjectWithWand } from './zap.js';
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './zap.js';

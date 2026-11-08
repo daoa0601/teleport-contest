@@ -4,7 +4,7 @@ import { A_CHA } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { objectDescription, objectDescriptionPrice } from '../js/objnam.js';
 import { priceQuoteSuffix, recordObjectPriceQuote } from '../js/shk.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 import { DAGGER, FOOD_RATION, GLOB_OF_GRAY_OOZE, GOLD_PIECE, POT_HEALING, SACK, } from '../js/object_data.js';
 import { unlinkObject, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { addShopObjectToBill, getCostOfShopItem, unpaidObjectCost } from '../js/shk.js';

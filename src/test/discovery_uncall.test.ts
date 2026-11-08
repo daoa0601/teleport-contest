@@ -4,7 +4,7 @@ import { A_CHA, PANICLOG } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { callObjectType, recordObjectCall } from '../js/do_name.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 
 import { POT_HEALING, WORTHLESS_PIECE_OF_WHITE_GLASS } from '../js/object_data.js';
 

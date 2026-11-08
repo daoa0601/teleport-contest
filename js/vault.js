@@ -35,7 +35,7 @@ import { deleteTrap } from './trap.js';
 import { publishMonsterYelp } from './sounds.js';
 import { heroFormSticks } from './polyself.js';
 import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object } from './mkobj.js';
-import { currency, freeInventoryObject, stack_object } from './invent.js';
+import { currency, freeInventoryObject, stack_object, goldAt } from './invent.js';
 import { enexto } from './teleport.js';
 import { heroGoldAmount, roomForRoomno, roomsAt } from './hack.js';
 const PM_GUARD = 272;
@@ -857,11 +857,6 @@ function nextCorridorSquare(guard, state) {
             deleteEngravingAt(ex, ey, level);
         return { x: nx, y: ny, typ };
     }
-}
-// C invent.c:g_at()
-// The gold stack on a square, if any; C invent.c:g_at() inline.
-export function goldAt(x, y, state) {
-    return requireGameLevel(state).objects[x]?.[y]?.find(object => object.otyp === GOLD_PIECE);
 }
 // C vault.c:gd_pick_corridor_gold()
 async function pickCorridorGold(guard, x, y, state, random) {

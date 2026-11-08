@@ -3,7 +3,8 @@
 // is_ice(), is_moat(), db_under_typ(), is_db_wall(), find_drawbridge(),
 // get_wall_for_db(), create_drawbridge(), set_entity()/m_to_e()/u_to_e(),
 // e_nam()/e_survives_at()/e_missed()/e_jumps()/e_at()/e_died()/do_entity(),
-// close_drawbridge(), open_drawbridge().
+// close_drawbridge(), open_drawbridge().  invent.c:delallobj() lives in
+// invent.ts.
 import { deleteTrap } from './trap.js';
 import { DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_SOUTH, DB_UNDER, DB_WEST, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, ICE, ICED_MOAT, IS_DRAWBRIDGE, IS_WALL, Is_stronghold, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, WATER, W_NONDIGGABLE, STONE, CRUSHING, KILLED_BY_AN, NO_KILLER_PREFIX, IS_WATERWALL } from './const.js';
 import { isok } from './cmd.js';
@@ -15,8 +16,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { remove_object } from './mkobj.js';
 import { BOULDER } from './object_data.js';
 import { wakeMonstersNearWithMessages, finishMonsterKilled, resolveMonsterLiquid, finishHeroMonsterKill, finishLiquidDeathForCurrentMover, } from './mon.js';
-import { delobj } from './invent.js';
-import { unpunishHero } from './read.js';
+import { destroyObjectsAt } from './invent.js';
 import { heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
@@ -162,19 +162,6 @@ export function findDrawbridgeAt(x, y, state = game) {
         return null;
     const bridgeLocation = state.level.at(bridge.x, bridge.y);
     return bridgeLocation ? { x: bridge.x, y: bridge.y, location: bridgeLocation } : null;
-}
-// C invent.c:delallobj()
-// The closing drawbridge destroys the pile at a square — this
-// whole-pile deletion.
-async function destroyObjectsAt(x, y, state) {
-    for (const object of [...state.level?.objects[x]?.[y] ?? []]) {
-        if (object.where === 'gone')
-            continue;
-        if (object === (state.uball || state.u.uball))
-            await unpunishHero(state);
-        if (object !== (state.uchain || state.u.uchain))
-            await delobj(object, state);
-    }
 }
 // Part of C dbridge.c:open_drawbridge(), close_drawbridge(),
 // destroy_drawbridge(): the t_at()/deltrap() removal.

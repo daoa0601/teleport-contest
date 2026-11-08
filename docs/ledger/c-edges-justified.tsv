@@ -476,8 +476,8 @@ gain_guardian_angel	mk_roamer	inlined	guardian angel creation with roamer flags 
 gem_learned	find_oid	inlined	bill object lookup by o_id (shk.ts)
 generate_stairs_find_room	alloc	n/a	room index array is a plain array (mklev.ts)
 genl_outrip	alloc	n/a	tombstone lines are strings
-genl_outrip	center	inlined	tombstoneLine centers name/gold/year (end.ts)
-genl_outrip	yyyymmdd	inlined	tombstoneYear (end.ts)
+genl_outrip	center	inlined	tombstoneLine centers name/gold/year (rip.ts)
+genl_outrip	yyyymmdd	inlined	tombstoneYear (rip.ts)
 get_cost	acurr	inlined	strength factor in the price (shk.ts shopGetPrice)
 get_cost	getprice	inlined	base price table (shk.ts shopGetPrice)
 get_rnd_line	alloc	n/a	rumor buffers are strings
@@ -639,7 +639,7 @@ obj_is_local	mon_is_local	inlined	carrier lookup decides locality (light.ts, tim
 obj_typename	nextobuf	n/a	name buffers are strings
 obj_typename	xcalled	inlined	call-name substitution in type names (objnam.ts)
 occupied	invocation_pos	n/a	t_at() is evaluated first in the same expression and already true at inv_pos (vibrating square placed before populate_maze's mktrap)
-occupied	t_at	inlined	traps.some at the square (mkroom.ts)
+occupied	t_at	inlined	traps.some at the square (mklev.ts)
 offer_different_alignment_altar	a_gname	inlined	altar god naming (sacrifice.ts)
 offer_different_alignment_altar	u_gname	inlined	own god naming (sacrifice.ts)
 ok_to_quest	is_pure	inlined	purity predicate inline in okToQuest (quest.ts)
@@ -1030,13 +1030,13 @@ show_achievements	rank_to_xlev	inlined	ACH_RNK1..8 range check against the title
 show_achievements	record_achievement	inlined	ascension reorders uachieved entries directly (insight.ts achievementLines)
 show_achievements	remove_achievement	inlined	same reorder: filter ACH_AMUL/ACH_UWIN then re-append (insight.ts achievementLines)
 close_drawbridge	del_engr_at	inlined	removeEngravingAt on both squares (dbridge.ts)
-close_drawbridge	delallobj	inlined	destroyObjectsAt on both squares (dbridge.ts)
+close_drawbridge	delallobj	inlined	destroyObjectsAt on both squares (invent.ts)
 close_drawbridge	dist2	inlined	squaredHeroDistance/distu comparison for coming/going (dbridge.ts announceBridgeMovement)
 close_drawbridge	do_entity	inlined	moveDrawbridgeOccupants -> handleEntity (dbridge.ts)
 close_drawbridge	nokiller	n/a	killer globals are not cached across occupant handling in the port
 close_drawbridge	set_entity	inlined	entityAt captures bridge and wall occupants incl. worm tails (dbridge.ts)
 open_drawbridge	del_engr_at	inlined	removeEngravingAt on both squares (dbridge.ts)
-open_drawbridge	delallobj	inlined	destroyObjectsAt (dbridge.ts)
+open_drawbridge	delallobj	inlined	destroyObjectsAt (invent.ts)
 open_drawbridge	dist2	inlined	squaredHeroDistance comparison (dbridge.ts)
 open_drawbridge	do_entity	inlined	moveDrawbridgeOccupants -> handleEntity (dbridge.ts)
 open_drawbridge	nokiller	n/a	killer globals are not cached across occupant handling in the port
@@ -1380,14 +1380,14 @@ known_vibrating_square_at	t_at	inlined	traps.find VIBRATING_SQUARE tseen (getpos
 lesshungry	reset_eat	inlined	victual.doreset on the shared meal state (eat.ts)
 losedogs	make_happy_shoppers	inlined	makeShoppersHappy after arrivals (dog.ts)
 make_grave	del_engr_at	inlined	makeEngravingAt replaces any engraving at the square (engrave.ts)
-makedog	carrying	inlined	camera check for the closeup photo (u_init.ts makedog)
+makedog	carrying	inlined	camera check for the closeup photo (dog.ts makedog)
 mapseen_temple	find_mapseen	inlined	_overviewRecords lookup (dungeon.ts)
 maybe_cannibal	change_luck	inlined	uluck reduced by rn1(4,2) (eat.ts)
 maybe_do_tutorial	ask_do_tutorial	inlined	askTutorial menu before entering (allmain.ts)
 maybe_kick_monster	overexertion	inlined	checkHeroAttackOverexertion (cmd.ts)
 mfind0	set_msg_xy	inlined	findHiddenMonster marks the monster square before its three messages (detect.ts)
 mkot_trap_warn	count_surround_traps	inlined	isok/glyphAt trap scan (artifact.ts)
-mon_leave	picked_container	inlined	clearNoCharge recursion (dog.ts)
+mon_leave	picked_container	inlined	clearCarriedNoCharge recursion (dog.ts)
 move_bc	movobj	inlined	moveObject for ball and chain (ball.ts)
 move_update	in_rooms	inlined	roomsAt membership scan (room.ts)
 movecmd	cmdbind_get	inlined	bindings.movementForKey (cmd.ts)
@@ -1968,7 +1968,7 @@ pay_billed_items	update_inventory	n/a	perm_invent window plumbing
 set_repo_loc	sgn	inlined	Math.sign (shk.ts completeShopSettlement)
 boxlock_invent	update_inventory	n/a	perm_invent window plumbing
 delayed_killer	alloc	n/a	memory allocation for the killer record; typed slimeKiller/stoneKiller/_polymorphGenocideCause fields replace it
-delayed_killer	find_delayed_killer	inlined	the typed fields are read back at slime.ts:235 (hero.slimeKiller) and stoning.ts:458 (petrificationDeathCause)
+delayed_killer	find_delayed_killer	inlined	the typed fields are read back at potion.ts:344 (hero.slimeKiller) and timeout.ts petrificationDeathCause
 menu_remarm	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (do_wear.ts selectBulkTakeoff)
 menu_remarm	menu_class_present	n/a	menu class plumbing; the BUC filter is a direct category check (do_wear.ts)
 doddoremarm	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (do_wear.ts takeOffAll)

@@ -4,7 +4,7 @@
 //   node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs edges [--function NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs args [--check-ledger L.tsv] [--write-ledger L.tsv]
-//   node scripts/static-gaps.mjs owners [--check-ledger L.tsv] [--write-ledger L.tsv]
+//   node scripts/static-gaps.mjs owners [--check-ledger L.tsv] [--write-ledger L.tsv] [--allow-owner-loss]
 //   node scripts/static-gaps.mjs screens RUN_DIR
 //
 // `messages` lists every C string literal (outside debugging calls) whose
@@ -35,6 +35,8 @@
 // The message ledger lists every literal found present; the constant ledger
 // every name whose value matches C. `--check-ledger` fails when
 // a listed literal is no longer present (a lost message is a regression).
+// The owners ledger's `--write-ledger` refuses to drop a row whose module
+// still exists unless `--allow-owner-loss` marks the loss as reviewed.
 // Diagnostics go to `.cache/static-gaps/`.
 
 import { createHash } from 'node:crypto';
@@ -549,6 +551,22 @@ async function ownership(args: string[]): Promise<void> {
     // Rows whose module a consolidation deleted are reported, not failed on.
     const removed = removedModuleKeys(checkPath ? [...readLedger(checkPath)] : [],
         module => existsSync(join(ROOT, module)));
+    // `--write-ledger` must not silently drop a row whose module still
+    // exists: that is a lost single owner, so a reviewed loss has to say so.
+    const writePath = option('--write-ledger');
+    if (writePath && existsSync(writePath) && !args.includes('--allow-owner-loss')) {
+        const current = new Set(report.singleOwnerKeys);
+        const writeRemoved = removedModuleKeys([...readLedger(writePath)],
+            module => existsSync(join(ROOT, module)));
+        const lost = [...readLedger(writePath)].filter(key => !current.has(key) && !writeRemoved.has(key));
+        if (lost.length) {
+            console.error(`\n${lost.length} module-owner rows would be dropped for modules that still exist:`);
+            for (const key of lost) console.error(`  ${key}`);
+            console.error('Pass --allow-owner-loss for a reviewed ownership loss.');
+            process.exitCode = 1;
+            return;
+        }
+    }
     applyLedger(option, report.singleOwnerKeys, 'module owners',
         'module\tC file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)',
         removed);
@@ -609,7 +627,7 @@ async function screens(args: string[]): Promise<void> {
 
 const USAGE = 'usage: static-gaps.mjs {messages [--coverage C-COVERAGE.json] [--reviewed-ledger R.tsv] [--verbose] '
     + '| constants | edges [--function NAME] | args | owners | screens RUN_DIR} '
-    + '[--check-ledger L.tsv] [--write-ledger L.tsv]';
+    + '[--check-ledger L.tsv] [--write-ledger L.tsv] [--allow-owner-loss (owners)]';
 const [command, ...rest] = process.argv.slice(2);
 try {
     if (command === 'messages') await messages(rest);

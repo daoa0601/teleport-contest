@@ -81,7 +81,7 @@ const bill = (value) => closedFieldsMatch(value, {
     price: integer,
     useup: monsterFlag,
 });
-const shopkeeper = (value) => closedFieldsMatch(value, {
+const shopkeeperData = (value) => closedFieldsMatch(value, {
     shoproom: integer,
     shoptype: integer,
     shoplevel: monsterHomeLevel,
@@ -145,7 +145,7 @@ function extra(representation) {
         edog: optional(pet),
         emin: optional(minion),
         epri: optional(priest),
-        eshk: optional(shopkeeper),
+        eshk: optional(shopkeeperData),
         ebones: optional(bones),
     });
 }
@@ -267,7 +267,7 @@ function monsterFields(value, context) {
         edog: optional(pet),
         emin: optional(minion),
         epri: optional(priest),
-        eshk: optional(shopkeeper),
+        eshk: optional(shopkeeperData),
         mextra: optional(extra(representation)),
         _egd: optional(guard(context)),
         wormno: optional(integer),

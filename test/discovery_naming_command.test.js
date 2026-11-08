@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { queueCannedKeys } from './support/canned-input.js';
 import { RIN_PROTECTION } from '../js/object_data.js';
 import { recordObjectCall } from '../js/do_name.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 import { renameDiscoveredType } from '../js/o_init.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { C_ATR_BOLD } from '../js/color_attr.js';

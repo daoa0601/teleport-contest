@@ -6,7 +6,7 @@ import test from 'node:test';
 
 import { game } from '../js/gstate.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

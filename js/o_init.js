@@ -586,15 +586,9 @@ export function recordObjectEncounter(otyp, state = game) {
         state._encounteredObjectTypes = new Set();
     state._encounteredObjectTypes.add(otyp);
 }
-// C u_init.c:knows_object()
-// Mark a type known without an encounter; the pauper guard lives at the
-// callers.
-export function recordObjectKnowledge(otyp, state = game) {
-    discoverKnownType(otyp, false, state);
-}
 // Part of C o_init.c:discover_object(): mark a type known, credit Wisdom
 // once, reprice gems.
-function discoverKnownType(otyp, creditHero, state) {
+export function discoverKnownType(otyp, creditHero, state) {
     if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT)
         return;
     const known = OBJECT_INITIAL_KNOWN[otyp] || state._knownObjectTypes?.has(otyp);

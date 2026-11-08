@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { fill_special_room } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishSpellTurn, prepareSpellCaster } from './support/monster-spells.js';
 import { freshObjectRoom } from './support/object-room.js';

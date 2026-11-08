@@ -122,7 +122,8 @@ export class CommandBindings {
     specialKey(name) {
         return this.specialKeys.get(name);
     }
-    // options.c:add_menu_cmd_alias() appends aliases; the first matching
+    // Part of C options.c:add_menu_cmd_alias(), illegal_menu_cmd_key():
+    // appends the alias after the caller-key validation; the first matching
     // key wins, and the original menu command remains available.
     bindMenuKey(key, name) {
         const command = MENU_COMMAND_KEYS.get(name);

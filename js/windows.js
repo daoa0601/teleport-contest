@@ -373,11 +373,12 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
         await tty_destroy_nhwindow(window);
     }
 }
-// C wintty.c:tty_putstr(): buffer text rows and flush full text-window
-// pages — the NHW_TEXT branch. The native tty_putstr buffers empty rows
-// too, and flushes at terminal height minus its footer; a trailing blank
-// can therefore own a page.  The NHW_MESSAGE branch is the topline owner
-// (tty_topline.ts) and the NHW_MENU branch is wintty.ts's menuLayout.
+// Part of C wintty.c:tty_putstr(): buffer text rows and flush full
+// text-window pages — the NHW_TEXT branch. The native tty_putstr buffers
+// empty rows too, and flushes at terminal height minus its footer; a
+// trailing blank can therefore own a page.  The NHW_MESSAGE branch is the
+// topline owner (tty_topline.ts) and the NHW_MENU branch is wintty.ts's
+// menuLayout.
 export async function showTextWindow(lines) {
     const d = display();
     if (!d)

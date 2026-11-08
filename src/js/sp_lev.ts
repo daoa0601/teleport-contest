@@ -3672,8 +3672,10 @@ function sp_level_coder_init() {
             }
         },
     );
-    // C nhlua.c:nhl_timer_start_at(): register a level timer at a map
-    // position; only melt-ice is a position timer (timer_is_pos()).
+    // Part of C nhlua.c:nhl_timer_start_at(): register a level timer at a
+    // map position; only melt-ice is a position timer (timer_is_pos()).
+    // Kept a local closure because it reads this scope's room coordinates
+    // when translating the caller's relative position.
     const startTimerAt = (...args: LuaValue[]) => {
         // nhl_get_timertype() takes luaL_checkoption over every
         // timeout_funcs entry at stack index -2, so a bad name is
