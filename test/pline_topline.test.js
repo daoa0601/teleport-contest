@@ -3,8 +3,8 @@ import test from 'node:test';
 import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
-import { doprevMessage, promptKey } from '../js/cmd.js';
-import { displayMessageWindow } from '../js/topl.js';
+import { promptKey } from '../js/cmd.js';
+import { doprevMessage, displayMessageWindow } from '../js/topl.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 function topline() {

@@ -20,7 +20,8 @@ import { CMDQ_KEY } from './const.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { showChoiceWindow } from './windows.js';
-import { doprevMessage, extcmdsMatch, yn_function } from './cmd.js';
+import { extcmdsMatch, yn_function } from './cmd.js';
+import { doprevMessage } from './topl.js';
 import type { NativeCommand } from './cmd.js';
 import { visibleCommandKey } from './hacklib.js';
 
