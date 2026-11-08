@@ -928,7 +928,7 @@ export function recordDiscoveredRoom(
     return true;
 }
 
-// Part of C dungeon.c:init_dungeon(): the lua_istable() checks that reject
+// Part of C dungeon.c:init_dungeons(): the lua_istable() checks that reject
 // a non-table dungeon entry. The Lua runtime supplies the data; this module
 // owns dungeon.c's placement and branch construction rules.
 function definitionRecord(value: unknown, path: string): Record<string, unknown> {
@@ -1267,11 +1267,13 @@ export function resolveDungeonIdentities(state: GameState = game): void {
     state.tower_dnum = dungeons.findIndex(dungeon => dungeon.dname === "Vlad's Tower");
 }
 
-// C dungeon.c:init_dungeon_dungeons() and init_dungeon_levels(): read each
-// Lua dungeon and level entry, roll its chance, and place its special
-// levels. add_branch() joins the parent at parent_dlevel's free square and
-// init_dungeon_set_depth() derives depth_start from that connection.
-// init_castle_tune() rolls the five drawbridge notes.
+// C dungeon.c:init_dungeons(): load dungeon.lua, walk its dungeon table,
+// and build the live dungeon/branch/level graph.
+// init_dungeon_dungeons() and init_dungeon_levels() are inlined in the
+// loop: read each Lua dungeon and level entry, roll its chance, and place
+// its special levels. add_branch() joins the parent at parent_dlevel's
+// free square and init_dungeon_set_depth() derives depth_start from that
+// connection. init_castle_tune() rolls the five drawbridge notes.
 export async function init_dungeons(): Promise<void> {
     const loaded: LoadedDungeon[] = [];
     const branches: DungeonBranch[] = [];

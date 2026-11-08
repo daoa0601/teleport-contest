@@ -15,7 +15,9 @@ function isNameStart(char) {
 function isNamePart(char) {
     return /[A-Za-z0-9_]/u.test(char || '');
 }
-// Part of C llex.c:skip_sep(): the [=*[ long-bracket level count.
+// C llex.c:skip_sep(): count the '='s of a [=[ long bracket — the level is
+// that count when the opening '[' is followed by another '['; -1 carries
+// C's "not a separator" return (its 0, or 1 for a bare bracket).
 function longBracketLevel(source, offset) {
     if (source[offset] !== '[')
         return -1;

@@ -2881,8 +2881,12 @@ export async function doOptions(menuRequested = false): Promise<void> {
 // C's HELP_IDX is distinct from the boolean 'help' option.
 const OPTIONS_MENU_HELP = 'options_menu_help';
 
-// Part of C options.c:doset(): the "Set what options?" menu and its
-// boolean toggling.
+// C options.c:doset(): the full "Set what options?" menu loop — the
+// cmdassist help block, the boolean/compound/other sections, the pick walk
+// that toggles booleans and dispatches compound editors (doset_add_menu's
+// rows come from requestMenuSections()), and the rerun-on-help-only pass
+// with reset_needed_visuals() at the end. doset_simple()'s port (doOptions)
+// routes here on a menu-requested '#options'.
 async function doRequestMenuOptions(): Promise<void> {
     let skipHelp = game.flags.cmdassist === false;
     let pending = NO_VISUAL_CHANGE;

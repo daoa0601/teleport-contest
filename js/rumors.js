@@ -243,8 +243,11 @@ function rumorEndpoints(label, start, lines) {
     return [`${label} ${decimal(start)} ${paddedLine(first, MD_PAD_RUMORS)}`,
         `         ${paddedLine(last, MD_PAD_RUMORS)}`];
 }
-// Part of C rumors.c:others_check(): one blank line, the title, the first
-// two entries, and the ellipsis/last entry of a section.
+// C rumors.c:others_check(): one supporting-text file's window lines —
+// the blank line, the header, the first two entries, the ellipsis, and the
+// last entry. rumor_check() owns the shared window, as C's winptr does;
+// the port compiles the file contents in, so the missing-file and
+// malformed-comment error paths cannot occur.
 function supportingText(title, entries, padding) {
     const first = entries[0];
     if (first === undefined)

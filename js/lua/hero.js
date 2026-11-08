@@ -22,6 +22,9 @@ export class LuaHeroTable extends LuaTable {
         super.set('giveobj', objects.give);
         super.set('clear_inventory', objects.clearInventory);
     }
+    // C nhlua.c:nhl_meta_u_index(): the ustruct[] field loop first, then
+    // the inventory/role/moves/uhave_amulet/depth/invocation_level lookups,
+    // and "Unknown u table index" for anything else.
     get(key) {
         if (super.get(key) !== null)
             return super.get(key);
