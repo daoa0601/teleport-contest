@@ -723,7 +723,7 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
             continue;
         }
         if (canonical === 'statushilites') {
-            result.iflags.hiliteDelta = optfnStatusHilites(optionValue ?? '', negated, true);
+            optfnStatusHilites(optionValue ?? '', negated, result.iflags, true);
             continue;
         }
         if (canonical === 'runmode') {
@@ -1206,14 +1206,14 @@ function optfnPileLimit(op, negated) {
 }
 // C options.c:optfn_statushilites(): negation clears the duration; a
 // missing value means the 3-turn default, atol() of junk is 0, and
-// negative values clamp to 1.  In-game changes request update_all even
-// when the value is unchanged (reset_status_hilites() under the
-// !go.opt_from_file guard).
-function optfnStatusHilites(op, negated, fromFile) {
+// negative values clamp to 1.  The duration is assigned before the
+// !go.opt_from_file reset_status_hilites(), whose update_all reads the
+// new value.
+function optfnStatusHilites(op, negated, iflags, fromFile) {
     const delta = negated ? 0 : op ? cInteger(op) : 3;
+    iflags.hiliteDelta = delta < 0 ? 1 : delta;
     if (!fromFile)
         resetStatusHilites();
-    return delta < 0 ? 1 : delta;
 }
 // C options.c:optfn_msg_window(): a value's first letter names the window
 // mode (single, combination, full, reversed); the bare option is full and
@@ -1464,7 +1464,7 @@ export async function setTextOption(name, value) {
                 await optionError(`'statuslines:${value}' is invalid; must be 2 or 3`);
             break;
         case 'statushilites': {
-            game.iflags.hiliteDelta = optfnStatusHilites(value, false, false);
+            optfnStatusHilites(value, false, game.iflags, false);
             break;
         }
         case 'hilite_status': {

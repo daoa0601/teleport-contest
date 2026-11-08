@@ -12,7 +12,7 @@ import { flush_screen } from '../js/display.js';
 import { statusHiliteMenu } from '../js/botl.js';
 import { cansee } from '../js/vision.js';
 import { BL_HP, BL_TH_ALWAYS_HILITE, HL_NONE, MAXBLSTATS, NO_LTEQGT } from '../js/const.js';
-import { CLR_RED, CLR_GREEN, ATR_BOLD, NO_COLOR } from '../js/terminal.js';
+import { CLR_RED, CLR_GREEN, CLR_BLUE, ATR_BOLD, NO_COLOR } from '../js/terminal.js';
 function screen() {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
 }
@@ -709,5 +709,23 @@ void test('full-screen options preserve a temporary HP highlight until duration 
     await setFullMenuTextOption('statushilites', '3');
     assert.equal(hitpointCell().text, original.text);
     assert.equal(hitpointCell().color, CLR_GREEN, 'update_all clears the temporary rule and selects the persistent rule');
+});
+void test('enabling statushilites from off resets buffered rules after assigning the duration', async () => {
+    await freshObjectRoom({ flags: { menu_overlay: false, cmdassist: false } });
+    requirePlayingGame(game);
+    applyNethackrc('OPTIONS=hilite_status:hp/always/blue/down/red');
+    // Disable highlighting after the rules are buffered: status rounds keep
+    // painting unstyled cells while the rule set still updates underneath.
+    game.iflags.hiliteDelta = 0;
+    await bot();
+    game.u.uhp--;
+    await bot();
+    const original = hitpointCell();
+    assert.equal(original.color, NO_COLOR, 'a disabled duration paints no highlight');
+    await setFullMenuTextOption('statushilites', '2');
+    assert.equal(hitpointCell().text, original.text);
+    assert.equal(hitpointCell().color, CLR_BLUE, 'reset_status_hilites() runs after the new duration is assigned, so update_all'
+        + ' re-evaluates the unchanged HP under the always/blue rule instead of painting'
+        + ' the buffered down/red rule');
 });
 //# sourceMappingURL=options_status_hilites.test.js.map
