@@ -1017,7 +1017,7 @@ async function categoryMenu(): Promise<Category[]> {
     return selected;
 }
 
-// Part of C invent.c:query_category(): the removal-category prompt.
+// Part of C pickup.c:query_category(): the removal-category prompt.
 async function traditionalCategories(combo: boolean, selectOff: SelectOff): Promise<Category[] | null> {
     const worn = wornInventory();
     const classes = [...new Set(worn.map(object => object.oclass))];
