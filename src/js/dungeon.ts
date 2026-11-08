@@ -985,8 +985,9 @@ function definitionFlags(value: unknown, path: string): DungeonFlag[] {
         .map((flag, index) => definitionFlag(flag, `${path}[${index + 1}]`));
 }
 
-// Part of C dungeon.c:791: dgnaligns2i[get_table_option(L, "alignment", ...)]
-// — the alignment name read.
+// C dungeon.c:get_dgn_align(): the alignment name read —
+// dgnaligns2i[get_table_option(L, "alignment", "unaligned", dgnaligns)]
+// (dungeon.c:791).
 function definitionAlignment(value: unknown, path: string): DungeonAlignment {
     if (value == null) return 'unaligned';
     if (typeof value !== 'string') throw new TypeError(`${path} must be an alignment name`);
@@ -997,8 +998,9 @@ function definitionAlignment(value: unknown, path: string): DungeonAlignment {
     }
 }
 
-// Part of C dungeon.c:897: brtypes2i[get_table_option(L, "branchtype", ...)]
-// — the branch-type name read.
+// C dungeon.c:init_dungeon_branches(): the branch-type name read —
+// brtypes2i[get_table_option(L, "branchtype", "stair", brtypes)]
+// (dungeon.c:897).
 function definitionBranchType(value: unknown, path: string): BranchDefinitionType {
     if (value == null) return 'stair';
     if (typeof value !== 'string') throw new TypeError(`${path} must be a branch type name`);
@@ -1008,8 +1010,9 @@ function definitionBranchType(value: unknown, path: string): BranchDefinitionTyp
     }
 }
 
-// Part of C dungeon.c:899: brdirstr2i[get_table_option(L, "direction", ...)]
-// — the up/down direction read.
+// C dungeon.c:init_dungeon_branches(): the up/down direction read —
+// brdirstr2i[get_table_option(L, "direction", "down", brdirstr)]
+// (dungeon.c:899).
 function definitionBranchUp(value: unknown, path: string): boolean {
     if (value == null || value === 'down') return false;
     if (value === 'up') return true;
@@ -1030,7 +1033,7 @@ function branchDefinition(value: unknown, path: string): BranchDefinition {
     };
 }
 
-// Part of C dungeon.c:init_dungeon_levels(): one Lua LEVEL entry.
+// C dungeon.c:init_dungeon_levels(): one Lua LEVEL entry.
 function levelDefinition(value: unknown, path: string): SpecialLevelDefinition {
     const source = definitionRecord(value, path);
     const flags = definitionFlags(source.flags, `${path}.flags`);
@@ -1049,7 +1052,7 @@ function levelDefinition(value: unknown, path: string): SpecialLevelDefinition {
     };
 }
 
-// Part of C dungeon.c:init_dungeon_dungeons(): one Lua DUNGEON entry.
+// C dungeon.c:init_dungeon_dungeons(): one Lua DUNGEON entry.
 function dungeonDefinition(value: unknown, path: string): DungeonDefinition {
     const source = definitionRecord(value, path);
     const flags = definitionFlags(source.flags, `${path}.flags`);
@@ -1345,21 +1348,27 @@ export async function init_dungeons(): Promise<void> {
     game.castleTune = castleTune.join(''); // init_castle_tune()
 
     game.dungeons = loaded.map(entry => entry.dungeon);
-    resolveDungeonIdentities(game);
     game.branches = branches;
     exposeSpecialLevels(loaded);
-    // C dungeon.c:fixup_level_locations() leaves Fort Ludios floating by
-    // replacing its source dungeon with the out-of-range n_dgns sentinel.
-    // mk_knox_portal() resolves that endpoint only after an eligible deep
-    // vault is generated.
+    fixupLevelLocations(game);
+}
+
+// C dungeon.c:fixup_level_locations(): the named-dungeon identities
+// (resolveDungeonIdentities() above, also used by save/restore), Fort
+// Ludios left floating by replacing its source dungeon with the
+// out-of-range n_dgns sentinel (mk_knox_portal() resolves that endpoint
+// only after an eligible deep vault is generated), and the dummy surface
+// that shifts the Planes up one floor, placing Earth at depth -1 instead
+// of zero.
+function fixupLevelLocations(state: GameState = game): void {
+    resolveDungeonIdentities(state);
+    const branches = state.branches || [];
     const knoxBranch = branches.find(branch =>
-        game.dungeons?.[branch.end2?.dnum]?.dname === 'Fort Ludios');
-    if (knoxBranch) knoxBranch.end1.dnum = loaded.length;
-    // C fixup_level_locations(): the dummy surface shifts the Planes up
-    // one floor, placing Earth at depth -1 instead of zero.
-    const dummy = game.specialLevels?.get('dummy');
+        state.dungeons?.[branch.end2?.dnum]?.dname === 'Fort Ludios');
+    if (knoxBranch) knoxBranch.end1.dnum = (state.dungeons ?? []).length;
+    const dummy = state.specialLevels?.get('dummy');
     if (dummy) {
-        const dungeon = requireDungeon(game.dungeons, dummy.dnum);
+        const dungeon = requireDungeon(state.dungeons, dummy.dnum);
         if (dungeon.num_dunlevs > 1 - dungeon.depth_start) dungeon.depth_start--;
     }
 }
@@ -1638,7 +1647,7 @@ function overviewYouCause(cause: string): string {
         .replace(' her ', ' your ');
 }
 
-// Part of C dungeon.c:show_overview(): the end-of-game dungeon-history projection.
+// C dungeon.c:show_overview(): the end-of-game dungeon-history projection.
 // C dungeon.c show_overview() with why > 0: the end-of-game disclosure
 // bypasses the interesting-level filter and prints every visited level in
 // every dungeon with its full mapseen projection.  Endgame levels print
