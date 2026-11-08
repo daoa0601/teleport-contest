@@ -2,19 +2,13 @@
 // interactive query_color()/query_attr() pickers shared by the options
 // menus, menu-color editing, and status-hilite rule editing.
 import { game } from './gstate.js';
+import { cutConfigBytes } from './cfgfiles.js';
 import { fuzzyMatch } from './hacklib.js';
 import { PosixRegex } from './posix_regex.js';
 import { showMultiSelectWindow } from './windows.js';
 import { BUFSZ, CLR_MAX, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_NONE, terminalAttrFromCAttr } from './color_attr.js';
-// C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept UTF-8
-// safe — vsnprintf's buf[BUFSZ-1] = '\0' and printf's %.Ns precision
-// count bytes; a UTF-8 sequence split by the cut survives as one
-// character.
-export function cutConfigBytes(text, limit) {
-    return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
-}
 // C coloratt.c:colornames[]: the sixteen canonical names first (the picker
 // and clr2colorname() stop at the null entry), aliases after them.  Values
 // are CLR_* constants.

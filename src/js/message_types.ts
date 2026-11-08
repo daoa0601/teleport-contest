@@ -57,8 +57,9 @@ import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visible
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
-import { attributeName, colorAttrToString, colorName, cutConfigBytes, matchAttributeName,
+import { attributeName, colorAttrToString, colorName, matchAttributeName,
     matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
+import { cutConfigBytes } from './cfgfiles.js';
 import {
     BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
     MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
@@ -806,7 +807,7 @@ export function parseOptions(
             continue;
         }
         if (canonical === 'statushilites') {
-            result.iflags.hiliteDelta = optfnStatusHilites(optionValue ?? '', negated);
+            result.iflags.hiliteDelta = optfnStatusHilites(optionValue ?? '', negated, true);
             continue;
         }
         if (canonical === 'runmode') {
@@ -1216,10 +1217,12 @@ function optfnPileLimit(op: string, negated: boolean): { limit: number; missing:
 
 // C options.c:optfn_statushilites(): negation clears the duration; a
 // missing value means the 3-turn default, atol() of junk is 0, and
-// negative values clamp to 1.
-function optfnStatusHilites(op: string, negated: boolean): number {
-    if (negated) return 0;
-    const delta = op ? cInteger(op) : 3;
+// negative values clamp to 1.  In-game changes request update_all even
+// when the value is unchanged (reset_status_hilites() under the
+// !go.opt_from_file guard).
+function optfnStatusHilites(op: string, negated: boolean, fromFile: boolean): number {
+    const delta = negated ? 0 : op ? cInteger(op) : 3;
+    if (!fromFile) resetStatusHilites();
     return delta < 0 ? 1 : delta;
 }
 
@@ -1472,11 +1475,7 @@ export async function setTextOption(name: string, value: string): Promise<void> 
             await optionError(`'statuslines:${value}' is invalid; must be 2 or 3`);
         break;
     case 'statushilites': {
-        // In-game changes request update_all even when the value is
-        // unchanged (optfn_statushilites() guards the reset with
-        // !go.opt_from_file).
-        game.iflags.hiliteDelta = optfnStatusHilites(value, false);
-        resetStatusHilites();
+        game.iflags.hiliteDelta = optfnStatusHilites(value, false, false);
         break;
     }
     case 'hilite_status': {

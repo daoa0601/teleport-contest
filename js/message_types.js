@@ -44,7 +44,8 @@ import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visible
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
-import { attributeName, colorAttrToString, colorName, cutConfigBytes, matchAttributeName, matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
+import { attributeName, colorAttrToString, colorName, matchAttributeName, matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
+import { cutConfigBytes } from './cfgfiles.js';
 import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms, STONE, } from './const.js';
 import { editSymset } from './options.js';
 // C options.c:ask_do_tutorial(). Empty acceptance rebuilds the menu with
@@ -722,7 +723,7 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
             continue;
         }
         if (canonical === 'statushilites') {
-            result.iflags.hiliteDelta = optfnStatusHilites(optionValue ?? '', negated);
+            result.iflags.hiliteDelta = optfnStatusHilites(optionValue ?? '', negated, true);
             continue;
         }
         if (canonical === 'runmode') {
@@ -1205,11 +1206,13 @@ function optfnPileLimit(op, negated) {
 }
 // C options.c:optfn_statushilites(): negation clears the duration; a
 // missing value means the 3-turn default, atol() of junk is 0, and
-// negative values clamp to 1.
-function optfnStatusHilites(op, negated) {
-    if (negated)
-        return 0;
-    const delta = op ? cInteger(op) : 3;
+// negative values clamp to 1.  In-game changes request update_all even
+// when the value is unchanged (reset_status_hilites() under the
+// !go.opt_from_file guard).
+function optfnStatusHilites(op, negated, fromFile) {
+    const delta = negated ? 0 : op ? cInteger(op) : 3;
+    if (!fromFile)
+        resetStatusHilites();
     return delta < 0 ? 1 : delta;
 }
 // C options.c:optfn_msg_window(): a value's first letter names the window
@@ -1461,11 +1464,7 @@ export async function setTextOption(name, value) {
                 await optionError(`'statuslines:${value}' is invalid; must be 2 or 3`);
             break;
         case 'statushilites': {
-            // In-game changes request update_all even when the value is
-            // unchanged (optfn_statushilites() guards the reset with
-            // !go.opt_from_file).
-            game.iflags.hiliteDelta = optfnStatusHilites(value, false);
-            resetStatusHilites();
+            game.iflags.hiliteDelta = optfnStatusHilites(value, false, false);
             break;
         }
         case 'hilite_status': {

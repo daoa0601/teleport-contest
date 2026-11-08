@@ -2,6 +2,7 @@
 // interactive query_color()/query_attr() pickers shared by the options
 // menus, menu-color editing, and status-hilite rule editing.
 import { game } from './gstate.js';
+import { cutConfigBytes } from './cfgfiles.js';
 import { fuzzyMatch } from './hacklib.js';
 import { PosixRegex } from './posix_regex.js';
 import { showMultiSelectWindow } from './windows.js';
@@ -19,15 +20,6 @@ export interface MenuColoringRule {
     color: number;
     attr: number;
     regex: PosixRegex;
-}
-
-
-// C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept UTF-8
-// safe — vsnprintf's buf[BUFSZ-1] = '\0' and printf's %.Ns precision
-// count bytes; a UTF-8 sequence split by the cut survives as one
-// character.
-export function cutConfigBytes(text: string, limit: number): string {
-    return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
 }
 
 
