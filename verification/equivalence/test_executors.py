@@ -1249,6 +1249,23 @@ class ExecutorTests(unittest.TestCase):
         self.rejected(c, js.replace('value === x', 'value === x + 1'),
                       **domain, reason='outputs differ')
 
+    def test_async_array_some_callback_is_rejected(self):
+        # [1].some(async () => false) is true in JavaScript: the callback
+        # returns a Promise, which is always truthy. The executor must not
+        # model the resolved value.
+        c = 'int example(int x) { return 0; }'
+        js_block = ('function example(x) { return [1].some(async (value) => {\n'
+                    '    return false;\n}); }')
+        js_expression = 'function example(x) { return [1].some(async (value) => false); }'
+        domain = dict(params=[('x', INT)])
+        self.rejected(c, js_block, **domain, reason='async')
+        self.rejected(c, js_expression, **domain, reason='async')
+
+    def test_async_array_reduce_callback_is_rejected(self):
+        c = 'int example(int x) { return 0; }'
+        js = ('function example(x) { return [1].reduce(async (a, v) => a + v, 0); }')
+        self.rejected(c, js, params=[('x', INT)], reason='async')
+
 
 if __name__ == '__main__':
     unittest.main()

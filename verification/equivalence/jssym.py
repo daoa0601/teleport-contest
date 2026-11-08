@@ -1245,6 +1245,10 @@ class JSExec:
         cb = _strip(callback)
         if cb.type != 'arrow_function':
             raise Unsupported(f'Array.{what} callback at {where} is not an arrow function')
+        if any(c.type == 'async' for c in cb.children):
+            # An async callback returns a Promise (always truthy), never the
+            # modeled body value.
+            raise Unsupported(f'Array.{what} callback at {where} is async')
         parameters = cb.child_by_field_name('parameters')
         if parameters is not None:
             prm_nodes = parameters.named_children
@@ -1333,6 +1337,9 @@ class JSExec:
         cb = _strip(callback)
         if cb.type != 'arrow_function':
             raise Unsupported(f'Array.reduce callback at {where} is not an arrow function')
+        if any(c.type == 'async' for c in cb.children):
+            # An async callback returns a Promise, never the modeled value.
+            raise Unsupported(f'Array.reduce callback at {where} is async')
         parameters = cb.child_by_field_name('parameters')
         if parameters is None or len(parameters.named_children) != 2:
             raise Unsupported(f'Array.reduce callback at {where} needs two parameters')
