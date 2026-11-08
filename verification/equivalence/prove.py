@@ -8,7 +8,7 @@ settings, the C and JavaScript functions must return the same value, consume
 the same random-stream positions, and emit the same RNG-log entries, with no C
 undefined behavior and no JavaScript exception or inexact arithmetic.
 
-    uv run prove.py [--only NAME] [--no-probes] [--no-mutants]
+    uv run prove.py [--only NAME] [--shard I/N] [--no-probes] [--no-mutants]
 """
 from __future__ import annotations
 
@@ -408,6 +408,8 @@ def main() -> int:
                            help='check only slow proofs, preserving complete ledger metadata checks')
     selection.add_argument('--skip-slow', action='store_true',
                            help='report and exclude claims marked slow, including their negative checks')
+    parser.add_argument('--shard', metavar='I/N',
+                        help='check only the I-th of N interleaved groups of the otherwise selected claims')
     parser.add_argument('--no-probes', action='store_true')
     parser.add_argument('--no-mutants', action='store_true')
     parser.add_argument('--check-ledger', type=Path, help='require recorded domains, check counts, and successful proofs')
@@ -415,7 +417,12 @@ def main() -> int:
     args = parser.parse_args()
     if (args.check_ledger or args.write_ledger) and (args.only or args.no_probes or args.no_mutants):
         parser.error('ledger checks require every selected spec, probe, and mutant')
-    if args.write_ledger and (args.skip_slow or args.slow_only):
+    if args.shard is not None:
+        index, separator, count = args.shard.partition('/')
+        if not separator or not index.isdigit() or not count.isdigit() \
+                or int(count) < 1 or not 1 <= int(index) <= int(count):
+            parser.error('--shard must be I/N with 1 <= I <= N and N >= 1')
+    if args.write_ledger and (args.skip_slow or args.slow_only or args.shard is not None):
         parser.error('writing a ledger requires all fast and slow proofs')
     claims = {spec.name: ClaimSummary(domain_summary(spec), len(spec.probes), len(spec.mutants), spec.slow) for spec in SPECS}
     if len(claims) != len(SPECS):
@@ -449,17 +456,33 @@ def main() -> int:
     modules = load_modules()
     print(f'C sources: {recorder}/src   Leaf JavaScript: {REPO}/js   z3 {z3.get_version_string()}')
     failures = 0
-    selected = set(args.only) if args.only else {spec.name for spec in SPECS}
+    # Targets are the claims the selection flags name; --slow-only and
+    # --shard filter them. Dependencies of a target are prerequisites and
+    # are always proved in this run, whatever filter excluded them from the
+    # targets: a claim is only as verified as its call summaries.
+    targets = set(args.only) if args.only else {spec.name for spec in SPECS}
+    if args.slow_only:
+        targets &= {spec.name for spec in SPECS if spec.slow}
+    if args.shard is not None:
+        index, _, count = args.shard.partition('/')
+        ordered = [spec.name for spec in SPECS if spec.name in targets]
+        sharded = set(ordered[int(index) - 1::int(count)])
+        print(f'shard {index}/{count}: {len(sharded)} of {len(ordered)} selected claims '
+              f'({len(ordered) - len(sharded)} in other shards)')
+        targets &= sharded
+    selected = set(targets)
     for spec in reversed(SPECS):
         if spec.name in selected:
             selected.update(spec.dependencies)
+    prerequisites = selected - targets
     established = set()
     for spec in SPECS:
         if spec.name not in selected:
             continue
-        if (args.skip_slow and spec.slow) or (args.slow_only and not spec.slow):
-            print(f'SKIPPED {spec.name} ({"slow" if spec.slow else "fast"})')
-            continue
+        if spec.name not in prerequisites:
+            if (args.skip_slow and spec.slow) or (args.slow_only and not spec.slow):
+                print(f'SKIPPED {spec.name} ({"slow" if spec.slow else "fast"})')
+                continue
         missing = set(spec.dependencies) - established
         if missing:
             print(f'FAILED  {spec.name}: unproved call summaries: {", ".join(sorted(missing))}')

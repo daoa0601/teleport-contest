@@ -14,7 +14,8 @@ from specs import INT, Spec
 class ProofSelectionTests(unittest.TestCase):
     def run_prover(self, *arguments, slow=False,
                    body='return x > 0 ? x : 0;',
-                   probe=lambda s: [s['x'] == -1], mutant='return 1;', dependency=None):
+                   probe=lambda s: [s['x'] == -1], mutant='return 1;', dependency=None,
+                   peer=None):
         with TemporaryDirectory(prefix='fv-selection-', dir=prove.REPO / '.cache') as directory:
             c_file = Path(directory) / 'example.c'
             js_file = Path(directory) / 'example.js'
@@ -33,6 +34,11 @@ class ProofSelectionTests(unittest.TestCase):
                                     pre=spec.pre, js_file=str(js_file))
                 spec.dependencies = ('prerequisite',)
                 specs = [prerequisite, spec]
+            if peer is not None:
+                c_file.write_text(c_file.read_text() + '\nint peer(int x) { return x; }')
+                js_file.write_text(js_file.read_text() + f'\nfunction peer(x) {{ {peer} }}')
+                specs.append(Spec('peer', 'peer', 'peer', [('x', INT)],
+                                  pre=spec.pre, slow=slow, js_file=str(js_file)))
             output = io.StringIO()
             # Keep the real executors and runner; unrelated generator claims
             # have their own selection tests.
@@ -84,6 +90,22 @@ class ProofSelectionTests(unittest.TestCase):
     def test_a_failed_prerequisite_rejects_the_composed_claim(self):
         status, report = self.run_prover('--only', 'example', dependency='return x + 1;')
         self.assertNotEqual(status, 0, report)
+
+    def test_slow_selection_proves_a_fast_prerequisite(self):
+        status, report = self.run_prover('--slow-only', slow=True, dependency='return x;')
+        self.assertEqual(status, 0, report)
+
+    def test_slow_shards_each_prove_their_share(self):
+        for shard in ('1/2', '2/2'):
+            status, report = self.run_prover('--slow-only', f'--shard={shard}', slow=True,
+                                             peer='return x < 3 ? x : 3;')
+            self.assertEqual(status, 0, report)
+
+    def test_a_divergent_slow_claim_fails_only_its_own_shard(self):
+        status, _ = self.run_prover('--slow-only', '--shard=1/2', slow=True, peer='return 1;')
+        self.assertEqual(status, 0)
+        status, _ = self.run_prover('--slow-only', '--shard=2/2', slow=True, peer='return 1;')
+        self.assertNotEqual(status, 0)
 
 
 if __name__ == '__main__':
