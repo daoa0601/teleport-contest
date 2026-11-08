@@ -208,7 +208,7 @@ selection to the I-th of N interleaved groups, each still proving the
 prerequisites of its claims; the nightly `slow-equivalence` job runs one
 4-shard matrix so every scheduled run finishes inside its timeout.
 
-There are 265 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 286 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
@@ -253,13 +253,21 @@ port-only zero class outside the valid int32 table range), and the twenty-six
 claims of fv-equivalence-batch-12: thirteen remaining obj.h predicates,
 eleven initial fields (oc_level, oc_nutrition, oc_color, oc_prob, oc_nowish,
 oc_hitbon, oc_wsdam, oc_wldam, oc_armcat, a_ac, a_can), and OBJ_NAME/OBJ_DESCR index
-mapping, and the sixteen claims of fv-equivalence-batch-13: artifact.c
+mapping, the sixteen claims of fv-equivalence-batch-13: artifact.c
 `defends`/`defends_when_carried` over the artilist table and the dragon-armor
 switch (one partition per damage type), mondata.c `resists_magm` over a modeled
 monster with a wielded weapon and inventory chain, hacklib.c
 `highc`/`lowc`/`ordin`, and the ten H<Prop> || E<Prop> resistance macros of
 youprop.h (`fire/cold/sleep/disint/shock/poison/drain/antimagic/acid/stone_resistance`)
-over the property record.
+over the property record, and the twenty-one claims of fv-equivalence-batch-14:
+thirteen further mondata.h species macros (`touch_petrifies`,
+`flesh_petrifies`, `is_whirly`, `is_rider`, `nonliving`, `is_vampire`,
+`passes_rocks`, `is_mplayer`, `is_unicorn`, `eyecount`, `emits_light`,
+`vegan`, `vegetarian`), mondata.c `poly_when_stoned` over the stone-golem
+mvitals entry and `cvt_adtyp_to_mseenres` over the damage-type code, the
+rm.h/trap.h terrain macros (`IS_WALL`, `IS_OBSTRUCTED`, `IS_DOOR`,
+`is_pit`, `is_hole`), and worn.c `find_mac` over a modeled monster with a
+bounded inventory chain.
 The name claims execute the real macros over every obj_descr_init row and
 compare nullable string contents. Their index correspondence assumes
 init_objects has assigned the indices; shuffling preservation is separate.

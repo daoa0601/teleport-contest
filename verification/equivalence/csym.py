@@ -1060,6 +1060,25 @@ class CExec:
                                   z3.And(self.truth(a), self.truth(b), same))
                     out.append((p, CVal(z3.If(equal if op == '==' else z3.Not(equal), 1, 0), (32, True))))
                     continue
+                if isinstance(a, CPtr) and isinstance(b, CPtr) \
+                        and isinstance(a.key, CElement) and isinstance(b.key, CElement):
+                    # Two element pointers into the same immutable table:
+                    # array order is element order, as with a fixed array.
+                    # Ordering a null pointer is undefined C behavior, so
+                    # both pointers must be non-null on every path.
+                    self.m.oblige(p, self.truth(a),
+                                  'C ordered element comparison with a null pointer',
+                                  self.where(n))
+                    self.m.oblige(p, self.truth(b),
+                                  'C ordered element comparison with a null pointer',
+                                  self.where(n))
+                    self.m.oblige(p, a.key.table == b.key.table,
+                                  'C ordered element pointers belong to different tables',
+                                  self.where(n))
+                    c = {'<': a.key.index < b.key.index, '<=': a.key.index <= b.key.index,
+                         '>': a.key.index > b.key.index, '>=': a.key.index >= b.key.index}[op]
+                    out.append((p, CVal(z3.If(c, 1, 0), (32, True))))
+                    continue
                 if isinstance(a, CPtr) and isinstance(b, CPtr) and op in ('<', '<=', '>', '>='):
                     same_array = _one_fixed_array(a, b)
                     if same_array is None:

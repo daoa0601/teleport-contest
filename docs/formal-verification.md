@@ -1018,6 +1018,65 @@ element. The batch found no port difference: the one open-search mismatch
 (an owornmask above int32, where C's 64-bit `&` and the port's 32-bit `&`
 disagree) is unreachable worn state and became the documented domain bound.
 
+**Predicate-owner batch (fv-equivalence-batch-14).** Twenty-one added claims
+prove more cited single-owner ports: thirteen further mondata.h species
+macros over one `&mons[species]` row, mondata.c's `poly_when_stoned()` over
+the stone-golem mvitals entry and `cvt_adtyp_to_mseenres()` over the
+damage-type code, the five rm.h/trap.h terrain macros over one terrain or
+trap type, and worn.c's `find_mac()` over one modeled monster.
+
+| Claim | C ↔ JavaScript | Domain | Paths | Time |
+|---|---|---|---|---|
+| `touch_petrifies:tables` | `mondata.h:touch_petrifies` ↔ `mondata.js:touchPetrifies` | Valid species; native pointer `&mons[species]`; initial tables | 1×1 | 2.7 s |
+| `flesh_petrifies:tables` | `mondata.h:flesh_petrifies` ↔ `mondata.js:fleshPetrifies` | Same domain | 2×3 | 2.8 s |
+| `is_whirly:tables` | `mondata.h:is_whirly` ↔ `mondata.js:monsterIsWhirly` | Same domain; record argument | 2×2 | 5.2 s |
+| `is_rider:tables` | `mondata.h:is_rider` ↔ `mondata.js:monsterIsRider` | Same domain; record argument; RIDER_SPECIES index set | 2×1 | 2.1 s |
+| `nonliving:tables` | `mondata.h:nonliving` ↔ `mondata.js:monsterIsNonliving` | Same domain; is_undead/golem compositions execute for real | 2×4 | 2.9 s |
+| `is_vampire:tables` | `mondata.h:is_vampire` ↔ `mondata.js:monsterIsVampire` | Same domain; symbol read | 1×1 | 2.0 s |
+| `passes_rocks:tables` | `mondata.h:passes_rocks` ↔ `mondata.js:passes_rocks` | Same domain; passes_walls/unsolid execute for real | 2×2 | 2.9 s |
+| `is_mplayer:tables` | `mondata.h:is_mplayer` ↔ `mondata.js:monsterIsPlayerMonster` | Same domain; ordered element-pointer comparison; no null probe (C UB) | 2×2 | 2.8 s |
+| `is_unicorn:tables` | `mondata.h:is_unicorn` ↔ `mondata.js:monsterIsUnicorn` | Same domain; likes_gems executes for real | 2×2 | 2.6 s |
+| `eyecount:tables` | `mondata.h:eyecount` ↔ `mondata.js:eyecount` | Same domain; int 0/1/2 return | 3×3 | 2.6 s |
+| `emits_light:tables` | `mondata.h:emits_light` ↔ `vision.js:monsterEmitsLight` | Same domain; LIGHT_EMITTING_MONSTERS index set | 2×2 | 6.3 s |
+| `vegan:tables` | `mondata.h:vegan` ↔ `food_traits.js:veganCorpse` | Same domain; symbol and index identities | 2×5 | 4.2 s |
+| `vegetarian:tables` | `mondata.h:vegetarian` ↔ `food_traits.js:vegetarianCorpse` | Same domain; vegan() executes for real | 3×5 | 5.0 s |
+| `poly_when_stoned:state` | `mondata.c:poly_when_stoned` ↔ `mondata.js:formCanBecomeStoneGolem` | Valid species; symbolic uchar stone-golem mvflags; every other mvitals entry all-clear | 2×3 | 3.0 s |
+| `cvt_adtyp_to_mseenres:tables` | `mondata.c:cvt_adtyp_to_mseenres` ↔ `mondata.js:seenResistanceForDamage` | Every uchar adtyp; verifies the AD_MAGM..AD_ACID code order against the M_SEEN_* bit order | 9×2 | 3.3 s |
+| `IS_WALL:terrain` | `rm.h:IS_WALL` ↔ `const.js:IS_WALL` | Every non-negative schar terrain code (negative probe differs: C's truthiness test) | 2×2 | 1.8 s |
+| `IS_OBSTRUCTED:terrain` | `rm.h:IS_OBSTRUCTED` ↔ `const.js:IS_OBSTRUCTED` | Every schar | 1×1 | 1.7 s |
+| `IS_DOOR:terrain` | `rm.h:IS_DOOR` ↔ `const.js:IS_DOOR` | Every schar | 1×1 | 1.8 s |
+| `is_pit:terrain` | `trap.h:is_pit` ↔ `const.js:is_pit` | Every int32 ttyp | 2×2 | 1.8 s |
+| `is_hole:terrain` | `trap.h:is_hole` ↔ `const.js:is_hole` | Every int32 ttyp | 2×2 | 1.8 s |
+| `find_mac:state` (slow) | `worn.c:find_mac` ↔ `worn.js:findMonsterArmorClass` | Modeled monster: valid species base AC, symbolic misc_worn_check, 0..2 item chains with otyp/owornmask/spe/erosion; counted items outside the armor class are exactly the rows with a zero a_ac | 1×1 per chain partition | 20.6 s |
+
+The species claims follow the flag-owner batch's entry relation; each kills
+one emitted-JavaScript mutant pinned to a species where the predicate is
+decided and rejects a null native pointer (except `is_mplayer`, whose
+ordered pointer comparison against null is C undefined behavior). The two
+index-set claims (`is_rider`, `emits_light`) verify the emitted
+`indexOf`/literal sets against the native `&mons[PM_*]` identities over the
+whole table rather than assuming them. The terrain macro claims pair the
+real rm.h/trap.h macros (expanded in `harness/terrain_macros.c`) with the
+const.js owners over the stored schar codes.
+
+`find_mac` needed the modeled-monster inventory relation of
+`resists_magm` plus the hero-side erosion fields. An earlier unrestricted
+domain produced a counterexample (a wielded grappling hook: C subtracts its
+oc_oc1 4, the port's `armorBaseBonus` armor-class guard returns 0), but
+that state is unreachable in C: weapon.c:929 does set `owornmask = W_WEP`
+on every successful monster wield, yet nothing ever adds W_WEP to
+`mon->misc_worn_check` — its only writers are the armor/amulet flags of
+`m_dowear_type` (worn.c:970), W_SADDLE (steed.c:159), I_SPECIAL
+(mon.c:5917) and W_ARMF (trap.c:2512) — so the `owornmask &
+misc_worn_check` test at worn.c:724 never counts a wielded weapon, and
+every other class a monster can wear into those bits (armor, amulets, the
+saddle) has a zero a_ac outside the armor class. The domain restriction,
+derived from the emitted class column rather than a hard-coded index
+range, states this and the port was left unchanged. Three executor
+extensions carry the batch, each with a failing-before test: ordered
+comparison of two table-element pointers, `for...of` over arrays
+(binding, continue, break), and comments inside array literals.
+
 **Earlier proof runs.**
 
 The complete 71-claim run exited 0 in **985.15 s** (the ledger-writing run

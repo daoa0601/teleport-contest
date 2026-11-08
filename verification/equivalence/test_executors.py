@@ -10,9 +10,10 @@ import unittest
 import z3
 
 from cfront import CFront
-from csym import CPtr
+from csym import CElement, CPtr
 from jssym import V, parse_module
 from prove import REPO, check, recorder_dir
+from core import LoopSpec
 from specs import INT, LONG, Spec
 from state_world import native_table
 
@@ -27,7 +28,8 @@ GLIBC_ASSERT = '''
 class ExecutorTests(unittest.TestCase):
     def compare(self, c, js, *, params=(), pre=lambda s: [], state=(), modules=None,
                 references=(), configure=lambda world, front, modules: None,
-                partitions=None, pairwise_outputs=False, restored_state=(), js_initializer=None):
+                partitions=None, pairwise_outputs=False, restored_state=(), js_initializer=None,
+                loops=None):
         with TemporaryDirectory(prefix='fv-language-', dir=REPO / '.cache') as directory:
             c_file = Path(directory) / 'example.c'
             c_file.write_text(c)
@@ -38,7 +40,8 @@ class ExecutorTests(unittest.TestCase):
             spec = Spec('example', 'example', 'example', list(params), pre=pre,
                         state=list(state), js_file='js/example.js',
                         references=list(references), configure=configure, partitions=partitions,
-                        restored_state=tuple(restored_state), js_initializer=js_initializer)
+                        restored_state=tuple(restored_state), js_initializer=js_initializer,
+                        loops=loops or {})
             return check(spec, CFront(recorder_dir(), [c_file]), parsed, pre,
                          pairwise_outputs=pairwise_outputs)
 
@@ -1265,6 +1268,295 @@ class ExecutorTests(unittest.TestCase):
         c = 'int example(int x) { return 0; }'
         js = ('function example(x) { return [1].reduce(async (a, v) => a + v, 0); }')
         self.rejected(c, js, params=[('x', INT)], reason='async')
+
+    def test_for_of_iteration_binds_elements_in_order(self):
+        c = ('int example(int x) { int i; for (i = 0; i < 3; i++) '
+             'if ((1 << i) == x) return 1; return 0; }')
+        js = ('const shifts = [1, 2, 4];\n'
+              'function example(x) { for (const s of shifts) {\n'
+              '    if (s === x)\n        return 1;\n'
+              '} return 0; }')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 8])
+        self.equivalent(c, js, **domain)
+        self.rejected(c, js.replace('s === x', 's === x + 1'),
+                      **domain, reason='outputs differ')
+
+    def test_for_of_continue_and_break_keep_javascript_meaning(self):
+        c = ('int example(int x) { int i, t = 0; for (i = 0; i < 4; i++) { '
+             'if (x == 1) continue; if (t > 1) break; t += 1; } return t; }')
+        js = ('function example(x) { let t = 0; '
+              'for (const i of [1, 1, 1, 1]) {\n'
+              '    if (i === x)\n        continue;\n'
+              '    if (t > 1)\n        break;\n'
+              '    t += i;\n'
+              '} return t; }')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 2])
+        self.equivalent(c, js, **domain)
+        self.rejected(c, js.replace('t > 1', 't > 0'),
+                      **domain, reason='outputs differ')
+
+    def test_array_literals_may_carry_comments_and_a_trailing_separator(self):
+        js = ('const shifts = [\n    1, // one\n    2, // two\n];\n'
+              'function example(x) { return shifts.includes(x); }')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 3])
+        self.equivalent('int example(int x) { return x == 1 || x == 2; }',
+                        js, **domain)
+        self.rejected('int example(int x) { return x == 1 || x == 2; }',
+                      js.replace('shifts.includes(x)', 'shifts.includes(x + 1)'),
+                      **domain, reason='outputs differ')
+
+    def test_ordered_comparison_of_two_table_element_pointers(self):
+        def pointers(world, front, modules):
+            world.c_globals['rows'] = native_table(world, front,
+                                                   front.files[0], 'rows')
+            a = world.c_state['a'][0]
+            b = world.c_state['b'][0]
+            world.pre.extend([a >= 0, a < 4, b >= 0, b < 4])
+            world.c_globals['pa'] = CPtr(True, CElement('rows', a))
+            world.c_globals['pb'] = CPtr(True, CElement('rows', b))
+            world.js_values['game.a'] = V('num', a)
+            world.js_values['game.b'] = V('num', b)
+
+        native = 'static int rows[] = {3, 1, 4, 1}; static int *pa, *pb; ' \
+                 'int example(void) { return pa < pb; }'
+        options = dict(state=[('a', INT, None), ('b', INT, None)],
+                       configure=pointers)
+        self.equivalent(native, 'function example() { return game.a < game.b; }',
+                        **options)
+        self.rejected(native, 'function example() { return game.a <= game.b; }',
+                      reason='outputs differ', **options)
+
+    def test_for_of_var_binding_survives_the_loop_and_shadows_module_state(self):
+        # `var` is function-scoped: after the loop the binding holds the last
+        # element, and a module-level binding of the same name stays untouched.
+        js = ('const item = 23;\n'
+              'function example(typ) {\n'
+              '    for (var item of [0]) {\n'
+              '    }\n'
+              '    return typ === item;\n'
+              '}')
+        domain = dict(params=[('typ', INT)], pre=lambda s: [s['typ'] >= 0, s['typ'] <= 30])
+        self.equivalent('int example(int typ) { return typ == 0; }', js, **domain)
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      **domain, reason='outputs differ')
+
+    def test_for_of_var_binding_survives_an_enclosing_block(self):
+        # `var` is function-scoped: even when the loop sits inside a nested
+        # block, the binding outlives that block and a module binding of the
+        # same name stays untouched.
+        js = ('const item = 23;\n'
+              'function example(typ) {\n'
+              '    {\n'
+              '        for (var item of [0]) {\n'
+              '        }\n'
+              '    }\n'
+              '    return typ === item;\n'
+              '}')
+        domain = dict(params=[('typ', INT)], pre=lambda s: [s['typ'] >= 0, s['typ'] <= 30])
+        self.equivalent('int example(int typ) { return typ == 0; }', js, **domain)
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      **domain, reason='outputs differ')
+
+    def test_for_of_var_does_not_preserve_an_unrelated_lexical_binding(self):
+        js = ('function example(typ) { '
+              'if (typ === 0) { for (var item of [1]) {} } '
+              'else { let item = 23; } return typ === item; }')
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      params=[('typ', INT)], reason='shadows a binding')
+
+    def test_for_of_var_is_undefined_when_evaluating_its_collection(self):
+        js = ('const items = [23]; '
+              'function example(typ) { for (var items of items) {} '
+              'return typ === 23; }')
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      params=[('typ', INT)], reason='for...of over undef')
+
+    def test_for_of_var_is_undefined_before_the_loop(self):
+        js = ('const item = 23; '
+              'function example(typ) { '
+              'if (item !== undefined) return typ === item; '
+              'for (var item of [1]) {} return typ === item; }')
+        self.equivalent('int example(int typ) { return typ == 1; }', js,
+                        params=[('typ', INT)])
+
+    def test_for_of_var_is_undefined_when_its_branch_is_skipped(self):
+        js = ('const item = 23; '
+              'function example(typ) { '
+              'if (typ === 0) { for (var item of [1]) {} } '
+              'return item === undefined; }')
+        self.equivalent('int example(int typ) { return typ != 0; }', js,
+                        params=[('typ', INT)])
+
+    def test_for_of_var_hoisting_does_not_enter_class_static_blocks(self):
+        # A class static block has its own var environment: the loop's `var
+        # item` must not hoist into the function, where it would shadow the
+        # module `const item = 23` from entry and fabricate `item ===
+        # undefined`. The scan fails closed on the class instead.
+        js = ('const item = 23;\n'
+              'function example(typ) {\n'
+              '    if (typ === 999) {\n'
+              '        class Holder {\n'
+              '            static {\n'
+              '                for (var item of [0]) {\n'
+              '                }\n'
+              '            }\n'
+              '        }\n'
+              '    }\n'
+              '    return typ === 23 && item === undefined;\n'
+              '}')
+        domain = dict(params=[('typ', INT)],
+                      pre=lambda s: [s['typ'] >= -128, s['typ'] <= 127])
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      **domain, reason='inside a claimed function')
+
+    def test_for_of_var_hoisting_rejects_unmodeled_scope_constructs(self):
+        for construct in (
+            'const C = class { static { for (var q of [1]) {} } };',
+            'with (typ) { }',
+            'eval(typ);',
+            'lab: function inner() { for (var z of [2]) {} }',
+        ):
+            js = ('function example(typ) {\n    ' + construct +
+                  '\n    return typ;\n}')
+            with self.subTest(construct=construct):
+                self.rejected('int example(int typ) { return typ; }', js,
+                              params=[('typ', INT)],
+                              pre=lambda s: [s['typ'] >= -5, s['typ'] <= 5],
+                              reason='inside a claimed function')
+
+    def test_callback_var_is_rejected_before_a_read_can_use_an_outer_binding(self):
+        callbacks = (
+            '[0].some(x => { return typ === item; for (var item of [1]) {} })',
+            '[0].reduce((total, x) => { return typ === item; for (var item of [1]) {} }, 0)',
+        )
+        for expression in callbacks:
+            with self.subTest(expression=expression):
+                js = f'const item = 23; function example(typ) {{ return {expression}; }}'
+                self.rejected('int example(int typ) { return typ == 23; }', js,
+                              params=[('typ', INT)], reason='callback has a for...of var')
+
+    def test_for_of_assignment_to_a_module_binding_is_rejected(self):
+        # A bare assignment target writes module state (`let flag`), which
+        # the executor cannot model; it must refuse rather than bind a local.
+        js = ('let flag = 0;\n'
+              'function example() {\n'
+              '    for (flag of [1]) {\n'
+              '    }\n'
+              '    return flag;\n'
+              '}')
+        self.rejected('int example(void) { return 1; }', js,
+                      reason='for...of writes the non-local binding flag')
+
+    def test_for_of_assignment_to_a_local_binding_assigns_elements(self):
+        js = ('function example(x) {\n'
+              '    let t;\n'
+              '    for (t of [x, x + 1]) {\n'
+              '    }\n'
+              '    return t;\n'
+              '}')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= -5, s['x'] <= 5])
+        self.equivalent('int example(int x) { return x + 1; }', js, **domain)
+
+    def test_ordered_element_comparison_requires_non_null_pointers(self):
+        def pointers(world, front, modules):
+            world.c_globals['rows'] = native_table(world, front,
+                                                   front.files[0], 'rows')
+            a = world.c_state['a'][0]
+            b = world.c_state['b'][0]
+            present = world.c_state['present'][0]
+            world.pre.extend([a >= 0, a < 4, b >= 0, b < 4,
+                              present >= 0, present <= 1])
+            world.c_globals['pa'] = CPtr(True, CElement('rows', a))
+            world.c_globals['pb'] = CPtr(present == 1, CElement('rows', b))
+            world.js_values['game.a'] = V('num', a)
+            world.js_values['game.b'] = V('num', b)
+
+        native = 'static int rows[] = {3, 1, 4, 1}; static int *pa, *pb; ' \
+                 'int example(void) { return pa < pb; }'
+        options = dict(state=[('a', INT, None), ('b', INT, None),
+                              ('present', INT, None)],
+                       configure=pointers)
+        proved, report = self.compare(native, 'function example() { return game.a < game.b; }',
+                                      **options)
+        self.assertFalse(proved, report)
+        self.assertIn('C ordered element comparison with a null pointer', report)
+        self.equivalent(native, 'function example() { return game.a < game.b; }',
+                        **options, pre=lambda s: [s['a'] >= 0, s['a'] < 4,
+                                                  s['b'] >= 0, s['b'] < 4,
+                                                  s['present'] == 1])
+
+
+
+    def test_for_of_const_target_is_uninitialized_while_its_collection_evaluates(self):
+        # The const loop binding is in scope, uninitialized, when the
+        # collection expression evaluates: `for (const items of items)`
+        # throws ReferenceError instead of iterating the module array.
+        js = ('const items = [1];\n'
+              'function example() {\n'
+              '    for (const items of items) {\n'
+              '    }\n'
+              '    return 1;\n'
+              '}')
+        self.rejected('int example(void) { return 1; }', js,
+                      reason='read before declaration')
+        js_let = js.replace('const items of', 'let items of')
+        self.rejected('int example(void) { return 1; }', js_let,
+                      reason='read before declaration')
+
+    def test_for_of_target_is_havoced_inside_an_annotated_loop(self):
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    let v = 0;\n'
+              '    while (i < x) {\n'
+              '        for (v of [1]) {\n'
+              '        }\n'
+              '        i = i + 1;\n'
+              '    }\n'
+              '    return v;\n'
+              '}')
+        c = ('int example(int x) { int i = 0, v = 0; '
+             'while (i < x) { v = 1; i = i + 1; } return v; }')
+
+        def invariant(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']),
+                    view['v'] == z3.If(view['i'] == 0, 0, 1)]
+
+        loops = {('js', 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=())}
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=loops)
+        self.equivalent(c, js, **domain)
+
+        # Without the for-of target in the modification scan, the havoc step
+        # leaves the entry value in place and the model computes a wrong
+        # concrete return for x >= 1. An invariant silent about v must leave
+        # the proof open rather than fabricate that value.
+        def silent(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x'])]
+
+        open_loops = {('js', 'example', 0): LoopSpec(
+            silent, lambda view, entry: entry['x'] - view['i'], streams=())}
+        self.rejected(c, js, reason='outputs differ',
+                      params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=open_loops)
+
+    def test_assigned_scan_counts_for_of_targets(self):
+        from jssym import _assigned
+        js = ('function example(x) {\n    let v = 0;\n'
+              '    while (v < x) {\n        for (v of [1]) {\n        }\n    }\n'
+              '    return v;\n}')
+        body = parse_module(js.encode())[0]['example'].child_by_field_name('body')
+        self.assertIn('v', _assigned(body))
+        # const/let targets stay block-scoped inside the loop and must not
+        # be treated as modifications of an enclosing binding.
+        scoped = ('function example(x) {\n    while (x > 0) {\n'
+                  '        for (const q of [1]) {\n        }\n        x = x - 1;\n    }\n'
+                  '    return x;\n}')
+        scoped_body = parse_module(scoped.encode())[0]['example'].child_by_field_name('body')
+        self.assertEqual(_assigned(scoped_body), {'x'})
+
 
 
 if __name__ == '__main__':
