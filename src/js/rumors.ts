@@ -220,8 +220,8 @@ export async function rumorCheck(): Promise<void> {
     await showTextWindow(lines);
 }
 
-// Part of C makedefs.c:do_rumors(): a section's compiled byte size,
-// re-derived from the padded lines that makedefs wrote into the index.
+// C makedefs.c:do_rumors(): a section's compiled byte size, re-derived
+// from the padded lines that makedefs wrote into the index.
 function rumorSectionSize(lines: readonly string[]): number {
     return lines.reduce((size, line) => size + paddedLine(line, MD_PAD_RUMORS).length + 1, 0);
 }
@@ -262,8 +262,8 @@ function supportingText(title: string, entries: readonly string[], padding: numb
     return [...lines, paddedLine(last, padding)];
 }
 
-// Part of C makedefs.c:padline(): pad a short line with '_' so random seeks
-// land in it as often as in long lines.
+// C makedefs.c:padline(): pad a short line with '_' so random seeks land
+// in it as often as in long lines.
 function paddedLine(line: string, lengthWithNewline: number): string {
     return line.padEnd(lengthWithNewline - 1, '_');
 }
