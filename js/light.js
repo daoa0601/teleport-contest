@@ -400,10 +400,9 @@ function refreshLightSourcePositions(state) {
 }
 // Port only: enumerate every live light source the way C walks light_base,
 // newest registration first (new_light_core() prepends).  Every registration
-// shares the state._lightSerial stamp: object lights via
-// registerObjectLightSource(), monster lights via
-// registerMonsterLightSource() at birth or light-changing shape shift, and
-// the hero's shape light via registerHeroFormLightSource().  A camera flash
+// shares the state._lightSerial stamp: object lights, monster lights at
+// birth or light-changing shape shift, and the hero's shape light, all
+// stamped by new_light_source().  A camera flash
 // is newer than everything by construction.  Sources registered before
 // their stamp existed keep seq 0 and fall to the tail in insertion order.
 export function lightSourceRecords(state) {
