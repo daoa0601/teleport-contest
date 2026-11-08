@@ -5068,7 +5068,8 @@ export async function dobuzz(nativeType: number, dice: number, direction: string
     }
 }
 
-// C rm.h:m_at(): the ray target lookup, guarded for states without a level.
+// Part of C rm.h:m_at(): the ray target lookup (steed.ts
+// monsterAtPosition), guarded for states without a level.
 export function rayMonsterAt(x: number, y: number, state: GameState = game) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
