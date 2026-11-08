@@ -8,6 +8,7 @@ src/js/bones.ts	bones.c
 src/js/botl.ts	botl.c
 src/js/calendar.ts	calendar.c
 src/js/cfgfiles.ts	cfgfiles.c
+src/js/cmd.ts	cmd.c
 src/js/coloratt.ts	coloratt.c
 src/js/command_bindings.ts	cmd.c
 src/js/dbridge.ts	dbridge.c
