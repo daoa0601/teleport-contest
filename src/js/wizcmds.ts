@@ -15,8 +15,9 @@ import { getLine, ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showTextMe
 import type { TextMenuEntry } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import type { TtyMenuWindow } from './wintty.js';
-import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible, customizedGlyphs } from './display.js';
-import type { CustomizedGlyph } from './display.js';
+import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible } from './display.js';
+import { customizedGlyphs } from './glyphs.js';
+import type { CustomizedGlyph } from './glyphs.js';
 import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
