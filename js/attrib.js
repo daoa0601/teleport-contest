@@ -812,7 +812,7 @@ function blockedProvenance(property, state) {
         return ` because of ${ownedSimpleObjectName(helmet, state, { capitalized: false })}`;
     return '';
 }
-// Port only: hero-shaped wrapper for mondata.c's noeyes() species test.
+// Part of C mondata.h:haseyes(): !haseyes(youmonst.data), the hero form.
 export function heroHasNoEyes(state = game) {
     return !monsterHasEyes(state.u.umonnum ?? -1);
 }

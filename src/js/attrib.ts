@@ -931,7 +931,7 @@ function blockedProvenance(property: PropertyName, state: GameState): string {
     return '';
 }
 
-// Port only: hero-shaped wrapper for mondata.c's noeyes() species test.
+// Part of C mondata.h:haseyes(): !haseyes(youmonst.data), the hero form.
 export function heroHasNoEyes(state: GameState = game): boolean {
     return !monsterHasEyes(state.u.umonnum ?? -1);
 }
