@@ -35,7 +35,6 @@ Finish_digestion	cpostfx
 Gloves_off	discover_object
 Gloves_off	encumber_msg
 Gloves_off	setworn
-Gloves_on	discover_object
 Gloves_on	rnd
 H2Opotion_dip	discover_object
 H2Opotion_dip	water_damage

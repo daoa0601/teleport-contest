@@ -2293,3 +2293,4 @@ zap_dig	unblock_point	inlined	zapDigWithObject's vision_note_blocker_change at t
 zap_map	unblock_point	inlined	probeTerrain's vision_note_blocker_change at the SDOOR recalc and SCORR reveal (zap.ts:3781,3789)
 zhitu	burn_away_slime	inlined	hitHeroWithRay's fire arm clears the sliming and prints the message (zap.ts:4349-4350)
 zhitu	zaptype	inlined	rayDamageType decodes the effect from type%10 (zap.ts:4292)
+Gloves_on	discover_object	inlined	armorOnIdentifiesType() gates the deferred makeknown() of the AC-evident gauntlets of power in finishDelayedArmorAction()/applyStartingArmorEffects() (do_wear.ts)

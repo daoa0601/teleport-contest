@@ -1974,8 +1974,9 @@ async function fillRandomRoomObjects(croom, pos) {
 }
 // C mklev.c:fill_ordinary_room(): a recursive ordinary-room fill —
 // subrooms first, then the sleeping monster, traps, gold, and the
-// non-rogue furniture; fillRandomRoomObjects() above is the shared
-// skip_nonrogue random-object tail.
+// non-rogue furniture; mksink() is inlined in the one-in-60 arm below
+// and fillRandomRoomObjects() above is the shared skip_nonrogue
+// random-object tail.
 export async function fill_ordinary_room(croom, bonus_items) {
     const g = game;
     if (!croom || (croom.rtype !== OROOM && croom.rtype !== THEMEROOM))

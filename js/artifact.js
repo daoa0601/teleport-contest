@@ -1989,7 +1989,8 @@ async function invokeFlingPoison(object, state, publish) {
 }
 // C artifact.c:arti_invoke(): the #invoke dispatch — the direct powers
 // (inv_prop > LAST_PROP) with their cost gate, and the property toggles
-// through invokeProperty() below.
+// through invokeProperty() below.  invoke_charge_obj() and invoke_untrap()
+// run in the switch arms below (chooseObjectToCharge() and untrap()).
 export async function artiInvoke(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
     if (!artifact)
         return { used: false };

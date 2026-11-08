@@ -1924,15 +1924,6 @@ async function applyCloakOffEffects(object, state) {
         await plineWithContinuation(`Suddenly you can ${propertyIsActive('seeInvisible', state) ? 'no longer see through yourself' : 'see yourself'}.`);
     }
 }
-// C do_wear.c:Armor_on() -> dragon_armor_handling().  Dragon armor's AC is
-// active as soon as setworn() installs the slot, but these extrinsics and
-// their feedback are afternmv effects: they begin only when dressing
-// reaches multi == 0.  Return messages so allmain can preserve nomovemsg
-// ordering.
-// C do_wear.c:Boots_on(): the boot switch — water walking, levitation,
-// speed, fumbling, and elven stealth, with the AC-evident known flag.
-// Gloves_on() runs whole in the function of that name below; Helmet_on()
-// and Cloak_on() in applyHelmetOnEffects() and applyCloakOnEffects().
 // C do_wear.c:Gloves_on(): the gauntlet switch.  Gauntlets of power are
 // identified (armorOnIdentifiesType() in the wear flow) and set botl;
 // gauntlets of fumbling start their rnd(20) timer when no other source
@@ -1964,6 +1955,15 @@ async function fumblingWearTimer(object, state) {
         setPropertyTimeout('fumbling', propertyTimeout('fumbling', state) + rnd(20), state);
     return [];
 }
+// C do_wear.c:Armor_on() -> dragon_armor_handling().  Dragon armor's AC is
+// active as soon as setworn() installs the slot, but these extrinsics and
+// their feedback are afternmv effects: they begin only when dressing
+// reaches multi == 0.  Return messages so allmain can preserve nomovemsg
+// ordering.
+// C do_wear.c:Boots_on(): the boot switch — water walking, levitation,
+// speed, fumbling, and elven stealth, with the AC-evident known flag.
+// Gloves_on() runs whole in the function of that name above; Helmet_on()
+// and Cloak_on() in applyHelmetOnEffects() and applyCloakOnEffects().
 export async function applyArmorOnEffects(object, state = game, { initialDon = false } = {}) {
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
