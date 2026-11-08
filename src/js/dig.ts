@@ -62,7 +62,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { addShopDamage, costlySpot, deleteObject, makeAngryShopkeeper, payForShopDamage, shopDig, stolenValue } from './shk.js';
 import { shopkeeperName } from './shknam.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { monsterAt, monsterHasMapPosition } from './steed.js';
+import { monsterHasMapPosition } from './steed.js';
 import { randomMonsterRelocation, teleportPetVictim } from './teleport.js';
 import { Is_botlevel, ceilingName, depth, levelHasCeiling, levelAtDepth, surfaceName, canDigDown } from './dungeon.js';
 import { CLR_WHITE } from './terminal.js';
@@ -116,6 +116,15 @@ export type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
     | typeof DIGTYP_STATUE | typeof DIGTYP_BOULDER | typeof DIGTYP_DOOR
     | typeof DIGTYP_TREE;
 
+// Part of C rm.h:m_at(): the head-only occupant of a square, with the call
+// sites' MON_AT()/DEADMONSTER() checks folded in. steed.ts monsterAt()
+// additionally counts worm-tail squares for movement scans; C's m_at() and
+// these dig.c callers match the head position only.
+function monsterAt(x: number, y: number, state: GameState): Monster | null {
+    return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
+        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
+    ) || null;
+}
 
 // C dig.c:pick_can_reach()
 // Whether a pick can reach a statue or boulder that sits in (or beside)
@@ -246,7 +255,7 @@ async function mkcavepos(x: number, y: number, dist: number, waslit: boolean, ro
     if (rockit) {
         if (IS_OBSTRUCTED(location.typ)) return;
         if (trapAt(state, x, y)) return;
-        const monster = monsterAt(state, x, y);
+        const monster = monsterAt(x, y, state);
         if (monster && !monsterPassesWalls(monster.mnum)) {
             // C rloc(mtmp, RLOC_NOMSG): relocate without a message.
             await randomMonsterRelocation(monster, { state, flags: RLOC_NOMSG });
@@ -1011,7 +1020,7 @@ export async function digActualHole(
     // BY_OBJECT means the hero broke a wand, so blame her for it.
     const herosFault = madeByYou || madeByObject;
     let wontFall = heroIsAirborne(state);
-    const victim = monsterAt(state, x, y);
+    const victim = monsterAt(x, y, state);
 
     if (atYou && hero.utrap) {
         if (hero.utraptype === TT_BURIEDBALL) {
@@ -1261,7 +1270,7 @@ export async function liquidFlow(
             }),
         });
     } else {
-        const monster = monsterAt(state, x, y);
+        const monster = monsterAt(x, y, state);
         if (monster) {
             await resolveMonsterLiquid(monster, state, {
                 announce: plineWithContinuation,
