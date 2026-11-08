@@ -101,7 +101,8 @@ import {
 
 } from './monster_data.js';
 import type { Monster } from './monster_types.js';
-import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
+import { learnObjectType, objectMaterial, observeObject } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import type { FoodMeal, FoodOccupation, NonfoodMeal, PreparedFoodObject, TinOpening } from './occupation_types.js';

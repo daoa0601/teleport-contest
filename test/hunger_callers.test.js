@@ -12,7 +12,7 @@ import { makeHeroVomiting } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDFOLD, DIAMOND, EGG, OBJECT_NUTRITION, POT_BOOZE, POT_FRUIT_JUICE, } from '../js/object_data.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 import { polymonHero } from '../js/polyself.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { teleportHeroAtWill } from '../js/teleport.js';

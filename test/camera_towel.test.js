@@ -20,7 +20,7 @@ import { initRng } from '../js/rng.js';
 import { canSeeMonster, newsym } from '../js/display.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { vision_recalc } from '../js/vision.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { gulpmu } from '../js/mhitu.js';

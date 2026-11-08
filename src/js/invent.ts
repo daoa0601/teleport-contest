@@ -1,8 +1,9 @@
 // invent.js — the invent.c owner: inventory admission (addinv/freeinv/
 // assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
-// views, look_here()/dolook(), doorganize/#adjust, and stack merging.
+// views, look_here()/dolook(), doorganize/#adjust, and stack merging,
+// delallobj() and g_at().
 // C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
-// look_here(), doorganize(), dolook().
+// look_here(), doorganize(), dolook(), delallobj(), g_at().
 import {
     RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS,
     SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
@@ -11,7 +12,7 @@ import {
 import {
     objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, CRYSKNIFE, ALCHEMY_SMOCK,
     ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, MAGIC_MARKER,
-    HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BLANK_PAPER,
+    HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER,
     SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
     BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE,
     CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA,
@@ -35,7 +36,9 @@ import {
 import { isThrowingWeapon } from './dothrow.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn, removeHeroEquipment } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { unpunishHero } from './read.js';
 import { hideUnhideMessageTypes } from './message_types.js';
+import { itemReadingText } from './iactions.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import {
     killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural,
@@ -66,7 +69,8 @@ import { MONSTER_NAME } from './monster_data.js';
 import type { SpellCategory } from './data_types.js';
 import { levelPrizeKind } from './level_prize.js';
 import { recordLiteracy } from './literacy.js';
-import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+import { learnObjectType, recordObjectEncounter, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import { promptYesNoAllQuit } from './query.js';
 import { isTwoWeaponObject, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
 import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
@@ -932,6 +936,18 @@ export async function delobj(object: GameObject, state: GameState = game, random
     await delobjCore(object, false, state, random);
 }
 
+// C invent.c:delallobj()
+// The closing drawbridge destroys the pile at a square — this
+// whole-pile deletion.
+export async function destroyObjectsAt(x: number, y: number, state: GameState): Promise<void> {
+    for (const object of [...state.level?.objects[x]?.[y] ?? []]) {
+        if (object.where === 'gone') continue;
+        if (object === (state.uball || state.u.uball)) await unpunishHero(state);
+        if (object !== (state.uchain || state.u.uchain)) await delobj(object, state);
+    }
+}
+
+
 // C invent.c:delobj_core().  `force` is the Rider-revival path.
 export async function delobjCore(
     object: GameObject, force: boolean, state: GameState = game, random = rn2,
@@ -963,6 +979,13 @@ export function objectAt(x: number, y: number, otyp: number, state: GameState): 
     return (state.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === otyp) || null;
 }
+
+// C invent.c:g_at()
+// The gold stack on a square, if any.
+export function goldAt(x: number, y: number, state: GameState): GameObject | undefined {
+    return requireGameLevel(state).objects[x]?.[y]?.find(object => object.otyp === GOLD_PIECE);
+}
+
 
 // C invent.c:carrying_stoning_corpse(). Return the first carried corpse that petrifies on touch.
 export function carryingStoningCorpse(state: GameState = game): GameObject | undefined {
@@ -3295,28 +3318,6 @@ function accessoryActionText(item: GameObject, state: GameState): string | null 
     return null;
 }
 
-// C iactions.c:item_reading_classification(). Reading advice depends on
-// what the hero knows about the type, rather than the object's charges.
-function itemReadingText(item: GameObject, state: GameState): string | null {
-    const known = objectTypeKnown(item, state);
-    if (item.otyp === FORTUNE_COOKIE) return 'Read the message inside this cookie';
-    if (item.otyp === OBJECT_NAMES.indexOf('T-shirt')) return 'Read the slogan on the shirt';
-    if (item.otyp === ALCHEMY_SMOCK) return 'Read the slogan on the apron';
-    if (item.otyp === HAWAIIAN_SHIRT) return 'Look at the pattern on the shirt';
-    if (item.oclass === SCROLL_CLASS) {
-        const magic = item.dknown && item.otyp !== SCR_MAIL
-            && (item.otyp !== SCR_BLANK_PAPER || !known)
-            ? ' to activate its magic' : '';
-        return `Read this scroll${magic}`;
-    }
-    if (item.oclass !== SPBOOK_CLASS) return null;
-    const novel = item.otyp === SPE_NOVEL;
-    const blank = item.otyp === SPE_BLANK_PAPER && known;
-    const tome = item.otyp === SPE_BOOK_OF_THE_DEAD && known;
-    const verb = novel || blank ? 'Read' : tome ? 'Examine' : 'Study';
-    const noun = novel ? simpleObjectName(item, state) : tome ? 'tome' : 'spellbook';
-    return `${verb} this ${noun}`;
-}
 
 // Port only: the action key adapter.
 function inventoryActionKey(code: number): InventoryActionKey {

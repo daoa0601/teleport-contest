@@ -452,7 +452,8 @@ import {
     corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle,
     bareArtifactOrPlainName, killerObjectName, definiteObjectAction, erosionMatters,
 } from './objnam.js';
-import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
+import { learnObjectType, observeObject, objectMaterial, objectTypeKnown } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
 import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep } from './timeout.js';
 import { LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';

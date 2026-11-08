@@ -820,7 +820,9 @@ async function runCommandHandler(binding: CommandBinding): Promise<void> {
 // C iactions.c:itemactions_pushkeys(): queue the chosen item action's
 // command, the m-prefix some actions need in front of it, and the object's
 // inventory letter; the command's own prompts pop the letter from the
-// shared queue (iactions.c:145-235).
+// shared queue (iactions.c:145-235).  The port dispatches the inventory
+// windows from this module's command loop, so the queue helper cannot live
+// in an iactions module without an import cycle over the cmdq calls.
 function enqueueInventoryAction(action: InventoryAction | null): void {
     if (!action || ['\x1b', ' ', '\n', '\r'].includes(action.key)) return;
     const { key, item } = action;
@@ -1465,9 +1467,10 @@ async function enterExploreMode(): Promise<void> {
     game.context.move = 0;
 }
 
-// C save.c:saveobjchn(): the release_data() block that releases a
+// Part of C save.c:saveobjchn(): the release_data() block that releases a
 // level-owned object — victual/tin/spbook keep their o_id so the pointer
-// can be restored on reload, then dealloc_obj().
+// can be restored on reload, then dealloc_obj().  Kept here because the
+// level teardown that needs it lives in this module.
 function freeLevelObject(object: GameObject): void {
     for (const content of [...(object.contents ?? [])]) freeLevelObject(content);
     const { victual, tin, spbook } = game.context;

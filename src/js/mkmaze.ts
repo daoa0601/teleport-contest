@@ -33,7 +33,7 @@ import { fill_special_room, load_special, medusaPetrifiable } from './sp_lev.js'
 import { goodPosition } from './teleport.js';
 import { mkcorpstat, createToptenObject, mkgold, mkobj, mkobj_at, mksobj, deallocateObject, objectWeight, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt } from './mkobj.js';
 import { makemon, makemonAt, setMonsterMalign } from './makemon.js';
-import { occupied } from './mkroom.js';
+
 import { objectProb } from './o_init.js';
 import { upstart } from './hacklib.js';
 import { addFruit } from './message_types.js';
@@ -47,7 +47,7 @@ import type { Monster } from './monster_types.js';
 import { premap_detect } from './detect.js';
 import { is_branchlev, placeHeroOnLevel, specialLevelAt, In_quest, In_mines, Invocation_lev } from './dungeon.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, mkstairs, mktrap, place_branch } from './mklev.js';
+import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, mkstairs, mktrap, occupied, place_branch } from './mklev.js';
 import { stairway_find_dir } from './stairs.js';
 import { isRoom } from './map_types.js';
 import type { ActiveSpecialLevel, ArrivalRegion, ElementalBubble, MapLocation, Position, Rectangle, Room, StairRegion } from './map_types.js';

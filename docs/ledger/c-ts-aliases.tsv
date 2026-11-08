@@ -50,7 +50,6 @@ miniwalk	rogueMiniwalk
 setgemprobs	setGemProbabilities
 no_bones_level	levelAllowsBones
 resetobjs	resetBonesObjects
-do_mkroom	maybeMakeSpecialRoom
 makevtele	makeniche
 walkfrom	carveMazeFrom
 set_mimic_sym	setMimicAppearance
@@ -237,5 +236,6 @@ finesse_ahriman	beginLevitatingArtifactDrop
 drop_boulder_on_player	dropBoulderOnHero
 reassign	reassignInventoryLetters
 is_pool	isPoolAt
+is_pool_or_lava	isPoolOrLavaAt
 water_damage_chain	damageWaterChain
 readobjnam_postparse1	parseWishText

@@ -48,7 +48,8 @@ import { mapVicinity } from './detect.js';
 import { mksobj, objectWeight } from './mkobj.js';
 import { deleteObject, chargeUnpaidUsage } from './shk.js';
 import { useHeroSkill, ensureHeroSkills, initializedSkills, requiredSkill } from './weapon.js';
-import { recordObjectKnowledge, learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import { findArmorClass, takeoffSlotObject } from './do_wear.js';
 import {
     canSeeMonster, canSpotMonster, flush_screen, shieldeff,

@@ -110,7 +110,7 @@ const bill: Check<ShopBillEntry> = (value): value is ShopBillEntry => closedFiel
     useup: monsterFlag,
 });
 
-const shopkeeper: Check<ShopkeeperData> = (value): value is ShopkeeperData => closedFieldsMatch<ShopkeeperData>(value, {
+const shopkeeperData: Check<ShopkeeperData> = (value): value is ShopkeeperData => closedFieldsMatch<ShopkeeperData>(value, {
     shoproom: integer,
     shoptype: integer,
     shoplevel: monsterHomeLevel,
@@ -179,7 +179,7 @@ function extra(representation: Check<number>): Check<MonsterExtra> {
         edog: optional(pet),
         emin: optional(minion),
         epri: optional(priest),
-        eshk: optional(shopkeeper),
+        eshk: optional(shopkeeperData),
         ebones: optional(bones),
     });
 }
@@ -303,7 +303,7 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         edog: optional(pet),
         emin: optional(minion),
         epri: optional(priest),
-        eshk: optional(shopkeeper),
+        eshk: optional(shopkeeperData),
         mextra: optional(extra(representation)),
         _egd: optional(guard(context)),
         wormno: optional(integer),

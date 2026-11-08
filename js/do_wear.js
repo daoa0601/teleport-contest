@@ -22,7 +22,8 @@ import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOB
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt, isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part, floatVsFlight } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
-import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
+import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName, suitSimpleName, cloakSimpleName, helmSimpleName, glovesSimpleName, bootsSimpleName, shieldSimpleName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters, bucCategory } from './invent.js';

@@ -1,15 +1,18 @@
 // invent.js — the invent.c owner: inventory admission (addinv/freeinv/
 // assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
-// views, look_here()/dolook(), doorganize/#adjust, and stack merging.
+// views, look_here()/dolook(), doorganize/#adjust, and stack merging,
+// delallobj() and g_at().
 // C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
-// look_here(), doorganize(), dolook().
+// look_here(), doorganize(), dolook(), delallobj(), g_at().
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, CRYSKNIFE, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD, } from './object_data.js';
+import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, CRYSKNIFE, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD, } from './object_data.js';
 import { pair_of, isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, launcherMatchesAmmo, isBlade, isPolearm, isLauncherAmmunition, } from './object_properties.js';
 import { isThrowingWeapon } from './dothrow.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn, removeHeroEquipment } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { unpunishHero } from './read.js';
 import { hideUnhideMessageTypes } from './message_types.js';
+import { itemReadingText } from './iactions.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, objectNeedsFullIdentification, observeObjectForNaming, simpleObjectName, singularObjectName, erosionMatters, objectUsesCharges, } from './objnam.js';
 import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, placeObject, objectWeight, isContainer, announceGlobMerge, } from './mkobj.js';
@@ -28,7 +31,8 @@ import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, GETOB
 import { MONSTER_NAME } from './monster_data.js';
 import { levelPrizeKind } from './level_prize.js';
 import { recordLiteracy } from './literacy.js';
-import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+import { learnObjectType, recordObjectEncounter, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import { promptYesNoAllQuit } from './query.js';
 import { isTwoWeaponObject, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
 import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
@@ -740,6 +744,19 @@ export async function freeInventoryObject(object, state = game) {
 export async function delobj(object, state = game, random = rn2) {
     await delobjCore(object, false, state, random);
 }
+// C invent.c:delallobj()
+// The closing drawbridge destroys the pile at a square — this
+// whole-pile deletion.
+export async function destroyObjectsAt(x, y, state) {
+    for (const object of [...state.level?.objects[x]?.[y] ?? []]) {
+        if (object.where === 'gone')
+            continue;
+        if (object === (state.uball || state.u.uball))
+            await unpunishHero(state);
+        if (object !== (state.uchain || state.u.uchain))
+            await delobj(object, state);
+    }
+}
 // C invent.c:delobj_core().  `force` is the Rider-revival path.
 export async function delobjCore(object, force, state = game, random = rn2) {
     requireLiveGame(state);
@@ -767,6 +784,11 @@ export async function delobjCore(object, force, state = game, random = rn2) {
 export function objectAt(x, y, otyp, state) {
     return (state.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === otyp) || null;
+}
+// C invent.c:g_at()
+// The gold stack on a square, if any.
+export function goldAt(x, y, state) {
+    return requireGameLevel(state).objects[x]?.[y]?.find(object => object.otyp === GOLD_PIECE);
 }
 // C invent.c:carrying_stoning_corpse(). Return the first carried corpse that petrifies on touch.
 export function carryingStoningCorpse(state = game) {
@@ -3170,33 +3192,6 @@ function accessoryActionText(item, state) {
         return item.otyp === LENSES ? 'Put these lenses on' : `Put this on${item.otyp === TOWEL ? ' to blindfold yourself' : ''}`;
     }
     return null;
-}
-// C iactions.c:item_reading_classification(). Reading advice depends on
-// what the hero knows about the type, rather than the object's charges.
-function itemReadingText(item, state) {
-    const known = objectTypeKnown(item, state);
-    if (item.otyp === FORTUNE_COOKIE)
-        return 'Read the message inside this cookie';
-    if (item.otyp === OBJECT_NAMES.indexOf('T-shirt'))
-        return 'Read the slogan on the shirt';
-    if (item.otyp === ALCHEMY_SMOCK)
-        return 'Read the slogan on the apron';
-    if (item.otyp === HAWAIIAN_SHIRT)
-        return 'Look at the pattern on the shirt';
-    if (item.oclass === SCROLL_CLASS) {
-        const magic = item.dknown && item.otyp !== SCR_MAIL
-            && (item.otyp !== SCR_BLANK_PAPER || !known)
-            ? ' to activate its magic' : '';
-        return `Read this scroll${magic}`;
-    }
-    if (item.oclass !== SPBOOK_CLASS)
-        return null;
-    const novel = item.otyp === SPE_NOVEL;
-    const blank = item.otyp === SPE_BLANK_PAPER && known;
-    const tome = item.otyp === SPE_BOOK_OF_THE_DEAD && known;
-    const verb = novel || blank ? 'Read' : tome ? 'Examine' : 'Study';
-    const noun = novel ? simpleObjectName(item, state) : tome ? 'tome' : 'spellbook';
-    return `${verb} this ${noun}`;
 }
 // Port only: the action key adapter.
 function inventoryActionKey(code) {

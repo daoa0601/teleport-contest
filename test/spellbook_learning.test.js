@@ -16,7 +16,7 @@ import { wearEyewear } from '../js/do_wear.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { currentSpellKnowledge } from '../js/spell.js';
 import { studyBook, continueSpellbookStudy, cursedBook } from '../js/spell.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';

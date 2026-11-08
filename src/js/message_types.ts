@@ -3,7 +3,8 @@
 // rule engine (msgtype_parse_add(), msgtype_type(),
 // hide_unhide_msgtypes()). The rc-file statements that carry OPTIONS=
 // elements live in cfgfiles.ts (C cfgfiles.c); the named-fruit registry
-// helpers used by bones/level gen stay in objnam.js.
+// helpers used by bones/level gen stay in objnam.js; the symbols-file
+// loader read_sym_file() lives in novel_tribute.ts (C files.c).
 
 import { PosixRegex } from './posix_regex.js';
 import { ILLOBJ_CLASS, COIN_CLASS, FOOD_CLASS } from './objclass.js';
@@ -20,7 +21,8 @@ import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { rn2, rnd } from './rng.js';
-import { isTextOption, textOptionValue, cInteger, optfnPickupTypes, optionError } from './option_values.js';
+import { isTextOption, textOptionValue, cInteger, optionError } from './option_values.js';
+import { readSymFile, isDefaultSymsetName } from './novel_tribute.js';
 import { featureAlertVersion } from './extversion.js';
 import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
@@ -1686,16 +1688,10 @@ function preferredPetDescription(): string {
     }
 }
 
-// dat/symbols: the symsets a `start:` line defines, and the handling each
-// declares with `Handling:`.  The port renders only DECgraphics symbols,
-// but options.c:optfn_symset() get_val still reports any loadable set's
+// dat/symbols: the handling each symset's `start:` line declares with
+// `Handling:`.  The port renders only DECgraphics symbols, but
+// options.c:optfn_symset() get_val still reports any loadable set's
 // declared handler.
-const SYMSET_NAMES: Record<string, true> = {
-    plain: true, blank: true, ibmgraphics: true, ibmgraphics_1: true,
-    ibmgraphics_2: true, rogueibm: true, rogueepyx: true, roguewindows: true,
-    curses: true, decgraphics: true, macgraphics: true, enhanced1: true,
-    enhanced2: true, amigafont: true,
-};
 const SYMSET_HANDLINGS: Record<string, string> = {
     ibmgraphics: 'IBM', ibmgraphics_1: 'IBM', ibmgraphics_2: 'IBM',
     rogueibm: 'IBM', rogueepyx: 'IBM', roguewindows: 'IBM',
@@ -1704,16 +1700,8 @@ const SYMSET_HANDLINGS: Record<string, string> = {
     enhanced1: 'UTF8', enhanced2: 'UTF8',
 };
 
-// C files.c:read_sym_file(): load the named set from the "symbols" data.
-// The port's symbol sets are fixed tables, so a name loads when a
-// `start:` line of dat/symbols defines it; a name no line carries fails
-// and the caller clears the choice.
-function readSymFile(name: string): boolean {
-    return SYMSET_NAMES[name.toLowerCase()] === true;
-}
-
 // C options.c:optfn_symset(): load the primary set from the symbols file
-// (readSymFile above).  "default" itself clears the choice without
+// (novel_tribute.ts readSymFile).  "default" itself clears the choice without
 // loading (isDefaultSymsetName below); a name no `start:` line carries
 // fails, clears the choice, and reports the error.
 function optfnSymset(
@@ -1750,15 +1738,6 @@ function optfnRoguesymset(
         return false;
     }
     return true;
-}
-
-// Part of C files.c:read_sym_file(): the "default symbols" name match.
-// files.c:read_sym_file() accepts a name that matches no `start:` line only
-// when it fuzzymatches "Default symbols" (ignoring spaces, '-' and '_') or
-// is exactly "default"; that choice clears the set instead of loading one.
-function isDefaultSymsetName(name: string): boolean {
-    return name.toLowerCase() === 'default'
-        || name.toLowerCase().replace(/[ \-_]/g, '') === 'defaultsymbols';
 }
 
 // Part of C options.c:optfn_symset(): the loaded set's value string.
@@ -2232,6 +2211,20 @@ const PICKUP_TYPE_ROWS = [
     ['n', '0', 'iron ball'],
     ['o', '_', 'iron chain'],
 ] as const;
+
+// C options.c:optfn_pickup_types(): the object-class letter validation
+// loop.
+export function optfnPickupTypes(value: string): { symbols: string; invalid: boolean } {
+    value = value.replace(/^ +/, '');
+    if (/^[aA]/.test(value)) return { symbols: '', invalid: false };
+    let symbols = '';
+    let invalid = false;
+    for (const symbol of value) {
+        if (!OBJECT_CLASS_SYMBOLS.includes(symbol) || symbols.includes(symbol)) invalid = true;
+        else symbols += symbol;
+    }
+    return { symbols, invalid };
+}
 
 // C options.c:handler_pickup_types(): the autopickup class editor.
 // options.c:optfn_pickup_types() prompts in traditional/combination mode;

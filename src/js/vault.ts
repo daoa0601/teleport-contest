@@ -55,7 +55,7 @@ import type { GameObject } from './object_types.js';
 import type { MonsterCallLog, MonsterMovement } from './monster_action_types.js';
 import { heroFormSticks } from './polyself.js';
 import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object } from './mkobj.js';
-import { currency, freeInventoryObject, stack_object } from './invent.js';
+import { currency, freeInventoryObject, stack_object, goldAt } from './invent.js';
 import { enexto } from './teleport.js';
 import type { MessagePublisher } from './pline.js';
 import { heroGoldAmount, roomForRoomno, roomsAt } from './hack.js';
@@ -831,11 +831,6 @@ function nextCorridorSquare(guard: VaultGuard, state: GameState) {
     }
 }
 
-// C invent.c:g_at()
-// The gold stack on a square, if any; C invent.c:g_at() inline.
-export function goldAt(x: number, y: number, state: GameState): GameObject | undefined {
-    return requireGameLevel(state).objects[x]?.[y]?.find(object => object.otyp === GOLD_PIECE);
-}
 
 // C vault.c:gd_pick_corridor_gold()
 async function pickCorridorGold(guard: VaultGuard, x: number, y: number, state: GameState, random: (limit: number) => number) {

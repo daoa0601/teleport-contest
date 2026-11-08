@@ -1,5 +1,5 @@
 // C do_name.c:noveltitle() and files.c:set_bonesfile_name()/delete_bonesfile()/
-// paniclog()/choose_passage()/read_tribute().
+// paniclog()/choose_passage()/read_tribute()/read_sym_file().
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { putMessageHistory } from './topl.js';
@@ -140,5 +140,28 @@ export async function readNovelTribute(book, title, state = game) {
     // ^P recall without displaying it.
     putMessageHistory(attribution);
     return true;
+}
+// dat/symbols: the symsets a `start:` line defines.  read_sym_file() loads
+// a set by matching its name against these lines.
+const SYMSET_NAMES = {
+    plain: true, blank: true, ibmgraphics: true, ibmgraphics_1: true,
+    ibmgraphics_2: true, rogueibm: true, rogueepyx: true, roguewindows: true,
+    curses: true, decgraphics: true, macgraphics: true, enhanced1: true,
+    enhanced2: true, amigafont: true,
+};
+// C files.c:read_sym_file(): load the named set from the "symbols" data.
+// The port's symbol sets are fixed tables, so a name loads when a
+// `start:` line of dat/symbols defines it; a name no line carries fails
+// and the caller clears the choice.
+export function readSymFile(name) {
+    return SYMSET_NAMES[name.toLowerCase()] === true;
+}
+// Part of C files.c:read_sym_file(): the "default symbols" name match.
+// files.c:read_sym_file() accepts a name that matches no `start:` line only
+// when it fuzzymatches "Default symbols" (ignoring spaces, '-' and '_') or
+// is exactly "default"; that choice clears the set instead of loading one.
+export function isDefaultSymsetName(name) {
+    return name.toLowerCase() === 'default'
+        || name.toLowerCase().replace(/[ \-_]/g, '') === 'defaultsymbols';
 }
 //# sourceMappingURL=novel_tribute.js.map

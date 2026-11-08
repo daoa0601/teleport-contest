@@ -2,15 +2,16 @@
 // C refs: mkroom.c — mkshop(), pick_room(), mkzoo(), mktemple(),
 // mkswamp(), fill_zoo() and its zoo/court/morgue/barracks/beehive branches,
 // morguemon(), antholemon(), courtmon(), squadmon(), nexttodoor(),
-// shrine_pos(); plus the coordinate selectors somexy()/somexyspace() and
-// mklev.c occupied() that share this file's room table.
+// shrine_pos(); plus the coordinate selectors somexy()/somexyspace().
+// do_mkroom() dispatches the special-room types; mklev.c occupied() lives
+// in mklev.ts.
 import { RANDOM_CLASS, FOOD_CLASS, SPBOOK_CLASS, WAND_CLASS } from './objclass.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { isPoolOrLavaAt } from './dbridge.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { CmapSymbol } from './glyph_numbers.js';
-import { AIR, ALTAR, AM_SHRINE, ANTHOLE, ANY_SHOP, ANY_TYPE, BARRACKS, BEEHIVE, BLCORNER, BRCORNER, CLOUD, COCKNEST, CORR, COURT, CROSSWALL, LEPREHALL, DBWALL, DOOR, DRAWBRIDGE_DOWN, FILL_NORMAL, FOUNTAIN, GRAVE, HWALL, ICE, IRONBARS, IS_DOOR, IS_FURNITURE, IS_ROOM, IS_WALL, LADDER, LAVAPOOL, LAVAWALL, MM_ASLEEP, MM_NOGRP, MORGUE, OROOM, POOL, ROOM, ROOMOFFSET, SHOPBASE, SDOOR, SINK, SPACE_POS, STAIRS, STONE, SWAMP, TEMPLE, TDWALL, THRONE, TLCORNER, TLWALL, TRCORNER, TREE, TRWALL, TUWALL, VWALL, WATER, ZOO, Align2amask, In_endgame, A_NONE, G_GONE } from './const.js';
+import { AIR, ALTAR, AM_SHRINE, ANTHOLE, ANY_SHOP, ANY_TYPE, BARRACKS, BEEHIVE, BLCORNER, BRCORNER, CLOUD, COCKNEST, CORR, COURT, CROSSWALL, LEPREHALL, DBWALL, DOOR, DRAWBRIDGE_DOWN, FILL_NORMAL, FOUNTAIN, GRAVE, HWALL, ICE, IRONBARS, IS_DOOR, IS_ROOM, IS_WALL, LADDER, LAVAPOOL, LAVAWALL, MM_ASLEEP, MM_NOGRP, MORGUE, OROOM, POOL, ROOM, ROOMOFFSET, SHOPBASE, SDOOR, SINK, SPACE_POS, STAIRS, STONE, SWAMP, TEMPLE, TDWALL, THRONE, TLCORNER, TLWALL, TRCORNER, TREE, TRWALL, TUWALL, VWALL, WATER, ZOO, Align2amask, In_endgame, A_NONE, G_GONE } from './const.js';
 import { isok } from './cmd.js';
+import { occupied } from './mklev.js';
 import { CORPSE, CHEST, GOLD_PIECE, LARGE_BOX, LUMP_OF_ROYAL_JELLY, MACE, STATUE, } from './object_data.js';
 import { RANDOM_SHOP_TYPES } from './shknam.js';
 import { level_difficulty, inducedAlignment } from './dungeon.js';
@@ -110,15 +111,6 @@ export function somex(room) {
 // C mkroom.c:somey():
 export function somey(room) {
     return rn1(room.hy - room.ly + 1, room.ly);
-}
-// C mklev.c:occupied():
-export function occupied(x, y, state = game) {
-    const location = state.level?.at?.(x, y);
-    if (!location)
-        return false;
-    const trapped = state.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
-    return !!(trapped || IS_FURNITURE(location.typ)
-        || isPoolOrLavaAt(x, y, state));
 }
 // C mkroom.c:somexy():
 export function somexy(room, coordinate, state = game) {
@@ -357,6 +349,15 @@ export async function markRandomSpecialRoom(roomType) {
     room.rtype = roomType;
     room.needfill = FILL_NORMAL;
     return true;
+}
+// C mkroom.c:do_mkroom(): dispatch one special-room type to its maker —
+// mkshop() for a shop, and the mkzoo()/mkswamp()/mktemple() selection that
+// markRandomSpecialRoom() merges above.  C's impossible() default is
+// unreachable: every caller passes one of the types makelevel() spells.
+export async function do_mkroom(roomtype) {
+    if (roomtype >= SHOPBASE)
+        return mkshop();
+    return markRandomSpecialRoom(roomtype);
 }
 // C mkroom.c:mkswamp(). Room selection is with replacement; a room already
 // converted by an earlier attempt is skipped. The first pool has a resident.

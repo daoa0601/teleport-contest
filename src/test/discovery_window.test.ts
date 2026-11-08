@@ -13,7 +13,8 @@ import {
     POT_BOOZE, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_HEALING, POT_SICKNESS,
     POT_WATER, RIN_PROTECTION, SACK, SCR_IDENTIFY, WAN_CANCELLATION, WOODEN_HARP,
 } from '../js/object_data.js';
-import { learnObjectType, recordObjectEncounter, recordObjectKnowledge } from '../js/o_init.js';
+import { learnObjectType, recordObjectEncounter } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 import { recordObjectCall } from '../js/do_name.js';
 import { recordObjectPriceQuote } from '../js/shk.js';
 

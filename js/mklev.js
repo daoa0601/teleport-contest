@@ -52,7 +52,7 @@ import { premap_detect, convertSecretDoor } from './detect.js';
 import { deleteEngravingAt, makeEngravingAt, make_grave, randomEngraving, restoreEngravings, sanitizeEngravings, wipeEngravingAt } from './engrave.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { insideShopRoomAt, addShopDamage, fixShopDamage, deleteObject } from './shk.js';
-import { PM_SOLDIER, antholeMonsterType, markRandomSpecialRoom, mkshop, occupied, roomHasStair, somex, somey, somexyspace, insideRoom } from './mkroom.js';
+import { PM_SOLDIER, antholeMonsterType, do_mkroom, roomHasStair, somex, somey, somexyspace, insideRoom } from './mkroom.js';
 import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMazeFile, generateElementalPlane, generateFakeWizardLevel, generateKnoxLevel, generateLuaQuestLevel, generateMedusaLevel, generateMinesEnd, generateMinetown, generateOracleLevel, generateRandomMaze, generateSokobanLevel, generateSpecialAndFixup, generateVladsTowerLevel, generateWizardLevel, isLuaQuestPrototype, mazeFloorPoint, mkportal, place_lregion, setLevelTerrainType, wallification } from './mkmaze.js';
 import { getbones, levelAllowsBones, restoreBonesMonsters } from './bones.js';
 import { makeroguerooms, makerogueghost } from './extralev.js';
@@ -60,7 +60,7 @@ import { restoreLevelRegions } from './region.js';
 import { beginObjectBurn } from './timeout.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition, enexto, enexto_gpflags } from './teleport.js';
-import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+import { isIceAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { addToContainer, beginLuaThemerooms, callLuaThemerooms, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, load_special, medusaPetrifiable, putGeneratedMonsterInventoryInStatue, themerooms_generate } from './sp_lev.js';
 import { finishHeroLiquidMonsterDeath, finishMonsterLiquidDeath, purgeDeadMonsters, removeMonsterFromGame, resolveMonsterLiquid, revealMonsterAppearance, sendMonsterToLimbo } from './mon.js';
 import { fractureRock } from './zap.js';
@@ -189,10 +189,6 @@ export async function runClaimedObjectRotTimer(claimed, state = game) {
     else
         await deleteObject(object, state);
     return { kind, object, where, x, y };
-}
-// C nhlua.c:l_nhcore_init(): entry adapter; LuaLifecycle.startCore() initializes the core.
-export async function l_nhcore_init() {
-    await currentLuaLifecycle().startCore(game);
 }
 // C mklev.c:mklev()
 export async function mklev() {
@@ -674,6 +670,15 @@ async function maybePlaceKnoxPortal(x, y) {
     await place_branch(branch, x, y);
     return true;
 }
+// C mklev.c:occupied():
+export function occupied(x, y, state = game) {
+    const location = state.level?.at?.(x, y);
+    if (!location)
+        return false;
+    const trapped = state.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
+    return !!(trapped || IS_FURNITURE(location.typ)
+        || isPoolOrLavaAt(x, y, state));
+}
 // Part of C mklev.c:makelevel(): the depth-dependent random special-room selection.
 // C ref: mklev.c makelevel() random-special-room else-if chain.  Every failed
 // depth-eligible predicate owns its draw; once one type is selected, room
@@ -683,31 +688,31 @@ async function maybeMakeSpecialRoom(roomThreshold) {
     const medusaDepth = depth_of_level(game.medusa_level);
     if (uDepth > 1 && uDepth < medusaDepth
         && requireGameLevel().nroom >= roomThreshold && rn2(uDepth) < 3)
-        return mkshop();
+        return do_mkroom(SHOPBASE);
     if (uDepth > 4 && !rn2(6))
-        return markRandomSpecialRoom(COURT);
+        return do_mkroom(COURT);
     if (uDepth > 5 && !rn2(8)
         && !((game.mvitals?.[MONSTER_NAME.indexOf('leprechaun')]?.mvflags ?? 0) & G_GONE))
-        return markRandomSpecialRoom(LEPREHALL);
+        return do_mkroom(LEPREHALL);
     if (uDepth > 6 && !rn2(7))
-        return markRandomSpecialRoom(ZOO);
+        return do_mkroom(ZOO);
     if (uDepth > 8 && !rn2(5))
-        return markRandomSpecialRoom(TEMPLE);
+        return do_mkroom(TEMPLE);
     if (uDepth > 9 && !rn2(5)
         && !((game.mvitals?.[MONSTER_NAME.indexOf('killer bee')]?.mvflags ?? 0) & G_GONE))
-        return markRandomSpecialRoom(BEEHIVE);
+        return do_mkroom(BEEHIVE);
     if (uDepth > 11 && !rn2(6))
-        return markRandomSpecialRoom(MORGUE);
+        return do_mkroom(MORGUE);
     if (uDepth > 12 && !rn2(8) && antholeMonsterType() !== null)
-        return markRandomSpecialRoom(ANTHOLE);
+        return do_mkroom(ANTHOLE);
     if (uDepth > 14 && !rn2(4)
         && !((game.mvitals?.[PM_SOLDIER]?.mvflags ?? 0) & G_GONE))
-        return markRandomSpecialRoom(BARRACKS);
+        return do_mkroom(BARRACKS);
     if (uDepth > 15 && !rn2(6))
-        return markRandomSpecialRoom(SWAMP);
+        return do_mkroom(SWAMP);
     if (uDepth > 16 && !rn2(8)
         && !((game.mvitals?.[MONSTER_NAME.indexOf('cockatrice')]?.mvflags ?? 0) & G_GONE))
-        return markRandomSpecialRoom(COCKNEST);
+        return do_mkroom(COCKNEST);
     return false;
 }
 // C mklev.c:makerooms()

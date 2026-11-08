@@ -1330,12 +1330,11 @@ export async function identifyTrap() {
     else
         await pline("I can't see a trap there.");
 }
-// C wintty.c:tty_display_file()
-// C pager.c:dispfile_help(), dispfile_shelp(), dispfile_optionfile(),
-// dispfile_optmenu(), dispfile_license(), dispfile_debughelp(), and
-// dispfile_usagehelp(): the per-file help commands share this display port.
-// C pager.c:whatdoes_help(): the keyHelp pass over KEYHELP drops comments
-// and indentation.
+// C pager.c:dispfile_help(): the per-file help command's display port;
+// dispfile_shelp(), dispfile_optionfile(), dispfile_optmenu(),
+// dispfile_license(), dispfile_debughelp(), and dispfile_usagehelp() share
+// it.  Under it, wintty.c:tty_display_file() reads the file into an NHW_TEXT
+// window and pages it (displayPagerText and expandTabs below).
 export async function displayHelpFile(name, keyHelp = false) {
     clearMessageWindow();
     // C display_file() reads the file into an NHW_TEXT window; the pager

@@ -175,7 +175,7 @@ export function createSelectionApi(context, invoke = null) {
         return result;
     };
     // C nhlsel.c:l_selection_filter_percent(): keep points with that chance.
-    const percentage = (self, percent) => wrap(selectionValue(self).percentage(luaInt(percent)));
+    const filterPercent = (self, percent) => wrap(selectionValue(self).percentage(luaInt(percent)));
     // C nhlsel.c:l_selection_filter_mapchar(): keep points whose map character
     // and lighting match.
     const filterMapchar = (self, character, lit = -2) => wrap(selectionValue(self).filterMapCharacter(luaString(character), luaInt(lit ?? -2)));
@@ -318,7 +318,7 @@ export function createSelectionApi(context, invoke = null) {
         clone,
         numpoints,
         negate,
-        percentage,
+        percentage: filterPercent,
         filter_mapchar: filterMapchar,
         grow,
         rndcoord,

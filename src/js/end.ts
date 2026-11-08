@@ -1,6 +1,8 @@
 // end.js — End-of-game disclosure and terminal presentation.
-// C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
+// C refs: end.c disclose()/really_done(), insight.c, dungeon.c; rip.c's
+// tombstone lives in rip.ts.
 
+import { tombstoneLine, tombstoneYear, tombstoneDeathRows } from './rip.js';
 import { goodbye } from './role.js';
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
@@ -128,7 +130,8 @@ import {
     makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName,
     observeObjectForNaming,
 } from './objnam.js';
-import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
+import { recordObjectEncounter } from './o_init.js';
+import { recordObjectKnowledge } from './u_init.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { deepestLevelReached, depth, In_quest } from './dungeon.js';
 import { hiddenGold, payVaultGuardOnExit } from './vault.js';
@@ -441,23 +444,7 @@ function terminalLine(row: number, col: number, value: string, attr = 0) {
         display?.setCell(col + index, row, value.charAt(index), NO_COLOR, attr);
 }
 
-// C rip.c:center()
-function tombstoneLine(value: string | undefined) {
-    const text = String(value).slice(0, 16);
-    const col = 28 - Math.trunc((text.length + 1) / 2);
-    return `${' '.repeat(col - 19)}${text}${' '.repeat(37 - col - text.length)}`;
-}
 
-// Part of C rip.c:genl_outrip(): the death year (yyyymmdd(when)/10000
-// % 10000, printed %4d).
-function tombstoneYear(when: number): string {
-    const year = Number(new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York', year: 'numeric',
-    }).format(new Date(when * 1000)));
-    // C calendar.c:yyyymmdd() treats tm_year below 70 as a two-digit year.
-    const calendarYear = year < 1970 ? year + 100 : year;
-    return String(calendarYear % 10000).padStart(4, ' ');
-}
 
 // Part of C end.c:really_done(): the "You died in %s" dungeon name
 // (svd.dungeons[u.uz.dnum].dname).
@@ -499,33 +486,10 @@ function finalLocationLine(verb: string, score: number): string {
     return `${text} with ${score} point${plur(score)},`;
 }
 
-// C rip.c:genl_outrip().  The stone receives up to four cause rows, each at
-// most sixteen characters, split backward at a word boundary when possible.
-function tombstoneDeathRows(cause: string) {
-    let remaining = String(cause || '');
-    const rows = [];
-    for (let row = 0; row < 4; row++) {
-        if (!remaining) {
-            rows.push('');
-            continue;
-        }
-        let count = remaining.length;
-        if (count > 16) {
-            const space = remaining.lastIndexOf(' ', 16);
-            // Native's backward scan reaches zero after a space at index
-            // one, so that case hard-splits just like an unbroken word.
-            count = space > 1 ? space : 16;
-        }
-        rows.push(remaining.slice(0, count));
-        remaining = remaining[count] === ' '
-            ? remaining.slice(count + 1) : remaining.slice(count);
-    }
-    return rows;
-}
 
 // Part of C end.c:really_done(): the end-of-game NHW_TEXT summary —
 // tombstone, goodbye line, location, gold and level lines.
-// Also C rip.c:genl_outrip(): the stone itself is composed in here.
+// Also C rip.c:genl_outrip(): the stone itself is composed in rip.ts.
 function deathSummaryLines(killer: string, { gold, score, moves }: GameSummary, endtime: number, {
     deathVerb = 'died', deathCause = null, deathType = null,
 }: DeathDescription & { deathType?: number | null } = {}): string[] {

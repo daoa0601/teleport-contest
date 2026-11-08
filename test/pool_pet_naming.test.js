@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { applyNethackrc, parseNethackrc } from '../js/cfgfiles.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { initRng } from '../js/rng.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

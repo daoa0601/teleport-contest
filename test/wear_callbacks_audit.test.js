@@ -9,7 +9,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyTimeout } from '../js/properties.js';
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 import { makeHallucinated } from '../js/potion.js';
 import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject } from './support/game-objects.js';

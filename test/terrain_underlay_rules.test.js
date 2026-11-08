@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DB_FLOOR, DB_ICE, DRAWBRIDGE_UP } from '../js/const.js';
-import { occupied } from '../js/mkroom.js';
+import { occupied } from '../js/mklev.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const under of [DB_FLOOR, DB_ICE]) {
     void test(`level features may occupy underlay ${under} below a raised bridge`, async () => {

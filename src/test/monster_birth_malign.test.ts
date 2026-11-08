@@ -11,7 +11,7 @@ import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import type { AlignmentValue } from '../js/role.js';
 import type { Room } from '../js/map_types.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishSpellTurn, prepareSpellCaster } from './support/monster-spells.js';
 import { freshObjectRoom } from './support/object-room.js';

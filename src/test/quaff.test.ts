@@ -13,7 +13,7 @@ import { heroIsInvisible } from '../js/hero_invisibility.js';
 import { woundHeroLegs } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 
-import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectKnowledge } from '../js/u_init.js';
 
 import {
     POT_FRUIT_JUICE, POT_HEALING, POT_INVISIBILITY,

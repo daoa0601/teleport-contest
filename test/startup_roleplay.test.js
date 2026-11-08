@@ -13,7 +13,7 @@ import { runSegment } from '../js/jsmain.js';
 import { FLINT, FOOD_RATION, POT_WATER, SACK, SPE_FORCE_BOLT, SPE_HEALING, SPE_PROTECTION, TOUCHSTONE, WAN_WISHING, } from '../js/object_data.js';
 import { parseNethackrc } from '../js/cfgfiles.js';
 import { roles } from '../js/role.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import { completeHeroStartup, prepareHeroStartup, } from './support/startup.js';
 import { heroGoldAmount } from '../js/hack.js';
 async function start(roleKey, raceName = 'human', flags = { pauper: true }) {

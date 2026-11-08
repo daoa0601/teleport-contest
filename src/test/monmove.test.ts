@@ -17,7 +17,7 @@ import { resolveMonsterLiquid } from '../js/mon.js';
 import {
     OBJECT_NAMES, ROCK, SCR_TELEPORTATION,
 } from '../js/object_data.js';
-import { makedog } from '../js/u_init.js';
+import { makedog } from '../js/dog.js';
 import {
     knownObject, uninitializedObject,
 } from './support/game-objects.js';

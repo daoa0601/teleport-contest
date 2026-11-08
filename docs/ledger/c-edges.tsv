@@ -3,6 +3,7 @@ Amulet_off	discover_object
 Amulet_off	drown
 Amulet_off	float_vs_flight
 Amulet_off	hliquid
+Amulet_off	is_pool_or_lava
 Amulet_off	see_monsters
 Amulet_off	setworn
 Amulet_off	spoteffects
@@ -233,6 +234,7 @@ block_door	shop_keeper
 block_entry	in_rooms
 block_entry	shop_keeper
 block_point	fill_point
+blocked_boulder	is_pool_or_lava
 blocked_boulder	isok
 blocking_terrain	is_waterwall
 blocking_terrain	isok
@@ -244,6 +246,7 @@ bottlename	rn2
 boulder_hits_pool	d
 boulder_hits_pool	docrt
 boulder_hits_pool	hliquid
+boulder_hits_pool	is_pool_or_lava
 boulder_hits_pool	losehp
 boulder_hits_pool	newsym
 boulder_hits_pool	recalc_block_point
@@ -912,6 +915,7 @@ dodip	water_damage
 dodip	yn_function
 dodown	float_down
 dodown	is_pool
+dodown	is_pool_or_lava
 dodown	losehp
 dodown	next_level
 dodown	pickup
@@ -1251,6 +1255,7 @@ dospellmenu	spell_skilltype
 dospellmenu	spellretention
 dospinweb	exercise
 dospinweb	in_rooms
+dospinweb	is_pool_or_lava
 dospinweb	maketrap
 dospinweb	newsym
 dospit	getdir
@@ -1552,6 +1557,7 @@ fall_through	surface
 familiar_level_msg	rn2
 fatal_corpse_mistake	instapetrify
 feel_location	is_pool
+feel_location	is_pool_or_lava
 feel_location	isok
 feel_location	map_background
 feel_location	map_engraving
@@ -2032,6 +2038,7 @@ init_attr	init_attr_role_redist
 init_attr_role_redist	rnd_attr
 init_castle_tune	rn2
 init_dungeon_dungeons	rn2
+init_dungeons	fixup_level_locations
 init_fill	rn2
 init_fill	rnd
 init_objects	rn2
@@ -2098,6 +2105,7 @@ is_lava	isok
 is_moat	isok
 is_ok_location	is_pool
 is_pool	isok
+is_pool_or_lava	is_lava
 is_pool_or_lava	is_pool
 is_solid	isok
 is_valid_jump_pos	isok
@@ -2302,6 +2310,7 @@ level_tele	rn2
 level_tele	rnl
 level_tele	surface
 level_tele	yn_function
+levitation_dialogue	is_pool_or_lava
 levitation_dialogue	surface
 levregion_add	get_location
 lift_object	calc_capacity
@@ -2356,6 +2365,7 @@ look_here	trapname
 look_here	visible_region_at
 look_traps	glyph_at
 look_traps	trapname
+lookaround	is_pool_or_lava
 lookaround	isok
 lookaround	nomul
 lookaround	set_msg_xy
@@ -2627,6 +2637,7 @@ maketrap	choose_trapnote
 maketrap	hole_destination
 maketrap	in_rooms
 maketrap	is_lava
+maketrap	is_pool_or_lava
 maketrap	isok
 maketrap	maybe_finish_sokoban
 maketrap	mk_trap_statue
@@ -2933,6 +2944,7 @@ mkswamp	makemon
 mkswamp	mkclass
 mkswamp	nexttodoor
 mkswamp	rn2
+mktrap	is_pool_or_lava
 mktrap	level_difficulty
 mktrap	makemon
 mktrap	maketrap
@@ -3177,6 +3189,7 @@ newpw	rn2
 newpw	rnd
 newsym	feel_location
 newsym	is_pool
+newsym	is_pool_or_lava
 newsym	isok
 newsym	map_background
 newsym	map_engraving
@@ -3550,6 +3563,7 @@ poison_strdmg	losehp
 poisontell	acurr
 polyman	check_strangling
 polyman	done
+polyman	is_pool_or_lava
 polyman	make_blinded
 polyman	newsym
 polyman	rn2
@@ -3565,6 +3579,7 @@ polymon	encumber_msg
 polymon	exercise
 polymon	hliquid
 polymon	instapetrify
+polymon	is_pool_or_lava
 polymon	learn_egg_type
 polymon	make_blinded
 polymon	newsym
@@ -3709,6 +3724,7 @@ readobjnam	can_be_hatched
 readobjnam	dead_species
 readobjnam	genus
 readobjnam	nartifact_exist
+readobjnam	readobjnam_postparse1
 readobjnam	readobjnam_preparse
 readobjnam	rn2
 readobjnam	rnd
@@ -4012,6 +4028,7 @@ seffect_light	rn2
 seffect_magic_mapping	make_confused
 seffect_magic_mapping	rnd
 seffect_punishment	punish
+seffect_stinking_cloud	do_stinking_cloud
 seffect_taming	isok
 seffect_taming	maybe_tame
 seffect_teleportation	level_tele
@@ -4105,6 +4122,7 @@ set_utrap	float_vs_flight
 set_wall	check_pos
 set_wall_state	xy_set_wall_state
 set_wallprop_in_selection	selection_iterate
+set_wear	Gloves_on
 set_wounded_legs	encumber_msg
 setnotworn	monstunseesu
 setnotworn	set_artifact_intrinsic
@@ -4375,6 +4393,7 @@ temple_priest_sound	rn2
 test_move	closed_door
 test_move	doorless_door
 test_move	is_pool
+test_move	is_pool_or_lava
 test_move	isok
 test_move	nomul
 tether_glyph	zapdir_to_glyph
@@ -4680,6 +4699,7 @@ unblock_point	dig_point
 under_ground	cls
 under_ground	newsym
 under_water	cls
+under_water	is_pool_or_lava
 under_water	isok
 under_water	newsym
 unearth_objs	buried_ball_to_punishment
@@ -4949,6 +4969,7 @@ wizterrainwish	fire_damage_chain
 wizterrainwish	fix_wall_spines
 wizterrainwish	is_lava
 wizterrainwish	is_pool
+wizterrainwish	is_pool_or_lava
 wizterrainwish	isok
 wizterrainwish	make_grave
 wizterrainwish	maketrap

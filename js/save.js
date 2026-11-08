@@ -445,7 +445,7 @@ export function restoreLevelPetHistory(level, elapsed) {
             restoreObjectPetHistory(pile ?? [], elapsed);
     restoreObjectPetHistory(level.buriedObjects ?? [], elapsed);
 }
-// C restore.c:restmon(): the edog fields (droptime, hungrytime,
+// Part of C restore.c:restmon(): the edog fields (droptime, hungrytime,
 // apport) of one restored monster's mextra.
 export function restoreMonsterPetHistory(monster, elapsed) {
     const pet = monster.edog || monster.mextra?.edog;

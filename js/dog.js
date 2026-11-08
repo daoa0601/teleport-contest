@@ -1,12 +1,13 @@
 // Tame monster state.
-// C refs: dog.c tamedog(), newedog(), initedog(), pick_familiar_pm(), make_familiar(), and abuse_dog().
+// C refs: dog.c makedog(), tamedog(), newedog(), initedog(), pet_type(),
+// pick_familiar_pm(), make_familiar(), and abuse_dog().
 import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { currentAttribute } from './attrib.js';
-import { A_CHA, DISMOUNT_THROWN, G_EXTINCT, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG, NO_MINVENT, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, EYE, LL_CONDUCT, } from './const.js';
+import { A_CHA, DISMOUNT_THROWN, G_EXTINCT, GP_AVOID_MONPOS, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG, NO_MINVENT, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, EYE, LL_CONDUCT, } from './const.js';
 import { isPoolAt } from './dbridge.js';
 import { makemonNear } from './mklev.js';
 import { canSpotMonster, newsym, canSeeMonster } from './display.js';
-import { plineWithContinuation, recordGameLogEvent } from './pline.js';
+import { plineWithContinuation, recordGameLogEvent, impossible } from './pline.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { withIndefiniteArticle, corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -15,22 +16,24 @@ import { sessionIsNight } from './calendar.js';
 import { releaseMonsterLeash } from './apply.js';
 import { finishMonsterEating, dogEat } from './dogmove.js';
 import { monsterName, setMonsterGivenName, monsterTypeName } from './do_name.js';
-import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';
+import { dismountHero, monsterHasMapPosition, placeMonsterOnMap, putSaddleOnMonster } from './steed.js';
 import { cansee, monsterEmitsLight, vision_recalc } from './vision.js';
-import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
-import { CORPSE, RIN_AGGRAVATE_MONSTER, } from './object_data.js';
+import { MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
+import { CORPSE, RIN_AGGRAVATE_MONSTER, EXPENSIVE_CAMERA, } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
-import { setMonsterMalign, makemonAt, rndmonstAdj, monsterBirthLimit } from './makemon.js';
+import { setMonsterMalign, makemonAt, rndmonstAdj, monsterBirthLimit, newMonsterHitPoints } from './makemon.js';
 import { stairway_find, stairway_find_from } from './stairs.js';
 import { levelFollower, carnivorous, herbivorous, is_domestic, monsterHasEyes, monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, regenerates, speciesHasWeaponAttack, } from './mondata.js';
-import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo, resolveMonsterLiquid, finishLiquidDeathForCurrentMover, nearHero } from './mon.js';
+import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo, resolveMonsterLiquid, finishLiquidDeathForCurrentMover, nearHero, seeMonsterCloseup } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
 import { hasShopkeeperData } from './shop_types.js';
+import { enexto_gpflags } from './teleport.js';
+import { nextIdent } from './mkobj.js';
 import { possessiveName } from './hacklib.js';
 import { depth } from './dungeon.js';
 import { dropSpecialMonsterObjects } from './steal.js';
@@ -465,12 +468,136 @@ function defaultFallDestination(state) {
         dlevel: Math.min((uz.dlevel ?? 1) + 1, bottom),
     };
 }
+// Role-keyed default dog names (C dog.c:makedog() reads data from the role
+// table; the port keys them by RoleKey).
+const DEFAULT_DOG_NAMES = {
+    caveman: 'Slasher',
+    ranger: 'Sirius',
+    samurai: 'Hachi',
+    barbarian: 'Idefix',
+};
+// C dog.c:makedog()
+// Also C dog.c:pet_type(): the starting-pet species choice is inlined here.
+// Also C dog.c:initedog(): the newborn pet's tame state and edog fields are inlined here.
+export async function makedog() {
+    const g = game;
+    if (g.preferred_pet === 'n') {
+        g.context.startingpet_typ = -1;
+        return null;
+    }
+    const role = g.urole?.key;
+    if (role !== 'archeologist' && role !== 'barbarian'
+        && role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
+        && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
+        && role !== 'priest' && role !== 'healer' && role !== 'knight'
+        && role !== 'monk' && role !== 'wizard')
+        return null;
+    if (!g.level)
+        throw new Error('Starting pet needs an initialized level');
+    let pettype = g.urole?.petnum;
+    if (pettype == null || pettype < 0) {
+        if (g.preferred_pet === 'c')
+            pettype = 32; // PM_KITTEN
+        else if (g.preferred_pet === 'd')
+            pettype = 16; // PM_LITTLE_DOG
+        else
+            pettype = rn2(2) ? 32 : 16;
+    }
+    g.context.startingpet_typ = pettype;
+    // C makemon() places a monster made on the hero with enexto_core(),
+    // first avoiding scary squares and only then accepting them.
+    const spot = enexto_gpflags(pettype, g.u.ux, g.u.uy, GP_AVOID_MONPOS);
+    if (!spot)
+        return null;
+    const monsterId = nextIdent();
+    // C makemon() rolls the pet through newmonhp(): adj_lev() lowers dogs and
+    // kittens to level one and the Knight's pony to level two, and an
+    // all-ones roll gains a point.
+    const { level, hp } = newMonsterHitPoints(pettype);
+    const female = !!rn2(2);
+    // Dogs, cats, and ponies are neutral. C's peace_minded() reaches its two
+    // random branches only for a neutral hero, and the first denominator is
+    // derived from the live alignment record rather than the role name.
+    if ((g.initAlignment?.value ?? 0) === 0) {
+        const record = g.u?.ualign?.record ?? 0;
+        if (rn2(16 + Math.max(-15, record)))
+            rn2(2); // 2 + abs(monster alignment), which is 0 here
+    }
+    const pet = {
+        mnum: pettype, m_id: monsterId,
+        mx: spot.x,
+        my: spot.y,
+        mhp: hp,
+        mhpmax: hp,
+        m_lev: level,
+        female,
+        mtame: 0,
+        mpeaceful: 1,
+        malign: 0,
+        mcanmove: 1,
+        mcansee: 1,
+        mblinded: 0,
+        movement: 0,
+        mmove: MONSTER_MOVE[pettype] ?? 0,
+        mspeed: 0,
+        symbol: pettype === 100 ? 'u' : pettype === 32 ? 'f' : 'd',
+        pet: true,
+        mtrack: [],
+        // C dog.c initedog(): initialize the pet's training and hunger state.
+        edog: {
+            droptime: 0,
+            dropdist: 10000,
+            // The pet is created before u_init_inventory_attrs(). At this
+            // point C's ACURR(A_CHA) clamps the zeroed attribute to 3; the
+            // finalized hero Charisma must not be read retroactively.
+            apport: g.u?.acurr?.a?.[A_CHA] ?? 3,
+            whistletime: 0,
+            hungrytime: (g.moves ?? 0) + 1000,
+            ogoal: { x: -1, y: -1 },
+            abuse: 0,
+            revivals: 0,
+            mhpmax_penalty: 0,
+            killed_by_u: 0,
+        },
+    };
+    if (!g.level.monsters)
+        g.level.monsters = [];
+    g.level.monsters.push(pet);
+    if (!g.context.startingpet_mid) {
+        g.context.startingpet_mid = pet.m_id;
+        if (pettype === MONSTER_NAME.indexOf('pony') && !g.u.uroleplay?.pauper)
+            await putSaddleOnMonster(null, pet);
+        g.bhitpos = { x: pet.mx, y: pet.my };
+        g.notonhead = false;
+        await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
+    }
+    else {
+        await impossible('makedog() when startingpet_mid is already non-zero?');
+    }
+    const name = pettype === MONSTER_NAME.indexOf('little dog')
+        ? g.flags.dogname || DEFAULT_DOG_NAMES[role]
+        : pettype === MONSTER_NAME.indexOf('kitten') ? g.flags.catname
+            : pettype === MONSTER_NAME.indexOf('pony') ? g.flags.horsename : null;
+    const petnameUsed = g.petname_used ?? 0;
+    g.petname_used = petnameUsed + 1;
+    if (!petnameUsed && name)
+        setMonsterGivenName(pet, name);
+    // C initedog() tames the pet after mpickobj() can forget an unseen saddle.
+    pet.mtame = 10;
+    setMonsterMalign(pet, g);
+    if (!g.u.uconduct)
+        g.u.uconduct = {};
+    g.u.uconduct.pets = (g.u.uconduct.pets || 0) + 1;
+    return pet;
+}
 // Part of C dog.c:mon_leave(): the no_charge reset via picked_container().
-function clearNoCharge(object) {
+// Named for its caller's carried-object loop; shk.c:clear_no_charge() is a
+// different function that walks a floor list with shop residency checks.
+function clearCarriedNoCharge(object) {
     // C dog.c mon_leave() resets shop pricing on carried containers.
     object.no_charge = false;
     for (const content of object.contents || [])
-        clearNoCharge(content);
+        clearCarriedNoCharge(content);
 }
 // Part of C dog.c:mon_arrive(): the no-room failure path (relmon(),
 // m_into_limbo()).
@@ -490,7 +617,7 @@ async function failArrival(monster, when, state) {
 // residency and carry only a tail length between levels.
 export async function prepareMonsterDeparture(monster, state) {
     for (const object of monster.minvent || monster.inventory || [])
-        clearNoCharge(object);
+        clearCarriedNoCharge(object);
     setShopResidency(monster, true, state);
     if (monster.wormno) {
         const x = monster.mx, y = monster.my;

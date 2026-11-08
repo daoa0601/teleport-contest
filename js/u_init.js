@@ -11,29 +11,23 @@ import { useUpInventoryStack, addCreatedInventoryItem } from './invent.js';
 import { useStartingItem } from './starting_equipment.js';
 import { japaneseItemName } from './objnam.js';
 import { setHeroSpecies } from './polyself.js';
-import { seeMonsterCloseup } from './mon.js';
-import { setMonsterGivenName } from './do_name.js';
-import { setMonsterMalign } from './makemon.js';
 import { rn2, rnd, d, rne } from './rng.js';
-import { enexto_gpflags } from './teleport.js';
 import { mkobj, mksobj, deallocateObject } from './mkobj.js';
-import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
+import { SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './do_wear.js';
 import { ensureQuestStatus } from './quest.js';
-import { GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, NOT_HUNGRY, P_FIRST_SPELL, P_LAST_SPELL, } from './const.js';
-import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
+import { A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, NOT_HUNGRY, P_FIRST_SPELL, P_LAST_SPELL, } from './const.js';
+import { recordObjectEncounter, discoverKnownType } from './o_init.js';
 import { ensureHeroSkills } from './weapon.js';
 import { spellSkillType } from './spell.js';
 import { hiddenGold } from './vault.js';
 import { addHeroGoldObject, setHeroGoldAmount } from './sit.js';
 import { syncBlindness, syncDeafness } from './senses.js';
-import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
-import { newMonsterHitPoints } from './makemon.js';
 import { invWeight } from './hack.js';
-import { objectWeight, nextIdent } from './mkobj.js';
+import { objectWeight } from './mkobj.js';
 import { initAttributes, varyInitAttr } from './attrib.js';
 import { impossible } from './pline.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
@@ -346,131 +340,17 @@ export function uInitMisc(handednessRoll) {
     g._lastInvNr = 51;
     g.spells = [];
 }
-const DEFAULT_DOG_NAMES = {
-    caveman: 'Slasher',
-    ranger: 'Sirius',
-    samurai: 'Hachi',
-    barbarian: 'Idefix',
-};
-// C dog.c:makedog()
-// Also C dog.c:pet_type(): the starting-pet species choice is inlined here.
-// Also C dog.c:initedog(): the newborn pet's tame state and edog fields are inlined here.
-export async function makedog() {
-    const g = game;
-    if (g.preferred_pet === 'n') {
-        g.context.startingpet_typ = -1;
-        return null;
-    }
-    const role = g.urole?.key;
-    if (role !== 'archeologist' && role !== 'barbarian'
-        && role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
-        && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
-        && role !== 'priest' && role !== 'healer' && role !== 'knight'
-        && role !== 'monk' && role !== 'wizard')
-        return null;
-    if (!g.level)
-        throw new Error('Starting pet needs an initialized level');
-    let pettype = g.urole?.petnum;
-    if (pettype == null || pettype < 0) {
-        if (g.preferred_pet === 'c')
-            pettype = 32; // PM_KITTEN
-        else if (g.preferred_pet === 'd')
-            pettype = 16; // PM_LITTLE_DOG
-        else
-            pettype = rn2(2) ? 32 : 16;
-    }
-    g.context.startingpet_typ = pettype;
-    // C makemon() places a monster made on the hero with enexto_core(),
-    // first avoiding scary squares and only then accepting them.
-    const spot = enexto_gpflags(pettype, g.u.ux, g.u.uy, GP_AVOID_MONPOS);
-    if (!spot)
-        return null;
-    const monsterId = nextIdent();
-    // C makemon() rolls the pet through newmonhp(): adj_lev() lowers dogs and
-    // kittens to level one and the Knight's pony to level two, and an
-    // all-ones roll gains a point.
-    const { level, hp } = newMonsterHitPoints(pettype);
-    const female = !!rn2(2);
-    // Dogs, cats, and ponies are neutral. C's peace_minded() reaches its two
-    // random branches only for a neutral hero, and the first denominator is
-    // derived from the live alignment record rather than the role name.
-    if ((g.initAlignment?.value ?? 0) === 0) {
-        const record = g.u?.ualign?.record ?? 0;
-        if (rn2(16 + Math.max(-15, record)))
-            rn2(2); // 2 + abs(monster alignment), which is 0 here
-    }
-    const pet = {
-        mnum: pettype, m_id: monsterId,
-        mx: spot.x,
-        my: spot.y,
-        mhp: hp,
-        mhpmax: hp,
-        m_lev: level,
-        female,
-        mtame: 0,
-        mpeaceful: 1,
-        malign: 0,
-        mcanmove: 1,
-        mcansee: 1,
-        mblinded: 0,
-        movement: 0,
-        mmove: MONSTER_MOVE[pettype] ?? 0,
-        mspeed: 0,
-        symbol: pettype === 100 ? 'u' : pettype === 32 ? 'f' : 'd',
-        pet: true,
-        mtrack: [],
-        // C dog.c initedog(): initialize the pet's training and hunger state.
-        edog: {
-            droptime: 0,
-            dropdist: 10000,
-            // The pet is created before u_init_inventory_attrs(). At this
-            // point C's ACURR(A_CHA) clamps the zeroed attribute to 3; the
-            // finalized hero Charisma must not be read retroactively.
-            apport: g.u?.acurr?.a?.[A_CHA] ?? 3,
-            whistletime: 0,
-            hungrytime: (g.moves ?? 0) + 1000,
-            ogoal: { x: -1, y: -1 },
-            abuse: 0,
-            revivals: 0,
-            mhpmax_penalty: 0,
-            killed_by_u: 0,
-        },
-    };
-    if (!g.level.monsters)
-        g.level.monsters = [];
-    g.level.monsters.push(pet);
-    if (!g.context.startingpet_mid) {
-        g.context.startingpet_mid = pet.m_id;
-        if (pettype === MONSTER_NAME.indexOf('pony') && !g.u.uroleplay?.pauper)
-            await putSaddleOnMonster(null, pet);
-        g.bhitpos = { x: pet.mx, y: pet.my };
-        g.notonhead = false;
-        await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
-    }
-    else {
-        await impossible('makedog() when startingpet_mid is already non-zero?');
-    }
-    const name = pettype === MONSTER_NAME.indexOf('little dog')
-        ? g.flags.dogname || DEFAULT_DOG_NAMES[role]
-        : pettype === MONSTER_NAME.indexOf('kitten') ? g.flags.catname
-            : pettype === MONSTER_NAME.indexOf('pony') ? g.flags.horsename : null;
-    const petnameUsed = g.petname_used ?? 0;
-    g.petname_used = petnameUsed + 1;
-    if (!petnameUsed && name)
-        setMonsterGivenName(pet, name);
-    // C initedog() tames the pet after mpickobj() can forget an unseen saddle.
-    pet.mtame = 10;
-    setMonsterMalign(pet, g);
-    if (!g.u.uconduct)
-        g.u.uconduct = {};
-    g.u.uconduct.pets = (g.u.uconduct.pets || 0) + 1;
-    return pet;
-}
 // C u_init.c:trquan()
 function trquan(trobj) {
     if (!trobj.min)
         return 1;
     return trobj.min + rn2(trobj.max - trobj.min + 1);
+}
+// C u_init.c:knows_object()
+// Mark a type known without an encounter; the pauper guard lives at the
+// callers.
+export function recordObjectKnowledge(otyp, state = game) {
+    discoverKnownType(otyp, false, state);
 }
 // C u_init.c:knows_class()
 // Role preknowledge is installed before

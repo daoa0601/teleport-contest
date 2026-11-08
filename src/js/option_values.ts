@@ -1,8 +1,7 @@
-// Text-entered option values. C refs: options.c:optfn_*(), botl.c:parse_status_hl1().
+// Text-entered option values. C refs: options.c:optfn_*() value echo and
+// parsing helpers, botl.c:parse_status_hl1().
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
-import { OBJECT_CLASS_SYMBOLS } from './display.js';
-
 
 // Part of C options.c:optfn_pile_limit(), optfn_menuinvertmode(),
 // optfn_suppress_alert(): echo each option's current value.
@@ -34,19 +33,4 @@ export function cInteger(value: string): number {
 export async function optionError(message: string): Promise<void> {
     await plineWithContinuation(/[.!?]$/.test(message) ? message : `${message}.`);
 }
-
-// C options.c:optfn_pickup_types(): the object-class letter validation
-// loop.
-export function optfnPickupTypes(value: string): { symbols: string; invalid: boolean } {
-    value = value.replace(/^ +/, '');
-    if (/^[aA]/.test(value)) return { symbols: '', invalid: false };
-    let symbols = '';
-    let invalid = false;
-    for (const symbol of value) {
-        if (!OBJECT_CLASS_SYMBOLS.includes(symbol) || symbols.includes(symbol)) invalid = true;
-        else symbols += symbol;
-    }
-    return { symbols, invalid };
-}
-
 
