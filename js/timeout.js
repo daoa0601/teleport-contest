@@ -587,7 +587,7 @@ export async function advanceHeroPetrification({ state = game, die = finishHeroD
     clearHeroPetrification(state);
     return { active: false, died: !!died, turns: 0 };
 }
-// Part of C end.c:find_delayed_killer(): reading the stored petrification
+// C end.c:find_delayed_killer(): reading the stored petrification
 // killer and its prefix format back for the death report.
 function petrificationDeathCause(state) {
     const name = state.u.stoneKiller;

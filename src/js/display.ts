@@ -140,11 +140,11 @@ export function objectClassSymbol(index: number): string {
     return activeObjectSymbols()[index] ?? '';
 }
 
-// Part of C symbols.c:get_othersym(): the SYM_BOULDER lookup for the active symbol set.
-// symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
-// else the default rock-class symbol.  optfn_boulder() fills both sets'
-// overrides, while the BOULDER= statement (cfgfiles.c) only fills the
-// primary one. A named primary selection can display that slot on Rogue.
+// C symbols.c:get_othersym(): the SYM_BOULDER lookup for the active
+// symbol set — the active set's override, else the default rock-class
+// symbol.  optfn_boulder() fills both sets' overrides, while the
+// BOULDER= statement (cfgfiles.c) only fills the primary one. A named
+// primary selection can display that slot on Rogue.
 export function currentBoulderSymbol(state: GameState = game): string {
     if (shownSymbolSet(state).rogue) {
         const set = activeRogueSymset(state);
@@ -453,10 +453,11 @@ export function reglyph_darkroom(): void {
     }
 }
 
-// Part of C symbols.c:switch_symbols(), symbols.c:assign_graphics():
-// re-resolve memory characters after a set change.  Object classes differ
-// on Rogue, and terrain characters and branch wall colors also depend on
-// the selected set.
+// C symbols.c:switch_symbols(): re-resolve memory characters after a
+// primary-set change — reset_glyphmap(gm_symchange), which
+// assign_graphics() also runs.  Object classes differ on Rogue, and
+// terrain characters and branch wall colors also depend on the selected
+// set.
 export function reglyphSymbolSet(): void {
     if (!game.level) return;
     for (let x = 1; x < COLNO; x++) {
@@ -1119,8 +1120,9 @@ const decFurnitureSymbols = new Map<number, string>([
     [CmapSymbol.explosionTopLeft + 5, 'x'], [CmapSymbol.explosionTopLeft + 7, 's'],
 ]);
 
-// Part of C symbols.c:assign_graphics(): selects the active dungeon symbols. DEC
-// characters retain their alternate font so they do not match ASCII letters.
+// C symbols.c:assign_graphics(): selects the active dungeon symbols.
+// DEC characters retain their alternate font so they do not match ASCII
+// letters.
 export function cmapSymbolAppearance(symbol: number): { ch: string; dec: boolean } {
     const defaultSymbol = MAP_SYMBOLS[symbol]?.ch ?? DEFAULT_EFFECT_SYMBOLS.get(symbol);
     if (defaultSymbol === undefined) throw new RangeError(`Unknown dungeon symbol ${symbol}`);

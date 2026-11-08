@@ -3734,6 +3734,42 @@ function sp_level_coder_init() {
             return false;
         }
     });
+    // C nhlua.c:nhl_timer_start_at(): register a level timer at a map
+    // position; only melt-ice is a position timer (timer_is_pos()).
+    const startTimerAt = (...args) => {
+        // nhl_get_timertype() takes luaL_checkoption over every
+        // timeout_funcs entry at stack index -2, so a bad name is
+        // lauxlib's argument error carrying that index; only melt-ice is
+        // a position timer (timer_is_pos()).
+        const timerIndex = -2;
+        if (args.length === 1) {
+            // With one argument, stack index -2 holds the called
+            // function itself. With none, C reads its caller's frame;
+            // this interpreter cannot reproduce that invalid access
+            // without Lua's VM stack.
+            throw new LuaArgumentError(timerIndex, 'string expected, got function');
+        }
+        const timerName = luaCheckString(timerIndex, args[args.length - 2]);
+        const timerType = LEVEL_TIMER_TYPE_NAMES.indexOf(timerName);
+        if (timerType < 0)
+            throw new LuaArgumentError(timerIndex, `invalid option '${timerName}'`);
+        const when = luaToInteger(args[args.length - 1]);
+        const point = luaTimerCoordinates(args);
+        if (timerType !== LEVEL_TIMER_TYPE_NAMES.indexOf('melt-ice'))
+            return;
+        // nhl_timer_start_at() and cvt_to_abscoord() store signed 16-bit
+        // coordxy values. Narrow before addition so large Lua integers
+        // retain their low bits, then narrow the sum.
+        const relativeX = (point.x << 16) >> 16;
+        const relativeY = (point.y << 16) >> 16;
+        const timerX = ((roomScope.context.xstart + relativeX) << 16) >> 16;
+        const timerY = ((roomScope.context.ystart + relativeY) << 16) >> 16;
+        if (!isok(timerX, timerY))
+            return;
+        const deadline = (game.moves ?? 0) + when;
+        stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
+        scheduleLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, deadline, game);
+    };
     const bindings = {
         nh: {
             debug_themerm: (...args) => {
@@ -3755,43 +3791,8 @@ function sp_level_coder_init() {
                     throw new NethackLuaError('level_difficulty should not have any args');
                 return level_difficulty();
             },
-            // C nhlua.c:nhl_timer_start_at(): register a level timer at a
-            // map position; only melt-ice is a position timer
-            // (timer_is_pos()).
-            start_timer_at: (...args) => {
-                // nhl_get_timertype() takes luaL_checkoption over every
-                // timeout_funcs entry at stack index -2, so a bad name is
-                // lauxlib's argument error carrying that index; only
-                // melt-ice is a position timer (timer_is_pos()).
-                const timerIndex = -2;
-                if (args.length === 1) {
-                    // With one argument, stack index -2 holds the called
-                    // function itself. With none, C reads its caller's
-                    // frame; this interpreter cannot reproduce that
-                    // invalid access without Lua's VM stack.
-                    throw new LuaArgumentError(timerIndex, 'string expected, got function');
-                }
-                const timerName = luaCheckString(timerIndex, args[args.length - 2]);
-                const timerType = LEVEL_TIMER_TYPE_NAMES.indexOf(timerName);
-                if (timerType < 0)
-                    throw new LuaArgumentError(timerIndex, `invalid option '${timerName}'`);
-                const when = luaToInteger(args[args.length - 1]);
-                const point = luaTimerCoordinates(args);
-                if (timerType !== LEVEL_TIMER_TYPE_NAMES.indexOf('melt-ice'))
-                    return;
-                // nhl_timer_start_at() and cvt_to_abscoord() store signed
-                // 16-bit coordxy values. Narrow before addition so large
-                // Lua integers retain their low bits, then narrow the sum.
-                const relativeX = (point.x << 16) >> 16;
-                const relativeY = (point.y << 16) >> 16;
-                const timerX = ((roomScope.context.xstart + relativeX) << 16) >> 16;
-                const timerY = ((roomScope.context.ystart + relativeY) << 16) >> 16;
-                if (!isok(timerX, timerY))
-                    return;
-                const deadline = (game.moves ?? 0) + when;
-                stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
-                scheduleLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, deadline, game);
-            },
+            // C nhlua.c:nhl_timer_start_at() is startTimerAt() above.
+            start_timer_at: startTimerAt,
         },
         des: l_register_des(operations, selectionApi.wrap),
         selection: selectionApi.bindings,

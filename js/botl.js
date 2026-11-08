@@ -313,19 +313,24 @@ export function statusConditionBit(text) {
     const index = definitions.findIndex(condition => condition.text[0] === text[0]);
     return index >= 0 ? 1 << index : 0;
 }
+// C botl.c:condopt(): set one condition's enabled bit in the choice
+// mask (condtests[]'s choice); the addr==NULL init pass that resets every
+// choice to its default and sorts cond_idx[] is the defaultMask constant.
+function condopt(mask, index, negated) {
+    return negated ? mask & ~(1 << index) : mask | (1 << index);
+}
 // C botl.c:parse_cond_option(): match one cond_ element against the
 // condition table (its first four letters, or the complete name when
-// shorter) and flip its bit; condopt() is inlined as the mask update and
-// C's init-to-defaults pass is the defaultMask constant.  Config parsing
-// supplies the negation separately.
+// shorter) and set its bit through condopt(); C's init-to-defaults pass
+// is the defaultMask constant.  Config parsing supplies the negation
+// separately.
 export function setConditionOption(option, enabled, mask = defaultMask) {
     const name = option.slice(5).toLowerCase();
     const index = definitions.findIndex(condition => name.length >= Math.min(4, condition.option.length)
         && condition.option.toLowerCase().startsWith(name));
     if (index < 0)
         return null;
-    const bit = 1 << index;
-    return enabled ? mask | bit : mask & ~bit;
+    return condopt(mask, index, !enabled);
 }
 // C botl.c:cond_cmp(); the bl_unconsc test reads trap.c:unconscious() as
 // heroIsUnconscious (botl.c:1214 does the same through the cond cache).
@@ -556,12 +561,11 @@ export function statusTerrain(state) {
         classifyStatusTerrain(state);
     return descriptions[state.iflags.terrain_typ ?? MAX_TYPE] ?? '';
 }
-// Part of C wintty.c:status_update(): the bar_pos computation for the
-// hitpoint bar.
-// ── botl.c:percentage() feeding wintty.c's bar_pos ──
-// botl.c:percentage() feeding wintty.c:5220-5229's bar_pos, the number of
-// lit cells in the fixed thirty-character bar.  Dead heroes light nothing;
-// a nonzero health fraction keeps one cell even above the display cap.
+// C wintty.c:status_update(): tty_status_update()'s bar_pos computation
+// for the hitpoint bar — the number of lit cells in the fixed
+// thirty-character bar (botl.c:percentage() feeding wintty.c:5220-5229).
+// Dead heroes light nothing; a nonzero health fraction keeps one cell
+// even above the display cap.
 export function hitpointBarFill(hp, maximum) {
     const health = Math.max(0, hp);
     let percent = maximum ? Math.trunc(100 * health / maximum) : 0;
@@ -1941,10 +1945,11 @@ function isFieldArrayValue(text, values, minimum, maximum) {
     }
     return null;
 }
-// Part of C botl.c:s_to_anything(): atoi()/atol() semantics for the
-// numeric parse.
-// botl.c s_to_anything(): C's atoi()/atol() semantics stop at the first
-// non-digit, so a leading number is read and anything after it ignored.
+// C botl.c:s_to_anything(): atoi()/atol() semantics for the numeric
+// parse of a status-hilite threshold.  C's atoi()/atol() stop at the
+// first non-digit, so a leading number is read and anything after it is
+// ignored; the port's thresholds are all ANY_LONG/ANY_INT, so the union's
+// pointer cases reduce to this number.
 function cAtoi(text) {
     const match = /^[+-]?\d+/.exec(text.trim());
     return match ? Number.parseInt(match[0], 10) : 0;

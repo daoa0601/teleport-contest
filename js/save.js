@@ -145,7 +145,7 @@ export async function askAboutPanicSave() {
     const question = 'Start a new game instead?';
     return await promptChoice(question, ['y', 'n', 'q'], 'n', { visibleChoices: 'yn' }) === 'y';
 }
-// Part of C save.c:savemonchn(): forget_temple_entry() for every priest and
+// C save.c:savemonchn(): forget_temple_entry() for every priest and
 // the dead-monster purge, applied to live, cached, and migrating levels
 // before the graph is serialized.
 function prepareMonstersForSave() {
@@ -232,9 +232,10 @@ async function confirmSaveOverwrite(storage, key) {
 // so the caller completes that dialogue through dismissUnhealthyRestore().
 let restoreRefusal = null;
 let retainedSave = null;
-// Part of C unixmain.c:main(): the wizard/explore save-retention question after recovery.
-// C unixmain.c asks after dorecover()'s welcome; ordinary games consume
-// their file inside dorecover(), while wizard and explore games may keep it.
+// C unixmain.c:main(): the wizard/explore save-retention question after
+// recovery. C unixmain.c asks after dorecover()'s welcome; ordinary games
+// consume their file inside dorecover(), while wizard and explore games
+// may keep it.
 export async function askKeepRestoredSave() {
     const restored = retainedSave;
     retainedSave = null;
@@ -444,8 +445,8 @@ export function restoreLevelPetHistory(level, elapsed) {
             restoreObjectPetHistory(pile ?? [], elapsed);
     restoreObjectPetHistory(level.buriedObjects ?? [], elapsed);
 }
-// Part of C restore.c:restmon(): the edog fields (droptime, hungrytime,
-// apport).
+// C restore.c:restmon(): the edog fields (droptime, hungrytime,
+// apport) of one restored monster's mextra.
 export function restoreMonsterPetHistory(monster, elapsed) {
     const pet = monster.edog || monster.mextra?.edog;
     if (!pet)

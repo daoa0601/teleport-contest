@@ -20,7 +20,7 @@ import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { rn2, rnd } from './rng.js';
-import { isTextOption, textOptionValue, cInteger, parsePickupTypes, optionError } from './option_values.js';
+import { isTextOption, textOptionValue, cInteger, optfnPickupTypes, optionError } from './option_values.js';
 import { featureAlertVersion } from './extversion.js';
 import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
@@ -57,8 +57,9 @@ import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visible
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
-import { attributeName, colorAttrToString, colorName, cutConfigBytes, matchAttributeName,
+import { attributeName, colorAttrToString, colorName, matchAttributeName,
     matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
+import { cutConfigBytes } from './cfgfiles.js';
 import {
     BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
     MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
@@ -441,9 +442,9 @@ const PARANOIA_ARGUMENTS = [
     ['none', 4, 0], ['all', 3, ~0],
 ] as const;
 
-// Part of C options.c:optfn_paranoid_confirmation(): the paranoid-bit value
+// C options.c:optfn_paranoid_confirmation(): the paranoid-bit value
 // parsing.
-function updateParanoiaBits(
+function optfnParanoidConfirmation(
     current: number, rawValue: string, addError: (message: string) => void,
 ): number {
     // optfn_paranoid_confirmation() condenses the value, treats a leading
@@ -479,8 +480,8 @@ function updateParanoiaBits(
 // C optfn_scores(): an explicit value replaces all three display choices.
 type ScoreChoices = Required<Pick<GameFlags, 'end_top' | 'end_around' | 'end_own'>> & { error: string | null };
 
-// Part of C options.c:optfn_scores(): the top/around/own value parsing.
-function parseScoreOption(value: string | null, negated: boolean): ScoreChoices | null {
+// C options.c:optfn_scores(): the top/around/own value parsing.
+function optfnScores(value: string | null, negated: boolean): ScoreChoices | null {
     // string_for_opt() trims the value; an empty one is a missing parameter.
     const text = value?.trim();
     if (!text) return null;
@@ -775,7 +776,7 @@ export function parseOptions(
         }
         if (canonical === 'pickup_types') {
             if (!negated) {
-                result.flags.pickup_types = parsePickupTypes(optionValue ?? '').symbols;
+                result.flags.pickup_types = optfnPickupTypes(optionValue ?? '').symbols;
                 if (!optionValue) result.flags.pickup = true;
             }
             continue;
@@ -790,9 +791,9 @@ export function parseOptions(
                 addError(`The ${canonical} option may not both have a value and be negated.`);
                 continue;
             }
-            if (!raw && !negated) addError(`Missing parameter for '${stripped}'`);
-            const limit = negated ? 0 : raw ? cInteger(raw) : 5;
-            result.flags.pile_limit = limit < 0 ? 5 : limit;
+            const { limit, missing } = optfnPileLimit(raw, negated);
+            if (missing) addError(`Missing parameter for '${stripped}'`);
+            result.flags.pile_limit = limit;
             continue;
         }
         if (canonical === 'hilite_status') {
@@ -806,14 +807,7 @@ export function parseOptions(
             continue;
         }
         if (canonical === 'statushilites') {
-            // options.c:optfn_statushilites(): negation clears the
-            // duration; a missing value means the 3-turn default, atol()
-            // junk is 0, and negative values clamp to 1.
-            if (negated) result.iflags.hiliteDelta = 0;
-            else {
-                const delta = optionValue ? cInteger(optionValue) : 3;
-                result.iflags.hiliteDelta = delta < 0 ? 1 : delta;
-            }
+            optfnStatusHilites(optionValue ?? '', negated, result.iflags, true);
             continue;
         }
         if (canonical === 'runmode') {
@@ -833,17 +827,9 @@ export function parseOptions(
             continue;
         }
         if (canonical === 'msg_window') {
-            // optfn_msg_window(): a value's first letter names the
-            // window mode; negation with a value is refused.
             const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
-            if (!raw) result.iflags.prevmsg_window = negated ? 's' : 'f';
-            else if (negated) {
-                addError(`The ${canonical} option may not both have a value and be negated.`);
-            } else {
-                const initial = raw.charAt(0).toLowerCase();
-                if ('scfr'.includes(initial)) result.iflags.prevmsg_window = initial;
-                else addError(`Unknown ${canonical} parameter '${raw}'`);
-            }
+            const window = optfnMsgWindow(raw, negated, addError);
+            if (window) result.iflags.prevmsg_window = window;
             continue;
         }
         if (canonical === 'msghistory') {
@@ -929,12 +915,12 @@ export function parseOptions(
             const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
             if (!raw) {
                 if (!compat) addError(`Missing parameter for '${stripped}'`);
-                setNumberPadOption(1, result);
+                optfnNumberPad(1, result);
             } else {
                 const mode = cInteger(raw);
                 if (mode < -1 || mode > 4 || (mode === 0 && raw.charAt(0) !== '0')) {
                     addError(`Illegal ${canonical} parameter '${raw}'`);
-                } else setNumberPadOption(mode, result);
+                } else optfnNumberPad(mode, result);
             }
             continue;
         }
@@ -965,13 +951,7 @@ export function parseOptions(
             continue;
         }
         if (canonical === 'sortvanquished') {
-            const initial = optionValue?.charAt(0) ?? '';
-            const mode = 'tdaACcnz'.indexOf(initial);
-            if (!optionValue) addError(`Missing parameter for '${stripped}'`);
-            if (negated) result.flags.vanqSortmode = 0;
-            else if (initial && mode >= 0) result.flags.vanqSortmode = mode;
-            else if (/^[0-7]$/.test(initial)) result.flags.vanqSortmode = Number(initial);
-            else if (optionValue) addError(`Unknown sortvanquished parameter '${optionValue}'`);
+            optfnSortvanquished(stripped, optionValue ?? '', negated, result, addError);
             continue;
         }
         if (canonical === 'sortloot') {
@@ -1004,7 +984,7 @@ export function parseOptions(
         if (canonical === 'scores') {
             // optfn_scores(): a value is mandatory; an explicit value
             // replaces all three display choices.
-            const choices = parseScoreOption(optionValue, negated);
+            const choices = optfnScores(optionValue, negated);
             if (!choices) addError(`Missing parameter for '${stripped}'`);
             else {
                 result.flags.end_top = choices.end_top;
@@ -1030,43 +1010,10 @@ export function parseOptions(
             continue;
         }
 
-        // optfn_autounlock(): bare means apply-key, negation none, and
-        // a value is a '+'- or space-separated list whose members
-        // prefix or fuzzymatch an unlock type — matched
-        // case-insensitively but dispatched on the exact lowercase
-        // first letter — while 'none' cannot mix with them.  Like C,
-        // each pass trims the remainder before splitting off one
-        // separator, so separator runs collapse.
         if (canonical === 'autounlock') {
             const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
-            if (!raw) {
-                result.flags.autounlock = negated ? 0 : AUTOUNLOCK_APPLY_KEY;
-            } else {
-                const sep = raw.includes('+') ? '+' : ' ';
-                let bits = 0;
-                let none = negated;
-                let invalid: string | null = null;
-                let rest = raw.trim();
-                for (;;) {
-                    const cut = rest.indexOf(sep);
-                    const op = (cut < 0 ? rest : rest.slice(0, cut)).trim();
-                    if (ciPrefixOf('none', op)) {
-                        none = true;
-                    } else {
-                        const type = AUTOUNLOCK_TYPES.find(([name]) =>
-                            ciPrefixOf(name, op) || fuzzyMatch(op, name));
-                        if (!type || type[0].charAt(0) !== op.charAt(0)) { invalid = op; break; }
-                        bits |= type[1];
-                    }
-                    if (cut < 0) break;
-                    rest = rest.slice(cut + 1).trim();
-                }
-                if (invalid !== null) {
-                    addError(`Invalid value for "autounlock": "${invalid}"`);
-                } else if (none && bits !== 0) {
-                    addError("Invalid value combination for \"autounlock\": 'none' with some");
-                } else result.flags.autounlock = none ? 0 : bits;
-            }
+            const unlock = optfnAutounlock(raw, negated, addError);
+            if (unlock !== null) result.flags.autounlock = unlock;
             continue;
         }
 
@@ -1125,20 +1072,10 @@ export function parseOptions(
             continue;
         }
 
-        // optfn_pickup_burden(): a value is mandatory
-        // (string_for_env_opt(FALSE)), with or without a delimiter;
-        // its first letter picks the burden, with 'o' and 't' both
-        // selecting overtaxed.
         if (canonical === 'pickup_burden') {
             const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
-            if (!raw) {
-                addError(`Missing parameter for '${stripped}'`);
-                continue;
-            }
-            const initial = raw.charAt(0).toLowerCase();
-            const burden = 'ubsntl'.indexOf(initial === 'o' ? 't' : initial);
-            if (burden >= 0) result.flags.pickup_burden = burden;
-            else addError(`Unknown ${canonical} parameter '${raw}'`);
+            const burden = optfnPickupBurden(stripped, raw, addError);
+            if (burden !== null) result.flags.pickup_burden = burden;
             continue;
         }
 
@@ -1166,29 +1103,10 @@ export function parseOptions(
                 } else addError(`Invalid value for "playmode":${raw}`);
             }
             else if (canonical === 'symset') {
-                // options.c:optfn_symset() loads the set from the
-                // symbols file.  A name no `start:` line carries fails,
-                // clears the choice, and reports the error; "default"
-                // itself clears the choice without loading (files.c
-                // read_sym_file()).
-                if (isDefaultSymsetName(val)) { result.symset = undefined; result.symsetCleared = true; }
-                else if (SYMSET_NAMES[val.toLowerCase()] === true) result.symset = val;
-                else {
-                    result.symset = undefined;
-                    result.symsetCleared = true;
-                    addError(`Unable to load symbol set "${val}" from "symbols"`);
-                }
+                optfnSymset(val, result, addError);
             }
             else if (canonical === 'roguesymset') {
-                // optfn_roguesymset() loads the rogue set the same way;
-                // restrictions only filter the interactive menu.
-                if (isDefaultSymsetName(val)) { result.rogueSymset = undefined; result.rogueSymsetCleared = true; }
-                else if (SYMSET_NAMES[val.toLowerCase()] === true) result.rogueSymset = val;
-                else {
-                    result.rogueSymset = undefined;
-                    result.rogueSymsetCleared = true;
-                    addError(`Unable to load symbol set "${val}" from "symbols"`);
-                }
+                optfnRoguesymset(val, result, addError);
             }
             else if (canonical === 'boulder') {
                 // optfn_boulder() decodes the raw text after the
@@ -1208,12 +1126,8 @@ export function parseOptions(
                 }
             }
             else if (canonical === 'menu_headings') {
-                if (negated)
-                    addError('The menu_headings option may not both have a value and be negated.');
-                else {
-                    const style = parseColorAttr(val, addError);
-                    if (style) result.iflags.menu_headings = style;
-                }
+                const style = optfnMenuHeadings(val, negated, addError);
+                if (style) result.iflags.menu_headings = style;
             }
             else if (canonical === 'suppress_alert') {
                 const parsed = negated ? null : featureAlertVersion(val);
@@ -1232,7 +1146,7 @@ export function parseOptions(
                     addError(`${canonical} requires a value; use 'none' to cancel all`);
                     continue;
                 }
-                state.paranoiaBits = updateParanoiaBits(state.paranoiaBits, val, addError);
+                state.paranoiaBits = optfnParanoidConfirmation(state.paranoiaBits, val, addError);
                 state.paranoiaSeen = true;
                 result.flags.paranoia_bits = state.paranoiaBits;
             }
@@ -1283,11 +1197,142 @@ export function parseOptions(
                 else if (canonical === 'reroll') result.flags.reroll = value;
                 // optfn_menu_headings() without a value: inverse, or
                 // none when negated.
-                else if (canonical === 'menu_headings')
-                    result.iflags.menu_headings = { attr: negated ? C_ATR_NONE : C_ATR_INVERSE, color: NO_COLOR };
+                else if (canonical === 'menu_headings') {
+                    const style = optfnMenuHeadings('', negated, addError);
+                    if (style) result.iflags.menu_headings = style;
+                }
             }
         }
     }
+}
+
+// C options.c:optfn_pile_limit(): the do_set branch shared by the config
+// parse and the doset text editor — atoi() of string_for_opt()'s value,
+// negation meaning zero, the 3-turn... pile default when no value is
+// given, and negative limits falling back to that default.
+function optfnPileLimit(op: string, negated: boolean): { limit: number; missing: boolean } {
+    const limit = negated ? 0 : op ? cInteger(op) : 5 /* PILE_LIMIT_DFLT */;
+    return { limit: limit < 0 ? 5 : limit, missing: !op && !negated };
+}
+
+// C options.c:optfn_statushilites(): negation clears the duration; a
+// missing value means the 3-turn default, atol() of junk is 0, and
+// negative values clamp to 1.  The duration is assigned before the
+// !go.opt_from_file reset_status_hilites(), whose update_all reads the
+// new value.
+function optfnStatusHilites(
+    op: string, negated: boolean, iflags: InterfaceFlags, fromFile: boolean,
+): void {
+    const delta = negated ? 0 : op ? cInteger(op) : 3;
+    iflags.hiliteDelta = delta < 0 ? 1 : delta;
+    if (!fromFile) resetStatusHilites();
+}
+
+// C options.c:optfn_msg_window(): a value's first letter names the window
+// mode (single, combination, full, reversed); the bare option is full and
+// negation single, and negation with a value is bad_negation().
+function optfnMsgWindow(
+    op: string, negated: boolean, addError: (message: string) => void,
+): 's' | 'c' | 'f' | 'r' | null {
+    if (!op) return negated ? 's' : 'f';
+    if (negated) {
+        addError(`The msg_window option may not both have a value and be negated.`);
+        return null;
+    }
+    const initial = op.charAt(0).toLowerCase();
+    if (initial === 's' || initial === 'c' || initial === 'f' || initial === 'r') return initial;
+    addError(`Unknown msg_window parameter '${op}'`);
+    return null;
+}
+
+// C options.c:optfn_sortvanquished(): negation and a missing value mean
+// 't'; a value is one of vanqmodes "tdaACcnz" (or a digit 0..7 for it),
+// with the mode letter matched case-sensitively like strchr().
+function optfnSortvanquished(
+    opts: string, op: string, negated: boolean, result: ConfigurationSettings,
+    addError: (message: string) => void,
+): void {
+    if (!op) addError(`Missing parameter for '${opts}'`);
+    if (negated) {
+        result.flags.vanqSortmode = 0; /* 0 => 't' */
+        return;
+    }
+    const initial = op.charAt(0);
+    const mode = 'tdaACcnz'.indexOf(initial);
+    if (initial && mode >= 0) result.flags.vanqSortmode = mode;
+    else if (/^[0-7]$/.test(initial)) result.flags.vanqSortmode = Number(initial);
+    else if (op) addError(`Unknown sortvanquished parameter '${op}'`);
+}
+
+// C options.c:optfn_autounlock(): bare means apply-key and negation none;
+// a value is a '+'- or space-separated list whose members prefix or
+// fuzzymatch an unlock type — matched case-insensitively but dispatched
+// on the exact lowercase first letter — while 'none' cannot mix with
+// them.  Like C, each pass trims the remainder before splitting off one
+// separator, so separator runs collapse.
+function optfnAutounlock(
+    op: string, negated: boolean, addError: (message: string) => void,
+): number | null {
+    if (!op) return negated ? 0 : AUTOUNLOCK_APPLY_KEY;
+    const sep = op.includes('+') ? '+' : ' ';
+    let bits = 0;
+    let none = negated;
+    let rest = op.trim();
+    for (;;) {
+        const cut = rest.indexOf(sep);
+        const element = (cut < 0 ? rest : rest.slice(0, cut)).trim();
+        if (ciPrefixOf('none', element)) {
+            none = true;
+        } else {
+            const type = AUTOUNLOCK_TYPES.find(([name]) =>
+                ciPrefixOf(name, element) || fuzzyMatch(element, name));
+            if (!type || type[0].charAt(0) !== element.charAt(0)) {
+                addError(`Invalid value for "autounlock": "${element}"`);
+                return null;
+            }
+            bits |= type[1];
+        }
+        if (cut < 0) break;
+        rest = rest.slice(cut + 1).trim();
+    }
+    if (none && bits !== 0) {
+        addError("Invalid value combination for \"autounlock\": 'none' with some");
+        return null;
+    }
+    return none ? 0 : bits;
+}
+
+// C options.c:optfn_pickup_burden(): the value is mandatory
+// (string_for_env_opt(FALSE)); its first letter picks the burden, with
+// 'o' and 't' both selecting overtaxed.
+function optfnPickupBurden(
+    opts: string, op: string, addError: (message: string) => void,
+): number | null {
+    if (!op) {
+        addError(`Missing parameter for '${opts}'`);
+        return null;
+    }
+    const initial = op.charAt(0).toLowerCase();
+    const burden = 'ubsntl'.indexOf(initial === 'o' ? 't' : initial);
+    if (burden < 0) {
+        addError(`Unknown pickup_burden parameter '${op}'`);
+        return null;
+    }
+    return burden;
+}
+
+// C options.c:optfn_menu_headings(): menu_headings without a value means
+// no-color&inverse, negation no-color&none; a value parses through
+// color_attr_parse_str() and negation with a value is bad_negation().
+function optfnMenuHeadings(
+    op: string, negated: boolean, addError: (message: string) => void,
+): { attr: number; color: number } | null {
+    if (!op) return { attr: negated ? C_ATR_NONE : C_ATR_INVERSE, color: NO_COLOR };
+    if (negated) {
+        addError('The menu_headings option may not both have a value and be negated.');
+        return null;
+    }
+    return parseColorAttr(op, addError);
 }
 
 // Part of C options.c:optfn_disclose(): the per-category values back into
@@ -1407,9 +1452,9 @@ export async function setTextOption(name: string, value: string): Promise<void> 
     value = value.trimEnd();
     switch (name) {
     case 'pile_limit': {
-        if (!value) await optionError("Missing parameter for 'pile_limit:'");
-        const limit = value ? cInteger(value) : 5;
-        game.flags.pile_limit = limit < 0 ? 5 : limit;
+        const { limit, missing } = optfnPileLimit(value, false);
+        if (missing) await optionError("Missing parameter for 'pile_limit:'");
+        game.flags.pile_limit = limit;
         break;
     }
     case 'packorder': {
@@ -1432,12 +1477,7 @@ export async function setTextOption(name: string, value: string): Promise<void> 
             await optionError(`'statuslines:${value}' is invalid; must be 2 or 3`);
         break;
     case 'statushilites': {
-        // optfn_statushilites(): a missing value means the 3-turn default,
-        // atol() of junk is 0 (off), and negative durations clamp to 1.
-        // In-game changes request update_all even when the value is unchanged.
-        const delta = value ? cInteger(value) : 3;
-        game.iflags.hiliteDelta = delta < 0 ? 1 : delta;
-        resetStatusHilites();
+        optfnStatusHilites(value, false, game.iflags, false);
         break;
     }
     case 'hilite_status': {
@@ -1664,6 +1704,54 @@ const SYMSET_HANDLINGS: Record<string, string> = {
     enhanced1: 'UTF8', enhanced2: 'UTF8',
 };
 
+// C files.c:read_sym_file(): load the named set from the "symbols" data.
+// The port's symbol sets are fixed tables, so a name loads when a
+// `start:` line of dat/symbols defines it; a name no line carries fails
+// and the caller clears the choice.
+function readSymFile(name: string): boolean {
+    return SYMSET_NAMES[name.toLowerCase()] === true;
+}
+
+// C options.c:optfn_symset(): load the primary set from the symbols file
+// (readSymFile above).  "default" itself clears the choice without
+// loading (isDefaultSymsetName below); a name no `start:` line carries
+// fails, clears the choice, and reports the error.
+function optfnSymset(
+    op: string, result: ConfigurationSettings, addError: (message: string) => void,
+): boolean {
+    if (isDefaultSymsetName(op)) {
+        result.symset = undefined;
+        result.symsetCleared = true;
+    } else if (readSymFile(op)) {
+        result.symset = op;
+    } else {
+        result.symset = undefined;
+        result.symsetCleared = true;
+        addError(`Unable to load symbol set "${op}" from "symbols"`);
+        return false;
+    }
+    return true;
+}
+
+// C options.c:optfn_roguesymset(): load the rogue set the same way;
+// restrictions only filter the interactive menu.
+function optfnRoguesymset(
+    op: string, result: ConfigurationSettings, addError: (message: string) => void,
+): boolean {
+    if (isDefaultSymsetName(op)) {
+        result.rogueSymset = undefined;
+        result.rogueSymsetCleared = true;
+    } else if (readSymFile(op)) {
+        result.rogueSymset = op;
+    } else {
+        result.rogueSymset = undefined;
+        result.rogueSymsetCleared = true;
+        addError(`Unable to load symbol set "${op}" from "symbols"`);
+        return false;
+    }
+    return true;
+}
+
 // Part of C files.c:read_sym_file(): the "default symbols" name match.
 // files.c:read_sym_file() accepts a name that matches no `start:` line only
 // when it fuzzymatches "Default symbols" (ignoring spaces, '-' and '_') or
@@ -1712,17 +1800,29 @@ function statusHilitesValue(): string {
         : "0 (off: don't highlight status fields)";
 }
 
+// C options.c:doset_add_menu(): one full-menu row — the option's current
+// value (its get_val string; compoundMenuValue in option_editors.ts) or
+// "unknown" in doset's "%-24s [%s]" format, selectable with an
+// accelerator.  Options that cannot be changed take doset_add_menu's
+// indexoffset==0 indent instead (readonly rows below).  The
+// other-settings rows keep their spaced label spellings.
+function dosetAddMenu(name: string, value: string, label = name): PageLocalMenuItem<string> {
+    return {
+        value: name,
+        text: `${label.padEnd(24)}[${value}]`,
+        itemFlags: requestBooleanByName.has(name.toLowerCase()) || name === 'idlecheckpoint'
+            ? MENU_ITEMFLAGS_SKIPINVERT : 0,
+    };
+}
+
 // Part of C options.c:doset(): the full options menu sections.
 function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
     const { role, race, gender, alignment } = requestMenuIdentity();
-    const choice = (name: string, text: string): PageLocalMenuItem<string> => ({
-        value: name, text: textOptionValue(name) === null ? text : `${name.padEnd(24)}[${textOptionValue(name)}]`,
-        itemFlags: requestBooleanByName.has(name.toLowerCase()) || name === 'idlecheckpoint' ? MENU_ITEMFLAGS_SKIPINVERT : 0,
-    });
+    // doset_add_menu() rows come from dosetAddMenu() above.
     const label = (text: string): MenuLabel => ({ selectable: false, text });
     const readonly = (name: string, value: string | boolean) => label(`    ${name.padEnd(24)}[${value}]`);
-    const boolean = (name: BooleanOptionName) => choice(name,
-        `${name.padEnd(24)}[${requestBooleanValue(name) ? 'true' : 'false'}]`);
+    const boolean = (name: BooleanOptionName) => dosetAddMenu(name,
+        requestBooleanValue(name) ? 'true' : 'false');
     return [
         { heading: 'Booleans (selecting will toggle value):', items: [
             readonly('blind', !!game.u?.uroleplay?.blind),
@@ -1748,7 +1848,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('autoopen'),
             boolean('autopickup'),
             boolean('autoquiver'),
-            choice('bgcolors', `bgcolors                [${requestBooleanValue('bgcolors') ? 'on' : 'off'}]`),
+            dosetAddMenu('bgcolors', requestBooleanValue('bgcolors') ? 'on' : 'off'),
             boolean('checkpoint'),
             boolean('cmdassist'),
             boolean('color'),
@@ -1771,7 +1871,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('hilite_pet'),
             boolean('hilite_pile'),
             boolean('hitpointbar'),
-            choice('idlecheckpoint', 'idlecheckpoint          [off]'),
+            dosetAddMenu('idlecheckpoint', 'off'),
             boolean('ignintr'),
             boolean('implicit_uncursed'),
             boolean('lit_corridor'),
@@ -1802,7 +1902,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('showvers'),
             boolean('silent'),
             boolean('sortpack'),
-            choice('sounds', `sounds                  [${requestBooleanValue('sounds') ? 'on' : 'off'}]`),
+            dosetAddMenu('sounds', requestBooleanValue('sounds') ? 'on' : 'off'),
             boolean('sparkle'),
             boolean('spot_monsters'),
             boolean('standout'),
@@ -1835,52 +1935,54 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             readonly('msghistory', String(game.iflags.msg_history ?? 20)),
             readonly('pettype', preferredPetDescription()),
             readonly('soundlib', 'nosound'),
-            choice('autounlock', `autounlock              [${compoundMenuValue('autounlock')}]`),
+            dosetAddMenu('autounlock', compoundMenuValue('autounlock') ?? 'unknown'),
             // optfn_boulder() get_val: the primary override, else the
             // active set's rock-class symbol (options.c:1238-1241).
-            choice('boulder', `boulder                 [${game.boulderSym || currentBoulderSymbol()}]`),
-            choice('crash_email', 'crash_email             [unknown]'),
-            choice('crash_name', 'crash_name              [unknown]'),
-            choice('crash_urlmax', 'crash_urlmax            [-1]'),
-            choice('disclose', `disclose                [${compoundMenuValue('disclose')}]`),
-            choice('fruit', `fruit                   [${game.fruitName}]`),
-            choice('glyph', 'glyph                   [(to be done)]'),
-            choice('hilite_status', `hilite_status           [${countStatusHilites() ? '(see "status highlight rules" below)' : '(none)'}]`),
-            choice('menu_headings', `${'menu_headings'.padEnd(24)}[${menuHeadingsValue()}]`),
-            choice('menu_objsyms', 'menu_objsyms            [conditional]'),
-            choice('menuinvertmode', 'menuinvertmode          [1]'),
-            choice('menustyle', `menustyle               [${MENU_STYLES[game.flags.menu_style ?? MENU_FULL][0]}]`),
-            choice('msg_window', `msg_window              [${compoundMenuValue('msg_window')}]`),
-            choice('number_pad', `number_pad              [${numberPadDescription()}]`),
-            choice('packorder', `packorder               [${inventoryOrderSymbols()}]`),
-            choice('paranoid_confirmation', `paranoid_confirmation   [${compoundMenuValue('paranoid_confirmation')}]`),
-            choice('petattr', `${'petattr'.padEnd(24)}[${attributeName(game.iflags.wc2_petattr ?? C_ATR_INVERSE)}]`),
-            choice('pickup_burden', `pickup_burden           [${compoundMenuValue('pickup_burden')}]`),
-            choice('pickup_types', `pickup_types            [${game.flags?.pickup_types || 'all'}]`),
-            choice('pile_limit', 'pile_limit              [5]'),
-            choice('roguesymset', `roguesymset             [${rogueSymsetMenuValue()}]`),
-            choice('runmode', `runmode                 [${compoundMenuValue('runmode')}]`),
-            choice('scores', `scores                  [${scoreDisplayDescription()}]`),
-            choice('sortdiscoveries', `sortdiscoveries         [${discoverySortDescription()}]`),
-            choice('sortloot', `sortloot                [${SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']}]`),
-            choice('sortvanquished', `sortvanquished          [${vanquishedOptionValue()}]`),
-            choice('statushilites', `${'statushilites'.padEnd(24)}[${statusHilitesValue()}]`),
-            choice('statuslines', 'statuslines             [2]'),
-            choice('suppress_alert', 'suppress_alert          [(none)]'),
-            choice('symset', `symset                  [${symsetMenuValue()}]`),
-            choice('versinfo', `versinfo                [${compoundMenuValue('versinfo')}]`),
-            choice('whatis_coord', `whatis_coord            [${compoundMenuValue('whatis_coord')}]`),
-            choice('whatis_filter', `whatis_filter           [${compoundMenuValue('whatis_filter')}]`),
+            dosetAddMenu('boulder', game.boulderSym || currentBoulderSymbol()),
+            dosetAddMenu('crash_email', 'unknown'),
+            dosetAddMenu('crash_name', 'unknown'),
+            dosetAddMenu('crash_urlmax', '-1'),
+            dosetAddMenu('disclose', compoundMenuValue('disclose') ?? 'unknown'),
+            dosetAddMenu('fruit', game.fruitName ?? 'undefined'),
+            dosetAddMenu('glyph', '(to be done)'),
+            dosetAddMenu('hilite_status', countStatusHilites() ? '(see "status highlight rules" below)' : '(none)'),
+            dosetAddMenu('menu_headings', menuHeadingsValue()),
+            dosetAddMenu('menu_objsyms', 'conditional'),
+            dosetAddMenu('menuinvertmode', textOptionValue('menuinvertmode') ?? '1'),
+            dosetAddMenu('menustyle', MENU_STYLES[game.flags.menu_style ?? MENU_FULL][0]),
+            dosetAddMenu('msg_window', compoundMenuValue('msg_window') ?? 'unknown'),
+            dosetAddMenu('number_pad', numberPadDescription()),
+            dosetAddMenu('packorder', inventoryOrderSymbols()),
+            dosetAddMenu('paranoid_confirmation', compoundMenuValue('paranoid_confirmation') ?? 'unknown'),
+            dosetAddMenu('petattr', attributeName(game.iflags.wc2_petattr ?? C_ATR_INVERSE)),
+            dosetAddMenu('pickup_burden', compoundMenuValue('pickup_burden') ?? 'unknown'),
+            dosetAddMenu('pickup_types', game.flags?.pickup_types || 'all'),
+            dosetAddMenu('pile_limit', textOptionValue('pile_limit') ?? '5'),
+            dosetAddMenu('roguesymset', rogueSymsetMenuValue()),
+            dosetAddMenu('runmode', compoundMenuValue('runmode') ?? 'unknown'),
+            dosetAddMenu('scores', scoreDisplayDescription()),
+            dosetAddMenu('sortdiscoveries', discoverySortDescription()),
+            dosetAddMenu('sortloot', SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']),
+            dosetAddMenu('sortvanquished', vanquishedOptionValue()),
+            dosetAddMenu('statushilites', statusHilitesValue()),
+            dosetAddMenu('statuslines', '2'),
+            dosetAddMenu('suppress_alert', textOptionValue('suppress_alert') ?? '(none)'),
+            dosetAddMenu('symset', symsetMenuValue()),
+            dosetAddMenu('versinfo', compoundMenuValue('versinfo') ?? 'unknown'),
+            dosetAddMenu('whatis_coord', compoundMenuValue('whatis_coord') ?? 'unknown'),
+            dosetAddMenu('whatis_filter', compoundMenuValue('whatis_filter') ?? 'unknown'),
             label(''),
         ] },
         { heading: 'Other settings:', items: [
-            choice('autocompletions', `autocompletions         [(${countCommandAutocompletions()} currently set)]`),
-            choice('autopickup_exceptions', `${'autopickup exceptions'.padEnd(24)}[(${game.iflags.autopickupExceptions?.length ?? 0} currently set)]`),
-            choice('bind_keys', `bind keys               [(${countBindKeys()} currently set)]`),
-            choice('menu_colors', `${'menu colors'.padEnd(24)}[(${game.iflags.menuColorings?.length ?? 0} currently set)]`),
-            choice('message_types', `message types           [(${game.iflags.messageTypes?.length ?? 0} currently set)]`),
-            choice('status_conditions', `status condition fields [${compoundMenuValue('status_conditions')}]`),
-            choice('status_highlights', `status highlight rules  [(${countStatusHilites()} currently set)]`),
+            dosetAddMenu('autocompletions', `(${countCommandAutocompletions()} currently set)`),
+            dosetAddMenu('autopickup_exceptions', `(${game.iflags.autopickupExceptions?.length ?? 0} currently set)`,
+                'autopickup exceptions'),
+            dosetAddMenu('bind_keys', `(${countBindKeys()} currently set)`, 'bind keys'),
+            dosetAddMenu('menu_colors', `(${game.iflags.menuColorings?.length ?? 0} currently set)`, 'menu colors'),
+            dosetAddMenu('message_types', `(${game.iflags.messageTypes?.length ?? 0} currently set)`, 'message types'),
+            dosetAddMenu('status_conditions', compoundMenuValue('status_conditions') ?? 'unknown',
+                'status condition fields'),
+            dosetAddMenu('status_highlights', `(${countStatusHilites()} currently set)`, 'status highlight rules'),
         ] }
     ];
 }
@@ -2094,8 +2196,8 @@ function numberPadDescription(): string {
 }
 
 
-// Part of C options.c:optfn_number_pad(): apply the chosen numberpad mode.
-function setNumberPadOption(value: number, settings: Pick<ConfigurationSettings, 'commandBindings' | 'iflags'>): void {
+// C options.c:optfn_number_pad(): apply the chosen numberpad mode.
+function optfnNumberPad(value: number, settings: Pick<ConfigurationSettings, 'commandBindings' | 'iflags'>): void {
     if (!settings.commandBindings.setNumberPad(value)) return;
     settings.iflags.num_pad = value > 0;
     settings.iflags.num_pad_mode = value === -1 ? 1 : value > 0 ? value - 1 : 0;
@@ -2110,7 +2212,7 @@ async function editNumberPad(): Promise<void> {
         })) }],
     });
     const index = selected[0];
-    if (index !== undefined) setNumberPadOption(index === 5 ? -1 : index, game);
+    if (index !== undefined) optfnNumberPad(index === 5 ? -1 : index, game);
 }
 
 const PICKUP_TYPE_ROWS = [
@@ -2177,7 +2279,7 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
         restoreMenuUnderlay(underlay);
         value = selected === null ? previous : selected.includes(' ') ? '' : selected.join('');
     }
-    const parsed = parsePickupTypes(value);
+    const parsed = optfnPickupTypes(value);
     game.flags.pickup_types = parsed.symbols;
     if (parsed.invalid) await optionError("Unknown pickup_types parameter ''");
 }
@@ -2835,43 +2937,51 @@ function simpleMenuSections(): PageLocalMultiSelectSection<string>[] {
     ];
 }
 
-// C options.c:doset_simple(): the simple options menu loop.
-// options.c:doset_simple() applies one choice, refreshes its visuals, and
-// offers a fresh menu. PICK_ONE accepts a choice immediately.
+// C options.c:doset_simple_menu(): build the simple options menu, take
+// one pick, and apply it — the boolean toggle, the compound handler, or
+// the help toggle; PICK_ONE accepts a choice immediately.  Returns the
+// picked name, or null when the menu was dismissed.
+async function dosetSimpleMenu(): Promise<string | null> {
+    const selected = await showMultiSelectWindow({
+        title: 'Options', pageLocalKeys: true, omitHeadings: true,
+        sections: simpleMenuSections(), pickOne: true,
+    });
+    const name = selected[0];
+    if (!name) return null;
+    if (name === 'help') {
+        game.iflags.simple_options_help = !game.iflags.simple_options_help;
+        return name;
+    }
+    const option = requestBooleanByName.get(name.toLowerCase());
+    let pending: PendingVisuals = NO_VISUAL_CHANGE;
+    if (option) {
+        setRequestBoolean(option, !requestBooleanValue(option[0]));
+        pending = await applyBooleanVisualChange(option[0]);
+    } else pending = { redraw: await editCompoundOption(name, false), customReset: false };
+    // options.c:8723-8731: reset_needed_visuals() runs for every pick;
+    // the extra flush_screen(1) happens only for opt_need_redraw.
+    if (pending.redraw || pending.customReset) {
+        if (pending.redraw) {
+            checkGoldSymbol();
+            reglyph_darkroom();
+        }
+        await docrt();
+    }
+    if (pending.redraw) await flush_screen(1);
+    await bot();
+    return name;
+}
+
+// C options.c:doset_simple(): the simple options menu loop — apply one
+// choice, refresh its visuals, and offer a fresh menu until a round
+// picks nothing.
 export async function doOptions(menuRequested = false): Promise<void> {
     if (menuRequested) {
         await doRequestMenuOptions();
         return;
     }
-    for (;;) {
-        const selected = await showMultiSelectWindow({
-            title: 'Options', pageLocalKeys: true, omitHeadings: true,
-            sections: simpleMenuSections(), pickOne: true,
-        });
-        const name = selected[0];
-        if (!name) break;
-        if (name === 'help') {
-            game.iflags.simple_options_help = !game.iflags.simple_options_help;
-            continue;
-        }
-        const option = requestBooleanByName.get(name.toLowerCase());
-        let pending: PendingVisuals = NO_VISUAL_CHANGE;
-        if (option) {
-            setRequestBoolean(option, !requestBooleanValue(option[0]));
-            pending = await applyBooleanVisualChange(option[0]);
-        } else pending = { redraw: await editCompoundOption(name, false), customReset: false };
-        // options.c:8723-8731: reset_needed_visuals() runs for every pick;
-        // the extra flush_screen(1) happens only for opt_need_redraw.
-        if (pending.redraw || pending.customReset) {
-            if (pending.redraw) {
-                checkGoldSymbol();
-                reglyph_darkroom();
-            }
-            await docrt();
-        }
-        if (pending.redraw) await flush_screen(1);
-        await bot();
-    }
+    // doset_simple() loops doset_simple_menu() while it took a pick.
+    while (await dosetSimpleMenu()) { /* offer a fresh menu */ }
     // doset_simple resets pending visuals after cancellation too. A full-screen
     // tty dismissal clears status while its input owner still suppresses bot().
     await bot();
@@ -2985,7 +3095,7 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
             (_character: string, key: number) => key >= 32 && key < 127);
         if (value === null) return false;
         if (name === 'scores') {
-            const parsed = parseScoreOption(value, false);
+            const parsed = optfnScores(value, false);
             if (parsed) {
                 game.flags.end_top = parsed.end_top;
                 game.flags.end_around = parsed.end_around;

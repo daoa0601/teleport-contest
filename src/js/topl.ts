@@ -117,7 +117,7 @@ export async function showMessageHistoryWindow(
     });
 }
 
-// C win/tty/topl.c:tty_doprev_message(): the recall dispatcher over
+// C topl.c:tty_doprev_message(): the recall dispatcher over
 // iflags.prevmsg_window. The port's #prevmsg entry point; C cmd.c's
 // doprev_message() is only the windowport dispatch, so the whole body has
 // its home here beside the recall ring. The prompt owners call this with
@@ -280,7 +280,7 @@ function renderChoicePrompt(message: string): void {
 
 export interface TtyPromptAnswer { answer: string; count: bigint }
 
-// C win/tty/topl.c:tty_yn_function().
+// C topl.c:tty_yn_function().
 // Native tty_yn_function returns the answer and sets yn_number. Keep the
 // number in the result so each suspended question owns its own answer.
 export async function tty_yn_function(
@@ -401,10 +401,11 @@ export async function tty_yn_function(
     }
 }
 
-// Part of C topl.c:tty_putmsghistory(): the non-restoring message insertion path.
-// C win/tty/topl.c:tty_putmsghistory(msg, FALSE): remember what is pending and
-// make this line the current topline without displaying it. The quest pager
+// C topl.c:tty_putmsghistory(): the non-restoring message insertion path
+// — tty_putmsghistory(msg, FALSE): remember what is pending and make
+// this line the current topline without displaying it. The quest pager
 // synopsis, novel tribute attribution, and count echoes use this path.
+// The restoring_msghist half is the save/restore owner's replay.
 export function putMessageHistory(message: string): void {
     // putmsghistory() marks a displayed topline as seen before replacing it.
     if (game._pending_message) {

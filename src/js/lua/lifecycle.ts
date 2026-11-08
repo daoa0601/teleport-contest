@@ -50,7 +50,7 @@ function alignmentName(value: LuaValue): LuaAlignmentName {
     throw new TypeError(`Invalid Lua alignment name: ${String(value)}`);
 }
 
-// Part of C nhlua.c:nhl_init(): the nh.* function registration
+// C nhlua.c:nhl_init(): the nh.* function registration
 // (rn2, parse_config, callback, pline, text, ...).
 function bindingsFor(
     gameState: GameState, lifecycle: LuaLifecycle, objects: ObjectApi,

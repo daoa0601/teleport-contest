@@ -191,7 +191,7 @@ export async function runClaimedObjectRotTimer(claimed, state = game) {
         await deleteObject(object, state);
     return { kind, object, where, x, y };
 }
-// Part of C nhlua.c:l_nhcore_init(): entry adapter; LuaLifecycle.startCore() initializes the core.
+// C nhlua.c:l_nhcore_init(): entry adapter; LuaLifecycle.startCore() initializes the core.
 export async function l_nhcore_init() {
     await currentLuaLifecycle().startCore(game);
 }

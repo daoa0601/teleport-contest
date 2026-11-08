@@ -4136,8 +4136,8 @@ export function arriveTravel(g = game) {
     if (g.multi > 0)
         g.multi = 0;
 }
-// Part of C flag.h:RUN_TPORT: runmode:teleport skips every per-step
-// update until the multi-step action stops. Options normalize the value.
+// C flag.h:RUN_TPORT(): runmode:teleport skips every per-step update
+// until the multi-step action stops. Options normalize the value.
 export function isTeleportRunmode(g = game) {
     const runmode = String(g.flags?.runmode || 'run').toLowerCase();
     return runmode === 'teleport' || runmode === 'tport';

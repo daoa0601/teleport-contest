@@ -23,7 +23,6 @@ import type { InterfaceFlags } from './flags.js';
 import { game } from './gstate.js';
 import { CommandBindings } from './command_bindings.js';
 import { C_ATR_INVERSE } from './color_attr.js';
-import { cutConfigBytes } from './coloratt.js';
 import { rawPrintf, truncatePlineMessage } from './pline.js';
 import { rawPrint } from './input.js';
 import { getret } from './wintty.js';
@@ -88,6 +87,14 @@ export async function displayConfigurationErrors(reports: readonly Configuration
         rawPrint(truncatePlineMessage(`\n${count} error${count === 1 ? '' : 's'} in ${report.source}.\n`));
         await getret();
     }
+}
+
+// C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept UTF-8
+// safe — vsnprintf's buf[BUFSZ-1] = '\0' and printf's %.Ns precision
+// count bytes; a UTF-8 sequence split by the cut survives as one
+// character.
+export function cutConfigBytes(text: string, limit: number): string {
+    return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
 }
 
 // C cfgfiles.c:get_uchars(). Zeros are stored unless the list is being

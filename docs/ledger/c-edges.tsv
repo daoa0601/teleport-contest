@@ -402,6 +402,7 @@ consume_tin	rndmonnam
 consume_tin	tin_variety
 consume_tin	use_up_tin
 consume_tin	yn_function
+contained_stats	count_obj
 convert_arg	align_gname
 convert_arg	homebase
 convert_arg	rank_of
@@ -418,6 +419,7 @@ count_contents	costly_spot
 count_feat_lastseentyp	altarmask_at
 count_feat_lastseentyp	is_drawbridge_wall
 count_feat_lastseentyp	isok
+count_obj	size_obj
 count_surround_traps	glyph_at
 count_surround_traps	isok
 courtmon	level_difficulty
@@ -1214,6 +1216,8 @@ dosearch0	rnl
 dosearch0	set_msg_xy
 dosearch0	unmap_invisible
 dosearch0	visible_region_at
+doset	doset_add_menu
+doset_simple	doset_simple_menu
 doset_simple	flush_screen
 dosinkfall	acurr
 dosinkfall	exercise
@@ -2949,8 +2953,10 @@ mloot_container	weight
 mnearto	isok
 mnearto	mon_leaving_level
 mon_beside	isok
+mon_chain	size_monst
 mon_consume_unstone	rnd
 mon_has_friends	isok
+mon_invent_chain	count_obj
 mon_is_gecko	glyph_at
 mon_leaving_level	fill_pit
 mon_leaving_level	isok
@@ -3219,11 +3225,13 @@ nh_timeout	you_unwere
 nhl_gamestate	init_uhunger
 nhl_gamestate	setnotworn
 nhl_gamestate	setworn
+nhl_timer_start_at	isok
 noisy_shop	wake_nearto
 nomul	cmdq_clear
 nomul	end_running
 noncoalignment	rn2
 noveltitle	rn2
+obj_chain	count_obj
 obj_delivery	newsym
 obj_delivery	rnd
 obj_delivery	scatter
@@ -3291,7 +3299,9 @@ openone	openholdingtrap
 openone	wake_nearto
 opentin	consume_tin
 optfn_hilite_status	parse_status_hl1
+optfn_roguesymset	read_sym_file
 optfn_statushilites	reset_status_hilites
+optfn_symset	read_sym_file
 oracle_sound	rn2
 out_container	bot
 out_container	costly_spot
@@ -3311,6 +3321,7 @@ parkguard	newsym
 parse	flush_screen
 parse	get_count
 parse	readchar
+parse_cond_option	condopt
 parse_condition	splitsubfields
 parse_condition	str2conditionbitmask
 parse_conf_buf	choose_random_part
@@ -4175,6 +4186,7 @@ sink_backs_up	newsym
 sink_into_lava	reset_utrap
 sink_into_lava	rnd
 sink_into_lava	safe_teleds
+size_obj	size_monst
 skill_based_spellbook_id	spell_skilltype
 skiprange	rnd
 slime_dialogue	Popeye
@@ -4916,6 +4928,11 @@ wiz_migrate_mons	rndmonst
 wiz_panic	paranoid_query
 wiz_polyself	polyself
 wiz_rumor_check	rumor_check
+wiz_show_stats	contained_stats
+wiz_show_stats	misc_stats
+wiz_show_stats	mon_chain
+wiz_show_stats	mon_invent_chain
+wiz_show_stats	obj_chain
 wiz_smell	glyph_at
 wiz_smell	map_invisible
 wiz_smell	unmap_invisible
