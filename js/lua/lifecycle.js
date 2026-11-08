@@ -32,7 +32,7 @@ function alignmentName(value) {
         return value;
     throw new TypeError(`Invalid Lua alignment name: ${String(value)}`);
 }
-// Part of C nhlua.c:nhl_init(): the nh.* function registration
+// C nhlua.c:nhl_init(): the nh.* function registration
 // (rn2, parse_config, callback, pline, text, ...).
 function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
     const { nh: additionalNh = {}, ...remainingBindings } = additionalBindings;

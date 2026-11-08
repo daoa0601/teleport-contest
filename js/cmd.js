@@ -1605,7 +1605,7 @@ async function enterExploreMode() {
     }
     game.context.move = 0;
 }
-// Part of C save.c:saveobjchn(): the release_data() block that releases a
+// C save.c:saveobjchn(): the release_data() block that releases a
 // level-owned object — victual/tin/spbook keep their o_id so the pointer
 // can be restored on reload, then dealloc_obj().
 function freeLevelObject(object) {

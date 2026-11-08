@@ -26,9 +26,9 @@ export function cInteger(value) {
 export async function optionError(message) {
     await plineWithContinuation(/[.!?]$/.test(message) ? message : `${message}.`);
 }
-// Part of C options.c:optfn_pickup_types(): the object-class letter
-// validation loop.
-export function parsePickupTypes(value) {
+// C options.c:optfn_pickup_types(): the object-class letter validation
+// loop.
+export function optfnPickupTypes(value) {
     value = value.replace(/^ +/, '');
     if (/^[aA]/.test(value))
         return { symbols: '', invalid: false };

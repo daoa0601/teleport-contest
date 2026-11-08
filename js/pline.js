@@ -227,7 +227,9 @@ export function truncateRawMessage(message) {
     const bytes = new TextEncoder().encode(message.split('\0', 1)[0] ?? '');
     return new TextDecoder().decode(bytes.subarray(0, BUFSZ - 1));
 }
-// C pline.c:raw_printf()/vraw_printf().
+// C pline.c:vraw_printf(): C raw_printf() is the vararg wrapper; this is
+// the shared body — the BUFSZ-1 truncation, raw_print and the early
+// count.
 export function rawPrintf(message) {
     rawPrint(truncateRawMessage(message));
     // Both raw_printf() and vraw_printf() increment the early-message count.

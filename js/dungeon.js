@@ -881,18 +881,21 @@ function definitionArray(value, path) {
         throw new TypeError(`${path} must be a Lua array`);
     return value;
 }
-// Part of C nhlua.c:get_table_str() (required string fields).
+// C nhlua.c:get_table_str(): the required string fields of a dungeon
+// definition table.
 function definitionString(value, path) {
     if (typeof value !== 'string')
         throw new TypeError(`${path} must be a string`);
     return value;
 }
-// Part of C nhlua.c:get_table_str_opt() as dungeon.c reads optional strings.
+// C nhlua.c:get_table_str_opt(): the optional string fields of a dungeon
+// definition table.
 function optionalDefinitionString(value, path) {
     return value == null ? undefined : definitionString(value, path);
 }
-// Part of C nhlua.c:get_table_int() and get_table_int_opt() with their
-// fallback values, as dungeon.c reads integer fields.
+// C nhlua.c:get_table_int(): the integer fields of a dungeon definition
+// table — also get_table_int_opt(), whose fallback value is the third
+// argument here.
 function definitionInteger(value, path, fallback) {
     if (value == null && fallback !== undefined)
         return fallback;

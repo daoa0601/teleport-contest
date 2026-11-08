@@ -8,10 +8,10 @@ import { showMultiSelectWindow } from './windows.js';
 import { BUFSZ, CLR_MAX, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_NONE, terminalAttrFromCAttr } from './color_attr.js';
-// Part of C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept
-// UTF-8 safe.
-// vconfig_error_add()'s BUFSZ-1 cut and printf's %.Ns precision count
-// bytes; a UTF-8 sequence split by the cut survives as one character.
+// C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept UTF-8
+// safe — vsnprintf's buf[BUFSZ-1] = '\0' and printf's %.Ns precision
+// count bytes; a UTF-8 sequence split by the cut survives as one
+// character.
 export function cutConfigBytes(text, limit) {
     return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
 }

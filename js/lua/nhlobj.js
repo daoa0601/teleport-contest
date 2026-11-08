@@ -238,7 +238,7 @@ export function createObjectApi(state = game) {
         },
         // C nhlobj.c:l_obj_timer_start(): replace an existing timer of the
         // kind and schedule it `when` turns ahead.
-        start_timer: (value, name, timeout) => {
+        start_timer(value, name, timeout) {
             const kind = timerKind(name), when = luaInteger(timeout);
             const item = object(value);
             if (item && kind && when > 0) {
