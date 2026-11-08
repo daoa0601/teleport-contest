@@ -593,9 +593,11 @@ export function resetBulkTakeoff(state: GameState = game): void {
     delete state.context.takeoff;
 }
 
-// Part of C do_wear.c:cancel_doff(): cancel one slot's pending removal.
+// C do_wear.c:cancel_doff(): cancel one slot's pending removal.
 // Slot replacement cancels work on that item, including an interrupted
-// delay.
+// delay.  The donning()/cancel_don() trigger of the C original lives with
+// the delayed-action owners (removeHeroArmor()'s pending check and
+// cancelDonning()); this clears the 'A' continuation state.
 export function cancelSlotTakeoff(slot: TakeoffSlot, state: GameState = game): void {
     const progress = state.context.takeoff;
     if (!progress) return;
@@ -1184,8 +1186,10 @@ export async function reportCoveredEquipment(object: GameObject): Promise<boolea
     return true;
 }
 
-// Part of C do_wear.c:count_worn_stuff(): the armor and accessory slot
-// lists, counting only the outermost torso layer.
+// C do_wear.c:count_worn_stuff(): the armor and accessory slot lists,
+// counting only the outermost torso layer.  The port returns the list
+// itself; the count and the single default item are its length and only
+// element.
 export function accessibleEquipment(accessory: boolean, state: GameState = game): GameObject[] {
     const objects = accessory
         ? [state.uleft, state.uright, state.uamul, state.ublindf]
@@ -1942,10 +1946,42 @@ async function applyCloakOffEffects(object: GameObject, state: GameState): Promi
 // ordering.
 // C do_wear.c:Boots_on(): the boot switch — water walking, levitation,
 // speed, fumbling, and elven stealth, with the AC-evident known flag.
-// C do_wear.c:Gloves_on(): gauntlets of power are identified and gauntlets
-// of fumbling start their rnd(20) timer; dexterity runs through the shared
-// adj_abon() credit above.  Helmet_on() and Cloak_on() run whole in
-// applyHelmetOnEffects() and applyCloakOnEffects() above.
+// Gloves_on() runs whole in the function of that name below; Helmet_on()
+// and Cloak_on() in applyHelmetOnEffects() and applyCloakOnEffects().
+
+// C do_wear.c:Gloves_on(): the gauntlet switch.  Gauntlets of power are
+// identified (armorOnIdentifiesType() in the wear flow) and set botl;
+// gauntlets of fumbling start their rnd(20) timer when no other source
+// fumbles (oldprop was the extrinsic without this glove slot, and
+// HFumbling & ~TIMEOUT a permanent intrinsic); dexterity runs through the
+// shared adj_abon() credit in applyArmorOnEffects(); leather does nothing.
+async function Gloves_on(object: GameObject, state: GameState): Promise<string[]> {
+    switch (object.otyp) {
+    case GAUNTLETS_OF_FUMBLING:
+        await fumblingWearTimer(object, state);
+        break;
+    case GAUNTLETS_OF_POWER:
+        state.context.botl = true; /* taken care of in attrib.c */
+        break;
+    default:
+        break;
+    }
+    return [];
+}
+
+// Part of C do_wear.c:Gloves_on(), do_wear.c:Boots_on(): the shared
+// fumbling incr_itimeout(&HFumbling, rnd(20)) when the item is the only
+// fumbling source.
+async function fumblingWearTimer(object: GameObject, state: GameState): Promise<string[]> {
+    const sources = state.u._propertySources?.fumbling;
+    const slot = armorSlotFor(object.otyp);
+    const otherEquipment = sources?.worn.some(source => source.slot !== slot);
+    if (!otherEquipment && !hasIntrinsicProperty('fumbling', null, state)
+        && !state.u.fumblingIntrinsic && !state.u.fumblingFromIce)
+        setPropertyTimeout('fumbling', propertyTimeout('fumbling', state) + rnd(20), state);
+    return [];
+}
+
 export async function applyArmorOnEffects(object: GameObject, state: GameState = game, { initialDon = false }: ArmorOnOptions = {}): Promise<string[]> {
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS) requireLiveGame(state);
     const previousLevitation = object?._levitationBeforeWear
@@ -1975,20 +2011,9 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
         await applyHelmetOnEffects(object, state);
         return [];
     }
-    if (object?.otyp === GAUNTLETS_OF_POWER) {
-        state.context.botl = true;
-        return [];
-    }
+    if (armorSlotFor(object.otyp) === 'uarmg') return Gloves_on(object, state);
 
-    if (object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING) {
-        const sources = state.u._propertySources?.fumbling;
-        const slot = armorSlotFor(object.otyp);
-        const otherEquipment = sources?.worn.some(source => source.slot !== slot);
-        if (!otherEquipment && !hasIntrinsicProperty('fumbling', null, state)
-            && !state.u.fumblingIntrinsic && !state.u.fumblingFromIce)
-            setPropertyTimeout('fumbling', propertyTimeout('fumbling', state) + rnd(20), state);
-        return [];
-    }
+    if (object.otyp === FUMBLE_BOOTS) return fumblingWearTimer(object, state);
 
     if (object.otyp === ELVEN_BOOTS) {
         if (!initialDon) await toggleArmorStealth(object, true, state);
