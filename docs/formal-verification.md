@@ -6,7 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 223 scoped C/JavaScript
+`verification/equivalence/` now proves 265 scoped C/JavaScript
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
@@ -980,6 +980,43 @@ RNG calls match. Deep is 300/300, matching 5,275,312 RNG calls and 58,002
 screens. Compilation, strict checks, 549 focused tests, 120 verifier tests,
 683 native differential cases, 37 differential harness tests and the static
 owner/message/edge ledgers pass. The RNG callsite ledger has zero regressions.
+
+**Defense-owner batch (fv-equivalence-batch-13).** Sixteen added claims
+prove the single-owner defense and helper ports of PRs 758-768 against C:
+`artifact.c:defends`/`defends_when_carried` over the artilist table and the
+dragon-armor switch, `mondata.c:resists_magm` over one modeled monster,
+hacklib.c's `highc`/`lowc`/`ordin`, and ten `H<Prop> || E<Prop>` resistance
+macros of youprop.h. `defended()` itself and `Resists_Elem()` stay outside:
+both declare `struct obj *o, otemp;`, a struct-typed local the C executor
+cannot type; `resists_drli`/`resists_blnd` call `defended()` and follow it.
+
+| Claim | C ↔ JavaScript | Domain | Paths / loop proof | Time |
+|---|---|---|---|---|
+| `highc` | `hacklib.c:highc` ↔ `hacklib.js:uppercase` | Any C char input in −128..127; probe leaves it | 2×2 | 4.8 s |
+| `lowc` | `hacklib.c:lowc` ↔ `hacklib.js:asciiLower` | Same domain | 2×2 | 3.3 s |
+| `ordin` | `hacklib.c:ordin` ↔ `hacklib.js:ordinalSuffix` | Every int32 n; returns text | 6×6 | 0.6 s |
+| `<prop>_resistance:state` ×9, `antimagic:state` | youprop.h `Fire_resistance` … `Stone_resistance`, `Antimagic` macro harnesses ↔ `properties.js:propertyIsActive` | One lumpled any-source boolean per bit family (permanent intrinsic, timed, worn, invoked W_ARTI, carried W_ART); representative mask bits on the C side | 2×2 | 2.1 s each |
+| `defends:tables` | `artifact.c:defends` ↔ `artifact.js:defends` | 16 damage-type partitions (AD_MAGM..AD_STON with query spellings); object null or present; otyp 0..NUM_OBJECTS-1; any signed-char oartifact; the real `get_artifact` over artilist[] and the port's `_artifactRuntime` map | 1×1 per partition | 15.7 s |
+| `defends_when_carried:tables` | `artifact.c:defends_when_carried` ↔ `artifact.js:defendsWhenCarried` | Same partitions; otyp/oclass unread | 1×1 per partition | 3.3 s |
+| `resists_magm:tables` (slow) | `mondata.c:resists_magm` ↔ `mondata.js:monsterHasMagicResistance` | Monster (not youmonst) with valid species, a bounded 0..2 minvent nobj chain with otyp/owornmask/oartifact and a modeled wielded index into it; `dmgtype` over mons[] executes for real; masks stay inside int32 | 1×1 per chain partition | 177.1 s |
+
+The artifact claims execute the real `get_artifact()` over the static
+NEARDATA `artilist[]` initializer and `dragonFormForArmor()` on the port
+side, so the defn/cary adtyp ↔ defense/carriedDefense string table
+correspondence is verified row for row rather than assumed. The
+resists_magm claim models `mw` as the chain item whose owornmask carries
+W_WEP (the invariant weapon.c's `mwepgone` maintains) and verifies that
+`ANTIMAGIC_ARMOR` is exactly the set of otyps whose `objects[].oc_oprop`
+is ANTIMAGIC, over every otyp in the table. Worn masks are bounded to a
+signed int32: the port reads owornmask with a JS 32-bit `&`.
+
+Two JS executor extensions carry the batch, each with a failing-before
+test: a module-level `export const f = (x) => …` binding is now callable
+(expression and block bodies), and `Array.prototype.some` accepts a
+block-bodied callback whose per-element return is reset before the next
+element. The batch found no port difference: the one open-search mismatch
+(an owornmask above int32, where C's 64-bit `&` and the port's 32-bit `&`
+disagree) is unreachable worn state and became the documented domain bound.
 
 **Earlier proof runs.**
 

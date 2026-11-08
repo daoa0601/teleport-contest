@@ -225,16 +225,31 @@ class JSExec:
                 if args == expected:
                     return [(path, result)]
             raise Unsupported(f'JavaScript call contract argument mismatch for {label}:{name}')
-        decl = self.modules[label][1][name]
+        _source, functions, _imports, constants = self.modules[label]
+        decl = functions.get(name)
+        if decl is None:
+            # A module-level `export const f = (x) => ...` binding is a
+            # callable function too; its initializer becomes the body.
+            initializer = constants.get(name)
+            if initializer is None or initializer.type != 'arrow_function':
+                raise KeyError(name)
+            decl = initializer
         if decl.type == 'generator_function_declaration' or any(c.type == 'async' for c in decl.children):
             raise Unsupported(f'async or generator function {name}')
         params = [c for c in decl.child_by_field_name('parameters').named_children]
         p = path.fork()
         p.frames.append({})
         body = decl.child_by_field_name('body')
-        loops = [m for m in _descendants(body) if m.type in ('for_statement', 'while_statement')]
+        concise = body.type != 'statement_block'
+        if concise:
+            # A concise arrow body is one expression whose value is returned;
+            # only an arrow function can have one.
+            if decl.type != 'arrow_function':
+                raise Unsupported(f'JavaScript function {name} without a block body')
+        scope = body if not concise else decl.child_by_field_name('body')
+        loops = [m for m in _descendants(scope) if m.type in ('for_statement', 'while_statement')]
         self.stack.append((name, label, {m.id: i for i, m in enumerate(loops)}))
-        patterns = [d.child_by_field_name('name') for d in _descendants(body) if d.type == 'variable_declarator']
+        patterns = [d.child_by_field_name('name') for d in _descendants(scope) if d.type == 'variable_declarator']
         patterns += [prm.child_by_field_name('left') if prm.type == 'assignment_pattern' else prm for prm in params]
         declared = set()
         for pattern in patterns:
@@ -247,7 +262,14 @@ class JSExec:
             paths = [p]
             for i, prm in enumerate(params):
                 paths = seq(paths, lambda q, prm=prm, i=i: self._parameter(q, prm, args[i] if i < len(args) else UNDEF))
-            outs = seq(paths, lambda q: self.exec(q, body))
+            if concise:
+                outs = []
+                for q in paths:
+                    for q2, value in self.eval(q, scope):
+                        q2.ret, q2.returned = value, True
+                        outs.append(q2)
+            else:
+                outs = seq(paths, lambda q: self.exec(q, body))
         finally:
             self.stack.pop()
             self.local_names.pop()
@@ -1223,6 +1245,10 @@ class JSExec:
         cb = _strip(callback)
         if cb.type != 'arrow_function':
             raise Unsupported(f'Array.{what} callback at {where} is not an arrow function')
+        if any(c.type == 'async' for c in cb.children):
+            # An async callback returns a Promise (always truthy), never the
+            # modeled body value.
+            raise Unsupported(f'Array.{what} callback at {where} is async')
         parameters = cb.child_by_field_name('parameters')
         if parameters is not None:
             prm_nodes = parameters.named_children
@@ -1231,8 +1257,22 @@ class JSExec:
             if prm_nodes[0] is None:
                 raise Unsupported(f'Array.{what} callback at {where} has no parameters')
         body = cb.child_by_field_name('body')
-        if body.type == 'statement_block':
-            raise Unsupported(f'Array.{what} callback at {where} has a block body')
+        block_body = body.type == 'statement_block'
+        if block_body:
+            # A block-bodied callback runs its statements; the scan value is
+            # the callback's return, undefined on the fall-through path. The
+            # per-element flag is reset so the enclosing control flow (and
+            # the next element's evaluation) starts clean.
+            def run(p2):
+                out = []
+                for q in self.exec(p2, body):
+                    value = q.ret if q.returned else UNDEF
+                    q.ret, q.returned = None, False
+                    out.append((q, value))
+                return out
+        else:
+            def run(p2):
+                return self.eval(p2, body)
         if len(prm_nodes) > 3:
             raise Unsupported(f'Array.{what} callback at {where} has more than three parameters')
         live, matched = [path], []
@@ -1246,7 +1286,7 @@ class JSExec:
                 for prm, value in zip(prm_nodes, arguments):
                     parameter_names.update(self._parameter_names(prm))
                     paths = seq(paths, lambda p, prm=prm, value=value: self._parameter(p, prm, value))
-                evaluated = [outcome for p2 in paths for outcome in self.eval(p2, body)]
+                evaluated = [outcome for p2 in paths for outcome in run(p2)]
                 _close_scope(outer, [p2 for p2, _ in evaluated])
                 for p2, _ in evaluated:
                     for name in parameter_names & outer.keys():
@@ -1263,7 +1303,7 @@ class JSExec:
         return matched, live
 
     def _array_some(self, path, array, callback, where):
-        """Array.prototype.some with an expression-bodied arrow callback."""
+        """Array.prototype.some with an arrow callback (expression or block body)."""
         matched, live = self._array_scan(path, array, callback, where, 'some')
         return ([(p, V('bool', z3.BoolVal(True))) for p, _ in matched]
                 + [(p, V('bool', z3.BoolVal(False))) for p in live])
@@ -1297,6 +1337,9 @@ class JSExec:
         cb = _strip(callback)
         if cb.type != 'arrow_function':
             raise Unsupported(f'Array.reduce callback at {where} is not an arrow function')
+        if any(c.type == 'async' for c in cb.children):
+            # An async callback returns a Promise, never the modeled value.
+            raise Unsupported(f'Array.reduce callback at {where} is async')
         parameters = cb.child_by_field_name('parameters')
         if parameters is None or len(parameters.named_children) != 2:
             raise Unsupported(f'Array.reduce callback at {where} needs two parameters')
