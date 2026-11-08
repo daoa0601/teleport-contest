@@ -76,7 +76,7 @@ import { hiddenGold } from './vault.js';
 import { finishMonsterEating } from './dogmove.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import { ceilingName, dungeonDepth, surfaceName, canFallThrough } from './dungeon.js';
+import { ceilingName, dungeonDepth, surfaceName, canFallThrough, sameDungeonLevel } from './dungeon.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { shopkeeperName } from './shknam.js';
 import { objectResistsDestruction } from './zap.js';
@@ -1539,13 +1539,6 @@ interface DeliveryOptions {
     random?: RandomBelow;
     rollOne?: (sides: number) => number;
 }
-// Part of C dungeon.c:on_level(): local d_level comparison (full port in
-// dungeon.ts).
-function sameLevel(first: DungeonLocation | null | undefined, second: DungeonLocation | null | undefined): boolean {
-    return !!first && !!second
-        && first.dnum === second.dnum
-        && first.dlevel === second.dlevel;
-}
 // Part of C dokick.c:drop_to(): the next-level-down destination.
 function levelBelow(state: PlayingGameState): DungeonLocation {
     const current = state.u?.uz || { dnum: 0, dlevel: 1 };
@@ -1566,7 +1559,7 @@ function inEndgame(state: PlayingGameState): boolean {
 }
 // Part of C dokick.c:drop_to(): the Is_stronghold() check.
 function onStronghold(state: PlayingGameState): boolean {
-    return sameLevel(state.u?.uz, state.stronghold_level);
+    return sameDungeonLevel(state.u?.uz, state.stronghold_level);
 }
 // C dokick.c:drop_to()
 // Destination for the MIGR_xxx choice down_gate() produced: the stronghold
@@ -1914,7 +1907,7 @@ export async function deliverMigratingObjects(
     let position: Position | null = null;
     for (const object of [...(state.migratingObjects || [])]) {
         const migration = object.migration;
-        if (!migration || !sameLevel(migration.destination, state.u?.uz))
+        if (!migration || !sameDungeonLevel(migration.destination, state.u?.uz))
             continue;
         if (migration.arrival & MIGR_TO_SPECIES) continue;
         const arrival = migration.arrival

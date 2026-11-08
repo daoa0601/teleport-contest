@@ -174,8 +174,11 @@ async function reassessHeroCover(source: PickupSource): Promise<void> {
         await hideHeroUnder(game);
 }
 
-// C pickup.c:pickup(); its autopick() pass over the square's objects runs
-// before the pickup menu.
+// Part of C pickup.c:pickup(): the what > 0 entry.  C runs pickup()'s
+// location gates for both entries, but the manual (what <= 0) entry always
+// arrives from dopickup() after pickup_checks() has enforced them
+// (hack.ts pickupLocationProblem), so the gates live here; its autopick()
+// pass over the square's objects runs before the pickup menu.
 export async function autopickupAtHero(): Promise<void> {
     if (heroIsUnaware(game)) {
         game._prevDecorType = STONE;

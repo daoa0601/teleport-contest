@@ -319,8 +319,9 @@ export function rollPhysicalWeaponDamage(object, monster, { state = game, hero =
     damage += targetDamageBonus(object, monster, { hatesBlessings, hatesSilver, hero }, rollOne, state);
     return applyErosion(object, damage);
 }
-// C weapon.c:dmgval(obj, &gy.youmonst): the form the dig.c, dothrow.c,
-// mthrowu.c, read.c, trap.c, uhitm.c and zap.c call sites use.
+// Part of C weapon.c:dmgval(): the dmgval(obj, &gy.youmonst) form the
+// dig.c, dothrow.c, mthrowu.c, read.c, trap.c, uhitm.c and zap.c call
+// sites use.
 export function rollPhysicalWeaponDamageAgainstHero(object, state, options = {}) {
     // C dmgval(obj, &youmonst) asks mon_hates_silver() about the hero's
     // current form; lycanthropy (Hate_silver) only adds the searing line.
@@ -1120,7 +1121,7 @@ function attackSkillType(weapon, state) {
 }
 // C skills.h:P_SKILL(): the skill's current proficiency level, read through
 // the port's initialized-skill checks.
-function proficiency(skill, state) {
+export function proficiency(skill, state) {
     return requiredSkill(initializedSkills(state), skill).skill;
 }
 // C you.h:martial_bonus(): the Monk and Samurai martial-arts roles.

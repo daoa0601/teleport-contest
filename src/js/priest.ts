@@ -806,9 +806,10 @@ export async function moveSpecial(
     };
 }
 
-// C vision.h:m_canseeu(): the special mover sees the hero with
-// its own eyes, without displacement, and not from the water.  pri_move()
-// and shk_move() both test it after the monster's own mcansee.
+// Part of C vision.h:m_canseeu(): pri_move() and shk_move() test
+// m_canseeu(mtmp) after the mover's own mcansee, so this helper carries
+// both: the special mover sees the hero with its own eyes, without
+// displacement, and not from the water.
 export function specialMoverSeesHero(monster: Monster, state: PlayingGameState) {
     const seesInvisible = monsterPerceives(monster.mnum);
     return (

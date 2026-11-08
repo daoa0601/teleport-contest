@@ -374,8 +374,8 @@ export function collect_coords(cx, cy, maxradius = 0, ccflags = CC_NO_FLAGS, { s
     }
     return coords;
 }
-// C dungeon.h:within_bounded_area(): the bounded-area test over the port's
-// Rectangle record (rect.ts within_bounded_area() is the scalar port).
+// Part of C dungeon.h:within_bounded_area(): the bounded-area test over the
+// port's Rectangle record (rect.ts within_bounded_area() is the scalar port).
 function inside(area, x, y) {
     return !!area && within_bounded_area(x, y, area.lx, area.ly, area.hx, area.hy);
 }

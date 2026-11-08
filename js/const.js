@@ -2947,9 +2947,9 @@ export function Is_earthlevel(uz) {
         && level.dlevel === specialLevel.dlevel;
 }
 // C dungeon.h:Is_airlevel()
-export function Is_airlevel(uz) {
-    const level = uz ?? game?.u?.uz;
-    const specialLevel = game?.air_level;
+export function Is_airlevel(uz, state = game) {
+    const level = uz ?? state?.u?.uz;
+    const specialLevel = state?.air_level;
     return !!level && !!specialLevel
         && level.dnum === specialLevel.dnum
         && level.dlevel === specialLevel.dlevel;

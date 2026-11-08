@@ -5829,8 +5829,9 @@ function heroIsStunned(state) {
 function heroIsFumbling(state) {
     return !!(state.u?.fumbling || (state.u?.fumblingTurns ?? 0) > 0);
 }
-// C rm.h:m_at(): the untrapping square's occupant; the runtime dead flag
-// must also exclude a killed-but-not-yet-unlinked monster.
+// Part of C rm.h:m_at(): the untrapping square's occupant (the family's
+// shared ports live in steed.ts); the runtime dead flag must also exclude
+// a killed-but-not-yet-unlinked monster.
 function monsterAt(state, x, y) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         !monster.dead && (monster.mhp ?? 1) > 0

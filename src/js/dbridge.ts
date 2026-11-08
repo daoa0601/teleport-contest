@@ -232,8 +232,9 @@ async function announceBridgeMovement(bridge: DrawbridgeSquare, wall: Drawbridge
         : 'chains rattling and gears turning.', plineWithContinuation, state);
 }
 
-// C you.h:u_at(): state-aware form for callers that run against either the
-// live game or a focused unit state.
+// Part of C you.h:u_at(): state-aware form for callers that run against
+// either the live game or a focused unit state (const.ts u_at() is the
+// global read).
 function heroAt(point: Position, state: GameState): boolean {
     return state.u?.ux === point.x && state.u?.uy === point.y;
 }

@@ -471,7 +471,11 @@ wield.c	dotwoweapon	set_twoweap	false;true
 wield.c	untwoweapon	set_twoweap	false
 wizard.c	choose_stairs	stairway_find_type_dir	false;false;true;true
 wizard.c	clonewiz	mksobj	true+false
+wizcmds.c	count_obj	count_obj	true+true
 wizcmds.c	makemap_remove_mons	keepdogs	true
+wizcmds.c	mon_invent_chain	count_obj	true+false
+wizcmds.c	obj_chain	count_obj	true+false
+wizcmds.c	size_obj	size_monst	false
 wizcmds.c	wiz_flip_level	flip_level	true
 wizcmds.c	wiz_flip_level	flip_level_rnd	true
 wizcmds.c	wiz_fuzzer	paranoid_query	true
@@ -480,6 +484,7 @@ wizcmds.c	wiz_makemap	makemap_prepost	false;true
 wizcmds.c	wiz_map	map_engraving	true
 wizcmds.c	wiz_map	map_trap	true
 wizcmds.c	wiz_panic	paranoid_query	true
+wizcmds.c	wiz_show_stats	obj_chain	false;false;false;true;true
 wizcmds.c	wiz_where	print_dungeon	false
 worm.c	worm_move	mcalcmove	false
 worn.c	extract_from_minvent	update_mon_extrinsics	false

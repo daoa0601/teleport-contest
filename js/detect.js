@@ -1829,8 +1829,9 @@ async function showHeroUnlessCovered(shown, state) {
 export async function clearDetectionMap(_state = game) {
     await cls();
 }
-// C you.h:u_at(): state-aware form for callers that run against either the
-// live game or a focused unit state.
+// Part of C you.h:u_at(): state-aware form for callers that run against
+// either the live game or a focused unit state (const.ts u_at() is the
+// global read).
 function atHero(x, y, state) { return x === state.u.ux && y === state.u.uy; }
 // Part of C detect.c:display_trap_map(): the ftrap walk.
 function floorTraps(state) { return [...(state.level.traps || [])].reverse(); }

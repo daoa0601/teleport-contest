@@ -1,7 +1,7 @@
 // Predicates derived from NetHack's object table.
 // C refs: include/obj.h.
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS, ARM_SHIELD, ARM_HELM, ARM_BOOTS, ARM_GLOVES, ARM_CLOAK, ARM_SHIRT, ARM_SUIT } from './objclass.js';
-import { objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
+import { objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TALLOW_CANDLE, WAX_CANDLE, TIN_OPENER, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
 import { artifactById } from './artifact.js';
 import { objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD, P_SHURIKEN, P_SPEAR, } from './const.js';
@@ -152,6 +152,10 @@ export function isBlade(object) {
 // C obj.h:is_wet_towel().
 export function isWetTowel(object) {
     return object?.otyp === TOWEL && (object.spe ?? 0) > 0;
+}
+// C obj.h:Is_candle().
+export function isCandle(object) {
+    return object?.otyp === TALLOW_CANDLE || object?.otyp === WAX_CANDLE;
 }
 // C obj.h:is_pole().
 // Snickersnee has the same reach as a polearm despite being a katana.

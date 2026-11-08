@@ -187,7 +187,7 @@ import type { ErosionKind, ErosionResult, ErosionOptions } from './trap.js';
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './invent.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
-import { drainHeroWeaponSkills, dryTowel, ensureHeroSkills, heroAttackBonus, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, specialContactDamage, showHeroSilverContact, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, useHeroSkill, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './weapon.js';
+import { drainHeroWeaponSkills, dryTowel, ensureHeroSkills, heroAttackBonus, heroStrengthDamageBonus, monsterWieldedWeapon, proficiency, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, specialContactDamage, showHeroSilverContact, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, useHeroSkill, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './weapon.js';
 import { applyHeroWereChange, isHumanWereMonster, isWereMonster, revertHeroWereForm, setHeroLycanthropy, wereChange } from './were.js';
 import { isTwoWeaponObject, setPrimaryWeapon, setTwoWeaponCombat, uwepgone } from './wield.js';
 import { cutWorm } from './worm.js';
@@ -896,17 +896,10 @@ interface BarehandMessageOptions {
     state?: GameState;
 }
 
-// C skills.h:P_SKILL(): the skill's current proficiency level, validated
-// against the initialized role skill table.
-function requiredHeroSkill(state: GameState, skill: number): HeroSkill {
-    const entry = ensureHeroSkills(state)?.[skill];
-    if (!entry) throw new Error(`Hero combat requires initialized skill ${skill}.`);
-    return entry;
-}
 
 // C skills.h P_SKILL(P_BARE_HANDED_COMBAT).
 export function barehandSkill(state: GameState = game): number {
-    return requiredHeroSkill(state, P_BARE_HANDED_COMBAT).skill;
+    return proficiency(P_BARE_HANDED_COMBAT, state);
 }
 
 // C skills.h:martial_bonus()

@@ -26,7 +26,8 @@ import {
     MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE,
     SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR,
     VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, ARM, EYE, FINGER, FINGERTIP, FOOT, G_GENOD,
-    HAIR, HAND, HANDED, HEAD, I_SPECIAL, In_endgame, LEG, M_AP_NOTHING, M_AP_OBJECT, NECK, NO_PART, NOSE,
+    HAIR, HAND, HANDED, HEAD, I_SPECIAL, In_endgame, Is_airlevel, Is_waterlevel, LEG, M_AP_NOTHING,
+    M_AP_OBJECT, NECK, NO_PART, NOSE,
     STR18, STR19, TOE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd,
     POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE,
     STRANGE_OBJECT, LL_CONDUCT, LL_MINORAC,
@@ -63,7 +64,7 @@ import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroS
 import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { newuhs } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { levelHasCeiling, surfaceName, sameDungeonLevel, isAirLevel, isWaterLevel } from './dungeon.js';
+import { levelHasCeiling, surfaceName, sameDungeonLevel } from './dungeon.js';
 import { heroHidingStatus } from './insight.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
@@ -124,7 +125,8 @@ import { objectLightRadius, registerHeroFormLightSource } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
 import {
     nameToMonster, resolveMonsterClass, heroCanBeStrangled, your_race, monsterIsMindless, infravision, is_dwarf,
-    is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, monsterBreaksArmor, monsterCanTeleport,
+    is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, likes_lava, monsterBreaksArmor,
+    monsterCanTeleport,
     monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasNoLimbs,
     monsterHasProperName, monsterHidesUnder, monsterHornCount, monsterIsAmorphous, monsterIsAmphibious,
     monsterIsAnimal, monsterIsBat, monsterIsBreathless, monsterIsCentaur, monsterIsClinger, monsterIsDemon,
@@ -257,17 +259,17 @@ export function heroIsFlying(state = game) {
     return !!state.u?.flying;
 }
 
-// C mondata.h:is_clinger(gy.youmonst.data).
+// Part of C mondata.h:is_clinger(): the hero form (gy.youmonst.data).
 export function heroFormClings(state = game) {
     return monsterIsClinger(heroMonsterForm(state) ?? -1);
 }
 
-// C mondata.h:hides_under(gy.youmonst.data).
+// Part of C mondata.h:hides_under(): the hero form (gy.youmonst.data).
 export function heroFormHidesUnderObjects(state = game) {
     return monsterHidesUnder(heroMonsterForm(state) ?? -1);
 }
 
-// C mondata.h:is_hider(gy.youmonst.data).
+// Part of C mondata.h:is_hider(): the hero form (gy.youmonst.data).
 export function heroFormHidesWithoutCover(state = game) {
     return monsterIsHider(heroMonsterForm(state) ?? -1);
 }
@@ -283,23 +285,23 @@ export function heroHidesOnCeiling(state = game) {
         || (heroFormClings(state) && MONSTER_SYMBOL[form] !== S_MIMIC);
 }
 
-// C mondata.h:nohands(gy.youmonst.data).
+// Part of C mondata.h:nohands(): the hero form (gy.youmonst.data).
 export function heroHasNoHands(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && monsterHasNoHands(form);
 }
 
-// C mondata.h:notake(gy.youmonst.data).
+// Part of C mondata.h:notake(): the hero form (gy.youmonst.data).
 export function heroCannotTake(state = game) {
     return notake(heroMonsterForm(state) ?? -1);
 }
 
-// C mondata.h:nolimbs(gy.youmonst.data).
+// Part of C mondata.h:nolimbs(): the hero form (gy.youmonst.data).
 export function heroHasNoLimbs(state = game) {
     return monsterHasNoLimbs(heroMonsterForm(state) ?? -1);
 }
 
-// C mondata.h:verysmall(gy.youmonst.data).
+// Part of C mondata.h:verysmall(): the hero form (gy.youmonst.data).
 export function heroIsVerySmall(state = game) {
     const form = heroMonsterForm(state);
     return form !== null && monsterIsVerySmall(form);
@@ -523,15 +525,10 @@ export function heroPassesWalls(state: GameState = game) {
     return !!state.u.passesWalls;
 }
 
-const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
-const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
-
-// C mondata.h:likes_lava(gy.youmonst.data): fire elementals and salamanders.
+// Part of C mondata.h:likes_lava(): the hero form (gy.youmonst.data);
+// fire elementals and salamanders.
 export function heroLikesLava(state: GameState = game) {
-    const hero = state.u;
-    if (!Upolyd(hero)) return false;
-    return hero.umonnum === PM_FIRE_ELEMENTAL
-        || hero.umonnum === PM_SALAMANDER;
+    return likes_lava(heroMonsterForm(state) ?? -1);
 }
 
 // C mondata.h:flaming(): the hero form's burning body.
@@ -3090,7 +3087,7 @@ export async function useHeroHide({
         return { used: true, spentTime: false, reason: 'no-ceiling' };
     }
     if (!ability.flying && heroFormHidesWithoutCover(state)
-        && (isAirLevel(state) || isWaterLevel(state))) {
+        && (Is_airlevel(state.u.uz, state) || Is_waterlevel(state.u.uz, state))) {
         state.u.uundetected = 0;
         await publish('There is nowhere to hide beneath you.');
         return { used: true, spentTime: false, reason: 'no-floor' };

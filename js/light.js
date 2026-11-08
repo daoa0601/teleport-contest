@@ -334,10 +334,11 @@ export function discardFlashes(state = game) {
     delete state._transientLights;
     state.vision_full_recalc = 1;
 }
-// C light.c:new_light_source() prepends to light_base, so each lighting
-// gives the object the newest slot in the list order that snuff searches.
-// Also C light.c:new_light_core(): new_light_source() is only a thin
-// wrapper around this core.
+// Part of C light.c:new_light_source(): the LS_OBJECT registration stamp.
+// new_light_source() prepends to light_base, so each lighting gives the
+// object the newest slot in the list order that snuff searches.
+// new_light_core(): new_light_source() is only a thin wrapper around the
+// core.
 export function registerObjectLightSource(object, state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;
@@ -345,17 +346,17 @@ export function registerObjectLightSource(object, state) {
     const location = getObjectLocation(object, state, { contained: true, buried: true });
     object._lightPosition = { x: location?.x ?? 0, y: location?.y ?? 0, show: false };
 }
-// C light.c:new_light_source() for monster sources: makemon.c:1349 registers
-// a light-emitting newborn, makemon.c:900 its clone, and mon.c:2541/5404 a
-// replacement form that emits light.  The stamp shares the object serial so
-// the #lightsources order and the at-hero LSF_SHOW pass follow native
-// registration order.
+// Part of C light.c:new_light_source(): the LS_MONSTER registration stamp.
+// makemon.c:1349 registers a light-emitting newborn, makemon.c:900 its clone,
+// and mon.c:2541/5404 a replacement form that emits light.  The stamp shares
+// the object serial so the #lightsources order and the at-hero LSF_SHOW pass
+// follow native registration order.
 export function registerMonsterLightSource(monster, state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     monster._lightSeq = state._lightSerial;
     monster._lightPosition = { x: monster.mx, y: monster.my, show: false };
 }
-// C light.c:new_light_source() for the hero's shape light
+// Part of C light.c:new_light_source(): the hero's shape light
 // (polyself.c:726-731).
 export function registerHeroFormLightSource(state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;

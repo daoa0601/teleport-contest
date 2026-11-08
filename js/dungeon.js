@@ -730,14 +730,6 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
 export function sameDungeonLevel(left, right) {
     return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
-// C dungeon.c:on_level(): the Is_airlevel comparison.
-export function isAirLevel(state) {
-    return sameDungeonLevel(state.u.uz, state.air_level);
-}
-// C dungeon.c:on_level(): the Is_waterlevel comparison.
-export function isWaterLevel(state) {
-    return sameDungeonLevel(state.u.uz, state.water_level);
-}
 // C dungeon.c:Is_branchlev(). A hero whose level is not yet placed matches
 // no branch, rather than the dungeon origin.
 export function is_branchlev(lev, state = game) {

@@ -160,7 +160,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_
 import type { Monster } from './monster_types.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import {
-    isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject,
+    isAxe, isCandle, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject,
 } from './object_properties.js';
 import type { GameObject, ObjectWhere } from './object_types.js';
 import {
@@ -1248,10 +1248,6 @@ function result(object: GameObject | null, state: GameState): AppliedLightResult
     return { spentTime: true, heroDied: !!state.program_state?.gameover, object };
 }
 
-// C obj.h:Is_candle()
-function isCandle(object: GameObject) {
-    return object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
-}
 
 // Part of C apply.c:use_lamp(): the Shk_Your() capitalized pronoun
 // prefix of the lamp on/off messages.
@@ -1486,7 +1482,7 @@ export async function snuffCandle(
     object: GameObject, state: GameState = game,
     publish: MessagePublisher = plineWithContinuation,
 ): Promise<boolean> {
-    const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
+    const candle = isCandle(object);
     if ((!candle && object.otyp !== CANDELABRUM_OF_INVOCATION) || !object.lamplit)
         return false;
     const many = candle ? object.quan > 1 : object.spe > 1;
@@ -1573,7 +1569,7 @@ export async function splashLitObject(object: GameObject | null | undefined, pub
     const visible = object.where === 'minvent'
         ? !!position && cansee(position.x, position.y) : !heroIsBlind(state);
     if (visible) {
-        const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
+        const candle = isCandle(object);
         if (candle || object.otyp === CANDELABRUM_OF_INVOCATION) {
             const many = candle ? object.quan > 1 : object.spe > 1;
             await publish(`${objectOwnershipPrefix(object, state, { capitalized: true })}${

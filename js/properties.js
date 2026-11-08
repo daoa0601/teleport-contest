@@ -12,8 +12,9 @@ const movementProperties = ['levitation', 'flying', 'swimming', 'stealth'];
 export function propertyTimeout(property, state = game) {
     return state.u[PROPERTY_TIMEOUT_FIELDS[property]] ?? 0;
 }
-// C you.h:u.uprops[prop] lvalue: the property's struct prop slot, which the
-// port materializes on first write instead of pre-allocating LAST_PROP slots.
+// Part of C you.h:u.uprops[prop]: the lvalue that the port materializes on
+// first write instead of pre-allocating LAST_PROP slots;
+// existingPropertyRecord() is the plain read.
 function propertyRecord(property, state = game) {
     const hero = state.u;
     if (!hero._propertySources)

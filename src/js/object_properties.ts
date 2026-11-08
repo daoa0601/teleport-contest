@@ -5,7 +5,7 @@ import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS, ARM_SHIEL
 import {
     objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS,
     FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN,
-    TIN_OPENER, TOWEL,
+    TALLOW_CANDLE, WAX_CANDLE, TIN_OPENER, TOWEL,
     ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS,
     ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE,
 } from './object_data.js';
@@ -202,6 +202,11 @@ export function isBlade(object: WeaponCandidate): boolean {
 // C obj.h:is_wet_towel().
 export function isWetTowel(object: WeaponCandidate): boolean {
     return object?.otyp === TOWEL && (object.spe ?? 0) > 0;
+}
+
+// C obj.h:Is_candle().
+export function isCandle(object: ObjectCandidate): boolean {
+    return object?.otyp === TALLOW_CANDLE || object?.otyp === WAX_CANDLE;
 }
 // C obj.h:is_pole().
 // Snickersnee has the same reach as a polearm despite being a katana.

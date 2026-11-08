@@ -692,7 +692,7 @@ export async function uqwepgone(state: GameState = game): Promise<void> {
 // C refs: wield.c can_twoweapon(), dotwoweapon(), drop_uswapwep(),
 // untwoweapon().
 
-// C mondata.h:could_twoweap() applied to the hero's current form
+// Part of C mondata.h:could_twoweap(): applied to the hero's current form
 // (gy.youmonst.data); wield.c:765, worn.c:462, polyself.c:252,1358 and
 // iactions.c:677 test could_twoweap(youmonst.data) directly.
 // Two-weapon anatomy follows the current body, independent of equipment.

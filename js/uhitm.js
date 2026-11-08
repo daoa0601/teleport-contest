@@ -89,7 +89,7 @@ import { damageObjectWithAcid, erodeObject, mintrap, heroIsUnconscious, igniteIt
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './invent.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
-import { drainHeroWeaponSkills, dryTowel, ensureHeroSkills, heroAttackBonus, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, specialContactDamage, showHeroSilverContact, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, useHeroSkill, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './weapon.js';
+import { drainHeroWeaponSkills, dryTowel, ensureHeroSkills, heroAttackBonus, heroStrengthDamageBonus, monsterWieldedWeapon, proficiency, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, specialContactDamage, showHeroSilverContact, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, useHeroSkill, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './weapon.js';
 import { applyHeroWereChange, isHumanWereMonster, isWereMonster, revertHeroWereForm, setHeroLycanthropy, wereChange } from './were.js';
 import { isTwoWeaponObject, setPrimaryWeapon, setTwoWeaponCombat, uwepgone } from './wield.js';
 import { cutWorm } from './worm.js';
@@ -665,17 +665,9 @@ export async function resolveHeroWeaponHit(monster, x, y, weapon, { attack, hit,
         await cutWorm(monster, x, y, sliceOrChop);
     return { ...result, hit: true };
 }
-// C skills.h:P_SKILL(): the skill's current proficiency level, validated
-// against the initialized role skill table.
-function requiredHeroSkill(state, skill) {
-    const entry = ensureHeroSkills(state)?.[skill];
-    if (!entry)
-        throw new Error(`Hero combat requires initialized skill ${skill}.`);
-    return entry;
-}
 // C skills.h P_SKILL(P_BARE_HANDED_COMBAT).
 export function barehandSkill(state = game) {
-    return requiredHeroSkill(state, P_BARE_HANDED_COMBAT).skill;
+    return proficiency(P_BARE_HANDED_COMBAT, state);
 }
 // C skills.h:martial_bonus()
 export function heroUsesMartialArts(state = game) {
