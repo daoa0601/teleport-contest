@@ -88,8 +88,10 @@ function selectionValue(value: LuaValue | undefined, argument = 1): SpecialSelec
     return value.value;
 }
 
-// Part of C nhlsel.c:l_selection_push_copy(): copy one selection's fields
-// into another.
+// Part of C nhlsel.c:l_selection_clone(): the two-argument form's copy into
+// the second slot — C's "*tmp = *sel; tmp->map = dupstr(sel->map)".
+// (l_selection_push_copy(), the userdata-creating form its filter callers
+// use, has no port site yet; wrap() plays the userdata role at each method.)
 function copySelectionInto(target: SpecialSelection, source: SpecialSelection): void {
     const copy = source.clone().selection;
     target.selection.wid = copy.wid;

@@ -9,7 +9,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 
 import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
-import { bonesLevelExists } from '../js/bones.js';
+import { openBonesFile } from '../js/novel_tribute.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, DAGGER, GOLD_PIECE, POT_HEALING, SACK } from '../js/object_data.js';
 import { loadScoreRecords } from '../js/topten.js';
@@ -209,7 +209,7 @@ void test('ascension uses death-style shop settlement before the reward summary'
     assert.equal(disclosed, true);
     assert.equal(sawSummary, true);
     assert.equal(dagger.where, 'inventory', 'Ascension does not drop possessions into bones');
-    assert.equal(bonesLevelExists(), false);
+    assert.equal(openBonesFile(), null);
     const record = loadScoreRecords(state)[0];
     assert.ok(record, 'Ascension must save a score record');
     assert.equal(record.outcome, 'ascended');
@@ -252,7 +252,7 @@ void test('quitting with fatal HP settles as death without another death or reco
     assert.ok(state.inventory.includes(amulet), 'Quit conversion cannot consume a life-saving amulet');
     assert.equal(shopkeeper.eshk.robbed, 0);
     assert.equal(heroGoldAmount(state), 23);
-    assert.equal(bonesLevelExists(), false);
+    assert.equal(openBonesFile(), null);
     assert.equal(floorObjectsAt(level, 24, 10).some(object => object.otyp === CORPSE), false);
     const record = loadScoreRecords(state)[0];
     assert.ok(record, 'A quit on fatal HP must record the converted death');
@@ -301,7 +301,7 @@ void test('a death summary counts loose and contained gold before bones removes 
     assert.equal(died, true);
     assert.equal(askedToSaveBones, true);
     assert.equal(sawSummary, true);
-    assert.equal(bonesLevelExists(), true, 'The test must complete a real bones save');
+    assert.equal(openBonesFile() != null, true, 'The test must complete a real bones save');
     assert.equal(state.inventory.length, 0);
     assert.ok(floorObjectsAt(level, 24, 10).includes(purse));
     assert.ok(floorObjectsAt(level, 24, 10).includes(bag));
@@ -377,7 +377,7 @@ for (const lifeSaving of [false, true]) {
         assert.equal(sawFailedRescue, lifeSaving);
         assert.equal(state.program_state.gameover, true);
         assert.equal(state.u.umortality, 1, 'Failed life saving does not count a second death');
-        assert.equal(bonesLevelExists(), false);
+        assert.equal(openBonesFile(), null);
         assert.equal(dagger.where, 'inventory');
         assert.ok(state.inventory.includes(dagger));
         assert.equal(floorObjectsAt(level, 24, 10).some(object => object.otyp === CORPSE), false);

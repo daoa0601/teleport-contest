@@ -146,7 +146,10 @@ export class LuaLifecycle {
             this.unavailableHooks.add('leave_tutorial');
         }
     }
-    // C nhl_callback() stores names in the persistent core, even when the
+    // C nhlua.c:nhl_callback(): register or remove one named callback —
+    // the argc 2/3 shapes, nhcb_name[] membership, the count fix, and the
+    // negative-count report returned to the nh.callback binding for its
+    // impossible(). Names stay in the persistent core, even when the
     // registration comes from a temporary level-generation Lua state.
     registerCallback(args) {
         if (!this.core)

@@ -1317,6 +1317,8 @@ dragon_armor_handling	make_hallucinated
 dragon_armor_handling	see_monsters
 drain_en	rnd
 drain_item	bot
+drain_item	defends
+drain_item	defends_when_carried
 drain_weapon_skill	rn2
 drinkfountain	adjattrib
 drinkfountain	dofindgem
@@ -2038,6 +2040,7 @@ invert_all	invert_all_on_page
 invert_all	menuitem_invert_test
 invert_all_on_page	menuitem_invert_test
 invert_all_on_page	set_item_state
+invocation_message	nomul
 invoke_banish	isok
 invoke_banish	rn2
 invoke_blinding_ray	flashburn
@@ -4354,6 +4357,7 @@ throne_sit_effect	rndcurse
 throne_sit_effect	special_throne_effect
 throne_sit_effect	tele
 throne_sit_effect	yn_function
+throw_gold	acurrstr
 throw_gold	ceiling
 throw_gold	closed_door
 throw_gold	isok
@@ -4361,6 +4365,7 @@ throw_gold	newsym
 throw_gold	ship_object
 throw_gold	surface
 throw_obj	acurr
+throw_obj	acurrstr
 throw_obj	encumber_msg
 throw_obj	getdir
 throw_obj	instapetrify
@@ -4422,6 +4427,7 @@ trap_description	trapname
 trap_detect	display_trap_map
 trap_detect	strange_feeling
 trapeffect_anti_magic	d
+trapeffect_anti_magic	defends_when_carried
 trapeffect_anti_magic	losehp
 trapeffect_anti_magic	newsym
 trapeffect_anti_magic	rnd
