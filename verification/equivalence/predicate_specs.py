@@ -215,13 +215,11 @@ PREDICATE_SPECS += [
 # rm.h/trap.h pinned codes: VWALL 1, DBWALL 12, POOL 16, DOOR 23, SDOOR 14,
 # PIT 11, SPIKED_PIT 12, HOLE 13, TRAPDOOR 14.
 TERRAIN_ASSUMPTIONS = (
-    'rm.h: levl[][].typ holds the levl_typ_types codes and trap.h ttyp the trap_types codes; both are stored in signed chars, so the claims cover every schar value (is_pit/is_hole over every int, as their ports take a bare number)',
+    'rm.h: levl[][].typ holds the levl_typ_types codes and trap.h ttyp the trap_types codes; both are stored in signed chars, so the claims cover every schar value (is_pit/is_hole over every int, as their ports take a bare number), except IS_WALL, which additionally assumes the stored code is non-negative: C\'s truthiness test accepts negative typ values and the port\'s VWALL lower bound does not',
 )
 
 
-def terrain_spec(name, harness, port, param, pre, probes, mutant_pre, old, new,
-                 pin):
-    del pin
+def terrain_spec(name, harness, port, param, pre, probes, mutant_pre, old, new):
     return Spec(f'{name}:terrain', harness, port, param, js_file=CONST,
                 assumptions=TERRAIN_ASSUMPTIONS, require_counterexamples=True,
                 pre=pre, probes=probes, mutant_pre=mutant_pre,
@@ -240,27 +238,26 @@ PREDICATE_SPECS += [
           lambda s: [s['typ'] == -1])],
         lambda s: [s['typ'] == 12],
         'return typ >= VWALL && typ <= DBWALL;',
-        'return typ >= VWALL && typ < DBWALL;', None),
+        'return typ >= VWALL && typ < DBWALL;'),
     terrain_spec(
         'IS_OBSTRUCTED', 'verification_IS_OBSTRUCTED', 'IS_OBSTRUCTED',
         [('typ', SCHAR)], lambda s: [], [], lambda s: [s['typ'] == 16],
         OBSTRUCTED_ANCHOR,
-        OBSTRUCTED_ANCHOR[:-len('return typ < POOL;')] + 'return typ <= POOL;',
-        None),
+        OBSTRUCTED_ANCHOR[:-len('return typ < POOL;')] + 'return typ <= POOL;'),
     terrain_spec(
         'IS_DOOR', 'verification_IS_DOOR', 'IS_DOOR', [('typ', SCHAR)],
         lambda s: [], [], lambda s: [s['typ'] == 23],
-        'return typ === DOOR;', 'return typ === SDOOR;', None),
+        'return typ === DOOR;', 'return typ === SDOOR;'),
     terrain_spec(
         'is_pit', 'verification_is_pit', 'is_pit', [('ttyp', INT)],
         lambda s: [], [], lambda s: [s['ttyp'] == 12],
         'return ttyp === PIT || ttyp === SPIKED_PIT;',
-        'return ttyp === PIT;', None),
+        'return ttyp === PIT;'),
     terrain_spec(
         'is_hole', 'verification_is_hole', 'is_hole', [('ttyp', INT)],
         lambda s: [], [], lambda s: [s['ttyp'] == 14],
         'return ttyp === HOLE || ttyp === TRAPDOOR;',
-        'return ttyp === HOLE || ttyp === TRAPDOOR + 1;', None),
+        'return ttyp === HOLE || ttyp === TRAPDOOR + 1;'),
 ]
 
 
@@ -273,7 +270,7 @@ MAX_MON_INV = 2
 
 FIND_MAC_ASSUMPTIONS = (
     'worn.c:find_mac: monster.data points to mons[species]; emitted mnum equals species; the emitted MONSTER_EXPERIENCE_META base AC is the mons[].ac column',
-    'worn.c:m_dowear_type: monsters only put armor-class rows and amulets into their worn bits, and weapons never carry one (weapon.c:885 sets mon->mw without a mask and setmnotwielded clears W_WEP), so every item counted by the owornmask/misc_worn_check test outside the armor interval has a zero a_ac; the domain restriction below encodes that by excluding the non-armor rows with a nonzero oc_oc1 from being counted',
+    'worn.c:m_dowear_type: mon->misc_worn_check never gains the W_WEP bit — its only writers are the armor/amulet flags of m_dowear_type (worn.c:970), W_SADDLE (steed.c:159), I_SPECIAL (mon.c:5917) and W_ARMF (trap.c:2512) — although weapon.c:929 sets owornmask W_WEP on every successful monster wield, so the owornmask & misc_worn_check test at worn.c:724 never counts a wielded weapon; every other class a monster can wear into those bits (armor, amulets, the saddle) has a zero a_ac outside the armor class, and the domain restriction below encodes that by excluding the non-armor-class rows with a nonzero oc_oc1 from being counted',
     'objects.c:objects_globals_init: the native objects[] table and the emitted a_ac column (OBJECT_HIT_BONUS, the oc_oc1 alias) retain their initial values; hack.h ARM_BONUS reads objects[otyp].a_ac for every worn item class',
     'obj.h owornmask and monst.h misc_worn_check are longs whose reachable worn bits stay inside a signed int32; the port reads them with a JS 32-bit &, so the claim keeps every modeled mask in 0..2^31-1',
     'the monster inventory is an acyclic nobj chain of length 0..2 with the same order and length as the emitted minvent array; otyp stays inside both object tables; spe is a signed char and both erosion bitfields are 0..3',
@@ -281,21 +278,33 @@ FIND_MAC_ASSUMPTIONS = (
 
 
 def nonarmor_with_bonus(world, front, modules):
-    """The otyps outside the armor interval whose oc_oc1 is nonzero, from the
-    emitted a_ac column; both tables' equality over every otyp is the
-    object_armor_ac:tables claim."""
+    """The otyps outside the armor class whose oc_oc1 is nonzero, from the
+    emitted class and a_ac columns; both tables' equality over every otyp is
+    the object_class:tables and object_armor_ac:tables claims."""
     del front
-    table = module_constant(world, modules, 'js/object_data.js',
+    bonus = module_constant(world, modules, 'js/object_data.js',
                             'OBJECT_HIT_BONUS')
-    if table.kind != 'array':
-        raise Unsupported('a_ac column is not an array')
+    classes = module_constant(world, modules, 'js/object_data.js',
+                              'OBJECT_CLASS')
+    armor = module_constant(world, modules, 'js/objclass.js', 'ARMOR_CLASS')
+    if bonus.kind != 'array' or classes.kind != 'array':
+        raise Unsupported('a_ac or class column is not an array')
+    if armor.kind != 'num' or not z3.is_int_value(z3.simplify(armor.v)):
+        raise Unsupported('armor class constant is not a fixed number')
+    armor_class = z3.simplify(armor.v).as_long()
+    if len(classes.v) != len(bonus.v):
+        raise Unsupported('class and a_ac columns disagree in length')
     out = []
-    for index, value in enumerate(table.v):
+    for index, (row_class, value) in enumerate(zip(classes.v, bonus.v)):
         number = z3.simplify(value.v) if value.kind == 'num' else None
-        if number is None or not z3.is_int_value(number):
-            raise Unsupported(f'a_ac row {index} is not a fixed number')
-        if (index < 89 or index > 172) and number.as_long() != 0:
+        row = z3.simplify(row_class.v) if row_class.kind == 'num' else None
+        if number is None or row is None \
+                or not z3.is_int_value(number) or not z3.is_int_value(row):
+            raise Unsupported(f'row {index} of the class or a_ac column is not a fixed number')
+        if row.as_long() != armor_class and number.as_long() != 0:
             out.append(index)
+    if not out:
+        raise Unsupported('no non-armor-class row has a nonzero oc_oc1')
     return out
 
 def find_mac_state(world, front, modules):
@@ -317,10 +326,11 @@ def find_mac_state(world, front, modules):
         world.c_globals[f'mon_invent[{i}].nobj'] = CPtr(
             length > i + 1, CElement('mon_invent', z3.IntVal(i + 1)))
     world.c_globals[f'mon_invent[{MAX_MON_INV - 1}].nobj'] = CPtr(False)
-    # The non-armor rows whose oc_oc1 is nonzero (weapons and tools); C's
-    # worn-bit test never counts them for a monster, so the domain excludes
-    # them from the counted set and the port's armor-interval guard stays
-    # unreachable-different rather than reachable.
+    # The non-armor-class rows whose oc_oc1 is nonzero (weapons and tools):
+    # misc_worn_check never carries their worn bits, so C's owornmask &
+    # misc_worn_check test never counts them for a monster; the domain
+    # excludes them from the counted set and the port's armor-class guard
+    # stays unreachable-different rather than reachable.
     counted_bad = nonarmor_with_bonus(world, front, modules)
     worn = world.c_state['monster.misc_worn_check'][0]
     records = []

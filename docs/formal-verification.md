@@ -1047,7 +1047,7 @@ trap type, and worn.c's `find_mac()` over one modeled monster.
 | `IS_DOOR:terrain` | `rm.h:IS_DOOR` ↔ `const.js:IS_DOOR` | Every schar | 1×1 | 1.8 s |
 | `is_pit:terrain` | `trap.h:is_pit` ↔ `const.js:is_pit` | Every int32 ttyp | 2×2 | 1.8 s |
 | `is_hole:terrain` | `trap.h:is_hole` ↔ `const.js:is_hole` | Every int32 ttyp | 2×2 | 1.8 s |
-| `find_mac:state` (slow) | `worn.c:find_mac` ↔ `worn.js:findMonsterArmorClass` | Modeled monster: valid species base AC, symbolic misc_worn_check, 0..2 item chains with otyp/owornmask/spe/erosion; counted items outside the armor interval are exactly the rows with a zero a_ac | 1×1 per chain partition | 20.6 s |
+| `find_mac:state` (slow) | `worn.c:find_mac` ↔ `worn.js:findMonsterArmorClass` | Modeled monster: valid species base AC, symbolic misc_worn_check, 0..2 item chains with otyp/owornmask/spe/erosion; counted items outside the armor class are exactly the rows with a zero a_ac | 1×1 per chain partition | 20.6 s |
 
 The species claims follow the flag-owner batch's entry relation; each kills
 one emitted-JavaScript mutant pinned to a species where the predicate is
@@ -1062,15 +1062,20 @@ const.js owners over the stored schar codes.
 `find_mac` needed the modeled-monster inventory relation of
 `resists_magm` plus the hero-side erosion fields. An earlier unrestricted
 domain produced a counterexample (a wielded grappling hook: C subtracts its
-oc_oc1 4, the port's `armorBaseBonus` armor-interval guard returns 0), but
-that state is unreachable in C: monster wielding is `mon->mw = obj` with no
-worn bit (weapon.c), `setmnotwielded` clears W_WEP, and `m_dowear_type`
-only puts armor-class rows and amulets into the worn bits, all of which
-have a zero a_ac outside the armor interval. The domain restriction states
-this and the port was left unchanged. Three executor extensions carry the
-batch, each with a failing-before test: ordered comparison of two
-table-element pointers, `for...of` over arrays (binding, continue, break),
-and comments inside array literals.
+oc_oc1 4, the port's `armorBaseBonus` armor-class guard returns 0), but
+that state is unreachable in C: weapon.c:929 does set `owornmask = W_WEP`
+on every successful monster wield, yet nothing ever adds W_WEP to
+`mon->misc_worn_check` — its only writers are the armor/amulet flags of
+`m_dowear_type` (worn.c:970), W_SADDLE (steed.c:159), I_SPECIAL
+(mon.c:5917) and W_ARMF (trap.c:2512) — so the `owornmask &
+misc_worn_check` test at worn.c:724 never counts a wielded weapon, and
+every other class a monster can wear into those bits (armor, amulets, the
+saddle) has a zero a_ac outside the armor class. The domain restriction,
+derived from the emitted class column rather than a hard-coded index
+range, states this and the port was left unchanged. Three executor
+extensions carry the batch, each with a failing-before test: ordered
+comparison of two table-element pointers, `for...of` over arrays
+(binding, continue, break), and comments inside array literals.
 
 **Earlier proof runs.**
 
