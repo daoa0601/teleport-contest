@@ -13,6 +13,7 @@ from cfront import CFront
 from csym import CElement, CPtr
 from jssym import V, parse_module
 from prove import REPO, check, recorder_dir
+from core import LoopSpec
 from specs import INT, LONG, Spec
 from state_world import native_table
 
@@ -27,7 +28,8 @@ GLIBC_ASSERT = '''
 class ExecutorTests(unittest.TestCase):
     def compare(self, c, js, *, params=(), pre=lambda s: [], state=(), modules=None,
                 references=(), configure=lambda world, front, modules: None,
-                partitions=None, pairwise_outputs=False, restored_state=(), js_initializer=None):
+                partitions=None, pairwise_outputs=False, restored_state=(), js_initializer=None,
+                loops=None):
         with TemporaryDirectory(prefix='fv-language-', dir=REPO / '.cache') as directory:
             c_file = Path(directory) / 'example.c'
             c_file.write_text(c)
@@ -38,7 +40,8 @@ class ExecutorTests(unittest.TestCase):
             spec = Spec('example', 'example', 'example', list(params), pre=pre,
                         state=list(state), js_file='js/example.js',
                         references=list(references), configure=configure, partitions=partitions,
-                        restored_state=tuple(restored_state), js_initializer=js_initializer)
+                        restored_state=tuple(restored_state), js_initializer=js_initializer,
+                        loops=loops or {})
             return check(spec, CFront(recorder_dir(), [c_file]), parsed, pre,
                          pairwise_outputs=pairwise_outputs)
 
@@ -1481,6 +1484,79 @@ class ExecutorTests(unittest.TestCase):
                         **options, pre=lambda s: [s['a'] >= 0, s['a'] < 4,
                                                   s['b'] >= 0, s['b'] < 4,
                                                   s['present'] == 1])
+
+
+
+    def test_for_of_const_target_is_uninitialized_while_its_collection_evaluates(self):
+        # The const loop binding is in scope, uninitialized, when the
+        # collection expression evaluates: `for (const items of items)`
+        # throws ReferenceError instead of iterating the module array.
+        js = ('const items = [1];\n'
+              'function example() {\n'
+              '    for (const items of items) {\n'
+              '    }\n'
+              '    return 1;\n'
+              '}')
+        self.rejected('int example(void) { return 1; }', js,
+                      reason='read before declaration')
+        js_let = js.replace('const items of', 'let items of')
+        self.rejected('int example(void) { return 1; }', js_let,
+                      reason='read before declaration')
+
+    def test_for_of_target_is_havoced_inside_an_annotated_loop(self):
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    let v = 0;\n'
+              '    while (i < x) {\n'
+              '        for (v of [1]) {\n'
+              '        }\n'
+              '        i = i + 1;\n'
+              '    }\n'
+              '    return v;\n'
+              '}')
+        c = ('int example(int x) { int i = 0, v = 0; '
+             'while (i < x) { v = 1; i = i + 1; } return v; }')
+
+        def invariant(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']),
+                    view['v'] == z3.If(view['i'] == 0, 0, 1)]
+
+        loops = {('js', 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=())}
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=loops)
+        self.equivalent(c, js, **domain)
+
+        # Without the for-of target in the modification scan, the havoc step
+        # leaves the entry value in place and the model computes a wrong
+        # concrete return for x >= 1. An invariant silent about v must leave
+        # the proof open rather than fabricate that value.
+        def silent(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x'])]
+
+        open_loops = {('js', 'example', 0): LoopSpec(
+            silent, lambda view, entry: entry['x'] - view['i'], streams=())}
+        self.rejected(c, js, reason='outputs differ',
+                      params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=open_loops)
+
+    def test_assigned_scan_counts_for_of_targets(self):
+        from jssym import _assigned
+        js = ('function example(x) {\n    let v = 0;\n'
+              '    while (v < x) {\n        for (v of [1]) {\n        }\n    }\n'
+              '    return v;\n}')
+        body = parse_module(js.encode())[0]['example'].child_by_field_name('body')
+        self.assertIn('v', _assigned(body))
+        # const/let targets stay block-scoped inside the loop and must not
+        # be treated as modifications of an enclosing binding.
+        scoped = ('function example(x) {\n    while (x > 0) {\n'
+                  '        for (const q of [1]) {\n        }\n        x = x - 1;\n    }\n'
+                  '    return x;\n}')
+        scoped_body = parse_module(scoped.encode())[0]['example'].child_by_field_name('body')
+        self.assertEqual(_assigned(scoped_body), {'x'})
+
 
 
 if __name__ == '__main__':

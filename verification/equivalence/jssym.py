@@ -189,6 +189,16 @@ def _assigned(node) -> set:
             target = m.child_by_field_name('left')
         elif m.type == 'update_expression':
             target = m.child_by_field_name('argument')
+        elif m.type == 'for_in_statement':
+            # A for...in/for...of target assigns its binding each iteration:
+            # include function-scoped and bare-identifier targets (an
+            # enclosing annotated loop must havoc them); const/let targets
+            # are block-scoped inside this loop and cannot escape it.
+            target, kind = _for_of_binding(m)
+            if kind in ('const', 'let'):
+                continue
+            names.add(target)
+            continue
         else:
             continue
         if target.type != 'identifier':
@@ -562,7 +572,22 @@ class JSExec:
         body = n.child_by_field_name('body')
         outer = set(path.env)
         out = []
-        for p, collection in self.eval(path, n.child_by_field_name('right')):
+        # A const/let loop binding is already in scope, uninitialized, while
+        # the collection expression evaluates: reading the name there is a
+        # ReferenceError. Bracket the evaluation with the frame's
+        # read-before-declaration name so such a read is rejected instead of
+        # resolving an outer or module binding.
+        frame_names = self.local_names[-1] if self.local_names else None
+        fresh_td = kind in ('const', 'let') and frame_names is not None \
+            and name not in frame_names
+        if fresh_td:
+            frame_names.add(name)
+        try:
+            evaluated = self.eval(path, n.child_by_field_name('right'))
+        finally:
+            if fresh_td:
+                frame_names.discard(name)
+        for p, collection in evaluated:
             if collection.kind != 'array':
                 raise Unsupported(f'JavaScript for...of over {collection.kind} at {self.where(n)}')
             live, done = [p], []
