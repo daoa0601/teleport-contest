@@ -1026,9 +1026,9 @@ export function howMonsterSeen(monster) {
         ways |= MONSEEN_WARNMON;
     return ways;
 }
-// C vision.h:couldsee(): state-aware read for callers that run against
-// either the live game or a focused unit state. Focused unit states omit
-// the vision buffer and are treated as unobstructed; live games always
+// Part of C vision.h:couldsee(): state-aware read for callers that run
+// against either the live game or a focused unit state. Focused unit states
+// omit the vision buffer and are treated as unobstructed; live games always
 // carry the current buffer produced by domove/vision_recalc.
 // Terrain browsing can rebuild it while temporarily lifting engulfment.
 export function couldSeeFromHero(state, x, y) {
@@ -1036,11 +1036,11 @@ export function couldSeeFromHero(state, x, y) {
         return true;
     return !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }
-// C vision.h:cansee(): state-aware read for callers that run against either
-// the live game or a focused unit state. vision_recalc never sets IN_SIGHT
-// while the hero is blind, so a state that has not run vision_recalc since
-// the hero was blinded must test the blind fields directly; a state with no
-// vision buffer is treated as in sight.
+// Part of C vision.h:cansee(): state-aware read for callers that run against
+// either the live game or a focused unit state. vision_recalc never sets
+// IN_SIGHT while the hero is blind, so a state that has not run
+// vision_recalc since the hero was blinded must test the blind fields
+// directly; a state with no vision buffer is treated as in sight.
 export function canseeFromHero(state, x, y) {
     if (state === game)
         return cansee(x, y);
