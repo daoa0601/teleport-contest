@@ -1265,7 +1265,7 @@ function attackSkillType(weapon: GameObject | null, state: GameState): number {
 
 // C skills.h:P_SKILL(): the skill's current proficiency level, read through
 // the port's initialized-skill checks.
-function proficiency(skill: number, state: GameState): number {
+export function proficiency(skill: number, state: GameState): number {
     return requiredSkill(initializedSkills(state), skill).skill;
 }
 

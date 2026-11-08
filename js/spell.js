@@ -826,8 +826,10 @@ export function currentSpellKnowledge(spell, state = game) {
         return 0;
     return Math.max(0, spell.know - Math.max(0, state.moves - 1));
 }
-// C skills.h:P_SKILL() over spell.c:spell_skilltype(): the hero's current
-// skill for a spell category.
+// Part of C skills.h:P_SKILL(): P_SKILL(spell_skilltype(otyp)) as used
+// throughout spell.c; before the role table initializes the port reports
+// the restricted level instead of a raw read. weapon.ts proficiency() is
+// the plain P_SKILL() port.
 export function liveSpellSkill(otyp, state = game) {
     const skills = ensureHeroSkills(state);
     return skills?.[spellSkillType(otyp, state)]?.skill ?? P_ISRESTRICTED;

@@ -1120,7 +1120,7 @@ function attackSkillType(weapon, state) {
 }
 // C skills.h:P_SKILL(): the skill's current proficiency level, read through
 // the port's initialized-skill checks.
-function proficiency(skill, state) {
+export function proficiency(skill, state) {
     return requiredSkill(initializedSkills(state), skill).skill;
 }
 // C you.h:martial_bonus(): the Monk and Samurai martial-arts roles.
