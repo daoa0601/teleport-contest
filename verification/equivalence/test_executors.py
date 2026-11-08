@@ -1323,6 +1323,70 @@ class ExecutorTests(unittest.TestCase):
         self.rejected(native, 'function example() { return game.a <= game.b; }',
                       reason='outputs differ', **options)
 
+    def test_for_of_var_binding_survives_the_loop_and_shadows_module_state(self):
+        # `var` is function-scoped: after the loop the binding holds the last
+        # element, and a module-level binding of the same name stays untouched.
+        js = ('const item = 23;\n'
+              'function example(typ) {\n'
+              '    for (var item of [0]) {\n'
+              '    }\n'
+              '    return typ === item;\n'
+              '}')
+        domain = dict(params=[('typ', INT)], pre=lambda s: [s['typ'] >= 0, s['typ'] <= 30])
+        self.equivalent('int example(int typ) { return typ == 0; }', js, **domain)
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      **domain, reason='outputs differ')
+
+    def test_for_of_assignment_to_a_module_binding_is_rejected(self):
+        # A bare assignment target writes module state (`let flag`), which
+        # the executor cannot model; it must refuse rather than bind a local.
+        js = ('let flag = 0;\n'
+              'function example() {\n'
+              '    for (flag of [1]) {\n'
+              '    }\n'
+              '    return flag;\n'
+              '}')
+        self.rejected('int example(void) { return 1; }', js,
+                      reason='for...of writes the non-local binding flag')
+
+    def test_for_of_assignment_to_a_local_binding_assigns_elements(self):
+        js = ('function example(x) {\n'
+              '    let t;\n'
+              '    for (t of [x, x + 1]) {\n'
+              '    }\n'
+              '    return t;\n'
+              '}')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= -5, s['x'] <= 5])
+        self.equivalent('int example(int x) { return x + 1; }', js, **domain)
+
+    def test_ordered_element_comparison_requires_non_null_pointers(self):
+        def pointers(world, front, modules):
+            world.c_globals['rows'] = native_table(world, front,
+                                                   front.files[0], 'rows')
+            a = world.c_state['a'][0]
+            b = world.c_state['b'][0]
+            present = world.c_state['present'][0]
+            world.pre.extend([a >= 0, a < 4, b >= 0, b < 4,
+                              present >= 0, present <= 1])
+            world.c_globals['pa'] = CPtr(True, CElement('rows', a))
+            world.c_globals['pb'] = CPtr(present == 1, CElement('rows', b))
+            world.js_values['game.a'] = V('num', a)
+            world.js_values['game.b'] = V('num', b)
+
+        native = 'static int rows[] = {3, 1, 4, 1}; static int *pa, *pb; ' \
+                 'int example(void) { return pa < pb; }'
+        options = dict(state=[('a', INT, None), ('b', INT, None),
+                              ('present', INT, None)],
+                       configure=pointers)
+        proved, report = self.compare(native, 'function example() { return game.a < game.b; }',
+                                      **options)
+        self.assertFalse(proved, report)
+        self.assertIn('C ordered element comparison with a null pointer', report)
+        self.equivalent(native, 'function example() { return game.a < game.b; }',
+                        **options, pre=lambda s: [s['a'] >= 0, s['a'] < 4,
+                                                  s['b'] >= 0, s['b'] < 4,
+                                                  s['present'] == 1])
+
 
 if __name__ == '__main__':
     unittest.main()

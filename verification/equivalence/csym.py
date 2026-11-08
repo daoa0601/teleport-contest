@@ -1064,6 +1064,14 @@ class CExec:
                         and isinstance(a.key, CElement) and isinstance(b.key, CElement):
                     # Two element pointers into the same immutable table:
                     # array order is element order, as with a fixed array.
+                    # Ordering a null pointer is undefined C behavior, so
+                    # both pointers must be non-null on every path.
+                    self.m.oblige(p, self.truth(a),
+                                  'C ordered element comparison with a null pointer',
+                                  self.where(n))
+                    self.m.oblige(p, self.truth(b),
+                                  'C ordered element comparison with a null pointer',
+                                  self.where(n))
                     self.m.oblige(p, a.key.table == b.key.table,
                                   'C ordered element pointers belong to different tables',
                                   self.where(n))

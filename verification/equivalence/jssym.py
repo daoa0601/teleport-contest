@@ -485,6 +485,10 @@ class JSExec:
         left = n.child_by_field_name('left')
         if left is None and len(n.children) > 2:
             left = n.children[2]
+        declared = False
+        kind = None
+        keywords = [c.type for c in n.children
+                    if not c.is_named and c.type in ('const', 'let', 'var')]
         if left is not None and left.type in ('variable_declaration',
                                               'lexical_declaration'):
             declarators = left.named_children
@@ -494,19 +498,37 @@ class JSExec:
             if name_node.type != 'identifier':
                 raise Unsupported('JavaScript for...of declaration pattern')
             name = name_node.text.decode()
+            declared = True
+            kind = keywords[0] if keywords else 'var'
         elif left is not None and left.type == 'identifier':
             name = left.text.decode()
+            # The declaration keyword sits as an unnamed child of the loop,
+            # not inside the `left` field, for `for (const x of xs)`.
+            if keywords:
+                declared, kind = True, keywords[0]
         else:
             raise Unsupported('JavaScript for...of binding')
-        if name in path.env and any(c.type in ('const', 'let')
-                                    for c in n.children if not c.is_named):
-            raise Unsupported(f'declaration of {name} shadows a binding at {self.where(n)}')
+        if name in path.env:
+            # A const/let binding would shadow the local; a var binding
+            # over a parameter assigns it but over a let is a SyntaxError.
+            # The one-env-per-frame model cannot separate those, so every
+            # declaration colliding with a local is rejected; a bare
+            # assignment target must name a local to be a modeled write.
+            if declared:
+                raise Unsupported(f'for...of declaration of {name} collides with a local binding at {self.where(n)}')
+        elif kind is None:
+            raise Unsupported(f'JavaScript for...of writes the non-local binding {name} at {self.where(n)}')
         body = n.child_by_field_name('body')
         outer = set(path.env)
         out = []
         for p, collection in self.eval(path, n.child_by_field_name('right')):
             if collection.kind != 'array':
                 raise Unsupported(f'JavaScript for...of over {collection.kind} at {self.where(n)}')
+            if declared and kind == 'var':
+                # `var` is function-scoped and hoisted: the binding exists
+                # (undefined) even when the array is empty, and survives the
+                # loop holding the last element.
+                p.env.setdefault(name, UNDEF)
             live, done = [p], []
             for item in collection.v:
                 nxt = []
@@ -527,7 +549,9 @@ class JSExec:
             # A break belongs to this loop; execution continues after it.
             if not p.returned:
                 p.broken = False
-        return _close_scope(outer, out)
+        if declared and kind in ('const', 'let'):
+            return _close_scope(outer, out)
+        return out
 
     def _loop(self, path, n, cond, update):
         body = n.child_by_field_name('body')
