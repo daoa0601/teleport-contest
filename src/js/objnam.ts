@@ -16,7 +16,7 @@ import {
     SPE_NOVEL, requireObjectData, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJ_NAME, oc_nowish, oc_level, EGG,
     GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS,
     CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS,
-    BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL,
+    BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, SHIELD_OF_REFLECTION,
 } from './object_data.js';
 import { game, requireGameLevel } from './gstate.js';
 import { objectProb, objectMaterial, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
@@ -117,6 +117,87 @@ const japaneseItems = new Map<number, string>([
 // C objnam.c:Japanese_item_name().
 export function japaneseItemName(type: number): string | undefined {
     return japaneseItems.get(type);
+}
+
+// C objnam.c:suit_simple_name().
+// Dragon mail and scales carry their category; other suits shorten to
+// "mail"/"jacket" and fall back to "suit".
+export function suitSimpleName(
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'name'>>,
+): string {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    if (/ dragon scale mail$/i.test(actualName)) return 'dragon mail';
+    if (/ dragon scales$/i.test(actualName)) return 'dragon scales';
+    if (/ mail$/i.test(actualName)) return 'mail';
+    if (/ jacket$/i.test(actualName)) return 'jacket';
+    return 'suit';
+}
+
+// C objnam.c:cloak_simple_name().
+// Robe, mummy wrapping, and the smock/apron split for a known alchemy smock.
+export function cloakSimpleName(
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'name' | 'dknown'>>,
+    state: GameState,
+): string {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    if (actualName === 'robe') return 'robe';
+    if (actualName === 'mummy wrapping') return 'wrapping';
+    if (actualName === 'alchemy smock')
+        return objectTypeKnown(object, state) && object.dknown !== false
+            ? 'smock' : 'apron';
+    return 'cloak';
+}
+
+// C objnam.c:helm_simple_name().
+// Soft headgear is a "hat"; everything that protects like the hard-helmet
+// messages is a "helm".
+const SOFT_HEADGEAR: Record<string, true> = {
+    'elven leather helm': true, fedora: true, cornuthaum: true, 'dunce cap': true,
+};
+
+export function helmSimpleName(
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'name'>>,
+): string {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    return SOFT_HEADGEAR[actualName] ? 'hat' : 'helm';
+}
+
+// C objnam.c:gloves_simple_name().
+// Recognized gauntlets keep their name; the search runs over the known
+// type's actual name, else over the description.
+export function glovesSimpleName(
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'name' | 'dknown'>>,
+    state: GameState,
+): string {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    const description = OBJ_DESCR(object.otyp, state) ?? '';
+    const perceivedName = objectTypeKnown(object, state) ? actualName : description;
+    return object.dknown !== false && /gauntlets/i.test(perceivedName)
+        ? 'gauntlets' : 'gloves';
+}
+
+// C objnam.c:boots_simple_name().
+// "Shoes" when the description or a known type name says so.
+export function bootsSimpleName(
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'name' | 'dknown'>>,
+    state: GameState,
+): string {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    const description = OBJ_DESCR(object.otyp, state) ?? '';
+    return object.dknown !== false
+        && (/shoes/i.test(description)
+            || objectTypeKnown(object, state) && /shoes/i.test(actualName))
+        ? 'shoes' : 'boots';
+}
+
+// C objnam.c:shield_simple_name().
+// xname() describes unseen reflection as "smooth".
+export function shieldSimpleName(
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'dknown'>>,
+): string {
+    if (object.otyp === SHIELD_OF_REFLECTION)
+        return object.dknown !== false ? 'silver shield' : 'smooth shield';
+    return 'shield';
 }
 
 // Part of C objnam.c:xname_flags(): its observation prologue (dknown,
@@ -221,6 +302,13 @@ export function fruitRegistry(state: GameState): Fruit[] {
 export function preferredFruitName(state: GameState): string {
     if (state.fruitName === undefined) throw new Error('Preferred fruit has not been initialized');
     return state.fruitName;
+}
+
+// C objnam.c:xname(): xname_flags(obj, CXN_NORMAL), the options-free form
+// every C caller of xname() uses.  objectName() below is xname_flags()
+// itself, with CXN_SINGULAR as its `minimal` option.
+export function xname(object: ObjectNameView, state: GameState = game): string {
+    return objectName(object, state);
 }
 
 // C objnam.c:xname_flags(), entered through its xname() wrapper:
@@ -3168,7 +3256,7 @@ export async function objectDescription(object: GameObject, {
     state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false,
     vagueQuantity = false,
 }: ObjectDescriptionOptions = {}): Promise<string> {
-    let noun = objectName(object, state);
+    let noun = xname(object, state);
     const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
     if (poisoned) noun = noun.slice(9);
     const override = !!(state.iflags.override_ID || object.overrideIdentified);
