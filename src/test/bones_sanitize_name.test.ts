@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { sanitizeName } from '../js/bones_name.js';
+import { sanitizeName } from '../js/bones.js';
 import { game } from '../js/gstate.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 

@@ -38,7 +38,7 @@ import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setw
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { unpunishHero } from './read.js';
 import { hideUnhideMessageTypes } from './message_types.js';
-import { itemReadingText } from './iactions.js';
+import { inventoryActionForObject, itemReadingText } from './iactions.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import {
     killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural,
@@ -93,18 +93,17 @@ import {
     heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem,
 } from './mondata.js';
 import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
-import { panic } from './diagnostics.js';
+import { panic } from './end.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
 import {
     currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill,
     stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer,
     doinvbill,
 } from './shk.js';
-import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';
+import { attachFigurineTimer, endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { objectShedsLight } from './light.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { assertCreatedObject, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { carryObjEffects } from './figurine_timer.js';
 import { heroGoldObject } from './sit.js';
 import { hiddenGold } from './vault.js';
 import { nomul, heroGoldAmount, roomsAt, nearCapacity } from './hack.js';
@@ -112,7 +111,7 @@ import { displayLiquidName, monsterName } from './do_name.js';
 
 import { NO_COLOR } from './terminal.js';
 import type { Monster } from './monster_types.js';
-import type { GameObject } from './object_types.js';
+import type { GameObject, ObjectTimer } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { HeroPossessions } from './hero_types.js';
 import type { GameDisplay } from './game_display.js';
@@ -465,6 +464,15 @@ export type Buc = 'B' | 'U' | 'C' | 'X';
 
 
 const BUC_CHOICES: readonly Buc[] = ['B', 'C', 'U', 'X'];
+// C invent.c:carry_obj_effects()
+// Carrying affects the object: a cursed figurine of a live species arms the
+// fig_transform timer.  The species/dead_species gate and the scheduling
+// are attach_fig_transform_timeout() (timeout.ts:attachFigurineTimer()).
+export function carryObjEffects(object: GameObject | null | undefined, state: GameState = game): ObjectTimer | null {
+    if (object?.otyp !== FIGURINE || !object.cursed) return null;
+    return attachFigurineTimer(object, state);
+}
+
 // C invent.c:count_buc()
 // The B/U/C/X classification of one object: coins follow the goldX
 // option, unknown status stays X.  C's counting loops became the menu
@@ -3096,207 +3104,6 @@ async function inventorySectionsInOrder(
     return [...grouped].map(([heading, items]) => ({ heading, items }));
 }
 
-// Part of C iactions.c:itemactions(): the action-choice window for one
-// item.
-async function showItemActionMenu(item: GameObject) {
-    const repairGold = item.oclass === COIN_CLASS && await checkInventoryGold('item-action');
-    return showChoiceWindow({
-        title: `Do what with ${definiteName(objectCombatName(item))}?`,
-        entries: itemActionEntries(item, game, repairGold),
-    });
-}
-
-// C iactions.c:itemactions()
-// The action-choice entry for one item: the menu window
-// (showItemActionMenu()), the contextual rows (itemActionEntries()), and
-// the selection the caller replays as queued keys.
-export async function inventoryActionForObject(item: GameObject): Promise<InventoryAction | null> {
-    const key = await showItemActionMenu(item);
-    return key === 0 ? null : { key: inventoryActionKey(key), item };
-}
-
-// Part of C iactions.c:itemactions(): the contextual action-menu rows.
-// Also C iactions.c:item_naming_classification(): inlined here
-// Also C iactions.c:ia_addmenu(): keyed action rows are built inline here
-// Also C worn.c:armcat_to_wornmask(): inlined here as armorSlotFor(),
-// using a typed slot name instead of an intermediate numeric mask.
-// Also C worn.c:wearmask_to_obj(): inlined here as the occupied-slot read
-// that supplies the wear action's already-wearing label.
-function itemActionEntries(item: GameObject, state: GameState, repairGold: boolean) {
-    const itemName = simpleObjectName(item, state);
-    const entries: { key: InventoryActionKey; text: string }[] = [];
-    const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
-    const stack = item.quan > 1;
-    const plural = objectNameIsPlural(item, state);
-    const shoot = launcherMatchesAmmo(item, state.uwep);
-    if (item === state.uwep || item === state.uswapwep || item === state.uquiver) {
-        const quivered = item === state.uquiver;
-        const verb = quivered ? 'Quiver' : 'Wield';
-        const action = quivered ? 'un-ready' : 'un-wield';
-        const noun = item.oclass === WEAPON_CLASS || isWeaponTool(item) ? 'weapon' : 'item';
-        entries.push({ key: '-', text: `${verb} '-' to ${action} ${plural ? `these ${noun}s` : `this ${noun}`}` });
-    }
-    const apply = itemApplyText(item, state);
-    if (apply) entries.push({ key: 'a', text: apply });
-    if (item.oclass !== COIN_CLASS && item.dknown && !item.oartifact && item.otyp !== SPE_NOVEL) {
-        const named = !!(item.oextra?.oname || item.oname);
-        entries.push({ key: 'c', text: `${named ? 'Rename or un-name' : 'Name'} ${
-            objectLooksUnique(item, state) ? 'the' : plural ? 'this stack of' : 'this specific'} ${itemName}` });
-    }
-    const callName = state._objectCallNames?.[item.otyp];
-    if (item.dknown && objectTypeCallable(item, state) && (!objectTypeKnown(item, state) || callName)) {
-        const noun = objectLooksUnique(item, state) ? definiteName(itemName, state)
-            : plural ? itemName : makePlural(itemName);
-        entries.push({ key: 'C', text: `${callName ? 'Re-call or un-call' : 'Call'} the type for ${noun}` });
-    }
-    if (!alreadyWorn) entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
-    if (item.otyp === TIN) {
-        const opener = state.uwep?.otyp === TIN_OPENER ? ' with your tin opener' : '';
-        entries.push({ key: 'e', text: `Open ${stack ? 'one of these tins' : 'this tin'}${opener} and eat the contents` });
-    } else if (isEdibleFood(item, state)) {
-        entries.push({ key: 'e', text: `Eat ${stack ? 'one of these' : 'this'}` });
-    }
-    if (item.otyp === TOWEL) {
-        entries.push({ key: 'E', text: 'Wipe the floor with this towel' });
-    } else if (item.otyp === MAGIC_MARKER) {
-        entries.push({ key: 'E', text: 'Scribble graffiti on the floor' });
-    } else if ([WEAPON_CLASS, RING_CLASS, WAND_CLASS, GEM_CLASS].includes(item.oclass)) {
-        const engraves = isBlade(item) || item.oclass === WAND_CLASS
-            || (item.oclass === RING_CLASS || item.oclass === GEM_CLASS) && !!state.objectToughness?.[item.otyp];
-        const verb = engraves ? 'Engrave' : 'Write';
-        const surface = surfaceName(state.u.ux, state.u.uy, state);
-        entries.push({ key: 'E', text: `${verb} on the ${surface} with ${stack ? 'one of these items' : 'this item'}` });
-    }
-    if (item === state.uquiver) {
-        const launcher = shoot && state.uwep
-            ? ` with your wielded ${simpleObjectName(state.uwep, state)}` : '';
-        entries.push({ key: 'f', text: `${shoot ? 'Shoot' : 'Throw'} ${stack ? 'one of these' : 'this'}${launcher}` });
-    }
-    if (item.oclass !== COIN_CLASS || repairGold)
-        entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
-    if (stack && item.oclass !== COIN_CLASS)
-        entries.push({ key: 'I', text: 'Adjust inventory by splitting this stack' });
-    if (state.level?.at(state.u.ux, state.u.uy)?.typ === ALTAR && !state.u.uswallow) {
-        if (item.otyp === CORPSE) entries.push({ key: 'O', text: 'Offer this corpse as a sacrifice at this altar' });
-        else if ([AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(item.otyp))
-            entries.push({ key: 'O', text: 'Offer this amulet as a sacrifice at this altar' });
-    }
-    const keeper = item.unpaid ? currentShopResident(state) : null;
-    if (keeper && shopkeeperInOwnShop(keeper, state))
-        entries.push({ key: 'p', text: `Buy this unpaid ${stack ? 'stack' : 'item'}` });
-    if (!alreadyWorn) {
-        const wear = accessoryActionText(item, state);
-        if (wear) entries.push({ key: 'P', text: wear });
-    }
-    if (item.oclass === POTION_CLASS)
-        entries.push({ key: 'q', text: `Quaff (drink) ${stack ? 'one of these potions' : 'this potion'}` });
-    if ([WEAPON_CLASS, GEM_CLASS].includes(item.oclass) && item !== state.uquiver)
-        entries.push({ key: 'Q', text: `Quiver this ${stack ? 'stack' : 'item'} for easy ${shoot ? 'shooting' : 'throwing'} with 'f'ire` });
-    const reading = itemReadingText(item, state);
-    if (reading) entries.push({ key: 'r', text: reading });
-    if ((item.owornmask ?? 0) & W_ACCESSORY) {
-        const accessory = (item.owornmask ?? 0) & W_AMUL ? 'amulet'
-            : (item.owornmask ?? 0) & W_RING ? 'ring'
-                : (item.owornmask ?? 0) & W_TOOL ? 'eyewear' : 'accessory';
-        entries.push({ key: 'R', text: `Remove this ${accessory}` });
-    }
-    if ([OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN].includes(item.otyp))
-        entries.push({ key: 'R', text: `Rub this ${itemName}` });
-    else if (item.oclass === GEM_CLASS && isGrayStone(item))
-        entries.push({ key: 'R', text: 'Rub something on this stone' });
-    if (!alreadyWorn) {
-        const goldStack = stack && item.otyp === GOLD_PIECE;
-        const quantity = stack ? goldStack ? 'them' : 'one of these' : 'this item';
-        const fireAlias = item === state.uquiver && !goldStack ? " (same as 'f')" : '';
-        entries.push({ key: 't', text: `${shoot ? 'Shoot' : 'Throw'} ${quantity}${fireAlias}` });
-    }
-    if ((item.owornmask ?? 0) & W_ARMOR)
-        entries.push({ key: 'T', text: 'Take off this armor' });
-    if ((isContainer(item) || item.otyp === BAG_OF_TRICKS) && (item.contents?.length || !item.cknown)
-        || item.otyp === HORN_OF_PLENTY && (item.spe > 0 || !item.known))
-        entries.push({ key: 'T', text: 'Tip all the contents out of this container' });
-    if (item.otyp === FAKE_AMULET_OF_YENDOR && !item.known
-        || item.oartifact || objectUnique(item.otyp) || item.otyp === CRYSTAL_BALL)
-        entries.push({ key: 'V', text: 'Try to invoke a unique power of this object' });
-    if (item !== state.uwep && !heroHasNoHands(state) && !heroIsVerySmall(state)) {
-        const weapon = item.oclass === WEAPON_CLASS || isWeaponTool(item)
-            || item.otyp === TOWEL && item.spe > 0 || item.otyp === HEAVY_IRON_BALL;
-        if (weapon) {
-            entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} as your weapon` });
-        } else if (item.otyp === TIN_OPENER) {
-            entries.push({ key: 'w', text: 'Wield the tin opener to easily open tins' });
-        } else if (!alreadyWorn) {
-            entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} in your ${makePlural(body_part(HAND, state))}` });
-        }
-    }
-    if (!alreadyWorn && item.oclass === ARMOR_CLASS) {
-        const slot = armorSlotFor(item.otyp);
-        const worn = slot ? state[slot] : null;
-        entries.push({ key: 'W', text: worn ? `[already wearing ${withIndefiniteArticle(armorSimpleName(worn, state))}]`
-            : 'Wear this armor' });
-    }
-    if (item === state.uwep) entries.push({ key: 'x', text: state.uswapwep
-        ? 'Swap this with your alternate weapon' : 'Ready this as an alternate weapon' });
-    else if (item === state.uswapwep)
-        entries.push({ key: 'x', text: 'Swap this with your main weapon' });
-    if ((item === state.uwep || item === state.uswapwep)
-        && (state.u.twoweap || heroCanUseTwoWeapons(state) && !state.uarms
-            && isTwoWeaponObject(state.uwep) && state.uwep && !isBimanualObject(state.uwep)
-            && isTwoWeaponObject(state.uswapwep) && state.uswapwep && !isBimanualObject(state.uswapwep)))
-        entries.push({ key: 'X', text: `Toggle two-weapon combat ${state.u.twoweap ? 'off' : 'on'}` });
-    if (item.oclass === WAND_CLASS) entries.push({ key: 'z', text: 'Zap this wand to release its magic' });
-    if (encyclopediaEntries(singularObjectName(item, state), state).length)
-        entries.push({ key: '/', text: `Look up information about ${stack ? 'these' : 'this'}` });
-    return entries;
-}
-
-// Part of C iactions.c:itemactions(): the 'a' apply-row classification.
-function itemApplyText(item: GameObject, state: GameState): string | null {
-    const light = item.lamplit ? 'Extinguish' : 'Light';
-    if (item.oclass === COIN_CLASS) return 'Flip a coin';
-    if (item.otyp === CREAM_PIE) return 'Hit yourself with this cream pie';
-    if (item.otyp === BULLWHIP) return 'Lash out with this whip';
-    if (item.otyp === GRAPPLING_HOOK) return 'Grapple something with this hook';
-    if (item.otyp === BAG_OF_TRICKS) return objectTypeKnown(item, state) ? 'Reach into this bag' : 'Open this container';
-    if (isContainer(item)) return 'Open this container';
-    switch (item.otyp) {
-    case CAN_OF_GREASE: return 'Use the can to grease an item';
-    case LOCK_PICK: case CREDIT_CARD: case SKELETON_KEY: return 'Use this tool to pick a lock';
-    case TINNING_KIT: return 'Use this kit to tin a corpse';
-    case LEASH: return 'Tie a pet to this leash';
-    case SADDLE: return 'Place this saddle on a pet';
-    case MAGIC_WHISTLE: case TIN_WHISTLE: return 'Blow this whistle';
-    case EUCALYPTUS_LEAF: return 'Use this leaf as a whistle';
-    case STETHOSCOPE: return 'Listen through the stethoscope';
-    case MIRROR: return 'Show something its reflection';
-    case BELL: case BELL_OF_OPENING: return 'Ring the bell';
-    case CANDELABRUM_OF_INVOCATION: return `${light} the candelabrum`;
-    case TALLOW_CANDLE: case WAX_CANDLE: {
-        const candelabrum = state.inventory.find(object => object.otyp === CANDELABRUM_OF_INVOCATION);
-        const multiple = item.quan !== 1;
-        if (candelabrum && candelabrum.spe < 7)
-            return `Attach ${multiple ? 'these' : 'this'} to your candelabrum, or ${
-                item.lamplit ? 'extinguish' : 'light'} ${multiple ? 'them' : 'it'}`;
-        return `${light} ${multiple ? 'these' : 'this'} ${simpleObjectName(item, state)}`;
-    }
-    case OIL_LAMP: case MAGIC_LAMP: case BRASS_LANTERN: return `${light} this light source`;
-    case EXPENSIVE_CAMERA: return 'Take a photograph';
-    case TOWEL: return 'Clean yourself off with this towel';
-    case CRYSTAL_BALL: return 'Peer into this crystal ball';
-    case MAGIC_MARKER: return 'Write on something with this marker';
-    case FIGURINE: return 'Make this figurine transform';
-    case UNICORN_HORN: return 'Use this unicorn horn';
-    case LAND_MINE: case BEARTRAP: return 'Arm this trap';
-    case PICK_AXE: case DWARVISH_MATTOCK: return 'Dig with this digging tool';
-    default: break;
-    }
-    if (item.otyp === POT_OIL && objectTypeKnown(item, state)) return `${light} this oil`;
-    if (item.oclass === POTION_CLASS) return `Dip something into ${item.quan > 1 ? 'one of these' : 'this'} potion${item.quan === 1 ? '' : 's'}`;
-    if (item.otyp === HORN_OF_PLENTY && objectTypeKnown(item, state)) return 'Blow into the horn of plenty';
-    if (item.otyp >= WOODEN_FLUTE && item.otyp <= DRUM_OF_EARTHQUAKE) return 'Play this musical instrument';
-    return item.oclass === WAND_CLASS ? 'Break this wand' : null;
-}
-
 // Part of C do_name.c:docall(): which object types accept a type call.
 export function objectTypeCallable(object: GameObject, state: GameState = game): boolean {
     return !!state._objectCallNames?.[object.otyp]
@@ -3305,31 +3112,6 @@ export function objectTypeCallable(object: GameObject, state: GameState = game):
             && !!OBJ_DESCR(object.otyp, state);
 }
 
-// Part of C iactions.c:itemactions(): the 'P' wear rows for amulet, rings
-// and eyewear.
-function accessoryActionText(item: GameObject, state: GameState): string | null {
-    if (item.oclass === AMULET_CLASS) return state.uamul ? '[already wearing an amulet]' : 'Put this amulet on';
-    if (item.oclass === RING_CLASS || item.otyp === MEAT_RING)
-        return state.uleft && state.uright ? `[both ring ${makePlural(body_part(FINGER, state))} in use]` : 'Put this ring on';
-    if ([BLINDFOLD, TOWEL, LENSES].includes(item.otyp)) {
-        if (state.ublindf) return '[already wearing eyewear]';
-        return item.otyp === LENSES ? 'Put these lenses on' : `Put this on${item.otyp === TOWEL ? ' to blindfold yourself' : ''}`;
-    }
-    return null;
-}
-
-
-// Port only: the action key adapter.
-function inventoryActionKey(code: number): InventoryActionKey {
-    const key = String.fromCharCode(code);
-    switch (key) {
-    case '-': case 'a': case 'c': case 'C': case 'd': case 'e': case 'E': case 'f': case 'i': case 'I': case 'O': case 'p': case 'P': case 'q': case 'Q': case 'r': case 'R':
-    case 't': case 'T': case 'V': case 'w': case 'W': case 'x': case 'X': case 'z': case '/': case '\x1b': case ' ': case '\n': case '\r':
-        return key;
-    default:
-        throw new RangeError(`Unexpected inventory action key ${code}`);
-    }
-}
 
 
 // Part of C invent.c:fully_identify_obj(), end.c:really_done(): identify

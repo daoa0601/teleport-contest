@@ -1,9 +1,13 @@
-import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, specialSelectionRandLine, selection_from_mkroom, selection_do_ellipse, selection_do_line, selection_do_gradient, selection_getpoint, selection_setpoint, selection_not, selection_size_description, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
+import { SpecialSelection, selection_from_mkroom, selection_do_ellipse, selection_do_line, selection_do_gradient, selection_getpoint, selection_setpoint, selection_new, selection_do_randline, selection_recalc_bounds, selection_getbounds, selection_not, selection_size_description, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
 import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { LuaArgumentError, NethackLuaError } from './errors.js';
 import { ANY_LOC, get_location_coord } from '../sp_lev.js';
+import { mapCharacterType } from './lifecycle.js';
 import { game } from '../gstate.js';
+import { isok } from '../cmd.js';
+import { match_maptyps, set_floodfillchk_match_under } from '../sp_lev.js';
+import { COLNO, INVALID_TYPE, MAP_Y_LIM, MAX_TYPE, ROWNO, STONE } from '../const.js';
 import { isRoom } from '../map_types.js';
 // Port only: wrap to C's 16-bit coordxy range.
 function coordxy(value) {
@@ -82,6 +86,119 @@ function boundsTable(bounds) {
     for (const field of ['lx', 'ly', 'hx', 'hy'])
         table.set(field, bounds[field]);
     return table;
+}
+// Part of C sp_lev.c:get_location_coord(): the relative-to-absolute
+// adjustment for selection coordinates.
+function absolute(context, x, y) {
+    return {
+        x: (context._room?.lx ?? context.xstart) + (x & 0xff),
+        y: (context._room?.ly ?? context.ystart) + (y & 0xff),
+    };
+}
+// Part of C nhlsel.c:l_selection_and(), l_selection_or(),
+// l_selection_xor(), l_selection_sub(): the shared bounds-union cell loop.
+function selection_binary(left, right, operation) {
+    selection_recalc_bounds(left);
+    selection_recalc_bounds(right);
+    const bounds = {
+        lx: Math.min(left.bounds.lx, right.bounds.lx),
+        ly: Math.min(left.bounds.ly, right.bounds.ly),
+        hx: Math.max(left.bounds.hx, right.bounds.hx),
+        hy: Math.max(left.bounds.hy, right.bounds.hy),
+    };
+    const result = selection_new();
+    for (let x = bounds.lx; x <= bounds.hx; x++)
+        for (let y = bounds.ly; y <= bounds.hy; y++)
+            selection_setpoint(x, y, result, operation(selection_getpoint(x, y, left), selection_getpoint(x, y, right)));
+    return result;
+}
+// C nhlsel.c:l_selection_and().
+export function selection_and(left, right) {
+    return selection_binary(left, right, (a, b) => a & b);
+}
+// C nhlsel.c:l_selection_or().
+export function selection_or(left, right) {
+    const result = selection_binary(left, right, (a, b) => a | b);
+    selection_recalc_bounds(result);
+    return result;
+}
+// C nhlsel.c:l_selection_xor().
+export function selection_xor(left, right) {
+    const result = selection_binary(left, right, (a, b) => a ^ b);
+    selection_recalc_bounds(result);
+    return result;
+}
+// C nhlsel.c:l_selection_sub().
+export function selection_sub(left, right) {
+    const result = selection_binary(left, right, (a, b) => (a ^ b) & a);
+    selection_recalc_bounds(result);
+    return result;
+}
+// C nhlsel.c:l_selection_numpoints(): counts selected points within the bounds.
+export function selection_numpoints(selection) {
+    let count = 0;
+    const bounds = selection_getbounds(selection);
+    for (let x = bounds.lx; x <= bounds.hx; x++)
+        for (let y = bounds.ly; y <= bounds.hy; y++)
+            if (selection_getpoint(x, y, selection))
+                count++;
+    return count;
+}
+// C nhlsel.c:l_selection_flood(): with get_location_coord resolution.
+// The Lua flood operation matches the starting square's terrain.
+export function specialSelectionFloodFill(context, x, y, diagonals = false) {
+    const start = absolute(context, x, y);
+    if (!isok(start.x, start.y))
+        return new SpecialSelection();
+    const terrain = game.level?.at?.(start.x, start.y)?.typ;
+    return new SpecialSelection().floodFill(start.x, start.y, diagonals, set_floodfillchk_match_under(terrain));
+}
+// C nhlsel.c:l_selection_match(): the map fragment match. The fragment
+// parse and mapfrag_error()'s odd-dimension and valid-center checks are
+// inlined above; mapfrag_free() has no port (no owned buffer).
+export function specialSelectionMatch(fragment) {
+    const data = (fragment.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
+    const rows = data.split('\n');
+    if (rows.at(-1) === '')
+        rows.pop();
+    if (rows.length > MAP_Y_LIM + 1)
+        throw new NethackLuaError('mapfragment error');
+    const width = Math.max(0, ...rows.map(row => row.length));
+    if (!(width % 2) || !(rows.length % 2))
+        throw new NethackLuaError('mapfragment needs to have odd height and width');
+    const xRadius = Math.trunc(width / 2);
+    const yRadius = Math.trunc(rows.length / 2);
+    // mapfrag_get() indexes the original buffer with a fixed row stride.
+    const terrainAt = (x, y) => mapCharacterType(data[y * (width + 1) + x]) ?? INVALID_TYPE;
+    const center = terrainAt(xRadius, yRadius);
+    if (center === INVALID_TYPE || center === MAX_TYPE)
+        throw new NethackLuaError('mapfragment center must be valid terrain');
+    const selection = selection_new();
+    for (let y = 0; y <= ROWNO; y++) {
+        for (let x = 1; x < COLNO; x++) {
+            let matched = true;
+            for (let offsetX = -xRadius; offsetX <= xRadius && matched; offsetX++) {
+                for (let offsetY = -yRadius; offsetY <= yRadius; offsetY++) {
+                    const expected = terrainAt(offsetX + xRadius, offsetY + yRadius);
+                    const actual = isok(x + offsetX, y + offsetY)
+                        ? game.level?.at?.(x + offsetX, y + offsetY)?.typ
+                        : STONE;
+                    if (!match_maptyps(expected, actual ?? STONE)) {
+                        matched = false;
+                        break;
+                    }
+                }
+            }
+            selection_setpoint(x, y, selection, matched ? 1 : 0);
+        }
+    }
+    selection_recalc_bounds(selection);
+    return new SpecialSelection(selection);
+}
+// C nhlsel.c:l_selection_randline().
+export function specialSelectionRandLine(x1, y1, x2, y2, roughness, recursion = 12, result = new SpecialSelection()) {
+    selection_do_randline(x1, y1, x2, y2, roughness, recursion, result.selection);
+    return result;
 }
 // C nhlsel.c:l_selection_register(): the selection method table and its
 // metatable. Entries without a helper of their own below: new
@@ -164,7 +281,7 @@ export function createSelectionApi(context, invoke = null) {
         return wrap(new SpecialSelection());
     };
     // C nhlsel.c:l_selection_numpoints(): count the selected points.
-    const numpoints = (self) => selectionValue(self).numPoints();
+    const numpoints = (self) => selection_numpoints(selectionValue(self).selection);
     // C nhlsel.c:l_selection_not(): negate a fresh selection or a clone.
     const negate = (...args) => {
         if (args.length === 0)
@@ -359,13 +476,13 @@ export function createSelectionApi(context, invoke = null) {
     const metatable = {
         __name: 'selection',
         __index: methods,
-        __bor: (left, right) => wrap(selectionValue(left).union(selectionValue(right, 2))),
-        __band: (left, right) => wrap(selectionValue(left).intersect(selectionValue(right, 2))),
-        __bxor: (left, right) => wrap(selectionValue(left).xor(selectionValue(right, 2))),
+        __bor: (left, right) => wrap(new SpecialSelection(selection_or(selectionValue(left).selection, selectionValue(right, 2).selection))),
+        __band: (left, right) => wrap(new SpecialSelection(selection_and(selectionValue(left).selection, selectionValue(right, 2).selection))),
+        __bxor: (left, right) => wrap(new SpecialSelection(selection_xor(selectionValue(left).selection, selectionValue(right, 2).selection))),
         __bnot: value => wrap(selectionValue(value).negate()),
         __unm: value => wrap(selectionValue(value).negate()),
-        __add: (left, right) => wrap(selectionValue(left).union(selectionValue(right, 2))),
-        __sub: (left, right) => wrap(selectionValue(left).subtract(selectionValue(right, 2))),
+        __add: (left, right) => wrap(new SpecialSelection(selection_or(selectionValue(left).selection, selectionValue(right, 2).selection))),
+        __sub: (left, right) => wrap(new SpecialSelection(selection_sub(selectionValue(left).selection, selectionValue(right, 2).selection))),
     };
     const currentContext = () => {
         const value = typeof context === 'function' ? context() : context;

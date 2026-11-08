@@ -4,7 +4,8 @@ import { gotoLevel } from '../js/do.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { createGasCloudSelection } from '../js/region.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
 void test('returning to a level ages gas clouds and removes expired clouds without thinning them', async () => {

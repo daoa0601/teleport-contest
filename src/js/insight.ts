@@ -38,6 +38,7 @@ import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';
 
 import { waterbodyName } from './pager.js';
+import { distanceDescription } from './getpos.js';
 import { trapName } from './trap.js';
 import { monsterAlignmentType } from './priest.js';
 import { wormSegmentIndexAt } from './worm.js';
@@ -445,24 +446,6 @@ function trapPredicament(final: EnlightenmentFinal, wizard: boolean): string {
     // u.utrap is an escape-attempt counter, so wizard mode uses braces.
     return wizard ? `${predicament} {${u.utrap}}` : predicament;
 }
-
-// C getpos.c:dxdy_to_dist_descr(dx, dy, TRUE).
-// Also C cmd.c:directionname(): inlined here (DIRECTION_NAMES holds the
-// eight directionname() strings).
-function distanceDescription(dx: number, dy: number): string {
-    if (!dx && !dy) return 'here';
-    const direction = DIRECTION_NAMES.find(entry => entry.dx === dx && entry.dy === dy);
-    if (direction) return direction.name;
-    const vertical = dy ? `${Math.abs(dy)}${dy > 0 ? 'south' : 'north'}${dx ? ',' : ''}` : '';
-    return `${vertical}${dx ? `${Math.abs(dx)}${dx > 0 ? 'east' : 'west'}` : ''}`;
-}
-
-const DIRECTION_NAMES = [
-    { dx: -1, dy: 0, name: 'west' }, { dx: -1, dy: -1, name: 'northwest' },
-    { dx: 0, dy: -1, name: 'north' }, { dx: 1, dy: -1, name: 'northeast' },
-    { dx: 1, dy: 0, name: 'east' }, { dx: 1, dy: 1, name: 'southeast' },
-    { dx: 0, dy: 1, name: 'south' }, { dx: -1, dy: 1, name: 'southwest' },
-] as const;
 
 // C insight.c:weapon_insight()
 // Weapons are described by

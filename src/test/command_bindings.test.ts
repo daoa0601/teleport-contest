@@ -13,7 +13,8 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { recordObjectKnowledge } from '../js/u_init.js';
 

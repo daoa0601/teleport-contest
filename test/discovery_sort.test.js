@@ -7,7 +7,8 @@ import { HELMET, LEATHER_GLOVES, POT_BOOZE, POT_HEALING, SPEED_BOOTS, WAN_FIRE }
 import { recordObjectEncounter } from '../js/o_init.js';
 import { recordObjectKnowledge } from '../js/u_init.js';
 import { applyNethackrc } from '../js/cfgfiles.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';

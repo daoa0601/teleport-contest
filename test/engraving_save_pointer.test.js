@@ -3,7 +3,8 @@ import test from 'node:test';
 import { DUST } from '../js/const.js';
 import { engravingAt, makeEngravingAt, wipeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('saving rewinds the worn engraving pointer, and restoring skips its erased prefix', async () => {

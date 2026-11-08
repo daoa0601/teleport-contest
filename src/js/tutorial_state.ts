@@ -6,7 +6,7 @@ import {
     W_SWAPWEP, W_TOOL, W_WEP,
 } from './const.js';
 import { plineWithContinuation, impossible } from './pline.js';
-import { carryObjEffects } from './figurine_timer.js';
+import { carryObjEffects } from './invent.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

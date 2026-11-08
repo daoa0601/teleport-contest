@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 
 const FIXED_DATETIME = '20250101120000';
 

@@ -17,7 +17,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.
 import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, promptDirection, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNo } from './query.js';
-import { selectMapPosition } from './getpos.js';
+import { selectMapPosition, coordinateDescription } from './getpos.js';
 import { getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { monsterAtPosition } from './steed.js';
@@ -1261,24 +1261,6 @@ function listHeading(kind, nearby, mode) {
         return `All ${kind} currently shown on the map:`;
     const name = kind.charAt(0).toUpperCase() + kind.slice(1);
     return `${name} currently shown near ${mode === 'c' ? canSpotHeroSelf() ? 'you' : 'your position' : coordinateDescription(game.u.ux, game.u.uy, mode)}:`;
-}
-// C getpos.c:coord_desc(): map, screen, or compass coordinates.
-export function coordinateDescription(x, y, mode) {
-    if (mode === 'n')
-        return '';
-    if (mode === 'm')
-        return `<${x},${y}>`;
-    if (mode === 's')
-        return `[${String(y + 2).padStart(2, '0')},${String(x).padStart(2, '0')}]`;
-    const dx = x - game.u.ux, dy = y - game.u.uy;
-    if (!dx && !dy)
-        return '(here)';
-    if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1)
-        return `(${dy ? dy > 0 ? 'south' : 'north' : ''}${dx ? dx > 0 ? 'east' : 'west' : ''})`;
-    const full = mode === 'f';
-    const parts = [dy ? `${Math.abs(dy)}${dy > 0 ? full ? 'south' : 's' : full ? 'north' : 'n'}` : '',
-        dx ? `${Math.abs(dx)}${dx > 0 ? full ? 'east' : 'e' : full ? 'west' : 'w'}` : ''].filter(Boolean);
-    return `(${parts.join(',')})`;
 }
 // Part of C pager.c:look_all(), look_traps(), look_engrs(): the raw glyph
 // symbol column.

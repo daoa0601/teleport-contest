@@ -29,7 +29,8 @@ import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 
 
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { loadScoreRecords } from '../js/topten.js';
 import { invault } from '../js/vault.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';

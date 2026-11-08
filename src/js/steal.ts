@@ -34,7 +34,7 @@ import { isBimanualObject } from './object_properties.js';
 import { inventoryItemDescription, finishInventoryRemoval, freeInventoryObject, inventoryItem } from './invent.js';
 import { heroIsBlind, heroIsUnaware } from './senses.js';
 import { rn2 } from './rng.js';
-import { carryObjEffects } from './figurine_timer.js';
+import { carryObjEffects } from './invent.js';
 import { objectShedsLight, snuffLightSource } from './light.js';
 import { heroSpecies, body_part, mbodypart } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';

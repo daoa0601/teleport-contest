@@ -42,7 +42,7 @@ import { objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse,
     isReviver, zombieForm,
 } from './mon.js';
-import { carryObjEffects } from './figurine_timer.js';
+import { carryObjEffects } from './invent.js';
 import { attachFigurineTimer } from './timeout.js';
 import { isIceAt } from './dbridge.js';
 import { block_point, cansee, vision_note_blocker_change } from './vision.js';

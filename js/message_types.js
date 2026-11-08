@@ -1410,7 +1410,7 @@ export function changePreferredFruit(name, state = game) {
 // run bones.c:sanitize_name() over each byte of the native buffer — control
 // bytes become '.', and a high byte is masked to '_' unless the tty accepts
 // eight-bit input, which keeps the byte itself. The port's bones names are
-// decoded strings (sanitizeName in bones_name.ts masks those per character);
+// decoded strings (sanitizeName in bones.ts masks those per character);
 // the fruit option still sees the raw UTF-8 bytes here.
 function sanitizeFruitCopy(name, iflags) {
     const bytes = new TextEncoder().encode(name).subarray(0, FRUIT_NAME_BYTES);

@@ -25,7 +25,8 @@ import { polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 
 import { teleds } from '../js/teleport.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { punishHero, unpunishHero } from '../js/read.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

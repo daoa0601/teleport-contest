@@ -21,7 +21,8 @@ import { objectTimers, scheduleLevelTimer } from '../js/timeout.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { setHeroBlindnessTurns, syncDeafness } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { runDueTimers } from '../js/timeout.js';

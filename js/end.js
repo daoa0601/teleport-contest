@@ -1,6 +1,6 @@
 // end.js — End-of-game disclosure and terminal presentation.
-// C refs: end.c disclose()/really_done(), insight.c, dungeon.c; rip.c's
-// tombstone lives in rip.ts.
+// C refs: end.c disclose()/really_done(), panic(), insight.c, dungeon.c;
+// rip.c's tombstone lives in rip.ts.
 import { tombstoneLine, tombstoneYear, tombstoneDeathRows } from './rip.js';
 import { goodbye } from './role.js';
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
@@ -16,9 +16,14 @@ import { endmultishot } from './dothrow.js';
 import { BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BASICENLIGHTENMENT, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, MAGICENLIGHTENMENT, PANICKED, PICK_ONE, QUIT, STARVING, STONING, TRICKED, In_endgame, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd, LL_CONDUCT, } from './const.js';
 import { isok, setMulti, paranoidQuery } from './cmd.js';
 import { PanicTermination } from './panic_termination.js';
+import { beginPanicOutput, rawPrintf } from './pline.js';
+import { rawPrint } from './input.js';
+import { paniclog } from './novel_tribute.js';
+import { saveErrorGame } from './save.js';
+import { diagnosticReason, fuzzerMode, FUZZER_OFF } from './diagnostics.js';
 import { nomul, heroGoldAmount } from './hack.js';
 import { achievementEntries, recordAchievement, finalConductLines, listGenocided, setVanqOrder, enlightenment, vanquishedLines, vanquishedTypeCount, } from './insight.js';
-import { game, requireInitializedGame } from './gstate.js';
+import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { heroFormSticks } from './polyself.js';
 import { monsterName, monsterTypeName } from './do_name.js';
@@ -1294,5 +1299,29 @@ export async function doneObjectCleanup() {
     const chain = game.uchain || game.u.uchain;
     if (chain?.where === 'free')
         await restoreBallAndChainPlacement(-1);
+}
+// C end.c:panic(): full body; the window-exit preamble lives in beginPanicOutput().
+export async function panic(reason, { state = game } = {}) {
+    requireLiveGame(state);
+    reason = diagnosticReason(reason);
+    const termination = new PanicTermination(reason);
+    const alreadyPanicking = state.program_state.panicking || 0;
+    state.program_state.panicking = alreadyPanicking + 1;
+    if (alreadyPanicking)
+        throw termination;
+    await beginPanicOutput();
+    const useful = state.program_state.something_worth_saving;
+    rawPrint(state.program_state.gameover
+        ? 'Postgame wrapup disrupted.'
+        : useful ? 'Suddenly, the dungeon collapses.' : 'Program initialization has failed.');
+    // The pinned sysconf has WIZARDS=*, with no SUPPORT or RECOVER setting.
+    if (!state.flags?.debug)
+        rawPrintf('Report error to "wizard"'
+            + (useful ? '\nand it may be possible to rebuild.' : '.'));
+    if (useful && fuzzerMode(state) === FUZZER_OFF)
+        await saveErrorGame();
+    rawPrint(reason);
+    paniclog('panic', reason, state);
+    throw termination;
 }
 //# sourceMappingURL=end.js.map

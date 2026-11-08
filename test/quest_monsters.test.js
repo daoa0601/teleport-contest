@@ -5,7 +5,8 @@ import { rndmonstAdj } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { memoryStorage } from './support/memory-storage.js';
 void test('the Healer quest generates the giant rats threatening its home', async () => {

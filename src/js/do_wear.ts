@@ -973,11 +973,11 @@ function matchesCategories(object: GameObject, categories: readonly Category[]):
         && (!categories.includes('P') || !!object.pickup_prev);
 }
 
-// C pickup.c:query_category(): the category menu menu_remarm()'s
-// MENU_FULL branch opens with, including the BUC/unpaid/just-picked
-// special rows; also inlines C pickup.c:count_categories() as the
-// single-category skip below (one class and no special filter needs no
-// menu).
+// Part of C do_wear.c:menu_remarm(): the query_category() call's
+// WORN_TYPES shape — no CHOOSE_ALL or JUSTPICKED rows, worn labels, and
+// the BUC/unpaid special rows; also inlines C pickup.c:count_categories()
+// as the single-category skip below (one class and no special filter
+// needs no menu).
 async function categoryMenu(): Promise<Category[]> {
     const worn = wornInventory();
     const classes = inventoryClassOrder().filter(oclass => worn.some(object => object.oclass === oclass));
@@ -1020,9 +1020,11 @@ async function categoryMenu(): Promise<Category[]> {
     return selected;
 }
 
-// C pickup.c:ggetobj(): the removal-category prompt of menu_remarm()'s
-// traditional and combination branches; the MENU_FULL branch's
-// query_category() menu is categoryMenu() above.
+// Part of C do_wear.c:doddoremarm() and do_wear.c:menu_remarm(): the
+// ggetobj("take off", ...) specialization of the removal-category prompt
+// for the traditional and combination branches (the prompt loop is
+// invent.c:ggetobj(); the inventory.ts identify dialog holds that port);
+// the MENU_FULL branch's query_category() menu is categoryMenu() above.
 async function traditionalCategories(combo: boolean, selectOff: SelectOff): Promise<Category[] | null> {
     const worn = wornInventory();
     const classes = [...new Set(worn.map(object => object.oclass))];

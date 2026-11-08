@@ -6,7 +6,8 @@ import {
     LEVEL_TELEP, PIT, POOL, ROLLING_BOULDER_TRAP, ROOM, STONE, TELEP_TRAP, TRAPDOOR,
 } from '../js/const.js';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER, DAGGER, ROCK } from '../js/object_data.js';

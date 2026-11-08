@@ -7,8 +7,7 @@
 // restobjchn()/getlev() clock shift (restoreBonesClock) used only by bones;
 // files.c set_bonesfile_name(). The other restore.c getlev() ports, including
 // branch connection repair, live in restore.ts. Payload
-// validation lives in bones_validation.ts and name sanitization in
-// bones_name.ts.
+// validation lives in bones_validation.ts.
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
 import { FOOD_CLASS } from './objclass.js';
@@ -21,12 +20,11 @@ import { nhgetch } from './input.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { DTHSZ, formatKiller } from './topten.js';
-import { sanitizeName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { hideMonsterOnRestore, hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape, restoreMonsterInventoryOwnership } from './mon.js';
 import { repairBonesConnections, restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies, } from './restore.js';
-import { restoreLevelPetHistory } from './save.js';
+import { restoreLevelPetHistory } from './restore.js';
 import { endObjectBurn, restoreLevelTimers } from './timeout.js';
 import { restoreLevelRegions, resetRegionMonsterIds } from './region.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency, shopkeeperInOwnShop } from './shk.js';
@@ -36,7 +34,8 @@ import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, m
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt, Invocation_lev } from './dungeon.js';
 import { bonesLevelId, bonesStorageKey, deleteBonesLevel, openBonesFile } from './novel_tribute.js';
-import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, EGG, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, TIN, WAX_CANDLE, objectUsesKnown } from './object_data.js';
+import { BOOMERANG, BOW, CORPSE, ELVEN_BOW, ICE_BOX, MUMMY_WRAPPING, ORCISH_BOW, SLIME_MOLD, STATUE, YUMI, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, EGG, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, TIN, WAX_CANDLE, objectUsesKnown } from './object_data.js';
+import { definiteName, objectCombatName } from './objnam.js';
 import { clearBypasses } from './worn.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { dismountHero, monsterHasMapPosition } from './steed.js';
@@ -57,6 +56,11 @@ import { relocateMonsterTo, enexto } from './teleport.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { roomForRoomno } from './hack.js';
 import { likes_gold, likes_gems, likes_objs, likes_magic, monsterHidesUnder, monsterIsUndead, giveHeroResistancesToMonster } from './mondata.js';
+// C bones.c:fix_ghostly_obj(): the asymmetrical weapons that need a
+// handedness adjustment.
+const HANDED_WEAPONS = new Set([
+    BOW, ELVEN_BOW, ORCISH_BOW, YUMI, BOOMERANG,
+]);
 const G_UNIQ = 0x1000;
 // C bones.c:can_make_bones()/no_bones_level(). Dungeon topology owns which
 // levels can leave bones; the depth trial still runs in wizard and explore mode.
@@ -348,6 +352,36 @@ async function fixupOracle(oracle) {
     if (currentRoom() === chamber)
         chamber.rtype = DELPHI;
     return true;
+}
+// C bones.c:sanitize_name(): while loading bones, strip text that could
+// disrupt display. High-bit control bytes are still controls; printable
+// high-bit characters follow the tty eight-bit input option. The port's
+// bones names are UTF-8-decoded strings, so this masks per character; the
+// fruit option's byte buffer is masked per byte in options.ts
+// (sanitizeFruitCopy), which is where C's caller actually sees bytes.
+export function sanitizeName(name, iflags = game.iflags) {
+    return [...String(name || '')].map(character => {
+        const code = character.charCodeAt(0);
+        const lowBits = code & 127;
+        if (lowBits < 32 || lowBits === 127)
+            return '.';
+        if (code > 127 && !iflags.wc_eight_bit_input)
+            return '_';
+        return character;
+    }).join('');
+}
+// C bones.c:fix_ghostly_obj(): the ghostly pickup notice; returns the
+// handedness adjustment message. This is called when a marked object from
+// a bones file is picked up.
+export function finishGhostlyPickup(object, state) {
+    if (!object?.ghostly)
+        return null;
+    object.ghostly = false;
+    if (!HANDED_WEAPONS.has(object.otyp))
+        return null;
+    const noun = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
+    const hand = state?.u?.rightHanded === false ? 'left' : 'right';
+    return `You make adjustments to ${noun} to suit your ${hand} hand.`;
 }
 // Part of C bones.c:getbones(): sanitize_name() over a restored
 // monster's given name.

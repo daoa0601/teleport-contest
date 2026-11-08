@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { G_EXTINCT, MV_KNOWS_EGG, OBJECT_TIMER_KIND } from '../js/const.js';
-import { runClaimedEggHatchTimer, finishEggHatchTimer } from '../js/egg.js';
+import { runClaimedEggHatchTimer, finishEggHatchTimer } from '../js/timeout.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG } from '../js/object_data.js';

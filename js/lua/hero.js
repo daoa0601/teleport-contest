@@ -1,7 +1,30 @@
-// C nhlua.c:init_u_data() and nhl_meta_u_index().
+// C nhlua.c:init_u_data(), nhl_meta_u_index(), get_table_int(),
+// get_table_str() and get_table_str_opt().
 import { depth, Invocation_lev } from '../dungeon.js';
 import { LuaTable } from './runtime.js';
 import { luaString as luaStringArgument } from './arguments.js';
+// C nhlua.c:get_table_str(): the required string fields of a dungeon
+// definition table.
+export function definitionString(value, path) {
+    if (typeof value !== 'string')
+        throw new TypeError(`${path} must be a string`);
+    return value;
+}
+// C nhlua.c:get_table_str_opt(): the optional string fields of a dungeon
+// definition table.
+export function optionalDefinitionString(value, path) {
+    return value == null ? undefined : definitionString(value, path);
+}
+// C nhlua.c:get_table_int(): the integer fields of a dungeon definition
+// table — also get_table_int_opt(), whose fallback value is the third
+// argument here.
+export function definitionInteger(value, path, fallback) {
+    if (value == null && fallback !== undefined)
+        return fallback;
+    if (typeof value !== 'number' || !Number.isSafeInteger(value))
+        throw new TypeError(`${path} must be an integer`);
+    return value;
+}
 const HERO_FIELDS = [
     'ux', 'uy', 'dx', 'dy', 'dz', 'tx', 'ty', 'ulevel', 'ulevelmax',
     'uhunger', 'nv_range', 'xray_range', 'umonster', 'umonnum', 'mh',

@@ -1089,6 +1089,20 @@ export function writeStatusLines(display: GameDisplay, lines: readonly [string, 
     }
 }
 
+// C wintty.c:status_update(): tty_status_update()'s bar_pos computation
+// for the hitpoint bar — the number of lit cells in the fixed
+// thirty-character bar (botl.c:percentage() feeding wintty.c:5220-5229).
+// Dead heroes light nothing; a nonzero health fraction keeps one cell
+// even above the display cap.
+export function hitpointBarFill(hp: number, maximum: number): number {
+    const health = Math.max(0, hp);
+    let percent = maximum ? Math.trunc(100 * health / maximum) : 0;
+    if (health && !percent) percent = 1;
+    if (percent >= 100) return 30;
+    if (!percent) return 0;
+    return Math.max(1, Math.min(29, Math.trunc(30 * percent / 100)));
+}
+
 // ── wintty.c:make_things_fit() — shrinking the second status row ──
 
 export interface StatusLine2Layout {

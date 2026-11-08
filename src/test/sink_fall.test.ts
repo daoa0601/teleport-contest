@@ -17,7 +17,8 @@ import {
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { loadScoreRecords } from '../js/topten.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { addInventoryObject, floorObject, untimedCorpse } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';

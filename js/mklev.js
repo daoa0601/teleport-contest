@@ -9,7 +9,7 @@
 import { stack_object } from './invent.js';
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, GEM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
-import { rotCorpse } from './corpse_rot.js';
+import { rotCorpse } from './dig.js';
 import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, mkcorpstat, set_corpsenm, rndmonnum, rndmonnumAdj, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, updateIceObjectTimersAt, addBuriedObject } from './mkobj.js';
 import { restoreMonsterInventoryOwnership } from './mon.js';
 import { oinit, objectMaterial } from './o_init.js';
@@ -26,9 +26,9 @@ import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies } from './restore.js';
-import { restoreLevelPetHistory } from './save.js';
+import { restoreLevelPetHistory } from './restore.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { panic } from './diagnostics.js';
+import { panic } from './end.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
@@ -161,34 +161,6 @@ export async function finishBuriedZombieTimer(event, state = game) {
     event.filledByBoulder = result.filled ? result.boulder : null;
     event.buriedFloorObjects = result.buriedFloorObjects;
     return event;
-}
-// C dig.c:rot_organic(): the timer callback, burying a container's
-// contents before the object rots away.
-// Also C dig.c:rot_corpse(): the corpse-rot half runs here too.
-export async function runClaimedObjectRotTimer(claimed, state = game) {
-    const object = claimed?.object;
-    const kind = claimed?.timer?.kind;
-    if (!object || (kind !== OBJECT_TIMER_KIND.ROT_CORPSE
-        && kind !== OBJECT_TIMER_KIND.ROT_ORGANIC))
-        return null;
-    if (kind === OBJECT_TIMER_KIND.ROT_ORGANIC) {
-        while (object.contents?.length) {
-            const content = object.contents[0];
-            if (!content)
-                throw new Error('Rotting container is missing its first object');
-            content.ox = object.ox;
-            content.oy = object.oy;
-            if ((await buryObject(content, state)).outcome === 'skipped') {
-                return { kind: 'blocked-organic-rot', object };
-            }
-        }
-    }
-    const { where, ox: x, oy: y } = object;
-    if (kind === OBJECT_TIMER_KIND.ROT_CORPSE)
-        await rotCorpse(object, state);
-    else
-        await deleteObject(object, state);
-    return { kind, object, where, x, y };
 }
 // C mklev.c:mklev()
 export async function mklev() {

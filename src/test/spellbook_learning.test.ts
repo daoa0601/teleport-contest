@@ -24,7 +24,8 @@ import { recordObjectKnowledge } from '../js/u_init.js';
 
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { addShopObjectToBill, deleteObject } from '../js/shk.js';
 import { addInventoryObject, knownObject, type KnownObjectOverrides } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

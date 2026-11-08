@@ -19,7 +19,7 @@ import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAg
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { dist2, distmin } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
-import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
+import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './dog.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import { BOULDER, SCR_MAIL, TRIPE_RATION, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, CORPSE, objectDelay, oc_nutrition, LUMP_OF_ROYAL_JELLY, SKELETON_KEY, UNICORN_HORN, } from './object_data.js';

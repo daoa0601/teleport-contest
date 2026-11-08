@@ -18,7 +18,8 @@ import { AXE, DAGGER, LEATHER_GLOVES, TIN, TIN_OPENER } from '../js/object_data.
 import { objectQuantity } from '../js/mkobj.js';
 
 import { addShopObjectToBill } from '../js/shk.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { setSlipperyHands } from '../js/potion.js';
 import { opentin, set_tin_variety, start_tin, tin_details, tin_variety, use_tin_opener } from '../js/eat.js';
 import { setPrimaryWeapon } from '../js/wield.js';

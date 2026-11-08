@@ -51,7 +51,8 @@ import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoo
 import { beginObjectBurn, scheduleLevelTimer, stopLevelTimer } from './timeout.js';
 import { monsterEmitsLight, vision_reset } from './vision.js';
 import { registerMonsterLightSource } from './light.js';
-import { SpecialSelection, specialSelectionMatch } from './selvar.js';
+import { SpecialSelection } from './selvar.js';
+import { specialSelectionMatch } from './lua/nhlsel.js';
 import { mapCharacterType } from './lua/lifecycle.js';
 import { CANDELABRUM_OF_INVOCATION, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD, S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom, makecorridors, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, topologize } from './mklev.js';
 import { stairway_add } from './stairs.js';

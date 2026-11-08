@@ -35,6 +35,7 @@ import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arri
 import { propertyIsActive } from './properties.js';
 import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { inventoryReport } from './invent.js';
+import { enqueueInventoryAction } from './iactions.js';
 import { isContainer, unlinkObject, deallocateObject } from './mkobj.js';
 import { doOptions, toggleBooleanOptionPrefix } from './message_types.js';
 import { extFuncTabFromFunc } from './command_bindings.js';
@@ -845,127 +846,6 @@ async function runCommandHandler(binding) {
         await setTopline(`Unknown command '${ch}'.`);
         game.context.move = 0;
     }
-}
-// C iactions.c:itemactions_pushkeys(): queue the chosen item action's
-// command, the m-prefix some actions need in front of it, and the object's
-// inventory letter; the command's own prompts pop the letter from the
-// shared queue (iactions.c:145-235).  The port dispatches the inventory
-// windows from this module's command loop, so the queue helper cannot live
-// in an iactions module without an import cycle over the cmdq calls.
-function enqueueInventoryAction(action) {
-    if (!action || ['\x1b', ' ', '\n', '\r'].includes(action.key))
-        return;
-    const { key, item } = action;
-    if (!item.invlet)
-        return;
-    if (key === '-') {
-        // IA_UNWIELD: the hands letter answers the wield, swap-weapon, or
-        // quiver command's getobj() prompt.
-        cmdq_add_ec(CQ_CANNED, item === game.uwep ? 'dowield'
-            : item === game.uswapwep ? 'remarm_swapwep'
-                : item === game.uquiver ? 'dowieldquiver' : 'donull');
-        cmdq_add_key(CQ_CANNED, '-'.charCodeAt(0));
-        return;
-    }
-    let extraKey = null;
-    let handler;
-    switch (key) {
-        case 'a':
-            // IA_APPLY_OBJ, or IA_DIP_OBJ for a potion other than known oil.
-            handler = item.oclass === POTION_CLASS && !(item.otyp === POT_OIL && objectTypeKnown(item))
-                ? 'dip_into' : 'doapply';
-            break;
-        case 'c':
-            handler = 'docallcmd';
-            extraKey = 'i'.charCodeAt(0);
-            break;
-        case 'C':
-            handler = 'docallcmd';
-            extraKey = 'o'.charCodeAt(0);
-            break;
-        case 'd':
-            handler = 'dodrop';
-            break;
-        case 'e':
-            cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
-            handler = 'doeat';
-            break;
-        case 'E':
-            handler = 'doengrave';
-            break;
-        case 'f':
-            cmdq_add_ec(CQ_CANNED, 'dofire');
-            return;
-        case 'i':
-            handler = 'doorganize';
-            break;
-        case 'I':
-            handler = 'adjust_split';
-            break;
-        case 'O':
-            handler = 'dosacrifice';
-            break;
-        case 'p':
-            handler = 'dopay';
-            break;
-        case 'P':
-        case 'W':
-            handler = 'dowear';
-            break;
-        case 'q':
-            cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
-            handler = 'dodrink';
-            break;
-        case 'Q':
-            handler = 'dowieldquiver';
-            break;
-        case 'r':
-            handler = 'doread';
-            break;
-        case 'R':
-            handler = (item.owornmask ?? 0) & W_ACCESSORY ? 'ia_dotakeoff' : 'dorub';
-            break;
-        case 't':
-            handler = 'dothrow';
-            break;
-        case 'T':
-            if ((item.owornmask ?? 0) & W_ARMOR) {
-                handler = 'ia_dotakeoff';
-                break;
-            }
-            cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
-            handler = 'dotip';
-            break;
-        case 'w':
-            handler = 'dowield';
-            break;
-        case 'V':
-            handler = 'doinvoke';
-            break;
-        case 'x':
-            cmdq_add_ec(CQ_CANNED, 'doswapweapon');
-            return;
-        case 'X':
-            cmdq_add_ec(CQ_CANNED, 'dotwoweapon');
-            return;
-        case 'z':
-            handler = 'dozap';
-            break;
-        case '/':
-            handler = 'dowhatis';
-            extraKey = 'i'.charCodeAt(0);
-            break;
-        // itemactions() never queues anything for the quit keys.
-        case '\x1b':
-        case ' ':
-        case '\n':
-        case '\r': return;
-        default: return;
-    }
-    cmdq_add_ec(CQ_CANNED, handler);
-    if (extraKey !== null)
-        cmdq_add_key(CQ_CANNED, extraKey);
-    cmdq_add_key(CQ_CANNED, item.invlet.charCodeAt(0));
 }
 // Port only: result adapter between the quaff command and potion.c's
 // dodrink().
@@ -2609,23 +2489,6 @@ export function cmdq_shift(q, state = game) {
     const last = queue.pop();
     if (last)
         queue.unshift(last);
-}
-// C getpos.c:812-826: getpos()'s one cmdq_pop() answers a horizontal
-// CMDQ_DIR with the spot next to the hero; every other queued entry — a
-// key, a vertical direction, the user-input placeholder, or a queued
-// extended command — drops that entry, clears CQ_CANNED, and returns -1.
-// The whole queued fast path is skipped while a do-again replay owns the
-// input (getpos.c:814), so undefined hands the caller its cursor loop.
-export function takeQueuedAdjacentPosition() {
-    if (game._inDoAgain)
-        return undefined;
-    const entry = cmdq_pop();
-    if (!entry)
-        return undefined;
-    if (entry.typ === CMDQ_DIR && entry.dirz === 0)
-        return { x: game.u.ux + entry.dirx, y: game.u.uy + entry.diry };
-    cmdq_clear(CQ_CANNED);
-    return null;
 }
 // Port only: the u.multi counter with involuntary delays mirrored
 // negative.

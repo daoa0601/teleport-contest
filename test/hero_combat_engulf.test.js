@@ -15,7 +15,8 @@ import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS,
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, OIL_LAMP } from '../js/object_data.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjectQuantityAt } from './support/level-state.js';

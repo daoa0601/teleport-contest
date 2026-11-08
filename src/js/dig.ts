@@ -5,7 +5,7 @@ import { stack_object } from './invent.js';
 import { POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { wakeNearby,
-    finishLiquidDeathForCurrentMover,
+    finishLiquidDeathForCurrentMover, hideHeroUnder,
 } from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './sounds.js';
@@ -35,7 +35,7 @@ import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { heroLiquidEffects, mayDig, spotChecks, loseHeroHp, finishDestinationSpotEffects, inTown, roomsAt, switchHeroTerrain } from './hack.js';
 import { dist2, possessiveName, upstart } from './hacklib.js';
 import { dropInventoryObjectAtHero, woundHeroLegs } from './do.js';
-import { freeInventoryObject, objectAt } from './invent.js';
+import { finishInventoryRemoval, freeInventoryObject, objectAt } from './invent.js';
 import { heroIsUnaware } from './senses.js';
 import { delobj } from './invent.js';
 import { gotoLevel } from './do.js';
@@ -45,14 +45,14 @@ import { addBuriedObject, createToptenObject, mksobj, placeTreeFruit, unlinkObje
 import { angerWatchGuards, maybeUnhideAt, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
-import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
+import { corpseName, definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
 import { greatestErosion, isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
 import { stopHeroOccupation } from './allmain.js';
 import type { DiggingOccupation } from './occupation_types.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, impossible } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { heroIsFlying, body_part, mbodypart } from './polyself.js';
+import { heroIsFlying, heroSpecies, body_part, mbodypart } from './polyself.js';
 import { altarWrath, altarmaskAt, desecrateAltar } from './pray.js';
 import { punishHero, unpunishHero } from './read.js';
 import { autopickupAtHero } from './pickup.js';
@@ -62,21 +62,23 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { addShopDamage, costlySpot, deleteObject, makeAngryShopkeeper, payForShopDamage, shopDig, stolenValue } from './shk.js';
 import { shopkeeperName } from './shknam.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { monsterAt, monsterHasMapPosition } from './steed.js';
+import { monsterAt, monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { randomMonsterRelocation, teleportPetVictim } from './teleport.js';
 import { Is_botlevel, ceilingName, depth, levelHasCeiling, levelAtDepth, surfaceName, canDigDown } from './dungeon.js';
 import { CLR_WHITE } from './terminal.js';
 import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { cansee, monsterHasLineOfSightToHero, unblock_point, vision_note_blocker_change } from './vision.js';
-import { heroAttackBonus, heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { heroAttackBonus, heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero, unwieldMonsterWeapon } from './weapon.js';
 import { willWeld } from './wield.js';
 import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './zap.js';
 import { captureRayTraversalFrame } from './zap.js';
 import { endObjectBurn } from './timeout.js';
+import { removeWornHeroItem } from './steal.js';
+import type { DueObjectTimer } from './timeout.js';
 import { displayMessageWindow } from './topl.js';
 import type { MapLocation, Position, Trap } from './map_types.js';
-import type { GameObject } from './object_types.js';
+import type { GameObject, ObjectWhere } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { fireDamageObject } from './trap.js';
 import { nomul, roomForRoomno } from './hack.js';
@@ -92,7 +94,7 @@ import type { AppliedWeaponAttackPermission } from './uhitm.js';
 import { MONSTER_MOVE } from './monster_data.js';
 import { confusePromptDirection } from './cmd.js';
 import type { Hero } from './hero_types.js';
-import { monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './mondata.js';
+import { monsterDigests, monsterHidesUnder, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './mondata.js';
 import { expelHero } from './mhitu.js';
 
 // ---------------------------------------------------------------------------
@@ -1786,6 +1788,75 @@ function scheduleBuriedRot(object: GameObject, underIce: boolean, state: GameSta
         object, OBJECT_TIMER_KIND.ROT_ORGANIC,
         (underIce ? 0 : 250) + rnd(250) + (state.moves ?? 0), state,
     );
+}
+
+// C dig.c:rot_corpse(). Carried corpses are named before they disappear.
+export async function rotCorpse(corpse: GameObject, state: GameState = game): Promise<void> {
+    requireLiveGame(state);
+    const { where, ox: x, oy: y } = corpse;
+    if (where === 'inventory') {
+        const wielded = state.uwep === corpse || state.u.uwep === corpse;
+        if (state.flags.verbose) {
+            const name = corpseName(corpse, { omitPrefix: true });
+            await plineWithContinuation(`Your ${wielded ? 'wielded ' : ''}${name} ${
+                corpse.quan > 1 ? 'rot' : 'rots'} away${wielded ? '!' : '.'}`);
+        }
+        if (corpse.owornmask) {
+            await removeWornHeroItem(corpse, state);
+            await stopHeroOccupation(state);
+        }
+        await finishInventoryRemoval(corpse, state);
+    } else if (where === 'minvent') {
+        const carrier = corpse.ocarry;
+        if (carrier && corpse.owornmask && carrier.mw === corpse)
+            await unwieldMonsterWeapon(carrier, state, { weapon: corpse });
+    } else if (where === 'migrating') {
+        corpse.owornmask = 0;
+    }
+    await deleteObject(corpse, state);
+    if (where === 'floor') {
+        const level = requireGameLevel(state);
+        const monster = monsterAtPosition(level, x, y);
+        if (monster && !level.objects[x]?.[y]?.length && monster.mundetected
+            && monsterHidesUnder(monster.mnum)) {
+            monster.mundetected = 0;
+        } else if (state.u.ux === x && state.u.uy === y && state.u.uundetected
+            && monsterHidesUnder(heroSpecies(state))) {
+            await hideHeroUnder(state);
+        }
+        await newsym(x, y);
+    }
+}
+
+// C dig.c:rot_organic(): the timer callback, burying a container's
+// contents before the object rots away.
+// Also C dig.c:rot_corpse(): the corpse-rot half runs here too.
+export async function runClaimedObjectRotTimer(claimed: DueObjectTimer | null | undefined, state: GameState = game): Promise<{
+    kind: 'blocked-organic-rot'; object: GameObject;
+} | {
+    kind: 'rot-organic' | 'rot-corpse'; object: GameObject;
+    where: ObjectWhere; x: number; y: number;
+} | null> {
+    const object = claimed?.object;
+    const kind = claimed?.timer?.kind;
+    if (!object || (kind !== OBJECT_TIMER_KIND.ROT_CORPSE
+        && kind !== OBJECT_TIMER_KIND.ROT_ORGANIC)) return null;
+
+    if (kind === OBJECT_TIMER_KIND.ROT_ORGANIC) {
+        while (object.contents?.length) {
+            const content = object.contents[0];
+            if (!content) throw new Error('Rotting container is missing its first object');
+            content.ox = object.ox;
+            content.oy = object.oy;
+            if ((await buryObject(content, state)).outcome === 'skipped') {
+                return { kind: 'blocked-organic-rot', object };
+            }
+        }
+    }
+    const { where, ox: x, oy: y } = object;
+    if (kind === OBJECT_TIMER_KIND.ROT_CORPSE) await rotCorpse(object, state);
+    else await deleteObject(object, state);
+    return { kind, object, where, x, y };
 }
 
 // C dig.c:unearth_objs().  Buried objects return to the floor; an unearthed

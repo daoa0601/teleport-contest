@@ -19,7 +19,8 @@ import { recordObjectCall } from '../js/do_name.js';
 import { recordObjectPriceQuote } from '../js/shk.js';
 
 import { objectName } from '../js/objnam.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { changeTutorialState } from '../js/tutorial_state.js';
 import { vision_reset } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

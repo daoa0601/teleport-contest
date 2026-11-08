@@ -12,7 +12,8 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';
 import { readObjectName } from '../js/objnam.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { makeWish } from '../js/zap.js';
 

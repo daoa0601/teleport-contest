@@ -2,6 +2,7 @@
 // C ref: dungeon.c — init_dungeons(), init_level(), place_level().
 // Data ref: dat/dungeon.lua.
 
+import { definitionInteger, definitionString, optionalDefinitionString } from './lua/hero.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
@@ -36,7 +37,7 @@ import { place_lregion } from './mkmaze.js';
 import { formatKiller } from './topten.js';
 import type { BranchDefinition, BranchDefinitionType, Dungeon, DungeonAlignment, DungeonBranch, DungeonBranchType, DungeonDefinition, DungeonFlag, DungeonLocation, LevelRangeDefinition, SpecialLevelDefinition, SpecialLevelDescriptor, OverviewFlags, OverviewRecord } from './dungeon_types.js';
 import { isok } from './cmd.js';
-import { panic } from './diagnostics.js';
+import { panic } from './end.js';
 import { displayLiquidName } from './do_name.js';
 import { onQuestStart } from './quest.js';
 import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
@@ -76,11 +77,6 @@ const DUNGEON_ALIGNMENT_BITS = {
 // C dungeon.c:get_dgn_flags(): the Lua DUNGEON.flags list packed to bits.
 function packedDungeonFlags(flags: readonly DungeonFlag[]): number {
     return flags.reduce((bits, name) => bits | DUNGEON_FLAG_BITS[name], 0);
-}
-
-// C dungeon.c:get_dgn_align(): the Lua DUNGEON.alignment packed to bits.
-function packedDungeonAlignment(alignment: DungeonAlignment): number {
-    return DUNGEON_ALIGNMENT_BITS[alignment];
 }
 
 // Port only: Amask2align() with AM_NONE kept as null.
@@ -945,29 +941,6 @@ function definitionArray(value: unknown, path: string): unknown[] {
     return value;
 }
 
-// C nhlua.c:get_table_str(): the required string fields of a dungeon
-// definition table.
-function definitionString(value: unknown, path: string): string {
-    if (typeof value !== 'string') throw new TypeError(`${path} must be a string`);
-    return value;
-}
-
-// C nhlua.c:get_table_str_opt(): the optional string fields of a dungeon
-// definition table.
-function optionalDefinitionString(value: unknown, path: string): string | undefined {
-    return value == null ? undefined : definitionString(value, path);
-}
-
-// C nhlua.c:get_table_int(): the integer fields of a dungeon definition
-// table — also get_table_int_opt(), whose fallback value is the third
-// argument here.
-function definitionInteger(value: unknown, path: string, fallback?: number): number {
-    if (value == null && fallback !== undefined) return fallback;
-    if (typeof value !== 'number' || !Number.isSafeInteger(value))
-        throw new TypeError(`${path} must be an integer`);
-    return value;
-}
-
 // Part of C dungeon.c:get_dgn_flags(): one flag name from the Lua table.
 function definitionFlag(value: unknown, path: string): DungeonFlag {
     switch (value) {
@@ -985,20 +958,18 @@ function definitionFlags(value: unknown, path: string): DungeonFlag[] {
         .map((flag, index) => definitionFlag(flag, `${path}[${index + 1}]`));
 }
 
-// C dungeon.c:get_dgn_align(): the alignment name read —
-// dgnaligns2i[get_table_option(L, "alignment", "unaligned", dgnaligns)]
-// (dungeon.c:791).
-function definitionAlignment(value: unknown, path: string): DungeonAlignment {
-    if (value == null) return 'unaligned';
-    if (typeof value !== 'string') throw new TypeError(`${path} must be an alignment name`);
-    switch (value) {
-        case 'lawful': case 'neutral': case 'chaotic': case 'unaligned': case 'noalign':
-            return value;
-        default: throw new TypeError(`${path} is not a dungeon alignment`);
-    }
+// C dungeon.c:get_dgn_align(): the alignment option read and its
+// dgnaligns2i[] packing — "unaligned" is the get_table_option default and
+// both "unaligned" and "noalign" pack to D_ALIGN_NONE (dungeon.c:786-798).
+function definitionAlignment(value: unknown, path: string): number {
+    if (value == null) return DUNGEON_ALIGNMENT_BITS.unaligned;
+    if (value !== 'lawful' && value !== 'neutral' && value !== 'chaotic'
+        && value !== 'unaligned' && value !== 'noalign')
+        throw new TypeError(`${path} is not a dungeon alignment`);
+    return DUNGEON_ALIGNMENT_BITS[value];
 }
 
-// C dungeon.c:init_dungeon_branches(): the branch-type name read —
+// Part of C dungeon.c:init_dungeon_branches(): the branch-type name read —
 // brtypes2i[get_table_option(L, "branchtype", "stair", brtypes)]
 // (dungeon.c:897).
 function definitionBranchType(value: unknown, path: string): BranchDefinitionType {
@@ -1010,7 +981,7 @@ function definitionBranchType(value: unknown, path: string): BranchDefinitionTyp
     }
 }
 
-// C dungeon.c:init_dungeon_branches(): the up/down direction read —
+// Part of C dungeon.c:init_dungeon_branches(): the up/down direction read —
 // brdirstr2i[get_table_option(L, "direction", "down", brdirstr)]
 // (dungeon.c:899).
 function definitionBranchUp(value: unknown, path: string): boolean {
@@ -1046,7 +1017,7 @@ function levelDefinition(value: unknown, path: string): SpecialLevelDefinition {
         chain: optionalDefinitionString(source.chainlevel, `${path}.chainlevel`),
         variants: definitionInteger(source.nlevels, `${path}.nlevels`, 0) || 1,
         alignment: alignmentType(((packedDungeonFlags(flags)
-            | packedDungeonAlignment(alignment)) & D_ALIGN_MASK) >> 4),
+            | definitionAlignment(source.alignment, `${path}.alignment`)) & D_ALIGN_MASK) >> 4),
         flags,
         bonetag: optionalDefinitionString(source.bonetag, `${path}.bonetag`),
     };
@@ -1075,7 +1046,7 @@ function dungeonDefinition(value: unknown, path: string): DungeonDefinition {
             unconnected: flags.includes('unconnected'),
             // The pinned loader assigns packed D_ALIGN_* directly to this
             // three-bit field, so its high alignment bits are truncated.
-            alignment: alignmentType(packedDungeonAlignment(alignment) & AM_MASK),
+            alignment: alignmentType(definitionAlignment(source.alignment, `${path}.alignment`) & AM_MASK),
         },
         branches: definitionArray(source.branches, `${path}.branches`)
             .map((branch, index) => branchDefinition(branch, `${path}.branches[${index + 1}]`)),

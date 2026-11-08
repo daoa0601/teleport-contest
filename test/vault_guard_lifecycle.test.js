@@ -9,7 +9,8 @@ import { ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFF
 import { makeEngravingAt } from '../js/engrave.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { unpunishHero } from '../js/read.js';
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { invault } from '../js/vault.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { flush_screen, xy_set_wall_state } from '../js/display.js';

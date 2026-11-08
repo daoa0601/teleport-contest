@@ -162,7 +162,7 @@ import { consumeMonsterItem } from './mthrowu.js';
 import { heroCanTeleport, randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import { runDueTimers } from './timeout.js';
-import { askKeepRestoredSave } from './save.js';
+import { askKeepRestoredSave } from './restore.js';
 import { finishScheduledLevelChange } from './do.js';
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';

@@ -18,7 +18,8 @@ import { CLUB, SACK } from '../js/object_data.js';
 import { removeCurseEffect } from '../js/read.js';
 import { makeWish } from '../js/zap.js';
 
-import { restoreGame, saveGame } from '../js/save.js';
+import { saveGame } from '../js/save.js';
+import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { completeHeroStartup } from './support/startup.js';
