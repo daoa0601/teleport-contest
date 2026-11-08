@@ -391,3 +391,82 @@ int verification_is_dprince(struct permonst *ptr)
 {
     return is_dprince(ptr);
 }
+
+/* fv-equivalence-batch-14: further mondata.h macros and the two mondata.c
+ * helpers over one species row. */
+int verification_is_whirly(struct permonst *ptr)
+{
+    return is_whirly(ptr);
+}
+
+int verification_is_rider(struct permonst *ptr)
+{
+    return is_rider(ptr);
+}
+
+int verification_nonliving(struct permonst *ptr)
+{
+    return nonliving(ptr);
+}
+
+int verification_is_vampire(struct permonst *ptr)
+{
+    return is_vampire(ptr);
+}
+
+int verification_flesh_petrifies(struct permonst *ptr)
+{
+    return flesh_petrifies(ptr);
+}
+
+int verification_passes_rocks(struct permonst *ptr)
+{
+    return passes_rocks(ptr);
+}
+
+int verification_is_mplayer(struct permonst *ptr)
+{
+    return is_mplayer(ptr);
+}
+
+int verification_is_unicorn(struct permonst *ptr)
+{
+    return is_unicorn(ptr);
+}
+
+int verification_eyecount(struct permonst *ptr)
+{
+    return eyecount(ptr);
+}
+
+int verification_touch_petrifies(struct permonst *ptr)
+{
+    return touch_petrifies(ptr);
+}
+
+int verification_emits_light(struct permonst *ptr)
+{
+    return emits_light(ptr);
+}
+
+int verification_vegan(struct permonst *ptr)
+{
+    return vegan(ptr);
+}
+
+int verification_vegetarian(struct permonst *ptr)
+{
+    return vegetarian(ptr);
+}
+
+boolean
+verification_poly_when_stoned(struct permonst *ptr)
+{
+    return poly_when_stoned(ptr);
+}
+
+unsigned long
+verification_cvt_adtyp_to_mseenres(uchar adtyp)
+{
+    return cvt_adtyp_to_mseenres(adtyp);
+}

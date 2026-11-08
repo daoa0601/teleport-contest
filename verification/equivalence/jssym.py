@@ -370,6 +370,9 @@ class JSExec:
         if t == 'continue_statement':
             path.continued = True
             return [path]
+        if t == 'for_in_statement' and any(
+                c.type == 'of' for c in n.children if not c.is_named):
+            return self._for_of(path, n)
         if t == 'for_statement':
             return self._for(path, n)
         if t == 'while_statement':
@@ -474,6 +477,57 @@ class JSExec:
             increment = None
         paths = seq(paths, lambda p: self._loop(p, n, cond, increment))
         return _close_scope(outer, paths)
+
+    def _for_of(self, path, n):
+        """for...of over one array: bind each element in order and run the
+        body. The array length is the concrete tuple length, so unrolling is
+        exact and return/break/continue keep their JavaScript meaning."""
+        left = n.child_by_field_name('left')
+        if left is None and len(n.children) > 2:
+            left = n.children[2]
+        if left is not None and left.type in ('variable_declaration',
+                                              'lexical_declaration'):
+            declarators = left.named_children
+            if len(declarators) != 1 or declarators[0].type != 'variable_declarator':
+                raise Unsupported('JavaScript for...of declaration pattern')
+            name_node = declarators[0].child_by_field_name('name')
+            if name_node.type != 'identifier':
+                raise Unsupported('JavaScript for...of declaration pattern')
+            name = name_node.text.decode()
+        elif left is not None and left.type == 'identifier':
+            name = left.text.decode()
+        else:
+            raise Unsupported('JavaScript for...of binding')
+        if name in path.env and any(c.type in ('const', 'let')
+                                    for c in n.children if not c.is_named):
+            raise Unsupported(f'declaration of {name} shadows a binding at {self.where(n)}')
+        body = n.child_by_field_name('body')
+        outer = set(path.env)
+        out = []
+        for p, collection in self.eval(path, n.child_by_field_name('right')):
+            if collection.kind != 'array':
+                raise Unsupported(f'JavaScript for...of over {collection.kind} at {self.where(n)}')
+            live, done = [p], []
+            for item in collection.v:
+                nxt = []
+                for q in live:
+                    q.env[name] = item
+                    for r in self.exec(q, body):
+                        if r.returned or r.broken:
+                            done.append(r)
+                        else:
+                            r.continued = False
+                            nxt.append(r)
+                live = nxt
+                if not live:
+                    break
+            out.extend(done)
+            out.extend(live)
+        for p in out:
+            # A break belongs to this loop; execution continues after it.
+            if not p.returned:
+                p.broken = False
+        return _close_scope(outer, out)
 
     def _loop(self, path, n, cond, update):
         body = n.child_by_field_name('body')
@@ -670,12 +724,14 @@ class JSExec:
                            for q, value in self.eval(p, value_node)]
             return [(p, V('record', fields)) for p, fields in results]
         if t == 'array':
-            elements = n.named_children
-            if any(child.type in ('spread_element', 'comment') for child in elements):
+            # Comments inside the literal are no-ops in JavaScript.
+            elements = [child for child in n.named_children if child.type != 'comment']
+            if any(child.type == 'spread_element' for child in elements):
                 raise Unsupported('JavaScript array spread or holes')
             # Named children omit holes. Count separators at this array level.
-            commas = sum(child.type == ',' for child in n.children)
-            trailing = len(n.children) >= 3 and n.children[-2].type == ','
+            children = [c for c in n.children if c.type != 'comment']
+            commas = sum(child.type == ',' for child in children)
+            trailing = len(children) >= 3 and children[-2].type == ','
             if (not elements and commas) or commas != max(0, len(elements) - 1) + int(trailing):
                 raise Unsupported('JavaScript array holes')
             return [(p, V('array', tuple(values))) for p, values in self.eval_list(path, elements)]

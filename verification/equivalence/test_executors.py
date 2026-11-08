@@ -10,7 +10,7 @@ import unittest
 import z3
 
 from cfront import CFront
-from csym import CPtr
+from csym import CElement, CPtr
 from jssym import V, parse_module
 from prove import REPO, check, recorder_dir
 from specs import INT, LONG, Spec
@@ -1265,6 +1265,63 @@ class ExecutorTests(unittest.TestCase):
         c = 'int example(int x) { return 0; }'
         js = ('function example(x) { return [1].reduce(async (a, v) => a + v, 0); }')
         self.rejected(c, js, params=[('x', INT)], reason='async')
+
+    def test_for_of_iteration_binds_elements_in_order(self):
+        c = ('int example(int x) { int i; for (i = 0; i < 3; i++) '
+             'if ((1 << i) == x) return 1; return 0; }')
+        js = ('const shifts = [1, 2, 4];\n'
+              'function example(x) { for (const s of shifts) {\n'
+              '    if (s === x)\n        return 1;\n'
+              '} return 0; }')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 8])
+        self.equivalent(c, js, **domain)
+        self.rejected(c, js.replace('s === x', 's === x + 1'),
+                      **domain, reason='outputs differ')
+
+    def test_for_of_continue_and_break_keep_javascript_meaning(self):
+        c = ('int example(int x) { int i, t = 0; for (i = 0; i < 4; i++) { '
+             'if (x == 1) continue; if (t > 1) break; t += 1; } return t; }')
+        js = ('function example(x) { let t = 0; '
+              'for (const i of [1, 1, 1, 1]) {\n'
+              '    if (i === x)\n        continue;\n'
+              '    if (t > 1)\n        break;\n'
+              '    t += i;\n'
+              '} return t; }')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 2])
+        self.equivalent(c, js, **domain)
+        self.rejected(c, js.replace('t > 1', 't > 0'),
+                      **domain, reason='outputs differ')
+
+    def test_array_literals_may_carry_comments_and_a_trailing_separator(self):
+        js = ('const shifts = [\n    1, // one\n    2, // two\n];\n'
+              'function example(x) { return shifts.includes(x); }')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 3])
+        self.equivalent('int example(int x) { return x == 1 || x == 2; }',
+                        js, **domain)
+        self.rejected('int example(int x) { return x == 1 || x == 2; }',
+                      js.replace('shifts.includes(x)', 'shifts.includes(x + 1)'),
+                      **domain, reason='outputs differ')
+
+    def test_ordered_comparison_of_two_table_element_pointers(self):
+        def pointers(world, front, modules):
+            world.c_globals['rows'] = native_table(world, front,
+                                                   front.files[0], 'rows')
+            a = world.c_state['a'][0]
+            b = world.c_state['b'][0]
+            world.pre.extend([a >= 0, a < 4, b >= 0, b < 4])
+            world.c_globals['pa'] = CPtr(True, CElement('rows', a))
+            world.c_globals['pb'] = CPtr(True, CElement('rows', b))
+            world.js_values['game.a'] = V('num', a)
+            world.js_values['game.b'] = V('num', b)
+
+        native = 'static int rows[] = {3, 1, 4, 1}; static int *pa, *pb; ' \
+                 'int example(void) { return pa < pb; }'
+        options = dict(state=[('a', INT, None), ('b', INT, None)],
+                       configure=pointers)
+        self.equivalent(native, 'function example() { return game.a < game.b; }',
+                        **options)
+        self.rejected(native, 'function example() { return game.a <= game.b; }',
+                      reason='outputs differ', **options)
 
 
 if __name__ == '__main__':
