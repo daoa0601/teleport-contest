@@ -227,9 +227,10 @@ export async function doready(): Promise<void> {
     await doquiverCore('ready');
 }
 
-// Checked split for a selected inventory stack: C's splitobj() (mkobj.c)
-// cannot fail, the JS splitObjectStack() returns null, and the wield paths
-// that rely on a successful split assert that precondition here.
+// Port only: checked split for a selected inventory stack — C's splitobj()
+// (mkobj.c) cannot fail, the JS splitObjectStack() returns null, and the
+// wield paths that rely on a successful split assert that precondition
+// here.
 function splitCarriedStack(item: GameObject, count: number): GameObject {
     const split = splitObjectStack(item, count, game);
     if (!split) throw new Error('cannot split selected inventory stack');

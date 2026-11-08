@@ -57,7 +57,8 @@ import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID,
 import { showInventoryWindow } from './windows.js';
 import { useUpFloorObject } from './invent.js';
 import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance, checkMonsterGearNextTurn, } from './mon.js';
-import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, removeObjectFromMonsterInventory, removeHeroEquipment, } from './worn.js';
+import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage, findMonsterArmorClass, wornInSlot, removeObjectFromMonsterInventory, removeHeroEquipment, } from './worn.js';
+import { rndHallublast, destroyObjectFromMonsterInventory } from './mthrowu.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { defended, monsterHasMagicResistance, resistsBlndByArtifact } from './mondata.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
@@ -149,7 +150,6 @@ import { visionCellBlocksLight } from './vision.js';
 import { placeObjectSynchronously } from './mkobj.js';
 import { breakFloorObject } from './dothrow.js';
 import { verbForSubject } from './objnam.js';
-import { rndHallublast } from './mthrowu.js';
 import { CLR_WHITE } from './terminal.js';
 import { show_glyph_cell } from './display.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
@@ -3398,7 +3398,7 @@ function glyphCharacter(glyph) {
 // C zap.c:bhit().
 //, ZAPPED_WAND branch: a beam-limited walk over the map,
 // monsters, floor piles, and doors.
-async function bhit(source, range, state, flashDirection) {
+export async function bhit(source, range, state, flashDirection) {
     if (flashDirection) {
         const object = source;
         const dx = flashDirection.x, dy = flashDirection.y;
@@ -5716,12 +5716,6 @@ export async function hitMonsterWithRay(monster, nativeType, dice, { state = gam
 // AD_ACID).
 export function heroAcidBreathAttack(state = game) {
     return heroBreathAttack(state, AD_ACID);
-}
-// C apply.c:do_blinding_ray(): the bhit() dispatch of a light source.
-export async function doBlindingRay(object, { dx, dy }, { state = game } = {}) {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    return bhit(object, COLNO, state, { x: dx, y: dy });
 }
 // Part of C pray.c:pray_revive(): revive(otmp, TRUE) with the revival's
 // deferred message flush and buried-revival effects.

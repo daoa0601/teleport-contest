@@ -23,7 +23,7 @@ import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part, floatVsFlight } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR, recordObjectKnowledge } from './o_init.js';
-import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName } from './objnam.js';
+import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName, suitSimpleName, cloakSimpleName, helmSimpleName, glovesSimpleName, bootsSimpleName, shieldSimpleName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters, bucCategory } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
@@ -2147,62 +2147,29 @@ export function findArmorClass(state = game) {
     }
     return hero.uac;
 }
-// Part of C objnam.c:suit_simple_name(), objnam.c:cloak_simple_name(),
-// objnam.c:helm_simple_name(), objnam.c:gloves_simple_name(),
-// objnam.c:boots_simple_name(), objnam.c:shield_simple_name(): the
-// slot-derived form.
+// C objnam.c's six *_simple_name() helpers behind the port's slot model:
+// armorSimpleName() dispatches each armor slot to its C function
+// (suit_simple_name(), cloak_simple_name(), helm_simple_name(),
+// gloves_simple_name(), boots_simple_name(), shield_simple_name(), each
+// cited at its own port in objnam.ts); delayed armor nomovemsg deliberately
+// uses these short category nouns, not xname()/doname().
 export function armorSimpleName(object, state = game) {
     const slot = armorSlotFor(object?.otyp);
-    const actualName = OBJ_NAME(object?.otyp) || object?.name || 'armor';
-    const description = OBJ_DESCR(object?.otyp, state)
-        ?? '';
-    const dknown = object?.dknown !== false;
-    const typeKnown = objectTypeKnown(object, state);
-    if (slot === 'uarm') {
-        if (/ dragon scale mail$/i.test(actualName))
-            return 'dragon mail';
-        if (/ dragon scales$/i.test(actualName))
-            return 'dragon scales';
-        if (/ mail$/i.test(actualName))
-            return 'mail';
-        if (/ jacket$/i.test(actualName))
-            return 'jacket';
-        return 'suit';
-    }
-    if (slot === 'uarmc') {
-        if (actualName === 'robe')
-            return 'robe';
-        if (actualName === 'mummy wrapping')
-            return 'wrapping';
-        if (actualName === 'alchemy smock')
-            return typeKnown && dknown ? 'smock' : 'apron';
-        return 'cloak';
-    }
-    if (slot === 'uarmh') {
-        const softHeadgear = new Set([
-            'elven leather helm', 'fedora', 'cornuthaum', 'dunce cap',
-        ]);
-        return softHeadgear.has(actualName) ? 'hat' : 'helm';
-    }
-    if (slot === 'uarmg') {
-        const perceivedName = typeKnown ? actualName : description;
-        return dknown && /gauntlets/i.test(perceivedName)
-            ? 'gauntlets' : 'gloves';
-    }
-    if (slot === 'uarmf') {
-        return dknown
-            && (/shoes/i.test(description)
-                || (typeKnown && /shoes/i.test(actualName)))
-            ? 'shoes' : 'boots';
-    }
-    if (slot === 'uarms') {
-        if (object?.otyp === SHIELD_OF_REFLECTION)
-            return dknown ? 'silver shield' : 'smooth shield';
-        return 'shield';
-    }
+    if (slot === 'uarm')
+        return suitSimpleName(object);
+    if (slot === 'uarmc')
+        return cloakSimpleName(object, state);
+    if (slot === 'uarmh')
+        return helmSimpleName(object);
+    if (slot === 'uarmg')
+        return glovesSimpleName(object, state);
+    if (slot === 'uarmf')
+        return bootsSimpleName(object, state);
+    if (slot === 'uarms')
+        return shieldSimpleName(object);
     if (slot === 'uarmu')
         return 'shirt';
-    return actualName;
+    return OBJ_NAME(object?.otyp) || object?.name || 'armor';
 }
 // C do_wear.c:fingers_or_gloves().
 // Plural "fingers" or optionally "gloves".

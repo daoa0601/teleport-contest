@@ -2064,7 +2064,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     };
 }
 // C potion.c:potionhit().
-export async function hitMonsterWithSupportedPotion({ state = game, monster, potion, wakeMonster = null, publish = plineWithContinuation, targetVisible = cansee(monster?.mx, monster?.my), targetSpotted = canSeeMonster(monster), spotMonster = target => canSpotMonster(target), repaintMonster = async (target) => await newsym(target.mx, target.my), rememberInvisible = async (target) => await map_invisible(target.mx, target.my), wakeNearby = null, splitMonster: splitMonsterHit = target => splitMonster(target, state, { publish }), transformWere = target => transformWereMonster(target, state), finishKill = null, showShield = target => shieldeff(target.mx, target.my, state), heroCaused = true, resolveVapor = false, distance = 0, target = { x: monster.mx, y: monster.my }, }) {
+export async function hitMonsterWithSupportedPotion({ state = game, monster, potion, wakeMonster = null, publish = plineWithContinuation, targetVisible = cansee(monster?.mx, monster?.my), targetSpotted = canSeeMonster(monster), spotMonster = target => canSpotMonster(target), repaintMonster = async (target) => await newsym(target.mx, target.my), rememberInvisible = async (target) => await map_invisible(target.mx, target.my), wakeNearby = null, splitMonster: splitMonsterHit = target => splitMon({ monster: target }, state, { publish }), transformWere = target => transformWereMonster(target, state), finishKill = null, showShield = target => shieldeff(target.mx, target.my, state), heroCaused = true, resolveVapor = false, distance = 0, target = { x: monster.mx, y: monster.my }, }) {
     if (!monster || !potion
         || !SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
         return null;
@@ -3014,6 +3014,13 @@ export async function releaseDjinni(source, state) {
             setMonsterMalign(monster, state);
             break;
     }
+}
+export async function splitMon(target, state = game, options = {}) {
+    return 'hero' in target
+        ? splitHeroMonsterForm(target.hero)
+        : splitMonster(target.monster, state, target.heatSource === undefined
+            ? options
+            : { ...options, heatSource: target.heatSource });
 }
 // Part of C potion.c:split_mon(): the monster branch. C takes one monster
 // pointer that may be &gy.youmonst; the hero port is not a Monster, so the

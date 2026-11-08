@@ -42,6 +42,7 @@ import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from '.
 import { monsterName } from './do_name.js';
 import { hasCompletedEngraving } from './engrave.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
+import { setTrack } from './track.js';
 import { monsterIsScaredAt } from './monmove.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { heroHasWaterWalking } from './do_wear.js';
@@ -1418,6 +1419,78 @@ export async function clearFixedTeleportDestination(
     };
 }
 
+// C teleport.c:tele_trap().
+// A hero stepping on a teleport trap.  C's static in_tele_trap flag stops
+// the spoteffects() recursion when a fixed destination holds another
+// teleport trap; the port's _inTeleportTrap flag is that guard.  The
+// trapeffect() hero branch (trap.ts) reveals the trap first and hands the
+// jump to this; the arrival handler is the port's finishTeleport seam.
+export async function teleTrap(
+    trap: Trap, finishTeleport: HeroTrapOptions['finishTeleport'],
+): Promise<boolean> {
+    if (game._inTeleportTrap) return false;
+    if (typeof finishTeleport !== 'function')
+        throw new TypeError('teleport trap needs an arrival handler');
+
+    game._inTeleportTrap = true;
+    try {
+        const blocked = heroTeleportTrapBlock();
+        if (blocked) {
+            if (blocked === 'antimagic')
+                await shieldeff(game.u.ux, game.u.uy);
+            await plineWithContinuation(formatFeltMessage('a wrenching sensation.'));
+            return true;
+        }
+
+        if (!await bringLeashedFollowers()) {
+            await plineWithContinuation('You shudder for a moment.');
+            return true;
+        }
+
+        let destination: Position | null = null;
+        if (trap.once) {
+            deleteTrap(trap, game);
+            await newsym(game.u.ux, game.u.uy);
+
+            const vault = searchSpecial(VAULT, game);
+            if (vault) {
+                const vaultSquare = { x: 0, y: 0 };
+                if (somexyspace(vault, vaultSquare, game)
+                    && heroTeleportDestinationOk(
+                        vaultSquare.x, vaultSquare.y,
+                    )) destination = vaultSquare;
+            }
+        } else if (trap.teledest
+            && isok(trap.teledest.x, trap.teledest.y)) {
+            setTrack(game);
+            const cleared = await clearFixedTeleportDestination(
+                trap.teledest.x, trap.teledest.y,
+            );
+            if (!cleared.cleared) {
+                await plineWithContinuation('You shudder for a moment.');
+                return true;
+            }
+            if (cleared.relocation) {
+                await newsym(cleared.relocation.oldx, cleared.relocation.oldy);
+                await newsym(cleared.relocation.x, cleared.relocation.y);
+            }
+            destination = trap.teledest;
+        } else {
+            await teleportHero({ chooseDestination: askTeleportDestination });
+            return true;
+        }
+
+        if (!destination) {
+            // vault_tele() falls back to tele(), including teleport control.
+            await teleportHero({ chooseDestination: askTeleportDestination });
+            return true;
+        }
+        await teleds(destination.x, destination.y, game, { finishArrival: finishTeleport });
+        return true;
+    } finally {
+        game._inTeleportTrap = false;
+    }
+}
 
 // C teleport.c:teleport_pet()
 // C teleport_pet(): feedback may wait for input while the leash is attached.

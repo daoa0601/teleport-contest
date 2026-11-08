@@ -38,7 +38,7 @@ import { wieldMonsterWeapon } from './weapon.js';
 import { releaseMonsterLeash } from './apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { displayMessageWindow } from './topl.js';
-import { begForFood, monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './sounds.js';
+import { begForFood, publishMonsterNoise, publishMonsterWhimper } from './sounds.js';
 import { maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes, monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks, tunnels, speciesHasWeaponAttack, touchPetrifies, carnivorous, herbivorous, resistConflict, monsterIsAnimal, monsterIsMindless, needspick, cantwield, } from './mondata.js';
 import { monsterReflectsRay } from './muse.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -992,7 +992,7 @@ export async function movePet(monster, state, random, rollDice, rollOne, calls) 
                     : monster.female
                         ? 'her'
                         : 'his';
-                const subject = canSpotMonster(monster) ? monsterSentenceSubject(monster) : 'It';
+                const subject = canSpotMonster(monster) ? visibleMonsterSubject(monster) : 'It';
                 await plineWithContinuation(`${subject} breaks loose of ${pronoun} leash!`);
                 await releaseMonsterLeash(monster, false, { state });
             }

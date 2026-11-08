@@ -17,6 +17,7 @@ import { validCloudPosition } from './read.js';
 import { MONSTER_ATTACKS, MONSTER_SOUND } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
+import { mPoisongasOk } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { makeBlinded } from './potion.js';
@@ -162,7 +163,7 @@ export async function createPoisonGasCloud(state, x, y, cloudSize, damage, rando
         return null;
     const silentSingleCell = !state.context?.mon_moving
         && x === state.u.ux && y === state.u.uy && cloudSize === 1
-        && (!damage || heroGasTolerance(state) === GAS_OK);
+        && (!damage || mPoisongasOk({ hero: state }) === GAS_OK);
     if (cloudSize > 150) {
         await impossible(`create_gas_cloud: cloud too large (${cloudSize})!`, { state });
         cloudSize = 150;
@@ -340,18 +341,33 @@ function halfHeroGasDamage(damage, state) {
 async function wakeNearGas(x, y, state, publish, wake) {
     await wake(x, y, 2, state, publish);
 }
-// Part of C region.c:inside_gas_cloud(): the hero branch (C indicates the
-// hero with a Null monster pointer; the TS hero is not a Monster, so the
-// hero and monster halves stay separate functions): fog-cloud maintenance, eyes
-// that sting and blind, and the cough plus poison damage for a breather.
-async function affectHeroWithGas(region, state, { publish, rollOne, wake, die }) {
-    if (!region.heroInside)
-        return null;
-    if (Upolyd(state.u))
-        maintainCloudForFog(region, state.u.umonnum);
+// C region.c:inside_gas_cloud().
+// The per-occupant callback: C indicates the hero with a Null monster
+// pointer and calls this once for the hero and once per monster inside the
+// cloud; fog-cloud ttl maintenance and the damage gate are shared.  The
+// hero half carries its own occupancy test because runLevelRegions() probes
+// every cloud for the hero rather than tracking hero membership.
+async function insideGasCloud(region, monster, state, handlers) {
+    if (!monster) {
+        if (!region.heroInside)
+            return null;
+        if (Upolyd(state.u))
+            maintainCloudForFog(region, state.u.umonnum);
+    }
+    else {
+        maintainCloudForFog(region, monster.mnum);
+    }
     if (region.damage < 1)
         return null;
-    const tolerance = heroGasTolerance(state);
+    return monster
+        ? affectMonsterWithGas(region, monster, state, handlers)
+        : heroGasEffect(region, state, handlers);
+}
+// Part of C region.c:inside_gas_cloud(): the hero branch (C indicates the
+// hero with a Null monster pointer): eyes that sting and blind, and the
+// cough plus poison damage for a breather.
+async function heroGasEffect(region, state, { publish, rollOne, wake, die }) {
+    const tolerance = mPoisongasOk({ hero: state });
     if (tolerance === GAS_OK)
         return null;
     if (!heroIsBlind(state)) {
@@ -379,10 +395,7 @@ async function affectHeroWithGas(region, state, { publish, rollOne, wake, die })
 // Part of C region.c:inside_gas_cloud(), monster branch: the cough, anger at the
 // hero's cloud, blindness, and the poison that can kill.
 async function affectMonsterWithGas(region, monster, state, { publish, rollOne, wake, onAnger, onMonsterDeath }) {
-    maintainCloudForFog(region, monster.mnum);
-    if (region.damage < 1)
-        return null;
-    if (monsterGasTolerance(monster, state) === GAS_OK)
+    if (mPoisongasOk({ monster }, state) === GAS_OK)
         return null;
     const nearHero = (monster.mx - state.u.ux) ** 2
         // C dist2(): the cough carries eight squares, squared.
@@ -404,7 +417,7 @@ async function affectMonsterWithGas(region, monster, state, { publish, rollOne, 
         monster.mblinded = 1;
         monster.mcansee = 0;
     }
-    if (monsterGasTolerance(monster, state) === GAS_MINOR)
+    if (mPoisongasOk({ monster }, state) === GAS_MINOR)
         return { kind: 'monster-gas', monster, resisted: true, damage: 0 };
     const damage = rollOne(region.damage) + 5;
     monster.mhp -= damage;
@@ -523,7 +536,7 @@ export async function runLevelRegions(state, { publish = plineWithContinuation, 
     for (const region of state.level.regions) {
         if (region.ttl > 0)
             region.ttl--;
-        const hero = await affectHeroWithGas(region, state, {
+        const hero = await insideGasCloud(region, null, state, {
             publish, rollOne, wake, die,
         });
         if (hero)
@@ -538,7 +551,7 @@ export async function runLevelRegions(state, { publish = plineWithContinuation, 
                 removeRegionMonster(region, index);
                 continue;
             }
-            const event = await affectMonsterWithGas(region, monster, state, {
+            const event = await insideGasCloud(region, monster, state, {
                 publish, rollOne, wake, onAnger, onMonsterDeath,
             });
             if (event)

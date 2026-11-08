@@ -111,8 +111,7 @@ import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd, d, rnl } from './rng.js';
 import { updateMonsterRegions , updateHeroRegions } from './region.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
-import { monsterSentenceSubject } from './sounds.js';
-import { displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
+import { displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName, visibleMonsterSubject } from './do_name.js';
 import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
 import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet } from './do_wear.js';
 import { setMonsterMalign, makemonAt } from './makemon.js';
@@ -1128,7 +1127,7 @@ async function applyHurtleTrap(monster: Monster, options: Pick<ActiveHurtleOptio
 export async function hurtleMonster(monster: Monster, dx: number, dy: number, distance: number, options: MonsterHurtleOptions = {}): Promise<MonsterHurtleOutcome> {
     const {
         monsterMoving = false, state = game, announce = plineWithContinuation,
-        nameMonster = monsterSentenceSubject, random = rn2,
+        nameMonster = visibleMonsterSubject, random = rn2,
     } = options;
     requirePlayingGame(state);
     const wakeMonster = options.wakeMonster

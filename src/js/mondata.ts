@@ -326,15 +326,17 @@ export function resolveMonsterClass(value: string): MonsterClassMatch {
     return { monsterClass: mnum < 0 ? 0 : (MONSTER_SYMBOL[mnum] ?? 0), mnum };
 }
 
+// mondata.c:defended()'s dragon species range (gray dragon through yellow
+// dragon, in mons[] order).
+const FIRST_DRAGON = MONSTER_NAME.indexOf('gray dragon');
+const LAST_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
+
 // C mondata.c:defended(): is 'mon' — the hero or a monster — protected
 // against damage type 'adtyp' via a wielded artifact's defn or dragon
 // scales, worn as body armor or implicit in an adult dragon's own body?
 // Unlike artifact.c:defends_when_carried(), items that merely defend while
 // carried do not count.  'adtyp' accepts the numeric attack type or the
 // artifact query spelling; artifact.c:defends() normalizes the number.
-const FIRST_DRAGON = MONSTER_NAME.indexOf('gray dragon');
-const LAST_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
-
 export function defended(
     mon: ArtifactDefender | { readonly youmonst: true },
     adtyp: DamageType | ArtifactDefenseQuery,

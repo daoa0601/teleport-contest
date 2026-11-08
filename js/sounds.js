@@ -492,10 +492,6 @@ const PM_DINGO = MONSTER_NAME.indexOf('dingo');
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const PM_GECKO = MONSTER_NAME.indexOf('gecko');
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
-// C do_name.c:Monnam(): monsterName capitalized, for sentence subjects.
-export function monsterSentenceSubject(monster) {
-    return monsterName(monster, { capitalized: true });
-}
 // C sounds.c:growl_sound(). Summoning uses the same noise while unseen.
 export function monsterGrowlSound(monster) {
     switch (MONSTER_SOUND[monster.mnum] ?? MS_SILENT) {

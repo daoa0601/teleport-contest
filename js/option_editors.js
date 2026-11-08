@@ -3,7 +3,7 @@ import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { visibleCommandKey } from './hacklib.js';
 import { autoUnlockFlags } from './lock.js';
-import { statusVersion } from './version.js';
+import { statusVersion } from './extversion.js';
 import { statusConditionOptions, condMenu } from './botl.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import { MENU_ITEMFLAGS_SELECTED, PICK_ONE, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';

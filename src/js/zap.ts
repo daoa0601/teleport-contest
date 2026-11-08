@@ -346,9 +346,10 @@ import {
 import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, MonsterSelfTouchResult } from './mon.js';
 import {
     setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed,
-    monsterSpeedMessage, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot,
+    monsterSpeedMessage, findMonsterArmorClass, wornInSlot,
     removeObjectFromMonsterInventory, removeHeroEquipment,
 } from './worn.js';
+import { rndHallublast, destroyObjectFromMonsterInventory } from './mthrowu.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { defended, monsterHasMagicResistance, resistsBlndByArtifact } from './mondata.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';
@@ -449,7 +450,6 @@ import { visionCellBlocksLight } from './vision.js';
 import { placeObjectSynchronously } from './mkobj.js';
 import { breakFloorObject } from './dothrow.js';
 import { verbForSubject } from './objnam.js';
-import { rndHallublast } from './mthrowu.js';
 import { CLR_WHITE } from './terminal.js';
 import { show_glyph_cell } from './display.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
@@ -4034,7 +4034,7 @@ function glyphCharacter(glyph: ReturnType<typeof glyphAt>): string | undefined {
 // C zap.c:bhit().
 //, ZAPPED_WAND branch: a beam-limited walk over the map,
 // monsters, floor piles, and doors.
-async function bhit(source: GameObject, range: number, state: PlayingGameState, flashDirection?: Position): Promise<boolean> {
+export async function bhit(source: GameObject, range: number, state: PlayingGameState, flashDirection?: Position): Promise<boolean> {
     if (flashDirection) {
         const object = source;
         const dx = flashDirection.x, dy = flashDirection.y;
@@ -6471,13 +6471,6 @@ export async function hitMonsterWithRay(monster: Monster, nativeType: number, di
 // AD_ACID).
 export function heroAcidBreathAttack(state = game) {
     return heroBreathAttack(state, AD_ACID);
-}
-
-// C apply.c:do_blinding_ray(): the bhit() dispatch of a light source.
-export async function doBlindingRay(object: GameObject, { dx, dy }: { dx: number; dy: number }, { state = game }: { state?: GameState } = {}): Promise<boolean> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    return bhit(object, COLNO, state, { x: dx, y: dy });
 }
 
 // Part of C pray.c:pray_revive(): revive(otmp, TRUE) with the revival's

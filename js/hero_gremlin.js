@@ -5,7 +5,7 @@ import { FOUNTAIN } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { dryFountainAt } from './fountain.js';
 import { game } from './gstate.js';
-import { splitHeroMonsterForm } from './potion.js';
+import { splitMon } from './potion.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';
 const PM_GREMLIN = MONSTER_NAME.indexOf('gremlin');
@@ -16,7 +16,7 @@ export function heroCanSplitLikeGremlin(state = game) {
 // Part of C cmd.c:domonability(): split_mon(&gy.youmonst, 0) and its
 // "You multiply!" message.
 async function splitGremlin(state, publish) {
-    const clone = await splitHeroMonsterForm(state);
+    const clone = await splitMon({ hero: state });
     if (clone)
         await publish('You multiply!');
     return clone;

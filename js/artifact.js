@@ -49,7 +49,7 @@ import { enlightenment } from './insight.js';
 import { chooseInventoryObject, freeInventoryObject } from './invent.js';
 import { useCrystalBall } from './detect.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
-import { doBlindingRay } from './zap.js';
+import { bringLeashedFollowers, doBlindingRay } from './apply.js';
 import { castSpell, spellSkillType } from './spell.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PLYS, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_MAGC } from './monster_attack_types.js';
@@ -60,7 +60,6 @@ import { removeWornHeroItem } from './steal.js';
 import { depth, surfaceName, In_quest, In_hell } from './dungeon.js';
 import { gotoLevel } from './do.js';
 import { levelTeleport, teleportMonsterByHero } from './teleport.js';
-import { bringLeashedFollowers } from './apply.js';
 import { showPagedPickOneMenu } from './windows.js';
 import { throwOrdinaryObject, resolveSwallowedEggPieOrVenomThrow } from './dothrow.js';
 import { holdAnotherObject } from './invent.js';
@@ -474,7 +473,7 @@ const QUERY_FOR_DAMAGE = {
     [AD_SLEE]: 'sleep', [AD_PLYS]: 'paralysis', [AD_DISN]: 'disintegration',
     [AD_SLOW]: 'slow', [AD_ACID]: 'acid', [AD_STON]: 'stone',
 };
-// C artifact.c:defends(): the dragon-scale half of the color switch, as the
+// artifact.c:defends(): the dragon-scale half of the color switch, as the
 // adult dragon species each damage type's scales belong to.  Dragon scales
 // and dragon scale mail of one color share the conversion (polyself.ts
 // dragonFormForArmor()); no entry means the default arm of the C switch.
@@ -496,6 +495,10 @@ const DRAGON_DEFENDING = {
     acid: MONSTER_NAME.indexOf('yellow dragon'),
     stone: MONSTER_NAME.indexOf('yellow dragon'),
 };
+// C artifact.c:defends().
+// Does this object's artifact or dragon-scale material defend against the
+// damage type?  The dragon-scale half of the color switch reads the table
+// above; no entry means the default arm of the C switch.
 export function defends(adtyp, object, state = game) {
     const damageType = typeof adtyp === 'number' ? QUERY_FOR_DAMAGE[adtyp] : adtyp;
     if (!object || damageType == null)

@@ -66,7 +66,7 @@ import {
     inventoryItemDescription, chooseInventoryObject, getobj, addInventoryItem,
 } from './invent.js';
 import {
-    doBlindingRay, getObjectLocation, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap,
+    bhit, getObjectLocation, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap,
     hitFloorPileWithWand, hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn,
     objectResistsDestruction, zappable,
 } from './zap.js';
@@ -215,6 +215,13 @@ import { snapshotMenuUnderlay } from './wintty.js';
 import type { MenuUnderlay } from './wintty.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { useMagicMarker } from './write.js';
+
+// C apply.c:do_blinding_ray(): the bhit() dispatch of a light source.
+export async function doBlindingRay(object: GameObject, { dx, dy }: { dx: number; dy: number }, { state = game }: { state?: GameState } = {}): Promise<boolean> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    return bhit(object, COLNO, state, { x: dx, y: dy });
+}
 
 // C apply.c:use_camera()
 export async function useCamera(

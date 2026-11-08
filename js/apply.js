@@ -28,7 +28,7 @@ import { paralyzeMonster } from './mhitm.js';
 import { explode } from './explode.js';
 import { makeFamiliar } from './dog.js';
 import { useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse, holdAnotherObject, freeInventoryObject, useUpInventoryStack, consumeInventoryItem, consumeObjectCharge, delobj, inventoryCommandLetter, inventoryItemDescription, chooseInventoryObject, getobj, addInventoryItem, } from './invent.js';
-import { doBlindingRay, getObjectLocation, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn, objectResistsDestruction, zappable, } from './zap.js';
+import { bhit, getObjectLocation, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn, objectResistsDestruction, zappable, } from './zap.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
@@ -84,6 +84,12 @@ import { showPagedPickOneMenu } from './windows.js';
 import { snapshotMenuUnderlay } from './wintty.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { useMagicMarker } from './write.js';
+// C apply.c:do_blinding_ray(): the bhit() dispatch of a light source.
+export async function doBlindingRay(object, { dx, dy }, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    return bhit(object, COLNO, state, { x: dx, y: dy });
+}
 // C apply.c:use_camera()
 export async function useCamera(object, { state = game } = {}) {
     requireLiveGame(state);

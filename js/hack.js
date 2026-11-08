@@ -61,7 +61,7 @@ import { objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectT
 import { floorObjectDescription, stack_object, freeInventoryObject, delobj, objectAt } from './invent.js';
 import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';
-import { autopickupAllows, autopickupAtHero } from './pickup.js';
+import { autopickupAllows, autopickupAtHero, pickupAtHero, pickupSourceAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
 import { intemple } from './priest.js';
 import { recordAchievement } from './insight.js';
@@ -2590,6 +2590,25 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
         messages: [reachMessage(state, trap)],
         spendsTurn: false,
     } : null;
+}
+// C hack.c:dopickup(): the #pickup command.  Always reset multi, run the
+// location checks (pickup_checks()), and hand what remains to pickup()
+// (pickup.ts:pickupAtHero()); the swallowed-with-inventory case (-2)
+// carries through the same stomach pass inside it.
+export async function dopickup() {
+    const count = Math.max(0, game._commandCount || 0);
+    setMulti(0);
+    const source = pickupSourceAtHero();
+    const problem = pickupLocationProblem({
+        state: game, objects: source.objects, monster: source.monster,
+    });
+    if (problem) {
+        for (const message of problem.messages)
+            await plineWithContinuation(message);
+        game.context.move = problem.spendsTurn ? 1 : 0;
+        return;
+    }
+    await pickupAtHero(count);
 }
 // C hack.c:spoteffects(TRUE) also applies when expulsion or a body change leaves
 // the hero on the same square. It does not count as a movement attempt.

@@ -64,9 +64,9 @@ import {
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters, flashGlyphAt, transientMonsterGlyph, shieldeff } from './display.js';
-import { splitMonster } from './potion.js';
+import { splitMon } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, requireMonsterData } from './monster_data.js';
-import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName } from './do_name.js';
+import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2, distmin, ordinalSuffix, pointsOnline } from './hacklib.js';
 import {
     monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars,
@@ -109,7 +109,7 @@ import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { hasLightSources } from './light.js';
-import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
+import { publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { insideWizardTower, sameDungeonLevel, level_difficulty, levelHasCeiling, surfaceName } from './dungeon.js';
@@ -117,7 +117,8 @@ import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPol
 import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments, removeMonsterWormBody } from './worm.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced } from './do_wear.js';
-import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './region.js';
+import { GAS_OK, heroGasTolerance, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './region.js';
+import type { GasTolerance } from './region.js';
 import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
@@ -262,12 +263,12 @@ export async function applyMonsterGolemEffects(monster: Monster, damageType: num
     if (slow && monster.mspeed !== MSLOW) {
         const change = adjustMonsterSpeed(monster, -1);
         if (!state.in_mklev && change.changed && change.canDescribe && canSeeMonster(monster)) {
-            const message = monsterSpeedMessage(change, monsterSentenceSubject(monster), state);
+            const message = monsterSpeedMessage(change, visibleMonsterSubject(monster), state);
             if (message) await publish(message);
         }
     }
     if (healing && healMonster(monster, healing) && cansee(monster.mx, monster.my))
-        await publish(`${monsterSentenceSubject(monster)} seems healthier.`);
+        await publish(`${visibleMonsterSubject(monster)} seems healthier.`);
 }
 
 // Part of C mon.c:dead_species(): the mvitals test.
@@ -430,7 +431,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
     const inFountain = location.typ === FOUNTAIN;
     if (monster.mnum === PM_GREMLIN && (inPool || inFountain)
         && random(3) !== 0) {
-        const clone = await splitMonster(monster, state, {
+        const clone = await splitMon({ monster }, state, {
             monsterMoving,
             random,
             publish: announce,
@@ -1126,6 +1127,20 @@ export function monsterCanCarryObject(
     return monsterCarryAmount(monster, object, state, random) > 0;
 }
 
+
+// C mon.c:m_poisongas_ok().
+// Would this actor be OK in poison gas?  Does not check for actual gas at
+// the location.  C reads the actor through one mtmp pointer, testing
+// mtmp == &gy.youmonst; the port's hero is not a Monster, so the union
+// names the actor and the halves stay in region.ts (heroGasTolerance(),
+// monsterGasTolerance(), the species tests they share).
+export type PoisonGasTarget = { hero: GameState } | { monster: Monster };
+export function mPoisongasOk(target: PoisonGasTarget, state: GameState = game): GasTolerance {
+    return 'hero' in target
+        ? heroGasTolerance(target.hero)
+        : monsterGasTolerance(target.monster, state);
+}
+
 // C mon.c:mfndpos(). Scan x first, then y; finding the real hero updates
 // perception before later squares are classified against the apparent hero.
 // C mon.c:monlineu(): the NOTONL test compares against the monster's
@@ -1154,7 +1169,7 @@ export async function mfndpos(
         (inAir || monster.mnum === PM_FIRE_ELEMENTAL || monster.mnum === PM_SALAMANDER);
     const { rockOk, treeOk } = monsterDigCapabilities(monster, flags);
     const throughDoor = !!(flags & (ALLOW_WALL | BUSTDOOR)) || rockOk || treeOk;
-    const poisonGasOk = monsterGasTolerance(monster, state) === GAS_OK;
+    const poisonGasOk = mPoisongasOk({ monster }, state) === GAS_OK;
     const currentRegion = visibleRegionAt(state, x, y);
     const inPoisonGas = currentRegion?.kind === 'gas-cloud' && !!currentRegion.damage;
     if (monster.mconf) flags = (flags | ALLOW_ALL) & ~NOTONL;

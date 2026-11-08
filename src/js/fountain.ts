@@ -29,7 +29,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { nexttodoor } from './mkroom.js';
-import { splitHeroMonsterForm, grantMonsterWish, applySupportedPotionVapor, heroPotionVaporProfile, drinkPotion, setPropertyTimeout } from './potion.js';
+import { splitMon, grantMonsterWish, applySupportedPotionVapor, heroPotionVaporProfile, drinkPotion, setPropertyTimeout } from './potion.js';
 import { mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject, adjustObjectLightAfterBlessing} from './mkobj.js';
 import { definiteName, objectCombatName, rndClass, makePlural, fruitName } from './objnam.js';
 import { resolveMonsterLiquid, angerWatchGuards, finishLiquidDeathForCurrentMover } from './mon.js';
@@ -150,7 +150,7 @@ async function warnAboutFountain(state: GameState, publish: MessagePublisher): P
 // Part of C sit.c:dosit(): the in_water gremlin branch — split_mon()
 // then dryup() when sitting in a fountain.
 export async function splitSittingGremlin() {
-    const clone = await splitHeroMonsterForm(game);
+    const clone = await splitMon({ hero: game });
     if (!clone) return null;
     await plineWithContinuation('You multiply!');
     await dryFountainAt(game.u.ux, game.u.uy);

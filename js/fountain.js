@@ -16,7 +16,7 @@ import { deleteEngravingAt } from './engrave.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { nexttodoor } from './mkroom.js';
-import { splitHeroMonsterForm, grantMonsterWish, applySupportedPotionVapor, heroPotionVaporProfile, drinkPotion, setPropertyTimeout } from './potion.js';
+import { splitMon, grantMonsterWish, applySupportedPotionVapor, heroPotionVaporProfile, drinkPotion, setPropertyTimeout } from './potion.js';
 import { mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject, adjustObjectLightAfterBlessing } from './mkobj.js';
 import { definiteName, objectCombatName, rndClass, makePlural, fruitName } from './objnam.js';
 import { resolveMonsterLiquid, angerWatchGuards, finishLiquidDeathForCurrentMover } from './mon.js';
@@ -123,7 +123,7 @@ async function warnAboutFountain(state, publish) {
 // Part of C sit.c:dosit(): the in_water gremlin branch — split_mon()
 // then dryup() when sitting in a fountain.
 export async function splitSittingGremlin() {
-    const clone = await splitHeroMonsterForm(game);
+    const clone = await splitMon({ hero: game });
     if (!clone)
         return null;
     await plineWithContinuation('You multiply!');

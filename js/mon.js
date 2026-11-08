@@ -16,9 +16,9 @@ import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALL
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters, flashGlyphAt, transientMonsterGlyph, shieldeff } from './display.js';
-import { splitMonster } from './potion.js';
+import { splitMon } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, requireMonsterData } from './monster_data.js';
-import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName } from './do_name.js';
+import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2, distmin, ordinalSuffix, pointsOnline } from './hacklib.js';
 import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, formCanBecomeStoneGolem, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, is_dwarf, is_elf, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsAlwaysHostile, monsterIsPlainHuman, monsterIsQuestGuardian, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, resistConflict, heroHasOlfaction, } from './mondata.js';
 import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
@@ -42,7 +42,7 @@ import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { hasLightSources } from './light.js';
-import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
+import { publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { insideWizardTower, sameDungeonLevel, level_difficulty, levelHasCeiling, surfaceName } from './dungeon.js';
@@ -50,7 +50,7 @@ import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPol
 import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments, removeMonsterWormBody } from './worm.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced } from './do_wear.js';
-import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './region.js';
+import { GAS_OK, heroGasTolerance, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './region.js';
 import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
@@ -142,13 +142,13 @@ export async function applyMonsterGolemEffects(monster, damageType, damage, { st
     if (slow && monster.mspeed !== MSLOW) {
         const change = adjustMonsterSpeed(monster, -1);
         if (!state.in_mklev && change.changed && change.canDescribe && canSeeMonster(monster)) {
-            const message = monsterSpeedMessage(change, monsterSentenceSubject(monster), state);
+            const message = monsterSpeedMessage(change, visibleMonsterSubject(monster), state);
             if (message)
                 await publish(message);
         }
     }
     if (healing && healMonster(monster, healing) && cansee(monster.mx, monster.my))
-        await publish(`${monsterSentenceSubject(monster)} seems healthier.`);
+        await publish(`${visibleMonsterSubject(monster)} seems healthier.`);
 }
 // Part of C mon.c:dead_species(): the mvitals test.
 export function speciesWasGenocided(mnum, state) {
@@ -291,7 +291,7 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
     const inFountain = location.typ === FOUNTAIN;
     if (monster.mnum === PM_GREMLIN && (inPool || inFountain)
         && random(3) !== 0) {
-        const clone = await splitMonster(monster, state, {
+        const clone = await splitMon({ monster }, state, {
             monsterMoving,
             random,
             publish: announce,
@@ -945,6 +945,11 @@ export function monsterCarryAmount(monster, object, state = game, random = rn2) 
 export function monsterCanCarryObject(monster, object, state = game, random = rn2) {
     return monsterCarryAmount(monster, object, state, random) > 0;
 }
+export function mPoisongasOk(target, state = game) {
+    return 'hero' in target
+        ? heroGasTolerance(target.hero)
+        : monsterGasTolerance(target.monster, state);
+}
 // C mon.c:mfndpos(). Scan x first, then y; finding the real hero updates
 // perception before later squares are classified against the apparent hero.
 // C mon.c:monlineu(): the NOTONL test compares against the monster's
@@ -967,7 +972,7 @@ export async function mfndpos(monster, state, flags = monAllowFlags(monster, sta
         (inAir || monster.mnum === PM_FIRE_ELEMENTAL || monster.mnum === PM_SALAMANDER);
     const { rockOk, treeOk } = monsterDigCapabilities(monster, flags);
     const throughDoor = !!(flags & (ALLOW_WALL | BUSTDOOR)) || rockOk || treeOk;
-    const poisonGasOk = monsterGasTolerance(monster, state) === GAS_OK;
+    const poisonGasOk = mPoisongasOk({ monster }, state) === GAS_OK;
     const currentRegion = visibleRegionAt(state, x, y);
     const inPoisonGas = currentRegion?.kind === 'gas-cloud' && !!currentRegion.damage;
     if (monster.mconf)

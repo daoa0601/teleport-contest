@@ -221,9 +221,10 @@ async function wieldSelectedWeapon(object) {
 export async function doready() {
     await doquiverCore('ready');
 }
-// Checked split for a selected inventory stack: C's splitobj() (mkobj.c)
-// cannot fail, the JS splitObjectStack() returns null, and the wield paths
-// that rely on a successful split assert that precondition here.
+// Port only: checked split for a selected inventory stack — C's splitobj()
+// (mkobj.c) cannot fail, the JS splitObjectStack() returns null, and the
+// wield paths that rely on a successful split assert that precondition
+// here.
 function splitCarriedStack(item, count) {
     const split = splitObjectStack(item, count, game);
     if (!split)

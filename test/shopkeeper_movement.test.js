@@ -10,7 +10,7 @@ import { startHeroDigging } from '../js/dig.js';
 import { syncHeroInvisibility } from '../js/hero_invisibility.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { destroyObjectFromMonsterInventory } from '../js/worn.js';
+import { destroyObjectFromMonsterInventory } from '../js/mthrowu.js';
 import { DAGGER, PICK_AXE } from '../js/object_data.js';
 import { addShopObjectToBill } from '../js/shk.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

@@ -43,7 +43,7 @@ import {
     monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance, touchPetrifies,
     isHeroDefender,
 } from './mondata.js';
-import { monsterSentenceSubject } from './sounds.js';
+import { visibleMonsterSubject } from './do_name.js';
 import { isBimanualObject, isWetTowel, type WeaponCandidate, isLauncherAmmunition } from './object_properties.js';
 import { rn2, d, rnd } from './rng.js';
 import { cansee, couldsee } from './vision.js';
@@ -111,10 +111,17 @@ export const SKILL_GROUPS = [
     { heading: 'Spellcasting Skills', first: 28, last: 34 },
 ];
 
-// C weapon.c:skill_level_name(): the level names, indexed by skill level.
+// weapon.c's P_* skill-level display order, indexed by the masked level.
 export const SKILL_LEVEL_NAMES = [
     'Unknown', 'Unskilled', 'Basic', 'Skilled', 'Expert', 'Master', 'Grand Master',
 ];
+
+// C weapon.c:skill_level_name().
+// The skill level's display name; C's switch default is the table's
+// 'Unknown' entry.
+export function skillLevelName(level: number): string {
+    return SKILL_LEVEL_NAMES[level] ?? 'Unknown';
+}
 
 // weapon.c's skill_init() grants these magic skills independently of the
 // weapons carried (healer/monk healing, cleric clerical, wizard attack and
@@ -721,7 +728,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster: Monster, state:
         if (cansee(monster.mx, monster.my)) {
             observeDistantObjectForNaming(weapon, state);
             const description = await inventoryItemDescription(weapon);
-            await publish(`${monsterSentenceSubject(monster)} drops ${description}.`);
+            await publish(`${visibleMonsterSubject(monster)} drops ${description}.`);
             await newsym(monster.mx, monster.my);
         }
         // C possibly_unwield(): raw extraction after setmnotwielded(),

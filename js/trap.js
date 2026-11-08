@@ -34,9 +34,10 @@ import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { plineWithContinuation, pline, set_msg_xy, formatSeenMessage, formatFeltMessage, formatHeardMessage, publishHeardMessage, recordGameLogEvent, impossible, } from './pline.js';
 import { requireInitializedHero } from './hero_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_SLEE, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
-import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor, } from './worn.js';
+import { removeObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor, } from './worn.js';
+import { projectileHitsIronBars, destroyObjectFromMonsterInventory } from './mthrowu.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, defended, monsterHasMagicResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, monsterStagger, isHeroDefender, resistsBlnd, } from './mondata.js';
-import { teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, teleds, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds, teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth, } from './teleport.js';
+import { teleportMonsterFromTrap, mlevel_tele_trap, teleTrap, teleds, activateMagicPortal, triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds, teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, randomTeleportDepth, } from './teleport.js';
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { canFallThrough } from './dungeon.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName, objectMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName, monsterTypeName, } from './do_name.js';
@@ -63,10 +64,8 @@ import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster, makeHallucinated, makeStunned, setPropertyTimeout, } from './potion.js';
-import { searchSpecial, somexyspace } from './mkroom.js';
+import { splitMon, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, makeHallucinated, makeStunned, setPropertyTimeout, } from './potion.js';
 import { impactDrop, shipObject } from './dokick.js';
-import { setTrack } from './track.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { autopickupAtHero, encumber_msg } from './pickup.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
@@ -76,7 +75,6 @@ import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibili
 import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { applyRemoveCurseSpell } from './sit.js';
-import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './explode.js';
 import { rangedTargetHitBonus } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
@@ -1403,7 +1401,7 @@ async function trapeffectRustTrap(mtmp, trap, { state = game, movement, roll = r
         }
         else if (heroIsPolymorphed(game) && hero.umonnum === PM_GREMLIN
             && rn2(3) !== 0) {
-            const clone = await splitHeroMonsterForm(game);
+            const clone = await splitMon({ hero: game });
             if (clone)
                 await plineWithContinuation('You multiply!');
         }
@@ -1475,7 +1473,7 @@ async function trapeffectRustTrap(mtmp, trap, { state = game, movement, roll = r
     // C trap.c:trapeffect_rust_trap(): "else if (mptr == &mons[PM_GREMLIN] && rn2(3))"
     // follows all water_damage() calls and their messages.
     if (monster.mnum === PM_GREMLIN && roll(3) !== 0)
-        await splitMonster(monster, state, { monsterMoving: true, publish });
+        await splitMon({ monster }, state, { monsterMoving: true, publish });
     event.finished = true;
     return event;
 }
@@ -1854,72 +1852,12 @@ function heroIronShoes() {
     const boots = heroObject('uarmf');
     return boots && objectMaterial(boots.otyp) === IRON ? boots : null;
 }
-// C trap.c:trapeffect_telep_trap(): the hero branch — reveal the trap and
-// jump; the monster branch is the TELEP_TRAP case of triggerMonsterTrap.
-// Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
-// Also C teleport.c:tele_trap(): the whole body after seeTrap() — the
-// in_tele_trap guard, the endgame/antimagic/noteleport refusals,
-// next_to_u(), the once/fixed-destination/random dispatch and teleds().
+// C trap.c:trapeffect_telep_trap(): the hero branch — reveal the trap, then
+// hand the jump to teleport.c's tele_trap() (teleport.ts:teleTrap()); the
+// monster branch is the TELEP_TRAP case of triggerMonsterTrap.
 async function triggerTeleportTrap(trap, finishTeleport) {
     await seeTrap(trap);
-    if (game._inTeleportTrap)
-        return false;
-    if (typeof finishTeleport !== 'function')
-        throw new TypeError('teleport trap needs an arrival handler');
-    game._inTeleportTrap = true;
-    try {
-        const blocked = heroTeleportTrapBlock();
-        if (blocked) {
-            if (blocked === 'antimagic')
-                await shieldeff(game.u.ux, game.u.uy);
-            await plineWithContinuation(formatFeltMessage('a wrenching sensation.'));
-            return true;
-        }
-        if (!await bringLeashedFollowers()) {
-            await plineWithContinuation('You shudder for a moment.');
-            return true;
-        }
-        let destination = null;
-        if (trap.once) {
-            deleteTrap(trap);
-            await newsym(game.u.ux, game.u.uy);
-            const vault = searchSpecial(VAULT);
-            if (vault) {
-                const vaultSquare = { x: 0, y: 0 };
-                if (somexyspace(vault, vaultSquare)
-                    && heroTeleportDestinationOk(vaultSquare.x, vaultSquare.y))
-                    destination = vaultSquare;
-            }
-        }
-        else if (trap.teledest
-            && isok(trap.teledest.x, trap.teledest.y)) {
-            setTrack(game);
-            const cleared = await clearFixedTeleportDestination(trap.teledest.x, trap.teledest.y);
-            if (!cleared.cleared) {
-                await plineWithContinuation('You shudder for a moment.');
-                return true;
-            }
-            if (cleared.relocation) {
-                await newsym(cleared.relocation.oldx, cleared.relocation.oldy);
-                await newsym(cleared.relocation.x, cleared.relocation.y);
-            }
-            destination = trap.teledest;
-        }
-        else {
-            await teleportHero({ chooseDestination: askTeleportDestination });
-            return true;
-        }
-        if (!destination) {
-            // vault_tele() falls back to tele(), including teleport control.
-            await teleportHero({ chooseDestination: askTeleportDestination });
-            return true;
-        }
-        await teleds(destination.x, destination.y, game, { finishArrival: finishTeleport });
-        return true;
-    }
-    finally {
-        game._inTeleportTrap = false;
-    }
+    return teleTrap(trap, finishTeleport);
 }
 // C trap.c:trapeffect_web(): the hero branch — webmakers pass through, the
 // destroyers tear it, and everyone else is caught with the struggle.
@@ -5569,7 +5507,7 @@ export async function drown({ state, location, x, y, publish, random, rollDice, 
     let formEffect = null;
     if ((u.mtimedone ?? 0) > 0) {
         if (u.umonnum === PM_GREMLIN && random(3) !== 0) {
-            const clone = await splitHeroMonsterForm(state);
+            const clone = await splitMon({ hero: state });
             if (clone)
                 await publish('You multiply!');
             formEffect = clone ? { kind: 'split', clone } : null;
@@ -7621,8 +7559,9 @@ export async function meltIceTrap(x, y) {
         deleteTrap(trap);
     }
 }
-// The C contact-petrification idiom: munstone() cure first, else
-// minstapetrify() (uhitm.c, mthrowu.c, muse.c callers).
+// Port only: the C contact-petrification idiom — munstone() cure first,
+// else minstapetrify() — shared by the uhitm.c, mthrowu.c, and muse.c
+// callers.
 export async function petrifyMonsterFromContact(monster, { creditHero = false, finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, } = {}) {
     const cure = await munstone(monster, {
         byHero: creditHero, publish, rollOne, state,

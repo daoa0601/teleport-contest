@@ -35,7 +35,8 @@ import {
     clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject,
     objectIsFlammable, splitObjectStack, objectWeight, placeObject,
 } from './mkobj.js';
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './worn.js';
+import { findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
+import type { MonsterObjectRemovalOptions } from './worn.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_KNIFE, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_NONDIGGABLE, W_WEP, WT_IRON_BALL_INCR, ARM, HAND, FOOT } from './const.js';
@@ -47,7 +48,7 @@ import {
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
 import { holdAnotherObject, stack_object } from './invent.js';
-import { rejectMonsterShadeContact, applyMonsterPassiveToObject } from './uhitm.js';
+import { shadeMiss, applyMonsterPassiveToObject } from './uhitm.js';
 import { captureHeroProjectileName } from './objnam.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
@@ -61,7 +62,7 @@ import { finishHeroDeathAfterMonsterMessage } from './end.js';
 import { recordRandom } from './monster_action_types.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import { MONSTER_NAME, MONSTER_SIZE, requireMonsterData } from './monster_data.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayLiquidName, monsterName, visibleMonsterSubject } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import {
     monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance,
@@ -70,7 +71,6 @@ import {
     monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks,
     touchPetrifies, canBlnd,
 } from './mondata.js';
-import { monsterSentenceSubject } from './sounds.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
 import { dropObjectAtHero, applyFloorEffects, landFloorObject } from './do.js';
@@ -684,10 +684,10 @@ export async function throwMonsterProjectile(source: Monster, object: GameObject
             if (cansee(point.x, point.y)) observeObject(missile, state);
             const monster = monsterAtPosition(state.level, point.x, point.y);
             if (monster) {
-                const shadeMiss = await rejectMonsterShadeContact(source, monster, missile, {
+                const missedShade = await shadeMiss(source, monster, missile, {
                     state, visible: true, thrown: true, publish, rollOne, rollDice,
                 });
-                if (!shadeMiss && await hitMonsterWithProjectile(monster, shot, range, context)) break;
+                if (!missedShade && await hitMonsterWithProjectile(monster, shot, range, context)) break;
             } else if (point.x === state.u.ux && point.y === state.u.uy) {
                 if (state.multi) nomul(0, state);
                 shot.heroTarget = true;
@@ -1282,7 +1282,7 @@ export async function attackHeroWithPolearm(monster: Monster, weapon: GameObject
         const description = objectHasPersonalName(weapon, state)
             ? definiteName(name, state) : withIndefiniteArticle(name);
         const verb = mswings_verb(weapon, distance <= 2, random);
-        await publish(`${monsterSentenceSubject(monster)} ${verb} ${description}.`);
+        await publish(`${visibleMonsterSubject(monster)} ${verb} ${description}.`);
     }
 
     let damage = Math.max(1, rollPhysicalWeaponDamageAgainstHero(weapon, state, { rollOne }));
@@ -1380,6 +1380,17 @@ export function monsterLinedUpWithPerceivedHero(
 ) {
     return monsterLinedUpWithHero(monster, state,
         range => recordRandom(random, calls, range));
+}
+
+// C mthrowu.c:m_useupall(): extract_from_minvent() followed by obfree();
+// mkobj.c:discard_minvent() destroys a monster's worn or carried objects
+// the same way.
+export async function destroyObjectFromMonsterInventory(
+    monster: Monster, object: GameObject, state: GameState = game,
+    options: MonsterObjectRemovalOptions = {},
+): Promise<boolean> {
+    if (!await removeObjectFromMonsterInventory(monster, object, state, options)) return false;
+    return await deleteObject(object, state);
 }
 
 // C mthrowu.c:m_useup(): remove one item from a monster's inventory,

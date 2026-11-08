@@ -25,7 +25,7 @@ import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import {
-    canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, monsterVisible, newsym,
+    canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, monsterVisible, newsym, shieldeff,
 } from './display.js';
 import { formatHeardMessage, plineWithContinuation } from './pline.js';
 import { artifactById } from './artifact.js';
@@ -34,8 +34,9 @@ import {
     M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED,
     M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON,
     ismnum, M_AP_MONSTER, STRAT_WAITMASK, STRAT_WAITFORU, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, W_ARMC,
-    W_ARMF, W_ARMH,
+    W_ARMF, W_ARMH, NON_PM, RLOC_MSG,
 } from './const.js';
+import { formatFeltMessage } from './pline.js';
 import {
     monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver,
     monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof,
@@ -47,7 +48,7 @@ import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './worn.js';
 import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
-import { splitMonster } from './potion.js';
+import { splitMon } from './potion.js';
 import { createElementalMonsterExplosion } from './explode.js';
 import { cansee } from './vision.js';
 import {
@@ -64,7 +65,15 @@ import {
 import {
     monsterObjectPronoun, monsterPossessive, formCanBecomeStoneGolem, monsterStagger, monsterHasAcidResistance,
     monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance,
+    monsterHasMagicResistance, monsterCanTeleport, is_shapeshifter,
 } from './mondata.js';
+import { monsterResistsEffect } from './zap.js';
+import { finishHeroMonsterKillOutcome } from './mon.js';
+import { teleportHero, askTeleportDestination, reportMonsterTeleportRestriction, randomMonsterRelocation } from './teleport.js';
+import { heroIsUnchanging, polymorphHero } from './polyself.js';
+import { applyHeroWereChange, revertHeroWereForm } from './were.js';
+import type { MhitmAdPolyCall } from './uhitm.js';
+import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
 import { mswings_verb } from './mhitu.js';
 import { isPolearm } from './object_properties.js';
@@ -75,7 +84,7 @@ import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCom
 import { trapAt, mintrap, damageObjectWithAcid, erodeObject } from './trap.js';
 import {
     applyMonsterCombatBlindness, mhitm_adtyping, passiveAttack, passiveDamage,
-    rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback,
+    shadeMiss, mhitm_ad_phys, mhitm_knockback,
     effectResult, erodeArmor,
 } from './uhitm.js';
 import { mon_reflects } from './muse.js';
@@ -545,7 +554,7 @@ export async function prepareMonsterCombatContact(
 ): Promise<'contact' | 'shade-miss'> {
     await revealAttackingMonsters(aggressor, defender, visible);
     const compatibility = aggressor.mcan ? 0 : could_seduce(aggressor, defender, attack, state);
-    if (!compatibility && await rejectMonsterShadeContact(aggressor, defender, weapon, {
+    if (!compatibility && await shadeMiss(aggressor, defender, weapon, {
         state, visible, publish, rollOne, rollDice,
     })) return 'shade-miss';
     if (!visible) {
@@ -1341,8 +1350,8 @@ export async function applyMonsterContactPassive(attacker: Monster, defender: Mo
                     const healing = Math.trunc(damage / 2);
                     healMonster(defender, healing, healing);
                     if (defender.mhpmax > (defender.m_lev + 1) * 8) {
-                        await splitMonster(defender, state,
-                            { monsterMoving: true, random, heatSource: attacker, publish });
+                        await splitMon({ monster: defender, heatSource: attacker }, state,
+                            { monsterMoving: true, random, publish });
                     }
                 }
             }
@@ -1631,4 +1640,179 @@ interface SleptMonstOptions {
     state?: GameState;
     publish?: MessagePublisher;
     rollOne?: (sides: number) => number;
+}
+
+// C mhitm.c:mon_poly(): a polymorph attack's effect on its target.
+// C reads magr and mdef against &gy.youmonst; the port's hero is not a
+// Monster, so the three actor combinations arrive through the same union
+// uhitm.c:mhitm_ad_poly() dispatches (uhitm.ts:mhitmAdPoly() runs the
+// wrapper's negation probe and armament/lethality gates first): the hero's
+// touch, a monster's touch against the hero, and monster versus monster.
+export async function monPoly(call: MhitmAdPolyCall): Promise<HeroNaturalEffectResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero's polymorphing touch */
+        const monster = call.defender;
+        const context = call.context;
+        const { state, publish, random } = context;
+        const visible = canSeeMonster(monster)
+            || Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) <= 1;
+        const before = monsterName(monster, { state, capitalized: true });
+        let damage = context.damage;
+        let heroDied = false;
+        if (monsterHasMagicResistance(monster)) {
+            if (visible) await showHeroPolymorphResistance(monster, context);
+        } else if (monsterResistsEffect(monster, 12, random)) {
+            await showHeroPolymorphResistance(monster, context);
+        } else if (random(25) === 0 && (monster.cham ?? NON_PM) === NON_PM
+            && (monster.mcan || is_shapeshifter(monster.mnum))) {
+            if (visible) await publish(`${before} shudders!`);
+            monster.mhp -= damage + Math.trunc((monster.mhpmax + 1) / 2);
+            damage = 0;
+            if (monster.mhp <= 0) {
+                const death = await finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
+                    noCorpse: true, publish,
+                });
+                heroDied = death.heroDied;
+            }
+        } else {
+            const change = await changeMonsterForm(monster, null, state, {
+                publish, creditHero: true,
+                finishDeath: (victim, options) => finishHeroMonsterKillOutcome(
+                    victim, victim.mx, victim.my, {
+                        ...options, showKillMessage: false, recordConduct: false, publish,
+                    },
+                ),
+            });
+            if (change) {
+                damage = 0;
+                heroDied = change.heroDied;
+                if (!heroDied && visible) {
+                    const wasSeen = before.toLowerCase() !== 'it';
+                    if (canSpotMonster(monster)) {
+                        const description = namelessMonsterName(monster, {
+                            state, article: 'a', suppressIt: true, suppressInvisible: true,
+                        });
+                        const transformation = state.flags.verbose || !wasSeen
+                            ? ' undergoes a freakish metamorphosis and' : '';
+                        await publish(`${before}${transformation} turns into ${description}.`);
+                    } else {
+                        await publish(`${before} undergoes a freakish metamorphosis${wasSeen ? ' and disappears' : ''}.`);
+                    }
+                }
+                if (!heroDied && monsterCanTeleport(heroSpecies(state))) {
+                    const teleport = await teleportHero({ chooseDestination: askTeleportDestination });
+                    heroDied = teleport.died;
+                }
+            } else if (visible && state.flags.verbose) {
+                await publish('Nothing happens.');
+            }
+        }
+
+        // Once mon_poly ran, damageum skips its common HP subtraction even if
+        // resistance or a failed shape change left the original damage intact.
+        return {
+            damage, nativeResult: M_ATTK_HIT | (monster.mhp <= 0 ? M_ATTK_DEF_DIED : 0),
+            done: true, heroDied,
+        };
+    } else if ('mdef' in call) {
+        /* mhitu: a monster's polymorphing touch against the hero */
+        const { state, attacker: monster, attack, publish, rollOne = rnd } = call.context;
+        const oldForm = state.u.umonnum;
+        if (state.u.antimagic) {
+            await shieldeff(state.u.ux, state.u.uy, state);
+        } else if (!heroIsUnchanging(state)) {
+            if (state.u.ulycn === -1) {
+                await publish('You are subjected to a freakish metamorphosis.');
+                await polymorphHero();
+            } else if (state.u.umonnum !== state.u.ulycn) {
+                await publish(formatFeltMessage('an unnatural urge coming on.', state));
+                await applyHeroWereChange({ state, publish });
+            } else {
+                await publish(formatFeltMessage('a natural urge coming on.', state));
+                await revertHeroWereForm({ state, publish });
+            }
+        }
+        if (state.u.umonnum !== oldForm)
+            monster.mspec_used = (monster.mspec_used ?? 0) + rollOne(2);
+        // mhitm_ad_poly() marks this hit done even when resistance prevented
+        // the body change. hitmu() still attempts knockback, then returns.
+        attack.contactDone = true;
+        return { damage: attack.damage ?? 0, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
+    } else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        const { state, publish, visible, random, rollOne, finishDeath } = context;
+        const oldSpecies = defender.mnum;
+        const before = monsterName(defender, { state, capitalized: true });
+        let damage = context.damage;
+        if (monsterHasMagicResistance(defender)) {
+            if (visible) await showPolymorphResistance(defender, context);
+        } else if (monsterResistsEffect(defender, 12, random)) {
+            await showPolymorphResistance(defender, context);
+        } else if (random(25) === 0 && (defender.cham ?? NON_PM) === NON_PM
+            && (defender.mcan || is_shapeshifter(defender.mnum))) {
+            if (visible) await publish(`${before} shudders!`);
+            defender.mhp -= damage + Math.trunc((defender.mhpmax + 1) / 2);
+            damage = 0;
+            if (defender.mhp <= 0) {
+                // mon_poly's system shock uses monkilled but never grow_up.
+                const death = await finishMonsterKilled(defender, state, {
+                    damageType: AD_RBRE, cause: '', publish, random, rollDice: context.rollDice,
+                });
+                if (death.heroDied) return { damage: 0, nativeResult: M_ATTK_MISS, done: true, heroDied: true };
+            }
+        } else {
+            const change = await changeMonsterForm(defender, null, state, {
+                publish, finishDeath, creditHero: false,
+            });
+            if (change?.heroDied) return { damage: 0, nativeResult: M_ATTK_MISS, done: true, heroDied: true };
+            if (change) {
+                if (visible) await announcePolymorph(defender, before, context);
+                damage = 0;
+                if ((monsterCanTeleport(attacker.mnum))
+                    && !await reportMonsterTeleportRestriction(attacker, { state, publish })) {
+                    const relocation = await randomMonsterRelocation(attacker, { state, random, rollOne, flags: RLOC_MSG });
+                    if (relocation?.died || state.program_state.gameover)
+                        return { damage: 0, nativeResult: M_ATTK_MISS, done: true, heroDied: true };
+                }
+            } else if (visible && state.flags.verbose) {
+                await publish('Nothing happens.');
+            }
+        }
+        if (defender.mnum !== oldSpecies) attacker.mspec_used = (attacker.mspec_used ?? 0) + rollOne(2);
+        // mon_poly consumes this attack even when resistance left its damage
+        // unchanged; the common hit-point subtraction must not run afterward.
+        return {
+            damage, nativeResult: M_ATTK_HIT | (defender.mhp <= 0 ? M_ATTK_DEF_DIED : 0),
+            done: true, heroDied: false,
+        };
+    }
+}
+
+// Part of C mhitm.c:mon_poly(): display a monster's resistance shield and message.
+async function showPolymorphResistance(defender: Monster, { state, publish }: MonsterCombatEffectContext): Promise<void> {
+    await shieldeff(defender.mx, defender.my, state);
+    if (cansee(defender.mx, defender.my))
+        await publish(`${monsterName(defender, { state, capitalized: true })} resists!`);
+}
+
+// Part of C mhitm.c:mon_poly(): describe the defender's transformation or disappearance.
+async function announcePolymorph(defender: Monster, before: string, { state, publish }: MonsterCombatEffectContext): Promise<void> {
+    const wasSeen = before.toLowerCase() !== 'it';
+    if (canSpotMonster(defender)) {
+        const description = namelessMonsterName(defender, {
+            state, article: 'a', suppressIt: true, suppressInvisible: true,
+        });
+        const transformation = state.flags.verbose || !wasSeen ? ' undergoes a freakish metamorphosis and' : '';
+        await publish(`${before}${transformation} turns into ${description}.`);
+    } else if (wasSeen) {
+        await publish(`${before} undergoes a freakish metamorphosis and disappears.`);
+    }
+}
+
+// Part of C mhitm.c:mon_poly(): publish resistance to a hero polymorph contact.
+async function showHeroPolymorphResistance(monster: Monster, context: HeroNaturalEffectContext): Promise<void> {
+    await shieldeff(monster.mx, monster.my, context.state);
+    if (cansee(monster.mx, monster.my))
+        await context.publish(`${monsterName(monster, { state: context.state, capitalized: true })} resists!`);
 }

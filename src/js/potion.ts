@@ -2343,7 +2343,7 @@ export async function hitMonsterWithSupportedPotion({
     repaintMonster = async target => await newsym(target.mx, target.my),
     rememberInvisible = async target => await map_invisible(target.mx, target.my),
     wakeNearby = null,
-    splitMonster: splitMonsterHit = target => splitMonster(target, state, { publish }),
+    splitMonster: splitMonsterHit = target => splitMon({ monster: target }, state, { publish }),
     transformWere = target => transformWereMonster(target, state),
     finishKill = null,
     showShield = target => shieldeff(target.mx, target.my, state),
@@ -3276,6 +3276,29 @@ interface SplitOptions extends CloneOptions {
     // split_mon()'s second argument: whose heat made the monster divide.
     heatSource?: Monster | 'hero' | null;
     publish?: MessagePublisher;
+}
+
+// C potion.c:split_mon().
+// One entry for a black pudding or gremlin dividing under heat: C tests
+// mon == &gy.youmonst and formats the heat reason before cloning.  The
+// hero half (splitHeroMonsterForm(); its callers own the "You multiply"
+// line) and the monster half (splitMonster(), which announces a spotted
+// division itself) stay separate, and the union below names the actor C
+// compared.
+export type SplitMonTarget = { hero: GameState } | {
+    monster: Monster;
+    heatSource?: SplitOptions['heatSource'];
+};
+export async function splitMon(
+    target: SplitMonTarget, state: GameState = game,
+    options: Omit<SplitOptions, 'heatSource'> = {},
+): Promise<Monster | null> {
+    return 'hero' in target
+        ? splitHeroMonsterForm(target.hero)
+        : splitMonster(target.monster, state,
+            target.heatSource === undefined
+                ? options
+                : { ...options, heatSource: target.heatSource });
 }
 
 // Part of C potion.c:split_mon(): the monster branch. C takes one monster

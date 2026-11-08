@@ -3067,7 +3067,6 @@ async function editBoulderSymbol(): Promise<boolean> {
 // kinds redraw; only opt_need_redraw re-probes the gold symbol and re-glyphs
 // dark rooms, and no toggle path flushes the screen. A pending status
 // update must finish even when option messages have been silenced.
-
 async function resetBooleanVisuals(pending: PendingVisuals): Promise<void> {
     if (pending.redraw || pending.customReset) {
         if (pending.redraw) {
@@ -3109,7 +3108,6 @@ async function chooseAddListRemove(kind: string, count: number): Promise<'add' |
 // is the file static options.c carries across commands: once
 // idlecheckpoint (or the options menu) has silenced it, later toggles print
 // nothing until doset_simple() resets it.
-
 export async function toggleBooleanOptionPrefix(prefix: string): Promise<boolean> {
     let toggled = false;
     let giveMessages = game.iflags.optionMessages !== false;

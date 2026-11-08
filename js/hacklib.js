@@ -171,6 +171,11 @@ export function distmin(x1, y1, x2, y2) {
 export function dist2(x1, y1, x2, y2) {
     return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
 }
+// C hacklib.c:stripchars(): remove the given characters (botl.c:2941 reads
+// the threshold number with "%<>=+" stripped).
+export function stripChars(text, remove) {
+    return [...text].filter(character => !remove.includes(character)).join('');
+}
 // C ref: rn2(x) already in rng.js — re-export not needed
 // C hacklib.c:ing_suffix(), including compound verbs such as "put on".
 export function ingSuffix(verb) {

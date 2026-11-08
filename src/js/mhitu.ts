@@ -55,7 +55,7 @@ import {
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject } from './artifact.js';
 import { createElementalMonsterExplosion } from './explode.js';
-import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm, setPropertyTimeout } from './potion.js';
+import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitMon, setPropertyTimeout } from './potion.js';
 import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import type { MonsterDeathOptions, MonsterLiquidDeathContext, HeroMonsterKillOptions, ReleaseHeroOptions } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
@@ -1285,7 +1285,7 @@ export async function passiveum(monster: Monster, oldForm: number, attackType: n
                 state.u.mhmax = Math.max(state.u.mhmax, state.u.mh);
                 const formLevel = MONSTER_LEVEL[state.u.umonnum];
                 if (formLevel !== undefined && state.u.mhmax > (formLevel + 1) * 8) {
-                    const clone = await splitHeroMonsterForm(state);
+                    const clone = await splitMon({ hero: state });
                     if (clone) await publish(`You multiply from ${possessiveName(monsterName(monster, { state }))} heat!`);
                 }
             }
