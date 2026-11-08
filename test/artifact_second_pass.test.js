@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArtifactHit, invokeArtifactPower } from '../js/artifact.js';
+import { applyArtifactHit, artiInvoke } from '../js/artifact.js';
 import { artifactByName } from '../js/artifact.js';
 import { makeHallucinated } from '../js/potion.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
@@ -158,7 +158,7 @@ void test('invoking the Heart of Ahriman during its cooldown extends the wait', 
         invlet: 'a', where: 'inventory', age: 1000,
     });
     game.inventory = [heart];
-    const invocation = await invokeArtifactPower(heart, artifactByName('The Heart of Ahriman'), {
+    const invocation = await artiInvoke(heart, artifactByName('The Heart of Ahriman'), {
         state: game, publish: async () => { }, rollDice: () => 16,
     });
     assert.deepEqual(invocation, { used: true, ready: false, on: false });

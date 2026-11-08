@@ -3,7 +3,7 @@ import { requireScreenRow } from './support/screen.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { invokeArtifactPower } from '../js/artifact.js';
+import { artiInvoke } from '../js/artifact.js';
 import { artifactByName } from '../js/artifact.js';
 import { A_WIS } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -53,7 +53,7 @@ void test('the Mitre restores a small energy deficit completely', async () => {
     requirePlayingGame(game);
     const mitre = await artifactObject('The Mitre of Holiness');
     game.inventory = [mitre];
-    await invokeArtifactPower(mitre, artifactByName('The Mitre of Holiness'), {
+    await artiInvoke(mitre, artifactByName('The Mitre of Holiness'), {
         state: game,
         publish: async () => { },
         scaledRandom: () => 100,
@@ -152,10 +152,10 @@ void test('turning an invoked property off starts its cooldown', async () => {
         rollDice: () => 30,
         scaledRandom: () => 100,
     };
-    await invokeArtifactPower(orb, artifact, options);
-    await invokeArtifactPower(orb, artifact, options);
+    await artiInvoke(orb, artifact, options);
+    await artiInvoke(orb, artifact, options);
     const cooldown = orb.age;
-    await invokeArtifactPower(orb, artifact, options);
+    await artiInvoke(orb, artifact, options);
     assert.equal(heroIsInvisible(game), false);
     assert.equal(cooldown, 270);
     assert.equal(orb.age, 300);
@@ -169,7 +169,7 @@ void test('another invisibility source stays active when the Orb is invoked', as
     const orb = await artifactObject('The Orb of Detection');
     game.inventory = [orb];
     const messages = [];
-    await invokeArtifactPower(orb, artifactByName('The Orb of Detection'), {
+    await artiInvoke(orb, artifactByName('The Orb of Detection'), {
         state: game,
         publish: async (message) => {
             messages.push(message);
@@ -186,7 +186,7 @@ void test('dropping the invoked Orb ends its invisibility', async () => {
         where: 'inventory',
     });
     game.inventory = [orb];
-    await invokeArtifactPower(orb, artifactByName('The Orb of Detection'), {
+    await artiInvoke(orb, artifactByName('The Orb of Detection'), {
         state: game,
         publish: async () => { },
     });

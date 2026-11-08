@@ -1138,11 +1138,8 @@ const MS_HUMANOID = 25;
 // C include/mextra.h.
 export const REPAIR_DELAY = 5;
 const ANGRY_TEXTS = ['quite upset', 'ticked off', 'furious'];
-// Part of C rm.h:m_at(): the monster at a square (steed.ts
-// monsterAtPosition() resolves the occupant).
-function monsterAt(state, x, y) {
-    return monsterAtPosition(state.level, x, y);
-}
+// C rm.h:m_at() via steed.ts:monsterAtPosition(): the occupant of a
+// square (the occupancy model is documented there).
 // C display.h:vobj_at(): the object pile at a square.
 function objectsAt(state, x, y) {
     return state.level?.objects?.[x]?.[y] || [];
@@ -1580,7 +1577,7 @@ export function repairableShopDamage(record, keeper, state = game) {
             && !heroPassesWalls(state))
             || (x === keeper.mx && y === keeper.my))
             return false;
-        const resident = monsterAt(state, x, y);
+        const resident = monsterAtPosition(state.level, x, y);
         if (resident && !monsterPassesWalls(resident.mnum))
             return false;
     }
@@ -1589,7 +1586,7 @@ export function repairableShopDamage(record, keeper, state = game) {
     if (trap) {
         if (state.u.ux === x && state.u.uy === y)
             return false;
-        const caught = monsterAt(state, x, y);
+        const caught = monsterAtPosition(state.level, x, y);
         if (caught?.mtrapped)
             return false;
     }
@@ -1776,7 +1773,7 @@ export async function payForShopDamage(verb, { cantMollify = false, state = game
     else {
         // Make the keeper show up at the damaged spot.  A monster in the
         // way gets an angry shove from a speaking keeper.
-        const blocker = monsterAt(state, x, y);
+        const blocker = monsterAtPosition(state.level, x, y);
         if (blocker) {
             if (!animal) {
                 if (!heroIsDeaf(state)
@@ -1851,7 +1848,7 @@ function removeTrap(trap, state) {
         // Freeing a trapped hero runs the set_utrap(0, 0) path, which also
         // refreshes the stored levitation/flying blocked masks.
         setHeroTrap(0, 0, state);
-    const caught = monsterAt(state, trap.tx, trap.ty);
+    const caught = monsterAtPosition(state.level, trap.tx, trap.ty);
     if (caught?.mtrapped)
         caught.mtrapped = 0;
 }
@@ -3275,7 +3272,7 @@ function updateBillAfterPurchase(resident, entry, object, partlyUsed, state) {
         removeBillEntry(resident, entry);
     }
 }
-// Part of C shk.c:dopayobj(): the safe_qbuf pay question.
+// C shk.c:dopayobj(): the safe_qbuf() pay question; the which/itemize/unseen flow runs in buyShopBillItem() above.
 // C dopayobj(): safe_qbuf() reserves the price and question before shortening
 // the doname() description. Keep the same object for equipment annotations,
 // and restore the temporary naming fields before asking for input.

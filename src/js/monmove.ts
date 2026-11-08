@@ -311,7 +311,12 @@ export function monsterSightingBeforeAction(monster: Monster, state: GameState):
     return { seen: !!state._occupation && canSpotMonster(monster), x: monster.mx, y: monster.my };
 }
 
-// Part of C monmove.c:dochugw(): the stop-occupation threat check.
+// C monmove.c:dochugw(): the stop-occupation threat check — hostile or
+// attack-capable, within the squared BOLT_LIM+1 radius, unseen or too far
+// before the move, spotted now, and neither paralyzed nor scared.  The
+// pre-move sighting (movemon()) and the arrivals without one (makemon(),
+// rloc_to_core()) supply the first half's already_saw_mon capture through
+// monsterSightingBeforeAction() above.
 export async function interruptOccupationForMonster(
     monster: Monster, state: GameState, before: MonsterSighting | null = null,
 ): Promise<void> {

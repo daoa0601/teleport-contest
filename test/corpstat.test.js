@@ -4,7 +4,7 @@ import { CORPSTAT_FEMALE, CORPSTAT_GENDER, CORPSTAT_HISTORIC, CORPSTAT_INIT, COR
 import { isok } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mkobj.js';
-import { createMonsterRemains, finishEnvironmentalMonsterDeath } from '../js/mon.js';
+import { make_corpse, finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { petrifyMonsterImmediately } from '../js/trap.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -45,7 +45,7 @@ void test('a parked guard leaves one corpse on the level, not at its parking coo
     const guard = await createMonsterAt('guard', 12, 10);
     guard.mhp = 0;
     placeMonsterAt(guard, 0, 0);
-    const corpse = await createMonsterRemains(guard);
+    const corpse = await make_corpse(guard);
     assert.ok(corpse, 'the parked guard leaves a corpse');
     assert.equal(corpse.corpsenm, guard.mnum);
     assert.ok(isok(corpse.ox, corpse.oy));

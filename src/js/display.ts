@@ -615,7 +615,9 @@ export function back_to_glyph(loc: MapLocation, x: number, y: number): TerrainGl
     };
 }
 
-// Part of C display.h:cmap_walls_to_glyph(): the branch wall offset.
+// C display.h:cmap_walls_to_glyph(): the branch-dependent wall offset the
+// macro selects (mines, Gehennom, Knox, Sokoban, main); cmapToGlyph()
+// (glyph_numbers.ts) applies the - S_vwall shift around it.
 function currentWallGlyphOffset(): GlyphOffset {
     const branch = game.dungeons[game.u.uz?.dnum ?? 0];
     return branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
@@ -1203,8 +1205,8 @@ export function canSpotHeroSelf() {
     return canSeeSelf || sensesSelf;
 }
 
-// Part of C display.h:random_obj_to_glyph(): the hallucinated object
-// glyph.  Generic object slots 0..17 are excluded; a randomly selected
+// C display.h:random_obj_to_glyph(): the hallucinated object glyph.
+// Generic object slots 0..17 are excluded; a randomly selected
 // corpse consumes a second display draw for its color.
 function randomHallucinatedObjectGlyph(): ObjectGlyph {
     const firstObject = OBJECT_BASES[WEAPON_CLASS];
@@ -1274,9 +1276,11 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
         };
 }
 
-// Part of C display.h:statue_to_glyph(), display.h:corpse_to_glyph(),
+// C display.h:statue_to_glyph(), display.h:corpse_to_glyph(),
 // display.h:generic_obj_to_glyph(): the piletop-adjusted glyph number.
-// An unobserved potion uses its class number in the same object range.
+// An unobserved potion uses its class number in the same object range;
+// the Hallucination arm of statue_to_glyph() lives in objectGlyph()
+// above with the hallucinated monster draw.
 function objectGlyphNumber(object: ObjectGlyphSource, piletop: boolean) {
     if (object.otyp === STATUE) {
         const female = ((object.spe ?? 0) & CORPSTAT_GENDER) === CORPSTAT_FEMALE;
@@ -1711,10 +1715,11 @@ function isRogueShowraceHeroGlyph(glyph: GlyphMetadata | null, x: number, y: num
     return glyph.glyph === heroGlyphNumber;
 }
 
-// Part of C display.c:reset_glyphmap(): the RogueEpyx color gate.
+// C display.c:reset_glyphmap(): the RogueEpyx color gate —
 // HAS_ROGUE_IBM_GRAPHICS with nocolor cleared (only RogueEpyx declares
-// `Color: Yes`) keeps color on the Rogue level through cmap_to_roguecolor()
-// and the object/monster branches of reset_glyphmap().
+// `Color: Yes`), as the glyphmap rows' per-level reset computes it.  The
+// cmap_to_roguecolor() rows are rogueLevelGlyphColor() below; the
+// object/monster colors resolve lazily through objectColor().
 export function rogueColorsActive(): boolean {
     const set = activeRogueSymset();
     return Is_rogue_level(game.u?.uz) && game.flags.color !== false

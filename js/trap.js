@@ -5772,7 +5772,7 @@ function weldedTwoHandedWeapon(state) {
     const weapon = state.uwep || state.u?.uwep;
     return isWeldedPrimary(weapon, state) && isBimanualObject(weapon);
 }
-// Part of C trap.c:untrap_prob(): the disarm failure roll; also inlines
+// C trap.c:untrap_prob(): the disarm failure roll; also inlines
 // C artifact.c:attacks() — attack?.damageType === 'fire' is the
 // fiery-blade test that guarantees the web-cut roll.
 function untrapFailureRoll(trap, state, random) {

@@ -527,10 +527,10 @@ async function restoreHumanBody(state, publish = plineWithContinuation) {
         race: state.urace?.adj || state.urace?.noun || 'human',
     };
 }
-// Part of C polyself.c:polyman(): the fatal boundary shared by
-// rehumanization and renewal.
-// C polyman(): both a restored body and newman() cross this same fatal
-// boundary before any regained senses, terrain, or equipment aftermath.
+// C polyself.c:polyman(): make a (new) human out of the player — the
+// fatal boundary both rehumanize() and newman() cross: restore the body
+// (restoreHumanBody()), announce, die to self-genocide, then run the
+// senses/terrain/equipment aftermath (finishHumanFormChange()).
 async function becomeHuman(announcement, state, publish = plineWithContinuation, die = finishHeroDeath) {
     const restored = await restoreHumanBody(state, publish);
     if (state.program_state.gameover)

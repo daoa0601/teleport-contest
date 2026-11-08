@@ -1286,7 +1286,7 @@ function nextTimerOrder(state: GameState): number {
     state._timerSerial = (state._timerSerial ?? 0) + 1;
     return state._timerSerial;
 }
-// Part of C timeout.c:start_timer(): reject duplicate object callbacks and schedule a deadline.
+// C timeout.c:start_timer(): the object-timer half — kind validation, duplicate-callback rejection, and the deadline; scheduleLevelTimer() below is the level-coordinate half and allocateTimerId() above the identity.
 export function scheduleObjectTimer(
     object: GameObject | null | undefined, kind: ObjectTimerKind,
     deadline: number, state: GameState = game,
@@ -1389,7 +1389,7 @@ export function objectsInTimerGraph(state: GameState = game): GameObject[] {
     }
     return objects;
 }
-// Part of C timeout.c:insert_timer(): order equal-deadline timers newest first.
+// C timeout.c:insert_timer(): order equal-deadline timers newest first (the insertion walks the due-timer arrays with this predicate at run time).
 function precedes(left: DueObjectTimer, right: DueObjectTimer | null): boolean {
     return !right || left.timer.deadline < right.timer.deadline
         || (left.timer.deadline === right.timer.deadline
@@ -1526,7 +1526,7 @@ export function lightObjectIsGlobal(object: GameObject): boolean {
             return false;
     }
 }
-// Part of C timeout.c:restore_timers(): reinsert a saved batch in native queue order.
+// C timeout.c:restore_timers(): reinsert a saved batch in native queue order.
 // save_timers writes queue order; restore_timers calls insert_timer
 // for each saved entry. Equal-time entries reverse within each batch.
 function restoreTimerBatch(timers: readonly (ObjectTimer | LevelTimer)[], state: GameState): void {
@@ -2063,7 +2063,7 @@ function timerQueueLines(state: GameState): string[] {
     return rows;
 }
 
-// Part of C timeout.c:property_by_index(): the PROPERTY_NAMES iteration
+// C timeout.c:property_by_index(): the PROPERTY_NAMES iteration
 // for the #timeout listing's timed-property rows; its bounds guard is
 // the typed table itself.
 function timedPropertyLines(state: GameState): string[] {

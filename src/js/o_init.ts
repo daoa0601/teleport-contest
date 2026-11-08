@@ -136,33 +136,18 @@ export function initializeObjectDescriptions(): (string | null)[] {
     descriptionIndex[objectId('fluorite')] = requireObjectData(descriptionIndex, fluoriteSource);
     colors[objectId('fluorite')] = requireObjectData(colors, fluoriteSource);
 
-    function shuffle(low: number, high: number, shuffleMaterial: boolean): void {
-        for (let current = low; current <= high; current++) {
-            // Objects without an unidentified description are pre-known and
-            // skipped by C without drawing.
-            if (requireObjectData(OBJECT_DESCRIPTIONS, current) === null) continue;
-            let picked;
-            do picked = current + rn2(high - current + 1);
-            while (requireObjectData(OBJECT_DESCRIPTIONS, picked) === null);
-            swapObjectField(descriptionIndex, current, picked);
-            swapObjectField(colors, current, picked);
-            swapObjectField(toughness, current, picked);
-            if (shuffleMaterial) swapObjectField(materials, current, picked);
-        }
-    }
-
     // Whole-class ranges, then the four shuffled armor sub-ranges.
-    shuffle(201, 211, true); // amulets (exclude fake/real Amulet of Yendor)
-    shuffle(297, 321, true); // potions (exclude fixed clear water)
-    shuffle(173, 200, true); // rings
-    shuffle(323, 363, true); // magical scrolls and extra labels
-    shuffle(366, 406, true); // spellbooks through chain lightning
-    shuffle(410, 437, true); // wands, including unnamed appearances
-    shuffle(478, 480, true); // venoms
-    shuffle(97, 100, false); // randomized helms
-    shuffle(159, 162, false); // gloves
-    shuffle(146, 149, false); // magical cloaks
-    shuffle(166, 172, false); // magical boots
+    shuffle(201, 211, true, descriptionIndex, colors, materials, toughness); // amulets (exclude fake/real Amulet of Yendor)
+    shuffle(297, 321, true, descriptionIndex, colors, materials, toughness); // potions (exclude fixed clear water)
+    shuffle(173, 200, true, descriptionIndex, colors, materials, toughness); // rings
+    shuffle(323, 363, true, descriptionIndex, colors, materials, toughness); // magical scrolls and extra labels
+    shuffle(366, 406, true, descriptionIndex, colors, materials, toughness); // spellbooks through chain lightning
+    shuffle(410, 437, true, descriptionIndex, colors, materials, toughness); // wands, including unnamed appearances
+    shuffle(478, 480, true, descriptionIndex, colors, materials, toughness); // venoms
+    shuffle(97, 100, false, descriptionIndex, colors, materials, toughness); // randomized helms
+    shuffle(159, 162, false, descriptionIndex, colors, materials, toughness); // gloves
+    shuffle(146, 149, false, descriptionIndex, colors, materials, toughness); // magical cloaks
+    shuffle(166, 172, false, descriptionIndex, colors, materials, toughness); // magical boots
 
     game.objectDescriptionIndex = descriptionIndex;
     game.objectDescriptions = descriptionIndex.map((index) =>
@@ -173,6 +158,27 @@ export function initializeObjectDescriptions(): (string | null)[] {
     game.objectToughness = toughness;
     game.wandNothingDirection = rn2(2);
     return game.objectDescriptions;
+}
+
+// C o_init.c:shuffle(): swap the description index, color, and toughness
+// of every unidentified row in [o_low, o_high], and its material too when
+// domaterial.  The port skips pre-known rows directly (rows without a
+// separate unidentified description) instead of C's num_to_shuffle < 2
+// early return.
+function shuffle(
+    o_low: number, o_high: number, domaterial: boolean,
+    descriptionIndex: number[], colors: number[], materials: number[], toughness: number[],
+): void {
+    for (let current = o_low; current <= o_high; current++) {
+        if (requireObjectData(OBJECT_DESCRIPTIONS, current) === null) continue;
+        let picked;
+        do picked = current + rn2(o_high - current + 1);
+        while (requireObjectData(OBJECT_DESCRIPTIONS, picked) === null);
+        swapObjectField(descriptionIndex, current, picked);
+        swapObjectField(colors, current, picked);
+        swapObjectField(toughness, current, picked);
+        if (domaterial) swapObjectField(materials, current, picked);
+    }
 }
 
 // Part of C o_init.c:shuffle(): swap one row's description, color,
@@ -467,9 +473,10 @@ function discoveryClassOrder(): number[] {
     return classes.includes(VENOM_CLASS) ? classes : [...classes, VENOM_CLASS];
 }
 
-// Part of C o_init.c:disco_output_sorted(): the per-class discoveries
-// rows, in the discosort order; sortloot_descr() is inlined here too
-// (classifyLoot replaces the numeric sortloot key).
+// C o_init.c:disco_output_sorted(): the per-class discoveries rows in the
+// discosort order; sortloot_descr() is inlined here too (classifyLoot
+// replaces the numeric sortloot key) and the cross-class alphabetical
+// qsort runs in discoveryRows() above.
 function classDiscoveries(oclass: number, order: DiscoverySortMode): string[] {
     const entries = [];
     for (const type of game._objectDiscoveryOrder ?? []) {

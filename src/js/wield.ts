@@ -43,7 +43,7 @@ import { shipObject } from './dokick.js';
 import { encumber_msg } from './pickup.js';
 import { monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
 
-// Part of C wield.c:dotwoweapon(): adapt the command's time result to the engine.
+// C wield.c:dotwoweapon(): the #twoweapon command; toggleTwoWeaponCombat() below holds the toggle and its rnd(20) > DEX time result.
 export async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
     if (!game.program_state.gameover) game.context.move = spentTime ? 1 : 0;
@@ -976,8 +976,8 @@ export function setWeaponEnchantment(object: GameObject, value: number) {
     object.enchantment = value;
 }
 
-// Part of C obj.h:u_wield_art(): test the hero's primary weapon for Magicbane.
-// The native u_wield_art test for ART_MAGICBANE (include/obj.h:441), as
+// C obj.h:u_wield_art(): test the hero's primary weapon for Magicbane —
+// the native u_wield_art(ART_MAGICBANE) test (include/obj.h:441), as
 // wield.c reads it.
 function heroWieldsMagicbane(state: GameState) {
     return artifactById(

@@ -150,7 +150,7 @@ export function get_coord(value, y = null) {
         return { x: value.x, y: value.y };
     return null;
 }
-// Part of C sp_lev.c:get_table_objclass(): the def_char_to_objclass()
+// C sp_lev.c:get_table_objclass(): the def_char_to_objclass()
 // symbol-letter resolution, as l_des_object()'s class argument applies it.
 export function objectClassForSymbol(symbol) {
     const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);

@@ -347,7 +347,7 @@ function whichArti(mask) {
         return SPE_BOOK_OF_THE_DEAD;
     return 0;
 }
-// Part of C wizard.c:mon_has_arti()/on_ground()/other_mon_has_arti(): the
+// C wizard.c:mon_has_arti()/on_ground()/other_mon_has_arti(): the
 // object test against the mask's artifact, which_arti() inlined as a
 // predicate over a given object.
 function objectMatchesTarget(object, mask, state) {

@@ -31,7 +31,7 @@ import { useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse, holdA
 import { bhit, getObjectLocation, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn, objectResistsDestruction, zappable, } from './zap.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu } from './hack.js';
+import { heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu, mNext2u } from './hack.js';
 import { distmin, possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import { setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, monsterFliesOrFloats, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, } from './mon.js';
@@ -46,7 +46,7 @@ import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, 
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { stack_object } from './invent.js';
-import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, transformMagicLampToOilLamp } from './light.js';
+import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
 import { lightRoom } from './read.js';
 import { finishTeleportArrival, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet, } from './teleport.js';
 import { pickLock } from './lock.js';
@@ -780,41 +780,50 @@ export function heroNextToLeashedFollowers() {
     const steed = game.u.usteed;
     return !(steed && monsterCarriesAmulet(steed));
 }
-// Part of C apply.c:mleashed_next2u(): the enexto() relocation of one
-// leashed follower.
-async function moveLeashedMonsterNextToHero(monster, state, random) {
-    // C distmin(mtmp->mx, mtmp->my, u.ux, u.uy) > 1.
-    if (distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1)
-        return;
-    const oldx = monster.mx;
-    const oldy = monster.my;
-    const destination = enexto(monster.mnum, state.u.ux, state.u.uy, { state, random });
-    if (!destination)
-        return;
-    await relocateMonsterTo(monster, destination.x, destination.y, { state, random });
-    if (state === game) {
-        await newsym(oldx, oldy);
-        await newsym(monster.mx, monster.my);
+// C apply.c:mleashed_next2u(): one leashed follower relocates beside the hero
+// (mnexto()) or its leash goes slack; a cursed leash still blocks the
+// follower and reports TRUE to next_to_u().
+async function mleashedNext2u(monster, state, random) {
+    if (!monster.mleashed)
+        return false;
+    if (!mNext2u(monster, state)) {
+        // C mon.c:mnexto(mtmp, RLOC_NOMSG): the enexto() relocation.  This
+        // port keeps the square's newsym pair directly instead of the shared
+        // moveMonsterNextToHero(), which adds wizard teleport control and the
+        // overcrowding fallback C only reaches when enexto() fails.
+        const oldx = monster.mx;
+        const oldy = monster.my;
+        const destination = enexto(monster.mnum, state.u.ux, state.u.uy, { state, random });
+        if (destination) {
+            await relocateMonsterTo(monster, destination.x, destination.y, { state, random });
+            if (state === game) {
+                await newsym(oldx, oldy);
+                await newsym(monster.mx, monster.my);
+            }
+        }
     }
-}
-// C apply.c:next_to_u(), used before stairs, falls, and teleportation.
-// C apply.c:mleashed_next2u(): each leashed pet relocates beside the hero
-// or its leash goes slack; a cursed leash still blocks the follower.
-export async function bringLeashedFollowers(state = game, random = rn2) {
-    for (const monster of [...(state.level?.monsters || [])].reverse()) {
-        if (!monster?.mleashed || (monster.mhp ?? 1) <= 0)
-            continue;
-        await moveLeashedMonsterNextToHero(monster, state, random);
-        // C apply.c:next_to_u(): distmin(mtmp, you) <= 1.
-        if (distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1)
-            continue;
+    if (!mNext2u(monster, state)) {
         const leash = leashAttachedToMonster(monster, state);
+        // C reports impossible("leashed-unleashed mon?") before the TRUE
+        // return; a leashed monster always has its leash object in this port,
+        // so the diagnostic is not printed.
         if (!leash || leash.cursed)
-            return false;
+            return true;
         await releaseMonsterLeash(monster, false, { state });
         // C apply.c:number_leashed(): a/the from the remaining leash count.
         const leashedCount = requireGameLevel(state).monsters.filter(candidate => candidate.mleashed).length;
         await plineWithContinuation(formatFeltMessage(`${leashedCount > 1 ? 'a' : 'the'} leash go slack.`, state));
+    }
+    return false;
+}
+// C apply.c:next_to_u(), used before stairs, falls, and teleportation.
+export async function bringLeashedFollowers(state = game, random = rn2) {
+    // C get_iter_mons(mleashed_next2u): stops at the first blocked follower.
+    for (const monster of [...(state.level?.monsters || [])].reverse()) {
+        if (!monster?.mleashed || (monster.mhp ?? 1) <= 0)
+            continue;
+        if (await mleashedNext2u(monster, state, random))
+            return false;
     }
     const steed = state.u?.usteed;
     const steedInventory = steed?.minvent || steed?.inventory || [];
@@ -1585,11 +1594,11 @@ async function rubRoyalJelly(jelly) {
     game.context.move = used ? 1 : 0;
     return used;
 }
-// Part of C apply.c:dorub(): the rub command; light.ts:transformMagicLampToOilLamp() contains the extracted conversion.
-// C refs: apply.c:dorub(), invent.c:getobj(), wield.c:wield_tool(), and
-// cmd.c:CQ_CANNED.  Selecting an unwielded lamp does not rub it immediately:
-// wield_tool() installs it, consumes one action, and queues dorub plus the
-// inventory letter for the next hero command boundary.
+// C apply.c:dorub(): the #rub command.
+// C refs: invent.c:getobj(), wield.c:wield_tool(), and cmd.c:CQ_CANNED.
+// Selecting an unwielded lamp does not rub it immediately: wield_tool()
+// installs it, consumes one action, and queues dorub plus the inventory
+// letter for the next hero command boundary.
 export async function dorub() {
     if (heroHasNoHands(game)) {
         await syncPline("You aren't able to rub anything without hands.");
@@ -1631,8 +1640,19 @@ export async function dorub() {
         if ((object.spe || 0) > 0 && rn2(3) === 0) {
             await chargeUnpaidUsage(object, { alternate: true });
             // C performs the bones-safe lamp transformation before the
-            // released monster can grant a fatal artifact wish.
-            transformMagicLampToOilLamp(object, 1000 + rn2(500), game, game.moves ?? 0);
+            // released monster can grant a fatal artifact wish:
+            // otyp = OIL_LAMP, spe = 0 (for safety), age = rn1(500, 1000),
+            // and begin_burn() for a lamp that was already lit.  A lit magic
+            // lamp already has a light source but no timer; once it becomes
+            // an oil lamp, begin_burn() attaches the ordinary fuel timer
+            // while preserving that light-source identity.
+            object.otyp = OIL_LAMP;
+            object.name = 'oil lamp';
+            object.plural = 'oil lamps';
+            object.spe = 0;
+            object.age = 1000 + rn2(500);
+            if (object.lamplit)
+                beginObjectBurn(object, game, game.moves ?? 0);
             requirePlayingGame(game);
             await releaseDjinni(object, game);
             learnObjectType(MAGIC_LAMP);

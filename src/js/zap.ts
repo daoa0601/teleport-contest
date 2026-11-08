@@ -1947,7 +1947,7 @@ export function restoreMonsterTraits(
     monster: Monster | null | undefined, saved: SavedMonsterTraits | null | undefined,
     options?: MonsterHitPointRandom,
 ): Monster | null | undefined;
-// Part of C zap.c:montraits(): restore saved traits while retaining the new body's identity, position, inventory, and worm state.
+// C zap.c:montraits(): restore saved traits while retaining the new body's identity, position, inventory, and worm state.
 export function restoreMonsterTraits(
     monster: Monster | null | undefined, saved: SavedMonsterTraits | null | undefined, {
     rollOne = rnd,

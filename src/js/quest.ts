@@ -526,7 +526,11 @@ export async function talkQuestCharacter(monster: Monster, state: GameState = ga
     }
 }
 
-// Part of C quest.c:expulsion(): the goto scheduling and the sealed half.
+// C quest.c:expulsion(): expel the hero to the parent of the Quest —
+// nomul(), the schedule_goto() whose execution performQuestExpulsion()
+// below completes after the leader's dialogue returns, and the sealed
+// half (qexpelled, remdun_mapseen() via forgetQuestOverview(), and the
+// near portal's deletion).
 export async function scheduleQuestExpulsion(seal: boolean, state: GameState = game): Promise<void> {
     nomul(0, state);
     state._questExpulsionPending = { seal, portal: !state.u.uevent?.qexpelled };

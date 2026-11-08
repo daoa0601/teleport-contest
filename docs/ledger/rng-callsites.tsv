@@ -1789,7 +1789,7 @@ src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""4""]"	constant
-src/js/o_init.ts	initializeObjectDescriptions/shuffle	rn2	"[""high - current + 1""]"	unproved
+src/js/o_init.ts	shuffle	rn2	"[""o_high - current + 1""]"	unproved
 src/js/uhitm.ts	erodeArmor	random	"[""5""]"	constant
 src/js/mhitm.ts	erodeAttackingWeapon	random	"[""kind === 'burn' ? 6 : 1""]"	constant
 src/js/trap.ts	erodeObject	luckRandom	"[""4""]"	constant

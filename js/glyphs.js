@@ -209,8 +209,8 @@ function objectGlyphs(otyp) {
         symbol: { kind: 'object', oclass }, baseColor, rogueColor,
     }));
 }
-// Part of C glyphs.c:parse_id(): the monster glyph id name, from the
-// monsdump enum names in include/monsters.h (human_* were-forms).
+// C glyphs.c:parse_id(): the monster glyph id name, from the monsdump
+// enum names in include/monsters.h (human_* were-forms).
 function monsterGlyphName(name, mnum) {
     const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
     // monsters.h enum names distinguish human were-creatures from animal forms.

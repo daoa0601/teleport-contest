@@ -3049,8 +3049,9 @@ export function levelAllowsMonsterDeathDrops(
     return !(state.level?.flags?.graveyard && undead && random(3));
 }
 
-// Part of C mon.c:mondied(), mon.c:xkilled(): the accessible-or-pool square
-// test that guards the make_corpse call.
+// C mon.c:mondied(): the accessible-or-pool square test guarding the
+// make_corpse() call (xkilled()'s port shares it); the death flow itself
+// is the mondead/mondied ports around finishMonsterLiquidDeath() below.
 export function monsterDeathSquareAllowsObjects(x: number, y: number, state: GameState = game): boolean {
     return isAccessibleAt(x, y, state) || isPoolAt(x, y, state);
 }
@@ -3135,148 +3136,12 @@ function corpseFlags(monster: Monster, initialize = true): number {
     return flags;
 }
 
-// Part of C mon.c:make_corpse(): the wood golem's material picks.
-function woodGolemMaterial() {
-    if (rn2(2)) return QUARTERSTAFF;
-    if (rn2(3)) return SMALL_SHIELD;
-    if (rn2(3)) return CLUB;
-    if (rn2(3)) return ELVEN_SPEAR;
-    return BOOMERANG;
-}
-
-// Part of C mon.c:make_corpse(): the rope golem's material picks.
-function ropeGolemMaterial() {
-    if (rn2(2)) return LEASH;
-    return rn2(3) ? BULLWHIP : GRAPPLING_HOOK;
-}
-
-// Part of C mon.c:make_corpse(): the leather golem's material picks.
-function leatherGolemMaterial() {
-    if (rn2(4)) return LEATHER_ARMOR;
-    return rn2(3) ? LEATHER_CLOAK : SADDLE;
-}
-
-// Part of C mon.c:make_corpse(): the golem-remains switch.
-async function createGolemRemains(monster: Monster, state: GameState): Promise<GameObject | null> {
-    const x = monster.mx;
-    const y = monster.my;
-    let remains: GameObject | null = null;
-    const placeNewObject = async (type: number, initialize = true): Promise<GameObject> => {
-        remains = await mksobj(type, initialize, false);
-        placeCreatedObject(remains, x, y, state);
-        return remains;
-    };
-
-    switch (monster.mnum) {
-    case PM_IRON_GOLEM:
-        for (let count = d(2, 6); count > 0; count--)
-            await placeNewObject(IRON_CHAIN);
-        break;
-    case PM_GLASS_GOLEM:
-        for (let count = d(2, 4); count > 0; count--) {
-            const glassType = WORTHLESS_PIECE_OF_WHITE_GLASS
-                + rn2(WORTHLESS_PIECE_OF_VIOLET_GLASS
-                    - WORTHLESS_PIECE_OF_WHITE_GLASS + 1);
-            await placeNewObject(glassType);
-        }
-        break;
-    case PM_CLAY_GOLEM: {
-        const rocks = await placeNewObject(ROCK, false);
-        rocks.quan = rocks.quantity = rn2(20) + 50;
-        rocks.owt = objectWeight(rocks);
-        break;
-    }
-    case PM_STONE_GOLEM:
-        remains = await mkcorpstat(
-            STATUE, null, monster.mnum, x, y, corpseFlags(monster, false), { state },
-        );
-        break;
-    case PM_WOOD_GOLEM:
-        for (let count = d(2, 4); count > 0; count--)
-            await placeNewObject(woodGolemMaterial());
-        break;
-    case PM_ROPE_GOLEM:
-        for (let count = rn2(3); count > 0; count--)
-            await placeNewObject(ropeGolemMaterial());
-        break;
-    case PM_LEATHER_GOLEM:
-        for (let count = d(2, 4); count > 0; count--)
-            await placeNewObject(leatherGolemMaterial());
-        break;
-    case PM_GOLD_GOLEM:
-        remains = await mkgold(200 - rnl(101), x, y, state);
-        break;
-    case PM_PAPER_GOLEM:
-        for (let count = rnd(4); count > 0; count--)
-            await placeNewObject(SCR_BLANK_PAPER);
-        break;
-    default:
-        break;
-    }
-
-    if (monster.mnum !== PM_STONE_GOLEM) setMonsterGivenName(monster, null);
-    return remains;
-}
-
-// Part of C mon.c:make_corpse(): placing one mksobj part.
-async function placeMonsterPart(type: number, monster: Monster, state: GameState, initialize = true): Promise<GameObject> {
-    const part = await mksobj(type, initialize, false);
-    placeCreatedObject(part, monster.mx, monster.my, state);
-    return part;
-}
-
-// Part of C mon.c:make_corpse(): the dragon-scale, unicorn-horn and
-// worm-tooth parts.
-async function createMonsterPart(monster: Monster, state: GameState, seen: boolean, publish: MessagePublisher): Promise<GameObject | null> {
-    const mnum = monster.mnum;
-    if (mnum >= PM_GRAY_DRAGON && mnum <= PM_YELLOW_DRAGON) {
-        const chance = monster.mrevived ? 20 : 3;
-        if (rn2(chance) !== 0) return null;
-        const scales = await placeMonsterPart(
-            GRAY_DRAGON_SCALES + mnum - PM_GRAY_DRAGON,
-            monster, state, false,
-        );
-        scales.spe = 0;
-        scales.cursed = false;
-        scales.blessed = false;
-        return scales;
-    }
-    if (mnum >= PM_WHITE_UNICORN && mnum <= PM_BLACK_UNICORN) {
-        if (monster.mrevived && rn2(2)) {
-            if (seen) {
-                const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
-                await publish(
-                    `${owner} recently regrown horn `
-                        + 'crumbles to dust.',
-                );
-            }
-            return null;
-        }
-        const horn = await placeMonsterPart(UNICORN_HORN, monster, state);
-        if (monster.mrevived) horn.degraded_horn = 1;
-        return horn;
-    }
-    if (mnum === PM_LONG_WORM)
-        return await placeMonsterPart(WORM_TOOTH, monster, state);
-    return null;
-}
-
-// Part of C mon.c:make_corpse(): the pudding glob and its meld.
-async function createPuddingGlob(monster: Monster, state: GameState, publish: MessagePublisher): Promise<GameObject | null> {
-    if (monster.mnum < PM_GRAY_OOZE
-        || monster.mnum > PM_BLACK_PUDDING) return null;
-    const glob = await placeMonsterPart(
-        GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE,
-        monster, state,
-    );
-    const remains = await meldNearbyFloorGlobs(glob, { state, publish });
-    setMonsterGivenName(monster, null);
-    await newsym(monster.mx, monster.my);
-    return remains;
-}
-
-// Part of C mon.c:make_corpse(): the remains dispatch.
-export async function createMonsterRemains(
+// C mon.c:make_corpse(): the per-species remains switch — special golem
+// remains, pudding globs with their meld, the dragon-scale/unicorn-horn/
+// worm-tooth parts, then the common corpse creation, burial, and the
+// stacking tail.  corpseFlags() below assembles the CORPSTAT_* bits,
+// finishMonsterRemains() the shared tail.
+export async function make_corpse(
     monster: Monster, state: GameState = game, {
         buried = false,
         zombify = false,
@@ -3287,14 +3152,119 @@ export async function createMonsterRemains(
 ): Promise<GameObject | null> {
     const x = monster.mx;
     const y = monster.my;
+    // C mksobj_at(): create one part and place it on the death square.
+    const placePart = async (type: number, initialize = true): Promise<GameObject> => {
+        const part = await mksobj(type, initialize, false);
+        placeCreatedObject(part, x, y, state);
+        return part;
+    };
+
     if (SPECIAL_GOLEM_REMAINS.has(monster.mnum)) {
-        const remains = await createGolemRemains(monster, state);
+        let remains: GameObject | null = null;
+        const placeNewObject = async (type: number, initialize = true): Promise<GameObject> => {
+            remains = await placePart(type, initialize);
+            return remains;
+        };
+
+        switch (monster.mnum) {
+        case PM_IRON_GOLEM:
+            for (let count = d(2, 6); count > 0; count--)
+                await placeNewObject(IRON_CHAIN);
+            break;
+        case PM_GLASS_GOLEM:
+            // very low chance of creating all glass gems
+            for (let count = d(2, 4); count > 0; count--) {
+                const glassType = WORTHLESS_PIECE_OF_WHITE_GLASS
+                    + rn2(WORTHLESS_PIECE_OF_VIOLET_GLASS
+                        - WORTHLESS_PIECE_OF_WHITE_GLASS + 1);
+                await placeNewObject(glassType);
+            }
+            break;
+        case PM_CLAY_GOLEM: {
+            const rocks = await placeNewObject(ROCK, false);
+            rocks.quan = rocks.quantity = rn2(20) + 50;
+            rocks.owt = objectWeight(rocks);
+            break;
+        }
+        case PM_STONE_GOLEM:
+            remains = await mkcorpstat(
+                STATUE, null, monster.mnum, x, y, corpseFlags(monster, false), { state },
+            );
+            break;
+        case PM_WOOD_GOLEM:
+            for (let count = d(2, 4); count > 0; count--)
+                await placeNewObject(rn2(2) ? QUARTERSTAFF
+                    : rn2(3) ? SMALL_SHIELD
+                        : rn2(3) ? CLUB
+                            : rn2(3) ? ELVEN_SPEAR : BOOMERANG);
+            break;
+        case PM_ROPE_GOLEM:
+            for (let count = rn2(3); count > 0; count--)
+                await placeNewObject(rn2(2) ? LEASH
+                    : rn2(3) ? BULLWHIP : GRAPPLING_HOOK);
+            break;
+        case PM_LEATHER_GOLEM:
+            for (let count = d(2, 4); count > 0; count--)
+                await placeNewObject(rn2(4) ? LEATHER_ARMOR
+                    : rn2(3) ? LEATHER_CLOAK : SADDLE);
+            break;
+        case PM_GOLD_GOLEM:
+            // Good luck gives more coins
+            remains = await mkgold(200 - rnl(101), x, y, state);
+            break;
+        case PM_PAPER_GOLEM:
+            for (let count = rnd(4); count > 0; count--)
+                await placeNewObject(SCR_BLANK_PAPER);
+            break;
+        default:
+            break;
+        }
+
+        // don't christen the objects
+        if (monster.mnum !== PM_STONE_GOLEM) setMonsterGivenName(monster, null);
         return remains ? await finishMonsterRemains(remains, monster, state) : null;
     }
-    if (monster.mnum >= PM_GRAY_OOZE && monster.mnum <= PM_BLACK_PUDDING)
-        return createPuddingGlob(monster, state, publish);
 
-    await createMonsterPart(monster, state, seen, publish);
+    /* expired puddings will congeal into a large blob; we have to do this
+       here because most other places expect there to be an object coming
+       back; not this one */
+    if (monster.mnum >= PM_GRAY_OOZE && monster.mnum <= PM_BLACK_PUDDING) {
+        const glob = await placePart(
+            GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE,
+        );
+        const remains = await meldNearbyFloorGlobs(glob, { state, publish });
+        setMonsterGivenName(monster, null);
+        await newsym(monster.mx, monster.my);
+        return remains;
+    }
+
+    const mnum = monster.mnum;
+    if (mnum >= PM_GRAY_DRAGON && mnum <= PM_YELLOW_DRAGON) {
+        // Make dragon scales; the order of the dragons matches the scales.
+        const chance = monster.mrevived ? 20 : 3;
+        if (rn2(chance) === 0) {
+            const scales = await placePart(
+                GRAY_DRAGON_SCALES + mnum - PM_GRAY_DRAGON, false,
+            );
+            scales.spe = 0;
+            scales.cursed = false;
+            scales.blessed = false;
+        }
+    } else if (mnum >= PM_WHITE_UNICORN && mnum <= PM_BLACK_UNICORN) {
+        if (monster.mrevived && rn2(2)) {
+            if (seen) {
+                const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
+                await publish(
+                    `${owner} recently regrown horn crumbles to dust.`,
+                );
+            }
+        } else {
+            const horn = await placePart(UNICORN_HORN);
+            if (monster.mrevived) horn.degraded_horn = 1;
+        }
+    } else if (mnum === PM_LONG_WORM) {
+        await placePart(WORM_TOOTH);
+    }
 
     const corpseForm = undeadToCorpse(monster.mnum);
     const vitalFlags = state.mvitals?.[monster.mnum]?.mvflags
@@ -3871,7 +3841,7 @@ export async function finishMonsterLiquidDeath(
     };
     const corpse = death.leavesRemains
         && monsterDeathSquareAllowsObjects(monster.mx, monster.my, state)
-        ? await createMonsterRemains(monster, state, {
+        ? await make_corpse(monster, state, {
             seen: state === game && canSeeMonster(monster),
             publish,
         })
@@ -3978,7 +3948,7 @@ async function resolveMonsterDeath(
         return { monster, survived: false, corpse: null, heroDied: true };
     const corpse = death.leavesRemains
         && monsterDeathSquareAllowsObjects(monster.mx, monster.my, state)
-        ? await createMonsterRemains(
+        ? await make_corpse(
             monster, state, {
                 zombify: zombifyCorpse,
                 noRevive,
@@ -4316,7 +4286,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     }
     let corpse = null;
     if (leavesCorpse) {
-        corpse = await createMonsterRemains(monster, game, {
+        corpse = await make_corpse(monster, game, {
             buried: buryCorpse,
             zombify: zombifyCorpse,
             noRevive,

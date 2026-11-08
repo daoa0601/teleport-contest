@@ -1657,7 +1657,7 @@ class CharacterSelection {
 
 }
 
-// Part of C role.c:genl_player_setup(): its yn_function() call for the
+// C role.c:genl_player_setup(): its yn_function() call for the
 // pick-for-you question, drawn over the base window before the game
 // windows exist.
 async function readSetupAnswer(question: string): Promise<string> {
@@ -1680,7 +1680,7 @@ async function readSetupAnswer(question: string): Promise<string> {
     return String.fromCharCode(answer);
 }
 
-// Part of C role.c:role_menu_extra(): its add_menu_str() call — a
+// C role.c:role_menu_extra(): its add_menu_str() call — a
 // text-only row.
 function addText(window: TtyMenuWindow<string>, text: string): void {
     tty_add_menu(window, { identifier: null, text });

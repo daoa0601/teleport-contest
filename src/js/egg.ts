@@ -196,7 +196,7 @@ function parentHatchMessage(mnum: number, count: number, egg: GameObject, state:
         description} like "${parent}${punctuation}"`;
 }
 
-// Part of C timeout.c:hatch_egg(): the monster-creating half of the timer
+// C timeout.c:hatch_egg(): the monster-creating half of the timer
 // callback, split so the caller can publish the hatch message before the
 // finishing phase runs.
 // C creates the monsters and reduces the egg stack before it prints the hatch

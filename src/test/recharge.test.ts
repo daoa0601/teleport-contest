@@ -7,7 +7,7 @@ import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 import { findArmorClass } from '../js/do_wear.js';
 
 import { currentAttribute } from '../js/attrib.js';
-import { invokeArtifactPower } from '../js/artifact.js';
+import { artiInvoke } from '../js/artifact.js';
 import { artifactByName } from '../js/artifact.js';
 import { A_STR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -345,7 +345,7 @@ void test('the Card\'s blessing does not improve charging for another role', asy
     const ball = await addInventoryObject(CRYSTAL_BALL, { spe: 0 });
     pushKeys(requiredLetter(ball));
 
-    await invokeArtifactPower(card, artifactByName('The Platinum Yendorian Express Card'));
+    await artiInvoke(card, artifactByName('The Platinum Yendorian Express Card'));
 
     assert.ok(ball.spe >= 1 && ball.spe <= 2);
     assert.equal(ball.blessed, false);

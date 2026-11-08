@@ -1,9 +1,10 @@
 import { addInventoryObject } from './support/game-objects.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ROOM, SHOPBASE, OBJECT_TIMER_KIND } from '../js/const.js';
+import { ROOM, SHOPBASE, W_WEP, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requirePlayingGame, requireGameLevel } from '../js/gstate.js';
-import { transformMagicLampToOilLamp } from '../js/light.js';
+import { rhack } from '../js/cmd.js';
+import { resetInputState } from '../js/input.js';
 import { BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
@@ -109,15 +110,24 @@ void test('lit magic-lamp release changes type and acquires an oil burn timer', 
     await applyInventoryA();
     assert.equal(lamp.lamplit, true);
     assert.deepEqual(objectTimers(lamp), []);
-    assert.equal(transformMagicLampToOilLamp(lamp, 1200, game, game.moves), true);
+    // Wield the lit lamp, then rub it: the djinni release converts it
+    // into an oil lamp whose fresh fuel starts an ordinary burn timer.
+    game.uwep = game.u.uwep = lamp;
+    initRng(39n);
+    resetInputState().feed('rub\na    ');
+    await rhack('#'.charCodeAt(0));
     assert.equal(lamp.otyp, OIL_LAMP);
     assert.equal(lamp.name, 'oil lamp');
     assert.equal(lamp.spe, 0);
     assert.equal(lamp.lamplit, true);
+    // C begin_burn() books the whole burn up front: age = rn1(500, 1000)
+    // draws 1362 here, so the stored age keeps
+    // only the excess over the 150-turn maximum booked at game.moves.
     assert.equal(lamp.age, 150);
+    assert.equal(game.moves, 40);
     assert.deepEqual(objectTimers(lamp).map(timer => [
         timer.kind, timer.deadline,
-    ]), [[OBJECT_TIMER_KIND.BURN_OBJECT, 1090]]);
+    ]), [[OBJECT_TIMER_KIND.BURN_OBJECT, 40 + 1362 - 150]]);
 });
 void test('unlit underwater and empty lamps refuse without creating timers', async () => {
     let lamp = await freshLampState(OIL_LAMP);

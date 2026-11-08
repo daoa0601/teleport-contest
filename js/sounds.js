@@ -453,7 +453,7 @@ async function acknowledgeHelmetTip({ monster, visible, unseen, statue, x, y }) 
         await pline(visible ? `${monsterName(monster, { capitalized: true })} doesn't respond.`
             : 'Nothing happens.');
 }
-// Part of C sounds.c:responsive_mon_at(): test whether the target monster can respond.
+// C sounds.c:responsive_mon_at(): test whether the target monster can respond.
 function canAcknowledgeTip(monster, x, y) {
     return !monsterIsHelpless(monster) && !!monster.mcansee && monsterHasEyes(monster.mnum)
         && (!heroIsInvisible(game) || monsterPerceives(monster.mnum))

@@ -44,9 +44,8 @@ import { LUA_SOURCES } from './generated/lua_sources.js';
 import { buriedBallToPunishment, buryObject, unearthFloorObjectsAt } from './dig.js';
 import { GameMap } from './game.js';
 import { ageStoresFuel } from './pickup.js';
-import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones_object.js';
-import { encodeSavedGraph } from './saved_graph.js';
 import { decodeBonesPayload } from './bones_validation.js';
+import { encodeSavedGraph } from './saved_graph.js';
 import type { BonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
@@ -1871,7 +1870,11 @@ async function fillRandomRoomObjects(croom: Room, pos: Position): Promise<void> 
     }
 }
 
-// C mklev.c:mksink().
+// C mklev.c:fill_ordinary_room(): a recursive ordinary-room fill —
+// subrooms first, then the sleeping monster, traps, gold, and the
+// non-rogue furniture; mksink() is inlined in the one-in-60 arm below
+// and fillRandomRoomObjects() above is the shared skip_nonrogue
+// random-object tail.
 export async function fill_ordinary_room(croom: Room | null | undefined, bonus_items: boolean): Promise<void> {
     const g = game;
     if (!croom || (croom.rtype !== OROOM && croom.rtype !== THEMEROOM)) return;

@@ -4,8 +4,8 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 
-// Part of C obj.h:is_mines_prize()/is_soko_prize(): which pending prize,
-// if any, this concrete object identity is.
+// C obj.h:is_mines_prize()/is_soko_prize(): which pending prize
+// (achieveo.mines_prize_oid / soko_prize_oid) this object identity is.
 export function levelPrizeKind(
     object: GameObject, state: GameState = game,
 ): 'mines' | 'sokoban' | null {

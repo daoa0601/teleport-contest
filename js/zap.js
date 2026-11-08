@@ -1209,7 +1209,7 @@ function copyRestoredTraits(monster, saved) {
             monster[key] = saved[key];
     }
 }
-// Part of C zap.c:montraits(): restore saved traits while retaining the new body's identity, position, inventory, and worm state.
+// C zap.c:montraits(): restore saved traits while retaining the new body's identity, position, inventory, and worm state.
 export function restoreMonsterTraits(monster, saved, { rollOne = rnd, randomBelow = rn2, } = {}) {
     if (!monster || !saved)
         return monster;

@@ -2392,7 +2392,7 @@ export async function lspo_exclusion(context: SpecialLevelContext, value: LuaVal
     });
 }
 
-// Part of C sp_lev.c:levregion_add(): uses raw map-relative endpoints, never croom.
+// C sp_lev.c:levregion_add(): resolves one region rectangle's raw map-relative endpoints, never croom; l_get_lregion() below and its caller append the resolved regions.
 async function regionCoordinates(context: SpecialLevelContext, coordinates: LuaRegion | undefined,
     levelCoordinates: boolean | number | undefined,
 ): Promise<Rectangle> {

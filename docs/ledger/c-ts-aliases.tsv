@@ -185,7 +185,6 @@ random_teleport_level	randomTeleportDepth
 lev_by_name	levelDepthByName
 thiefdead	armorThiefGone
 mon_leaving_level	detachMonsterFromLevel
-make_corpse	createMonsterRemains
 pick_familiar_pm	familiarSpecies
 roguename	roguePlayerName
 maybe_finish_sokoban	finishSokobanIfSolved
@@ -203,7 +202,7 @@ ndemon	normalDemon
 llord	lawfulLord
 lminion	lawfulMinion
 newman	renewHumanForm
-arti_invoke	invokeArtifactPower
+arti_invoke	artiInvoke
 arti_invoke_cost	beginInvocation
 invoke_storm_spell	invokeStorm
 get_artifact	artifactById
@@ -239,3 +238,4 @@ drop_boulder_on_player	dropBoulderOnHero
 reassign	reassignInventoryLetters
 is_pool	isPoolAt
 water_damage_chain	damageWaterChain
+readobjnam_postparse1	parseWishText

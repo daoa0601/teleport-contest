@@ -862,7 +862,7 @@ export async function rejectCasting(state: GameState = game) {
     return true;
 }
 
-// Part of C spell.c:age_spells(): compute remaining knowledge from its expiry turn.
+// C spell.c:age_spells(): compute remaining knowledge from its expiry turn.
 // The spl_book know-counter is stored as the turn on which it expires.
 // Casting does not refresh it; every elapsed global turn ages all memorized
 // spells. The per-turn decrnknow loop becomes an expiry-deadline subtraction.

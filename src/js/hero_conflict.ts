@@ -22,7 +22,7 @@ export function hasNonArtifactConflict(state: GameState = game): boolean {
         || propertyHasOtherSources('conflict', state);
 }
 
-// Part of C youprop.h:Conflict: the combined intrinsic/extrinsic property,
+// C youprop.h:Conflict(): the combined intrinsic/extrinsic property,
 // as C's macro evaluates it at each call site.
 export function heroHasConflict(state: GameState = game): boolean {
     return wearsConflictRing(state)

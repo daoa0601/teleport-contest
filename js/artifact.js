@@ -1618,19 +1618,9 @@ const DIRECT_POWERS = [
 function isDirectPower(power) {
     return DIRECT_POWERS.some((candidate) => candidate === power);
 }
-// Part of C artifact.c:arti_invoke(): the levitation independence check.
-// C do_wear.c-style extrinsic check: an invoked artifact is nothing special
-// while an independent intrinsic (including the potion timeout), worn ring,
-// or boots source also grants levitation (artifact.c:2197-2201).
-// Part of C artifact.c:arti_invoke(): the levitation independence check.
-function hasNonArtifactLevitation(state) {
-    return propertyHasOtherSources('levitation', state);
-}
-// Part of C artifact.c:arti_invoke(): the levitation refresh after the
-// toggle.
-function syncHeroLevitation(state) {
-    refreshProperty('levitation', state);
-}
+// C artifact.c:arti_invoke(): the levitation entry in PROPERTY_POWERS below
+// holds the property branch's other-source test (eprop & ~W_ARTI) || iprop —
+// artifact.c:2197-2201 — and the post-toggle property refresh.
 const PROPERTY_POWERS = Object.freeze({
     conflict: {
         property: 'conflict',
@@ -1644,8 +1634,8 @@ const PROPERTY_POWERS = Object.freeze({
     },
     levitation: {
         property: 'levitation',
-        hasOtherSource: hasNonArtifactLevitation,
-        sync: syncHeroLevitation,
+        hasOtherSource: (state) => propertyHasOtherSources('levitation', state),
+        sync: (state) => refreshProperty('levitation', state),
     },
 });
 // Part of C artifact.c:arti_invoke(): the property-power artifact test.
@@ -1997,9 +1987,11 @@ async function invokeFlingPoison(object, state, publish) {
     }
     return true;
 }
-// C artifact.c:invoke_charge_obj().
-// C artifact.c:invoke_untrap().
-export async function invokeArtifactPower(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
+// C artifact.c:arti_invoke(): the #invoke dispatch — the direct powers
+// (inv_prop > LAST_PROP) with their cost gate, and the property toggles
+// through invokeProperty() below.  invoke_charge_obj() and invoke_untrap()
+// run in the switch arms below (chooseObjectToCharge() and untrap()).
+export async function artiInvoke(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
     if (!artifact)
         return { used: false };
     if (isPropertyArtifact(artifact)) {
@@ -2217,7 +2209,7 @@ export async function doinvoke() {
         game.context.move = 1;
         return;
     }
-    const invocation = await invokeArtifactPower(object, artifact, {
+    const invocation = await artiInvoke(object, artifact, {
         enterTrap: moveIntoFailedUntrap,
     });
     if ('heroDied' in invocation && invocation.heroDied)
