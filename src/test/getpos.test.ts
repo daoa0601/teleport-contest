@@ -33,9 +33,11 @@ void test('a lowercase DEC drawing letter remains an unknown direction during se
 });
 
 void test('getpos also accepts active DECgraphics cmap keys', () => {
+    game.symset = 'DECgraphics';
     for (const ch of ['\xe7', '\xf9', '\xfa', '\xf8', '\xf1', '\xef', '\xf3'] as const)
-        assert.equal(isGetposFeatureSymbol(ch, 'DECgraphics'), true, ch);
+        assert.equal(isGetposFeatureSymbol(ch), true, ch);
 
-    assert.equal(isGetposFeatureSymbol('q', 'default'), false);
-    assert.equal(isGetposFeatureSymbol('qq', 'DECgraphics'), false);
+    game.symset = null;
+    assert.equal(isGetposFeatureSymbol('\xe7'), false);
+    assert.equal(isGetposFeatureSymbol('qq'), false, 'only single bytes can name a feature');
 });

@@ -317,7 +317,9 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     // A dismissed corner window restores the already-painted map rather
     // than recomputing vision. Callers may retain a final page after exit.
     const underlay = restoreUnderlay
-        ? d.grid.map(row => row.map(cell => ({ ...cell }))) : null;
+        ? d.grid.map((row, r) => row.map((cell, c) => ({
+            ...cell, altFont: d.altFontAt(c, r),
+        }))) : null;
     const underlayCursor = restoreUnderlay
         ? { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible } : null;
     clearRect(cornerOffset, 0, d.cols, content.length + 1);
@@ -337,7 +339,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     } else if (underlay && underlayCursor) {
         for (const [row, cells] of underlay.entries()) {
             for (const [col, cell] of cells.entries()) {
-                d.setCell(col, row, cell.ch, cell.color, cell.attr);
+                d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
             }
         }
         // docorner() leaves the covered message columns blank.

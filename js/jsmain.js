@@ -70,8 +70,7 @@ export function serializeCapture(term) {
             lastRow = row;
     }
     const lines = [];
-    const decGraphics = /^DECgraphics$/i.test(game.symset || '');
-    for (const cells of grid.slice(0, lastRow + 1)) {
+    for (const [row, cells] of grid.slice(0, lastRow + 1).entries()) {
         const firstCol = cells.findIndex(painted);
         if (firstCol < 0) {
             lines.push('');
@@ -123,7 +122,8 @@ export function serializeCapture(term) {
             line += transition(fg, attr, nextFg, nextAttr);
             fg = nextFg;
             attr = nextAttr;
-            const decChar = decGraphics ? UNICODE_TO_DEC.get(cell.ch) : null;
+            const decChar = term instanceof GameDisplay && term.altFontAt(col, row)
+                ? UNICODE_TO_DEC.get(cell.ch) ?? cell.ch : null;
             const nextDec = decChar != null;
             if (nextDec !== dec) {
                 line += nextDec ? '\x0e' : '\x0f';
@@ -132,6 +132,10 @@ export function serializeCapture(term) {
             line += decChar ?? cell.ch;
             col++;
         }
+        // The recorder closes an open alternate-font run first and only
+        // then emits the row's end-of-line reset (termcap.c
+        // nomux_capture_screen: `if (in_dec) \017` at 843 precedes the
+        // color/attr reset at 845-852).
         if (dec)
             line += '\x0f';
         line += transition(fg, attr, 39, 0);

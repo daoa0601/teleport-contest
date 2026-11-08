@@ -506,7 +506,7 @@ export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines =
                 for (let col = boundary; col < d.cols; col++) {
                     const cell = underlay[row]?.[col];
                     if (cell)
-                        d.setCell(col, row, cell.ch, cell.color, cell.attr);
+                        d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
                 }
             }
         }
@@ -760,7 +760,11 @@ export async function showMessageMenu(letter, pickMode, message) {
 // Port only: retain terminal cells beneath an overlay menu.
 export function snapshotMenuUnderlay() {
     const d = display();
-    return d?.grid?.map(row => row.map(cell => ({ ...cell }))) || null;
+    // The saved cell keeps its g_putch() shift state: restoring the map
+    // below a dismissed menu replays those glyph bytes.
+    return d?.grid?.map((row, r) => row.map((cell, c) => ({
+        ...cell, altFont: d.altFontAt(c, r),
+    }))) || null;
 }
 // Port only: restore saved overlay cells while respecting current topline ownership.
 export function restoreMenuUnderlay(snapshot) {
@@ -790,7 +794,7 @@ export function restoreMenuUnderlay(snapshot) {
                 break;
             if (row === 0 && col >= toplineLimit)
                 break;
-            d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
         }
     }
     if (stateOwnsTopline)
@@ -964,7 +968,7 @@ export function writeMapCell(display, x, y, loc, frameColor) {
     const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
     const name = shownSymbolSet().name?.toLowerCase() ?? '';
     const byteGlyph = !loc.disp_decgfx && ROGUE_SYMSETS[name]?.ibm === true;
-    display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR, loc.disp_attr ?? 0, frameColor, byteGlyph);
+    display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR, loc.disp_attr ?? 0, frameColor, byteGlyph, loc.disp_decgfx === true);
 }
 // Part of C win/tty/wintty.c:tty_clear_nhwindow(): the NHW_MAP/NHW_BASE
 // term_clear_screen case, which just clears the map rows of the physical
@@ -1202,7 +1206,7 @@ export function _buildScreenOutput() {
                 for (const [c, cell] of cells.entries()) {
                     if (c >= display.cols)
                         break;
-                    display.setCell(c, 0, cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch, NO_COLOR, 0);
+                    display.setCell(c, 0, cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch, NO_COLOR, 0, cell.dec && game._toplineGlyphPainted);
                 }
             }
             else {

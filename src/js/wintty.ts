@@ -38,7 +38,7 @@ import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import type { ConditionText, StatusFieldSpan, StatusLine2Fields, StatusStyle } from './botl.js';
 import type { MapLocation } from './map_types.js';
 import type { TerminalCell, TerminalColor } from './terminal.js';
-import type { GameDisplay } from './game_display.js';
+import type { GameDisplay, UnderlayCell } from './game_display.js';
 
 const ANSI_DEFAULT = 39;
 const ANSI_COLOR = [
@@ -90,7 +90,7 @@ export interface TextMenuLine {
     // heading out of menucolor rule matching.
     itemflags?: number;
 }
-export type MenuUnderlay = readonly (readonly TerminalCell[])[];
+export type MenuUnderlay = readonly (readonly UnderlayCell[])[];
 export interface PaintedMenuRow extends TextMenuLine { attributeStart: number }
 export interface MenuLayout<T extends TextMenuLine> {
     rows: readonly (T & PaintedMenuRow)[];
@@ -569,7 +569,7 @@ export function paintMenuPage<T extends TextMenuLine>(
             for (let row = firstRestoredRow; row < maxRows; row++) {
                 for (let col = boundary; col < d.cols; col++) {
                     const cell = underlay[row]?.[col];
-                    if (cell) d.setCell(col, row, cell.ch, cell.color, cell.attr);
+                    if (cell) d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
                 }
             }
         }
@@ -837,7 +837,11 @@ export async function showMessageMenu(
 // Port only: retain terminal cells beneath an overlay menu.
 export function snapshotMenuUnderlay(): MenuUnderlay | null {
     const d = display();
-    return d?.grid?.map(row => row.map(cell => ({ ...cell }))) || null;
+    // The saved cell keeps its g_putch() shift state: restoring the map
+    // below a dismissed menu replays those glyph bytes.
+    return d?.grid?.map((row, r) => row.map((cell, c) => ({
+        ...cell, altFont: d.altFontAt(c, r),
+    }))) || null;
 }
 
 // Port only: restore saved overlay cells while respecting current topline ownership.
@@ -863,7 +867,7 @@ export function restoreMenuUnderlay(snapshot: MenuUnderlay | null): void {
             // restored snapshot must not repaint old content there either.
             if (col === d.cols - 1) break;
             if (row === 0 && col >= toplineLimit) break;
-            d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
         }
     }
     if (stateOwnsTopline) d.clearRow(0);
@@ -1014,7 +1018,7 @@ export function writeMapCell(display: GameDisplay, x: number, y: number,
     const name = shownSymbolSet().name?.toLowerCase() ?? '';
     const byteGlyph = !loc.disp_decgfx && ROGUE_SYMSETS[name]?.ibm === true;
     display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR,
-        loc.disp_attr ?? 0, frameColor, byteGlyph);
+        loc.disp_attr ?? 0, frameColor, byteGlyph, loc.disp_decgfx === true);
 }
 
 // Part of C win/tty/wintty.c:tty_clear_nhwindow(): the NHW_MAP/NHW_BASE
@@ -1263,6 +1267,7 @@ export function _buildScreenOutput() {
                         c, 0,
                         cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch,
                         NO_COLOR, 0,
+                        cell.dec && game._toplineGlyphPainted,
                     );
                 }
             } else {

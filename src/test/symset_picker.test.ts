@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
+import { selectMapPosition } from '../js/getpos.js';
 import { HWALL, LADDER, LA_UP, STAIRS } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { docrt, flush_screen, map_object, newsym } from '../js/display.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { floorObject } from './support/game-objects.js';
@@ -486,4 +488,26 @@ void test('an empty picker pick keeps an unlisted primary set displayed', async 
     await docrt();
     await flush_screen(1);
     assert.equal(requireScreenCell(cell.column, cell.row).ch, '<');
+});
+
+// getpos.c:1053 matches the key against the active showsyms.  After
+// do_symset() copies a picked primary set into showsyms (switch_symbols(),
+// symbols.c:257-260) those hold the DEC bytes even on the Rogue level, so
+// the DEC feature keys still name features there.
+void test('a primary DECgraphics pick keeps DEC feature keys on the Rogue level', async () => {
+    await freshObjectRoom({ flags: { verbose: false, tips: false, help: false } });
+    requirePlayingGame(game);
+    game.rogue_level = { ...game.u.uz };
+    await driveOptionWindow('symset', 'DECgraphics', true);
+
+    const input = resetInputState();
+    const selection = await answerPrompts(selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Choose a location.', goal: 'a location',
+    }), input, [
+        { prompt: /Choose a location\./, keys: '\xe7' },
+        { prompt: /Can't find dungeon feature/, keys: '.' },
+    ]);
+
+    assert.equal(selection?.x, 10);
+    assert.equal(selection?.y, 10);
 });

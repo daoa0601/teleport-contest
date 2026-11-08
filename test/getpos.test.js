@@ -26,9 +26,11 @@ void test('a lowercase DEC drawing letter remains an unknown direction during se
     assert.equal(selection?.y, 10);
 });
 void test('getpos also accepts active DECgraphics cmap keys', () => {
+    game.symset = 'DECgraphics';
     for (const ch of ['\xe7', '\xf9', '\xfa', '\xf8', '\xf1', '\xef', '\xf3'])
-        assert.equal(isGetposFeatureSymbol(ch, 'DECgraphics'), true, ch);
-    assert.equal(isGetposFeatureSymbol('q', 'default'), false);
-    assert.equal(isGetposFeatureSymbol('qq', 'DECgraphics'), false);
+        assert.equal(isGetposFeatureSymbol(ch), true, ch);
+    game.symset = null;
+    assert.equal(isGetposFeatureSymbol('\xe7'), false);
+    assert.equal(isGetposFeatureSymbol('qq'), false, 'only single bytes can name a feature');
 });
 //# sourceMappingURL=getpos.test.js.map

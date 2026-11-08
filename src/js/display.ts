@@ -111,11 +111,16 @@ export function shownSymbolSet(state: GameState = game) {
     };
 }
 
-// C sym.h:SYMHANDLING(H_DEC): the shown set's handling test, modeled by
-// symset name in this port.
-function usesDecSymbols(): boolean {
-    const symbols = shownSymbolSet();
-    return !symbols.rogue && /^DECgraphics$/i.test(symbols.name ?? '');
+// C sym.h:SYMHANDLING(H_DEC) over gs.symset[gc.currentgraphics]: the shown
+// set's handling test.  DECgraphics declares `Handling: DEC` and loads into
+// either slot — the roguesymset option never checks `Restrictions: primary`
+// (options.c:3553-3566 -> read_sym_file), so a Rogue level whose rogue set
+// is DECgraphics also carries the DEC handling.  assign_graphics()
+// (symbols.c:233/246) picks the slot from the level; switch_symbols()
+// (symbols.c:257-260) copies a picked primary set into showsyms without
+// changing currentgraphics.
+export function usesDecSymbols(state: GameState = game): boolean {
+    return /^DECgraphics$/i.test(shownSymbolSet(state).name ?? '');
 }
 
 // Port only: the active set's object-class symbol table.
@@ -526,7 +531,7 @@ export function reglyphSymbolSet(): void {
             // other set leaves them their set-independent gray.
             let color = memory.color;
             if (wall) {
-                if (BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? ''))
+                if (BRANCH_WALL_COLOR_SYMSETS.test(shownSymbolSet().name ?? ''))
                     color = decWallColors.get(offset) ?? memory.color;
                 else if ([CLR_BROWN, CLR_RED, CLR_YELLOW, CLR_BLUE].includes(memory.color))
                     color = NO_COLOR;
@@ -713,8 +718,9 @@ function terrainGlyphChars(loc: MapLocation, x: number, y: number): GlyphAppeara
     const rogue = Is_rogue_level(game.u?.uz);
     const dec = usesDecSymbols();
     // symbols.c:load_symset() applies these sets' G_ wall colors independently
-    // of character handling; the default set leaves wallcolors[] gray.
-    const hasBranchWallColors = BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? '');
+    // of character handling; glyphs.c:apply_customizations(gc.currentgraphics)
+    // applies the shown set's entries, so the shown set's name decides here.
+    const hasBranchWallColors = BRANCH_WALL_COLOR_SYMSETS.test(shownSymbolSet().name ?? '');
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
