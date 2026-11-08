@@ -1354,6 +1354,46 @@ class ExecutorTests(unittest.TestCase):
         self.rejected('int example(int typ) { return typ == 23; }', js,
                       **domain, reason='outputs differ')
 
+    def test_for_of_var_does_not_preserve_an_unrelated_lexical_binding(self):
+        js = ('function example(typ) { '
+              'if (typ === 0) { for (var item of [1]) {} } '
+              'else { let item = 23; } return typ === item; }')
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      params=[('typ', INT)], reason='shadows a binding')
+
+    def test_for_of_var_is_undefined_when_evaluating_its_collection(self):
+        js = ('const items = [23]; '
+              'function example(typ) { for (var items of items) {} '
+              'return typ === 23; }')
+        self.rejected('int example(int typ) { return typ == 23; }', js,
+                      params=[('typ', INT)], reason='for...of over undef')
+
+    def test_for_of_var_is_undefined_before_the_loop(self):
+        js = ('const item = 23; '
+              'function example(typ) { '
+              'if (item !== undefined) return typ === item; '
+              'for (var item of [1]) {} return typ === item; }')
+        self.equivalent('int example(int typ) { return typ == 1; }', js,
+                        params=[('typ', INT)])
+
+    def test_for_of_var_is_undefined_when_its_branch_is_skipped(self):
+        js = ('const item = 23; '
+              'function example(typ) { '
+              'if (typ === 0) { for (var item of [1]) {} } '
+              'return item === undefined; }')
+        self.equivalent('int example(int typ) { return typ != 0; }', js,
+                        params=[('typ', INT)])
+
+    def test_callback_var_is_rejected_before_a_read_can_use_an_outer_binding(self):
+        callbacks = (
+            '[0].some(x => { return typ === item; for (var item of [1]) {} })',
+            '[0].reduce((total, x) => { return typ === item; for (var item of [1]) {} }, 0)',
+        )
+        for expression in callbacks:
+            with self.subTest(expression=expression):
+                js = f'const item = 23; function example(typ) {{ return {expression}; }}'
+                self.rejected('int example(int typ) { return typ == 23; }', js,
+                              params=[('typ', INT)], reason='callback has a for...of var')
 
     def test_for_of_assignment_to_a_module_binding_is_rejected(self):
         # A bare assignment target writes module state (`let flag`), which

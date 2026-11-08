@@ -98,6 +98,47 @@ def _descendants(node):
         yield from _descendants(c)
 
 
+def _function_descendants(node):
+    """Visit this function's statements without entering nested functions."""
+    for child in node.named_children:
+        if child.type in ('function_declaration', 'function_expression',
+                          'generator_function_declaration', 'generator_function',
+                          'arrow_function', 'method_definition'):
+            continue
+        yield child
+        yield from _function_descendants(child)
+
+
+def _for_of_binding(node):
+    left = node.child_by_field_name('left')
+    if left is None and len(node.children) > 2:
+        left = node.children[2]
+    keywords = [c.type for c in node.children
+                if not c.is_named and c.type in ('const', 'let', 'var')]
+    kind = keywords[0] if keywords else None
+    if left is not None and left.type in ('variable_declaration', 'lexical_declaration'):
+        declarators = left.named_children
+        if len(declarators) != 1 or declarators[0].type != 'variable_declarator':
+            raise Unsupported('JavaScript for...of declaration pattern')
+        left = declarators[0].child_by_field_name('name')
+        kind = kind or 'var'
+    if left is None or left.type != 'identifier':
+        raise Unsupported('JavaScript for...of binding')
+    return left.text.decode(), kind
+
+
+def _for_of_vars(body):
+    names = set()
+    for node in _function_descendants(body):
+        if (node.type == 'for_in_statement'
+                and any(c.type == 'of' for c in node.children)
+                and any(c.type == 'var' for c in node.children)):
+            name, kind = _for_of_binding(node)
+            if kind == 'var':
+                names.add(name)
+    return names
+
+
 def _strip(node):
     while node.type == 'parenthesized_expression':
         node = node.named_children[0]
@@ -141,25 +182,11 @@ class JSExec:
         self.module_env = module_env
         self.stack = []
         self.local_names = []
-        self.frame_vars = []
         self.resolving = set()
         self.literal_values = modules.literal_values if isinstance(modules, Modules) else {}
 
     def where(self, node) -> str:
         return f'{self.stack[-1][1]}:{node.start_point[0] + 1}'
-
-    def _close_frame_aware(self, outer, paths):
-        """Close a block or loop scope. Function-scoped (`var`) names that
-        this frame's for...of loops bound survive the block, as in
-        JavaScript; everything else behaves as _close_scope."""
-        keep = self.frame_vars[-1] if self.frame_vars else frozenset()
-        if not keep:
-            return _close_scope(outer, paths)
-        for p in paths:
-            for name in [k for k in p.env
-                         if k not in outer and k not in keep]:
-                del p.env[name]
-        return paths
 
     @staticmethod
     def merge_value(guard, a, b):
@@ -221,13 +248,11 @@ class JSExec:
         path.env.update(locals)
         self.stack.append((name, label, {}))
         self.local_names.append(set(locals))
-        self.frame_vars.append(set())
         try:
             results = self.eval(path, candidates[0].child_by_field_name('value'))
         finally:
             self.stack.pop()
             self.local_names.pop()
-            self.frame_vars.pop()
         out = []
         for p, value in results:
             p.ret = value
@@ -263,6 +288,7 @@ class JSExec:
             if decl.type != 'arrow_function':
                 raise Unsupported(f'JavaScript function {name} without a block body')
         scope = body if not concise else decl.child_by_field_name('body')
+        hoisted = _for_of_vars(scope)
         loops = [m for m in _descendants(scope) if m.type in ('for_statement', 'while_statement')]
         self.stack.append((name, label, {m.id: i for i, m in enumerate(loops)}))
         patterns = [d.child_by_field_name('name') for d in _descendants(scope) if d.type == 'variable_declarator']
@@ -274,11 +300,17 @@ class JSExec:
             elif pattern.type == 'array_pattern':
                 declared.update(c.text.decode() for c in pattern.named_children if c.type == 'identifier')
         self.local_names.append(declared)
-        self.frame_vars.append(set())
         try:
             paths = [p]
             for i, prm in enumerate(params):
                 paths = seq(paths, lambda q, prm=prm, i=i: self._parameter(q, prm, args[i] if i < len(args) else UNDEF))
+            # Function var bindings exist before any body statement, even on
+            # paths that skip the loop or read its collection before iterating.
+            for q in paths:
+                for binding in sorted(hoisted):
+                    if binding in q.env:
+                        raise Unsupported(f'for...of declaration of {binding} collides with a parameter')
+                    q.env[binding] = UNDEF
             if concise:
                 outs = []
                 for q in paths:
@@ -290,7 +322,6 @@ class JSExec:
         finally:
             self.stack.pop()
             self.local_names.pop()
-            self.frame_vars.pop()
         results = []
         for q in outs:
             value = q.ret if q.returned else UNDEF
@@ -353,7 +384,7 @@ class JSExec:
             for c in n.named_children:
                 paths = seq(paths, lambda p, c=c: self.exec(p, c))
                 paths = self.join(paths)
-            return self._close_frame_aware(outer, paths)
+            return _close_scope(outer, paths)
         if t in ('lexical_declaration', 'variable_declaration'):
             paths = [path]
             for d in n.named_children:
@@ -478,7 +509,7 @@ class JSExec:
                 [(_, other)] = results
                 matches.append(self._equal(value, other))
             out.extend(self.m.switch(p, matches, statements, self.exec))
-        return self._close_frame_aware(outer, out)
+        return _close_scope(outer, out)
 
     def _for(self, path, n):
         cond = n.child_by_field_name('condition')
@@ -494,63 +525,23 @@ class JSExec:
         if increment is not None and increment.type == 'empty_statement':
             increment = None
         paths = seq(paths, lambda p: self._loop(p, n, cond, increment))
-        return self._close_frame_aware(outer, paths)
+        return _close_scope(outer, paths)
 
     def _for_of(self, path, n):
         """for...of over one array: bind each element in order and run the
         body. The array length is the concrete tuple length, so unrolling is
         exact and return/break/continue keep their JavaScript meaning."""
-        left = n.child_by_field_name('left')
-        if left is None and len(n.children) > 2:
-            left = n.children[2]
-        declared = False
-        kind = None
-        keywords = [c.type for c in n.children
-                    if not c.is_named and c.type in ('const', 'let', 'var')]
-        if left is not None and left.type in ('variable_declaration',
-                                              'lexical_declaration'):
-            declarators = left.named_children
-            if len(declarators) != 1 or declarators[0].type != 'variable_declarator':
-                raise Unsupported('JavaScript for...of declaration pattern')
-            name_node = declarators[0].child_by_field_name('name')
-            if name_node.type != 'identifier':
-                raise Unsupported('JavaScript for...of declaration pattern')
-            name = name_node.text.decode()
-            declared = True
-            kind = keywords[0] if keywords else 'var'
-        elif left is not None and left.type == 'identifier':
-            name = left.text.decode()
-            # The declaration keyword sits as an unnamed child of the loop,
-            # not inside the `left` field, for `for (const x of xs)`.
-            if keywords:
-                declared, kind = True, keywords[0]
-        else:
-            raise Unsupported('JavaScript for...of binding')
-        if name in path.env:
-            # A const/let binding would shadow the local; a var binding
-            # over a parameter assigns it but over a let is a SyntaxError.
-            # The one-env-per-frame model cannot separate those, so every
-            # declaration colliding with a local is rejected; a bare
-            # assignment target must name a local to be a modeled write.
-            if declared:
-                raise Unsupported(f'for...of declaration of {name} collides with a local binding at {self.where(n)}')
-        elif kind is None:
+        name, kind = _for_of_binding(n)
+        if kind in ('const', 'let') and name in path.env:
+            raise Unsupported(f'for...of declaration of {name} collides with a local binding at {self.where(n)}')
+        if kind in (None, 'var') and name not in path.env:
             raise Unsupported(f'JavaScript for...of writes the non-local binding {name} at {self.where(n)}')
         body = n.child_by_field_name('body')
         outer = set(path.env)
-        if declared and kind == 'var':
-            # The binding is function-scoped: remember it so enclosing
-            # blocks keep it alive past their own scope close.
-            self.frame_vars[-1].add(name)
         out = []
         for p, collection in self.eval(path, n.child_by_field_name('right')):
             if collection.kind != 'array':
                 raise Unsupported(f'JavaScript for...of over {collection.kind} at {self.where(n)}')
-            if declared and kind == 'var':
-                # `var` is function-scoped and hoisted: the binding exists
-                # (undefined) even when the array is empty, and survives the
-                # loop holding the last element.
-                p.env.setdefault(name, UNDEF)
             live, done = [p], []
             for item in collection.v:
                 nxt = []
@@ -571,8 +562,8 @@ class JSExec:
             # A break belongs to this loop; execution continues after it.
             if not p.returned:
                 p.broken = False
-        if declared and kind in ('const', 'let'):
-            return self._close_frame_aware(outer, out)
+        if kind in ('const', 'let'):
+            return _close_scope(outer, out)
         return out
 
     def _loop(self, path, n, cond, update):
@@ -671,14 +662,12 @@ class JSExec:
             path.frames.append({})
             self.stack.append(('<constant>', label, {}))
             self.local_names.append(set())
-            self.frame_vars.append(set())
             obligations_before = len(self.m.obligations)
             try:
                 results = self.eval(path, constants[name])
             finally:
                 self.stack.pop()
                 self.local_names.pop()
-                self.frame_vars.pop()
                 path.frames.pop()
                 self.resolving.remove(key)
             if len(results) != 1:
@@ -1361,6 +1350,10 @@ class JSExec:
             if prm_nodes[0] is None:
                 raise Unsupported(f'Array.{what} callback at {where} has no parameters')
         body = cb.child_by_field_name('body')
+        # Callbacks share the caller's modeled environment. Reject their var
+        # bindings before any read could resolve to a caller or module binding.
+        if _for_of_vars(body):
+            raise Unsupported(f'Array.{what} callback has a for...of var at {where}')
         block_body = body.type == 'statement_block'
         if block_body:
             # A block-bodied callback runs its statements; the scan value is
@@ -1449,6 +1442,8 @@ class JSExec:
             raise Unsupported(f'Array.reduce callback at {where} needs two parameters')
         acc_node, element_node = parameters.named_children
         body = cb.child_by_field_name('body')
+        if _for_of_vars(body):
+            raise Unsupported(f'Array.reduce callback has a for...of var at {where}')
         states = [(path, initial)]
         for element in array.v:
             following = []
