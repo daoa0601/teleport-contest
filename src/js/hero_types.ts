@@ -245,6 +245,10 @@ export interface Hero extends HeroCoordinates, HeroPropertyState,
     uinvault?: number;
     // Radius of the LS_MONSTER light source polyself() attaches to the hero.
     formLightRange?: 2;
+    // Registration stamp of that light source (C light.c prepends it to
+    // light_base at polyself.c:731); shares state._lightSerial with object
+    // and monster lights for the #lightsources order.
+    formLightSeq?: number;
     usleep?: number;
     uinvulnerable?: boolean | 0 | 1;
     ucreamed?: number;

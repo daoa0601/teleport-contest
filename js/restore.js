@@ -281,6 +281,7 @@ function monsterFields(value, context) {
         migrationSource: optional(monsterPosition),
         migrationOrigin: optional(monsterHomeLevel),
         migrationDestination: optional(monsterHomeLevel),
+        _lightSeq: optional(integer),
     };
 }
 // Port only: full saved Monster validation.

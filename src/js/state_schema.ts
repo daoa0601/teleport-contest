@@ -206,6 +206,7 @@ const transientFields = {
     viz_array: true,
     warn_obj_cnt: true,
     _magicKeyTrapWarningCount: true,
+    _regionCapacity: true,
 } satisfies Record<Exclude<keyof GameState, PersistentStateKey>, true>;
 
 const persistentStateKeys = new Set<PersistentStateKey>(persistentNames);

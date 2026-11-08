@@ -39,6 +39,7 @@ import { depth as depth_of_level, level_difficulty, sameDungeonLevel, specialLev
 import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth, removeMonsterFromGame } from './mon.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { beginObjectBurn, stopObjectTimer } from './timeout.js';
+import { registerMonsterLightSource } from './light.js';
 import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, addCreatedObjectToContainer, nextIdent, objectWeight, discardMonsterInventory } from './mkobj.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
@@ -2375,7 +2376,11 @@ export function finishMonsterGrowth(monster: Monster, growth: MonsterGrowth | nu
 // ---------------------------------------------------------------------------
 export async function finishMonsterBirth<T extends Monster>(monster: T, flags = 0, state: GameState = game): Promise<T> {
     requireLiveGame(state);
-    if (monsterEmitsLight(monster.mnum)) state.vision_full_recalc = 1;
+    // C makemon.c:1349: a light-emitting newborn registers its light source.
+    if (monsterEmitsLight(monster.mnum)) {
+        registerMonsterLightSource(monster, state);
+        state.vision_full_recalc = 1;
+    }
     if (state.in_mklev) return monster;
 
     await newsym(monster.mx, monster.my);
@@ -2511,7 +2516,12 @@ export async function cloneMonster(
     // cutworm replaces the copied body after cloning. During taming, the
     // copied worm number still refers to the parent's retained segments.
     level.monsters.push(clone);
-    if (monsterEmitsLight(clone.mnum)) state.vision_full_recalc = 1;
+    // C makemon.c:899-901: the clone of a light-emitting parent registers
+    // its own light source.
+    if (monsterEmitsLight(clone.mnum)) {
+        registerMonsterLightSource(clone, state);
+        state.vision_full_recalc = 1;
+    }
 
     if (!monsterMoving && monster.mpeaceful) {
         const attitudeRange = Math.max(2 + (state.u?.uluck ?? 0), 2);

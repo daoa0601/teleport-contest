@@ -317,6 +317,7 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         migrationSource: optional(monsterPosition),
         migrationOrigin: optional(monsterHomeLevel),
         migrationDestination: optional(monsterHomeLevel),
+        _lightSeq: optional(integer),
     };
 }
 

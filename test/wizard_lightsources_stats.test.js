@@ -1,11 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { OIL_LAMP } from '../js/object_data.js';
+import { LARGE_BOX, OIL_LAMP } from '../js/object_data.js';
+import { SIZEOF_OEXTRA } from '../js/const.js';
 import { beginObjectBurn } from '../js/timeout.js';
+import { createGasCloudSelection, restoreLevelRegions, runLevelRegions } from '../js/region.js';
+import { lightSourceRecords } from '../js/light.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 // Each wizard window waits for a dismiss key; capture the screen at every
 // wait so the test sees every page the native game would show.
@@ -117,5 +121,82 @@ void test('#stats reports the reference build\'s memory table', async () => {
         assert.equal(screen[pageSize]?.trimEnd(), '--More--', `page ${page + 1} pager row`);
     }
     assert.equal(game.context.move, 0);
+});
+async function statsWindowRows() {
+    const screens = captureScreens();
+    await runExtendedCommand('stats', ' \x1b');
+    return screens.filter(rows => rows[23]?.trimEnd() === '--More--')
+        .flatMap(rows => rows.slice(0, 23).map(row => row.trimEnd()));
+}
+void test('#lightsources orders sources by registration across kinds', async () => {
+    await freshLitLampRoom();
+    const olderVortex = await createMonsterAt('fire vortex', 12, 10);
+    // C light.c:83-90 prepends every registration: the newborn's light was
+    // registered after the lamp's, so the monster line leads the listing.
+    let records = lightSourceRecords(game);
+    assert.equal(records[0]?.kind, 'mon');
+    assert.equal(records[1]?.kind, 'obj');
+    // A still newer registration takes the head.
+    const newerVortex = await createMonsterAt('fire vortex', 13, 10);
+    records = lightSourceRecords(game);
+    assert.equal(records[0]?.idText, `0x${newerVortex.m_id.toString(16)}`);
+    assert.equal(records[1]?.idText, `0x${olderVortex.m_id.toString(16)}`);
+    assert.equal(records[2]?.kind, 'obj');
+});
+void test('#lightsources clears the coordinates of unlocatable sources', async () => {
+    const lamp = await freshLitLampRoom();
+    // zap.c:687: a source that get_obj_location() cannot resolve — a lit
+    // lamp inside a closed container — reports (0,0) with LSF_SHOW cleared
+    // (light.c:187-190).
+    const box = await addInventoryObject(LARGE_BOX);
+    game.inventory = game.inventory.filter(object => object !== lamp);
+    box.contents = [...(box.contents || []), lamp];
+    lamp.where = 'contained';
+    lamp.container = box;
+    // zap.c:701-707: a buried monster also reports (0,0) without
+    // LSF_SHOW, while the type column's mon_is_local() test (mx > 0,
+    // light.c:373) still prints "mon".
+    const vortex = await createMonsterAt('fire vortex', 12, 10);
+    vortex.mburied = 1;
+    const records = lightSourceRecords(game);
+    const lampRecord = records.find(record => record.kind === 'obj' && record.idText === `0x${lamp.o_id.toString(16)}`);
+    assert.deepEqual([lampRecord?.x, lampRecord?.y, lampRecord?.show], [0, 0, false]);
+    const vortexRecord = records.find(record => record.kind === 'mon');
+    assert.deepEqual([vortexRecord?.x, vortexRecord?.y, vortexRecord?.show], [0, 0, false]);
+});
+void test('#stats counts retained oextra and mextra allocations', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    const lamp = await addInventoryObject(OIL_LAMP);
+    // A bare omid (a corpse's ghost id, bones.ts:369) means C's oextra is
+    // allocated; a cleared name leaves the record behind
+    // (bones_object.ts).  C wizcmds.c:1121-1122 and 1235-1236 count the
+    // allocations regardless of what they still hold.
+    lamp.omid = 7;
+    const box = await addInventoryObject(LARGE_BOX);
+    box.oextra = {};
+    const vortex = await createMonsterAt('fire vortex', 12, 10);
+    vortex.mextra = {};
+    const rows = await statsWindowRows();
+    assert.ok(rows.includes(statsRow('invent', 2, 2 * 112 + 2 * SIZEOF_OEXTRA)), `invent row missing from:\n${rows.join('\n')}`);
+    assert.ok(rows.includes(statsRow('fmon', 1, 192 + 64)), `fmon row missing from:\n${rows.join('\n')}`);
+});
+void test('#stats keeps the region array\'s retained capacity after clouds expire', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    // One cloud: add_region() grew the region array to ten slots
+    // (region.c:289-298).
+    await createGasCloudSelection(game, [{ x: 9, y: 9 }, { x: 10, y: 9 }], 1, 0);
+    // Two turns age the ttl-1 cloud to expiry through run_regions().
+    await runLevelRegions(game);
+    await runLevelRegions(game);
+    assert.equal(game.level?.regions.length, 0);
+    // C region_stats() (region.c:910) still sizes max_regions slots.
+    const rows = await statsWindowRows();
+    assert.ok(rows.includes(statsRow('regions, size 96+8*rect+N', 0, 960)), `retained-capacity row missing from:\n${rows.join('\n')}`);
+    // A level reload (rest_regions(), region.c:814) forgets that capacity.
+    await restoreLevelRegions(game, 0);
+    const reloaded = await statsWindowRows();
+    assert.equal(reloaded.includes(statsRow('regions, size 96+8*rect+N', 0, 960)), false);
 });
 //# sourceMappingURL=wizard_lightsources_stats.test.js.map

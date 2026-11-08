@@ -238,6 +238,10 @@ export interface Monster extends MonsterPosition {
     migrationSource?: Position;
     migrationOrigin?: MonsterLevel;
     migrationDestination?: MonsterLevel;
+    // C light.c registration stamp for this monster's light source: births
+    // and light-changing shape shifts share state._lightSerial with object
+    // lights, giving #lightsources the native light_base order.
+    _lightSeq?: number;
 }
 
 // makemon publishes its pending actor before groups and inventory generation.

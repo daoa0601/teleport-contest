@@ -1152,8 +1152,13 @@ function sizeObj(object) {
     let size = SIZEOF_OBJ;
     const name = object.oname ?? object.oextra?.oname ?? null;
     const embedded = object.oextra?.omonst ?? null;
+    // C wizcmds.c:1121-1122 counts the oextra allocation whenever it
+    // exists, whatever it holds.  The port's oextra record survives a
+    // cleared name, and the mirrored top-level oname/omid (bones.ts) also
+    // mean the allocation is live.  C's omid of 0 is "not set", so a bare
+    // falsy omid does not open one.
     // The port keeps no omailcmd text (OMAILCMD belongs to mail delivery).
-    if (name || embedded) {
+    if (object.oextra !== undefined || name || embedded || !!object.omid) {
         size += SIZEOF_OEXTRA;
         if (name)
             size += name.length + 1;
@@ -1177,7 +1182,13 @@ function sizeMonst(monster, inclWsegs) {
     const hasMinion = !!monster.isminion;
     const hasPetData = !!monster.edog || !!monster.mextra?.edog;
     const hasBones = !!monster.mextra?.ebones;
-    if (name || hasGuard || hasPriest || hasShopkeeper || hasMinion
+    // C wizcmds.c:1235-1236 counts the mextra allocation whenever it
+    // exists.  The port's mextra record survives cleared components, and
+    // the mirrored top-level mcorpsenm (makemon.ts, MCORPSENM lives in
+    // mextra; makemon.c:2527-2545 only ever resets its value to NON_PM)
+    // also means the allocation is live.
+    if (monster.mextra !== undefined || monster.mcorpsenm !== undefined || name
+        || hasGuard || hasPriest || hasShopkeeper || hasMinion
         || hasPetData || hasBones) {
         size += SIZEOF_MEXTRA;
         if (name)

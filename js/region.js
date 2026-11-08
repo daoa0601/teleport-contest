@@ -84,6 +84,11 @@ async function makeGasCloud(state, cells, ttl, damage, silent, publish) {
         monsterIds: [...monsterIds],
         heroInside: orderedCells.some(cell => cell.x === state.u.ux && cell.y === state.u.uy),
     };
+    // C region.c:289-298 add_region(): the region array grows in tens and
+    // keeps its capacity when regions later expire.
+    const capacity = regionCapacity(state.level, state);
+    if (capacity <= state.level.regions.length)
+        (state._regionCapacity ||= new WeakMap()).set(state.level, capacity + 10);
     (state.level.regions ||= []).push(region);
     if (state.level === game.level) {
         // C add_region() redraws the entire bounding box using the old sight
@@ -469,7 +474,11 @@ async function removeGasCloud(region, state) {
 // C rest_regions() removes expired clouds without running their expiry callback.
 // Time spent on another level reduces a finite lifetime, never its damage.
 export async function restoreLevelRegions(state, elapsed) {
-    const regions = requireGameLevel(state).regions;
+    const level = requireGameLevel(state);
+    // C rest_regions() (region.c:814) resets gm.max_regions to the restored
+    // count: a reloaded level forgets the capacity its live session grew.
+    state._regionCapacity?.set(level, level.regions.length);
+    const regions = level.regions;
     for (const region of [...regions].reverse()) {
         if (region.ttl < 0)
             continue;
@@ -477,6 +486,12 @@ export async function restoreLevelRegions(state, elapsed) {
         if (region.ttl === 0)
             await removeGasCloud(region, state);
     }
+}
+// C region.c gm.max_regions, the retained capacity of the gr.regions array.
+// An untracked level reports its current count (the state rest_regions()
+// leaves it in).
+function regionCapacity(level, state) {
+    return state._regionCapacity?.get(level) ?? level.regions.length;
 }
 // C region.c:expire_gas_cloud(): a thick cloud halves its damage and
 // resets its ttl instead of dying; expiry counts the visible spots it
@@ -573,9 +588,10 @@ export async function runLevelRegions(state, { publish = plineWithContinuation, 
 // and region.h MONST_INC).  The port's clouds carry the cells and ids but no
 // message texts.
 export function regionStats(state = game) {
-    const regions = state.level?.regions ?? [];
+    const level = state.level;
+    const regions = level?.regions ?? [];
     const count = regions.length;
-    let size = Math.ceil(count / 10) * 10 * SIZEOF_NHREGION;
+    let size = (level ? regionCapacity(level, state) : 0) * SIZEOF_NHREGION;
     for (const region of regions) {
         size += region.cells.length * SIZEOF_NHRECT;
         size += (region.monsterIds.length ? Math.ceil(region.monsterIds.length / 5) * 5 : 0)

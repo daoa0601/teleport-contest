@@ -345,6 +345,23 @@ export function registerObjectLightSource(object: GameObject, state: GameState):
     object._litSeq = state._lightSerial;
 }
 
+// C light.c:new_light_source() for monster sources: makemon.c:1349 registers
+// a light-emitting newborn, makemon.c:900 its clone, and mon.c:2541/5404 a
+// replacement form that emits light.  The stamp shares the object serial so
+// the #lightsources order and the at-hero LSF_SHOW pass follow native
+// registration order.
+export function registerMonsterLightSource(monster: Monster, state: GameState): void {
+    state._lightSerial = (state._lightSerial ?? 0) + 1;
+    monster._lightSeq = state._lightSerial;
+}
+
+// C light.c:new_light_source() for the hero's shape light
+// (polyself.c:726-731).
+export function registerHeroFormLightSource(state: GameState): void {
+    state._lightSerial = (state._lightSerial ?? 0) + 1;
+    state.u.formLightSeq = state._lightSerial;
+}
+
 // Port only: one light_base entry (C light.c:gl.light_base), derived from
 // the live records.  `show` is the LSF_SHOW flag light.c:178-203 maintains
 // during vision passes; `idText` stands in for C's fmt_ptr() of the source
@@ -357,57 +374,69 @@ export interface LightSourceRecord {
     kind: 'obj' | 'mon' | 'you' | '<m>';
     idText: string;
     show: boolean;
+    seq: number;
 }
 
 // Port only: enumerate every live light source the way C walks light_base,
-// newest registration first (new_light_core() prepends).  Object lights carry
-// the global _lightSerial stamp from registerObjectLightSource(); monster
-// lights were registered at birth (makemon.c:900/1349), so a higher m_id is
-// newer; a camera flash is newer than everything by construction.  The hero's
-// shape light was registered by the polymorph that set formLightRange
-// (polyself.c:728) — that moment is not tracked, so the hero source is listed
-// after the objects.
+// newest registration first (new_light_core() prepends).  Every registration
+// shares the state._lightSerial stamp: object lights via
+// registerObjectLightSource(), monster lights via
+// registerMonsterLightSource() at birth or light-changing shape shift, and
+// the hero's shape light via registerHeroFormLightSource().  A camera flash
+// is newer than everything by construction.  Sources registered before
+// their stamp existed keep seq 0 and fall to the tail in insertion order.
 export function lightSourceRecords(state: GameState): LightSourceRecord[] {
     const records: LightSourceRecord[] = [];
     for (const flash of state._transientLights || [])
         records.push({ x: flash.x, y: flash.y, range: flash.range, kind: 'obj',
-            idText: '0x0', show: true });
+            idText: '0x0', show: true, seq: Number.POSITIVE_INFINITY });
     const objects = objectsInTimerGraph(state)
         .filter(object => objectShedsLight(object))
-        .sort((left, right) => (right._litSeq ?? 0) - (left._litSeq ?? 0));
+        .sort((left, right) => (right._litSeq ?? 0) - (left._litSeq ?? 0)
+            || right.o_id - left.o_id);
     for (const object of objects) {
         // do_light_sources() resolves each object through
-        // get_obj_location(obj, &x, &y, 0); an unresolvable source keeps its
-        // last recorded square and loses LSF_SHOW.
+        // get_obj_location(obj, &x, &y, 0); on failure zap.c:687 clears the
+        // coordinates to (0,0) and the source loses LSF_SHOW.
         const location = getObjectLocation(object, state);
         records.push({
-            x: location?.x ?? object.ox,
-            y: location?.y ?? object.oy,
+            x: location?.x ?? 0,
+            y: location?.y ?? 0,
             range: objectLightRadius(object, state),
             kind: 'obj',
             idText: `0x${object.o_id.toString(16)}`,
             show: !!location,
+            seq: object._litSeq ?? 0,
         });
     }
     const monsters = [...(state.level?.monsters ?? []), ...(state._migratingMonsters ?? [])]
         .filter(monster => !monster.dead && !monster.lightRemoved
             && monsterEmitsLight(monster.mnum))
-        .sort((left, right) => right.m_id - left.m_id);
+        .sort((left, right) => (right._lightSeq ?? 0) - (left._lightSeq ?? 0)
+            || right.m_id - left.m_id);
     for (const monster of monsters) {
-        // mon_is_local() is just mx > 0 (light.c:373); a migrating light
-        // keeps its entry with LSF_SHOW cleared.
+        // do_light_sources() resolves the monster through get_mon_location()
+        // with no buried exception: zap.c:701-707 reports a buried or
+        // migrating monster at (0,0) and drops LSF_SHOW.  The type column's
+        // mon_is_local() test (light.c:373) still only asks mx > 0, so a
+        // buried local monster reads "mon" at (0,0).
+        const located = monster.mx > 0 && !monster.mburied;
         records.push({
-            x: monster.mx,
-            y: monster.my,
+            x: located ? monster.mx : 0,
+            y: located ? monster.my : 0,
             range: 1,
             kind: monster.mx > 0 ? 'mon' : '<m>',
             idText: `0x${monster.m_id.toString(16)}`,
-            show: monster.mx > 0,
+            show: located,
+            seq: monster._lightSeq ?? 0,
         });
     }
     if (state.u.formLightRange)
         records.push({ x: state.u.ux, y: state.u.uy, range: state.u.formLightRange,
-            kind: 'you', idText: '0x1', show: true });
+            kind: 'you', idText: '0x1', show: true, seq: state.u.formLightSeq ?? 0 });
+    // light.c:83-90: each registration prepends, so the list is newest
+    // first; the stable sort keeps insertion order between equal stamps.
+    records.sort((left, right) => right.seq - left.seq);
     // do_light_sources() (light.c:198-203): at the hero's square only the
     // strongest of the newer sources keeps LSF_SHOW.  Run the same pass over
     // the newest-first order to fill the flags column.
