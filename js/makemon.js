@@ -697,9 +697,698 @@ export function setMonsterMalign(monster, state = game) {
         monster.malign = absoluteAlignment;
     }
 }
+// C makemon.c:m_initweap().
+// The armed-species weapon switch — S_HUMAN mercenaries, elves, dwarves,
+// priests, ninja and quest guardians; kobolds, Keystone Kops, orcs, trolls,
+// wraiths, zombies, giants, ogres, centaurs, salamanders and armed gnomes;
+// angels and weapon-bearing demons; the default bias-weighted weapon table —
+// each arm ending in the shared level-versus-rn2(75) offensive-item tail.
+// makemon() calls this only for armed species; C returns on Rogue levels,
+// which the port's initialize gate models together with NO_MINVENT.  Human
+// mercenaries' armor budget and shopkeepers' fixed kit are m_initinv()'s
+// declarations and live there.
+async function mInitweap(eq) {
+    const { monster, mndx, baseLevel, mongets, mInitthrow, giveOffensiveMonsterItem, giveGeneralMonsterWeapon, markInventory, } = eq;
+    if (!eq.initialize)
+        return;
+    if (mndx === PM_VLAD_THE_IMPALER) {
+        // Vlad is a vampire prince and extra-nasty, reducing the ordinary
+        // armament table to rnd(8).  His fixed Candelabrum from makemon()
+        // exists before this shared weapon/offensive-item tail.
+        await giveGeneralMonsterWeapon();
+    }
+    else if (mndx >= 59 && mndx <= 61) { // kobold through kobold leader
+        // C ref: makemon.c m_initweap(), S_KOBOLD.
+        if (!rn2(4))
+            await mInitthrow(DART, 12);
+        await giveOffensiveMonsterItem();
+    }
+    else if (mndx >= 70 && mndx <= 73) {
+        // C ref: makemon.c m_initweap(), S_ORC.  Goblins, hobgoblins,
+        // corpses-only base orcs, and hill orcs all use the default armament
+        // branch; the goblin form short-circuits the dagger/scimitar choice.
+        if (rn2(2))
+            await mongets(ORCISH_HELM);
+        if (rn2(2)) {
+            const weapon = mndx === 70 || rn2(2) === 0
+                ? ORCISH_DAGGER : SCIMITAR;
+            await mongets(weapon);
+        }
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 27
+        && monsterIsHumanoid(mndx)
+        && speciesHasWeaponAttack(mndx)) {
+        // C ref: m_initweap(), humanoid S_ANGEL.  Minion weapons and shields
+        // deliberately bypass mongets()/ordinary object initialization.
+        const isLord = is_lord(mndx);
+        const weapon = await mksobj(rn2(3) ? LONG_SWORD : SILVER_MACE, false, false);
+        const promote = !rn2(20) || isLord;
+        if (promote && monsterAlignmentType(monster) === A_LAWFUL) {
+            nameArtifact(weapon, artifactByName(weapon.otyp === LONG_SWORD ? 'Sunsword' : 'Demonbane'));
+        }
+        weapon.blessed = true;
+        weapon.cursed = false;
+        weapon.oerodeproof = true;
+        weapon.spe = rn2(4) + (weapon.otyp === SILVER_MACE ? 3 : 0);
+        await addCreatedObjectToMonsterInventory(monster, weapon, game);
+        markInventory();
+        const shield = await mksobj(!rn2(4) || isLord ? 158 : LARGE_SHIELD, false, false);
+        shield.oerodeproof = true;
+        shield.spe = 0;
+        await addCreatedObjectToMonsterInventory(monster, shield, game);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 8 && mndx === PM_HOBBIT) {
+        // C ref: makemon.c m_initweap(), S_HUMANOID/PM_HOBBIT.
+        const weaponRoll = rn2(3);
+        if (weaponRoll === 0)
+            await mongets(DAGGER);
+        else if (weaponRoll === 1)
+            await mongets(ELVEN_DAGGER);
+        else {
+            await mongets(SLING);
+            await mInitthrow(!rn2(4) ? FLINT : ROCK, 6);
+        }
+        if (!rn2(10))
+            await mongets(ELVEN_MITHRIL_COAT);
+        if (!rn2(10))
+            await mongets(DWARVISH_CLOAK);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 8
+        && (is_dwarf(mndx))) {
+        // C ref: makemon.c m_initweap(), S_HUMANOID/is_dwarf().  Keep the
+        // complete equipment tree together because every optional item feeds
+        // the same ordinary object constructor and erosion rules.
+        if (rn2(7))
+            await mongets(DWARVISH_CLOAK);
+        if (rn2(7))
+            await mongets(IRON_SHOES);
+        if (!rn2(4)) {
+            await mongets(DWARVISH_SHORT_SWORD);
+            if (rn2(2)) {
+                await mongets(DWARVISH_MATTOCK);
+            }
+            else {
+                await mongets(rn2(2) ? AXE : DWARVISH_SPEAR);
+                await mongets(DWARVISH_ROUNDSHIELD);
+            }
+            await mongets(DWARVISH_IRON_HELM);
+            if (!rn2(3))
+                await mongets(DWARVISH_MITHRIL_COAT);
+        }
+        else {
+            await mongets(!rn2(3) ? PICK_AXE : DAGGER);
+        }
+        await giveOffensiveMonsterItem();
+    }
+    else if (mndx >= 264 && mndx <= 269) { // ordinary elf species
+        // C ref: makemon.c m_initweap(), is_elf().  Clothing probes precede
+        // the mutually exclusive primary loadout; monarchs then receive two
+        // extra utility probes before the common offensive-item tail.
+        if (rn2(2))
+            await mongets(rn2(2) ? ELVEN_MITHRIL_COAT : ELVEN_CLOAK);
+        if (rn2(2))
+            await mongets(ELVEN_LEATHER_HELM);
+        else if (!rn2(4))
+            await mongets(ELVEN_BOOTS);
+        if (rn2(2))
+            await mongets(ELVEN_DAGGER);
+        switch (rn2(3)) {
+            case 0: {
+                if (!rn2(4))
+                    await mongets(ELVEN_SHIELD);
+                if (rn2(3))
+                    await mongets(ELVEN_SHORT_SWORD);
+                await mongets(ELVEN_BOW);
+                await mInitthrow(ELVEN_ARROW, 12);
+                break;
+            }
+            case 1:
+                await mongets(ELVEN_BROADSWORD);
+                if (rn2(2))
+                    await mongets(ELVEN_SHIELD);
+                break;
+            case 2:
+                if (rn2(2)) {
+                    await mongets(ELVEN_SPEAR);
+                    await mongets(ELVEN_SHIELD);
+                }
+                break;
+        }
+        if (mndx === 269) { // PM_ELVEN_MONARCH
+            if (rn2(3) || (game.in_mklev && Is_earthlevel(game.u?.uz)))
+                await mongets(PICK_AXE);
+            if (!rn2(50))
+                await mongets(CRYSTAL_BALL);
+        }
+        await giveOffensiveMonsterItem();
+    }
+    else if ([
+        PM_SOLDIER, PM_SERGEANT, PM_LIEUTENANT, PM_CAPTAIN,
+        PM_WATCHMAN, PM_WATCH_CAPTAIN, PM_GUARD,
+    ].includes(mndx)) {
+        // C ref: makemon.c m_initweap(), S_HUMAN mercenaries' weapons.  The
+        // armor budget, whistles, and rations are m_initinv()'s.
+        let primaryWeapon = 0;
+        let secondaryWeapon = 0;
+        if (mndx === PM_SOLDIER || mndx === PM_WATCHMAN) {
+            if (!rn2(3)) {
+                primaryWeapon = PARTISAN + rn2(12);
+                secondaryWeapon = rn2(2) ? DAGGER : KNIFE;
+            }
+            else {
+                primaryWeapon = rn2(2) ? SPEAR : SHORT_SWORD;
+            }
+        }
+        else if (mndx === PM_SERGEANT) {
+            primaryWeapon = rn2(2) ? 81 : MACE; // FLAIL
+        }
+        else if (mndx === PM_LIEUTENANT) {
+            primaryWeapon = rn2(2) ? 52 : LONG_SWORD; // BROADSWORD
+        }
+        else if (mndx === PM_CAPTAIN || mndx === PM_WATCH_CAPTAIN) {
+            primaryWeapon = rn2(2) ? LONG_SWORD : SILVER_SABER;
+        }
+        else {
+            if (!rn2(4))
+                primaryWeapon = DAGGER;
+            if (!rn2(7))
+                secondaryWeapon = SPEAR;
+        }
+        if (primaryWeapon)
+            await mongets(primaryWeapon);
+        if (!secondaryWeapon && primaryWeapon !== DAGGER && !rn2(4))
+            secondaryWeapon = KNIFE;
+        if (secondaryWeapon)
+            await mongets(secondaryWeapon);
+        const offensiveRoll = rn2(75);
+        if (baseLevel > offensiveRoll) {
+            const offensiveItem = rnd_offensive_item(monster);
+            if (offensiveItem)
+                await mongets(offensiveItem);
+        }
+    }
+    else if (mndx === PM_SHOPKEEPER) {
+        // C ref: m_initweap(), S_HUMAN.  An armed shopkeeper matches no
+        // S_HUMAN arm, so only the offensive-item tail runs; the fixed kit
+        // is m_initinv()'s.
+        const offensiveRoll = rn2(75);
+        if (baseLevel > offensiveRoll) {
+            const offensiveItem = rnd_offensive_item(monster);
+            if (offensiveItem)
+                await mongets(offensiveItem);
+        }
+    }
+    else if (MONSTER_SYMBOL[mndx] === 56
+        && (monsterIsDemon(mndx))
+        && speciesHasWeaponAttack(mndx)) {
+        // C m_initweap(), S_DEMON: fixed demon weapons are added before the
+        // same bias-sensitive general armament table used by normal monsters.
+        if (mndx === PM_BALROG) {
+            await mongets(BULLWHIP);
+            await mongets(52); // BROADSWORD
+        }
+        else if (mndx === PM_ORCUS) {
+            await mongets(WAN_DEATH);
+        }
+        else if (mndx === PM_HORNED_DEVIL) {
+            await mongets(rn2(4) ? 33 : BULLWHIP); // TRIDENT
+        }
+        else if (mndx === PM_DISPATER) {
+            await mongets(WAN_STRIKING);
+        }
+        else if (mndx === PM_YEENOGHU) {
+            await mongets(81); // FLAIL
+        }
+        await giveGeneralMonsterWeapon();
+    }
+    else if (speciesHasWeaponAttack(mndx) && receivesClericEquipment(mndx)) {
+        // C makemon() skips m_initweap() for unarmed species, even when
+        // the hero's role makes them Cleric quest representatives.
+        const mace = await mksobj(MACE, false, false);
+        mace.spe = rnd(3);
+        if (!rn2(2)) {
+            mace.cursed = true;
+            mace.buc = 'cursed';
+        }
+        await addCreatedObjectToMonsterInventory(monster, mace, game);
+        markInventory();
+        const offensiveRoll = rn2(75);
+        if (baseLevel > offensiveRoll) {
+            const offensiveItem = rnd_offensive_item(monster);
+            if (offensiveItem)
+                await mongets(offensiveItem);
+        }
+    }
+    else if (mndx === MONSTER_NAME.indexOf('ninja')) {
+        await mongets(rn2(4) ? SHURIKEN : DART);
+        await mongets(rn2(4) ? SHORT_SWORD : AXE);
+        await giveOffensiveMonsterItem();
+    }
+    else if (speciesHasWeaponAttack(mndx)
+        && ['student', 'attendant', 'abbot', 'acolyte', 'guide', 'apprentice']
+            .includes(MONSTER_NAME[mndx] ?? '')) {
+        // C makemon() calls m_initweap() only for armed species. Abbots
+        // appear in its guardian switch but have no weapon attack.
+        if (rn2(2))
+            await mongets(rn2(3) ? DAGGER : KNIFE);
+        if (rn2(5))
+            await mongets(rn2(3) ? LEATHER_JACKET : LEATHER_CLOAK);
+        if (rn2(3))
+            await mongets(rn2(3) ? LOW_BOOTS : HIGH_BOOTS);
+        if (rn2(3))
+            await mongets(POT_HEALING);
+        await giveOffensiveMonsterItem();
+    }
+    else if (['chieftain', 'page', 'roshi', 'warrior'].includes(MONSTER_NAME[mndx] ?? '')) {
+        await mongets(rn2(3) ? LONG_SWORD : SHORT_SWORD);
+        await mongets(rn2(3) ? CHAIN_MAIL : LEATHER_ARMOR);
+        if (rn2(2))
+            await mongets(rn2(2) ? LOW_BOOTS : HIGH_BOOTS);
+        if (!rn2(3))
+            await mongets(LEATHER_CLOAK);
+        if (!rn2(3)) {
+            await mongets(BOW);
+            await mInitthrow(ARROW, 12);
+        }
+        await giveOffensiveMonsterItem();
+    }
+    else if (mndx === MONSTER_NAME.indexOf('hunter')) {
+        await mongets(rn2(3) ? SHORT_SWORD : DAGGER);
+        if (rn2(2))
+            await mongets(rn2(2) ? LEATHER_JACKET : LEATHER_ARMOR);
+        await mongets(BOW);
+        await mInitthrow(ARROW, 12);
+        await giveOffensiveMonsterItem();
+    }
+    else if (mndx === MONSTER_NAME.indexOf('thug')) {
+        await mongets(CLUB);
+        await mongets(rn2(3) ? DAGGER : KNIFE);
+        if (rn2(2))
+            await mongets(LEATHER_GLOVES);
+        await mongets(rn2(2) ? LEATHER_JACKET : LEATHER_ARMOR);
+        await giveOffensiveMonsterItem();
+    }
+    else if (mndx === MONSTER_NAME.indexOf('neanderthal')) {
+        await mongets(CLUB);
+        await mongets(LEATHER_ARMOR);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 37) { // S_KOP
+        if (!rn2(4))
+            await mInitthrow(CREAM_PIE, 2);
+        if (!rn2(3))
+            await mongets(rn2(2) ? CLUB : RUBBER_HOSE);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 15
+        && speciesHasWeaponAttack(mndx)) { // S_ORC
+        // C ref: makemon.c m_initweap(), S_ORC.  The common helm probe
+        // precedes a subtype-specific equipment graph; an orc captain chooses
+        // one of the two ranked subtypes before entering the same graph.
+        if (rn2(2))
+            await mongets(ORCISH_HELM);
+        const orcSubtype = mndx === 77 // PM_ORC_CAPTAIN
+            ? (rn2(2) ? 74 : 75) : mndx;
+        if (orcSubtype === 74) { // PM_MORDOR_ORC
+            if (!rn2(3))
+                await mongets(SCIMITAR);
+            if (!rn2(3))
+                await mongets(ORCISH_SHIELD);
+            if (!rn2(3))
+                await mongets(KNIFE);
+            if (!rn2(3))
+                await mongets(ORCISH_CHAIN_MAIL);
+        }
+        else if (orcSubtype === 75) { // PM_URUK_HAI
+            if (!rn2(3))
+                await mongets(ORCISH_CLOAK);
+            if (!rn2(3))
+                await mongets(ORCISH_SHORT_SWORD);
+            if (!rn2(3))
+                await mongets(IRON_SHOES);
+            if (!rn2(3)) {
+                await mongets(ORCISH_BOW);
+                await mInitthrow(ORCISH_ARROW, 12);
+            }
+            if (!rn2(3))
+                await mongets(URUK_HAI_SHIELD);
+        }
+        else if (mndx !== 76 && rn2(2)) { // not PM_ORC_SHAMAN
+            await mongets(mndx === 70 || !rn2(2) ? ORCISH_DAGGER : SCIMITAR);
+        }
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 46) { // S_TROLL
+        if (!rn2(2)) {
+            const polearms = [RANSEUR, PARTISAN, GLAIVE, SPETUM];
+            const polearm = polearms[rn2(polearms.length)];
+            if (polearm === undefined)
+                throw new RangeError('troll polearm selection exceeded its table');
+            await mongets(polearm);
+        }
+        // The class switch only chooses the ordinary weapon.  Every armed
+        // troll still reaches m_initweap()'s shared level-versus-rn2(75)
+        // offensive-item tail; high-level Olog-hai make the winning branch
+        // observable during summon-nasties.
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 49
+        && speciesHasWeaponAttack(mndx)) { // S_WRAITH
+        // C ref: makemon.c:m_initweap().  Armed wraith-class monsters receive
+        // both fixed weapons before the shared offensive-item reservoir.
+        await mongets(KNIFE);
+        await mongets(LONG_SWORD);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 52
+        && speciesHasWeaponAttack(mndx)) { // S_ZOMBIE
+        // C ref: makemon.c m_initweap(), S_ZOMBIE.  Armed skeletons first
+        // probe for leather armor and a knife/short sword, then rejoin the
+        // shared offensive-item tail.
+        if (!rn2(4))
+            await mongets(LEATHER_ARMOR);
+        if (!rn2(4))
+            await mongets(rn2(3) ? KNIFE : SHORT_SWORD);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 34
+        && speciesHasWeaponAttack(mndx)) { // S_GIANT
+        // C ref: makemon.c m_initweap().  Giants independently probe for a
+        // throwing boulder (ettins get a club) and, except for ettins, a
+        // heavy melee weapon before the common offensive-item reservoir.
+        if (rn2(2))
+            await mongets(mndx === PM_ETTIN ? CLUB : BOULDER);
+        if (mndx !== PM_ETTIN && !rn2(5))
+            await mongets(rn2(2) ? TWO_HANDED_SWORD : BATTLE_AXE);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 41) { // S_OGRE
+        const range = mndx === 205 ? 3 : mndx === 204 ? 6 : 12;
+        await mongets(!rn2(range) ? BATTLE_AXE : CLUB);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 29) { // S_CENTAUR
+        // Forest centaurs use bows; the other two species use crossbows.
+        // The missile stack is created only when the class probe succeeds.
+        if (rn2(2)) {
+            const forest = mndx === 131;
+            await mongets(forest ? BOW : CROSSBOW);
+            await mInitthrow(forest ? 18 : CROSSBOW_BOLT, 12); // ARROW
+        }
+        await giveOffensiveMonsterItem();
+    }
+    else if (mndx === PM_SALAMANDER) {
+        // C ref: makemon.c m_initweap(), S_LIZARD/PM_SALAMANDER.  The fixed
+        // polearm choice replaces the generic bias-sensitive weapon table,
+        // then rejoins its ordinary offensive-item tail.
+        await mongets(rn2(7) ? SPEAR : rn2(3) ? 33 : STILETTO);
+        await giveOffensiveMonsterItem();
+    }
+    else if (MONSTER_SYMBOL[mndx] === 33 // S_GNOME
+        && speciesHasWeaponAttack(mndx)) {
+        // C ref: makemon.c m_initweap(), default class armament.  Gnomes do
+        // not have a dedicated switch case, so armed gnomes reach this table;
+        // leader/ruler ranks narrow it through the lord/prince bias.
+        const bias = (is_lord(mndx) ? 1 : 0)
+            + (is_prince(mndx) ? 2 : 0)
+            + (extra_nasty(mndx) ? 1 : 0);
+        const weaponRoll = rnd(14 - (2 * bias));
+        switch (weaponRoll) {
+            case 1:
+                if (strongmonst(mndx))
+                    await mongets(BATTLE_AXE);
+                else
+                    await mInitthrow(DART, 12);
+                break;
+            case 2:
+                if (strongmonst(mndx))
+                    await mongets(TWO_HANDED_SWORD);
+                else {
+                    await mongets(CROSSBOW);
+                    await mInitthrow(CROSSBOW_BOLT, 12);
+                }
+                break;
+            case 3:
+                await mongets(BOW);
+                await mInitthrow(18, 12); // ARROW
+                break;
+            case 4:
+                if (strongmonst(mndx))
+                    await mongets(LONG_SWORD);
+                else
+                    await mInitthrow(DAGGER, 3);
+                break;
+            case 5:
+                await mongets(strongmonst(mndx) ? LUCERN_HAMMER : AKLYS);
+                break;
+            default:
+                break;
+        }
+        await giveOffensiveMonsterItem();
+    }
+    else if (speciesHasWeaponAttack(mndx)) {
+        if (M_INITWEAP_SWITCH_CLASSES.has(requireMonsterData(MONSTER_SYMBOL, mndx))) {
+            // This explicit class arm has no additional behavior in the
+            // currently ported constructor, but it still bypasses default.
+            await giveOffensiveMonsterItem();
+        }
+        else {
+            // C m_initweap()'s default switch arm first runs the
+            // bias-sensitive general weapon table; the rn2(75) probe is its
+            // tail, not a replacement for that table.
+            await giveGeneralMonsterWeapon();
+        }
+    }
+}
+// C makemon.c:m_initinv().
+// The every-species inventory switch: human mercenaries' armor budget with
+// whistles and rations, the shopkeeper kit, priest and monk robes, nymph
+// mirrors, minotaur and giant gems, leprechaun gold, the Nazgul ring, mummy
+// wrappings, lich weapons, the gnome candle, Schrödinger's box, and the
+// unarmed demons' fixed wands — then the soldier's early return (the skip
+// flag), the level-gated defensive and miscellaneous reservoirs, and greedy
+// monsters' final gold gate.
+async function mInitinv(eq) {
+    const { monster, inventory, mndx, baseLevel, x, y, mongets, mkmonmoney, markInventory, hasInventory, } = eq;
+    if (!eq.initialize)
+        return;
+    const level = requireGameLevel();
+    let skipCommonMonsterInventory = false;
+    if ([
+        PM_SOLDIER, PM_SERGEANT, PM_LIEUTENANT, PM_CAPTAIN,
+        PM_WATCHMAN, PM_WATCH_CAPTAIN, PM_GUARD,
+    ].includes(mndx)) {
+        // C ref: m_initinv(), S_HUMAN mercenaries.  Soldiers, the watch, and
+        // vault guards share an armor budget; armor gained in each round
+        // gates whether later slots are attempted.
+        let mercenaryAc = mndx === PM_GUARD ? -1
+            : (mndx === PM_SOLDIER || mndx === PM_WATCHMAN) ? 3
+                : mndx === PM_SERGEANT ? 0
+                    : (mndx === PM_LIEUTENANT
+                        || mndx === PM_WATCH_CAPTAIN) ? -2 : -3;
+        const addArmor = async (otyp) => {
+            const object = await mongets(otyp);
+            mercenaryAc += armorBonus(object);
+        };
+        if (mercenaryAc < -1 && rn2(5))
+            await addArmor(rn2(5) ? PLATE_MAIL : CRYSTAL_PLATE_MAIL);
+        else if (mercenaryAc < 3 && rn2(5))
+            await addArmor(rn2(3) ? SPLINT_MAIL : BANDED_MAIL);
+        else if (rn2(5))
+            await addArmor(rn2(3) ? RING_MAIL : STUDDED_LEATHER_ARMOR);
+        else
+            await addArmor(LEATHER_ARMOR);
+        if (mercenaryAc < 10 && rn2(3))
+            await addArmor(HELMET);
+        else if (mercenaryAc < 10 && rn2(2))
+            await addArmor(DENTED_POT);
+        if (mercenaryAc < 10 && rn2(3))
+            await addArmor(SMALL_SHIELD);
+        else if (mercenaryAc < 10 && rn2(2))
+            await addArmor(LARGE_SHIELD);
+        if (mercenaryAc < 10 && rn2(3))
+            await addArmor(LOW_BOOTS);
+        else if (mercenaryAc < 10 && rn2(2))
+            await addArmor(HIGH_BOOTS);
+        if (mercenaryAc < 10 && rn2(3))
+            await addArmor(LEATHER_GLOVES);
+        else if (mercenaryAc < 10 && rn2(2))
+            await addArmor(LEATHER_CLOAK);
+        if (mndx === PM_WATCHMAN) {
+            if (rn2(3))
+                await mongets(TIN_WHISTLE);
+        }
+        else if (mndx === PM_GUARD) {
+            const whistle = await mksobj(TIN_WHISTLE, true, false);
+            whistle.cursed = true;
+            whistle.buc = 'cursed';
+            await addCreatedObjectToMonsterInventory(monster, whistle, game);
+            markInventory();
+        }
+        else if (mndx !== PM_WATCH_CAPTAIN) {
+            if (!rn2(3))
+                await mongets(K_RATION);
+            if (!rn2(2))
+                await mongets(C_RATION);
+            if (mndx !== PM_SOLDIER && !rn2(3))
+                await mongets(BUGLE);
+            // Ordinary soldiers usually stop before the defensive and
+            // miscellaneous magic-item reservoirs.
+            if (mndx === PM_SOLDIER && rn2(13))
+                skipCommonMonsterInventory = true;
+        }
+    }
+    else if (mndx === PM_SHOPKEEPER) {
+        // C ref: m_initinv(), S_HUMAN shopkeepers: the fixed kit.
+        await mongets(SKELETON_KEY);
+        const firstKitItem = rn2(4);
+        if (firstKitItem === 0)
+            await mongets(WAN_MAGIC_MISSILE);
+        if (firstKitItem <= 1)
+            await mongets(POT_EXTRA_HEALING);
+        if (firstKitItem <= 2)
+            await mongets(POT_HEALING);
+        await mongets(WAN_STRIKING);
+    }
+    else if (receivesClericEquipment(mndx)) {
+        // C ref: makemon.c m_initinv(), Priest/Cleric quest-leader branch.
+        await mongets(rn2(7) ? ROBE
+            : rn2(3) ? CLOAK_OF_PROTECTION : CLOAK_OF_MAGIC_RESISTANCE);
+        await mongets(SMALL_SHIELD);
+        await mkmonmoney(rn1(10, 20));
+    }
+    else if (questMonsterRepresentsRole(mndx, 'monk')) {
+        await mongets(rn2(11) ? ROBE : CLOAK_OF_MAGIC_RESISTANCE);
+    }
+    if (MONSTER_SYMBOL[mndx] === 14) { // S_NYMPH
+        // C ref: makemon.c m_initinv(), S_NYMPH.
+        if (!rn2(2))
+            await mongets(MIRROR);
+        if (!rn2(2))
+            await mongets(POT_OBJECT_DETECTION);
+    }
+    if (mndx === PM_MINOTAUR) {
+        // C ref: makemon.c:m_initinv(), S_GIANT.  This probe belongs to the
+        // explicit minotaur constructor, before the common defensive and
+        // miscellaneous inventory reservoirs.
+        if (!rn2(8) || (game.in_mklev && Is_earthlevel(game.u?.uz)))
+            await mongets(WAN_DIGGING);
+    }
+    else if (MONSTER_SYMBOL[mndx] === 34
+        && (monsterIsGiant(mndx))) {
+        // C ref: makemon.c m_initinv(), is_giant().  Each iteration chooses
+        // one weighted gem/glass type, creates it without ordinary object
+        // initialization, and replaces its stack size with rn1(2,3).
+        for (let count = rn2(Math.trunc(baseLevel / 2)); count > 0; count--) {
+            const gem = await mksobj(rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1), false, false);
+            gem.quan = rn1(2, 3);
+            gem.quantity = gem.quan;
+            gem.owt = objectBaseWeight(gem.otyp) * gem.quan;
+            await addCreatedObjectToMonsterInventory(monster, gem, game);
+            markInventory();
+        }
+    }
+    if (MONSTER_SYMBOL[mndx] === 12) { // S_LEPRECHAUN
+        await mkmonmoney(d(level_difficulty(), 30));
+    }
+    if (mndx === MONSTER_NAME.indexOf('Nazgul')) {
+        const ring = await mksobj(RIN_INVISIBILITY, false, false);
+        ring.cursed = true;
+        await addCreatedObjectToMonsterInventory(monster, ring, game);
+        markInventory();
+    }
+    if (MONSTER_SYMBOL[mndx] === 39) { // S_MUMMY
+        if (rn2(7))
+            await mongets(MUMMY_WRAPPING);
+    }
+    if (MONSTER_SYMBOL[mndx] === 38) { // S_LICH
+        if (mndx === 185 && !rn2(13)) { // PM_MASTER_LICH
+            await mongets(rn2(7) ? ATHAME : WAN_NOTHING);
+        }
+        else if (mndx === 186 && !rn2(3)) { // PM_ARCH_LICH
+            const weapon = await mksobj(rn2(3) ? ATHAME : QUARTERSTAFF, true, !rn2(13));
+            if (weapon.spe < 2)
+                weapon.spe = rnd(3);
+            if (!rn2(4))
+                weapon.oerodeproof = true;
+            await addCreatedObjectToMonsterInventory(monster, weapon, game);
+            markInventory();
+        }
+    }
+    if (MONSTER_SYMBOL[mndx] === 33) { // S_GNOME
+        // C ref: makemon.c m_initinv(), S_GNOME.  During Mines generation
+        // the candle chance is 1/20 (1/60 elsewhere).
+        const candleChance = game.in_mklev && In_mines(game.u.uz) ? 20 : 60;
+        if (!rn2(candleChance)) {
+            const candle = await mksobj(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, true, false);
+            candle.quan = candle.quantity = 1;
+            candle.owt = objectWeight(candle);
+            await addCreatedObjectToMonsterInventory(monster, candle, game);
+            markInventory();
+            if (candle.where !== 'gone' && !level.at(x, y)?.lit)
+                beginObjectBurn(candle);
+        }
+    }
+    if (MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
+        // C ref: makemon.c m_initinv().  The class switch evaluates the rare
+        // Schrödinger-box probe before its PM_QUANTUM_MECHANIC species test,
+        // so genetic engineers consume the same rn2(20) even though they can
+        // never receive the box.  Keep the success path as a real contained-
+        // object transaction so later discovery can observe the same owner.
+        if (!rn2(20) && mndx === 210) { // PM_QUANTUM_MECHANIC
+            const box = await mksobj(LARGE_BOX, false, false);
+            const cat = await mksobj(CORPSE, true, false);
+            box.spe = 1;
+            set_corpsenm(cat, 33); // PM_HOUSECAT
+            stopObjectTimer(cat, OBJECT_TIMER_KIND.ROT_CORPSE);
+            cat.otrapped = false;
+            await addCreatedObjectToContainer(box, cat);
+            box.owt = objectWeight(box);
+            await addCreatedObjectToMonsterInventory(monster, box, game);
+            markInventory();
+        }
+    }
+    if (mndx === 298 && !rn2(4))
+        await mongets(SPEAR); // PM_ICE_DEVIL
+    if (mndx === PM_ASMODEUS) {
+        // C makemon.c:m_initinv(), S_DEMON.  Asmodeus has no weapon attack,
+        // so his fixed cold/fire wands are inventory declarations rather
+        // than m_initweap() gear and precede both common magic reservoirs.
+        await mongets(WAN_COLD);
+        await mongets(WAN_FIRE);
+    }
+    // m_initinv() finishes with the soldier's early return modeled as the
+    // skip flag, then level-gated defensive and miscellaneous choices.
+    if (!skipCommonMonsterInventory) {
+        const defensiveRoll = rn2(50);
+        if (baseLevel > defensiveRoll) {
+            const defensiveItem = rnd_defensive_item(monster);
+            if (defensiveItem)
+                await mongets(defensiveItem);
+        }
+        const miscellaneousRoll = rn2(100);
+        if (baseLevel > miscellaneousRoll) {
+            const miscellaneousItem = rnd_misc_item(monster);
+            if (miscellaneousItem)
+                await mongets(miscellaneousItem);
+        }
+    }
+    // C ref: makemon.c m_initinv().  Greedy monsters get a final gold gate
+    // after the defensive and miscellaneous reservoirs.  Amount dice depend
+    // on whether class-specific equipment already populated the inventory.
+    if ((likes_gold(mndx))
+        && !inventory.some(object => object.otyp === GOLD_PIECE)
+        && !rn2(5)) {
+        const amount = d(level_difficulty(), hasInventory() ? 5 : 10);
+        if (amount > 0) {
+            await mkmonmoney(amount);
+        }
+    }
+}
 // C makemon.c:makemon()
-// Also C makemon.c:m_initweap(): species-specific starting weapons are inlined here.
-// Also C makemon.c:m_initinv(): species-specific starting inventory is inlined here.
 export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const level = requireGameLevel();
     if (game.iflags.debug_mongen || mdat == null && level.flags.rndmongen === false)
@@ -1054,665 +1743,22 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         }
         await giveOffensiveMonsterItem();
     };
-    // C m_initweap() and m_initinv() both return on Rogue levels. Fixed
-    // possessions from makemon() above and its saddle probe below are separate.
-    if (!initializeMonsterEquipment) {
-        // NO_MINVENT and Rogue levels bypass ordinary equipment creation.
-    }
-    else if (mndx === PM_VLAD_THE_IMPALER) {
-        // Vlad is a vampire prince and extra-nasty, reducing the ordinary
-        // armament table to rnd(8).  His fixed Candelabrum above exists
-        // before this shared weapon/offensive-item tail.
-        await giveGeneralMonsterWeapon();
-    }
-    else if (mndx >= 59 && mndx <= 61) { // kobold through kobold leader
-        // C ref: makemon.c m_initweap(), S_KOBOLD.
-        if (!rn2(4))
-            await mInitthrow(DART, 12);
-        await giveOffensiveMonsterItem();
-    }
-    else if (mndx >= 70 && mndx <= 73) {
-        // C ref: makemon.c m_initweap(), S_ORC.  Goblins, hobgoblins,
-        // corpses-only base orcs, and hill orcs all use the default armament
-        // branch; the goblin form short-circuits the dagger/scimitar choice.
-        if (rn2(2))
-            await mongets(ORCISH_HELM);
-        if (rn2(2)) {
-            const weapon = mndx === 70 || rn2(2) === 0
-                ? ORCISH_DAGGER : SCIMITAR;
-            await mongets(weapon);
-        }
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 27
-        && monsterIsHumanoid(mndx)
-        && speciesHasWeaponAttack(mndx)) {
-        // C ref: m_initweap(), humanoid S_ANGEL.  Minion weapons and shields
-        // deliberately bypass mongets()/ordinary object initialization.
-        const isLord = is_lord(mndx);
-        const weapon = await mksobj(rn2(3) ? LONG_SWORD : SILVER_MACE, false, false);
-        const promote = !rn2(20) || isLord;
-        if (promote && monsterAlignmentType(pendingMonster) === A_LAWFUL) {
-            nameArtifact(weapon, artifactByName(weapon.otyp === LONG_SWORD ? 'Sunsword' : 'Demonbane'));
-        }
-        weapon.blessed = true;
-        weapon.cursed = false;
-        weapon.oerodeproof = true;
-        weapon.spe = rn2(4) + (weapon.otyp === SILVER_MACE ? 3 : 0);
-        await addCreatedObjectToMonsterInventory(pendingMonster, weapon, game);
-        hasMonsterInventory = true;
-        const shield = await mksobj(!rn2(4) || isLord ? 158 : LARGE_SHIELD, false, false);
-        shield.oerodeproof = true;
-        shield.spe = 0;
-        await addCreatedObjectToMonsterInventory(pendingMonster, shield, game);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 8 && mndx === PM_HOBBIT) {
-        // C ref: makemon.c m_initweap(), S_HUMANOID/PM_HOBBIT.
-        const weaponRoll = rn2(3);
-        if (weaponRoll === 0)
-            await mongets(DAGGER);
-        else if (weaponRoll === 1)
-            await mongets(ELVEN_DAGGER);
-        else {
-            await mongets(SLING);
-            await mInitthrow(!rn2(4) ? FLINT : ROCK, 6);
-        }
-        if (!rn2(10))
-            await mongets(ELVEN_MITHRIL_COAT);
-        if (!rn2(10))
-            await mongets(DWARVISH_CLOAK);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 8
-        && (is_dwarf(mndx))) {
-        // C ref: makemon.c m_initweap(), S_HUMANOID/is_dwarf().  Keep the
-        // complete equipment tree together because every optional item feeds
-        // the same ordinary object constructor and erosion rules.
-        if (rn2(7))
-            await mongets(DWARVISH_CLOAK);
-        if (rn2(7))
-            await mongets(IRON_SHOES);
-        if (!rn2(4)) {
-            await mongets(DWARVISH_SHORT_SWORD);
-            if (rn2(2)) {
-                await mongets(DWARVISH_MATTOCK);
-            }
-            else {
-                await mongets(rn2(2) ? AXE : DWARVISH_SPEAR);
-                await mongets(DWARVISH_ROUNDSHIELD);
-            }
-            await mongets(DWARVISH_IRON_HELM);
-            if (!rn2(3))
-                await mongets(DWARVISH_MITHRIL_COAT);
-        }
-        else {
-            await mongets(!rn2(3) ? PICK_AXE : DAGGER);
-        }
-        await giveOffensiveMonsterItem();
-    }
-    else if (mndx >= 264 && mndx <= 269) { // ordinary elf species
-        // C ref: makemon.c m_initweap(), is_elf().  Clothing probes precede
-        // the mutually exclusive primary loadout; monarchs then receive two
-        // extra utility probes before the common offensive-item tail.
-        if (rn2(2))
-            await mongets(rn2(2) ? ELVEN_MITHRIL_COAT : ELVEN_CLOAK);
-        if (rn2(2))
-            await mongets(ELVEN_LEATHER_HELM);
-        else if (!rn2(4))
-            await mongets(ELVEN_BOOTS);
-        if (rn2(2))
-            await mongets(ELVEN_DAGGER);
-        switch (rn2(3)) {
-            case 0: {
-                if (!rn2(4))
-                    await mongets(ELVEN_SHIELD);
-                if (rn2(3))
-                    await mongets(ELVEN_SHORT_SWORD);
-                await mongets(ELVEN_BOW);
-                await mInitthrow(ELVEN_ARROW, 12);
-                break;
-            }
-            case 1:
-                await mongets(ELVEN_BROADSWORD);
-                if (rn2(2))
-                    await mongets(ELVEN_SHIELD);
-                break;
-            case 2:
-                if (rn2(2)) {
-                    await mongets(ELVEN_SPEAR);
-                    await mongets(ELVEN_SHIELD);
-                }
-                break;
-        }
-        if (mndx === 269) { // PM_ELVEN_MONARCH
-            if (rn2(3) || (game.in_mklev && Is_earthlevel(game.u?.uz)))
-                await mongets(PICK_AXE);
-            if (!rn2(50))
-                await mongets(CRYSTAL_BALL);
-        }
-        await giveOffensiveMonsterItem();
-    }
-    else if ([
-        PM_SOLDIER, PM_SERGEANT, PM_LIEUTENANT, PM_CAPTAIN,
-        PM_WATCHMAN, PM_WATCH_CAPTAIN, PM_GUARD,
-    ].includes(mndx)) {
-        // C ref: makemon.c m_initweap()/m_initinv(), human mercenaries.
-        // Soldiers, the watch, and vault guards share an armor budget;
-        // armor gained in each round gates whether later slots are attempted.
-        let primaryWeapon = 0;
-        let secondaryWeapon = 0;
-        if (mndx === PM_SOLDIER || mndx === PM_WATCHMAN) {
-            if (!rn2(3)) {
-                primaryWeapon = PARTISAN + rn2(12);
-                secondaryWeapon = rn2(2) ? DAGGER : KNIFE;
-            }
-            else {
-                primaryWeapon = rn2(2) ? SPEAR : SHORT_SWORD;
-            }
-        }
-        else if (mndx === PM_SERGEANT) {
-            primaryWeapon = rn2(2) ? 81 : MACE; // FLAIL
-        }
-        else if (mndx === PM_LIEUTENANT) {
-            primaryWeapon = rn2(2) ? 52 : LONG_SWORD; // BROADSWORD
-        }
-        else if (mndx === PM_CAPTAIN || mndx === PM_WATCH_CAPTAIN) {
-            primaryWeapon = rn2(2) ? LONG_SWORD : SILVER_SABER;
-        }
-        else {
-            if (!rn2(4))
-                primaryWeapon = DAGGER;
-            if (!rn2(7))
-                secondaryWeapon = SPEAR;
-        }
-        if (primaryWeapon)
-            await mongets(primaryWeapon);
-        if (!secondaryWeapon && primaryWeapon !== DAGGER && !rn2(4))
-            secondaryWeapon = KNIFE;
-        if (secondaryWeapon)
-            await mongets(secondaryWeapon);
-        const offensiveRoll = rn2(75);
-        if (baseLevel > offensiveRoll) {
-            const offensiveItem = rnd_offensive_item(pendingMonster);
-            if (offensiveItem)
-                await mongets(offensiveItem);
-        }
-        let mercenaryAc = mndx === PM_GUARD ? -1
-            : (mndx === PM_SOLDIER || mndx === PM_WATCHMAN) ? 3
-                : mndx === PM_SERGEANT ? 0
-                    : (mndx === PM_LIEUTENANT
-                        || mndx === PM_WATCH_CAPTAIN) ? -2 : -3;
-        const addArmor = async (otyp) => {
-            const object = await mongets(otyp);
-            mercenaryAc += armorBonus(object);
-        };
-        if (mercenaryAc < -1 && rn2(5))
-            await addArmor(rn2(5) ? PLATE_MAIL : CRYSTAL_PLATE_MAIL);
-        else if (mercenaryAc < 3 && rn2(5))
-            await addArmor(rn2(3) ? SPLINT_MAIL : BANDED_MAIL);
-        else if (rn2(5))
-            await addArmor(rn2(3) ? RING_MAIL : STUDDED_LEATHER_ARMOR);
-        else
-            await addArmor(LEATHER_ARMOR);
-        if (mercenaryAc < 10 && rn2(3))
-            await addArmor(HELMET);
-        else if (mercenaryAc < 10 && rn2(2))
-            await addArmor(DENTED_POT);
-        if (mercenaryAc < 10 && rn2(3))
-            await addArmor(SMALL_SHIELD);
-        else if (mercenaryAc < 10 && rn2(2))
-            await addArmor(LARGE_SHIELD);
-        if (mercenaryAc < 10 && rn2(3))
-            await addArmor(LOW_BOOTS);
-        else if (mercenaryAc < 10 && rn2(2))
-            await addArmor(HIGH_BOOTS);
-        if (mercenaryAc < 10 && rn2(3))
-            await addArmor(LEATHER_GLOVES);
-        else if (mercenaryAc < 10 && rn2(2))
-            await addArmor(LEATHER_CLOAK);
-        if (mndx === PM_WATCHMAN) {
-            if (rn2(3))
-                await mongets(TIN_WHISTLE);
-        }
-        else if (mndx === PM_GUARD) {
-            const whistle = await mksobj(TIN_WHISTLE, true, false);
-            whistle.cursed = true;
-            whistle.buc = 'cursed';
-            await addCreatedObjectToMonsterInventory(pendingMonster, whistle, game);
-            hasMonsterInventory = true;
-        }
-        else if (mndx !== PM_WATCH_CAPTAIN) {
-            if (!rn2(3))
-                await mongets(K_RATION);
-            if (!rn2(2))
-                await mongets(C_RATION);
-            if (mndx !== PM_SOLDIER && !rn2(3))
-                await mongets(BUGLE);
-            // Ordinary soldiers usually stop before the defensive and
-            // miscellaneous magic-item reservoirs.
-            if (mndx === PM_SOLDIER && rn2(13))
-                skipCommonMonsterInventory = true;
-        }
-    }
-    else if (mndx === PM_SHOPKEEPER) {
-        // C refs: makemon.c m_initweap() and m_initinv().  Shopkeepers have
-        // no class-specific weapon, but are armed and therefore still reach
-        // the final offensive-item roll before receiving their fixed kit.
-        const offensiveRoll = rn2(75);
-        if (baseLevel > offensiveRoll) {
-            const offensiveItem = rnd_offensive_item(pendingMonster);
-            if (offensiveItem)
-                await mongets(offensiveItem);
-        }
-        await mongets(SKELETON_KEY);
-        const firstKitItem = rn2(4);
-        if (firstKitItem === 0)
-            await mongets(WAN_MAGIC_MISSILE);
-        if (firstKitItem <= 1)
-            await mongets(POT_EXTRA_HEALING);
-        if (firstKitItem <= 2)
-            await mongets(POT_HEALING);
-        await mongets(WAN_STRIKING);
-    }
-    else if (MONSTER_SYMBOL[mndx] === 56
-        && (monsterIsDemon(mndx))
-        && speciesHasWeaponAttack(mndx)) {
-        // C m_initweap(), S_DEMON: fixed demon weapons are added before the
-        // same bias-sensitive general armament table used by normal monsters.
-        if (mndx === PM_BALROG) {
-            await mongets(BULLWHIP);
-            await mongets(52); // BROADSWORD
-        }
-        else if (mndx === PM_ORCUS) {
-            await mongets(WAN_DEATH);
-        }
-        else if (mndx === PM_HORNED_DEVIL) {
-            await mongets(rn2(4) ? 33 : BULLWHIP); // TRIDENT
-        }
-        else if (mndx === PM_DISPATER) {
-            await mongets(WAN_STRIKING);
-        }
-        else if (mndx === PM_YEENOGHU) {
-            await mongets(81); // FLAIL
-        }
-        await giveGeneralMonsterWeapon();
-    }
-    else if (speciesHasWeaponAttack(mndx) && receivesClericEquipment(mndx)) {
-        // C makemon() skips m_initweap() for unarmed species, even when
-        // the hero's role makes them Cleric quest representatives.
-        const mace = await mksobj(MACE, false, false);
-        mace.spe = rnd(3);
-        if (!rn2(2)) {
-            mace.cursed = true;
-            mace.buc = 'cursed';
-        }
-        await addCreatedObjectToMonsterInventory(pendingMonster, mace, game);
-        hasMonsterInventory = true;
-        const offensiveRoll = rn2(75);
-        if (baseLevel > offensiveRoll) {
-            const offensiveItem = rnd_offensive_item(pendingMonster);
-            if (offensiveItem)
-                await mongets(offensiveItem);
-        }
-    }
-    else if (mndx === MONSTER_NAME.indexOf('ninja')) {
-        await mongets(rn2(4) ? SHURIKEN : DART);
-        await mongets(rn2(4) ? SHORT_SWORD : AXE);
-        await giveOffensiveMonsterItem();
-    }
-    else if (speciesHasWeaponAttack(mndx)
-        && ['student', 'attendant', 'abbot', 'acolyte', 'guide', 'apprentice']
-            .includes(MONSTER_NAME[mndx] ?? '')) {
-        // C makemon() calls m_initweap() only for armed species. Abbots
-        // appear in its guardian switch but have no weapon attack.
-        if (rn2(2))
-            await mongets(rn2(3) ? DAGGER : KNIFE);
-        if (rn2(5))
-            await mongets(rn2(3) ? LEATHER_JACKET : LEATHER_CLOAK);
-        if (rn2(3))
-            await mongets(rn2(3) ? LOW_BOOTS : HIGH_BOOTS);
-        if (rn2(3))
-            await mongets(POT_HEALING);
-        await giveOffensiveMonsterItem();
-    }
-    else if (['chieftain', 'page', 'roshi', 'warrior'].includes(MONSTER_NAME[mndx] ?? '')) {
-        await mongets(rn2(3) ? LONG_SWORD : SHORT_SWORD);
-        await mongets(rn2(3) ? CHAIN_MAIL : LEATHER_ARMOR);
-        if (rn2(2))
-            await mongets(rn2(2) ? LOW_BOOTS : HIGH_BOOTS);
-        if (!rn2(3))
-            await mongets(LEATHER_CLOAK);
-        if (!rn2(3)) {
-            await mongets(BOW);
-            await mInitthrow(ARROW, 12);
-        }
-        await giveOffensiveMonsterItem();
-    }
-    else if (mndx === MONSTER_NAME.indexOf('hunter')) {
-        await mongets(rn2(3) ? SHORT_SWORD : DAGGER);
-        if (rn2(2))
-            await mongets(rn2(2) ? LEATHER_JACKET : LEATHER_ARMOR);
-        await mongets(BOW);
-        await mInitthrow(ARROW, 12);
-        await giveOffensiveMonsterItem();
-    }
-    else if (mndx === MONSTER_NAME.indexOf('thug')) {
-        await mongets(CLUB);
-        await mongets(rn2(3) ? DAGGER : KNIFE);
-        if (rn2(2))
-            await mongets(LEATHER_GLOVES);
-        await mongets(rn2(2) ? LEATHER_JACKET : LEATHER_ARMOR);
-        await giveOffensiveMonsterItem();
-    }
-    else if (mndx === MONSTER_NAME.indexOf('neanderthal')) {
-        await mongets(CLUB);
-        await mongets(LEATHER_ARMOR);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 37) { // S_KOP
-        if (!rn2(4))
-            await mInitthrow(CREAM_PIE, 2);
-        if (!rn2(3))
-            await mongets(rn2(2) ? CLUB : RUBBER_HOSE);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 15
-        && speciesHasWeaponAttack(mndx)) { // S_ORC
-        // C ref: makemon.c m_initweap(), S_ORC.  The common helm probe
-        // precedes a subtype-specific equipment graph; an orc captain chooses
-        // one of the two ranked subtypes before entering the same graph.
-        if (rn2(2))
-            await mongets(ORCISH_HELM);
-        const orcSubtype = mndx === 77 // PM_ORC_CAPTAIN
-            ? (rn2(2) ? 74 : 75) : mndx;
-        if (orcSubtype === 74) { // PM_MORDOR_ORC
-            if (!rn2(3))
-                await mongets(SCIMITAR);
-            if (!rn2(3))
-                await mongets(ORCISH_SHIELD);
-            if (!rn2(3))
-                await mongets(KNIFE);
-            if (!rn2(3))
-                await mongets(ORCISH_CHAIN_MAIL);
-        }
-        else if (orcSubtype === 75) { // PM_URUK_HAI
-            if (!rn2(3))
-                await mongets(ORCISH_CLOAK);
-            if (!rn2(3))
-                await mongets(ORCISH_SHORT_SWORD);
-            if (!rn2(3))
-                await mongets(IRON_SHOES);
-            if (!rn2(3)) {
-                await mongets(ORCISH_BOW);
-                await mInitthrow(ORCISH_ARROW, 12);
-            }
-            if (!rn2(3))
-                await mongets(URUK_HAI_SHIELD);
-        }
-        else if (mndx !== 76 && rn2(2)) { // not PM_ORC_SHAMAN
-            await mongets(mndx === 70 || !rn2(2) ? ORCISH_DAGGER : SCIMITAR);
-        }
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 46) { // S_TROLL
-        if (!rn2(2)) {
-            const polearms = [RANSEUR, PARTISAN, GLAIVE, SPETUM];
-            const polearm = polearms[rn2(polearms.length)];
-            if (polearm === undefined)
-                throw new RangeError('troll polearm selection exceeded its table');
-            await mongets(polearm);
-        }
-        // The class switch only chooses the ordinary weapon.  Every armed
-        // troll still reaches m_initweap()'s shared level-versus-rn2(75)
-        // offensive-item tail; high-level Olog-hai make the winning branch
-        // observable during summon-nasties.
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 49
-        && speciesHasWeaponAttack(mndx)) { // S_WRAITH
-        // C ref: makemon.c:m_initweap().  Armed wraith-class monsters receive
-        // both fixed weapons before the shared offensive-item reservoir.
-        await mongets(KNIFE);
-        await mongets(LONG_SWORD);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 52
-        && speciesHasWeaponAttack(mndx)) { // S_ZOMBIE
-        // C ref: makemon.c m_initweap(), S_ZOMBIE.  Armed skeletons first
-        // probe for leather armor and a knife/short sword, then rejoin the
-        // shared offensive-item tail.
-        if (!rn2(4))
-            await mongets(LEATHER_ARMOR);
-        if (!rn2(4))
-            await mongets(rn2(3) ? KNIFE : SHORT_SWORD);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 34
-        && speciesHasWeaponAttack(mndx)) { // S_GIANT
-        // C ref: makemon.c m_initweap().  Giants independently probe for a
-        // throwing boulder (ettins get a club) and, except for ettins, a
-        // heavy melee weapon before the common offensive-item reservoir.
-        if (rn2(2))
-            await mongets(mndx === PM_ETTIN ? CLUB : BOULDER);
-        if (mndx !== PM_ETTIN && !rn2(5))
-            await mongets(rn2(2) ? TWO_HANDED_SWORD : BATTLE_AXE);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 41) { // S_OGRE
-        const range = mndx === 205 ? 3 : mndx === 204 ? 6 : 12;
-        await mongets(!rn2(range) ? BATTLE_AXE : CLUB);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 29) { // S_CENTAUR
-        // Forest centaurs use bows; the other two species use crossbows.
-        // The missile stack is created only when the class probe succeeds.
-        if (rn2(2)) {
-            const forest = mndx === 131;
-            await mongets(forest ? BOW : CROSSBOW);
-            await mInitthrow(forest ? 18 : CROSSBOW_BOLT, 12); // ARROW
-        }
-        await giveOffensiveMonsterItem();
-    }
-    else if (mndx === PM_SALAMANDER) {
-        // C ref: makemon.c m_initweap(), S_LIZARD/PM_SALAMANDER.  The fixed
-        // polearm choice replaces the generic bias-sensitive weapon table,
-        // then rejoins its ordinary offensive-item tail.
-        await mongets(rn2(7) ? SPEAR : rn2(3) ? 33 : STILETTO);
-        await giveOffensiveMonsterItem();
-    }
-    else if (MONSTER_SYMBOL[mndx] === 33 // S_GNOME
-        && speciesHasWeaponAttack(mndx)) {
-        // C ref: makemon.c m_initweap(), default class armament.  Gnomes do
-        // not have a dedicated switch case, so armed gnomes reach this table;
-        // leader/ruler ranks narrow it through the lord/prince bias.
-        const bias = (is_lord(mndx) ? 1 : 0)
-            + (is_prince(mndx) ? 2 : 0)
-            + (extra_nasty(mndx) ? 1 : 0);
-        const weaponRoll = rnd(14 - (2 * bias));
-        switch (weaponRoll) {
-            case 1:
-                if (strongmonst(mndx))
-                    await mongets(BATTLE_AXE);
-                else
-                    await mInitthrow(DART, 12);
-                break;
-            case 2:
-                if (strongmonst(mndx))
-                    await mongets(TWO_HANDED_SWORD);
-                else {
-                    await mongets(CROSSBOW);
-                    await mInitthrow(CROSSBOW_BOLT, 12);
-                }
-                break;
-            case 3:
-                await mongets(BOW);
-                await mInitthrow(18, 12); // ARROW
-                break;
-            case 4:
-                if (strongmonst(mndx))
-                    await mongets(LONG_SWORD);
-                else
-                    await mInitthrow(DAGGER, 3);
-                break;
-            case 5:
-                await mongets(strongmonst(mndx) ? LUCERN_HAMMER : AKLYS);
-                break;
-            default:
-                break;
-        }
-        await giveOffensiveMonsterItem();
-    }
-    else if (speciesHasWeaponAttack(mndx)) {
-        if (M_INITWEAP_SWITCH_CLASSES.has(requireMonsterData(MONSTER_SYMBOL, mndx))) {
-            // This explicit class arm has no additional behavior in the
-            // currently ported constructor, but it still bypasses default.
-            await giveOffensiveMonsterItem();
-        }
-        else {
-            // C m_initweap()'s default switch arm first runs the
-            // bias-sensitive general weapon table; the rn2(75) probe is its
-            // tail, not a replacement for that table.
-            await giveGeneralMonsterWeapon();
-        }
-    }
-    // m_initinv(), m_dowear(), and the domestic-saddle probe share the same
-    // allow_minvent gate.  NO_MINVENT must consume none of their RNG and must
-    // leave an empty minvent even for species with fixed starting objects.
-    if (initializeMonsterEquipment && receivesClericEquipment(mndx)) {
-        // C ref: makemon.c m_initinv(), Priest/Cleric quest-leader branch.
-        await mongets(rn2(7) ? ROBE
-            : rn2(3) ? CLOAK_OF_PROTECTION : CLOAK_OF_MAGIC_RESISTANCE);
-        await mongets(SMALL_SHIELD);
-        await mkmonmoney(rn1(10, 20));
-    }
-    else if (initializeMonsterEquipment && questMonsterRepresentsRole(mndx, 'monk')) {
-        await mongets(rn2(11) ? ROBE : CLOAK_OF_MAGIC_RESISTANCE);
-    }
-    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 14) { // S_NYMPH
-        // C ref: makemon.c m_initinv(), S_NYMPH.
-        if (!rn2(2))
-            await mongets(MIRROR);
-        if (!rn2(2))
-            await mongets(POT_OBJECT_DETECTION);
-    }
-    if (initializeMonsterEquipment && mndx === PM_MINOTAUR) {
-        // C ref: makemon.c:m_initinv(), S_GIANT.  This probe belongs to the
-        // explicit minotaur constructor, before the common defensive and
-        // miscellaneous inventory reservoirs.
-        if (!rn2(8) || (game.in_mklev && Is_earthlevel(game.u?.uz)))
-            await mongets(WAN_DIGGING);
-    }
-    else if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 34
-        && (monsterIsGiant(mndx))) {
-        // C ref: makemon.c m_initinv(), is_giant().  Each iteration chooses
-        // one weighted gem/glass type, creates it without ordinary object
-        // initialization, and replaces its stack size with rn1(2,3).
-        for (let count = rn2(Math.trunc(baseLevel / 2)); count > 0; count--) {
-            const gem = await mksobj(rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1), false, false);
-            gem.quan = rn1(2, 3);
-            gem.quantity = gem.quan;
-            gem.owt = objectBaseWeight(gem.otyp) * gem.quan;
-            await addCreatedObjectToMonsterInventory(pendingMonster, gem, game);
-            hasMonsterInventory = true;
-        }
-    }
-    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 12) { // S_LEPRECHAUN
-        await mkmonmoney(d(level_difficulty(), 30));
-    }
-    if (initializeMonsterEquipment && mndx === MONSTER_NAME.indexOf('Nazgul')) {
-        const ring = await mksobj(RIN_INVISIBILITY, false, false);
-        ring.cursed = true;
-        await addCreatedObjectToMonsterInventory(pendingMonster, ring, game);
-        hasMonsterInventory = true;
-    }
-    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 39) { // S_MUMMY
-        if (rn2(7))
-            await mongets(MUMMY_WRAPPING);
-    }
-    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 38) { // S_LICH
-        if (mndx === 185 && !rn2(13)) { // PM_MASTER_LICH
-            await mongets(rn2(7) ? ATHAME : WAN_NOTHING);
-        }
-        else if (mndx === 186 && !rn2(3)) { // PM_ARCH_LICH
-            const weapon = await mksobj(rn2(3) ? ATHAME : QUARTERSTAFF, true, !rn2(13));
-            if (weapon.spe < 2)
-                weapon.spe = rnd(3);
-            if (!rn2(4))
-                weapon.oerodeproof = true;
-            await addCreatedObjectToMonsterInventory(pendingMonster, weapon, game);
-            hasMonsterInventory = true;
-        }
-    }
-    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 33) { // S_GNOME
-        // C ref: makemon.c m_initinv(), S_GNOME.  During Mines generation
-        // the candle chance is 1/20 (1/60 elsewhere).
-        const candleChance = game.in_mklev && In_mines(game.u.uz) ? 20 : 60;
-        if (!rn2(candleChance)) {
-            const candle = await mksobj(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, true, false);
-            candle.quan = candle.quantity = 1;
-            candle.owt = objectWeight(candle);
-            await addCreatedObjectToMonsterInventory(pendingMonster, candle, game);
-            hasMonsterInventory = true;
-            if (candle.where !== 'gone' && !level.at(x, y)?.lit)
-                beginObjectBurn(candle);
-        }
-    }
-    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
-        // C ref: makemon.c m_initinv().  The class switch evaluates the rare
-        // Schrödinger-box probe before its PM_QUANTUM_MECHANIC species test,
-        // so genetic engineers consume the same rn2(20) even though they can
-        // never receive the box.  Keep the success path as a real contained-
-        // object transaction so later discovery can observe the same owner.
-        if (!rn2(20) && mndx === 210) { // PM_QUANTUM_MECHANIC
-            const box = await mksobj(LARGE_BOX, false, false);
-            const cat = await mksobj(CORPSE, true, false);
-            box.spe = 1;
-            set_corpsenm(cat, 33); // PM_HOUSECAT
-            stopObjectTimer(cat, OBJECT_TIMER_KIND.ROT_CORPSE);
-            cat.otrapped = false;
-            await addCreatedObjectToContainer(box, cat);
-            box.owt = objectWeight(box);
-            await addCreatedObjectToMonsterInventory(pendingMonster, box, game);
-            hasMonsterInventory = true;
-        }
-    }
-    if (initializeMonsterEquipment && mndx === 298 && !rn2(4))
-        await mongets(SPEAR); // PM_ICE_DEVIL
-    if (initializeMonsterEquipment && mndx === PM_ASMODEUS) {
-        // C makemon.c:m_initinv(), S_DEMON.  Asmodeus has no weapon attack,
-        // so his fixed cold/fire wands are inventory declarations rather
-        // than m_initweap() gear and precede both common magic reservoirs.
-        await mongets(WAN_COLD);
-        await mongets(WAN_FIRE);
-    }
-    // m_initinv() finishes with level-gated defensive and miscellaneous item
-    // choices for every monster.
-    if (initializeMonsterEquipment && !skipCommonMonsterInventory) {
-        const defensiveRoll = rn2(50);
-        if (baseLevel > defensiveRoll) {
-            const defensiveItem = rnd_defensive_item(pendingMonster);
-            if (defensiveItem)
-                await mongets(defensiveItem);
-        }
-        const miscellaneousRoll = rn2(100);
-        if (baseLevel > miscellaneousRoll) {
-            const miscellaneousItem = rnd_misc_item(pendingMonster);
-            if (miscellaneousItem)
-                await mongets(miscellaneousItem);
-        }
-    }
-    // C ref: makemon.c m_initinv().  Greedy monsters get a final gold gate
-    // after the defensive and miscellaneous reservoirs.  Amount dice depend
-    // on whether class-specific equipment already populated the inventory.
-    if (initializeMonsterEquipment && (likes_gold(mndx))
-        && !monsterInventory.some(object => object.otyp === GOLD_PIECE)
-        && !rn2(5)) {
-        const amount = d(level_difficulty(), hasMonsterInventory ? 5 : 10);
-        if (amount > 0) {
-            await mkmonmoney(amount);
-        }
-    }
+    // C makemon() calls m_initweap() for armed species and m_initinv() for
+    // every species; both return early on Rogue levels, which the port's
+    // initializeMonsterEquipment gate models together with NO_MINVENT (the
+    // fixed possessions above and the saddle probe below are makemon()'s
+    // own declarations).
+    const equipment = {
+        monster: pendingMonster, inventory: monsterInventory,
+        mndx, baseLevel, x, y,
+        initialize: initializeMonsterEquipment,
+        mongets, mInitthrow, mkmonmoney,
+        giveOffensiveMonsterItem, giveGeneralMonsterWeapon,
+        markInventory() { hasMonsterInventory = true; },
+        hasInventory: () => hasMonsterInventory,
+    };
+    await mInitweap(equipment);
+    await mInitinv(equipment);
     const classIndex = MONSTER_SYMBOL[mndx] || 0;
     // C makemon.c initializes strategic presentation state for waiting and
     // covetous species unless the caller explicitly supplies MM_NOWAIT.
