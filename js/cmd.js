@@ -9,7 +9,7 @@ import { doname, monsterName } from './do_name.js';
 import { doannotate, doDungeonOverview, levelIsWizardTower, recordMappedOverviewState, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
 import { On_stairs_dn, On_stairs_up } from './stairs.js';
 import { dochat } from './sounds.js';
-import { doloot, pickupAtHero, dotip, autopickupAtHero } from './pickup.js';
+import { doloot, dotip, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifact.js';
 import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from './insight.js';
 import { doturn, dopray, dosacrifice } from './pray.js';
@@ -30,7 +30,7 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation } from './pager.js';
 import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
 import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
-import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip, checkSpecialRoom } from './hack.js';
+import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip, checkSpecialRoom, dopickup } from './hack.js';
 import { propertyIsActive } from './properties.js';
 import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { inventoryReport } from './invent.js';
@@ -749,7 +749,7 @@ async function runCommandHandler(binding) {
         game.context.move = 0;
     }
     else if (ch === ',') {
-        await pickupAtHero();
+        await dopickup();
     }
     else if (ch === '>') {
         await dodown();

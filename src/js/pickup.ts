@@ -11,7 +11,7 @@ import {
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
 import {
     nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount,
-    calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, pickupLocationProblem,
+    calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity,
 } from './hack.js';
 import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks, touchPetrifies, heroResistsStoning } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -115,30 +115,19 @@ export function pickupClassOrder(): string[] {
     return [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
 }
 
-// Part of C hack.c:dopickup(): command adapter combining location checks with pickup.c:pickup().
-// The #pickup command: C hack.c:dopickup() runs the location checks and
-// then pickup.c:pickup() over what remains, or loots the swallower's
-// stomach when it holds the engulfer's inventory.
+// C pickup.c:pickup().
+// The count-driven pickup pass over the hero's square, or over a
+// swallower's stomach inventory when the hero is engulfed: the
+// physically-incapable complaint, the run-stopping nomul(0), the
+// traditional or menu selection, and the hider's cover re-check.
+// hack.c:dopickup() (hack.ts) runs the pickup_checks() location checks
+// first; pickup.c:loot_mon() enters here directly, so a swallowed #loot
+// never reports the engulfer's tongue.
 export async function pickupAtHero(
     count = Math.max(0, game._commandCount || 0),
-    { runLocationChecks = true }: { runLocationChecks?: boolean } = {},
 ): Promise<void> {
     setMulti(0);
     const source = pickupSourceAtHero();
-    // hack.c:pickup_checks() tests OBJ_AT, which counts the punishment
-    // chain; the empty-floor complaints only fire when the square has no
-    // object at all.  A chain-only square falls through to the pickup menu
-    // path, where all_but_uchain() filters it into an empty selection.
-    // Only dopickup() runs those checks; pickup.c:loot_mon() calls pickup()
-    // directly, so a swallowed #loot never reports the engulfer's tongue.
-    const problem = runLocationChecks
-        ? pickupLocationProblem({ state: game, objects: source.objects, monster: source.monster })
-        : null;
-    if (problem) {
-        for (const message of problem.messages) await plineWithContinuation(message);
-        game.context.move = problem.spendsTurn ? 1 : 0;
-        return;
-    }
     const objects = pickupObjects(source);
     game._pickupEncumbrance = 0;
     if (!source.monster && heroCannotTake(game)) {
@@ -525,7 +514,7 @@ async function pickedInventoryDescription(carried: GameObject, count: number): P
 
 // Part of C pickup.c:pickup(): the engulfer's stomach or the hero's
 // square as the pickup source.
-function pickupSourceAtHero(): PickupSource {
+export function pickupSourceAtHero(): PickupSource {
     const x = game.u?.ux, y = game.u?.uy;
     const monster = game.u?.uswallow ? game.u?.ustuck : null;
     if (monster) {
@@ -1246,10 +1235,9 @@ async function loot_mon(monster: Monster): Promise<number> {
         }
     }
     if (game.u.uswallow) {
-        // C loot_mon() passes the saddle inquiry flag, not the command count.
-        // pickup.c:loot_mon() calls pickup() directly; only dopickup()
-        // runs pickup_checks(), so an empty stomach costs no turn here.
-        await pickupAtHero(asked ? 1 : 0, { runLocationChecks: false });
+        // C loot_mon() passes the saddle inquiry flag, not the command count;
+        // it calls pickup() directly, so an empty stomach costs no turn here.
+        await pickupAtHero(asked ? 1 : 0);
         timepassed = Number(!!game.context.move);
     }
     return timepassed;
