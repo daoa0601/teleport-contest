@@ -236,8 +236,8 @@ import { nhTimeout } from './timeout.js';
 
 
 
-// Port only: raw map-display cell writer for the legacy screen (C draws the
-// intro through window putstr calls).
+// Part of C allmain.c:newgame(): the legacy introduction lines C delivers
+// through window putstr() calls, written straight onto the map display.
 function putLine(col: number, row: number, text: string, attr = 0): void {
     const game = requireInitializedGame();
     const display = requireGameDisplay(game);
@@ -357,12 +357,6 @@ export async function welcome(newGame: boolean): Promise<void> {
     await printLevelAnnotation(g);
 }
 
-// Port only: message adapter — print a line, then drain the pending topline
-// before the redraw that follows.
-async function showInlineMore(message: string): Promise<void> {
-    await plineWithContinuation(message);
-    await flushPendingTopline();
-}
 
 // Part of C allmain.c:moveloop_preamble(): the real-world calendar
 // side-effects — moon phase and Friday-the-13th luck.
@@ -547,7 +541,8 @@ async function maybeDoTutorial(): Promise<void> {
     oldHero.uy = oldPosition.y;
     oldHero.ux0 = oldPosition.x0;
     oldHero.uy0 = oldPosition.y0;
-    await showInlineMore('Entering the tutorial.');
+    await plineWithContinuation('Entering the tutorial.');
+    await flushPendingTopline();
     await checkSpecialRoom({ newLevel: true });
 
     game.level = tutorialLevel;
