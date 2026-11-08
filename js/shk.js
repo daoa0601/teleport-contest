@@ -2516,11 +2516,18 @@ function completeShopSettlement(keeper, taken) {
     }
     return taken;
 }
+// C shk.c:find_oid(): the object-list search by o_id.  C walks invent,
+// fobj, the buried list, migrating objects, then every monster inventory;
+// callers pass that search domain as the port's timer graph
+// (objectsInTimerGraph()), walked once.
+function findObjectId(oId, objects) {
+    return objects.find(object => object.o_id === oId) ?? null;
+}
 // C shk.c:bp_to_obj(): find a bill entry's object by o_id — used-up entries
-// sit on the bill list, the rest on any list find_oid() (the port's timer
-// graph) walks, so the merged scan below covers both arms.
+// sit on the bill list, the rest on any list find_oid() walks, so the merged
+// scan below covers both arms.
 function bpToObj(entry, objects) {
-    return objects.find(object => object.o_id === entry.bo_id) ?? null;
+    return findObjectId(entry.bo_id, objects);
 }
 // Part of C shk.c:set_repo_loc(), finish_paybill(): the u.ux/ux0
 // repository position.
@@ -3400,7 +3407,7 @@ function containedPurchases(resident, container, state) {
     const objects = objectsInTimerGraph(state);
     const purchases = [];
     for (const entry of resident.eshk.bill) {
-        const object = objects.find(candidate => candidate.o_id === entry.bo_id);
+        const object = findObjectId(entry.bo_id, objects);
         if (object && object !== container && outermostContainer(object) === container)
             purchases.push(object);
     }

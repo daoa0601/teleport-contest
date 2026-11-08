@@ -610,14 +610,34 @@ function discoverKnownType(otyp, creditHero, state) {
         && !state.program_state.gameover)
         repriceDiscoveredGems(otyp, state);
 }
+// C o_init.c:discover_object().
+// One entry for every flag combination: the gate that decides whether
+// anything runs, the svd.disco[] slot walk (rememberType()), the encounter
+// mark, then the known mark with its Wisdom credit and gem repricing.  The
+// fragments are individually idempotent, so the two macro forms below
+// delegate here.
+export function discoverObject(otyp, markKnown, markEncountered, creditHero, state = game) {
+    if (otyp < FIRST_OBJECT)
+        return; /* don't discover generic objects */
+    const known = !!OBJECT_INITIAL_KNOWN[otyp] || !!state._knownObjectTypes?.has(otyp);
+    const encountered = !!state._encounteredObjectTypes?.has(otyp);
+    const samuraiJapanese = state.urole?.key === 'samurai'
+        && !!japaneseItemName(otyp);
+    const gateOpens = (!known && markKnown)
+        || (!encountered && markEncountered)
+        || samuraiJapanese;
+    if (!gateOpens)
+        return;
+    if (markEncountered)
+        recordObjectEncounter(otyp, state);
+    if (markKnown)
+        discoverKnownType(otyp, creditHero, state);
+}
 // C hack.h:makeknown(): the discover_object(TRUE, TRUE, TRUE) macro.
 // C makeknown() — the macro every caller's call graph spells
 // discover_object(): learning a type also records the encounter and
 // credits Wisdom once. Restoring saved knowledge does not grant that credit.
 export function learnObjectType(otyp, state = game) {
-    if (otyp < FIRST_OBJECT)
-        return;
-    recordObjectEncounter(otyp, state);
-    discoverKnownType(otyp, true, state);
+    discoverObject(otyp, true, true, true, state);
 }
 //# sourceMappingURL=o_init.js.map

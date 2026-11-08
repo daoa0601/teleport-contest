@@ -26,7 +26,7 @@ import {
     OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL,
 } from './object_data.js';
 import {
-    canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponDescription, weaponSkillType,
+    canAdvanceHeroSkill, ensureHeroSkills, skillName, skillLevelName, weaponDescription, weaponSkillType,
 } from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
@@ -561,11 +561,11 @@ function skillLevel(skill: number): number {
     return entry.skill;
 }
 
-// Part of C weapon.c:skill_level_name(): the enlightenment wording adapter, using "no" for restricted skills.
-// "no" for restricted, otherwise weapon.c:skill_level_name() lowercased.
+// Part of C insight.c:status_enlightenment(): its skill_level_name() wording —
+// "no" for restricted, otherwise the level name lowercased.
 function skillLevelDescription(level: number): string {
     if (level === P_ISRESTRICTED) return 'no';
-    return (SKILL_LEVEL_NAMES[level] ?? 'Unknown').toLowerCase();
+    return skillLevelName(level).toLowerCase();
 }
 
 // Part of C insight.c:status_enlightenment(): the weapon insight and

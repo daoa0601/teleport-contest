@@ -3,7 +3,7 @@
 // Japanese_items vocabulary, and the named-fruit lookups live here.
 import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
 import { guardianGenus, hatchableEggSpecies } from './mon.js';
-import { objectClassForType, objectBaseWeight, objectBaseCost, objectSkill, objectMerge, objectUsesKnown, objectUnique, objectMagic, objectCharged, CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, requireObjectData, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJ_NAME, oc_nowish, oc_level, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
+import { objectClassForType, objectBaseWeight, objectBaseCost, objectSkill, objectMerge, objectUsesKnown, objectUnique, objectMagic, objectCharged, CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, requireObjectData, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJ_NAME, oc_nowish, oc_level, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, SHIELD_OF_REFLECTION, } from './object_data.js';
 import { game, requireGameLevel } from './gstate.js';
 import { objectProb, objectMaterial, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns } from './artifact.js';
@@ -63,6 +63,71 @@ const japaneseItems = new Map([
 // C objnam.c:Japanese_item_name().
 export function japaneseItemName(type) {
     return japaneseItems.get(type);
+}
+// C objnam.c:suit_simple_name().
+// Dragon mail and scales carry their category; other suits shorten to
+// "mail"/"jacket" and fall back to "suit".
+export function suitSimpleName(object) {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    if (/ dragon scale mail$/i.test(actualName))
+        return 'dragon mail';
+    if (/ dragon scales$/i.test(actualName))
+        return 'dragon scales';
+    if (/ mail$/i.test(actualName))
+        return 'mail';
+    if (/ jacket$/i.test(actualName))
+        return 'jacket';
+    return 'suit';
+}
+// C objnam.c:cloak_simple_name().
+// Robe, mummy wrapping, and the smock/apron split for a known alchemy smock.
+export function cloakSimpleName(object, state) {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    if (actualName === 'robe')
+        return 'robe';
+    if (actualName === 'mummy wrapping')
+        return 'wrapping';
+    if (actualName === 'alchemy smock')
+        return objectTypeKnown(object, state) && object.dknown !== false
+            ? 'smock' : 'apron';
+    return 'cloak';
+}
+// C objnam.c:helm_simple_name().
+// Soft headgear is a "hat"; everything that protects like the hard-helmet
+// messages is a "helm".
+const SOFT_HEADGEAR = {
+    'elven leather helm': true, fedora: true, cornuthaum: true, 'dunce cap': true,
+};
+export function helmSimpleName(object) {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    return SOFT_HEADGEAR[actualName] ? 'hat' : 'helm';
+}
+// C objnam.c:gloves_simple_name().
+// Recognized gauntlets keep their name; the search runs over the known
+// type's actual name, else over the description.
+export function glovesSimpleName(object, state) {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    const description = OBJ_DESCR(object.otyp, state) ?? '';
+    const perceivedName = objectTypeKnown(object, state) ? actualName : description;
+    return object.dknown !== false && /gauntlets/i.test(perceivedName)
+        ? 'gauntlets' : 'gloves';
+}
+// C objnam.c:boots_simple_name().
+// "Shoes" when the description or a known type name says so.
+export function bootsSimpleName(object, state) {
+    const actualName = OBJ_NAME(object.otyp) || object.name || 'armor';
+    const description = OBJ_DESCR(object.otyp, state) ?? '';
+    return object.dknown !== false
+        && (/shoes/i.test(description)
+            || objectTypeKnown(object, state) && /shoes/i.test(actualName))
+        ? 'shoes' : 'boots';
+}
+// C objnam.c:shield_simple_name().
+// xname() describes unseen reflection as "smooth".
+export function shieldSimpleName(object) {
+    if (object.otyp === SHIELD_OF_REFLECTION)
+        return object.dknown !== false ? 'silver shield' : 'smooth shield';
+    return 'shield';
 }
 // Part of C objnam.c:xname_flags(): its observation prologue (dknown,
 // beatitude, artifact identity).
@@ -160,6 +225,12 @@ export function preferredFruitName(state) {
     if (state.fruitName === undefined)
         throw new Error('Preferred fruit has not been initialized');
     return state.fruitName;
+}
+// C objnam.c:xname(): xname_flags(obj, CXN_NORMAL), the options-free form
+// every C caller of xname() uses.  objectName() below is xname_flags()
+// itself, with CXN_SINGULAR as its `minimal` option.
+export function xname(object, state = game) {
+    return objectName(object, state);
 }
 // C objnam.c:xname_flags(), entered through its xname() wrapper:
 // The visible name without inventory annotations.  Unlike doname(),
@@ -3113,7 +3184,7 @@ export function simpleArmorName(armor, slot, state) {
 // Callers observe the object separately before formatting it.
 // Also C objnam.c:strprepend(): inlined here as the prefix and noun join.
 export async function objectDescription(object, { state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false, vagueQuantity = false, } = {}) {
-    let noun = objectName(object, state);
+    let noun = xname(object, state);
     const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
     if (poisoned)
         noun = noun.slice(9);

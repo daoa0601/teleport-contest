@@ -18,7 +18,7 @@ import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './worn.js';
 import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
-import { splitMonster } from './potion.js';
+import { splitMon } from './potion.js';
 import { createElementalMonsterExplosion } from './explode.js';
 import { cansee } from './vision.js';
 import { applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder, prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, turnGolemToStone, } from './mon.js';
@@ -34,7 +34,7 @@ import { weaponHitValue } from './weapon.js';
 import { getmattk } from './mhitu.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { trapAt, mintrap, damageObjectWithAcid, erodeObject } from './trap.js';
-import { applyMonsterCombatBlindness, mhitm_adtyping, passiveAttack, passiveDamage, rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback, effectResult, erodeArmor, } from './uhitm.js';
+import { applyMonsterCombatBlindness, mhitm_adtyping, passiveAttack, passiveDamage, shadeMiss, mhitm_ad_phys, mhitm_knockback, effectResult, erodeArmor, } from './uhitm.js';
 import { mon_reflects } from './muse.js';
 import { finishMonsterEating } from './dogmove.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
@@ -464,7 +464,7 @@ export async function showMonsterGrabFailure(aggressor, defender, attack, target
 export async function prepareMonsterCombatContact(aggressor, defender, attack, weapon, { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d }) {
     await revealAttackingMonsters(aggressor, defender, visible);
     const compatibility = aggressor.mcan ? 0 : could_seduce(aggressor, defender, attack, state);
-    if (!compatibility && await rejectMonsterShadeContact(aggressor, defender, weapon, {
+    if (!compatibility && await shadeMiss(aggressor, defender, weapon, {
         state, visible, publish, rollOne, rollDice,
     }))
         return 'shade-miss';
@@ -1124,7 +1124,7 @@ export async function applyMonsterContactPassive(attacker, defender, { hit, weap
                             const healing = Math.trunc(damage / 2);
                             healMonster(defender, healing, healing);
                             if (defender.mhpmax > (defender.m_lev + 1) * 8) {
-                                await splitMonster(defender, state, { monsterMoving: true, random, heatSource: attacker, publish });
+                                await splitMon({ monster: defender, heatSource: attacker }, state, { monsterMoving: true, random, publish });
                             }
                         }
                     }

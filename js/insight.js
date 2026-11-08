@@ -21,7 +21,7 @@ import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWind
 import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
 import { fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL, } from './object_data.js';
-import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponDescription, weaponSkillType, } from './weapon.js';
+import { canAdvanceHeroSkill, ensureHeroSkills, skillName, skillLevelName, weaponDescription, weaponSkillType, } from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
@@ -574,12 +574,12 @@ function skillLevel(skill) {
         throw new Error(`Weapon insight requires initialized skill ${skill}`);
     return entry.skill;
 }
-// Part of C weapon.c:skill_level_name(): the enlightenment wording adapter, using "no" for restricted skills.
-// "no" for restricted, otherwise weapon.c:skill_level_name() lowercased.
+// Part of C insight.c:status_enlightenment(): its skill_level_name() wording —
+// "no" for restricted, otherwise the level name lowercased.
 function skillLevelDescription(level) {
     if (level === P_ISRESTRICTED)
         return 'no';
-    return (SKILL_LEVEL_NAMES[level] ?? 'Unknown').toLowerCase();
+    return skillLevelName(level).toLowerCase();
 }
 // Part of C insight.c:status_enlightenment(): the weapon insight and
 // armor rows (weapon_insight() plus the no-armor line).

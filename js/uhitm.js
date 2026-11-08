@@ -68,7 +68,7 @@ import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './dogmove.js';
 import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
 import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
-import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroSlimingTimeout, splitMonster, startHeroSliming, } from './potion.js';
+import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroSlimingTimeout, splitMon, startHeroSliming, } from './potion.js';
 import { ghodHitsu } from './priest.js';
 import { propertyIsActive } from './properties.js';
 import { paranoidQuery } from './cmd.js';
@@ -1411,7 +1411,7 @@ async function resolvePhysicalHit(monster, originalObject, context) {
         const shade = monsterIsShade(monster);
         strike.damage = strike.getDamageBonus && !shade ? 1 : 0;
         if (shade && !strike.hitTextShown && mode !== 'thrown' && mode !== 'kicked')
-            strike.hitTextShown = await showHeroShadeMiss(monster, strike.object, { state, publish });
+            strike.hitTextShown = await shadeMiss('youmonst', monster, strike.object, { state, publish });
     }
     let alreadyKilled = false;
     let maybeKnockback = false;
@@ -4239,6 +4239,20 @@ export async function rejectMonsterShadeContact(aggressor, defender, weapon, { s
     defender.msleeping = 0;
     return true;
 }
+// C uhitm.c:shade_miss().
+// The zero-damage pass-through against a shade; dmgval() decides whether
+// the weapon can touch it.  C reads magr == &gy.youmonst for the subject
+// ("Your attack" vs. the monster's possessive) and gates one verbose flag;
+// the hero half (showHeroShadeMiss(), verbose) and the monster or thrown
+// half (rejectMonsterShadeContact(), caller visibility) stay separate, and
+// the 'youmonst' member below names the attacker C compared.
+export async function shadeMiss(attacker, defender, object, options) {
+    if (attacker === 'youmonst')
+        return showHeroShadeMiss(defender, object, options);
+    if (options.visible === undefined)
+        throw new TypeError('monster shade contact needs its visibility');
+    return rejectMonsterShadeContact(attacker, defender, object, { ...options, visible: options.visible });
+}
 const IRON = 11, METAL = 12, SILVER = 14;
 const PUDDINGS = new Set(['black pudding', 'brown pudding'].map(name => MONSTER_NAME.indexOf(name)));
 const ROPE_GOLEM = MONSTER_NAME.indexOf('rope golem');
@@ -4373,7 +4387,7 @@ export async function mhitm_ad_phys(call) {
         const weapon = context.attack[0] === AT_WEAP || context.attack[0] === AT_CLAW
             ? monsterWieldedWeapon(aggressor) ?? null : null;
         let nativeResult = M_ATTK_MISS;
-        if (await rejectMonsterShadeContact(aggressor, defender, weapon, {
+        if (await shadeMiss(aggressor, defender, weapon, {
             state, visible: canSeeMonster(aggressor) && canSeeMonster(defender),
             publish, rollOne, rollDice,
         })) {
@@ -5860,7 +5874,7 @@ async function applyColdPassive(context) {
         return { appliedDamage: damage, heroDied };
     healMonster(monster, Math.trunc((damage + random(2)) / 2), Math.trunc((damage + 1) / 2));
     if ((monster.mhpmax ?? 0) > ((monster.m_lev ?? 0) + 1) * 8)
-        await splitMonster(monster, state, { heatSource: 'hero', publish });
+        await splitMon({ monster, heatSource: 'hero' }, state, { publish });
     return { appliedDamage: damage, heroDied: false };
 }
 // Part of C uhitm.c:passive(): apply the passive stun timeout.

@@ -333,17 +333,28 @@ function findCovetousTarget(monster, mask, state) {
     }
     return null;
 }
-// Part of C wizard.c:which_arti(): object-type selection is inlined into this predicate.
-function objectMatchesTarget(object, mask, state) {
+// C wizard.c:which_arti().
+// The wanted artifact's object type for a M3_WANTS* mask; 0 signifies the
+// quest artifact.
+function whichArti(mask) {
     if (mask === WANTS_AMULET)
-        return object.otyp === AMULET_OF_YENDOR;
+        return AMULET_OF_YENDOR;
     if (mask === WANTS_BELL)
-        return object.otyp === BELL_OF_OPENING;
-    if (mask === WANTS_BOOK)
-        return object.otyp === SPE_BOOK_OF_THE_DEAD;
+        return BELL_OF_OPENING;
     if (mask === WANTS_CANDELABRUM)
-        return object.otyp === CANDELABRUM_OF_INVOCATION;
-    return !!object.questArtifact || !!artifactById(object.oartifact, state)?.questArtifact;
+        return CANDELABRUM_OF_INVOCATION;
+    if (mask === WANTS_BOOK)
+        return SPE_BOOK_OF_THE_DEAD;
+    return 0;
+}
+// Part of C wizard.c:mon_has_arti()/on_ground()/other_mon_has_arti(): the
+// object test against the mask's artifact, which_arti() inlined as a
+// predicate over a given object.
+function objectMatchesTarget(object, mask, state) {
+    const target = whichArti(mask);
+    return target
+        ? object.otyp === target
+        : !!object.questArtifact || !!artifactById(object.oartifact, state)?.questArtifact;
 }
 // C wizard.c:you_have()
 function heroHasTarget(mask, state) {

@@ -24,7 +24,7 @@ import { mhitm_adtyping, isHeroDeferredContactDamageType, mhitm_mgc_atk_negated,
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject } from './artifact.js';
 import { createElementalMonsterExplosion } from './explode.js';
-import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm, setPropertyTimeout } from './potion.js';
+import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitMon, setPropertyTimeout } from './potion.js';
 import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
@@ -1166,7 +1166,7 @@ export async function passiveum(monster, oldForm, attackType, { state = game, ra
                     state.u.mhmax = Math.max(state.u.mhmax, state.u.mh);
                     const formLevel = MONSTER_LEVEL[state.u.umonnum];
                     if (formLevel !== undefined && state.u.mhmax > (formLevel + 1) * 8) {
-                        const clone = await splitHeroMonsterForm(state);
+                        const clone = await splitMon({ hero: state });
                         if (clone)
                             await publish(`You multiply from ${possessiveName(monsterName(monster, { state }))} heat!`);
                     }
