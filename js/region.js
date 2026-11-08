@@ -2,7 +2,7 @@
 // C ref: region.c create_region(), make_gas_cloud(), and
 // create_gas_cloud_selection().
 import { isPoolAt } from './dbridge.js';
-import { M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd, EYE, LUNG } from './const.js';
+import { M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, SIZEOF_NHRECT, SIZEOF_NHREGION, SIZEOF_UNSIGNED, Upolyd, EYE, LUNG } from './const.js';
 import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { formatFeltMessage, formatSeenMessage, plineWithContinuation, impossible } from './pline.js';
@@ -564,5 +564,27 @@ export async function runLevelRegions(state, { publish = plineWithContinuation, 
     }
     await announceDissipation(state, dissipation, publish);
     return events;
+}
+// C region.c:region_stats(): the #stats row over the gr.regions array.  C
+// sizes max_regions NhRegion slots (add_region() grows the array in tens,
+// region.c:289-298), plus each region's rectangle list (a gas cloud holds one
+// NhRect per cell, region.c:1298-1302), its enter/leave message texts, and
+// its monster-id capacity (add_mon_to_reg() grows in fives, region.c:174-183
+// and region.h MONST_INC).  The port's clouds carry the cells and ids but no
+// message texts.
+export function regionStats(state = game) {
+    const regions = state.level?.regions ?? [];
+    const count = regions.length;
+    let size = Math.ceil(count / 10) * 10 * SIZEOF_NHREGION;
+    for (const region of regions) {
+        size += region.cells.length * SIZEOF_NHRECT;
+        size += (region.monsterIds.length ? Math.ceil(region.monsterIds.length / 5) * 5 : 0)
+            * SIZEOF_UNSIGNED;
+    }
+    return {
+        header: `regions, size ${SIZEOF_NHREGION}+${SIZEOF_NHRECT}*rect+N`,
+        count,
+        size,
+    };
 }
 //# sourceMappingURL=region.js.map

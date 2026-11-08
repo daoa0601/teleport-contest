@@ -1,13 +1,13 @@
 // Wizard-mode commands.
 // C refs: wizcmds.c wiz_wish()/wiz_polyself()/wiz_genesis()/wiz_detect()/
 // wiz_kill()/wiz_telekinesis()/wiz_where()/wiz_level_tele()/wiz_level_change()/
-// wiz_map()/wiz_identify()/wiz_show_nhuuid().
+// wiz_map()/wiz_identify()/wiz_show_nhuuid()/wiz_show_stats().
 
-import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_sokoban, IN_SIGHT, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_ANY, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
+import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_sokoban, IN_SIGHT, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_ANY, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, SIZEOF_CEMETERY, SIZEOF_DAMAGE, SIZEOF_EBONES, SIZEOF_EDOG, SIZEOF_EGD, SIZEOF_EMIN, SIZEOF_EPRI, SIZEOF_ESHK, SIZEOF_KINFO, SIZEOF_MEXTRA, SIZEOF_MONST, SIZEOF_OBJ, SIZEOF_OEXTRA, SIZEOF_TRAP, SIZEOF_WSEG, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
-import type { Monster } from './monster_types.js';
+import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { DungeonBranch, DungeonLocation, SpecialLevelDescriptor } from './dungeon_types.js';
@@ -50,8 +50,13 @@ import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip, checkSpecialRoom } from './hack.js';
-import { Is_botlevel, depth, dungeonDepth, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot, In_quest, In_mines, In_V_tower, Invocation_lev } from './dungeon.js';
+import { Is_botlevel, depth, dungeonDepth, overviewStats, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot, In_quest, In_mines, In_V_tower, Invocation_lev } from './dungeon.js';
 import { unlinkObject, deallocateObject } from './mkobj.js';
+import { lightStats } from './light.js';
+import { engrStats } from './engrave.js';
+import { timerStats } from './timeout.js';
+import { regionStats } from './region.js';
+import type { GameMap } from './game.js';
 import { objectTypeKnown } from './o_init.js';
 import { reassignInventoryLetters } from './invent.js';
 import { objectNeedsFullIdentification, observeObjectForNaming } from './objnam.js';
@@ -1127,4 +1132,273 @@ function wizcustomCallback(
     const text = `[${String(glyph.glyph).padStart(4, '0')}] ${glyph.id.padEnd(44)} `
         + `'\\${String(byte).padStart(3, '0')}' ${String(color).padStart(2, '0')} ${customColor} ${unicode}`;
     tty_add_menu(window, { identifier: glyph.glyph + 1, text });
+}
+
+// C wizcmds.c:1112-1114: the #stats row template and the fixed header and
+// separator lines.
+const STATS_TEMPLATE_WIDTHS = { label: 27, count: 4, size: 6 } as const;
+const STATS_HDR = '                             count  bytes';
+const STATS_SEP = '---------------------------  ----- -------';
+
+// C wizcmds.c:Sprintf(buf, template, ...) — "%-27s  %4ld  %6ld".
+function statsRow(label: string, count: number, size: number): string {
+    return `${label.padEnd(STATS_TEMPLATE_WIDTHS.label)}  `
+        + `${String(count).padStart(STATS_TEMPLATE_WIDTHS.count)}  `
+        + `${String(size).padStart(STATS_TEMPLATE_WIDTHS.size)}`;
+}
+
+// C wizcmds.c:size_obj()
+function sizeObj(object: GameObject): number {
+    let size = SIZEOF_OBJ;
+    const name = object.oname ?? object.oextra?.oname ?? null;
+    const embedded = object.oextra?.omonst ?? null;
+    // The port keeps no omailcmd text (OMAILCMD belongs to mail delivery).
+    if (name || embedded) {
+        size += SIZEOF_OEXTRA;
+        if (name) size += name.length + 1;
+        if (embedded) size += sizeMonst(embedded, false);
+    }
+    return size;
+}
+
+// C wizcmds.c:size_monst().  `monster` also covers OMONST(otmp) records,
+// which C sizes with the same helper.
+function sizeMonst(monster: Monster | SavedMonsterTraits, inclWsegs: boolean): number {
+    let size = SIZEOF_MONST;
+    // C worm.c:size_wseg(): one struct wseg per body segment; the port's
+    // wormSegments array is that body.
+    if (inclWsegs && 'wormSegments' in monster)
+        size += (monster.wormSegments?.length ?? 0) * SIZEOF_WSEG;
+    const name = MGIVENNAME(monster);
+    const hasGuard = !!monster.isgd;
+    const hasPriest = !!monster.ispriest;
+    const hasShopkeeper = !!monster.isshk;
+    const hasMinion = !!monster.isminion;
+    const hasPetData = !!monster.edog || !!monster.mextra?.edog;
+    const hasBones = !!monster.mextra?.ebones;
+    if (name || hasGuard || hasPriest || hasShopkeeper || hasMinion
+        || hasPetData || hasBones) {
+        size += SIZEOF_MEXTRA;
+        if (name) size += name.length + 1;
+        if (hasGuard) size += SIZEOF_EGD;
+        if (hasPriest) size += SIZEOF_EPRI;
+        if (hasShopkeeper) size += SIZEOF_ESHK;
+        if (hasMinion) size += SIZEOF_EMIN;
+        if (hasPetData) size += SIZEOF_EDOG;
+        if (hasBones) size += SIZEOF_EBONES;
+    }
+    return size;
+}
+
+// C wizcmds.c:count_obj(): count and size one chain, optionally recursing
+// into container contents.
+function countObj(
+    chain: readonly GameObject[] | null | undefined, top: boolean, recurse: boolean,
+): { count: number; size: number } {
+    let count = 0;
+    let size = 0;
+    for (const object of chain || []) {
+        if (top) {
+            count++;
+            size += sizeObj(object);
+        }
+        if (recurse && object.contents?.length) {
+            const nested = countObj(object.contents, true, true);
+            count += nested.count;
+            size += nested.size;
+        }
+    }
+    return { count, size };
+}
+
+// C wizcmds.c:obj_chain()
+function objChain(
+    lines: string[], label: string, chain: readonly GameObject[] | null | undefined,
+    force: boolean, totals: { count: number; size: number },
+): void {
+    const { count, size } = countObj(chain, true, false);
+    if (count || size || force) {
+        totals.count += count;
+        totals.size += size;
+        lines.push(statsRow(label, count, size));
+    }
+}
+
+// C wizcmds.c:mon_invent_chain()
+function monInventChain(
+    lines: string[], label: string, monsters: readonly Monster[],
+    totals: { count: number; size: number },
+): void {
+    let count = 0;
+    let size = 0;
+    for (const monster of monsters) {
+        const result = countObj(monster.minvent || monster.inventory, true, false);
+        count += result.count;
+        size += result.size;
+    }
+    if (count || size) {
+        totals.count += count;
+        totals.size += size;
+        lines.push(statsRow(label, count, size));
+    }
+}
+
+// C wizcmds.c:contained_stats(): every object inside a container anywhere
+// in the hero inventory, on the level, or carried by a monster.
+function containedStats(
+    lines: string[], state: PlayingGameState, totals: { count: number; size: number },
+): void {
+    const level = requireGameLevel(state);
+    // C walks invent, fobj, buried, migrating objects and both monster
+    // inventories (wizcmds.c:1208-1217) — not the bill chain.
+    const chains: Array<readonly GameObject[] | null | undefined> = [
+        state.inventory, floorObjectChain(level), level.buriedObjects,
+        state.migratingObjects,
+    ];
+    for (const monster of level.monsters.filter(candidate => !candidate.dead))
+        chains.push(monster.minvent || monster.inventory);
+    for (const monster of state._migratingMonsters || [])
+        chains.push(monster.minvent || monster.inventory);
+    let count = 0;
+    let size = 0;
+    for (const chain of chains) {
+        const result = countObj(chain, false, true);
+        count += result.count;
+        size += result.size;
+    }
+    if (count || size) {
+        totals.count += count;
+        totals.size += size;
+        lines.push(statsRow('contained', count, size));
+    }
+}
+
+// Port only: flatten the floor grid into C's fobj chain (order is
+// irrelevant to the counts).
+function floorObjectChain(level: GameMap): GameObject[] {
+    const objects: GameObject[] = [];
+    for (const column of level.objects)
+        for (const pile of column ?? []) objects.push(...(pile ?? []));
+    return objects;
+}
+
+// C wizcmds.c:mon_chain()
+function monChain(
+    lines: string[], label: string, monsters: readonly Monster[],
+    force: boolean, totals: { count: number; size: number },
+): void {
+    // C includes worm segments only for the fmon chain: wormno means
+    // something different for migrating_mons and mydogs.
+    const inclWsegs = label === 'fmon';
+    let count = 0;
+    let size = 0;
+    for (const monster of monsters) {
+        count++;
+        size += sizeMonst(monster, inclWsegs);
+    }
+    if (count || size || force) {
+        totals.count += count;
+        totals.size += size;
+        lines.push(statsRow(label, count, size));
+    }
+}
+
+// C wizcmds.c:misc_stats(): traps and engravings unconditionally, the rest
+// only when nonzero.
+function miscStats(
+    lines: string[], state: PlayingGameState, totals: { count: number; size: number },
+): void {
+    const level = requireGameLevel(state);
+    const row = (label: string, count: number, size: number): void => {
+        totals.count += count;
+        totals.size += size;
+        lines.push(statsRow(label, count, size));
+    };
+
+    const traps = level.traps.length;
+    row(`traps, size ${SIZEOF_TRAP}`, traps, traps * SIZEOF_TRAP);
+
+    const engravings = engrStats(state);
+    row(engravings.header, engravings.count, engravings.size);
+
+    const lights = lightStats(state);
+    if (lights.count || lights.size) row(lights.header, lights.count, lights.size);
+
+    const timers = timerStats(state);
+    if (timers.count || timers.size) row(timers.header, timers.count, timers.size);
+
+    const damage = level.damagelist?.length ?? 0;
+    if (damage) row(`shop damage, size ${SIZEOF_DAMAGE}`, damage, damage * SIZEOF_DAMAGE);
+
+    const regions = regionStats(state);
+    if (regions.count || regions.size) row(regions.header, regions.count, regions.size);
+
+    // C svk.killer.next: one struct kinfo per installed delayed killer.  The
+    // port records the stoned and slimed killers on the hero
+    // (potion.c:make_stoned()/make_slimed()); no sick killer is modeled.
+    const killers = Number(state.u.stoneKiller !== undefined)
+        + Number(state.u.slimeKiller !== undefined);
+    if (killers)
+        row(`delayed killer${killers === 1 ? '' : 's'}, size ${SIZEOF_KINFO}`,
+            killers, killers * SIZEOF_KINFO);
+
+    const bonesHistory = level.bonesInfo?.length ?? 0;
+    if (bonesHistory)
+        row(`bones history, size ${SIZEOF_CEMETERY}`, bonesHistory,
+            bonesHistory * SIZEOF_CEMETERY);
+
+    const typeNames = Object.values(state._objectCallNames ?? {})
+        .filter((name): name is string => !!name);
+    if (typeNames.length)
+        row('object type names, text', typeNames.length,
+            typeNames.reduce((sum, name) => sum + name.length + 1, 0));
+}
+
+// C wizcmds.c:wiz_show_stats(): the #stats window over every live object,
+// monster and level record.
+export async function wizShowStats(): Promise<void> {
+    requirePlayingGame(game);
+    const state = game;
+    const level = requireGameLevel(state);
+    const liveMonsters = level.monsters.filter(monster => !monster.dead);
+    const migratingMonsters = state._migratingMonsters ?? [];
+    const lines: string[] = ['Current memory statistics:'];
+
+    const objTotals = { count: 0, size: 0 };
+    lines.push(STATS_HDR, `  Objects, base size ${SIZEOF_OBJ}`);
+    objChain(lines, 'invent', state.inventory, true, objTotals);
+    objChain(lines, 'fobj', floorObjectChain(level), true, objTotals);
+    objChain(lines, 'buried', level.buriedObjects, false, objTotals);
+    objChain(lines, 'migrating obj', state.migratingObjects, false, objTotals);
+    objChain(lines, 'billobjs', state.billObjects, false, objTotals);
+    monInventChain(lines, 'minvent', liveMonsters, objTotals);
+    monInventChain(lines, 'migrating minvent', migratingMonsters, objTotals);
+    containedStats(lines, state, objTotals);
+    lines.push(STATS_SEP, statsRow('  Obj total', objTotals.count, objTotals.size));
+
+    const monTotals = { count: 0, size: 0 };
+    lines.push('', `  Monsters, base size ${SIZEOF_MONST}`);
+    monChain(lines, 'fmon', liveMonsters, true, monTotals);
+    monChain(lines, 'migrating', migratingMonsters, false, monTotals);
+    // gm.mydogs is only populated during a level change or final disclosure,
+    // never while a command runs, so the port has no such list to show.
+    lines.push(STATS_SEP, statsRow('  Mon total', monTotals.count, monTotals.size));
+
+    const overview = overviewStats(state);
+    lines.push('', '  Overview');
+    for (const entry of overview.rows) lines.push(statsRow(entry.label, entry.count, entry.size));
+    lines.push(STATS_SEP, statsRow('  Over total', overview.count, overview.size));
+
+    const miscTotals = { count: 0, size: 0 };
+    lines.push('', '  Miscellaneous');
+    miscStats(lines, state, miscTotals);
+    lines.push(STATS_SEP, statsRow('  Misc total', miscTotals.count, miscTotals.size));
+
+    lines.push('', STATS_SEP, statsRow('  Grand total',
+        objTotals.count + monTotals.count + overview.count + miscTotals.count,
+        objTotals.size + monTotals.size + overview.size + miscTotals.size));
+
+    // C builds the listing with putstr in an NHW_TEXT window.
+    await showTextWindow(lines);
+    state.context.move = 0;
 }

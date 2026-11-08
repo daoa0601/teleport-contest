@@ -21,7 +21,7 @@ import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornPr
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { healHeroLegs } from './do.js';
 import { isPoolAt, isIceAt, isPoolOrLavaAt } from './dbridge.js';
-import { ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FULL_MOON, G_GENOD, GENOCIDED, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND, M_AP_MONSTER, MV_KNOWS_EGG, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE, PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_ALL, SICK_NONVOMITABLE, STONING, TIMEOUT, TURNED_SLIME, W_SADDLE, NECK, HAND, FOOT } from './const.js';
+import { ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FULL_MOON, G_GENOD, GENOCIDED, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND, M_AP_MONSTER, MV_KNOWS_EGG, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE, PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SIZEOF_TIMER_ELEMENT, STONING, TIMEOUT, TURNED_SLIME, W_SADDLE, NECK, HAND, FOOT } from './const.js';
 import { AMULET_OF_STRANGULATION, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, FEDORA, FIGURINE, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { confersLuck } from './invent.js';
 import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
@@ -2087,5 +2087,11 @@ async function announceBuriedRevival(event) {
         if (dx * dx + dy * dy < 25)
             await publishHeardMessage('scratching noises.', plineWithContinuation);
     }
+}
+// C timeout.c:timer_stats(): the #stats row over the timer_base queue — one
+// timer_element per timer, object timers and level timers alike.
+export function timerStats(state = game) {
+    const count = queuedTimers(state).length;
+    return { header: `timers, size ${SIZEOF_TIMER_ELEMENT}`, count, size: count * SIZEOF_TIMER_ELEMENT };
 }
 //# sourceMappingURL=timeout.js.map

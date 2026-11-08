@@ -19,7 +19,7 @@ import type { GameMap } from './game.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { artifactEmitsLight } from './artifact.js';
-import { COLNO, CORR, COULD_SEE, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, ROWNO, TEMP_LIT } from './const.js';
+import { COLNO, CORR, COULD_SEE, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, ROWNO, SIZEOF_LIGHT_SOURCE, TEMP_LIT } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible } from './display.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP,
@@ -38,6 +38,10 @@ import { placeObjectSynchronously, remove_object } from './mkobj.js';
 import { roomForRoomno } from './hack.js';
 import { snuffLitObject } from './apply.js';
 import { monsterDigests, monsterIsWhirly } from './mondata.js';
+import { showDisclosureOverlay } from './windows.js';
+
+// C light.c:41 LSF_SHOW — the only flag set on a live, displayed source.
+const LSF_SHOW = 0x1;
 // Only message delivery is observed; display callbacks may return input status.
 type Publish = (message: string) => unknown;
 type RandomBelow = (limit: number) => number;
@@ -339,6 +343,118 @@ export function discardFlashes(state: GameState = game): void {
 export function registerObjectLightSource(object: GameObject, state: GameState): void {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;
+}
+
+// Port only: one light_base entry (C light.c:gl.light_base), derived from
+// the live records.  `show` is the LSF_SHOW flag light.c:178-203 maintains
+// during vision passes; `idText` stands in for C's fmt_ptr() of the source
+// pointer, using the stable o_id/m_id (and 0x1 for youmonst, whose id
+// light.c:find_mid() pins to 1) in the same 0x-prefixed shape as #timeout.
+export interface LightSourceRecord {
+    x: number;
+    y: number;
+    range: number;
+    kind: 'obj' | 'mon' | 'you' | '<m>';
+    idText: string;
+    show: boolean;
+}
+
+// Port only: enumerate every live light source the way C walks light_base,
+// newest registration first (new_light_core() prepends).  Object lights carry
+// the global _lightSerial stamp from registerObjectLightSource(); monster
+// lights were registered at birth (makemon.c:900/1349), so a higher m_id is
+// newer; a camera flash is newer than everything by construction.  The hero's
+// shape light was registered by the polymorph that set formLightRange
+// (polyself.c:728) — that moment is not tracked, so the hero source is listed
+// after the objects.
+export function lightSourceRecords(state: GameState): LightSourceRecord[] {
+    const records: LightSourceRecord[] = [];
+    for (const flash of state._transientLights || [])
+        records.push({ x: flash.x, y: flash.y, range: flash.range, kind: 'obj',
+            idText: '0x0', show: true });
+    const objects = objectsInTimerGraph(state)
+        .filter(object => objectShedsLight(object))
+        .sort((left, right) => (right._litSeq ?? 0) - (left._litSeq ?? 0));
+    for (const object of objects) {
+        // do_light_sources() resolves each object through
+        // get_obj_location(obj, &x, &y, 0); an unresolvable source keeps its
+        // last recorded square and loses LSF_SHOW.
+        const location = getObjectLocation(object, state);
+        records.push({
+            x: location?.x ?? object.ox,
+            y: location?.y ?? object.oy,
+            range: objectLightRadius(object, state),
+            kind: 'obj',
+            idText: `0x${object.o_id.toString(16)}`,
+            show: !!location,
+        });
+    }
+    const monsters = [...(state.level?.monsters ?? []), ...(state._migratingMonsters ?? [])]
+        .filter(monster => !monster.dead && !monster.lightRemoved
+            && monsterEmitsLight(monster.mnum))
+        .sort((left, right) => right.m_id - left.m_id);
+    for (const monster of monsters) {
+        // mon_is_local() is just mx > 0 (light.c:373); a migrating light
+        // keeps its entry with LSF_SHOW cleared.
+        records.push({
+            x: monster.mx,
+            y: monster.my,
+            range: 1,
+            kind: monster.mx > 0 ? 'mon' : '<m>',
+            idText: `0x${monster.m_id.toString(16)}`,
+            show: monster.mx > 0,
+        });
+    }
+    if (state.u.formLightRange)
+        records.push({ x: state.u.ux, y: state.u.uy, range: state.u.formLightRange,
+            kind: 'you', idText: '0x1', show: true });
+    // do_light_sources() (light.c:198-203): at the hero's square only the
+    // strongest of the newer sources keeps LSF_SHOW.  Run the same pass over
+    // the newest-first order to fill the flags column.
+    let atHeroRange = 0;
+    for (const record of records) {
+        if (record.x === state.u.ux && record.y === state.u.uy) {
+            if (atHeroRange >= record.range) record.show = false;
+            else atHeroRange = record.range;
+        }
+    }
+    return records;
+}
+
+// C light.c:light_stats(): the #stats row over the light_base list — one
+// light_source per entry.
+export function lightStats(state: GameState = game): { header: string; count: number; size: number } {
+    const count = lightSourceRecords(state).length;
+    return { header: `light sources, size ${SIZEOF_LIGHT_SOURCE}`, count, size: count * SIZEOF_LIGHT_SOURCE };
+}
+
+// C light.c:wiz_light_sources(): the #lightsources wizard listing in a
+// putstr-built NHW_MENU window (a corner text window for the tty interface;
+// the disclosure overlay owns that geometry).
+export async function wizLightSources(): Promise<void> {
+    requirePlayingGame(game);
+    const state = game;
+    const hero = state.u;
+    const lines = [
+        `Mobile light sources: hero @ (${String(hero.ux).padStart(2)},${String(hero.uy).padStart(2)})`,
+        '',
+    ];
+    const records = lightSourceRecords(state);
+    if (records.length) {
+        lines.push('location range flags  type    id',
+            '-------- ----- ------ ----  -------');
+        for (const record of records)
+            lines.push(`  ${String(record.x).padStart(2)},${String(record.y).padStart(2)}   `
+                + `${String(record.range).padStart(2)}   `
+                + `0x${(record.show ? LSF_SHOW : 0).toString(16).padStart(4, '0')}  `
+                + `${record.kind}  ${record.idText}`);
+    } else {
+        lines.push('<none>');
+    }
+    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    state._pending_message = '';
+    state._retained_message = '';
+    state.context.move = 0;
 }
 
 // Part of C apply.c:dorub(): performs this type change before the released djinni can

@@ -24,7 +24,7 @@ import { AT_HUGS } from './monster_attack_types.js';
 import {
     P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS,
     ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN,
-    NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS,
+    NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS, SIZEOF_ENGRAVING,
 } from './const.js';
 import type { Monster } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -1451,4 +1451,17 @@ function engravingFinishVerb(
         default:
             return 'your weird engraving';
     }
+}
+
+// C engrave.c:engr_stats(): the #stats row over the head_engr list — one
+// struct engr per engraving plus its text allocation.  make_engr_at()
+// (engrave.c:429,454) allocates smem * 3 bytes for the three text states,
+// with smem = strlen(text) + 1; the port keeps that original length in the
+// pristine text.
+export function engrStats(state: GameState = game): { header: string; count: number; size: number } {
+    const engravings = state.level?.engravings ?? [];
+    let size = 0;
+    for (const engraving of engravings)
+        size += SIZEOF_ENGRAVING + 3 * (engraving.pristine.length + 1);
+    return { header: `engravings, size ${SIZEOF_ENGRAVING}+text`, count: engravings.length, size };
 }
