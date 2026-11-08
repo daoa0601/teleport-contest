@@ -195,6 +195,7 @@ import { hitIronBars } from './mthrowu.js';
 import { dissolveBars } from './monmove.js';
 import { ensureHeroSkills, useHeroSkill, weaponDescription, weaponSkillType } from './weapon.js';
 import type { TerminalCell } from './terminal.js';
+import type { UnderlayCell } from './game_display.js';
 
 // Door opening and teleport input live with their C owners.
 
@@ -4232,7 +4233,7 @@ export async function captureRunmodeDelay(
     {
         preservePhysicalTopline = false,
         retainedTopline: suppliedRetainedTopline = null,
-    }: { preservePhysicalTopline?: boolean; retainedTopline?: readonly TerminalCell[] | null } = {},
+    }: { preservePhysicalTopline?: boolean; retainedTopline?: readonly UnderlayCell[] | null } = {},
 ): Promise<void> {
     const runmodeDelayFrames = runmodeDelayFrameCount(
         g, enabled, sourceTurn,
@@ -4240,21 +4241,25 @@ export async function captureRunmodeDelay(
     if (!runmodeDelayFrames) return;
     g.context.time_botl = !!g.flags.time;
 
-    const restoreTopline = (topline: readonly TerminalCell[] | null | undefined): void => {
+    const restoreTopline = (topline: readonly UnderlayCell[] | null | undefined): void => {
         if (!topline) return;
         for (const [col, cell] of topline.entries()) {
             g.nhDisplay?.setCell(
-                col, 0, cell.ch, cell.color, cell.attr,
+                col, 0, cell.ch, cell.color, cell.attr, cell.altFont,
             );
         }
     };
     const retainedTopline = preservePhysicalTopline && !g._pending_message
         ? (suppliedRetainedTopline
-            || g.nhDisplay?.grid?.[0])?.map(cell => ({ ...cell }))
+            || g.nhDisplay?.grid?.[0])?.map((cell, col) => ({
+                ...cell, altFont: g.nhDisplay?.altFontAt(col, 0) ?? false,
+            }))
         : null;
     await flush_screen(1);
     const logicalTopline = retainedTopline
-        ? g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }))
+        ? g.nhDisplay?.grid?.[0]?.map((cell, col) => ({
+            ...cell, altFont: g.nhDisplay?.altFontAt(col, 0) ?? false,
+        }))
         : null;
     restoreTopline(retainedTopline);
     g.nhDisplay?.setCursor(

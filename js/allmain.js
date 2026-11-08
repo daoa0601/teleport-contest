@@ -974,7 +974,10 @@ export async function runMoveloopCore() {
                             }
                             else if (!delayedAction._runmodeRetainedTopline) {
                                 delayedAction._runmodeRetainedTopline
-                                    = g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }));
+                                    = g.nhDisplay?.grid?.[0]?.map((cell, col) => ({
+                                        ...cell,
+                                        altFont: g.nhDisplay?.altFontAt(col, 0) ?? false,
+                                    }));
                             }
                         }
                         await captureRunmodeDelay(g, true, sourceTurn, {

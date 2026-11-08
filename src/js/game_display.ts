@@ -12,8 +12,12 @@
 import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
 import type { StatusLine2Fields } from './botl.js';
 import { StatusHighlights } from './botl.js';
-import type { EmptyQueueHandler, KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
+import type { EmptyQueueHandler, KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
+
+// A saved terminal cell together with the g_putch() alternate-font shift it
+// was last drawn with; every snapshot/restore path must carry both.
+export interface UnderlayCell extends TerminalCell { altFont: boolean }
 
 export class GameDisplay {
     readonly terminal: Terminal;

@@ -57,6 +57,7 @@ import { tty_yn_function } from './topl.js';
 import { getLine, showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
+import type { UnderlayCell } from './game_display.js';
 import { promptYesNo } from './query.js';
 import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js';
 import {
@@ -2189,7 +2190,7 @@ export type RunState = DirectionalRunState | TravelRunState;
 
 export interface ArmorCompletion {
     object: GameObject;
-    _runmodeRetainedTopline?: TerminalCell[] | undefined;
+    _runmodeRetainedTopline?: UnderlayCell[] | undefined;
     kind: 'wear' | 'remove';
 }
 

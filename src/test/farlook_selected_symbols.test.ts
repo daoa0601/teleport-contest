@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { displaySelf, flush_screen, newsym } from '../js/display.js';
-import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { ALTAR } from '../js/const.js';
+
 import { rhack } from '../js/cmd.js';
+import { ALTAR } from '../js/const.js';
+import { displaySelf, flush_screen, newsym } from '../js/display.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { serializeCapture } from '../js/jsmain.js';
 import { applyNethackrc } from '../js/cfgfiles.js';
-import { POT_HEALING } from '../js/object_data.js';
-import { floorObject } from './support/game-objects.js';
+import { showDisclosureOverlay } from '../js/windows.js';
+import { POT_HEALING, SMALL_SHIELD } from '../js/object_data.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { farlookText } from './support/farlook.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
@@ -18,7 +21,7 @@ void test('farlook identifies the potion class through the RogueIBM symbol', asy
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     applyNethackrc('OPTIONS=roguesymset:RogueIBM');
-    await floorObject(POT_HEALING, 11, 10);
+    await floorObject(POT_HEALING, 11, 10, { dknown: true });
     await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '\xad');
@@ -26,6 +29,20 @@ void test('farlook identifies the potion class through the RogueIBM symbol', asy
     const text = await farlookText('l.');
 
     assert.match(text, /a potion \(/, text);
+});
+
+void test('farlook identifies the human class through the RogueEpyx hero symbol', async () => {
+    await freshObjectRoom({ flags: { tips: false, help: false } });
+    requirePlayingGame(game);
+    game.rogue_level = { ...game.u.uz };
+    applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
+    await displaySelf();
+    await flush_screen(1);
+    assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, '\x01');
+
+    const text = await farlookText('.');
+
+    assert.match(text, /a human or elf/, text);
 });
 
 // win/tty/topl.c's putmixed kludge keeps the leading glyph on the physical
@@ -51,16 +68,50 @@ void test('a flushed DEC farlook description keeps its glyph shift on the messag
         `the message-row glyph keeps its alternate-font shift: ${JSON.stringify(row)}`);
 });
 
-void test('farlook identifies the human class through the RogueEpyx hero symbol', async () => {
-    await freshObjectRoom({ flags: { tips: false, help: false } });
+// wintty.c:docorner() repaints the uncovered map from the glyph buffer, so
+// every glyph below a dismissed menu replays through g_putch() with its own
+// shift; the underlay snapshot must carry that per-cell state (the takeoff
+// category menu restores its underlay directly, without a later map flush
+// before the screen is read).
+void test('a dismissed takeoff menu restores DEC map glyphs with their shifts', async () => {
+    const level = await freshObjectRoom({ flags: { tips: false, help: false } });
     requirePlayingGame(game);
-    game.rogue_level = { ...game.u.uz };
-    applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
-    await displaySelf();
+    applyNethackrc('OPTIONS=symset:DECgraphics');
+    level.requireAt(11, 9).typ = ALTAR;
+    await newsym(11, 9);
     await flush_screen(1);
-    assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, '\x01');
+    const shiftedAltar = /\x0e[^\x0f]*\{/;
+    const altarRow = () => serializeCapture(requireGameDisplay()).split('\n')[10] ?? '';
+    assert.ok(shiftedAltar.test(altarRow()), 'the altar records its shift');
 
-    const text = await farlookText('.');
+    const shield = await addInventoryObject(SMALL_SHIELD);
+    await wearHeroArmor(shield);
+    const input = resetInputState();
+    input.feed('\x1b');
+    await rhack('A'.charCodeAt(0));
 
-    assert.match(text, /a human or elf/, text);
+    assert.ok(shiftedAltar.test(altarRow()),
+        `the restored altar keeps its shift: ${JSON.stringify(altarRow().slice(0, 48))}`);
+});
+
+// process_text_window() restores the covered map cells when its corner is
+// dismissed; each restored glyph replays its g_putch() shift.
+void test('a dismissed corner disclosure restores DEC map glyphs with their shifts', async () => {
+    const level = await freshObjectRoom({ flags: { tips: false, help: false } });
+    requirePlayingGame(game);
+    applyNethackrc('OPTIONS=symset:DECgraphics');
+    level.requireAt(11, 9).typ = ALTAR;
+    await newsym(11, 9);
+    await flush_screen(1);
+    const shiftedAltar = /\x0e[^\x0f]*\{/;
+    const altarRow = () => serializeCapture(requireGameDisplay()).split('\n')[10] ?? '';
+    assert.ok(shiftedAltar.test(altarRow()), 'the altar records its shift');
+
+    const input = resetInputState();
+    input.feed(' ');
+    const key = await showDisclosureOverlay(['a short disclosure line'], { restoreUnderlay: true });
+
+    assert.equal(key, ' '.charCodeAt(0));
+    assert.ok(shiftedAltar.test(altarRow()),
+        `the restored altar keeps its shift: ${JSON.stringify(altarRow().slice(0, 48))}`);
 });

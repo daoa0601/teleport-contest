@@ -4142,16 +4142,20 @@ export async function captureRunmodeDelay(g = game, enabled = false, sourceTurn 
         if (!topline)
             return;
         for (const [col, cell] of topline.entries()) {
-            g.nhDisplay?.setCell(col, 0, cell.ch, cell.color, cell.attr);
+            g.nhDisplay?.setCell(col, 0, cell.ch, cell.color, cell.attr, cell.altFont);
         }
     };
     const retainedTopline = preservePhysicalTopline && !g._pending_message
         ? (suppliedRetainedTopline
-            || g.nhDisplay?.grid?.[0])?.map(cell => ({ ...cell }))
+            || g.nhDisplay?.grid?.[0])?.map((cell, col) => ({
+            ...cell, altFont: g.nhDisplay?.altFontAt(col, 0) ?? false,
+        }))
         : null;
     await flush_screen(1);
     const logicalTopline = retainedTopline
-        ? g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }))
+        ? g.nhDisplay?.grid?.[0]?.map((cell, col) => ({
+            ...cell, altFont: g.nhDisplay?.altFontAt(col, 0) ?? false,
+        }))
         : null;
     restoreTopline(retainedTopline);
     g.nhDisplay?.setCursor((g.u?.ux ?? 1) - 1, (g.u?.uy ?? 0) + 1);

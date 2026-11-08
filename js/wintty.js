@@ -506,7 +506,7 @@ export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines =
                 for (let col = boundary; col < d.cols; col++) {
                     const cell = underlay[row]?.[col];
                     if (cell)
-                        d.setCell(col, row, cell.ch, cell.color, cell.attr);
+                        d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
                 }
             }
         }
@@ -760,7 +760,11 @@ export async function showMessageMenu(letter, pickMode, message) {
 // Port only: retain terminal cells beneath an overlay menu.
 export function snapshotMenuUnderlay() {
     const d = display();
-    return d?.grid?.map(row => row.map(cell => ({ ...cell }))) || null;
+    // The saved cell keeps its g_putch() shift state: restoring the map
+    // below a dismissed menu replays those glyph bytes.
+    return d?.grid?.map((row, r) => row.map((cell, c) => ({
+        ...cell, altFont: d.altFontAt(c, r),
+    }))) || null;
 }
 // Port only: restore saved overlay cells while respecting current topline ownership.
 export function restoreMenuUnderlay(snapshot) {
@@ -790,7 +794,7 @@ export function restoreMenuUnderlay(snapshot) {
                 break;
             if (row === 0 && col >= toplineLimit)
                 break;
-            d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
         }
     }
     if (stateOwnsTopline)

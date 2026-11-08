@@ -484,7 +484,9 @@ async function catchThrownObject(object, { state, random, publish }) {
 // Part of C mthrowu.c:m_throw(), zap.c:bhit(): the tmp_at flight display.
 export function monsterProjectileDisplay(object, state, { tethered = false, } = {}) {
     const glyph = transientObjectGlyph(object);
-    const topRow = state.nhDisplay?.grid[0]?.map(cell => ({ ...cell }));
+    const topRow = state.nhDisplay?.grid[0]?.map((cell, col) => ({
+        ...cell, altFont: state.nhDisplay?.altFontAt(col, 0) ?? false,
+    }));
     const retainedTopline = !state._pending_message && topRow?.some(cell => cell.ch !== ' ') ? topRow : null;
     const effect = new TemporaryMapEffect(tethered ? 'tether' : 'flash', glyph);
     let first = true;
@@ -493,7 +495,7 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
         await flush_screen(1);
         if (retainedTopline && !state._pending_message) {
             for (const [column, cell] of retainedTopline.entries())
-                state.nhDisplay?.setCell(column, 0, cell.ch, cell.color, cell.attr);
+                state.nhDisplay?.setCell(column, 0, cell.ch, cell.color, cell.attr, cell.altFont);
         }
         if (cursor)
             state.nhDisplay?.setCursor(...cursor);
