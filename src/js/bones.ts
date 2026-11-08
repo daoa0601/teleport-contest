@@ -472,10 +472,10 @@ export function completeBonesMonster<T extends Monster>(monster: T, state: GameS
     return monster;
 }
 
-// Part of C restore.c:restmonchn(), restore.c:getlev(), bones.c:getbones():
-// bones monster-chain restore — restmonchn()'s ghostly propagate and
-// restshk()/restpriest() reassignment, getlev()'s peaceful/malign/hide
-// pass, getbones()'s sanitize_name and defunct purge.
+// C restore.c:restmonchn(): bones monster-chain restore — restmonchn()'s
+// ghostly propagate and restshk()/restpriest() reassignment,
+// getlev()'s peaceful/malign/hide pass, getbones()'s sanitize_name and
+// defunct purge.
 export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, state: GameState): Promise<void> {
     // C restmonchn() admits the complete chain before getbones() starts
     // purging it. Inventory drops during purge must not affect admission
@@ -710,11 +710,11 @@ export function saveBonesLevel(
     }
 }
 
-// Part of C save.c:save_stairs(), save.c:savetrapchn(): destinations are
-// stored relative to the saved level; restore re-adds depth on load.
-// C save_stairs()/savetrapchn() store same-dungeon destinations relative
-// to the saved level. rest_stairs()/getlev() add the receiving level's depth.
-// Only the bones copy is shifted; live and cached maps retain absolute depths.
+// C save.c:save_stairs(): destinations are stored relative to the saved
+// level; restore re-adds depth on load. save_stairs()/savetrapchn()
+// store same-dungeon destinations relative to the saved level;
+// rest_stairs()/getlev() add the receiving level's depth. Only the
+// bones copy is shifted; live and cached maps retain absolute depths.
 function shiftBonesDestinations(payload: BonesPayload, location: DungeonLocation, adjustment: number): void {
     for (let stair = payload.stairs; stair; stair = stair.next) {
         if (stair.tolev.dnum === location.dnum)

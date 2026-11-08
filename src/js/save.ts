@@ -172,7 +172,7 @@ export async function askAboutPanicSave(): Promise<boolean> {
     return await promptChoice(question, ['y', 'n', 'q'], 'n', { visibleChoices: 'yn' }) === 'y';
 }
 
-// Part of C save.c:savemonchn(): forget_temple_entry() for every priest and
+// C save.c:savemonchn(): forget_temple_entry() for every priest and
 // the dead-monster purge, applied to live, cached, and migrating levels
 // before the graph is serialized.
 function prepareMonstersForSave(): void {
@@ -257,9 +257,10 @@ async function confirmSaveOverwrite(storage: SaveStorage, key: string): Promise<
 let restoreRefusal: 'unhealthy' | null = null;
 let retainedSave: { storage: RestoreStorage; key: string } | null = null;
 
-// Part of C unixmain.c:main(): the wizard/explore save-retention question after recovery.
-// C unixmain.c asks after dorecover()'s welcome; ordinary games consume
-// their file inside dorecover(), while wizard and explore games may keep it.
+// C unixmain.c:main(): the wizard/explore save-retention question after
+// recovery. C unixmain.c asks after dorecover()'s welcome; ordinary games
+// consume their file inside dorecover(), while wizard and explore games
+// may keep it.
 export async function askKeepRestoredSave(): Promise<void> {
     const restored = retainedSave;
     retainedSave = null;
@@ -475,8 +476,8 @@ export function restoreLevelPetHistory(level: GameMap, elapsed: number): void {
     restoreObjectPetHistory(level.buriedObjects ?? [], elapsed);
 }
 
-// Part of C restore.c:restmon(): the edog fields (droptime, hungrytime,
-// apport).
+// C restore.c:restmon(): the edog fields (droptime, hungrytime,
+// apport) of one restored monster's mextra.
 export function restoreMonsterPetHistory(monster: Monster | SavedMonsterTraits, elapsed: number): void {
     const pet = monster.edog || monster.mextra?.edog;
     if (!pet) return;
