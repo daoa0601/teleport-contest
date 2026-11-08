@@ -551,7 +551,9 @@ export function back_to_glyph(loc, x, y) {
         glyph: typ === ALTAR ? altarToGlyph(loc.flags) : cmapToGlyph(symbol, currentWallGlyphOffset()),
     };
 }
-// Part of C display.h:cmap_walls_to_glyph(): the branch wall offset.
+// C display.h:cmap_walls_to_glyph(): the branch-dependent wall offset the
+// macro selects (mines, Gehennom, Knox, Sokoban, main); cmapToGlyph()
+// (glyph_numbers.ts) applies the - S_vwall shift around it.
 function currentWallGlyphOffset() {
     const branch = game.dungeons[game.u.uz?.dnum ?? 0];
     return branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
@@ -1110,8 +1112,8 @@ export function canSpotHeroSelf() {
         || heroDetectsMonsters();
     return canSeeSelf || sensesSelf;
 }
-// Part of C display.h:random_obj_to_glyph(): the hallucinated object
-// glyph.  Generic object slots 0..17 are excluded; a randomly selected
+// C display.h:random_obj_to_glyph(): the hallucinated object glyph.
+// Generic object slots 0..17 are excluded; a randomly selected
 // corpse consumes a second display draw for its color.
 function randomHallucinatedObjectGlyph() {
     const firstObject = OBJECT_BASES[WEAPON_CLASS];
@@ -1180,9 +1182,11 @@ function objectGlyph(object) {
             statueGlyph: object.otyp === STATUE, piletop,
         };
 }
-// Part of C display.h:statue_to_glyph(), display.h:corpse_to_glyph(),
+// C display.h:statue_to_glyph(), display.h:corpse_to_glyph(),
 // display.h:generic_obj_to_glyph(): the piletop-adjusted glyph number.
-// An unobserved potion uses its class number in the same object range.
+// An unobserved potion uses its class number in the same object range;
+// the Hallucination arm of statue_to_glyph() lives in objectGlyph()
+// above with the hallucinated monster draw.
 function objectGlyphNumber(object, piletop) {
     if (object.otyp === STATUE) {
         const female = ((object.spe ?? 0) & CORPSTAT_GENDER) === CORPSTAT_FEMALE;
