@@ -1623,8 +1623,9 @@ export function parseWishNoun(parsed: ParsedWish): 'lookup' | 'direct' | 'glob' 
     return 'lookup';
 }
 
-// Part of C objnam.c:readobjnam_postparse1(): the fruit reparsing of food
-// prefixes.
+// Part of C objnam.c:readobjnam_postparse3(): the fruit block's prefix
+// stripping over d.fruitbuf (an/a/count, blessed/cursed/uncursed, partly
+// eaten) ahead of the case-sensitive fruit match in searchWishNames().
 // Fruit names can contain ordinary object modifiers. C reparses only food
 // prefixes and restores these values after a case-sensitive fruit match.
 function parseFruitWish(text: string): ParsedFruitWish {
@@ -1845,10 +1846,12 @@ interface WishSearch {
     descriptionUsesNoun: boolean;
 }
 
-// Part of C objnam.c:readobjnam(): the type-lookup jumps across the
-// postparse stages.
-// Follow readobjnam's jumps: an early type or rejection ends lookup; class
-// parsing goes directly to name search; only unclassified nouns try ranges.
+// C objnam.c:readobjnam_postparse1(): its stages in order, from the
+// " called " class ranges through the wizard trap tail; the return values
+// 1..5 became the WishLookup kinds (readobjnam()'s switch: srch, typfnd,
+// return otmp, any, wiztrap). The leading suffix tests (" named ",
+// " called ", " labeled ", " of spinach") run in parseWishText(), and the
+// tail stages parseWishRange()/searchWishNames() are postparse2()/3().
 export function lookupWishType(parsed: ParsedWish, {
     wizardWish = false, state = game,
 }: { wizardWish?: boolean; state?: GameState } = {}): WishLookup {
