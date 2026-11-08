@@ -529,8 +529,8 @@ const BONES_VERSION = 20;
 
 
 
-// Port only: storage probe standing in for C's open_bonesfile()
-// existence check.
+// Part of C bones.c:open_bonesfile(): the bones-file existence probe,
+// against the port's bones storage keys.
 export function bonesLevelExists(level: DungeonLocation | undefined = game.u.uz): boolean {
     return game.storage?.getItem(bonesStorageKey(level)) != null;
 }
