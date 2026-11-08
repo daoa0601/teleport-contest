@@ -1690,8 +1690,9 @@ function mapGlyphInfo(glyph, nextGlyph, x, y, color) {
     // yellow there whatever its sex (display.c:2624-2627).
     if (rogueColorsActive()) {
         const rogueColor = rogueLevelGlyphColor(nextGlyph, x, y);
-        if (rogueColor !== null)
-            return rogueColor;
+        // Glyphs whose native branch has no rogue override (explosions,
+        // the branch wall ranges) keep their own color, not the clear.
+        return rogueColor !== null ? rogueColor : color;
     }
     // reset_glyphmap() clears every other color on the Rogue level
     // (GMAP_ROGUELEVEL); map_glyphinfo()'s showrace tweak recolors the
