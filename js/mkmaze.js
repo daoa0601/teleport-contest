@@ -11,6 +11,7 @@ import { ACCESSIBLE, AIR, ALTAR, BLCORNER, BRCORNER, CLOUD, COLNO, CORR, CROSSWA
 import { isok } from './cmd.js';
 import { isPoolAt, isIceAt } from './dbridge.js';
 import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, BOULDER, STATUE, OBJECT_NAMES } from './object_data.js';
+import { within_bounded_area } from './rect.js';
 import { createPoisonGasCloud } from './region.js';
 import { heroIsDeaf } from './senses.js';
 import { plineWithContinuation, impossible } from './pline.js';
@@ -135,12 +136,8 @@ function extend_spine(locale, wall_there, dx, dy) {
         return 0;
     return 1;
 }
-// Port only: bounds test for the port's protected-area restriction of the
-// wall_cleanup and fix_wall_spines walks.
-function withinArea(x, y, area) {
-    return !!area && x >= area.x1 && x <= area.x2
-        && y >= area.y1 && y <= area.y2;
-}
+// The C walks pass gb.bughack.inarea to dungeon.h:within_bounded_area()
+// (rect.ts) inline; a null area is the port's empty inarea.
 // C mkmaze.c:wall_cleanup():
 function wall_cleanup(x1, y1, x2, y2, protectedArea = null) {
     const map = game.level;
@@ -148,7 +145,7 @@ function wall_cleanup(x1, y1, x2, y2, protectedArea = null) {
         return;
     for (let x = x1; x <= x2; x++)
         for (let y = y1; y <= y2; y++) {
-            if (withinArea(x, y, protectedArea))
+            if (protectedArea && within_bounded_area(x, y, protectedArea.x1, protectedArea.y1, protectedArea.x2, protectedArea.y2))
                 continue;
             const loc = map.at(x, y);
             if (!loc)
@@ -179,7 +176,8 @@ export function fix_wall_spines(x1, y1, x2, y2, wallOnlyArea = null) {
             const typ = loc.typ;
             if (!(IS_WALL(typ) && typ !== DBWALL))
                 continue;
-            const probe = withinArea(x, y, wallOnlyArea)
+            const probe = wallOnlyArea
+                && within_bounded_area(x, y, wallOnlyArea.x1, wallOnlyArea.y1, wallOnlyArea.x2, wallOnlyArea.y2)
                 ? isWallTile : isWallOrStone;
             const locale = [
                 [probe(x - 1, y - 1), probe(x - 1, y), probe(x - 1, y + 1)],

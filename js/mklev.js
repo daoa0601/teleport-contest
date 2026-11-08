@@ -50,7 +50,7 @@ import { nhgetch } from './input.js';
 import { flush_screen, newsym, back_to_glyph, canOverwriteTerrain, set_wall_state } from './display.js';
 import { pline, plineWithContinuation, impossible } from './pline.js';
 import { premap_detect, convertSecretDoor } from './detect.js';
-import { deleteEngravingAt, makeEngravingAt, make_grave, randomEngraving, make_engr_at, restoreEngravings, sanitizeEngravings, wipeEngravingAt } from './engrave.js';
+import { deleteEngravingAt, makeEngravingAt, make_grave, randomEngraving, restoreEngravings, sanitizeEngravings, wipeEngravingAt } from './engrave.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { insideShopRoomAt, addShopDamage, fixShopDamage, deleteObject } from './shk.js';
 import { PM_SOLDIER, antholeMonsterType, markRandomSpecialRoom, mkshop, occupied, roomHasStair, somex, somey, somexyspace, insideRoom } from './mkroom.js';
@@ -2119,7 +2119,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
                     break;
             } while (!rn2(40));
             if (level.at(pos.x, pos.y)?.typ === ROOM)
-                make_engr_at(pos.x, pos.y, engrText, pristine, 0, MARK);
+                makeEngravingAt(pos.x, pos.y, engrText, pristine, 0, MARK);
         }
     }
     await fillRandomRoomObjects(croom, pos);

@@ -57,6 +57,7 @@ import { makemon, mkclass } from './makemon.js';
 import { depth as depth_of_level, ledgerNo } from './dungeon.js';
 import { GOLD_PIECE, OBJECT_BASES, SPE_NOVEL, TOUCHSTONE, CORPSE, EGG, TIN, POT_FRUIT_JUICE, POT_BOOZE, POT_WATER, POT_HEALING, POT_FULL_HEALING, POT_OIL, ICE_BOX, LEATHER_GLOVES, ELVEN_CLOAK, SCR_FOOD_DETECTION, LUMP_OF_ROYAL_JELLY, WAX_CANDLE, TALLOW_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, WAN_LIGHT, SCR_LIGHT, SPE_LIGHT } from './object_data.js';
 import { mksobj, mksobj_at, mkobj_at, linkObjectToMonsterInventory } from './mkobj.js';
+import { vegetarianCorpse } from './food_traits.js';
 import { objectMaterial, objectProb } from './o_init.js';
 import { set_tin_variety } from './eat.js';
 
@@ -873,39 +874,8 @@ const SHOP_STOCK: ReadonlyArray<readonly StockEntry[] | null> = [
         { otyp: SPE_LIGHT }],
 ];
 
-const S_BLOB = 2, S_JELLY = 10, S_FUNGUS = 32, S_VORTEX = 22,
-    S_LIGHT = 25, S_GHOST = 54, S_ELEMENTAL = 31, S_PUDDING = 42,
-    S_GOLEM = 55;
-
-const PM_STALKER = MONSTER_NAME.indexOf('stalker');
-
-const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
-
-const PM_LEATHER_GOLEM = MONSTER_NAME.indexOf('leather golem');
-
-const PM_BLACK_PUDDING = MONSTER_NAME.indexOf('black pudding');
-
-// Port only: duplicate the vegan species predicate for shop stock checks.
-// The full macro port is veganCorpse in food_traits.ts.
-// C mondata.h vegan/vegetarian over monster symbols; noncorporeal
-// is exactly S_GHOST (wraiths are unsolid but not vegan).
-function veganSpecies(mnum: number): boolean {
-    const symbol = MONSTER_SYMBOL[mnum];
-    if (symbol === undefined) return false;
-    return [S_BLOB, S_JELLY, S_FUNGUS, S_VORTEX, S_LIGHT].includes(symbol)
-        || symbol === S_GHOST
-        || (symbol === S_ELEMENTAL && mnum !== PM_STALKER)
-        || (symbol === S_GOLEM && mnum !== PM_FLESH_GOLEM
-            && mnum !== PM_LEATHER_GOLEM);
-}
-
-// Port only: duplicate the vegetarian species predicate for shop stock checks.
-// The full macro port is vegetarianCorpse in food_traits.ts.
-function vegetarianSpecies(mnum: number): boolean {
-    return veganSpecies(mnum)
-        || (MONSTER_SYMBOL[mnum] === S_PUDDING
-            && mnum !== PM_BLACK_PUDDING);
-}
+// C shknam.c:veggy_item() reads the mondata.h vegetarian() macro through
+// food_traits.ts vegetarianCorpse().
 
 // C shknam.c:veggy_item()
 function veggyItem(object: GameObject): boolean {
@@ -919,7 +889,7 @@ function veggyItem(object: GameObject): boolean {
         return typeof object.corpsenm === 'number' && Number.isInteger(object.corpsenm)
             && object.corpsenm >= 0
             && object.corpsenm < MONSTER_NAME.length
-            && vegetarianSpecies(object.corpsenm);
+            && vegetarianCorpse(object.corpsenm);
     }
     return false;
 }

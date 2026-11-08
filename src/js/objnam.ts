@@ -148,13 +148,13 @@ export function cloakSimpleName(
     return 'cloak';
 }
 
-// C objnam.c:helm_simple_name().
-// Soft headgear is a "hat"; everything that protects like the hard-helmet
-// messages is a "helm".
 const SOFT_HEADGEAR: Record<string, true> = {
     'elven leather helm': true, fedora: true, cornuthaum: true, 'dunce cap': true,
 };
 
+// C objnam.c:helm_simple_name().
+// Soft headgear is a "hat"; everything that protects like the hard-helmet
+// messages is a "helm".
 export function helmSimpleName(
     object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'name'>>,
 ): string {

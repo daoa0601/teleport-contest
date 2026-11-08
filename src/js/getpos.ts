@@ -66,6 +66,7 @@ import { cmdq_add_key, cmdq_clear, cmdq_pop, readcharPoskey, takeQueuedAdjacentP
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { glyphToCmapSymbol } from './glyphs.js';
 
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cansee } from './vision.js';
@@ -287,24 +288,8 @@ function matchingGetposSymbols(key: string, state: GameState): ReadonlySet<numbe
     return matching;
 }
 
-// C glyphs.c:glyph_to_cmap(): the displayed glyph number to its defsyms[]
-// index, mapping each branch wall range back onto the base symbols.
-export function glyphToCmapSymbol(glyph: number | undefined): number | null {
-    if (glyph === undefined) return null;
-    if (glyph === GlyphOffset.cmapStone) return CmapSymbol.stone;
-    if (glyph >= GlyphOffset.cmapMain && glyph < GlyphOffset.cmapA)
-        return (glyph - GlyphOffset.cmapMain) % (CmapSymbol.trwall - CmapSymbol.vwall + 1) + CmapSymbol.vwall;
-    if (glyph >= GlyphOffset.cmapA && glyph < GlyphOffset.altar)
-        return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
-    if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB) return CmapSymbol.altar;
-    if (glyph >= GlyphOffset.cmapB && glyph < GlyphOffset.zap)
-        return glyph - GlyphOffset.cmapB + CmapSymbol.grave;
-    if (glyph >= GlyphOffset.zap && glyph < GlyphOffset.cmapC)
-        return (glyph - GlyphOffset.zap) % 4 + 74;
-    if (glyph >= GlyphOffset.cmapC && glyph < GlyphOffset.swallow)
-        return glyph - GlyphOffset.cmapC + CmapSymbol.digbeam;
-    return null;
-}
+// C glyphs.c:glyph_to_cmap() lives in glyphs.ts; the getpos scans below
+// read it through that import.
 
 // C getpos.c:known_vibrating_square_at(): only the genuine invocation
 // position counts, and only once the trap itself is known.

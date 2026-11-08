@@ -20,7 +20,7 @@ import { initRng } from '../js/rng.js';
 import { loadScoreRecords } from '../js/topten.js';
 import { initializePet } from '../js/dog.js';
 import { punishHero } from '../js/read.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import {
     BEAR_TRAP,
     CLOUD,
@@ -267,6 +267,26 @@ void test('cursed charged ringing summons real undead without inventory and mark
     assert.equal(bell.spe, 1);
     assert.equal(bell.known, false);
 });
+
+void test('cursed charged ringing creates no undead when morguemon rolls only extinct classes', async () => {
+    await freshBell({ gameplaySeed: 5n });
+    requirePlayingGame(game);
+    assert.ok(game.mvitals);
+    // Every zombie and vampire species is gone, so mkroom.c:morguemon()'s
+    // mkclass() fallbacks yield no monster on the roll>=40 iterations, and
+    // mkundead()'s `mdat &&' guard skips makemon() for them (a ghost or
+    // wraith roll still creates one; this seed rolls none).
+    for (const [mnum, symbol] of MONSTER_SYMBOL.entries()) {
+        if (symbol === 52 || symbol === 48)
+            game.mvitals[mnum] = { born: 0, died: 0, mvflags: G_GONE };
+    }
+    const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 2, cursed: true, known: false });
+    await useBell(bell);
+    assert.equal(requireGameLevel().monsters.length, 0);
+    assert.equal(requireGameLevel().flags.graveyard, true);
+    assert.equal(bell.spe, 1);
+});
+
 
 void test('charged ringing expels a swallowed hero; a cursed Bell leaves the engulfment intact', async () => {
     for (const cursed of [false, true]) {

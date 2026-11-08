@@ -29,7 +29,7 @@ import { recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { heroPassesWalls, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 import { rnl, rn2 } from './rng.js';
-import { formatHeardMessage, pline, plineWithContinuation, impossible } from './pline.js';
+import { pline, plineWithContinuation, impossible, publishHeardMessage } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { ForceLockOccupation, PickLockOccupation } from './occupation_types.js';
@@ -40,7 +40,7 @@ import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming
 import { heroCanReachFloor } from './engrave.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade, isPick } from './object_properties.js';
-import { startCorpseTimeout, unlinkObject, isContainer, placeObject, chargeAlteredUnpaidObject } from './mkobj.js';
+import { startCorpseTimeout, unlinkObject, isContainer, placeObject, chargeAlteredUnpaidObject, objectQuantity } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -233,10 +233,8 @@ function forceWeaponFailure(weapon: GameObject | null | undefined): string {
     return `You can't force anything ${description} weapon${plural ? 's' : ''}.`;
 }
 
-// Port only: obj->quan accessor.
-function objectQuantity(object: GameObject | null | undefined): number {
-    return object?.quan ?? object?.quantity ?? 1;
-}
+// obj->quan reads go through mkobj.ts objectQuantity() over the port's
+// dual quan/quantity fields.
 
 // Part of C lock.c:forcelock(): the blade-break roll
 // (rn2(1000 - spe) vs 992 - greatest_erosion * 10, cursed and
@@ -1068,7 +1066,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
         if (Is_rogue_level(state.u.uz)) {
             const visible = cansee(x, y);
             if (visible) await plineWithContinuation('A cloud of dust springs up in the older, more primitive doorway.');
-            else await publishHeard('a swoosh.', state);
+            else await publishHeardMessage('a swoosh.', plineWithContinuation, state);
             if (await doorObstructed(x, y, quietly, state)) {
                 if (visible) await plineWithContinuation('The cloud quickly dissipates.');
                 return false;
@@ -1117,7 +1115,8 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
                         await plineWithContinuation('KABOOM!!  You see a door explode.');
                     else if (!heroIsDeaf(state)) {
                         const dx = x - state.u.ux, dy = y - state.u.uy;
-                        await publishHeard(`a ${dx * dx + dy * dy > 49 ? 'distant' : 'nearby'} explosion.`, state);
+                        await publishHeardMessage(`a ${dx * dx + dy * dy > 49 ? 'distant' : 'nearby'} explosion.`,
+                            plineWithContinuation, state);
                     }
                 }
             }
@@ -1130,7 +1129,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
             if (state.flags.verbose) {
                 if ((saw || sees) && !heroIsUnaware(state))
                     await plineWithContinuation('The door crashes open!');
-                else if (!heroIsDeaf(state)) await publishHeard('a crashing sound.', state);
+                else if (!heroIsDeaf(state)) await publishHeardMessage('a crashing sound.', plineWithContinuation, state);
             }
             if (state.vision_full_recalc) await vision_recalc(0);
             loudness = 20;
@@ -1172,11 +1171,7 @@ export async function doorObstructed(x: number, y: number, quietly: boolean, sta
     return false;
 }
 
-// Port only: publish through You_hear() semantics.
-async function publishHeard(text: string, state: GameState) {
-    const message = formatHeardMessage(text, state);
-    if (message) await plineWithContinuation(message);
-}
+// You_hear() calls publish through pline.ts publishHeardMessage().
 
 // C lock.c:stumble_on_door_mimic(): check the disguise itself, even when
 // the hero senses the monster.

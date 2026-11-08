@@ -1,5 +1,5 @@
 // Predicates derived from NetHack's object table.
-// C refs: include/obj.h and dothrow.c throwing_weapon().
+// C refs: include/obj.h.
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS, ARM_SHIELD, ARM_HELM, ARM_BOOTS, ARM_GLOVES, ARM_CLOAK, ARM_SHIRT, ARM_SUIT } from './objclass.js';
 import { objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
 import { artifactById } from './artifact.js';
@@ -16,7 +16,7 @@ const MITHRIL = 17;
 const GLASS = 19;
 const WHACK = 4;
 // Port only: null-safe read of an object's class field.
-function objectClass(object) {
+export function objectClass(object) {
     return object?.oclass ?? 0;
 }
 // C obj.h:is_graystone().
@@ -77,24 +77,7 @@ export function matching_launcher(ammunition, launcher) {
     return objectSkill(ammunition.otyp)
         === -objectSkill(launcher.otyp);
 }
-// C dothrow.c:throwing_weapon(). It stays beside the object-table predicates:
-// the throwing_weapon equivalence proof (state_specs.py throwing_weapon:tables)
-// runs this module in the prover's curated JS set, which dothrow.js's import
-// closure cannot join.
-export function isThrowingWeapon(object) {
-    if (!object)
-        return false;
-    const kind = objectClass(object);
-    const skill = objectSkill(object.otyp);
-    const piercingDaggerOrKnife = kind === WEAPON_CLASS
-        && skill >= P_DAGGER && skill < P_SHORT_SWORD
-        && (objectBaseDirection(object.otyp) & 1) !== 0;
-    return isMissileObject(object)
-        || (kind === WEAPON_CLASS && skill === P_SPEAR)
-        || piercingDaggerOrKnife
-        || object.otyp === WAR_HAMMER
-        || object.otyp === AKLYS;
-}
+// C dothrow.c:throwing_weapon() lives in dothrow.ts with its C owner.
 // C obj.h:is_multigen().
 export function isMultiGeneratedWeapon(object) {
     if (!object)

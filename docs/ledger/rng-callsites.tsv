@@ -2359,13 +2359,12 @@ src/js/u_init.ts	uInitInventoryAttrs	rn2	"[""6""]"	constant
 src/js/u_init.ts	uInitInventoryAttrs	rn2	"[""90""]"	constant
 src/js/u_init.ts	uInitInventoryAttrs	rnd	"[""1000""]"	constant
 src/js/u_init.ts	uInitRaceInventoryAndKnowledge	rn2	"[""ELF_INSTRUMENTS.length""]"	constant
-src/js/undead_summoning.ts	summonUndead	rnd	"[""5""]"	constant
+src/js/mkroom.ts	makeUndeadNear	rnd	"[""5""]"	constant
 src/js/zap.ts	turnHeroWithUndeadMagic	roll	"[""30""]"	constant
 src/js/zap.ts	turnMonsterWithUndeadMagic	options.roll	"[""8""]"	constant
 src/js/apply.ts	causeHornTrouble	random	"[""13""]"	constant
 src/js/apply.ts	causeHornTrouble	random	"[""90""]"	constant
 src/js/apply.ts	causeHornTrouble	random	"[""constitution""]"	invariant
-src/js/apply.ts	shuffleTroubles	random	"[""index + 1""]"	unproved
 src/js/apply.ts	useUnicornHorn	random	"[""maximum""]"	constant
 src/js/apply.ts	useUnicornHorn	rollDice	"[""2"", ""object?.blessed ? 4 : 2""]"	constant
 src/js/trap.ts	rewardMonsterRescue	luckRandom	"[""10""]"	constant

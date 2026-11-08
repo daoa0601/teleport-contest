@@ -167,7 +167,9 @@ lock.c	doclose	obstructed	false
 lock.c	doopen_indir	autokey	true
 lock.c	doopen_indir	exercise	true
 lock.c	forcelock	exercise	true;true;true
+makemon.c	m_initinv	mksobj	false+false;false+false;false+false;true;true+false;true+false;true+false
 makemon.c	m_initthrow	mksobj	true+false
+makemon.c	m_initweap	mksobj	false+false;false+false;false+false
 makemon.c	makemon	mkobj_at	true
 makemon.c	makemon	propagate	false
 makemon.c	mkmonmoney	mksobj	false+false

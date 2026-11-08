@@ -1128,13 +1128,14 @@ export function monsterCanCarryObject(
 }
 
 
+// The port's hero is not a Monster, so this union names the actor C read
+// through one mtmp pointer (mtmp == &gy.youmonst).
+export type PoisonGasTarget = { hero: GameState } | { monster: Monster };
+
 // C mon.c:m_poisongas_ok().
 // Would this actor be OK in poison gas?  Does not check for actual gas at
-// the location.  C reads the actor through one mtmp pointer, testing
-// mtmp == &gy.youmonst; the port's hero is not a Monster, so the union
-// names the actor and the halves stay in region.ts (heroGasTolerance(),
+// the location.  The halves stay in region.ts (heroGasTolerance(),
 // monsterGasTolerance(), the species tests they share).
-export type PoisonGasTarget = { hero: GameState } | { monster: Monster };
 export function mPoisongasOk(target: PoisonGasTarget, state: GameState = game): GasTolerance {
     return 'hero' in target
         ? heroGasTolerance(target.hero)

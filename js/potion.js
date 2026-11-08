@@ -3015,6 +3015,13 @@ export async function releaseDjinni(source, state) {
             break;
     }
 }
+// C potion.c:split_mon().
+// One entry for a black pudding or gremlin dividing under heat: C tests
+// mon == &gy.youmonst and formats the heat reason before cloning.  The
+// hero half (splitHeroMonsterForm(); its callers own the "You multiply"
+// line) and the monster half (splitMonster(), which announces a spotted
+// division itself) stay separate, and the union above names the actor C
+// compared.
 export async function splitMon(target, state = game, options = {}) {
     return 'hero' in target
         ? splitHeroMonsterForm(target.hero)

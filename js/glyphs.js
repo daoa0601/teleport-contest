@@ -1,5 +1,6 @@
 // glyphs.js — the glyph customization expansion.  C ref: glyphs.c
-// wizcustom_glyphids(), parse_id(), apply_customizations() over dat/symbols.
+// glyph_to_cmap(), wizcustom_glyphids(), parse_id(), apply_customizations()
+// over dat/symbols.
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -23,6 +24,27 @@ const BRANCHES = [
     { offset: GlyphOffset.cmapKnox, name: 'knox', palette: BASIC_COLOR | CLR_YELLOW, rgb: 0x7ee6e6 },
     { offset: GlyphOffset.cmapSokoban, name: 'sokoban', palette: BASIC_COLOR | CLR_BLUE, rgb: BASIC_COLOR | CLR_BLUE },
 ];
+// C glyphs.c:glyph_to_cmap(): the displayed glyph number to its defsyms[]
+// index, mapping each branch wall range back onto the base symbols.
+export function glyphToCmapSymbol(glyph) {
+    if (glyph === undefined)
+        return null;
+    if (glyph === GlyphOffset.cmapStone)
+        return CmapSymbol.stone;
+    if (glyph >= GlyphOffset.cmapMain && glyph < GlyphOffset.cmapA)
+        return (glyph - GlyphOffset.cmapMain) % (CmapSymbol.trwall - CmapSymbol.vwall + 1) + CmapSymbol.vwall;
+    if (glyph >= GlyphOffset.cmapA && glyph < GlyphOffset.altar)
+        return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
+    if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB)
+        return CmapSymbol.altar;
+    if (glyph >= GlyphOffset.cmapB && glyph < GlyphOffset.zap)
+        return glyph - GlyphOffset.cmapB + CmapSymbol.grave;
+    if (glyph >= GlyphOffset.zap && glyph < GlyphOffset.cmapC)
+        return (glyph - GlyphOffset.zap) % 4 + 74;
+    if (glyph >= GlyphOffset.cmapC && glyph < GlyphOffset.swallow)
+        return glyph - GlyphOffset.cmapC + CmapSymbol.digbeam;
+    return null;
+}
 // S_ replacements common to Enhanced1 and Enhanced2. Wall entries are
 // separate because Enhanced2 uses double lines for S_, but single lines for G_.
 const ENHANCED_SYMBOLS = [
