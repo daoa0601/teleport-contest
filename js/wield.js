@@ -943,8 +943,8 @@ export function setWeaponEnchantment(object, value) {
     object.spe = value;
     object.enchantment = value;
 }
-// Part of C obj.h:u_wield_art(): test the hero's primary weapon for Magicbane.
-// The native u_wield_art test for ART_MAGICBANE (include/obj.h:441), as
+// C obj.h:u_wield_art(): test the hero's primary weapon for Magicbane —
+// the native u_wield_art(ART_MAGICBANE) test (include/obj.h:441), as
 // wield.c reads it.
 function heroWieldsMagicbane(state) {
     return artifactById((state.uwep || state.u?.uwep)?.oartifact)?.name === 'Magicbane';
