@@ -647,8 +647,11 @@ export async function advanceHeroPetrification({
     return { active: false, died: !!died, turns: 0 };
 }
 
-// Part of C end.c:find_delayed_killer(): reading the stored petrification
-// killer and its prefix format back for the death report.
+// Part of C timeout.c:nh_timeout(): the STONED case's delayed-killer read
+// (find_delayed_killer(STONED) with its format/name copy, else
+// NO_KILLER_PREFIX and "killed by petrification"), reported for the death
+// call; the port stores its one delayed killer on u.stoneKiller instead of
+// end.c's killer list, so find_delayed_killer() has no port body.
 function petrificationDeathCause(state: GameState): string {
     const name = state.u.stoneKiller;
     if (!name) return 'killed by petrification';
@@ -1477,10 +1480,11 @@ function objectTimerIsGlobal(object: GameObject, state: GameState): boolean {
         && !!state._migratingMonsters?.includes(outer.ocarry);
 }
 
-// Part of C light.c:obj_is_local(): classify a light's outermost owner.
-// The light batch uses the inverse of obj_is_local. Its mon_is_local macro
-// tests whether the carrier's mx is positive, unlike timeout.c's migration-list test.
-// The timer queue uses objectTimerIsGlobal above for its corresponding test.
+// Part of C light.c:save_light_sources(), maybe_write_ls(): an object
+// source's is_global classification — timeout.c:obj_is_local()'s recursion
+// with light.c's local mon_is_local macro ((mon)->mx > 0, light.c:373), so
+// a carrier without a map position is global; the timer queue's
+// objectTimerIsGlobal above uses timeout.c's list-based mon_is_local().
 export function lightObjectIsGlobal(object: GameObject): boolean {
     let outermost = object;
     while (outermost.where === 'contained' && outermost.container)
