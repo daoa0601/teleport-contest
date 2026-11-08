@@ -906,7 +906,7 @@ src/js/makemon.ts	makemon	rn2	"[""75""]"	constant
 src/js/makemon.ts	makemon	rn2	"[""75""]"	constant
 src/js/makemon.ts	makemon	rn2	"[""75""]"	constant
 src/js/makemon.ts	makemon	rn2	"[""8""]"	constant
-src/js/makemon.ts	makemon	rn2	"[""Math.trunc(baseLevel / 2)""]"	unproved
+src/js/makemon.ts	mInitinv	rn2	"[""Math.trunc(baseLevel / 2)""]"	unproved
 src/js/makemon.ts	makemon	rn2	"[""candleChance""]"	constant
 src/js/makemon.ts	makemon	rn2	"[""polearms.length""]"	constant
 src/js/makemon.ts	makemon	rn2	"[""range""]"	constant
