@@ -4760,22 +4760,24 @@ export async function hitHeroWithRay({ state = game, attack = heroBreathAttack(s
     }
 }
 
-// C zap.c:destroy_items(&gy.youmonst, AD_FIRE, dmg) as the fire-effect
-// callers use it.
+// Part of C zap.c:destroy_items(): the destroy_items(&gy.youmonst, AD_FIRE,
+// dmg) call form the fire-effect callers use.
 export function destroyFireInventory(sourceDamage: number, options: InventoryDamageOptions = {}) {
     return destroyInventoryByElement(
         INVENTORY_DAMAGE.FIRE, sourceDamage, options,
     );
 }
 
-// C zap.c:destroy_items(&gy.youmonst, AD_COLD, dmg).
+// Part of C zap.c:destroy_items(): the destroy_items(&gy.youmonst, AD_COLD,
+// dmg) call form.
 export function destroyColdInventory(sourceDamage: number, options: InventoryDamageOptions = {}) {
     return destroyInventoryByElement(
         INVENTORY_DAMAGE.COLD, sourceDamage, options,
     );
 }
 
-// C zap.c:destroy_items(&gy.youmonst, AD_ELEC, dmg).
+// Part of C zap.c:destroy_items(): the destroy_items(&gy.youmonst, AD_ELEC,
+// dmg) call form.
 export function destroyElectricInventory(sourceDamage: number, options: InventoryDamageOptions = {}) {
     return destroyInventoryByElement(
         INVENTORY_DAMAGE.ELECTRIC, sourceDamage, options,
@@ -6177,8 +6179,8 @@ function heroResists(state: GameState, damageType: InventoryDamageType) {
     return false;
 }
 
-// C zap.c:maybe_destroy_item(): the worn-ring test (uleft/uright or the
-// W_RING worn mask) before the shock-resistance gloves check.
+// Part of C zap.c:maybe_destroy_item(): the worn-ring test (uleft/uright or
+// the W_RING worn mask) before the shock-resistance gloves check.
 function isWornRing(object: GameObject, state: GameState) {
     return object === state.uleft || object === state.uright
         || object === state.u?.uleft || object === state.u?.uright
@@ -6437,7 +6439,8 @@ export function monsterHasElementalResistance(monster: Monster, mask: number): b
     return !!(monsterResistanceBits(monster) & mask);
 }
 
-// C zap.c:destroy_items(mon, AD_COLD, dmg).
+// Part of C zap.c:destroy_items(): the destroy_items(mon, AD_COLD, dmg)
+// call form.
 export function destroyColdMonsterInventory(
     monster: Monster, sourceDamage: number, options: MonsterInventoryDamageOptions = {},
 ) {
@@ -6446,7 +6449,8 @@ export function destroyColdMonsterInventory(
     );
 }
 
-// C zap.c:destroy_items(mon, AD_FIRE, dmg).
+// Part of C zap.c:destroy_items(): the destroy_items(mon, AD_FIRE, dmg)
+// call form.
 export function destroyFireMonsterInventory(
     monster: Monster, sourceDamage: number, options: MonsterInventoryDamageOptions = {},
 ) {
@@ -6455,9 +6459,9 @@ export function destroyFireMonsterInventory(
     );
 }
 
-// C zap.c:zhitm(): the damage-only entry muse.c and spell.c call; they own
-// the death, wake-up, and hit messages. The numeric result is zhitm's
-// applied damage, including MAGIC_COOKIE for disintegration.
+// Part of C zap.c:zhitm(): the damage-only entry muse.c and spell.c call;
+// they own the death, wake-up, and hit messages. The numeric result is
+// zhitm's applied damage, including MAGIC_COOKIE for disintegration.
 export async function hitMonsterWithRay(monster: Monster, nativeType: number, dice: number, {
     state = game, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd,
 }: Pick<NativeRayOptions, 'state' | 'publish' | 'random' | 'rollDice' | 'rollOne'> = {}): Promise<number> {
