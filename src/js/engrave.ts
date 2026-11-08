@@ -24,7 +24,8 @@ import { AT_HUGS } from './monster_attack_types.js';
 import {
     P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS,
     ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN,
-    NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS, SIZEOF_ENGRAVING,
+    Is_airlevel, Is_waterlevel, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT,
+    MD_PAD_RUMORS, SIZEOF_ENGRAVING,
 } from './const.js';
 import type { Monster } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -497,8 +498,8 @@ export function heroCanReachFloor(
     if (hero.ustuck && !heroFormSticks(state) && holderHugs(hero.ustuck))
         return false;
 
-    const airLevel = sameDungeonLevel(hero.uz, state.air_level);
-    const waterLevel = sameDungeonLevel(hero.uz, state.water_level);
+    const airLevel = Is_airlevel(hero.uz, state);
+    const waterLevel = Is_waterlevel(hero.uz, state);
     if ((hero.levitating || hero.levitation || state.levitating)
         && !airLevel && !waterLevel) return false;
     if (hero.usteed && ridingSkill(state) < 2) return false;
@@ -526,15 +527,6 @@ function holderHugs(holder: Monster): boolean {
 function ridingSkill(state: GameState): number {
     return state.u?.weaponSkills?.[P_RIDING]?.skill ?? 0;
 }
-
-// Part of C engrave.c:can_reach_floor(): Is_airlevel()/Is_waterlevel()
-// compare the hero's location with the level records.
-function sameDungeonLevel(current: DungeonLocation | null | undefined, target: DungeonLocation | null | undefined): boolean {
-    return !!current && !!target
-        && current.dnum === target.dnum
-        && current.dlevel === target.dlevel;
-}
-
 // Part of C engrave.c:can_reach_floor(): t_at(u.ux, u.uy) for the pit
 // check.
 function trapAtHeroInState(state: GameState): Trap | null {

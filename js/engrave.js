@@ -13,7 +13,7 @@ import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm, hero
 import { heroTeetersAtPit, heroEscapedShaft } from './trap.js';
 import { MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
-import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS, SIZEOF_ENGRAVING, } from './const.js';
+import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, Is_airlevel, Is_waterlevel, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS, SIZEOF_ENGRAVING, } from './const.js';
 import { rn2, rnd } from './rng.js';
 import { newsym } from './display.js';
 import { surfaceName, ceilingName } from './dungeon.js';
@@ -406,8 +406,8 @@ export function heroCanReachFloor(state = game, { checkPit = false } = {}) {
         return false;
     if (hero.ustuck && !heroFormSticks(state) && holderHugs(hero.ustuck))
         return false;
-    const airLevel = sameDungeonLevel(hero.uz, state.air_level);
-    const waterLevel = sameDungeonLevel(hero.uz, state.water_level);
+    const airLevel = Is_airlevel(hero.uz, state);
+    const waterLevel = Is_waterlevel(hero.uz, state);
     if ((hero.levitating || hero.levitation || state.levitating)
         && !airLevel && !waterLevel)
         return false;
@@ -435,13 +435,6 @@ function holderHugs(holder) {
 // Part of C engrave.c:can_reach_floor(): P_SKILL(P_RIDING).
 function ridingSkill(state) {
     return state.u?.weaponSkills?.[P_RIDING]?.skill ?? 0;
-}
-// Part of C engrave.c:can_reach_floor(): Is_airlevel()/Is_waterlevel()
-// compare the hero's location with the level records.
-function sameDungeonLevel(current, target) {
-    return !!current && !!target
-        && current.dnum === target.dnum
-        && current.dlevel === target.dlevel;
 }
 // Part of C engrave.c:can_reach_floor(): t_at(u.ux, u.uy) for the pit
 // check.

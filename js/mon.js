@@ -20,7 +20,7 @@ import { splitMon } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2, distmin, ordinalSuffix, pointsOnline } from './hacklib.js';
-import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, formCanBecomeStoneGolem, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, is_dwarf, is_elf, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsAlwaysHostile, monsterIsPlainHuman, monsterIsQuestGuardian, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, resistConflict, heroHasOlfaction, } from './mondata.js';
+import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, formCanBecomeStoneGolem, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, is_dwarf, is_elf, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, likes_lava, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsAlwaysHostile, monsterIsPlainHuman, monsterIsQuestGuardian, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, resistConflict, heroHasOlfaction, } from './mondata.js';
 import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { randomMonsterRelocation, relocateMonsterTo, reportMonsterTeleportRestriction, monsterTeleportRestricted, enexto, goodPosition } from './teleport.js';
@@ -105,8 +105,6 @@ import { docrt } from './display.js';
 import { placeBallAndChain } from './ball.js';
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
-const PM_FIRE_ELEMENTAL = 155;
-const PM_SALAMANDER = 329;
 const PM_BABY_PURPLE_WORM = 113;
 const PM_PURPLE_WORM = 115;
 const PM_SHRIEKER = 163;
@@ -245,17 +243,12 @@ export function rollMonsterPoolReaction(monster, state = game, { random = rn2, r
         return { kind: 'safe' };
     return { kind: 'drown' };
 }
-// C mondata.h:likes_lava():
-function monsterLikesLava(monster) {
-    return monster?.mnum === PM_FIRE_ELEMENTAL
-        || monster?.mnum === PM_SALAMANDER;
-}
 // Part of C mon.c:minliquid_core(): the lava reaction branch.
 export function monsterLavaReaction(monster, state = game) {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     if (!location || !isLavaAt(monster.mx, monster.my, state))
         return null;
-    const likesLava = monsterLikesLava(monster);
+    const likesLava = likes_lava(monster?.mnum ?? -1);
     if (monsterInAir(monster, state) || monsterIsClinger(monster.mnum) || likesLava)
         return { kind: 'safe' };
     const fireResistant = monsterHasFireResistance(monster);
@@ -395,7 +388,7 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
                 if (state.program_state.gameover || monster.dead || monster.mhp <= 0)
                     return death;
             }
-            if (monsterInAir(monster, state) || monsterLikesLava(monster))
+            if (monsterInAir(monster, state) || likes_lava(monster.mnum))
                 return { survived: true };
             await fireDamageChain(monster.minvent || monster.inventory || [], {
                 carrier: monster,
@@ -973,7 +966,7 @@ export async function mfndpos(monster, state, flags = monAllowFlags(monster, sta
     let wantPool = symbol === S_EEL;
     const poolOk = (!waterLevel && inAir) || (monsterIsSwimmer(monster.mnum) && !wantPool);
     const lavaOk = monster.mnum !== PM_FLOATING_EYE &&
-        (inAir || monster.mnum === PM_FIRE_ELEMENTAL || monster.mnum === PM_SALAMANDER);
+        (inAir || likes_lava(monster.mnum));
     const { rockOk, treeOk } = monsterDigCapabilities(monster, flags);
     const throughDoor = !!(flags & (ALLOW_WALL | BUSTDOOR)) || rockOk || treeOk;
     const poisonGasOk = mPoisongasOk({ monster }, state) === GAS_OK;

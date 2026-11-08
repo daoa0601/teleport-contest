@@ -77,7 +77,7 @@ import {
     monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless,
     monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst,
     tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead,
-    monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig,
+    monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, likes_lava,
     monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater,
     monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving,
     monsterIsAlwaysHostile, monsterIsPlainHuman, monsterIsQuestGuardian,
@@ -186,8 +186,6 @@ import { placeBallAndChain } from './ball.js';
 
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
-const PM_FIRE_ELEMENTAL = 155;
-const PM_SALAMANDER = 329;
 const PM_BABY_PURPLE_WORM = 113;
 const PM_PURPLE_WORM = 115;
 const PM_SHRIEKER = 163;
@@ -372,18 +370,12 @@ export function rollMonsterPoolReaction(
     return { kind: 'drown' };
 }
 
-// C mondata.h:likes_lava():
-function monsterLikesLava(monster: Monster): boolean {
-    return monster?.mnum === PM_FIRE_ELEMENTAL
-        || monster?.mnum === PM_SALAMANDER;
-}
-
 // Part of C mon.c:minliquid_core(): the lava reaction branch.
 export function monsterLavaReaction(monster: Monster, state: GameState = game): MonsterLavaReaction | null {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     if (!location || !isLavaAt(monster.mx, monster.my, state)) return null;
 
-    const likesLava = monsterLikesLava(monster);
+    const likesLava = likes_lava(monster?.mnum ?? -1);
     if (monsterInAir(monster, state) || monsterIsClinger(monster.mnum) || likesLava)
         return { kind: 'safe' };
     const fireResistant = monsterHasFireResistance(monster);
@@ -533,7 +525,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                     ? 'lava-scorch' : 'lava-burning', false);
                 if (state.program_state.gameover || monster.dead || monster.mhp <= 0) return death;
             }
-            if (monsterInAir(monster, state) || monsterLikesLava(monster))
+            if (monsterInAir(monster, state) || likes_lava(monster.mnum))
                 return { survived: true };
             await fireDamageChain(
                 monster.minvent || monster.inventory || [],
@@ -1167,7 +1159,7 @@ export async function mfndpos(
     const poolOk = (!waterLevel && inAir) || (monsterIsSwimmer(monster.mnum) && !wantPool);
     const lavaOk =
         monster.mnum !== PM_FLOATING_EYE &&
-        (inAir || monster.mnum === PM_FIRE_ELEMENTAL || monster.mnum === PM_SALAMANDER);
+        (inAir || likes_lava(monster.mnum));
     const { rockOk, treeOk } = monsterDigCapabilities(monster, flags);
     const throughDoor = !!(flags & (ALLOW_WALL | BUSTDOOR)) || rockOk || treeOk;
     const poisonGasOk = mPoisongasOk({ monster }, state) === GAS_OK;

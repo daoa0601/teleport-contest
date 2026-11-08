@@ -2077,6 +2077,14 @@ export function likes_objs(mnum: number): boolean {
         || speciesHasWeaponAttack(mnum);
 }
 
+const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
+const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
+
+// C mondata.h:likes_lava()
+export function likes_lava(mnum: number): boolean {
+    return mnum === PM_FIRE_ELEMENTAL || mnum === PM_SALAMANDER;
+}
+
 // C mondata.h:is_ndemon()
 export function is_ndemon(mnum: number): boolean {
     return monsterIsDemon(mnum) && !is_lord(mnum) && !is_prince(mnum);
