@@ -1060,8 +1060,9 @@ async function replaceProofing(armor: GameObject, oldProof: boolean, newProof: b
     armor.oerodeproof = newProof;
 }
 
-// Port only: vision recalc and shine message after an armor's light
-// radius changes.
+// Part of C read.c:seffect_enchant_armor(): the `if (old_light)
+// maybe_adjust_light(otmp, old_light)` call, with mkobj.c:maybe_adjust_light()'s
+// vision recalc and shine line inlined for the port's armor callers.
 async function adjustArmorLight(armor: GameObject, oldRadius: number, state: GameState): Promise<void> {
     if (!oldRadius) return;
     const delta = objectLightRadius(armor, state) - oldRadius;

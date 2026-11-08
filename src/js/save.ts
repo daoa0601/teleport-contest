@@ -172,7 +172,9 @@ export async function askAboutPanicSave(): Promise<boolean> {
     return await promptChoice(question, ['y', 'n', 'q'], 'n', { visibleChoices: 'yn' }) === 'y';
 }
 
-// Port only: pre-save monster pass (dead purge, priest timers).
+// Part of C save.c:savemonchn(): forget_temple_entry() for every priest and
+// the dead-monster purge, applied to live, cached, and migrating levels
+// before the graph is serialized.
 function prepareMonstersForSave(): void {
     const levels = [game.level, ...[...(game._levelCache?.values() ?? [])].map(cached => cached.level)];
     for (const level of levels) {

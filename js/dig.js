@@ -92,8 +92,10 @@ const DIG_ACTIONS = [
 ];
 // C dig.c d_target[] for "You hit the <target>..." messages.
 const DIG_TARGETS = ['', 'rock', 'statue', 'boulder', 'door', 'tree'];
-// Port only: m_at() lookups with the call sites' MON_AT()/DEADMONSTER()
-// checks.
+// Part of C rm.h:m_at(): the head-only occupant of a square, with the call
+// sites' MON_AT()/DEADMONSTER() checks folded in. steed.ts monsterAt()
+// additionally counts worm-tail squares for movement scans; C's m_at() and
+// these dig.c callers match the head position only.
 function monsterAt(x, y, state) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y) || null;

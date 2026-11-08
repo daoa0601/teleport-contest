@@ -116,8 +116,10 @@ export type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
     | typeof DIGTYP_STATUE | typeof DIGTYP_BOULDER | typeof DIGTYP_DOOR
     | typeof DIGTYP_TREE;
 
-// Port only: m_at() lookups with the call sites' MON_AT()/DEADMONSTER()
-// checks.
+// Part of C rm.h:m_at(): the head-only occupant of a square, with the call
+// sites' MON_AT()/DEADMONSTER() checks folded in. steed.ts monsterAt()
+// additionally counts worm-tail squares for movement scans; C's m_at() and
+// these dig.c callers match the head position only.
 function monsterAt(x: number, y: number, state: GameState): Monster | null {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,

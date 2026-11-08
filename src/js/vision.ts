@@ -28,7 +28,9 @@ import type { MapLocation, Position } from './map_types.js';
 import { monsterPerceives } from './mondata.js';
 import { set_seenv } from './display.js';
 
-// Port only: local mimic-light predicate; appearanceBlocksLight carries the native macro citation.
+// C monst.h:is_lightblocker_mappear(): mimic appearances that block vision/light
+// (is_obj_mappear(BOULDER), or furniture walls/doors/tree). A mimic with no
+// saved mappearance blocks nothing.
 export function mimicBlocksLight(monster: Pick<Monster, 'm_ap_type' | 'mappearance'>): boolean {
     if (monster.mappearance === undefined) return false;
     return M_AP_TYPE(monster) === M_AP_OBJECT && monster.mappearance === BOULDER
@@ -946,25 +948,33 @@ export function couldsee(x: number, y: number): boolean {
     return !!((game.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }
 
-// C ref: vision.h m_canseeu(m). Assumes that if the hero has a clear line of
+// C vision.h:m_canseeu(): assumes that if the hero has a clear line of
 // sight to the monster's location and the hero is visible, the monster could
 // see the hero; it deliberately does not test the monster's blindness.
-
-// Port only: local observer-visibility predicate; specialMoverSeesHero carries the native macro citation.
 export function monsterHasLineOfSightToHero(monster: Monster, state: GameState = game): boolean {
     return (!heroIsInvisible(state) || monsterPerceives(monster.mnum))
         && !state.u.uinwater && couldsee(monster.mx, monster.my);
 }
 
-// Port only: expose state-aware geometric sight to live games and focused test states.
-// State-aware couldsee for modules that run against either the live game
-// or a focused unit state. COULD_SEE is bit 0 of the vision buffer. Focused
-// unit states omit the buffer and are treated as unobstructed; live games
-// always carry the current buffer produced by domove/vision_recalc.
+// C vision.h:couldsee(): state-aware read for callers that run against
+// either the live game or a focused unit state. Focused unit states omit
+// the vision buffer and are treated as unobstructed; live games always
+// carry the current buffer produced by domove/vision_recalc.
 // Terrain browsing can rebuild it while temporarily lifting engulfment.
 export function couldSeeFromHero(state: GameState, x: number, y: number) {
     if (!state?.viz_array) return true;
     return !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
+}
+
+// C vision.h:cansee(): state-aware read for callers that run against either
+// the live game or a focused unit state. vision_recalc never sets IN_SIGHT
+// while the hero is blind, so a state that has not run vision_recalc since
+// the hero was blinded must test the blind fields directly; a state with no
+// vision buffer is treated as in sight.
+export function canseeFromHero(state: GameState, x: number, y: number): boolean {
+    if (state === game) return cansee(x, y);
+    if (state.blind || (state.u?.blindTurns ?? 0) > 0) return false;
+    return !state.viz_array || !!((state.viz_array[y]?.[x] ?? 0) & IN_SIGHT);
 }
 
 // C vision.c:vision_init(). Neither work buffer belongs to a previous game.

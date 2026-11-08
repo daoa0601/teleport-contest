@@ -222,16 +222,19 @@ export async function rumorCheck() {
     ];
     await showTextWindow(lines);
 }
-// Port only: rumor section byte size under the makedefs line padding.
+// Part of C makedefs.c:do_rumors(): a section's compiled byte size,
+// re-derived from the padded lines that makedefs wrote into the index.
 function rumorSectionSize(lines) {
     return lines.reduce((size, line) => size + paddedLine(line, MD_PAD_RUMORS).length + 1, 0);
 }
-// Port only: one T/F start-end-size boundary line of the rumor report.
+// Part of C rumors.c:rumor_check(): the "T start=%06ld (%06lx), end=…,
+// size=…" reveal lines.
 function rumorBoundary(label, start, end, size) {
     const field = (value) => `${decimal(value)} (${value.toString(16).padStart(6, '0')})`;
     return `${label} start=${field(start)}, end=${field(end)}, size=${field(size)}`;
 }
-// Port only: the first and last padded lines bounding a rumor section.
+// Part of C rumors.c:rumor_check(): the first and last padded rumors bounding
+// a section ("T %06ld %s" and the "  %6s %s" continuation).
 function rumorEndpoints(label, start, lines) {
     const first = lines[0];
     const last = lines.at(-1);
@@ -240,7 +243,8 @@ function rumorEndpoints(label, start, lines) {
     return [`${label} ${decimal(start)} ${paddedLine(first, MD_PAD_RUMORS)}`,
         `         ${paddedLine(last, MD_PAD_RUMORS)}`];
 }
-// Port only: engraving/epitaph/bogus-mon section text for the rumor report.
+// Part of C rumors.c:others_check(): one blank line, the title, the first
+// two entries, and the ellipsis/last entry of a section.
 function supportingText(title, entries, padding) {
     const first = entries[0];
     if (first === undefined)
@@ -259,11 +263,12 @@ function supportingText(title, entries, padding) {
         throw new Error(`${title} has no last entry`);
     return [...lines, paddedLine(last, padding)];
 }
-// Port only: one makedefs-padded line.
+// Part of C makedefs.c:padline(): pad a short line with '_' so random seeks
+// land in it as often as in long lines.
 function paddedLine(line, lengthWithNewline) {
     return line.padEnd(lengthWithNewline - 1, '_');
 }
-// Port only: six-digit decimal field of the rumor report.
+// Part of C rumors.c:rumor_check(): the %06ld field format.
 function decimal(value) {
     return String(value).padStart(6, '0');
 }

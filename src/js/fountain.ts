@@ -236,11 +236,6 @@ function fountainActorIndefiniteName(monster: Monster) {
     return monsterName(monster, { article: 'a' });
 }
 
-// Port only: capitalized monster-name adapter for mintrap()'s messages.
-function fountainActorVisibleSubject(monster: Monster) {
-    return monsterName(monster, { capitalized: true });
-}
-
 // Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
 // the t_at(mtmp->mx, mtmp->my) test.
 function fountainTrapAt(monster: Monster) {
@@ -256,7 +251,7 @@ async function triggerFountainTrap(monster: Monster) {
     // first half, so the completion runs unconditionally as in C's single
     // mintrap() call (fountain.c:55).
     await mintrap(monster, state, {
-        describeMonster: fountainActorVisibleSubject,
+        describeMonster: monster => monsterName(monster, { capitalized: true }),
         publish: plineWithContinuation,
     });
     return { heroDied: !!state.program_state.gameover };
@@ -593,14 +588,10 @@ interface FountainTrapResult {
     heroDied: boolean;
 }
 
-// Port only: resolve a lazy message part.
-function resolvedLiquidName(liquidName: DescribedPart): string {
-    return typeof liquidName === 'function' ? liquidName() : liquidName;
-}
-
-// Port only: resolve a lazy message part.
-function resolvedArmName(armName: DescribedPart): string {
-    return typeof armName === 'function' ? armName() : armName;
+// Port only: resolve a lazy message part (names computed only when the
+// message that uses them is printed).
+function resolvedPart(part: DescribedPart): string {
+    return typeof part === 'function' ? part() : part;
 }
 
 // Part of C fountain.c:dipfountain(): the fate 26 and 27 strange-feeling
@@ -610,7 +601,7 @@ export function resolveDippedSensationFate({ fate, armName = 'arm' }: { fate: nu
         return {
             handled: true,
             message: `A strange tingling runs up your ${
-                resolvedArmName(armName)
+                resolvedPart(armName)
             }.`,
         };
     }
@@ -687,7 +678,7 @@ export async function applyDippedCoinFate({
     loc.looted = (loc.looted ?? 0) | 1;
     await createGold(effect.quantity);
     const message = effect.showMessage
-        ? dippedCoinMessage(resolvedLiquidName(liquidName))
+        ? dippedCoinMessage(resolvedPart(liquidName))
         : '';
     exerciseWisdom();
     await repaint();

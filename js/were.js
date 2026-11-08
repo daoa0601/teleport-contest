@@ -176,14 +176,16 @@ export async function revertHeroWereForm({ state = game, publish = plineWithCont
     }
     return { kind: remain ? 'remained' : 'blocked', cured: purify, changed: false };
 }
-// Port only: request purification only when the hero is infected or in werecreature form.
+// Part of C eat.c:fpostfx(), potion.c:peffect_water(), pray.c:fix_worst_trouble():
+// the ismnum(u.ulycn) || is_were(youmonst.data) gate around you_unwere(TRUE).
 export async function purifyHeroLycanthropy({ state = game, publish = plineWithContinuation, } = {}) {
     requirePlayingGame(state);
     if (!(state.u.ulycn >= 0) && !isWereMonster({ mnum: state.u.umonnum }))
         return { cured: false, changed: false };
     return revertHeroWereForm({ state, publish, purify: true });
 }
-// Port only: adapt an optional monster species to the werecreature predicate.
+// Part of C mondata.h:is_were(): optional-species form for callers that may
+// hold no monster (C callers always have a species pointer).
 export function isWereMonster(monster) {
     const mnum = monster?.mnum;
     return mnum !== undefined && is_were(mnum);

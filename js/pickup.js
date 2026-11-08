@@ -2209,7 +2209,9 @@ function rejectedPutMessage(container, object, state) {
     }
     return null;
 }
-// Port only: clamp a requested transfer count.
+// Part of C pickup.c:pickup_object(), out_container(): the counted transfer's
+// count normalization — unset means the whole stack and the count is capped
+// at quan before splitobj().
 function transferQuantity(object, count) {
     const total = quantity(object);
     return count > 0 ? Math.min(Math.trunc(count), total) : total;
