@@ -109,7 +109,8 @@ export function drawbridgeWallPosition({ x, y, location }: DrawbridgeSquare): Po
     return { x: x - 1, y };
 }
 
-// Port only: pairs a drawbridge square with its get_wall_for_db() wall.
+// Part of C dbridge.c:find_drawbridge(): accept only a drawbridge square,
+// then get_wall_for_db() (drawbridgeWallPosition) supplies its paired wall.
 export function drawbridgeWallAt(x: number, y: number, state = game): DrawbridgeSquare | null {
     const level = state.level;
     if (!level) return null;
@@ -231,7 +232,8 @@ async function announceBridgeMovement(bridge: DrawbridgeSquare, wall: Drawbridge
         : 'chains rattling and gears turning.', plineWithContinuation, state);
 }
 
-// Port only: u_at() position test.
+// C you.h:u_at(): state-aware form for callers that run against either the
+// live game or a focused unit state.
 function heroAt(point: Position, state: GameState): boolean {
     return state.u?.ux === point.x && state.u?.uy === point.y;
 }
@@ -362,7 +364,8 @@ export async function destroyDrawbridge(x: number, y: number, state = game, opti
     return true;
 }
 
-// Port only: dispatch between open_drawbridge() and close_drawbridge().
+// Part of C music.c:do_play_instrument(): the drawbridge response to the
+// passtune — DRAWBRIDGE_DOWN closes, otherwise it opens.
 export async function toggleDrawbridge(x: number, y: number, state = game, options: DrawbridgeOptions = {}): Promise<boolean> {
     const location = state.level?.at(x, y);
     if (location?.typ === DRAWBRIDGE_UP)
@@ -447,11 +450,6 @@ function entityAt(x: number, y: number, state: GameState): DrawbridgeEntity | nu
         species: tail ? MONSTER_NAME.indexOf('long worm tail') : monster.mnum };
 }
 
-// Port only: edata symbol accessor for the entity.
-function entitySymbol(entity: DrawbridgeEntity): number | null {
-    return MONSTER_SYMBOL[entity.species] ?? null;
-}
-
 // C dbridge.c:e_nam().
 function entityName(entity: DrawbridgeEntity, state: GameState, capitalized = false): string {
     if (entity.hero) return capitalized ? 'You' : 'you';
@@ -473,7 +471,7 @@ function entityPassesWalls(entity: DrawbridgeEntity, state: GameState): boolean 
 
 // Part of C dbridge.c:automiss(), e_survives_at(): the noncorporeal() test.
 function entityIsNoncorporeal(entity: DrawbridgeEntity): boolean {
-    return entitySymbol(entity) === S_GHOST;
+    return MONSTER_SYMBOL[entity.species] === S_GHOST;
 }
 
 // Part of C dbridge.c:e_missed(), e_survives_at(): the is_flyer() test.
@@ -483,7 +481,8 @@ function entityIsFlying(entity: DrawbridgeEntity): boolean {
 
 // Part of C dbridge.c:e_missed(), e_survives_at(): the is_floater() test.
 function entityIsFloating(entity: DrawbridgeEntity): boolean {
-    const symbol = entitySymbol(entity);
+    // C reads edata->mlet directly (is_floater(): mlet == S_EYE || S_LIGHT).
+    const symbol = MONSTER_SYMBOL[entity.species];
     return symbol === S_EYE || symbol === S_LIGHT;
 }
 
