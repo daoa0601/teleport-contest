@@ -188,7 +188,7 @@ function luaStringToFloat(text: string): number | null {
     return negative ? -value : value;
 }
 
-// Part of C lobject.c:l_str2dloc()
+// Part of C lobject.c:lua_strx2number(): its l_mathop(ldexp)(r, e) finish,
 // strtod-grade mantissa * 2^shift: the arithmetic stays exact in BigInt
 // space and crosses into double precision once, so a zero mantissa with
 // a huge exponent is zero rather than 0 * Infinity = NaN, and a long
@@ -209,8 +209,8 @@ function hexFloatValue(mantissa: bigint, shift: number): number {
         : Number(`0.${'0'.repeat(-wholeDigits)}${digits}`);
 }
 
-// Part of C lobject.c:l_str2dloc(): the mantissa's bit length for the
-// exponent shift.
+// Part of C lobject.c:lua_strx2number(): the mantissa's bit length for
+// its exponent shift.
 function bitLength(value: bigint): number {
     return value.toString(2).length;
 }

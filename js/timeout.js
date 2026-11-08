@@ -37,7 +37,7 @@ import { finishHeroDeath } from './end.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, refreshHeroSeeing, see_monsters } from './display.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
-import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
+import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, new_light_source } from './light.js';
 import { Popeye, eating_dangerous_corpse, morehungry, vomit } from './eat.js';
 import { removeWornHeroItem } from './steal.js';
 import { captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification } from './trap.js';
@@ -584,8 +584,11 @@ export async function advanceHeroPetrification({ state = game, die = finishHeroD
     clearHeroPetrification(state);
     return { active: false, died: !!died, turns: 0 };
 }
-// Part of C end.c:find_delayed_killer(): reading the stored petrification
-// killer and its prefix format back for the death report.
+// Part of C timeout.c:nh_timeout(): the STONED case's delayed-killer read
+// (find_delayed_killer(STONED) with its format/name copy, else
+// NO_KILLER_PREFIX and "killed by petrification"), reported for the death
+// call; the port stores its one delayed killer on u.stoneKiller instead of
+// end.c's killer list, so find_delayed_killer() has no port body.
 function petrificationDeathCause(state) {
     const name = state.u.stoneKiller;
     if (!name)
@@ -1405,10 +1408,11 @@ function objectTimerIsGlobal(object, state) {
     return outer.where === 'minvent' && !!outer.ocarry
         && !!state._migratingMonsters?.includes(outer.ocarry);
 }
-// Part of C light.c:obj_is_local(): classify a light's outermost owner.
-// The light batch uses the inverse of obj_is_local. Its mon_is_local macro
-// tests whether the carrier's mx is positive, unlike timeout.c's migration-list test.
-// The timer queue uses objectTimerIsGlobal above for its corresponding test.
+// Part of C light.c:save_light_sources(), maybe_write_ls(): an object
+// source's is_global classification — timeout.c:obj_is_local()'s recursion
+// with light.c's local mon_is_local macro ((mon)->mx > 0, light.c:373), so
+// a carrier without a map position is global; the timer queue's
+// objectTimerIsGlobal above uses timeout.c's list-based mon_is_local().
 export function lightObjectIsGlobal(object) {
     let outermost = object;
     while (outermost.where === 'contained' && outermost.container)
@@ -1716,8 +1720,11 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
     if (artifactEmitsLight(object)) {
         object.lamplit = true;
         if (!alreadyLit) {
-            registerObjectLightSource(object, state);
-            state.vision_full_recalc = 1;
+            // C begin_burn(): get_obj_location(CONTAINED_TOO|BURIED_TOO)
+            // feeds new_light_source(). A missing position has no port
+            // branch; it registers at 0,0 as before.
+            const location = getObjectLocation(object, state, { contained: true, buried: true });
+            new_light_source(location?.x ?? 0, location?.y ?? 0, { kind: 'object', object }, state);
         }
         return true;
     }
@@ -1726,8 +1733,11 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
             return false;
         object.lamplit = true;
         if (!alreadyLit) {
-            registerObjectLightSource(object, state);
-            state.vision_full_recalc = 1;
+            // C begin_burn(): get_obj_location(CONTAINED_TOO|BURIED_TOO)
+            // feeds new_light_source(). A missing position has no port
+            // branch; it registers at 0,0 as before.
+            const location = getObjectLocation(object, state, { contained: true, buried: true });
+            new_light_source(location?.x ?? 0, location?.y ?? 0, { kind: 'object', object }, state);
         }
         return true;
     }
@@ -1758,8 +1768,11 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
         return false;
     object.age -= turns;
     if (!alreadyLit) {
-        registerObjectLightSource(object, state);
-        state.vision_full_recalc = 1;
+        // C begin_burn(): get_obj_location(CONTAINED_TOO|BURIED_TOO)
+        // feeds new_light_source(). A missing position has no port
+        // branch; it registers at 0,0 as before.
+        const location = getObjectLocation(object, state, { contained: true, buried: true });
+        new_light_source(location?.x ?? 0, location?.y ?? 0, { kind: 'object', object }, state);
     }
     return true;
 }

@@ -121,7 +121,7 @@ import { is_elven_armor, isFlimsyObject } from './object_properties.js';
 import { grantIntrinsicProperty, propertySourceIsActive, refreshMovementProperties, refreshProperty,
     revokeIntrinsicProperty, setPropertyFloatBlocked } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
-import { objectLightRadius, registerHeroFormLightSource } from './light.js';
+import { objectLightRadius, new_light_source } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
 import {
     nameToMonster, resolveMonsterClass, heroCanBeStrangled, your_race, monsterIsMindless, infravision, is_dwarf,
@@ -1487,8 +1487,7 @@ function updateHeroFormLight(oldLight: boolean, state: PlayingGameState) {
     if (!newLight) return;
     // C light.c:new_light_source() asks for a full recalc so the source shows.
     state.u.formLightRange = 2;
-    registerHeroFormLightSource(state);
-    state.vision_full_recalc = 1;
+    new_light_source(state.u.ux, state.u.uy, { kind: 'you' }, state);
 }
 
 // C polyself.c:polyself(): one polymorph of the hero.

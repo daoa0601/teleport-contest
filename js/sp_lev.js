@@ -50,7 +50,7 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom, fillZooRoom, insideRoom } from './mkroom.js';
 import { beginObjectBurn, scheduleLevelTimer, stopLevelTimer } from './timeout.js';
 import { monsterEmitsLight, vision_reset } from './vision.js';
-import { registerMonsterLightSource } from './light.js';
+import { new_light_source } from './light.js';
 import { SpecialSelection } from './selvar.js';
 import { specialSelectionMatch } from './lua/nhlsel.js';
 import { mapCharacterType } from './lua/lifecycle.js';
@@ -2308,7 +2308,7 @@ export async function create_monster(context, options) {
                         if (monsterEmitsLight(oldForm) !== monsterEmitsLight(type)) {
                             delete monster._lightPosition;
                             if (monsterEmitsLight(type))
-                                registerMonsterLightSource(monster, game);
+                                new_light_source(monster.mx, monster.my, { kind: 'monster', monster }, game);
                             game.vision_full_recalc = 1;
                         }
                         if (!monster.perminvis || oldForm === PM_STALKER || oldForm === PM_BLACK_LIGHT)
@@ -3610,10 +3610,10 @@ const LEVEL_TIMER_TYPE_NAMES = [
     'rot-organic', 'rot-corpse', 'revive-mon', 'zombify-mon',
     'burn-obj', 'hatch-egg', 'fig-transform', 'shrink-glob', 'melt-ice',
 ];
-// Part of C nhlua.c:nhl_timer_start_at(): the coordinate adapter using nhl_get_xy_params() and sp_lev.c:get_coord().
-// nhlua.c:nhl_get_xy_params() over sp_lev.c:get_coord(), as reached by
-// nhl_timer_start_at() after the timer type and delay were popped: two
-// integers, or one table with x/y fields or a two-entry array.
+// Part of C nhlua.c:nhl_get_xy_params(): the x/y parameter read — two
+// integers, or one table through sp_lev.c:get_coord() (x/y fields or a
+// two-entry array); reached by nhl_timer_start_at() after the timer type
+// and delay were popped.
 function luaTimerCoordinates(args) {
     if (args.length === 4)
         return { x: luaToInteger(args[0]), y: luaToInteger(args[1]) };
@@ -3735,8 +3735,8 @@ function sp_level_coder_init() {
             return false;
         }
     });
-    // Part of C nhlua.c:nhl_timer_start_at(): register a level timer at a
-    // map position; only melt-ice is a position timer (timer_is_pos()).
+    // C nhlua.c:nhl_timer_start_at(): register a level timer at a map
+    // position; only melt-ice is a position timer (timer_is_pos()).
     // Kept a local closure because it reads this scope's room coordinates
     // when translating the caller's relative position.
     const startTimerAt = (...args) => {

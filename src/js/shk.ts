@@ -4080,7 +4080,8 @@ function moneyAmount(amount: number, state: GameState): string {
     return `${amount} ${currency(amount, { state })}`;
 }
 
-// Part of C shk.c:2292-2293: the "%ld gold piece%s" offer format.
+// Port only: the "%ld gold piece%s" format shk.c's payment messages share
+// (dopayobj's shk_names_obj call, shk.c:2292-2293, and its other offers).
 function goldPieces(amount: number): string {
     return `${amount} gold piece${amount === 1 ? '' : 's'}`;
 }

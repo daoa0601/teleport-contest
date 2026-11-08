@@ -62,8 +62,10 @@ function getAxis(value: LuaValue | undefined): number {
     return Number.isInteger(number) ? coordxy(number) : 0;
 }
 
-// Part of C lauxlib.c:luaL_typeerror(): the value's type name for error
-// messages.
+// C lauxlib.c:luaL_typeerror(): the typearg half — the __name metatable
+// field, "light userdata", luaL_typename(), and "no value" past the top;
+// the "%s expected, got %s" message and the raise are LuaArgumentError's,
+// shared with every other check* argument read below.
 function argumentType(value: LuaValue | undefined): string {
     if (value === undefined) return 'no value';
     if (value instanceof LuaUserdata) return value.metatable.__name ?? 'userdata';
@@ -341,7 +343,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     };
 // C nhlsel.c:l_selection_filter_percent(): keep points with that chance.
     const filterPercent = (self: LuaValue, percent: LuaValue) => wrap(
-        selectionValue(self).percentage(luaInt(percent)),
+        selectionValue(self).percentageFilter(luaInt(percent)),
     );
 // C nhlsel.c:l_selection_filter_mapchar(): keep points whose map character
 // and lighting match.

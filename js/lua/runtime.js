@@ -365,8 +365,10 @@ function luaStringMatch(value, pattern) {
         return match[1] ?? null;
     return new LuaValues(match.slice(1));
 }
-// Part of C lvm.c:luaV_execute(): the OP_UNM, OP_BNOT, OP_NOT and OP_LEN
-// opcode cases with their metamethod dispatch.
+// Part of C lvm.c:luaV_objlen(), lobject.c:luaO_arith(): the OP_UNM,
+// OP_BNOT, OP_NOT and OP_LEN opcode cases — the # primitive lengths and
+// typeerror of luaV_objlen(), the raw arithmetic with its trybinTM
+// metamethod fallback of luaO_arith(), and OP_NOT's l_isfalse test.
 function unaryValue(operator, value) {
     if (operator === 'not')
         return !truthy(value);
@@ -391,9 +393,10 @@ function unaryValue(operator, value) {
     }
     throw new Error(`Unsupported Lua unary operator ${operator}`);
 }
-// Part of C lvm.c:luaV_execute(): the arithmetic, bitwise and relational
-// opcode cases; metamethod dispatch follows luaV_arith and object equality
-// luaV_equalobj.
+// Part of C lobject.c:luaO_arith(), lvm.c:luaV_lessthan(), luaV_lessequal(),
+// luaV_equalobj(), luaV_concat(): the arithmetic, bitwise, equality,
+// comparison and concat opcode cases — each primitive with the metamethod
+// dispatch of its Lua library function.
 function binaryValue(operator, left, right) {
     const methods = {
         '==': '__eq', '~=': '__eq', '<': '__lt', '<=': '__le',
@@ -1109,8 +1112,9 @@ function isHostObject(value) {
     return typeof value === 'object' && value !== null
         && Object.getPrototypeOf(value) === Object.prototype;
 }
-// Part of C lvm.c:luaV_execute(): the relational opcode comparison itself,
-// for numbers and strings.
+// Part of C lvm.c:luaV_lessthan(), luaV_lessequal(): the number/string
+// primitive comparison those two functions fall through to for the
+// relational opcodes.
 function orderedComparison(operator, left, right) {
     switch (operator) {
         case '<': return left < right;

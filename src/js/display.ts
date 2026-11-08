@@ -140,11 +140,14 @@ export function objectClassSymbol(index: number): string {
     return activeObjectSymbols()[index] ?? '';
 }
 
-// Part of C symbols.c:get_othersym(): the SYM_BOULDER lookup for the active
-// symbol set — the active set's override, else the default rock-class
-// symbol.  optfn_boulder() fills both sets' overrides, while the
-// BOULDER= statement (cfgfiles.c) only fills the primary one. A named
-// primary selection can display that slot on Rogue.
+// C symbols.c:get_othersym(): the SYM_BOULDER lookup for the active symbol
+// set — the active set's override, else the default rock-class symbol (the
+// port computes the effective symbol on demand where C materializes
+// showsyms[SYM_OFF_X + SYM_BOULDER]; the SYM_NOTHING default is inlined at
+// its one use in reglyphSymbolSet below, and no port site reads
+// SYM_UNEXPLORED or SYM_INVISIBLE).  optfn_boulder() fills both sets'
+// overrides, while the BOULDER= statement (cfgfiles.c) only fills the
+// primary one. A named primary selection can display that slot on Rogue.
 export function currentBoulderSymbol(state: GameState = game): string {
     if (shownSymbolSet(state).rogue) {
         const set = activeRogueSymset(state);
