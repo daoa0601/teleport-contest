@@ -3544,10 +3544,10 @@ const LEVEL_TIMER_TYPE_NAMES = [
     'burn-obj', 'hatch-egg', 'fig-transform', 'shrink-glob', 'melt-ice',
 ];
 
-// Part of C nhlua.c:nhl_timer_start_at(): the coordinate adapter using nhl_get_xy_params() and sp_lev.c:get_coord().
-// nhlua.c:nhl_get_xy_params() over sp_lev.c:get_coord(), as reached by
-// nhl_timer_start_at() after the timer type and delay were popped: two
-// integers, or one table with x/y fields or a two-entry array.
+// Part of C nhlua.c:nhl_get_xy_params(): the x/y parameter read — two
+// integers, or one table through sp_lev.c:get_coord() (x/y fields or a
+// two-entry array); reached by nhl_timer_start_at() after the timer type
+// and delay were popped.
 function luaTimerCoordinates(args: readonly LuaValue[]): { x: number; y: number } {
     if (args.length === 4)
         return { x: luaToInteger(args[0]), y: luaToInteger(args[1]) };
@@ -3674,8 +3674,8 @@ function sp_level_coder_init() {
             }
         },
     );
-    // Part of C nhlua.c:nhl_timer_start_at(): register a level timer at a
-    // map position; only melt-ice is a position timer (timer_is_pos()).
+    // C nhlua.c:nhl_timer_start_at(): register a level timer at a map
+    // position; only melt-ice is a position timer (timer_is_pos()).
     // Kept a local closure because it reads this scope's room coordinates
     // when translating the caller's relative position.
     const startTimerAt = (...args: LuaValue[]) => {
