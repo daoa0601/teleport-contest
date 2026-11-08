@@ -41,8 +41,8 @@ import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen,
 import { pline, plineWithContinuation } from './pline.js';
 import type { FeatureOptions, InventoryClassification } from './invent.js';
 import type { MessagePublisher } from './pline.js';
-import { getLine, showMultiSelectWindow, showDisclosureOverlay, showChoiceWindow, showTextWindow } from './windows.js';
-import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';
+import { getLine, showMultiSelectWindow, showDisclosureOverlay, showChoiceWindow } from './windows.js';
+import { snapshotMenuUnderlay, restoreMenuUnderlay, showTextWindow } from './wintty.js';
 import type { ChoiceMenuEntry, CountedSelection, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
 import type { MenuUnderlay } from './wintty.js';
 import { takeQueuedInventoryChoice } from './invent.js';

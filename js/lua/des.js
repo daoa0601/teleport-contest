@@ -8,9 +8,10 @@ import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, RING_CLASS, POTION_CLASS, SCR
 import { objectClassForType, CORPSE, EGG, FIGURINE, OBJECT_DESCRIPTIONS, OBJECT_NAMES, STATUE, TIN, } from '../object_data.js';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, ROWNO, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from '../const.js';
 import { game } from '../gstate.js';
-import { LuaTable, luaValueToJs } from './runtime.js';
+import { LuaTable, luaValueToJs, luaType } from './runtime.js';
 import { unwrapSelection } from './nhlsel.js';
-import { luaInteger } from './arguments.js';
+import { luaInteger, luaNumberValue, luaToInteger } from './arguments.js';
+import { NethackLuaError } from './errors.js';
 import { OBJECT_CLASS_SYMBOLS } from '../display.js';
 export const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
@@ -149,6 +150,17 @@ export function get_coord(value, y = null) {
         && Number.isInteger(value.x) && Number.isInteger(value.y))
         return { x: value.x, y: value.y };
     return null;
+}
+// C sp_lev.c:get_table_intarray_entry()
+// Numbers and numeric strings
+// convert with lua_tointeger laxness, everything else raises nhl_error.
+// The C message hardcodes entry number 1 for both positions.
+export function luaTimerArrayEntry(table, entry) {
+    const value = table.get(entry);
+    const converted = luaNumberValue(value);
+    if (converted === null)
+        throw new NethackLuaError(`Array entry #1 is ${luaType(value)}, expected number`);
+    return luaToInteger(converted);
 }
 // C sp_lev.c:get_table_objclass(): the def_char_to_objclass()
 // symbol-letter resolution, as l_des_object()'s class argument applies it.

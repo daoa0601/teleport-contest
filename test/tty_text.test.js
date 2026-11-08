@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { showDisclosureOverlay, showTextWindow } from '../js/windows.js';
+import { showDisclosureOverlay } from '../js/windows.js';
+import { showTextWindow } from '../js/wintty.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 void test('an empty text window still waits at its bottom-row More prompt', async () => {
     freshPlayableRoom();

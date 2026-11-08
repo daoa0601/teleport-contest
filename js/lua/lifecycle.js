@@ -1,15 +1,17 @@
-import { AIR, CLOUD, COLNO, CORR, CROSSWALL, DOOR, FOUNTAIN, HWALL, ICE, IRONBARS, LAVAPOOL, LAVAWALL, MATCH_WALL, MAX_TYPE, MOAT, POOL, ROOM, ROWNO, SCORR, SDOOR, SINK, STONE, THRONE, TREE, VWALL, WATER, } from '../const.js';
+import { AIR, CLOUD, COLNO, CORR, CROSSWALL, DOOR, FOUNTAIN, HWALL, ICE, IRONBARS, LAVAPOOL, LAVAWALL, LEVEL_TIMER_KIND, MATCH_WALL, MAX_TYPE, MOAT, POOL, ROOM, ROWNO, SCORR, SDOOR, SINK, STONE, THRONE, TREE, VWALL, WATER, } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
-import { commandKeyDescription } from '../cmd.js';
+import { commandKeyDescription, isok } from '../cmd.js';
 import { applyNethackrc } from '../cfgfiles.js';
 import { rn2 } from '../rng.js';
 import { changeTutorialState } from '../tutorial_state.js';
 import { luaPline, luaText } from './messages.js';
-import { NethackLuaError } from './errors.js';
-import { luaInteger } from './arguments.js';
+import { LuaArgumentError, NethackLuaError } from './errors.js';
+import { luaInteger, luaToInteger } from './arguments.js';
+import { luaTimerArrayEntry } from './des.js';
+import { stopLevelTimer, scheduleLevelTimer } from '../timeout.js';
 import { LuaHeroTable } from './hero.js';
 import { createObjectApi } from './nhlobj.js';
-import { LuaState, LuaTable, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
+import { LuaState, LuaTable, luaCheckInteger, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
 import { impossible } from '../pline.js';
 import { game } from '../gstate.js';
 export class LuaGameState extends LuaState {
@@ -82,6 +84,76 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
         obj: objects.bindings,
         ...remainingBindings,
     };
+}
+// nhlua.c:nhl_get_timertype() takes luaL_checkoption over timeout_funcs'
+// timer names, in timeout.h order; timer_is_pos() admits only melt-ice.
+const LEVEL_TIMER_TYPE_NAMES = [
+    'rot-organic', 'rot-corpse', 'revive-mon', 'zombify-mon',
+    'burn-obj', 'hatch-egg', 'fig-transform', 'shrink-glob', 'melt-ice',
+];
+// Part of C nhlua.c:nhl_get_xy_params(): the x/y parameter read — two
+// integers, or one table through sp_lev.c:get_coord() (x/y fields or a
+// two-entry array); reached by nhl_timer_start_at() after the timer type
+// and delay were popped.
+function luaTimerCoordinates(args) {
+    if (args.length === 4)
+        return { x: luaToInteger(args[0]), y: luaToInteger(args[1]) };
+    if (args.length === 3 && args[0] instanceof LuaTable) {
+        const table = args[0];
+        const x = table.get('x');
+        if (x != null) {
+            // get_coord() converts x with luaL_checkinteger before it
+            // looks for y at all.
+            const xValue = luaCheckInteger(-1, x);
+            const y = table.get('y');
+            if (y == null)
+                throw new NethackLuaError('Not a coordinate');
+            return { x: xValue, y: luaCheckInteger(-1, y) };
+        }
+        if (table.length() !== 2)
+            throw new NethackLuaError('Not a coordinate');
+        return { x: luaTimerArrayEntry(table, 1), y: luaTimerArrayEntry(table, 2) };
+    }
+    throw new NethackLuaError('nhl_timer_start_at: Wrong args');
+}
+// C nhlua.c:nhl_timer_start_at(): register a level timer at a map
+// position; only melt-ice is a position timer (timer_is_pos()). The
+// special-level binding passes its room context's origin, which C reads
+// through cvt_to_abscoord() when translating the caller's relative
+// position.
+export function startTimerAt(xstart, ystart, args) {
+    // nhl_get_timertype() takes luaL_checkoption over every
+    // timeout_funcs entry at stack index -2, so a bad name is
+    // lauxlib's argument error carrying that index; only melt-ice is
+    // a position timer (timer_is_pos()).
+    const timerIndex = -2;
+    if (args.length === 1) {
+        // With one argument, stack index -2 holds the called
+        // function itself. With none, C reads its caller's frame;
+        // this interpreter cannot reproduce that invalid access
+        // without Lua's VM stack.
+        throw new LuaArgumentError(timerIndex, 'string expected, got function');
+    }
+    const timerName = luaCheckString(timerIndex, args[args.length - 2]);
+    const timerType = LEVEL_TIMER_TYPE_NAMES.indexOf(timerName);
+    if (timerType < 0)
+        throw new LuaArgumentError(timerIndex, `invalid option '${timerName}'`);
+    const when = luaToInteger(args[args.length - 1]);
+    const point = luaTimerCoordinates(args);
+    if (timerType !== LEVEL_TIMER_TYPE_NAMES.indexOf('melt-ice'))
+        return;
+    // nhl_timer_start_at() and cvt_to_abscoord() store signed 16-bit
+    // coordxy values. Narrow before addition so large Lua integers
+    // retain their low bits, then narrow the sum.
+    const relativeX = (point.x << 16) >> 16;
+    const relativeY = (point.y << 16) >> 16;
+    const timerX = ((xstart + relativeX) << 16) >> 16;
+    const timerY = ((ystart + relativeY) << 16) >> 16;
+    if (!isok(timerX, timerY))
+        return;
+    const deadline = (game.moves ?? 0) + when;
+    stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
+    scheduleLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, deadline, game);
 }
 export class LuaLifecycle {
     stateCount = 0;

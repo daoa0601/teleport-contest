@@ -57,7 +57,7 @@ import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions,
 import { glyphToCmapSymbol } from './glyphs.js';
 import { completeExtendedCommand, editExtendedCommand, promptChoice } from './query.js';
 import { tty_yn_function } from './topl.js';
-import { getLine, showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
+import { getLine, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
 import type { UnderlayCell } from './game_display.js';
@@ -121,7 +121,8 @@ import { FUZZER_IMPOSSIBLE_CONTINUE } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { heroCanReachFloor } from './engrave.js';
 import { CmapSymbol, GlyphOffset, monnumToGlyph, objnumToGlyph } from './glyph_numbers.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu,
+    tty_start_menu, showTextWindow } from './wintty.js';
 import { selection_floodfill, selection_getbounds, selection_getpoint, selection_new, selection_size_description } from './selvar.js';
 import { floorObjectDescription } from './invent.js';
 import { cansee, couldsee, vision_reset_new_level } from './vision.js';

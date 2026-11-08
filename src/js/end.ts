@@ -123,9 +123,10 @@ import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOn
 import type { ShopExitOutcome } from './shk.js';
 import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, selectInventoryObject, lootSortMode, sortObjects, currency, stack_object } from './invent.js';
-import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.js';
+import { showDisclosureOverlay, showTextPages } from './windows.js';
 import type { TextPage } from './windows.js';
 import type { TextMenuLine } from './wintty.js';
+import { showTextWindow } from './wintty.js';
 import { artifactById } from './artifact.js';
 import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
 import { NO_COLOR } from './terminal.js';

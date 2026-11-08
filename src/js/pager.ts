@@ -166,9 +166,9 @@ import {
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNo } from './query.js';
 import { selectMapPosition, coordinateDescription } from './getpos.js';
-import { displayPagerText, expandTabs } from './wintty.js';
+import { displayPagerText, expandTabs, showTextWindow } from './wintty.js';
 import {
-    getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
+    getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow,
     type PageLocalMultiSelectItem,
 } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
