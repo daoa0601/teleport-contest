@@ -68,7 +68,7 @@ import { dropSpecialMonsterObjects, addObjectToMonsterInventory, removeWornHeroI
 import { monsterAtPosition } from './steed.js';
 import { deleteTrap, trapAt, trapName, setHeroTrap } from './trap.js';
 import { chooseStairs } from './wizard.js';
-import { isPick } from './object_properties.js';
+import { isCandle, isPick } from './object_properties.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { bookDisappears } from './spell.js';
 import { checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex, showGetposTip, distu, mNext2u, } from './hack.js';
@@ -2830,11 +2830,6 @@ export function objectPricingUnits(object) {
     }
     return units;
 }
-// C obj.h:Is_candle(): wax and tallow only; the candelabrum is a
-// special_stock case, never a candle for pricing.
-export function objectIsCandle(object) {
-    return object.otyp === WAX_CANDLE || object.otyp === TALLOW_CANDLE;
-}
 // Part of C shk.c:getprice(): the artifact cost read.
 function artifactCost(object, state) {
     const artifact = artifactById(object.oartifact, state);
@@ -2909,7 +2904,7 @@ export function shopGetPrice(object, shkBuying, state = game) {
             tmp += 10 * object.spe;
     }
     else if (object.oclass === TOOL_CLASS /* TOOL_CLASS */) {
-        if (objectIsCandle(object)
+        if (isCandle(object)
             && (object.age ?? 0) < 20 * objectBaseCost(object.otyp)) {
             tmp = Math.trunc(tmp / 2);
         }
@@ -3921,7 +3916,7 @@ function containedSellCost(object, resident, state) {
         if (saleable(resident, content) && !content.unpaid
             && content.oclass !== BALL_CLASS
             && !(content.oclass === FOOD_CLASS && content.oeaten)
-            && !(objectIsCandle(content)
+            && !(isCandle(content)
                 && (content.age ?? 0)
                     < 20 * objectBaseCost(content.otyp))) {
             price += shopOfferForObject(content, resident, state);
@@ -4205,7 +4200,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         || object.oclass === BALL_CLASS || object.oclass === CHAIN_CLASS
         || offer === 0
         || (object.oclass === FOOD_CLASS && object.oeaten)
-        || (objectIsCandle(object)
+        || (isCandle(object)
             && (object.age ?? 0) < 20 * objectBaseCost(object.otyp))) {
         await publish(`${shopkeeperName(resident)} seems uninterested${cgold ? ' in the rest' : ''}.`);
         if (container)

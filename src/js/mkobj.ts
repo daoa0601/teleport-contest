@@ -104,7 +104,7 @@ import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER
 import { forgetTempleEntry } from './priest.js';
 import { artifactExistCount, mk_artifact, uncreateArtifact } from './artifact.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph, copyObjectTimers } from './timeout.js';
-import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
+import { isCandle, isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
 import { learnObjectType, objectMaterial, objectProb } from './o_init.js';
 import { nameObjectFromTopten } from './topten.js';
@@ -114,7 +114,7 @@ import { assignCandyWrapper } from './read.js';
 import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks, confersLuck } from './invent.js';
 import { setMoreLuck } from './attrib.js';
 import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously, landObjectOnAltar } from './do.js';
-import { addShopObjectToBill, billForObject, costlyAdjacent, costlySpot, currentShopResident, deleteObject, findObjectOwner, objectIsCandle, objectPriceAdjustment, reconcileObjectDeletionBill, removeObjectAndContentsFromBill, retainBillObject, settleGlobAbsorptionBilling, shopClaimsObject, shopkeeperInOwnShop, shopResident, splitObjectBill, stolenValue, visitBilledShopkeepers } from './shk.js';
+import { addShopObjectToBill, billForObject, costlyAdjacent, costlySpot, currentShopResident, deleteObject, findObjectOwner, objectPriceAdjustment, reconcileObjectDeletionBill, removeObjectAndContentsFromBill, retainBillObject, settleGlobAbsorptionBilling, shopClaimsObject, shopkeeperInOwnShop, shopResident, splitObjectBill, stolenValue, visitBilledShopkeepers } from './shk.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nearCapacity, roomForRoomno, roomsAt } from './hack.js';
 import { maybeResetPick } from './lock.js';
@@ -1431,7 +1431,7 @@ export async function billDummyObject(object: GameObject, state: GameState = gam
     };
     if (dummy.oextra) delete dummy.oextra.omid;
     dummy.o_id = nextObjectId(object, dummy, state);
-    if (objectIsCandle(dummy)) dummy.lamplit = 0;
+    if (isCandle(dummy)) dummy.lamplit = 0;
     const transaction = await addShopObjectToBill(dummy, state,
         { ininv: false, silent: true });
     if (transaction) {

@@ -60,7 +60,7 @@ import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
 import { AD_BLND, AT_ENGL, AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
-import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject, } from './object_properties.js';
+import { isAxe, isCandle, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject, } from './object_properties.js';
 import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName, objectDescription, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, singularObjectName, withIndefiniteArticle, } from './objnam.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline as syncPline, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage, impossible, } from './pline.js';
 import { propertyIsActive } from './properties.js';
@@ -1192,10 +1192,6 @@ export async function useBell(object, { state = game } = {}) {
 function result(object, state) {
     return { spentTime: true, heroDied: !!state.program_state?.gameover, object };
 }
-// C obj.h:Is_candle()
-function isCandle(object) {
-    return object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
-}
 // Part of C apply.c:use_lamp(): the Shk_Your() capitalized pronoun
 // prefix of the lamp on/off messages.
 function lampOwner(object, state) {
@@ -1421,7 +1417,7 @@ function lightSourceName(object, state) {
 // end_burn(). snuff_lit()'s candle tail and the drop/throw/kick/put-in-box
 // callers land here.
 export async function snuffCandle(object, state = game, publish = plineWithContinuation) {
-    const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
+    const candle = isCandle(object);
     if ((!candle && object.otyp !== CANDELABRUM_OF_INVOCATION) || !object.lamplit)
         return false;
     const many = candle ? object.quan > 1 : object.spe > 1;
@@ -1505,7 +1501,7 @@ export async function splashLitObject(object, publish, state = game) {
     const visible = object.where === 'minvent'
         ? !!position && cansee(position.x, position.y) : !heroIsBlind(state);
     if (visible) {
-        const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
+        const candle = isCandle(object);
         if (candle || object.otyp === CANDELABRUM_OF_INVOCATION) {
             const many = candle ? object.quan > 1 : object.spe > 1;
             await publish(`${objectOwnershipPrefix(object, state, { capitalized: true })}${candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
