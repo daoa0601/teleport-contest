@@ -496,9 +496,9 @@ const roleRecords = [
         enemy2sym: 49,
         greeting: 'Hello', goodbye: 'Goodbye' },
 ];
-// Port only: roles[] lookup in the native role.c table order.
-// role.c orders Rogue before Ranger; the player-monster indices do the reverse.
-// Native random role choices must use the role table's order.
+// Part of C role.c: the roles[] table indexed in its native order (Rogue
+// before Ranger); the player-monster indices run the other way, so native
+// indexing needs the swap. Random role choices must use this order.
 export function nativeRoleAt(index) {
     const playerIndex = index === 7 ? 8 : index === 8 ? 7 : index;
     return roles.find(role => role.mnum === playerIndex);
@@ -645,7 +645,8 @@ const CHARACTER_ROLE_ORDER = [
     'archeologist', 'barbarian', 'caveman', 'healer', 'knight', 'monk',
     'priest', 'rogue', 'ranger', 'samurai', 'tourist', 'valkyrie', 'wizard',
 ];
-// Port only: the roles[] table in native order for random selection.
+// Part of C role.c: the roles[] table in native order, for random selection
+// (randrole()/ROLE_RANDOM walks the table in this order).
 export function nativeRoleChoices() {
     return CHARACTER_ROLE_ORDER.flatMap(key => {
         const role = roles.find(candidate => candidate.key === key);
@@ -1555,9 +1556,8 @@ async function finishMenu(window, title, defaultChoice) {
     return result.selections.find(item => item.identifier !== defaultChoice)?.identifier
         ?? result.selections[0]?.identifier ?? defaultChoice;
 }
-// Port only: fresh gr.rfilter masks before any ROLEDISCARD parse.
-// C ref: role.c gr.rfilter — the zeroed filter masks before any
-// ROLEDISCARD option is parsed.
+// Part of C role.c:clearrolefilter(): fresh zeroed gr.rfilter masks before
+// any ROLEDISCARD option is parsed.
 export function createCharacterFilters() {
     return { roles: new Set(), races: new Set(), genders: new Set(), alignments: new Set() };
 }
