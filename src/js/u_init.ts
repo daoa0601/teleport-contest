@@ -281,7 +281,8 @@ const WIZARD_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
-// Port only: build a terminated one-item starting-inventory table.
+// Part of C u_init.c:u_init_role(): the one-item trobj tables (Lamp[],
+// Tinopener[], ...), item plus terminator row.
 function oneItem(typ: number, spe = 0): InitialInventoryEntry[] {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
@@ -290,7 +291,8 @@ function oneItem(typ: number, spe = 0): InitialInventoryEntry[] {
 }
 
 
-// Port only: roll one initial advancement entry from role or race data.
+// Part of C attrib.c:newhp(), exper.c:newpw(): the infix + rnd(inrnd)
+// advancement roll C writes inline for hpadv/enadv.
 function initialRoll(adv: Advancement | undefined): number {
     if (!adv) return 0;
     return (adv.infix || 0) + (adv.inrnd > 0 ? rnd(adv.inrnd) : 0);
