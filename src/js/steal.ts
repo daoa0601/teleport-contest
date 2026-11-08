@@ -66,12 +66,6 @@ import {
     monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, touchPetrifies,
 } from './mondata.js';
 
-// Port only: format a thief's visible or unseen sentence subject.
-// C Some_Monnam: unseen thieves are "Someone" or "Something".
-function wornItemRemover(monster: Monster, state: GameState): string {
-    return monsterName(monster, { state, capitalized: true, augmentIt: true });
-}
-
 // Part of C steal.c:worn_item_removal(): describe equipment before removing it.
 async function wornTheftObjectDescription(object: GameObject): Promise<string> {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
@@ -222,7 +216,7 @@ export async function stealFromHero(
         // C steal.c:381-405: not even a thousand men in armor can strip a
         // naked man. steal() returns 1 so mhitm_ad_sedu() lets it flee.
         if (!animal && game.uchain && draw(4)) {
-            await plineWithContinuation(`${wornItemRemover(monster, game)} takes off ${
+            await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true, augmentIt: true })} takes off ${
                 await wornTheftObjectDescription(game.uchain)}.`);
             await removeWornHeroItem(game.uchain, game);
         } else if (!animal && game.u.utrap && game.u.utraptype === TT_BURIEDBALL && !draw(4)) {
@@ -345,7 +339,7 @@ export async function stealFromHero(
         const verb = removalItem === object && wasWeapon ? 'disarms'
             : wasAccessory ? 'removes' : 'takes off';
         // worn_item_removal() names the thief again with Some_Monnam().
-        removalMessage = `${wornItemRemover(monster, game)} ${verb} ${description}.`;
+        removalMessage = `${monsterName(monster, { state: game, capitalized: true, augmentIt: true })} ${verb} ${description}.`;
     }
     if (removalMessage && !charmed) {
         await plineWithContinuation(removalMessage);
@@ -728,7 +722,8 @@ export async function dropMonsterObject(monster: Monster, object: GameObject, st
     return landed;
 }
 
-// Port only: observe and name a monster's dropped object at a distance.
+// Part of C steal.c:mdrop_obj(): distant_name(obj, doname) for its
+// observation side effects, taken before the object leaves the inventory.
 async function distantDropObjectName(object: GameObject, state: GameState): Promise<string> {
     observeDistantObjectForNaming(object, state);
     return await inventoryItemDescription(inventoryItem(object));
