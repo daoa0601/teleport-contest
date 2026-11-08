@@ -447,7 +447,7 @@ class JSExec:
                 out.append(p)
             return out
         if t == 'throw_statement':
-            self.m.oblige(path, False, 'JavaScript throw is reachable', self.where(n))
+            self.m.oblige(path, False, 'JavaScript throw is reachable', self.where(n), drop=True)
             return []
         if t == 'continue_statement':
             path.continued = True
@@ -637,6 +637,9 @@ class JSExec:
             return {k: v.v for k, v in p.env.items() if v.kind == 'num'}
 
         def havoc_fn(p, name):
+            old = p.env.get(name)
+            if not isinstance(old, V) or old.kind != 'num':
+                raise Unsupported(f'annotated JavaScript loop havocs the non-numeric {name}')
             p.env[name] = V('num', self.m.world.fresh(name))
 
         modset = _assigned(body) | (_assigned(cond) if cond is not None else set()) \

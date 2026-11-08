@@ -27,7 +27,7 @@ from pathlib import Path
 import z3
 
 from cfront import CFront
-from core import STREAMS, Machine, Unsupported, World
+from core import STREAMS, U64, Machine, Unsupported, World
 from csym import CExec, CPtr, CStr, CText, CVal, in_range
 from jssym import JSExec, Modules, V, parse_module
 from specs import C_FILES, JS_FILES, SPECS
@@ -153,6 +153,119 @@ def _outputs_equal(c, j):
     for a, b in zip(c.events, j.events):
         eqs += [x == y for x, y in zip(a.values, b.values)]
     return z3.And(eqs)
+
+
+def _stream_applications(world, formula) -> set:
+    """Every R_stream(...) application mentioned by the formula."""
+    functions = set(world.streams.values())
+    found, seen = set(), set()
+
+    def visit(term):
+        if term.get_id() in seen:
+            return
+        seen.add(term.get_id())
+        if term.num_args() and term.decl() in functions:
+            found.add(term)
+        for index in range(term.num_args()):
+            visit(term.arg(index))
+
+    visit(formula)
+    return found
+
+def _mentions_uninterpreted(world, formula) -> bool:
+    """Whether the formula applies any uninterpreted function besides the
+    random streams. Annotated-loop facts introduce definitional extensions
+    (a recurrence summing draws); an exit path condition describes the
+    program only through those definitions, and the coverage negation
+    cannot soundly quantify them away: the definitional value is not an
+    input the witness may choose."""
+    streams = set(world.streams.values())
+    seen = set()
+
+    def visit(term):
+        if term.get_id() in seen:
+            return False
+        seen.add(term.get_id())
+        if term.num_args() and term.decl().kind() == z3.Z3_OP_UNINTERPRETED:
+            return term.decl() not in streams
+        return any(visit(term.arg(index)) for index in range(term.num_args()))
+
+    return visit(formula)
+
+
+def _free_constants(formula) -> set:
+    """Every free uninterpreted constant (z3.Int('x'), Bool marks) in the
+    formula, collected by one linear walk. z3util.get_vars is super-linear
+    on the deeply joined terms the bounded-state claims produce."""
+    found, seen = set(), set()
+
+    def visit(term):
+        if term.get_id() in seen:
+            return
+        seen.add(term.get_id())
+        if not term.num_args() and term.decl().kind() == z3.Z3_OP_UNINTERPRETED:
+            found.add(term)
+        for index in range(term.num_args()):
+            visit(term.arg(index))
+
+    visit(formula)
+    return found
+
+def _uncovered(world, paths, obligations):
+    """(result, solver): 'skipped' when the check cannot be made sound,
+    else sat with a model when some input in the domain has no path whose
+    condition can hold for it.
+
+    Executor-local symbols (havoced loop variables, fresh stream positions)
+    are existential per path: a path covers an input when some value of its
+    locals satisfies the path condition, so the negation quantifies each
+    path's locals universally. Stream values are inputs shared by every path
+    and a witness may not pick illegal draws: each R_stream(term) a path
+    condition mentions is bounded to [0, 2**64) — terms without local
+    symbols in the query itself, locally-bound terms inside that path's
+    quantifier guard. Inputs where a dropped-path obligation (an assert
+    branch, a thrown path) is violated are excluded: those inputs fail the
+    claim through the obligation itself, and the claim is only sound when
+    the remaining region is covered. Domain symbols stay free, so a model
+    of the negation names an uncovered input.
+
+    A path set that mentions a non-stream uninterpreted function is skipped:
+    such functions are definitional extensions introduced by loop
+    annotations, and for annotated loops the exit coverage is a theorem of
+    the annotation machinery instead — the invariant holds on entry and is
+    preserved from the fully havoced head, so every real exit state is
+    described by some havoced head state, and Machine._induct fails closed
+    when the havoc set misses a write or the body touches global state.
+    """
+    if any(_mentions_uninterpreted(world, z3.And(*p.pc)) for p in paths):
+        return 'skipped', None
+    domain = _free_constants(z3.And(*world.pre))
+    domain.update(sym for _, sym, _ in world.params)
+    domain.update(sym for sym, _ in world.c_state.values())
+    domain.update(world.js_state.values())
+    dropped = [ob for ob in obligations if ob.drop]
+    bounds, clauses = [], [z3.Not(z3.And(*ob.pc, z3.Not(ob.cond))) for ob in dropped]
+    for path in paths:
+        pc = z3.And(*path.pc)
+        locals_ = [v for v in _free_constants(pc) if v not in domain]
+        local_set = set(locals_)
+        mentioned = _stream_applications(world, pc)
+        bounded_here = set()
+        for term in mentioned:
+            if any(v in local_set for v in _free_constants(term)):
+                bounded_here.add(term)
+            else:
+                bounds += [term >= 0, term < U64]
+        body = z3.Not(pc)
+        if bounded_here:
+            guard = z3.And(*[z3.And(term >= 0, term < U64) for term in bounded_here])
+            body = z3.Implies(guard, body)
+        clauses.append(z3.ForAll(locals_, body) if locals_ else body)
+    solver = z3.Solver()
+    solver.set('timeout', 120_000)
+    solver.add(*world.pre, *bounds, *clauses)
+    result = solver.check()
+    return result, solver
 
 
 def coalesce_returns(paths):
@@ -364,6 +477,24 @@ def _check(spec, front, modules, pre_fn, pairwise_outputs=False) -> tuple[bool, 
                             raise Unsupported('result-range contract needs an integer result')
                         machine.oblige(path, z3.And(value >= low, value <= high),
                                        'result outside proved call-summary range', spec.name)
+            # Sound comparison needs every feasible input covered by a path
+            # on each side: the pairwise equality queries below only
+            # constrain the region covered by both path sets, so an input
+            # region one executor dropped (an unjustified narrowing, a lost
+            # branch) would otherwise pass vacuously. Regions the executor
+            # removed together with a drop obligation (an assert branch, a
+            # thrown path) are legitimate: they fail the claim through that
+            # obligation when reachable. An uncovered region, or a solver
+            # that cannot decide coverage, fails the claim instead of
+            # proving it.
+            for side, machine, side_paths in (('C', cm, c_paths), ('JS', jm, j_paths)):
+                result, solver = _uncovered(world, side_paths, machine.obligations)
+                if result == z3.sat:
+                    return False, (f'log={"on" if logging else "off"}: {side} paths do not '
+                                   f'cover the input domain: {describe_model(solver.model(), world)}')
+                if result == z3.unknown:
+                    return False, (f'log={"on" if logging else "off"}: solver gave up on '
+                                   f'{side} path coverage')
         except Unsupported as error:
             return False, f'unsupported: {error}'
         for machine in (cm, jm):

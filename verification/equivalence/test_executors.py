@@ -11,6 +11,7 @@ import z3
 
 from cfront import CFront
 from csym import CElement, CPtr
+import core
 from jssym import V, parse_module
 from prove import REPO, check, recorder_dir
 from core import LoopSpec
@@ -1556,6 +1557,164 @@ class ExecutorTests(unittest.TestCase):
                   '    return x;\n}')
         scoped_body = parse_module(scoped.encode())[0]['example'].child_by_field_name('body')
         self.assertEqual(_assigned(scoped_body), {'x'})
+
+    def test_unhavoced_loop_write_cannot_close_a_claim(self):
+        """End-to-end discrimination for a modification-scan miss.
+
+        The JS port really returns 1 for x >= 1 while C returns 0. With the
+        loop-modified local left at its entry value at the modeled loop exit
+        (any future hole in the havoc scan, simulated here by dropping 'v'
+        from jssym._assigned), the modeled JS return becomes 0 as well and
+        the claim used to close as PROVED over a state the real loop can
+        never be in. The executor must fail closed on the unlisted write
+        instead of proving through the narrowing.
+        """
+        c = ('int example(int x) { int i = 0, v = 0; '
+             'while (i < x) { v = 3; i = i + 1; } return 0; }')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    let v = 0;\n'
+              '    while (i < x) {\n'
+              '        v = 3;\n'
+              '        i = i + 1;\n'
+              '    }\n'
+              '    return v > 0 ? 1 : 0;\n'
+              '}')
+
+        def silent(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x'])]
+
+        loops = {('js', 'example', 0): LoopSpec(
+            silent, lambda view, entry: entry['x'] - view['i'], streams=())}
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=loops)
+
+        import jssym
+        real_assigned = jssym._assigned
+
+        def without_v(node):
+            return real_assigned(node) - {'v'}
+
+        jssym._assigned = without_v
+        try:
+            self.rejected(c, js, reason='outside the havoc set', **domain)
+        finally:
+            jssym._assigned = real_assigned
+        # With the scan intact the havoc makes the silent invariant too weak
+        # to pin the return, so the real difference is found.
+        self.rejected(c, js, reason='outputs differ', **domain)
+
+    def test_uncovered_input_region_cannot_close_a_claim(self):
+        """A loop-exit narrowing that drops an input region must not prove.
+
+        The invariant ties v to i, which the real loop satisfies, but the
+        un-havoced head pins v to its entry value 0, so the modeled exit
+        state is feasible only for x == 0. The x >= 1 region, where the JS
+        port really returns 99 against C's x, used to pass vacuously because
+        no path pair covered it; claim comparison must reject the uncovered
+        region rather than tolerate it.
+        """
+        c = ('int example(int x) { int i = 0, v = 0; '
+             'while (i < x) { v = v + 1; i = i + 1; } return v; }')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    let v = 0;\n'
+              '    while (i < x) {\n'
+              '        v = v + 1;\n'
+              '        i = i + 1;\n'
+              '    }\n'
+              '    return v > 2 ? 99 : v;\n'
+              '}')
+
+        def ties_v_to_i(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']),
+                    view['v'] == view['i']]
+
+        loops = {('js', 'example', 0): LoopSpec(
+            ties_v_to_i, lambda view, entry: entry['x'] - view['i'], streams=())}
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=loops)
+
+        import jssym
+        real_assigned = jssym._assigned
+
+        def without_v(node):
+            return real_assigned(node) - {'v'}
+
+        jssym._assigned = without_v
+        try:
+            self.rejected(c, js, reason='outside the havoc set', **domain)
+        finally:
+            jssym._assigned = real_assigned
+        self.rejected(c, js, reason='outputs differ', **domain)
+
+    def test_dropped_path_cannot_close_a_claim(self):
+        """The pairwise comparison alone tolerates an uncovered side.
+
+        Equality queries only constrain the region covered by both path
+        sets, so a claim whose C execution dropped the x > 2 branch (any
+        executor path loss; simulated by pruning one branch arm) used to
+        prove vacuously over the missing region even though the JavaScript
+        returns 2 where C returns 1. Coverage of the input domain by each
+        side's paths is now part of the claim.
+        """
+        c = 'int example(int x) { if (x > 2) return 1; return 0; }'
+        js = 'function example(x) { if (x > 2) return 2; return 0; }'
+        real_branch = core.Machine.branch
+
+        def dropping_branch(self, path, cond):
+            out = real_branch(self, path, cond)
+            if self.side == 'c' and z3.simplify(cond).eq(z3.simplify(z3.Int('x') > 2)):
+                return [pair for pair in out if not pair[1]]
+            return out
+
+        core.Machine.branch = dropping_branch
+        try:
+            self.rejected(c, js, reason='do not cover the input domain',
+                          params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5])
+        finally:
+            core.Machine.branch = real_branch
+        self.rejected(c, js, reason='outputs differ',
+                      params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5])
+
+    def test_annotated_loop_cannot_lose_a_global_state_write(self):
+        """Fail closed when the loop body writes global state.
+
+        The havoc set only covers locals, so a loop whose body writes a
+        global through a call would leave the modeled exit state claiming
+        the global kept its entry value. The annotation machinery must
+        reject that claim instead of proving through the lost write.
+        """
+        c = ('struct s { int g; };\n'
+             'struct s st;\n'
+             'static void bump(void) { st.g = st.g + 1; }\n'
+             'int example(int x) { int i = 0; '
+             'while (i < x) { bump(); i = i + 1; } return st.g; }')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) {\n'
+              '        i = i + 1;\n'
+              '    }\n'
+              '    return i;\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            del pos, pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x'])]
+
+        loops = {('c', 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=())}
+        self.rejected(c, js, reason='writes global state st.g, which annotations do not havoc',
+                      params=[('x', INT)], state=[('st.g', INT, None)],
+                      pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
+
+        # Without an annotation the same loop unrolls and the write is kept:
+        # the claim then fails on the observable difference, not on modeling.
+        self.rejected(c, js, reason='final st.g differs from its entry value',
+                      params=[('x', INT)], state=[('st.g', INT, None)],
+                      pre=lambda s: [s['x'] >= 1, s['x'] <= 5])
 
 
 

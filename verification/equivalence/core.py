@@ -28,6 +28,27 @@ class Unsupported(Exception):
     """Source uses a construct outside the modeled subset."""
 
 
+def same_model_value(a, b) -> bool:
+    """Structural equality of two executor values (locals, heap cells).
+
+    z3 terms compare by identity (z3.eq), so a value counts as unchanged only
+    when the executor kept or rebuilt the very same term. Anything else is
+    conservatively reported as changed, which is the fail-closed direction.
+    """
+    if a is b:
+        return True
+    if isinstance(a, z3.ExprRef) or isinstance(b, z3.ExprRef):
+        return isinstance(a, z3.ExprRef) and isinstance(b, z3.ExprRef) and z3.eq(a, b)
+    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+        return len(a) == len(b) and all(same_model_value(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(same_model_value(a[k], b[k]) for k in a)
+    if hasattr(a, '__dataclass_fields__') and hasattr(b, '__dataclass_fields__'):
+        return type(a) is type(b) and all(same_model_value(getattr(a, f), getattr(b, f))
+                                          for f in a.__dataclass_fields__)
+    return a == b
+
+
 @dataclass(frozen=True)
 class Event:
     """One observable RNG-log line: a shape such as 'rnl({})={}' plus its values."""
@@ -63,6 +84,8 @@ class Obligation:
     cond: object
     what: str
     where: str
+    drop: bool = False   # the executor dropped this branch's paths; the
+                         # obligation is the only witness left for that region
 
 
 @dataclass
@@ -206,10 +229,10 @@ class Machine:
     def trem(self, path: Path, a, b):
         return a % b if self.proves(path, z3.And(a >= 0, b > 0)) else trem(a, b)
 
-    def oblige(self, path: Path, cond, what: str, where: str) -> None:
+    def oblige(self, path: Path, cond, what: str, where: str, drop: bool = False) -> None:
         cond = z3.simplify(cond) if isinstance(cond, z3.ExprRef) else z3.BoolVal(cond)
         if not z3.is_true(cond):
-            self.obligations.append(Obligation(list(path.pc), cond, what, where))
+            self.obligations.append(Obligation(list(path.pc), cond, what, where, drop))
 
     def draw(self, path: Path, stream: str) -> z3.ArithRef:
         position = path.pos[stream]
@@ -305,7 +328,8 @@ class Machine:
             self.oblige(path, c, 'loop invariant holds on entry', where)
 
         head = path.fork()
-        for name in modset_fn():
+        modset = set(modset_fn())
+        for name in modset:
             havoc_fn(head, name)
         for s in spec.streams:
             head.pos[s] = self.world.fresh(f'pos_{s}')
@@ -317,6 +341,7 @@ class Machine:
         events_before = len(head.events)
 
         exits = []
+        written, heap_written = set(), set()
         for p2, cond in cond_fn(head):
             for p3, taken in self.branch(p2, cond):
                 if not taken:
@@ -330,11 +355,33 @@ class Machine:
                     for s in STREAMS:
                         if s not in spec.streams and not z3.eq(p4.pos[s], head.pos[s]):
                             raise Unsupported(f'{where}: loop draws from unlisted stream {s}')
+                    # The havoc set must cover every local the condition,
+                    # body, or update can write. A local left at its entry
+                    # value at the loop head narrows the modeled exit state
+                    # to states the real loop can never reach, so a proof
+                    # closed over that narrowing would be unsound. Detect
+                    # the writes the annotation's modification scan missed
+                    # by running the body once from the havoced head, and
+                    # fail closed on any unlisted write, including a write
+                    # to global state, which no annotation can havoc today.
+                    for name, value in p4.env.items():
+                        if name not in head.env or not same_model_value(value, head.env[name]):
+                            written.add(name)
+                    for key, value in p4.heap.items():
+                        if key not in head.heap or not same_model_value(value, head.heap[key]):
+                            heap_written.add(key)
                     after = view_fn(p4)
                     p4.pc.extend(spec.facts(after, entry, p4.pos, pos0))
                     for c in spec.invariant(after, entry, p4.pos, pos0):
                         self.oblige(p4, c, 'loop invariant is preserved', where)
                     self.oblige(p4, spec.variant(after, entry) < measure, 'loop variant decreases', where)
+        unlisted = sorted(written - modset)
+        if unlisted:
+            raise Unsupported(f'{where}: annotated loop writes {", ".join(unlisted)} '
+                              'outside the havoc set of its annotation')
+        if heap_written:
+            raise Unsupported(f'{where}: annotated loop writes global state '
+                              f'{", ".join(sorted(heap_written))}, which annotations do not havoc')
         return exits
 
 

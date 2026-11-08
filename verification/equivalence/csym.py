@@ -584,6 +584,8 @@ class CExec:
             return {k: v.v for k, v in p.env.items() if isinstance(v, CVal)}
 
         def havoc_fn(p, name):
+            if name not in p.env:
+                raise Unsupported(f'annotated C loop havocs {name}, which is not a local variable')
             old = p.env[name]
             if not isinstance(old, CVal):
                 raise Unsupported(f'annotated C loop havocs the non-scalar {name}')
@@ -625,7 +627,7 @@ class CExec:
                 out = []
                 for p, value in self.eval(path, condition):
                     holds = self.truth(value) if success else z3.Not(self.truth(value))
-                    self.m.oblige(p, holds, 'C assertion failed', self.where(n))
+                    self.m.oblige(p, holds, 'C assertion failed', self.where(n), drop=True)
                     out.extend((q, None) for q, taken in self.m.branch(p, holds) if taken)
                 return out
         if k in ('ParenExpr', 'ConstantExpr'):
