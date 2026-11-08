@@ -211,6 +211,35 @@ def _free_constants(formula) -> set:
     visit(formula)
     return found
 
+def _local_draw_bound(world, entry, local_set):
+    """The stream term when this path condition is exactly a draw's legality
+    bound t >= 0 ∧ t < 2**64 over one locally-positioned stream term.
+
+    A legal stream satisfies that bound at every position, so the coverage
+    question may drop the conjunct: keeping it would let a witness pick an
+    illegal value at that position and vacate the clause for a claim that is
+    genuinely covered."""
+    if not (z3.is_and(entry) and entry.num_args() == 2):
+        return None
+    low, high = entry.arg(0), entry.arg(1)
+    if not z3.is_ge(low):
+        low, high = high, low
+    if not (z3.is_ge(low) and z3.is_lt(high)):
+        return None
+    term, zero = low.arg(0), low.arg(1)
+    same, limit = high.arg(0), high.arg(1)
+    if not (z3.is_int_value(zero) and zero.as_long() == 0
+            and z3.is_int_value(limit) and limit.as_long() == U64
+            and z3.eq(term, same)):
+        return None
+    mentioned = _stream_applications(world, entry)
+    if len(mentioned) != 1 or not z3.eq(next(iter(mentioned)), term):
+        return None
+    if any(v not in local_set for v in _free_constants(term)):
+        return None
+    return term
+
+
 def _uncovered(world, paths, obligations):
     """(result, solver): 'skipped' when the check cannot be made sound,
     else sat with a model when some input in the domain has no path whose
@@ -219,15 +248,16 @@ def _uncovered(world, paths, obligations):
     Executor-local symbols (havoced loop variables, fresh stream positions)
     are existential per path: a path covers an input when some value of its
     locals satisfies the path condition, so the negation quantifies each
-    path's locals universally. Stream values are inputs shared by every path
-    and a witness may not pick illegal draws: each R_stream(term) a path
-    condition mentions is bounded to [0, 2**64) — terms without local
-    symbols in the query itself, locally-bound terms inside that path's
-    quantifier guard. Inputs where a dropped-path obligation (an assert
-    branch, a thrown path) is violated are excluded: those inputs fail the
-    claim through the obligation itself, and the claim is only sound when
-    the remaining region is covered. Domain symbols stay free, so a model
-    of the negation names an uncovered input.
+    path's locals universally. Stream values are inputs shared by every
+    path, so a witness may not pick illegal draws: every R_stream(term) a
+    path condition mentions without local symbols is bounded to
+    [0, 2**64) in the query, and a draw's legality bound over a
+    locally-positioned term is dropped from the clause because a legal
+    stream implies it at every position. Inputs where a dropped-path
+    obligation (an assert branch, a thrown path) is violated are excluded:
+    those inputs fail the claim through the obligation itself, and the
+    claim is only sound when the remaining region is covered. Domain
+    symbols stay free, so a model of the negation names an uncovered input.
 
     A path set that mentions a non-stream uninterpreted function is skipped:
     such functions are definitional extensions introduced by loop
@@ -249,17 +279,12 @@ def _uncovered(world, paths, obligations):
         pc = z3.And(*path.pc)
         locals_ = [v for v in _free_constants(pc) if v not in domain]
         local_set = set(locals_)
-        mentioned = _stream_applications(world, pc)
-        bounded_here = set()
-        for term in mentioned:
-            if any(v in local_set for v in _free_constants(term)):
-                bounded_here.add(term)
-            else:
+        for term in _stream_applications(world, pc):
+            if not any(v in local_set for v in _free_constants(term)):
                 bounds += [term >= 0, term < U64]
-        body = z3.Not(pc)
-        if bounded_here:
-            guard = z3.And(*[z3.And(term >= 0, term < U64) for term in bounded_here])
-            body = z3.Implies(guard, body)
+        kept = [entry for entry in path.pc
+                if _local_draw_bound(world, entry, local_set) is None]
+        body = z3.Not(z3.And(*kept)) if kept else z3.BoolVal(False)
         clauses.append(z3.ForAll(locals_, body) if locals_ else body)
     solver = z3.Solver()
     solver.set('timeout', 120_000)

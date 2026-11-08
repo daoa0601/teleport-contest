@@ -1716,6 +1716,57 @@ class ExecutorTests(unittest.TestCase):
                       params=[('x', INT)], state=[('st.g', INT, None)],
                       pre=lambda s: [s['x'] >= 1, s['x'] <= 5])
 
+    def test_annotated_loop_followed_by_a_draw_still_covers(self):
+        """Coverage must not reject a legal annotated loop plus a draw.
+
+        Both loops keep the core position at zero, so the draw after the
+        loop reads R_core(pos) with a locally havoced position. The coverage
+        clause used to guard that term's legality with an implication, and a
+        witness making R_core illegal everywhere vacated every clause, so
+        this equivalent pair was rejected as "paths do not cover the input
+        domain" with negative draws in the model. A draw's legality bound
+        over a local position is implied by the stream domain and is now
+        dropped from the clause instead of guarded.
+        """
+        c = ('extern unsigned long long isaac64_next_uint64(void *);\n'
+             'struct { long rng_state; } rnglist[1];\n'
+             'int example(int x) {\n'
+             '    int i = 0;\n'
+             '    while (i < x) { i = i + 1; }\n'
+             '    return (int) (isaac64_next_uint64(&rnglist[0].rng_state) % 10u);\n'
+             '}')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) { i = i + 1; }\n'
+              '    return Number(isaac64_next_uint64(game.coreCtx) % 10n);\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            del pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']), pos['core'] == 0]
+
+        loops = {('c', 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',)),
+            ('js', 'example', 0): LoopSpec(
+                invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',))}
+        self.equivalent(c, js, params=[('x', INT)],
+                        pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
+
+        # A genuinely uncovered region is still found with local positions
+        # in play: pinning the loop counter below x removes every exit path
+        # for x >= 1.
+        def broken(view, entry, pos, pos0):
+            del pos0
+            return [z3.And(view['i'] >= 0, view['i'] < entry['x']), pos['core'] == 0]
+
+        bad_loops = {('c', 'example', 0): LoopSpec(
+            broken, lambda view, entry: entry['x'] - view['i'], streams=('core',)),
+            ('js', 'example', 0): LoopSpec(
+                broken, lambda view, entry: entry['x'] - view['i'], streams=('core',))}
+        self.rejected(c, js, reason='do not cover the input domain',
+                      params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                      loops=bad_loops)
+
 
 
 if __name__ == '__main__':
