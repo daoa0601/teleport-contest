@@ -297,11 +297,20 @@ jobs:
   slow-equivalence:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: equivalence
+    strategy:
+      fail-fast: false
+      matrix:
+        # Interleaved groups of the slow claims. The heaviest single claim
+        # (same_race:tables) is ~10 min locally and ~2x that on a hosted
+        # runner, so every shard stays well under the budget; the timeout
+        # keeps headroom above that claim's worst case plus setup.
+        shard: [1, 2, 3, 4, 5, 6]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       NETHACK_RECORDER: ${{ github.workspace }}/nethack-c/recorder
       UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
+      SLOW_SHARDS: 6
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -365,17 +374,17 @@ jobs:
       - name: Prove slow claims, probes, and mutants
         working-directory: verification/equivalence
         run: |
-          /usr/bin/time -p uv run --locked prove.py --slow-only --check-ledger ../../docs/ledger/equivalence.tsv 2>&1 | tee ../../.cache/equivalence/slow-proofs.txt
+          /usr/bin/time -p uv run --locked prove.py --slow-only --shard "${{ matrix.shard }}/${SLOW_SHARDS}" --check-ledger ../../docs/ledger/equivalence.tsv 2>&1 | tee ../../.cache/equivalence/slow-proofs.txt
       - name: Report slow proof runtime and results
         if: always()
         run: |
-          echo "Slow-job elapsed since checkout: $(($(date +%s) - VERIFICATION_STARTED)) seconds" >> "$GITHUB_STEP_SUMMARY"
+          echo "Slow-job shard ${{ matrix.shard }}/${SLOW_SHARDS} elapsed since checkout: $(($(date +%s) - VERIFICATION_STARTED)) seconds" >> "$GITHUB_STEP_SUMMARY"
           if [ -f .cache/equivalence/slow-proofs.txt ]; then
             cat .cache/equivalence/slow-proofs.txt >> "$GITHUB_STEP_SUMMARY"
           fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: equivalence-slow
+          name: equivalence-slow-shard-${{ matrix.shard }}
           path: .cache/equivalence
           retention-days: 30

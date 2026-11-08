@@ -202,6 +202,11 @@ slow: an unpinned search for `mon_resistancebits:state`'s mutant took 17 s
 locally and exceeded the 120 s solver timeout on a loaded CI runner.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
+`--slow-only` checks only the claims marked slow (their fast prerequisites
+are still proved as call summaries), and `--shard I/N` further limits that
+selection to the I-th of N interleaved groups, each still proving the
+prerequisites of its claims; the nightly `slow-equivalence` job runs one
+4-shard matrix so every scheduled run finishes inside its timeout.
 
 There are 265 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,

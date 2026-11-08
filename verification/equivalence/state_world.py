@@ -7,7 +7,7 @@ import z3
 
 from core import Machine, Unsupported, select_int
 from csym import CArray, CElement, CExec, CPtr, CRecord, CState, CVal
-from jssym import JSExec, V
+from jssym import JSExec, V, UNDEF
 
 LONG = (64, True)   # C long on the recorder's LP64 target
 
@@ -256,11 +256,13 @@ def _levitation_flags(s):
     }
 
 
-def _property_record(intrinsic, worn_boot, worn_other, terrain):
+def _property_record(intrinsic, worn_boot, worn_other, terrain, float_blocked):
     """One JS _propertySources record over the lumped entry booleans. Every
     permanent intrinsic origin and the levitation timeout are folded into
     `intrinsic`; every non-boot worn source, invoked and carried artifact is
-    folded into `worn_other` (all such reads are disjunctions)."""
+    folded into `worn_other` (all such reads are disjunctions). The blocked
+    bits are the stored FROMOUTSIDE and I_SPECIAL mask halves, which entry
+    state satisfies the float_vs_flight() invariant for."""
     boot_source = V('record', {'slot': V('str', 'uarmf')})
     other_source = V('record', {'slot': V('str', 'uarmc')})
     return V('record', {
@@ -277,6 +279,7 @@ def _property_record(intrinsic, worn_boot, worn_other, terrain):
         'invoked': V('null'),
         'carried': V('array', ()),
         'blockedByTerrain': V('bool', terrain),
+        'blockedByFloat': V('bool', float_blocked),
     })
 
 
@@ -342,11 +345,23 @@ def capacity_state(world, front, modules):
 
     # JS property records over the lumped source booleans.
     world.js_values['game.u._propertySources.levitation'] = _property_record(
-        flags['h_lev'], flags['e_boot'], flags['e_other'], flags['terr_lev'])
+        flags['h_lev'], flags['e_boot'], flags['e_other'], flags['terr_lev'],
+        flags['trap_lev0'])
     world.js_values['game.u._propertySources.flying'] = _property_record(
-        flags['h_fly'], z3.BoolVal(False), flags['e_fly'], flags['terr_fly'])
+        flags['h_fly'], z3.BoolVal(False), flags['e_fly'], flags['terr_fly'],
+        flags['trap_fly0'])
     world.js_state['game.u.levitationTurns'] = z3.If(flags['h_lev'], 1, 0)
     world.js_state['game.u.flyingTurns'] = z3.If(flags['h_fly'], 1, 0)
+
+    # weightCapacity ends with polyself.js floatVsFlight(game) exactly when
+    # hack.c:weight_cap ends with float_vs_flight() (4339-4343).  On entry
+    # states in this domain the stored block bits already satisfy the
+    # float_vs_flight()/steed_vs_stealth() invariants, so the call only
+    # rewrites them with their entry values (the restored-state contract
+    # below checks the same for C) and requests the status repaint the entry
+    # state already has; it is summarized as that identity.
+    world.js_calls[('js/polyself.js', 'floatVsFlight')] = [
+        ([V('obj', 'game')], UNDEF)]
 
     # Projected movement booleans (properties.ts:projectProperty).
     flying_active = z3.And(z3.Or(flags['flying'], z3.And(present, steed_flies)),
