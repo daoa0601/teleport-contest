@@ -164,8 +164,35 @@ async function prepareQtDelivery(messageId: string, state: GameState): Promise<Q
         ? { line: text.lines.join('\n'), text } : { page: text };
 }
 
+// C quest.c:on_start(): the home-level arrival text.  qt_pager()'s lookup
+// and its commit are split (see prepareQuestArrival) so the Lua RNG stays
+// on the command that entered the level.
+async function onStart(
+    status: QuestStatus, fromDepth: DungeonLocation | undefined,
+    currentDepth: DungeonLocation, g: GameState,
+): Promise<QuestArrival | null> {
+    if (!status.first_start) {
+        return {
+            ...await prepareQtDelivery('firsttime', g),
+            commit() { status.first_start = true; },
+        };
+    }
+    const fromOtherDungeon = fromDepth?.dnum !== g.u?.uz?.dnum;
+    const fromAbove = fromDepth?.dnum === g.u?.uz?.dnum
+        && (fromDepth?.dlevel ?? currentDepth.dlevel)
+            < (g.u?.uz?.dlevel ?? 0);
+    if (fromOtherDungeon || fromAbove) {
+        // on_start() uses nexttime for the first three rejected returns.
+        // It is a pline message, but quest.lua loading and substitution
+        // still precede collision with the pending level-teleport message.
+        if ((status.not_ready ?? 0) <= 2)
+            return prepareQtDelivery('nexttime', g);
+        return prepareQtDelivery('othertime', g);
+    }
+    return null;
+}
+
 // C quest.c:onquest()
-// Also C quest.c:on_start(): inlined here
 // Also C quest.c:on_locate(): inlined here
 // Also C quest.c:on_goal(): inlined here
 // C do.c:goto_level() leaves its level-teleport pline pending and then calls
@@ -188,28 +215,7 @@ export async function prepareQuestArrival({ fromDepth }: {
     // a bones filler level keeps the departure level's prototype.
     const at = (name: string) => sameDungeonLevel(currentDepth, g.specialLevels?.get(name));
     const status = ensureQuestStatus(g);
-    if (at('x-strt')) {
-        if (!status.first_start) {
-            return {
-                ...await prepareQtDelivery('firsttime', g),
-                commit() { status.first_start = true; },
-            };
-        }
-        const fromOtherDungeon = fromDepth?.dnum !== g.u?.uz?.dnum;
-        const fromAbove = fromDepth?.dnum === g.u?.uz?.dnum
-            && (fromDepth?.dlevel ?? currentDepth.dlevel)
-                < (g.u?.uz?.dlevel ?? 0);
-        if (fromOtherDungeon || fromAbove) {
-            // quest.c:on_start() uses nexttime for the first three rejected
-            // returns. It is a pline message, but quest.lua loading and
-            // substitution still precede collision with the pending level-
-            // teleport message.
-            if ((status.not_ready ?? 0) <= 2)
-                return prepareQtDelivery('nexttime', g);
-            return prepareQtDelivery('othertime', g);
-        }
-        return null;
-    }
+    if (at('x-strt')) return onStart(status, fromDepth, currentDepth, g);
     if (at('x-loca')) {
         if (status.killed_nemesis) return null;
         const fromAbove = (fromDepth?.dlevel ?? currentDepth.dlevel)
