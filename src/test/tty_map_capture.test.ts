@@ -25,21 +25,19 @@ void test('a control glyph keeps a shifted cell inside its shift', () => {
     display.setMapCell(4, 3, '\x01', NO_COLOR, 0, null, false, false);
 
     const row = serializeCapture(display).split('\n')[3] ?? '';
-    assert.ok(/\x0e[^\x0f]*x\x1b\[[0-9;]*m\x0f$/.test(row),
-        `the retained wall keeps its shift, closed after the color reset: ${JSON.stringify(row)}`);
+    assert.ok(row.includes('\x0ex\x0f'),
+        `the retained wall keeps its alternate-font shift: ${JSON.stringify(row)}`);
 });
 
-// termcap.c nomux_capture_screen() writes the end-of-line color/attr reset
-// first and closes the alternate-font run after it (`if (in_dec) \017`).
-void test('a row ending inside a shift resets its color before closing the shift', () => {
+// termcap.c nomux_capture_screen() closes an open shift run at line 843
+// and only then writes the row's end-of-line reset (lines 845-852).
+void test('a row ending inside a shift closes the shift before its color reset', () => {
     const display = new GameDisplay(null);
     display.setMapCell(4, 3, '\u2502', CLR_BLUE, 2, null, false, true);
 
     const row = serializeCapture(display).split('\n')[3] ?? '';
-    assert.ok(/\x0e[^\x0f]*x\x1b\[[0-9;]*m\x0f$/.test(row),
-        `the shift closes after the reset: ${JSON.stringify(row)}`);
-    assert.ok(!row.includes('\x0f\x1b['),
-        `no escape follows the shift close: ${JSON.stringify(row)}`);
+    assert.ok(row.endsWith('\x0f\x1b[0m'),
+        `the shift closes before the reset: ${JSON.stringify(row)}`);
 });
 
 void test('the tty capture records an IBM wall while the live display retains its symbol', () => {

@@ -132,12 +132,13 @@ export function serializeCapture(term) {
             line += decChar ?? cell.ch;
             col++;
         }
-        // The recorder emits the row's final SGR reset first and closes the
-        // alternate-font run after it (termcap.c nomux_capture_screen:
-        // end-of-line color/attr reset, then `if (in_dec) \017`).
-        line += transition(fg, attr, 39, 0);
+        // The recorder closes an open alternate-font run first and only
+        // then emits the row's end-of-line reset (termcap.c
+        // nomux_capture_screen: `if (in_dec) \017` at 843 precedes the
+        // color/attr reset at 845-852).
         if (dec)
             line += '\x0f';
+        line += transition(fg, attr, 39, 0);
         lines.push(line);
     }
     return lines.join('\n');

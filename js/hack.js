@@ -4146,10 +4146,12 @@ export async function captureRunmodeDelay(g = game, enabled = false, sourceTurn 
         }
     };
     const retainedTopline = preservePhysicalTopline && !g._pending_message
-        ? (suppliedRetainedTopline
-            || g.nhDisplay?.grid?.[0])?.map((cell, col) => ({
-            ...cell, altFont: g.nhDisplay?.altFontAt(col, 0) ?? false,
-        }))
+        ? suppliedRetainedTopline
+            ?? g.nhDisplay?.grid?.[0]?.map((cell, col) => ({
+                // Only the fallback copy reads the live screen; a supplied
+                // topline keeps the per-cell shift state it was drawn with.
+                ...cell, altFont: g.nhDisplay?.altFontAt(col, 0) ?? false,
+            }))
         : null;
     await flush_screen(1);
     const logicalTopline = retainedTopline

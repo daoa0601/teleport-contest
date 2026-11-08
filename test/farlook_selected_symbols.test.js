@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { ALTAR } from '../js/const.js';
+import { captureRunmodeDelay } from '../js/hack.js';
+import { showUnrememberedTopline } from '../js/topl.js';
 import { displaySelf, flush_screen, newsym } from '../js/display.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
@@ -9,6 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { serializeCapture } from '../js/jsmain.js';
 import { applyNethackrc } from '../js/cfgfiles.js';
 import { showDisclosureOverlay } from '../js/windows.js';
+import { NO_COLOR } from '../js/terminal.js';
 import { POT_HEALING, SMALL_SHIELD } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { farlookText } from './support/farlook.js';
@@ -95,5 +98,25 @@ void test('a dismissed corner disclosure restores DEC map glyphs with their shif
     const key = await showDisclosureOverlay(['a short disclosure line'], { restoreUnderlay: true });
     assert.equal(key, ' '.charCodeAt(0));
     assert.ok(shiftedAltar.test(altarRow()), `the restored altar keeps its shift: ${JSON.stringify(altarRow().slice(0, 48))}`);
+});
+// hack.c:runmode_delay_output() keeps the physical top line through its
+// frames; a retained DEC glyph there replays the shift it was drawn with,
+// whatever the live screen shows during the delay.
+void test('a retained top line keeps its own shift through runmode delay frames', async () => {
+    await freshObjectRoom({ flags: { tips: false, help: false } });
+    requirePlayingGame(game);
+    applyNethackrc('OPTIONS=symset:DECgraphics');
+    showUnrememberedTopline('plain text');
+    game._pending_message = '';
+    const frames = [];
+    game.animationFrame = async () => {
+        frames.push(serializeCapture(requireGameDisplay()).split('\n')[0] ?? '');
+    };
+    await captureRunmodeDelay(game, true, 7, {
+        preservePhysicalTopline: true,
+        retainedTopline: [{ ch: '\u03c0', color: NO_COLOR, attr: 0, altFont: true }],
+    });
+    delete game.animationFrame;
+    assert.ok(frames.some(frame => frame.includes('\x0e{')), `the retained DEC glyph keeps its shift: ${JSON.stringify(frames[0])}`);
 });
 //# sourceMappingURL=farlook_selected_symbols.test.js.map
