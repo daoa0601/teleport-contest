@@ -144,10 +144,6 @@ const PM_NINJA = MONSTER_NAME.indexOf('ninja');
 const FIRST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of white glass');
 const LAST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of violet glass');
 
-// Port only: null-safe OBJ_NAME read.
-export function objectTypeName(object: Pick<GameObject, 'otyp'> | null | undefined): string {
-    return object ? OBJ_NAME(object.otyp) || '' : '';
-}
 
 // C mthrowu.c:m_has_launcher_and_ammo(): a wielded launcher with matching
 // ammo.
@@ -253,8 +249,8 @@ function monsterClassVolleyBonus(monster: Monster, missile: GameObject, launcher
         bonus++;
     }
     if ((monster.mnum === PM_NINJA || monster.mnum === PM_SAMURAI)
-        && objectTypeName(missile) === 'ya'
-        && objectTypeName(launcher) === 'yumi') {
+        && OBJ_NAME(missile?.otyp) === 'ya'
+        && OBJ_NAME(launcher?.otyp) === 'yumi') {
         bonus++;
     }
     return bonus;
@@ -265,7 +261,7 @@ export function monsterVolleyCount(
     monster: Monster, missile: GameObject, launcher: GameObject | null | undefined, rollOne = rnd,
 ) {
     const quantity = missile?.quan ?? missile?.quantity ?? 1;
-    const missileName = objectTypeName(missile);
+    const missileName = OBJ_NAME(missile?.otyp);
     const ammunition = isLauncherAmmunition(missile);
     const matchingLauncher = launcherMatchesAmmo(missile, launcher);
     const stackableWeapon = missile.oclass === WEAPON_CLASS;
@@ -277,7 +273,7 @@ export function monsterVolleyCount(
     else if (is_lord(monster?.mnum)) maximum++;
     else if (monsterIsPlayerMonster(monster.mnum)) maximum++;
     if (missileName === 'elven arrow' && !missile.cursed) maximum++;
-    if (objectTypeName(launcher) === 'elven bow'
+    if (OBJ_NAME(launcher?.otyp) === 'elven bow'
         && matchingLauncher && !launcher?.cursed) maximum++;
     if (matchingLauncher && (launcher?.spe ?? 0) > 1)
         maximum += Math.trunc(((launcher?.spe ?? 0) + 1) / 3);
@@ -286,13 +282,13 @@ export function monsterVolleyCount(
     volley += monsterClassVolleyBonus(monster, missile, launcher);
     if ((is_elf(monster?.mnum)
             && missileName === 'elven arrow'
-            && objectTypeName(launcher) === 'elven bow')
+            && OBJ_NAME(launcher?.otyp) === 'elven bow')
         || (is_orc(monster?.mnum)
             && missileName === 'orcish arrow'
-            && objectTypeName(launcher) === 'orcish bow')
+            && OBJ_NAME(launcher?.otyp) === 'orcish bow')
         || (is_gnome(monster?.mnum)
             && missileName === 'crossbow bolt'
-            && objectTypeName(launcher) === 'crossbow')) {
+            && OBJ_NAME(launcher?.otyp) === 'crossbow')) {
         volley++;
     }
     return Math.max(1, Math.min(quantity, volley));

@@ -8,7 +8,7 @@ import {
     GEM_CLASS, ROCK_CLASS, BALL_CLASS, VENOM_CLASS,
 } from './objclass.js';
 import {
-    objectSkill, SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, APPLE, BANANA, BULLWHIP,
+    OBJ_NAME, objectSkill, SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, APPLE, BANANA, BULLWHIP,
     BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT, ENORMOUS_MEATBALL,
     GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, BAG_OF_HOLDING, BLINDFOLD, BOOMERANG,
     CANDY_BAR, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEMBAS_WAFER, LEATHER_JACKET, LEASH,
@@ -112,7 +112,7 @@ import {
 import { movePet, monsterCouldReachItem, finishMonsterEating } from './dogmove.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fightNearbyMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
-import { attackHeroWithPolearm, monsterHasLauncherAndAmmo, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
+import { attackHeroWithPolearm, monsterHasLauncherAndAmmo, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero, monsterHasAvailableDistanceAttack } from './mhitu.js';
 import { swingMonsterWeapon } from './mhitm.js';
@@ -1335,7 +1335,7 @@ function monsterApproachPolicy(
     if (monsterHasLauncherAndAmmo(monster)) return { policy: -1, min: 0, max: 0 };
 
     const wielded = monsterWieldedWeapon(monster);
-    const wieldedName = objectTypeName(wielded);
+    const wieldedName = OBJ_NAME(wielded?.otyp);
     if (isPolearm(wielded) && distance <= 5) return { policy: -1, min: 0, max: 0 };
     if (wieldedName === 'aklys') return { policy: -2, min: 4, max: 16 };
 

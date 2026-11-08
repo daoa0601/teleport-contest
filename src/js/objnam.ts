@@ -3212,10 +3212,11 @@ export function objectUsesCharges(object: GameObject | null | undefined): boolea
             && !!objectCharged(object.otyp));
 }
 
-// C objnam.c:suit_simple_name(), objnam.c:cloak_simple_name(),
-// objnam.c:helm_simple_name(), objnam.c:gloves_simple_name(),
-// objnam.c:boots_simple_name(), objnam.c:shield_simple_name(),
-// objnam.c:shirt_simple_name().
+// Part of C objnam.c:suit_simple_name(), cloak_simple_name(),
+// helm_simple_name(), gloves_simple_name(), boots_simple_name(),
+// shield_simple_name() and shirt_simple_name(): the armor-slot dispatcher
+// the wear and combat messages share; each case defers to the matching
+// simple-name port where one exists.
 export function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameState): string {
     const name = OBJ_NAME(armor.otyp);
     if (!name) throw new RangeError(`Missing name for armor type ${armor.otyp}`);
@@ -3224,10 +3225,7 @@ export function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameS
     const known = objectTypeKnown(armor, state);
     switch (slot) {
     case 'uarm':
-        if (name.endsWith('dragon scale mail')) return 'dragon mail';
-        if (name.endsWith('dragon scales')) return 'dragon scales';
-        if (name.endsWith(' mail')) return 'mail';
-        return name.endsWith(' jacket') ? 'jacket' : 'suit';
+        return suitSimpleName(armor);
     case 'uarmc':
         if (name === 'robe') return 'robe';
         if (name === 'mummy wrapping') return 'wrapping';
