@@ -25,6 +25,7 @@ import {
 import { SLIME_MOLD } from './object_data.js';
 import { validSavedHeroAlignment } from './character_validation.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
+import { validSavedLightSourcePosition } from './light_validation.js';
 import {
     arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string, validateSavedEntity,
 } from './saved_validation.js';
@@ -318,6 +319,7 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         migrationOrigin: optional(monsterHomeLevel),
         migrationDestination: optional(monsterHomeLevel),
         _lightSeq: optional(integer),
+        _lightPosition: optional(validSavedLightSourcePosition),
     };
 }
 

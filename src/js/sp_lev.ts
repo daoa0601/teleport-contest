@@ -62,6 +62,7 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom, fillZooRoom, insideRoom } from './mkroom.js';
 import { beginObjectBurn, scheduleLevelTimer, stopLevelTimer } from './timeout.js';
 import { monsterEmitsLight, vision_reset } from './vision.js';
+import { registerMonsterLightSource } from './light.js';
 import { SpecialSelection, specialSelectionMatch } from './selvar.js';
 import { mapCharacterType } from './lua/lifecycle.js';
 import { CANDELABRUM_OF_INVOCATION, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD, S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom, makecorridors, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, topologize } from './mklev.js';
@@ -2268,8 +2269,11 @@ export async function create_monster(context: SpecialLevelContext, options: DesM
                     const oldForm = monster.mnum;
                     monster.female = shapechangerGender(monster.cham ?? oldForm, type, !!monster.female);
                     setMonsterSpecies(monster, type);
-                    if (monsterEmitsLight(oldForm) !== monsterEmitsLight(type))
+                    if (monsterEmitsLight(oldForm) !== monsterEmitsLight(type)) {
+                        delete monster._lightPosition;
+                        if (monsterEmitsLight(type)) registerMonsterLightSource(monster, game);
                         game.vision_full_recalc = 1;
+                    }
                     if (!monster.perminvis || oldForm === PM_STALKER || oldForm === PM_BLACK_LIGHT)
                         monster.perminvis = type === PM_STALKER || type === PM_BLACK_LIGHT;
                 }

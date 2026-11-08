@@ -524,7 +524,8 @@ export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, sta
     }
 }
 
-const BONES_VERSION = 20;
+// Light sources now retain their saved coordinates and LSF_SHOW flag.
+const BONES_VERSION = 21;
 
 
 

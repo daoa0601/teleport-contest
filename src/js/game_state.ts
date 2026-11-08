@@ -477,7 +477,7 @@ export interface GameState {
     _suppressMapStatusForFlush?: boolean;
     _suppressMessagesUntilInput?: boolean;
     _silentPrefixRetainedTopline?: boolean;
-    _transientLights?: Array<Position & { range: number }>;
+    _transientLights?: Array<Position & { range: number; show: boolean }>;
     _monsterNoticesBlocked?: number;
     viz_array?: Uint8Array[];
     vision_full_recalc?: number;

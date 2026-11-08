@@ -253,6 +253,7 @@ export function hasLightSources() {
 }
 // C light.c:do_light_sources()
 export function doLightSources(level, couldSee) {
+    refreshLightSourcePositions(game);
     let atHeroRange = 0;
     for (const source of mobileLightSources(level)) {
         const atHero = source.x === game.u.ux && source.y === game.u.uy;
@@ -288,7 +289,7 @@ export async function showTransientLight(object, x, y, state = game) {
         placeObjectSynchronously(object, x, y, state);
     }
     else {
-        (state._transientLights ??= []).unshift({ x, y, range: 0 });
+        (state._transientLights ??= []).unshift({ x, y, range: 0, show: false });
     }
     try {
         await vision_recalc(0);
@@ -340,6 +341,9 @@ export function discardFlashes(state = game) {
 export function registerObjectLightSource(object, state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;
+    // C timeout.c:1792 includes contained and buried objects at creation.
+    const location = getObjectLocation(object, state, { contained: true, buried: true });
+    object._lightPosition = { x: location?.x ?? 0, y: location?.y ?? 0, show: false };
 }
 // C light.c:new_light_source() for monster sources: makemon.c:1349 registers
 // a light-emitting newborn, makemon.c:900 its clone, and mon.c:2541/5404 a
@@ -349,12 +353,58 @@ export function registerObjectLightSource(object, state) {
 export function registerMonsterLightSource(monster, state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     monster._lightSeq = state._lightSerial;
+    monster._lightPosition = { x: monster.mx, y: monster.my, show: false };
 }
 // C light.c:new_light_source() for the hero's shape light
 // (polyself.c:726-731).
 export function registerHeroFormLightSource(state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     state.u.formLightSeq = state._lightSerial;
+    state.u.formLightPosition = { x: state.u.ux, y: state.u.uy, show: false };
+}
+// Part of C light.c:do_light_sources(): resolve moved sources and suppress
+// duplicates at the hero. Its loop follows "ls = gl.light_base; ls;
+// ls = ls->next" (light.c:178). The Blind branch of vision_recalc()
+// jumps past this pass (vision.c:583,703).
+function refreshLightSourcePositions(state) {
+    const sources = [];
+    for (const object of objectsInTimerGraph(state)) {
+        if (!objectShedsLight(object))
+            continue;
+        const location = getObjectLocation(object, state);
+        const position = { x: location?.x ?? 0, y: location?.y ?? 0, show: !!location };
+        object._lightPosition = position;
+        sources.push({ position, range: objectLightRadius(object, state), seq: object._litSeq ?? 0 });
+    }
+    for (const monster of [...(state.level?.monsters ?? []), ...(state._migratingMonsters ?? [])]) {
+        if (monster.dead || monster.lightRemoved || !monsterEmitsLight(monster.mnum))
+            continue;
+        const located = monster.mx > 0 && !monster.mburied;
+        const position = {
+            x: located ? monster.mx : 0, y: located ? monster.my : 0, show: located,
+        };
+        monster._lightPosition = position;
+        sources.push({ position, range: 1, seq: monster._lightSeq ?? 0 });
+    }
+    if (state.u.formLightRange) {
+        const position = { x: state.u.ux, y: state.u.uy, show: true };
+        state.u.formLightPosition = position;
+        sources.push({ position, range: state.u.formLightRange, seq: state.u.formLightSeq ?? 0 });
+    }
+    for (const flash of state._transientLights ?? []) {
+        flash.show = true;
+        sources.push({ position: flash, range: flash.range, seq: Number.POSITIVE_INFINITY });
+    }
+    sources.sort((left, right) => right.seq - left.seq);
+    let atHeroRange = 0;
+    for (const { position, range } of sources) {
+        if (position.x !== state.u.ux || position.y !== state.u.uy)
+            continue;
+        if (atHeroRange >= range)
+            position.show = false;
+        else
+            atHeroRange = range;
+    }
 }
 // Port only: enumerate every live light source the way C walks light_base,
 // newest registration first (new_light_core() prepends).  Every registration
@@ -368,23 +418,20 @@ export function lightSourceRecords(state) {
     const records = [];
     for (const flash of state._transientLights || [])
         records.push({ x: flash.x, y: flash.y, range: flash.range, kind: 'obj',
-            idText: '0x0', show: true, seq: Number.POSITIVE_INFINITY });
+            idText: '0x0', show: flash.show, seq: Number.POSITIVE_INFINITY });
     const objects = objectsInTimerGraph(state)
         .filter(object => objectShedsLight(object))
         .sort((left, right) => (right._litSeq ?? 0) - (left._litSeq ?? 0)
         || right.o_id - left.o_id);
     for (const object of objects) {
-        // do_light_sources() resolves each object through
-        // get_obj_location(obj, &x, &y, 0); on failure zap.c:687 clears the
-        // coordinates to (0,0) and the source loses LSF_SHOW.
-        const location = getObjectLocation(object, state);
+        const position = object._lightPosition;
+        if (!position)
+            throw new Error(`Object light ${object.o_id} has no cached position`);
         records.push({
-            x: location?.x ?? 0,
-            y: location?.y ?? 0,
+            ...position,
             range: objectLightRadius(object, state),
             kind: 'obj',
             idText: `0x${object.o_id.toString(16)}`,
-            show: !!location,
             seq: object._litSeq ?? 0,
         });
     }
@@ -394,40 +441,27 @@ export function lightSourceRecords(state) {
         .sort((left, right) => (right._lightSeq ?? 0) - (left._lightSeq ?? 0)
         || right.m_id - left.m_id);
     for (const monster of monsters) {
-        // do_light_sources() resolves the monster through get_mon_location()
-        // with no buried exception: zap.c:701-707 reports a buried or
-        // migrating monster at (0,0) and drops LSF_SHOW.  The type column's
-        // mon_is_local() test (light.c:373) still only asks mx > 0, so a
-        // buried local monster reads "mon" at (0,0).
-        const located = monster.mx > 0 && !monster.mburied;
+        const position = monster._lightPosition;
+        if (!position)
+            throw new Error(`Monster light ${monster.m_id} has no cached position`);
         records.push({
-            x: located ? monster.mx : 0,
-            y: located ? monster.my : 0,
+            ...position,
             range: 1,
             kind: monster.mx > 0 ? 'mon' : '<m>',
             idText: `0x${monster.m_id.toString(16)}`,
-            show: located,
             seq: monster._lightSeq ?? 0,
         });
     }
-    if (state.u.formLightRange)
-        records.push({ x: state.u.ux, y: state.u.uy, range: state.u.formLightRange,
-            kind: 'you', idText: '0x1', show: true, seq: state.u.formLightSeq ?? 0 });
+    if (state.u.formLightRange) {
+        const position = state.u.formLightPosition;
+        if (!position)
+            throw new Error('Hero form light has no cached position');
+        records.push({ ...position, range: state.u.formLightRange,
+            kind: 'you', idText: '0x1', seq: state.u.formLightSeq ?? 0 });
+    }
     // light.c:83-90: each registration prepends, so the list is newest
     // first; the stable sort keeps insertion order between equal stamps.
     records.sort((left, right) => right.seq - left.seq);
-    // do_light_sources() (light.c:198-203): at the hero's square only the
-    // strongest of the newer sources keeps LSF_SHOW.  Run the same pass over
-    // the newest-first order to fill the flags column.
-    let atHeroRange = 0;
-    for (const record of records) {
-        if (record.x === state.u.ux && record.y === state.u.uy) {
-            if (atHeroRange >= record.range)
-                record.show = false;
-            else
-                atHeroRange = record.range;
-        }
-    }
     return records;
 }
 // C light.c:light_stats(): the #stats row over the light_base list — one

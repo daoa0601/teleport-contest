@@ -452,7 +452,8 @@ export async function restoreBonesMonsters(level, state) {
         await removeMonsterFromGame(monster);
     }
 }
-const BONES_VERSION = 20;
+// Light sources now retain their saved coordinates and LSF_SHOW flag.
+const BONES_VERSION = 21;
 // Part of C bones.c:getbones(), bones.c:savebones(): the wizard y_n()
 // prompts with their screen flush.
 async function bonesPrompt(message, displayLevel = null) {

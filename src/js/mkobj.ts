@@ -1895,6 +1895,8 @@ export function splitObjectStack(
     // so the split-off stack owns the newer light source.
     if (objectShedsLight(object)) {
         split.lamplit = true;
+        // C light.c:obj_split_light_source() copies x/y and flags too.
+        if (object._lightPosition) split._lightPosition = { ...object._lightPosition };
         state._lightSerial = (state._lightSerial ?? 0) + 1;
         split._litSeq = state._lightSerial;
         if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE)

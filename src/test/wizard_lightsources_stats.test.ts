@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LARGE_BOX, OIL_LAMP } from '../js/object_data.js';
 import { SIZEOF_OEXTRA } from '../js/const.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { rhack } from '../js/cmd.js';
+import { create_monster } from '../js/sp_lev.js';
+import { initRng } from '../js/rng.js';
+import { vision_recalc } from '../js/vision.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { saveBonesLevel } from '../js/bones.js';
@@ -212,6 +218,93 @@ async function lightsourcesWindowRows(): Promise<string[]> {
     assert.ok(window, 'the listing must render a window');
     return window.filter(row => /^ *\d+, *\d+ +\d/.test(row));
 }
+
+void test('#lightsources keeps its last sighted lamp position while blind, including after restore', async () => {
+    await freshLitLampRoom();
+    await vision_recalc(0);
+    setHeroBlindnessTurns(20);
+
+    await rhack('l'.charCodeAt(0));
+    await vision_recalc(0);
+
+    assert.equal(game.u.ux, 11);
+    // C vision.c:583's "goto skip" bypasses do_light_sources():703 while
+    // Blind, retaining light.c:187-203's cached coordinates and LSF_SHOW.
+    let rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', /10,10 {4}3 {3}0x0001 {2}obj/);
+
+    game.plname = 'Blindlight';
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(await restoreGame('Blindlight', storage), true);
+    rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', /10,10 {4}3 {3}0x0001 {2}obj/);
+
+    setHeroBlindnessTurns(0);
+    await vision_recalc(0);
+    rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', /11,10 {4}3 {3}0x0001 {2}obj/);
+});
+
+void test('#lightsources leaves lights registered while blind at their creation positions with flags zero', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    setHeroBlindnessTurns(20);
+    const lamp = await addInventoryObject(OIL_LAMP);
+    assert.equal(beginObjectBurn(lamp, game), true);
+    await createMonsterAt('fire vortex', 12, 10);
+
+    await rhack('l'.charCodeAt(0));
+    await vision_recalc(0);
+
+    // C light.c:new_light_core():84-89 sets the creation coordinates and
+    // "ls->flags = 0"; Blind vision leaves both unchanged.
+    let rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', /12,10 {4}1 {3}0x0000 {2}mon/);
+    assert.match(rows[1] ?? '', /10,10 {4}3 {3}0x0000 {2}obj/);
+
+    setHeroBlindnessTurns(0);
+    await vision_recalc(0);
+    rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', /12,10 {4}1 {3}0x0001 {2}mon/);
+    assert.match(rows[1] ?? '', /11,10 {4}3 {3}0x0001 {2}obj/);
+});
+
+void test('#lightsources still refreshes a swallowed hero\'s carried light', async () => {
+    await freshLitLampRoom();
+    await vision_recalc(0);
+    const worm = await createMonsterAt('purple worm', 12, 10);
+    game.u.ustuck = worm;
+    game.u.uswallow = 1;
+    game.u.ux = worm.mx;
+    game.u.uy = worm.my;
+
+    // C vision.c:545-547 leaves the sight array empty but falls through
+    // to do_light_sources():703; it does not take Blind's "goto skip".
+    await vision_recalc(0);
+
+    const rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', /12,10 {4}3 {3}0x0001 {2}obj/);
+});
+
+void test('#lightsources registers a special-level appearance light ahead of an older lamp', async () => {
+    await freshLitLampRoom();
+    initRng(2n);
+
+    const monster = await create_monster({ xstart: 0, ystart: 0, width: 80, height: 21 }, {
+        point: { x: 12, y: 10 }, monsterType: MONSTER_NAME.indexOf('chameleon'), monsterClass: null,
+        nameFemale: null, group: false,
+        appearance: { kind: 'monster', type: MONSTER_NAME.indexOf('fire elemental') },
+    });
+
+    assert.ok(monster);
+    assert.equal(monster.mnum, MONSTER_NAME.indexOf('fire elemental'));
+    // C sp_lev.c:2100-2108 calls new_light_source() after the appearance
+    // change.  light.c:83-90 prepends it: "ls->next = gl.light_base".
+    const rows = await lightsourcesWindowRows();
+    assert.match(rows[0] ?? '', /12,10 {4}1 {3}0x0001 {2}mon/);
+    assert.match(rows[1] ?? '', /10,10 {4}3 {3}0x0001 {2}obj/);
+});
 
 void test('#lightsources orders sources by registration across kinds', async () => {
     await freshLitLampRoom();

@@ -21,6 +21,7 @@ import { AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, ismnum, MAGIC_PORTAL, M_AP_
 import { SLIME_MOLD } from './object_data.js';
 import { validSavedHeroAlignment } from './character_validation.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
+import { validSavedLightSourcePosition } from './light_validation.js';
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string, validateSavedEntity, } from './saved_validation.js';
 import { isSavedRecord } from './saved_graph.js';
 // C restore.c:inven_inuse(). Announce before consuming, so a pager still
@@ -282,6 +283,7 @@ function monsterFields(value, context) {
         migrationOrigin: optional(monsterHomeLevel),
         migrationDestination: optional(monsterHomeLevel),
         _lightSeq: optional(integer),
+        _lightPosition: optional(validSavedLightSourcePosition),
     };
 }
 // Port only: full saved Monster validation.
