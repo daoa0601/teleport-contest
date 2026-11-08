@@ -409,8 +409,9 @@ export function rollPhysicalWeaponDamage(
     return applyErosion(object, damage);
 }
 
-// C weapon.c:dmgval(obj, &gy.youmonst): the form the dig.c, dothrow.c,
-// mthrowu.c, read.c, trap.c, uhitm.c and zap.c call sites use.
+// Part of C weapon.c:dmgval(): the dmgval(obj, &gy.youmonst) form the
+// dig.c, dothrow.c, mthrowu.c, read.c, trap.c, uhitm.c and zap.c call
+// sites use.
 export function rollPhysicalWeaponDamageAgainstHero(
     object: GameObject, state: GameState, options: PhysicalWeaponDamageOptions = {},
 ): number {
