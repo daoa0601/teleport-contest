@@ -4,6 +4,13 @@ import { LARGE_BOX, OIL_LAMP } from '../js/object_data.js';
 import { SIZEOF_OEXTRA } from '../js/const.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { restoreGame, saveGame } from '../js/save.js';
+import { saveBonesLevel } from '../js/bones.js';
+import { mklev } from '../js/mklev.js';
+import { init_objects } from '../js/o_init.js';
+import { initializeArtifacts } from '../js/artifact.js';
+import { pushKeys } from '../js/input.js';
+import { createDungeon } from './support/topology.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 import { createGasCloudSelection, restoreLevelRegions, runLevelRegions, updateMonsterRegions } from '../js/region.js';
 import { restoreLevelLightSources } from '../js/light.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
@@ -14,6 +21,25 @@ import { createMonsterAt } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 import { memoryStorage } from './support/memory-storage.js';
 import type { GameObject } from '../js/object_types.js';
+import type { StorageBackend } from '../js/storage.js';
+
+// The bones-room setup from bones.test.ts: a room on a bones-enabled level
+// whose save the next freshBonesWizardRoom call can load.
+function freshBonesWizardRoom(storage: StorageBackend): void {
+    freshPlayableRoom({
+        seed: 8701n,
+        hero: {
+            uz: { dnum: 0, dlevel: 7 },
+            ualign: { type: 1, record: 10 },
+        },
+    });
+    requirePlayingGame(game);
+    game.storage = storage;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
+    game.flags.debug = true;
+    init_objects();
+    initializeArtifacts(game);
+}
 
 // Each wizard window waits for a dismiss key; capture the screen at every
 // wait so the test sees every page the native game would show.
@@ -382,4 +408,27 @@ void test('#stats counts every installed delayed killer', async () => {
     const rows = await statsWindowRows();
     assert.ok(rows.includes(statsRow('delayed killers, size 272', 2, 544)),
         `delayed-killer row missing from:\n${rows.join('\n')}`);
+});
+
+void test('#stats sizes a bones cloud\'s monster-id capacity from its saved members', async () => {
+    const storage = memoryStorage();
+    freshBonesWizardRoom(storage);
+    const soldier = await createMonsterAt('soldier', 12, 10);
+    const cloud = await createGasCloudSelection(game, [{ x: 12, y: 10 }], 4, 0);
+    assert.ok(cloud, 'the cloud must join the level');
+    // The saved bones region also references a member that no longer exists
+    // when the level is restored.
+    cloud.monsterIds.push(soldier.m_id + 999);
+    assert.equal(saveBonesLevel(), true);
+    freshBonesWizardRoom(storage);
+    pushKeys('yn');
+    await mklev();
+
+    // C region.c:873 sets max_monst from the saved membership before
+    // reset_region_mids() (region.c:888-889) drops the unmappable id,
+    // which lowers n_monst but never max_monst: one region slot, one cell,
+    // two id slots.
+    const rows = await statsWindowRows();
+    assert.ok(rows.includes(statsRow('regions, size 96+8*rect+N', 1, 96 + 8 + 2 * 4)),
+        `bones region capacity missing from:\n${rows.join('\n')}`);
 });

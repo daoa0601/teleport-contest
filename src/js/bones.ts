@@ -934,11 +934,15 @@ export async function getbones(): Promise<boolean> {
         x: point.x, y: point.y,
     }));
     restoreBonesClock(game.level, payload.savedAt);
+    // C rest_regions() (region.c:873) sets each region's monster-id
+    // capacity from the saved membership before reset_region_mids()
+    // (region.c:888-889, called from renewBonesIdentities below) drops the
+    // ids that cannot be remapped, which lowers n_monst but never max_monst.
+    await restoreLevelRegions(game, 0);
     await renewBonesIdentities(game.level, payload.fruits);
     restoreBonesFloorOrder(game.level);
     restoreLevelTimers(game);
     await restoreBonesMonsters(game.level, game);
-    await restoreLevelRegions(game, 0);
     repairBonesConnections(game.level, location);
     resetBonesObjects(game.level, 'restore');
     await fixShopDamage(game);
