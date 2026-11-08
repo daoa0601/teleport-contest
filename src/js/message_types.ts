@@ -20,7 +20,7 @@ import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { rn2, rnd } from './rng.js';
-import { isTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, parseBoulderSymbolValue } from './option_values.js';
+import { isTextOption, textOptionValue, cInteger, parsePickupTypes, optionError } from './option_values.js';
 import { featureAlertVersion } from './extversion.js';
 import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
@@ -1194,11 +1194,12 @@ export function parseOptions(
                 // optfn_boulder() decodes the raw text after the
                 // delimiter (spaces included) and writes the first byte
                 // into both symbol sets; the BOULDER= statement above
-                // only touches the primary set.
+                // only touches the primary set.  The initial config
+                // records the override without a redraw (go.opt_initial).
                 const raw = stripped.slice(colonIdx + 1);
                 if (!raw) addError(`Missing parameter for '${stripped}'`);
                 else {
-                    const parsed = parseBoulderSymbolValue(raw);
+                    const parsed = optfnBoulder(raw, { initial: true });
                     if ('error' in parsed) addError(parsed.error);
                     else {
                         result.boulderSym = parsed.symbol;
@@ -3004,6 +3005,37 @@ async function editFruitOption(giveMessage: boolean): Promise<void> {
     if (!result.changed || giveMessage) await plineWithContinuation(result.message);
 }
 
+// C options.c:optfn_boulder(): the do_set branch. escapes() decodes the
+// value, then the first byte replaces the boulder symbol in both symbol
+// sets' overrides. A monster-class or warning symbol is refused ("boulder
+// symbol would conflict"); the warning test covers '1'..'5' only, so '0'
+// passes. char is signed in the native build, so a decoded byte of 128..255
+// is negative there and is refused as a control character together with
+// everything below space. Mid-game (go.opt_initial clear) the shown symbol
+// refreshes through get_othersym() and go.opt_need_redraw; the initial
+// config only records the override.
+export function optfnBoulder(raw: string, { initial = false } = {}):
+    { symbol: string } | { error: string } {
+    const symbol = decodeOptionEscapes(raw).charAt(0);
+    const code = symbol.charCodeAt(0);
+    const monsterClash = MONSTER_CLASS_SYMBOLS.indexOf(symbol) > 0;
+    const warningClash = code >= 49 && code < 48 + WARNCOUNT;
+    if (!(code >= 32) || code > 127)
+        return { error: 'boulder symbol cannot be a control character' };
+    if (monsterClash)
+        return { error: `Badoption - boulder symbol '${symbol}' would conflict with a monster symbol` };
+    if (warningClash)
+        return { error: `Badoption - boulder symbol '${symbol}' would conflict with a warning symbol` };
+    // The override is written to both symbol sets before the mid-game
+    // refresh reads it back through get_othersym() (options.c:1213-1225).
+    if (!initial) {
+        game.boulderSym = symbol;
+        game.rogueBoulderSym = symbol;
+        reglyphBoulderSymbols();
+    }
+    return { symbol };
+}
+
 // Part of C options.c:doset(): the boulder prompt routed back through
 // optfn_boulder.
 // doset() gives boulder no handler, so the menu prompts and re-runs
@@ -3017,14 +3049,11 @@ async function editBoulderSymbol(): Promise<boolean> {
         await optionError("Missing parameter for 'boulder:'");
         return false;
     }
-    const parsed = parseBoulderSymbolValue(value);
+    const parsed = optfnBoulder(value);
     if ('error' in parsed) {
         await optionError(parsed.error);
         return false;
     }
-    game.boulderSym = parsed.symbol;
-    game.rogueBoulderSym = parsed.symbol;
-    reglyphBoulderSymbols();
     return true;
 }
 
