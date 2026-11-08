@@ -4,7 +4,7 @@ import { M_AP_FURNITURE, M_AP_OBJECT } from '../js/const.js';
 import { BOULDER } from '../js/object_data.js';
 import { revealMonsterAppearance } from '../js/mon.js';
 import { initRng } from '../js/rng.js';
-import { requireGameLevel } from '../js/gstate.js';
+import { game, requireGameLevel } from '../js/gstate.js';
 import { block_point, clearPath, visionCellBlocksLight } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -68,4 +68,32 @@ void test('revealing a blocking mimic reopens the sight line through its square'
     assert.equal(visionCellBlocksLight(level, 12, 10), false, 'the revealed mimic does not block');
     assert.equal(clearPath(10, 10, 14, 10), true,
         'seemimic() unblocks the square, so the sight line resumes');
+});
+
+// C mon.c:seemimic() calls unblock_point() only when is_blocker_appear was
+// set, and vision.c:unblock_point() raises gv.vision_full_recalc only for a
+// square in the hero's visibility map — so revealing a doorway, open door,
+// bars, corridor, altar or fountain disguise must not request a full vision
+// recalculation, while revealing a wall disguise must.
+void test('revealing a non-blocking disguise does not request a vision recalculation', async () => {
+    await freshObjectRoom();
+    initRng(671n);
+    const mimic = await createMonsterAt('small mimic', 12, 10);
+    const level = requireGameLevel();
+    game.vision_full_recalc = 0;
+    for (const [mappearance, what] of [[12, 'S_ndoor doorway'], [13, 'S_vodoor open door'],
+        [14, 'S_hodoor open door'], [17, 'S_bars'], [23, 'S_litcorr'],
+        [33, 'S_altar'], [37, 'S_fountain']] as const) {
+        mimic.m_ap_type = M_AP_FURNITURE;
+        mimic.mappearance = mappearance;
+        await revealMonsterAppearance(mimic);
+        assert.equal(game.vision_full_recalc, 0, `revealing a ${what} disguise`);
+    }
+
+    mimic.m_ap_type = M_AP_FURNITURE;
+    mimic.mappearance = 1; // wall disguise
+    assert.equal(visionCellBlocksLight(level, 12, 10), true, 'wall disguise blocks');
+    await revealMonsterAppearance(mimic);
+    assert.equal(game.vision_full_recalc, 1,
+        'revealing a blocking disguise the hero sees requests the recalculation');
 });
