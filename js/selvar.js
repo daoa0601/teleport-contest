@@ -528,6 +528,7 @@ export class SpecialSelection {
     negate() {
         return new SpecialSelection(selection_not(selection_clone(this.selection)));
     }
+    // C selvar.c:selection_filter_percent().
     percentage(percent) {
         return new SpecialSelection(selection_filter_percent(this.selection, percent));
     }
