@@ -771,8 +771,11 @@ export function restoreLevelPetHistory(level: GameMap, elapsed: number): void {
     restoreObjectPetHistory(level.buriedObjects ?? [], elapsed);
 }
 
-// Part of C restore.c:restmon(): the edog fields (droptime, hungrytime,
-// apport) of one restored monster's mextra.
+// C restore.c:restmon(): the edog (pet) part of one restored monster's
+// mextra — relative_time_to_moves() on droptime and hungrytime (the port
+// re-bases them by the elapsed move count instead of a saved clock), and
+// the apport sanity floor. The stream reads around it have no port
+// counterpart: saved state arrives as a validated object graph.
 export function restoreMonsterPetHistory(monster: Monster | SavedMonsterTraits, elapsed: number): void {
     const pet = monster.edog || monster.mextra?.edog;
     if (!pet) return;
