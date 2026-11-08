@@ -15,6 +15,7 @@ import { isSavedRecord } from './saved_graph.js';
 import { ismnum } from './const.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
 import { validSavedGlyph } from './display_validation.js';
+import { validSavedLightSourcePosition } from './light_validation.js';
 import { validSavedDungeonLocation } from './map_validation.js';
 import {
     validSavedAlignmentValue, validSavedAttributeValues, validSavedHeroAlignment,
@@ -173,6 +174,8 @@ export function validSavedHero(
         ty: optional(integer),
         uinvault: optional(integer),
         formLightRange: optional(oneOf(2)),
+        formLightSeq: optional(integer),
+        formLightPosition: optional(validSavedLightSourcePosition),
         usleep: optional(integer),
         uinvulnerable: optional(heroFlag),
         ucreamed: optional(integer),

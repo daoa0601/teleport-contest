@@ -11,7 +11,7 @@ import { beginObjectBurn, endObjectBurn, lightObjectIsGlobal, objectsInTimerGrap
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { artifactEmitsLight } from './artifact.js';
-import { COLNO, CORR, COULD_SEE, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, ROWNO, TEMP_LIT } from './const.js';
+import { COLNO, CORR, COULD_SEE, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, ROWNO, SIZEOF_LIGHT_SOURCE, TEMP_LIT } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible } from './display.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { rnd } from './rng.js';
@@ -24,6 +24,9 @@ import { placeObjectSynchronously, remove_object } from './mkobj.js';
 import { roomForRoomno } from './hack.js';
 import { snuffLitObject } from './apply.js';
 import { monsterDigests, monsterIsWhirly } from './mondata.js';
+import { showDisclosureOverlay } from './windows.js';
+// C light.c:41 LSF_SHOW — the only flag set on a live, displayed source.
+const LSF_SHOW = 0x1;
 export const CANDLE_TYPES = new Set([
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
 ]);
@@ -114,32 +117,74 @@ export function snuffLightSource(x, y, state = game) {
         snuffOrdinaryLight(target);
 }
 // C light.c:save_light_sources() writes a batch (the global lights, or one
-// level's lights) newest-first, and restore_light_sources() pushes each
-// entry back onto the front of light_base, so a restored batch returns
-// reversed and ahead of the lights that never left the list.  Re-stamp the
-// batch the same way: previously-oldest first, above every other light.
-export function restoreLightSourceBatch(batch, state = game) {
-    const lights = (batch ?? [])
-        .filter(object => objectLightRadius(object, state) > 0)
-        .sort((left, right) => (left._litSeq ?? 0) - (right._litSeq ?? 0));
-    if (!lights.length)
+// level's lights) newest-first, and restore_light_sources()
+// (light.c:487-491) pushes each entry back onto the front of light_base, so
+// a restored batch returns reversed and ahead of the lights that never left
+// the list.  Re-stamp the batch the same way: previously-oldest first,
+// above every other light.
+function restoreLightBatch(lights, state) {
+    const batch = [...lights].sort((left, right) => left.seq - right.seq);
+    if (!batch.length)
         return;
     const base = state._lightSerial ?? 0;
-    lights.forEach((object, index) => {
-        object._litSeq = base + lights.length - index;
-    });
-    state._lightSerial = base + lights.length;
+    batch.forEach((light, index) => light.restamp(base + batch.length - index));
+    state._lightSerial = base + batch.length;
+}
+function objectLightEntries(objects, state) {
+    const entries = [];
+    for (const object of objects) {
+        if (objectLightRadius(object, state) <= 0)
+            continue;
+        entries.push({
+            seq: object._litSeq ?? 0,
+            restamp: serial => { object._litSeq = serial; },
+        });
+    }
+    return entries;
 }
 // Part of C restore.c:getlev(): the level-local light-source restoration.
 // C getlev() restores the entered level's light sources after the level
-// data (restore.c:1145); other levels keep waiting in their files.
+// data (restore.c:1145); other levels keep waiting in their files.  The
+// batch also carries the level's resident light-emitting monsters
+// (light.c:452-453 saves a monster's source with its level when
+// mon_is_local(), mx > 0).  Migrating monsters (mx 0) stay in the global
+// batch, and the hero's youmonst.mx is pinned to 0 (light.c:16-17), so the
+// hero's light stays in the list during a level change.
 export function restoreLevelLightSources(state = game) {
-    restoreLightSourceBatch(objectsInTimerGraph(state).filter(object => !lightObjectIsGlobal(object)), state);
+    const lights = objectLightEntries(objectsInTimerGraph(state).filter(object => !lightObjectIsGlobal(object)), state);
+    for (const monster of state.level?.monsters ?? []) {
+        if (monster.dead || monster.lightRemoved || monster.mx <= 0
+            || !monsterEmitsLight(monster.mnum))
+            continue;
+        lights.push({
+            seq: monster._lightSeq ?? 0,
+            restamp: serial => { monster._lightSeq = serial; },
+        });
+    }
+    restoreLightBatch(lights, state);
 }
 // C restore.c:655 reloads the global batch while reading the game state,
 // then getlev() pushes the current level's batch in front of it.
 export function restoreSavedLightSources(state = game) {
-    restoreLightSourceBatch(objectsInTimerGraph(state).filter(lightObjectIsGlobal), state);
+    const lights = objectLightEntries(objectsInTimerGraph(state).filter(lightObjectIsGlobal), state);
+    // youmonst.mx is always 0 (light.c:16-17), so maybe_write_ls():586
+    // includes the hero: "is_global = !mon_is_local(ls->id.a_monst)".
+    if (state.u.formLightRange) {
+        lights.push({
+            seq: state.u.formLightSeq ?? 0,
+            restamp: serial => { state.u.formLightSeq = serial; },
+        });
+    }
+    // The global batch keeps the migrating monsters' lights (mx 0).
+    for (const monster of state._migratingMonsters ?? []) {
+        if (monster.dead || monster.lightRemoved || !monsterEmitsLight(monster.mnum))
+            continue;
+        lights.push({
+            seq: monster._lightSeq ?? 0,
+            restamp: serial => { monster._lightSeq = serial; },
+        });
+    }
+    restoreLightBatch(lights, state);
     restoreLevelLightSources(state);
 }
 // Part of C mhitm.c:gulpmm(): the engulfed inventory light pass, shared with uhitm.c:gulpum().
@@ -208,6 +253,7 @@ export function hasLightSources() {
 }
 // C light.c:do_light_sources()
 export function doLightSources(level, couldSee) {
+    refreshLightSourcePositions(game);
     let atHeroRange = 0;
     for (const source of mobileLightSources(level)) {
         const atHero = source.x === game.u.ux && source.y === game.u.uy;
@@ -243,7 +289,7 @@ export async function showTransientLight(object, x, y, state = game) {
         placeObjectSynchronously(object, x, y, state);
     }
     else {
-        (state._transientLights ??= []).unshift({ x, y, range: 0 });
+        (state._transientLights ??= []).unshift({ x, y, range: 0, show: false });
     }
     try {
         await vision_recalc(0);
@@ -295,6 +341,162 @@ export function discardFlashes(state = game) {
 export function registerObjectLightSource(object, state) {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;
+    // C timeout.c:1792 includes contained and buried objects at creation.
+    const location = getObjectLocation(object, state, { contained: true, buried: true });
+    object._lightPosition = { x: location?.x ?? 0, y: location?.y ?? 0, show: false };
+}
+// C light.c:new_light_source() for monster sources: makemon.c:1349 registers
+// a light-emitting newborn, makemon.c:900 its clone, and mon.c:2541/5404 a
+// replacement form that emits light.  The stamp shares the object serial so
+// the #lightsources order and the at-hero LSF_SHOW pass follow native
+// registration order.
+export function registerMonsterLightSource(monster, state) {
+    state._lightSerial = (state._lightSerial ?? 0) + 1;
+    monster._lightSeq = state._lightSerial;
+    monster._lightPosition = { x: monster.mx, y: monster.my, show: false };
+}
+// C light.c:new_light_source() for the hero's shape light
+// (polyself.c:726-731).
+export function registerHeroFormLightSource(state) {
+    state._lightSerial = (state._lightSerial ?? 0) + 1;
+    state.u.formLightSeq = state._lightSerial;
+    state.u.formLightPosition = { x: state.u.ux, y: state.u.uy, show: false };
+}
+// Part of C light.c:do_light_sources(): resolve moved sources and suppress
+// duplicates at the hero. Its loop follows "ls = gl.light_base; ls;
+// ls = ls->next" (light.c:178). The Blind branch of vision_recalc()
+// jumps past this pass (vision.c:583,703).
+function refreshLightSourcePositions(state) {
+    const sources = [];
+    for (const object of objectsInTimerGraph(state)) {
+        if (!objectShedsLight(object))
+            continue;
+        const location = getObjectLocation(object, state);
+        const position = { x: location?.x ?? 0, y: location?.y ?? 0, show: !!location };
+        object._lightPosition = position;
+        sources.push({ position, range: objectLightRadius(object, state), seq: object._litSeq ?? 0 });
+    }
+    for (const monster of [...(state.level?.monsters ?? []), ...(state._migratingMonsters ?? [])]) {
+        if (monster.dead || monster.lightRemoved || !monsterEmitsLight(monster.mnum))
+            continue;
+        const located = monster.mx > 0 && !monster.mburied;
+        const position = {
+            x: located ? monster.mx : 0, y: located ? monster.my : 0, show: located,
+        };
+        monster._lightPosition = position;
+        sources.push({ position, range: 1, seq: monster._lightSeq ?? 0 });
+    }
+    if (state.u.formLightRange) {
+        const position = { x: state.u.ux, y: state.u.uy, show: true };
+        state.u.formLightPosition = position;
+        sources.push({ position, range: state.u.formLightRange, seq: state.u.formLightSeq ?? 0 });
+    }
+    for (const flash of state._transientLights ?? []) {
+        flash.show = true;
+        sources.push({ position: flash, range: flash.range, seq: Number.POSITIVE_INFINITY });
+    }
+    sources.sort((left, right) => right.seq - left.seq);
+    let atHeroRange = 0;
+    for (const { position, range } of sources) {
+        if (position.x !== state.u.ux || position.y !== state.u.uy)
+            continue;
+        if (atHeroRange >= range)
+            position.show = false;
+        else
+            atHeroRange = range;
+    }
+}
+// Port only: enumerate every live light source the way C walks light_base,
+// newest registration first (new_light_core() prepends).  Every registration
+// shares the state._lightSerial stamp: object lights via
+// registerObjectLightSource(), monster lights via
+// registerMonsterLightSource() at birth or light-changing shape shift, and
+// the hero's shape light via registerHeroFormLightSource().  A camera flash
+// is newer than everything by construction.  Sources registered before
+// their stamp existed keep seq 0 and fall to the tail in insertion order.
+export function lightSourceRecords(state) {
+    const records = [];
+    for (const flash of state._transientLights || [])
+        records.push({ x: flash.x, y: flash.y, range: flash.range, kind: 'obj',
+            idText: '0x0', show: flash.show, seq: Number.POSITIVE_INFINITY });
+    const objects = objectsInTimerGraph(state)
+        .filter(object => objectShedsLight(object))
+        .sort((left, right) => (right._litSeq ?? 0) - (left._litSeq ?? 0)
+        || right.o_id - left.o_id);
+    for (const object of objects) {
+        const position = object._lightPosition;
+        if (!position)
+            throw new Error(`Object light ${object.o_id} has no cached position`);
+        records.push({
+            ...position,
+            range: objectLightRadius(object, state),
+            kind: 'obj',
+            idText: `0x${object.o_id.toString(16)}`,
+            seq: object._litSeq ?? 0,
+        });
+    }
+    const monsters = [...(state.level?.monsters ?? []), ...(state._migratingMonsters ?? [])]
+        .filter(monster => !monster.dead && !monster.lightRemoved
+        && monsterEmitsLight(monster.mnum))
+        .sort((left, right) => (right._lightSeq ?? 0) - (left._lightSeq ?? 0)
+        || right.m_id - left.m_id);
+    for (const monster of monsters) {
+        const position = monster._lightPosition;
+        if (!position)
+            throw new Error(`Monster light ${monster.m_id} has no cached position`);
+        records.push({
+            ...position,
+            range: 1,
+            kind: monster.mx > 0 ? 'mon' : '<m>',
+            idText: `0x${monster.m_id.toString(16)}`,
+            seq: monster._lightSeq ?? 0,
+        });
+    }
+    if (state.u.formLightRange) {
+        const position = state.u.formLightPosition;
+        if (!position)
+            throw new Error('Hero form light has no cached position');
+        records.push({ ...position, range: state.u.formLightRange,
+            kind: 'you', idText: '0x1', seq: state.u.formLightSeq ?? 0 });
+    }
+    // light.c:83-90: each registration prepends, so the list is newest
+    // first; the stable sort keeps insertion order between equal stamps.
+    records.sort((left, right) => right.seq - left.seq);
+    return records;
+}
+// C light.c:light_stats(): the #stats row over the light_base list — one
+// light_source per entry.
+export function lightStats(state = game) {
+    const count = lightSourceRecords(state).length;
+    return { header: `light sources, size ${SIZEOF_LIGHT_SOURCE}`, count, size: count * SIZEOF_LIGHT_SOURCE };
+}
+// C light.c:wiz_light_sources(): the #lightsources wizard listing in a
+// putstr-built NHW_MENU window (a corner text window for the tty interface;
+// the disclosure overlay owns that geometry).
+export async function wizLightSources() {
+    requirePlayingGame(game);
+    const state = game;
+    const hero = state.u;
+    const lines = [
+        `Mobile light sources: hero @ (${String(hero.ux).padStart(2)},${String(hero.uy).padStart(2)})`,
+        '',
+    ];
+    const records = lightSourceRecords(state);
+    if (records.length) {
+        lines.push('location range flags  type    id', '-------- ----- ------ ----  -------');
+        for (const record of records)
+            lines.push(`  ${String(record.x).padStart(2)},${String(record.y).padStart(2)}   `
+                + `${String(record.range).padStart(2)}   `
+                + `0x${(record.show ? LSF_SHOW : 0).toString(16).padStart(4, '0')}  `
+                + `${record.kind}  ${record.idText}`);
+    }
+    else {
+        lines.push('<none>');
+    }
+    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    state._pending_message = '';
+    state._retained_message = '';
+    state.context.move = 0;
 }
 // Part of C apply.c:dorub(): performs this type change before the released djinni can
 // grant a fatal wish.  A lit magic lamp already has a light source but no

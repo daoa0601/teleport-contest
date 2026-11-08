@@ -113,6 +113,10 @@ export interface GasCloud {
     ttl: number;
     cells: Position[];
     monsterIds: number[];
+    // C region.h NhRegion.max_monst: the retained capacity of the monster-id
+    // array.  add_mon_to_reg() grows it in MONST_INC steps and removals
+    // never shrink it; rest_regions() resets it to the restored count.
+    maxMonst?: number;
     heroInside: boolean;
     heroFault?: boolean;
 }

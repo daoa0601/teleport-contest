@@ -3,7 +3,7 @@
 // create_gas_cloud_selection().
 
 import { isPoolAt } from './dbridge.js';
-import { M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd, EYE, LUNG } from './const.js';
+import { MONST_INC, M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, SIZEOF_NHRECT, SIZEOF_NHREGION, SIZEOF_UNSIGNED, Upolyd, EYE, LUNG } from './const.js';
 import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { formatFeltMessage, formatSeenMessage, plineWithContinuation, impossible } from './pline.js';
@@ -16,6 +16,7 @@ import type { Monster } from './monster_types.js';
 import { sameDungeonLevel } from './dungeon.js';
 import type { GasCloud, Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
+import type { GameMap } from './game.js';
 import { heroIsBreathless, body_part } from './polyself.js';
 
 import { makePlural } from './objnam.js';
@@ -155,8 +156,16 @@ async function makeGasCloud(
         ttl,
         cells: orderedCells,
         monsterIds: [...monsterIds],
+        // Each founding monster joined through add_mon_to_reg(), which
+        // grows the id array in MONST_INC steps (region.c:174-184).
+        maxMonst: monsterIds.size ? Math.ceil(monsterIds.size / MONST_INC) * MONST_INC : 0,
         heroInside: orderedCells.some(cell => cell.x === state.u.ux && cell.y === state.u.uy),
     };
+    // C region.c:289-298 add_region(): the region array grows in tens and
+    // keeps its capacity when regions later expire.
+    const capacity = regionCapacity(state.level, state);
+    if (capacity <= state.level.regions.length)
+        (state._regionCapacity ||= new WeakMap()).set(state.level, capacity + 10);
     (state.level.regions ||= []).push(region);
     if (state.level === game.level) {
         // C add_region() redraws the entire bounding box using the old sight
@@ -278,7 +287,13 @@ export function updateMonsterRegions(monster: Monster, state: GameState = game,
     for (const region of requireGameLevel(state).regions) {
         const index = region.monsterIds.indexOf(monster.m_id);
         if (regionContains(region, position.x, position.y)) {
-            if (index < 0) region.monsterIds.push(monster.m_id);
+            // C region.c:174-184 add_mon_to_reg(): the id array grows in
+            // MONST_INC steps and removals never shrink it.
+            if (index < 0) {
+                if ((region.maxMonst ?? region.monsterIds.length) <= region.monsterIds.length)
+                    region.maxMonst = (region.maxMonst ?? region.monsterIds.length) + MONST_INC;
+                region.monsterIds.push(monster.m_id);
+            }
         } else if (index >= 0) {
             removeRegionMonster(region, index);
         }
@@ -575,12 +590,27 @@ async function removeGasCloud(region: GasCloud, state: GameState): Promise<void>
 // C rest_regions() removes expired clouds without running their expiry callback.
 // Time spent on another level reduces a finite lifetime, never its damage.
 export async function restoreLevelRegions(state: GameState, elapsed: number): Promise<void> {
-    const regions = requireGameLevel(state).regions;
+    const level = requireGameLevel(state);
+    // C rest_regions() (region.c:814-815) resets gm.max_regions to the
+    // restored count: a reloaded level forgets the capacity its live
+    // session grew.
+    (state._regionCapacity ||= new WeakMap()).set(level, level.regions.length);
+    const regions = level.regions;
+    // C rest_regions() (region.c:873) also resets each region's monster-id
+    // capacity to its restored membership.
+    for (const region of regions) region.maxMonst = region.monsterIds.length;
     for (const region of [...regions].reverse()) {
         if (region.ttl < 0) continue;
         region.ttl = Math.max(0, region.ttl - elapsed);
         if (region.ttl === 0) await removeGasCloud(region, state);
     }
+}
+
+// C region.c gm.max_regions, the retained capacity of the gr.regions array.
+// An untracked level reports its current count (the state rest_regions()
+// leaves it in).
+function regionCapacity(level: GameMap, state: GameState): number {
+    return state._regionCapacity?.get(level) ?? level.regions.length;
 }
 
 // C region.c:expire_gas_cloud(): a thick cloud halves its damage and
@@ -671,4 +701,29 @@ export async function runLevelRegions(state: GameState | null | undefined, {
     }
     await announceDissipation(state, dissipation, publish);
     return events;
+}
+
+// C region.c:region_stats(): the #stats row over the gr.regions array.  C
+// sizes max_regions NhRegion slots (add_region() grows the array in tens,
+// region.c:289-298), plus each region's rectangle list (a gas cloud holds one
+// NhRect per cell, region.c:1298-1302), its enter/leave message texts, and
+// its monster-id capacity (add_mon_to_reg() grows max_monst in MONST_INC
+// steps, region.c:174-183; region_stats() sizes that retained capacity,
+// region.c:919).  An untracked capacity is the state rest_regions()
+// leaves it in: the restored membership count (region.c:873).  The port's
+// clouds carry the cells and ids but no message texts.
+export function regionStats(state: GameState = game): { header: string; count: number; size: number } {
+    const level = state.level;
+    const regions = level?.regions ?? [];
+    const count = regions.length;
+    let size = (level ? regionCapacity(level, state) : 0) * SIZEOF_NHREGION;
+    for (const region of regions) {
+        size += region.cells.length * SIZEOF_NHRECT;
+        size += (region.maxMonst ?? region.monsterIds.length) * SIZEOF_UNSIGNED;
+    }
+    return {
+        header: `regions, size ${SIZEOF_NHREGION}+${SIZEOF_NHRECT}*rect+N`,
+        count,
+        size,
+    };
 }

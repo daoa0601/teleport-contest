@@ -3,10 +3,9 @@
 
 import type { GameContext, GameState } from './game_state.js';
 
-// Format 46 added PropertySources.blockedByFloat (C u.uprops[].blocked's
-// I_SPECIAL, written by float_vs_flight()); saves without it would restore
-// levitation/flying as unblocked.
-export const SAVE_VERSION = 46;
+// Format 47 saves light_source coordinates and LSF_SHOW between vision
+// passes. Older saves cannot recover these fields while the hero is Blind.
+export const SAVE_VERSION = 47;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
@@ -206,6 +205,7 @@ const transientFields = {
     viz_array: true,
     warn_obj_cnt: true,
     _magicKeyTrapWarningCount: true,
+    _regionCapacity: true,
 } satisfies Record<Exclude<keyof GameState, PersistentStateKey>, true>;
 
 const persistentStateKeys = new Set<PersistentStateKey>(persistentNames);

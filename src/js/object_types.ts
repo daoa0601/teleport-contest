@@ -1,6 +1,7 @@
 import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { LevitationState } from './property_types.js';
 import type { SpellCategory } from './data_types.js';
+import type { LightSourcePosition } from './light.js';
 
 export type ObjectWhere =
     | 'free'
@@ -97,6 +98,7 @@ export interface GameObject {
     // is newest-first).  Used only while lamplit; a fresh value is assigned
     // each time the object is (re)lit or split off while lit.
     _litSeq?: number;
+    _lightPosition?: LightSourcePosition;
     container?: GameObject | null;
     ocarry?: Monster | null;
     carrierMid?: number | null;

@@ -9,9 +9,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { capturedScreen, screenText } from './support/screen.js';
 const names = Object.keys(ROUND20_RECIPES);
 for (const name of names) {
-    const todo = name === 'wizard-mobile-lights' ? '#lightsources is not implemented'
-        : name === 'wizard-memory-statistics' ? '#stats is not implemented' : false;
-    void test(`${name} reaches its native effect through live commands`, { todo }, async () => {
+    void test(`${name} reaches its native effect through live commands`, async () => {
         const segment = makeRecipe(name, { seed: 13, datetime: '20000110090000',
             character: { role: 'wizard', race: 'human', gender: 'male', align: 'neutral' } }).segments[0];
         assert.ok(segment);

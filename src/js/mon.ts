@@ -108,7 +108,7 @@ import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
-import { hasLightSources } from './light.js';
+import { hasLightSources, registerMonsterLightSource } from './light.js';
 import { publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -2171,8 +2171,12 @@ export async function revealMonsterAppearance(monster: Monster, {
         ?? monster.mextra?.mcorpsenm ?? null;
     monster.m_ap_type = 0;
     monster.mappearance = 0;
-    delete monster.mcorpsenm;
-    if (monster.mextra) delete monster.mextra.mcorpsenm;
+    // C freemcorpsenm() (makemon.c:2379-2382) resets MCORPSENM to NON_PM
+    // and keeps the mextra allocation; the -1 marker is the port's trace of
+    // that retained allocation.
+    if (monster.mcorpsenm !== undefined) monster.mcorpsenm = -1;
+    if (monster.mextra && monster.mextra.mcorpsenm !== undefined)
+        monster.mextra.mcorpsenm = -1;
     if (lightBlocker)
         vision_note_blocker_change(monster.mx, monster.my);
     await newsym(monster.mx, monster.my);
@@ -5583,8 +5587,12 @@ export async function changeMonsterForm(
         await releaseMonsterLeash(monster, true, { state, publish });
         leashReleased = true;
     }
-    if (monsterEmitsLight(oldMnum) !== monsterEmitsLight(targetMnum))
+    // C mon.c:5397-5404 (and the replacement at mon.c:2539-2541): when the
+    // form's light changes, the new form registers a fresh light source.
+    if (monsterEmitsLight(oldMnum) !== monsterEmitsLight(targetMnum)) {
+        if (monsterEmitsLight(targetMnum)) registerMonsterLightSource(monster, state);
         state.vision_full_recalc = 1;
+    }
     if (!monster.perminvis || oldNaturallyInvisible)
         monster.perminvis = naturallyInvisible;
     monster.minvis = monster.invis_blkd ? 0 : !!monster.perminvis;

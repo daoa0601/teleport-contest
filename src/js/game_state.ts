@@ -300,6 +300,10 @@ export interface GameState {
     // C light.c keeps light_base newest-first; object light creation order
     // decides which source snuff_light_source() finds first.
     _lightSerial?: number;
+    // C region.c gm.max_regions: the gr.regions array's retained capacity.
+    // Runtime-only; rest_regions() recomputes it from the restored count, so
+    // it never survives a save (the WeakMap dies with its level maps).
+    _regionCapacity?: WeakMap<GameMap, number>;
 
     // Discovery, artifacts and event history are installed by their owners.
     _knownObjectTypes?: Set<number>;
@@ -473,7 +477,7 @@ export interface GameState {
     _suppressMapStatusForFlush?: boolean;
     _suppressMessagesUntilInput?: boolean;
     _silentPrefixRetainedTopline?: boolean;
-    _transientLights?: Array<Position & { range: number }>;
+    _transientLights?: Array<Position & { range: number; show: boolean }>;
     _monsterNoticesBlocked?: number;
     viz_array?: Uint8Array[];
     vision_full_recalc?: number;

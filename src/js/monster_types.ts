@@ -1,6 +1,7 @@
 import type { GameObject } from './object_types.js';
 import type { Position, Room } from './map_types.js';
 import type { HeroAlignment } from './hero_types.js';
+import type { LightSourcePosition } from './light.js';
 
 // The port currently stores C bit fields as either booleans or integer bits.
 // Multi-bit fields such as mstate, mstrategy and mtrapseen remain numbers.
@@ -238,6 +239,11 @@ export interface Monster extends MonsterPosition {
     migrationSource?: Position;
     migrationOrigin?: MonsterLevel;
     migrationDestination?: MonsterLevel;
+    // C light.c registration stamp for this monster's light source: births
+    // and light-changing shape shifts share state._lightSerial with object
+    // lights, giving #lightsources the native light_base order.
+    _lightSeq?: number;
+    _lightPosition?: LightSourcePosition;
 }
 
 // makemon publishes its pending actor before groups and inventory generation.

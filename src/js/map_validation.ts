@@ -122,6 +122,7 @@ function validGasCloud(value: unknown): value is GasCloud {
         visible: boolean, damage: integer, ttl: integer,
         cells: arrayOf(validSavedPosition),
         monsterIds: arrayOf((id): id is number => integer(id) && id > 0),
+        maxMonst: optional(integer),
         heroInside: boolean,
         heroFault: optional(boolean),
     });

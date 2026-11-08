@@ -15,6 +15,7 @@ import { NON_PM, ismnum } from './const.js';
 import { CORPSE, FIGURINE, LOADSTONE, OBJECT_NAMES, STATUE } from './object_data.js';
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
+import { validSavedLightSourcePosition } from './light_validation.js';
 import type { Check, SavedEntityContext } from './saved_validation.js';
 import {
     arrayOf,
@@ -162,6 +163,7 @@ export function validSavedObject(value: unknown, context: SavedEntityContext): v
         migration: optional(validMigration),
         _fobjOrder: optional(integer),
         _litSeq: optional(integer),
+        _lightPosition: optional(validSavedLightSourcePosition),
         lua_ref_cnt: optional(integer),
         oextra: optional(nullable(extra)),
         oartifact: optional(integer),

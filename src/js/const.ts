@@ -43,6 +43,44 @@ export const PATCHLEVEL = 0;
 export const VERSION_STRING = `NetHack ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL} Teleport #${COMMIT_NUMBER}`;
 export const TELEPORT_BANNER_C = `         Version ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}-134 Teleport JS (experiment ${COMMIT_NUMBER}) ${TELEPORT_BUILD_DATE}.`;
 
+// Reference-build struct sizes (bytes) reported by the #stats wizard
+// command.  C prints sizeof(struct obj) etc. (wizcmds.c:wiz_show_stats());
+// the value depends on the ABI of the binary that recorded the sessions, so
+// these model the pinned 64-bit recorder build (clang LP64: macOS arm64 and
+// Linux x86_64 agree for these layouts; verified against the recorder binary).
+// Derived from the struct definitions in nethack-c/upstream/include plus the
+// private worm.c:12 struct wseg:
+//   obj.h:struct obj, obj.h:struct oextra, monst.h:struct monst,
+//   monst.h:struct mextra and its egd/epri/eshk/emin/edog/ebones unions,
+//   trap.h:struct trap, engrave.h:struct engr, hack.h light_source,
+//   timeout.h timer_element, hack.h:struct damage, region.h:NhRegion and
+//   NhRect, hack.h:struct kinfo, hack.h:struct cemetery,
+//   dungeon.h:struct mapseen.
+export const SIZEOF_OBJ = 112;
+export const SIZEOF_OEXTRA = 32;
+export const SIZEOF_MONST = 192;
+export const SIZEOF_MEXTRA = 64;
+export const SIZEOF_EGD = 640;
+export const SIZEOF_EPRI = 56;
+export const SIZEOF_ESHK = 4960;
+export const SIZEOF_EMIN = 8;
+export const SIZEOF_EDOG = 64;
+export const SIZEOF_EBONES = 28;
+export const SIZEOF_TRAP = 32;
+export const SIZEOF_ENGRAVING = 64;
+export const SIZEOF_LIGHT_SOURCE = 32;
+export const SIZEOF_TIMER_ELEMENT = 48;
+export const SIZEOF_DAMAGE = 32;
+export const SIZEOF_NHREGION = 96;
+export const SIZEOF_NHRECT = 8;
+export const SIZEOF_KINFO = 272;
+export const SIZEOF_CEMETERY = 184;
+export const SIZEOF_MAPSEEN = 384;
+export const SIZEOF_WSEG = 16;
+// C sizeof(unsigned) — the region monster-id array element
+// (region.c:region_stats() sizes rg->monsters).
+export const SIZEOF_UNSIGNED = 4;
+
 // AUTO-IMPORT-BEGIN: CONST_GLOBAL_RM
 // Auto-imported global/rm constants from C headers
 // Sources: global.h, rm.h

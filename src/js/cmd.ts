@@ -24,9 +24,10 @@ import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANC
 import { nhgetch, nh_poskey, MAP_CLICK_KEY, inputGate } from './input.js';
 import { visibleCommandKey } from './hacklib.js';
 
-import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish, makemapRemoveMons } from './wizcmds.js';
+import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizShowStats, wizSmell, wizTelekinesis, wizWhere, wizWish, makemapRemoveMons } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
+import { wizLightSources } from './light.js';
 import type { GameState } from './game_state.js';
 import type { HeroOccupation } from './occupation_types.js';
 import type { Monster } from './monster_types.js';
@@ -1677,6 +1678,8 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizborn', doborn],
     ['timeout', wizTimeoutQueue],
     ['wizshownhuuid', wizShowNhuuid],
+    ['lightsources', wizLightSources],
+    ['stats', wizShowStats],
 ]);
 
 // Part of C cmd.c:domonability(): the mounted steed breath-attack branch.

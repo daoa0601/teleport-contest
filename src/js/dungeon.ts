@@ -6,7 +6,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER, FOOT } from './const.js';
-import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, Is_stronghold, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, Is_stronghold, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SIZEOF_CEMETERY, SIZEOF_MAPSEEN, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './windows.js';
 import { SHOP_TYPES } from './shknam.js';
 import { altarmaskAt, deityName } from './pray.js';
@@ -1878,4 +1878,42 @@ export function surfaceName(x: number, y: number, state: GameState = game): stri
     if (IS_WALL(type) || type === SDOOR) return 'wall';
     if (type === DOOR) return 'doorway';
     return IS_ROOM(type) && !Is_earthlevel(state.u.uz) ? 'floor' : 'ground';
+}
+
+// C dungeon.c:overview_stats(): the #stats 'Overview' rows over the
+// mapseen chain — one record per visited level, plus its final resting
+// places (cemetery entries) and its #annotate text (custom_lth bytes).
+export function overviewStats(
+    state: GameState = game,
+): { rows: Array<{ label: string; count: number; size: number }>; count: number; size: number } {
+    const rows: Array<{ label: string; count: number; size: number }> = [];
+    const records = [...(state._overviewRecords ?? [])];
+    let totalCount = records.length;
+    let totalSize = records.length * SIZEOF_MAPSEEN;
+    rows.push({ label: `general, size ${SIZEOF_MAPSEEN}`,
+        count: records.length, size: records.length * SIZEOF_MAPSEEN });
+    let cemeteryCount = 0;
+    for (const [, record] of records)
+        cemeteryCount += record.finalRestingPlaces?.length ?? 0;
+    if (cemeteryCount) {
+        rows.push({ label: `cemetery, size ${SIZEOF_CEMETERY}`,
+            count: cemeteryCount, size: cemeteryCount * SIZEOF_CEMETERY });
+        totalCount += cemeteryCount;
+        totalSize += cemeteryCount * SIZEOF_CEMETERY;
+    }
+    let annotationCount = 0;
+    let annotationSize = 0;
+    for (const [key] of records) {
+        const annotation = state._levelAnnotations?.get(key);
+        if (annotation) {
+            annotationCount++;
+            annotationSize += annotation.length + 1;
+        }
+    }
+    if (annotationCount) {
+        rows.push({ label: 'annotations, text', count: annotationCount, size: annotationSize });
+        totalCount += annotationCount;
+        totalSize += annotationSize;
+    }
+    return { rows, count: totalCount, size: totalSize };
 }

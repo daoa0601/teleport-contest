@@ -2,6 +2,7 @@ import { NON_PM, ismnum } from './const.js';
 import { CORPSE, FIGURINE, LOADSTONE, OBJECT_NAMES, STATUE } from './object_data.js';
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
+import { validSavedLightSourcePosition } from './light_validation.js';
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string, validateSavedEntity, } from './saved_validation.js';
 // Port only: membership type-guard combinator for saved field domains.
 function oneOf(...values) {
@@ -91,6 +92,7 @@ export function validSavedObject(value, context) {
         migration: optional(validMigration),
         _fobjOrder: optional(integer),
         _litSeq: optional(integer),
+        _lightPosition: optional(validSavedLightSourcePosition),
         lua_ref_cnt: optional(integer),
         oextra: optional(nullable(extra)),
         oartifact: optional(integer),

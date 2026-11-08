@@ -92,6 +92,7 @@ function validGasCloud(value) {
         visible: boolean, damage: integer, ttl: integer,
         cells: arrayOf(validSavedPosition),
         monsterIds: arrayOf((id) => integer(id) && id > 0),
+        maxMonst: optional(integer),
         heroInside: boolean,
         heroFault: optional(boolean),
     });
