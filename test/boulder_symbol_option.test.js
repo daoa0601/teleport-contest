@@ -142,7 +142,8 @@ void test('changing the boulder option mid-game redraws displayed boulders', asy
     assert.equal(requireScreenCell(cell.column, cell.row).ch, '9');
 });
 // optfn_boulder() get_val falls back to the active set's rock-class
-// symbol, which Blank replaces with \032 on the Rogue level.
+// symbol, which Blank replaces with a space on the Rogue level
+// (dat/symbols:77 S_boulder: \032, decimal per options.c escapes()).
 void test('the options menu boulder row follows the displayed rock symbol', async () => {
     await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
@@ -166,6 +167,6 @@ void test('the options menu boulder row follows the displayed rock symbol', asyn
     input.beforeRead = null;
     delete game.rogue_level;
     assert.ok(row, 'the full options menu offered the boulder row');
-    assert.match(row, /boulder +\[\x1a\]/);
+    assert.match(row, /boulder +\[ \]/);
 });
 //# sourceMappingURL=boulder_symbol_option.test.js.map

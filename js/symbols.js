@@ -147,7 +147,9 @@ export const ROGUE_SYMSETS = {
         },
     },
 };
-export const BLANK_SYMBOL = '\x1a';
+// The Blank set's \032 entries are decimal (options.c escapes()), so the
+// blank glyph is a space, not C-style octal 0x1a.
+export const BLANK_SYMBOL = ' ';
 // Port only: the named Rogue symbol set (C's loaded rogue showsyms).
 export function activeRogueSymset(state = game) {
     const shown = shownSymbolSet(state);

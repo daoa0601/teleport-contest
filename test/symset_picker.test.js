@@ -207,7 +207,7 @@ void test('restoring on Rogue discards the displayed primary symbol set', async 
     await flush_screen(1);
     assert.equal(requireScreenCell(2, 3).ch, '*');
 });
-for (const { name, coin } of [{ name: 'RogueEpyx', coin: '\x0f' }, { name: 'Blank', coin: '\x1a' }]) {
+for (const { name, coin } of [{ name: 'RogueEpyx', coin: '\x0f' }, { name: 'Blank', coin: ' ' }]) {
     void test(`restoring ${name} retains the process gold-label fallback until an options redraw`, async () => {
         await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
