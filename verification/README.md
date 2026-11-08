@@ -203,7 +203,7 @@ locally and exceeded the 120 s solver timeout on a loaded CI runner.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 249 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 265 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
@@ -247,7 +247,14 @@ columns read by the shared `object_data.js` owners over every otyp, and the
 port-only zero class outside the valid int32 table range), and the twenty-six
 claims of fv-equivalence-batch-12: thirteen remaining obj.h predicates,
 eleven initial fields (oc_level, oc_nutrition, oc_color, oc_prob, oc_nowish,
-oc_hitbon, oc_wsdam, oc_wldam, oc_armcat, a_ac, a_can), and OBJ_NAME/OBJ_DESCR index mapping.
+oc_hitbon, oc_wsdam, oc_wldam, oc_armcat, a_ac, a_can), and OBJ_NAME/OBJ_DESCR index
+mapping, and the sixteen claims of fv-equivalence-batch-13: artifact.c
+`defends`/`defends_when_carried` over the artilist table and the dragon-armor
+switch (one partition per damage type), mondata.c `resists_magm` over a modeled
+monster with a wielded weapon and inventory chain, hacklib.c
+`highc`/`lowc`/`ordin`, and the ten H<Prop> || E<Prop> resistance macros of
+youprop.h (`fire/cold/sleep/disint/shock/poison/drain/antimagic/acid/stone_resistance`)
+over the property record.
 The name claims execute the real macros over every obj_descr_init row and
 compare nullable string contents. Their index correspondence assumes
 init_objects has assigned the indices; shuffling preservation is separate.

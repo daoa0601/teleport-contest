@@ -1224,6 +1224,31 @@ class ExecutorTests(unittest.TestCase):
         proved, report = self.compare_flags('metallivorous', 'metallivorous')
         self.assertTrue(proved, report)
 
+    def test_module_level_arrow_const_is_callable(self):
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= -10, s['x'] <= 10])
+        self.equivalent('int example(int x) { return x > 0 ? x + 1 : x - 1; }',
+                        'export const example = (x) => x > 0 ? x + 1 : x - 1;',
+                        **domain)
+
+    def test_module_level_arrow_const_runs_a_block_body(self):
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= -10, s['x'] <= 10])
+        self.equivalent('int example(int x) { if (x > 3) return 3; return x; }',
+                        'export const example = (x) => {\n'
+                        '    if (x > 3)\n        return 3;\n    return x;\n};',
+                        **domain)
+
+    def test_array_some_accepts_a_block_bodied_callback(self):
+        c = ('int example(int x) { int i; for (i = 0; i < 3; i++) '
+             'if ((1 << i) == x) return 1; return 0; }')
+        js = ('const shifts = [1, 2, 4];\n'
+              'function example(x) { return shifts.some((value) => {\n'
+              '    if (value === x)\n        return true;\n'
+              '    return false;\n}); }')
+        domain = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 8])
+        self.equivalent(c, js, **domain)
+        self.rejected(c, js.replace('value === x', 'value === x + 1'),
+                      **domain, reason='outputs differ')
+
 
 if __name__ == '__main__':
     unittest.main()
