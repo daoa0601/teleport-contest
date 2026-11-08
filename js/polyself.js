@@ -54,7 +54,7 @@ import { addShopDamage, deleteObject } from './shk.js';
 import { is_elven_armor, isFlimsyObject } from './object_properties.js';
 import { grantIntrinsicProperty, propertySourceIsActive, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty, setPropertyFloatBlocked } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
-import { objectLightRadius, registerHeroFormLightSource } from './light.js';
+import { objectLightRadius, new_light_source } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
 import { nameToMonster, resolveMonsterClass, heroCanBeStrangled, your_race, monsterIsMindless, infravision, is_dwarf, is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, likes_lava, monsterBreaksArmor, monsterCanTeleport, monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasNoLimbs, monsterHasProperName, monsterHidesUnder, monsterHornCount, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsBat, monsterIsBreathless, monsterIsCentaur, monsterIsClinger, monsterIsDemon, monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindFlayer, monsterIsNonliving, monsterIsSlithy, monsterIsSwimmer, monsterIsTelepathic, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterWrappingAllowed, notake, polyok, regenerates, strongmonst, cantwield, formCanBecomeStoneGolem, touchPetrifies, PM_STONE_GOLEM, } from './mondata.js';
 import { promptYesNo } from './query.js';
@@ -1377,8 +1377,7 @@ function updateHeroFormLight(oldLight, state) {
         return;
     // C light.c:new_light_source() asks for a full recalc so the source shows.
     state.u.formLightRange = 2;
-    registerHeroFormLightSource(state);
-    state.vision_full_recalc = 1;
+    new_light_source(state.u.ux, state.u.uy, { kind: 'you' }, state);
 }
 // C polyself.c:polyself(): one polymorph of the hero.
 export async function polymorphHero(flags = POLY_NOFLAGS) {

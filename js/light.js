@@ -335,34 +335,24 @@ export function discardFlashes(state = game) {
     delete state._transientLights;
     state.vision_full_recalc = 1;
 }
-// Part of C light.c:new_light_source(): the LS_OBJECT registration stamp.
-// new_light_source() prepends to light_base, so each lighting gives the
-// object the newest slot in the list order that snuff searches.
-// new_light_core(): new_light_source() is only a thin wrapper around the
-// core.
-export function registerObjectLightSource(object, state) {
-    state._lightSerial = (state._lightSerial ?? 0) + 1;
-    object._litSeq = state._lightSerial;
-    // C timeout.c:1792 includes contained and buried objects at creation.
-    const location = getObjectLocation(object, state, { contained: true, buried: true });
-    object._lightPosition = { x: location?.x ?? 0, y: location?.y ?? 0, show: false };
-}
-// Part of C light.c:new_light_source(): the LS_MONSTER registration stamp.
-// makemon.c:1349 registers a light-emitting newborn, makemon.c:900 its clone,
-// and mon.c:2541/5404 a replacement form that emits light.  The stamp shares
-// the object serial so the #lightsources order and the at-hero LSF_SHOW pass
-// follow native registration order.
-export function registerMonsterLightSource(monster, state) {
-    state._lightSerial = (state._lightSerial ?? 0) + 1;
-    monster._lightSeq = state._lightSerial;
-    monster._lightPosition = { x: monster.mx, y: monster.my, show: false };
-}
-// Part of C light.c:new_light_source(): the hero's shape light
-// (polyself.c:726-731).
-export function registerHeroFormLightSource(state) {
-    state._lightSerial = (state._lightSerial ?? 0) + 1;
-    state.u.formLightSeq = state._lightSerial;
-    state.u.formLightPosition = { x: state.u.ux, y: state.u.uy, show: false };
+export function new_light_source(x, y, id, state = game) {
+    const serial = (state._lightSerial ?? 0) + 1;
+    state._lightSerial = serial;
+    const position = { x, y, show: false };
+    if (id.kind === 'object') {
+        id.object._litSeq = serial;
+        id.object._lightPosition = position;
+    }
+    else if (id.kind === 'monster') {
+        id.monster._lightSeq = serial;
+        id.monster._lightPosition = position;
+    }
+    else {
+        state.u.formLightSeq = serial;
+        state.u.formLightPosition = position;
+    }
+    // new_light_core(): gv.vision_full_recalc = 1.
+    state.vision_full_recalc = 1;
 }
 // Part of C light.c:do_light_sources(): resolve moved sources and suppress
 // duplicates at the hero. Its loop follows "ls = gl.light_base; ls;

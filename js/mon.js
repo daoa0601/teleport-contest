@@ -41,7 +41,7 @@ import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroMonsterForm, body_part, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { cansee, couldSeeFromHero, couldsee, mimicBlocksLight, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
-import { hasLightSources, registerMonsterLightSource } from './light.js';
+import { hasLightSources, new_light_source } from './light.js';
 import { publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -4765,8 +4765,10 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
     // C mon.c:5397-5404 (and the replacement at mon.c:2539-2541): when the
     // form's light changes, the new form registers a fresh light source.
     if (monsterEmitsLight(oldMnum) !== monsterEmitsLight(targetMnum)) {
+        // del_light_source() asks for its own recalc when the form loses
+        // its light; new_light_source() asks for one when it gains one.
         if (monsterEmitsLight(targetMnum))
-            registerMonsterLightSource(monster, state);
+            new_light_source(monster.mx, monster.my, { kind: 'monster', monster }, state);
         state.vision_full_recalc = 1;
     }
     if (!monster.perminvis || oldNaturallyInvisible)

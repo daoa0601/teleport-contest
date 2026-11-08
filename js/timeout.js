@@ -37,7 +37,7 @@ import { finishHeroDeath } from './end.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, refreshHeroSeeing, see_monsters } from './display.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
-import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
+import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, new_light_source } from './light.js';
 import { Popeye, eating_dangerous_corpse, morehungry, vomit } from './eat.js';
 import { removeWornHeroItem } from './steal.js';
 import { captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification } from './trap.js';
@@ -1716,8 +1716,11 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
     if (artifactEmitsLight(object)) {
         object.lamplit = true;
         if (!alreadyLit) {
-            registerObjectLightSource(object, state);
-            state.vision_full_recalc = 1;
+            // C begin_burn(): get_obj_location(CONTAINED_TOO|BURIED_TOO)
+            // feeds new_light_source(). A missing position has no port
+            // branch; it registers at 0,0 as before.
+            const location = getObjectLocation(object, state, { contained: true, buried: true });
+            new_light_source(location?.x ?? 0, location?.y ?? 0, { kind: 'object', object }, state);
         }
         return true;
     }
@@ -1726,8 +1729,11 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
             return false;
         object.lamplit = true;
         if (!alreadyLit) {
-            registerObjectLightSource(object, state);
-            state.vision_full_recalc = 1;
+            // C begin_burn(): get_obj_location(CONTAINED_TOO|BURIED_TOO)
+            // feeds new_light_source(). A missing position has no port
+            // branch; it registers at 0,0 as before.
+            const location = getObjectLocation(object, state, { contained: true, buried: true });
+            new_light_source(location?.x ?? 0, location?.y ?? 0, { kind: 'object', object }, state);
         }
         return true;
     }
@@ -1758,8 +1764,11 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
         return false;
     object.age -= turns;
     if (!alreadyLit) {
-        registerObjectLightSource(object, state);
-        state.vision_full_recalc = 1;
+        // C begin_burn(): get_obj_location(CONTAINED_TOO|BURIED_TOO)
+        // feeds new_light_source(). A missing position has no port
+        // branch; it registers at 0,0 as before.
+        const location = getObjectLocation(object, state, { contained: true, buried: true });
+        new_light_source(location?.x ?? 0, location?.y ?? 0, { kind: 'object', object }, state);
     }
     return true;
 }

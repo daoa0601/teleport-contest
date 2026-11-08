@@ -21,7 +21,7 @@ import { depth as depth_of_level, level_difficulty, sameDungeonLevel, specialLev
 import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth, removeMonsterFromGame } from './mon.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { beginObjectBurn, stopObjectTimer } from './timeout.js';
-import { registerMonsterLightSource } from './light.js';
+import { new_light_source } from './light.js';
 import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, addCreatedObjectToContainer, nextIdent, objectWeight, discardMonsterInventory } from './mkobj.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
@@ -2330,8 +2330,7 @@ export async function finishMonsterBirth(monster, flags = 0, state = game) {
     requireLiveGame(state);
     // C makemon.c:1349: a light-emitting newborn registers its light source.
     if (monsterEmitsLight(monster.mnum)) {
-        registerMonsterLightSource(monster, state);
-        state.vision_full_recalc = 1;
+        new_light_source(monster.mx, monster.my, { kind: 'monster', monster }, state);
     }
     if (state.in_mklev)
         return monster;
@@ -2457,8 +2456,7 @@ export async function cloneMonster(monster, state = game, { monsterMoving = !!st
     // C makemon.c:899-901: the clone of a light-emitting parent registers
     // its own light source.
     if (monsterEmitsLight(clone.mnum)) {
-        registerMonsterLightSource(clone, state);
-        state.vision_full_recalc = 1;
+        new_light_source(clone.mx, clone.my, { kind: 'monster', monster: clone }, state);
     }
     if (!monsterMoving && monster.mpeaceful) {
         const attitudeRange = Math.max(2 + (state.u?.uluck ?? 0), 2);

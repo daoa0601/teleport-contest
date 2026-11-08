@@ -50,7 +50,7 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom, fillZooRoom, insideRoom } from './mkroom.js';
 import { beginObjectBurn, scheduleLevelTimer, stopLevelTimer } from './timeout.js';
 import { monsterEmitsLight, vision_reset } from './vision.js';
-import { registerMonsterLightSource } from './light.js';
+import { new_light_source } from './light.js';
 import { SpecialSelection } from './selvar.js';
 import { specialSelectionMatch } from './lua/nhlsel.js';
 import { mapCharacterType } from './lua/lifecycle.js';
@@ -2308,7 +2308,7 @@ export async function create_monster(context, options) {
                         if (monsterEmitsLight(oldForm) !== monsterEmitsLight(type)) {
                             delete monster._lightPosition;
                             if (monsterEmitsLight(type))
-                                registerMonsterLightSource(monster, game);
+                                new_light_source(monster.mx, monster.my, { kind: 'monster', monster }, game);
                             game.vision_full_recalc = 1;
                         }
                         if (!monster.perminvis || oldForm === PM_STALKER || oldForm === PM_BLACK_LIGHT)
