@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { LARGE_BOX, OIL_LAMP } from '../js/object_data.js';
 import { SIZEOF_OEXTRA } from '../js/const.js';
 import { beginObjectBurn } from '../js/timeout.js';
-import { createGasCloudSelection, restoreLevelRegions, runLevelRegions } from '../js/region.js';
-import { lightSourceRecords } from '../js/light.js';
+import { createGasCloudSelection, regionStats, restoreLevelRegions, runLevelRegions } from '../js/region.js';
+import { lightSourceRecords, restoreLevelLightSources } from '../js/light.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -226,4 +226,54 @@ void test('#stats keeps the region array\'s retained capacity after clouds expir
     await restoreLevelRegions(game, 0);
     const reloaded = await statsWindowRows();
     assert.equal(reloaded.includes(statsRow('regions, size 96+8*rect+N', 0, 960)), false);
+});
+
+void test('a level reload reverses its monster light batch ahead of older lights', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    const vortex = await createMonsterAt('fire vortex', 12, 10);
+    const lamp = await addInventoryObject(OIL_LAMP);
+    assert.equal(beginObjectBurn(lamp, game), true);
+    // The lamp was lit after the newborn, so it currently leads.
+    assert.equal(lightSourceRecords(game)[0]?.kind, 'obj');
+
+    // C light.c:487-491: restore_light_sources() pushes each saved entry
+    // back onto the front of light_base, so the level's batch — its
+    // resident monsters included (light.c:452-453 saves a monster's source
+    // with its level when mon_is_local()) — returns ahead of the hero's
+    // carried lights that never left the list.
+    restoreLevelLightSources(game);
+    const records = lightSourceRecords(game);
+    assert.equal(records[0]?.idText, `0x${vortex.m_id.toString(16)}`);
+    assert.equal(records[1]?.kind, 'obj');
+});
+
+void test('#stats records a restored region capacity even without a live allocation', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    // A level whose regions arrived from a save (not through add_region())
+    // has no capacity entry yet; rest_regions() (region.c:814-815) still
+    // records max_regions for it.
+    const level = game.level;
+    assert.ok(level, 'the fixture must install a level');
+    level.regions.push({ kind: 'gas-cloud', visible: true, damage: 0, ttl: 1,
+        cells: [{ x: 9, y: 9 }], monsterIds: [], heroInside: false });
+    await restoreLevelRegions(game, 0);
+    // Expiry later removes the region; the recorded capacity remains.
+    level.regions.length = 0;
+    const stats = regionStats(game);
+    assert.deepEqual([stats.count, stats.size], [0, 96]);
+});
+
+void test('#stats excludes a null oextra like the unallocated pointer', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    const lamp = await addInventoryObject(OIL_LAMP);
+    // shk.c:3673 creates the used-up part of a billed stack with a null
+    // oextra; wizcmds.c:1121 skips unallocated extensions.
+    lamp.oextra = null;
+
+    const rows = await statsWindowRows();
+    assert.ok(rows.includes(statsRow('invent', 1, 112)),
+        `invent row missing from:\n${rows.join('\n')}`);
 });

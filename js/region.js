@@ -475,9 +475,10 @@ async function removeGasCloud(region, state) {
 // Time spent on another level reduces a finite lifetime, never its damage.
 export async function restoreLevelRegions(state, elapsed) {
     const level = requireGameLevel(state);
-    // C rest_regions() (region.c:814) resets gm.max_regions to the restored
-    // count: a reloaded level forgets the capacity its live session grew.
-    state._regionCapacity?.set(level, level.regions.length);
+    // C rest_regions() (region.c:814-815) resets gm.max_regions to the
+    // restored count: a reloaded level forgets the capacity its live
+    // session grew.
+    (state._regionCapacity ||= new WeakMap()).set(level, level.regions.length);
     const regions = level.regions;
     for (const region of [...regions].reverse()) {
         if (region.ttl < 0)

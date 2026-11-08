@@ -150,42 +150,79 @@ export function snuffLightSource(x: number, y: number, state: GameState = game):
     if (target) snuffOrdinaryLight(target);
 }
 
+// One entry of a restored light-source batch: the stamp to re-order by and
+// the write that replaces it.
+interface RestampableLightSource {
+    seq: number;
+    restamp: (serial: number) => void;
+}
+
 // C light.c:save_light_sources() writes a batch (the global lights, or one
-// level's lights) newest-first, and restore_light_sources() pushes each
-// entry back onto the front of light_base, so a restored batch returns
-// reversed and ahead of the lights that never left the list.  Re-stamp the
-// batch the same way: previously-oldest first, above every other light.
-export function restoreLightSourceBatch(
-    batch: readonly GameObject[] | null | undefined, state: GameState = game,
+// level's lights) newest-first, and restore_light_sources()
+// (light.c:487-491) pushes each entry back onto the front of light_base, so
+// a restored batch returns reversed and ahead of the lights that never left
+// the list.  Re-stamp the batch the same way: previously-oldest first,
+// above every other light.
+function restoreLightBatch(
+    lights: readonly RestampableLightSource[], state: GameState,
 ): void {
-    const lights = (batch ?? [])
-        .filter(object => objectLightRadius(object, state) > 0)
-        .sort((left, right) => (left._litSeq ?? 0) - (right._litSeq ?? 0));
-    if (!lights.length) return;
+    const batch = [...lights].sort((left, right) => left.seq - right.seq);
+    if (!batch.length) return;
     const base = state._lightSerial ?? 0;
-    lights.forEach((object, index) => {
-        object._litSeq = base + lights.length - index;
-    });
-    state._lightSerial = base + lights.length;
+    batch.forEach((light, index) => light.restamp(base + batch.length - index));
+    state._lightSerial = base + batch.length;
+}
+
+function objectLightEntries(
+    objects: readonly GameObject[], state: GameState,
+): RestampableLightSource[] {
+    const entries: RestampableLightSource[] = [];
+    for (const object of objects) {
+        if (objectLightRadius(object, state) <= 0) continue;
+        entries.push({
+            seq: object._litSeq ?? 0,
+            restamp: serial => { object._litSeq = serial; },
+        });
+    }
+    return entries;
 }
 
 // Part of C restore.c:getlev(): the level-local light-source restoration.
 // C getlev() restores the entered level's light sources after the level
-// data (restore.c:1145); other levels keep waiting in their files.
+// data (restore.c:1145); other levels keep waiting in their files.  The
+// batch also carries the level's resident light-emitting monsters
+// (light.c:452-453 saves a monster's source with its level when
+// mon_is_local(), mx > 0).  Migrating monsters (mx 0) stay in the global
+// batch, and the hero's youmonst.mx is pinned to 0 (light.c:16-17), so the
+// hero's light never leaves the list.
 export function restoreLevelLightSources(state: GameState = game): void {
-    restoreLightSourceBatch(
-        objectsInTimerGraph(state).filter(object => !lightObjectIsGlobal(object)),
-        state,
-    );
+    const lights = objectLightEntries(
+        objectsInTimerGraph(state).filter(object => !lightObjectIsGlobal(object)), state);
+    for (const monster of state.level?.monsters ?? []) {
+        if (monster.dead || monster.lightRemoved || monster.mx <= 0
+            || !monsterEmitsLight(monster.mnum)) continue;
+        lights.push({
+            seq: monster._lightSeq ?? 0,
+            restamp: serial => { monster._lightSeq = serial; },
+        });
+    }
+    restoreLightBatch(lights, state);
 }
 
 // C restore.c:655 reloads the global batch while reading the game state,
 // then getlev() pushes the current level's batch in front of it.
 export function restoreSavedLightSources(state: GameState = game): void {
-    restoreLightSourceBatch(
-        objectsInTimerGraph(state).filter(lightObjectIsGlobal),
-        state,
-    );
+    const lights = objectLightEntries(
+        objectsInTimerGraph(state).filter(lightObjectIsGlobal), state);
+    // The global batch keeps the migrating monsters' lights (mx 0).
+    for (const monster of state._migratingMonsters ?? []) {
+        if (monster.dead || monster.lightRemoved || !monsterEmitsLight(monster.mnum)) continue;
+        lights.push({
+            seq: monster._lightSeq ?? 0,
+            restamp: serial => { monster._lightSeq = serial; },
+        });
+    }
+    restoreLightBatch(lights, state);
     restoreLevelLightSources(state);
 }
 

@@ -1155,10 +1155,12 @@ function sizeObj(object) {
     // C wizcmds.c:1121-1122 counts the oextra allocation whenever it
     // exists, whatever it holds.  The port's oextra record survives a
     // cleared name, and the mirrored top-level oname/omid (bones.ts) also
-    // mean the allocation is live.  C's omid of 0 is "not set", so a bare
-    // falsy omid does not open one.
+    // mean the allocation is live; C's omid of 0 is "not set", so a bare
+    // falsy omid does not open one.  A null record is C's unallocated
+    // pointer: the used-up part of a billed stack is created without one
+    // (shk.c:3673).
     // The port keeps no omailcmd text (OMAILCMD belongs to mail delivery).
-    if (object.oextra !== undefined || name || embedded || !!object.omid) {
+    if (object.oextra != null || name || embedded || !!object.omid) {
         size += SIZEOF_OEXTRA;
         if (name)
             size += name.length + 1;
