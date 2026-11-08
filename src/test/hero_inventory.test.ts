@@ -2,7 +2,7 @@ import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { artifactByName } from '../js/artifact.js';
-import { invokeArtifactPower } from '../js/artifact.js';
+import { artiInvoke } from '../js/artifact.js';
 import { LANDMINE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -67,7 +67,7 @@ async function invokedHeart() {
     await addInventoryItem(heart);
     const artifact = artifactByName('The Heart of Ahriman');
     assert.ok(artifact);
-    await invokeArtifactPower(heart, artifact);
+    await artiInvoke(heart, artifact);
     assert.equal(propertyIsActive('levitation'), true);
     assert.equal(game.u.moreluck, 3);
     return heart;

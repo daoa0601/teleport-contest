@@ -5,7 +5,7 @@ import { artifactObject } from './support/game-objects.js';
 import { invokeInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { heroIsBlind } from '../js/senses.js';
-import { invokeArtifactPower } from '../js/artifact.js';
+import { artiInvoke } from '../js/artifact.js';
 import { artifactByName } from '../js/artifact.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
@@ -29,7 +29,7 @@ for (const cream of [0, 2]) {
             invlet: 'a', where: 'inventory', age: 0,
         });
         game.inventory = [staff];
-        await invokeArtifactPower(staff, artifactByName('The Staff of Aesculapius'), {
+        await artiInvoke(staff, artifactByName('The Staff of Aesculapius'), {
             publish: plineWithContinuation,
         });
         await flush_screen(1);

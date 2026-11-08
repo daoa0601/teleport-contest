@@ -12,7 +12,7 @@ import {
 import { descendFromLevitation } from '../js/levitation_commands.js';
 import { applyLevitationPotion } from '../js/potion.js';
 import { artifactByName } from '../js/artifact.js';
-import { invokeArtifactPower } from '../js/artifact.js';
+import { artiInvoke } from '../js/artifact.js';
 import { POT_LEVITATION } from '../js/object_data.js';
 import {
     addInventoryObject, knownObject,
@@ -124,7 +124,7 @@ void test('descending from an invoked artifact cools it down for a long while', 
     const object = await addInventoryObject(artifact.baseType, {
         oartifact: artifact.id,
     });
-    await invokeArtifactPower(object, artifact, {
+    await artiInvoke(object, artifact, {
         publish: collector().publish,
     });
     assert.ok(hasInvokedProperty('levitation'));

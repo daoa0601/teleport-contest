@@ -11,7 +11,7 @@ import { artifactByName } from '../js/artifact.js';
 import {
     artifactInvokeIsActive,
     deactivateArtifactProperty,
-    invokeArtifactPower,
+    artiInvoke,
 } from '../js/artifact.js';
 import { applyLevitationPotion } from '../js/potion.js';
 import { wearHeroArmor } from '../js/do_wear.js';
@@ -45,7 +45,7 @@ void test('invoking the Heart of Ahriman starts levitation', async () => {
     const { artifact, object } = await heartOfAhriman();
     const log = collector();
 
-    const result = await invokeArtifactPower(object, artifact, {
+    const result = await artiInvoke(object, artifact, {
         publish: log.publish,
     });
 
@@ -62,7 +62,7 @@ void test('a tired Heart of Ahriman refuses to levitate and cools down longer', 
     object.age = (game.moves ?? 0) + 500;
     const log = collector();
 
-    const result = await invokeArtifactPower(object, artifact, {
+    const result = await artiInvoke(object, artifact, {
         publish: log.publish,
     });
 
@@ -80,7 +80,7 @@ void test('an independent levitation source makes the invocation nothing special
     const { artifact, object } = await heartOfAhriman();
     const log = collector();
 
-    const result = await invokeArtifactPower(object, artifact, {
+    const result = await artiInvoke(object, artifact, {
         publish: log.publish,
     });
 
@@ -94,9 +94,9 @@ void test('turning the invoked Heart of Ahriman off lands the hero', async () =>
     await freshObjectRoom({ gameplaySeed: 74n });
     requirePlayingGame(game);
     const { artifact, object } = await heartOfAhriman();
-    await invokeArtifactPower(object, artifact, { publish: collector().publish });
+    await artiInvoke(object, artifact, { publish: collector().publish });
 
-    const result = await invokeArtifactPower(object, artifact, {
+    const result = await artiInvoke(object, artifact, {
         publish: collector().publish,
     });
 
@@ -109,7 +109,7 @@ void test('losing the invoked artifact from inventory deactivates its levitation
     await freshObjectRoom({ gameplaySeed: 75n });
     requirePlayingGame(game);
     const { artifact, object } = await heartOfAhriman();
-    await invokeArtifactPower(object, artifact, { publish: collector().publish });
+    await artiInvoke(object, artifact, { publish: collector().publish });
     assert.equal(game.u.levitating, true);
 
     const stopped = await deactivateArtifactProperty(object, artifact, {

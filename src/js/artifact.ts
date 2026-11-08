@@ -2142,20 +2142,9 @@ function isDirectPower(power: ArtifactPower | null): power is (typeof DIRECT_POW
     return DIRECT_POWERS.some((candidate) => candidate === power);
 }
 
-// Part of C artifact.c:arti_invoke(): the levitation independence check.
-// C do_wear.c-style extrinsic check: an invoked artifact is nothing special
-// while an independent intrinsic (including the potion timeout), worn ring,
-// or boots source also grants levitation (artifact.c:2197-2201).
-// Part of C artifact.c:arti_invoke(): the levitation independence check.
-function hasNonArtifactLevitation(state: GameState): boolean {
-    return propertyHasOtherSources('levitation', state);
-}
-
-// Part of C artifact.c:arti_invoke(): the levitation refresh after the
-// toggle.
-function syncHeroLevitation(state: GameState): void {
-    refreshProperty('levitation', state);
-}
+// C artifact.c:arti_invoke(): the levitation entry in PROPERTY_POWERS below
+// holds the property branch's other-source test (eprop & ~W_ARTI) || iprop —
+// artifact.c:2197-2201 — and the post-toggle property refresh.
 
 const PROPERTY_POWERS = Object.freeze({
     conflict: {
@@ -2170,8 +2159,8 @@ const PROPERTY_POWERS = Object.freeze({
     },
     levitation: {
         property: 'levitation',
-        hasOtherSource: hasNonArtifactLevitation,
-        sync: syncHeroLevitation,
+        hasOtherSource: (state: GameState) => propertyHasOtherSources('levitation', state),
+        sync: (state: GameState) => refreshProperty('levitation', state),
     },
 } satisfies Record<PropertyPowerName, InvokedPropertyPower>);
 
@@ -2557,9 +2546,10 @@ async function invokeFlingPoison(object: GameObject, state: GameState, publish: 
     return true;
 }
 
-// C artifact.c:invoke_charge_obj().
-// C artifact.c:invoke_untrap().
-export async function invokeArtifactPower(
+// C artifact.c:arti_invoke(): the #invoke dispatch — the direct powers
+// (inv_prop > LAST_PROP) with their cost gate, and the property toggles
+// through invokeProperty() below.
+export async function artiInvoke(
     object: GameObject,
     artifact: Artifact | null | undefined,
     {
@@ -2788,7 +2778,7 @@ export async function doinvoke() {
         return;
     }
 
-    const invocation = await invokeArtifactPower(object, artifact, {
+    const invocation = await artiInvoke(object, artifact, {
         enterTrap: moveIntoFailedUntrap,
     });
     if ('heroDied' in invocation && invocation.heroDied) return;

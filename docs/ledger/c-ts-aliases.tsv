@@ -203,7 +203,7 @@ ndemon	normalDemon
 llord	lawfulLord
 lminion	lawfulMinion
 newman	renewHumanForm
-arti_invoke	invokeArtifactPower
+arti_invoke	artiInvoke
 arti_invoke_cost	beginInvocation
 invoke_storm_spell	invokeStorm
 get_artifact	artifactById
