@@ -29,7 +29,7 @@ import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, POT_ACID, POT_FRUIT_
 import { promptYesNo } from './query.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { mintrap, waterDamageChain, waterDamageObject, deleteFloorTrap } from './trap.js';
+import { mintrap, waterDamageChain, waterDamageObject, deleteFloorTrap, trapAt } from './trap.js';
 import { cansee, clearAreaCells, couldsee } from './vision.js';
 import { objectLightRadius } from './light.js';
 import { morehungry, newuhs, vomit } from './eat.js';
@@ -148,7 +148,7 @@ export async function gushForthFromFountain({ drinking = false, state = game } =
             || nexttodoor(x, y, state)) {
             continue;
         }
-        const trap = state.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
+        const trap = trapAt(state, x, y);
         if (trap && !await deleteFloorTrap(trap, state))
             continue;
         if (madePool++ === 0) {
@@ -204,11 +204,6 @@ function fountainActorIndefiniteName(monster) {
     return monsterName(monster, { article: 'a' });
 }
 // Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
-// the t_at(mtmp->mx, mtmp->my) test.
-function fountainTrapAt(monster) {
-    return game.level?.traps?.some(trap => trap.tx === monster.mx && trap.ty === monster.my) ?? false;
-}
-// Part of C fountain.c:dowaterdemon(), dowaternymph(), dowatersnakes():
 // the mintrap() call on the summoned actor (fountain.c:55).
 async function triggerFountainTrap(monster) {
     const state = requireInitializedGame();
@@ -239,7 +234,7 @@ export async function summonFountainNymph() {
     else
         await announceFountainHeard('a seductive voice.');
     nymph.msleeping = 0;
-    if (fountainTrapAt(nymph))
+    if (trapAt(game, nymph.mx, nymph.my))
         await triggerFountainTrap(nymph);
 }
 // C fountain.c:dowaterdemon().
@@ -262,7 +257,7 @@ export async function summonFountainDemon() {
         // give a wish and discard the monster (mongrantswish)
         await grantMonsterWish(demon);
     }
-    else if (fountainTrapAt(demon)) {
+    else if (trapAt(game, demon.mx, demon.my)) {
         await triggerFountainTrap(demon);
     }
 }
@@ -285,7 +280,7 @@ export async function summonFountainSnakes() {
         if (!snake)
             continue;
         await newsym(snake.mx, snake.my);
-        const trap = fountainTrapAt(snake) ? await triggerFountainTrap(snake) : null;
+        const trap = trapAt(game, snake.mx, snake.my) ? await triggerFountainTrap(snake) : null;
         if (trap?.heroDied)
             break;
     }

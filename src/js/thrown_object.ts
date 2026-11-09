@@ -42,7 +42,7 @@ import { isPick, isLauncherAmmunition, launcherMatchesAmmo } from './object_prop
 import { MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact, settleThrownShopObject } from './dothrow.js';
 import { splitObjectStack, objectWeight, placeObject } from './mkobj.js';
-import { objectIsVulnerableToErosion } from './trap.js';
+import { objectIsVulnerableToErosion, trapAt } from './trap.js';
 import { closedDoor } from './monmove.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { rn2 } from './rng.js';
@@ -107,15 +107,6 @@ function liveMonsterAt(state: GameState, x: number, y: number): Monster | null {
     const monster = monsterAtPosition(state.level, x, y);
     return monster && monsterHasMapPosition(monster, state)
         && !monster.dead && monster.mhp > 0 ? monster : null;
-}
-
-// Part of C zap.c:bhit(): the t_at(x, y) read tested for WEB at the
-// flight square, over the port's runtime trap array.
-function webAt(state: GameState, x: number, y: number): Trap | null {
-    return (state.level?.traps || []).find(trap =>
-        trap?.ttyp === WEB
-        && trap.tx === x
-        && trap.ty === y) || null;
 }
 
 // Part of C zap.c:bhit(): exclude shades and unrevealed object mimics from projectile contact.
@@ -394,8 +385,8 @@ async function flyPhysicalObject({
             }
 
             let monster = liveMonsterAt(state, x, y);
-            const web = monster ? null : webAt(state, x, y);
-            if (web && random(3) === 0) {
+            const web = monster ? null : trapAt(state, x, y);
+            if (web && web.ttyp === WEB && random(3) === 0) {
                 if (cansee(x, y)) {
                     await publish(
                         `${ownedObjectName(object, state)} gets stuck in a web!`,
