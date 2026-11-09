@@ -335,8 +335,14 @@ class JSExec:
         self.local_names.append(declared)
         try:
             paths = [p]
+            parameter_names = [self._binding_names(prm) for prm in params]
             for i, prm in enumerate(params):
-                paths = seq(paths, lambda q, prm=prm, i=i: self._parameter(q, prm, args[i] if i < len(args) else UNDEF))
+                later = tuple(name for names in parameter_names[i + 1:]
+                              for name in names)
+                paths = seq(paths, lambda q, prm=prm, i=i, later=later:
+                            self._parameter(q, prm,
+                                            args[i] if i < len(args) else UNDEF,
+                                            later))
             # Function var bindings exist before any body statement, even on
             # paths that skip the loop or read its collection before iterating.
             for q in paths:
@@ -363,27 +369,45 @@ class JSExec:
             results.append((q, value))
         return self.join_results(results)
 
-    def _parameter(self, path, node, value):
+    def _parameter(self, path, node, value, pending=()):
+        """Bind one parameter. `pending` names the bindings of the same
+        parameter list that are not initialized yet (this pattern's later
+        bindings and every later parameter); they are in JavaScript's
+        temporal dead zone while a default runs."""
         if node.type == 'identifier':
             path.env[node.text.decode()] = value
             return [path]
         if node.type == 'assignment_pattern':
             target = node.child_by_field_name('left')
             if value.kind != 'undef':
-                return self._parameter(path, target, value)
+                return self._parameter(path, target, value, pending)
             if target.type != 'identifier':
                 raise Unsupported('JavaScript parameter pattern default')
-            return self._bind_default(path, target.text.decode(), node)
+            return self._bind_default(path, target.text.decode(), node, pending)
         if node.type == 'object_pattern' and value.kind == 'record':
-            paths = [path]
-            for field in node.named_children:
+            fields = [field for field in node.named_children
+                      if field.type != 'comment']
+            targets = []
+            for field in fields:
                 target = field.child_by_field_name('left') if field.type == 'object_assignment_pattern' else field
                 if target.type != 'shorthand_property_identifier_pattern':
                     raise Unsupported('JavaScript object parameter with renaming or rest')
-                name = target.text.decode()
+                targets.append(target)
+            # A field's default sees the fields bound before it; the fields
+            # after it (and later parameters) stay in their dead zone.
+            later_names = [None] * len(fields)
+            suffix = list(pending)
+            for index in reversed(range(len(fields))):
+                later_names[index] = tuple(suffix)
+                suffix = [targets[index].text.decode()] + suffix
+            paths = [path]
+            for index, field in enumerate(fields):
+                name = targets[index].text.decode()
                 item = value.v.get(name, UNDEF)
                 if item.kind == 'undef' and field.type == 'object_assignment_pattern':
-                    paths = seq(paths, lambda p, field=field, name=name: self._bind_default(p, name, field))
+                    later = later_names[index]
+                    paths = seq(paths, lambda p, field=field, name=name, later=later:
+                                self._bind_default(p, name, field, later))
                 else:
                     for p in paths:
                         p.env[name] = item
@@ -391,33 +415,69 @@ class JSExec:
         if node.type == 'array_pattern':
             if value.kind != 'array':
                 raise Unsupported('JavaScript array parameter of a non-array')
+            slots = _array_slots(node)
+            # An element's default sees the elements bound before it; the
+            # elements after it (and later parameters) stay in their dead
+            # zone.
+            later_names = [None] * len(slots)
+            suffix = list(pending)
+            for index in reversed(range(len(slots))):
+                later_names[index] = tuple(suffix)
+                suffix = self._binding_names(slots[index][0]) + suffix
             paths = [path]
-            for slot, position in _array_slots(node):
+            for index, (slot, position) in enumerate(slots):
                 item = value.v[position] if position < len(value.v) else UNDEF
-                paths = seq(paths, lambda p, slot=slot, item=item: self._parameter(p, slot, item))
+                later = later_names[index]
+                paths = seq(paths, lambda p, slot=slot, item=item, later=later:
+                            self._parameter(p, slot, item, later))
             return paths
         raise Unsupported('JavaScript parameter pattern')
 
-    def _bind_default(self, path, name, field):
+    def _bind_default(self, path, name, field, pending=()):
         """Bind one parameter's default value. The initializer runs in a
-        scope where the parameter itself is already declared but
-        uninitialized (ECMAScript temporal dead zone): a default that reads
-        the parameter it initializes throws ReferenceError in JavaScript.
-        Reject those instead of letting the read resolve to a shadowed
-        caller binding, which would fabricate a value JavaScript cannot
-        produce. Defaults reading genuinely outer bindings stay legal."""
+        scope where the parameter itself and every later binding of the same
+        parameter list are declared but uninitialized (ECMAScript temporal
+        dead zone): a default that reads any of them throws ReferenceError
+        in JavaScript. Reject those instead of letting the read resolve to a
+        shadowed caller or module binding, which would fabricate a value
+        JavaScript cannot produce. Defaults reading genuinely outer bindings
+        stay legal."""
+        blocked = {name, *pending}
         default = _strip(field.child_by_field_name('right'))
         if any(node.type in ('identifier', 'shorthand_property_identifier')
-               and node.text == name.encode()
+               and node.text.decode() in blocked
                for node in (default, *_descendants(default))):
             raise Unsupported(
-                f'JavaScript default of parameter {name} reads {name} in its '
-                'temporal dead zone at ' + self.where(field))
+                f'JavaScript default of parameter {name} reads a binding of '
+                'the same parameter list in its temporal dead zone at '
+                + self.where(field))
         results = []
         for p, value in self.eval(path, default):
             p.env[name] = value
             results.append(p)
         return results
+
+    @staticmethod
+    def _binding_names(node):
+        """The names one binding pattern declares, in source order,
+        including nested array/object destructuring."""
+        if node.type in ('identifier', 'shorthand_property_identifier_pattern'):
+            return [node.text.decode()]
+        if node.type == 'assignment_pattern':
+            return JSExec._binding_names(node.child_by_field_name('left'))
+        if node.type == 'array_pattern':
+            names = []
+            for slot, _ in _array_slots(node):
+                names.extend(JSExec._binding_names(slot))
+            return names
+        if node.type == 'object_pattern':
+            names = []
+            for field in node.named_children:
+                target = field.child_by_field_name('left') if field.type == 'object_assignment_pattern' else field
+                if target.type == 'shorthand_property_identifier_pattern':
+                    names.append(target.text.decode())
+            return names
+        raise Unsupported(f'JavaScript binding pattern {node.type}')
 
     # ---- statements --------------------------------------------------------
 
@@ -500,8 +560,10 @@ class JSExec:
                 paths = [p]
                 for i, (name, item) in enumerate(zip(names, items)):
                     entry = value.v[i] if i < len(value.v) else UNDEF
+                    later = tuple(names[i + 1:])
                     if entry.kind == 'undef' and item.type == 'assignment_pattern':
-                        paths = seq(paths, lambda q, name=name, item=item: self._bind_default(q, name, item))
+                        paths = seq(paths, lambda q, name=name, item=item, later=later:
+                                    self._bind_default(q, name, item, later))
                     else:
                         for q in paths:
                             q.env[name] = entry
@@ -1452,9 +1514,13 @@ class JSExec:
                 parameter_names = set()
                 paths = [q]
                 arguments = [element, V('num', z3.IntVal(index)), array]
-                for prm, value in zip(prm_nodes, arguments):
+                callback_names = [self._binding_names(prm) for prm in prm_nodes]
+                for i, (prm, value) in enumerate(zip(prm_nodes, arguments)):
+                    later = tuple(name for names in callback_names[i + 1:]
+                                  for name in names)
                     parameter_names.update(self._parameter_names(prm))
-                    paths = seq(paths, lambda p, prm=prm, value=value: self._parameter(p, prm, value))
+                    paths = seq(paths, lambda p, prm=prm, value=value, later=later:
+                                self._parameter(p, prm, value, later))
                 evaluated = [outcome for p2 in paths for outcome in run(p2)]
                 _close_scope(outer, [p2 for p2, _ in evaluated])
                 for p2, _ in evaluated:
@@ -1560,8 +1626,11 @@ class JSExec:
             for q, acc in states:
                 outer = dict(q.env)
                 paths = [q]
-                for node, value in ((acc_node, acc), (element_node, element)):
-                    paths = seq(paths, lambda p, node=node, value=value: self._parameter(p, node, value))
+                element_names = tuple(self._binding_names(element_node))
+                for node, value, later in ((acc_node, acc, element_names),
+                                           (element_node, element, ())):
+                    paths = seq(paths, lambda p, node=node, value=value, later=later:
+                                self._parameter(p, node, value, later))
                 if body.type == 'statement_block':
                     outcomes = []
                     for p2 in paths:

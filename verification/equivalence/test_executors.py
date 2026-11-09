@@ -728,6 +728,54 @@ class ExecutorTests(unittest.TestCase):
             '    return [undefined].map((x = {x: 7}) => x.x)[0];\n'
             '}')
 
+    def test_parameter_default_cannot_read_a_later_same_list_binding(self):
+        """A non-simple parameter list declares every binding up front:
+        while a default runs, its own parameter and every later one are in
+        the temporal dead zone, and the list shadows outer variables. The
+        executor used to bind left-to-right and resolve such reads to an
+        outer variable, so this program proved equivalent to C's 7 while
+        Node throws ReferenceError."""
+        options = dict(reason='temporal dead zone')
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    const b = 7;\n'
+            '    return [[]].map(([a = b, b = 1]) => a)[0];\n'
+            '}', **options)
+        # A function declaration's parameter list resolves the same read to
+        # module scope instead of throwing.
+        self.rejected(
+            'int example(void) { return 7; }',
+            'const b = 7;\n'
+            'function pick([a = b, b = 1]) { return a; }\n'
+            'function example() { return pick([]); }\n', **options)
+        # A destructuring declaration reads module scope the same way.
+        self.rejected(
+            'int example(void) { return 7; }',
+            'const b = 7;\n'
+            'function example() {\n'
+            '    const row = [];\n'
+            '    const [a = b, b = 1] = row;\n'
+            '    return a;\n'
+            '}\n', **options)
+        # reduce() threads the accumulator as a defaulted parameter.
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    const t = 7;\n'
+            '    return [1].reduce((acc = t, t = 2) => acc, undefined);\n'
+            '}\n', **options)
+        # Defaults reading earlier same-list bindings stay legal JavaScript.
+        self.equivalent(
+            'int example(void) { return 1; }',
+            'function example() {\n'
+            '    return [[1]].map(([a, b = a]) => b)[0];\n'
+            '}')
+        self.equivalent(
+            'int example(void) { return 3; }',
+            'function pick(a = 3, b = a) { return b; }\n'
+            'function example() { return pick(); }\n')
+
     def test_callback_parameters_do_not_overwrite_enclosing_bindings(self):
         self.equivalent(
             'int example(int x) { return x; }',
