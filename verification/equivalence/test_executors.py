@@ -708,6 +708,26 @@ class ExecutorTests(unittest.TestCase):
             '    return [undefined].map((x = 5) => x)[0];\n'
             '}')
 
+    def test_parameter_default_shorthand_cannot_read_its_own_parameter(self):
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    const x = 7;\n'
+            '    return [undefined].map((x = {x}) => x.x)[0];\n'
+            '}', reason='temporal dead zone')
+        # Shorthand reads of initialized outer bindings remain valid.
+        self.equivalent(
+            'int example(int y) { return y; }',
+            'function example(y) {\n'
+            '    return [undefined].map((x = {y}) => x.y)[0];\n'
+            '}', params=[('y', INT)])
+        # An explicit property key is not a read of the parameter.
+        self.equivalent(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    return [undefined].map((x = {x: 7}) => x.x)[0];\n'
+            '}')
+
     def test_callback_parameters_do_not_overwrite_enclosing_bindings(self):
         self.equivalent(
             'int example(int x) { return x; }',

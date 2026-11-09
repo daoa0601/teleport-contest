@@ -407,7 +407,8 @@ class JSExec:
         caller binding, which would fabricate a value JavaScript cannot
         produce. Defaults reading genuinely outer bindings stay legal."""
         default = _strip(field.child_by_field_name('right'))
-        if any(node.type == 'identifier' and node.text == name.encode()
+        if any(node.type in ('identifier', 'shorthand_property_identifier')
+               and node.text == name.encode()
                for node in (default, *_descendants(default))):
             raise Unsupported(
                 f'JavaScript default of parameter {name} reads {name} in its '
