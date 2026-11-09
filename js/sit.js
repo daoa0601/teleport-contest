@@ -14,7 +14,8 @@ import { waterDamageObject, dotrap } from './trap.js';
 import { doGenocide, GENOCIDE_ON_THRONE, exerciseScrollWisdom, removeCurseEffect } from './read.js';
 import { morehungry } from './eat.js';
 import { heroCanReachFloor } from './engrave.js';
-import { burnAwayHeroSlime, heroGoldAmount, loseHeroHp } from './hack.js';
+import { heroGoldAmount, loseHeroHp } from './hack.js';
+import { burnAwayHeroSlime } from './timeout.js';
 import { dropObjectAtHero, healHeroLegs, scheduleLevelChange } from './do.js';
 import { identifyPack, useUpFloorObject } from './invent.js';
 import { removeWornHeroItem } from './steal.js';
@@ -651,7 +652,7 @@ async function sitWhileTrapped(trap) {
     }
     else if (u.utraptype === TT_LAVA) {
         await pline(`You sit in the ${displayLiquidName('lava')}!`);
-        await burnAwayHeroSlime(game, pline);
+        await burnAwayHeroSlime({ state: game, publish: pline });
         u.utrap += rnd(4);
         if (await loseHeroHp(d(2, 10), 'sitting in lava', { deathCause: 'killed by sitting in lava' }))
             return true;
@@ -780,7 +781,7 @@ export async function dosit({ finishTeleport = null, gotoLevel = null, chooseTel
     }
     else if (isLavaAt(x, y)) {
         await pline(`You sit on the ${displayLiquidName('lava')}.`);
-        await burnAwayHeroSlime(game, pline);
+        await burnAwayHeroSlime({ state: game, publish: pline });
         if (formLikesLava()) {
             await pline(`The ${displayLiquidName('lava')} feels warm.`);
         }

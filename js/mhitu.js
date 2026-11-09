@@ -40,7 +40,7 @@ import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { bot } from './botl.js';
 import { burnArmorByFire, trapAt, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately, resetUtrap, } from './trap.js';
 import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
-import { nomul, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
+import { nomul, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker, contactIsProtected, paralyzeMonster, swingMonsterWeapon, } from './mhitm.js';
 import { msummon } from './minion.js';
 import { isWereMonster, isHumanWereMonster, transformWereMonster, summonWerePack, counterWereSpecies } from './were.js';
@@ -72,7 +72,7 @@ import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './worn.js';
 import { ceilingName } from './dungeon.js';
 import { carriedObjectOwner } from './shk.js';
-import { endObjectBurn } from './timeout.js';
+import { endObjectBurn, burnAwayHeroSlime } from './timeout.js';
 import { releaseAllMonsterLeashes } from './apply.js';
 import { dismountHero } from './steed.js';
 import { encumber_msg } from './pickup.js';
@@ -2699,7 +2699,7 @@ export async function gulpmu(monster, attack, { state = game, random = rn2, roll
                     await publish(fire ? 'You are burning to a crisp!' : 'You are freezing to death!');
                 }
                 if (fire)
-                    await burnAwayHeroSlime(state, publish);
+                    await burnAwayHeroSlime({ state, publish });
             }
             break;
         case AD_DISE:
@@ -3835,7 +3835,7 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
                 }
                 else
                     monstersForgetHeroResistance(M_SEEN_FIRE, state, observers);
-                await burnAwayHeroSlime(state, publish);
+                await burnAwayHeroSlime({ state, publish });
                 if (level > random(20))
                     await burnArmorByFire(state.u, state, publish, calls, random);
                 if (level > random(20)) {

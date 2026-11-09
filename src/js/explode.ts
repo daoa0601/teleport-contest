@@ -8,7 +8,7 @@ import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE,
 } from './object_data.js';
 import { monsterHasMagicResistance } from './mondata.js';
-import { burnArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact } from './trap.js';
+import { burnArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact, trapAt } from './trap.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BURNING, BURNING_OIL, COLNO, DOOR, D_CLOSED, D_LOCKED, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, LARGEST_INT, LOST_EXPLODING, M_AP_MONSTER, M_AP_TYPE, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, SHOPBASE, SINK, STATUE_TRAP, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, ZAP_POS } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, TemporaryMapEffect } from './display.js';
@@ -18,7 +18,7 @@ import type { MessagePublisher } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler, OrdinaryDeathOptions } from './end.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { burnAwayHeroSlime, nomul, roomsAt } from './hack.js';
+import { nomul, roomsAt } from './hack.js';
 import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages,
     finishHeroMonsterKillOutcome, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt,
@@ -70,7 +70,7 @@ import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
 import { shouldMulchMissile, breakFloorObject, rangedTargetHitBonus } from './dothrow.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { endObjectBurn } from './timeout.js';
+import { endObjectBurn, burnAwayHeroSlime } from './timeout.js';
 
 export interface ExplosionOptions {
     state?: GameState;
@@ -275,7 +275,7 @@ export async function explode(x: number, y: number, type: number, damage: number
             await publish(`You are caught in the ${description}!`);
             state._lastPlineKind = PLNMSG_CAUGHT_IN_EXPLOSION;
         }
-        if (damageType === AD_FIRE) await burnAwayHeroSlime(state, publish);
+        if (damageType === AD_FIRE) await burnAwayHeroSlime({ state, publish });
         let heroDamage = source.heroDamage;
         if (propertyIsActive('invulnerable', state)) {
             heroDamage = 0;
@@ -830,9 +830,8 @@ async function hitHero(node: ScatterNode, state: GameState, options: ScatterSett
 async function fractureObject(object: GameObject, x: number, y: number, state: GameState, options: ScatterSettings): Promise<void> {
     const boulder = object.otyp === BOULDER;
     if (!boulder) {
-        const statueTrap = state.level?.traps.find(trap =>
-            trap.tx === x && trap.ty === y && trap.ttyp === STATUE_TRAP);
-        if (statueTrap) deleteTrap(statueTrap, state);
+        const statueTrap = trapAt(state, x, y);
+        if (statueTrap?.ttyp === STATUE_TRAP) deleteTrap(statueTrap, state);
     }
     if (squareIsVisible(state, x, y)) {
         const name = capitalizedDefiniteName(objectCombatName(object, { state }), state);

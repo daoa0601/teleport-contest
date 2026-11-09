@@ -30,7 +30,7 @@ import { objectTypeKnown, oinit } from './o_init.js';
 import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition, setShopResidency, fixShopDamage, dopay } from './shk.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
-import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire } from './hack.js';
+import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire } from './hack.js';
 import { buryFloorObjectsAt, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, map_background, } from './display.js';
 import { cansee, canseeFromHero, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
@@ -74,7 +74,7 @@ import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireSh
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
-import { runDueTimers, restoreLevelTimers, objectTimers, scheduleObjectTimer } from './timeout.js';
+import { runDueTimers, restoreLevelTimers, objectTimers, scheduleObjectTimer, burnAwayHeroSlime } from './timeout.js';
 import { restoreLevelChains, restoreMonsterCover, restoreMonsterWormHeads } from './restore.js';
 import { hideMonsterOnRestore } from './mon.js';
 import { restoreLevelPetHistory, restoreObjectPetHistory } from './restore.js';
@@ -156,7 +156,7 @@ export async function dropBoulderIntoLiquid(boulder, x, y, state = game, { publi
     const fills = !Is_waterlevel(state.u.uz)
         && (type === WATER ? chance < 5 : lava ? chance === 0 : chance !== 0);
     if (fills) {
-        const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+        const trap = trapAt(state, x, y);
         if (type === DRAWBRIDGE_UP) {
             location.drawbridgemask = ((location.drawbridgemask ?? 0) & ~DB_UNDER) | DB_FLOOR;
         }
@@ -215,7 +215,7 @@ export async function dropBoulderIntoLiquid(boulder, x, y, state = game, { publi
             // C do.c:132-137 reads the plain Fire_resistance macro.
             const fireResistant = heroResistsFire(state);
             await publish(`You are hit by molten ${displayLiquidName('lava', state)}${fireResistant ? '.' : '!'}`);
-            await burnAwayHeroSlime(state, publish);
+            await burnAwayHeroSlime({ state, publish });
             let damage = d(fireResistant ? 1 : 3, 6);
             if (state.u.halfPhysicalDamage
                 || heroHasCarriedArtifactFlag('SPFX_HPHDAM', state))
@@ -325,7 +325,7 @@ async function teleportSink(state) {
         const cy = 1 + rn2(ROWNO - 2); /* 1..ROWNO-2 */
         const location = level.requireAt(cx, cy);
         if (location.typ !== ROOM
-            || level.traps.some(trap => trap.tx === cx && trap.ty === cy)
+            || trapAt(state, cx, cy)
             || engravingAt(cx, cy, level))
             continue;
         const dx = cx - ux;

@@ -78,7 +78,7 @@ import {
 } from './trap.js';
 
 import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
-import { nomul, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
+import { nomul, stopRun, loseHeroHp, heroGoldAmount, applyHeroLocationEffects, finishHeroHelplessness } from './hack.js';
 import {
     attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker, contactIsProtected,
     paralyzeMonster, swingMonsterWeapon,
@@ -115,7 +115,7 @@ import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './worn.js';
 import { ceilingName } from './dungeon.js';
 import { carriedObjectOwner } from './shk.js';
-import { endObjectBurn } from './timeout.js';
+import { endObjectBurn, burnAwayHeroSlime } from './timeout.js';
 import { releaseAllMonsterLeashes } from './apply.js';
 
 import type { MapLocation } from './map_types.js';
@@ -2832,7 +2832,7 @@ export async function gulpmu(
             } else {
                 await publish(fire ? 'You are burning to a crisp!' : 'You are freezing to death!');
             }
-            if (fire) await burnAwayHeroSlime(state, publish);
+            if (fire) await burnAwayHeroSlime({ state, publish });
         }
         break;
     case AD_DISE:
@@ -4024,7 +4024,7 @@ export async function resolveMonsterGaze(monster: Monster, attack: MonsterAttack
                 await applyHeroGolemEffects(AD_FIRE, rollDice(12, 6), { state, publish });
                 damage = 0;
             } else monstersForgetHeroResistance(M_SEEN_FIRE, state, observers);
-            await burnAwayHeroSlime(state, publish);
+            await burnAwayHeroSlime({ state, publish });
             if (level > random(20)) await burnArmorByFire(state.u, state, publish, calls, random);
             if (level > random(20)) {
                 const items = await destroyInventoryByElement('fire', originalDamage, { state, publish, random, rollOne });
