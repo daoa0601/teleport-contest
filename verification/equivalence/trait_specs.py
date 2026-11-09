@@ -39,16 +39,13 @@ PM_FLOATING_EYE = 28
 PM_GREMLIN = 40
 PM_MIND_FLAYER = 48
 PM_FIRE_ELEMENTAL = 155
-PM_ORC = 72
-PM_DWARF = 44
 PM_WOOD_GOLEM = 254
 PM_GHOUL = 246
 PM_GREEN_SLIME = 208
 PM_BAT = 126
 PM_TROLL = 220
 PM_HUMAN = 260
-PM_ELF = 264
-PM_GNOME = 165
+PM_ARCHEOLOGIST = 331   # first of the thirteen role species (role.c:roles[].mnum)
 PM_MASTER_MIND_FLAYER = 49
 PM_FOG_CLOUD = 106
 PM_VAMPIRE_BAT = 129
@@ -141,19 +138,24 @@ TRAIT_SPECS = [
 
 # ---- mondata.c:olfaction() over the hero's current form ----
 
-# role.c:races[]: the five playable races keep mnum PM_HUMAN, PM_ELF,
-# PM_DWARF, PM_GNOME and PM_ORC; mondata.c:mon_data() sends a non-polymorphed
-# gy.youmonst to &mons[gu.urace.mnum], and a polymorphed one to
-# &mons[u.umonnum] (you.h:Upolyd compares the two species numbers).
+# polyself.c:38-43 (set_uasmon) keeps gy.youmonst.data at &mons[u.umonnum]
+# for the polymorphed and the original form alike; u_init.c:991 starts the
+# game with u.umonnum = u.umonster = gu.urole.mnum, one of the thirteen role
+# species, and every hero-side olfaction() caller (do.c:2011, mon.c:5803,
+# wizcmds.c:895) passes gy.youmonst.data. mondata.c:raceptr() is the helper
+# that would return the race row for a non-polymorphed hero, and no
+# olfaction() caller uses it.
 OLFACTION_ASSUMPTIONS = PREDICATE_ASSUMPTIONS + (
-    'role.c:role_init copies the selected races[] row into gu.urace before play, so gu.urace.mnum is one of the five playable species and the port record game.urace.mnum equals it',
-    'mondata.c:mon_data() resolves the hero to &mons[gu.urace.mnum] when !Upolyd and to &mons[u.umonnum] otherwise; polyself.js:heroMonsterForm(state) makes the same selection over game.u.umonnum/umonster and returns null exactly when the hero is not polymorphed',
-    'mondata.js:heroHasOlfaction returns true for the unpolymorphed hero without reading the table, matching olfaction() over every playable race row (none carries an olfaction-free class letter)',
+    'polyself.c:set_uasmon keeps gy.youmonst.data at &mons[u.umonnum] on every form change, and the hero-side olfaction() callers (do.c:2011, mon.c:5803, wizcmds.c:895) pass gy.youmonst.data, so the native argument here is &mons[u.umonnum]',
+    'u_init.c:991 sets u.umonnum = u.umonster = gu.urole.mnum at game start, so a non-polymorphed hero carries one of the thirteen role species (role.c:roles[].mnum: the archeologist..wizard player monsters) and u.umonster stays inside that set; you.h:Upolyd compares the two species numbers, and polyself.js:heroMonsterForm(state) returns null exactly when they are equal',
+    'mondata.js:heroHasOlfaction returns true for the non-polymorphed hero without reading the table, so the claim proves olfaction() true over every role species row (none carries an olfaction-free class letter)',
 )
 
 OLFACTION_STATE = [('u.umonnum', INT, 'game.u.umonnum'),
-                   ('u.umonster', INT, 'game.u.umonster'),
-                   ('gu.urace.mnum', INT, 'game.urace.mnum')]
+                   ('u.umonster', INT, 'game.u.umonster')]
+
+# role.c:roles[].mnum — the thirteen playable role species.
+ROLE_SPECIES = (331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343)
 
 
 def olfaction_state(world, front, modules):
@@ -162,17 +164,15 @@ def olfaction_state(world, front, modules):
     for key in ('u.umonnum', 'u.umonster'):
         world.pre.append(symbols[key] >= 0)
         world.pre.append(symbols[key] < front.enum_value('NUMMONS'))
-    world.pre.append(z3.Or(*[symbols['gu.urace.mnum'] == index
-                             for index in (PM_HUMAN, PM_ELF, PM_DWARF,
-                                           PM_GNOME, PM_ORC)]))
+    world.pre.append(z3.Or(*[symbols['u.umonster'] == index
+                             for index in ROLE_SPECIES]))
 
 
 def olfaction_arguments(world, front):
     values = {name: value for name, value, _ in world.params}
     symbols = {name: value for name, (value, _) in world.c_state.items()}
-    form = z3.If(symbols['u.umonnum'] != symbols['u.umonster'],
-                 symbols['u.umonnum'], symbols['gu.urace.mnum'])
-    pointer = CPtr(values['native_pointer_present'] != 0, CElement('mons', form))
+    pointer = CPtr(values['native_pointer_present'] != 0,
+                   CElement('mons', symbols['u.umonnum']))
     return ([pointer], [V('obj', 'game')])
 
 
@@ -187,8 +187,7 @@ TRAIT_SPECS += [
          probes=[('null native species pointer', lambda s: [
              s['species'] >= 0, s['native_pointer_present'] == 0])],
          mutant_pre=lambda s: [s['u.umonnum'] == PM_WOOD_GOLEM,
-                               s['u.umonster'] == PM_HUMAN,
-                               s['gu.urace.mnum'] == PM_HUMAN],
+                               s['u.umonster'] == PM_ARCHEOLOGIST],
          mutants=[(MONDATA, '!OLFACTIONLESS_SYMBOLS.has(symbol);',
                    '!OLFACTIONLESS_SYMBOLS.has(symbol + 1);')]),
 ]
