@@ -47,7 +47,7 @@ import { MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { displayColorName, monsterName } from './do_name.js';
 import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './region.js';
-import { openFallingTrap, openHoldingTrap, trapName, triggerBoobyTrap, activateStatueTrapAt } from './trap.js';
+import { openFallingTrap, openHoldingTrap, trapName, triggerBoobyTrap, activateStatueTrapAt, trapAt } from './trap.js';
 import { cmapToGlyph, CmapSymbol, GlyphOffset } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { Hero } from './hero_types.js';
@@ -924,7 +924,7 @@ export async function showMapSpot(x: number, y: number, {
     } else await magic_map_background(x, y, true);
 
     if (!IS_FURNITURE(loc.typ)) {
-        const trap = level.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
+        const trap = trapAt(state, x, y);
         const engraving = level.engravings?.find(candidate => candidate.x === x && candidate.y === y);
         if (trap && (trap.tseen || revealAllTraps)) {
             if (revealAllTraps) trap.tseen = true;
@@ -1170,8 +1170,7 @@ export async function findit() {
             found.corridors++;
         }
 
-        const trap = game.level.traps?.find(candidate =>
-            candidate.tx === x && candidate.ty === y);
+        const trap = trapAt(game, x, y);
         if (trap && !trap.tseen && trap.ttyp !== STATUE_TRAP) {
             const glyph = transientTrapGlyph(trap);
             await flashGlyphAt(x, y, glyph, 6);
@@ -1325,7 +1324,7 @@ export async function openit(state: GameState = game) {
             await newsym(x, y);
             opened++;
         } else {
-            const trap = state.level.traps.find(t => t.tx === x && t.ty === y);
+            const trap = trapAt(state, x, y);
             if (trap) {
                 if (!trap.tseen && trap.ttyp !== STATUE_TRAP) {
                     trap.tseen = true;
@@ -1479,8 +1478,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
                 if (result === -1) continue;
                 if (result > 0) return true;
             } else if (!automatic && !blind) await unmap_invisible(x, y);
-            const trap = game.level?.traps?.find(candidate =>
-                candidate.tx === x && candidate.ty === y);
+            const trap = trapAt(game, x, y);
             if (trap && !trap.tseen) {
                 if (rnl(8)) continue;
                 nomul(0, game);
