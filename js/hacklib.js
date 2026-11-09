@@ -171,6 +171,10 @@ export function distmin(x1, y1, x2, y2) {
 export function dist2(x1, y1, x2, y2) {
     return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
 }
+// C hacklib.c:sgn().
+export function sgn(value) {
+    return value < 0 ? -1 : value !== 0 ? 1 : 0;
+}
 // C hacklib.c:stripchars(): remove the given characters (botl.c:2941 reads
 // the threshold number with "%<>=+" stripped).
 export function stripChars(text, remove) {

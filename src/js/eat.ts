@@ -3084,3 +3084,8 @@ export async function Finish_digestion(state: GameState = game): Promise<void> {
 
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
+
+// C eat.c:is_fainted().
+export function heroHasFainted(state: GameState = game): boolean {
+    return state.u?.uhs === FAINTED;
+}
