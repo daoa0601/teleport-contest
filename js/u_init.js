@@ -17,7 +17,7 @@ import { SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './do_wear.js';
 import { ensureQuestStatus } from './quest.js';
 import { A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, NOT_HUNGRY, P_FIRST_SPELL, P_LAST_SPELL, } from './const.js';
-import { recordObjectEncounter, discoverKnownType, discoverObject } from './o_init.js';
+import { recordObjectEncounter, discoverKnownType } from './o_init.js';
 import { ensureHeroSkills } from './weapon.js';
 import { spellSkillType } from './spell.js';
 import { hiddenGold } from './vault.js';
@@ -350,7 +350,7 @@ function trquan(trobj) {
 // Mark a type known without an encounter; the pauper guard lives at the
 // callers.
 export function recordObjectKnowledge(otyp, state = game) {
-    discoverObject(otyp, true, false, false, state);
+    discoverKnownType(otyp, false, state);
 }
 // C u_init.c:knows_class()
 // Role preknowledge is installed before
