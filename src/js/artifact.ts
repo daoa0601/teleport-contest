@@ -168,7 +168,9 @@ import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 
 import { loseHeroExperience } from './exper.js';
-import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, heroIsOnStairs, isInvocationPosition, nomul } from './hack.js';
+import { applyHeroLocationEffects, loseHeroHp, isInvocationPosition, nomul } from './hack.js';
+import { On_stairs } from './stairs.js';
+import { burnAwayHeroSlime } from './timeout.js';
 import { lightDamage } from './zap.js';
 import { lightRoom } from './read.js';
 import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel, setHeroGrip,
@@ -1211,7 +1213,7 @@ export async function retouchHeroObject(object: GameObject, {
 }: RetouchOptions & { dropRejected?: boolean } = {}): Promise<HeroRetouchResult> {
     if (object.otyp === BELL_OF_OPENING
         && isInvocationPosition(state.u.ux, state.u.uy, state)
-        && !heroIsOnStairs(state)) return { died: false, rejected: false };
+        && !On_stairs(state, state.u.ux, state.u.uy)) return { died: false, rejected: false };
     const artifact = artifactById(object.oartifact, state);
 
     const touch = await touchArtifactByHero(object, artifact, {
@@ -1849,7 +1851,7 @@ export async function applyArtifactHit(
             }
         }
     }
-    if (defender === 'hero' && damageType === 'fire') await burnAwayHeroSlime(state, publish);
+    if (defender === 'hero' && damageType === 'fire') await burnAwayHeroSlime({ state, publish });
 
     return { damage, specialMessage: realizesDamage };
 }

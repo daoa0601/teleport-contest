@@ -31,7 +31,9 @@ import { getRumor } from './rumors.js';
 import { exerciseAttribute, extrinsicPropertyMask } from './attrib.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
-import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, heroIsOnStairs, isInvocationPosition, nomul } from './hack.js';
+import { applyHeroLocationEffects, loseHeroHp, isInvocationPosition, nomul } from './hack.js';
+import { On_stairs } from './stairs.js';
+import { burnAwayHeroSlime } from './timeout.js';
 import { lightDamage } from './zap.js';
 import { lightRoom } from './read.js';
 import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel, setHeroGrip, finishHeroMonsterKillOutcome, } from './mon.js';
@@ -864,7 +866,7 @@ const activeChecks = new WeakSet();
 export async function retouchHeroObject(object, { dropRejected = false, state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
     if (object.otyp === BELL_OF_OPENING
         && isInvocationPosition(state.u.ux, state.u.uy, state)
-        && !heroIsOnStairs(state))
+        && !On_stairs(state, state.u.ux, state.u.uy))
         return { died: false, rejected: false };
     const artifact = artifactById(object.oartifact, state);
     const touch = await touchArtifactByHero(object, artifact, {
@@ -1380,7 +1382,7 @@ visible = defender !== 'hero' && cansee(defender.mx, defender.my)
         }
     }
     if (defender === 'hero' && damageType === 'fire')
-        await burnAwayHeroSlime(state, publish);
+        await burnAwayHeroSlime({ state, publish });
     return { damage, specialMessage: realizesDamage };
 }
 // Part of C artifact.c:artifact_hit(): the adtyp-to-inventory-damage
