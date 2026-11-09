@@ -81,7 +81,7 @@ import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { d, rn2, rnd } from './rng.js';
 import type { PropertyName } from './property_types.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttribute } from './attrib.js';
+import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttribute, changeHeroLuck } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import { encumber_msg, heroIsSafeFromFatalCorpse, ST_CORPSE, ST_PETRIFIES } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
@@ -856,9 +856,7 @@ function weaponNoun(object: GameObject | null): string {
 // Part of C do_wear.c:cursed(): the welded() test revealing the curse.
 // welded() reveals the curse even when the weapon does not block removal.
 function checkWeldedWeapon(object: GameObject | null, state: GameState = game): boolean {
-    if (!object || !isWeldedPrimary(object, state)) return false;
-    object.bknown = true;
-    return true;
+    return isWeldedPrimary(object, state);
 }
 
 // C do_wear.c:cursed(): a welded weapon or cursed worn item refuses to
@@ -1128,11 +1126,10 @@ function restoreMap(underlay: MenuUnderlay | null): void {
     game._retained_message = '';
     restoreMenuUnderlay(underlay);
 }
-
-// The four getobj equip verbs equipmentClassification() classifies.
 type EquipmentAction = 'wear' | 'put on' | 'take off' | 'remove';
 
-// C do_wear.c:equip_ok().
+// C do_wear.c:equip_ok(): the four getobj equip verbs
+// equipmentClassification() classifies are the EquipmentAction union.
 // C do_wear.c:puton_ok().
 // C do_wear.c:remove_ok().
 // C do_wear.c:wear_ok().
@@ -1388,7 +1385,7 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     }
     // C attrib.c:change_luck(-1): the fedora's luck refund at its bounds.
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
-        state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - 1);
+        changeHeroLuck(-1, state);
     if (object.otyp === CORNUTHAUM && !cancelledDon) {
         state.u.abon ??= { a: [0, 0, 0, 0, 0, 0] };
         state.u.abon.a[A_CHA] += state.urole?.key === 'wizard' ? -1 : 1;
@@ -1652,10 +1649,10 @@ export async function destroyWornArmor(armor: GameObject, state: GameState = gam
     return true;
 }
 
+// C do_wear.c:disintegrate_arm(), with a specified worn piece.
 // C do_wear.c:maybe_destroy_armor(): the slot check and the 90% resistance
 // roll that mark this piece as the one that crumbles, inlined with the
 // caller's per-slot messages.
-// C do_wear.c:disintegrate_arm(), with a specified worn piece.
 export async function disintegrateWornArmor(armor: GameObject, {
     state = game, publish = plineWithContinuation,
 }: ArmorDestructionOptions = {}) {
@@ -1768,7 +1765,7 @@ async function applyHelmetOnEffects(object: GameObject, state: GameState): Promi
     if (object.otyp === FEDORA) {
         if (state.urole?.key === 'archeologist') {
             // Helmet_on()/Helmet_off() use change_luck(), including its bounds.
-            state.u.uluck = Math.min(LUCKMAX, (state.u.uluck ?? 0) + 1);
+            changeHeroLuck(1, state);
         }
         return;
     }
