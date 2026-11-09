@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_AP_MONSTER, TURNED_SLIME } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { burnAwayHeroSlime } from '../js/hack.js';
+import { burnAwayHeroSlime } from '../js/timeout.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, identifyLifeSavingAmulet, } from '../js/end.js';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
@@ -110,7 +110,10 @@ void test('burning slime clears its countdown, killer, and false appearance', as
     game.u.m_ap_type = M_AP_MONSTER;
     game.u.mappearance = PM_GREEN_SLIME;
     const messages = [];
-    await burnAwayHeroSlime(game, async (message) => { messages.push(message); });
+    await burnAwayHeroSlime({
+        state: game,
+        publish: async (message) => { messages.push(message); },
+    });
     assert.deepEqual(messages, [
         'The slime that covers you is burned away!',
     ]);

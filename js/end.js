@@ -44,7 +44,7 @@ import { NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj, isContainer, placeObjectSynchronously } from './mkobj.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, } from './objnam.js';
-import { recordObjectEncounter } from './o_init.js';
+import { recordObjectEncounter, discoverObject } from './o_init.js';
 import { recordObjectKnowledge } from './u_init.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { deepestLevelReached, depth, In_quest } from './dungeon.js';
@@ -1019,8 +1019,7 @@ async function finalPossessionLines(possessions) {
     const lines = possessions.artifacts.map(({ object, value, points, name }) => {
         // C discover_object(otyp, TRUE, TRUE, FALSE): the type is marked
         // encountered and known, without the Wisdom credit.
-        recordObjectEncounter(object.otyp);
-        recordObjectKnowledge(object.otyp);
+        discoverObject(object.otyp, true, true, false);
         object.known = object.dknown = object.bknown = object.rknown = true;
         return `${name} (worth ${value} ${currency(value)} and ${points} points)`;
     });
@@ -1034,8 +1033,7 @@ async function finalPossessionLines(possessions) {
             const object = await mksobj(type, false, false);
             object.known = object.dknown = true;
             object.quan = count;
-            recordObjectEncounter(type);
-            recordObjectKnowledge(type);
+            discoverObject(type, true, true, false);
             const name = objectName(object);
             lines.push(`${prefix} ${count === 1 ? name : makePlural(name)} (worth ${worth} ${currency(2)}),`);
             await deleteObject(object);
