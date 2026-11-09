@@ -61,7 +61,7 @@ import {
     P_FIRST_SPELL, P_LAST_SPELL,
 } from './const.js';
 
-import { recordObjectEncounter, discoverKnownType } from './o_init.js';
+import { recordObjectEncounter, discoverKnownType, discoverObject } from './o_init.js';
 
 import { ensureHeroSkills } from './weapon.js';
 import { spellSkillType } from './spell.js';
@@ -434,7 +434,7 @@ function trquan(trobj: InitialInventoryEntry): number {
 // Mark a type known without an encounter; the pauper guard lives at the
 // callers.
 export function recordObjectKnowledge(otyp: number, state: GameState = game): void {
-    discoverKnownType(otyp, false, state);
+    discoverObject(otyp, true, false, false, state);
 }
 
 

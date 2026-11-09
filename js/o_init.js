@@ -207,6 +207,14 @@ function discoveryBaseName(otyp, known, actualName, appearance) {
             return known ? actualName : appearance || actualName;
     }
 }
+// C o_init.c:interesting_to_discover(): a type earns a '\' row only with
+// an unidentified appearance, a call name, or a Japanese name.
+function interestingToDiscover(otyp, known, encountered, callName, appearance) {
+    const japaneseName = game.urole?.key === 'samurai' ? japaneseItemName(otyp) : undefined;
+    if (japaneseName)
+        return true;
+    return !!callName || !!((known || encountered) && appearance);
+}
 // C o_init.c:disco_typename(): the discoveries row's type name.
 // Also C o_init.c:interesting_to_discover(): inlined here (a row needs an
 // appearance, a call name, or a Japanese name to explain).
@@ -223,7 +231,7 @@ function formattedDiscovery(otyp) {
         : OBJ_DESCR(otyp, game);
     // C interesting_to_discover(): Japanese names need an explanation even
     // when there is no unidentified appearance to list.
-    if (!japaneseName && !callName && !((known || encountered) && appearance))
+    if (!interestingToDiscover(otyp, known, encountered, callName, appearance))
         return null;
     let name = discoveryBaseName(otyp, known, japaneseName || ordinaryName, appearance);
     if (japaneseName)
