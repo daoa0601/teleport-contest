@@ -16,8 +16,11 @@ import {
 } from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt, heroCanReachFloor } from './engrave.js';
+import { trapAt } from './trap.js';
+import { dist2, sgn } from './hacklib.js';
 import { flushPendingTopline } from './topl.js';
 import { updateStatusLines } from './botl.js';
+import { visibleRegionAt } from './region.js';
 import { _buildScreenOutput, writeMapCell } from './wintty.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { known_branch_stairs, stairwayAt } from './stairs.js';
@@ -250,9 +253,8 @@ export function canSpotMonster(monster: Monster | null | undefined) {
 // m_lev / 4 already at context.warnlevel.
 export function monsterHasWarningProjection(monster: Monster | null | undefined) {
     if (!monster || !game.u?.warning || monster.mpeaceful) return null;
-    const dx = monster.mx - game.u.ux, dy = monster.my - game.u.uy;
-    if (dx * dx + dy * dy >= 100) return null;
     // C dist2(): the warning radius is a squared distance (ten squares).
+    if (dist2(monster.mx, monster.my, game.u.ux, game.u.uy) >= 100) return null;
     return warningOf(monster) >= (game.context?.warnlevel ?? 1);
 }
 
@@ -1386,8 +1388,7 @@ export async function map_location(x: number, y: number, show = true) {
     const covered = terrainCoversObjectsAt(x, y);
     const level = requireGameLevel();
     const object = level.objects?.[x]?.[y]?.[0];
-    const trap = level.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y);
+    const trap = trapAt(game, x, y);
     const engraving = engravingAt(x, y);
     const typ = requireDisplayLocation(x, y).typ;
     if (object && !covered) {
@@ -1401,7 +1402,7 @@ export async function map_location(x: number, y: number, show = true) {
         await map_background(x, y, show);
     }
     updateLastSeenTerrain(x, y);
-    if (show && !heroIsBlind() && visibleMapRegionAt(x, y)) await showMapRegion(x, y);
+    if (show && !heroIsBlind() && visibleRegionAt(game, x, y)) await showMapRegion(x, y);
 }
 
 // C display.c:feel_newsym(). Known terrain changes update memory by touch
@@ -1768,7 +1769,7 @@ export async function shieldeff(x: number, y: number, g: GameState = game) {
 // C display.c:tether_glyph(): the tether segment from a saved position back
 // toward the hero, drawn before the tethered object's next position.
 function tether_glyph(x: number, y: number): DisplayGlyph {
-    return zapdir_to_glyph(Math.sign(game.u.ux - x), Math.sign(game.u.uy - y), 2);
+    return zapdir_to_glyph(sgn(game.u.ux - x), sgn(game.u.uy - y), 2);
 }
 
 // Each active temporary effect owns its saved positions, so nested effects
@@ -1883,8 +1884,7 @@ export async function unmapObject(x: number, y: number) {
     const loc = game.level?.at(x, y);
     if (!loc || !game.level?.flags.hero_memory) return;
     const covered = terrainCoversObjectsAt(x, y);
-    const trap = game.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y);
+    const trap = trapAt(game, x, y);
     if (trap?.tseen && !covered) {
         await map_trap(trap, false);
     } else if (loc.seenv) {
@@ -1955,16 +1955,9 @@ async function showMonsterOrWarning(x: number, y: number, glyph: DisplayGlyph, a
     await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, attr, glyph);
 }
 
-// Part of C display.c:newsym(): the visible region at a cell.
-function visibleMapRegionAt(x: number, y: number) {
-    return (game.level?.regions || []).find(region => region.visible
-        && region.ttl !== -2 && region.cells?.some(cell =>
-            cell.x === x && cell.y === y)) || null;
-}
-
 // Part of C display.c:newsym(): displaying a gas cloud.
 async function showMapRegion(x: number, y: number) {
-    const region = visibleMapRegionAt(x, y);
+    const region = visibleRegionAt(game, x, y);
     if (!region) return;
     const poisonous = region.damage > 0;
     await show_glyph_cell(x, y, '#', poisonous ? CLR_BRIGHT_GREEN : CLR_GRAY, false, 0,
@@ -2016,7 +2009,7 @@ export async function newsym(x: number, y: number) {
     if (physicallyVisible && engraving) engraving.erevealed = true;
 
     const monster = monsterAtPosition(requireGameLevel(), x, y);
-    const region = physicallyVisible ? visibleMapRegionAt(x, y) : null;
+    const region = physicallyVisible ? visibleRegionAt(game, x, y) : null;
     if (region && (ACCESSIBLE(loc.typ) || isPoolOrLavaAt(x, y))
         && !monsterOverridesMapRegion(monster, x, y)) {
         // region.c:show_region() uses the gas-cloud cmap glyph.  Visible gas
@@ -2042,8 +2035,7 @@ export async function newsym(x: number, y: number) {
     if (projection && monster) {
         // A visible actor overlays rather than replaces the remembered layer.
         if (physicallyVisible) {
-            const trap = monster.mtrapped ? game.level?.traps.find(candidate =>
-                candidate.tx === x && candidate.ty === y) : undefined;
+            const trap = monster.mtrapped ? trapAt(game, x, y) : undefined;
             // Seeing a monster caught in a physical trap also reveals it.
             if (trap && (trap.ttyp === BEAR_TRAP || is_pit(trap.ttyp) || trap.ttyp === WEB))
                 trap.tseen = true;
