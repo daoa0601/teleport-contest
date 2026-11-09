@@ -18,7 +18,7 @@ import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';
 import type { Position, MapLocation, Room, SpecialLevelContext, FloorObjects, Trap, ActiveSpecialLevel, Rectangle, StairRegion } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { deleteTrap, maketrap } from './trap.js';
+import { deleteTrap, maketrap, trapAt } from './trap.js';
 import { lookupNovelTitle, setMonsterGivenName, monsterTypeName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
@@ -268,8 +268,7 @@ export async function fill_empty_maze(mappedCells: SpecialSelection): Promise<vo
     for (let count = rnd(Math.trunc(12 * mapfact / 100));
         count > 0; count--) {
         const point = maze1xy(mappedCells);
-        const trap = level.traps?.find(candidate =>
-            candidate.tx === point.x && candidate.ty === point.y);
+        const trap = trapAt(game, point.x, point.y);
         if (trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) continue;
         await mksobj_at(BOULDER, point.x, point.y, true, false);
     }
@@ -1830,13 +1829,16 @@ export async function lspo_engraving(context: SpecialLevelContext,
     const type = types[engravingType];
     if (type == null)
         throw new Error(`unknown Lua engraving type ${engravingType}`);
-    return makeEngravingAt(
-        point.x, point.y, textValue, null, 0, type,
-        {
-            nowipeout: options.degrade === false,
-            guardobjects: !!options.guardobjects,
-        },
-    );
+    makeEngravingAt(point.x, point.y, textValue, null, 0, type);
+    // C sp_lev.c:lspo_engraving(): the coder's guard/degrade flags are
+    // applied after make_engr_at(), so they also override the Elbereth
+    // guard that make_engr_at() itself installs while making a level.
+    const engraving = engravingAt(point.x, point.y);
+    if (engraving) {
+        engraving.guardobjects = !!options.guardobjects;
+        engraving.nowipeout = options.degrade === false;
+    }
+    return engraving;
 }
 
 // C sp_lev.c:lspo_gold(). Resolve placement before drawing an unspecified amount.
@@ -3408,8 +3410,7 @@ export async function lspo_grave(context: SpecialLevelContext, value: LuaValue |
 
     const point = await get_location_coord(context, options.point, DRY);
     const level = requireGameLevel();
-    if (!isok(point.x, point.y)
-        || level.traps.some(trap => trap.tx === point.x && trap.ty === point.y)) return;
+    if (!isok(point.x, point.y) || trapAt(game, point.x, point.y)) return;
     level.requireAt(point.x, point.y).typ = GRAVE;
     make_grave(point.x, point.y, options.text ?? null);
 
