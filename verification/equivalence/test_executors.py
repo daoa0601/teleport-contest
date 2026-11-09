@@ -649,6 +649,37 @@ class ExecutorTests(unittest.TestCase):
             params=[('turns', INT)], modules=js_modules,
             pre=lambda s: [s['turns'] >= 0, s['turns'] <= 9])
 
+    def test_array_map_builds_the_mapped_array_from_each_element(self):
+        js_modules = {'js/names.js': (
+            'export const NAMES = ["bat", "giant bat", "vampire bat"];\n'
+            'export const BATS = new Set(NAMES.map(name => NAMES.indexOf(name)));\n'
+            'export function isBat(index) { return BATS.has(index); }\n')}
+        options = dict(
+            modules=js_modules, params=[('index', INT)],
+            pre=lambda s: [s['index'] >= 0, s['index'] <= 2])
+        # map plus Set.has evaluates the real initializer: indices 0..2 are
+        # bats, and a set emptied in the emitted source fails the claim.
+        self.equivalent(
+            'int example(int index) { return 1; }',
+            'import { isBat } from "./names.js";\n'
+            'function example(index) { return isBat(index) ? 1 : 0; }',
+            **options)
+        self.rejected(
+            'int example(int index) { return 1; }',
+            'import { isBat } from "./names.js";\n'
+            'function example(index) { return isBat(index) ? 1 : 0; }',
+            reason='outputs differ', modules={
+                'js/names.js': (
+                    'export const NAMES = ["bat", "giant bat", "vampire bat"];\n'
+                    'export const BATS = new Set(NAMES.map(name => -1));\n'
+                    'export function isBat(index) { return BATS.has(index); }\n')},
+            params=[('index', INT)], pre=lambda s: [s['index'] >= 0, s['index'] <= 2])
+        # A callback that branches per element has no single modeled array.
+        self.rejected(
+            'int example(int x) { return x; }',
+            'function example(x) { return [1, 2].map(v => v > x ? v : 0)[1]; }',
+            reason='Array.map callback', params=[('x', INT)])
+
     def test_callback_parameters_do_not_overwrite_enclosing_bindings(self):
         self.equivalent(
             'int example(int x) { return x; }',

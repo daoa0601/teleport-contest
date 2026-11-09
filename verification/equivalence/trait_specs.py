@@ -17,7 +17,7 @@ from jssym import V
 from specs import INT, Spec
 from state_specs import PREDICATE_ASSUMPTIONS, species_predicate_arguments, \
     species_predicate_state, species_record_arguments
-from state_world import module_constant, native_monsters
+from state_world import native_monsters
 
 MONDATA = 'js/mondata.js'
 MON = 'js/mon.js'
@@ -29,35 +29,6 @@ TRAIT_JS_FILES = (MON, TRAP, ROLE_MONSTERS, POLYSELF)
 TRAIT_C_FILES = ('trap.c',)
 
 
-def _species_name_set(world, front, modules, label, binding, names):
-    """A module-level `new Set(names.map(MONSTER_NAME.indexOf))` binding the
-    executor cannot evaluate: supply the same membership from the emitted
-    name table it mirrors."""
-    del front
-    table = module_constant(world, modules, 'js/monster_data.js', 'MONSTER_NAME')
-    if table.kind != 'array' or any(v.kind != 'str' for v in table.v):
-        raise Unsupported('MONSTER_NAME is not a string table')
-    members = []
-    for name in names:
-        index = next((i for i, v in enumerate(table.v) if v.v == name), None)
-        if index is None:
-            raise Unsupported(f'{name} missing from MONSTER_NAME')
-        members.append(V('num', z3.IntVal(index)))
-    world.js_constants[(label, binding)] = V('set', tuple(members))
-
-
-def corpse_eater_state(world, front, modules):
-    species_predicate_state(world, front, modules)
-    _species_name_set(world, front, modules, MONDATA, 'CORPSE_EATERS',
-                      ('purple worm', 'baby purple worm', 'ghoul', 'piranha'))
-
-
-def slimeproof_state(world, front, modules):
-    species_predicate_state(world, front, modules)
-    _species_name_set(world, front, modules, 'js/monster_data.js',
-                      'FLAMING_SPECIES',
-                      ('fire vortex', 'flaming sphere',
-                       'fire elemental', 'salamander'))
 
 SHORT = (16, True)   # you.h: struct Race masks and dungeon.h d_level members
 
@@ -81,10 +52,11 @@ PM_GNOME = 165
 PM_MASTER_MIND_FLAYER = 49
 PM_FOG_CLOUD = 106
 PM_VAMPIRE_BAT = 129
+PM_FIRE_VORTEX = 111
 PM_ROCK_PIERCER = 78
 
 
-def species_tables_spec(name, harness, port, record, mutant, pin,
+def species_tables_spec(name, harness, port, record, mutants, pin,
                         js_file=MONDATA, configure=species_predicate_state):
     """One mons[] predicate in the batch-14 shape: a native species pointer
     against the port's species index over every valid species, with a
@@ -99,60 +71,70 @@ def species_tables_spec(name, harness, port, record, mutant, pin,
         probes=[('null native species pointer', lambda s: [
             s['species'] >= 0, s['native_pointer_present'] == 0])],
         mutant_pre=lambda s, pin=pin: [s['species'] == pin],
-        mutants=[(js_file, *mutant)],
+        mutants=[mutant if mutant[0].endswith('.js') else (js_file, *mutant)
+                 for mutant in mutants],
     )
 
 
 TRAIT_SPECS = [
     species_tables_spec(
         'is_mind_flayer', 'verification_is_mind_flayer', 'monsterIsMindFlayer',
-        False, ('return mnum === PM_MIND_FLAYER || mnum === PM_MASTER_MIND_FLAYER;',
-                'return mnum === PM_MIND_FLAYER || mnum === PM_MASTER_MIND_FLAYER + 1;'),
+        False, [('return mnum === PM_MIND_FLAYER || mnum === PM_MASTER_MIND_FLAYER;',
+                 'return mnum === PM_MIND_FLAYER || mnum === PM_MASTER_MIND_FLAYER + 1;')],
         PM_MASTER_MIND_FLAYER),
     species_tables_spec(
         'telepathic', 'verification_telepathic', 'monsterIsTelepathic',
-        False, ('return mnum === PM_FLOATING_EYE || monsterIsMindFlayer(mnum);',
-                'return mnum === PM_FLOATING_EYE + 1 || monsterIsMindFlayer(mnum);'),
+        False, [('return mnum === PM_FLOATING_EYE || monsterIsMindFlayer(mnum);',
+                 'return mnum === PM_FLOATING_EYE + 1 || monsterIsMindFlayer(mnum);')],
         PM_FLOATING_EYE),
     species_tables_spec(
         'likes_lava', 'verification_likes_lava', 'likes_lava',
-        False, ('return mnum === PM_FIRE_ELEMENTAL || mnum === PM_SALAMANDER;',
-                'return mnum === PM_FIRE_ELEMENTAL + 1 || mnum === PM_SALAMANDER;'),
+        False, [('return mnum === PM_FIRE_ELEMENTAL || mnum === PM_SALAMANDER;',
+                 'return mnum === PM_FIRE_ELEMENTAL + 1 || mnum === PM_SALAMANDER;')],
         PM_FIRE_ELEMENTAL),
     species_tables_spec(
         'is_wooden', 'verification_is_wooden', 'monsterIsWooden',
-        True, ('return monster?.mnum === PM_WOOD_GOLEM;',
-               'return monster?.mnum === PM_WOOD_GOLEM + 1;'),
+        True, [('return monster?.mnum === PM_WOOD_GOLEM;',
+                'return monster?.mnum === PM_WOOD_GOLEM + 1;')],
         PM_WOOD_GOLEM),
     species_tables_spec(
         'hates_light', 'verification_hates_light', 'monsterHatesLight',
-        True, ('return monster?.mnum === PM_GREMLIN;',
-               'return monster?.mnum === PM_GREMLIN + 1;'),
+        True, [('return monster?.mnum === PM_GREMLIN;',
+                'return monster?.mnum === PM_GREMLIN + 1;')],
         PM_GREMLIN),
     species_tables_spec(
         'weirdnonliving', 'verification_weirdnonliving', 'monsterIsWeirdNonliving',
-        False, ('return MONSTER_SYMBOL[mnum] === S_VORTEX || monsterIsGolem(mnum);',
-                'return MONSTER_SYMBOL[mnum] === S_VORTEX + 1 || monsterIsGolem(mnum);'),
+        False, [('return MONSTER_SYMBOL[mnum] === S_VORTEX || monsterIsGolem(mnum);',
+                 'return MONSTER_SYMBOL[mnum] === S_VORTEX + 1 || monsterIsGolem(mnum);')],
         PM_FOG_CLOUD),
     species_tables_spec(
         'corpse_eater', 'verification_corpse_eater', 'speciesEatsCorpses',
-        False, ('return CORPSE_EATERS.has(species);',
-                'return CORPSE_EATERS.has(species + 1);'),
-        PM_GHOUL, configure=corpse_eater_state),
+        False, [('return CORPSE_EATERS.has(species);',
+                 'return CORPSE_EATERS.has(species + 1);'),
+                # The emitted initializer itself: dropping a corpse-eating
+                # species from the set must fail the claim.
+                ('new Set([\'purple worm\', \'baby purple worm\', \'ghoul\',',
+                 'new Set([\'purple worm\', \'baby purple worm\',')],
+        PM_GHOUL),
     species_tables_spec(
         'slimeproof', 'verification_slimeproof', 'monsterIsSlimeproof',
-        True, ('return monster?.mnum === PM_GREEN_SLIME',
-               'return monster?.mnum === PM_GREEN_SLIME + 1'),
-        PM_GREEN_SLIME, configure=slimeproof_state),
+        True, [('FLAMING_SPECIES.has(monster.mnum))',
+                'FLAMING_SPECIES.has(monster.mnum + 1))'),
+               # The emitted initializer itself: dropping a flaming species
+               # from the set must fail the claim.
+               ('js/monster_data.js',
+                'new Set([\'fire vortex\', \'flaming sphere\',',
+                'new Set([\'flaming sphere\',')],
+        PM_FIRE_VORTEX),
     species_tables_spec(
         'is_bat', 'verification_is_bat', 'monsterIsBat',
-        False, ("return ['bat', 'giant bat', 'vampire bat'].includes(",
-                "return ['bat', 'giant bat'].includes("),
+        False, [("return ['bat', 'giant bat', 'vampire bat'].includes(",
+                 "return ['bat', 'giant bat'].includes(")],
         PM_VAMPIRE_BAT),
     species_tables_spec(
         'is_reviver', 'verification_is_reviver', 'isReviver',
-        False, ('MONSTER_SYMBOL[mnum] === 46; // S_TROLL',
-                'MONSTER_SYMBOL[mnum] === 47; // S_TROLL'),
+        False, [('MONSTER_SYMBOL[mnum] === 46; // S_TROLL',
+                 'MONSTER_SYMBOL[mnum] === 47; // S_TROLL')],
         PM_TROLL, js_file=MON),
 ]
 

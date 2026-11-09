@@ -1290,6 +1290,14 @@ class JSExec:
                         raise Unsupported('JavaScript some() on a non-array')
                     out.extend(self._array_some(p, array, arg_nodes[0], where))
                 return out
+            if prop == 'map' and len(arg_nodes) == 1:
+                out = []
+                for p, array in self.eval(path, fn.child_by_field_name('object')):
+                    if array.kind != 'array':
+                        raise Unsupported('JavaScript map() on a non-array')
+                    out.extend((q, mapped) for q, mapped
+                               in self._array_map(p, array, arg_nodes[0], where))
+                return out
             if prop == 'indexOf' and len(arg_nodes) == 1:
                 out = []
                 for p, array in self.eval(path, fn.child_by_field_name('object')):
@@ -1449,6 +1457,44 @@ class JSExec:
             if not live:
                 break
         return matched, live
+
+    def _array_map(self, path, array, callback, where):
+        """Array.prototype.map with a one-parameter expression-bodied arrow.
+
+        Every element must yield exactly one value on one path: a callback
+        that forks or draws has no single modeled result, so it is rejected
+        instead of silently dropping a branch of the mapped array."""
+        cb = _strip(callback)
+        if cb.type != 'arrow_function':
+            raise Unsupported(f'Array.map callback at {where} is not an arrow function')
+        if any(c.type == 'async' for c in cb.children):
+            raise Unsupported(f'Array.map callback at {where} is async')
+        parameters = cb.child_by_field_name('parameters')
+        prm_nodes = parameters.named_children if parameters is not None \
+            else [cb.child_by_field_name('parameter')]
+        if len(prm_nodes) != 1 or prm_nodes[0] is None:
+            raise Unsupported(f'Array.map callback at {where} needs one parameter')
+        body = cb.child_by_field_name('body')
+        if body.type == 'statement_block':
+            raise Unsupported(f'Array.map callback at {where} has a block body')
+        if _for_of_vars(body):
+            raise Unsupported(f'Array.map callback has a for...of var at {where}')
+        current, values = path, []
+        for element in array.v:
+            outer = dict(current.env)
+            paths = [current]
+            paths = seq(paths, lambda p: self._parameter(p, prm_nodes[0], element))
+            mapped = [outcome for q in paths for outcome in self.eval(q, body)]
+            _close_scope(outer, [q for q, _ in mapped])
+            for q, _ in mapped:
+                for name in self._parameter_names(prm_nodes[0]) & outer.keys():
+                    q.env[name] = outer[name]
+            if len(mapped) != 1 or any(not z3.is_true(z3.simplify(term))
+                                       for term in mapped[0][0].pc[len(path.pc):]):
+                raise Unsupported(f'Array.map callback at {where} is not single-valued')
+            current, value = mapped[0]
+            values.append(value)
+        return [(current, V('array', tuple(values)))]
 
     def _array_some(self, path, array, callback, where):
         """Array.prototype.some with an arrow callback (expression or block body)."""
