@@ -256,7 +256,7 @@ import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductio
 import {
     setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap,
     openFallingTrap, openHoldingTrap, sokobanGuilt, igniteItems, resetUtrap, maketrap,
-    deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue,
+    deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue, trapAt,
 } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, mungSpaces } from './hacklib.js';
@@ -390,7 +390,8 @@ import { attachEggHatchTimer } from './timeout.js';
 import { encumber_msg } from './pickup.js';
 import { loseHeroExperience } from './exper.js';
 import { requireGameLevel } from './gstate.js';
-import { applyHeroLocationEffects, burnAwayHeroSlime, nomul } from './hack.js';
+import { applyHeroLocationEffects, nomul } from './hack.js';
+import { burnAwayHeroSlime } from './timeout.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { setHeroGrip } from './mon.js';
 import { holdAnotherObject } from './invent.js';
@@ -3404,7 +3405,7 @@ async function elementalSelfZap(
         monstersForgetHeroResistance(memory, state);
     }
     if (kind === 'fire') {
-        await burnAwayHeroSlime(state, pline);
+        await burnAwayHeroSlime({ state, publish: pline });
         await burnArmorByFire(state.u, state, pline);
         if (state.program_state.gameover) return 0;
     }
@@ -3891,7 +3892,7 @@ export async function zapMapAt(x: number, y: number, source: GameObject, { state
     requirePlayingGame(state);
     let learned = await cancelMagicTrap(x, y, source, state);
     if (state.program_state.gameover) return;
-    const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    const trap = trapAt(state, x, y);
     if ((state.u.dz ?? 0) > 0) await zapEngraving(x, y, source, state);
     else if (!state.u.dz) learned = await zapDrawbridge(x, y, source, state) || learned;
     if (state.program_state.gameover) return;

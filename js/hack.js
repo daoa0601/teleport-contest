@@ -23,12 +23,13 @@ import { removeWornHeroItem, finishDelayedArmorTheft } from './steal.js';
 import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel, applyFloorEffects } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
-import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming, setPropertyTimeout } from './potion.js';
+import { splitHeroMonsterForm, setPropertyTimeout } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrap, trapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt, triggerBoobyTrap, selfTouchPetrifyingWeapons, drown, lava_effects, heroCanLiveUnderwater, finishLiquidDeath, launchRollingBoulder, immune_to_trap, explodeLandMine, into_vs_onto, heroTeetersAtPit, } from './trap.js';
 import { dismountHero, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, riderCannotReachMessage } from './steed.js';
+import { On_stairs } from './stairs.js';
 import { isRoom } from './map_types.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet, armorSimpleName, finishDelayedArmorAction, takeoffSlotObject } from './do_wear.js';
@@ -46,7 +47,7 @@ import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
 import { updateHeroRegions, visibleRegionAt } from './region.js';
 import { requireShopGame } from './shop_types.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt, monsterCanFog } from './monmove.js';
+import { leaveMovementCloud, makeMonsterFlee, heroCanOoze, monsterIsScaredAt, monsterCanFog, closedDoor } from './monmove.js';
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterIsRider, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, monsterDigests, monsterIsFloater, grounded } from './mondata.js';
 import { PM_FIRE_ELEMENTAL, PM_SALAMANDER } from './mklev.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
@@ -169,7 +170,7 @@ async function pushBoulders(sx, sy, dx, dy) {
             await cannotPushMessage(boulder, sx, sy);
             return cannotPush(boulder, sx, sy);
         }
-        const trap = level.traps.find(candidate => candidate.tx === rx && candidate.ty === ry);
+        const trap = trapAt(game, rx, ry);
         const monster = monsterAtPosition(level, rx, ry);
         const costly = !!costlySpot(sx, sy)
             && !!shopResident(roomsAt(level, sx, sy, SHOPBASE)[0]);
@@ -867,14 +868,6 @@ export function heroResistsFire(state) {
     const hero = state.u;
     return !!(hero.fireResistance);
 }
-// Part of C timeout.c:burn_away_slime(): the shared port is in
-// timeout.ts.
-export async function burnAwayHeroSlime(state, publish) {
-    if (!clearHeroSliming(state))
-        return false;
-    await publish('The slime that covers you is burned away!');
-    return true;
-}
 // C youprop.h:Swimming(), mondata.h:is_swimmer(): the hero can
 // move through water.
 export function heroCanSwim(state) {
@@ -1124,7 +1117,7 @@ function testHeroMove(fromX, fromY, x, y, mode, g) {
                 return { passes: false };
         }
     }
-    else if (closedTravelDoor(x, y, g)) {
+    else if (closedDoor(g, x, y)) {
         if (passesWalls || heroCanOoze(g))
             checkDoorEntry = false;
         else {
@@ -1194,13 +1187,6 @@ function testHeroMove(fromX, fromY, x, y, mode, g) {
     }
     return { passes: true };
 }
-// Part of C hacklib.c:dist2(): local squared-distance helper for the
-// travel search (the shared port is dist2() in hacklib.ts).
-function runDist2(x1, y1, x2, y2) {
-    const dx = x1 - x2;
-    const dy = y1 - y2;
-    return dx * dx + dy * dy;
-}
 // C refs: hack.c findtravelpath(TRAVP_TRAVEL), test_move(TEST_TRAV).
 // NetHack searches backwards from the destination, cardinal directions
 // first, and uses the predecessor of the hero as the next travel step.  A
@@ -1210,12 +1196,6 @@ export const TRAVEL_DIRECTIONS = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
     [-1, -1], [1, -1], [1, 1], [-1, 1],
 ];
-// Part of C hack.c:findtravelpath(): the closed- or locked-door delay
-// test.
-function closedTravelDoor(x, y, g) {
-    const location = g.level?.at(x, y);
-    return location?.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED));
-}
 // Part of C hack.c:findtravelpath(): sobj_at(BOULDER, x, y).
 function travelBoulderAt(x, y, g) {
     return !!g.level?.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
@@ -1275,12 +1255,6 @@ function markTravelStep(x, y, g) {
 function travelDistance(x1, y1, x2, y2) {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }
-// Part of C hack.c:findtravelpath(): dist2() over the guessed target.
-function travelDistanceSquared(x1, y1, x2, y2) {
-    const dx = x1 - x2;
-    const dy = y1 - y2;
-    return dx * dx + dy * dy;
-}
 // C hack.c:findtravelpath().  TRAVP_TRAVEL searches backward from the
 // target so the predecessor of the hero is the next step; TRAVP_GUESS
 // limits the forward search to couldsee() squares, then re-enters the
@@ -1339,7 +1313,7 @@ async function findtravelpath(mode, targetX, targetY, g) {
                             const nx = x + dx, ny = y + dy;
                             if (!isok(nx, ny) || searchMode === 'guess' && !couldsee(nx, ny))
                                 continue;
-                            const delayed = !heroPassesWalls(g) && !heroCanOoze(g) && closedTravelDoor(x, y, g)
+                            const delayed = !heroPassesWalls(g) && !heroCanOoze(g) && closedDoor(g, x, y)
                                 || travelBoulderAt(x, y, g) && !heroCouldMoveOntoBoulder(x, y, g)
                                 || await testTravelMove(x, y, nx, ny, 'trap', g);
                             if (delayed && (distance.get(y * COLNO + x) ?? 0) > radius - 3) {
@@ -1393,7 +1367,7 @@ async function findtravelpath(mode, targetX, targetY, g) {
             /* if guessing, find best location in travel matrix and go there */
             let pickX = g.u.ux, pickY = g.u.uy;
             let bestDistance = travelDistance(targetX, targetY, g.u.ux, g.u.uy);
-            let bestSquared = travelDistanceSquared(targetX, targetY, g.u.ux, g.u.uy);
+            let bestSquared = dist2(targetX, targetY, g.u.ux, g.u.uy);
             let bestPath = COLNO * ROWNO;
             for (let x = 1; x < COLNO; x++) {
                 for (let y = 0; y < ROWNO; y++) {
@@ -1401,7 +1375,7 @@ async function findtravelpath(mode, targetX, targetY, g) {
                     if (!path || !couldsee(x, y))
                         continue;
                     const candidateDistance = travelDistance(targetX, targetY, x, y);
-                    const candidateSquared = travelDistanceSquared(targetX, targetY, x, y);
+                    const candidateSquared = dist2(targetX, targetY, x, y);
                     if (candidateDistance < bestDistance
                         || candidateDistance === bestDistance && path < bestPath && candidateSquared < bestSquared) {
                         pickX = x;
@@ -1590,7 +1564,7 @@ export async function lookaroundRun(state = game._runState, g = game) {
                 continue;
             }
             else if (typ === DOOR || hasDoorAppearance(monster)) {
-                const closed = hasDoorAppearance(monster) || !!(loc.doormask & (D_CLOSED | D_LOCKED));
+                const closed = hasDoorAppearance(monster) || closedDoor(g, x, y);
                 if (closed) {
                     if (x !== u.ux && y !== u.uy)
                         continue;
@@ -1665,10 +1639,10 @@ export async function lookaroundRun(state = game._runState, g = game) {
             if (!corridorLike || currentTyp === ROOM)
                 continue;
             if (run === 1 || run === 3 || run === 8) {
-                const distance = runDist2(x, y, targetX, targetY);
+                const distance = dist2(x, y, targetX, targetY);
                 if (distance > 2)
                     continue;
-                if (corrct === 1 && runDist2(x, y, x0, y0) !== 1)
+                if (corrct === 1 && dist2(x, y, x0, y0) !== 1)
                     noturn = true;
                 if (distance < i0) {
                     i0 = distance;
@@ -1825,7 +1799,7 @@ export async function strikeIronBarsWithWeapon(weapon, x, y, state = game) {
 export async function fightSeenWebWithForce(x, y, state = game) {
     if (!state.context.forcefight)
         return false;
-    const trap = state.level?.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    const trap = trapAt(state, x, y);
     if (!trap || trap.ttyp !== WEB || !trap.tseen)
         return false;
     requirePlayingGame(state);
@@ -2092,7 +2066,7 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, tra
     if (!location)
         throw new RangeError(`No landing square at ${newx},${newy}.`);
     const typ = location.typ;
-    let trap = game.level.traps.find(candidate => candidate.tx === newx && candidate.ty === newy);
+    let trap = trapAt(game, newx, newy);
     if (spotDepth && activeSpot && activeSpot.x === newx && activeSpot.y === newy
         && activeSpot.typ === typ
         && (!activeSpot.trap || !trap || activeSpot.trapType === trap.ttyp))
@@ -2505,10 +2479,6 @@ function emptyFloorMessage(location, state) {
         return 'The stairs are solidly affixed.';
     return 'There is nothing here to pick up.';
 }
-// Part of C hack.c:pickup_checks(): the trap under the hero's square.
-function trapAtHero(state) {
-    return state.level?.traps?.find(trap => trap.tx === state.u?.ux && trap.ty === state.u?.uy) || null;
-}
 // Part of C hack.c:pickup_checks(): the cannot-reach-the-floor message.
 function reachMessage(state, trap) {
     if (heroTeetersAtPit(state, trap))
@@ -2582,7 +2552,7 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
             spendsTurn: false,
         };
     }
-    const trap = trapAtHero(state);
+    const trap = trapAt(state, state.u.ux, state.u.uy);
     const unreachable = !heroCanReachFloor(state, {
         checkPit: !!trap && is_pit(trap.ttyp),
     });
@@ -2923,12 +2893,12 @@ export function checkSlipperyIce() {
 // t_at() and trapname() run inside the find; set_msg_xy() marks the trap
 // square from announceRunTrap() below.
 export function knownRunTrap(x, y, state) {
-    return state.level?.traps.find(trap => trap.tx === x && trap.ty === y
-        && trap.tseen && trap.ttyp !== VIBRATING_SQUARE);
+    const trap = trapAt(state, x, y);
+    return trap?.tseen && trap.ttyp !== VIBRATING_SQUARE ? trap : undefined;
 }
 // C hack.c:avoid_moving_on_liquid(): an unsafe liquid transition stops a
 // blind or shift-dir run; known water/lava walking keeps going.
-// is_pool_or_lava() is the isPoolAt||isLavaAt pair; hliquid() and
+// is_pool_or_lava() covers the final liquid test; hliquid() and
 // set_msg_xy() run in announceRunLiquid() below.
 export function runLiquidIsDangerous(x, y, state) {
     const location = state.level?.at(x, y);
@@ -2942,7 +2912,7 @@ export function runLiquidIsDangerous(x, y, state) {
         && (inAir || heroKnowsLavaWalking(state) || (pool && heroKnowsWaterWalking(state)))
         && !liquidWall)
         return false;
-    return !!((pool || lava) && location.seenv);
+    return !!(isPoolOrLavaAt(x, y, state) && location.seenv);
 }
 // Part of C hack.c:avoid_moving_on_trap(): the mention_walls "You stop in
 // front of ..." with set_msg_xy().
@@ -2979,7 +2949,8 @@ export async function confirmHeroStep(x, y, state = game) {
     if (!heroIsBlind(state) && !hallucinating) {
         const entered = visibleRegionAt(state, x, y);
         const exited = visibleRegionAt(state, state.u.ux, state.u.uy);
-        if (entered && (!exited || (entered.damage > 0 && exited.damage === 0))) {
+        if (entered && (!exited || (entered.damage > 0 && exited.damage === 0))
+            && testHeroMove(state.u.ux, state.u.uy, x, y, 'test', state).passes) {
             const verb = locomotion.charAt(0).toUpperCase() + locomotion.slice(1);
             if (!await paranoidQuery(confirm, `${verb} into that ${entered.damage > 0 ? 'poison gas' : 'vapor'} cloud?`, bits)) {
                 cancelStep(state);
@@ -2987,8 +2958,10 @@ export async function confirmHeroStep(x, y, state = game) {
             }
         }
     }
-    const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
-    if (!trap?.tseen || (!hallucinating && immune_to_trap(trap.ttyp, state)))
+    const trap = trapAt(state, x, y);
+    if (!trap?.tseen
+        || !testHeroMove(state.u.ux, state.u.uy, x, y, 'test', state).passes
+        || (!hallucinating && immune_to_trap(trap.ttyp, state)))
         return true;
     const type = hallucinating ? rnd(TRAPNUM - 1) : trap.ttyp;
     const into = into_vs_onto(type);
@@ -3185,10 +3158,10 @@ export async function settlePetHeroDisplacement(monster, state) {
     await revealMonsterAppearance(monster);
     hero.ux = x;
     hero.uy = y;
-    const trap = monster.mtrapped ? state.level.traps.find(candidate => candidate.tx === monster.mx && candidate.ty === monster.my) : undefined;
+    const trap = monster.mtrapped ? trapAt(state, monster.mx, monster.my) : undefined;
     if (!trap)
         monster.mtrapped = 0;
-    const boulder = state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
+    const boulder = !!objectAt(x, y, BOULDER, state);
     /* can't swap places with pet pinned in a pit by a boulder */
     if (trap && is_pit(trap.ttyp) && boulder)
         return false;
@@ -3583,8 +3556,9 @@ async function domoveCore(dx, dy) {
     }
     if (await rootedHeroCannotMove())
         return true;
-    if (testHeroMove(u.ux, u.uy, newx, newy, 'test', game).passes
-        && !await confirmHeroStep(newx, newy))
+    // C domove_core() calls avoid_trap_andor_region() unconditionally under
+    // ParanoidTrap; its own test_move() gates live in confirmHeroStep().
+    if (!await confirmHeroStep(newx, newy))
         return false;
     if (u.utrap) {
         // domove()'s trapmove() + reset_utrap(TRUE) release live in the
@@ -4245,7 +4219,7 @@ function carriedCandelabrum() {
 // C hack.c:invocation_message().
 export async function announceInvocationSquare() {
     if (!isInvocationPosition(game.u?.ux, game.u?.uy)
-        || heroIsOnStairs())
+        || On_stairs(game, game.u?.ux ?? -1, game.u?.uy ?? -1))
         return false;
     stopRun();
     // C invocation_message(): the "beneath ..." position phrase — the
@@ -4270,19 +4244,6 @@ export async function announceInvocationSquare() {
 export function isInvocationPosition(x, y, state = game) {
     return Invocation_lev(state.u?.uz, state)
         && !!state.level?.traps?.some(trap => trap.ttyp === VIBRATING_SQUARE && trap.tx === x && trap.ty === y);
-}
-// Part of C hack.c:invocation_message(): the on-stairs exception.
-export function heroIsOnStairs(state = game) {
-    const x = state.u?.ux, y = state.u?.uy;
-    if (state.level?.upstair?.x === x && state.level.upstair.y === y)
-        return true;
-    if (state.level?.dnstair?.x === x && state.level.dnstair.y === y)
-        return true;
-    for (let stair = state.stairs; stair; stair = stair.next) {
-        if (stair.sx === x && stair.sy === y)
-            return true;
-    }
-    return false;
 }
 // C hack.c:1785-1794.  `violent` marks a kick or throw; a plain drop needs
 // ten times the weight to be noticeable.  The coordinates are the impact

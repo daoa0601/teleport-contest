@@ -2943,4 +2943,8 @@ export async function Finish_digestion(state = game) {
 }
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
+// C eat.c:is_fainted().
+export function heroHasFainted(state = game) {
+    return state.u?.uhs === FAINTED;
+}
 //# sourceMappingURL=eat.js.map

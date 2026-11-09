@@ -5,7 +5,7 @@
 // e_nam()/e_survives_at()/e_missed()/e_jumps()/e_at()/e_died()/do_entity(),
 // close_drawbridge(), open_drawbridge().  invent.c:delallobj() lives in
 // invent.ts.
-import { deleteTrap } from './trap.js';
+import { deleteTrap, trapAt } from './trap.js';
 import { DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_SOUTH, DB_UNDER, DB_WEST, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, ICE, ICED_MOAT, IS_DRAWBRIDGE, IS_WALL, Is_stronghold, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, WATER, W_NONDIGGABLE, STONE, CRUSHING, KILLED_BY_AN, NO_KILLER_PREFIX, IS_WATERWALL } from './const.js';
 import { isok } from './cmd.js';
 import { newsym, canSeeMonster, canSpotMonster } from './display.js';
@@ -166,7 +166,7 @@ export function findDrawbridgeAt(x, y, state = game) {
 // Part of C dbridge.c:open_drawbridge(), close_drawbridge(),
 // destroy_drawbridge(): the t_at()/deltrap() removal.
 function removeTrapAt(x, y, state = game) {
-    const trap = state.level?.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    const trap = trapAt(state, x, y);
     if (trap)
         deleteTrap(trap, state);
 }

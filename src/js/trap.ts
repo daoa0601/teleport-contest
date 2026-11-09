@@ -455,7 +455,7 @@ import {
 import { learnObjectType, observeObject, objectMaterial, objectTypeKnown } from './o_init.js';
 import { recordObjectKnowledge } from './u_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
-import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep } from './timeout.js';
+import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep, burnAwayHeroSlime } from './timeout.js';
 import { LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
 import type { IgniteItemsOptions } from './light.js';
 import { iceDescriptionAt, waterbodyName } from './pager.js';
@@ -709,11 +709,11 @@ import {
     propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill,
     grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty,
 } from './properties.js';
-import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
+import { ordinalSuffix, possessiveName, dist2, distmin, sgn } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { artifactById, defendsWhenCarried, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import {
-    burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
+    loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
     applyHeroLiquidEffects, heroLocomotion, applyHeroLocationEffects, heroCanSwim,
     moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire,
@@ -1099,8 +1099,7 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
     }
     const level = game.level;
     if (!level.traps) level.traps = [];
-    const oldTrap = level.traps.find(candidate =>
-        candidate.tx === x && candidate.ty === y);
+    const oldTrap = trapAt(game, x, y);
     // C reinitializes a destroyable trap in place.  This matters when a Lua
     // random trap lands on a fixed one: t_at() must expose the replacement,
     // not an older duplicate.  Portals and the vibrating square are the two
@@ -1828,8 +1827,6 @@ export function monsterTrapVisibility(monster: Monster, state = game): { inSight
     return { inSight, seeSquare };
 }
 
-// Arrows and darts created by floor traps.
-// C ref: trap.c t_missile().
 
 // C trap.c:t_missile().
 export async function makeTrapMissile(objectType: number, trap: Pick<Trap, 'tx' | 'ty'>): Promise<GameObject> {
@@ -6312,7 +6309,7 @@ async function burnHeroAndPossessions(
     if (!damage) await publish('You are uninjured.');
     else if (await loseHeroHp(damage, 'tower of flame', { publish })) return { died: true };
 
-    await burnAwayHeroSlime(game, publish);
+    await burnAwayHeroSlime({ state: game, publish });
     const torsoChecked = await burnArmorByFire(game.u, game, publish, [], rn2);
     if (torsoChecked || rn2(3) !== 0) {
         const items = await destroyFireInventory(originalDamage, { publish });
@@ -8825,11 +8822,10 @@ export function pitsAreConjoined(first: Trap | null | undefined, second: Trap | 
 }
 
 // Part of C trap.c:conjoined_pits(): the pit offset it derives with sgn()
-// and xytodir(); Math.sign() and the xdir/ydir table lookup are those two
-// callees inlined here.
+// and xytodir(); the xdir/ydir table lookup is that second callee here.
 export function pitDirection(from: Trap, to: Trap) {
-    const dx = Math.sign(to.tx - from.tx);
-    const dy = Math.sign(to.ty - from.ty);
+    const dx = sgn(to.tx - from.tx);
+    const dy = sgn(to.ty - from.ty);
     return xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
 }
 
@@ -8860,14 +8856,14 @@ function adjNonconjoinedPit(adjtrap: Trap | null | undefined, state: GameState =
 }
 
 // C trap.c:uteetering_at_seen_pit().
-export function heroTeetersAtPit(state: GameState, trap: Trap | null): boolean {
+export function heroTeetersAtPit(state: GameState, trap: Trap | null | undefined): boolean {
     return !!trap && is_pit(trap.ttyp) && !!trap.tseen
         && trap.tx === state.u.ux && trap.ty === state.u.uy
         && !(state.u?.utrap && state.u.utraptype === TT_PIT);
 }
 
 // C trap.c:uescaped_shaft().
-export function heroEscapedShaft(trap: Trap | null): boolean {
+export function heroEscapedShaft(trap: Trap | null | undefined): boolean {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
 }
 
@@ -8966,7 +8962,7 @@ export async function lava_effects(options: LavaContext): Promise<EnteredLiquid>
             const damage = rollDice(6, 6);
             // C lava_effects() maps the liquid by touch before its first message.
             if (state === game) await feel_newsym(hero.ux, hero.uy);
-            await burnAwayHeroSlime(state, publish);
+            await burnAwayHeroSlime({ state, publish });
             if (heroLikesLava(state)) {
                 result = { entered: true, moved: false, died: false };
                 break lavaOutcome;
@@ -9253,7 +9249,7 @@ export async function sinkHeroIntoLava({
     hero.utrap -= 1 << 8;
     if (hero.utrap < 1 << 8) {
         await publish('You sink below the surface and die.', { urgent: true });
-        await burnAwayHeroSlime(state, publish);
+        await burnAwayHeroSlime({ state, publish });
         // sink_into_lava() leaves HP intact for done()'s initial status redraw.
         if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
@@ -9287,7 +9283,7 @@ export async function sinkHeroIntoLava({
         if (slimeBurns || state._lastPlineMessage !== message) {
             await publish(message);
         }
-        if (slimeBurns) await burnAwayHeroSlime(state, publish);
+        if (slimeBurns) await burnAwayHeroSlime({ state, publish });
         hero.utrap += rollOne(4);
     }
     return { sank: true, died: false };

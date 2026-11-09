@@ -28,7 +28,7 @@ import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
 import { getLine, showMultiSelectWindow } from './windows.js';
 import { colorName, matchAttributeName, matchColorName, queryAttr, queryColorMenu } from './coloratt.js';
-import { fuzzyMatch, stripChars } from './hacklib.js';
+import { fuzzyMatch, stripChars, sgn } from './hacklib.js';
 import { NO_COLOR, ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from './terminal.js';
 import { classifyStatusTerrain, heroGoldAmount, nearCapacity } from './hack.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
@@ -820,7 +820,7 @@ function isPolymorphedTitleFallback(text) {
 function compare(previous, current) {
     // C sgn(): the direction of the difference.
     if (typeof previous === 'string' && typeof current === 'string')
-        return previous < current ? -1 : previous > current ? 1 : 0;
+        return sgn(previous < current ? -1 : previous > current ? 1 : 0);
     return previous < current ? 1 : previous > current ? -1 : 0;
 }
 // Part of C botl.c:get_hilite(): the fuzzymatch() normalization of

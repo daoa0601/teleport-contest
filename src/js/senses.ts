@@ -9,6 +9,7 @@ import { heroHasInvoluntaryDelay } from './cmd.js';
 import { heroIsUnconscious } from './trap.js';
 import { LENSES } from './object_data.js';
 import { artifactById } from './artifact.js';
+import { heroHasFainted } from './eat.js';
 import { hasIntrinsicProperty, propertyIsActive } from './properties.js';
 
 
@@ -16,7 +17,7 @@ import { hasIntrinsicProperty, propertyIsActive } from './properties.js';
 // using the current involuntary-delay representation.
 export function heroIsUnaware(state = game) {
     return heroHasInvoluntaryDelay(state)
-        && (heroIsUnconscious(state) || state.u?.uhs === FAINTED);
+        && (heroIsUnconscious(state) || heroHasFainted(state));
 }
 
 const EYES_OF_THE_OVERWORLD = 'The Eyes of the Overworld';

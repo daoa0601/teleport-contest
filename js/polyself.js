@@ -44,7 +44,7 @@ import { heroCanSeeInvisible } from './mcastu.js';
 import { breatheInDirection } from './mthrowu.js';
 import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp, hitMonsterWithThrownObject, } from './dothrow.js';
 import { mksobj, placeCreatedObject, adjustObjectLightAfterBlessing as adjustObjectLight } from './mkobj.js';
-import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons, setHeroTrap } from './trap.js';
+import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons, setHeroTrap, trapAt } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
@@ -1814,10 +1814,6 @@ export async function chooseSpiderAbility() {
     const { answer } = await yn_function('Hide [h] or spin a web [s]?', 'hsq', 'q', true, { menuable: true });
     return answer === 'h' ? 'hide' : answer === 's' ? 'spin' : null;
 }
-// Part of C polyself.c:dospinweb(): the trap on the hero's square.
-function trapAtHero(state) {
-    return state.level?.traps?.find(trap => trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
-}
 // Part of C polyself.c:dospinweb(): the On_stairs test.
 function heroIsOnStairway(state) {
     for (let stair = state.stairs; stair; stair = stair.next) {
@@ -1881,7 +1877,7 @@ export async function useHeroWeb({ state = game, publish = plineWithContinuation
         return { used: true, spentTime: false, reason: 'trapped' };
     }
     await exerciseAttribute(A_DEX, true, state);
-    const trap = trapAtHero(state);
+    const trap = trapAt(state, x, y);
     if (trap) {
         if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
             await publish('You spin a web, covering up the pit.');

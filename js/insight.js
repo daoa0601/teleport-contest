@@ -11,7 +11,7 @@
 // mstatusline(), ustatusline().
 import { OBJ_NAME, objectPropertyName } from './object_data.js';
 import { levitationAtWill, propertyTimeout, hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked } from './properties.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { heroIsHallucinating, blindfolded, heroIsBlind, heroIsDeaf, permanentBlind, blindnessBlocked } from './senses.js';
 import { makePlural, withIndefiniteArticle, simpleObjectName, simpleObjectNameWithArticle, simpleObjectTypeName, simpleArmorName } from './objnam.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
@@ -307,7 +307,7 @@ function statusEnlightenmentLines(magic = false, final = 0, killer = '') {
         message(youToo, 'are ', 'were ', 'flying', fromWhat('flying'));
     if (u.uinwater)
         are('underwater');
-    else if (u.waterWalking && !u.levitating && !u.flying && (isPoolAt(u.ux, u.uy) || isLavaAt(u.ux, u.uy)))
+    else if (u.waterWalking && !u.levitating && !u.flying && isPoolOrLavaAt(u.ux, u.uy))
         are(`walking on ${isPoolAt(u.ux, u.uy) ? 'water' : 'lava'}`, fromWhat('waterWalking'));
     if (Upolyd(u) && (u.uundetected || M_AP_TYPE(u) !== M_AP_NOTHING))
         are(heroHidingStatus(game));
@@ -768,7 +768,7 @@ export function attributeEnlightenmentLines(final = 0) {
         else
             message('You ', 'could cling', 'could have clung', ` to the ceiling if ${ceiling ? '' : 'there was one'}${!ceiling && u.uinwater ? ' and ' : ''}${u.uinwater ? underwater ? "you weren't underwater" : "you weren't in the water" : ''}`);
     }
-    const walkingOnWater = !u.uinwater && !u.levitating && !u.flying && (isPoolAt(u.ux, u.uy) || isLavaAt(u.ux, u.uy));
+    const walkingOnWater = !u.uinwater && !u.levitating && !u.flying && isPoolOrLavaAt(u.ux, u.uy);
     if (active('waterWalking') && !walkingOnWater)
         can('walk on water', 'waterWalking');
     if (active('swimming') && (underwater || !u.uinwater))

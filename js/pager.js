@@ -12,7 +12,9 @@ import { makePlural, simpleObjectName, withIndefiniteArticle, singularObjectName
 import { visibleRegionAt } from './region.js';
 import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt, isLavaAt } from './dbridge.js';
 import { surfaceName, In_hell } from './dungeon.js';
-import { trapName } from './trap.js';
+import { trapName, trapAt } from './trap.js';
+import { engravingAt } from './engrave.js';
+import { closedDoor } from './monmove.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings, promptDirection, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
@@ -520,8 +522,8 @@ function placementSuffix(object, x, y, state) {
         return ' embedded in stone';
     if (IS_WALL(location.typ) || location.typ === SDOOR)
         return ' embedded in a wall';
-    if (location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED)))
-        // C closed_door(): a closed or locked door holds the embedded object.
+    // C closed_door(): a closed or locked door holds the embedded object.
+    if (closedDoor(state, x, y))
         return ' embedded in a door';
     if (isPoolAt(x, y, state))
         return ' in water';
@@ -725,7 +727,7 @@ export async function offerMonsterSupplement(monster, name, withoutAsking) {
 // engraving: report its saved text, even when the live inscription has
 // since been scuffed or replaced.
 export function quotedEngraving(x, y, name, force = false) {
-    const engraving = game.level?.engravings?.find(e => e.x === x && e.y === y);
+    const engraving = engravingAt(x, y);
     const headstone = name === 'grave';
     if (!engraving || !force && name !== 'engraving' && !headstone)
         return '';
@@ -1208,9 +1210,9 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
                 if (glyph.kind === 'trap')
                     description = displayedTrapDescription(glyph.trapType, x, y);
                 else {
-                    const trap = level.traps.find(t => t.tx === x && t.ty === y && t.tseen);
+                    const trap = trapAt(game, x, y);
                     // C t_at(): the seen trap on this square.
-                    if (trap && (!(Is_waterlevel(game.u.uz) || Is_airlevel(game.u.uz)) || couldsee(x, y))) {
+                    if (trap?.tseen && (!(Is_waterlevel(game.u.uz) || Is_airlevel(game.u.uz)) || couldsee(x, y))) {
                         description = trapName(trap.ttyp);
                         obscured = true;
                         symbol = transientTrapGlyph(trap).ch;
@@ -1219,7 +1221,7 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
             }
             else {
                 const location = level.at(x, y);
-                const engraving = level.engravings?.find(e => e.x === x && e.y === y);
+                const engraving = engravingAt(x, y);
                 // C engr_at(): the inscription on this square.
                 if (!location?.seenv || !engraving)
                     continue;

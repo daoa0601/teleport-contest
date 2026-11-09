@@ -55,7 +55,8 @@ import { cansee } from './vision.js';
 import { showInventoryWindow } from './windows.js';
 import { heroHasFreeHand } from './engrave.js';
 import { applyScrollEffects } from './read.js';
-import { loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip, exceedsActionCapacity, } from './hack.js';
+import { loseHeroHp, nomul, isInvocationPosition, shouldShowGetposTip, showGetposTip, exceedsActionCapacity, } from './hack.js';
+import { On_stairs } from './stairs.js';
 import { body_part, heroSpecies } from './polyself.js';
 // C spell.c:known_spell()
 export function knownSpell(otyp, state = game) {
@@ -193,7 +194,7 @@ export async function readBookOfDead(book, { state = game } = {}) {
     learnObjectType(book.otyp, state);
     observeObject(book, state);
     book.known = true;
-    if (isInvocationPosition(state.u.ux, state.u.uy, state) && !heroIsOnStairs(state)) {
+    if (isInvocationPosition(state.u.ux, state.u.uy, state) && !On_stairs(state, state.u.ux, state.u.uy)) {
         await invokeBook(book, state);
     }
     else if (book.cursed) {

@@ -1095,7 +1095,7 @@ function shatterCandidate(
     const samuraiKatana = state.urole.key === 'samurai' && weapon.otyp === KATANA
         && !(state.uarms || state.u.uarms);
     if (!isBimanualObject(weapon) && !samuraiKatana) return null;
-    const skill = Math.abs(objectSkill(weapon.otyp) ?? P_NONE);
+    const skill = weaponSkillType(weapon);
     if (skill === P_NONE) return null;
     const proficiency = ensureHeroSkills(state)?.[skill];
     if (!proficiency) throw new Error(`Weapon shattering requires initialized skill ${skill}.`);
@@ -1491,7 +1491,7 @@ export function rollHeroJoust(
     const secondary = state.uswapwep || hero.uswapwep;
     if (weapon !== primary && (weapon !== secondary || !hero.twoweap)) return 0;
     const skills = ensureHeroSkills(state);
-    let rating = skills?.[Math.abs(objectSkill(weapon.otyp))]?.skill ?? P_ISRESTRICTED;
+    let rating = skills?.[weaponSkillType(weapon)]?.skill ?? P_ISRESTRICTED;
     if (hero.twoweap)
         rating = Math.min(rating, skills?.[P_TWO_WEAPON_COMBAT]?.skill ?? P_ISRESTRICTED);
     if (rating === P_ISRESTRICTED) rating = P_UNSKILLED;

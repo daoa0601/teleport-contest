@@ -74,7 +74,7 @@ import {
     WOODEN_HARP, BOULDER,
 } from './object_data.js';
 import { learnObjectType } from './o_init.js';
-import { consumeObjectCharge } from './invent.js';
+import { consumeObjectCharge, objectAt } from './invent.js';
 import {
     definiteObjectAction,
     definiteName, ownedObjectName, simpleObjectName,
@@ -357,9 +357,7 @@ function monsterAt(x: number, y: number) {
 
 // Part of C music.c:do_pit(): sobj_at(BOULDER, x, y) lookup.
 function boulderAt(x: number, y: number) {
-    return game.level?.objects?.[x]?.[y]?.find(
-        object => object.otyp === BOULDER,
-    ) || null;
+    return objectAt(x, y, BOULDER, game);
 }
 
 // Part of C music.c:do_pit(): KADOOM branch, boulder fills the new chasm.

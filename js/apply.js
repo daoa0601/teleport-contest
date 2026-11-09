@@ -11,7 +11,7 @@ import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from '
 import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
 import { armorSimpleName, armorSlotFor, fingersOrGloves, heroHasFreeAction, applyEyewear, removeEyewear, heroHasSlipperyHands, heroIsStrangled, heroHasWaterWalking, } from './do_wear.js';
 import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
-import { currentAttribute } from './attrib.js';
+import { currentAttribute, changeHeroLuck } from './attrib.js';
 import { bot } from './botl.js';
 import { dropBoulderIntoLiquid, dropInventoryObjectAtHero, woundHeroLegs, reviveCorpseImmediately, gotoLevel, objectNoLongerHeld, } from './do.js';
 import { commandResultCancelled, commandResultFailed, commandResultSpentTime, cmdq_add_ec, cmdq_add_key, setMulti, isok, paranoidQuery, confusePromptDirection, promptDirection, } from './cmd.js';
@@ -27,12 +27,13 @@ import { gulp_blnd_check } from './mhitu.js';
 import { paralyzeMonster } from './mhitm.js';
 import { explode } from './explode.js';
 import { makeFamiliar } from './dog.js';
-import { useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse, holdAnotherObject, freeInventoryObject, useUpInventoryStack, consumeInventoryItem, consumeObjectCharge, delobj, inventoryCommandLetter, inventoryItemDescription, chooseInventoryObject, getobj, addInventoryItem, } from './invent.js';
+import { useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse, holdAnotherObject, freeInventoryObject, useUpInventoryStack, consumeInventoryItem, consumeObjectCharge, delobj, inventoryCommandLetter, objectAt, inventoryItemDescription, chooseInventoryObject, getobj, addInventoryItem, } from './invent.js';
 import { bhit, getObjectLocation, releaseHold, zapHeroWithObject, beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, lightDamage, rayPositionIsOpen, flashBurn, objectResistsDestruction, zappable, } from './zap.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu, mNext2u } from './hack.js';
-import { distmin, possessiveName } from './hacklib.js';
+import { heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu, mNext2u } from './hack.js';
+import { On_stairs } from './stairs.js';
+import { distmin, possessiveName, dist2 } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import { setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero, monsterFliesOrFloats, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded, cureHeroSickness, heroIsVomiting, makeHeroVomiting, heroIsSick, heroIsSliming, } from './potion.js';
@@ -42,7 +43,7 @@ import { stumbleOntoMimic } from './uhitm.js';
 import { heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroIsUnderwater, setHeroBlindnessTimeout, } from './senses.js';
 import { heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, heroIsFlying, body_part, mbodypart } from './polyself.js';
 import { heroStatusLine, monsterStatusLine } from './insight.js';
-import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification, resetUtrap, maketrap, activateStatueTrapAt, fireDamageObject, } from './trap.js';
+import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification, resetUtrap, maketrap, activateStatueTrapAt, fireDamageObject, trapAt, } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { stack_object } from './invent.js';
@@ -56,7 +57,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { billDummyObject, mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object, chargeAlteredUnpaidObject, } from './mkobj.js';
 import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsRider, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow, monsterHidesUnder, monsterIsAmorphous, monsterIsEel, monsterIsFlyer, monsterPassesWalls, } from './mondata.js';
 import { wakeAttackedMonster } from './mon.js';
-import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
+import { makeMonsterFlee, isAccessibleAt, closedDoor } from './monmove.js';
 import { AD_BLND, AT_ENGL, AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
@@ -392,7 +393,7 @@ async function diagnoseFloorObjects(x, y) {
         const name = heroIsBlind(game) ? `${x === game.u.ux && y === game.u.uy ? 'This' : 'That'} ${monsterIsHumanoid(species) ? 'person' : 'creature'}`
             : `${monsterHasProperName(species) ? '' : 'The '}${objectMonsterName(object)}`;
         const health = game.urole.key === 'healer'
-            ? game.level.traps.some(trap => trap.tx === x && trap.ty === y && trap.ttyp === STATUE_TRAP) ? 'extraordinary'
+            ? trapAt(game, x, y)?.ttyp === STATUE_TRAP ? 'extraordinary'
                 : object.contents?.length ? 'remarkable' : 'fine' : 'fine';
         await pline(`${name} is in ${health} health for a statue.`);
     }
@@ -520,8 +521,8 @@ async function summonPets(object, state) {
         if (state.program_state.gameover)
             return;
         if (pet.mhp <= 0)
-            state.u.uluck = Math.max(LUCKMIN, (state.u.uluck || 0) - 1);
-        // C attrib.c:change_luck(-1): a summoned pet dying in a trap.
+            // C attrib.c:change_luck(-1): a summoned pet dying in a trap.
+            changeHeroLuck(-1, state);
         if (state._lastPlineKind !== PLNMSG_enum) {
             noticed.trapped++;
             continue;
@@ -1108,7 +1109,7 @@ export async function useBell(object, { state = game } = {}) {
     requireInitializedHero(state.u);
     const ordinary = object.otyp !== BELL_OF_OPENING || !object.spe;
     const invoking = object.otyp === BELL_OF_OPENING
-        && isInvocationPosition(state.u.ux, state.u.uy, state) && !heroIsOnStairs(state);
+        && isInvocationPosition(state.u.ux, state.u.uy, state) && !On_stairs(state, state.u.ux, state.u.uy);
     let wake = false, learn = false;
     let remainingObject = object;
     await plineWithContinuation(`You ring ${bellName(object, state)}.`);
@@ -1304,7 +1305,7 @@ export async function useCandelabrum(object, { state = game } = {}) {
     }
     else
         await plineWithContinuation(`${definiteObjectAction(object, null, state)}'s ${candles} burn${heroIsBlind(state) ? '.' : ' brightly!'}`);
-    if (!isInvocationPosition(state.u.ux, state.u.uy, state) || heroIsOnStairs(state)) {
+    if (!isInvocationPosition(state.u.ux, state.u.uy, state) || On_stairs(state, state.u.ux, state.u.uy)) {
         await plineWithContinuation(`The ${candles} ${object.spe === 1 ? 'is' : 'are'} being rapidly consumed!`);
         object.age = Math.trunc((object.age + 1) / 2);
         if (object.age === 0) {
@@ -1694,7 +1695,7 @@ function jumpResult(spentTime, state) {
 function jumpRestriction(x, y, magic, state) {
     const hero = state.u;
     const dx = x - hero.ux, dy = y - hero.uy;
-    const distance = dx * dx + dy * dy;
+    const distance = dist2(x, y, hero.ux, hero.uy);
     // Permanent intrinsic jumping is the limited knight's move. Timed,
     // form, and equipment sources permit the ordinary physical range.
     const sources = hero._propertySources?.jumping;
@@ -1731,10 +1732,9 @@ function jumpRestriction(x, y, magic, state) {
     const throwsRocks = monsterThrowsRocks(heroSpecies(state));
     for (const point of walkPathCells(hero.ux, hero.uy, x, y)) {
         const location = state.level.requireAt(point.x, point.y);
-        const boulder = (state.level.objects[point.x]?.[point.y] || [])
-            .some(object => object.otyp === BOULDER);
+        const boulder = !!objectAt(point.x, point.y, BOULDER, state);
         if (IS_STWALL(location.typ) || blocksDoor(location)
-            || (location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED)))
+            || closedDoor(state, point.x, point.y)
             || (boulder && !throwsRocks))
             return 'There is an obstacle preventing that jump.';
     }
@@ -2765,7 +2765,7 @@ function trapSettingRefusal() {
         return 'in water';
     if (isLavaAt(hero.ux, hero.uy))
         return 'in lava';
-    if (heroIsOnStairs(game)) {
+    if (On_stairs(game, hero.ux, hero.uy)) {
         for (let stair = game.stairs; stair; stair = stair.next)
             if (stair.sx === hero.ux && stair.sy === hero.uy)
                 return stair.isladder ? 'on the ladder' : 'on the stairs';
@@ -4052,7 +4052,7 @@ async function digWithBrokenWand(wand, x, y, fillMessageShown, state) {
     if (state.program_state.gameover)
         return result;
     while (isPoolAt(x, y, state) || isLavaAt(x, y, state)) {
-        const boulder = state.level.objects[x]?.[y]?.find(object => object.otyp === BOULDER);
+        const boulder = objectAt(x, y, BOULDER, state);
         if (!boulder)
             break;
         unlinkObject(boulder, state);

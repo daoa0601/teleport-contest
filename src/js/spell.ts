@@ -107,9 +107,10 @@ import type { SpellCategory } from './data_types.js';
 import type { Position } from './map_types.js';
 import { applyScrollEffects } from './read.js';
 import {
-    loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip,
+    loseHeroHp, nomul, isInvocationPosition, shouldShowGetposTip, showGetposTip,
     exceedsActionCapacity,
 } from './hack.js';
+import { On_stairs } from './stairs.js';
 import { body_part, heroSpecies } from './polyself.js';
 
 export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: GameState; }
@@ -254,7 +255,7 @@ export async function readBookOfDead(book: GameObject, { state = game }: Spellbo
     learnObjectType(book.otyp, state);
     observeObject(book, state);
     book.known = true;
-    if (isInvocationPosition(state.u.ux, state.u.uy, state) && !heroIsOnStairs(state)) {
+    if (isInvocationPosition(state.u.ux, state.u.uy, state) && !On_stairs(state, state.u.ux, state.u.uy)) {
         await invokeBook(book, state);
     } else if (book.cursed) {
         await raiseDead(state);

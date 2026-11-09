@@ -15,7 +15,7 @@ import { objectDescription as fullObjectDescription, verbForSubject, objectNameI
 import { learnObjectType, observeObject, objectMaterial, objectTypeKnown } from './o_init.js';
 import { recordObjectKnowledge } from './u_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
-import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep } from './timeout.js';
+import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep, burnAwayHeroSlime } from './timeout.js';
 import { LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
 import { iceDescriptionAt, waterbodyName } from './pager.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
@@ -51,9 +51,9 @@ import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment,
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, monsterOccupiesPosition } from './steed.js';
 import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid, applyFloorEffects } from './do.js';
 import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, } from './properties.js';
-import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
+import { ordinalSuffix, possessiveName, dist2, distmin, sgn } from './hacklib.js';
 import { artifactById, defendsWhenCarried, hasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
-import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, maybeHalfPhysicalDamage, } from './hack.js';
+import { loseHeroHp, blocksDiagonalDoor, blocksMove, badRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, finishHeroHelplessness, maybeHalfPhysicalDamage, } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { displayMessageWindow } from './topl.js';
 import { abusePet, tameMonster, makePetWary } from './dog.js';
@@ -405,7 +405,7 @@ export async function maketrap(x, y, typ) {
     const level = game.level;
     if (!level.traps)
         level.traps = [];
-    const oldTrap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    const oldTrap = trapAt(game, x, y);
     // C reinitializes a destroyable trap in place.  This matters when a Lua
     // random trap lands on a fixed one: t_at() must expose the replacement,
     // not an older duplicate.  Portals and the vibrating square are the two
@@ -1035,8 +1035,6 @@ export function monsterTrapVisibility(monster, state = game) {
         || canSeeMonster(monster);
     return { inSight, seeSquare };
 }
-// Arrows and darts created by floor traps.
-// C ref: trap.c t_missile().
 // C trap.c:t_missile().
 export async function makeTrapMissile(objectType, trap) {
     const missile = await mksobj(objectType, true, false);
@@ -4820,7 +4818,7 @@ async function burnHeroAndPossessions(damage, originalDamage, publish) {
         await publish('You are uninjured.');
     else if (await loseHeroHp(damage, 'tower of flame', { publish }))
         return { died: true };
-    await burnAwayHeroSlime(game, publish);
+    await burnAwayHeroSlime({ state: game, publish });
     const torsoChecked = await burnArmorByFire(game.u, game, publish, [], rn2);
     if (torsoChecked || rn2(3) !== 0) {
         const items = await destroyFireInventory(originalDamage, { publish });
@@ -6979,11 +6977,10 @@ export function pitsAreConjoined(first, second) {
         && !!((second.conjoined ?? 0) & (1 << ((direction + 4) % 8)));
 }
 // Part of C trap.c:conjoined_pits(): the pit offset it derives with sgn()
-// and xytodir(); Math.sign() and the xdir/ydir table lookup are those two
-// callees inlined here.
+// and xytodir(); the xdir/ydir table lookup is that second callee here.
 export function pitDirection(from, to) {
-    const dx = Math.sign(to.tx - from.tx);
-    const dy = Math.sign(to.ty - from.ty);
+    const dx = sgn(to.tx - from.tx);
+    const dy = sgn(to.ty - from.ty);
     return xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
 }
 // C trap.c:clear_conjoined_pits().
@@ -7109,7 +7106,7 @@ export async function lava_effects(options) {
             // C lava_effects() maps the liquid by touch before its first message.
             if (state === game)
                 await feel_newsym(hero.ux, hero.uy);
-            await burnAwayHeroSlime(state, publish);
+            await burnAwayHeroSlime({ state, publish });
             if (heroLikesLava(state)) {
                 result = { entered: true, moved: false, died: false };
                 break lavaOutcome;
@@ -7371,7 +7368,7 @@ export async function sinkHeroIntoLava({ state = game, publish = plineWithContin
     hero.utrap -= 1 << 8;
     if (hero.utrap < 1 << 8) {
         await publish('You sink below the surface and die.', { urgent: true });
-        await burnAwayHeroSlime(state, publish);
+        await burnAwayHeroSlime({ state, publish });
         // sink_into_lava() leaves HP intact for done()'s initial status redraw.
         if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
@@ -7406,7 +7403,7 @@ export async function sinkHeroIntoLava({ state = game, publish = plineWithContin
             await publish(message);
         }
         if (slimeBurns)
-            await burnAwayHeroSlime(state, publish);
+            await burnAwayHeroSlime({ state, publish });
         hero.utrap += rollOne(4);
     }
     return { sank: true, died: false };

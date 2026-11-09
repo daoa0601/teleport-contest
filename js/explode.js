@@ -4,14 +4,14 @@
 import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, VENOM_CLASS, RANDOM_CLASS } from './objclass.js';
 import { objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE, } from './object_data.js';
 import { monsterHasMagicResistance } from './mondata.js';
-import { burnArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact } from './trap.js';
+import { burnArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact, trapAt } from './trap.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BURNING, BURNING_OIL, COLNO, DOOR, D_CLOSED, D_LOCKED, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, LARGEST_INT, LOST_EXPLODING, M_AP_MONSTER, M_AP_TYPE, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, SHOPBASE, SINK, STATUE_TRAP, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, ZAP_POS } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, TemporaryMapEffect } from './display.js';
 import { formatHeardMessage, plineWithContinuation, impossible, publishHeardMessage } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { burnAwayHeroSlime, nomul, roomsAt } from './hack.js';
+import { nomul, roomsAt } from './hack.js';
 import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster, finishHeroMonsterKill, } from './mon.js';
 import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
@@ -43,7 +43,7 @@ import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
 import { shouldMulchMissile, breakFloorObject, rangedTargetHitBonus } from './dothrow.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { endObjectBurn } from './timeout.js';
+import { endObjectBurn, burnAwayHeroSlime } from './timeout.js';
 const RAY = 3;
 const resistanceLevels = new Map([
     [WAND_CLASS, 12], [TOOL_CLASS, 10], [WEAPON_CLASS, 10],
@@ -215,7 +215,7 @@ export async function explode(x, y, type, damage, objectClass, style, { state = 
             state._lastPlineKind = PLNMSG_CAUGHT_IN_EXPLOSION;
         }
         if (damageType === AD_FIRE)
-            await burnAwayHeroSlime(state, publish);
+            await burnAwayHeroSlime({ state, publish });
         let heroDamage = source.heroDamage;
         if (propertyIsActive('invulnerable', state)) {
             heroDamage = 0;
@@ -753,8 +753,8 @@ async function hitHero(node, state, options) {
 async function fractureObject(object, x, y, state, options) {
     const boulder = object.otyp === BOULDER;
     if (!boulder) {
-        const statueTrap = state.level?.traps.find(trap => trap.tx === x && trap.ty === y && trap.ttyp === STATUE_TRAP);
-        if (statueTrap)
+        const statueTrap = trapAt(state, x, y);
+        if (statueTrap?.ttyp === STATUE_TRAP)
             deleteTrap(statueTrap, state);
     }
     if (squareIsVisible(state, x, y)) {

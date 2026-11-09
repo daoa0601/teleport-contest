@@ -10,6 +10,7 @@ import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
 import { isRoom } from './map_types.js';
 import type { Rectangle } from './map_types.js';
+import type { GameMap } from './game.js';
 import { impossible } from './pline.js';
 
 export interface CaveMapOptions {
@@ -20,6 +21,13 @@ export interface CaveMapOptions {
     joined?: boolean;
     walled?: boolean;
     icedPools?: boolean;
+}
+
+// C mkmap.c:get_map(): the bounded terrain read the map passes share;
+// out-of-range squares read as the background type.
+function getMap(level: GameMap, x: number, y: number, background: number): number {
+    return x <= 0 || y < 0 || x > COLNO - 2 || y >= ROWNO - 1
+        ? background : level.requireAt(x, y).typ;
 }
 
 // C mkmap.c:init_map().
@@ -69,9 +77,8 @@ export async function mkmap({
         [-1, -1], [-1, 0], [-1, 1], [0, -1],
         [0, 1], [1, -1], [1, 0], [1, 1],
     ] as const;
-    const terrainAt = (x: number, y: number): number => x <= 0 || y < 0
-        || x > width || y >= height
-        ? background : level.requireAt(x, y).typ;
+    const terrainAt = (x: number, y: number): number =>
+        getMap(level, x, y, background);
     const neighborCount = (x: number, y: number): number => dirs.reduce((count, [dx, dy]) =>
         count + Number(terrainAt(x + dx, y + dy) === foreground), 0);
 

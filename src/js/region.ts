@@ -28,6 +28,7 @@ import { monsterName } from './do_name.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { mPoisongasOk } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
+import { dist2 } from './hacklib.js';
 import { heroIsBlind } from './senses.js';
 import { makeBlinded } from './potion.js';
 import { cansee, vision_note_blocker_change, visionCellBlocksLight } from './vision.js';
@@ -517,9 +518,8 @@ async function affectMonsterWithGas(
 ): Promise<RegionEvent | null> {
     if (mPoisongasOk({ monster }, state) === GAS_OK) return null;
 
-    const nearHero = (monster.mx - state.u.ux) ** 2
     // C dist2(): the cough carries eight squares, squared.
-        + (monster.my - state.u.uy) ** 2 < 8;
+    const nearHero = dist2(monster.mx, monster.my, state.u.ux, state.u.uy) < 8;
     const visible = canSeeMonster(monster);
     if ((MONSTER_SOUND[monster.mnum] ?? 0) !== 0) {
         if (cansee(monster.mx, monster.my) || nearHero)

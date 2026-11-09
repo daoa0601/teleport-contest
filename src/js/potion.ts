@@ -1369,9 +1369,6 @@ export async function applyPotionEffect(source: GameObject, { state = game }: Po
     return { result, unknown, nothing, heroDied: !!state.program_state.gameover };
 }
 
-// ---- healup() (C potion.c:1428) ----
-//
-// ---- peffect_levitation() (C potion.c:1165-1223) ----
 
 // C potion.c:healup(). Healing applies to the body currently occupied.
 export async function healHero(amount: number, extraMaximum: number, {

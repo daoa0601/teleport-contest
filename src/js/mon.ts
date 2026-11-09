@@ -47,7 +47,7 @@ import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import type { MonsterRelocation, MonsterAction, MonsterCallLog, MonsterDistressEvent, MonsterMoveCandidate, PublishMonsterMessage, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
 import { beginMonsterDochug, isAccessibleAt, canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject, setMonsterApparentHeroPosition } from './monmove.js';
 import { fightNearbyMonster } from './mhitm.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import {
     ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM,
     ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR,
@@ -175,8 +175,7 @@ import { releaseHeroGrip } from './polyself.js';
 import { makePetWary } from './dog.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
-import { recordObjectEncounter } from './o_init.js';
-import { recordObjectKnowledge } from './u_init.js';
+import { learnObjectType } from './o_init.js';
 import { simpleObjectTypeName } from './objnam.js';
 import { RLOC_NONE, Is_astralevel, Is_waterlevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
@@ -1373,13 +1372,13 @@ export async function attemptMonsterRestrap(
     if (random(3) !== 0 || state.u.ustuck === monster) return false;
     const level = requireGameLevel(state);
     // C t_at(): the trap on this square, if any.
-    const trap = level.traps.find(candidate => candidate.tx === monster.mx && candidate.ty === monster.my);
+    const trap = trapAt(state, monster.mx, monster.my);
     if (monster.mtrapped && trap && !is_pit(trap.ttyp)) return false;
     const mimic = MONSTER_SYMBOL[monster.mnum] === S_MIMIC;
     const ceilingHider = (monsterIsClinger(monster.mnum) && !mimic) || monsterIsFlyer(monster.mnum);
     if (ceilingHider && !levelHasCeiling(state)) return false;
     // C dist2() as the m_next2u() adjacency test.
-    const adjacent = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) <= 1;
+    const adjacent = dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 2;
     if (canSenseMonster(monster) && adjacent) return false;
     if (mimic) {
         if (monster.msleeping || monster.mfrozen) return false;
@@ -2806,8 +2805,6 @@ export async function mnearto(
     return 1;
 }
 
-// ---------------------------------------------------------- shk anger state
-
 // C mon.c:dmonsfree(), called after movement and before saving a level.
 // A dead guard stays linked while its temporary corridor needs cleanup.
 export function purgeDeadMonsters(level: GameMap): void {
@@ -3392,12 +3389,9 @@ export async function lifeSaveMonster(
         await line(
             `${possessiveName(monsterName(monster, { capitalized: true }))} medallion begins to glow!`,
         );
-        const alreadyKnown = game._knownObjectTypes instanceof Set
-            && game._knownObjectTypes.has(amulet.otyp);
-        if (!alreadyKnown) await exerciseAttribute(A_WIS, true);
-        // C discover_object(): the amulet's type becomes known.
-        recordObjectEncounter(amulet.otyp);
-        recordObjectKnowledge(amulet.otyp);
+        // C makeknown(): the amulet's type becomes encountered and known,
+        // with the Wisdom credit discover_object() grants.
+        learnObjectType(amulet.otyp, game);
         if (canSeeMonster(monster)) {
             // C picks the recovery verb from explosion attacks
             // (AT_EXPL or AT_BOOM).
@@ -5104,8 +5098,7 @@ function pickVampireShape(monster: Monster): number {
         // C is_pool_or_lava(): no walking shape that drowns or burns.
         if ((baseMnum === PM_VAMPIRE_LEADER || baseMnum === PM_VLAD_THE_IMPALER)
             && !rn2(wolfChance) && !uppercaseOnly
-            && !isPoolAt(monster.mx, monster.my)
-            && !isLavaAt(monster.mx, monster.my)) {
+            && !isPoolOrLavaAt(monster.mx, monster.my)) {
             targetMnum = PM_WOLF;
         } else {
             targetMnum = !rn2(4) && !uppercaseOnly

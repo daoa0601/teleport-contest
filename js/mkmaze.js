@@ -17,7 +17,7 @@ import { heroIsDeaf } from './senses.js';
 import { plineWithContinuation, impossible } from './pline.js';
 import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { deleteTrap, maketrap } from './trap.js';
+import { deleteTrap, maketrap, trapAt } from './trap.js';
 import { canOverwriteTerrain, cmapSymbolAppearance, newsym } from './display.js';
 import { CLR_BRIGHT_BLUE, CLR_CYAN, CLR_GRAY } from './terminal.js';
 import { CmapSymbol } from './glyph_numbers.js';
@@ -287,7 +287,7 @@ async function putLregionHere(x, y, nlx, nly, nhx, nhy, type, oneshot, destinati
     if (bad_location(x, y, nlx, nly, nhx, nhy) || excludedLregion(type, x, y)) {
         if (!oneshot)
             return false;
-        const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+        const trap = trapAt(game, x, y);
         if (trap && trap.ttyp !== MAGIC_PORTAL && trap.ttyp !== VIBRATING_SQUARE) {
             const monster = monsterAtPosition(level, x, y);
             if (monster)

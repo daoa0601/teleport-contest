@@ -21,7 +21,7 @@ import { putMonsterToSleep, sleptMonst } from './mhitm.js';
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import { BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP, BOULDER, } from './object_data.js';
 import { learnObjectType } from './o_init.js';
-import { consumeObjectCharge } from './invent.js';
+import { consumeObjectCharge, objectAt } from './invent.js';
 import { definiteObjectAction, definiteName, ownedObjectName, simpleObjectName, } from './objnam.js';
 import { askForTune, playTune } from './passtune.js';
 import { heroFormSticks, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
@@ -269,7 +269,7 @@ function monsterAt(x, y) {
 }
 // Part of C music.c:do_pit(): sobj_at(BOULDER, x, y) lookup.
 function boulderAt(x, y) {
-    return game.level?.objects?.[x]?.[y]?.find(object => object.otyp === BOULDER) || null;
+    return objectAt(x, y, BOULDER, game);
 }
 // Part of C music.c:do_pit(): KADOOM branch, boulder fills the new chasm.
 async function fillChasmWithBoulder(x, y, boulder, monster) {
