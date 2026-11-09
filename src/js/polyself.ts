@@ -78,7 +78,7 @@ import {
     hitMonsterWithThrownObject,
 } from './dothrow.js';
 import { mksobj, placeCreatedObject, adjustObjectLightAfterBlessing as adjustObjectLight } from './mkobj.js';
-import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons, setHeroTrap } from './trap.js';
+import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons, setHeroTrap, trapAt } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
@@ -2065,11 +2065,6 @@ export async function chooseSpiderAbility() {
     return answer === 'h' ? 'hide' : answer === 's' ? 'spin' : null;
 }
 
-// Part of C polyself.c:dospinweb(): the trap on the hero's square.
-function trapAtHero(state: GameState) {
-    return state.level?.traps?.find(trap =>
-        trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
-}
 
 // Part of C polyself.c:dospinweb(): the On_stairs test.
 function heroIsOnStairway(state: GameState): boolean {
@@ -2149,7 +2144,7 @@ export async function useHeroWeb({
     }
 
     await exerciseAttribute(A_DEX, true, state);
-    const trap = trapAtHero(state);
+    const trap = trapAt(state, x, y);
     if (trap) {
         if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
             await publish('You spin a web, covering up the pit.');
