@@ -649,6 +649,133 @@ class ExecutorTests(unittest.TestCase):
             params=[('turns', INT)], modules=js_modules,
             pre=lambda s: [s['turns'] >= 0, s['turns'] <= 9])
 
+    def test_array_map_builds_the_mapped_array_from_each_element(self):
+        js_modules = {'js/names.js': (
+            'export const NAMES = ["bat", "giant bat", "vampire bat"];\n'
+            'export const BATS = new Set(NAMES.map(name => NAMES.indexOf(name)));\n'
+            'export function isBat(index) { return BATS.has(index); }\n')}
+        options = dict(
+            modules=js_modules, params=[('index', INT)],
+            pre=lambda s: [s['index'] >= 0, s['index'] <= 2])
+        # map plus Set.has evaluates the real initializer: indices 0..2 are
+        # bats, and a set emptied in the emitted source fails the claim.
+        self.equivalent(
+            'int example(int index) { return 1; }',
+            'import { isBat } from "./names.js";\n'
+            'function example(index) { return isBat(index) ? 1 : 0; }',
+            **options)
+        self.rejected(
+            'int example(int index) { return 1; }',
+            'import { isBat } from "./names.js";\n'
+            'function example(index) { return isBat(index) ? 1 : 0; }',
+            reason='outputs differ', modules={
+                'js/names.js': (
+                    'export const NAMES = ["bat", "giant bat", "vampire bat"];\n'
+                    'export const BATS = new Set(NAMES.map(name => -1));\n'
+                    'export function isBat(index) { return BATS.has(index); }\n')},
+            params=[('index', INT)], pre=lambda s: [s['index'] >= 0, s['index'] <= 2])
+        # A callback that branches per element has no single modeled array.
+        self.rejected(
+            'int example(int x) { return x; }',
+            'function example(x) { return [1, 2].map(v => v > x ? v : 0)[1]; }',
+            reason='Array.map callback', params=[('x', INT)])
+
+    def test_parameter_default_cannot_read_its_own_parameter(self):
+        """A parameter's default runs while the parameter is in its temporal
+        dead zone: `(x = x) => x` throws ReferenceError in JavaScript. The
+        executor used to evaluate the default in the caller's scope, so with
+        an outer x = 7 the mapped value wrongly proved equivalent to C's 7."""
+        options = dict(reason='temporal dead zone')
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    const x = 7;\n'
+            '    return [undefined].map((x = x) => x)[0];\n'
+            '}', **options)
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() { return pick(undefined); }\n'
+            'function pick(v = v + 1) { return v; }\n', **options)
+        # Defaults reading genuinely outer bindings stay legal JavaScript.
+        self.equivalent(
+            'int example(int y) { return y; }',
+            'function example(y) {\n'
+            '    return [undefined].map((x = y) => x)[0];\n'
+            '}', params=[('y', INT)])
+        self.equivalent(
+            'int example(void) { return 5; }',
+            'function example() {\n'
+            '    return [undefined].map((x = 5) => x)[0];\n'
+            '}')
+
+    def test_parameter_default_shorthand_cannot_read_its_own_parameter(self):
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    const x = 7;\n'
+            '    return [undefined].map((x = {x}) => x.x)[0];\n'
+            '}', reason='temporal dead zone')
+        # Shorthand reads of initialized outer bindings remain valid.
+        self.equivalent(
+            'int example(int y) { return y; }',
+            'function example(y) {\n'
+            '    return [undefined].map((x = {y}) => x.y)[0];\n'
+            '}', params=[('y', INT)])
+        # An explicit property key is not a read of the parameter.
+        self.equivalent(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    return [undefined].map((x = {x: 7}) => x.x)[0];\n'
+            '}')
+
+    def test_parameter_default_cannot_read_a_later_same_list_binding(self):
+        """A non-simple parameter list declares every binding up front:
+        while a default runs, its own parameter and every later one are in
+        the temporal dead zone, and the list shadows outer variables. The
+        executor used to bind left-to-right and resolve such reads to an
+        outer variable, so this program proved equivalent to C's 7 while
+        Node throws ReferenceError."""
+        options = dict(reason='temporal dead zone')
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    const b = 7;\n'
+            '    return [[]].map(([a = b, b = 1]) => a)[0];\n'
+            '}', **options)
+        # A function declaration's parameter list resolves the same read to
+        # module scope instead of throwing.
+        self.rejected(
+            'int example(void) { return 7; }',
+            'const b = 7;\n'
+            'function pick([a = b, b = 1]) { return a; }\n'
+            'function example() { return pick([]); }\n', **options)
+        # A destructuring declaration reads module scope the same way.
+        self.rejected(
+            'int example(void) { return 7; }',
+            'const b = 7;\n'
+            'function example() {\n'
+            '    const row = [];\n'
+            '    const [a = b, b = 1] = row;\n'
+            '    return a;\n'
+            '}\n', **options)
+        # reduce() threads the accumulator as a defaulted parameter.
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    const t = 7;\n'
+            '    return [1].reduce((acc = t, t = 2) => acc, undefined);\n'
+            '}\n', **options)
+        # Defaults reading earlier same-list bindings stay legal JavaScript.
+        self.equivalent(
+            'int example(void) { return 1; }',
+            'function example() {\n'
+            '    return [[1]].map(([a, b = a]) => b)[0];\n'
+            '}')
+        self.equivalent(
+            'int example(void) { return 3; }',
+            'function pick(a = 3, b = a) { return b; }\n'
+            'function example() { return pick(); }\n')
+
     def test_callback_parameters_do_not_overwrite_enclosing_bindings(self):
         self.equivalent(
             'int example(int x) { return x; }',
@@ -1766,6 +1893,67 @@ class ExecutorTests(unittest.TestCase):
         self.rejected(c, js, reason='do not cover the input domain',
                       params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
                       loops=bad_loops)
+
+    def test_source_level_draw_bound_after_loop_still_covers(self):
+        """A bound the source itself puts on a local-position draw.
+
+        Stripping a draw's legality bounds is syntactic: a comparison the
+        program makes against 2**64-1 (always true for a legal draw) is not
+        one of the stripped forms, so it stayed in the clause. The coverage
+        witness then chose an out-of-domain R_core, falsified that conjunct
+        for every local, and reported this equivalent pair as uncovered
+        (R_core[0..2] = 2**64,... in the model). A guard implication cannot
+        fix this (the witness keeps an illegal stream function and vacates
+        it), so the stream's legality now enters the coverage query as an
+        axiom over the stream function itself.
+        """
+        c = ('extern unsigned long long isaac64_next_uint64(void *);\n'
+             'struct { long rng_state; } rnglist[1];\n'
+             'int example(int x) {\n'
+             '    int i = 0;\n'
+             '    while (i < x) { i = i + 1; }\n'
+             '    if (x == 0) return 7;\n'
+             '    unsigned long long v = isaac64_next_uint64(&rnglist[0].rng_state);\n'
+             '    if (v <= 18446744073709551615ull) return 7;\n'
+             '    return 7;\n'
+             '}')
+        js = ('function example(x) {\n'
+              '    let i = 0;\n'
+              '    while (i < x) { i = i + 1; }\n'
+              '    if (x === 0) return 7;\n'
+              '    const v = isaac64_next_uint64(game.coreCtx);\n'
+              '    if (v <= 18446744073709551615n) return 7;\n'
+              '    return 7;\n'
+              '}')
+
+        def invariant(view, entry, pos, pos0):
+            del pos0
+            return [z3.And(view['i'] >= 0, view['i'] <= entry['x']), pos['core'] == 0]
+
+        loops = {(side, 'example', 0): LoopSpec(
+            invariant, lambda view, entry: entry['x'] - view['i'], streams=('core',))
+            for side in ('c', 'js')}
+        self.equivalent(c, js, params=[('x', INT)],
+                        pre=lambda s: [s['x'] >= 0, s['x'] <= 5], loops=loops)
+
+        # The stream axiom must not hide a real hole: with the draw
+        # condition in the clause, dropping an input branch (x == 0) must
+        # still leave the claim unproved.
+        real_branch = core.Machine.branch
+
+        def dropping_input_branch(self, path, cond):
+            out = real_branch(self, path, cond)
+            if self.side == 'c' and z3.eq(z3.simplify(cond), z3.IntVal(0) == z3.Int('x')):
+                return [pair for pair in out if not pair[1]]
+            return out
+
+        core.Machine.branch = dropping_input_branch
+        try:
+            self.rejected(c, js, reason='do not cover the input domain',
+                          params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 5],
+                          loops=loops)
+        finally:
+            core.Machine.branch = real_branch
 
     def test_coalesced_draw_branches_still_cover(self):
         """Coverage must also strip draw bounds nested under Or.
