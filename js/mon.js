@@ -11,7 +11,7 @@ import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibilit
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { beginMonsterDochug, isAccessibleAt, canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject, setMonsterApparentHeroPosition } from './monmove.js';
 import { fightNearbyMonster } from './mhitm.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE, IN_SIGHT, MMOVE_DIED, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, STOMACH, LL_ACHIEVE, LL_KILLEDPET, LL_UMONST, } from './const.js';
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
@@ -95,8 +95,7 @@ import { releaseHeroGrip } from './polyself.js';
 import { makePetWary } from './dog.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
-import { recordObjectEncounter } from './o_init.js';
-import { recordObjectKnowledge } from './u_init.js';
+import { learnObjectType } from './o_init.js';
 import { simpleObjectTypeName } from './objnam.js';
 import { RLOC_NONE, Is_astralevel, Is_waterlevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
@@ -1145,7 +1144,7 @@ export async function attemptMonsterRestrap(monster, state = game, { random = rn
         return false;
     const level = requireGameLevel(state);
     // C t_at(): the trap on this square, if any.
-    const trap = level.traps.find(candidate => candidate.tx === monster.mx && candidate.ty === monster.my);
+    const trap = trapAt(state, monster.mx, monster.my);
     if (monster.mtrapped && trap && !is_pit(trap.ttyp))
         return false;
     const mimic = MONSTER_SYMBOL[monster.mnum] === S_MIMIC;
@@ -1153,7 +1152,7 @@ export async function attemptMonsterRestrap(monster, state = game, { random = rn
     if (ceilingHider && !levelHasCeiling(state))
         return false;
     // C dist2() as the m_next2u() adjacency test.
-    const adjacent = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) <= 1;
+    const adjacent = dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 2;
     if (canSenseMonster(monster) && adjacent)
         return false;
     if (mimic) {
@@ -2480,7 +2479,6 @@ export async function mnearto(monster, x, y, state, { moveOther = false, flags =
     }
     return 1;
 }
-// ---------------------------------------------------------- shk anger state
 // C mon.c:dmonsfree(), called after movement and before saving a level.
 // A dead guard stays linked while its temporary corridor needs cleanup.
 export function purgeDeadMonsters(level) {
@@ -2888,13 +2886,9 @@ export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCur
     if (visible) {
         await continueLine('But wait...');
         await line(`${possessiveName(monsterName(monster, { capitalized: true }))} medallion begins to glow!`);
-        const alreadyKnown = game._knownObjectTypes instanceof Set
-            && game._knownObjectTypes.has(amulet.otyp);
-        if (!alreadyKnown)
-            await exerciseAttribute(A_WIS, true);
-        // C discover_object(): the amulet's type becomes known.
-        recordObjectEncounter(amulet.otyp);
-        recordObjectKnowledge(amulet.otyp);
+        // C makeknown(): the amulet's type becomes encountered and known,
+        // with the Wisdom credit discover_object() grants.
+        learnObjectType(amulet.otyp, game);
         if (canSeeMonster(monster)) {
             // C picks the recovery verb from explosion attacks
             // (AT_EXPL or AT_BOOM).
@@ -4332,8 +4326,7 @@ function pickVampireShape(monster) {
         // C is_pool_or_lava(): no walking shape that drowns or burns.
         if ((baseMnum === PM_VAMPIRE_LEADER || baseMnum === PM_VLAD_THE_IMPALER)
             && !rn2(wolfChance) && !uppercaseOnly
-            && !isPoolAt(monster.mx, monster.my)
-            && !isLavaAt(monster.mx, monster.my)) {
+            && !isPoolOrLavaAt(monster.mx, monster.my)) {
             targetMnum = PM_WOLF;
         }
         else {
