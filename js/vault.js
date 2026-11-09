@@ -31,7 +31,7 @@ import { angerMonster, removeMonsterFromGame, sendMonsterToLimbo, moveMonsterNex
 import { releaseMonsterInventory } from './steal.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
-import { deleteTrap } from './trap.js';
+import { deleteTrap, trapAt } from './trap.js';
 import { publishMonsterYelp } from './sounds.js';
 import { heroFormSticks } from './polyself.js';
 import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object } from './mkobj.js';
@@ -405,7 +405,7 @@ export async function clearVaultCorridor(guard, force = false, state = game) {
         location.typ = point.typ;
         setVaultTerrainFlags(location, point.flags);
         if (IS_STWALL(location.typ)) {
-            const trap = level.traps.find((candidate) => candidate.tx === point.x && candidate.ty === point.y);
+            const trap = trapAt(state, point.x, point.y);
             if (trap)
                 deleteTrap(trap, state);
             if (location.typ === STONE)
@@ -955,7 +955,7 @@ export async function wallifyVault(guard, state, random = rn2) {
             for (const rock of [...pile])
                 if (rock.otyp === ROCK || rock.otyp === BOULDER)
                     await deleteObject(rock, state);
-            const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
+            const trap = trapAt(state, x, y);
             if (trap)
                 deleteTrap(trap, state);
             cell.typ = x === left ? y === top ? TLCORNER : y === bottom ? BLCORNER : VWALL

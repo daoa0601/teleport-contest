@@ -14,7 +14,7 @@ import { addInventoryItem } from './invent.js';
 import { finishHeroDeath } from './end.js';
 import { dist2, distmin } from './hacklib.js';
 import { within_bounded_area } from './rect.js';
-import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious } from './trap.js';
+import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious, trapAt } from './trap.js';
 import { Is_botlevel, levelAtDepth, levelDepthByName, insideWizardTower, levelIsWizardTower, printDungeon, specialDisplayName, surfaceName, In_quest, In_mines, sameDungeonLevel } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { bot } from './botl.js';
@@ -410,7 +410,7 @@ function trapAllowedAtDestination(state, trap, allowTrap) {
 export function heroTeleportDestinationOk(x, y, { state = game, allowTrap = false } = {}) {
     if (!isok(x, y))
         return false;
-    const trap = requireGameLevel(state).traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    const trap = trapAt(state, x, y);
     if (!trapAllowedAtDestination(state, trap, allowTrap))
         return false;
     if (!goodPosition(x, y, { kind: 'hero' }, { state }))
@@ -558,7 +558,9 @@ export async function teleportHeroAtWill({ state = game, random = rn2, rollOne =
     requirePlayingGame(state);
     const hero = state.u;
     const old = { x: hero.ux, y: hero.uy, ...hero.uz };
-    let trap = state.level.traps.find(candidate => candidate.tx === hero.ux && candidate.ty === hero.uy && candidate.tseen);
+    let trap = trapAt(state, hero.ux, hero.uy);
+    if (trap && !trap.tseen)
+        trap = undefined;
     if (trap?.ttyp === LEVEL_TELEP) {
         if (await promptYesNo('There is a level teleporter here. Trigger it?') === 'y') {
             await triggerLevelTeleportTrap(trap, gotoLevel, true);
