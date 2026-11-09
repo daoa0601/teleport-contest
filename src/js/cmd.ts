@@ -16,7 +16,7 @@ import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from 
 import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';
 import { doclose, doopen, continuePicking, continueForceLock, doforce, maybeResetPick, resetPick } from './lock.js';
-import { moveIntoFailedUntrap, doUntrap, resetUtrap } from './trap.js';
+import { moveIntoFailedUntrap, doUntrap, resetUtrap, trapAt } from './trap.js';
 import { askTeleportDestination, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import type { InventoryAction } from './invent.js';
@@ -1160,7 +1160,7 @@ async function selfEntries(add: AddEntry, x: number, y: number): Promise<void> {
     add('search', 'Search around you');
     add('look', 'Look at what is here');
     if (game.spells.length) add('cast', 'Cast a spell');
-    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    const trap = trapAt(game, x, y);
     if (trap?.tseen && trap.ttyp !== VIBRATING_SQUARE) add('untrap-here', 'Attempt to disarm trap');
 }
 
