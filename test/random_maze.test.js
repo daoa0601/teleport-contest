@@ -12,7 +12,8 @@ import { BOULDER, GOLD_PIECE } from '../js/object_data.js';
 import { addTrap, floorObjects, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { heroIsOnStairs, isInvocationPosition } from '../js/hack.js';
+import { On_stairs } from '../js/stairs.js';
+import { isInvocationPosition } from '../js/hack.js';
 function prepareMaze({ seed = 173, depth = 24, hell = false } = {}) {
     freshSpecialLevel({ prototype: 'random-maze', seed, depth });
     game._activeSpecialLevel = null;
@@ -206,7 +207,7 @@ void test('an invocation maze has a distant square instead of a down stair', asy
     assert.equal(isInvocationPosition(firstStair.sx, firstStair.sy), false);
     game.u.ux = square.tx;
     game.u.uy = square.ty;
-    assert.equal(heroIsOnStairs(), false);
+    assert.equal(On_stairs(game, game.u.ux, game.u.uy), false);
     game.u.uz = { dnum: 0, dlevel: 28 };
     assert.ok(square != null);
     assert.equal(isInvocationPosition(square.tx, square.ty), false);
