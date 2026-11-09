@@ -239,3 +239,12 @@ is_pool	isPoolAt
 is_pool_or_lava	isPoolOrLavaAt
 water_damage_chain	damageWaterChain
 readobjnam_postparse1	parseWishText
+welded	isWeldedPrimary
+Boots_off	removeHeroArmor
+Gloves_off	removeHeroArmor
+thitu	hitHeroWithObject
+thitu	hitHeroWithProjectile
+make_sick	cureHeroSickness
+make_sick	cureHeroSicknessWithMessages
+done	finishHeroDeath
+done	finishHeroDeathAfterMonsterMessage
