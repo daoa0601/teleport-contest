@@ -133,11 +133,10 @@ const FIRST_REAL_GEM = OBJECT_NAMES.indexOf('dilithium crystal');
 // Part of C shk.c:inside_shop(): a room boundary is not merchandise floor
 // space.
 export function insideShopRoomAt(state: GameState, x: number, y: number): ShopRoom | null {
-    const location = state.level?.at?.(x, y);
-    const roomno = location?.roomno ?? 0;
-    if (roomno < ROOMOFFSET || location?.edge) return null;
+    const roomno = insideShop(state, x, y);
+    if (roomno === null) return null;
     const room = roomForRoomno(state.level, roomno);
-    return room && room.rtype >= SHOPBASE ? { room, roomno } : null;
+    return room ? { room, roomno } : null;
 }
 
 // Part of C shk.c:costly_spot(), shkcatch(): the first in_rooms shop at a
@@ -188,9 +187,8 @@ function shopkeeperForRoom(roomno: number | undefined, state: GameState = game):
     return resident && shopkeeperInOwnShop(resident, state) ? resident : null;
 }
 
-// Part of C shk.c:shop_keeper() (the citation owner is shopKeeper() below):
-// the assigned resident may be outside the shop, and looking up an angry
-// keeper also applies the bill surcharge.
+// C shk.c:shop_keeper(): the assigned resident may be outside the shop,
+// and looking up an angry keeper also applies the bill surcharge.
 export function shopResident(roomno: number | undefined, state: GameState = game): Shopkeeper | null {
     if (roomno === undefined) return null;
     const keeper = roomForRoomno(state.level, roomno)?.resident;
@@ -1228,9 +1226,8 @@ function damageRecords(state: ShopGameState): ShopDamage[] {
     return state.level.damagelist;
 }
 
-// C shk.c:shop_keeper()
-// The registered resident of a shop room, regardless of where that
-// resident currently stands.
+// Part of C shk.c:shop_keeper() (the citation owner is shopResident()
+// above): the live-keeper read that does not disturb an angry resident.
 function shopKeeper(state: ShopGameState, roomno: number): Shopkeeper | null {
     const resident = roomForRoomno(state.level, roomno)?.resident;
     return hasShopkeeperData(resident) && resident.isshk && !resident.dead
@@ -1239,7 +1236,7 @@ function shopKeeper(state: ShopGameState, roomno: number): Shopkeeper | null {
 
 // C shk.c:inside_shop()
 // Strictly inside shop walls, boundary excluded.
-function insideShop(state: ShopGameState, x: number, y: number): number | null {
+function insideShop(state: GameState, x: number, y: number): number | null {
     const location = state.level?.at?.(x, y);
     const roomno = location?.roomno ?? 0;
     if (!location || roomno < ROOMOFFSET || location.edge) return null;
@@ -1289,12 +1286,38 @@ function onBillOf(object: GameObject, keeper: Shopkeeper | null): boolean {
         entry => entry.bo_id === object.o_id);
 }
 
+// C shk.c:find_oid(): the object-list search by o_id.  C walks invent,
+// fobj, the buried list, migrating objects, then every monster inventory;
+// callers pass that search domain as the port's timer graph
+// (objectsInTimerGraph()), walked once.
+function findObjectId(oId: number, objects: readonly GameObject[]): GameObject | null {
+    return objects.find(object => object.o_id === oId) ?? null;
+}
+
+// C shk.c:bp_to_obj(): a bill entry's object by o_id — a used-up entry
+// sits on gb.billobjs, the rest on any list find_oid() walks.
+function bpToObj(entry: ShopBillEntry, state: GameState = game): GameObject | null {
+    return entry.useup
+        ? findObjectId(entry.bo_id, state.billObjects ?? [])
+        : findObjectId(entry.bo_id, objectsInTimerGraph(state));
+}
+// Part of C shk.c:setpaid(), shk.c:hot_pursuit(): fobj as the flat pile
+// list clear_no_charge() walks.
+function floorObjectList(state: GameState): readonly GameObject[] {
+    return (state.level?.objects ?? []).flat(2).filter((object): object is GameObject => !!object);
+}
+
+// C shk.c:clear_no_charge(): the list walk that clears no_charge on
+// every object and its contents.
+function clearNoCharge(keeper: Shopkeeper | null, list: readonly GameObject[], state: GameState): void {
+    for (const object of list) clearNoChargeObject(keeper, object, state);
+}
+
 // C shk.c:clear_no_charge_obj().
 function clearNoChargeObject(
     keeper: Shopkeeper | null, object: GameObject, state: GameState,
 ): void {
-    for (const content of object.contents || [])
-        clearNoChargeObject(keeper, content, state);
+    if (object.contents?.length) clearNoCharge(keeper, object.contents, state);
     if (!object.no_charge) return;
 
     const location = ['floor', 'contained', 'buried'].includes(object.where)
@@ -1341,15 +1364,8 @@ export function setPaidShopkeeper(keeper: Shopkeeper | null, state: GameState = 
     }
 
     // Clear no_charge for everything in this keeper's shop.
-    for (const column of state.level?.objects || []) {
-        for (const pile of column || []) {
-            for (const object of pile || [])
-                clearNoChargeObject(keeper, object, state);
-        }
-    }
-
-    for (const object of state.level?.buriedObjects || [])
-        clearNoChargeObject(keeper, object, state);
+    clearNoCharge(keeper, floorObjectList(state), state);
+    clearNoCharge(keeper, state.level?.buriedObjects ?? [], state);
 
     // C gb.billobjs is global, even when only one keeper's debt is settled.
     // Raw deallocation must not retain these identities on the bill again.
@@ -1509,16 +1525,11 @@ export function hotPursuitShopkeeper(
 
     // Shopkeeper networking: clear no_charge on every floor object of the
     // level, plus pet-carried objects except rival-shop merchandise.
-    for (const column of state.level?.objects || []) {
-        for (const pile of column || []) {
-            for (const object of pile || [])
-                clearNoChargeObject(null, object, state);
-        }
-    }
+    clearNoCharge(null, floorObjectList(state), state);
+    // C shk.c:clear_no_charge_pets(): each pet's inventory.
     for (const pet of state.level?.monsters || []) {
         if (!pet.mtame) continue;
-        for (const object of pet.minvent || [])
-            clearNoChargeObject(monster, object, state);
+        clearNoCharge(monster, pet.minvent ?? [], state);
     }
 }
 
@@ -2652,20 +2663,6 @@ function completeShopSettlement(keeper: Shopkeeper, taken: boolean): boolean {
     return taken;
 }
 
-// C shk.c:find_oid(): the object-list search by o_id.  C walks invent,
-// fobj, the buried list, migrating objects, then every monster inventory;
-// callers pass that search domain as the port's timer graph
-// (objectsInTimerGraph()), walked once.
-function findObjectId(oId: number, objects: readonly GameObject[]): GameObject | null {
-    return objects.find(object => object.o_id === oId) ?? null;
-}
-
-// C shk.c:bp_to_obj(): find a bill entry's object by o_id — used-up entries
-// sit on the bill list, the rest on any list find_oid() walks, so the merged
-// scan below covers both arms.
-function bpToObj(entry: ShopBillEntry, objects: readonly GameObject[]): GameObject | null {
-    return findObjectId(entry.bo_id, objects);
-}
 
 // Part of C shk.c:set_repo_loc(), finish_paybill(): the u.ux/ux0
 // repository position.
@@ -3252,8 +3249,7 @@ export async function itemizedShopBill(resident: Monster | null | undefined, sta
     const objects = objectsInTimerGraph(state);
     const bill: ShopBillItem[] = [];
     for (const [billIndex, entry] of resident.eshk.bill.entries()) {
-        const object = (entry.useup ? state.billObjects ?? [] : objects)
-            .find(candidate => candidate.o_id === entry.bo_id);
+        const object = bpToObj(entry, state);
         if (!object) continue;
         if (object.where === 'onbill' || object.quan === 0) {
             bill.push({ object, kind: 'used', quantity: entry.bquan,
@@ -3504,7 +3500,7 @@ function containedPurchases(resident: BilledShopkeeper, container: GameObject, s
     const objects = objectsInTimerGraph(state);
     const purchases: GameObject[] = [];
     for (const entry of resident.eshk.bill) {
-        const object = findObjectId(entry.bo_id, objects);
+        const object = bpToObj(entry, state);
         if (object && object !== container && outermostContainer(object) === container)
             purchases.push(object);
     }
@@ -4460,7 +4456,7 @@ export function doinvbill(mode: 0 | 1): BillLine[] | Promise<void> {
     const objects = [...objectsInTimerGraph(), ...game.billObjects ?? []];
     const lines: BillLine[] = [];
     for (const entry of keeper.eshk.bill ?? []) {
-        const object = bpToObj(entry, objects);
+        const object = bpToObj(entry);
         if (object && (entry.useup || object.quan < entry.bquan)) {
             const quantity = entry.useup ? entry.bquan : entry.bquan - object.quan;
             lines.push({ object, quantity, price: quantity * entry.price });
