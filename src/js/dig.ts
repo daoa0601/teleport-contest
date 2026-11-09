@@ -69,7 +69,7 @@ import { CLR_WHITE } from './terminal.js';
 import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { cansee, monsterHasLineOfSightToHero, unblock_point, vision_note_blocker_change } from './vision.js';
 import { heroAttackBonus, heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero, unwieldMonsterWeapon } from './weapon.js';
-import { willWeld } from './wield.js';
+import { isWeldedPrimary } from './wield.js';
 import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './zap.js';
 import { captureRayTraversalFrame } from './zap.js';
@@ -438,7 +438,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
     if (hero.fumbling && !rn2(3)) {
         switch (rn2(3)) {
         case 0:
-            if (!willWeld(uwep)) {
+            if (!isWeldedPrimary(uwep, state)) {
                 await pline(
                     `You fumble and drop ${
                         ownedObjectName(uwep, state, { capitalized: false })
@@ -447,7 +447,6 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
                 await dropInventoryObjectAtHero(uwep, { state });
             } else {
                 // welded() identifies a curse when the hero cannot let go.
-                uwep.bknown = true;
                 const plural = (uwep.quan ?? uwep.quantity ?? 1) > 1;
                 const bounced = ownedObjectAction(uwep, 'bounce', state);
                 if (hero.usteed) {
@@ -761,9 +760,9 @@ export function digCheck(madeBy: DiggingActor, x: number, y: number, state: Game
     // C tests On_stairs(x, y), i.e. the stairway structure, not levl.typ:
     // a debug terrain wish can overwrite the displayed terrain while the
     // stairway itself remains, and digging must still refuse there.
-    const stair = stairwayAt(state, x, y);
-    if (stair) {
-        return stair.isladder ? DIGCHECK_FAIL_ONLADDER : DIGCHECK_FAIL_ONSTAIRS;
+    if (On_stairs(state, x, y)) {
+        const stair = stairwayAt(state, x, y);
+        return stair?.isladder ? DIGCHECK_FAIL_ONLADDER : DIGCHECK_FAIL_ONSTAIRS;
     } else if (IS_THRONE(location.typ) && madeBy !== 'object') {
         return DIGCHECK_FAIL_THRONE;
     } else if (IS_ALTAR(location.typ)
@@ -2022,7 +2021,6 @@ export async function wizBury(): Promise<void> {
     game.context.move = 0;
 }
 
-// ── moved from src/js/trap.ts ──
 
 // C dig.c:buried_ball_to_freedom(). The ball stays where it was buried,
 // which may be beside the hero rather than directly underneath them.
