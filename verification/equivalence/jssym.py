@@ -371,10 +371,9 @@ class JSExec:
             target = node.child_by_field_name('left')
             if value.kind != 'undef':
                 return self._parameter(path, target, value)
-            out = []
-            for p, v in self.eval(path, node.child_by_field_name('right')):
-                out.extend(self._parameter(p, target, v))
-            return out
+            if target.type != 'identifier':
+                raise Unsupported('JavaScript parameter pattern default')
+            return self._bind_default(path, target.text.decode(), node)
         if node.type == 'object_pattern' and value.kind == 'record':
             paths = [path]
             for field in node.named_children:
@@ -400,8 +399,21 @@ class JSExec:
         raise Unsupported('JavaScript parameter pattern')
 
     def _bind_default(self, path, name, field):
+        """Bind one parameter's default value. The initializer runs in a
+        scope where the parameter itself is already declared but
+        uninitialized (ECMAScript temporal dead zone): a default that reads
+        the parameter it initializes throws ReferenceError in JavaScript.
+        Reject those instead of letting the read resolve to a shadowed
+        caller binding, which would fabricate a value JavaScript cannot
+        produce. Defaults reading genuinely outer bindings stay legal."""
+        default = _strip(field.child_by_field_name('right'))
+        if any(node.type == 'identifier' and node.text == name.encode()
+               for node in (default, *_descendants(default))):
+            raise Unsupported(
+                f'JavaScript default of parameter {name} reads {name} in its '
+                'temporal dead zone at ' + self.where(field))
         results = []
-        for p, value in self.eval(path, field.child_by_field_name('right')):
+        for p, value in self.eval(path, default):
             p.env[name] = value
             results.append(p)
         return results

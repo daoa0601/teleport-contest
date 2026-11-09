@@ -680,6 +680,34 @@ class ExecutorTests(unittest.TestCase):
             'function example(x) { return [1, 2].map(v => v > x ? v : 0)[1]; }',
             reason='Array.map callback', params=[('x', INT)])
 
+    def test_parameter_default_cannot_read_its_own_parameter(self):
+        """A parameter's default runs while the parameter is in its temporal
+        dead zone: `(x = x) => x` throws ReferenceError in JavaScript. The
+        executor used to evaluate the default in the caller's scope, so with
+        an outer x = 7 the mapped value wrongly proved equivalent to C's 7."""
+        options = dict(reason='temporal dead zone')
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() {\n'
+            '    const x = 7;\n'
+            '    return [undefined].map((x = x) => x)[0];\n'
+            '}', **options)
+        self.rejected(
+            'int example(void) { return 7; }',
+            'function example() { return pick(undefined); }\n'
+            'function pick(v = v + 1) { return v; }\n', **options)
+        # Defaults reading genuinely outer bindings stay legal JavaScript.
+        self.equivalent(
+            'int example(int y) { return y; }',
+            'function example(y) {\n'
+            '    return [undefined].map((x = y) => x)[0];\n'
+            '}', params=[('y', INT)])
+        self.equivalent(
+            'int example(void) { return 5; }',
+            'function example() {\n'
+            '    return [undefined].map((x = 5) => x)[0];\n'
+            '}')
+
     def test_callback_parameters_do_not_overwrite_enclosing_bindings(self):
         self.equivalent(
             'int example(int x) { return x; }',
