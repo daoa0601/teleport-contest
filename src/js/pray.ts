@@ -82,7 +82,7 @@ import type { AlignmentName, Role } from './role.js';
 
 import { d, rn1, rn2, rn2Display, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
-import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './weapon.js';
+import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill, weaponSkillType } from './weapon.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -1507,7 +1507,7 @@ async function crownHero(): Promise<void> {
         object.oeroded = object.oeroded2 = 0;
         object.oerodeproof = object.bknown = object.rknown = true;
         object.spe = Math.max(1, object.spe);
-        unrestrictHeroSkill(Math.abs(objectSkill(object.otyp)));
+        unrestrictHeroSkill(weaponSkillType(object));
     } else if (!classGift) await pline(formatFeltMessage('unworthy.'));
     await addHeroWeaponSkillSlots(1);
 }
@@ -1939,9 +1939,8 @@ async function bestowArtifact(value: number): Promise<boolean> {
     hero.ublesscnt = rnz(300 + 50 * count);
     await exerciseAttribute(A_WIS, true);
     recordGameLogEvent(`was bestowed with ${artifact.name} by ${deityName(hero.ualign.type)}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT });
-    const skillType = [WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(object.oclass ?? RANDOM_CLASS)
-        ? Math.abs(objectSkill(object.otyp)) : 0;
-    unrestrictHeroSkill(skillType);
+    // C weapon_type(): the gift's skill class.
+    unrestrictHeroSkill(weaponSkillType(object));
     if (!hallucinating && !blind) {
         object.dknown = true;
         recordObjectEncounter(object.otyp);
