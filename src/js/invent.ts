@@ -88,7 +88,7 @@ import { deityName } from './pray.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';
 import { visibleRegionAt } from './region.js';
-import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion } from './trap.js';
+import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion, trapAt } from './trap.js';
 import {
     heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem,
 } from './mondata.js';
@@ -1982,7 +1982,7 @@ export async function lookHere(
     const level = requireGameLevel();
     const limit = configuredPileLimit();
     const skipObjects = limit > 0 && objectCount >= limit;
-    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    const trap = trapAt(game, x, y);
     if (!skipObjects) {
         const region = visibleRegionAt(game, x, y);
         const features: string[] = [];

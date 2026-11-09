@@ -79,7 +79,7 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
-import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage, triggerChestTrap } from './trap.js';
+import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage, triggerChestTrap, trapAt } from './trap.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { containerContents } from './end.js';
 import { bot } from './botl.js';
@@ -1086,7 +1086,7 @@ async function do_loot_cont(container: GameObject, containerIndex: number, conta
 // C pickup.c:able_to_loot(): floor-container admission for loot and tip.
 export async function ableToLoot(x: number, y: number, looting: boolean): Promise<boolean> {
     const verb = looting ? 'loot' : 'tip';
-    const trap = requireGameLevel().traps.find(trap => trap.tx === x && trap.ty === y);
+    const trap = trapAt(game, x, y);
     if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
         if (game.u.usteed && (game.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC) {
             await plineWithContinuation(riderCannotReachMessage());
