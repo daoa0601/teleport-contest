@@ -10,7 +10,7 @@ import { is_boots } from './object_properties.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { exerciseWisdom, exerciseAttribute } from './attrib.js';
 import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm, heroSpecies, body_part } from './polyself.js';
-import { heroTeetersAtPit, heroEscapedShaft } from './trap.js';
+import { heroTeetersAtPit, heroEscapedShaft, trapAt } from './trap.js';
 import { MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
 import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, Is_airlevel, Is_waterlevel, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS, SIZEOF_ENGRAVING, } from './const.js';
@@ -163,8 +163,7 @@ export function makeEngravingAt(x, y, text, pristine = null, epoch = 0, engrType
 // C engrave.c:make_grave().  The caller is responsible for newsym(x, y).
 export function make_grave(x, y, text) {
     const loc = game.level?.at(x, y);
-    const trapped = game.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
-    if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapped)
+    if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapAt(game, x, y))
         return;
     if (!setLevelTerrainType(x, y, GRAVE))
         return;
@@ -390,10 +389,9 @@ export async function readEngravingAt(x, y, publish) {
 // C engrave.c:freehand(). A removable item does not occupy the hand permanently.
 export function heroHasFreeHand(state) {
     const weapon = state.uwep || state.u.uwep;
-    if (!weapon || !willWeld(weapon))
+    if (!weapon || !isWeldedPrimary(weapon, state))
         return true;
     // freehand() calls welded() before checking the other hand or shield.
-    weapon.bknown = true;
     const shield = state.uarms || state.u.uarms;
     return !isBimanualObject(weapon) && !shield?.cursed;
 }
@@ -420,7 +418,7 @@ export function heroCanReachFloor(state = game, { checkPit = false } = {}) {
         || (form != null && (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE)) {
         return true;
     }
-    const trap = checkPit ? trapAtHeroInState(state) : null;
+    const trap = checkPit ? trapAt(state, hero.ux, hero.uy) : null;
     if (heroTeetersAtPit(state, trap))
         return false;
     if (heroEscapedShaft(trap))
@@ -435,12 +433,6 @@ function holderHugs(holder) {
 // Part of C engrave.c:can_reach_floor(): P_SKILL(P_RIDING).
 function ridingSkill(state) {
     return state.u?.weaponSkills?.[P_RIDING]?.skill ?? 0;
-}
-// Part of C engrave.c:can_reach_floor(): t_at(u.ux, u.uy) for the pit
-// check.
-function trapAtHeroInState(state) {
-    const hero = state.u;
-    return state.level?.traps?.find(trap => trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
 // object_data.js: an uncursed athame never dulls while carving.
 const ATHAME = 38;

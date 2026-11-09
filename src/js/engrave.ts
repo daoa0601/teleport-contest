@@ -18,7 +18,7 @@ import type { Engraving, Trap } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import { exerciseWisdom, exerciseAttribute } from './attrib.js';
 import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm, heroSpecies, body_part } from './polyself.js';
-import { heroTeetersAtPit, heroEscapedShaft } from './trap.js';
+import { heroTeetersAtPit, heroEscapedShaft, trapAt } from './trap.js';
 import { MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
 import {
@@ -234,8 +234,7 @@ export function makeEngravingAt(
 // C engrave.c:make_grave().  The caller is responsible for newsym(x, y).
 export function make_grave(x: number, y: number, text: string | null): void {
     const loc = game.level?.at(x, y);
-    const trapped = game.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
-    if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapped) return;
+    if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapAt(game, x, y)) return;
     if (!setLevelTerrainType(x, y, GRAVE)) return;
     const epitaph = text ?? getRndLine(RANDOM_EPITAPHS, MD_PAD_RUMORS, rn2);
     makeEngravingAt(x, y, epitaph, null, 0, HEADSTONE);
@@ -476,9 +475,8 @@ export async function readEngravingAt(
 // C engrave.c:freehand(). A removable item does not occupy the hand permanently.
 export function heroHasFreeHand(state: GameState): boolean {
     const weapon = state.uwep || state.u.uwep;
-    if (!weapon || !willWeld(weapon)) return true;
+    if (!weapon || !isWeldedPrimary(weapon, state)) return true;
     // freehand() calls welded() before checking the other hand or shield.
-    weapon.bknown = true;
     const shield = state.uarms || state.u.uarms;
     return !isBimanualObject(weapon) && !shield?.cursed;
 }
@@ -511,7 +509,7 @@ export function heroCanReachFloor(
         return true;
     }
 
-    const trap = checkPit ? trapAtHeroInState(state) : null;
+    const trap = checkPit ? trapAt(state, hero.ux, hero.uy) : null;
     if (heroTeetersAtPit(state, trap)) return false;
     if (heroEscapedShaft(trap)) return false;
     return true;
@@ -526,13 +524,6 @@ function holderHugs(holder: Monster): boolean {
 // Part of C engrave.c:can_reach_floor(): P_SKILL(P_RIDING).
 function ridingSkill(state: GameState): number {
     return state.u?.weaponSkills?.[P_RIDING]?.skill ?? 0;
-}
-// Part of C engrave.c:can_reach_floor(): t_at(u.ux, u.uy) for the pit
-// check.
-function trapAtHeroInState(state: GameState): Trap | null {
-    const hero = state.u;
-    return state.level?.traps?.find(trap =>
-        trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
 
 
