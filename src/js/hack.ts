@@ -3643,8 +3643,9 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
 
     if (await rootedHeroCannotMove()) return true;
 
-    if (testHeroMove(u.ux, u.uy, newx, newy, 'test', game).passes
-        && !await confirmHeroStep(newx, newy)) return false;
+    // C domove_core() calls avoid_trap_andor_region() unconditionally under
+    // ParanoidTrap; its own test_move() gates live in confirmHeroStep().
+    if (!await confirmHeroStep(newx, newy)) return false;
 
     if (u.utrap) {
         // domove()'s trapmove() + reset_utrap(TRUE) release live in the
