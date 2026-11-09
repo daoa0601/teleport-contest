@@ -523,7 +523,7 @@ function placementSuffix(object, x, y, state) {
     if (IS_WALL(location.typ) || location.typ === SDOOR)
         return ' embedded in a wall';
     // C closed_door(): a closed or locked door holds the embedded object.
-    if (closedDoor(game, x, y))
+    if (closedDoor(state, x, y))
         return ' embedded in a door';
     if (isPoolAt(x, y, state))
         return ' in water';
