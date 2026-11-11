@@ -875,7 +875,10 @@ function fieldValues(state, fields) {
         [BL_LEVELDESC, textValue(fields.location)], [BL_VERS, textValue(fields.version)],
     ]);
     const experiencePercent = experiencePercentage(state);
-    values.set(BL_XP, numberValue(level, level, experiencePercent));
+    // initblstats[] takes the experience-level percentage against BL_XP
+    // (percentage(XP, XP), always 100), not against the experience points;
+    // only the experience field itself uses exp_percentage().
+    values.set(BL_XP, numberValue(level, level, percentage(level, level)));
     values.set(BL_EXP, numberValue(experience, experience, experiencePercent));
     values.set(BL_HD, numberValue(Upolyd(hero) ? MONSTER_LEVEL[hero.umonnum ?? -1] ?? 0 : 0));
     for (const [field, attribute] of [[BL_STR, A_STR], [BL_DX, A_DEX], [BL_CO, A_CON],
@@ -960,7 +963,7 @@ const STATUS_FIELDS = [
     { fld: 10, name: 'gold', anytype: 'long', idxmax: -1 },
     { fld: BL_ENE, name: 'power', anytype: 'int', idxmax: BL_ENEMAX },
     { fld: BL_ENEMAX, name: 'power-max', anytype: 'int', idxmax: -1 },
-    { fld: BL_XP, name: 'experience-level', anytype: 'int', idxmax: BL_EXP },
+    { fld: BL_XP, name: 'experience-level', anytype: 'int', idxmax: BL_XP },
     { fld: BL_AC, name: 'armor-class', anytype: 'int', idxmax: -1 },
     { fld: 15, name: 'HD', anytype: 'int', idxmax: -1 },
     { fld: 16, name: 'time', anytype: 'long', idxmax: -1 },

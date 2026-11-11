@@ -86,7 +86,7 @@ for (const hitpointbar of [false, true]) {
         assert.equal(fieldCell('HP:40').color, NO_COLOR, 'A full highlight reset uses the actual percentage');
     });
 }
-void test('experience percentage highlights change while the level stays the same', async () => {
+void test('experience points no longer drive the experience-level percentage', async () => {
     await roomWithRules([
         rule(BL_XP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
         rule(BL_XP, BL_TH_VAL_PERCENTAGE, 50, LT_VALUE, CLR_RED),
@@ -94,7 +94,7 @@ void test('experience percentage highlights change while the level stays the sam
     game.u.ulevel = 1;
     game.u.uexp = 0;
     await bot();
-    assert.equal(fieldCell('Xp:1').color, CLR_RED);
+    assert.equal(fieldCell('Xp:1').color, CLR_GREEN, 'the experience-level percentage is 100 from the start');
     game.u.uexp = 12;
     await bot();
     assert.equal(fieldCell('Xp:1').color, CLR_GREEN);
@@ -156,7 +156,7 @@ void test('a time-only status update preserves the percentage used for the next 
     await bot();
     assert.equal(fieldCell('HP:31').color, CLR_GREEN);
 });
-void test('hidden experience points refresh the level highlight when a percentage rule changes', async () => {
+void test('hidden experience point gains leave the level highlight unchanged', async () => {
     await roomWithRules([
         rule(BL_XP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
         rule(BL_XP, BL_TH_VAL_PERCENTAGE, 50, LT_VALUE, CLR_RED),
@@ -165,10 +165,7 @@ void test('hidden experience points refresh the level highlight when a percentag
     game.u.ulevel = 1;
     game.u.uexp = 8;
     await bot();
-    assert.equal(fieldCell('Xp:1').color, CLR_RED);
-    addExperience(1);
-    updateStatusLines();
-    assert.equal(fieldCell('Xp:1').color, CLR_RED);
+    assert.equal(fieldCell('Xp:1').color, CLR_GREEN, 'the <50% rule cannot match the constant 100 percent');
     addExperience(1);
     updateStatusLines();
     assert.equal(fieldCell('Xp:1').color, CLR_GREEN);
