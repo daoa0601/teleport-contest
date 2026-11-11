@@ -1879,20 +1879,35 @@ export async function lspo_object(context, parentContainer, parentMonster, invok
     if (speciesObject && corpseMonster?.length === 1 && (corpseMonsterClass == null || corpseMonsterClass < 1))
         throw new Error(`unknown Lua monster class ${corpseMonster}`);
     // lspo_object() resolves the montype name against the male and female
-    // spellings too, and the gender the spelling implies is recorded in the
-    // statue/corpse gender overloads.
+    // spellings too; the gender the spelling implies is recorded in the
+    // statue/corpse/figurine gender overloads, while the species' neutral
+    // spelling explicitly requests the ungendered form (spe 0).
     const montypeMatch = speciesObject && corpseMonster && corpseMonster.length > 1 && !noSpecies
         ? find_montype(corpseMonster) : null;
-    const montypeGender = montypeMatch?.female === false ? CORPSTAT_MALE
-        : montypeMatch?.female === true ? CORPSTAT_FEMALE : 0;
-    if (objectType === STATUE || objectType === CORPSE) {
-        options.spe = montypeGender | (options.historic ? CORPSTAT_HISTORIC : 0)
-            | (options.male ? CORPSTAT_MALE : 0) | (options.female ? CORPSTAT_FEMALE : 0);
+    let lflags = 0;
+    if (montypeMatch?.female === false)
+        lflags |= CORPSTAT_MALE;
+    else if (montypeMatch?.female === true)
+        lflags |= CORPSTAT_FEMALE;
+    else if (montypeMatch)
+        options.spe = 0;
+    if (objectType === STATUE || objectType === CORPSE || objectType === FIGURINE) {
+        if (options.historic)
+            lflags |= CORPSTAT_HISTORIC;
+        if (options.male)
+            lflags |= CORPSTAT_MALE;
+        if (options.female)
+            lflags |= CORPSTAT_FEMALE;
+        // Without any gender request the enchantment overload keeps what
+        // mksobj() initialized, so a random statue or figurine retains the
+        // gender mkobj() picked instead of collapsing to the neutral name.
+        if (lflags !== 0)
+            options.spe = lflags;
     }
     else if (objectType === EGG) {
         options.spe = options.laid_by_you ? 1 : 0;
     }
-    else if (objectType === TIN || objectType === FIGURINE) {
+    else if (objectType === TIN) {
         options.spe = spinachTin ? 1 : 0;
     }
     const objectOptions = {
