@@ -292,7 +292,7 @@ const DUPLICATE_POSSESSION_MESSAGES = {
 // Currency names from invent.c; hallucinated choices use the core RNG.
 const CURRENCIES = [
     'Altarian Dollar', 'Ankh-Morpork Dollar', 'auric', 'buckazoid', 'cirbozoid',
-    'credit chit', 'cubit', 'Flanian Pobble Bead', 'fretzer', 'imperial credit',
+    'credit chit', 'cubit', 'Flainian Pobble Bead', 'fretzer', 'imperial credit',
     'Hong Kong Luna Dollar', 'kongbuck', 'nanite', 'quatloo', 'simoleon',
     'solari', 'spacebuck', 'sporebuck', 'Triganic Pu', 'woolong', 'zorkmid',
 ];
