@@ -1748,18 +1748,19 @@ function invocationRings(x: number, y: number): Position[][] {
 }
 
 // C mklev.c:mkinvk_check_wall(). Is this square a wall or iron bars?
-function mkinvkCheckWall(location: { typ: number } | null | undefined): boolean {
-    return !!location && (IS_STWALL(location.typ) || location.typ === IRONBARS);
+function mkinvkCheckWall(x: number, y: number, state: GameState): boolean {
+    if (!isok(x, y)) return false;
+    const location = requireGameLevel(state).requireAt(x, y);
+    return IS_STWALL(location.typ) || location.typ === IRONBARS;
 }
 
 // C mklev.c:mkinvokearea().
 export async function makeInvocationArea({ state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
-    const level = requireGameLevel(state);
     const rings = invocationRings(state.u.ux, state.u.uy);
     await plineWithContinuation('The floor shakes violently under you!');
-    if (rings.flat().some(({ x, y }) => mkinvkCheckWall(level.at(x, y))))
+    if (rings.flat().some(({ x, y }) => mkinvkCheckWall(x, y, state)))
         await plineWithContinuation('The walls around you begin to bend and crumble!');
     await flushPendingTopline();
     if (state.u.utrap) {

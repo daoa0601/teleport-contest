@@ -1,17 +1,31 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FIRE_TRAP, MOAT, STAIRS, VIBRATING_SQUARE } from '../js/const.js';
+import { COLNO, FIRE_TRAP, HWALL, MOAT, ROOM, ROWNO, STAIRS, VIBRATING_SQUARE } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { mklev } from '../js/mklev.js';
+import { makeInvocationArea, mklev } from '../js/mklev.js';
 import { BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD } from '../js/object_data.js';
 import { readBookOfDead } from '../js/spell.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { freshSpecialLevel } from './support/special-level.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
+void test('invocation ignores walls in the unplayable map column', async () => {
+    const level = await freshObjectRoom({ heroX: 6, heroY: 10 });
+    for (let x = 1; x < COLNO; x++)
+        for (let y = 0; y < ROWNO; y++)
+            level.requireAt(x, y).typ = ROOM;
+    level.requireAt(0, 10).typ = HWALL;
+    installPagerInput(resetInputState(), {
+        expected: /floor shakes violently|walls around you|stairwell leading down/, limit: 8,
+    });
+    await makeInvocationArea();
+    assert.doesNotMatch([...game._messageHistory, game._lastPlineMessage].join('\n'), /walls around you/);
+    assert.match(game._lastPlineMessage, /standing at the top of a stairwell/);
+});
 void test('reading the prepared invocation book shows the fire ring before the moat and stairwell', async () => {
     freshSpecialLevel({ prototype: 'unused', seed: 12, depth: 8 });
     requirePlayingGame(game);
