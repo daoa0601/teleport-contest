@@ -1,3 +1,4 @@
+import { says } from './shk.js';
 // Monster summoning by demons, minions, and the Wizard of Yendor.
 // C ref: minion.c msummon(), dprince(), dlord(), ndemon(), demon_talk(),
 // bribe(), lose_guardian_angel(), and gain_guardian_angel().
@@ -145,7 +146,7 @@ export async function demandDemonBribe(monster: Monster, state: PlayingGameState
     const deaf = heroIsDeaf(state);
     if (heroIsDemon) {
         if (!deaf) await plineWithContinuation(`${subject()} says, "Good hunting, ${state.flags.female ? 'Sister' : 'Brother'}."`);
-        else if (canSeeMonster(monster)) await plineWithContinuation(`${subject()} says something.`);
+        else if (canSeeMonster(monster)) await plineWithContinuation(`${subject()} ${says(state)} something.`);
         if (!await reportMonsterTeleportRestriction(monster, { state }))
             await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
         return true;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BY_COOKIE, BY_OTHER, BY_PAPER, FAINTED } from '../js/const.js';
+import { BY_COOKIE, BY_ORACLE, BY_OTHER, BY_PAPER, FAINTED } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import * as rumors from '../js/rumors.js';
@@ -47,4 +47,13 @@ void test('other rumor delivery prints the rumor without a reading or speaker in
     assert.ok(text.trim(), 'The rumor must be delivered even while blind');
     assert.doesNotMatch(text, /It reads:|This cookie has a scrap of paper inside\.|True to her word, the Oracle/);
 });
+for (const deaf of [false, true]) {
+    void test(`the Oracle introduces a rumor with ${deaf ? 'signs' : 'speech'} for a ${deaf ? 'deaf' : 'hearing'} hero`, async () => {
+        await freshObjectRoom({ hero: { deafTurns: deaf ? 20 : 0 } });
+        const pages = collectRumorPages();
+        await rumors.outRumor(1, BY_ORACLE);
+        const text = [...pages, game._pending_message].join('\n');
+        assert.match(text, deaf ? /True to her word, the Oracle .*signs:/ : /True to her word, the Oracle .*says:/);
+    });
+}
 //# sourceMappingURL=rumor_delivery.test.js.map

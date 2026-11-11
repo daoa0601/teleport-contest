@@ -18,7 +18,7 @@ import { inventoryItemDescription, addInventoryItem, freeInventoryObject, getobj
 import { isBimanualObject, is_elven_weapon, isWeaponTool, isWetTowel, is_launcher, isLauncherAmmunition, isMissileObject, isPolearm, launcherMatchesAmmo, pair_of } from './object_properties.js';
 import { resetBulkTakeoff, takeoffSlotObject } from './do_wear.js';
 import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restrictName } from './artifact.js';
-import { objectOwnershipPrefix, insideShopRoomAt, shopResident, updateUnpaidObjectPrice } from './shk.js';
+import { objectOwnershipPrefix, insideShopRoomAt, shopResident, updateUnpaidObjectPrice, says } from './shk.js';
 import { promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
 import { retouchHeroObject } from './artifact.js';
@@ -552,7 +552,7 @@ async function readySelectedWeapon(weapon, state) {
             const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
             // C monflag.h:MS_ANIMAL is the last non-speaking sound category.
             if (!heroIsDeaf(state) && (MONSTER_SOUND[keeper.mnum] ?? 0) > 17)
-                await plineWithContinuation(`${shopkeeperName(keeper, { state })} says "You be careful with my ${name}!"`);
+                await plineWithContinuation(`${shopkeeperName(keeper, { state })} ${says(state)} "You be careful with my ${name}!"`);
             else
                 await plineWithContinuation(`${shopkeeperName(keeper, { state })} looks apprehensive about your wielding ${monsterPossessive(keeper, { state })} ${name}.`);
         }

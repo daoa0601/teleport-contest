@@ -8,7 +8,7 @@ import type { GameObject } from './object_types.js';
 import { heroIsBlind } from './senses.js';
 import type { Monster } from './monster_types.js';
 
-import { moneyToMonster } from './shk.js';
+import { moneyToMonster, says } from './shk.js';
 import { currency } from './invent.js';
 import { monsterName, monsterTypeName } from './do_name.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
@@ -187,7 +187,7 @@ export async function outRumor(truth: -1 | 0 | 1, mechanism: RumorMechanism, sta
     if (mechanism === BY_ORACLE) {
         const manner = !rn2(4) ? 'offhandedly ' : !rn2(3) ? 'casually '
             : rn2(2) ? 'nonchalantly ' : '';
-        await pline(`True to her word, the Oracle ${manner}says: `);
+        await pline(`True to her word, the Oracle ${manner}${says(state)}: `);
         await pline(`"${rumor}"`);
         return;
     }

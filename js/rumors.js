@@ -4,7 +4,7 @@ import { ACH_ORCL, BY_COOKIE, BY_ORACLE, BY_OTHER, BY_PAPER, FAINTED, MD_PAD_BOG
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsBlind } from './senses.js';
-import { moneyToMonster } from './shk.js';
+import { moneyToMonster, says } from './shk.js';
 import { currency } from './invent.js';
 import { monsterName, monsterTypeName } from './do_name.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
@@ -189,7 +189,7 @@ export async function outRumor(truth, mechanism, state = game) {
     if (mechanism === BY_ORACLE) {
         const manner = !rn2(4) ? 'offhandedly ' : !rn2(3) ? 'casually '
             : rn2(2) ? 'nonchalantly ' : '';
-        await pline(`True to her word, the Oracle ${manner}says: `);
+        await pline(`True to her word, the Oracle ${manner}${says(state)}: `);
         await pline(`"${rumor}"`);
         return;
     }

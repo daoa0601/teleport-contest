@@ -2892,6 +2892,11 @@ export async function moneyToHero(monster: Monster, amount: number, state: GameS
 // C include/monflag.h enum msound: sounds at or below MS_ANIMAL are not speech.
 const MS_ANIMAL = 17;
 
+// C shk.c:says(): speakers sign when the hero cannot hear them.
+export function says(state: GameState = game): 'signs' | 'says' {
+    return heroIsDeaf(state) ? 'signs' : 'says';
+}
+
 // C shk.c:muteshk().
 export function shopkeeperIsMuted(resident: Monster): boolean {
     // C shk.c:58 muteshk(): helpless, or no capability for human speech.

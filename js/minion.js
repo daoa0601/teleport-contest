@@ -1,6 +1,4 @@
-// Monster summoning by demons, minions, and the Wizard of Yendor.
-// C ref: minion.c msummon(), dprince(), dlord(), ndemon(), demon_talk(),
-// bribe(), lose_guardian_angel(), and gain_guardian_angel().
+import { says } from './shk.js';
 import { artifactById } from './artifact.js';
 import { deityName } from './pray.js';
 import { A_CHA, A_NONE, FAINTED, In_endgame, LL_UMONST, MM_ADJACENTOK, MM_EMIN, MM_NOMSG, NON_PM, RLOC_MSG, STRAT_APPEARMSG, W_ARMS } from './const.js';
@@ -126,7 +124,7 @@ export async function demandDemonBribe(monster, state, random = rn2, rollOne = r
         if (!deaf)
             await plineWithContinuation(`${subject()} says, "Good hunting, ${state.flags.female ? 'Sister' : 'Brother'}."`);
         else if (canSeeMonster(monster))
-            await plineWithContinuation(`${subject()} says something.`);
+            await plineWithContinuation(`${subject()} ${says(state)} something.`);
         if (!await reportMonsterTeleportRestriction(monster, { state }))
             await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
         return true;
