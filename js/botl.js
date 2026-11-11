@@ -655,7 +655,7 @@ export class StatusHighlights {
         this.enabled = !!state.iflags.hiliteDelta;
         this.updateField(state, BL_TIME, numberValue(state.moves));
     }
-    // botl.c exp_percent_changing(): hidden points can change the level's rule.
+    // C botl.c:exp_percent_changing(): hidden points can change the level's rule.
     experiencePercentChanging(state) {
         if (state.context.botl)
             return false;

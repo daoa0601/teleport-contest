@@ -723,7 +723,7 @@ export class StatusHighlights {
         this.updateField(state, BL_TIME, numberValue(state.moves));
     }
 
-    // botl.c exp_percent_changing(): hidden points can change the level's rule.
+    // C botl.c:exp_percent_changing(): hidden points can change the level's rule.
     experiencePercentChanging(state: GameState): boolean {
         if (state.context.botl) return false;
         const rules = state.iflags.statusThresholds?.[BL_XP] ?? [];
