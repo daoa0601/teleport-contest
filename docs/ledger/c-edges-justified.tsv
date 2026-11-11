@@ -2392,3 +2392,5 @@ doengrave	doengrave_ctx_init	included as present via the EngraveSetup stage of d
 doengrave	doengrave_ctx_verb	included as present via the everb/eloc switch stage of doengrave()'s port (engrave.ts)
 doengrave	doengrave_sfx_item	included as present via the stylus-effects stage of doengrave()'s port (engrave.ts:903)
 dokick	maybe_kick_monster	inlined
+offer_real_amulet	a_gname	included as present via the altar-alignment deityName() read offerAmulet() uses (pray.ts)
+dopray	can_pray	included as present via prayerOutcome()/worstPrayerTrouble(); can_pray(FALSE)'s port is canPraySafely() (pray.ts)
