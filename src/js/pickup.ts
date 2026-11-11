@@ -1150,6 +1150,10 @@ export async function doloot_core(): Promise<void> {
                 const items = [];
                 if (containers.length > 1) {
                     for (const object of containers) {
+                        // pickup.c:doloot_core(): each container row
+                        // attaches obj_to_glyph() menu metadata before its
+                        // name, a display-RNG draw while hallucinating.
+                        consumeHallucinatedMenuObjectGlyph(object);
                         observeObjectForNaming(object);
                         items.push({ text: await inventoryItemDescription(object), value: object });
                     }
@@ -1273,9 +1277,14 @@ async function containerDescription(object: GameObject): Promise<string> {
 // C pickup.c:choose_tip_container_menu().
 async function choose_tip_container_menu(containers: readonly GameObject[]): Promise<number> {
     const items: PageLocalMultiSelectItem<GameObject | null>[] = [];
-    for (const object of containers) items.push({
-        text: await containerDescription(object), value: object,
-    });
+    for (const object of containers) {
+        // pickup.c:choose_tip_container_menu(): every container row draws
+        // its obj_to_glyph() menu metadata from the display RNG.
+        consumeHallucinatedMenuObjectGlyph(object);
+        items.push({
+            text: await containerDescription(object), value: object,
+        });
+    }
     if (game.inventory.length) items.push({ selectable: false, text: '' }, {
         ...(containers.length <= 8 && !game.flags.lootabc ? { key: 'i' } : {}),
         text: 'tip something being carried', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
@@ -1372,6 +1381,9 @@ async function tipDestination(source: GameObject): Promise<{ cancelled: boolean;
     if (!hands) await plineWithContinuation(heroHasNoHands(game) ? 'You have no hands!'
         : `You have no free ${body_part(HAND)}.`);
     for (const object of targets) {
+        // pickup.c:tipcontainer_gettarget(): every destination row, locked
+        // or selectable, draws its obj_to_glyph() menu metadata.
+        consumeHallucinatedMenuObjectGlyph(object);
         if (!hands || object.olocked && object.lknown || !object.invlet)
             items.push({ selectable: false, text: `    ${await containerDescription(object)}` });
         else items.push({ key: object.invlet, text: await containerDescription(object), value: object });
