@@ -1456,11 +1456,14 @@ async function executeMonsterTurns() {
                 await moveVaultGuard(actor, game, rn2);
                 actor.mlstmv = game.moves;
             }
+            actor.movement = 0;
             continue;
         }
         if ((actor.mhp ?? 1) <= 0 || actor.mx === 0
-            || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
+            || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR) {
+            actor.movement = 0;
             continue;
+        }
         await runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
         if (actor.movement === undefined)
             throw new Error(`Monster ${actor.m_id} entered a turn before movement initialization.`);

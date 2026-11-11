@@ -78,4 +78,12 @@ void test('a monster closing in from beyond the threat radius still stops the me
     assert.equal(game._occupation, null, 'an on-map monster returning 0 from dochug() interrupts (monmove.c:223-235)');
     assert.match(game._lastPlineMessage, /You stop eating the food ration\./);
 });
+void test('an off-map monster loses movement banked before leaving the map', async () => {
+    await freshObjectRoom();
+    const monster = await createMonsterAt('goblin', 12, 10);
+    monster.mx = 0;
+    monster.movement = 120;
+    await moveMonsters();
+    assert.equal(monster.movement, 0);
+});
 //# sourceMappingURL=offmap_monster_interrupt.test.js.map
