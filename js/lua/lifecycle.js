@@ -1,3 +1,4 @@
+import { QUEST_LUA_SOURCE } from '../quest_data.js';
 import { AIR, CLOUD, COLNO, CORR, CROSSWALL, DOOR, FOUNTAIN, HWALL, ICE, IRONBARS, LAVAPOOL, LAVAWALL, LEVEL_TIMER_KIND, MATCH_WALL, MAX_TYPE, MOAT, POOL, ROOM, ROWNO, SCORR, SDOOR, SINK, STONE, THRONE, TREE, VWALL, WATER, } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
 import { commandKeyDescription, isok } from '../cmd.js';
@@ -157,6 +158,7 @@ export function startTimerAt(xstart, ystart, args) {
 }
 export class LuaLifecycle {
     stateCount = 0;
+    questPager = null;
     core;
     themed;
     unavailableHooks;
@@ -258,6 +260,24 @@ export class LuaLifecycle {
     createSpecialState(gameState, bindings = {}) {
         return this.createState(gameState, bindings);
     }
+    // Part of C questpgr.c:com_pager_core(): retain the private quest interpreter.
+    async questPagerState(gameState) {
+        const previous = this.questPager;
+        if (previous?.gameState === gameState)
+            return previous.state;
+        this.questPager = null;
+        await previous?.state.destroy();
+        const state = this.createSpecialState(gameState);
+        try {
+            state.execute(QUEST_LUA_SOURCE, 'quest.lua');
+            this.questPager = { gameState, state };
+            return state;
+        }
+        catch (error) {
+            await state.destroy();
+            throw error;
+        }
+    }
     async executeSpecial(gameState, filename, bindings = {}, beforeExecute = null) {
         const state = this.createSpecialState(gameState, bindings);
         try {
@@ -309,7 +329,9 @@ export class LuaLifecycle {
     destroy() {
         if (this._destroyPromise)
             return this._destroyPromise;
-        const states = [this.core, ...[...this.themed.values()].map(entry => entry.state)];
+        // Also C questpgr.c:free_questpager(), called by nhlua.c:l_nhcore_done().
+        const states = [this.core, this.questPager?.state, ...[...this.themed.values()].map(entry => entry.state)];
+        this.questPager = null;
         this.core = null;
         this.themed.clear();
         this._destroyPromise = Promise.resolve().then(async () => {
