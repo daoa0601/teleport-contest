@@ -168,10 +168,12 @@ void test('wielding an uncursed aklys secures its tether', async () => {
     assert.match(messages.join('\n'), /You secure the tether\./);
 });
 
-for (const quantity of [1, 5]) {
-    void test(`wielding ${quantity} unpaid dagger${quantity === 1 ? '' : 's'} names the shopkeeper's goods with the right number`, async () => {
+for (const quantity of [1, 5]) for (const deaf of [false, true]) {
+    void test(`wielding ${quantity} unpaid dagger${quantity === 1 ? '' : 's'} ${deaf ? 'gestures about' : 'names'} the shopkeeper's goods with the right number`, async () => {
         await readinessRoom();
+        game.u.deafTurns = deaf ? 20 : 0;
         const { shopkeeper } = await createStaffedShop();
+        shopkeeper.female = false;
         shopkeeper.eshk.shknam = 'Izchak';
         const daggers = await floorObject(DAGGER, game.u.ux, game.u.uy, { quan: quantity });
         await pickupAtHero();
@@ -183,7 +185,8 @@ for (const quantity of [1, 5]) {
 
         assert.equal(game.uwep, daggers);
         assert.equal(game.context.move, 1);
-        assert.equal(game._pending_message,
-            `Izchak says "You be careful with my ${quantity === 1 ? 'dagger' : 'daggers'}!"`);
+        assert.equal(game._pending_message, deaf
+            ? `Izchak looks apprehensive about your wielding his ${quantity === 1 ? 'dagger' : 'daggers'}.`
+            : `Izchak says "You be careful with my ${quantity === 1 ? 'dagger' : 'daggers'}!"`);
     });
 }

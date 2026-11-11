@@ -1,3 +1,4 @@
+import { MONSTER_SOUND } from './monster_data.js';
 // wield.js — Wield, quiver, and weapon-swap commands.
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
 // doswapweapon(), dotwoweapon(), finish_splitting(), and ready_ok().
@@ -35,13 +36,13 @@ import { shopkeeperName } from './shknam.js';
 import { statusConditionEnabled } from './botl.js';
 import { resolveImmediatePetrification } from './trap.js';
 import { setnotworn, setworn } from './worn.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { strangeFeeling } from './potion.js';
 import { displayColorName } from './do_name.js';
 import { dropInventoryObjectAtHero, dropObjectAtHero, landObjectOnAltar } from './do.js';
 import { shipObject } from './dokick.js';
 import { encumber_msg } from './pickup.js';
-import { monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
+import { monsterPossessive, monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
 
 // C wield.c:dotwoweapon(): the #twoweapon command; toggleTwoWeaponCombat() below holds the toggle and its rnd(20) > DEX time result.
 export async function dotwoweapon() {
@@ -568,7 +569,11 @@ async function readySelectedWeapon(weapon: GameObject | null, state: GameState):
         const keeper = shopResident(shop?.roomno, state);
         if (keeper) {
             const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
-            await plineWithContinuation(`${shopkeeperName(keeper, { state })} says "You be careful with my ${name}!"`);
+            // C monflag.h:MS_ANIMAL is the last non-speaking sound category.
+            if (!heroIsDeaf(state) && (MONSTER_SOUND[keeper.mnum] ?? 0) > 17)
+                await plineWithContinuation(`${shopkeeperName(keeper, { state })} says "You be careful with my ${name}!"`);
+            else
+                await plineWithContinuation(`${shopkeeperName(keeper, { state })} looks apprehensive about your wielding ${monsterPossessive(keeper, { state })} ${name}.`);
         }
     }
     return 'time';
