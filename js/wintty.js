@@ -542,9 +542,26 @@ export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines =
     for (const [row, line] of rows.entries()) {
         // tty_end_menu retains the row; process_menu_window also clips it to
         // the current terminal width when a retained menu is redisplayed.
+        if (boundary > 0)
+            clearRect(boundary, row, d.cols, row + 1);
+        let outputCol = left, outputRow = row;
         for (let col = 0; col < line.text.length && left + col < d.cols - 1; col++) {
+            const character = line.text.charAt(col);
+            // Native putchar() leaves tab stops and wrapping to the terminal;
+            // its clipping counter still counts source characters.
+            if (character === '\t') {
+                outputCol = Math.min(d.cols - 1, outputCol + 8 - outputCol % 8);
+                continue;
+            }
+            if (outputCol === d.cols) {
+                outputCol = 0;
+                if (++outputRow === d.rows) {
+                    d.scrollUp();
+                    outputRow--;
+                }
+            }
             const style = toggle_menu_attr(line, col);
-            d.setCell(left + col, row, line.text.charAt(col), style.color, style.attr);
+            d.setCell(outputCol++, outputRow, character, style.color, style.attr);
         }
     }
     // dmore() paints the pager prompt at (boundary + 1, rows.length) and

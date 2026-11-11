@@ -481,3 +481,45 @@ void test('starting a new menu discards old rows and selections before reusing t
     await tty_destroy_nhwindow(window);
     assert.throws(() => tty_add_menu(window, { identifier: 'gone', text: 'gone map' }), /destroyed/);
 });
+
+void test('menu tabs advance to terminal tab stops after the selector prefix', async () => {
+    freshPlayableRoom({ flags: { menu_overlay: false } });
+    const window = tty_create_nhwindow<string>(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'item', selector: 'a', text: 'Name\tValue\tEnd' });
+    tty_end_menu(window);
+    const input = resetInputState();
+    let row = '';
+    input.beforeRead = () => { row = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? ''; };
+    input.feed('\x1b');
+
+    await tty_select_menu(window, PICK_ONE);
+
+    assert.equal(row.indexOf('Name'), 5);
+    assert.equal(row.indexOf('Value'), 16);
+    assert.equal(row.indexOf('End'), 24);
+    assert.equal(row.includes('\t'), false);
+    await tty_destroy_nhwindow(window);
+});
+
+void test('tabbed menu output wraps physically while clipping counts source characters', async () => {
+    freshPlayableRoom({ flags: { menu_overlay: false } });
+    const window = tty_create_nhwindow<string>(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'item', selector: 'a', text: 'x'.repeat(70) + '\tAB' });
+    tty_end_menu(window);
+    const input = resetInputState();
+    let lastColumn = '', nextRow = '';
+    input.beforeRead = () => {
+        const display = requireGameDisplay();
+        lastColumn = display.grid[0]?.[79]?.ch ?? '';
+        nextRow = display.grid[1]?.[0]?.ch ?? '';
+    };
+    input.feed('\x1b');
+
+    await tty_select_menu(window, PICK_ONE);
+
+    assert.equal(lastColumn, 'A');
+    assert.equal(nextRow, 'B');
+    await tty_destroy_nhwindow(window);
+});

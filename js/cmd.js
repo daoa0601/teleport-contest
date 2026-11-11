@@ -2030,7 +2030,10 @@ export async function showExtendedCommandList() {
             addMenuHeading(window, wizardSection ? 'Debugging Extended Commands' : 'Extended commands');
             for (const { command, description } of entries) {
                 const markers = `${command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX ? 'm' : ''}${commandAutocompletes(command) ? 'A' : ''}`;
-                label(` ${(command.name ?? '').padEnd(14)} ${(markers ? `[${markers}]` : '').padStart(4)} ${description}`);
+                const marker = markers ? `[${markers}]` : '';
+                label(game.iflags.menu_tab_sep
+                    ? ` ${command.name ?? ''}\t${marker}\t${description}`
+                    : ` ${(command.name ?? '').padEnd(14)} ${marker.padStart(4)} ${description}`);
                 found++;
             }
             label('');
