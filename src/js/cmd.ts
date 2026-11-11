@@ -875,10 +875,9 @@ async function doherecmdmenu(): Promise<void> {
 // C cmd.c:dotherecmdmenu()
 async function dotherecmdmenu(): Promise<void> {
     const target = game._clicklookTarget;
-    if (target && isok(target.x, target.y)) {
+    if (target && isok(target.x, target.y) && game.iflags.getdir_click) {
         enqueueContextMenu(await selectContextMenu(target.x, target.y,
             target.x === game.u.ux && target.y === game.u.uy ? CLICK_1 : game.iflags.getdir_click ?? 0));
-        game._clicklookTarget = null;
         game.iflags.getdir_click = 0;
         return;
     }
@@ -886,6 +885,7 @@ async function dotherecmdmenu(): Promise<void> {
     const direction = await promptDirection();
     const click = game.iflags.getdir_click;
     game.iflags.getdir_click = 0;
+    game._clicklookTarget = null;
     if (!direction || !isok(game.u.ux + direction.dx, game.u.uy + direction.dy)) {
         commandResultCancelled(); // cmd.c:there_cmdmenu() returns ECMD_CANCEL.
         return;
@@ -902,7 +902,6 @@ async function dotherecmdmenu(): Promise<void> {
 function enqueueContextMenu(selection: ContextMenuSelection | null): void {
     game.context.move = 0;
     if (!selection) return;
-    // act_on_act() sets this before dotherecmdmenu() clears a mouse target.
     if (selection.action === 'look-at') game._clicklookTarget = { x: selection.x, y: selection.y };
     if (selection.action === 'remove-saddle') cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
     const command = contextMenuCommand(selection);
@@ -911,11 +910,12 @@ function enqueueContextMenu(selection: ContextMenuSelection | null): void {
     contextMenuResponses(selection);
 }
 
-// C cmd.c:doclicklook() retains the clicked location for later commands.
+// C cmd.c:doclicklook(): describe and then clear the clicked location.
 async function doclicklook(): Promise<void> {
     game.context.move = 0;
     const target = game._clicklookTarget;
     if (target && isok(target.x, target.y)) await autoDescribePosition(target.x, target.y);
+    game._clicklookTarget = null;
 }
 
 // C cmd.c:domouseaction()
@@ -1080,10 +1080,6 @@ export interface ContextMenuSelection extends Position { action: ContextMenuActi
 // next2u / far entry sections, the no-entry move-or-travel fallback, the
 // single-entry shortcut, and the selection that feeds enqueueContextMenu
 // (act_on_act()).
-// Also C cmd.c:there_cmd_menu_common(): inlined here (the look-at entry
-// and the CLICK_1/CLICK_2 suppression).
-// Also C cmd.c:there_cmd_menu_far(): inlined here (the throw and travel
-// entries for a distant CLICK_1).
 // Also C cmd.c:mcmd_addmenu(): inlined here (tty_add_menu per entry).
 export async function selectContextMenu(x: number, y: number, click: number): Promise<ContextMenuSelection | null> {
     const entries: ContextMenuEntry[] = [];
@@ -1092,8 +1088,8 @@ export async function selectContextMenu(x: number, y: number, click: number): Pr
     const self = dx === 0 && dy === 0;
     const adjacent = Math.max(Math.abs(dx), Math.abs(dy)) <= 1;
     if (self) await selfEntries(add, x, y);
-    else if (adjacent) adjacentEntries(add, x, y, click);
-    else farEntries(add, x, y, click);
+    else if (adjacent) adjacentEntries(add, x, y);
+    else farEntries(add, x, y);
     commonEntries(add, x, y, click);
 
     if (!entries.length) {
@@ -1102,8 +1098,9 @@ export async function selectContextMenu(x: number, y: number, click: number): Pr
         return adjacent && heroTestMove(x, y) ? { action: 'move', x, y }
             : game.flags.travel !== false ? { action: 'travel', x, y } : null;
     }
-    if (entries.length === 1 && entries[0]?.action === 'attack')
-        return { action: 'attack', x, y };
+    const onlyEntry = entries.length === 1 ? entries[0] : undefined;
+    if (onlyEntry?.action === 'attack' || onlyEntry?.action === 'move')
+        return { action: onlyEntry.action, x, y };
 
     clearMessageWindow();
     const window = tty_create_nhwindow<ContextMenuAction>(NHW_MENU);
@@ -1120,8 +1117,7 @@ export async function selectContextMenu(x: number, y: number, click: number): Pr
 // C cmd.c:there_cmd_menu_far(): the far-click entries.  linedup(..., 1):
 // boulders do not obstruct an explicitly chosen throw, so the walk toward
 // the target only rejects other blocking terrain.
-function farEntries(add: AddEntry, x: number, y: number, click: number): void {
-    if (click !== CLICK_1) return;
+function farEntries(add: AddEntry, x: number, y: number): void {
     requirePlayingGame(game);
     const dx = game.u.ux - x, dy = game.u.uy - y;
     let linedUp = !(dx && dy && Math.abs(dx) !== Math.abs(dy)
@@ -1135,7 +1131,7 @@ function farEntries(add: AddEntry, x: number, y: number, click: number): void {
         } while (tx !== game.u.ux || ty !== game.u.uy);
     }
     if (linedUp && dx * dx + dy * dy < 18 * 18) add('throw', 'Throw something');
-    add('travel', 'Travel here');
+    if (dx * dx + dy * dy > 2) add('travel', 'Travel here');
 }
 
 type AddEntry = (action: ContextMenuAction, text: string) => void;
@@ -1190,7 +1186,7 @@ async function menuObjectName(object: GameObject): Promise<string> {
 }
 
 // C cmd.c:there_cmd_menu_next2u().
-function adjacentEntries(add: AddEntry, x: number, y: number, click: number): void {
+function adjacentEntries(add: AddEntry, x: number, y: number): void {
     const level = requireGameLevel();
     const location = level.requireAt(x, y);
     if (location.typ === DOOR) {
@@ -1201,7 +1197,7 @@ function adjacentEntries(add: AddEntry, x: number, y: number, click: number): vo
                 add('lock', key ? 'Lock or unlock the door' : 'Unlock the door');
             add('untrap-door', 'Search the door for a trap');
             add('kick', 'Kick the door');
-        } else if (location.doormask & D_ISOPEN && click === CLICK_2) add('close', 'Close the door');
+        } else if (location.doormask & D_ISOPEN) add('close', 'Close the door');
     }
     if (location.typ <= SCORR) add('search', 'Search for secret doors');
     const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
@@ -1228,14 +1224,19 @@ function adjacentEntries(add: AddEntry, x: number, y: number, click: number): vo
     }
     if (monster && !(monster.mpeaceful || monster.mtame) || glyphAt(x, y)?.glyph === GlyphOffset.invisible)
         add('attack', `Attack ${monster ? monsterName(monster, { article: 'the' }) : 'unseen creature'}`);
+    else if (heroTestMove(x, y)) add('move', 'Move here');
 }
 
-// C cmd.c:there_cmd_menu_common(): the "Look at map symbol" entry shared
-// by every click (iflags.clicklook is ignored here); on the hero's own
-// square it appears only when the shown glyph is not the ordinary hero
-// symbol (steed, invisible without see invisible, polymorphed).
+// C cmd.c:mousebtn_has_lookat().
+function mouseButtonHasLookAt(): boolean {
+    return game.commandBindings.mouseCommand(1)?.handler === 'doclicklook'
+        || game.commandBindings.mouseCommand(2)?.handler === 'doclicklook';
+}
+
+// C cmd.c:there_cmd_menu_common(): offer map inspection when neither
+// mouse button already provides it; exclude the ordinary hero glyph.
 function commonEntries(add: AddEntry, x: number, y: number, click: number): void {
-    if (click !== CLICK_1 && click !== CLICK_2) return;
+    if (click !== CLICK_1 && click !== CLICK_2 || mouseButtonHasLookAt()) return;
     const hero = game.u;
     if (x === hero.ux && y === hero.uy) {
         // hero_glyph: the ordinary hero symbol, or the race symbol while

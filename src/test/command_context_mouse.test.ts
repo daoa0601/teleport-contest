@@ -98,7 +98,7 @@ void test('actual and simulated left clicks offer the same distant actions witho
         await engine.runUntilInputNeeded();
         assert.match(screen(), /Throw something/);
         assert.match(screen(), /Travel here/);
-        assert.match(screen(), /Look at map symbol/);
+        assert.doesNotMatch(screen(), /Look at map symbol/);
         assert.equal(game.u.ux, 10);
         assert.equal(game.moves, moves);
         await type(engine, '\x1b');
@@ -107,7 +107,7 @@ void test('actual and simulated left clicks offer the same distant actions witho
 
         assert.match(screen(), /Throw something/);
         assert.match(screen(), /Travel here/);
-        assert.match(screen(), /Look at map symbol/);
+        assert.doesNotMatch(screen(), /Look at map symbol/);
         assert.equal(game.u.ux, 10);
         assert.equal(game.moves, moves);
     } finally { await finish(engine); }
@@ -139,21 +139,22 @@ void test('actual and simulated right clicks offer closing an open doorway', asy
     } finally { await finish(engine); }
 });
 
-void test('repeating a mouse look retains its map target without spending a turn', async () => {
+void test('repeating a mouse look after its target is cleared spends no turn', async () => {
     const engine = await startMenuGame();
     try {
         const moves = game.moves;
         engine.inputGate.feedMapClick(11, 10, 2);
         await engine.runUntilInputNeeded();
-        await type(engine, '\x01');
         assert.match(screen(), /floor of a room/);
+        await type(engine, '\x01');
+        assert.doesNotMatch(screen(), /floor of a room/);
         assert.doesNotMatch(screen(), /unknown extended command/);
         assert.equal(game.moves, moves);
     } finally { await finish(engine); }
 });
 
-void test('a mounted self-click clears the map-look target before the queued look runs', async () => {
-    const engine = await startMenuGame();
+void test('a mounted self-click preserves the selected map target for the queued look', async () => {
+    const engine = await startMenuGame('BINDINGS=mouse2:therecmdmenu');
     try {
         game.u.usteed = await createSaddledSteed();
         await newsym(10, 10);
@@ -163,13 +164,13 @@ void test('a mounted self-click clears the map-look target before the queued loo
 
         await choose(engine, 'Look at map symbol');
 
-        assert.equal(screen().split('\n')[0]?.trim(), '');
+        assert.match(screen().split('\n')[0] ?? '', /pony/);
         assert.equal(game.moves, moves);
     } finally { await finish(engine); }
 });
 
 void test('the keyboard here menu keeps the map-look target when mounted', async () => {
-    const engine = await startMenuGame();
+    const engine = await startMenuGame('BINDINGS=mouse2:therecmdmenu');
     try {
         game.u.usteed = await createSaddledSteed();
         await newsym(10, 10);

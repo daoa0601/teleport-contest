@@ -346,15 +346,16 @@ void test('a simulated right click offers closing an open door', async () => {
         await finish(engine);
     }
 });
-void test('a simulated left click does not offer closing an open door', async () => {
+void test('a simulated left click offers closing and entering an open doorway', async () => {
     const engine = await startMenuGame();
     try {
         const door = requireGameLevel().requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = D_ISOPEN;
         await type(engine, '#therecmdmenu\n_l,');
-        assert.match(screen(), /Look at map symbol/);
-        assert.doesNotMatch(screen(), /Close the door/);
+        assert.match(screen(), /Close the door/);
+        assert.match(screen(), /Move here/);
+        assert.doesNotMatch(screen(), /Look at map symbol/);
     }
     finally {
         await finish(engine);
@@ -532,7 +533,7 @@ void test('the here menu offers dismounting the current steed', async () => {
     }
 });
 void test('an unseen-creature marker offers attacking without revealing a monster', async () => {
-    const engine = await startMenuGame();
+    const engine = await startMenuGame('BINDINGS=mouse2:therecmdmenu');
     try {
         await map_invisible(11, 10);
         await type(engine, '#therecmdmenu\n_l,');
@@ -543,24 +544,25 @@ void test('an unseen-creature marker offers attacking without revealing a monste
         await finish(engine);
     }
 });
-void test('a distant left-click target offers throwing, travel and map inspection', async () => {
+void test('a distant left-click target offers throwing and travel without duplicating mouse inspection', async () => {
     const engine = await startMenuGame();
     try {
         await type(engine, '#therecmdmenu\n_lll,');
         assert.match(screen(), /a - Throw something/);
         assert.match(screen(), /b - Travel here/);
-        assert.match(screen(), /c - Look at map symbol/);
+        assert.doesNotMatch(screen(), /Look at map symbol/);
     }
     finally {
         await finish(engine);
     }
 });
-void test('a distant right-click target offers only map inspection', async () => {
-    const engine = await startMenuGame();
+void test('a distant right-click target offers throwing, travel and unbound map inspection', async () => {
+    const engine = await startMenuGame('BINDINGS=mouse2:therecmdmenu');
     try {
         await type(engine, '#therecmdmenu\n_lll.');
-        assert.match(screen(), /a - Look at map symbol/);
-        assert.doesNotMatch(screen(), /Throw something|Travel here/);
+        assert.match(screen(), /a - Throw something/);
+        assert.match(screen(), /b - Travel here/);
+        assert.match(screen(), /c - Look at map symbol/);
         await choose(engine, 'Look at map symbol');
         assert.match(screen(), /floor of a room/);
     }
@@ -660,7 +662,7 @@ void test('removing a saddle skips floor containers and supplies the monster dir
         await finish(engine);
     }
 });
-void test('an ordinary direction with no entries queues a move', async () => {
+void test('an ordinary direction with movement as its only action queues a move', async () => {
     const engine = await startMenuGame();
     try {
         await type(engine, '#therecmdmenu\nl');
@@ -686,8 +688,8 @@ void test('a hostile adjacent monster is attacked without asking for a menu choi
         await finish(engine);
     }
 });
-void test('map inspection leaves its target for the next there menu, which then consumes it', async () => {
-    const engine = await startMenuGame();
+void test('map inspection clears its target before the next there menu', async () => {
+    const engine = await startMenuGame('BINDINGS=mouse2:therecmdmenu');
     try {
         const door = requireGameLevel().requireAt(11, 10);
         door.typ = DOOR;
@@ -695,9 +697,6 @@ void test('map inspection leaves its target for the next there menu, which then 
         await type(engine, '#therecmdmenu\n_l.');
         await choose(engine, 'Look at map symbol');
         await type(engine, '#therecmdmenu\n');
-        assert.match(screen(), /What do you want to do/);
-        assert.match(screen(), /Open the door/);
-        await type(engine, '\x1b#therecmdmenu\n');
         assert.match(screen(), /In what direction/);
     }
     finally {
