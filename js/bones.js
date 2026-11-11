@@ -469,6 +469,7 @@ export async function restoreBonesMonsters(level, state) {
     }
     for (const monster of monsters) {
         setShopResidency(monster, false, state);
+        monster.movement = 0;
         if (monster.mundetected && monsterHidesUnder(monster.mnum))
             await hideMonsterUnder(monster, state);
         if (!monster.isshk) {
