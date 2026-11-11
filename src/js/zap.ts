@@ -1615,10 +1615,11 @@ export async function probeMonster(monster: Monster, {
 // An engulfer's list closes with the INCLUDE_HERO fake hero
 // row (pickup.c:1146-1164).
 export async function showProbedObjectInventory(objects: readonly GameObject[], title: string, {
-    state = game, groupByClass = true, engulfer = null,
-}: { state?: GameState; groupByClass?: boolean; engulfer?: Monster | null } = {}): Promise<void> {
+    state = game, groupByClass = true, engulfer = null, allow = () => true,
+}: { state?: GameState; groupByClass?: boolean; engulfer?: Monster | null;
+    allow?: (object: GameObject) => boolean } = {}): Promise<void> {
     const withCorpseGenders = checkForPuzzlingNonmerge(objects, state) > 0;
-    const sorted = sortObjects(objects, { mode: lootSortMode({ state }), state });
+    const sorted = sortObjects(objects.filter(allow), { mode: lootSortMode({ state }), state });
     const sections: InventorySection<GameObject>[] = [];
     const classes = groupByClass ? inventoryClassOrder(state) : [null];
     let first = true;

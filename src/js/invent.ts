@@ -2636,6 +2636,7 @@ export async function probedContentsTitle(object: GameObject, state: GameState):
 // Also C invent.c:only_here(): inlined as the buried-objects filter by
 // (x, y) below.
 export async function displayBuriedInventory(x: number, y: number, state: PlayingGameState) {
+    const onlyHere = (object: GameObject) => object.ox === x && object.oy === y;
     const pile = state.level.objects[x]?.[y] || [];
     let underwhat = 'here', count = 0;
     if ((isPoolAt(x, y, state) || isLavaAt(x, y, state)) && !(state.underwater || state.u.uinwater) && pile.length) {
@@ -2648,13 +2649,18 @@ export async function displayBuriedInventory(x: number, y: number, state: Playin
             await plineWithContinuation(`There ${plural ? 'are' : 'is'} ${await inventoryItemDescription(object)} under the ${liquid} here.`);
             underwhat = plural || pair_of(object) ? 'under them' : 'beneath it';
         } else {
-            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, { state, groupByClass: false });
+            await showProbedObjectInventory(floorObjectChainFrom(pile[0], state), `Things that are under the ${liquid} here:`, {
+                state, groupByClass: false, allow: onlyHere,
+            });
             underwhat = 'beneath them';
         }
     }
-    const buried = (state.level.buriedObjects || []).filter(object => object.ox === x && object.oy === y);
+    const buriedChain = state.level.buriedObjects ?? [];
+    const buried = buriedChain.filter(onlyHere);
     for (const object of buried) observeObject(object, state);
-    if (buried.length) await showProbedObjectInventory(buried, `Things that are buried ${underwhat}:`, { state });
+    if (buried.length) await showProbedObjectInventory(buriedChain, `Things that are buried ${underwhat}:`, {
+        state, allow: onlyHere,
+    });
     return count + buried.length;
 }
 
@@ -3106,9 +3112,9 @@ export function checkForPuzzlingNonmerge(objects: readonly GameObject[], state: 
 
 // C's nobj traversal from a floor pile's head also visits older objects
 // on other squares; nexthere traversal would restrict the scan to the pile.
-export function floorObjectChainFrom(first: GameObject | undefined): GameObject[] {
+export function floorObjectChainFrom(first: GameObject | undefined, state: GameState = game): GameObject[] {
     if (!first) return [];
-    const floorChain = requireGameLevel().objects.flat(2)
+    const floorChain = requireGameLevel(state).objects.flat(2)
         .filter(object => object !== null && object !== undefined)
         .sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
     const start = floorChain.indexOf(first);
