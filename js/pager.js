@@ -38,7 +38,7 @@ import { dist2, visibleCommandKey } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { DEC_TO_UNICODE } from './terminal.js';
-import { detectedTrapDisguise } from './detect.js';
+import { trappedChestAt, trappedDoorAt } from './detect.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
@@ -815,7 +815,11 @@ export function mapFeatureDescription(x, y, glyph) {
 }
 // C pager.c:trap_description().
 export function displayedTrapDescription(type, x, y) {
-    return detectedTrapDisguise(type, x, y) ?? trapName(type);
+    if (trappedChestAt(type, x, y))
+        return 'trapped chest'; /* might actually be a large box */
+    if (trappedDoorAt(type, x, y))
+        return 'trapped door'; /* not "trap door"... */
+    return trapName(type);
 }
 // C you.h:next2u(): distu(px,py) <= 2 adjacency.
 function adjacentToHero(x, y) {
@@ -1301,9 +1305,9 @@ export async function identifyTrap() {
     const x = game.u.ux + direction.dx, y = game.u.uy + direction.dy;
     const glyph = glyphAt(x, y);
     if (glyph?.kind === 'trap' && [BEAR_TRAP, TRAPPED_CHEST, TRAPPED_DOOR].includes(glyph.trapType)) {
-        const disguise = detectedTrapDisguise(glyph.trapType, x, y);
-        if (disguise) {
-            await pline(`That is a ${disguise}.`);
+        const chest = trappedChestAt(glyph.trapType, x, y);
+        if (chest || trappedDoorAt(glyph.trapType, x, y)) {
+            await pline(`That is a trapped ${chest ? 'chest' : 'door'}.`);
             return;
         }
     }
