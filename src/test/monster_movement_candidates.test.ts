@@ -3,7 +3,7 @@ import type { Monster } from '../js/monster_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ANTI_MAGIC, BEAR_TRAP, D_NODOOR, DOOR, FIRE_TRAP, LAVAPOOL, MM_ANGRY, NO_MINVENT, PIT, ROOM, RUST_TRAP, SLP_GAS_TRAP, STONE, TELEP_TRAP } from '../js/const.js';
+import { ANTI_MAGIC, BEAR_TRAP, D_NODOOR, DOOR, FIRE_TRAP, LAVAPOOL, MM_ANGRY, NO_MINVENT, PIT, ROLLING_BOULDER_TRAP, ROOM, RUST_TRAP, SLP_GAS_TRAP, STONE, TELEP_TRAP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/steed.js';
@@ -225,3 +225,16 @@ void test('a tracked fixed teleport remains a destination even after its type is
 
     assert.equal(await canStep(goblin, 11, 10), true);
 });
+
+for (const inSokoban of [false, true]) {
+    void test(`a monster ${inSokoban ? 'crosses' : 'avoids'} a known rolling-boulder trap ${inSokoban ? 'in' : 'outside'} Sokoban`, async () => {
+        const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
+        requirePlayingGame(game);
+        game.sokoban_dnum = inSokoban ? game.u.uz.dnum : game.u.uz.dnum + 1;
+        const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
+        const trap = addTrap(level, ROLLING_BOULDER_TRAP, 11, 10);
+        monsterLearnsTrap(goblin, trap);
+
+        assert.equal(await canStep(goblin, 11, 10), inSokoban);
+    });
+}

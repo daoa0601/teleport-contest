@@ -1731,6 +1731,8 @@ export function monsterTrapIsHarmless(monster: Monster, trap: Trap, state: Playi
                 [94, 96].includes(monster.mnum) ||
                 whirly
             );
+        case ROLLING_BOULDER_TRAP:
+            return In_sokoban(state.u.uz);
         case SLP_GAS_TRAP:
             // C trap.c:1134
             return monsterResistsSleep(monster) || defended(monster, AD_SLEE, state);
