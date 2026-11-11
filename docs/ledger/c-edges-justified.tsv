@@ -2335,3 +2335,6 @@ Armor_gone	setnotworn	inlined	the merged clearHeroArmor() clears slots through s
 Ring_off_or_gone	setnotworn	inlined	clearHeroAccessory() uses setworn(null, mask) for both the gone and voluntary ring paths (do_wear.ts)
 background_enlightenment	enlght_line	inlined	background rows are direct template strings in backgroundEnlightenmentLines(); enlght_line()'s assembly is enlghtLine()/contractEnlightenment() (insight.ts)
 item_resistance_message	u_adtyp_resistance_obj	inlined	u_adtyp_resistance_obj()'s port is the INVENTORY_DAMAGE-keyed protectionChance() (zap.ts, fire/cold/electric); item_resistance_message() reads extrinsicPropertyMask() for all five damage types (insight.ts)
+shop_object	in_rooms	inlined	shop_object()'s in_rooms()+shop_keeper() lookup is costlySpot()'s resident: costly_spot performs the same in_rooms/shop_keeper/inhishop sequence (shk.ts quoteShopGoods)
+paybill	next_shkp	inlined	paybill() iterates next_shkp(fmon, FALSE), whose port is exitShopkeepers() (shk.ts); the cited TRUE-form port visitBilledShopkeepers() is a different filter
+dopay	pay_billed_items	inlined	pay_billed_items()'s gold/credit admission is fused into dopay()'s prompts (shk.ts dopay region); the itemized flow is itemizedShopBill()
