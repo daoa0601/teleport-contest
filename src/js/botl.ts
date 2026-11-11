@@ -748,7 +748,7 @@ export class StatusHighlights {
         const reset = this.resetPending || !previous
             || encodingChanged && AT_OR_AFTER_GOLD.has(field);
         let change = reset ? 0 : compare(previous.raw, current.raw);
-        const percentMatters = field === BL_HP || field === BL_ENE || field === BL_XP || field === BL_EXP;
+        const percentMatters = (STATUS_FIELDS.find(entry => entry.fld === field)?.idxmax ?? -1) >= 0;
         const calculatePercent = (percentMatters && rules.length > 0 && (change !== 0 || reset || field === BL_XP))
             || (field === BL_HP && state.flags.hitpointbar);
         // C keeps the cached percentage but passes zero to get_hilite() when
@@ -912,9 +912,9 @@ function fieldValues(state: GameState, fields: StatusLine2Fields): Map<number, F
     const values = new Map<number, FieldValue>([
         [BL_TITLE, { ...textValue(title), text: title.slice(nameLength + 5) }],
         [BL_ALIGN, textValue(hero.ualign?.type === -1 ? 'Chaotic' : hero.ualign?.type === 0 ? 'Neutral' : 'Lawful')],
-        [BL_HP, numberValue(Math.min(hp, 9999), hp, percentage(hp, maximum))],
+        [BL_HP, numberValue(Math.min(hp, 9999), hp)],
         [BL_HPMAX, numberValue(Math.min(maximum, 9999), maximum)],
-        [BL_ENE, numberValue(Math.min(energy, 9999), energy, percentage(energy, energyMaximum))],
+        [BL_ENE, numberValue(Math.min(energy, 9999), energy)],
         [BL_ENEMAX, numberValue(Math.min(energyMaximum, 9999), energyMaximum)],
         [BL_AC, numberValue(hero.uac ?? 10)], [BL_TIME, numberValue(state.moves)],
         [BL_HUNGER, numberValue(hero.uhs ?? 0, hero.uhs ?? 0, 0, fields.hunger)],
@@ -923,14 +923,25 @@ function fieldValues(state: GameState, fields: StatusLine2Fields): Map<number, F
         [BL_GOLD, numberValue(Math.min(gold, 999999), gold)],
         [BL_LEVELDESC, textValue(fields.location)], [BL_VERS, textValue(fields.version)],
     ]);
-    const experiencePercent = experiencePercentage(state);
-    values.set(BL_XP, numberValue(level, level, experiencePercent));
-    values.set(BL_EXP, numberValue(experience, experience, experiencePercent));
+    values.set(BL_XP, numberValue(level));
+    values.set(BL_EXP, numberValue(experience));
     values.set(BL_HD, numberValue(Upolyd(hero) ? MONSTER_LEVEL[hero.umonnum ?? -1] ?? 0 : 0));
     for (const [field, attribute] of [[BL_STR, A_STR], [BL_DX, A_DEX], [BL_CO, A_CON],
         [BL_IN, A_INT], [BL_WI, A_WIS], [BL_CH, A_CHA]] as const)
         values.set(field, numberValue(currentAttribute(attribute, state)));
     for (const equipment of fields.equipment) values.set(equipment.field, textValue(equipment.text));
+    // eval_notify_windowport_field() selects the maximum from initblstats.
+    // percentage() uses unclipped values for HP and power only.
+    for (const { fld, idxmax } of STATUS_FIELDS) {
+        const current = values.get(fld), maximum = values.get(idxmax);
+        if (!current || idxmax < 0) continue;
+        const useRaw = fld === BL_HP || fld === BL_ENE;
+        const value = useRaw ? current.raw : current.value;
+        const maxValue = useRaw ? maximum?.raw : maximum?.value;
+        const percent = idxmax === BL_EXP ? experiencePercentage(state)
+            : typeof value === 'number' && typeof maxValue === 'number' ? percentage(value, maxValue) : 0;
+        values.set(fld, { ...current, percent });
+    }
     if (!state.flags.time) values.delete(BL_TIME);
     if (!state.flags.showvers) values.delete(BL_VERS);
     if (Upolyd(hero)) {

@@ -42,6 +42,31 @@ void test('status fields use the closest threshold and exact values take precede
     assert.equal(fieldCell('HP:12').color, CLR_GREEN);
     assert.equal(fieldCell('HP:12').attr, ATR_INVERSE);
 });
+for (const { field, label } of [{ field: BL_HP, label: 'HP' }, { field: BL_ENE, label: 'power' }]) {
+    void test(`${label} percentage highlights use values above the display limit`, async () => {
+        await roomWithRules([rule(field, BL_TH_VAL_PERCENTAGE, 50, EQ_VALUE, CLR_RED)]);
+        game.u.uhp = game.u.uen = 10000;
+        game.u.uhpmax = game.u.uenmax = 20000;
+        await bot();
+        assert.equal(fieldCell(field === BL_HP ? 'HP:9999' : 'Pw:9999').color, CLR_RED);
+    });
+}
+void test('level and experience highlights measure progress within the current level', async () => {
+    await roomWithRules([BL_XP, BL_EXP].flatMap(field => [
+        rule(field, BL_TH_VAL_PERCENTAGE, 5, EQ_VALUE, CLR_BLUE),
+        rule(field, BL_TH_VAL_PERCENTAGE, 100, EQ_VALUE, CLR_RED),
+    ]));
+    game.flags.showexp = true;
+    game.u.ulevel = 2;
+    game.u.uexp = 21;
+    await bot();
+    assert.equal(fieldCell('Xp:2').color, CLR_BLUE);
+    assert.equal(fieldCell('/21', 23, 1).color, CLR_BLUE);
+    game.u.uexp = 39;
+    await bot();
+    assert.equal(fieldCell('Xp:2').color, CLR_RED);
+    assert.equal(fieldCell('/39', 23, 1).color, CLR_RED);
+});
 void test('temporary change highlights expire back to the persistent rule', async () => {
     await roomWithRules([
         rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
