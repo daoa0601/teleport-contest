@@ -615,7 +615,9 @@ export async function moveVaultGuard(
                 await letHeroKnow(guard, state);
                 return null;
             }
-            if (!heroIsDeaf(state)) await pline('"Well, begone."');
+            if (!heroIsDeaf(state)
+                && (guard.mx - state.u.ux) ** 2 + (guard.my - state.u.uy) ** 2 <= 100)
+                await pline('"Well, begone."');
             egd.gddone = 1;
             return result(await finishEscort(guard, semiDead, false, state));
         }
