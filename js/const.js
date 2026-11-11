@@ -2172,7 +2172,8 @@ export const LEVEL_TIMER_KIND = Object.freeze({
 export const MELT_ICE_AWAY = TIMER_FUNC.MELT_ICE_AWAY;
 // Corpse taint/revival age window (src/mkobj.c)
 // Runtime fields: rot/revive scheduling bound for corpse timers.
-export const TAINT_AGE = 50;
+export const INEDIBLE_AGE = 50;
+export const TAINT_AGE = 100;
 // Artifact naming/origin flags (src/artifact.c)
 // Runtime fields: oname()/artifact_origin() provenance bits.
 export const ONAME_NO_FLAGS = 0;

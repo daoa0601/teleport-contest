@@ -1,3 +1,4 @@
+import { TAINT_AGE } from './const.js';
 // dig.c owner: hero and monster digging, terrain changes, burial, and
 // wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
 // digging_watch/buried_object/hole (pure move, no behavior change).
@@ -1210,7 +1211,7 @@ export async function digUpGrave(coordinate = null, { state = game } = {}) {
     if (whatHappens === 0 || whatHappens === 1) {
         await plineWithContinuation('You unearth a corpse.');
         const corpse = await createToptenObject(CORPSE, digX, digY);
-        corpse.age -= 51; /* TAINT_AGE + 1: this is an *OLD* corpse */
+        corpse.age -= TAINT_AGE + 1;
     }
     else if (whatHappens === 2) {
         if (!blind) {

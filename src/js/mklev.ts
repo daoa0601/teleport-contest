@@ -1,3 +1,4 @@
+import { INEDIBLE_AGE } from './const.js';
 import { level_status_init } from './gstate.js';
 // mklev.js — regular level generation.
 // C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
@@ -1608,12 +1609,12 @@ export async function mktrap_victim(trap: Trap): Promise<void> {
     const corpse = await mkcorpstat(
         CORPSE, null, victim_mnum, x, y, 8,
     ); // CORPSTAT_INIT
-    // C makes every trap-victim corpse older than TAINT_AGE after creating
+    // C makes every trap-victim corpse older than INEDIBLE_AGE after creating
     // it.  The existing rot timer is intentionally left unchanged; dogfood()
     // observes the backdated age immediately and classifies it as unsafe.
     if (!corpse || corpse.age === undefined)
         throw new Error('Trap victim creation did not produce an aged corpse.');
-    corpse.age -= 51; // TAINT_AGE + 1
+    corpse.age -= INEDIBLE_AGE + 1;
 }
 
 // Part of C dothrow.c:breaktest(): the trap-victim subset, including zap.c:obj_resists() for fresh non-invocation objects.

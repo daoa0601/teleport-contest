@@ -37,7 +37,7 @@ void test('digging a grave unearths the named corpse of a recorded adventurer', 
     assert.equal(corpse.oextra?.oname, 'Ada');
     assert.equal(corpse.corpsenm, MONSTER_NAME.indexOf('valkyrie'));
     assert.equal(corpse.spe, CORPSTAT_FEMALE);
-    assert.ok(corpse.age <= game.moves - 51, 'The grave corpse is already old.');
+    assert.ok(corpse.age <= game.moves - 101, 'The grave corpse is already tainted.');
 });
 
 void test('disturbing a mummy in a grave delivers the complete warning', async () => {

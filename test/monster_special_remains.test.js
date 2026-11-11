@@ -4,7 +4,7 @@ import { G_NOCORPSE, MGIVENNAME, NO_MINVENT } from '../js/const.js';
 import { glyphAt } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
-import { finishMonsterKilled } from '../js/mon.js';
+import { make_corpse, finishMonsterKilled } from '../js/mon.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { CORPSE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ROCK, STATUE, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -84,4 +84,11 @@ for (const [species, type] of [
         assert.equal(shown.otyp, type);
     });
 }
+void test('undead remains are already tainted when they become a corpse', async () => {
+    await freshObjectRoom();
+    const zombie = await createMonsterAt('human zombie', 12, 10, NO_MINVENT);
+    const corpse = await make_corpse(zombie);
+    assert.ok(corpse);
+    assert.equal(game.moves - corpse.age, 101);
+});
 //# sourceMappingURL=monster_special_remains.test.js.map

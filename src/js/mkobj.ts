@@ -1,3 +1,4 @@
+import { TAINT_AGE } from './const.js';
 // Object creation and species-dependent initialization.
 // C ref: mkobj.c.
 
@@ -765,7 +766,7 @@ export function startCorpseTimeout(body: GameObject | null | undefined, { zombif
         kind = OBJECT_TIMER_KIND.REVIVE_MON;
         delay = riderRevivalTime(body);
     } else if (MONSTER_SYMBOL[species] === 46) { // S_TROLL
-        for (let turn = 2; turn <= 50; turn++) {
+        for (let turn = 2; turn <= TAINT_AGE; turn++) {
             if (rn2(TROLL_REVIVE_CHANCE)) continue;
             kind = OBJECT_TIMER_KIND.REVIVE_MON;
             delay = turn;

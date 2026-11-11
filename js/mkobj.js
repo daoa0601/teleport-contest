@@ -1,3 +1,4 @@
+import { TAINT_AGE } from './const.js';
 // Object creation and species-dependent initialization.
 // C ref: mkobj.c.
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, VENOM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
@@ -709,7 +710,7 @@ export function startCorpseTimeout(body, { zombify = false } = {}) {
         delay = riderRevivalTime(body);
     }
     else if (MONSTER_SYMBOL[species] === 46) { // S_TROLL
-        for (let turn = 2; turn <= 50; turn++) {
+        for (let turn = 2; turn <= TAINT_AGE; turn++) {
             if (rn2(TROLL_REVIVE_CHANCE))
                 continue;
             kind = OBJECT_TIMER_KIND.REVIVE_MON;

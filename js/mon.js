@@ -1,3 +1,4 @@
+import { TAINT_AGE } from './const.js';
 import { NONFLYER_VS_LIQUID, CANDROWN_VS_LIQUID, TERRAIN_FALLOUT_MASK } from './const.js';
 import { mon_offmap } from './const.js';
 // Monster body and terrain rules: scheduling and movement allocation,
@@ -2877,7 +2878,7 @@ export async function make_corpse(monster, state = game, { buried = false, zombi
     });
     corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
     if (corpseForm !== monster.mnum)
-        corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
+        corpse.age = (corpse.age ?? state.moves ?? 1) - (TAINT_AGE + 1);
     if (buried && corpseForm === monster.mnum) {
         const result = await buryObject(corpse, state);
         if (result.outcome === 'absorbed')
