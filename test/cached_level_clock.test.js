@@ -32,14 +32,14 @@ for (const saveWhileAway of [false, true]) {
         assert.equal(heroTeleportRestricted(), false, 'Time on another level exhausts stasis');
     });
 }
-void test('a cached pet keeps its feeding deadline and delivery reward interval while away', async () => {
+void test('a fed cached pet keeps its delivery reward interval while away', async () => {
     const { source } = freshConnectedLevels();
     requirePlayingGame(game);
     game.flags.verbose = false;
     const pet = await createMonsterAt('little dog', 15, 10, MM_NOGRP | NO_MINVENT);
     initializePet(pet);
     assert.ok(pet.edog);
-    pet.edog.hungrytime = game.moves;
+    pet.edog.hungrytime = game.moves + 1000;
     pet.edog.droptime = game.moves - 10;
     pet.edog.dropdist = 10;
     pet.edog.apport = 5;
@@ -47,7 +47,7 @@ void test('a cached pet keeps its feeding deadline and delivery reward interval 
     assert.ok(source.monsters.includes(pet), 'The distant pet stays behind');
     game.moves += 800;
     await gotoLevel({ dlevel: 1 }, { arrival: 'stairs' });
-    assert.ok((pet.mtame ?? 0) > 0, 'Separation reduces tameness without starving a previously fed pet');
+    assert.ok((pet.mtame ?? 0) > 0, 'A pet with enough food remains tame while separated');
     const food = await floorObject(TRIPE_RATION, 15, 10, { invlet: 'a' });
     installPagerInput(resetInputState(), { expected: /dog eats/, limit: 2 });
     await finishPetEating(pet, beginPetEating(pet, food, { x: 15, y: 10 }));

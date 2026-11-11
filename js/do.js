@@ -1892,8 +1892,11 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
                 restoreMonsterTerrainState(monster, game);
                 setShopResidency(monster, false, game);
                 await restoreMonsterCover(monster, game);
-                if (elapsed > 0)
+                if (elapsed > 0) {
+                    if (monster.edog)
+                        monster.edog.hungrytime -= elapsed;
                     await catchUpMonster(monster, elapsed, game);
+                }
                 await restoreMonsterShape(monster, game);
                 if (game.program_state.gameover)
                     break;

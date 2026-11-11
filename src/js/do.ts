@@ -2108,7 +2108,10 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
                 restoreMonsterTerrainState(monster, game);
                 setShopResidency(monster, false, game);
                 await restoreMonsterCover(monster, game);
-                if (elapsed > 0) await catchUpMonster(monster, elapsed, game);
+                if (elapsed > 0) {
+                    if (monster.edog) monster.edog.hungrytime -= elapsed;
+                    await catchUpMonster(monster, elapsed, game);
+                }
                 await restoreMonsterShape(monster, game);
                 if (game.program_state.gameover) break;
                 if (elapsed > 0 && elapsed > rnd(10))
