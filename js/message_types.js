@@ -166,7 +166,7 @@ const OPTION_TABLE = [
     ['lit_corridor', null, true, true, false, false, false, false, false],
     ['lootabc', null, true, true, false, false, false, false, false],
     ['mail', null, true, true, false, false, false, false, false],
-    ['map_mode', null, false, true, true, false, false, false, false],
+    ['map_mode', null, false, true, true, true, false, false, false],
     ['mention_decor', null, true, true, false, false, false, false, false],
     ['mention_map', null, true, true, false, false, false, false, false],
     ['mention_walls', null, true, true, false, false, false, false, false],
