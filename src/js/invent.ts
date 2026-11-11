@@ -1674,6 +1674,11 @@ function unpaidObjects(objects: readonly GameObject[]): GameObject[] {
     return objects.flatMap(object => [...(object.unpaid ? [object] : []), ...unpaidObjects(object.contents ?? [])]);
 }
 
+// C invent.c:count_unpaid(). The recursive count of unpaid objects.
+function countUnpaid(list: readonly GameObject[]): number {
+    return unpaidObjects(list).length;
+}
+
 // C invent.c:display_pickinv(): the getobj inventory menu, including the
 // "Not carrying anything" shortcut and the hands entry when allowed.
 export async function selectInventoryObject({
@@ -1847,21 +1852,21 @@ async function typeInventory(): Promise<InventoryAction | null> {
     if (game.urole?.key === 'priest')
         for (const object of game.inventory) object.bknown = object.oclass !== COIN_CLASS;
     const level = requireGameLevel();
-    const carried = unpaidObjects(game.inventory);
-    const floor = unpaidObjects(level.objects.flatMap(column =>
+    const uCarried = countUnpaid(game.inventory);
+    const uFloor = countUnpaid(level.objects.flatMap(column =>
         (column ?? []).flatMap(pile => pile ?? [])));
-    const buried = unpaidObjects(level.buriedObjects ?? []);
+    const uBuried = countUnpaid(level.buriedObjects ?? []);
     const statuses = new Set<Buc>(game.inventory.map(object => bucCategory(object)));
     const picked = game.inventory.filter(object => object.pickup_prev);
     const classes = [...new Set(game.inventory.map(object => object.oclass))];
-    const extra = `${carried.length + floor.length + buried.length ? 'u' : ''}${bill.length ? 'x' : ''}${
+    const extra = `${uCarried + uFloor + uBuried ? 'u' : ''}${bill.length ? 'x' : ''}${
         [...'BUCX'].filter(status => statuses.has(bucChoice(status))).join('')}${picked.length ? 'P' : ''}`;
     const prompt = 'What type of object do you want an inventory of?';
     let choice: string | number | null;
     const style = game.flags.menu_style ?? MENU_FULL;
     if (style === MENU_FULL || style === MENU_PARTIAL) {
         const menuClasses = [...inventoryClassOrder(), VENOM_CLASS].filter(oclass => classes.includes(oclass));
-        choice = await inventoryCategoryMenu(menuClasses, carried.length > 0, bill.length > 0, statuses, picked, prompt);
+        choice = await inventoryCategoryMenu(menuClasses, uCarried > 0, bill.length > 0, statuses, picked, prompt);
     } else {
         const types = classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('') + (extra ? ` ${extra}` : '');
         choice = types;
@@ -1880,14 +1885,15 @@ async function typeInventory(): Promise<InventoryAction | null> {
     if (choice === null) return null;
     if (choice === 'x' || choice === 'X' && bill.length && !statuses.has('X')) {
         if (bill.length) await doinvbill(1);
-        else await pline(`No used-up objects${carried.length + floor.length + buried.length ? ' on your shopping bill' : ''}.`);
+        else await pline(`No used-up objects${uCarried + uFloor + uBuried ? ' on your shopping bill' : ''}.`);
         return null;
     }
-    if (choice === 'u' || choice === 'U' && carried.length + floor.length + buried.length > 0 && !statuses.has('U')) {
-        if (carried.length + floor.length + buried.length) await showUnpaid(carried, floor.length, buried.length);
+    if (choice === 'u' || choice === 'U' && uCarried + uFloor + uBuried > 0 && !statuses.has('U')) {
+        if (uCarried + uFloor + uBuried) await showUnpaid(unpaidObjects(game.inventory), uFloor, uBuried);
         else await pline('You are not carrying any unpaid objects.');
         return null;
     }
+
     const status = typeof choice === 'string' && 'BUCXP'.includes(choice) ? choice : null;
     const oclass = typeof choice === 'number' ? choice : OBJECT_CLASS_SYMBOLS.indexOf(choice);
     const candidates = game.inventory.filter(object => status === 'P' ? object.pickup_prev
@@ -2938,10 +2944,9 @@ async function askInventoryPrompt(prompt: string): Promise<number> {
     return answer.charCodeAt(0);
 }
 
-// Part of C invent.c:dounpaid()/count_buc(): the unpaid recursion into
-// containers.
+// C invent.c:ckunpaid(). Unpaid itself, or a container holding unpaid goods.
 function hasUnpaidContents(object: GameObject): boolean {
-    return !!object.unpaid || (object.contents || []).some(hasUnpaidContents);
+    return !!object.unpaid || countUnpaid(object.contents ?? []) > 0;
 }
 
 // Part of C invent.c:dotypeinv(): the traditional class+BUCX+uP+aim

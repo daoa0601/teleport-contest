@@ -2349,3 +2349,8 @@ slimed_to_death	polymon	inlined	polymon() is advanceHeroSliming()'s injected tra
 print_queue	fmt_ptr	n/a	fmt_ptr() formats native pointers; the port prints the object's stable o_id in the same 0x-prefixed shape (timeout.ts timerQueueLines)
 timer_is_local	mon_is_local	inlined	timer_is_local()'s obj/mon classification is objectTimerIsGlobal() itself (timeout.ts)
 timer_is_local	obj_is_local	inlined	timer_is_local()'s obj/mon classification is objectTimerIsGlobal() itself (timeout.ts)
+display_pickinv	count_unidentified	inlined	display_pickinv()'s override-ID branch (count_unidentified + identify_pack) is reimplemented by wiz_identify()'s port (wizcmds.ts wizIdentify); count_unidentified()'s port is countUnidentified() (invent.ts)
+display_pickinv	identify_pack	inlined	the identify_pack(0) call of display_pickinv()'s override-ID 'all' choice lives in wiz_identify()'s port (wizcmds.ts wizIdentify)
+display_inventory	display_pickinv	inlined	display_inventory()'s port hands the queued class choice to the shared inventory window flow; display_pickinv()'s port is selectInventoryObject() (invent.ts)
+dotypeinv	tally_BUCX	inlined	tally_BUCX()'s beatitude tallies are the statuses Set and picked filter in typeInventory()/traditionalIdentifyChoices() (invent.ts)
+learn_unseen_invent	update_inventory	n/a	the pinned TTY build's update_inventory() has no persistent inventory window after learn_unseen_invent() (invent.ts)
