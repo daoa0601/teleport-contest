@@ -71,6 +71,7 @@ void test('tip empties a floor chest onto the floor without picking up its conte
 void test('cancelling the tipping destination leaves contents alone but spends the command turn', async () => {
     freshPlayableRoom();
     const sack = await addInventoryObject(SACK, { invlet: 'a', initialize: false });
+    await addInventoryObject(CHEST, { initialize: false });
     const club = await knownObject(CLUB, { where: 'contained', container: sack });
     sack.contents = [club];
 
@@ -82,20 +83,20 @@ void test('cancelling the tipping destination leaves contents alone but spends t
 });
 
 for (const hasTarget of [false, true]) {
-    void test(`cancelling a tip ${hasTarget ? 'with another container discovers' : 'with only the source preserves'} a weapon's unknown curse`, async () => {
+    void test(`a tip ${hasTarget ? 'cancelled at the destination' : 'with no other destination'} ${hasTarget ? 'preserves' : 'still runs'} a weapon's unknown curse check`, async () => {
         freshPlayableRoom();
         const sack = await addInventoryObject(SACK, { initialize: false });
         const club = await knownObject(CLUB, { where: 'contained', container: sack });
         sack.contents = [club];
         const weapon = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
         await setPrimaryWeapon(weapon);
-        if (hasTarget) await addInventoryObject(SACK, { initialize: false });
+        if (hasTarget) await addInventoryObject(CHEST, { initialize: false });
 
-        await runExtendedCommand('tip', `${sack.invlet}\x1b`);
+        await runExtendedCommand('tip', `${sack.invlet}${hasTarget ? '\x1b' : '\n    '}`);
 
         assert.equal(weapon.bknown, hasTarget);
-        assert.equal(sack.contents.includes(club), true);
-        assert.equal(club.where, 'contained');
+        assert.equal(sack.contents.includes(club), hasTarget);
+        assert.equal(club.where, hasTarget ? 'contained' : 'floor');
         assert.equal(game.context.move, 1);
     });
 }
