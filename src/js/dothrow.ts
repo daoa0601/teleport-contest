@@ -924,6 +924,7 @@ export async function resolveMapPotionThrow({
         if (flight.contact) {
             prepareHeroThrownTarget(flight.contact);
             rnd(20); // thitmonst() computes this before the potion class test
+            await applyCaitiffPenalty(flight.contact, state);
             if (currentAttribute(A_DEX, state) > rnd(25)) {
                 const impact = await hitMonsterWithThrownPotion({
                     state,
@@ -1304,7 +1305,6 @@ export interface RangedObjectHitOptions {
     guaranteedHit?: boolean;
     finishKillWithObject?: FinishKillWithObject | null;
     finishMonsterKill?: FinishHeroMonsterDeath | null;
-    checkCaitiff?: boolean;
     target?: Position;
     volley?: HeroProjectileVolley;
     publish?: MessagePublisher;
@@ -1476,12 +1476,11 @@ function isHeroThrownEggPieOrVenom(object: GameObject | null | undefined): boole
 async function hitMonsterWithRangedObject(
     monster: Monster, object: GameObject, state: PlayingGameState, mode: RangedAttackMode, {
         guaranteedHit = false, finishKillWithObject = null, finishMonsterKill = null,
-        checkCaitiff = true, target = { x: monster.mx, y: monster.my }, volley,
+        target = { x: monster.mx, y: monster.my }, volley,
         publish = plineWithContinuation, random = rn2, rollOne = rnd,
     }: Omit<RangedObjectHitOptions, 'state'> = {},
 ): Promise<RangedObjectHitResult> {
     const applied = mode === 'applied';
-    if (applied && checkCaitiff) await applyCaitiffPenalty(monster, state);
     let threshold = baseRangedHitThreshold(monster, object, state, random);
     if (guaranteedHit) threshold += 1000;
     const gift = await offerUnicornGem(monster, object, state);
@@ -1540,6 +1539,7 @@ async function hitMonsterWithRangedObject(
         }
     }
     const dieRoll = rollOne(20);
+    await applyCaitiffPenalty(monster, state);
     const weaponHit = rangedObjectUsesWeaponHit(object);
     const heavyObject = object.otyp === BOULDER || object.otyp === HEAVY_IRON_BALL;
     const swallowedBall = object.otyp === HEAVY_IRON_BALL
@@ -1638,10 +1638,10 @@ export type ThrownFoodContact = { heroDied: true }
 // Part of C dothrow.c:thitmonst(): the applied (use_pole()) arm.
 export async function hitMonsterWithAppliedWeapon(
     monster: Monster, weapon: GameObject,
-    { state = game, checkCaitiff = true, target }: Pick<RangedObjectHitOptions, 'state' | 'checkCaitiff' | 'target'> = {},
+    { state = game, target }: Pick<RangedObjectHitOptions, 'state' | 'target'> = {},
 ): Promise<RangedObjectHitResult> {
     requirePlayingGame(state);
-    return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { checkCaitiff, ...(target ? { target } : {}) });
+    return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { ...(target ? { target } : {}) });
 }
 
 // Part of C dothrow.c:thitmonst(): the kicked (dokick.c kick()) arm.
@@ -1656,7 +1656,7 @@ export async function hitMonsterWithKickedObject(
 // Part of C dothrow.c:thitmonst(): the thrown (throwit_mon_hit()) arm.
 export function hitMonsterWithThrownObject(
     monster: Monster, object: GameObject,
-    { state = game, ...options }: Omit<RangedObjectHitOptions, 'checkCaitiff'> = {},
+    { state = game, ...options }: RangedObjectHitOptions = {},
 ): Promise<RangedObjectHitResult> {
     requirePlayingGame(state);
     return hitMonsterWithRangedObject(monster, object, state, 'thrown', options);
@@ -3102,6 +3102,7 @@ export async function resolveSwallowedPotionThrow({
         await applyLowStaminaThrow({ state, object: thrown });
 
         rnd(20);
+        await applyCaitiffPenalty(engulfer, state);
         const impact = await hitMonsterWithSupportedPotion({
             state,
             monster: engulfer,
@@ -3138,6 +3139,7 @@ export async function resolveSwallowedFoodThrow({
         const impactX = engulfer.mx, impactY = engulfer.my;
         prepareHeroThrownTarget(engulfer);
         rnd(20);
+        await applyCaitiffPenalty(engulfer, state);
         const offer = await offerThrownFood(engulfer, thrown, state);
         if (offer?.heroDied) return true;
         if (offer?.handled) {
@@ -3222,6 +3224,7 @@ export async function resolveGenericSwallowedThrow({
         // its d20 targeting roll (dothrow.c:1490-1492, 2152).
         await snuffCandle(thrown, state);
         rnd(20);
+        await applyCaitiffPenalty(engulfer, state);
         const wake = await wakeMonster(engulfer);
         if (wake.heroDied) return true;
         const targetName = monsterName(engulfer, { state });
@@ -3518,6 +3521,7 @@ async function resolveQuiveredGoldMonsterContact({
     // classes, but a metal-eating pet can still catch one as food.
     prepareHeroThrownTarget(monster);
     rnd(20);
+    await applyCaitiffPenalty(monster, state);
     const food = await offerThrownFood(monster, gold, state);
     if (food?.heroDied) return true;
     if (food) return food.handled;

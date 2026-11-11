@@ -122,3 +122,18 @@ void test('a real multishot volley carries each arrow ordinal into physical hit 
     assert.match(game._pending_message, /The \d+(?:st|nd|rd|th) arrow hits the jackal/);
     assert.doesNotMatch(game._pending_message, /The the/);
 });
+
+void test('a samurai loses honor for a missed arrow aimed at a peaceful monster', async () => {
+    await freshObjectRoom({ role: 'samurai', hero: { uhitinc: -100 } });
+    const target = await createMonsterAt('jackal', 12, 10, NO_MINVENT);
+    target.mpeaceful = 1;
+    const health = target.mhp;
+    const arrow = await knownObject(ARROW);
+    installPagerInput(resetInputState(), { expected: /dishonorably|misses/, limit: 3 });
+
+    const result = await hitMonsterWithThrownObject(target, arrow);
+
+    assert.ok('hit' in result && !result.hit);
+    assert.equal(target.mhp, health);
+    assert.equal(game.u.ualign?.record, -1);
+});

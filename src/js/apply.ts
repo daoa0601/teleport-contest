@@ -3595,10 +3595,6 @@ export async function usePolearm(
             return { spentTime: false, failure: true };
         }
 
-        // C charges check_caitiff() before recording the Snickersnee free
-        // strike; the shared applied-weapon attack must not repeat it.
-        await applyCaitiffPenalty(monster, state);
-
         if (isArtifactSnickersnee(object)) {
             const previous = state.context?.snickersneeTurn ?? -1;
             freehit = previous !== (state.moves ?? 0);
@@ -3609,7 +3605,6 @@ export async function usePolearm(
         state.notonhead = cc.x !== monster.mx || cc.y !== monster.my;
         const hit = await hitMonsterWithAppliedWeapon(monster, object, {
             state,
-            checkCaitiff: false,
             target: cc,
         });
         if (hit.heroDied) return hit;
@@ -3942,7 +3937,6 @@ async function prepareHookAttack(monster: Monster, hook: GameObject, target: Pos
         if (confirmation === undefined) delete state.flags.confirm;
         else state.flags.confirm = confirmation;
     }
-    if (!state.program_state.gameover) await applyCaitiffPenalty(monster, state);
 }
 
 // Part of C apply.c:use_grapple(): the "You hook yourself!" outcome.
@@ -4048,6 +4042,7 @@ export async function useGrapplingHook(hook: GameObject, {
                 if (destination) {
                     await prepareHookAttack(monster, hook, target, state);
                     if (state.program_state.gameover) return { spentTime: true };
+                    await applyCaitiffPenalty(monster, state);
                     await pullTinyMonster(monster, destination, state);
                     return { spentTime: true };
                 }
@@ -4058,7 +4053,7 @@ export async function useGrapplingHook(hook: GameObject, {
             if ((!large && !strong) || rn2(4) !== 0) {
                 await prepareHookAttack(monster, hook, target, state);
                 if (state.program_state.gameover) return { spentTime: true };
-                await attackMonster(monster, hook, { state, target, checkCaitiff: false });
+                await attackMonster(monster, hook, { state, target });
                 return { spentTime: true };
             }
             hitSurface = true;
