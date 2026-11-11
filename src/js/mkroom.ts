@@ -317,6 +317,8 @@ function pickSpecialRoom(strict: boolean): Room | null {
 // C mkroom.c:shrine_pos()
 // Even-width or even-height interiors have
 // two central squares, and each such axis owns one independent tie-breaker.
+// An irregular room or a blocked center falls back to a random free
+// location so the shrine still lands inside its own room.
 export function shrinePosition(room: Room): Position {
     const xDelta = room.hx - room.lx;
     let x = room.lx + Math.trunc(xDelta / 2);
@@ -325,7 +327,14 @@ export function shrinePosition(room: Room): Position {
     const yDelta = room.hy - room.ly;
     let y = room.ly + Math.trunc(yDelta / 2);
     if ((yDelta % 2) && rn2(2)) y++;
-    return { x, y };
+
+    const buf: Position = { x, y };
+    const center = requireGameLevel().at(x, y);
+    const roomNumber = (room.roomnoidx ?? -1) + ROOMOFFSET;
+    if (!center || center.roomno !== roomNumber
+        || (center.typ !== ROOM && center.typ !== ICE && center.typ !== CLOUD))
+        somexyspace(room, buf);
+    return buf;
 }
 
 // C mkroom.c:mktemple(): pick an ordinary room and build the temple:
