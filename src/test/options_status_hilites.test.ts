@@ -416,26 +416,23 @@ void test('toggle with a parameter flips every matching boolean', async () => {
     assert.equal(game.flags.verbose, true);
 });
 
-void test('the hilite field table follows initblstats order, not the enum', async () => {
+void test('selecting the version hilite opens its own behavior menu', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views } = await runScript(input, command, [
         { at: /status highlight rules/, pick: /status highlight rules/ },
-        // initblstats runs condition, version, weapon, armor, terrain; the
-        // "version" row carries enum BL_VERS, so menu_fld(26) reads the
-        // table's terrain row.
         { at: / - (?:title|strength|dexterity|constitution|condition|version|weapon|armor|terrain)/, pick: /^version\s*$/ },
-        { at: /Select terrain field hilite behavior:/, keys: '\x1b' },
+        { at: /Select version field hilite behavior:/, keys: '\x1b' },
         { at: /Status hilites:/, keys: '\x1b' },
         { at: /Options/, keys: '\x1b' },
     ]);
     const fieldPage = views.find(view => / - condition/.test(view));
     assert.ok(fieldPage, 'The field list paged to the last five fields');
-    assert.ok(fieldPage.indexOf('version') < fieldPage.indexOf('weapon'),
-        'initblstats lists version before weapon');
-    assert.ok(views.some(view => /Select terrain field hilite behavior:/.test(view)),
-        'The version row opens the terrain behavior menu');
+    assert.ok(fieldPage.indexOf('version') > fieldPage.indexOf('weapon'),
+        'The version choice follows weapon, armor and terrain');
+    assert.ok(views.some(view => /Select version field hilite behavior:/.test(view)),
+        'The version row opens the version behavior menu');
 });
 
 void test("a sixth bad value is still prompted; the seventh draws the line", async () => {

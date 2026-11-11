@@ -991,13 +991,8 @@ function decodeStyle(coloridx: number): StatusStyle {
 // ── botl.c STATUS_HILITES: the interactive rule menus and the rule store ──
 type AnyType = 'int' | 'long' | 'str' | 'mask32';
 
-// botl.c initblstats[] in its own order: the menus index this table by
-// position, not by enum value. The last five rows are permuted — the table
-// runs condition, version, weapon, armor, terrain while the enum numbers
-// weapon, armor, terrain, vers — and `fld` below carries C's initblstats[].fld
-// (the enum value) exactly, so the main menu's identifiers pick the shifted
-// rows just as native does. idxmax is the field a percentage is taken
-// against (-1: no percentage rules).
+// C botl.c:initblstats[] follows the status-field enum order.
+// idxmax selects the denominator for percentage rules; -1 disables them.
 const STATUS_FIELDS: readonly { fld: number; name: string; anytype: AnyType; idxmax: number }[] = [
     { fld: BL_TITLE, name: 'title', anytype: 'str', idxmax: -1 },
     { fld: 1, name: 'strength', anytype: 'int', idxmax: -1 },
@@ -1022,10 +1017,10 @@ const STATUS_FIELDS: readonly { fld: number; name: string; anytype: AnyType; idx
     { fld: 20, name: 'dungeon-level', anytype: 'str', idxmax: -1 },
     { fld: BL_EXP, name: 'experience', anytype: 'long', idxmax: BL_EXP },
     { fld: BL_CONDITION, name: 'condition', anytype: 'mask32', idxmax: -1 },
-    { fld: BL_VERS, name: 'version', anytype: 'str', idxmax: -1 },
     { fld: BL_WEAPON, name: 'weapon', anytype: 'str', idxmax: -1 },
     { fld: BL_ARMOR, name: 'armor', anytype: 'str', idxmax: -1 },
     { fld: BL_TERRAIN, name: 'terrain', anytype: 'str', idxmax: -1 },
+    { fld: BL_VERS, name: 'version', anytype: 'str', idxmax: -1 },
 ];
 if (STATUS_FIELDS.length !== MAXBLSTATS) throw new Error('initblstats must list every status field');
 
