@@ -606,8 +606,10 @@ async function wandEngraveEffects(wand, setup, oep, oetype, frosted, state) {
             if (!blind)
                 post = 'A few ice cubes drop from the wand.';
             if (oep && oep.engr_type === BURN) {
-                if (!blind)
+                if (!blind) {
                     await pline(`The engraving on the ${surface} vanishes!`);
+                    setup.heroToldItVanished = true;
+                }
                 setup.dengr = true;
             }
             return post;
@@ -615,15 +617,19 @@ async function wandEngraveEffects(wand, setup, oep, oetype, frosted, state) {
         case WAN_CANCELLATION:
         case WAN_MAKE_INVISIBLE:
             if (oep && oep.engr_type !== HEADSTONE) {
-                if (!blind)
+                if (!blind) {
                     await pline(`The engraving on the ${surface} vanishes!`);
+                    setup.heroToldItVanished = true;
+                }
                 setup.dengr = true;
             }
             return '';
         case WAN_TELEPORTATION:
             if (oep && oep.engr_type !== HEADSTONE) {
-                if (!blind)
+                if (!blind) {
                     await pline(`The engraving on the ${surface} vanishes!`);
+                    setup.heroToldItVanished = true;
+                }
                 setup.teleengr = true;
             }
             return '';
@@ -694,7 +700,7 @@ export async function doengrave(state = game) {
     const setup = {
         dengr: false, doblind: false, doknown: false, eow: false,
         ptext: true, teleengr: false, zapwand: false, disprefresh: false,
-        adding: false, ret: 'ok', type: DUST, buf: '', ebuf: '',
+        adding: false, heroToldItVanished: false, ret: 'ok', type: DUST, buf: '', ebuf: '',
     };
     let oep = engravingAt(hero.ux, hero.uy, state.level);
     const oetype = oep?.engr_type ?? 0;
@@ -1058,6 +1064,8 @@ export async function doengrave(state = game) {
             everb = setup.adding ? 'add to the weird writing on' : 'write strangely on';
             break;
     }
+    if (setup.heroToldItVanished)
+        await newsym(hero.ux, hero.uy);
     // Tell the adventurer what is going on.
     if (!usingHands && object) {
         const quantity = object.quan ?? object.quantity ?? 1;
