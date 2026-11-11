@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToContainer } from '../js/mkobj.js';
-import { BAG_OF_HOLDING, BAG_OF_TRICKS, CRYSKNIFE, DAGGER, HORN_OF_PLENTY, SACK, WAN_CANCELLATION, WORM_TOOTH } from '../js/object_data.js';
+import { BAG_OF_HOLDING, BAG_OF_TRICKS, CHEST, CRYSKNIFE, DAGGER, HORN_OF_PLENTY, SACK, WAN_CANCELLATION, WORM_TOOTH } from '../js/object_data.js';
 
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
@@ -26,7 +26,6 @@ void test('the inventory tip action spills a carried sack while ignoring a floor
     planInput(input, t, [
         { prompt: /Tools/, keys: sack.invlet },
         { prompt: /T - Tip all the contents out of this container/, keys: 'T' },
-        { prompt: /Where to tip the contents of[\s\S]*on the floor/, keys: '\n' },
     ]);
 
     await rhack('i'.charCodeAt(0));
@@ -46,6 +45,7 @@ void test('the inventory tip action spills a carried sack while ignoring a floor
 void test('cancelling a tip destination keeps the contents and spends a turn', async t => {
     await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { initialize: false, cknown: true });
+    await addInventoryObject(CHEST, { initialize: false });
     const dagger = await knownObject(DAGGER, { where: 'free' });
     await addObjectToContainer(sack, dagger);
     const input = resetInputState();
@@ -73,7 +73,6 @@ void test('tipping a locked carried container learns the lock and leaves its con
     planInput(input, t, [
         { prompt: /Tools/, keys: sack.invlet },
         { prompt: /T - Tip all the contents out of this container/, keys: 'T' },
-        { prompt: /Where to tip the contents of/, keys: '\n' },
     ]);
 
     await rhack('i'.charCodeAt(0));
@@ -123,7 +122,6 @@ void test('tipping a bag of tricks empties all its charges in one turn', async t
     planInput(input, t, [
         { prompt: /Tools/, keys: bag.invlet },
         { prompt: /T - Tip all the contents out of this container/, keys: 'T' },
-        { prompt: /Where to tip the contents of/, keys: '\n' },
         { prompt: /suddenly appears next to you!.*--More--/, keys: ' ' },
     ]);
 
@@ -193,8 +191,7 @@ void test('the tip command asks about a floor sack and spills it after confirmat
     const input = resetInputState();
     input.feed('tip\n');
     planInput(input, t, [
-        { prompt: /There is .*sack here, tip it\?/, keys: 'y' },
-        { prompt: /Where to tip the contents of/, keys: '\n' },
+        { prompt: /There is .*sack here, tip it onto the floor\?/, keys: 'y' },
     ]);
 
     await rhack('#'.charCodeAt(0));
@@ -214,7 +211,6 @@ void test('declining a floor sack continues to carried-object selection for tipp
     planInput(input, t, [
         { prompt: /There is .*sack here, tip it\?/, keys: 'n' },
         { prompt: /What do you want to tip\?/, keys: carried.invlet },
-        { prompt: /Where to tip the contents of/, keys: '\n' },
     ]);
 
     await rhack('#'.charCodeAt(0));
