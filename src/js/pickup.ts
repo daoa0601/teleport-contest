@@ -27,10 +27,10 @@ import {
 import { autokey, autoUnlockFlags, pickLock, isForceableWeapon, changeBoxLockByMagic } from './lock.js';
 import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND, MM_ADJACENTOK, MM_NOMSG, NO_MINVENT, FOOT } from './const.js';
 import {
-    inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject,
+    checkForPuzzlingNonmerge, floorObjectChainFrom, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject,
     inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem,
     chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription,
-    freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving,
+    freeInventoryObject, getobj, lookHere, readFloorEngraving,
     recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, bucCategory,
 } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero, landObjectOnAltar } from './do.js';
@@ -318,6 +318,8 @@ async function choosePickupObjects(source: PickupSource, objects: readonly GameO
     const onlyObject = eligible[0];
     if (autoSelect && eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
         return [{ value: onlyObject, count: count || objectQuantity(onlyObject) }];
+    const objectChain = source.monster ? source.objects : floorObjectChainFrom(source.objects[0]);
+    const withCorpseGenders = checkForPuzzlingNonmerge(objectChain) > 0;
     const ordered = orderedPickupObjects(eligible);
     const sections: MultiSelectSection<GameObject>[] = [];
     let letterCode = 'a'.charCodeAt(0);
@@ -342,7 +344,7 @@ async function choosePickupObjects(source: PickupSource, objects: readonly GameO
             menuItems.push({
                 key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
-                text: await pricedFloorObjectDescription(object),
+                text: await objectDescription(object, { withPrice: true, withCorpseGenders }),
                 value: object,
             });
         }
@@ -1995,7 +1997,8 @@ export async function chooseObjectCategories(title: string, objects: readonly Ga
 }
 
 // Part of C pickup.c:query_objlist(): the menu sections and their rows.
-async function selectionSections(objects: readonly GameObject[], useInventoryLetters: boolean): Promise<MultiSelectSection<GameObject>[]> {
+async function selectionSections(objects: readonly GameObject[], useInventoryLetters: boolean,
+    withCorpseGenders: boolean): Promise<MultiSelectSection<GameObject>[]> {
     const ordered = sortObjects(objects, {
         mode: lootSortMode({ inventoryLetters: useInventoryLetters }),
     });
@@ -2019,7 +2022,9 @@ async function selectionSections(objects: readonly GameObject[], useInventoryLet
                 // pickup.c:query_objlist() names menu entries with
                 // doname_with_price(), so shop goods inside a floor
                 // container are quoted "for sale".
-                text: await lootObjectDescription(object, inventoryPrimaryHandDetail(object), true),
+                text: await inventoryItemDescription(object, {
+                    primaryHandDetail: inventoryPrimaryHandDetail(object), withPrice: true, withCorpseGenders,
+                }),
                 value: object,
             });
         }
@@ -2029,11 +2034,13 @@ async function selectionSections(objects: readonly GameObject[], useInventoryLet
 }
 
 // Part of C pickup.c:query_objlist(): the counted object menu.
-async function chooseObjects(title: string, objects: readonly GameObject[], useInventoryLetters: boolean): Promise<CountedSelection<GameObject>[]> {
+async function chooseObjects(title: string, objects: readonly GameObject[], useInventoryLetters: boolean,
+    unfilteredObjects: readonly GameObject[]): Promise<CountedSelection<GameObject>[]> {
     if (!objects.length) return [];
+    const withCorpseGenders = checkForPuzzlingNonmerge(unfilteredObjects) > 0;
     return showMultiSelectWindow({
         title,
-        sections: await selectionSections(objects, useInventoryLetters),
+        sections: await selectionSections(objects, useInventoryLetters, withCorpseGenders),
         omitHeadings: game.flags.sortpack === false,
         returnCounts: true,
     });
@@ -2588,7 +2595,7 @@ async function menu_loot(container: GameObject, putIn: boolean, resetPicked = fa
     }
     const selected = categories.autoSelect
         ? eligible.map(value => ({ value, count: -1 }))
-        : await chooseObjects(`${action} what?`, eligible, putIn);
+        : await chooseObjects(`${action} what?`, eligible, putIn, candidates);
     const results: ContainerTransferResult[] = [];
     let resetJustPicked = resetPicked;
     for (const selection of selected) {

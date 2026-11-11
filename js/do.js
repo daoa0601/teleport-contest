@@ -46,7 +46,7 @@ import { heroHasCarriedArtifactFlag } from './artifact.js';
 import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero } from './pickup.js';
-import { selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription, consumeInventoryItem, delobj, sortObjects, chooseInventoryObject, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, } from './invent.js';
+import { checkForPuzzlingNonmerge, selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription, consumeInventoryItem, delobj, sortObjects, chooseInventoryObject, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject, objectWeight, meldLandingGlob, addBuriedObject, chargeAlteredUnpaidObject } from './mkobj.js';
 import { promptYesNo } from './query.js';
@@ -1225,6 +1225,7 @@ async function dropCategories() {
 async function chooseDroppedObjects(objects) {
     if (!objects.length)
         return [];
+    const withCorpseGenders = checkForPuzzlingNonmerge(game.inventory) > 0;
     const sorted = sortObjects(objects, { mode: lootSortMode({ inventoryLetters: true }) });
     // menu_drop() passes INVORDER_SORT even when sortpack is disabled.
     const sections = [];
@@ -1238,7 +1239,7 @@ async function chooseDroppedObjects(objects) {
             consumeHallucinatedMenuObjectGlyph(object);
             items.push({ key: object.invlet ?? '#', value: object,
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '',
-                text: await objectDescription(object, { withPrice: true }) });
+                text: await objectDescription(object, { withPrice: true, withCorpseGenders }) });
         }
         sections.push({ heading: objectClassHeading(oclass), items });
     }

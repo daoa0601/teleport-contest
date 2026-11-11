@@ -1994,13 +1994,7 @@ export async function lookHere(
         if (trap?.tseen) features.push(withIndefiniteArticle(trapName(trap.ttyp)));
         if (features.length) await plineWithContinuation(`There is ${features.join(' and ')} here.`);
     }
-    // Native check_for_puzzling_nonmerge follows nobj from the pile top,
-    // so it also sees older floor objects on other squares.
-    const first = level.objects[x]?.[y]?.[0];
-    const floorChain = level.objects.flat(2).filter(object => object !== null && object !== undefined)
-        .sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
-    const start = first ? floorChain.indexOf(first) : -1;
-    const withCorpseGenders = checkForPuzzlingNonmerge(start < 0 ? [] : floorChain.slice(start)) > 0;
+    const withCorpseGenders = checkForPuzzlingNonmerge(floorObjectChainFrom(level.objects[x]?.[y]?.[0])) > 0;
     const underwater = !!(game.underwater || game.u.uinwater);
     let featureName = dungeonFeatureAt(x, y);
     if (featureName === 'pool of water' && underwater) featureName = null;
@@ -2600,6 +2594,7 @@ async function displayMonsterInventory(
     // supplies another title, so the perceived owner still changes.
     monsterName(monster, { article: 'your', suppressIt: true, capitalized: true,
         suppressSaddle: !!MGIVENNAME(monster) });
+    const withCorpseGenders = checkForPuzzlingNonmerge(objects) > 0;
     const ordered = sortObjects(objects, { mode: lootSortMode() });
     const sections: InventorySection<GameObject>[] = [];
     let first = true;
@@ -2613,7 +2608,7 @@ async function displayMonsterInventory(
             const firstGold = first && object.otyp === GOLD_PIECE;
             first = false;
             items.push({ ...(firstGold ? { key: '$' } : {}),
-                text: await inventoryItemDescription(object), value: object });
+                text: await inventoryItemDescription(object, { withCorpseGenders }), value: object });
         }
         sections.push({ heading: objectClassHeading(oclass), items });
     }
@@ -3076,12 +3071,12 @@ async function rerollFallbackPrompt() {
 
 // C invent.c:check_for_puzzling_nonmerge(): mark letters whose corpse
 // species matches another letter but whose gender differs.
-export function checkForPuzzlingNonmerge(objects: readonly GameObject[]): number {
+export function checkForPuzzlingNonmerge(objects: readonly GameObject[], state: GameState = game): number {
     const species = Array.from({ length: 53 }, () => 0);
     const genders = Array.from({ length: 53 }, () => 0);
     const letters = Array.from({ length: 53 }, () => false);
-    game._puzzlingCriteria = 0;
-    game._puzzlingLetters = letters;
+    state._puzzlingCriteria = 0;
+    state._puzzlingLetters = letters;
     let found = false;
     for (const object of objects) {
         if (object.otyp !== CORPSE || object.corpsenm === undefined
@@ -3104,9 +3099,20 @@ export function checkForPuzzlingNonmerge(objects: readonly GameObject[]): number
                 }
             }
         }
-        if (count) game._puzzlingCriteria = 411;
+        if (count) state._puzzlingCriteria = 411;
     }
     return count;
+}
+
+// C's nobj traversal from a floor pile's head also visits older objects
+// on other squares; nexthere traversal would restrict the scan to the pile.
+export function floorObjectChainFrom(first: GameObject | undefined): GameObject[] {
+    if (!first) return [];
+    const floorChain = requireGameLevel().objects.flat(2)
+        .filter(object => object !== null && object !== undefined)
+        .sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
+    const start = floorChain.indexOf(first);
+    return start < 0 ? [] : floorChain.slice(start);
 }
 
 // Part of C invent.c:display_pickinv(): sortloot() grouping into class

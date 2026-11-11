@@ -266,7 +266,7 @@ import { removeWornHeroItem } from './steal.js';
 import { rechargeRing, unpunishHero } from './read.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
+import { checkForPuzzlingNonmerge, consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
 import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval, displayBuriedInventory, probedContentsTitle, engulfedHeroMenuSection } from './invent.js';
 import { cleanupTransientLight, showTransientLight } from './light.js';
 import { lightRoom } from './read.js';
@@ -1617,6 +1617,7 @@ export async function probeMonster(monster: Monster, {
 export async function showProbedObjectInventory(objects: readonly GameObject[], title: string, {
     state = game, groupByClass = true, engulfer = null,
 }: { state?: GameState; groupByClass?: boolean; engulfer?: Monster | null } = {}): Promise<void> {
+    const withCorpseGenders = checkForPuzzlingNonmerge(objects, state) > 0;
     const sorted = sortObjects(objects, { mode: lootSortMode({ state }), state });
     const sections: InventorySection<GameObject>[] = [];
     const classes = groupByClass ? inventoryClassOrder(state) : [null];
@@ -1630,7 +1631,7 @@ export async function showProbedObjectInventory(objects: readonly GameObject[], 
             consumeHallucinatedMenuObjectGlyph(object);
             items.push({
                 ...(first && objectClassForType(object.otyp) === COIN_CLASS ? { key: '$' } : {}),
-                text: await inventoryItemDescription(object), value: object,
+                text: await objectDescription(object, { state, withCorpseGenders }), value: object,
             });
             first = false;
         }

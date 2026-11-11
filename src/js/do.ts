@@ -84,7 +84,7 @@ import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero } from './pickup.js';
 import {
-    selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription,
+    checkForPuzzlingNonmerge, selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription,
     consumeInventoryItem, delobj, sortObjects, chooseInventoryObject, finishInventoryRemoval,
     floorObjectDescription, freeInventoryObject,
 } from './invent.js';
@@ -1463,6 +1463,7 @@ async function dropCategories() {
 // Part of C do.c:menu_drop(): the query_objlist() inventory pick.
 async function chooseDroppedObjects(objects: readonly GameObject[]) {
     if (!objects.length) return [];
+    const withCorpseGenders = checkForPuzzlingNonmerge(game.inventory) > 0;
     const sorted = sortObjects(objects, { mode: lootSortMode({ inventoryLetters: true }) });
     // menu_drop() passes INVORDER_SORT even when sortpack is disabled.
     const sections: MultiSelectSection<GameObject>[] = [];
@@ -1475,7 +1476,7 @@ async function chooseDroppedObjects(objects: readonly GameObject[]) {
             consumeHallucinatedMenuObjectGlyph(object);
             items.push({ key: object.invlet ?? '#', value: object,
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '',
-                text: await objectDescription(object, { withPrice: true }) });
+                text: await objectDescription(object, { withPrice: true, withCorpseGenders }) });
         }
         sections.push({ heading: objectClassHeading(oclass), items });
     }
