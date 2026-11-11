@@ -2936,6 +2936,7 @@ export function checkForPuzzlingNonmerge(objects) {
     const species = Array.from({ length: 53 }, () => 0);
     const genders = Array.from({ length: 53 }, () => 0);
     const letters = Array.from({ length: 53 }, () => false);
+    game._puzzlingCriteria = 0;
     game._puzzlingLetters = letters;
     let found = false;
     for (const object of objects) {
