@@ -101,6 +101,7 @@ import {
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { convertSecretDoor } from './detect.js';
 import { addShopDamage } from './shk.js';
+import { align_str } from './insight.js';
 
 export type InstrumentOptions = NonNullable<Parameters<typeof playTune>[2]>;
 type InstrumentEffectResult = { heroDied: boolean } | void;
@@ -610,9 +611,7 @@ async function wakeMonsterForEarthquake(monster: Monster | null): Promise<boolea
 
 // Part of C music.c:do_earthquake(): align_str(Amask2align()) for the altar case.
 function altarName(mask: number): string {
-    const alignment = Amask2align(mask & AM_MASK);
-    return alignment > 0 ? 'lawful'
-        : alignment < 0 ? 'chaotic' : alignment === 0 ? 'neutral' : 'unaligned';
+    return align_str(Amask2align(mask & AM_MASK));
 }
 
 // Part of C music.c:do_earthquake(): the terrain switch (fountain, sink,

@@ -29,6 +29,7 @@ import { createPoisonGasCloud } from './region.js';
 import { deleteTrap } from './trap.js';
 import { markOverviewUnreachable, sameDungeonLevel } from './dungeon.js';
 import { angerMonster, angerWatchGuards } from './mon.js';
+import { align_str } from './insight.js';
 
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
@@ -347,9 +348,8 @@ async function questPurity(talk: boolean, g: GameState = game): Promise<-1 | 0 |
     const alignment = g.u.ualign;
     if (!alignment) throw new Error('Quest purity requires initialized hero alignment.');
     if (g.flags?.debug && talk) {
-        const alignmentName = (value: number) => value > 0 ? 'lawful' : value < 0 ? 'chaotic' : 'neutral';
         if (alignment.type !== original)
-            await plineWithContinuation(`You are currently ${alignmentName(alignment.type)} instead of ${alignmentName(original)}.`);
+            await plineWithContinuation(`You are currently ${align_str(alignment.type)} instead of ${align_str(original)}.`);
         else if (currentBaseAlignment(g) !== original)
             await plineWithContinuation('You have converted.');
         else if (alignment.record < MIN_QUEST_ALIGN) {

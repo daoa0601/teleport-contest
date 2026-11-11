@@ -22,6 +22,7 @@ import { promptYesNo } from './query.js';
 import { selectMapPosition, coordinateDescription } from './getpos.js';
 import { displayPagerText, expandTabs, showTextWindow } from './wintty.js';
 import { getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, } from './windows.js';
+import { showMenuControls } from './option_editors.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { monsterAtPosition } from './steed.js';
 import { altarmaskAt } from './pray.js';
@@ -37,7 +38,7 @@ import { dist2, visibleCommandKey } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { DEC_TO_UNICODE } from './terminal.js';
-import { detectedTrapDisguise } from './detect.js';
+import { trappedChestAt, trappedDoorAt } from './detect.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
@@ -814,7 +815,11 @@ export function mapFeatureDescription(x, y, glyph) {
 }
 // C pager.c:trap_description().
 export function displayedTrapDescription(type, x, y) {
-    return detectedTrapDisguise(type, x, y) ?? trapName(type);
+    if (trappedChestAt(type, x, y))
+        return 'trapped chest'; /* might actually be a large box */
+    if (trappedDoorAt(type, x, y))
+        return 'trapped door'; /* not "trap door"... */
+    return trapName(type);
 }
 // C you.h:next2u(): distu(px,py) <= 2 adjacency.
 function adjacentToHero(x, y) {
@@ -1300,9 +1305,9 @@ export async function identifyTrap() {
     const x = game.u.ux + direction.dx, y = game.u.uy + direction.dy;
     const glyph = glyphAt(x, y);
     if (glyph?.kind === 'trap' && [BEAR_TRAP, TRAPPED_CHEST, TRAPPED_DOOR].includes(glyph.trapType)) {
-        const disguise = detectedTrapDisguise(glyph.trapType, x, y);
-        if (disguise) {
-            await pline(`That is a ${disguise}.`);
+        const chest = trappedChestAt(glyph.trapType, x, y);
+        if (chest || trappedDoorAt(glyph.trapType, x, y)) {
+            await pline(`That is a trapped ${chest ? 'chest' : 'door'}.`);
             return;
         }
     }
@@ -1361,23 +1366,7 @@ export function setOptionsCommand() {
 }
 // C pager.c:domenucontrols().
 export async function menuControlsHelp() {
-    const key = (command) => visibleCommandKey(game.commandBindings.menuKey(command));
-    const wholeAndPage = (label, whole, page) => `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;
-    const goTo = (key, name) => wholeAndPage('', key, name);
-    await displayPagerText([
-        'Menu control keys:', '',
-        '           Whole  Current', '            Menu   Page',
-        wholeAndPage('Select', key('.'), key(',')), wholeAndPage('Invert', key('@'), key('~')),
-        wholeAndPage('Deselect', key('-'), key('\\')), '',
-        wholeAndPage('Go to', key('>'), 'Next page'), goTo(key('<'), 'Previous page'),
-        goTo(key('^'), 'First page'), goTo(key('|'), 'Last page'), '',
-        wholeAndPage('Search', key(':'), 'Exter a target string and invert all matching entries'), '',
-        '   Other   Return   Accept current choice(s) and dismiss menu',
-        '           Enter    Same as Return',
-        '           Space    If not on last page, advance one page;',
-        '                    when on last page, treat like Return',
-        '           Escape   Cancel menu without making any choice(s)',
-    ]);
+    await displayPagerText(showMenuControls(false));
 }
 // Part of C pager.c:self_lookat(): the swallowed subset — swallowing has
 // already dismounted the hero, revealed them, and released any trap.

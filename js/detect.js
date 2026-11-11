@@ -14,7 +14,7 @@ import { canSpotMonster, canSenseMonster, monsterHasWarningProjection, feel_loca
 import { currentBoulderSymbol } from './symbols.js';
 import { displayMessageWindow, flushPendingTopline } from './topl.js';
 import { formatFeltMessage, formatSeenMessage, pline, plineWithContinuation, set_msg_xy } from './pline.js';
-import { A_INT, M_AP_FURNITURE, TER_FULL, TREE, BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TOE, FOOT, NOSE } from './const.js';
+import { A_INT, M_AP_FURNITURE, TER_FULL, TREE, BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TOE, FOOT, NOSE } from './const.js';
 import { isok, ynSingleKey } from './cmd.js';
 import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
 import { definiteName, objectCombatName, verbForSubject, withIndefiniteArticle, makePlural } from './objnam.js';
@@ -152,26 +152,41 @@ export async function mapDetectedMonster(monster, showTail, state = game) {
         await show_glyph_cell(segment.x, segment.y, tail.ch, tail.color, false, attribute, tail);
     }
 }
-// C detect.c:trapped_chest_at()/trapped_door_at() identify the projection,
-// not whether a visible box or door still has its trap armed.
-export function detectedTrapDisguise(type, x, y) {
+// C detect.c:trapped_chest_at(): the trap glyph hides a chest or large
+// box — any trappable container on the map, an actually trapped one in an
+// inventory — when the square's trap type agrees and hallucination has
+// not rewritten it.  This identifies the projection, not whether the box
+// is still armed.
+export function trappedChestAt(type, x, y) {
     if (glyphAt(x, y)?.kind !== 'trap')
-        return null;
-    if (type === TRAPPED_CHEST && (!heroIsHallucinating() || rn2(20) === 0)) {
-        const level = game.level;
-        const boxes = level?.objects[x]?.[y] ?? [];
-        const here = x === game.u.ux && y === game.u.uy;
-        const carried = here ? [...game.inventory, ...game.u.usteed?.minvent ?? []] : [];
-        const monster = level ? monsterAtPosition(level, x, y) : null;
-        const isBox = (object) => object.otyp === CHEST || object.otyp === LARGE_BOX;
-        if (boxes.some(isBox) || [...carried, ...monster?.minvent ?? []]
-            .some(object => isBox(object) && object.otrapped))
-            return 'trapped chest';
-    }
-    if (type === TRAPPED_DOOR && (!heroIsHallucinating() || rn2(20) === 0)
-        && game.level?.at(x, y)?.typ === DOOR)
-        return 'trapped door';
-    return null;
+        return false;
+    if (type !== TRAPPED_CHEST || heroIsHallucinating() && rn2(20))
+        return false;
+    const level = game.level;
+    const boxes = level?.objects[x]?.[y] ?? [];
+    const here = x === game.u.ux && y === game.u.uy;
+    const carried = here ? [...game.inventory, ...game.u.usteed?.minvent ?? []] : [];
+    const monster = level ? monsterAtPosition(level, x, y) : null;
+    const isBox = (object) => object.otyp === CHEST || object.otyp === LARGE_BOX;
+    return boxes.some(isBox) || [...carried, ...monster?.minvent ?? []]
+        .some(object => isBox(object) && object.otrapped);
+}
+// C detect.c:trapped_door_at(): the trap glyph marks the door itself.  An
+// open, broken, or missing door consults trapped_chest_at() like C — where
+// the door-only trap type makes that inner test always fail — so the door
+// reading stands either way.
+export function trappedDoorAt(type, x, y) {
+    if (glyphAt(x, y)?.kind !== 'trap')
+        return false;
+    if (type !== TRAPPED_DOOR || heroIsHallucinating() && rn2(20))
+        return false;
+    const location = game.level?.at(x, y);
+    if (!location || location.typ !== DOOR)
+        return false;
+    if (location.doormask & (D_NODOOR | D_BROKEN | D_ISOPEN)
+        && trappedChestAt(type, x, y))
+        return false;
+    return true;
 }
 // C detect.c:o_in().
 function objectOfClass(object, objectClass) {

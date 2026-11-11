@@ -30,7 +30,7 @@ import { objectTypeKnown, oinit } from './o_init.js';
 import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition, setShopResidency, fixShopDamage, dopay } from './shk.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
-import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire } from './hack.js';
+import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, blockMonsterNotices, unblockMonsterNotices, noticeAllMonsters, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire, rootedHeroCannotMove } from './hack.js';
 import { buryFloorObjectsAt, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, map_background, } from './display.js';
 import { cansee, canseeFromHero, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
@@ -1452,11 +1452,7 @@ export async function dodown() {
     if (game.iflags.menu_requested)
         game.context.nopick = true;
     game.context.travel = game.context.travel1 = false;
-    if (MONSTER_MOVE[game.u.umonnum] === 0) {
-        const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
-            || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
-        await plineWithContinuation(`You are rooted ${where}.`);
-        nomul(0, game);
+    if (await rootedHeroCannotMove()) {
         game.context.move = 1;
         return false;
     }
@@ -1559,12 +1555,8 @@ export async function doup() {
     if (game.iflags.menu_requested)
         game.context.nopick = true;
     game.context.travel = game.context.travel1 = false;
-    // C hack.c:u_rooted(): the "You are rooted" refusal, inlined as in dodown().
-    if (MONSTER_MOVE[game.u.umonnum] === 0) {
-        const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
-            || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
-        await plineWithContinuation(`You are rooted ${where}.`);
-        nomul(0, game);
+    // C hack.c:u_rooted(): the "You are rooted" refusal, as in dodown().
+    if (await rootedHeroCannotMove()) {
         game.context.move = 1;
         return false;
     }

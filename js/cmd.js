@@ -6,12 +6,12 @@ import { FOOD_CLASS, POTION_CLASS } from './objclass.js';
 import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting } from './apply.js';
 import { doname, monsterName } from './do_name.js';
-import { doannotate, doDungeonOverview, levelIsWizardTower, recordMappedOverviewState, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
+import { doannotate, doDungeonOverview, levelIsWizardTower, recordMappedOverviewState, rm_mapseen, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
 import { On_stairs_dn, On_stairs_up } from './stairs.js';
 import { dochat } from './sounds.js';
 import { doloot, dotip, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifact.js';
-import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from './insight.js';
+import { doChronicle, doGenocided, doVanquished, doattributes, doconduct, remove_achievement } from './insight.js';
 import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';
 import { doclose, doopen, continuePicking, continueForceLock, doforce, maybeResetPick, resetPick } from './lock.js';
@@ -31,7 +31,9 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation } from './pager.js';
 import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
 import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
-import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip, checkSpecialRoom, dopickup } from './hack.js';
+import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip, checkSpecialRoom, dopickup, setHeroInWater } from './hack.js';
+import { initTrack } from './track.js';
+import { showMenuControls } from './option_editors.js';
 import { propertyIsActive } from './properties.js';
 import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { inventoryReport } from './invent.js';
@@ -268,6 +270,11 @@ async function commandAllowed(command) {
     return !(game.iflags.debug_fuzzer
         && (command.flags & NATIVE_COMMAND_FLAGS.NOFUZZERCMD));
 }
+// C cmd.c:accept_menu_prefix(): commands which accept the 'm' prefix to
+// request menu operation (overloaded for move-without-autopickup).
+function acceptMenuPrefix(command) {
+    return (command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX) !== 0;
+}
 // C cmd.c:rhack(). Prefixes are commands; each consumes another parse in
 // the same dispatch, so counts and configured keys work at every position.
 export async function rhack(key) {
@@ -383,7 +390,7 @@ export async function rhack(key) {
                 resetCommandVariables(game.multi < 0);
                 return;
             }
-            if (game.iflags.menu_requested && !(selected.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+            if (game.iflags.menu_requested && !acceptMenuPrefix(selected)) {
                 const prefixKey = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
                 await plineWithContinuation(`'${prefixKey}' prefix has no effect for the ${selected.name} command.`);
                 game.iflags.menu_requested = false;
@@ -896,16 +903,16 @@ export async function terrainCommand() {
     game.context.move = 0;
 }
 // C cmd.c:here_cmd_menu(): inlined here (there_cmd_menu at the hero's own
-// square with CLICK_1; C doherecmdmenu() is this function's own name).
+// square with CLICK_1; C dotherecmdmenu() is this function's own name).
 async function doherecmdmenu() {
-    enqueueContextMenu(await selectContextMenu(game.u.ux, game.u.uy, CLICK_1));
+    await selectContextMenu(game.u.ux, game.u.uy, CLICK_1);
 }
 // C cmd.c:dotherecmdmenu()
 async function dotherecmdmenu() {
     game.iflags.getdir_click = CLICK_1 | CLICK_2;
     const target = game._clicklookTarget;
     if (target && isok(target.x, target.y)) {
-        enqueueContextMenu(await selectContextMenu(target.x, target.y, target.x === game.u.ux && target.y === game.u.uy ? CLICK_1 : game.iflags.getdir_click));
+        await selectContextMenu(target.x, target.y, target.x === game.u.ux && target.y === game.u.uy ? CLICK_1 : game.iflags.getdir_click);
         game._clicklookTarget = null;
         game.iflags.getdir_click = 0;
         return;
@@ -917,7 +924,7 @@ async function dotherecmdmenu() {
         commandResultCancelled(); // cmd.c:there_cmdmenu() returns ECMD_CANCEL.
         return;
     }
-    enqueueContextMenu(await selectContextMenu(game.u.ux + direction.dx, game.u.uy + direction.dy, direction.dx || direction.dy ? click : CLICK_1));
+    await selectContextMenu(game.u.ux + direction.dx, game.u.uy + direction.dy, direction.dx || direction.dy ? click : CLICK_1);
 }
 // C cmd.c:act_on_act() queues the chosen action's command together with
 // the answers its prompts consume (cmd.c:4686-4835); every entry lands on
@@ -1135,8 +1142,8 @@ function contextMenuResponses(selection) {
 }
 // C cmd.c:there_cmd_menu(). The dispatcher frame: menu window, self /
 // next2u / far entry sections, the no-entry move-or-travel fallback, the
-// single-entry shortcut, and the selection that feeds enqueueContextMenu
-// (act_on_act()).
+// single-entry shortcut, and the selection that act_on_act()
+// (enqueueContextMenu()) executes.
 // Also C cmd.c:there_cmd_menu_common(): inlined here (the look-at entry
 // and the CLICK_1/CLICK_2 suppression).
 // Also C cmd.c:there_cmd_menu_far(): inlined here (the throw and travel
@@ -1158,11 +1165,14 @@ export async function selectContextMenu(x, y, click) {
     if (!entries.length) {
         // getdir's ordinary keyboard direction has no click modifier. With
         // no contextual action, native queues movement or travel directly.
-        return adjacent && heroTestMove(x, y) ? { action: 'move', x, y }
-            : game.flags.travel !== false ? { action: 'travel', x, y } : null;
+        enqueueContextMenu(adjacent && heroTestMove(x, y) ? { action: 'move', x, y }
+            : game.flags.travel !== false ? { action: 'travel', x, y } : null);
+        return;
     }
-    if (entries.length === 1 && entries[0]?.action === 'attack')
-        return { action: 'attack', x, y };
+    if (entries.length === 1 && entries[0]?.action === 'attack') {
+        enqueueContextMenu({ action: 'attack', x, y });
+        return;
+    }
     clearMessageWindow();
     const window = tty_create_nhwindow(NHW_MENU);
     await tty_start_menu(window);
@@ -1172,7 +1182,7 @@ export async function selectContextMenu(x, y, click) {
     const result = await tty_select_menu(window, PICK_ONE);
     await tty_destroy_nhwindow(window);
     const action = result.selections[0]?.identifier;
-    return action ? { action, x, y } : null;
+    enqueueContextMenu(action ? { action, x, y } : null);
 }
 // C cmd.c:there_cmd_menu_far(): the far-click entries.  linedup(..., 1):
 // boulders do not obstruct an explicitly chosen throw, so the walk toward
@@ -1516,43 +1526,36 @@ function freeLevelObject(object) {
 // in mydogs for the post half's losedogs(); the port returns them to the
 // caller instead, so the pre half returns the kept followers, and null
 // when monster removal ends the game (an abort C's synchronous halves
-// cannot take). In the pre half, dobjsfree() plus savelev(FREEING)
-// release the level's objects below — get_freeing_nhfile() and
-// close_nhfile() are only the file plumbing around that release, which
-// the port performs in memory — set_uinwater(0) is the u.uinwater write,
-// and the svd.dndest/svu.updest memsets need no counterpart because the
-// arrival regions belong to the replacement level, which rebuilds them.
+// cannot take). In the pre half, savelev(FREEING) releases the level's
+// objects below — get_freeing_nhfile() and close_nhfile() are only the file
+// plumbing around that release, which the port performs in memory; C's
+// dobjsfree() drains a deferred-deletion queue the port does not keep
+// (freed objects are released eagerly), and the svd.dndest/svu.updest
+// memsets need no counterpart because the arrival regions belong to the
+// replacement level, which rebuilds them.
 // In the post half, vision_reset() is vision_reset_new_level(),
 // u_on_rndspot() keeps its C name in dungeon.ts, losedogs() is
 // deliverMigratingMonsters(), u_collide_m() is resolveHeroArrivalCollision(),
-// initrack() is the track reset, and deliver_splev_message() is
+// initrack() is initTrack() (track.ts), and deliver_splev_message() is
 // deliverSpecialLevelMessages(). The INSURANCE save_currentstate()
 // checkpoint is saveCurrentState() (do.ts).
-// Also C dungeon.c:rm_mapseen(): inlined here (the overview record and
-// annotation of the replaced level are discarded).
 export async function makemapPrepost(pre, wasInsideTower, pets = []) {
     requirePlayingGame(game);
     if (pre) {
         const kept = await makemapRemoveMons();
         if (game.program_state.gameover)
             return null;
-        // rm_mapseen(): discard the overview record of the level being
-        // replaced; mklev() re-creates an empty one via init_mapseen().
-        const key = `${game.u.uz.dnum}:${game.u.uz.dlevel}`;
-        game._overviewRecords?.delete(key);
-        game._levelAnnotations?.delete(key);
+        // mklev() re-creates an empty record via init_mapseen().
+        rm_mapseen(game.u.uz);
         // Achievement tracking; if replacing a level that has a special
         // prize, lose credit for previously finding it and reset for the
-        // new instance of that prize (remove_achievement()).
+        // new instance of that prize.
         const prototype = specialPrototypeAt(game.u.uz.dnum, game.u.uz.dlevel);
         const achievement = prototype === 'minend' ? ACH_MINE_PRIZE
             : prototype === 'soko1' ? ACH_SOKO_PRIZE : null;
         if (achievement !== null) {
-            const earned = game.u.uachieved ?? [];
-            if (earned.some(entry => Math.abs(entry) === achievement)) {
-                game.u.uachieved = earned.filter(entry => Math.abs(entry) !== achievement);
+            if (remove_achievement(game, achievement))
                 await plineWithContinuation(`${achievement === ACH_MINE_PRIZE ? "Mine's-end" : 'Soko-prize'} achievement revoked.`);
-            }
             const prizes = game.context.achieveo;
             if (prizes) {
                 if (achievement === ACH_MINE_PRIZE)
@@ -1576,7 +1579,7 @@ export async function makemapPrepost(pre, wasInsideTower, pets = []) {
         game.u.ustuck = null;
         game.u.uswallow = game.uswallow = 0;
         game.u.uswldtim = 0;
-        game.u.uinwater = 0;
+        await setHeroInWater(false);
         game.u.uundetected = false;
         // savelev(FREEING) releases level-owned objects without destruction
         // rolls or uncreating their artifacts. Carried objects have
@@ -1588,7 +1591,7 @@ export async function makemapPrepost(pre, wasInsideTower, pets = []) {
                     freeLevelObject(object);
         for (const object of [...(oldLevel.buriedObjects ?? [])])
             freeLevelObject(object);
-        game._levelCache?.delete(key);
+        game._levelCache?.delete(`${game.u.uz.dnum}:${game.u.uz.dlevel}`);
         return kept;
     }
     vision_reset_new_level();
@@ -1606,7 +1609,7 @@ export async function makemapPrepost(pre, wasInsideTower, pets = []) {
     if ((await killGenocidedMonsters()).heroDied)
         return [];
     await resolveHeroArrivalCollision();
-    game._heroTrack = [];
+    initTrack(game);
     if (heroIsPunished()) {
         await unplaceBallAndChain();
         await placeBallAndChain();
@@ -2013,7 +2016,7 @@ export async function showExtendedCommandList() {
                 continue;
             addMenuHeading(window, wizardSection ? 'Debugging Extended Commands' : 'Extended commands');
             for (const { command, description } of entries) {
-                const markers = `${command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX ? 'm' : ''}${commandAutocompletes(command) ? 'A' : ''}`;
+                const markers = `${acceptMenuPrefix(command) ? 'm' : ''}${commandAutocompletes(command) ? 'A' : ''}`;
                 label(` ${(command.name ?? '').padEnd(14)} ${(markers ? `[${markers}]` : '').padStart(4)} ${description}`);
                 found++;
             }
@@ -2511,9 +2514,9 @@ export function setMulti(value, state = game) {
 export function heroHasInvoluntaryDelay(state = game) {
     return currentMulti(state) < 0;
 }
-// ── Command counts (C cmd.c:get_count(), parse()) ─────────────────────────
 // C cmd.c:parse(): read the command key and its count prefix; C's rhack()
 // runs this whenever the command queue has no queued input.
+// ── Command counts (C cmd.c:get_count(), parse()) ─────────────────────────
 export async function readCommandInput() {
     game._commandCount = 0;
     setMulti(0);
@@ -2776,7 +2779,7 @@ export async function ynSingleKey(message, cursorOffset = 0) {
 // when it needs the direction; other prompts must keep its entry type.
 function queuedDirectionKey({ dirx, diry, dirz }) {
     const direction = dirz ? zdir.findIndex(z => z === Math.sign(dirz))
-        : xdir.findIndex((x, index) => index < N_DIRS && x === dirx && ydir[index] === diry);
+        : xyToDirection(dirx, diry);
     // A distant vector yields DIR_ERR. The pinned recorder reads NUL at
     // dirchars[-1] and cancels silently; avoid that out-of-bounds read.
     return direction < 0 ? 0 : game.commandBindings.directionKeys.charCodeAt(direction);
@@ -3166,7 +3169,7 @@ async function readcharCore(inputState) {
     }
     else if (key === 27 && game.iflags?.altmeta && inputState !== 'other') {
         // pgetchar() returns char, unlike the first nh_poskey() int.
-        const next = nativeChar(await nhgetch(inputState));
+        const next = nativeChar(await pgetchar());
         key = next === -1 || next === 0 || next === 27 ? 27 : next | 128;
     }
     return { key: nativeChar(key), click: null };
@@ -3315,8 +3318,6 @@ export function controlKeyHintLines(key) {
     ];
 }
 // C cmd.c:dokeylist().
-// C cmd.c:keylist_func_has_key().
-// C cmd.c:keylist_putcmds().
 // Also C cmd.c:show_direction_keys(): inlined here (the direction-key
 // diagram at the top of the list).
 // Also C cmd.c:spkey_name(): inlined here (the "[name]" labels of keyless
@@ -3346,23 +3347,7 @@ export async function showKeyBindings() {
     lines.push('^C      interrupt: break out of NetHack (SIGINT)');
     for (const special of keyless)
         lines.push(`${`[${special.name}]`.padEnd(21)} ${special.description}`);
-    lines.push('', 'Menu control keys:');
-    for (const [control, description] of [
-        ['>', 'Go to next page'], ['<', 'Go to previous page'], ['^', 'Go to first page'],
-        ['|', 'Go to last page'], ['.', 'Select all items in entire menu'],
-        ['@', 'Invert selection for all items'], ['-', 'Unselect all items in entire menu'],
-        [',', 'Select all items on current page'], ['~', "Invert current page's selections"],
-        ['\\', 'Unselect all items on current page'], [':', 'Search and invert matching items'],
-        ['Return', 'Accept current choice(s) and dismiss menu'], ['Enter', 'Same as Return'],
-        ['Space', 'If not on last page, advance one page;'], ['     ', 'when on last page, treat like Return'],
-        ['Escape', 'Cancel menu without making any choice(s)'],
-    ]) {
-        // C options.c:show_menu_controls() uses the configured alias for
-        // each menu command; Return, Space and Escape stay hardcoded.
-        const key = control?.length === 1
-            ? visibleCommandKey(bindings.menuKey(control)) : control ?? '';
-        lines.push(`${key.padEnd(7)} ${description ?? ''}`);
-    }
+    lines.push('', ...showMenuControls(true));
     const ignored = NATIVE_COMMAND_FLAGS.INTERNALCMD | NATIVE_COMMAND_FLAGS.MOVEMENTCMD | NATIVE_COMMAND_FLAGS.WIZMODECMD;
     const categories = [
         ['General commands:', command => !!(command.flags & NATIVE_COMMAND_FLAGS.GENERALCMD) && !(command.flags & ignored)],
@@ -3371,29 +3356,58 @@ export async function showKeyBindings() {
                 && !!(command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD) && !(command.flags & NATIVE_COMMAND_FLAGS.INTERNALCMD)],
     ];
     for (const [heading, include] of categories) {
-        const commands = NATIVE_COMMANDS.filter(command => command.name !== null && include(command));
-        if (!commands.length)
+        if (!keylistPutCmds(lines, used, include, true))
             continue;
         lines.push('', heading);
-        const previouslyUsed = new Set(used);
-        for (let code = 0; code < 256; code++) {
-            if (used.has(code) || code === 32 && !game.flags.rest_on_space)
-                continue;
-            const binding = bindings.lookup(code);
-            if (!binding?.command || !include(binding.command))
-                continue;
-            lines.push(`${keyText(code).padEnd(7)} ${(binding.command.name ?? '').padEnd(13)} ${commandDescription(binding.command)}${binding.parameter === null ? '' : ` "${binding.parameter}"`}`);
-            used.add(code);
-        }
-        for (const command of commands) {
-            if (bindings.bindings.some(binding => !previouslyUsed.has(binding.key) && binding.command === command))
-                continue;
-            lines.push(`#${(command.name ?? '').padEnd(20)} ${commandDescription(command)}`);
-        }
+        keylistPutCmds(lines, used, include, false);
     }
     await showTextWindow(lines);
     await restoreCommandMap();
     game.context.move = 0;
+}
+// C cmd.c:keylist_func_has_key(): does any key outside keysUsed still run
+// this command?
+function keylistFuncHasKey(command, keysUsed) {
+    const bindings = game.commandBindings;
+    for (let code = 0; code < 256; code++) {
+        if (keysUsed.has(code))
+            continue;
+        if (bindings.lookup(code)?.command === command)
+            return true;
+    }
+    return false;
+}
+// C cmd.c:keylist_putcmds(): one command category — every still-unused key
+// bound to an included command, in key order, then the included commands
+// with no such key as "#name" rows.  docount only reports the row count.
+function keylistPutCmds(lines, used, include, docount) {
+    const keysAlreadyUsed = new Set(used);
+    let count = 0;
+    for (let code = 0; code < 256; code++) {
+        if (used.has(code) || code === 32 && !game.flags.rest_on_space)
+            continue;
+        const binding = game.commandBindings.lookup(code);
+        if (!binding?.command || !include(binding.command))
+            continue;
+        if (docount) {
+            count++;
+            continue;
+        }
+        lines.push(`${keyText(code).padEnd(7)} ${(binding.command.name ?? '').padEnd(13)} ${commandDescription(binding.command)}${binding.parameter === null ? '' : ` "${binding.parameter}"`}`);
+        used.add(code);
+    }
+    for (const command of NATIVE_COMMANDS) {
+        if (command.name === null || !include(command))
+            continue;
+        if (keylistFuncHasKey(command, keysAlreadyUsed))
+            continue;
+        if (docount) {
+            count++;
+            continue;
+        }
+        lines.push(`#${command.name.padEnd(20)} ${commandDescription(command)}`);
+    }
+    return count;
 }
 // Player-facing descriptions from pinned cmd.c:extcmdlist.
 export const COMMAND_DESCRIPTIONS = new Map([
