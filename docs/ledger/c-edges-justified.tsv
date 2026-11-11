@@ -2359,3 +2359,7 @@ nasty	msummon	inlined	nasty()'s Inhell msummon branch returns a deferral the wiz
 getpos_refresh	docrt_flags	inlined	getpos_refresh()'s docrt_flags(docrtRefresh) is modeled as the botl request plus the pending glyph resend (getpos.ts refreshHilite)
 gloc_filter_init	gloc_filter_floodfill	inlined	gloc_filter_init()'s flood fill is inlined in getposArea() with its classify/matcharea predicates (getpos.ts)
 known_vibrating_square_at	invocation_pos	inlined	invocation_pos() is isInvocationPosition() (hack.ts); known_vibrating_square_at() reads the stored invocationPosition plus its known-trap test directly (getpos.ts)
+tty_getmsghistory	msghistory_snapshot	inlined	tty_getmsghistory()'s snapshot exchange is the direct history-array read in the save path (save.ts); no ring snapshot copy exists
+redotoplin	putsyms	inlined	putsyms()'s cell writes are inlined in redotoplin() and renderKeyPrompt(); topl_putsym()'s hard wrap is toplineRows() (topl.ts)
+update_topl	redotoplin	inlined	updateTopline()'s pending-topline branches own the repaint; redotoplin()'s port is the same-named function (topl.ts)
+more	topl_putsym	inlined	topl_putsym()'s hard column wrap is toplineRows(splitWords: false) inside pageTopline() (topl.ts)
