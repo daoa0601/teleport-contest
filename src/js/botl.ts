@@ -669,8 +669,7 @@ export class StatusHighlights {
         field.expires = 0;
     }
 
-// Port only: re-arm temporary highlights and collect whether any expired
-// (C does this inside eval_and_notify_windowport()'s field sweep).
+    // Re-arm changed fields and check pending expirations for the next status update.
     evaluateNextUnhilite(state: GameState): boolean {
         this.moves = state.moves;
         let update = !!state.context.botl;
@@ -680,7 +679,10 @@ export class StatusHighlights {
                     ? state.moves + (state.iflags.hiliteDelta ?? 0) : 0;
                 field.changed = false;
                 update = true;
-            } else if (!state.multi && field.expires > 0 && field.expires < state.moves) update = true;
+            }
+            if (update) continue;
+            if (field.expires > 0 && this.hiliteResetNeeded(field, state, field.expires + 1)
+                && field.expires < state.moves) update = true;
         }
         return update;
     }
@@ -688,9 +690,11 @@ export class StatusHighlights {
     // C botl.c:hilite_reset_needed(). A temporary highlight expires once
     // its time has passed and the hero is not stalled in a multi-turn
     // action.
-    hiliteResetNeeded(previous: FieldHistory | undefined, state: GameState): boolean {
-        return !!previous?.expires && !state.multi
-            && previous.expires < (this.moves ?? state.moves);
+    hiliteResetNeeded(
+        previous: FieldHistory | undefined, state: GameState, time = this.moves ?? state.moves,
+    ): boolean {
+        return previous?.rule?.behavior === BL_TH_UPDOWN && !!previous.expires && !state.multi
+            && previous.expires < time;
     }
 
 // C botl.c:evaluate_and_notify_windowport(): the whole-field sweep; both
