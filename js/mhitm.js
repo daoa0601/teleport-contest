@@ -20,7 +20,7 @@ import { findMonsterArmorClass } from './worn.js';
 import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
 import { splitMon } from './potion.js';
-import { createElementalMonsterExplosion } from './explode.js';
+import { createElementalMonsterExplosion, explodingMonsterForm, monsterExplosionKiller } from './explode.js';
 import { cansee } from './vision.js';
 import { applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder, prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, turnGolemToStone, } from './mon.js';
 import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName, monsterTypeName } from './do_name.js';
@@ -869,6 +869,7 @@ export async function resolveMonsterCombatExplosion(attacker, defender, attack, 
     if (damageType === AD_FIRE || damageType === AD_COLD || damageType === AD_ELEC) {
         const damage = dice ? rollDice(dice, sides)
             : sides ? rollDice((MONSTER_LEVEL[attacker.mnum] ?? 0) + 1, sides) : 0;
+        const recentForm = explodingMonsterForm(attacker);
         if (attacker.mhp > 0) {
             const death = await finishEnvironmentalMonsterDeath(attacker, state, {
                 noCorpse: true, publish, random, rollDice,
@@ -877,7 +878,7 @@ export async function resolveMonsterCombatExplosion(attacker, defender, attack, 
                 return { mask: M_ATTK_AGR_DIED, heroDied: true, damage };
         }
         // Death recovery may change the source's form before the blast.
-        const killer = `${possessiveName(monsterTypeName(attacker.mnum, !!attacker.female))} explosion`;
+        const killer = monsterExplosionKiller(attacker, recentForm);
         const blast = await createElementalMonsterExplosion(attacker.mx, attacker.my, damageType, damage, killer, { state, publish, random });
         // explmm keeps AGR_DIED even when life saving leaves the source alive.
         const mask = M_ATTK_AGR_DIED | (defender.mhp <= 0 ? M_ATTK_DEF_DIED : 0);

@@ -3,10 +3,10 @@
 // objects fly outward from the blast or a collapsing structure.
 import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, VENOM_CLASS, RANDOM_CLASS } from './objclass.js';
 import { objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE, } from './object_data.js';
-import { monsterHasMagicResistance } from './mondata.js';
+import { is_shapeshifter, monsterHasMagicResistance } from './mondata.js';
 import { burnArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact, trapAt } from './trap.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_STR, BURNING, BURNING_OIL, COLNO, DOOR, D_CLOSED, D_LOCKED, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, LARGEST_INT, LOST_EXPLODING, M_AP_MONSTER, M_AP_TYPE, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, SHOPBASE, SINK, STATUE_TRAP, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, ZAP_POS } from './const.js';
+import { A_STR, BURNING, BURNING_OIL, COLNO, DOOR, D_CLOSED, D_LOCKED, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, LARGEST_INT, LOST_EXPLODING, M_AP_MONSTER, M_AP_TYPE, MON_EXPLODE, NON_PM, PHYS_EXPL_TYPE, ROWNO, SHOPBASE, SINK, STATUE_TRAP, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, ZAP_POS } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, TemporaryMapEffect } from './display.js';
 import { formatHeardMessage, plineWithContinuation, impossible, publishHeardMessage } from './pline.js';
 import { finishHeroDeath } from './end.js';
@@ -108,8 +108,10 @@ export async function explode(x, y, type, damage, objectClass, style, { state = 
     const youExploding = objectClass === MON_EXPLODE && type >= 0;
     const monsterExplosion = objectClass === MON_EXPLODE && !youExploding;
     const hallucinate = monsterExplosion && heroIsHallucinating(state)
-        && /(?:'s|s') explosion/i.test(killer || '');
+        && /(?:'s|s') explosion|explosion of an? /i.test(killer || '');
     let description = monsterExplosion ? killer || source.name : source.name;
+    const alternateForm = monsterExplosion ? /morphed into an? (.*)/.exec(description)?.[1] : undefined;
+    const unmorphedDescription = alternateForm ? `${possessiveName(alternateForm)} explosion` : null;
     const cells = await explosionCells(x, y, damageType, objectClass, Math.abs(style), state);
     const visible = cells.some(cell => cansee(cell.x, cell.y));
     if (visible) {
@@ -160,7 +162,7 @@ export async function explode(x, y, type, damage, objectClass, style, { state = 
             else if (cansee(cell.x, cell.y)) {
                 if (monster.m_ap_type)
                     await revealMonsterAppearance(monster);
-                await publish(`${monsterName(monster, { state, capitalized: true })} is caught in the ${description}!`);
+                await publish(`${monsterName(monster, { state, capitalized: true })} is caught in the ${unmorphedDescription ?? description}!`);
             }
             const seen = canSeeMonster(monster);
             const itemDamage = await destroyMonsterInventoryByElement(monster, damageKinds.get(damageType)?.items, damage, { state, publish, random, visible: seen });
@@ -176,7 +178,7 @@ export async function explode(x, y, type, damage, objectClass, style, { state = 
                 let bodyDamage = damage;
                 if (monsterResistsEffect(monster, (resistanceLevels.get(objectClass) ?? state.u.ulevel), random)) {
                     if (cansee(cell.x, cell.y) || insideEngulfer)
-                        await publish(`${monsterName(monster, { state, capitalized: true })} resists the ${description}!`);
+                        await publish(`${monsterName(monster, { state, capitalized: true })} resists the ${unmorphedDescription ?? description}!`);
                     bodyDamage = Math.trunc((damage + 1) / 2);
                 }
                 if (grabbed && monster === state.u.ustuck
@@ -211,7 +213,7 @@ export async function explode(x, y, type, damage, objectClass, style, { state = 
         if (state.flags.verbose && (type < 0 || objectClass !== SCROLL_CLASS)) {
             if (hallucinate)
                 description = hallucinatedExplosion();
-            await publish(`You are caught in the ${description}!`);
+            await publish(`You are caught in the ${unmorphedDescription ?? description}!`);
             state._lastPlineKind = PLNMSG_CAUGHT_IN_EXPLOSION;
         }
         if (damageType === AD_FIRE)
@@ -996,10 +998,25 @@ async function explosionStyleForDamage(damageType, state) {
     await impossible(`adtyp_to_expltype: bad explosion type ${damageType}`, { state });
     return EXPL_FIERY;
 }
+// Part of C explode.c:mon_explodes(): retain the exploding form before death.
+export function explodingMonsterForm(monster) {
+    return monster.cham !== undefined && monster.cham !== NON_PM && is_shapeshifter(monster.cham)
+        ? monster.mnum : NON_PM;
+}
+// Part of C explode.c:mon_explodes(): death records identify a shapeshifter
+// and its former exploding body after mondead() restores the original form.
+export function monsterExplosionKiller(monster, recentForm) {
+    const species = monsterTypeName(monster.mnum, !!monster.female);
+    if (recentForm !== NON_PM && is_shapeshifter(monster.mnum)) {
+        const alternate = monsterTypeName(recentForm, !!monster.female);
+        return `explosion of ${withIndefiniteArticle(species)} morphed into ${withIndefiniteArticle(alternate)}`;
+    }
+    return `${possessiveName(species)} explosion`;
+}
 // C explode.c:mon_explodes(). Kill credit and the map blast for a
 // monster whose death explodes.
 export function createPhysicalMonsterExplosion(sourceMonster, x, y, damage, options = {}) {
-    const killer = `${possessiveName(monsterTypeName(sourceMonster.mnum, !!sourceMonster.female))} explosion`;
+    const killer = monsterExplosionKiller(sourceMonster, explodingMonsterForm(sourceMonster));
     return explode(x, y, PHYS_EXPL_TYPE, damage, MON_EXPLODE, EXPL_NOXIOUS, { ...options, killer });
 }
 //# sourceMappingURL=explode.js.map

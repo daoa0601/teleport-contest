@@ -350,4 +350,20 @@ void test('worn defending dragon scales mark the hero unaffected by a sphere', a
     assert.ok(messages.includes('You seem unaffected by it.'), `expected the defended line, got: ${messages.join(' | ')}`);
     assert.ok(sphere.mhp <= 0 || sphere.dead, 'the sphere still dies in its own blast');
 });
+void test('a shapeshifter blast names its exploding body and records both forms in a fatal cause', async () => {
+    await freshObjectRoom({ hero: { uhp: 1 }, flags: { verbose: true } });
+    const monster = await createMonsterAt('flaming sphere', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    monster.cham = MONSTER_NAME.indexOf('chameleon');
+    const attack = MONSTER_ATTACKS[monster.mnum]?.find(([type]) => type === AT_EXPL);
+    assert.ok(attack);
+    const messages = [];
+    let killer = '';
+    await resolveMonsterSelfExplosion(monster, attack, {
+        foundHero: true,
+        publish: async (message) => { messages.push(message); },
+        die: async (options) => { killer = options.killer; return true; },
+    });
+    assert.ok(messages.includes("You are caught in the flaming sphere's explosion!"));
+    assert.equal(killer, 'explosion of a chameleon morphed into a flaming sphere');
+});
 //# sourceMappingURL=monster_self_explosion.test.js.map
