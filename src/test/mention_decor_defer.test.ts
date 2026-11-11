@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 import type { Engine } from '../js/jsmain.js';
 import { runSegment } from '../js/jsmain.js';
 import { moveloop_core } from '../js/allmain.js';
+import { rcfileOnlyThisOption } from '../js/cfgfiles.js';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
+import { enableRngLog, getRngLog } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 
@@ -72,6 +74,86 @@ void test('a declined startup reports the deferred option\'s frame through the m
     } finally {
         await engine.lua.destroy();
     }
+});
+
+void test('a configured tutorial enters without the declined tutorial\'s extra error frame', async () => {
+    const engine = await runSegment({
+        seed: 29371, datetime: '20260112120000', moves: ' '.repeat(24), storage: memoryStorage(),
+        nethackrc: 'OPTIONS=name:Iris,role:Wizard,race:human,gender:female,align:neutral,'
+            + '!legacy,!autopickup,pettype:none,tutorial,mention_decor:zzz',
+    });
+    try {
+        const messages = [...engine.state._messageHistory, engine.state._pending_message].join('\n');
+        assert.equal(messages.split('not valid for a boolean').length - 1, 1,
+            'only moveloop reports the deferred option after an accepted tutorial');
+        assert.equal(engine.state._tutorialActive, true, 'the configured tutorial is accepted');
+    } finally {
+        await engine.lua.destroy();
+    }
+});
+
+for (const statement of ['[missing]', 'CHOOSE', 'CHOOSE=', 'OPTIONS=mention_decor:bad']) {
+    void test(`the deferred re-read reports ${statement} before later options and section choices`, async () => {
+        await freshObjectRoom({ flags: { mention_decor: false } });
+        game.nethackrc = `${statement}\nOPTIONS=mention_decor\nCHOOSE=alpha\n[alpha]\n`;
+        game.nethackOptions = null;
+        enableRngLog();
+        const input = resetInputState();
+        const reread = rcfileOnlyThisOption('mention_decor');
+        try {
+            await input.waitUntilBlocked();
+            assert.ok(game._pending_message.includes(statement), 'the erroneous source line is displayed');
+            assert.equal(game.flags.mention_decor, false, 'the later option waits for error acknowledgement');
+            assert.equal(getRngLog().length, statement === 'CHOOSE=' ? 1 : 0,
+                'only choices preceding the error have consumed randomness');
+        } finally {
+            input.feed(' '.repeat(30));
+            await reread;
+        }
+        assert.equal(game.flags.mention_decor, true, 'parsing resumes with the later option');
+        assert.equal(getRngLog().length, statement === 'CHOOSE=' ? 2 : 1);
+    });
+}
+
+for (const options of ['mention_decor,mention_decor:bad', 'mention_decor,!mention_decor']) {
+    void test(`the deferred re-read waits before applying the next option in ${options}`, async () => {
+        await freshObjectRoom({ flags: { mention_decor: false } });
+        const sourceLine = `OPTIONS=${options}`;
+        game.nethackrc = sourceLine;
+        game.nethackOptions = null;
+        const input = resetInputState();
+        const reread = rcfileOnlyThisOption('mention_decor');
+        try {
+            await input.waitUntilBlocked();
+            assert.ok(game._pending_message.includes(sourceLine), 'the erroneous source line is displayed');
+            assert.equal(game.flags.mention_decor, false,
+                'the leftmost value waits for the earlier error, including a duplicate diagnostic');
+        } finally {
+            input.feed(' '.repeat(30));
+            await reread;
+        }
+        assert.equal(game.flags.mention_decor, true);
+        const messages = [...game._messageHistory, game._pending_message].join('\n');
+        assert.equal(messages.split(sourceLine).length - 1, 1,
+            'multiple errors on one line echo the source only once');
+    });
+}
+
+void test('the deferred re-read finishes file diagnostics before applying environment options', async () => {
+    await freshObjectRoom({ flags: { mention_decor: false } });
+    game.nethackrc = 'CHOOSE';
+    game.nethackOptions = 'mention_decor';
+    const input = resetInputState();
+    const reread = rcfileOnlyThisOption('mention_decor');
+    try {
+        await input.waitUntilBlocked();
+        assert.ok(game._pending_message.includes('CHOOSE'));
+        assert.equal(game.flags.mention_decor, false);
+    } finally {
+        input.feed(' '.repeat(30));
+        await reread;
+    }
+    assert.equal(game.flags.mention_decor, true);
 });
 
 void test('the deferred rc re-read runs once, keeping later in-game option changes', async () => {

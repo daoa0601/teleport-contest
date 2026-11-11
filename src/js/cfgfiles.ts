@@ -10,7 +10,7 @@
 import type { ConfigurationSettings, OptionParseState } from './message_types.js';
 import {
     bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException,
-    parseOptions, MENU_KEY_OPTIONS,
+    parseOptionsSteps, MENU_KEY_OPTIONS,
 } from './message_types.js';
 import { mungSpaces, visibleCommandKey } from './hacklib.js';
 import { parseMenuColoring } from './coloratt.js';
@@ -371,11 +371,11 @@ type ConfigStatementName = typeof CONFIG_STATEMENTS[number][0];
 // cnf_line_OPTIONS() hands the original, uncondensed statement — from its
 // own find_optparam(), skipping nothing after the delimiter — to
 // parseoptions(); every other handler receives the condensed value.
-function parseConfigLine(
+function* parseConfigLine(
     bytes: Uint8Array, result: ConfigurationSettings, state: OptionParseState,
     addError: (message: string) => void, addRawError: (message: string, pause?: boolean) => void,
     onlyOption?: string,
-): void {
+): Generator<void> {
     const mungedBytes = mungSpaces(bytes);
     const delimiter = findOptparam(mungedBytes);
     if (delimiter < 0) {
@@ -407,7 +407,7 @@ function parseConfigLine(
     // handler never runs and adds no error.
     if (match !== 'OPTIONS' && onlyOption !== undefined) return;
     if (match === 'OPTIONS') {
-        parseOptions(bytes.subarray(findOptparam(bytes) + 1),
+        yield* parseOptionsSteps(bytes.subarray(findOptparam(bytes) + 1),
             result, state, true, addError, addRawError, onlyOption);
         return;
     }
@@ -475,6 +475,7 @@ function* configurationLines(rc: string, report: ConfigurationErrorReport) {
             // parse_conf_buf() rejects a full fgets buffer before advancing
             // the error frame, so this diagnostic still names the prior line.
             report.errors.push({ sourceLine, lineNumber, message: 'Line too long, skipping' });
+            yield { bytes: null, sourceLine, lineNumber };
             continue;
         }
         lineNumber++;
@@ -504,6 +505,7 @@ function* configurationLines(rc: string, report: ConfigurationErrorReport) {
 
         if (handleConfigSection(statement, sections, report, sourceLine, lineNumber)) {
             pending = new Uint8Array(0);
+            yield { bytes: null, sourceLine, lineNumber };
             continue;
         }
 
@@ -528,6 +530,7 @@ function* configurationLines(rc: string, report: ConfigurationErrorReport) {
                         message: cutConfigBytes('No config section to choose', BUFSZ - 1) });
             }
             pending = new Uint8Array(0);
+            yield { bytes: null, sourceLine, lineNumber };
             continue;
         }
         yield { bytes: pending.subarray(0, end), sourceLine, lineNumber };
@@ -582,27 +585,43 @@ function parseConfiguration(
     rc: string, result: ConfigurationSettings, report: ConfigurationErrorReport, fromFile: boolean,
     onlyOption?: string,
 ): ConfigurationSettings {
+    for (const _step of parseConfigurationSteps(rc, result, report, fromFile, onlyOption)) {
+        // Synchronous callers collect the frame for their own display path.
+    }
+    return result;
+}
+
+// C cfgfiles.c:parse_conf_file()/parse_conf_buf(): yield after diagnostics
+// are recorded so live callers can display them before parsing continues.
+function* parseConfigurationSteps(
+    rc: string, result: ConfigurationSettings, report: ConfigurationErrorReport, fromFile: boolean,
+    onlyOption?: string,
+): Generator<void> {
     const state: OptionParseState = {
         paranoiaBits: result.flags.paranoia_bits ?? DEFAULT_PARANOIA_BITS,
         paranoiaSeen: false,
         optionsSeen: new Map(),
         characterOptionsSeen: new Map(),
     };
-    if (!rc && fromFile) return result;
+    if (!rc && fromFile) return;
     const lines = fromFile ? configurationLines(rc, report)
         : [{ bytes: new TextEncoder().encode(rc.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
     for (const { bytes, sourceLine, lineNumber } of lines) {
+        // Section and CHOOSE diagnostics belong to parse_conf_buf(), which
+        // reports them before it reads the next statement.
+        yield;
+        if (bytes === null) continue;
         const addError = (message: string) => {
             report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
         };
         const addRawError = (message: string, pause = true) => {
             report.errors.push({ sourceLine, lineNumber, message, raw: true, pause });
         };
-        if (fromFile) parseConfigLine(bytes, result, state, addError, addRawError, onlyOption);
-        else parseOptions(bytes, result, state, false, addError, addRawError, onlyOption);
+        if (fromFile) yield* parseConfigLine(bytes, result, state, addError, addRawError, onlyOption);
+        else yield* parseOptionsSteps(bytes, result, state, false, addError, addRawError, onlyOption);
+        yield;
     }
     if (state.paranoiaSeen) result.flags.paranoia_bits = state.paranoiaBits;
-    return result;
 }
 
 // Part of C cfgfiles.c:rcfile(): the NETHACKOPTIONS half around
@@ -640,14 +659,12 @@ export async function rcfileOnlyThisOption(option: string): Promise<void> {
         commandBindings: game.commandBindings,
     };
     const fileReport: ConfigurationErrorReport = { source: '.nethackrc', errors: [] };
-    parseConfiguration(game.nethackrc, result, fileReport, true, option);
     result.configErrors.push(fileReport);
-    await displayLiveConfigurationErrors(fileReport);
+    await parseLiveConfiguration(game.nethackrc, result, fileReport, true, option);
     if (game.nethackOptions != null) {
         const envReport: ConfigurationErrorReport = { source: 'NETHACKOPTIONS', errors: [] };
-        parseConfiguration(game.nethackOptions, result, envReport, false, option);
         result.configErrors.push(envReport);
-        await displayLiveConfigurationErrors(envReport);
+        await parseLiveConfiguration(game.nethackOptions, result, envReport, false, option);
     }
     // heed_all_options(): mention_decor is heeded from here on.
     game._mentionDecorDeferred = false;
@@ -658,17 +675,23 @@ export async function rcfileOnlyThisOption(option: string): Promise<void> {
 // its original line once and its message, the summary plines once, and
 // wait_synch() only redisplays the map (tty_wait_synch() falls back to
 // getret() solely for raw-printed output, which this frame never adds).
-async function displayLiveConfigurationErrors(report: ConfigurationErrorReport): Promise<void> {
-    if (!report.errors.length) return;
+async function parseLiveConfiguration(
+    rc: string, result: ConfigurationSettings, report: ConfigurationErrorReport, fromFile: boolean,
+    onlyOption: string,
+): Promise<void> {
     let previousLine: number | null = null;
-    for (const error of report.errors) {
-        const punctuation = /[.!?]$/.test(error.message) ? '' : '.';
-        if (error.lineNumber !== previousLine) {
-            await pline(`\n${error.sourceLine}`);
-            previousLine = error.lineNumber;
+    let displayedErrors = 0;
+    for (const _step of parseConfigurationSteps(rc, result, report, fromFile, onlyOption)) {
+        for (const error of report.errors.slice(displayedErrors)) {
+            const punctuation = /[.!?]$/.test(error.message) ? '' : '.';
+            if (error.lineNumber !== previousLine) {
+                await pline(`\n${error.sourceLine}`);
+                previousLine = error.lineNumber;
+            }
+            const line = error.lineNumber > 0 ? `Line ${error.lineNumber}: ` : '';
+            await pline(` * ${line}${error.message}${punctuation}`);
         }
-        const line = error.lineNumber > 0 ? `Line ${error.lineNumber}: ` : '';
-        await pline(` * ${line}${error.message}${punctuation}`);
+        displayedErrors = report.errors.length;
     }
     const count = report.errors.filter(error => !error.raw).length;
     if (!count) return;

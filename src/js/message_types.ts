@@ -569,8 +569,21 @@ export function parseOptions(
     fromFile: boolean, addError: (message: string) => void, addRawError: (message: string, pause?: boolean) => void,
     onlyOption?: string,
 ): void {
+    for (const _step of parseOptionsSteps(optionList, result, state, fromFile, addError, addRawError, onlyOption)) {
+        // Startup and Lua collect errors instead of awaiting message input.
+    }
+}
+
+// C options.c:parseoptions(): live rc-file reads can pause between options
+// and after duplicate diagnostics, before the same option's handler runs.
+export function* parseOptionsSteps(
+    optionList: Uint8Array, result: ConfigurationSettings, state: OptionParseState,
+    fromFile: boolean, addError: (message: string) => void, addRawError: (message: string, pause?: boolean) => void,
+    onlyOption?: string,
+): Generator<void> {
     let usingAlias = false;
     for (const optionBytes of configurationOptions(optionList)) {
+        yield;
         if (optionBytes.length > BUFSZ / 2) {
             addError(`Option too long, max length is ${BUFSZ / 2} characters`);
             continue;
@@ -655,6 +668,7 @@ export function parseOptions(
             const aliasSuffix = usingAlias
                 ? ` (via alias: ${optionMatch.alias ?? '(null)'})` : '';
             addError(`${optionMatch.isBool || optionMatch.other ? 'boolean' : 'compound'} option specified multiple times: ${canonical}${aliasSuffix}`);
+            yield;
         }
         // parseoptions() rejects negation of a !negateok option before
         // any handler runs (bad_negation() with its parameter form).

@@ -463,28 +463,25 @@ async function maybeDoTutorial(): Promise<void> {
     if (!target)
         return;
 
-    // ask_do_tutorial() obeys a tutorial option set in the configuration
-    // file without asking; unlike C, this port then skips entry entirely.
-    // C's maybe_do_tutorial() else-branch processes the deferred option
-    // when the tutorial is not entered, ahead of moveloop()'s own re-read.
-    if (game.tutorial_set_in_config) {
-        await rcfileOnlyThisOption('mention_decor');
-        return;
+    // ask_do_tutorial() obeys either configured value without a menu.
+    let doTutorial = game.flags.tutorial !== false;
+    if (!game.tutorial_set_in_config) {
+        // Menu creation flushes only a message still awaiting dismissal.
+        // A wrapped welcome has already completed its own pager.
+        await flushPendingTopline();
+        await flush_screen(1);
+        doTutorial = await askTutorial();
+        game._pending_message = '';
     }
-
-    // Menu creation flushes only a message still awaiting dismissal.
-    // A wrapped welcome has already completed its own pager.
-    await flushPendingTopline();
-    await flush_screen(1);
-    const doTutorial = await askTutorial();
     game._tutorialDeclined = !doTutorial;
-    game._pending_message = '';
     if (!doTutorial) {
         // maybe_do_tutorial()'s else-branch: no tutorial, so okay to
         // process mention_decor now — moveloop() re-reads it once more.
         await rcfileOnlyThisOption('mention_decor');
-        await redrawMap();
-        await flush_screen(1);
+        if (!game.tutorial_set_in_config) {
+            await redrawMap();
+            await flush_screen(1);
+        }
         return;
     }
 
