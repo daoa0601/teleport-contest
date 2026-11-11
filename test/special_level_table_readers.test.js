@@ -11,9 +11,7 @@ import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
-// sp_lev.c's table readers are case-insensitive C lookups (get_table_option
-// uses strcmpi; get_table_buc and get_table_align share it), and
-// lspo_feature's flag fields reach l_table_getset_feature_flag().
+import { roomBindings } from './support/themed-room-bindings.js';
 async function buildRoom(t, contents) {
     freshGame({ flags: { bones: false } });
     requirePlayingGame(game);
@@ -40,29 +38,49 @@ async function buildRoom(t, contents) {
     assert.ok(room, 'the Lua room definition should build a chamber');
     return room;
 }
-void test('an object buc name is matched case-insensitively like get_table_buc', async (t) => {
+void test('lowercase object buc options bless and curse the placed objects', async (t) => {
     const room = await buildRoom(t, `
-        des.object({ id = "fedora", buc = "Blessed", x = 2, y = 1 })
-        des.object({ id = "bullwhip", buc = "CuRsEd", x = 3, y = 1 })
+        des.object({ id = "fedora", buc = "blessed", x = 2, y = 1 })
+        des.object({ id = "bullwhip", buc = "cursed", x = 3, y = 1 })
     `);
     const level = requireGameLevel();
     const fedora = (level.objects[room.lx + 2]?.[room.ly + 1] ?? []).at(-1);
     const bullwhip = (level.objects[room.lx + 3]?.[room.ly + 1] ?? []).at(-1);
     if (!fedora || !bullwhip)
         throw new Error('the two level objects must be placed');
-    assert.equal(fedora.blessed, true, '"Blessed" blesses the fedora');
+    assert.equal(fedora.blessed, true);
     assert.equal(fedora.cursed, false);
-    assert.equal(bullwhip.cursed, true, '"CuRsEd" curses the bullwhip');
+    assert.equal(bullwhip.cursed, true);
 });
-void test('an altar alignment name is matched case-insensitively like get_table_align', async (t) => {
+void test('the lowercase law option creates a lawful altar', async (t) => {
     const room = await buildRoom(t, `
-        des.altar({ align = "Law", x = 2, y = 1 })
+        des.altar({ align = "law", x = 2, y = 1 })
     `);
     const altar = requireGameLevel().at(room.lx + 2, room.ly + 1);
     assert.ok(altar, 'the altar square must exist');
     assert.equal(altar.typ, ALTAR);
-    assert.equal(Amask2align(altar.flags), A_LAWFUL, '"Law" resolves to a lawful altar');
+    assert.equal(Amask2align(altar.flags), A_LAWFUL);
 });
+for (const buc of ['Blessed', 'CuRsEd', 'constructor', '__proto__', 'unknown']) {
+    void test(`object buc=${buc} is rejected without placing an object`, async (t) => {
+        const lua = await roomBindings(t);
+        await lua.executeAsync('des.map({ x = 10, y = 6, map = "." })');
+        await assert.rejects(lua.executeAsync(`des.object({ id = "fedora", buc = "${buc}", x = 0, y = 0 })`), /unsupported Lua buc/);
+        assert.equal(requireGameLevel().objects[10]?.[6]?.length ?? 0, 0);
+    });
+}
+for (const align of ['Law', 'constructor', '__proto__', 'unknown']) {
+    void test(`altar align=${align} is rejected without changing the terrain`, async (t) => {
+        const lua = await roomBindings(t);
+        await lua.executeAsync('des.map({ x = 10, y = 6, map = "." })');
+        const cell = requireGameLevel().requireAt(10, 6);
+        const previousType = cell.typ;
+        const previousFlags = cell.flags;
+        await assert.rejects(lua.executeAsync(`des.altar({ align = "${align}", x = 0, y = 0 })`), /unsupported Lua alignment/);
+        assert.equal(cell.typ, previousType);
+        assert.equal(cell.flags, previousFlags);
+    });
+}
 void test('feature flag fields set the furniture flags of the placed feature', async (t) => {
     const room = await buildRoom(t, `
         des.feature({ type = "fountain", looted = true, warned = false, x = 2, y = 1 })

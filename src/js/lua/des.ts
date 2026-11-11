@@ -157,6 +157,7 @@ export interface DesOptions {
 }
 
 export interface DesObjectOptions extends DesOptions {
+    curseState: number;
     point: LuaPoint | null;
     objectClass: number | null;
     objectType: number | null;

@@ -1483,16 +1483,16 @@ function noncoalignedSpecialAmask() {
 // C sp_lev.c:get_table_align(). The alignment field's mask: a fixed
 // alignment, a coalignment placeholder, or random.
 function get_table_align(align = 'random') {
-    const gtaligns = {
-        noalign: AM_NONE,
-        law: AM_LAWFUL,
-        neutral: AM_NEUTRAL,
-        chaos: AM_CHAOTIC,
-        coaligned: AM_SPLEV_CO,
-        noncoaligned: AM_SPLEV_NONCO,
-        random: AM_SPLEV_RANDOM,
-    };
-    const spAmask = gtaligns[String(align).toLowerCase()];
+    const gtaligns = new Map([
+        ['noalign', AM_NONE],
+        ['law', AM_LAWFUL],
+        ['neutral', AM_NEUTRAL],
+        ['chaos', AM_CHAOTIC],
+        ['coaligned', AM_SPLEV_CO],
+        ['noncoaligned', AM_SPLEV_NONCO],
+        ['random', AM_SPLEV_RANDOM],
+    ]);
+    const spAmask = gtaligns.get(align);
     if (spAmask === undefined)
         throw new Error(`unsupported Lua alignment ${align}`);
     return spAmask;
@@ -1510,10 +1510,11 @@ function sp_amask_to_amask(spAmask) {
 // C sp_lev.c:lspo_altar(). The shared table reader supplies the altar descriptor.
 export async function lspo_altar(context, value) {
     const options = tableOptions(value);
-    await create_altar(context, options);
+    const spAmask = get_table_align(options.align);
+    await create_altar(context, options, spAmask);
 }
 // C sp_lev.c:create_altar(). Place the altar and its optional shrine priest.
-async function create_altar(context, options) {
+async function create_altar(context, options, spAmask) {
     const level = requireGameLevel();
     const coordinate = get_table_xy_or_coord(options);
     const point = context._room
@@ -1524,10 +1525,7 @@ async function create_altar(context, options) {
         return;
     if (!setLevelTerrainType(point.x, point.y, ALTAR))
         return;
-    // lspo_altar() resolves the alignment field before create_altar()
-    // stores it: sp_amask_to_amask() resolves the whole mask (including
-    // the re-evaluated noncoalignment ternary).
-    const amask = sp_amask_to_amask(get_table_align(options.align));
+    const amask = sp_amask_to_amask(spAmask);
     const alignment = Amask2align(amask);
     altar.flags = amask;
     const altarType = options.type ?? 'altar';
@@ -1946,6 +1944,7 @@ export async function lspo_gold(context, value, x, y) {
 export async function lspo_object(context, parentContainer, parentMonster, invokeContents, id, x, y) {
     const options = id instanceof LuaTable
         ? tableOptions(id) : {};
+    const curseState = get_table_buc(options.buc);
     if (typeof id === 'string') {
         if (id.length === 1)
             options.class = id;
@@ -1978,6 +1977,7 @@ export async function lspo_object(context, parentContainer, parentMonster, invok
     }
     const objectOptions = {
         ...options,
+        curseState,
         point: location,
         objectClass: options.class
             ? objectClassForSymbol(options.class) : null,
@@ -2008,12 +2008,12 @@ export async function lspo_object(context, parentContainer, parentMonster, invok
 // C sp_lev.c:get_table_buc(). The buc field's curse-state code: 0 random,
 // 1 blessed, 2 uncursed, 3 cursed, 4 not-cursed, 5 not-uncursed,
 // 6 not-blessed.
-function get_table_buc(buc) {
-    const bucs = {
-        random: 0, blessed: 1, uncursed: 2, cursed: 3,
-        'not-cursed': 4, 'not-uncursed': 5, 'not-blessed': 6,
-    };
-    const curseState = bucs[String(buc ?? 'random').toLowerCase()];
+function get_table_buc(buc = 'random') {
+    const bucs = new Map([
+        ['random', 0], ['blessed', 1], ['uncursed', 2], ['cursed', 3],
+        ['not-cursed', 4], ['not-uncursed', 5], ['not-blessed', 6],
+    ]);
+    const curseState = bucs.get(buc);
     if (curseState === undefined)
         throw new Error(`unsupported Lua buc ${buc}`);
     return curseState;
@@ -2068,7 +2068,7 @@ async function create_object(context, options, corpseSpecies, parentContainer, p
     const spe = get_table_int_or_random(options.spe, 'spe', -127);
     if (spe !== -127) /* That means NOT RANDOM! */
         object.spe = spe;
-    switch (get_table_buc(options.buc)) {
+    switch (options.curseState) {
         case 1: /* blessed */
             blessObjectState(object);
             break;
