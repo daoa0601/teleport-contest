@@ -1574,7 +1574,7 @@ export function probeObjectChain(inventory: readonly GameObject[], { state = gam
         if (isContainer(object) || object.otyp === STATUE) {
             object.lknown = true;
             if (!isQuantumBox(object)) object.cknown = true;
-        } else if (object.otyp === TIN) object.known = true;
+        } else if (object.otyp === TIN || object.otyp === EGG) object.known = true;
     }
 }
 

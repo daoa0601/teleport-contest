@@ -859,7 +859,7 @@ export function probeObjectChain(inventory, { state = game } = {}) {
             if (!isQuantumBox(object))
                 object.cknown = true;
         }
-        else if (object.otyp === TIN)
+        else if (object.otyp === TIN || object.otyp === EGG)
             object.known = true;
     }
 }

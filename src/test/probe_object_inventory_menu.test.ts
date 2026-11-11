@@ -4,10 +4,10 @@ import { buryFloorObjectsAt } from '../js/dig.js';
 import { addBuriedObject, placeObject } from '../js/mkobj.js';
 import { CORPSTAT_FEMALE, CORPSTAT_MALE, POOL } from '../js/const.js';
 import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
-import { probeObject } from '../js/zap.js';
+import { probeObjectChain, probeObject } from '../js/zap.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { BOULDER, CORPSE, DIAMOND, SACK, WAN_PROBING } from '../js/object_data.js';
+import { BOULDER, CORPSE, DIAMOND, EGG, SACK, WAN_PROBING } from '../js/object_data.js';
 import { applyWandEffect } from '../js/zap.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -132,4 +132,13 @@ void test('underwater probing lists newer objects beneath an older boulder', asy
     assert.doesNotMatch(menu, /(?:fe)?male newt corpse/);
     assert.equal(menu.match(/newt corpse/g)?.length, 1, 'the remote corpse must stay out of the menu');
     assert.equal(remote.dknown, false);
+});
+
+void test('probing inventory identifies the species of a carried egg', async () => {
+    freshTurnRoom();
+    const egg = await addInventoryObject(EGG, { corpsenm: MONSTER_NAME.indexOf('newt'), known: false });
+
+    probeObjectChain(game.inventory);
+
+    assert.equal(egg.known, true);
 });
