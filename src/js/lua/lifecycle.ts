@@ -4,6 +4,7 @@ import {
     SINK, STONE, THRONE, TREE, VWALL, WATER,
 } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
+import { QUEST_LUA_SOURCE } from '../quest_data.js';
 import { commandKeyDescription, isok } from '../cmd.js';
 import { applyNethackrc } from '../cfgfiles.js';
 import { rn2 } from '../rng.js';
@@ -295,6 +296,21 @@ export class LuaLifecycle {
 
     createSpecialState(gameState: GameState, bindings: LuaBindings = {}): LuaGameState {
         return this.createState(gameState, bindings);
+    }
+
+    // questpgr.c:487 "L = nhl_init(&sbi);", :619 "nhl_done(L);":
+    // the pinned quest pager creates and closes a state for each message.
+    // Keep that lifetime here so table readers do not own interpreter cleanup.
+    async withQuestState<Result>(
+        gameState: GameState, read: (state: LuaGameState) => Result,
+    ): Promise<Result> {
+        const state = this.createSpecialState(gameState);
+        try {
+            state.execute(QUEST_LUA_SOURCE, 'quest.lua');
+            return await read(state);
+        } finally {
+            await state.destroy();
+        }
     }
 
     async executeSpecial(

@@ -3,7 +3,22 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { convertQuestLine } from '../js/questpgr.js';
+import { convertQuestLine, prepareQuestText } from '../js/questpgr.js';
+void test('a common quest message remains available after an absent role message', async () => {
+    await freshObjectRoom({ role: 'valkyrie' });
+    assert.equal(await prepareQuestText('absent_message'), null);
+    const text = await prepareQuestText('quest_portal');
+    assert.ok(text);
+    assert.equal(text.output, 'pline');
+    assert.match(text.lines.join('\n'), /faint telepathic message from the Norn/);
+});
+void test('wizard-kit wishing suppresses quest text until normal play resumes', async () => {
+    await freshObjectRoom({ role: 'valkyrie' });
+    game.program_state.wizkit_wishing = true;
+    assert.equal(await prepareQuestText('quest_portal'), null);
+    game.program_state.wizkit_wishing = false;
+    assert.ok(await prepareQuestText('quest_portal'));
+});
 function dungeonNamed(dname) {
     return {
         dname,

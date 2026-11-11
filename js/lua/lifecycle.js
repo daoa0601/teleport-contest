@@ -1,5 +1,6 @@
 import { AIR, CLOUD, COLNO, CORR, CROSSWALL, DOOR, FOUNTAIN, HWALL, ICE, IRONBARS, LAVAPOOL, LAVAWALL, LEVEL_TIMER_KIND, MATCH_WALL, MAX_TYPE, MOAT, POOL, ROOM, ROWNO, SCORR, SDOOR, SINK, STONE, THRONE, TREE, VWALL, WATER, } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
+import { QUEST_LUA_SOURCE } from '../quest_data.js';
 import { commandKeyDescription, isok } from '../cmd.js';
 import { applyNethackrc } from '../cfgfiles.js';
 import { rn2 } from '../rng.js';
@@ -257,6 +258,19 @@ export class LuaLifecycle {
     }
     createSpecialState(gameState, bindings = {}) {
         return this.createState(gameState, bindings);
+    }
+    // questpgr.c:487 "L = nhl_init(&sbi);", :619 "nhl_done(L);":
+    // the pinned quest pager creates and closes a state for each message.
+    // Keep that lifetime here so table readers do not own interpreter cleanup.
+    async withQuestState(gameState, read) {
+        const state = this.createSpecialState(gameState);
+        try {
+            state.execute(QUEST_LUA_SOURCE, 'quest.lua');
+            return await read(state);
+        }
+        finally {
+            await state.destroy();
+        }
     }
     async executeSpecial(gameState, filename, bindings = {}, beforeExecute = null) {
         const state = this.createSpecialState(gameState, bindings);
