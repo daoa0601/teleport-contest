@@ -57,7 +57,7 @@ import type { DeathHandler, FinishHeroDeathOptions, KillerFormat } from './end.j
 import { heroCanReachFloor, engravingAt, wipeEngravingAt } from './engrave.js';
 
 import {
-    putHeroToSleep, objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers,
+    putHeroToSleep, objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, spotTimeExpires,
 } from './timeout.js';
 import { reset_faint, gethungry, morehungry, Hear_again, unfaint, eatmdone, Finish_digestion } from './eat.js';
 import { removeWornHeroItem, finishDelayedArmorTheft } from './steal.js';
@@ -136,7 +136,7 @@ import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType }
 import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
-import type { GameObject, LevelTimer } from './object_types.js';
+import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyState, PropertyName } from './property_types.js';
 import type { Hero } from './hero_types.js';
@@ -2239,21 +2239,13 @@ export async function finishDestinationSpotEffects({
     }
 }
 
-// C timeout.c:spot_time_expires(). The deadline of the level timer at
-// this square, or 0 when none is scheduled.
-function spotTimeExpires(kind: LevelTimer['kind'], x: number, y: number, state: GameState = game): number {
-    const timer = levelTimers(state).find(candidate =>
-        candidate.kind === kind && candidate.x === x && candidate.y === y);
-    return timer ? timer.deadline : 0;
-}
-
 // Part of C hack.c:spoteffects(): the "Warning alerts you to ice danger"
 // block; the Warning intrinsic alerts the hero to melting ice underfoot.
 // C timeout.c:spot_time_left(): the remaining melt time.
 async function warnAboutMeltingIce(publish: MessagePublisher): Promise<void> {
     const { ux: x, uy: y } = game.u;
     if (!propertyIsActive('warning', game) || !isIceAt(x, y, game)) return;
-    const expires = spotTimeExpires(LEVEL_TIMER_KIND.MELT_ICE_AWAY, x, y, game);
+    const expires = spotTimeExpires(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
     const remaining = expires > 0 ? expires - game.moves : 0;
     if (!remaining || remaining >= 15) return;
     await publish(remaining < 5 ? 'The ice, is gonna BREAK!'

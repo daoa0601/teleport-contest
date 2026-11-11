@@ -17,7 +17,7 @@ import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { shopkeeperName } from './shknam.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, recordHeroKillConduct } from './end.js';
 import { heroCanReachFloor, engravingAt, wipeEngravingAt } from './engrave.js';
-import { putHeroToSleep, objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers, } from './timeout.js';
+import { putHeroToSleep, objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, spotTimeExpires, } from './timeout.js';
 import { reset_faint, gethungry, morehungry, Hear_again, unfaint, eatmdone, Finish_digestion } from './eat.js';
 import { removeWornHeroItem, finishDelayedArmorTheft } from './steal.js';
 import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel, applyFloorEffects } from './do.js';
@@ -2145,12 +2145,6 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, tra
             activeSpot = null;
     }
 }
-// C timeout.c:spot_time_expires(). The deadline of the level timer at
-// this square, or 0 when none is scheduled.
-function spotTimeExpires(kind, x, y, state = game) {
-    const timer = levelTimers(state).find(candidate => candidate.kind === kind && candidate.x === x && candidate.y === y);
-    return timer ? timer.deadline : 0;
-}
 // Part of C hack.c:spoteffects(): the "Warning alerts you to ice danger"
 // block; the Warning intrinsic alerts the hero to melting ice underfoot.
 // C timeout.c:spot_time_left(): the remaining melt time.
@@ -2158,7 +2152,7 @@ async function warnAboutMeltingIce(publish) {
     const { ux: x, uy: y } = game.u;
     if (!propertyIsActive('warning', game) || !isIceAt(x, y, game))
         return;
-    const expires = spotTimeExpires(LEVEL_TIMER_KIND.MELT_ICE_AWAY, x, y, game);
+    const expires = spotTimeExpires(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
     const remaining = expires > 0 ? expires - game.moves : 0;
     if (!remaining || remaining >= 15)
         return;

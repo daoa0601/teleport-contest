@@ -2,7 +2,7 @@
 // and run_regions(), the fatal-condition dialogues, every timed intrinsic
 // expiring in prop.h order, fall_asleep(), the egg/figurine/burn object
 // timers, slip_or_trip(), do_storms(), the saveable timer queue, and
-// wiz_timeout_queue(). Folded here from slime.js, hero_illness.js,
+// spot_time_expires() and wiz_timeout_queue(). Folded here from slime.js, hero_illness.js,
 // hero_sleep.js, hero_strangulation.js, levitation_timeout.js,
 // timeout_queue.js, timeout_warnings.js, storms.js, timer_effects.js,
 // timeout_luck.js, and timeout_body.js.
@@ -1362,6 +1362,11 @@ export function copyObjectTimers(source, destination, state = game) {
         scheduleObjectTimer(destination, timer.kind, timer.deadline, state);
     }
     return objectTimers(destination);
+}
+// C timeout.c:spot_time_expires(). The deadline at this square, or zero.
+export function spotTimeExpires(x, y, kind, state = game) {
+    const timer = levelTimersFor(state).find(candidate => candidate.kind === kind && candidate.x === x && candidate.y === y);
+    return timer ? timer.deadline : 0;
 }
 // Port only: expose copies of the level's timer records.
 export function levelTimers(state = game) {
