@@ -678,6 +678,14 @@ export function initOverviewRecord(location: DungeonLocation, state: GameState =
     });
 }
 
+// C dungeon.c:rm_mapseen(): discard the overview record and the annotations
+// of one level; mklev() re-creates an empty record via init_mapseen().
+export function rm_mapseen(location: DungeonLocation, state: GameState = game): void {
+    const key = `${location.dnum}:${location.dlevel}`;
+    state._overviewRecords?.delete(key);
+    state._levelAnnotations?.delete(key);
+}
+
 // C dungeon.c:update_lastseentyp(). Terrain memory is independent of the
 // remembered glyph: an object can hide the terrain, and a mimic can fake it.
 export function updateLastSeenTerrain(x: number, y: number) {

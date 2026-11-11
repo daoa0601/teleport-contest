@@ -1,6 +1,6 @@
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
-import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
+import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown, sokobanGuilt } from './trap.js';
 import { OBJ_DESCR } from './o_init.js';
 import { encumber_msg } from './pickup.js';
 import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, LEG, HAND } from './const.js';
@@ -761,13 +761,9 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
                             dismounted: true, steed, movement, liquid,
                             location, died: true,
                         };
-                    if (state.level.flags.sokoban_rules
-                        && (state.level.objects[landing.x]?.[landing.y] || [])
-                            .some(object => object.otyp === BOULDER)) {
-                        hero.uconduct ||= {};
-                        hero.uconduct.sokocheat = (hero.uconduct.sokocheat || 0) + 1;
-                        hero.uluck = Math.max(-13, (hero.uluck || 0) - 1);
-                    }
+                    if ((state.level.objects[landing.x]?.[landing.y] || [])
+                        .some(object => object.otyp === BOULDER))
+                        sokobanGuilt(state);
                 }
                 finally {
                     state._steedDismounting = false;

@@ -1255,20 +1255,23 @@ export async function applyAreaScrollEffect(source, { state = game, finishHeroDe
         default: throw new Error(`Unsupported area scroll ${source.otyp}`);
     }
 }
-// C read.c:seffect_amnesia().
 // C read.c:forget().
-async function amnesiaEffect(source, state) {
+async function forget(allSpells, state) {
     if (heroIsPunished(state))
         state.u.bc_felt = 0;
-    if (!source.blessed)
+    if (allSpells)
         loseHeroSpellMemory({ state });
-    await drainHeroWeaponSkills(rnd(source.blessed ? 3 : 5), state);
+    await drainHeroWeaponSkills(rnd(allSpells ? 5 : 3), state);
     for (const monster of state.level.monsters) {
         if (monster !== state.u.usteed && monster !== state.u.ustuck)
             monster.meverseen = 0;
     }
     for (const monster of state._migratingMonsters || [])
         monster.meverseen = 0;
+}
+// C read.c:seffect_amnesia().
+async function amnesiaEffect(source, state) {
+    await forget(!source.blessed, state);
     if (heroIsHallucinating(state))
         await pline('Your mind releases itself from mundane concerns.');
     else if (/^maud/i.test(state.plname || ''))

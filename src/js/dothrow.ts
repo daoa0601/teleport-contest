@@ -272,9 +272,27 @@ async function okToThrow(): Promise<boolean> {
     return true;
 }
 
-// C dothrow.c:dofire().  Also C dothrow.c:find_launcher(): inlined in the
-// fireassist branch that prefers a matching known non-cursed launcher,
-// then unknown BUC.
+// C dothrow.c:dofire().  Also C dothrow.c:find_launcher(): a matching
+// known non-cursed launcher, preferring known blessed/uncursed and keeping
+// only the first unknown-BUC match as fallback; null when the ammo fits
+// none.
+function findLauncher(ammo: GameObject | null): GameObject | null {
+    if (!ammo) return null;
+    let unknownLauncher: GameObject | null = null;
+    let inventoryLauncher: GameObject | null = null;
+    for (const candidate of game.inventory || []) {
+        if (candidate.cursed && candidate.bknown) continue;
+        if (!launcherMatchesAmmo(ammo, candidate)) continue;
+        if (candidate.bknown) {
+            inventoryLauncher = candidate;
+            break;
+        }
+        if (!unknownLauncher) unknownLauncher = candidate;
+    }
+    return inventoryLauncher ?? unknownLauncher;
+}
+
+// C dothrow.c:dofire().
 export async function dofire(): Promise<void> {
     // C dothrow.c:ok_to_throw() reads the count from gc.command_count; a
     // queued dofire (fireassist swap chains) finds it untouched because
@@ -367,22 +385,7 @@ export async function dofire(): Promise<void> {
             return;
         }
         if (fireassist && !matchingLauncher(game.uwep)) {
-            // dothrow.c:find_launcher() scans the live inventory chain.  A
-            // known cursed launcher is ineligible; the first known blessed
-            // or uncursed match wins immediately, while only the first
-            // unknown-BUC match is retained as a fallback.
-            let unknownLauncher = null;
-            let inventoryLauncher = null;
-            for (const candidate of game.inventory || []) {
-                if (candidate.cursed && candidate.bknown) continue;
-                if (!matchingLauncher(candidate)) continue;
-                if (candidate.bknown) {
-                    inventoryLauncher = candidate;
-                    break;
-                }
-                if (!unknownLauncher) unknownLauncher = candidate;
-            }
-            inventoryLauncher ||= unknownLauncher;
+            const inventoryLauncher = findLauncher(fireObject);
             if (inventoryLauncher) {
                 if (!inventoryLauncher.invlet)
                     throw new Error('Cannot queue a wield command for an object without an inventory letter.');

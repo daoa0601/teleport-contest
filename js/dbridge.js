@@ -404,18 +404,24 @@ const S_LIGHT = 25;
 const S_GHOST = 54;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
-// C dbridge.c:set_entity().
-// C dbridge.c:m_to_e().
-// C dbridge.c:u_to_e().
-function entityAt(x, y, state) {
-    if (state.u.ux === x && state.u.uy === y)
-        return { hero: true, actor: state.u, x, y, species: heroSpecies(state), active: true };
-    const monster = state.level ? monsterAtPosition(state.level, x, y) : null;
+// C dbridge.c:u_to_e(): the hero as the bridge occupant.
+function u_to_e(x, y, state) {
+    return { hero: true, actor: state.u, x, y, species: heroSpecies(state), active: true };
+}
+// C dbridge.c:m_to_e(): the monster occupant; a worm's span counts as the
+// tail species.  No monster leaves no entity.
+function m_to_e(monster, x, y) {
     if (!monster)
         return null;
     const tail = monster.wormno && (monster.mx !== x || monster.my !== y);
     return { hero: false, actor: monster, x, y, active: true,
         species: tail ? MONSTER_NAME.indexOf('long worm tail') : monster.mnum };
+}
+// C dbridge.c:set_entity().
+function entityAt(x, y, state) {
+    if (state.u.ux === x && state.u.uy === y)
+        return u_to_e(x, y, state);
+    return m_to_e(state.level ? monsterAtPosition(state.level, x, y) : null, x, y);
 }
 // C dbridge.c:e_nam().
 function entityName(entity, state, capitalized = false) {

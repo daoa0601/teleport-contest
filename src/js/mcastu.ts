@@ -16,7 +16,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { castMonsterSpellRay, monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { displayRayName } from './zap.js';
 import { currentAttribute, loseHeroStrength } from './attrib.js';
-import { clearHeroSliming, makeBlinded } from './potion.js';
+import { clearHeroSliming, makeBlinded, makeConfused } from './potion.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage, flashBurn } from './zap.js';
 import { burnArmorByFire, igniteItems } from './trap.js';
@@ -674,8 +674,7 @@ async function mcastConfuseYou(monster: Monster, ctx: McastuSpellContext): Promi
     let duration = monsterLevel;
     if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
     const alreadyConfused = (state.u.confusionTurns ?? 0) > 0;
-    if (!state.u.confusionTurns && duration) state.context.botl = true;
-    state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
+    await makeConfused((state.u.confusionTurns ?? 0) + duration, { state, talk: false });
     await ctx.publish(formatFeltMessage(
         heroIsHallucinating(state)
             ? alreadyConfused ? 'trippier!' : 'trippy!'

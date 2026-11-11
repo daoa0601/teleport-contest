@@ -1,4 +1,5 @@
-// Interactive compound options. C refs: options.c:handler_*().
+// Interactive compound options and help lists. C refs: options.c:handler_*(),
+// options.c:show_menu_controls().
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { visibleCommandKey } from './hacklib.js';
@@ -9,6 +10,7 @@ import { statusConditionOptions, condMenu } from './botl.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import {
     MENU_ITEMFLAGS_SELECTED, PICK_ONE,
+    NH_DEVEL_STATUS, NH_STATUS_RELEASED,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE,
@@ -143,7 +145,8 @@ async function editLocationFilter(): Promise<void> {
 // C options.c:handler_versinfo(): the version-information flags menu.
 async function editVersionInfo(): Promise<void> {
     const previous = game.flags.versinfo ?? 1;
-    const choices = [ ['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, '(not applicable)'] ] as const;
+    const branch = NH_DEVEL_STATUS === NH_STATUS_RELEASED ? '(not applicable)' : '(not available)';
+    const choices = [ ['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, branch] ] as const;
     const selected = await showMultiSelectWindow({
         title: 'Select version information flags:', omitHeadings: true,
         sections: [{ items: choices.map(([key, bit, text]) => ({ key, value: bit,
@@ -286,4 +289,52 @@ async function editDisclosure(): Promise<void> {
 // the stored disclose string.
 function disclosureDescription(values: readonly string[]): string {
     return DISCLOSURE_CATEGORIES.map(([key], index) => `${values[index] ?? 'n'}${key}`).join(' ');
+}
+
+// C options.c:show_menu_controls(): the menu-control help rows — cmd.c's
+// '?i' one-key-per-line list when dolist, pager.c's '?k' whole/current-page
+// table otherwise.  Single-letter keys show the configured alias; Return,
+// Space and Escape stay hardcoded.
+export function showMenuControls(dolist: boolean): string[] {
+    const key = (command: string) => visibleCommandKey(game.commandBindings.menuKey(command));
+    if (dolist) {
+        const rows: readonly (readonly [string, string])[] = [
+            ['>', 'Go to next page'], ['<', 'Go to previous page'],
+            ['^', 'Go to first page'], ['|', 'Go to last page'],
+            ['.', 'Select all items in entire menu'],
+            ['@', 'Invert selection for all items'],
+            ['-', 'Unselect all items in entire menu'],
+            [',', 'Select all items on current page'],
+            ['~', "Invert current page's selections"],
+            ['\\', 'Unselect all items on current page'],
+            [':', 'Search and invert matching items'],
+            ['Return', 'Accept current choice(s) and dismiss menu'],
+            ['Enter', 'Same as Return'],
+            ['Space', 'If not on last page, advance one page;'],
+            ['     ', 'when on last page, treat like Return'],
+            ['Escape', 'Cancel menu without making any choice(s)'],
+        ];
+        return ['Menu control keys:',
+            ...rows.map(([control, description]) =>
+                `${(control.length === 1 ? key(control) : control).padEnd(7)} ${description}`)];
+    }
+    const wholeAndPage = (label: string, whole: string, page: string) =>
+        `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;
+    const goTo = (code: string, name: string) => wholeAndPage('', code, name);
+    return [
+        'Menu control keys:', '',
+        '           Whole  Current', '            Menu   Page',
+        wholeAndPage('Select', key('.'), key(',')),
+        wholeAndPage('Invert', key('@'), key('~')),
+        wholeAndPage('Deselect', key('-'), key('\\')), '',
+        wholeAndPage('Go to', key('>'), 'Next page'), goTo(key('<'), 'Previous page'),
+        goTo(key('^'), 'First page'), goTo(key('|'), 'Last page'), '',
+        wholeAndPage('Search', key(':'),
+            'Exter a target string and invert all matching entries'), '',
+        '   Other   Return   Accept current choice(s) and dismiss menu',
+        '           Enter    Same as Return',
+        '           Space    If not on last page, advance one page;',
+        '                    when on last page, treat like Return',
+        '           Escape   Cancel menu without making any choice(s)',
+    ];
 }
