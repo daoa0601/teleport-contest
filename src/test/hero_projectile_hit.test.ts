@@ -1,3 +1,4 @@
+import { setMulti } from '../js/cmd.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -194,4 +195,21 @@ void test('an eligible catch reveals a welded weapon\'s curse while using the ot
 
     assert.equal(result.shots[0]?.caught, true);
     assert.equal(wielded.bknown, true);
+});
+
+void test('an asleep hero cannot catch a missile or reveal a welded curse', async () => {
+    await freshObjectRoom();
+    requireFixtureGame(game);
+    const wielded = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
+    await setPrimaryWeapon(wielded);
+    setMulti(-3);
+    game.u.usleep = 1;
+    const { soldier, weapon } = await throwWeaponAtHero(DART);
+
+    const result = await throwMonsterWeaponAtHero(soldier, game, weapon, {
+        random: () => 0, rollOne: () => 1, publish: async () => {},
+    });
+
+    assert.equal(result.shots[0]?.caught, false);
+    assert.equal(wielded.bknown, false);
 });

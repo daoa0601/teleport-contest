@@ -56,7 +56,7 @@ import { displayRayName } from './zap.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { rayHitMessage, rayMissMessage } from './zap.js';
 import { d, rn2, rnd } from './rng.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsUnaware, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { formatHeardMessage, plineWithContinuation, publishHeardMessage, set_msg_xy, impossible } from './pline.js';
@@ -461,7 +461,7 @@ async function catchUnicornGift(object, { state, source, publish }) {
 async function catchThrownObject(object, { state, random, publish }) {
     const hero = state.u;
     // freehand() can reveal a welded curse, so keep the native eligibility order.
-    if (heroIsBlind(state) || hero.confused || hero.stunned || hero.fumbling
+    if (heroIsBlind(state) || hero.confused || hero.stunned || hero.fumbling || heroIsUnaware(state)
         || object.oclass === VENOM_CLASS || heroHasNoHands(state) || !heroHasFreeHand(state)
         || calcCapacity(state, object.owt) > SLT_ENCUMBER)
         return false;
