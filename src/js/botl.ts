@@ -1784,8 +1784,8 @@ export async function statusHiliteMenu(): Promise<boolean> {
             const count = linestrCountField(row.fld);
             // SCORE_ON_BOTL is not compiled in: hide 'score' without rules.
             if (row.fld === BL_SCORE && !count) continue;
-            let text = row.name.padEnd(18);
-            if (count) text += ` (${count} defined)`;
+            let text = game.iflags.menu_tab_sep ? `${row.name}\t` : `${row.name.padEnd(18)} `;
+            if (count) text += `(${count} defined)`;
             items.push({ value: row.fld + 1, text });
         }
         const picks = await showMultiSelectWindow<number>({

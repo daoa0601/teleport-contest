@@ -251,7 +251,7 @@ async function editDisclosure(): Promise<void> {
     const categories = await showMultiSelectWindow({
         title: 'Change which disclosure options categories:', omitHeadings: true,
         sections: [{ items: DISCLOSURE_CATEGORIES.map(([key, name], index) => ({
-            key, value: index, text: `${name.padEnd(12)}[${values[index] ?? 'n'}${key}]`,
+            key, value: index, text: `${game.iflags.menu_tab_sep ? `${name}\t` : name.padEnd(12)}[${values[index] ?? 'n'}${key}]`,
         })) }],
     });
     for (const index of categories) {

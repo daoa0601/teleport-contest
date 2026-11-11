@@ -40,7 +40,7 @@ export async function editSymset(rogueflag) {
             .map(([name, desc], index) => ({
             key: String.fromCharCode('b'.charCodeAt(0) + index),
             value: name,
-            text: `${name.padEnd(17)} ${desc}`,
+            text: game.iflags.menu_tab_sep ? `${name}\t${desc}` : `${name.padEnd(17)} ${desc}`,
         })),
     ];
     const currentKey = current
