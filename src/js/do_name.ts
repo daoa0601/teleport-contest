@@ -890,12 +890,11 @@ function restrictedArtifactName(object: GameObject, artifact: Artifact): boolean
     return description === other || artifact.baseType >= low && artifact.baseType <= high;
 }
 
+// C do_name.c:objtyp_is_callable().
 // ---------------------------------------------------------------------------
-// Object type calls. C refs: do_name.c objtyp_is_callable(), docall(),
-// docall_xname().
+// Object type calls. C refs: do_name.c docall(), docall_xname().
 // ---------------------------------------------------------------------------
 
-// C do_name.c:objtyp_is_callable().
 export function objectTypeIsCallable(object: Pick<GameObject, 'otyp' | 'oclass'>,
     state: GameState = game): boolean {
     if (state._objectCallNames?.[object.otyp]) return true;
