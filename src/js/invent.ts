@@ -11,7 +11,7 @@ import {
     VENOM_CLASS,
 } from './objclass.js';
 import {
-    objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, CRYSKNIFE, ALCHEMY_SMOCK,
+    objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, CRYSKNIFE, ALCHEMY_SMOCK, CHEST, LARGE_BOX,
     ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, MAGIC_MARKER,
     HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER,
     SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
@@ -2618,11 +2618,11 @@ async function displayMonsterInventory(
 }
 
 // C invent.c:cinv_doname(): the probing contents menu names the box with
-// "trapped" inserted before its lock state even though doname() already
-// shows a just-learned trap, so a trapped box is named twice.
+// "trapped" inserted before its lock state only when doname() could
+// not include the known box trap itself.
 export async function probedContentsTitle(object: GameObject, state: GameState): Promise<string> {
     let name = await objectDescription(object, { state });
-    if (!object.otrapped) return name;
+    if (!object.otrapped || (object.otyp === CHEST || object.otyp === LARGE_BOX) && object.tknown && object.dknown) return name;
     const locked = name.indexOf(' locked ');
     const unlocked = name.indexOf(' unlocked ');
     if (locked >= 0 && (unlocked < 0 || locked < unlocked))

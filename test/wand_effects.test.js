@@ -236,7 +236,7 @@ void test('probing removes an empty remembered invisible monster marker', async 
     await zap(WAN_PROBING);
     assert.notEqual(level.requireAt(11, 10).remembered_glyph?.kind, 'invisible');
 });
-void test('probing a trapped chest names the trap again in its contents menu', async () => {
+void test('probing a trapped chest names its trap once in the contents menu', async () => {
     room();
     requirePlayingGame(game);
     const chest = await floorObject(CHEST, 11, 10, { olocked: true, otrapped: true });
@@ -244,7 +244,7 @@ void test('probing a trapped chest names the trap again in its contents menu', a
     const input = resetInputState();
     await answerPrompts(zap(WAN_PROBING), input, [
         { prompt: /The chest is trapped!--More--/, keys: ' ' },
-        { prompt: /trapped trapped locked chest containing \d+ items?[\s\S]*\(end\)/, keys: ' ' },
+        { prompt: /trapped locked chest containing \d+ items?[\s\S]*\(end\)/, keys: ' ' },
     ]);
     assert.equal(chest.tknown, true);
     assert.equal(chest.cknown, true);
