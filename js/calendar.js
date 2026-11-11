@@ -99,7 +99,12 @@ export function fixedCalendar(datetime) {
     if ((epact === 25 && goldn > 11) || epact === 24)
         epact++;
     const moonphase = (Math.floor(((((diy + epact) * 6) + 11) % 177) / 22)) & 7;
-    return { moonphase, friday13: weekday === 5 && day === 13 };
+    return { moonphase, friday13: friday13th(datetime) };
+}
+// C calendar.c:friday_13th(). Is the local date Friday the 13th?
+export function friday13th(datetime) {
+    const date = recorderLocalDate(datetime);
+    return !!date && date.weekday === 5 && date.day === 13;
 }
 // C calendar.c:night()
 export function sessionIsNight(datetime) {

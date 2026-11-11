@@ -2,7 +2,7 @@
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
 import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot, In_hell } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
-import { recorderLocalEpochSeconds, fixedCalendar, sessionIsNight } from './calendar.js';
+import { recorderLocalEpochSeconds, fixedCalendar, friday13th, sessionIsNight } from './calendar.js';
 import { pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent } from './pline.js';
 import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, promptYesNo, rhack,  dolookaround } from './cmd.js';
 import { getLine } from './windows.js';
@@ -365,7 +365,8 @@ async function applyCalendarMessages() {
     const game = requireInitializedGame();
     const calendar = fixedCalendar(game.datetime);
     game.flags.moonphase = calendar.moonphase;
-    game.flags.friday13 = calendar.friday13;
+    const friday = friday13th(game.datetime);
+    game.flags.friday13 = friday;
     // Native luck changes follow the message, including any input it needs.
     if (calendar.moonphase === 4) {
         await plineWithContinuation('You are lucky!  Full moon tonight.');
@@ -373,7 +374,7 @@ async function applyCalendarMessages() {
     } else if (calendar.moonphase === 0) {
         await plineWithContinuation('Be careful!  New moon tonight.');
     }
-    if (calendar.friday13) {
+    if (friday) {
         await plineWithContinuation('Watch out!  Bad things can happen on Friday the 13th.');
         changeHeroLuck(-1);
     }

@@ -2376,3 +2376,12 @@ readobjnam_postparse1	def_char_to_objclass	included as present via the lookup ow
 readobjnam_postparse1	weight	included as present via lookupWishType()'s weight() tail; readObjectName() itself assigns objectWeight() (objnam.ts)
 readobjnam_postparse3	digit	n/a	ctype digit() macro
 simple_typename	obj_typename	inlined	the composition is inverted: objectTypeName() builds on simpleObjectTypeName(); the type-knowledge switch is the shared core (objnam.ts)
+hmon_hitmon	first_weapon_hit	included as present via recordFirstHeroWeaponHit(), called by the hit-dispatch owners at uhitm.ts:1530,1961
+hmon_hitmon_jousting	first_weapon_hit	included as present via recordFirstHeroWeaponHit() at uhitm.ts:1530
+hmon_hitmon	nohandglow	included as present via confuseTouchedMonster() at uhitm.ts:2001
+hmon_hitmon_jousting	mhurtle_to_doom	inlined	hmon_hitmon_jousting() and mhurtle_to_doom() are fused in resolveHeroJoust() (uhitm.ts)
+u_init_misc	adjabil	inlined	the initial role/race ability grant is the inline table walk in uInitMisc(); adjabil()'s port is adjustLevelAbilities(), which needs a level change and a publisher (attrib.ts)
+u_init_misc	newhp	included as present via initialRoll(), u_init_misc()'s hpadv/enadv roll helper (u_init.ts)
+u_init_misc	newpw	included as present via initialRoll(), u_init_misc()'s hpadv/enadv roll helper (u_init.ts)
+newgame	com_pager	included as present via comPager() (questpgr.ts), run by newgame's pager path (allmain.ts)
+maybe_do_tutorial	deferred_goto	included as present via the hand-rolled goto_level arrival the tutorial models (allmain.ts maybeDoTutorial)
