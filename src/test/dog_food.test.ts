@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { OBJECT_TIMER_KIND } from '../js/const.js';
+import { scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { nameToMonster } from '../js/mondata.js';
@@ -226,3 +228,15 @@ void test('quest artifacts are protected and pets avoid weapon poison and trappe
     assert.equal(quality(dog, dagger), POISON);
     assert.equal(quality(dog, await knownObject(LARGE_BOX, { otrapped: true })), POISON);
 });
+
+for (const species of ['little dog', 'ghoul']) {
+    void test(`${species} rejects a zombifying corpse as poisonous`, async () => {
+        await freshObjectRoom();
+        const eater = await pet(species);
+        const food = await corpse('jackal', game.moves - 60);
+        stopAllObjectTimers(food);
+        scheduleObjectTimer(food, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves + 100, game);
+
+        assert.equal(quality(eater, food), POISON);
+    });
+}

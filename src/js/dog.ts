@@ -5,6 +5,7 @@ import { mon_offmap } from './const.js';
 // pick_familiar_pm(), make_familiar(), abuse_dog(), and dogfood().
 
 import { SCROLL_CLASS, SPBOOK_CLASS, FOOD_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
+import { objectTimers } from './timeout.js';
 import { currentAttribute } from './attrib.js';
 import {
     A_CHA, DISMOUNT_THROWN, G_EXTINCT, GP_AVOID_MONPOS, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG,
@@ -13,7 +14,7 @@ import {
     MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU,
     MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING,
     NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, EYE, LL_CONDUCT,
-    G_GENOD, MAX_EGG_HATCH_TIME,
+    G_GENOD, MAX_EGG_HATCH_TIME, OBJECT_TIMER_KIND,
 } from './const.js';
 
 import { isPoolAt } from './dbridge.js';
@@ -1236,6 +1237,8 @@ function foodQuality(monster: Monster, object: GameObject, state: GameState): Fo
     const flesh = [CORPSE, TIN, EGG].includes(object.otyp) ? object.corpsenm : undefined;
     if (object.otyp === CORPSE && flesh !== undefined && monsterIsRider({ mnum: flesh }))
         return TABU;
+    if (object.otyp === CORPSE
+        && objectTimers(object).some(timer => timer.kind === OBJECT_TIMER_KIND.ZOMBIFY_MON)) return POISON;
     if ((object.otyp === CORPSE || object.otyp === EGG)
         && fleshPetrifies(flesh) && !monsterHasStoneResistance(monster)) return POISON;
     if (object.otyp === LUMP_OF_ROYAL_JELLY && monster.mnum === PM_KILLER_BEE) {

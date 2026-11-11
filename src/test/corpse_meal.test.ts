@@ -7,6 +7,8 @@ import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { OBJECT_TIMER_KIND } from '../js/const.js';
+import { scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { CORPSE } from '../js/object_data.js';
 import { polymonHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -85,4 +87,24 @@ void test('a Monk eats with the transformed body and regains the original diet o
         [...messages, game._pending_message].join('\n'),
         /This lizard corpse tastes terrible!/,
     );
+});
+
+void test('eating a zombifying corpse treats otherwise edible meat as tainted', async () => {
+    await freshObjectRoom({ role: 'caveman', hero: { uhunger: 200 } });
+    game.moves = 100;
+    const food = await addInventoryObject(CORPSE, {
+        corpsenm: MONSTER_NAME.indexOf('jackal'), age: game.moves - 30,
+    });
+    stopAllObjectTimers(food);
+    scheduleObjectTimer(food, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves + 100, game);
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /Ulch|too long ago/, limit: 4 });
+    input.feed(inventoryLetter(food));
+
+    await rhack('e'.charCodeAt(0));
+
+    assert.equal(food.where, 'gone');
+    assert.match([...messages, game._pending_message].join('\n'), /Ulch - that meat was tainted!/);
 });

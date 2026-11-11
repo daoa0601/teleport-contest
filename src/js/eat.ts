@@ -41,7 +41,7 @@ import {
     Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, M_AP_NOTHING, M_AP_OBJECT,
     M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN,
     SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TT_BEARTRAP, TIMEOUT, Upolyd, WEAK, W_AMUL,
-    W_ARMOR, W_NONDIGGABLE, W_RING, W_SADDLE, W_TOOL, FINGER, LIGHT_HEADED, STOMACH, NOSE, LL_CONDUCT,
+    OBJECT_TIMER_KIND, W_ARMOR, W_NONDIGGABLE, W_RING, W_SADDLE, W_TOOL, FINGER, LIGHT_HEADED, STOMACH, NOSE, LL_CONDUCT,
 } from './const.js';
 import { reviveCorpseImmediately } from './do.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
@@ -66,7 +66,7 @@ import { freeInventoryObject, useUpInventoryStack, addInventoryItem, chooseInven
 import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { retouchEquipment, retouchHeroObject } from './artifact.js';
 import { heroIsUnaware, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { putHeroToSleep } from './timeout.js';
+import { objectTimers, putHeroToSleep } from './timeout.js';
 import { changeHeroSex, heroIsBreathless, heroSpecies, heroHasNoHands, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, polymonHero, polymorphHero, returnHeroToHumanForm, heroIsSlimeproof, heroFormClings, heroIsFlying, body_part } from './polyself.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
@@ -1643,6 +1643,7 @@ export async function eatcorpse(food: GameObject, { state = game }: CorpseMealOp
     if (!meal || meal.key !== 'eat-food')
         throw new Error('Corpse preparation requires an active food meal');
     const species = corpseSpecies(food), glob = !!food.globby;
+    const zombifying = objectTimers(food).some(timer => timer.kind === OBJECT_TIMER_KIND.ZOMBIFY_MON);
     const name = withIndefiniteArticle(food_xname(food, { state }));
     let logged = false;
     if (!veganCorpse(species) && incrementConduct('unvegan', state)) {
@@ -1660,6 +1661,7 @@ export async function eatcorpse(food: GameObject, { state = game }: CorpseMealOp
             ? food.age + Math.trunc((state.moves - food.age) / 2) : food.age;
         rotted = Math.trunc((state.moves - age) / (10 + rn2(20)));
         rotted += food.cursed ? 2 : food.blessed ? -2 : 0;
+        if (zombifying) rotted += 5;
     }
     const stoneable = heroWouldPetrifyFromFlesh(species, state);
     const slimeable = species === PM_GREEN_SLIME && heroCanBeSlimed(state);
