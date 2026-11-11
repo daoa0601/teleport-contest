@@ -512,10 +512,9 @@ export const BUILD_DATE = "Sun May  3 01:27:17 2026";
 export const BUILD_TIME = (1777786037);
 // date.c:populate_nomakedefs() pins the recorder's runtime build banner.
 // NH_DEVEL_STATUS != RELEASED (patchlevel.h): mdlib_version_string() appends
-// "-EDITLEVEL" and bannerc_string() appends its non-released subbuf, which
-// is the " Work-in-progress" fallback until upstream fixes the post-release
-// case.
-export const COPYRIGHT_BANNER_C = "         Version 5.0.0-0 MacOS Work-in-progress, built May  2 2026 12:00:00.";
+// "-EDITLEVEL" and bannerc_string() now spells the NH_STATUS_POSTRELEASE
+// subbuf (" post-release") instead of the " Work-in-progress" fallback.
+export const COPYRIGHT_BANNER_C = "         Version 5.0.0-0 MacOS post-release, built May  2 2026 12:00:00.";
 
 // AUTO-IMPORT-BEGIN: CONST_ALL_HEADERS
 // Auto-imported header constants (pre-symbol pass)
