@@ -12,7 +12,7 @@ import { swallowToGlyph, zapdirToGlyph } from '../js/display.js';
 import { glyphToCmapSymbol } from '../js/glyphs.js';
 import { AM_CHAOTIC, AM_LAWFUL, AM_MASK, AM_NEUTRAL, AM_SANCTUM, FEMALE, MALE, WARNCOUNT } from '../js/const.js';
 import { MONSTER_COLOR } from '../js/monster_data.js';
-import { CORPSE, OBJECT_COLOR, STATUE } from '../js/object_data.js';
+import { CORPSE, ARROW as FIRST_OBJECT, OBJECT_COLOR, STATUE } from '../js/object_data.js';
 
 
 const NUMMONS = MONSTER_COLOR.length;
@@ -51,6 +51,8 @@ void test('bodies and statues are objects that decode to their generic object', 
     assert.ok(glyphIsStatue(GlyphOffset.statueFemale + 5));
     assert.ok(glyphIsStatue(GlyphOffset.statueMalePiletop + 5));
     assert.ok(glyphIsObject(GlyphOffset.object + CORPSE));
+    assert.ok(glyphIsObject(GlyphOffset.objectPiletop + FIRST_OBJECT - 1),
+        'The generic venom boundary is also an object when it tops a pile.');
     assert.ok(!glyphIsObject(GlyphOffset.monMale));
     // glyph_to_obj() maps every body to CORPSE, every statue to STATUE, and
     // decodes plain object numbers; the fencepost is NUM_OBJECTS.

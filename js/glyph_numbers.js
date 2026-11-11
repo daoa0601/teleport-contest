@@ -258,7 +258,7 @@ export function glyphIsGenericObject(glyph) {
 // C display.h:glyph_is_normal_piletop_obj() / glyph_is_normal_object()
 function glyphIsNormalPiletopObj(glyph) {
     return glyph === GlyphOffset.objectPiletop
-        || glyph > GlyphOffset.objectPiletop + FIRST_OBJECT - 1
+        || glyph >= GlyphOffset.objectPiletop + FIRST_OBJECT - 1
             && glyph < GlyphOffset.objectPiletop + NUM_OBJECTS;
 }
 // C display.h:glyph_is_normal_object().
