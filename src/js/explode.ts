@@ -533,7 +533,7 @@ async function finishExplosionMonsterDeath(monster: Monster, {
 // Part of C explode.c:explode(): the killer.format/name assignment when
 // the hero dies ("caught %self in ...").
 function explosionDeathCause(type: number, objectClass: number, description: string, killer: string | null, state: GameState): OrdinaryDeathOptions {
-    if (objectClass === MON_EXPLODE) return { killer: killer || description, killerFormat: KILLED_BY_AN };
+    if (objectClass === MON_EXPLODE) return { killer: description === 'explosion' ? description : killer || description, killerFormat: KILLED_BY_AN };
     const himself = state.flags.female ? 'herself' : 'himself';
     if (objectClass === TRAP_EXPLODE) {
         const cause = `caught ${himself} in a ${description}`;

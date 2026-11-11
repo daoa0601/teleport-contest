@@ -480,7 +480,7 @@ async function finishExplosionMonsterDeath(monster, { state, publish, heroCaused
 // the hero dies ("caught %self in ...").
 function explosionDeathCause(type, objectClass, description, killer, state) {
     if (objectClass === MON_EXPLODE)
-        return { killer: killer || description, killerFormat: KILLED_BY_AN };
+        return { killer: description === 'explosion' ? description : killer || description, killerFormat: KILLED_BY_AN };
     const himself = state.flags.female ? 'herself' : 'himself';
     if (objectClass === TRAP_EXPLODE) {
         const cause = `caught ${himself} in a ${description}`;
