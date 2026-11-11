@@ -150,7 +150,7 @@ export function adjustErinys(abuse: number): void {
         abuse > 20 ? [first[0], first[1], 3, first[3]] : first,
         weaponAttack, spellAttack, fourth, fifth, sixth,
     ];
-    erinys.level = Math.min(7 + abuse, 50);
+    erinys.level = Math.min(7 + abuse, 49);
     erinys.difficulty = Math.min(10 + Math.trunc(abuse / 3), 25);
 
     // exper.c:experience() reads mattk too. Its precomputed bonuses must
