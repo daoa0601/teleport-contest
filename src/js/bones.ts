@@ -42,7 +42,7 @@ import {
 
     MM_NONAME,
 
-    MON_FLOOR,
+    mon_offmap,
 
     NON_PM,
 
@@ -399,7 +399,7 @@ const MS_NEMESIS = 37;
 export async function prepareBonesMonstersForSave(): Promise<void> {
     const level = requireGameLevel();
     for (const monster of [...level.monsters].reverse()) {
-        if (monster.mhp < 1 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        if (monster.mhp < 1 || mon_offmap(monster)) continue;
         const sound = MONSTER_SOUND[monster.mnum];
         if (monster.iswiz || monster.mnum === PM_MEDUSA
             || sound === MS_LEADER || sound === MS_NEMESIS

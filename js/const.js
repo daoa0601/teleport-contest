@@ -1387,6 +1387,10 @@ export const MON_ENDGAME_FREE = 0x20;
 export const MON_ENDGAME_MIGR = 0x40;
 export const MON_OBLITERATE = 0x80;
 export const MON_STILL_ARRIVING = 0x100;
+// C monst.h:mon_offmap(). An omitted state is the port's initial MON_FLOOR.
+export function mon_offmap(monster) {
+    return (monster.mstate ?? MON_FLOOR) !== MON_FLOOR;
+}
 export const M_AP_TYPMASK = 0x7;
 export const M_AP_F_DKNOWN = 0x8;
 export const MAX_NUM_WORMS = 32;
