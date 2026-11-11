@@ -1316,9 +1316,18 @@ function kickRange(
         range = 1;
     return { range, slide };
 }
+
+// C dokick.c:kick_object(). The top-of-pile object a kick reaches, with
+// the boulder/ball/chain refusals.
+function kickObject(x: number, y: number, state: GameState): GameObject | null {
+    const object = state.level?.objects?.[x]?.[y]?.[0];
+    if (!object) return null;
+    if (object.otyp === BOULDER || object === state.uball || object === state.u.uball
+        || object === state.uchain || object === state.u.uchain) return null;
+    return object;
+}
+
 // C dokick.c:really_kick_object().
-// Also C dokick.c:kick_object(): inlined here as the top-of-pile selection
-// and the object name used if the kick hurts the hero.
 export async function kickFloorObject(x: number, y: number, {
     state = game,
     dx = state.u?.dx ?? 0,
@@ -1327,10 +1336,8 @@ export async function kickFloorObject(x: number, y: number, {
     random = rn2,
     rollOne = rnd,
 }: KickObjectOptions = {}) {
-    const object = state.level?.objects?.[x]?.[y]?.[0];
+    const object = kickObject(x, y, state);
     if (!object) return false;
-    if (object.otyp === BOULDER || object === state.uball || object === state.u.uball
-        || object === state.uchain || object === state.u.uchain) return false;
     const trap = trapAt(state, x, y);
     const passesWalls = state.u.passesWalls;
     if (trap && ((is_pit(trap.ttyp) && !passesWalls)

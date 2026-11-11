@@ -2388,3 +2388,7 @@ maybe_do_tutorial	deferred_goto	included as present via the hand-rolled goto_lev
 dip_hands_ok	dip_ok	included as present via dipClassification(), the getobj filter chooseDipTarget() passes (potion.ts)
 dip_into	inaccessible_equipment	included as present via coveringEquipment()/reportCoveredEquipment() (do_wear.ts) at potion.ts:2796,2929
 itimeout_incr	itimeout	included as present via the per-property timeout field increaseLevitationTimeout() reads and writes (potion.ts)
+doengrave	doengrave_ctx_init	included as present via the EngraveSetup stage of doengrave()'s port (engrave.ts:808)
+doengrave	doengrave_ctx_verb	included as present via the everb/eloc switch stage of doengrave()'s port (engrave.ts)
+doengrave	doengrave_sfx_item	included as present via the stylus-effects stage of doengrave()'s port (engrave.ts:903)
+dokick	maybe_kick_monster	inlined
