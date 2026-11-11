@@ -745,4 +745,15 @@ void test('the here menu offers Engrave here', async () => {
         await finish(engine);
     }
 });
+void test('the here menu offers Jump', async () => {
+    const engine = await startMenuGame();
+    try {
+        grantIntrinsicProperty('jumping', 'outside');
+        await type(engine, '#herecmdmenu\n');
+        assert.match(screen(), /Jump/);
+    }
+    finally {
+        await finish(engine);
+    }
+});
 //# sourceMappingURL=command_context_menu.test.js.map

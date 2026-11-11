@@ -1046,6 +1046,7 @@ function contextMenuCommand(selection) {
         case 'offer':
         case 'pray':
         case 'engrave':
+        case 'jump':
         case 'inventory':
         case 'cast':
         case 'throw': return selection.action;
@@ -1130,6 +1131,7 @@ function contextMenuResponses(selection) {
         case 'move':
         case 'pray':
         case 'engrave':
+        case 'jump':
         case 'pickup':
         case 'search':
         case 'sit':
@@ -1248,6 +1250,8 @@ async function selfEntries(add, x, y) {
     const trap = trapAt(game, x, y);
     if (trap?.tseen && trap.ttyp !== VIBRATING_SQUARE)
         add('untrap-here', 'Attempt to disarm trap');
+    if (propertyIsActive('jumping'))
+        add('jump', 'Jump');
 }
 // Part of C cmd.c:there_cmd_menu(): the object entry's name.
 async function menuObjectName(object) {
