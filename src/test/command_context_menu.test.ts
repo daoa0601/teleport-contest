@@ -691,3 +691,11 @@ void test('the here menu offers View attributes', async () => {
         assert.match(screen(), /View attributes/);
     } finally { await finish(engine); }
 });
+
+void test('the here menu offers Access memories', async () => {
+    const engine = await startMenuGame();
+    try {
+        await type(engine, '#herecmdmenu\n');
+        assert.match(screen(), /Access memories/);
+    } finally { await finish(engine); }
+});
