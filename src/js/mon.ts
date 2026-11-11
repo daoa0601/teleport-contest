@@ -3376,6 +3376,14 @@ export function wornMonsterLifeSaver(monster: Monster): GameObject | null | unde
         && ((object.owornmask ?? 0) & W_AMUL));
 }
 
+// C mon.c:set_mon_min_mhpmax(): life-saving's traditional minimum of 10,
+// never below m_lev+1.
+export function setMonMinimumMhpmax(monster: Monster, minimum: number): void {
+    monster.mhpmax = Math.max(
+        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, minimum,
+    );
+}
+
 // C mon.c:lifesaved_monster(): an amulet of life saving revives a dying
 // monster; genocided species still fail after the medallion crumbles.
 // The caller supplies any credited kill line. The amulet is consumed and the
@@ -3433,9 +3441,7 @@ export async function lifeSaveMonster(
         });
     }
     // C mon.c:set_mon_min_mhpmax(mtmp, 10).
-    monster.mhpmax = Math.max(
-        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
-    );
+    setMonMinimumMhpmax(monster, 10);
     monster.mhp = monster.mhpmax;
     if (genocided) {
         if (cansee(monster.mx, monster.my)) {
@@ -3520,9 +3526,7 @@ async function reviveShiftedVampire(
     monster.mcanmove = 1;
     monster.mfrozen = 0;
     // C mon.c:set_mon_min_mhpmax(mtmp, 10).
-    monster.mhpmax = Math.max(
-        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
-    );
+    setMonMinimumMhpmax(monster, 10);
     monster.mhp = monster.mhpmax;
 
     if (state.u?.ustuck === monster) {
@@ -4498,9 +4502,7 @@ function restoreRevertedMonsterHealth(monster: Monster): void {
     monster.mcanmove = 1;
     monster.mfrozen = 0;
     // C mon.c:set_mon_min_mhpmax(mtmp, 10).
-    monster.mhpmax = Math.max(
-        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
-    );
+    setMonMinimumMhpmax(monster, 10);
     monster.mhp = monster.mhpmax;
 }
 // Part of C mon.c:monstone(): clearing a carried object's worn and wielded

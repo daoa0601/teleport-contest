@@ -19,7 +19,7 @@ import { expiredFatally } from './timeout.js';
 import { gameLogEvents, pline, recordGameLogEvent } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, ATR_NONE, showInventoryWindow } from './windows.js';
 import { showTextWindow } from './wintty.js';
-import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
+import { G_GENOD, A_NONE, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
 import { fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL, } from './object_data.js';
 import { canAdvanceHeroSkill, ensureHeroSkills, skillName, skillLevelName, weaponDescription, weaponSkillType, } from './weapon.js';
@@ -108,12 +108,12 @@ export function backgroundEnlightenmentLines(final = 0) {
         : converted ? final ? 'belatedly ' : 'now '
             : !u.uconduct.gnostic && game.moves > 1000 ? 'nominally ' : '';
     const opponents = [1, 0, -1].filter(value => value !== alignment)
-        .map(value => `${deityName(value)} (${alignmentName(value)})`);
-    lines.push(`  You ${final ? 'were' : 'are'} ${alignmentName(alignment)}, ${modifier}on a mission for ${uGname()}`, `  who ${final ? 'was' : 'is'} opposed by ${opponents.join(' and ')}.`);
+        .map(value => `${deityName(value)} (${align_str(value)})`);
+    lines.push(`  You ${final ? 'were' : 'are'} ${align_str(alignment)}, ${modifier}on a mission for ${uGname()}`, `  who ${final ? 'was' : 'is'} opposed by ${opponents.join(' and ')}.`);
     if (temporary)
-        lines.push(`  You ${final ? 'were' : 'are'} actually ${alignmentName(current)}.`);
+        lines.push(`  You ${final ? 'were' : 'are'} actually ${align_str(current)}.`);
     if (changedGender || converted)
-        lines.push(`  You started out ${changedGender ? game.flags.initgend ? 'female' : 'male' : ''}${changedGender && converted ? ' and ' : ''}${converted ? alignmentName(original) : ''}.`);
+        lines.push(`  You started out ${changedGender ? game.flags.initgend ? 'female' : 'male' : ''}${changedGender && converted ? ' and ' : ''}${converted ? align_str(original) : ''}.`);
     lines.push(`  You ${final ? 'were' : 'are'} ${handednessDescription()}.`, locationLine(final));
     lines.push(game.moves === 1
         ? `  You ${final ? 'had' : 'have'} just started your adventure.`
@@ -224,8 +224,14 @@ export function handednessDescription() {
     return `${body_part(HANDED) === 'handed' ? '' : 'normally '}${game.u.rightHanded ? 'right' : 'left'}-handed`;
 }
 // C insight.c:align_str().
-function alignmentName(value) {
-    return value > 0 ? 'lawful' : value < 0 ? 'chaotic' : 'neutral';
+export function align_str(alignment) {
+    switch (alignment) {
+        case -1: return 'chaotic';
+        case 0: return 'neutral';
+        case 1: return 'lawful';
+        case A_NONE: return 'unaligned';
+    }
+    return 'unknown';
 }
 // Part of C insight.c:background_enlightenment(): the "You are in ..."
 // location row (endgame, Knox, quest depth, big room, rogue level).
@@ -1408,6 +1414,19 @@ export function recordAchievement(state, achievement) {
                 flags: ACHIEVEMENT_LOG_FLAGS.get(identity) ?? 0,
             });
     }
+    return true;
+}
+// C insight.c:remove_achievement(): discard a recorded achievement,
+// keeping the order of the rest; returns whether it was present.
+export function remove_achievement(state, achidx) {
+    if (!state?.u || !Number.isInteger(achidx) || !achidx)
+        return false;
+    const achieved = achievementEntries(state);
+    const index = achieved.findIndex(entry => Math.abs(entry) === Math.abs(achidx));
+    if (index < 0)
+        return false;
+    achieved.splice(index, 1);
+    state.u.uachieved = achieved;
     return true;
 }
 // C insight.c:achieve_rank(): a rank index to achievement number, negated

@@ -824,11 +824,10 @@ function restrictedArtifactName(object, artifact) {
     const [low, high] = appearanceRange(object);
     return description === other || artifact.baseType >= low && artifact.baseType <= high;
 }
-// ---------------------------------------------------------------------------
-// Object type calls. C refs: do_name.c objtyp_is_callable(), docall(),
-// docall_xname().
-// ---------------------------------------------------------------------------
 // C do_name.c:objtyp_is_callable().
+// ---------------------------------------------------------------------------
+// Object type calls. C refs: do_name.c docall(), docall_xname().
+// ---------------------------------------------------------------------------
 export function objectTypeIsCallable(object, state = game) {
     if (state._objectCallNames?.[object.otyp])
         return true;

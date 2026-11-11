@@ -1997,6 +1997,21 @@ export async function lspo_object(
         ? MONSTER_CLASS_SYMBOLS.indexOf(corpseMonster) : null;
     if (speciesObject && corpseMonster?.length === 1 && (corpseMonsterClass == null || corpseMonsterClass < 1))
         throw new Error(`unknown Lua monster class ${corpseMonster}`);
+    let monsterType: number | null = null;
+    if (speciesObject && corpseMonster && corpseMonster.length > 1 && !noSpecies) {
+        // lspo_object() has its own name scan; find_montype() belongs to
+        // monster requests and also determines the monster's gender.
+        const target = corpseMonster.toLowerCase();
+        for (let type = 0; type < MONSTER_NAME.length; type++) {
+            if (MONSTER_NAME[type]?.toLowerCase() === target
+                || monsterTypeName(type, false).toLowerCase() === target
+                || monsterTypeName(type, true).toLowerCase() === target) {
+                monsterType = type;
+                break;
+            }
+        }
+        if (monsterType === null) throw new Error(`unknown Lua monster ${corpseMonster}`);
+    }
     if (objectType === STATUE || objectType === CORPSE) {
         options.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
             | (options.male ? CORPSTAT_MALE : 0) | (options.female ? CORPSTAT_FEMALE : 0);
@@ -2012,8 +2027,7 @@ export async function lspo_object(
         objectClass: options.class
             ? objectClassForSymbol(options.class) : null,
         objectType,
-        monsterType: speciesObject && corpseMonster && corpseMonster.length > 1 && !noSpecies
-            ? find_montype(corpseMonster).type : null,
+        monsterType,
         monsterClass: corpseMonsterClass,
     };
 

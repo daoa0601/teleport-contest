@@ -56,16 +56,34 @@ void test('trying to leash empty space takes time and clears an invisible marker
     assert.notEqual(level.requireAt(game.u.ux + 1, game.u.uy).remembered_glyph?.kind, 'invisible');
 });
 
-void test('a third leash cannot be attached and never asks for a direction', async () => {
+void test('two attached inventory leashes prevent a third attachment without spending time', async () => {
     freshPlayableRoom();
     await addInventoryObject(LEASH, { leashmon: 41 });
     await addInventoryObject(LEASH, { leashmon: 42 });
     const leash = await addInventoryObject(LEASH);
 
-    await applyInventoryObject(leash);
+    await applyInventoryObject(leash, 'l');
 
-    assert.equal(game.context.move, 0);
     assert.equal(game._pending_message, 'You cannot leash any more pets.');
+    assert.equal(game.context.move, 0);
+    assert.equal(leash.leashmon ?? 0, 0);
+});
+
+void test('an attached leash can still be removed when two inventory leashes are in use', async () => {
+    freshPlayableRoom();
+    const pet = await createMonsterAt('kitten', game.u.ux + 1, game.u.uy);
+    initializePet(pet);
+    pet.mleashed = 1;
+    const leash = await addInventoryObject(LEASH, { leashmon: pet.m_id });
+    const otherLeash = await addInventoryObject(LEASH, { leashmon: 42 });
+
+    await applyInventoryObject(leash, 'l');
+
+    assert.equal(leash.leashmon, 0);
+    assert.equal(pet.mleashed, 0);
+    assert.equal(otherLeash.leashmon, 42);
+    assert.equal(game.context.move, 1);
+    assert.match(game._pending_message, /remove the leash/);
 });
 
 void test('a tame unsolid creature cannot hold a leash', async () => {

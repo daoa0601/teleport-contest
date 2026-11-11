@@ -8,7 +8,7 @@ import { stack_object } from './invent.js';
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectClassForType, objectSkill, BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, CORPSE, DART, STATUE, ARROW, BEARTRAP, LAND_MINE, ROCK, SADDLE, CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, IRON_SHOES, KICKING_BOOTS, objectPropertyName, AMULET_OF_LIFE_SAVING, } from './object_data.js';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, xdir, ydir, M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL, M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel, W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING, IS_WATERWALL, PLNMSG_BACK_ON_GROUND, A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF, CORPSTAT_HISTORIC, MM_ADJACENTOK, MM_NOTAIL, MM_NOWAIT, NO_MINVENT, M_SEEN_ELEC, FAINTED, WATER, Is_earthlevel, In_sokoban, W_QUIVER, In_endgame, LAVAPOOL, HEAD, ARM, FOOT, LEG, SPINE, HAND, FINGER, LL_DUMP, LL_MINORAC, } from './const.js';
-import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
+import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti, xyToDirection } from './cmd.js';
 import { armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet, heroHasFreeAction, destroyWornArmor, } from './do_wear.js';
 import { delobj, consumeObjectCharge, useUpInventoryStack, chooseInventoryObject, inventoryItemDescription, objectAt, currency, } from './invent.js';
 import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName, definiteObjectAction, erosionMatters, } from './objnam.js';
@@ -24,7 +24,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './s
 import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart, floatVsFlight } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import { levelHasCeiling, level_difficulty, specialPrototypeAt, levelAtDepth, depth, dungeonDepth, find_hell, surfaceName, ceilingName, placeHeroOnLevel, updateLastSeenTerrain, In_quest, In_hell, } from './dungeon.js';
-import { monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, restoreShapechanger, turnGolemToStone, wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance, setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape, finishHeroMonsterKill, finishHeroMonsterKillOutcome, } from './mon.js';
+import { monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, restoreShapechanger, turnGolemToStone, wakeMonster, wakeNearby, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance, setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape, finishHeroMonsterKill, finishHeroMonsterKillOutcome, } from './mon.js';
 import { objectOwnershipPrefix, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig, chargeUnpaidUsage, costlySpot, restoreShopkeeperResidency, stolenValue, insideShopRoomAt, makeAngryShopkeeper, deleteObjectContents, } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
@@ -1209,7 +1209,7 @@ async function trapeffectSqkyBoard(mtmp, trap, { state = game, movement, publish
         await plineWithContinuation(deaf
             ? 'A board beneath you vibrates.'
             : `A board beneath you squeaks ${squeakyBoardNoteWithArticle(trap.tnote ?? -1) || 'a note'} loudly.`);
-        await wakeMonstersNearWithMessages(hero.ux, hero.uy, hero.ulevel * 20, game);
+        await wakeNearby(game);
         return null;
     }
     const monster = mtmp;
@@ -1493,19 +1493,12 @@ async function wetHeroObject(object, description = null) {
         await plineWithContinuation(message);
     return result;
 }
-// Part of C trap.c:trapeffect_rust_trap(): damage or destroy the hero's iron-golem form.
+// Part of C trap.c:trapeffect_rust_trap(): damage or destroy the hero's
+// iron-golem form.
 async function rustIronGolemHero() {
     const hero = game.u;
     await plineWithContinuation('You are covered with rust!');
-    const damage = maybeHalfPhysicalDamage(hero.mhmax ?? hero.mh ?? 1, game);
-    hero.mh = (hero.mh ?? 1) - damage;
-    if (hero.mh > 0)
-        return;
-    if (!(hero.unchanging || game.unchanging)) {
-        await returnHeroToHumanForm(game);
-        return;
-    }
-    await finishHeroDeath({ killer: 'rusting away' });
+    await loseHeroHp(maybeHalfPhysicalDamage(hero.mhmax ?? hero.mh ?? 1, game), 'rusting away', { killerFormat: KILLED_BY });
 }
 // C trap.c:trapeffect_fire_trap(): the monster branch — the flame under a
 // monster, golem immolation, item destruction, and the maximum-HP scorch.
@@ -1948,11 +1941,11 @@ async function triggerMagicTrap(trap) {
     await triggerHeroMagicTrapEffect();
 }
 // C trap.c:trapeffect_anti_magic(): the monster branch — iron shoes shed
-// the drain silently (wearing_iron_shoes() is
-// monsterWornIronShoes), magic resistance shields, and the drained monster
-// loses power and maximum hit points.
+// the drain silently (wearing_iron_shoes() is monsterWearsIronShoes,
+// which_armor(mtmp, W_ARMF) is wornInSlot), magic resistance shields, and
+// the drained monster loses power and maximum hit points.
 export async function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne = rnd, trap, state = game } = {}) {
-    const shoes = monsterWornIronShoes(monster);
+    const shoes = monsterWearsIronShoes(monster) ? wornInSlot(monster, W_ARMF) : null;
     if (shoes && (shoes.spe ?? 0) > 0) {
         shoes.spe--;
         if (Number.isInteger(shoes.enchantment))
@@ -2005,16 +1998,12 @@ export async function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne
         killed: monster.mhp <= 0,
     };
 }
-// Part of C trap.c:trapeffect_poly_trap(): find the monster's worn iron boots.
-export function monsterWornIronShoes(monster) {
-    return monsterInventory(monster).find((object) => objectMaterial(object?.otyp) === IRON && !!((object?.owornmask ?? 0) & W_ARMF));
-}
 // C trap.c:trapeffect_poly_trap(): the monster branch — worn iron shoes
-// are transformed first (wearing_iron_shoes() is
-// monsterWornIronShoes), magic resistance shields, and the form change is
-// staged with its possessive message.
+// (wearing_iron_shoes() is monsterWearsIronShoes, which_armor(mtmp, W_ARMF)
+// is wornInSlot) are transformed first, magic resistance shields, and the
+// form change is staged with its possessive message.
 export async function applyMonsterPolymorphTrap(monster, trap, state = game, { random = rn2 } = {}) {
-    const shoes = monsterWornIronShoes(monster);
+    const shoes = monsterWearsIronShoes(monster) ? wornInSlot(monster, W_ARMF) : null;
     if (shoes) {
         return {
             kind: 'polymorph-trap',
@@ -2524,8 +2513,8 @@ export async function triggerHeroPolymorphTrap(trap, viaSitting) {
             suppressSaddle: true,
         })} onto` : `${locomotion} onto`;
     await plineWithContinuation(`You ${verb} a polymorph trap!`);
-    const shoes = game.uarmf || game.u.uarmf;
-    if (shoes && objectMaterial(shoes.otyp) === IRON) {
+    const shoes = heroIronShoes();
+    if (shoes) {
         deleteTrap(trap);
         observeObjectForNaming(shoes);
         await plineWithContinuation(`${ownedObjectName(shoes)} warps strangely.`);
@@ -6262,7 +6251,7 @@ async function helpMonsterOut(monster, trap, options) {
     await rewardMonsterRescue(trap, monster, {
         state, publish, random, luckRandom,
     });
-    await fillPitWithBoulder(trap.tx, trap.ty, state, publish);
+    await fillPitWithBoulderAt(trap.tx, trap.ty, state, { publish });
     return true;
 }
 // Part of C trap.c:fill_pit(): consume a boulder, fill a pit and bury its floor objects.
@@ -6977,11 +6966,11 @@ export function pitsAreConjoined(first, second) {
         && !!((second.conjoined ?? 0) & (1 << ((direction + 4) % 8)));
 }
 // Part of C trap.c:conjoined_pits(): the pit offset it derives with sgn()
-// and xytodir(); the xdir/ydir table lookup is that second callee here.
+// and xytodir().
 export function pitDirection(from, to) {
     const dx = sgn(to.tx - from.tx);
     const dy = sgn(to.ty - from.ty);
-    return xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
+    return xyToDirection(dx, dy);
 }
 // C trap.c:clear_conjoined_pits().
 export function clearPitConnections(trap, state = game) {

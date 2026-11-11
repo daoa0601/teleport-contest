@@ -804,9 +804,17 @@ export function setrolefilter(filters, value) {
 export function gotrolefilter(filters) {
     return !!(filters.roles.size || filters.races.size || filters.genders.size || filters.alignments.size);
 }
-// C role.c:clearrolefilter(): clear one facet's filter mask.
+// C role.c:clearrolefilter(): clear one facet's filter mask.  RS_filter
+// clears the race/gender/alignment mask then falls through to the role
+// mask, so it clears all four.
 export function clearrolefilter(filters, facet) {
     switch (facet) {
+        case 'filter':
+            filters.races.clear();
+            filters.genders.clear();
+            filters.alignments.clear();
+            filters.roles.clear();
+            break;
         case 'role':
             filters.roles.clear();
             break;
@@ -857,11 +865,10 @@ function root_plselection_prompt(choices, random, filters) {
     const { role, race, gender, alignment } = choices;
     const description = [];
     const missing = new Set();
-    const usableAlignment = alignment && !filters?.alignments.has(alignment.name)
-        && validalign(role, race, alignment) ? alignment : null;
+    const usableAlignment = alignment && ok_align(choices, filters) ? alignment : null;
     if (usableAlignment)
         description.push(usableAlignment.name);
-    else if (!race || !filters?.races.has(race.name) && validrace(role, race, null)
+    else if (!race || ok_race({ ...choices, alignment: null }, filters)
         && race_alignmentcount(race) > 1)
         missing.add('alignment');
     const genderCount = role_gendercount(role);
@@ -871,7 +878,7 @@ function root_plselection_prompt(choices, random, filters) {
     }
     else if (!role || genderCount > 1)
         missing.add('gender');
-    if (race && (!role || !filters?.races.has(race.name) && validrace(role, race, usableAlignment)))
+    if (race && (!role || ok_race({ ...choices, alignment: usableAlignment }, filters)))
         description.push(role ? race.adj : race.name);
     else
         missing.add('race');
@@ -1314,27 +1321,19 @@ class CharacterSelection {
         }
     }
     // C ref: role.c pick_role()'s candidate set — the ok_*() conjunction
-    // per facet; the menu variant adds the cross-checks setup_*menu()
-    // makes (setup_racemenu() also asks ok_role() and ok_align(), &c).
-    candidates(facet, menu = false) {
+    // per facet (ok_race() for race, &c); the facet menus' extra
+    // cross-checks live in setup_rolemenu()/setup_racemenu()/
+    // setup_gendmenu()/setup_algnmenu().
+    candidates(facet) {
         const c = this.choices;
         switch (facet) {
             case 'role': return this.roleCandidates(c);
-            case 'race': return races.filter(race => {
-                const choice = { ...c, race };
-                return ok_race(choice, this.filters) && (!menu
-                    || ok_role(choice, this.filters) && ok_align(choice, this.filters));
-            }).map(race => race.name);
-            case 'gender': return genders.filter(gender => {
-                const choice = { ...c, gender };
-                return ok_gend(choice, this.filters) && (!menu
-                    || ok_role(choice, this.filters) && ok_race(choice, this.filters));
-            }).map(gender => gender.name);
-            case 'alignment': return aligns.filter(alignment => {
-                const choice = { ...c, alignment };
-                return ok_align(choice, this.filters) && (!menu
-                    || ok_role(choice, this.filters) && ok_race(choice, this.filters));
-            }).map(alignment => alignment.name);
+            case 'race': return races.filter(race => ok_race({ ...c, race }, this.filters))
+                .map(race => race.name);
+            case 'gender': return genders.filter(gender => ok_gend({ ...c, gender }, this.filters))
+                .map(gender => gender.name);
+            case 'alignment': return aligns.filter(alignment => ok_align({ ...c, alignment }, this.filters))
+                .map(alignment => alignment.name);
         }
     }
     roleCandidates(choices) {
@@ -1344,15 +1343,6 @@ class CharacterSelection {
                 && ok_gend(choice, this.filters) && ok_align(choice, this.filters);
         }).map(role => role.key);
     }
-    // C ref: role.c setup_rolemenu()'s rolenamebuf — the male, female, or
-    // combined male/female role name.
-    roleName(role, gender, combined = false) {
-        if (gender?.value === 1)
-            return role.name.f;
-        if (!gender && combined && role.name.f !== role.name.m)
-            return `${role.name.m}/${role.name.f}`;
-        return role.name.m;
-    }
     // C role.c:plsel_startmenu(): open the facet menu with the header
     // line of aspects chosen so far, after rigid_role_checks() has
     // narrowed the forced facets; the second maybe_skip_seps() call
@@ -1360,16 +1350,16 @@ class CharacterSelection {
     plsel_startmenu(aspect) {
         this.rigid_role_checks();
         const { role, race, gender, alignment } = this.choices;
-        const roleName = role ? this.roleName(role, gender) : '<role>';
+        const heroRoleName = role ? roleName(role, gender) : '<role>';
         const short = (value) => value.slice(0, 20);
         let header;
         if (this.name && role && race && gender && alignment) {
             // "<name> the <alignment> <gender> <race.adjective> <role>"
-            header = [this.name, 'the', alignment.name, gender.name, race.adj, roleName].map(short).join(' ');
+            header = [this.name, 'the', alignment.name, gender.name, race.adj, heroRoleName].map(short).join(' ');
         }
         else {
             // "<role> <race.noun> <gender> <alignment>"
-            header = [roleName, race?.noun ?? '<race>', gender?.name ?? '<gender>',
+            header = [heroRoleName, race?.noun ?? '<race>', gender?.name ?? '<gender>',
                 alignment?.name ?? '<alignment>'].map(short).join(' ');
         }
         const window = tty_create_nhwindow(NHW_MENU);
@@ -1395,7 +1385,20 @@ class CharacterSelection {
     // misc rows.
     async facetMenu(facet, excess) {
         const window = this.plsel_startmenu(facet);
-        this.setup_facet_menu(window, facet);
+        switch (facet) {
+            case 'role':
+                setup_rolemenu(window, true, this.choices, this.filters, role => role.key);
+                break;
+            case 'race':
+                setup_racemenu(window, true, this.choices, this.filters, race => race.name);
+                break;
+            case 'gender':
+                setup_gendmenu(window, true, this.choices, this.filters, gender => gender.name);
+                break;
+            case 'alignment':
+                setup_algnmenu(window, true, this.choices, this.filters, alignment => alignment.name);
+                break;
+        }
         this.role_menu_extra('random', window, true);
         if (facet !== 'role' || excess < 1 || excess > 2)
             addText(window, '');
@@ -1407,31 +1410,6 @@ class CharacterSelection {
         this.role_menu_extra('filter', window);
         this.role_menu_extra('quit', window);
         return finishMenu(window, TITLES[facet], 'random');
-    }
-    // C role.c:setup_rolemenu(), setup_racemenu(), setup_gendmenu(), and
-    // setup_algnmenu(): the selection-menu variant (C's filtering TRUE)
-    // — one row per still-permitted value, roles as "an Archeologist"
-    // names with the combined male/female form. The filter-reset
-    // variant is inside reset_role_filtering().
-    setup_facet_menu(window, facet) {
-        let previous = '';
-        for (const key of this.candidates(facet, true)) {
-            let selector = key.charAt(0);
-            let text = key;
-            if (facet === 'role') {
-                const role = roles.find(candidate => candidate.key === key);
-                if (!role)
-                    continue;
-                if (selector === previous)
-                    selector = selector.toUpperCase();
-                previous = selector;
-                text = withIndefiniteArticle(this.roleName(role, this.choices.gender, true));
-            }
-            tty_add_menu(window, {
-                identifier: key, selector,
-                group: facet !== 'role' ? selector.toUpperCase() : '', text,
-            });
-        }
     }
     // C role.c:role_menu_extra(): one miscellaneous menu entry — the
     // grayed-out "    role forces female"-style line when the facet's
@@ -1561,80 +1539,128 @@ async function finishMenu(window, title, defaultChoice) {
 export function createCharacterFilters() {
     return { roles: new Set(), races: new Set(), genders: new Set(), alignments: new Set() };
 }
+// C ref: role.c setup_rolemenu()'s rolenamebuf — the male, female, or
+// combined male/female role name.
+function roleName(role, gender, combined = false) {
+    if (gender?.value === 1)
+        return role.name.f;
+    if (!gender && combined && role.name.f !== role.name.m)
+        return `${role.name.m}/${role.name.f}`;
+    return role.name.m;
+}
+// C role.c:setup_rolemenu(): add entries a-Archeologist, b-Barbarian, &c
+// to the menu being built in 'window'.  filtering TRUE keeps only the
+// roles still compatible with the chosen race/gender/alignment; FALSE is
+// the filter-reset variant, where every role appears and the ones the
+// current filter excludes are preselected.
+function setup_rolemenu(window, filtering, choices, filters, identifier) {
+    let previous = '';
+    for (const role of nativeRoleChoices()) {
+        const candidate = { ...choices, role };
+        const roleOk = ok_role(candidate, filters) && ok_race(candidate, filters)
+            && ok_gend(candidate, filters) && ok_align(candidate, filters);
+        if (filtering && !roleOk)
+            continue;
+        let selector = role.name.m.charAt(0).toLowerCase();
+        if (selector === previous)
+            selector = selector.toUpperCase();
+        previous = selector;
+        tty_add_menu(window, {
+            identifier: identifier(role), selector,
+            text: withIndefiniteArticle(roleName(role, choices.gender, true)),
+            itemflags: !filtering && !roleOk ? MENU_ITEMFLAGS_SELECTED : 0,
+        });
+    }
+}
+// C role.c:setup_racemenu(): the race rows, chosen by first letter with
+// the capital letter as unseen accelerator in the selection variant, and
+// by capital letter (lowercase role letters are present) in the
+// filter-reset variant.  No ok_gend(); race isn't constrained by gender.
+function setup_racemenu(window, filtering, choices, filters, identifier) {
+    for (const race of races) {
+        const candidate = { ...choices, race };
+        const raceOk = ok_race(candidate, filters) && ok_role(candidate, filters)
+            && ok_align(candidate, filters);
+        if (filtering && !raceOk)
+            continue;
+        const selector = race.name.charAt(0);
+        tty_add_menu(window, {
+            identifier: identifier(race),
+            selector: filtering ? selector : selector.toUpperCase(),
+            group: filtering ? selector.toUpperCase() : '',
+            text: race.name,
+            itemflags: !filtering && !raceOk ? MENU_ITEMFLAGS_SELECTED : 0,
+        });
+    }
+}
+// C role.c:setup_gendmenu(): the gender rows, with setup_racemenu()'s
+// selector letters and setup_rolemenu()'s preselection.  No ok_align();
+// gender isn't constrained by alignment.
+function setup_gendmenu(window, filtering, choices, filters, identifier) {
+    for (const gender of genders) {
+        const candidate = { ...choices, gender };
+        const gendOk = ok_gend(candidate, filters) && ok_role(candidate, filters)
+            && ok_race(candidate, filters);
+        if (filtering && !gendOk)
+            continue;
+        const selector = gender.name.charAt(0);
+        tty_add_menu(window, {
+            identifier: identifier(gender),
+            selector: filtering ? selector : selector.toUpperCase(),
+            group: filtering ? selector.toUpperCase() : '',
+            text: gender.name,
+            itemflags: !filtering && !gendOk ? MENU_ITEMFLAGS_SELECTED : 0,
+        });
+    }
+}
+// C role.c:setup_algnmenu(): the alignment rows, with setup_racemenu()'s
+// selector letters and setup_rolemenu()'s preselection.  No ok_gend();
+// alignment isn't constrained by gender.
+function setup_algnmenu(window, filtering, choices, filters, identifier) {
+    for (const alignment of aligns) {
+        const candidate = { ...choices, alignment };
+        const algnOk = ok_align(candidate, filters) && ok_role(candidate, filters)
+            && ok_race(candidate, filters);
+        if (filtering && !algnOk)
+            continue;
+        const selector = alignment.name.charAt(0);
+        tty_add_menu(window, {
+            identifier: identifier(alignment),
+            selector: filtering ? selector : selector.toUpperCase(),
+            group: filtering ? selector.toUpperCase() : '',
+            text: alignment.name,
+            itemflags: !filtering && !algnOk ? MENU_ITEMFLAGS_SELECTED : 0,
+        });
+    }
+}
 // C role.c:reset_role_filtering(): the "Pick all that apply" menu over
-// every role, race, gender, and alignment.  The four loops are
-// setup_rolemenu(), setup_racemenu(), setup_gendmenu(), and
-// setup_algnmenu() with filtering FALSE — the unacceptable values are
-// preselected; clearrolefilter(RS_filter) clears the old masks on any
-// non-cancelled answer and the selections become the new masks.
-// 'cancelled' is C's ESC (n < 0); 'empty' clears the masks like n == 0;
-// 'filtered' is C's TRUE return.
+// every role, race, gender, and alignment — setup_rolemenu(),
+// setup_racemenu(), setup_gendmenu(), and setup_algnmenu() with filtering
+// FALSE, so the unacceptable values are preselected;
+// clearrolefilter(RS_filter) clears the old masks on any non-cancelled
+// answer and the selections become the new masks.  'cancelled' is C's ESC
+// (n < 0); 'empty' clears the masks like n == 0; 'filtered' is C's TRUE
+// return.
 export async function reset_role_filtering(filters) {
     const window = tty_create_nhwindow(NHW_MENU);
     try {
         await tty_start_menu(window);
         tty_add_menu(window, { identifier: null, text: 'Unacceptable roles' });
-        let previousKey = '';
-        for (const role of nativeRoleChoices()) {
-            const first = role.name.m.charAt(0).toLowerCase();
-            const key = first === previousKey ? first.toUpperCase() : first;
-            previousKey = key;
-            const name = role.name.m === role.name.f ? role.name.m : `${role.name.m}/${role.name.f}`;
-            const choices = { role, race: null, gender: null, alignment: null };
-            const allowed = ok_role(choices, filters)
-                && ok_race(choices, filters)
-                && ok_gend(choices, filters)
-                && ok_align(choices, filters);
-            tty_add_menu(window, {
-                identifier: { facet: 'role', value: role.key }, selector: key,
-                text: withIndefiniteArticle(name),
-                itemflags: allowed ? 0 : MENU_ITEMFLAGS_SELECTED,
-            });
-        }
+        setup_rolemenu(window, false, EMPTY_CHOICES, filters, (role) => ({ facet: 'role', value: role.key }));
         tty_add_menu(window, { identifier: null, text: '' });
         tty_add_menu(window, { identifier: null, text: 'Unacceptable races' });
-        for (const race of races) {
-            const choices = { role: null, race, gender: null, alignment: null };
-            const allowed = ok_race(choices, filters)
-                && ok_role(choices, filters)
-                && ok_align(choices, filters);
-            tty_add_menu(window, {
-                identifier: { facet: 'race', value: race.name }, selector: race.name.charAt(0).toUpperCase(),
-                text: race.name, itemflags: allowed ? 0 : MENU_ITEMFLAGS_SELECTED,
-            });
-        }
+        setup_racemenu(window, false, EMPTY_CHOICES, filters, (race) => ({ facet: 'race', value: race.name }));
         tty_add_menu(window, { identifier: null, text: '' });
         tty_add_menu(window, { identifier: null, text: 'Unacceptable genders' });
-        for (const gender of genders) {
-            const choices = { role: null, race: null, gender, alignment: null };
-            const allowed = ok_gend(choices, filters)
-                && ok_role(choices, filters)
-                && ok_race(choices, filters);
-            tty_add_menu(window, {
-                identifier: { facet: 'gender', value: gender.name }, selector: gender.name.charAt(0).toUpperCase(),
-                text: gender.name, itemflags: allowed ? 0 : MENU_ITEMFLAGS_SELECTED,
-            });
-        }
+        setup_gendmenu(window, false, EMPTY_CHOICES, filters, (gender) => ({ facet: 'gender', value: gender.name }));
         tty_add_menu(window, { identifier: null, text: '' });
         tty_add_menu(window, { identifier: null, text: 'Unacceptable alignments' });
-        for (const alignment of aligns) {
-            const choices = { role: null, race: null, gender: null, alignment };
-            const allowed = ok_align(choices, filters)
-                && ok_role(choices, filters)
-                && ok_race(choices, filters);
-            tty_add_menu(window, {
-                identifier: { facet: 'alignment', value: alignment.name }, selector: alignment.name.charAt(0).toUpperCase(),
-                text: alignment.name, itemflags: allowed ? 0 : MENU_ITEMFLAGS_SELECTED,
-            });
-        }
+        setup_algnmenu(window, false, EMPTY_CHOICES, filters, (alignment) => ({ facet: 'alignment', value: alignment.name }));
         tty_end_menu(window, `Pick all that apply${gotrolefilter(filters) ? ' and/or unpick any that no longer apply' : ''}`);
         const result = await tty_select_menu(window, PICK_ANY, true);
         if (result.cancelled)
             return 'cancelled';
-        filters.roles.clear();
-        filters.races.clear();
-        filters.genders.clear();
-        filters.alignments.clear();
+        clearrolefilter(filters, 'filter');
         for (const { identifier } of result.selections) {
             switch (identifier.facet) {
                 case 'role':

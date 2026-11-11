@@ -3150,8 +3150,9 @@ async function bumpIntoMonster(monster: Monster, x: number, y: number): Promise<
     return true;
 }
 
-// C hack.c:u_rooted(). An immobile form may attack but cannot take a step.
-async function rootedHeroCannotMove(): Promise<boolean> {
+// C hack.c:u_rooted(). An immobile form may attack but cannot take a step
+// (the '>' and '<' commands share it).
+export async function rootedHeroCannotMove(): Promise<boolean> {
     if (MONSTER_MOVE[heroSpecies(game)] !== 0) return false;
     const inPlace = game.u.levitating || Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
     await plineWithContinuation(`You are rooted ${inPlace ? 'in place' : 'to the ground'}.`);

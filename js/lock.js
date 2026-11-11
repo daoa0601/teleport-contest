@@ -35,7 +35,7 @@ import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, currentShopResident, stolenValue, addShopDamage, deleteObject } from './shk.js';
-import { artifactById, touchArtifactByHero } from './artifact.js';
+import { artifactById, isMagicKey, touchArtifactByHero } from './artifact.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { displayLiquidName, monsterName } from './do_name.js';
@@ -632,14 +632,6 @@ export function autoUnlockFlags(state = game) {
     }
     return flags;
 }
-// Part of C artifact.c:is_magic_key(): the Master Key of Thievery bless
-// or curse test (non-cursed for rogues, blessed otherwise).
-export function isHeroMagicKey(tool, state = game) {
-    if (!tool)
-        return false;
-    return artifactById(tool.oartifact, state)?.name === 'The Master Key of Thievery'
-        && (state.urole?.key === 'rogue' ? !tool.cursed : !!tool.blessed);
-}
 // C lock.c:autokey(). Pick a tool for autounlock.
 export function autokey(opening, state = game) {
     let key = null, pick = null, card = null;
@@ -656,7 +648,7 @@ export function autokey(opening, state = game) {
                 foreignCard = tool;
         }
         else {
-            if (tool.otyp === SKELETON_KEY && (!key || isHeroMagicKey(tool, state)))
+            if (tool.otyp === SKELETON_KEY && (!key || isMagicKey({ youmonst: true }, tool, state)))
                 key = tool;
             else if (tool.otyp === LOCK_PICK && !pick)
                 pick = tool;
@@ -707,7 +699,7 @@ export async function pickLock(tool, { state = game, target = null, container = 
                 chance: previous.chance, usedtime: previous.usedtime,
             };
             attempt.text = lockAction(attempt);
-            attempt.magicKey = isHeroMagicKey(tool, state);
+            attempt.magicKey = !!tool && isMagicKey({ youmonst: true }, tool, state);
             await plineWithContinuation(`You resume your attempt at ${attempt.text}.`);
             state._lockAttempt = state._occupation = attempt;
         }
@@ -876,7 +868,7 @@ function startPicking(tool, target, state) {
     const attempt = {
         key: 'pick-lock', text: '', remaining: 51, usedtime: 0, tool,
         x: target.x ?? state.u.ux, y: target.y ?? state.u.uy,
-        ...target, chance: lockPickChance(tool, target.container, state), magicKey: isHeroMagicKey(tool, state),
+        ...target, chance: lockPickChance(tool, target.container, state), magicKey: !!tool && isMagicKey({ youmonst: true }, tool, state),
     };
     attempt.text = lockAction(attempt);
     state._lockAttempt = state._occupation = attempt;

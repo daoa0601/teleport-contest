@@ -260,6 +260,7 @@ attributes_enlightenment	u_gname
 attributes_enlightenment	walking_on_water
 auto_describe	flush_screen
 auto_describe	is_valid_travelpt
+autokey	is_magic_key
 avoid_moving_on_liquid	hliquid
 avoid_moving_on_liquid	is_lava
 avoid_moving_on_liquid	is_pool
@@ -446,6 +447,7 @@ calc_pole_range	uwep_skill_type
 call_kops	angry_guards
 call_kops	isok
 call_kops	makekops
+call_ok	objtyp_is_callable
 can_advance	slots_required
 can_be_hatched	little_to_big
 can_be_hatched	rn2
@@ -615,6 +617,7 @@ confdir	u_maybe_impaired
 confused_book	rn2
 conjoined_pits	isok
 conjoined_pits	sgn
+conjoined_pits	xytodir
 consume_offering	exercise
 consume_offering	rn2
 consume_tin	costly_tin
@@ -995,8 +998,10 @@ dismount_steed	landing_spot
 dismount_steed	losehp
 dismount_steed	rn2
 dismount_steed	set_wounded_legs
+dismount_steed	sokoban_guilt
 dismount_steed	surface
 dismount_steed	teleds
+disp_artifact_discoveries	align_str
 disp_artifact_discoveries	simple_typename
 dispinv_with_action	display_inventory
 display_binventory	hliquid
@@ -1085,6 +1090,7 @@ do_class_genocide	udeadinside
 do_clear_area	view_from
 do_clear_area	vision_recalc
 do_earthquake	add_damage
+do_earthquake	align_str
 do_earthquake	altarmask_at
 do_earthquake	desecrate_altar
 do_earthquake	do_pit
@@ -1285,6 +1291,7 @@ dobuzz	zap_hit
 dobuzz	zapdir_to_glyph
 dobuzz	zaptype
 dobuzz	zhitu
+doc_extcmd_flagstr	accept_menu_prefix
 doc_extcmd_flagstr	cmd_from_func
 docallcmd	cmdq_clear
 docallcmd	cmdq_pop
@@ -1375,6 +1382,7 @@ dodown	stairway_at
 dodown	stucksteed
 dodown	surface
 dodown	t_at
+dodown	u_rooted
 dodown	u_stuck_cannot_go
 dodown	uescaped_shaft
 dodown	uteetering_at_seen_pit
@@ -1438,6 +1446,7 @@ doengrave_sfx_item	rn2
 doengrave_sfx_item	surface
 doengrave_sfx_item_WAN	blengr
 doengrave_sfx_item_WAN	surface
+doextcmd	accept_menu_prefix
 doextcmd	can_do_extcmd
 doextcmd	cmd_from_func
 dofindgem	newsym
@@ -1447,6 +1456,7 @@ dofire	autoquiver
 dofire	cmdq_add_ec
 dofire	cmdq_add_key
 dofire	could_pole_mon
+dofire	find_launcher
 dofire	ok_to_throw
 dofire	throw_obj
 dofiretrap	burn_away_slime
@@ -1505,6 +1515,9 @@ doinvoke	arti_invoke
 doinvoke	getobj
 dojump	jump
 dokeylist	key2txt
+dokeylist	keylist_func_has_key
+dokeylist	keylist_putcmds
+dokeylist	show_menu_controls
 dokick	acurr
 dokick	acurrstr
 dokick	getdir
@@ -1555,6 +1568,7 @@ domagictrap	rn2
 domagictrap	rnd
 domagictrap	self_invis_message
 domagictrap	wake_nearto
+domenucontrols	show_menu_controls
 domindblast	dist2
 domindblast	rn2
 domindblast	rnd
@@ -1913,6 +1927,7 @@ doup	next_to_u
 doup	prev_level
 doup	stairway_at
 doup	stucksteed
+doup	u_rooted
 doup	u_stuck_cannot_go
 doup	yn_function
 dovanquished	list_vanquished
@@ -2562,6 +2577,9 @@ genl_player_setup	plsel_startmenu
 genl_player_setup	reset_role_filtering
 genl_player_setup	rigid_role_checks
 genl_player_setup	role_menu_extra
+genl_player_setup	setup_algnmenu
+genl_player_setup	setup_gendmenu
+genl_player_setup	setup_racemenu
 genl_player_setup	setup_rolemenu
 genl_player_setup	validalign
 genl_player_setup	validgend
@@ -2611,6 +2629,7 @@ getdir	help_dir
 getdir	movecmd
 getdir	readchar
 getdir	rn2
+getdir	xytodir
 gethungry	is_fainted
 gethungry	near_capacity
 gethungry	newuhs
@@ -2760,6 +2779,7 @@ heal_legs	encumber_msg
 healup	make_blinded
 healup	make_deaf
 healup	make_vomiting
+help_monster_out	fill_pit
 help_monster_out	instapetrify
 help_monster_out	polymon
 help_monster_out	reward_untrap
@@ -3043,6 +3063,7 @@ is_pool	is_moat
 is_pool	isok
 is_pool_or_lava	is_lava
 is_pool_or_lava	is_pool
+is_pure	align_str
 is_solid	isok
 is_valid_jump_pos	dist2
 is_valid_jump_pos	isok
@@ -3100,6 +3121,7 @@ key2extcmddesc	movecmd
 keylist_func_has_key	cmdbind_get
 keylist_putcmds	cmdbind_get
 keylist_putcmds	key2txt
+keylist_putcmds	keylist_func_has_key
 kick_door	acurr
 kick_door	add_damage
 kick_door	exercise
@@ -3315,6 +3337,7 @@ levitation_dialogue	stop_occupation
 levitation_dialogue	surface
 levregion_add	get_location
 lifesaved_monster	discover_object
+lifesaved_monster	set_mon_min_mhpmax
 lift_object	calc_capacity
 lift_object	carry_count
 lift_object	near_capacity
@@ -3686,13 +3709,17 @@ makemap_prepost	deliver_splev_message
 makemap_prepost	dmonsfree
 makemap_prepost	docrt
 makemap_prepost	flush_screen
+makemap_prepost	initrack
 makemap_prepost	kill_genocided_monsters
 makemap_prepost	losedogs
 makemap_prepost	makemap_remove_mons
 makemap_prepost	maybe_reset_pick
 makemap_prepost	placebc
+makemap_prepost	remove_achievement
 makemap_prepost	reset_utrap
+makemap_prepost	rm_mapseen
 makemap_prepost	save_currentstate
+makemap_prepost	set_uinwater
 makemap_prepost	u_collide_m
 makemap_prepost	u_on_rndspot
 makemap_prepost	unplacebc
@@ -3879,6 +3906,7 @@ mbhitm	tele
 mbhitm	unturn_you
 mcast_blind_you	make_blinded
 mcast_clone_wiz	clonewiz
+mcast_confuse_you	make_confused
 mcast_confuse_you	monstseesu
 mcast_confuse_you	monstunseesu
 mcast_confuse_you	shieldeff
@@ -4139,6 +4167,7 @@ mktrap_victim	weight
 mkveggy_at	mksobj_at
 mkzoo	pick_room
 mleashed_next2u	dist2
+mleashed_next2u	number_leashed
 mloot_container	dist2
 mloot_container	rn2
 mloot_container	weight
@@ -5192,6 +5221,7 @@ read_engr_at	nomul
 read_engr_at	surface
 read_tribute	choose_passage
 readchar	readchar_core
+readchar_core	pgetchar
 readchar_core	randomkey
 readchar_poskey	readchar_core
 readobjnam	artifact_exists
@@ -5327,6 +5357,7 @@ remove_region	inside_region
 remove_region	isok
 remove_region	newsym
 rename_disco	interesting_to_discover
+rename_disco	objtyp_is_callable
 render_status	condattr
 render_status	repad_with_dashes
 repair_damage	closed_door
@@ -5370,7 +5401,12 @@ reset_needed_visuals	reglyph_darkroom
 reset_occupations	reset_pick
 reset_occupations	reset_remarm
 reset_occupations	reset_trapset
+reset_role_filtering	clearrolefilter
 reset_role_filtering	gotrolefilter
+reset_role_filtering	setup_algnmenu
+reset_role_filtering	setup_gendmenu
+reset_role_filtering	setup_racemenu
+reset_role_filtering	setup_rolemenu
 reset_utrap	float_up
 reset_utrap	set_utrap
 resetobjs	artifact_exists
@@ -5436,6 +5472,7 @@ rhack	cmdq_peek
 rhack	cmdq_pop
 rhack	cmdq_shift
 rhack	domove
+rhack	parse
 rhack	reset_cmd_vars
 rhack	set_occupation
 rider_corpse_revival	exercise
@@ -5505,6 +5542,8 @@ roguename	rn2
 role_init	rn2
 role_menu_extra	gotrolefilter
 room_discovered	recalc_mapseen
+root_plselection_prompt	ok_align
+root_plselection_prompt	ok_race
 root_plselection_prompt	race_alignmentcount
 root_plselection_prompt	role_gendercount
 rottenfood	d
@@ -5583,6 +5622,7 @@ see_nearby_objects	newsym_force
 see_objects	newsym
 see_traps	newsym
 seffect_amnesia	exercise
+seffect_amnesia	forget
 seffect_amnesia	rn2
 seffect_charging	d
 seffect_charging	getobj
@@ -5721,6 +5761,8 @@ set_cost	get_pricing_units
 set_cost	getprice
 set_crosswall	check_pos
 set_door_orientation	isok
+set_entity	m_to_e
+set_entity	u_to_e
 set_levltyp	count_level_features
 set_levltyp	is_ice
 set_levltyp	isok
@@ -6207,6 +6249,8 @@ tether_glyph	zapdir_to_glyph
 theft_petrifies	instapetrify
 themerooms_post_level_generate	reset_xystart_size
 themerooms_post_level_generate	wallification
+there_cmd_menu	act_on_act
+there_cmd_menu	cmdq_add_ec
 there_cmd_menu	test_move
 there_cmd_menu	there_cmd_menu_common
 there_cmd_menu	there_cmd_menu_far
@@ -6350,6 +6394,7 @@ trapeffect_anti_magic	drain_en
 trapeffect_anti_magic	losehp
 trapeffect_anti_magic	newsym
 trapeffect_anti_magic	rnd
+trapeffect_anti_magic	wearing_iron_shoes
 trapeffect_arrow_trap	newsym
 trapeffect_arrow_trap	rn2
 trapeffect_arrow_trap	steedintrap
@@ -6417,6 +6462,7 @@ trapeffect_poly_trap	newsym
 trapeffect_poly_trap	polyself
 trapeffect_poly_trap	shieldeff
 trapeffect_poly_trap	update_inventory
+trapeffect_poly_trap	wearing_iron_shoes
 trapeffect_rocktrap	ceiling
 trapeffect_rocktrap	d
 trapeffect_rocktrap	exercise
@@ -6428,6 +6474,7 @@ trapeffect_rocktrap	t_missile
 trapeffect_rocktrap	thitm
 trapeffect_rolling_boulder_trap	launch_obj
 trapeffect_rolling_boulder_trap	newsym
+trapeffect_rust_trap	losehp
 trapeffect_rust_trap	rn2
 trapeffect_rust_trap	water_damage
 trapeffect_selector	trapeffect_anti_magic
@@ -6452,6 +6499,7 @@ trapeffect_slp_gas_trap	monstunseesu
 trapeffect_slp_gas_trap	rnd
 trapeffect_sqky_board	dist2
 trapeffect_sqky_board	trapnote
+trapeffect_sqky_board	wake_nearby
 trapeffect_sqky_board	wake_nearto
 trapeffect_vibrating_square	dist2
 trapeffect_web	acurr
@@ -6745,6 +6793,7 @@ use_lamp	d
 use_lamp	make_glib
 use_lamp	rn2
 use_lamp	shop_keeper
+use_leash	number_leashed
 use_leash	unmap_invisible
 use_leash	use_leash_core
 use_leash_core	map_invisible
@@ -6829,6 +6878,7 @@ vamprises	closed_door
 vamprises	is_fainted
 vamprises	newsym
 vamprises	recalc_block_point
+vamprises	set_mon_min_mhpmax
 vamprises	unconscious
 vamprises	uunstick
 vary_init_attr	rn2
@@ -7103,6 +7153,7 @@ zap_dig	rnd
 zap_dig	stairway_at
 zap_dig	t_at
 zap_dig	watch_dig
+zap_dig	xytodir
 zap_hit	rn2
 zap_hit	rnd
 zap_hit	spell_hit_bonus
