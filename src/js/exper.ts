@@ -4,7 +4,7 @@
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { finishHeroDeath } from './end.js';
 import { returnHeroToHumanForm } from './polyself.js';
-import { adjustLevelAbilities, currentAttribute, minHeroMaxHitPoints, newHeroHitPoints } from './attrib.js';
+import { adjustLevelAbilities, currentAttribute, minHeroMaxHitPoints, newHeroHitPoints, setHeroMaxHitPoints } from './attrib.js';
 import { rnd, rn2 } from './rng.js';
 import { A_CON, A_WIS, KILLED_BY, LL_MINORAC, MAXULEV, Upolyd } from './const.js';
 import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
@@ -123,7 +123,8 @@ export async function gainExperienceLevel({
 
     if (Upolyd(hero)) {
         const formGain = monsterHitPointsPerLevel({ mnum: hero.umonnum, m_lev: 0 });
-        hero.mh = Math.min(hero.mhmax, hero.mh + formGain);
+        hero.mh += formGain;
+        setHeroMaxHitPoints(hero.mhmax + formGain, false, state);
     }
     const oldLevel = hero.ulevel;
     const hp = newHeroHitPoints(state);

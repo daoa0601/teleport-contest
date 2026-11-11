@@ -279,14 +279,14 @@ void test('one large experience award gains one level and keeps only that level 
     assert.ok(messages.includes('Welcome to experience level 2.'));
     assert.ok(gameLogEvents().some(event => event.text === 'gained experience level 2'));
 });
-void test('gaining a level heals the monster body without increasing its maximum HP', async () => {
+void test('gaining a level raises monster HP and maximum HP by the same amount', async () => {
     await freshObjectRoom({ hero: { ulevel: 4, uhp: 30, uhpmax: 30 } });
     requireFixtureGame(game);
     installPolymorphedHero('giant ant', { hitPoints: 9, maxHitPoints: 10 });
     pushKeys(' '.repeat(30));
     await gainExperienceLevel();
-    assert.equal(game.u.mh, 10);
-    assert.equal(game.u.mhmax, 10);
+    assert.ok(game.u.mhmax > 10);
+    assert.equal(game.u.mh, game.u.mhmax - 1);
     assert.ok(game.u.uhp > 30);
     assert.equal(game.u.uhp, game.u.uhpmax);
     assert.equal(game.u.ulevel, 5);
