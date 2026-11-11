@@ -2780,7 +2780,7 @@ export async function finishReturningThrow({
         await plineWithContinuation(tethered
             ? heroIsBlind(state)
                 ? `Your tethered weapon snaps back and is left dangling from your ${body_part(ARM, state)}.`
-                : `${definiteObjectAction(object, 'return', state)} is left dangling from your .`
+                : `${definiteObjectAction(object, 'return', state)} and is left dangling from your ${body_part(ARM, state)}.`
             : heroIsBlind(state)
                 ? `Something lands ${position} your ${feet}.`
                 : `${definiteObjectAction(object, 'return', state)} back to you, landing ${position} your ${feet}.`);
