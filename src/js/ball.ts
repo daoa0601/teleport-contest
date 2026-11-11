@@ -1,3 +1,4 @@
+import { updateHeroRegions } from './region.js';
 // ball.js — Punishment ball-and-chain movement.
 // C ref: ball.c bc_order(), move_bc(), and drag_ball().
 import { encumber_msg } from './pickup.js';
@@ -361,9 +362,11 @@ export async function dropBall(x: number, y: number, { state = game, publish = p
             && !hero.utrap
             && (isPoolAt(x, y, state)
                 || (trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))))) {
+            updateHeroRegions(state, x, y);
             hero.ux = x;
             hero.uy = y;
         } else {
+            updateHeroRegions(state, x - (hero.dx ?? 0), y - (hero.dy ?? 0));
             hero.ux = x - (hero.dx ?? 0);
             hero.uy = y - (hero.dy ?? 0);
         }
@@ -733,6 +736,7 @@ async function jerkHeroBackToChain(plan: BallChainMove, state: GameState): Promi
     // Death, life saving, and displacement can each change who occupies the
     // chain square. Only an empty square lets the chain pull the hero there.
     if (!monsterAtPosition(level, chain.ox, chain.oy)) {
+        updateHeroRegions(state, chain.ox, chain.oy);
         state.u.ux = chain.ox;
         state.u.uy = chain.oy;
         await newsym(state.u.ux0, state.u.uy0);

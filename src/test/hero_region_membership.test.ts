@@ -1,3 +1,6 @@
+import { dropBall } from '../js/ball.js';
+import { punishHero } from '../js/read.js';
+import { moveObject } from '../js/hack.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NO_MINVENT } from '../js/const.js';
@@ -49,4 +52,27 @@ void test('saving preserves gas exposure after blocked knockback', async () => {
 
     assert.equal(game.u.uhp, hp);
     assert.equal(game.u.blindTurns ?? 0, 0);
+});
+
+void test('a thrown punishment ball pulls the hero into poison gas exposure', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    pushKeys(' '.repeat(12));
+    await punishHero();
+    const ball = game.uball;
+    assert.ok(ball);
+    await moveObject(ball, 14, 10);
+    game.u.dx = 1;
+    game.u.dy = 0;
+    const cloud = await createGasCloudSelection(game, [{ x: 13, y: 10 }], 5, 8, async () => {});
+    assert.ok(cloud);
+    cloud.heroFault = false;
+
+    await dropBall(14, 10);
+    const hp = game.u.uhp;
+    await runLevelRegions(game, { publish: async () => {}, rollOne: () => 1 });
+
+    assert.equal(game.u.ux, 13);
+    assert.equal(game.u.uy, 10);
+    assert.equal(game.u.uhp, hp - 6);
 });
