@@ -1822,6 +1822,40 @@ export function copyShopkeeperData(value: ShopkeeperData): ShopkeeperData {
     return copy;
 }
 
+// C mon.c:copy_mextra(): retain each extension present on the source.
+export function copyMonsterExtra(target: Monster, source: Monster): void {
+    if (!source.mextra) return;
+    const extra = target.mextra ??= {};
+    if (source.mextra.mgivenname) {
+        extra.mgivenname = source.mextra.mgivenname;
+        target.mgivenname = source.mextra.mgivenname;
+    }
+    if (source._egd) target._egd = {
+        ...source._egd, gdlevel: { ...source._egd.gdlevel },
+        fakecorr: source._egd.fakecorr.map(cell => ({ ...cell })),
+    };
+    if (source.mextra.epri) {
+        target.epri = { ...source.mextra.epri, shrpos: { ...source.mextra.epri.shrpos },
+            shrlevel: { ...source.mextra.epri.shrlevel } };
+        extra.epri = target.epri;
+    }
+    if (source.mextra.eshk) {
+        target.eshk = copyShopkeeperData(source.mextra.eshk);
+        extra.eshk = target.eshk;
+    }
+    if (source.mextra.emin) {
+        target.emin = { ...source.mextra.emin };
+        extra.emin = target.emin;
+    }
+    if (source.mextra.edog) {
+        target.edog = copyPetData(source.mextra.edog);
+        extra.edog = target.edog;
+    }
+    if (source.mextra.ebones) extra.ebones = { ...source.mextra.ebones };
+    if (source.mextra.mcorpsenm !== undefined)
+        extra.mcorpsenm = source.mextra.mcorpsenm;
+}
+
 // C mon.c:KEEPTRAITS(). Corpses keep their monster's traits when it was a
 // shopkeeper or pet, a unique or reviver, the quest leader, or a seducer.
 const G_UNIQ = 0x1000;

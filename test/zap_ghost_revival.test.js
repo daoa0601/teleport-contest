@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { rhack } from '../js/cmd.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -14,10 +15,11 @@ void test('reviving a ghost\'s former body removes the ghost from its visible sq
     await freshObjectRoom({ hero: { seeInvisible: true } });
     requirePlayingGame(game);
     const ghost = await createMonsterAt('ghost', 13, 11);
+    setMonsterGivenName(ghost, 'Alice');
     await newsym(13, 11);
     assert.equal(glyphAt(13, 11)?.kind, 'monster');
     await floorObject(CORPSE, 10, 10, {
-        corpsenm: MONSTER_NAME.indexOf('troll'), oextra: { omid: ghost.m_id },
+        corpsenm: MONSTER_NAME.indexOf('troll'), oextra: { omid: ghost.m_id, oname: 'Wrong name' },
     });
     const wand = await addInventoryObject(WAN_UNDEAD_TURNING, { spe: 2 });
     const input = resetInputState();
@@ -26,7 +28,10 @@ void test('reviving a ghost\'s former body removes the ghost from its visible sq
     await rhack('z'.charCodeAt(0));
     assert.equal(game.level.monsters.includes(ghost), false);
     assert.equal(glyphAt(13, 11)?.kind, 'terrain');
-    assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('troll')));
+    const revived = game.level.monsters.find(monster => monster.mnum === MONSTER_NAME.indexOf('troll'));
+    assert.ok(revived);
+    assert.equal(revived.mgivenname, 'Alice');
+    assert.match(game._messageHistory.join('\n') + game._pending_message, /Alice is resurrected!/);
 });
 void test('undead turning cannot merge a killed ghost into the body revived by the same zap', async () => {
     await freshObjectRoom({ hero: { seeInvisible: true } });

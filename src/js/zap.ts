@@ -339,7 +339,7 @@ import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { Trap } from './map_types.js';
 import type { PropertyName } from './property_types.js';
 import {
-    changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance,
+    changeMonsterForm, copyMonsterExtra, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance,
     checkMonsterGearNextTurn,
 } from './mon.js';
 
@@ -1749,6 +1749,7 @@ export function zombieCanDig(x: number, y: number, state: GameState) {
 // C zap.c:revive().
 export async function revive(corpse: GameObject, state: GameState, { byHero = false } = {}): Promise<CorpseRevivalResult> {
     requireCorpseSpecies(corpse);
+    let useCorpseName = true;
     const originalWhere = corpse.where;
     const occupation = state._occupation;
     if (occupation?.key === 'eat-food' && state.context.victual?.piece === corpse) {
@@ -1880,6 +1881,12 @@ export async function revive(corpse: GameObject, state: GameState, { byHero = fa
                     if (await tameMonster(monster, null, { state }))
                         monster.mtame = ghost.mtame;
                 }
+                const ghostName = ghost.mextra?.mgivenname || ghost.mgivenname;
+                if (ghostName) {
+                    setMonsterGivenName(monster, ghostName);
+                    useCorpseName = false;
+                }
+                copyMonsterExtra(monster, ghost);
                 monster.mconf = 1;
                 await removeMonsterFromGame(ghost);
             }
@@ -1891,7 +1898,7 @@ export async function revive(corpse: GameObject, state: GameState, { byHero = fa
     {
         const corpse = body;
         const name = corpse.oextra?.oname || corpse.oname;
-        if (name && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)) {
+        if (useCorpseName && name && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)) {
             setMonsterGivenName(monster, name);
         }
         if ((corpse.oeaten ?? 0) > 0) {
@@ -2952,7 +2959,7 @@ export async function turnObjectWithUndeadMagic(object: GameObject, state: GameS
     const x = event?.location?.x ?? event?.monster?.mx;
     const y = event?.location?.y ?? event?.monster?.my;
     if (event?.monster && cansee(x, y)) {
-        const name = namelessMonsterName(event.monster, { state, article: 'the' });
+        const name = monsterName(event.monster, { state, article: event.monster.mtame ? 'your' : 'the' });
         await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
     }
     return true;
@@ -2969,7 +2976,7 @@ async function reviveFloorCorpse(object: GameObject, state: PlayingGameState) {
     let learned = false;
     if (cansee(x, y)) {
         if (canSpotMonster(monster)) {
-            const name = namelessMonsterName(monster, { state, article: 'the' });
+            const name = monsterName(monster, { state, article: monster.mtame ? 'your' : 'the' });
             await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
             learned = !state.context?.mon_moving || !!state.context.zap_oseen;
         } else {
