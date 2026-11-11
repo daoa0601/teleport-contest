@@ -1,3 +1,4 @@
+import { BUFSZ } from './const.js';
 // Trap construction, triggers, damage, petrification, and terrain effects.
 // C trap.c: maketrap(), dotrap(), mintrap(), animate_statue(), activate_statue_trap(),
 // chest_trap(), b_trapped(), selftouch(), float_up(), float_down(), drown(),
@@ -6778,7 +6779,7 @@ export async function triggerChestTrap(container, { state = game, disarm = false
             const insider = !!spot && !!insideShopRoomAt(state, state.u.ux, state.u.uy)
                 && state.u.ushops?.[0] === spot.roomno;
             await publish(`${definiteObjectAction(container, 'explode', state)}!`);
-            const killer = `exploding ${objectCombatName(container, { state, includeCorpseSpecies: false })}`;
+            const killer = `exploding ${objectCombatName(container, { state, includeCorpseSpecies: false })}`.slice(0, BUFSZ - 1);
             // Charge while the objects and their bills still exist, before damage
             // can end the game and settle the hero's debt through inheritance.
             let loss = spot ? await stolenValue(container, location.x, location.y, spot.resident.mpeaceful, { state, publish, silent: true }) : 0;
