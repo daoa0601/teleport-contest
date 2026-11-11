@@ -16,7 +16,7 @@ import { isok } from './cmd.js';
 import { msummon, monsterCensus } from './minion.js';
 import { rndcurse } from './sit.js';
 import { dungeonBuildsUp, insideWizardTower } from './dungeon.js';
-import { monsterIsHelpless, is_minion } from './mondata.js';
+import { monsterIsHelpless, is_minion, monsterYoungerForm } from './mondata.js';
 import { mksobj, linkObjectToMonsterInventory, remove_object } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { recordRandom } from './monster_action_types.js';
@@ -351,24 +351,24 @@ function onGround(matches: (object: GameObject) => boolean, state: PlayingGameSt
 // C wizard.c:other_mon_has_arti(). The first carrier other than the
 // seeker that holds the want; it does not search past an excluded carrier.
 function otherMonHasArti(
-    monster: Monster, matches: (object: GameObject) => boolean, state: PlayingGameState,
+    monster: Monster, otyp: number, state: PlayingGameState,
 ): Monster | undefined {
     return [...state.level.monsters].reverse().find(candidate =>
-        candidate !== monster && (candidate.minvent ?? []).some(matches));
+        candidate !== monster && monHasArti(candidate, otyp, state));
 }
 
 // C wizard.c:target_on()
-// Also C wizard.c:mon_has_arti(): inlined here for the seeking monster.
 function findCovetousTarget(monster: Monster, mask: number, state: PlayingGameState): CovetousTarget | null {
     // C wizard.c:target_on() checks the requested wants mask directly.
     if (!(questMonsterFlags3(monster.mnum, state) & mask)) return null;
-    const matches = (object: GameObject) => objectMatchesTarget(object, mask, state);
-    if (!(monster.minvent ?? []).some(matches)) {
+    const target = whichArti(mask);
+    const matches = (object: GameObject) => objectMatchesArtifact(object, target, state);
+    if (!monHasArti(monster, target, state)) {
         if (heroHasTarget(mask, state))
             return { kind: 'hero', position: { x: state.u.ux, y: state.u.uy }, mask };
         const floor = onGround(matches, state);
         if (floor) return { kind: 'floor', position: { x: floor.ox, y: floor.oy }, mask, object: floor };
-        const carrier = otherMonHasArti(monster, matches, state);
+        const carrier = otherMonHasArti(monster, target, state);
         if (carrier && (mask !== WANTS_AMULET || !carrier.iswiz && !priestIsInOwnTemple(carrier, state)))
             return { kind: 'monster', position: { x: carrier.mx, y: carrier.my }, mask };
     }
@@ -386,13 +386,15 @@ function whichArti(mask: number): number {
     return 0;
 }
 
-// C wizard.c:mon_has_arti()/on_ground()/other_mon_has_arti(): the
-// object test against the mask's artifact, which_arti() inlined as a
-// predicate over a given object.
-function objectMatchesTarget(object: GameObject, mask: number, state: PlayingGameState): boolean {
-    const target = whichArti(mask);
-    return target
-        ? object.otyp === target
+// C wizard.c:mon_has_arti(). Only the monster's top-level inventory counts.
+function monHasArti(monster: Monster, otyp: number, state: PlayingGameState): boolean {
+    return (monster.minvent ?? []).some(object => objectMatchesArtifact(object, otyp, state));
+}
+
+// The covetous inventory and floor searches use the same artifact match.
+function objectMatchesArtifact(object: GameObject, otyp: number, state: PlayingGameState): boolean {
+    return otyp
+        ? object.otyp === otyp
         : !!object.questArtifact || !!artifactById(object.oartifact, state)?.questArtifact;
 }
 
@@ -599,34 +601,6 @@ const NASTY_MONSTERS = [
     'horned devil', 'barbed devil',
 ].map(monsterIndexByName);
 
-const NASTY_SHAPE_DEMOTIONS: readonly (readonly [string, string])[] = [
-    ['cockatrice', 'chickatrice'],
-    ['purple worm', 'baby purple worm'],
-    ['black dragon', 'baby black dragon'],
-    ['red dragon', 'baby red dragon'],
-    ['silver dragon', 'baby silver dragon'],
-    ['orange dragon', 'baby orange dragon'],
-    ['green dragon', 'baby green dragon'],
-    ['yellow dragon', 'baby yellow dragon'],
-    ['arch-lich', 'master lich'],
-    ['vampire leader', 'vampire'],
-    ['master mind flayer', 'mind flayer'],
-    ['elf-noble', 'elf'],
-    ['elven monarch', 'elf-noble'],
-    ['ogre tyrant', 'ogre leader'],
-    ['captain', 'lieutenant'],
-];
-const NASTY_BIG_TO_LITTLE = new Map(NASTY_SHAPE_DEMOTIONS.map(([large, small]): [number, number] => [
-    monsterIndexByName(large), monsterIndexByName(small),
-]));
-
-// C wizard.c:big_to_little(). The nasty table's demoted species for a
-// genocided, out-of-place, or over-difficult one; species outside the
-// table stay.
-function bigToLittle(mndx: number): number {
-    return NASTY_BIG_TO_LITTLE.get(mndx) ?? mndx;
-}
-
 // C wizard.c:pick_nasty()
 export function pickNastyShape(difficultyCap: number): number {
     let result = pickNastyCandidate();
@@ -641,7 +615,7 @@ export function pickNastyShape(difficultyCap: number): number {
         || (difficultyCap > 0
             && (MONSTER_DIFFICULTY[result] ?? 0) >= difficultyCap)
         || !!((MONSTER_GENO[result] ?? 0) & outOfPlaceMask);
-    const alternate = shouldDemote ? bigToLittle(result) : result;
+    const alternate = shouldDemote ? monsterYoungerForm(result) : result;
     if (alternate !== result && !speciesWasGenocided(alternate, game)) {
         const name = MONSTER_NAME[alternate] ?? '';
         if (!name.startsWith('baby ')
@@ -654,8 +628,6 @@ export function pickNastyShape(difficultyCap: number): number {
 
 const S_DEMON_WIZ = 56;
 const S_ANGEL_WIZ = 27;
-
-// minion.c:monster_census() is minion.ts monsterCensus().
 
 // C wizard.c:nasty()
 // Uses wizard.c:pick_nasty() above for mcastu.c:mcast_summon_mons().
