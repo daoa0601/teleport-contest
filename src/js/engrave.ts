@@ -1048,12 +1048,14 @@ export async function doengrave(state: GameState = game): Promise<void> {
         await relocateEngraving(oep, state);
         oep.eread = false;
         oep.erevealed = false;
+        if (setup.heroToldItVanished) await newsym(hero.ux, hero.uy);
         setup.disprefresh = true;
         oep = null;
     }
     if (setup.dengr && oep) {
         deleteEngraving(oep, state.level);
         oep = null;
+        if (setup.heroToldItVanished) await newsym(hero.ux, hero.uy);
         setup.disprefresh = true;
     }
     // A polymorphed engraving replaces whatever was here.
@@ -1178,8 +1180,6 @@ export async function doengrave(state: GameState = game): Promise<void> {
             everb = setup.adding ? 'add to the weird writing on' : 'write strangely on';
             break;
     }
-
-    if (setup.heroToldItVanished) await newsym(hero.ux, hero.uy);
 
     // Tell the adventurer what is going on.
     if (!usingHands && object) {
