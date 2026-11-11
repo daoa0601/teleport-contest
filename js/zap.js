@@ -896,8 +896,9 @@ export async function probeMonster(monster, { state = game, onHead = true, x = m
 // so tty assigns letters. INVORDER_SORT adds headings even for one item.
 // An engulfer's list closes with the INCLUDE_HERO fake hero
 // row (pickup.c:1146-1164).
-export async function showProbedObjectInventory(objects, title, { state = game, groupByClass = true, engulfer = null, allow = () => true, } = {}) {
-    const withCorpseGenders = checkForPuzzlingNonmerge(objects, state) > 0;
+// Naming follows nobj even when menu rows follow nexthere.
+export async function showProbedObjectInventory(objects, title, { state = game, groupByClass = true, engulfer = null, allow = () => true, nobjChain = objects, } = {}) {
+    const withCorpseGenders = checkForPuzzlingNonmerge(nobjChain, state) > 0;
     const sorted = sortObjects(objects.filter(allow), { mode: lootSortMode({ state }), state });
     const sections = [];
     const classes = groupByClass ? inventoryClassOrder(state) : [null];

@@ -7,7 +7,7 @@ import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
 import { probeObject } from '../js/zap.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { CORPSE, DIAMOND, SACK, WAN_PROBING } from '../js/object_data.js';
+import { BOULDER, CORPSE, DIAMOND, SACK, WAN_PROBING } from '../js/object_data.js';
 import { applyWandEffect } from '../js/zap.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -92,4 +92,42 @@ for (const location of ['buried', 'underwater']) {
         });
     }
 }
+void test('underwater probing lists newer objects beneath an older boulder', async () => {
+    const input = freshTurnRoom();
+    const remote = await knownObject(CORPSE, {
+        initialize: false, corpsenm: MONSTER_NAME.indexOf('newt'),
+        spe: CORPSTAT_FEMALE, invlet: 'b', dknown: false,
+    });
+    await placeObject(remote, game.u.ux + 1, game.u.uy);
+    await placeObject(await knownObject(BOULDER, { initialize: false }), game.u.ux, game.u.uy);
+    // The local corpse is newer than the pile's boulder head, so C's
+    // nobj gender scan cannot pair it with the older remote corpse.
+    const local = await knownObject(CORPSE, {
+        initialize: false, corpsenm: MONSTER_NAME.indexOf('newt'),
+        spe: CORPSTAT_MALE, invlet: 'a', dknown: false,
+    });
+    await placeObject(local, game.u.ux, game.u.uy);
+    await placeObject(await knownObject(DIAMOND, { initialize: false }), game.u.ux, game.u.uy);
+    requireGameLevel().requireAt(game.u.ux, game.u.uy).typ = POOL;
+    grantIntrinsicProperty('levitation', 'outside');
+    const wand = await addInventoryObject(WAN_PROBING, { spe: 3 });
+    game.u.dx = game.u.dy = 0;
+    game.u.dz = 1;
+    let menu = '';
+    input.display = {
+        async readKey() {
+            const view = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            if (view.includes('Things that are under the water here:'))
+                menu = view;
+            return ' '.charCodeAt(0);
+        },
+    };
+    await applyWandEffect(wand);
+    assert.match(menu, /diamond/);
+    assert.match(menu, /newt corpse/);
+    assert.match(menu, /boulder/);
+    assert.doesNotMatch(menu, /(?:fe)?male newt corpse/);
+    assert.equal(menu.match(/newt corpse/g)?.length, 1, 'the remote corpse must stay out of the menu');
+    assert.equal(remote.dknown, false);
+});
 //# sourceMappingURL=probe_object_inventory_menu.test.js.map

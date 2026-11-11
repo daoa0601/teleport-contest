@@ -2500,8 +2500,8 @@ export async function displayBuriedInventory(x, y, state) {
             underwhat = plural || pair_of(object) ? 'under them' : 'beneath it';
         }
         else {
-            await showProbedObjectInventory(floorObjectChainFrom(pile[0], state), `Things that are under the ${liquid} here:`, {
-                state, groupByClass: false, allow: onlyHere,
+            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, {
+                state, groupByClass: false, nobjChain: floorObjectChainFrom(pile[0], state),
             });
             underwhat = 'beneath them';
         }

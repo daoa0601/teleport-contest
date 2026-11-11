@@ -1614,11 +1614,12 @@ export async function probeMonster(monster: Monster, {
 // so tty assigns letters. INVORDER_SORT adds headings even for one item.
 // An engulfer's list closes with the INCLUDE_HERO fake hero
 // row (pickup.c:1146-1164).
+// Naming follows nobj even when menu rows follow nexthere.
 export async function showProbedObjectInventory(objects: readonly GameObject[], title: string, {
-    state = game, groupByClass = true, engulfer = null, allow = () => true,
+    state = game, groupByClass = true, engulfer = null, allow = () => true, nobjChain = objects,
 }: { state?: GameState; groupByClass?: boolean; engulfer?: Monster | null;
-    allow?: (object: GameObject) => boolean } = {}): Promise<void> {
-    const withCorpseGenders = checkForPuzzlingNonmerge(objects, state) > 0;
+    allow?: (object: GameObject) => boolean; nobjChain?: readonly GameObject[] } = {}): Promise<void> {
+    const withCorpseGenders = checkForPuzzlingNonmerge(nobjChain, state) > 0;
     const sorted = sortObjects(objects.filter(allow), { mode: lootSortMode({ state }), state });
     const sections: InventorySection<GameObject>[] = [];
     const classes = groupByClass ? inventoryClassOrder(state) : [null];

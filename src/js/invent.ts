@@ -2649,8 +2649,8 @@ export async function displayBuriedInventory(x: number, y: number, state: Playin
             await plineWithContinuation(`There ${plural ? 'are' : 'is'} ${await inventoryItemDescription(object)} under the ${liquid} here.`);
             underwhat = plural || pair_of(object) ? 'under them' : 'beneath it';
         } else {
-            await showProbedObjectInventory(floorObjectChainFrom(pile[0], state), `Things that are under the ${liquid} here:`, {
-                state, groupByClass: false, allow: onlyHere,
+            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, {
+                state, groupByClass: false, nobjChain: floorObjectChainFrom(pile[0], state),
             });
             underwhat = 'beneath them';
         }
