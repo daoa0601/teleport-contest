@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DOOR, M_AP_OBJECT, PIT, SCORR, SDOOR } from '../js/const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DOOR, M_AP_OBJECT, M_AP_MONSTER, PIT, SCORR, SDOOR } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -299,3 +299,19 @@ for (const [type, name] of pairedDisguises) {
         assert.equal(game.context.move, 0);
     });
 }
+
+void test('a stethoscope reveals the true Wizard beneath a monster disguise', async () => {
+    freshPlayableRoom();
+    const wizard = await createMonsterAt('Wizard of Yendor', game.u.ux + 1, game.u.uy);
+    wizard.m_ap_type = M_AP_MONSTER;
+    wizard.mappearance = MONSTER_NAME.indexOf('goblin');
+    const stethoscope = await addInventoryObject(STETHOSCOPE);
+    const messages: string[] = [];
+    const input = resetInputState();
+    input.beforeRead = () => { messages.push(game._pending_message); input.feed(' '); };
+
+    await applyInventoryObject(stethoscope, 'l');
+
+    assert.match([...messages, game._pending_message].join('\n'), /That goblin is really (?:the |a )?Wizard of Yendor\./);
+    assert.equal(wizard.m_ap_type, 0);
+});

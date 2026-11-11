@@ -20,7 +20,7 @@ import { use_container, pickupFloorObject, handlesPetrifyingCorpseBareHanded } f
 import { useCrystalBall, convertSecretDoor, findit, openit } from './detect.js';
 import { digActualHole, digCheck, liquidFlow, liquidForHole, watchDigging, freeHeroFromBuriedBall, usePickAxe, } from './dig.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
-import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName, monsterTypeName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterLeashName, formatMonsterName, monsterName, monsterReflexiveAction, objectMonsterName, monsterTypeName } from './do_name.js';
 import { attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTimers, stopLevelTimer, stopObjectTimer, scheduleObjectTimer, } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
@@ -326,8 +326,8 @@ export async function useStethoscope(object) {
 async function diagnoseMonster(monster, x, y) {
     // C formats this even when only the later status line is printed.
     // During hallucination each formatting selects a new perceived identity.
-    const name = monsterName(monster, {
-        article: 'a', suppressIt: true, suppressInvisible: true, suppressSaddle: false,
+    const name = formatMonsterName(monster, game, {
+        article: 'a', suppressIt: true, suppressInvisible: true, suppressSaddle: false, suppressAppearance: true,
     });
     if (monster.mundetected) {
         if (!canSpotMonster(monster))
