@@ -1189,6 +1189,16 @@ export async function init_dungeons() {
         if (!game.flags?.debug && chance && chance <= rn2(100))
             continue;
         const dnum = loaded.length;
+        // C dungeon.c:init_dungeon_dungeons(): reject names which cannot fit
+        // the native dungeon fields before rolling the level count.
+        if ((definition.levelFill ?? '').length >= 15)
+            await panic(`fill_lvl too long for dungeon ${dnum}`);
+        if (definition.name.length >= 24)
+            await panic(`dname too long for dungeon ${dnum}`);
+        if ((definition.protofile ?? '').length >= 15)
+            await panic(`proto too long for dungeon ${dnum}`);
+        if ((definition.themeRooms ?? '').length >= 15)
+            await panic(`themerms too long for dungeon ${dnum}`);
         const num_dunlevs = definition.range
             ? definition.base + rn2(definition.range)
             : definition.base;
