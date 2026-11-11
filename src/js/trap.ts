@@ -437,7 +437,7 @@ import {
 
 
 } from './const.js';
-import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
+import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti, xyToDirection } from './cmd.js';
 import {
     armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet, heroHasFreeAction,
     destroyWornArmor,
@@ -532,7 +532,7 @@ import {
 import {
     monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt,
     finishMonsterKilled, finishMonsterPetrification, restoreShapechanger, turnGolemToStone,
-    wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance,
+    wakeMonster, wakeNearby, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance,
     setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape,
     finishHeroMonsterKill, finishHeroMonsterKillOutcome,
 } from './mon.js';
@@ -2092,7 +2092,7 @@ async function trapeffectSqkyBoard(
             : `A board beneath you squeaks ${
                 squeakyBoardNoteWithArticle(trap.tnote ?? -1) || 'a note'
             } loudly.`);
-        await wakeMonstersNearWithMessages(hero.ux, hero.uy, hero.ulevel * 20, game);
+        await wakeNearby(game);
         return null;
     }
     const monster = mtmp;
@@ -2467,18 +2467,13 @@ async function wetHeroObject(object: GameObject | null, description: string | nu
     return result;
 }
 
-// Part of C trap.c:trapeffect_rust_trap(): damage or destroy the hero's iron-golem form.
+// Part of C trap.c:trapeffect_rust_trap(): damage or destroy the hero's
+// iron-golem form.
 async function rustIronGolemHero() {
     const hero = game.u;
     await plineWithContinuation('You are covered with rust!');
-    const damage = maybeHalfPhysicalDamage(hero.mhmax ?? hero.mh ?? 1, game);
-    hero.mh = (hero.mh ?? 1) - damage;
-    if (hero.mh > 0) return;
-    if (!(hero.unchanging || game.unchanging)) {
-        await returnHeroToHumanForm(game);
-        return;
-    }
-    await finishHeroDeath({ killer: 'rusting away' });
+    await loseHeroHp(maybeHalfPhysicalDamage(hero.mhmax ?? hero.mh ?? 1, game),
+        'rusting away', { killerFormat: KILLED_BY });
 }
 
 // C trap.c:trapeffect_fire_trap(): the monster branch — the flame under a
@@ -2964,14 +2959,14 @@ async function triggerMagicTrap(trap: Trap) {
 }
 
 // C trap.c:trapeffect_anti_magic(): the monster branch — iron shoes shed
-// the drain silently (wearing_iron_shoes() is
-// monsterWornIronShoes), magic resistance shields, and the drained monster
-// loses power and maximum hit points.
+// the drain silently (wearing_iron_shoes() is monsterWearsIronShoes,
+// which_armor(mtmp, W_ARMF) is wornInSlot), magic resistance shields, and
+// the drained monster loses power and maximum hit points.
 export async function applyMonsterAntiMagicTrap(
     monster: Monster,
     { rollDice = d, rollOne = rnd, trap, state = game }: MonsterAntiMagicOptions = {},
 ): Promise<MonsterAntiMagicTrapEvent> {
-    const shoes = monsterWornIronShoes(monster);
+    const shoes = monsterWearsIronShoes(monster) ? wornInSlot(monster, W_ARMF) : null;
     if (shoes && (shoes.spe ?? 0) > 0) {
         shoes.spe--;
         if (Number.isInteger(shoes.enchantment)) shoes.enchantment = shoes.spe;
@@ -3026,24 +3021,18 @@ export async function applyMonsterAntiMagicTrap(
     };
 }
 
-// Part of C trap.c:trapeffect_poly_trap(): find the monster's worn iron boots.
-export function monsterWornIronShoes(monster: Monster) {
-    return monsterInventory(monster).find(
-        (object) => objectMaterial(object?.otyp) === IRON && !!((object?.owornmask ?? 0) & W_ARMF),
-    );
-}
 
 // C trap.c:trapeffect_poly_trap(): the monster branch — worn iron shoes
-// are transformed first (wearing_iron_shoes() is
-// monsterWornIronShoes), magic resistance shields, and the form change is
-// staged with its possessive message.
+// (wearing_iron_shoes() is monsterWearsIronShoes, which_armor(mtmp, W_ARMF)
+// is wornInSlot) are transformed first, magic resistance shields, and the
+// form change is staged with its possessive message.
 export async function applyMonsterPolymorphTrap(
     monster: Monster,
     trap: Trap,
     state: GameState = game,
     { random = rn2 } = {},
 ): Promise<MonsterPolymorphTrapEvent> {
-    const shoes = monsterWornIronShoes(monster);
+    const shoes = monsterWearsIronShoes(monster) ? wornInSlot(monster, W_ARMF) : null;
     if (shoes) {
         return {
             kind: 'polymorph-trap',
@@ -3714,8 +3703,8 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
         })} onto` : `${locomotion} onto`;
     await plineWithContinuation(`You ${verb} a polymorph trap!`);
 
-    const shoes = game.uarmf || game.u.uarmf;
-    if (shoes && objectMaterial(shoes.otyp) === IRON) {
+    const shoes = heroIronShoes();
+    if (shoes) {
         deleteTrap(trap);
         observeObjectForNaming(shoes);
         await plineWithContinuation(`${ownedObjectName(shoes)} warps strangely.`);
@@ -8047,7 +8036,7 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
     await rewardMonsterRescue(trap, monster, {
         state, publish, random, luckRandom,
     });
-    await fillPitWithBoulder(trap.tx, trap.ty, state, publish);
+    await fillPitWithBoulderAt(trap.tx, trap.ty, state, { publish });
     return true;
 }
 
@@ -8822,11 +8811,11 @@ export function pitsAreConjoined(first: Trap | null | undefined, second: Trap | 
 }
 
 // Part of C trap.c:conjoined_pits(): the pit offset it derives with sgn()
-// and xytodir(); the xdir/ydir table lookup is that second callee here.
+// and xytodir().
 export function pitDirection(from: Trap, to: Trap) {
     const dx = sgn(to.tx - from.tx);
     const dy = sgn(to.ty - from.ty);
-    return xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
+    return xyToDirection(dx, dy);
 }
 
 // C trap.c:clear_conjoined_pits().
