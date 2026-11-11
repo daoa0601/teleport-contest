@@ -2344,3 +2344,8 @@ domove_swap_with_pet	handle_tip	inlined	handle_tip()'s per-type tips are split: 
 domove_core	impaired_movement	inlined	impaired_movement()'s retry loop is inlined in domoveCore(); its u_maybe_impaired() test is the port of that name (hack.ts)
 domove_core	in_out_region	inlined	in_out_region() is updateHeroRegions() (hack.ts:3594) plus the region owners' can-enter gates and enter/leave messages (region.ts)
 dopickup	loot_mon	inlined	dopickup()'s swallowed -2 case is merged into pickupAtHero()'s stomach pass (hack.ts/pickup.ts); loot_mon()'s port is the doloot monster inquiry
+slimed_to_death	done_timeout	inlined	polymon()/done_timeout() are advanceHeroSliming()'s injected transform/die callbacks, bound by the caller to polyself.ts and the death owner (timeout.ts)
+slimed_to_death	polymon	inlined	polymon() is advanceHeroSliming()'s injected transform callback; the caller binds polyself.ts polymonHero (timeout.ts)
+print_queue	fmt_ptr	n/a	fmt_ptr() formats native pointers; the port prints the object's stable o_id in the same 0x-prefixed shape (timeout.ts timerQueueLines)
+timer_is_local	mon_is_local	inlined	timer_is_local()'s obj/mon classification is objectTimerIsGlobal() itself (timeout.ts)
+timer_is_local	obj_is_local	inlined	timer_is_local()'s obj/mon classification is objectTimerIsGlobal() itself (timeout.ts)

@@ -136,7 +136,7 @@ import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType }
 import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
-import type { GameObject } from './object_types.js';
+import type { GameObject, LevelTimer } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyState, PropertyName } from './property_types.js';
 import type { Hero } from './hero_types.js';
@@ -2238,22 +2238,29 @@ export async function finishDestinationSpotEffects({
         if (--spotDepth === 0) activeSpot = null;
     }
 }
+
+// C timeout.c:spot_time_expires(). The deadline of the level timer at
+// this square, or 0 when none is scheduled.
+function spotTimeExpires(kind: LevelTimer['kind'], x: number, y: number, state: GameState = game): number {
+    const timer = levelTimers(state).find(candidate =>
+        candidate.kind === kind && candidate.x === x && candidate.y === y);
+    return timer ? timer.deadline : 0;
+}
+
 // Part of C hack.c:spoteffects(): the "Warning alerts you to ice danger"
 // block; the Warning intrinsic alerts the hero to melting ice underfoot.
-// C timeout.c:spot_time_left(): the remaining melt time read off the
-// level timer's deadline; C timeout.c:spot_time_expires(): its expiry
-// lookup is the levelTimers find.
+// C timeout.c:spot_time_left(): the remaining melt time.
 async function warnAboutMeltingIce(publish: MessagePublisher): Promise<void> {
     const { ux: x, uy: y } = game.u;
     if (!propertyIsActive('warning', game) || !isIceAt(x, y, game)) return;
-    const timer = levelTimers(game).find(candidate =>
-        candidate.kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY && candidate.x === x && candidate.y === y);
-    const remaining = timer ? timer.deadline - game.moves : 0;
+    const expires = spotTimeExpires(LEVEL_TIMER_KIND.MELT_ICE_AWAY, x, y, game);
+    const remaining = expires > 0 ? expires - game.moves : 0;
     if (!remaining || remaining >= 15) return;
     await publish(remaining < 5 ? 'The ice, is gonna BREAK!'
         : remaining < 10 ? 'You feel the ice shift beneath you!'
             : 'The ice seems very soft and slushy.');
 }
+
 const S_PIERCER = 16;
 
 // Part of C hack.c:spoteffects(): the arriving ceiling-hider block — a

@@ -10,7 +10,7 @@
 import { castMonsterSpellRay } from './mthrowu.js';
 import { gotoLevel, healHeroLegs, runClaimedCorpseRevivalTimer } from './do.js';
 import type { CorpseRevivalTimerEvent } from './do.js';
-import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, setPropertyTimeout } from './potion.js';
+import { clearHeroSliming, cureHeroSickness, makeHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, setHeroSlimingTimeout, setPropertyTimeout } from './potion.js';
 import { advanceDisplacementTimeout, clearHeroStrangulation } from './do_wear.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle } from './objnam.js';
 import { advanceSpellProtection } from './spell.js';
@@ -25,13 +25,13 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './s
 import { isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FOOT, FULL_MOON, GENOCIDED, G_GENOD, HAND, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND, MV_KNOWS_EGG, M_AP_MONSTER, NECK, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE, PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SIZEOF_TIMER_ELEMENT, STONING, TIMEOUT, TURNED_SLIME, W_SADDLE, G_EXTINCT, MM_NOMSG, NO_MINVENT } from './const.js';
 import { AMULET_OF_STRANGULATION, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, FEDORA, EGG, FIGURINE, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, ROCK, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
-import { confersLuck, useUpInventoryStack } from './invent.js';
+import { carrying, confersLuck, useUpInventoryStack } from './invent.js';
 import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
 import { isWereMonster, revertHeroWereForm } from './were.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { displayColorName, monsterName, monsterTypeName, randomDisplayMonsterName } from './do_name.js';
 import { dismountHero , monsterAtPosition } from './steed.js';
-import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.js';
+import { adjustAttribute, currentAttribute, exerciseAttribute, stoneLuck } from './attrib.js';
 import { body_part, extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenSlime, heroIsPolymorphed, heroIsUnchanging, heroSpecies, polymonHero, returnHeroToHumanForm } from './polyself.js';
 import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
@@ -396,10 +396,9 @@ export async function burnAwayHeroSlime({
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<boolean> {
     if (!heroIsSliming(state)) return false;
     state.context.botl = true;
-    state.u.slimedTurns = 0;
-    state.u.slimed = false;
-    await publish('The slime that covers you is burned away!');
-    clearHeroSliming(state);
+    await setHeroSlimingTimeout(0, {
+        state, message: 'The slime that covers you is burned away!', publish,
+    });
     return true;
 }
 
@@ -707,23 +706,13 @@ export async function nhTimeout(): Promise<void> {
         const luck = game.u.uluck ?? 0;
         const interval = game.u.uhave?.amulet || game.u.ugangr ? 300 : 600;
         if (luck !== baseline && game.moves % interval === 0) {
-            // attrib.c:stone_luck(): count quantities, including luck
-            // artifacts.  Uncursed items count for possession but do not
-            // favor either timeout.
-            let allStones = 0;
-            let blessedAndCursed = 0;
-            let luckstone = false;
-            for (const object of game.inventory) {
-                if (!confersLuck(object, game)) continue;
-                const quantity = object.quan;
-                allStones += object.cursed ? -quantity : quantity;
-                if (object.cursed) blessedAndCursed -= quantity;
-                else if (object.blessed) blessedAndCursed += quantity;
-                if (object.otyp === LUCKSTONE) luckstone = true;
-            }
-            const noStone = !luckstone && allStones === 0;
-            if (luck > baseline && (noStone || blessedAndCursed < 0)) game.u.uluck = luck - 1;
-            else if (luck < baseline && (noStone || blessedAndCursed > 0)) game.u.uluck = luck + 1;
+            // Cursed luckstones stop bad luck from timing out; blessed
+            // luckstones stop good luck; uncursed stop both; no luckstone
+            // stops neither.  attrib.c:stone_luck() is attrib.ts stoneLuck().
+            const timeLuck = stoneLuck(false, game);
+            const nostone = !carrying(LUCKSTONE, game) && !stoneLuck(true, game);
+            if (luck > baseline && (nostone || timeLuck < 0)) game.u.uluck = luck - 1;
+            else if (luck < baseline && (nostone || timeLuck > 0)) game.u.uluck = luck + 1;
         }
     }
     // C timeout.c:621-622: prayer's u.uinvulnerable returns before the
