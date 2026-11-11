@@ -1014,7 +1014,7 @@ function linkFloorObject(object, x, y, state) {
     pile.splice(index, 0, object);
     if (object.otyp === BOULDER && !pileTopWasBoulder && state === game)
         block_point(x, y);
-    if (object.no_charge && !costlySpot(x, y, state)
+    if (state.program_state.beyond_savefile_load && object.no_charge && !costlySpot(x, y, state)
         && !costlyAdjacent(findObjectOwner(object, x, y, state), x, y, state))
         object.no_charge = false;
     updateCorpseIceTimer(object, x, y, isIceAt(x, y, state), state);
