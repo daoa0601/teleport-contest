@@ -47,7 +47,7 @@ import { recalculateTelepathyRange, bypassObject, clearBypasses, nextUnbypassedO
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, makeBlinded, makeHallucinated, makeConfused, makeStunned } from './potion.js';
-import { enlightenment } from './insight.js';
+import { align_str, enlightenment } from './insight.js';
 import { chooseInventoryObject, freeInventoryObject } from './invent.js';
 import { useCrystalBall } from './detect.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
@@ -299,10 +299,8 @@ export function discoveredArtifacts(state = game) {
         const artifact = artifactById(id, state);
         if (!artifact)
             throw new Error(`Unknown discovered artifact ${id}`);
-        const alignment = artifact.alignment === 1 ? 'lawful'
-            : artifact.alignment === 0 ? 'neutral'
-                : artifact.alignment === -1 ? 'chaotic' : 'non-aligned';
-        return `  ${artifact.name} [${alignment} ${simpleObjectTypeName(artifact.baseType)}]`;
+        const alignment = align_str(artifact.alignment ?? 0);
+        return `  ${artifact.name} [${alignment === 'unaligned' ? 'non-aligned' : alignment} ${simpleObjectTypeName(artifact.baseType)}]`;
     });
 }
 // C artifact.c:dump_artifact_info(). This includes artifacts the hero has
