@@ -465,8 +465,12 @@ async function maybeDoTutorial(): Promise<void> {
 
     // ask_do_tutorial() obeys a tutorial option set in the configuration
     // file without asking; unlike C, this port then skips entry entirely.
-    if (game.tutorial_set_in_config)
+    // C's maybe_do_tutorial() else-branch processes the deferred option
+    // when the tutorial is not entered, ahead of moveloop()'s own re-read.
+    if (game.tutorial_set_in_config) {
+        await rcfileOnlyThisOption('mention_decor');
         return;
+    }
 
     // Menu creation flushes only a message still awaiting dismissal.
     // A wrapped welcome has already completed its own pager.
@@ -476,6 +480,9 @@ async function maybeDoTutorial(): Promise<void> {
     game._tutorialDeclined = !doTutorial;
     game._pending_message = '';
     if (!doTutorial) {
+        // maybe_do_tutorial()'s else-branch: no tutorial, so okay to
+        // process mention_decor now — moveloop() re-reads it once more.
+        await rcfileOnlyThisOption('mention_decor');
         await redrawMap();
         await flush_screen(1);
         return;
@@ -959,13 +966,16 @@ export async function runMoveloopCore(): Promise<void> {
     }
 
     await moveloopPreamble();
-    // C moveloop(): rcfile_only_this_option(opt_mention_decor) runs once,
-    // after the tutorial decision and before the command loop; the engine
-    // re-enters this function per player command, so the deferred flag
-    // gates the single pass for new and resumed games alike. Re-reading on
-    // every command would reset in-game option changes and redraw CHOOSE=
-    // section picks from the core stream.
-    if (g._mentionDecorDeferred) await rcfileOnlyThisOption('mention_decor');
+    // C moveloop(): rcfile_only_this_option(opt_mention_decor) runs once
+    // per game after the tutorial decision — in addition to
+    // maybe_do_tutorial()'s own re-read when the tutorial is declined, so
+    // a declined startup consumes two CHOOSE= re-reads on the core stream.
+    // The engine re-enters this function per player command, so a separate
+    // once-per-game flag keeps this call to C's single one here.
+    if (!g._mentionDecorMoveloopRead) {
+        g._mentionDecorMoveloopRead = true;
+        await rcfileOnlyThisOption('mention_decor');
+    }
     if (g.program_state.gameover) return;
     if (g.context.bypasses) clearBypasses(g);
     const movementRationActionPending = !!g._heroTimePending;

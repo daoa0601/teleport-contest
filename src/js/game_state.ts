@@ -346,6 +346,9 @@ export interface GameState {
     // C options.c: initoptions_finish() disregards mention_decor until
     // rcfile_only_this_option() heeds it again (post-tutorial decision).
     _mentionDecorDeferred?: boolean;
+    // True once C moveloop()'s own rcfile_only_this_option(opt_mention_decor)
+    // pass has run; the engine re-enters runMoveloopCore() per command.
+    _mentionDecorMoveloopRead?: boolean;
 
     // Resumed commands retain actual entities, not detached copies.
     _occupation?: HeroOccupation | null;

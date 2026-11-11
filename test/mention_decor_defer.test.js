@@ -46,18 +46,23 @@ void test('the deferred mention_decor option takes effect once play begins', asy
         await engine.lua.destroy();
     }
 });
-void test('a malformed deferred mention_decor value reports its error once play begins', async () => {
+void test('a declined startup reports the deferred option\'s frame through the message window twice', async () => {
     const engine = await runSegment({
-        seed: 29371, datetime: '20260112120000', moves: '', storage: memoryStorage(),
+        seed: 29371, datetime: '20260112120000', moves: ' '.repeat(8), storage: memoryStorage(),
         nethackrc: 'OPTIONS=name:Iris,role:Wizard,race:human,gender:female,align:neutral,'
             + '!legacy,!autopickup,pettype:none,!tutorial,mention_decor:zzz',
     });
     try {
-        // rcfile()'s config_error_done() reports the deferred option's
-        // diagnostics after the tutorial decision, waiting for input.
-        const screen = visibleScreen(engine);
-        assert.match(screen, /'mention_decor:zzz' is not valid for a boolean/);
-        assert.match(screen, /1 error in \.nethackrc/);
+        // The message window is live by the deferred re-read, so
+        // config_erradd() plines each diagnostic; a declined tutorial runs
+        // maybe_do_tutorial()'s re-read and moveloop()'s own, so the frame
+        // is delivered twice (two CHOOSE= core draws accompany them).
+        const messages = [...engine.state._messageHistory, engine.state._pending_message]
+            .join('\n');
+        assert.match(messages, /'mention_decor:zzz' is not valid for a boolean/);
+        assert.match(messages, /1 error in \.nethackrc/);
+        const frames = messages.split('not valid for a boolean').length - 1;
+        assert.equal(frames, 2, 'both re-reads deliver their config_error_done() frame');
     }
     finally {
         await engine.lua.destroy();

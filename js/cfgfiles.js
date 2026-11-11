@@ -14,6 +14,8 @@ import { addMessageTypeRule } from './message_types.js';
 import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
 import { str2role } from './role.js';
 import { game } from './gstate.js';
+import { pline } from './pline.js';
+import { flush_screen } from './display.js';
 import { CommandBindings } from './command_bindings.js';
 import { C_ATR_INVERSE } from './color_attr.js';
 import { rawPrintf, truncatePlineMessage } from './pline.js';
@@ -582,11 +584,13 @@ export function parseNethackOptions(options, result, onlyOption) {
 // section pick and sections still gate which statements reach
 // parse_config_line() — both live in parse_conf_buf(), ahead of the
 // disregard machinery — and the errors that ignore_statement_errors and
-// set_ignore_errors_on_unmatched() suppress stay dropped. rcfile()'s own
-// config_error_done() frames still report their diagnostics and wait, so
-// the retained reports go through the same display the startup read uses.
-// The tail heeds everything again, so later parses (Lua parse_config, doset)
-// apply the option normally.
+// set_ignore_errors_on_unmatched() suppress stay dropped. rcfile() delivers
+// the file frame's config_error_done() before parsing NETHACKOPTIONS; by
+// this re-read's time the message window is live, so config_erradd()
+// plines each diagnostic (only pre-window startup errors fall back to the
+// raw print of displayConfigurationErrors) and tty_wait_synch() redisplays
+// the map without waiting for a key. The tail heeds everything again, so
+// later parses (Lua parse_config, doset) apply the option normally.
 export async function rcfileOnlyThisOption(option) {
     const result = {
         configErrors: [],
@@ -596,13 +600,38 @@ export async function rcfileOnlyThisOption(option) {
     const fileReport = { source: '.nethackrc', errors: [] };
     parseConfiguration(game.nethackrc, result, fileReport, true, option);
     result.configErrors.push(fileReport);
+    await displayLiveConfigurationErrors(fileReport);
     if (game.nethackOptions != null) {
         const envReport = { source: 'NETHACKOPTIONS', errors: [] };
         parseConfiguration(game.nethackOptions, result, envReport, false, option);
         result.configErrors.push(envReport);
+        await displayLiveConfigurationErrors(envReport);
     }
     // heed_all_options(): mention_decor is heeded from here on.
     game._mentionDecorDeferred = false;
-    await displayConfigurationErrors(result.configErrors);
+}
+// C cfgfiles.c:config_erradd() and config_error_done() for a frame whose
+// diagnostics arrive while the message window is live: each error plines
+// its original line once and its message, the summary plines once, and
+// wait_synch() only redisplays the map (tty_wait_synch() falls back to
+// getret() solely for raw-printed output, which this frame never adds).
+async function displayLiveConfigurationErrors(report) {
+    if (!report.errors.length)
+        return;
+    let previousLine = null;
+    for (const error of report.errors) {
+        const punctuation = /[.!?]$/.test(error.message) ? '' : '.';
+        if (error.lineNumber !== previousLine) {
+            await pline(`\n${error.sourceLine}`);
+            previousLine = error.lineNumber;
+        }
+        const line = error.lineNumber > 0 ? `Line ${error.lineNumber}: ` : '';
+        await pline(` * ${line}${error.message}${punctuation}`);
+    }
+    const count = report.errors.filter(error => !error.raw).length;
+    if (!count)
+        return;
+    await pline(`\n${count} error${count === 1 ? '' : 's'} in ${report.source}.\n`);
+    await flush_screen(1);
 }
 //# sourceMappingURL=cfgfiles.js.map

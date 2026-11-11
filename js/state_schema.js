@@ -83,6 +83,7 @@ const transientFields = {
     targetY: true,
     tutorial_set_in_config: true,
     _mentionDecorDeferred: true,
+    _mentionDecorMoveloopRead: true,
     vault_x: true,
     vault_y: true,
     were_changes: true,
