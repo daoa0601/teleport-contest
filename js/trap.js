@@ -6292,7 +6292,7 @@ async function fillPitWithBoulder(x, y, state, publish) {
 async function disarmBox(box, { state, force, publish, random, rollOne, rollDice, }) {
     if (!box.otrapped) {
         await publish(`That ${objectCombatName(box, { state, includeCorpseSpecies: false })} was not trapped.`);
-        box.tknown = false;
+        box.tknown = true;
         return;
     }
     let chance = currentAttribute(A_DEX, state) + (state.u?.ulevel ?? 1);
@@ -6317,14 +6317,18 @@ async function disarmBox(box, { state, force, publish, random, rollOne, rollDice
 // C trap.c:untrap_box()
 async function inspectBox(box, options) {
     const { state, force, ask, publish, random } = options;
+    const name = definiteName(objectCombatName(box, { state, includeCorpseSpecies: false }), state);
+    if (box.tknown && !box.otrapped) {
+        await publish(`You know ${name} is not trapped.`);
+        return;
+    }
     const impaired = heroIsImpaired(state);
     const found = (box.otrapped
         && (force || (!impaired
             && random(MAXULEV + 1 - (state.u?.ulevel ?? 1)) < 10)))
-        || box.tknown
+        || (box.tknown && box.otrapped)
         || (!force && impaired && random(3) === 0);
     const alreadyKnown = box.tknown && box.dknown;
-    const name = definiteName(objectCombatName(box, { state, includeCorpseSpecies: false }), state);
     if (!found) {
         await publish(`You find no traps on ${name}.`);
         return;
@@ -6444,7 +6448,7 @@ export async function untrap({ state = game, container = null, door = null, forc
 }
 // Part of C trap.c:untrap(): collect boxes on the hero's square.
 function boxesAt(state, x, y) {
-    return (state.level?.objects?.[x]?.[y] || []).filter(object => object.otyp === LARGE_BOX || object.otyp === CHEST);
+    return (state.level?.objects?.[x]?.[y] || []).filter(object => (object.otyp === LARGE_BOX || object.otyp === CHEST) && !(object.tknown && !object.otrapped));
 }
 // Part of C trap.c:untrap(): describe floor traps and containers the hero cannot reach.
 function unreachableTrapMessage(description, boxCount, here, state) {
@@ -6520,7 +6524,9 @@ async function handlePit(trap, options) {
 // Part of C trap.c:untrap(): prompt for and inspect each floor container.
 async function handleBoxes(boxes, { state, force, ask, publish, random, rollOne, rollDice, }) {
     for (const box of boxes) {
-        const known = box.tknown && box.dknown;
+        if (box.tknown && !box.otrapped)
+            continue;
+        const known = box.tknown && box.otrapped && box.dknown;
         if (!known)
             observeObjectForNaming(box, { state });
         const answer = await ask(await objectQuestion(box, {

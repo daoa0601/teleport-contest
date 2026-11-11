@@ -936,7 +936,7 @@ export async function continuePicking(occupation, state = game) {
                 door.doormask &= ~D_TRAPPED;
             else if (box) {
                 box.otrapped = false;
-                box.tknown = false;
+                box.tknown = true;
             }
             await plineWithContinuation(`You succeed in disarming the trap.  The ${door ? 'door' : box?.otyp === CHEST ? 'chest' : 'box'} is still ${locked ? '' : 'un'}locked.`);
             await exerciseAttribute(A_WIS, true, state);

@@ -44,4 +44,14 @@ void test('disarming a known chest trap keeps the full inscription without inven
     assert.equal(question, `Disarm this chest named ${personalName}`);
     assert.equal(chest.oextra?.oname, personalName);
 });
+void test('a direct untrap request reports a chest already known to be safe', async () => {
+    await freshObjectRoom({ hero: { confused: true } });
+    const chest = await floorObject(CHEST, 10, 10, {
+        initialize: false, tknown: true, otrapped: false,
+    });
+    const messages = [];
+    await untrap({ container: chest, publish: async (message) => { messages.push(message); } });
+    assert.deepEqual(messages, ['You know the chest is not trapped.']);
+    assert.equal(chest.tknown, true);
+});
 //# sourceMappingURL=untrap_box_question.test.js.map

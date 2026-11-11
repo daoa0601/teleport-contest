@@ -8079,7 +8079,7 @@ async function disarmBox(box: GameObject, {
 }: Omit<BoxTrapOptions, 'ask'>): Promise<void> {
     if (!box.otrapped) {
         await publish(`That ${objectCombatName(box, { state, includeCorpseSpecies: false })} was not trapped.`);
-        box.tknown = false;
+        box.tknown = true;
         return;
     }
 
@@ -8103,14 +8103,18 @@ async function disarmBox(box: GameObject, {
 // C trap.c:untrap_box()
 async function inspectBox(box: GameObject, options: BoxTrapOptions): Promise<void> {
     const { state, force, ask, publish, random } = options;
+    const name = definiteName(objectCombatName(box, { state, includeCorpseSpecies: false }), state);
+    if (box.tknown && !box.otrapped) {
+        await publish(`You know ${name} is not trapped.`);
+        return;
+    }
     const impaired = heroIsImpaired(state);
     const found = (box.otrapped
         && (force || (!impaired
             && random(MAXULEV + 1 - (state.u?.ulevel ?? 1)) < 10)))
-        || box.tknown
+        || (box.tknown && box.otrapped)
         || (!force && impaired && random(3) === 0);
     const alreadyKnown = box.tknown && box.dknown;
-    const name = definiteName(objectCombatName(box, { state, includeCorpseSpecies: false }), state);
     if (!found) {
         await publish(`You find no traps on ${name}.`);
         return;
@@ -8250,7 +8254,7 @@ export async function untrap({
 // Part of C trap.c:untrap(): collect boxes on the hero's square.
 function boxesAt(state: GameState, x: number, y: number): GameObject[] {
     return (state.level?.objects?.[x]?.[y] || []).filter(object =>
-        object.otyp === LARGE_BOX || object.otyp === CHEST);
+        (object.otyp === LARGE_BOX || object.otyp === CHEST) && !(object.tknown && !object.otrapped));
 }
 
 // Part of C trap.c:untrap(): describe floor traps and containers the hero cannot reach.
@@ -8335,7 +8339,8 @@ async function handleBoxes(boxes: GameObject[], {
     state, force, ask, publish, random, rollOne, rollDice,
 }: BoxTrapOptions): Promise<boolean | null> {
     for (const box of boxes) {
-        const known = box.tknown && box.dknown;
+        if (box.tknown && !box.otrapped) continue;
+        const known = box.tknown && box.otrapped && box.dknown;
         if (!known) observeObjectForNaming(box, { state });
         const answer = await ask(await objectQuestion(box, {
             prefix: known ? 'Disarm this ' : 'There is ',
