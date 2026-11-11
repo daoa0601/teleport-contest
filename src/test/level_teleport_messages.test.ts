@@ -104,3 +104,17 @@ void test('wizard prototype names force a destination in another dungeon', async
 
     assert.deepEqual(destinations, [{ dnum: 1, dlevel: 1 }]);
 });
+
+void test('wizard quest prototype names can omit the current role prefix', async () => {
+    freshConnectedLevels({ role: 'monk' });
+    game.flags.debug = true;
+    game.specialLevels = new Map([['x-loca', createSpecialLevel({ dnum: 1, dlevel: 1 })]]);
+    const input = resetInputState();
+    const destinations: Partial<{ dnum: number; dlevel: number }>[] = [];
+
+    await answerPrompts(levelTeleport({ gotoLevel: destination => { destinations.push(destination); } }), input, [
+        { prompt: /To what level do you want to teleport\?/, keys: 'LOCA\r' },
+    ]);
+
+    assert.deepEqual(destinations, [{ dnum: 1, dlevel: 1 }]);
+});

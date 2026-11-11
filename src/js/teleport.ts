@@ -21,7 +21,7 @@ import { dist2, distmin } from './hacklib.js';
 import { within_bounded_area } from './rect.js';
 import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious, trapAt } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
-import { Is_botlevel, levelAtDepth, levelDepthByName, findLevel, insideWizardTower, levelIsWizardTower, printDungeon, specialDisplayName, surfaceName, In_quest, In_mines, sameDungeonLevel } from './dungeon.js';
+import { Is_botlevel, levelAtDepth, levelDepthByName, findLevelSubstring, insideWizardTower, levelIsWizardTower, printDungeon, specialDisplayName, surfaceName, In_quest, In_mines, sameDungeonLevel } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { bot } from './botl.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, nomul, shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt, switchHeroTerrain, finishDestinationSpotEffects } from './hack.js';
@@ -1057,7 +1057,7 @@ async function readLevelRequest(state: PlayingGameState, menuRequested: boolean)
             return { random: true };
         }
         if (text === null) return null;
-        const prototype = wizard ? findLevel(text, state) : undefined;
+        const prototype = wizard ? findLevelSubstring(text, state) : undefined;
         if (prototype) return { destination: prototype, depth: depth(state.u.uz, state.dungeons) };
         if (wizard && text === '?') return chooseWizardLevelDestination();
         const requested = levelDepthByName(text, state) || Number.parseInt(text, 10) || 0;

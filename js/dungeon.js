@@ -6,7 +6,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER, FOOT } from './const.js';
-import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, Is_stronghold, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SIZEOF_CEMETERY, SIZEOF_MAPSEEN, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, QBUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, Is_stronghold, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SIZEOF_CEMETERY, SIZEOF_MAPSEEN, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './windows.js';
 import { SHOP_TYPES } from './shknam.js';
 import { altarmaskAt, deityName } from './pray.js';
@@ -345,6 +345,13 @@ export function findLevel(name, state = game) {
         if (specialDisplayName(key, state).toLowerCase() === name.toLowerCase())
             return level;
     return undefined;
+}
+// C dungeon.c:find_level_substr(): retry a prototype with the hero's role prefix.
+export function findLevelSubstring(name, state = game) {
+    const exact = findLevel(name, state);
+    if (exact || !state.urole)
+        return exact;
+    return findLevel(`${state.urole.filecode}-${name}`.slice(0, QBUFSZ - 1), state);
 }
 // C dungeon.c:lev_by_name(): names require an actually visited level and
 // can address only this branch or the main-dungeon/Gehennom connection.
