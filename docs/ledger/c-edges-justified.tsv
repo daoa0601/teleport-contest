@@ -2385,3 +2385,6 @@ u_init_misc	newhp	included as present via initialRoll(), u_init_misc()'s hpadv/e
 u_init_misc	newpw	included as present via initialRoll(), u_init_misc()'s hpadv/enadv roll helper (u_init.ts)
 newgame	com_pager	included as present via comPager() (questpgr.ts), run by newgame's pager path (allmain.ts)
 maybe_do_tutorial	deferred_goto	included as present via the hand-rolled goto_level arrival the tutorial models (allmain.ts maybeDoTutorial)
+dip_hands_ok	dip_ok	included as present via dipClassification(), the getobj filter chooseDipTarget() passes (potion.ts)
+dip_into	inaccessible_equipment	included as present via coveringEquipment()/reportCoveredEquipment() (do_wear.ts) at potion.ts:2796,2929
+itimeout_incr	itimeout	included as present via the per-property timeout field increaseLevitationTimeout() reads and writes (potion.ts)
