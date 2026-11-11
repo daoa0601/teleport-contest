@@ -1241,11 +1241,7 @@ export async function dotip() {
             else {
                 const source = containers[0];
                 if (source) {
-                    // dotip()'s question names the destination when the
-                    // surface below is the only possible one.
-                    const { count: tipTargetCount } = await countTipTargets(source);
-                    const onlySurface = tipTargetCount === 0 ? ` onto the ${surfaceName(x, y)}` : '';
-                    const answer = await promptYesNoQuit(`There is ${await containerDescription(source)} here, tip it${onlySurface}?`);
+                    const answer = await promptYesNoQuit(`There is ${await containerDescription(source)} here, tip it?`);
                     if (answer === 'q')
                         return;
                     if (answer === 'y') {
@@ -1302,45 +1298,23 @@ export async function dotip() {
 // C pickup.c:tipcontainer_gettarget(). The destination menu; tip to floor
 // needs no hands, container-to-container needs a free one.
 // C pickup.c:u_handsy() is the hands test for the container choice.
-// C pickup.c:tipcontainer_gettarget(), pass 0: count the eligible
-// container-to-container targets. u_handsy() reports blocked hands at the
-// first candidate; its message belongs to this pass, which dotip()'s prompt
-// also runs to decide the question's wording.
-async function countTipTargets(source) {
+async function tipDestination(source) {
+    const items = [{
+            key: '-', text: 'on the floor', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
+        }, { selectable: false, text: '' }];
     const targets = game.inventory.filter(object => object !== source && isContainer(object)
         && !(object.otyp === BAG_OF_TRICKS && object.dknown && objectTypeKnown(object)));
-    let handsAvailable = true;
-    let count = 0;
-    if (targets.length) {
-        // C pickup.c:u_handsy(): no hands at all, or no free one, blocks a
-        // container-to-container tip.
-        handsAvailable = !heroHasNoHands(game) && heroHasFreeHand(game);
-        if (!handsAvailable)
-            await plineWithContinuation(heroHasNoHands(game) ? 'You have no hands!'
-                : `You have no free ${body_part(HAND)}.`);
-        for (const object of targets)
-            if (handsAvailable && !(object.olocked && object.lknown) && object.invlet)
-                count++;
-    }
-    return { targets, handsAvailable, count };
-}
-// C pickup.c:tipcontainer_gettarget(), pass 1: with no eligible target
-// besides the surface below, no destination menu is shown and the tip goes
-// straight down without being cancelled. Otherwise the floor row names the
-// actual surface under the hero.
-async function tipDestination(source) {
-    const { targets, handsAvailable, count } = await countTipTargets(source);
-    if (count === 0)
-        return { cancelled: false, target: null };
-    const items = [{
-            key: '-', text: `on the ${surfaceName(game.u.ux, game.u.uy)}`, value: null,
-            itemFlags: MENU_ITEMFLAGS_SELECTED,
-        }, { selectable: false, text: '' }];
+    // C pickup.c:u_handsy(): no hands at all, or no free one, blocks a
+    // container-to-container tip.
+    const hands = targets.length === 0 || (!heroHasNoHands(game) && heroHasFreeHand(game));
+    if (!hands)
+        await plineWithContinuation(heroHasNoHands(game) ? 'You have no hands!'
+            : `You have no free ${body_part(HAND)}.`);
     for (const object of targets) {
         // pickup.c:tipcontainer_gettarget(): every destination row, locked
         // or selectable, draws its obj_to_glyph() menu metadata.
         consumeHallucinatedMenuObjectGlyph(object);
-        if (!handsAvailable || object.olocked && object.lknown || !object.invlet)
+        if (!hands || object.olocked && object.lknown || !object.invlet)
             items.push({ selectable: false, text: `    ${await containerDescription(object)}` });
         else
             items.push({ key: object.invlet, text: await containerDescription(object), value: object });
