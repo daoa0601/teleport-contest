@@ -905,7 +905,10 @@ export function objectAction(object, verb, state = game) {
     const name = objectCombatName(object, { state });
     const quantity = object.quan ?? object.quantity ?? 1;
     const subject = quantity === 1 ? name : `${quantity} ${name}`;
-    return objectActionText(object, subject, verb, state);
+    if (!verb)
+        return subject;
+    const inflectedVerb = objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb);
+    return `${subject.slice(0, BUFSZ - 2 - inflectedVerb.length)} ${inflectedVerb}`;
 }
 // C objnam.c:Tobjnam(): The(cxname) with a conjugated verb.
 // C Tobjnam(): The(xname), without a count or corpse species.
