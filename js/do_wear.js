@@ -26,7 +26,7 @@ import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_
 import { recordObjectKnowledge } from './u_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName, suitSimpleName, cloakSimpleName, helmSimpleName, glovesSimpleName, bootsSimpleName, shieldSimpleName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
-import { chooseInventoryObject, compactInventoryLetters, bucCategory } from './invent.js';
+import { chooseInventoryObject, compactInventoryLetters, bucCategory, wearingArmor } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { setBallAndChainFelt } from './ball.js';
@@ -520,14 +520,10 @@ export const TAKEOFF_ORDER = [
 export function takeoffSlotObject(slot, state = game) {
     return state[slot] || state.u[slot] || null;
 }
-// C do_wear.c:wearing_armor(): the armor slots its scan covers.
+// Armor slots used by the takeoff menu and its delay calculation.
 const WORN_ARMOR_SLOTS = [
     'uarmc', 'uarmh', 'uarm', 'uarmu', 'uarms', 'uarmg', 'uarmf',
 ];
-// C do_wear.c:wearing_armor(). Any worn armor piece occupies a slot.
-function wearingArmor(state = game) {
-    return WORN_ARMOR_SLOTS.some(slot => takeoffSlotObject(slot, state));
-}
 // C do_wear.c:reset_remarm().
 export function resetBulkTakeoff(state = game) {
     delete state.context.takeoff;
@@ -1307,6 +1303,8 @@ export async function removeHeroArmor(object, state = game, options = {}) {
     const slot = armorSlotFor(object.otyp);
     if (!slot || takeoffSlotObject(slot, state) !== object)
         return false;
+    if (slot === 'uarm')
+        return await removeHeroSuit(object, state, options);
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
@@ -1344,10 +1342,6 @@ export async function removeHeroArmor(object, state = game, options = {}) {
             learnObjectType(object.otyp, state);
             await plineWithContinuation(formatFeltMessage(`yourself slow down${state.u.fast ? ' a bit' : ''}.`, state));
         }
-        // Armor_off() clears cancelled_don before dragon handling, so an
-        // interrupted blue suit still reports its speed loss.
-        if (dragonArmorColor(object) === 'blue' && !state.u.veryFast)
-            await plineWithContinuation('You slow down.');
         if (!cancelledDon && (object.otyp === ELVEN_CLOAK || object.otyp === ELVEN_BOOTS))
             await toggleStealth(object, false, state);
     }
@@ -1361,11 +1355,6 @@ export async function removeHeroArmor(object, state = game, options = {}) {
             setSlipperyHands(0, state);
         await losePetrificationProtection(object, state, !state.context.mon_moving && !object.in_use);
         if (state.program_state?.gameover)
-            return removed;
-    }
-    if (removed && dragonArmorColor(object) === 'yellow') {
-        await losePetrificationProtection(object, state, options.voluntary ?? true);
-        if (state.program_state.gameover)
             return removed;
     }
     // C Boots_off(): identify before spoteffects(), which can kill the hero.
@@ -1389,6 +1378,20 @@ export async function removeHeroArmor(object, state = game, options = {}) {
             floatVsFlight(state);
         delete object._levitationBeforeWear;
     }
+    return removed;
+}
+// C do_wear.c:Armor_off(). Voluntary suit removal and dragon-armor effects.
+async function removeHeroSuit(object, state, options) {
+    const pending = pendingArmorAction(state);
+    const cancelledDon = options.cancelledDon
+        ?? (pending?.kind === 'wear' && pending.object === object);
+    if (pending?.object === object)
+        cancelDonning(state);
+    const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
+    if (removed && dragonArmorColor(object) === 'blue' && !state.u.veryFast)
+        await plineWithContinuation('You slow down.');
+    if (removed && dragonArmorColor(object) === 'yellow')
+        await losePetrificationProtection(object, state, options.voluntary ?? true);
     return removed;
 }
 // Part of C do_wear.c:Cloak_off(): toggle_displacement() runs after the
