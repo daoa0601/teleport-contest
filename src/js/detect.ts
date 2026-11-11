@@ -60,6 +60,7 @@ import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { MONSTER_CLASS_SYMBOLS, monsterDigests, monsterHidesUnder, monsterIsHider, resistsBlnd } from './mondata.js';
 import { expelHero } from './mhitu.js';
+import { findgold } from './steal.js';
 import { body_part, heroPolyGender } from './polyself.js';
 
 type DetectionTrap = Pick<Trap, 'ttyp' | 'tx' | 'ty'>;
@@ -213,20 +214,26 @@ export async function mapDetectedMonster(monster: Monster, showTail: boolean, st
     }
 }
 
-// C detect.c:trapped_chest_at()/trapped_door_at() identify the projection,
-// not whether a visible box or door still has its trap armed.
+// C detect.c:trapped_chest_at(). The projection of a trapped chest: a
+// trappable container on the square, or an armed one in a carried or
+// monster inventory.
+function trappedChestAt(x: number, y: number): boolean {
+    const level = game.level;
+    const boxes = level?.objects[x]?.[y] ?? [];
+    const here = x === game.u.ux && y === game.u.uy;
+    const carried = here ? [...game.inventory, ...game.u.usteed?.minvent ?? []] : [];
+    const monster = level ? monsterAtPosition(level, x, y) : null;
+    const isBox = (object: { otyp: number }) => object.otyp === CHEST || object.otyp === LARGE_BOX;
+    return boxes.some(isBox) || [...carried, ...monster?.minvent ?? []]
+        .some(object => isBox(object) && object.otrapped);
+}
+
+// C detect.c:trapped_door_at(): the projection, not whether a visible box
+// or door still has its trap armed.
 export function detectedTrapDisguise(type: number, x: number, y: number): string | null {
     if (glyphAt(x, y)?.kind !== 'trap') return null;
-    if (type === TRAPPED_CHEST && (!heroIsHallucinating() || rn2(20) === 0)) {
-        const level = game.level;
-        const boxes = level?.objects[x]?.[y] ?? [];
-        const here = x === game.u.ux && y === game.u.uy;
-        const carried = here ? [...game.inventory, ...game.u.usteed?.minvent ?? []] : [];
-        const monster = level ? monsterAtPosition(level, x, y) : null;
-        const isBox = (object: { otyp: number }) => object.otyp === CHEST || object.otyp === LARGE_BOX;
-        if (boxes.some(isBox) || [...carried, ...monster?.minvent ?? []]
-            .some(object => isBox(object) && object.otrapped)) return 'trapped chest';
-    }
+    if (type === TRAPPED_CHEST && (!heroIsHallucinating() || rn2(20) === 0)
+        && trappedChestAt(x, y)) return 'trapped chest';
     if (type === TRAPPED_DOOR && (!heroIsHallucinating() || rn2(20) === 0)
         && game.level?.at(x, y)?.typ === DOOR) return 'trapped door';
     return null;
@@ -340,7 +347,7 @@ export async function detectGold(source: GameObject | null, { state = game }: De
         }
         for (const monster of monsters) {
             const carried = monsterObjects(monster);
-            if (monster.mnum === GOLD_GOLEM || carried.some(object => object.otyp === GOLD_PIECE)) {
+            if (monster.mnum === GOLD_GOLEM || !!findgold(carried)) {
                 await showObjectAt(detectedCoins(), monster.mx, monster.my, shown);
             } else {
                 const found = carried.map(object => goldIn(object, blessed, state)).find(Boolean);
@@ -531,7 +538,7 @@ function misleadingMimic(monster: Monster, source: GameObject | null, objectClas
 // Part of C detect.c:gold_detect(): the findgold()/gold-golem monster test.
 function monsterGold(monster: Monster, objectClass: number) {
     return (!objectClass || objectClass === COIN_CLASS)
-        && monsterObjects(monster).some(object => object.otyp === GOLD_PIECE);
+        && !!findgold(monsterObjects(monster));
 }
 
 // C detect.c:monster_detect().
