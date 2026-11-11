@@ -16,7 +16,7 @@ for (const { stage, nameOption, prompt } of [
         try {
             const text = screenText(capturedScreen(engine));
             assert.match(text, prompt);
-            assert.match(text, /Version 5\.0\.0 MacOS, built May  2 2026 12:00:00\./);
+            assert.match(text, /Version 5\.0\.0-0 MacOS Work-in-progress, built May  2 2026 12:00:00\./);
         }
         finally {
             await engine.lua.destroy();

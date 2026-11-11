@@ -511,7 +511,11 @@ export const BUILD_DATE = "Sun May  3 01:27:17 2026";
 // C date.h:BUILD_TIME()
 export const BUILD_TIME = (1777786037);
 // date.c:populate_nomakedefs() pins the recorder's runtime build banner.
-export const COPYRIGHT_BANNER_C = "         Version 5.0.0 MacOS, built May  2 2026 12:00:00.";
+// NH_DEVEL_STATUS != RELEASED (patchlevel.h): mdlib_version_string() appends
+// "-EDITLEVEL" and bannerc_string() appends its non-released subbuf, which
+// is the " Work-in-progress" fallback until upstream fixes the post-release
+// case.
+export const COPYRIGHT_BANNER_C = "         Version 5.0.0-0 MacOS Work-in-progress, built May  2 2026 12:00:00.";
 
 // AUTO-IMPORT-BEGIN: CONST_ALL_HEADERS
 // Auto-imported header constants (pre-symbol pass)
@@ -740,7 +744,7 @@ export const NH_STATUS_RELEASED = 0;
 export const NH_STATUS_WIP = 1;
 export const NH_STATUS_BETA = 2;
 export const NH_STATUS_POSTRELEASE = 3;
-export const NH_DEVEL_STATUS = NH_STATUS_RELEASED;
+export const NH_DEVEL_STATUS = NH_STATUS_POSTRELEASE;
 export const COPYRIGHT_BANNER_A = "NetHack, Copyright 1985-2026";
 export const COPYRIGHT_BANNER_B = "         By Stichting Mathematisch Centrum and M. Stephenson.";
 export const COPYRIGHT_BANNER_D = "         See license for details.";

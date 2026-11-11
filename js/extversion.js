@@ -9,7 +9,8 @@ import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import { pline } from './pline.js';
 import { cInteger } from './option_values.js';
-export const NATIVE_VERSION = 'MacOS NetHack Version 5.0.0 - last build May  2 2026 12:00:00.';
+// mdlib.c:version_id_string() with NH_DEVEL_STATUS == NH_STATUS_POSTRELEASE.
+export const NATIVE_VERSION = 'MacOS NetHack Version 5.0.0-0 post-release - last build May  2 2026 12:00:00.';
 const VERSION_PAGE_1 = [
     NATIVE_VERSION,
     '',
