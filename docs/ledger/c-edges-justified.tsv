@@ -2356,3 +2356,6 @@ dotypeinv	tally_BUCX	inlined	tally_BUCX()'s beatitude tallies are the statuses S
 learn_unseen_invent	update_inventory	n/a	the pinned TTY build's update_inventory() has no persistent inventory window after learn_unseen_invent() (invent.ts)
 clonewiz	makemon	inlined	clonewiz()'s clone is created by the mcastu owner that resumes the interrupted cast (wizard.ts)
 nasty	msummon	inlined	nasty()'s Inhell msummon branch returns a deferral the wizard and mcastu callers await (wizard.ts summonNastyMonsters, mcastu.ts)
+getpos_refresh	docrt_flags	inlined	getpos_refresh()'s docrt_flags(docrtRefresh) is modeled as the botl request plus the pending glyph resend (getpos.ts refreshHilite)
+gloc_filter_init	gloc_filter_floodfill	inlined	gloc_filter_init()'s flood fill is inlined in getposArea() with its classify/matcharea predicates (getpos.ts)
+known_vibrating_square_at	invocation_pos	inlined	invocation_pos() is isInvocationPosition() (hack.ts); known_vibrating_square_at() reads the stored invocationPosition plus its known-trap test directly (getpos.ts)

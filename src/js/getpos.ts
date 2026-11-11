@@ -642,7 +642,7 @@ export async function prepareMapPositionHighlights(isValidLocation: ValidLocatio
     await setMapPositionHighlights(isValidLocation, game.iflags.bgcolors !== false);
 }
 
-// Part of C getpos.c:getpos_sethilite(): install or clear the validity
+// C getpos.c:getpos_sethilite(): install or clear the validity
 // rule and redraw the union of old and new selections.
 async function setMapPositionHighlights(isValidLocation: ValidLocation | null, background: boolean): Promise<void> {
     const previous = game._mapPositionHighlight;
