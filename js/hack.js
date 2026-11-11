@@ -3852,6 +3852,7 @@ async function domoveCore(dx, dy) {
                 u.usteed.mx = oldx;
                 u.usteed.my = oldy;
             }
+            nomul(0, game);
         }
         else if (game.program_state.gameover)
             return true;

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MM_ANGRY, NO_MINVENT, POOL } from '../js/const.js';
+import { domove } from '../js/hack.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -136,5 +137,22 @@ void test('a pet blocking a step in an angry keeper\'s shop does not increase th
     assert.match(game._pending_message, /is in the way/);
     assert.equal(entry.price, 100);
     assert.equal(!!shopkeeper.eshk.surcharge, false);
+});
+void test('travel stops after a pet refuses to move onto the hero hazardous square', async () => {
+    const level = await freshObjectRoom();
+    const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
+    initializePet(pet);
+    level.requireAt(10, 10).typ = POOL;
+    game.context.run = 8;
+    game.context.travel = true;
+    game._travelTarget = { x: 14, y: 10 };
+    game.multi = 20;
+    pushKeys(' '.repeat(20));
+    initRng(1n);
+    await domove(1, 0);
+    assert.equal(game.u.ux, 10);
+    assert.equal(pet.mx, 11);
+    assert.equal(game.context.travel, false);
+    assert.equal(game.multi, 0);
 });
 //# sourceMappingURL=hero_safe_displacement.test.js.map
