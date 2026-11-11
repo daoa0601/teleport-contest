@@ -348,11 +348,14 @@ const CONFIG_STATEMENTS = [
 // cnf_line_OPTIONS() hands the original, uncondensed statement — from its
 // own find_optparam(), skipping nothing after the delimiter — to
 // parseoptions(); every other handler receives the condensed value.
-function parseConfigLine(bytes, result, state, addError, addRawError) {
+function parseConfigLine(bytes, result, state, addError, addRawError, onlyOption) {
     const mungedBytes = mungSpaces(bytes);
     const delimiter = findOptparam(mungedBytes);
     if (delimiter < 0) {
-        addError("Not a config statement, missing '='");
+        // ignore_statement_errors suppresses the report during
+        // rcfile_only_this_option()'s re-read.
+        if (onlyOption === undefined)
+            addError("Not a config statement, missing '='");
         return;
     }
     // skip past '=' (or ':'), then the one space between it and the value
@@ -372,11 +375,16 @@ function parseConfigLine(bytes, result, state, addError, addRawError) {
         }
     }
     if (!match) {
-        addError('Unknown config statement');
+        if (onlyOption === undefined)
+            addError('Unknown config statement');
         return;
     }
+    // disregard_all_config_statements() except OPTIONS: the matched
+    // handler never runs and adds no error.
+    if (match !== 'OPTIONS' && onlyOption !== undefined)
+        return;
     if (match === 'OPTIONS') {
-        parseOptions(bytes.subarray(findOptparam(bytes) + 1), result, state, true, addError, addRawError);
+        parseOptions(bytes.subarray(findOptparam(bytes) + 1), result, state, true, addError, addRawError, onlyOption);
         return;
     }
     handleConfigStatement(match, valueBytes, new TextDecoder().decode(valueBytes), result, addError, addRawError);
@@ -529,7 +537,7 @@ export function applyNethackrc(rc, state = game) {
 // rcfile()'s xtraopts call does. cnf_parser_init()/cnf_parser_done() state
 // is the generator's locals, and free_config_sections() is the sections
 // object each parse starts from.
-function parseConfiguration(rc, result, report, fromFile) {
+function parseConfiguration(rc, result, report, fromFile, onlyOption) {
     const state = {
         paranoiaBits: result.flags.paranoia_bits ?? DEFAULT_PARANOIA_BITS,
         paranoiaSeen: false,
@@ -548,9 +556,9 @@ function parseConfiguration(rc, result, report, fromFile) {
             report.errors.push({ sourceLine, lineNumber, message, raw: true, pause });
         };
         if (fromFile)
-            parseConfigLine(bytes, result, state, addError, addRawError);
+            parseConfigLine(bytes, result, state, addError, addRawError, onlyOption);
         else
-            parseOptions(bytes, result, state, false, addError, addRawError);
+            parseOptions(bytes, result, state, false, addError, addRawError, onlyOption);
     }
     if (state.paranoiaSeen)
         result.flags.paranoia_bits = state.paranoiaBits;
@@ -562,11 +570,32 @@ function parseConfiguration(rc, result, report, fromFile) {
 // envname, FALSE) around parseoptions(), then config_error_done(). C waits
 // for the rc file's errors first; the caller displays them between the two
 // parses.
-export function parseNethackOptions(options, result) {
+export function parseNethackOptions(options, result, onlyOption) {
     const report = { source: 'NETHACKOPTIONS', errors: [] };
-    parseConfiguration(options, result, report, false);
+    parseConfiguration(options, result, report, false, onlyOption);
     result.configErrors.push(report);
     result.commandBindings.finishConfiguration();
     return report;
+}
+// C cfgfiles.c:rcfile_only_this_option(): re-run rcfile() with every config
+// statement and option disregarded except `option`. CHOOSE= still draws its
+// section pick and sections still gate which statements reach
+// parse_config_line() — both live in parse_conf_buf(), ahead of the
+// disregard machinery — and the errors that ignore_statement_errors and
+// set_ignore_errors_on_unmatched() suppress stay dropped, like the Lua
+// parse_conf_str() path. The tail heeds everything again, so later parses
+// (Lua parse_config, doset) apply the option normally.
+export function rcfileOnlyThisOption(option) {
+    const result = {
+        configErrors: [],
+        flags: game.flags, iflags: game.iflags,
+        commandBindings: game.commandBindings,
+    };
+    const report = { source: '.nethackrc', errors: [] };
+    parseConfiguration(game.nethackrc, result, report, true, option);
+    if (game.nethackOptions != null)
+        parseConfiguration(game.nethackOptions, result, { source: 'NETHACKOPTIONS', errors: [] }, false, option);
+    // heed_all_options(): mention_decor is heeded from here on.
+    game._mentionDecorDeferred = false;
 }
 //# sourceMappingURL=cfgfiles.js.map

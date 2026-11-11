@@ -247,6 +247,7 @@ export class Engine {
         bindLuaLifecycle(this.lua);
         g.datetime = this._datetime;
         g.nethackrc = this._nethackrc;
+        g.nethackOptions = this._nethackOptions ?? null;
         g.storage = this.storage;
         // Gameplay code paints a transient frame, then yields here.
         g.animationFrame = () => this.animationFrame();
@@ -257,6 +258,10 @@ export class Engine {
         this.coreRng = g.coreCtx;
         this.displayRng = g.displayCtx;
         enableRngLog();
+        // C options.c:initoptions_finish() disregards mention_decor before
+        // rcfile() runs; rcfile_only_this_option() heeds it again once the
+        // tutorial decision is past (see runMoveloopCore()).
+        g._mentionDecorDeferred = true;
         // Parse nethackrc
         const opts = parseNethackrc(this._nethackrc, {
             fileName: this._nethackrcFileName,

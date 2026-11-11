@@ -198,6 +198,9 @@ export interface GameState {
     currentSeed?: RngSeed;
     datetime: string | null;
     nethackrc: string;
+    // C reads NETHACKOPTIONS live in rcfile(); the engine keeps the env
+    // string for rcfileOnlyThisOption()'s re-read.
+    nethackOptions?: string | null;
     plname: string;
     displayName: string;
     name?: string;
@@ -340,6 +343,9 @@ export interface GameState {
     _tutorialDeclined?: boolean;
     tutorial_set_in_config?: boolean;
     _tutorialState?: TutorialState;
+    // C options.c: initoptions_finish() disregards mention_decor until
+    // rcfile_only_this_option() heeds it again (post-tutorial decision).
+    _mentionDecorDeferred?: boolean;
 
     // Resumed commands retain actual entities, not detached copies.
     _occupation?: HeroOccupation | null;

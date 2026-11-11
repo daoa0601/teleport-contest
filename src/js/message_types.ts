@@ -567,6 +567,7 @@ function trimConfigurationOption(bytes: Uint8Array): Uint8Array {
 export function parseOptions(
     optionList: Uint8Array, result: ConfigurationSettings, state: OptionParseState,
     fromFile: boolean, addError: (message: string) => void, addRawError: (message: string, pause?: boolean) => void,
+    onlyOption?: string,
 ): void {
     let usingAlias = false;
     for (const optionBytes of configurationOptions(optionList)) {
@@ -624,8 +625,19 @@ export function parseOptions(
                 }
             }
         }
-        if (!optionMatch) {
-            if (!stripped.startsWith('S_')) addError(`Unknown option '${stripped}'`);
+        // parseoptions() applies nothing for a disregarded option: the
+        // !disregarded guard wraps duplicate detection, negation and the
+        // handler (options.c:619-641). rcfile_only_this_option() disregards
+        // every option but its target, and initoptions_finish() defers
+        // mention_decor until after the tutorial decision. Unmatched or
+        // disregarded elements stay silent (config_unmatched_ignored()).
+        const disregarded = onlyOption !== undefined
+            ? optionMatch?.name !== onlyOption
+            : optionMatch?.name === 'mention_decor' && !!game._mentionDecorDeferred;
+        if (!optionMatch || disregarded) {
+            if (optionMatch === null && onlyOption === undefined
+                && !stripped.startsWith('S_'))
+                addError(`Unknown option '${stripped}'`);
             continue;
         }
         // parseoptions()'s right-to-left recursion retains using_alias

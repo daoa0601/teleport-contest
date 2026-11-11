@@ -1,6 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), panic(), insight.c, dungeon.c;
 // rip.c's tombstone lives in rip.ts.
+import { rcfileOnlyThisOption } from './cfgfiles.js';
 import { tombstoneLine, tombstoneYear, tombstoneDeathRows } from './rip.js';
 import { goodbye } from './role.js';
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
@@ -859,6 +860,9 @@ export async function doquit() {
         await flush_screen(1);
         game.context.move = 0;
         if (abandonTutorial) {
+            // done2(): mention_decor can be processed now, ahead of the
+            // schedule_goto() back to regular play.
+            rcfileOnlyThisOption('mention_decor');
             const prior = game.u.ucamefrom;
             if (!prior)
                 throw new Error('Tutorial exit has no prior dungeon level');

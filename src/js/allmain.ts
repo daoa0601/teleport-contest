@@ -1,5 +1,6 @@
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
+import { rcfileOnlyThisOption } from './cfgfiles.js';
 import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot, In_hell } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
 import { recorderLocalEpochSeconds, fixedCalendar, sessionIsNight } from './calendar.js';
@@ -956,6 +957,10 @@ export async function runMoveloopCore(): Promise<void> {
     }
 
     await moveloopPreamble();
+    // C moveloop(): rcfile_only_this_option(opt_mention_decor) processes the
+    // one deferred option after the tutorial decision, for new games and
+    // resumed ones alike.
+    rcfileOnlyThisOption('mention_decor');
     if (g.program_state.gameover) return;
     if (g.context.bypasses) clearBypasses(g);
     const movementRationActionPending = !!g._heroTimePending;

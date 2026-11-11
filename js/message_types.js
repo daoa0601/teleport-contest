@@ -471,7 +471,7 @@ function trimConfigurationOption(bytes) {
 // parse_config_line() always parses OPTIONS in initial/config-file mode,
 // including Lua fragments. Only full startup performs the final
 // reconciliation.
-export function parseOptions(optionList, result, state, fromFile, addError, addRawError) {
+export function parseOptions(optionList, result, state, fromFile, addError, addRawError, onlyOption) {
     let usingAlias = false;
     for (const optionBytes of configurationOptions(optionList)) {
         if (optionBytes.length > BUFSZ / 2) {
@@ -526,8 +526,18 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
                 }
             }
         }
-        if (!optionMatch) {
-            if (!stripped.startsWith('S_'))
+        // parseoptions() applies nothing for a disregarded option: the
+        // !disregarded guard wraps duplicate detection, negation and the
+        // handler (options.c:619-641). rcfile_only_this_option() disregards
+        // every option but its target, and initoptions_finish() defers
+        // mention_decor until after the tutorial decision. Unmatched or
+        // disregarded elements stay silent (config_unmatched_ignored()).
+        const disregarded = onlyOption !== undefined
+            ? optionMatch?.name !== onlyOption
+            : optionMatch?.name === 'mention_decor' && !!game._mentionDecorDeferred;
+        if (!optionMatch || disregarded) {
+            if (optionMatch === null && onlyOption === undefined
+                && !stripped.startsWith('S_'))
                 addError(`Unknown option '${stripped}'`);
             continue;
         }
