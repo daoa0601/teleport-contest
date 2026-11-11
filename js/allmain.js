@@ -8,7 +8,7 @@ import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCo
 import { getLine } from './windows.js';
 import { doStorms } from './timeout.js';
 import { rewindEngravingsForSave, engravingAt, wipeEngravingAt, readEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, runMonsterAction, } from './mon.js';
+import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, seeNearbyMonsters, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, runMonsterAction, } from './mon.js';
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
@@ -39,7 +39,7 @@ import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHer
 import { MONSTER_GENO, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath, } from './end.js';
-import { restoreMonsterCover, finishInUseInventory } from './restore.js';
+import { getlev, finishInUseInventory } from './restore.js';
 import { releaseObjectLeash, checkHeroLeashes, heroNextToLeashedFollowers } from './apply.js';
 import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, } from './object_data.js';
 import { heroIsUnaware } from './senses.js';
@@ -249,27 +249,12 @@ export async function restoregamePreamble() {
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
     game._encumbranceLevel = 0;
-    // C getlev() closes dorecover() with a fixup pass over every monster on
-    // the restored current level. Ownership links survive the saved graph,
-    // but hiding cover must be rechecked before restoring each shape.
-    // Births append in the port, whereas C's fmon chain keeps the newest
-    // monster first. The pass runs where C runs it, before vision_reset()
-    // (restore.c:926) and with program_state.restoring still set, so plain
-    // sight sees nothing yet and the map stays unpainted behind any
-    // sensed-change message; only sensing can spot a revert here. getlev()
-    // holds in_getlev across the pass (restore.c:1064-1305), so a revert that
-    // asks for a vision recalculation cannot rebuild sight mid-pass.
     game.program_state.restoring = true;
-    game.program_state.in_getlev = true;
     game.vision_full_recalc = 0;
     try {
-        for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
-            await restoreMonsterCover(monster, game);
-            await restoreMonsterShape(monster, game);
-            if (game.program_state.gameover)
-                return;
-        }
-        game.program_state.in_getlev = false;
+        await getlev({ kind: 'saved' });
+        if (game.program_state.gameover)
+            return;
         await finishInUseInventory(false);
         // C dorecover() rebuilds vision, then expires timers while map and
         // status output are still suppressed by program_state.restoring.
