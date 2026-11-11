@@ -624,20 +624,26 @@ export function parseNethackOptions(
 // section pick and sections still gate which statements reach
 // parse_config_line() — both live in parse_conf_buf(), ahead of the
 // disregard machinery — and the errors that ignore_statement_errors and
-// set_ignore_errors_on_unmatched() suppress stay dropped, like the Lua
-// parse_conf_str() path. The tail heeds everything again, so later parses
-// (Lua parse_config, doset) apply the option normally.
-export function rcfileOnlyThisOption(option: string): void {
+// set_ignore_errors_on_unmatched() suppress stay dropped. rcfile()'s own
+// config_error_done() frames still report their diagnostics and wait, so
+// the retained reports go through the same display the startup read uses.
+// The tail heeds everything again, so later parses (Lua parse_config, doset)
+// apply the option normally.
+export async function rcfileOnlyThisOption(option: string): Promise<void> {
     const result: ConfigurationSettings = {
         configErrors: [],
         flags: game.flags, iflags: game.iflags,
         commandBindings: game.commandBindings,
     };
-    const report: ConfigurationErrorReport = { source: '.nethackrc', errors: [] };
-    parseConfiguration(game.nethackrc, result, report, true, option);
-    if (game.nethackOptions != null)
-        parseConfiguration(game.nethackOptions, result,
-            { source: 'NETHACKOPTIONS', errors: [] }, false, option);
+    const fileReport: ConfigurationErrorReport = { source: '.nethackrc', errors: [] };
+    parseConfiguration(game.nethackrc, result, fileReport, true, option);
+    result.configErrors.push(fileReport);
+    if (game.nethackOptions != null) {
+        const envReport: ConfigurationErrorReport = { source: 'NETHACKOPTIONS', errors: [] };
+        parseConfiguration(game.nethackOptions, result, envReport, false, option);
+        result.configErrors.push(envReport);
+    }
     // heed_all_options(): mention_decor is heeded from here on.
     game._mentionDecorDeferred = false;
+    await displayConfigurationErrors(result.configErrors);
 }

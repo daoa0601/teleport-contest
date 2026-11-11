@@ -1947,17 +1947,20 @@ export async function completeMovedMonsterAction(monster, movement, state, rando
                 await swallowed(false);
         }
         else if (state === game) {
+            // monmove.c:1656-1659: only call newsym() when this is not a
+            // vault guard parked off the map at <0,0>; other off-map
+            // coordinates still reach newsym() and its diagnostic.
             const { mx, my } = monster;
-            if (!state.in_mklev && !state.program_state.saving && !isok(mx, my)) {
-                // C newsym() diagnoses column zero even when a live guard
-                // is legitimately parked there until its corridor clears.
-                const reason = `newsym: attempting screen update for <${mx},${my}>`;
-                if (mx < 0 || my < 0 || mx >= COLNO || my >= ROWNO)
-                    await panic(reason, { state });
-                await impossible(reason, { state });
+            if (mx !== 0) {
+                if (!state.in_mklev && !state.program_state.saving && !isok(mx, my)) {
+                    const reason = `newsym: attempting screen update for <${mx},${my}>`;
+                    if (mx < 0 || my < 0 || mx >= COLNO || my >= ROWNO)
+                        await panic(reason, { state });
+                    await impossible(reason, { state });
+                }
+                else
+                    await newsym(mx, my);
             }
-            else
-                await newsym(mx, my);
         }
         movement.postMoveDestinationPainted = true;
     }

@@ -766,10 +766,14 @@ export async function runMoveloopCore() {
         return;
     }
     await moveloopPreamble();
-    // C moveloop(): rcfile_only_this_option(opt_mention_decor) processes the
-    // one deferred option after the tutorial decision, for new games and
-    // resumed ones alike.
-    rcfileOnlyThisOption('mention_decor');
+    // C moveloop(): rcfile_only_this_option(opt_mention_decor) runs once,
+    // after the tutorial decision and before the command loop; the engine
+    // re-enters this function per player command, so the deferred flag
+    // gates the single pass for new and resumed games alike. Re-reading on
+    // every command would reset in-game option changes and redraw CHOOSE=
+    // section picks from the core stream.
+    if (g._mentionDecorDeferred)
+        await rcfileOnlyThisOption('mention_decor');
     if (g.program_state.gameover)
         return;
     if (g.context.bypasses)

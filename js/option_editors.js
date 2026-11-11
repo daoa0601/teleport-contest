@@ -147,7 +147,7 @@ async function editLocationFilter() {
 // C options.c:handler_versinfo(): the version-information flags menu.
 async function editVersionInfo() {
     const previous = game.flags.versinfo ?? 1;
-    const choices = [['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, '(not applicable)']];
+    const choices = [['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, '(not available)']];
     const selected = await showMultiSelectWindow({
         title: 'Select version information flags:', omitHeadings: true,
         sections: [{ items: choices.map(([key, bit, text]) => ({ key, value: bit,

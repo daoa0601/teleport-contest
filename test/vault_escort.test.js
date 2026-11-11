@@ -185,7 +185,7 @@ void test('teleporting into rock blocks levitation before the vault guard reacts
     assert.equal(game.u.levitation, false);
     assert.equal(guard.mpeaceful, 0);
 });
-void test('a live parked guard reports its invalid map update before other monsters act', async () => {
+void test('a live parked guard no longer reports its off-map map update', async () => {
     const { level, guard } = await escort();
     requirePlayingGame(game);
     assert.ok(guard._egd);
@@ -201,26 +201,15 @@ void test('a live parked guard reports its invalid map update before other monst
     for (let x = 11; x <= 13; x++)
         level.requireAt(x, 10).typ = CORR;
     game.u.ux = 12;
-    const input = resetInputState();
-    const turn = runMonsterAction(guard, game);
-    const paused = await Promise.race([
-        turn.then(() => false), input.waitUntilBlocked().then(() => true),
-    ]);
-    try {
-        assert.equal(paused, true, 'A live parked guard must acknowledge its disappearance before continuing.');
-        const message = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
-        assert.match(message, /Suddenly, the guard disappears\.--More--/);
-        assert.equal(guard.mx, 0);
-        assert.ok(guard.mhp > 0);
-        input.feed(' ');
-        await input.waitUntilBlocked();
-        const diagnostic = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
-        assert.match(diagnostic, /newsym: attempting screen update for <0,0>/);
-    }
-    finally {
-        input.beforeRead = () => input.feed(' ');
-        input.feed(' ');
-        await turn;
-    }
+    resetInputState();
+    await runMonsterAction(guard, game);
+    assert.equal(guard.mx, 0);
+    assert.ok(guard.mhp > 0);
+    // The disappearance completes the guard's turn; c42d35eac keeps
+    // postmov() from calling newsym() for the <0,0> park, so no diagnostic
+    // follows it.
+    const history = [...game._messageHistory, game._pending_message].join('\n');
+    assert.match(history, /Suddenly, the guard disappears\./);
+    assert.doesNotMatch(history, /newsym: attempting screen update for <0,0>/);
 });
 //# sourceMappingURL=vault_escort.test.js.map

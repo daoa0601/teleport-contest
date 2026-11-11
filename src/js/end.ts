@@ -1079,7 +1079,7 @@ export async function doquit() {
         if (abandonTutorial) {
             // done2(): mention_decor can be processed now, ahead of the
             // schedule_goto() back to regular play.
-            rcfileOnlyThisOption('mention_decor');
+            await rcfileOnlyThisOption('mention_decor');
             const prior = game.u.ucamefrom;
             if (!prior) throw new Error('Tutorial exit has no prior dungeon level');
             scheduleLevelChange([prior, { arrival: 'stairs' }], undefined, 'Resuming regular play.');
