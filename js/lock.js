@@ -26,7 +26,7 @@ import { pline, plineWithContinuation, impossible, publishHeardMessage } from '.
 import { consumeInventoryItem, delobj, inventoryItemDescription } from './invent.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { objectMaterial } from './o_init.js';
-import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
+import { withIndefiniteArticle, definiteName, objectName, ownedObjectQuestion, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import { heroCanReachFloor } from './engrave.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade, isPick } from './object_properties.js';
@@ -773,7 +773,9 @@ async function pickBoxLock(tool, container, automatic, state) {
             }
         }
         if (automatic && flags & AUTOUNLOCK_APPLY_KEY) {
-            if (!tool || await promptYesNoQuit(`Unlock it with ${lockToolName(tool, state)}?`) !== 'y')
+            if (!tool || await promptYesNoQuit(await ownedObjectQuestion(tool, {
+                prefix: 'Unlock it with ', suffix: '?', fallback: 'that', capitalized: false,
+            }, state)) !== 'y')
                 return false;
         }
         else {
@@ -859,7 +861,10 @@ async function pickDoorLock(tool, x, y, automatic, state) {
         return true;
     }
     const action = door.doormask & D_LOCKED ? 'Unlock' : 'Lock';
-    const answer = await promptYesNoQuit(`${action} it${automatic && tool ? ` with ${lockToolName(tool, state)}` : ''}?`);
+    const question = automatic && tool ? await ownedObjectQuestion(tool, {
+        prefix: `${action} it with `, suffix: '?', fallback: 'that', capitalized: false,
+    }, state) : `${action} it?`;
+    const answer = await promptYesNoQuit(question);
     if (answer !== 'y' || !tool)
         return false;
     if (automatic) {
