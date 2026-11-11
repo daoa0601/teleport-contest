@@ -1,8 +1,8 @@
 // C timeout.c — the once-per-turn countdown allmain.c calls between glibr()
 // and run_regions(), the fatal-condition dialogues, every timed intrinsic
 // expiring in prop.h order, fall_asleep(), the egg/figurine/burn object
-// timers, slip_or_trip(), do_storms(), the saveable timer queue, and
-// spot_time_expires() and wiz_timeout_queue(). Folded here from slime.js, hero_illness.js,
+// timers, slip_or_trip(), do_storms(), the saveable timer queue,
+// spot_time_expires(), and wiz_timeout_queue(). Folded here from slime.js, hero_illness.js,
 // hero_sleep.js, hero_strangulation.js, levitation_timeout.js,
 // timeout_queue.js, timeout_warnings.js, storms.js, timer_effects.js,
 // timeout_luck.js, and timeout_body.js.
