@@ -735,4 +735,14 @@ void test('the here menu offers Pray here', async () => {
         await finish(engine);
     }
 });
+void test('the here menu offers Engrave here', async () => {
+    const engine = await startMenuGame();
+    try {
+        await type(engine, '#herecmdmenu\n');
+        assert.match(screen(), /Engrave here/);
+    }
+    finally {
+        await finish(engine);
+    }
+});
 //# sourceMappingURL=command_context_menu.test.js.map

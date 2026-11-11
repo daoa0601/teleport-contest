@@ -991,6 +991,7 @@ function contextMenuCommand(selection: ContextMenuSelection): string {
     case 'sit': case 'up': case 'down': case 'pickup': case 'loot': case 'tip':
     case 'eat': case 'wait': case 'look': case 'offer':
     case 'pray':
+    case 'engrave':
     case 'inventory': case 'cast': case 'throw': return selection.action;
     }
 }
@@ -1049,6 +1050,7 @@ function contextMenuResponses(selection: ContextMenuSelection): void {
     case 'attack': case 'cast': case 'dismount': case 'down': case 'drop':
     case 'inventory': case 'look': case 'look-at': case 'loot': case 'move':
     case 'pray':
+    case 'engrave':
     case 'pickup': case 'search': case 'sit': case 'up': case 'wait': return;
     }
 }
@@ -1060,7 +1062,7 @@ export type ContextMenuAction =
     | 'untrap' | 'move' | 'ride' | 'remove-saddle' | 'saddle' | 'chat' | 'name'
     | 'quaff' | 'dip' | 'sit' | 'up' | 'down' | 'dismount' | 'pickup' | 'loot'
     | 'tip' | 'eat' | 'drop' | 'wait' | 'look' | 'look-at' | 'attack'
-    | 'pray' | 'untrap-here' | 'offer' | 'inventory' | 'cast' | 'throw' | 'travel';
+    | 'pray' | 'engrave' | 'untrap-here' | 'offer' | 'inventory' | 'cast' | 'throw' | 'travel';
 
 interface ContextMenuEntry { action: ContextMenuAction; text: string }
 export interface ContextMenuSelection extends Position { action: ContextMenuAction }
@@ -1163,6 +1165,7 @@ async function selfEntries(add: AddEntry, x: number, y: number): Promise<void> {
     add('search', 'Search around you');
     add('look', 'Look at what is here');
     add('pray', 'Pray here');
+    add('engrave', 'Engrave here');
     if (game.spells.length) add('cast', 'Cast a spell');
     const trap = trapAt(game, x, y);
     if (trap?.tseen && trap.ttyp !== VIBRATING_SQUARE) add('untrap-here', 'Attempt to disarm trap');

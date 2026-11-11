@@ -666,3 +666,11 @@ void test('the here menu offers Pray here', async () => {
         assert.match(screen(), /Pray here/);
     } finally { await finish(engine); }
 });
+
+void test('the here menu offers Engrave here', async () => {
+    const engine = await startMenuGame();
+    try {
+        await type(engine, '#herecmdmenu\n');
+        assert.match(screen(), /Engrave here/);
+    } finally { await finish(engine); }
+});
