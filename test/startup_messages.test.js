@@ -4,6 +4,8 @@ import { runSegment } from '../js/jsmain.js';
 import { game } from '../js/gstate.js';
 import { gameLogEvents } from '../js/pline.js';
 import { saveGame } from '../js/save.js';
+import { prepareQuestText } from '../js/questpgr.js';
+import { initRng, rn2 } from '../js/rng.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 function visibleRows(engine) {
@@ -20,6 +22,33 @@ async function startWithLongWelcome({ tutorial = false, explore = false, datetim
         ].join('\n'),
         moves: '',
         storage: memoryStorage(),
+    });
+}
+for (const pauper of [false, true]) {
+    void test(`${pauper ? 'pauper' : 'ordinary'} legacy startup shares its pager with later quest messages`, async (t) => {
+        const engine = await runSegment({
+            seed: 123,
+            datetime: '20260801120000',
+            nethackrc: 'OPTIONS=name:Iris,role:Wizard,race:human,gender:male,align:neutral,'
+                + `legacy,!tutorial,!autopickup,pettype:none${pauper ? ',pauper' : ''}`,
+            moves: '', storage: memoryStorage(),
+        });
+        t.after(() => engine.lua.destroy());
+        assert.match(visibleRows(engine).join('\n'), /It is written in the Book of Thoth/);
+        engine.inputGate.feed(' ');
+        await engine.runUntilInputNeeded();
+        // These fixed messages make no random choice. Reading them after
+        // the introduction must leave the next gameplay roll unchanged.
+        initRng(456n);
+        const expectedRoll = rn2(10_000);
+        initRng(456n);
+        const common = await prepareQuestText('quest_portal', engine.state, true);
+        const role = await prepareQuestText('assignquest', engine.state);
+        assert.ok(common);
+        assert.match(common.lines.join('\n'), /telepathic message from Neferet/);
+        assert.ok(role);
+        assert.match(role.lines.join('\n'), /Iris, you truly are ready/);
+        assert.equal(rn2(10_000), expectedRoll, 'quest text must reuse the legacy pager');
     });
 }
 void test('a wrapped welcome waits for acknowledgment without spending a turn', async () => {

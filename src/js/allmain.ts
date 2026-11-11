@@ -254,10 +254,9 @@ function putLine(col: number, row: number, text: string, attr = 0): void {
 // creation story is laid out by the tty pager; role, rank, and god are live.
 async function showLegacy(): Promise<void> {
     const game = requireInitializedGame();
-    // com_pager() creates a fresh Lua state, which loads nhlib.lua before
-    // quest.lua and consumes the alignment shuffle from CORE.
-    const questState = currentLuaLifecycle().createSpecialState(game);
-    await questState.destroy();
+    // com_pager() initializes the shared quest interpreter on first use;
+    // later quest/cuss messages must reuse its nhlib alignment shuffle.
+    await currentLuaLifecycle().questPagerState(game);
 
     const d = requireGameDisplay(game);
     const alignment = game.initAlignment?.name;
