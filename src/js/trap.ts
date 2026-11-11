@@ -8979,16 +8979,16 @@ export async function lava_effects(options: LavaContext): Promise<EnteredLiquid>
             const waterWalkingBeforeBootsBurn = heroHasWaterWalking(state);
             const survives = fireResistant
                 || (waterWalkingBeforeBootsBurn && damage < (hero.uhp ?? 0));
-            let protectedObject: GameObject | null = null;
+            const protectedObjectIds: number[] = [];
             if (!survives) {
 
                 for (const object of state.inventory) {
                     if (object.in_use) {
-                        if (!protectedObject) {
-                            protectedObject = object;
+                        if (protectedObjectIds.length < 4) {
+                            protectedObjectIds.push(object.o_id);
                             object.in_use = false;
                         } else {
-                            await impossible(`lava_effects: object #${object.o_id} is already in use; so is #${protectedObject.o_id}.`);
+                            await impossible(`lava_effects: '${simpleObjectName(object, state)}' (#${object.o_id}) is in use; so are ${protectedObjectIds.length} others.`);
                         }
                         continue;
                     }
@@ -9003,7 +9003,7 @@ export async function lava_effects(options: LavaContext): Promise<EnteredLiquid>
             const boots = state.uarmf || state.u?.uarmf;
             if (boots && (boots.in_use || (!boots.oerodeproof && objectIsOrganic(boots, state)))) {
                 await publish(`${ownedObjectAction(boots, 'burst', state)} into flame!`);
-                if (boots === protectedObject) {
+                if (protectedObjectIds.includes(boots.o_id)) {
                     await removeWornHeroItem(boots, state);
                 } else {
                     await destroyWornArmor(boots, state);
@@ -9048,7 +9048,7 @@ export async function lava_effects(options: LavaContext): Promise<EnteredLiquid>
                 let named = bootsBurned ? 1 : 0;
                 let unnamed = 0;
                 for (const object of [...(state.inventory || [])]) {
-                    if (object === protectedObject) {
+                    if (protectedObjectIds.includes(object.o_id)) {
                         object.in_use = true;
                         continue;
                     }
