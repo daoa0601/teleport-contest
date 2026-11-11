@@ -389,3 +389,18 @@ void test('a saddled steed keeps its saddle in the announcement', async () => {
     assert.ok(said.includes('You see your saddled pony.'),
         `the unnamed steed is announced with its saddle: ${said.join(' | ')}`);
 });
+
+void test('a hallucinated pet announcement does not reveal ownership', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.flags.spot_monsters = true;
+    const pet = await createMonsterAt('little dog', 12, 10, NO_MINVENT);
+    pet.mtame = 5;
+    game.u.hallucinationTurns = 10;
+    const messages: string[] = [];
+
+    await noticeAllMonsters(game, async message => { messages.push(message); });
+
+    assert.ok(messages.some(message => message.startsWith('You see ')));
+    assert.ok(messages.every(message => !message.includes('your ')), messages.join(' | '));
+});

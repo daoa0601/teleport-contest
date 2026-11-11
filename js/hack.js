@@ -3920,7 +3920,7 @@ export async function noticeMonster(monster, state = game, publish = plineWithCo
     if (spottable && !monster.mspotted && !monster.dead && monster.mhp > 0) {
         monster.mspotted = 1;
         const named = MGIVENNAME(monster) !== '';
-        const article = monster.mtame ? 'your'
+        const article = monster.mtame && !heroIsHallucinating(state) ? 'your'
             : !named && !(monsterHasProperName(monster.mnum)) ? 'a'
                 : 'none';
         // C hack.c:1727 suppresses the saddle only for a named monster, so
