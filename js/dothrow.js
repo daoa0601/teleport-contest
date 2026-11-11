@@ -2330,9 +2330,9 @@ export async function finishReturningThrow({ state, object, impact, impaired, tw
     requirePlayingGame(state);
     const tethered = !!tetherDisplay?.tethered;
     if (rn2(100) === 0) {
-        await tetherDisplay?.clear();
-        await plineWithContinuation(tethered ? `The tether snaps off your ${body_part(ARM, state)}!`
+        await plineWithContinuation(tethered ? `The tether comes off your ${body_part(ARM, state)}.`
             : `${definiteObjectAction(object, 'fail', state)} to return!`);
+        await tetherDisplay?.clear();
         return false;
     }
     if (tetherDisplay)
@@ -2361,24 +2361,28 @@ export async function finishReturningThrow({ state, object, impact, impaired, tw
             await newsym(impact.x, impact.y);
     }
     if (damage === 0) {
-        const position = propertyIsActive('levitation', state) ? 'beneath' : 'at';
-        const feet = makePlural(body_part(FOOT, state));
-        await plineWithContinuation(tethered
-            ? heroIsBlind(state)
-                ? `Your tethered weapon snaps back and is left dangling from your ${body_part(ARM, state)}.`
-                : `${definiteObjectAction(object, 'return', state)} and is left dangling from your ${body_part(ARM, state)}.`
-            : heroIsBlind(state)
+        if (tethered) {
+            await plineWithContinuation(`Your tethered ${simpleObjectName(object, state)} snaps back but the tether slips from your ${body_part(ARM, state)}.`);
+        }
+        else {
+            const position = propertyIsActive('levitation', state) ? 'beneath' : 'at';
+            const feet = makePlural(body_part(FOOT, state));
+            await plineWithContinuation(heroIsBlind(state)
                 ? `Something lands ${position} your ${feet}.`
                 : `${definiteObjectAction(object, 'return', state)} back to you, landing ${position} your ${feet}.`);
+        }
     }
     else {
         damage += rnd(3);
         const arm = body_part(ARM, state);
-        await plineWithContinuation(tethered
-            ? `Your tethered ${heroIsBlind(state) ? 'weapon returns and hits' : definiteObjectAction(object, 'hit', state)} your ${arm}!`
-            : heroIsBlind(state)
+        if (tethered) {
+            await plineWithContinuation(`Your tethered ${simpleObjectName(object, state)} returns and hits your ${arm}!`);
+        }
+        else {
+            await plineWithContinuation(heroIsBlind(state)
                 ? `${definiteObjectAction(object, 'hit', state)} your ${arm}!`
                 : `${definiteObjectAction(object, 'fly', state)} back toward you, hitting your ${arm}!`);
+        }
         if (object.oartifact) {
             const hit = await applyArtifactHit(object, 'hero', damage, {
                 state, publish: plineWithContinuation, random: rn2, rollOne: rnd, dieRoll: 0,
@@ -2391,7 +2395,8 @@ export async function finishReturningThrow({ state, object, impact, impaired, tw
             return true;
     }
     if (tethered) {
-        await plineWithContinuation(`The ${possessiveName(simpleObjectName(object, state))} tether releases from your ${body_part(ARM, state)}!`);
+        if (damage !== 0)
+            await plineWithContinuation(`The ${possessiveName(simpleObjectName(object, state))} tether comes off your ${body_part(ARM, state)}.`);
         return true;
     }
     if (state.u.uswallow) {
@@ -2404,6 +2409,14 @@ export async function finishReturningThrow({ state, object, impact, impaired, tw
         await dropObjectAtHero(object, { state });
     }
     return true;
+}
+// Part of C dothrow.c:throwit(): an already-handled tethered missile
+// releases its cord before the temporary map display is removed.
+async function releaseLostTether(display, state) {
+    if (!display)
+        return;
+    await plineWithContinuation(`The tether comes off your ${body_part(ARM, state)}.`);
+    await display.clear();
 }
 // C dothrow.c:sho_obj_return_to_u(). The currently thrown object returns to
 // the hero (not for boomerangs); the glyph roll uses the display rng.
@@ -2557,6 +2570,9 @@ export async function resolveSwallowedWeaponThrow({ state = game, item, objectCl
                 if (state.program_state.gameover)
                     return true;
             }
+        }
+        else {
+            await releaseLostTether(tetherDisplay, state);
         }
         state.context.move = 1;
         return true;
@@ -2827,8 +2843,6 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
             const returned = await returnThrowToInventory(thrown, weaponMask, twoWeapons, oldSlot, state);
             return { ...flight, object: thrown, landed: returned };
         }
-        if ('consumed' in flight && flight.consumed)
-            return { ...flight, consumed: true };
         // bhit() erases a web-stopped returning missile before throwit() recoils.
         if (flight.stoppedBy === 'web')
             await tetherDisplay?.clear();
@@ -2839,8 +2853,10 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
             if (state.program_state.gameover)
                 return { heroDied: true };
         }
-        if (flight.destroyed || flight.migrated)
+        if (flight.destroyed || flight.migrated || ('consumed' in flight && flight.consumed)) {
+            await releaseLostTether(tetherDisplay, state);
             return flight;
+        }
         if (flight.contact) {
             // throwit_mon_hit(): a keeper who caught the missile in flight
             // owns it already; no thitmonst, no landing.
@@ -2854,8 +2870,10 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
             });
             if (contact.heroDied)
                 return contact;
-            if (contact.consumed)
+            if (contact.consumed) {
+                await releaseLostTether(tetherDisplay, state);
                 return { ...flight, consumed: true };
+            }
         }
         if (!boomerang && returns && flight.stoppedBy !== 'web'
             && await finishReturningThrow({

@@ -62,7 +62,7 @@ void test('a detached tether leaves an aklys no more than four squares away', as
 
     assert.equal(game.uwep, null);
     assert.ok(floorObjectsAt(level, 14, 10).includes(weapon));
-    assert.match(game._pending_message, /The tether snaps off your arm!/);
+    assert.match(game._pending_message, /The tether comes off your arm\./);
 });
 
 void test('a failed catch leaves the returning aklys unwielded in inventory', async () => {
@@ -74,7 +74,7 @@ void test('a failed catch leaves the returning aklys unwielded in inventory', as
 
     assert.equal(game.uwep, null);
     assert.equal(weapon.where, 'inventory');
-    assert.match(game._pending_message, /tether releases from your arm!/);
+    assert.match(game._pending_message, /tether (?:comes off|slips from) your arm/);
 });
 
 for (const command of ['throw', 'fire']) {
@@ -262,7 +262,7 @@ void test('a blind thrower feels the aklys return to inventory', async () => {
 
     await throwInventoryObject(weapon, 'l', ' '.repeat(10));
 
-    assert.match(game._pending_message, /tether releases from your arm!/);
+    assert.match(game._pending_message, /tether (?:comes off|slips from) your arm/);
     assert.equal(weapon.where, 'inventory');
 });
 
