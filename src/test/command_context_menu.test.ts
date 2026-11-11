@@ -572,7 +572,7 @@ void test('cancelling the item for a menu dip discards the unused confirmation',
     } finally { await finish(engine); }
 });
 
-void test('a distant menu throw silently cancels and keeps the selected apple', async () => {
+void test('a distant menu throw normalizes its queued direction and launches the apple', async () => {
     const engine = await startMenuGame();
     try {
         const apple = await addInventoryObject(APPLE, { invlet: 'z' });
@@ -584,10 +584,11 @@ void test('a distant menu throw silently cancels and keeps the selected apple', 
         await type(engine, 'z');
 
         assert.doesNotMatch(screen(), /In what direction/);
-        assert.equal(game.moves, moves);
-        assert.ok(game.inventory.includes(apple), 'the cancelled throw must keep the apple in inventory');
-        await type(engine, 'i');
-        assert.match(screen(), /z - .*apple/);
+        assert.ok(game.moves > moves);
+        assert.equal(game.inventory.includes(apple), false);
+        assert.equal(apple.where, 'floor');
+        assert.ok(apple.ox > game.u.ux);
+        assert.equal(apple.oy, game.u.uy);
     } finally { await finish(engine); }
 });
 

@@ -99,57 +99,50 @@ for (const { state, kind } of [
         }
     });
 }
-void test('an actual distant context click travels, while a simulated left click offers a menu', async () => {
+void test('actual and simulated left clicks offer the same distant actions without traveling', async () => {
     const engine = await startMenuGame();
     try {
         const moves = game.moves;
-        // C dotherecmdmenu() passes CLICK_1 | CLICK_2 for an actual click.
-        // No far/common entries accept that modifier, so it queues travel.
         engine.inputGate.feedMapClick(13, 10, 1);
         await engine.runUntilInputNeeded();
-        assert.equal(game.u.ux, 13);
-        assert.equal(game.u.uy, 10);
-        assert.equal(game.moves, moves + 3);
-        assert.doesNotMatch(screen(), /What do you want to do/);
-        assert.equal(screen().split('\n')[11]?.[12], '@');
-        await type(engine, '#therecmdmenu\n_lll,');
-        assert.match(screen(), /What do you want to do/);
         assert.match(screen(), /Throw something/);
         assert.match(screen(), /Travel here/);
         assert.match(screen(), /Look at map symbol/);
-        assert.equal(game.u.ux, 13);
-        assert.equal(game.moves, moves + 3);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.moves, moves);
+        await type(engine, '\x1b');
+        await type(engine, '#therecmdmenu\n_lll,');
+        assert.match(screen(), /Throw something/);
+        assert.match(screen(), /Travel here/);
+        assert.match(screen(), /Look at map symbol/);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.moves, moves);
     }
     finally {
         await finish(engine);
     }
 });
-void test('an actual context right click enters an open doorway, while a simulated right click offers closing', async () => {
+void test('actual and simulated right clicks offer closing an open doorway', async () => {
     const engine = await startMenuGame('BINDINGS=mouse2:therecmdmenu');
     try {
-        const level = requireGameLevel();
-        const door = level.requireAt(11, 10);
-        for (const x of [11, 12]) {
-            const doorway = level.requireAt(x, 10);
-            doorway.typ = DOOR;
-            doorway.doormask = D_ISOPEN;
-            await newsym(x, 10);
-        }
+        const door = requireGameLevel().requireAt(11, 10);
+        door.typ = DOOR;
+        door.doormask = D_ISOPEN;
+        await newsym(11, 10);
         const moves = game.moves;
         engine.inputGate.feedMapClick(11, 10, 2);
         await engine.runUntilInputNeeded();
-        assert.equal(game.u.ux, 11);
-        assert.equal(game.u.uy, 10);
-        assert.equal(game.moves, moves + 1);
-        assert.equal(door.doormask, D_ISOPEN);
-        assert.doesNotMatch(screen(), /What do you want to do|Close the door/);
-        await type(engine, '#therecmdmenu\n_l.');
-        assert.match(screen(), /What do you want to do/);
         assert.match(screen(), /Close the door/);
         assert.match(screen(), /Look at map symbol/);
-        assert.equal(game.u.ux, 11);
-        assert.equal(game.moves, moves + 1);
-        assert.equal(level.requireAt(12, 10).doormask, D_ISOPEN);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.moves, moves);
+        await type(engine, '\x1b');
+        await type(engine, '#therecmdmenu\n_l.');
+        assert.match(screen(), /Close the door/);
+        assert.match(screen(), /Look at map symbol/);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.moves, moves);
+        assert.equal(door.doormask, D_ISOPEN);
     }
     finally {
         await finish(engine);

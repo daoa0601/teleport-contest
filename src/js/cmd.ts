@@ -874,15 +874,15 @@ async function doherecmdmenu(): Promise<void> {
 
 // C cmd.c:dotherecmdmenu()
 async function dotherecmdmenu(): Promise<void> {
-    game.iflags.getdir_click = CLICK_1 | CLICK_2;
     const target = game._clicklookTarget;
     if (target && isok(target.x, target.y)) {
         enqueueContextMenu(await selectContextMenu(target.x, target.y,
-            target.x === game.u.ux && target.y === game.u.uy ? CLICK_1 : game.iflags.getdir_click));
+            target.x === game.u.ux && target.y === game.u.uy ? CLICK_1 : game.iflags.getdir_click ?? 0));
         game._clicklookTarget = null;
         game.iflags.getdir_click = 0;
         return;
     }
+    game.iflags.getdir_click = CLICK_1 | CLICK_2;
     const direction = await promptDirection();
     const click = game.iflags.getdir_click;
     game.iflags.getdir_click = 0;
@@ -2806,14 +2806,13 @@ export async function ynSingleKey(message: string, cursorOffset = 0): Promise<nu
     return key;
 }
 
-// Part of C cmd.c:yn_function(): the queued-direction answer key.
+// Part of C cmd.c:getdir(): the queued-direction answer key.
 // C getdir() converts CMDQ_DIR through xytodir() and Cmd.dirchars only
 // when it needs the direction; other prompts must keep its entry type.
 function queuedDirectionKey({ dirx, diry, dirz }: CmdQueueDirEntry): number {
     const direction = dirz ? zdir.findIndex(z => z === Math.sign(dirz))
-        : xdir.findIndex((x, index) => index < N_DIRS && x === dirx && ydir[index] === diry);
-    // A distant vector yields DIR_ERR. The pinned recorder reads NUL at
-    // dirchars[-1] and cancels silently; avoid that out-of-bounds read.
+        : xdir.findIndex((x, index) => index < N_DIRS && x === Math.sign(dirx) && ydir[index] === Math.sign(diry));
+    // Invalid vectors still cancel without reading outside dirchars.
     return direction < 0 ? 0 : game.commandBindings.directionKeys.charCodeAt(direction);
 }
 
@@ -3208,6 +3207,7 @@ async function readcharCore(inputState: InputState): Promise<CharacterInput> {
             // (upstream cmd.c:5264: "click_to_cmd(*x, *y, *mod);").
             // click_to_cmd() queues the mouse button's bound command.
             cmdq_add_ec(CQ_CANNED, command.handler);
+            if (click) game.iflags.getdir_click = click.button;
         }
         return { key: 0, click };
     }
