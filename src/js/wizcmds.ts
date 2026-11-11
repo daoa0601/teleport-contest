@@ -1102,7 +1102,9 @@ function migratingMonsterLine(monster: Monster, showDestination: boolean): strin
 // C wizcmds.c:wiz_custom()/wizcustom_callback(), glyphs.c:wizcustom_glyphids().
 export async function wizCustom(): Promise<void> {
     const window = tty_create_nhwindow<number>(NHW_MENU);
-    addMenuHeading(window, '    glyph  glyph identifier                             sym   clr customcolor unicode utf8');
+    addMenuHeading(window, game.iflags.menu_tab_sep
+        ? 'glyph\tglyph identifier\tsym\tclr\tcustomcolor\tunicode\tutf8'
+        : '    glyph  glyph identifier                             sym   clr customcolor unicode utf8');
     const rogue = Is_rogue_level(game.u.uz);
     // reset_glyphmap() also clears Rogue colors unless its active set enables IBM color.
     const colorEnabled = game.flags.color !== false
@@ -1129,12 +1131,15 @@ function wizcustomCallback(
     const baseColor = rogue ? glyph.rogueColor : glyph.baseColor;
     const color = colorEnabled ? baseColor : NO_COLOR;
     const customColor = glyph.customColor.toString(16).padStart(11, '0');
+    const separator = game.iflags.menu_tab_sep ? '\t' : ' ';
     const unicode = glyph.unicode === null ? ''
         : `U+${glyph.unicode.toString(16).padStart(4, '0')}`
             + [...new TextEncoder().encode(String.fromCodePoint(glyph.unicode))]
-                .map(byte => ` <${byte}>`).join('');
-    const text = `[${String(glyph.glyph).padStart(4, '0')}] ${glyph.id.padEnd(44)} `
-        + `'\\${String(byte).padStart(3, '0')}' ${String(color).padStart(2, '0')} ${customColor} ${unicode}`;
+                .map((byte, index) => `${index === 0 ? separator : ' '}<${byte}>`).join('');
+    const id = game.iflags.menu_tab_sep ? glyph.id : glyph.id.padEnd(44);
+    const text = `[${String(glyph.glyph).padStart(4, '0')}]${separator}${id}${separator}`
+        + `'\\${String(byte).padStart(3, '0')}'${separator}${String(color).padStart(2, '0')}`
+        + `${separator}${customColor}${separator}${unicode}`;
     tty_add_menu(window, { identifier: glyph.glyph + 1, text });
 }
 
