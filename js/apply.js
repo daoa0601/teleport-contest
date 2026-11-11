@@ -632,6 +632,10 @@ export function releaseAllMonsterLeashes(state = game) {
         leash.leashmon = 0;
     return attachedLeashes.length;
 }
+// C apply.c:number_leashed(): how many monsters the hero keeps leashed.
+function numberLeashed(state) {
+    return (state.level?.monsters || []).filter(monster => monster.mleashed).length;
+}
 // C apply.c:use_leash(): prompt for the adjacent creature; the two-pet
 // cap counts C apply.c:number_leashed()'s attached leashes inline.
 export async function useLeash(leash) {
@@ -646,7 +650,7 @@ export async function useLeash(leash) {
         await pline(`You can't ${action}.`);
         return false;
     }
-    if (!leash.leashmon && game.inventory.filter(object => object.otyp === LEASH && object.leashmon).length >= 2) {
+    if (!leash.leashmon && numberLeashed(game) >= 2) {
         await pline('You cannot leash any more pets.');
         return false;
     }
@@ -812,8 +816,7 @@ async function mleashedNext2u(monster, state, random) {
             return true;
         await releaseMonsterLeash(monster, false, { state });
         // C apply.c:number_leashed(): a/the from the remaining leash count.
-        const leashedCount = requireGameLevel(state).monsters.filter(candidate => candidate.mleashed).length;
-        await plineWithContinuation(formatFeltMessage(`${leashedCount > 1 ? 'a' : 'the'} leash go slack.`, state));
+        await plineWithContinuation(formatFeltMessage(`${numberLeashed(state) > 1 ? 'a' : 'the'} leash go slack.`, state));
     }
     return false;
 }
