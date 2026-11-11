@@ -17,7 +17,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { AXE, DAGGER, LEATHER_GLOVES, TIN, TIN_OPENER } from '../js/object_data.js';
 import { objectQuantity } from '../js/mkobj.js';
 
-import { addShopObjectToBill } from '../js/shk.js';
+import { deleteObject, addShopObjectToBill } from '../js/shk.js';
 import { saveGame } from '../js/save.js';
 import { restoreGame } from '../js/restore.js';
 import { setSlipperyHands } from '../js/potion.js';
@@ -559,4 +559,20 @@ void test('applying a tin opener wields it and opens the selected tin', async t 
     assert.equal(game.uwep, opener);
     assert.equal(game.inventory.includes(food), false);
     assert.equal(game.context.move, 1);
+});
+
+void test('destroying a partly opened tin clears its opening reference', async t => {
+    await room(t);
+    requirePlayingGame(game);
+    await wield(DAGGER);
+    const food = await tin();
+    await start_tin(food);
+    assert.equal(game.context.tin?.tin, food);
+
+    await deleteObject(food);
+
+    assert.equal(game.context.tin?.tin, null);
+    assert.equal(game.context.tin?.o_id, 0);
+    await continueCountedCommand(game);
+    assert.equal(game._occupation, null);
 });

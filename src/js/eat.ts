@@ -306,9 +306,13 @@ export function nonrottingCorpse(species: number | undefined): boolean {
 
 // C eat.c:food_disappears(): stop being the meal in progress when the
 // object decays mid-meal. Timers are stopped by the freeing owner.
-export function clearVictualReference(object: GameObject, state: GameState): void {
+export function foodDisappears(object: GameObject, state: GameState): void {
     if (state.context?.victual?.piece === object)
         state.context.victual = null;
+    if (state.context.tin?.tin === object) {
+        state.context.tin.tin = null;
+        state.context.tin.o_id = 0;
+    }
 }
 
 // C eat.c:is_edible(). Decide whether a particular object can be eaten by

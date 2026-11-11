@@ -52,7 +52,7 @@ import { makemonAt } from './makemon.js';
 import { enexto } from './teleport.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
-import { intrinsic_possible, clearVictualReference } from './eat.js';
+import { intrinsic_possible, foodDisappears } from './eat.js';
 import { artifactById } from './artifact.js';
 import { bot } from './botl.js';
 import { showGetposInstructions, selectMapPosition } from './getpos.js';
@@ -246,7 +246,7 @@ export async function deleteObject(object, state = game, { mergeInto = null } = 
     if (object.otyp === LEASH && object.leashmon)
         releaseObjectLeash(object, state);
     if (object.oclass === FOOD_CLASS)
-        clearVictualReference(object, state);
+        foodDisappears(object, state);
     await deleteObjectContents(object, state);
     maybeResetPick(object, state);
     unlinkObject(object, state);
