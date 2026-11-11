@@ -80,4 +80,15 @@ async function completeLevelTeleport(options = {}) {
     await levelTeleport(options);
     await finishScheduledLevelChange();
 }
+void test('wizard prototype names force a destination in another dungeon', async () => {
+    freshConnectedLevels();
+    game.flags.debug = true;
+    game.specialLevels = new Map([['knox', createSpecialLevel({ dnum: 1, dlevel: 1 })]]);
+    const input = resetInputState();
+    const destinations = [];
+    await answerPrompts(levelTeleport({ gotoLevel: destination => { destinations.push(destination); } }), input, [
+        { prompt: /To what level do you want to teleport\?/, keys: 'KNOX\r' },
+    ]);
+    assert.deepEqual(destinations, [{ dnum: 1, dlevel: 1 }]);
+});
 //# sourceMappingURL=level_teleport_messages.test.js.map

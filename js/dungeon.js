@@ -339,6 +339,13 @@ function findBranch(name, state) {
         return dungeonName === name || dungeonName?.replace(/^the /, '') === name;
     });
 }
+// C dungeon.c:find_level(): match a special level's Lua prototype.
+export function findLevel(name, state = game) {
+    for (const [key, level] of state.specialLevels ?? [])
+        if (specialDisplayName(key, state).toLowerCase() === name.toLowerCase())
+            return level;
+    return undefined;
+}
 // C dungeon.c:lev_by_name(): names require an actually visited level and
 // can address only this branch or the main-dungeon/Gehennom connection.
 export function levelDepthByName(input, state = game) {
