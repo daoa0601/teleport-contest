@@ -2363,3 +2363,6 @@ tty_getmsghistory	msghistory_snapshot	inlined	tty_getmsghistory()'s snapshot exc
 redotoplin	putsyms	inlined	putsyms()'s cell writes are inlined in redotoplin() and renderKeyPrompt(); topl_putsym()'s hard wrap is toplineRows() (topl.ts)
 update_topl	redotoplin	inlined	updateTopline()'s pending-topline branches own the repaint; redotoplin()'s port is the same-named function (topl.ts)
 more	topl_putsym	inlined	topl_putsym()'s hard column wrap is toplineRows(splitWords: false) inside pageTopline() (topl.ts)
+make_gas_cloud	add_region	inlined	make_gas_cloud() fuses create_region()/add_rect_to_reg()/add_region() activation (region.ts makeGasCloud)
+expire_gas_cloud	inside_region	inlined	expire_gas_cloud() walks the region's cell array directly; inside_region()'s port is regionContains() (region.ts)
+inside_gas_cloud	wake_nearto	inlined	inside_gas_cloud()'s wake_nearto is the injected wake callback of wakeNearGas(); mon.ts wakeMonstersNearWithMessages is wake_nearto()'s port (region.ts)
