@@ -443,7 +443,7 @@ export function objectNeedsFullIdentification(object) {
 // C objnam.c:corpse_xname(): corpse species with adjectives and articles.
 // C corpse_xname(): corpse species is visible even when the object type has
 // not been discovered. Possessive species put adjectives after their name.
-export function corpseName(object, { adjective = '', includeArticle = false, singular = false, definite = false, omitPrefix = false, } = {}) {
+export function corpseName(object, { adjective = '', includeArticle = false, singular = false, definite = false, omitPrefix = false, includeGender = false, } = {}) {
     const glob = object.otyp !== CORPSE && object.globby;
     let name = glob ? requireObjectName(object.otyp) : objectMonsterName(object);
     const personal = !glob && object.corpsenm !== undefined
@@ -451,9 +451,13 @@ export function corpseName(object, { adjective = '', includeArticle = false, sin
     const unique = !glob && corpseMonsterIsUnique(object.corpsenm);
     if (personal || unique)
         name = possessiveName(name);
+    const gender = !includeGender ? '' : (object.spe ?? 0) & CORPSTAT_MALE ? 'male '
+        : (object.spe ?? 0) & CORPSTAT_FEMALE ? 'female ' : '';
     if (adjective)
         name = personal || unique
-            ? `${name} ${adjective}` : `${adjective} ${name}`;
+            ? `${name} ${gender}${adjective}` : `${adjective} ${gender}${name}`;
+    else
+        name = gender + name;
     name = name.trim().replace(/\s+/g, ' ');
     if (!omitPrefix && !personal && (unique || definite))
         name = `the ${name}`;
@@ -3182,7 +3186,7 @@ export function simpleArmorName(armor, slot, state) {
 // knowledge, quantities, physical state, equipment annotations, and prices.
 // Callers observe the object separately before formatting it.
 // Also C objnam.c:strprepend(): inlined here as the prefix and noun join.
-export async function objectDescription(object, { state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false, vagueQuantity = false, } = {}) {
+export async function objectDescription(object, { state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false, vagueQuantity = false, withCorpseGenders = false, } = {}) {
     let noun = xname(object, state);
     const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
     if (poisoned)
@@ -3220,7 +3224,12 @@ export async function objectDescription(object, { state = game, withPrice = fals
         noun = pluralizeObjectNoun(object, noun);
     let description;
     if (object.otyp === CORPSE) {
+        const letter = object.invlet ?? '';
+        const index = /^[A-Z]$/.test(letter) ? letter.charCodeAt(0) - 65
+            : /^[a-z]$/.test(letter) ? letter.charCodeAt(0) - 97 + 26 : 53;
         description = corpseName(object, {
+            includeGender: withCorpseGenders && index < 53
+                && state._puzzlingCriteria === 411 && !!state._puzzlingLetters?.[index],
             adjective: [...(object.quan !== 1 ? [quantity] : []), ...prefix].join(' '),
             includeArticle: object.quan === 1,
         }) + noun.replace(/^corpses?/, '');

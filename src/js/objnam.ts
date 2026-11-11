@@ -500,16 +500,19 @@ export function objectNeedsFullIdentification(object: GameObject | null | undefi
 // C corpse_xname(): corpse species is visible even when the object type has
 // not been discovered. Possessive species put adjectives after their name.
 export function corpseName(object: CorpseNameView, {
-    adjective = '', includeArticle = false, singular = false, definite = false, omitPrefix = false,
-}: { adjective?: string; includeArticle?: boolean; singular?: boolean; definite?: boolean; omitPrefix?: boolean } = {}): string {
+    adjective = '', includeArticle = false, singular = false, definite = false, omitPrefix = false, includeGender = false,
+}: { adjective?: string; includeArticle?: boolean; singular?: boolean; definite?: boolean; omitPrefix?: boolean; includeGender?: boolean } = {}): string {
     const glob = object.otyp !== CORPSE && object.globby;
     let name = glob ? requireObjectName(object.otyp) : objectMonsterName(object);
     const personal = !glob && object.corpsenm !== undefined
         && monsterHasProperName(object.corpsenm);
     const unique = !glob && corpseMonsterIsUnique(object.corpsenm);
     if (personal || unique) name = possessiveName(name);
+    const gender = !includeGender ? '' : (object.spe ?? 0) & CORPSTAT_MALE ? 'male '
+        : (object.spe ?? 0) & CORPSTAT_FEMALE ? 'female ' : '';
     if (adjective) name = personal || unique
-        ? `${name} ${adjective}` : `${adjective} ${name}`;
+        ? `${name} ${gender}${adjective}` : `${adjective} ${gender}${name}`;
+    else name = gender + name;
     name = name.trim().replace(/\s+/g, ' ');
     if (!omitPrefix && !personal && (unique || definite)) name = `the ${name}`;
     const plural = !glob && !singular && (object.quan ?? object.quantity ?? 1) > 1;
@@ -3173,6 +3176,7 @@ export interface ObjectDescriptionOptions {
     primaryHandDetail?: string | null;
     projectPrimaryHand?: boolean;
     vagueQuantity?: boolean;
+    withCorpseGenders?: boolean;
 }
 
 // C objnam.c:paydoname(). Billing hides contents, weights, and the usual
@@ -3255,7 +3259,7 @@ export function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameS
 // Also C objnam.c:strprepend(): inlined here as the prefix and noun join.
 export async function objectDescription(object: GameObject, {
     state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false,
-    vagueQuantity = false,
+    vagueQuantity = false, withCorpseGenders = false,
 }: ObjectDescriptionOptions = {}): Promise<string> {
     let noun = xname(object, state);
     const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
@@ -3289,7 +3293,12 @@ export async function objectDescription(object: GameObject, {
     if (object.quan !== 1) noun = pluralizeObjectNoun(object, noun);
     let description: string;
     if (object.otyp === CORPSE) {
+        const letter = object.invlet ?? '';
+        const index = /^[A-Z]$/.test(letter) ? letter.charCodeAt(0) - 65
+            : /^[a-z]$/.test(letter) ? letter.charCodeAt(0) - 97 + 26 : 53;
         description = corpseName(object, {
+            includeGender: withCorpseGenders && index < 53
+                && state._puzzlingCriteria === 411 && !!state._puzzlingLetters?.[index],
             adjective: [...(object.quan !== 1 ? [quantity] : []), ...prefix].join(' '),
             includeArticle: object.quan === 1,
         }) + noun.replace(/^corpses?/, '');

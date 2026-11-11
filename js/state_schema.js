@@ -48,6 +48,8 @@ const transientFields = {
     _lastDemigodAggravation: true,
     _lastDemigodNasty: true,
     _lastInvNr: true,
+    _puzzlingCriteria: true,
+    _puzzlingLetters: true,
     _lastPushedBoulder: true,
     _mimicMealMessage: true,
     _monsterGenerationOrder: true,

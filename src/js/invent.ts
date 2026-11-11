@@ -4,6 +4,7 @@
 // delallobj() and g_at().
 // C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
 // look_here(), doorganize(), dolook(), delallobj(), g_at().
+import { CORPSTAT_MALE, CORPSTAT_FEMALE } from './const.js';
 import {
     RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS,
     SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
@@ -136,6 +137,7 @@ export interface InventoryObjectMenuOptions {
 }
 
 export interface InventoryDescriptionOptions {
+    withCorpseGenders?: boolean;
     primaryHandDetail?: string | null;
     projectPrimaryHand?: boolean;
     withPrice?: boolean;
@@ -1614,6 +1616,7 @@ async function reportSubset(items: readonly GameObject[] | null, inuse = true, a
         }
     } else {
         const ordered = sortObjects(candidates, { mode: SORTLOOT_INUSE });
+        const withCorpseGenders = checkForPuzzlingNonmerge(game.inventory) > 0;
         // invent.c:display_pickinv() classifies entries only when sortloot()
         // actually runs its comparison, so a lone in-use entry keeps
         // orderclass 0 and is listed without any class heading.  The bare
@@ -1635,6 +1638,7 @@ async function reportSubset(items: readonly GameObject[] | null, inuse = true, a
                 consumeHallucinatedMenuObjectGlyph(object);
             }
             const text = object ? await inventoryItemDescription(object, {
+                withCorpseGenders,
                 primaryHandDetail: inventoryPrimaryHandDetail(object),
             }) : `${game.uarmg ? 'gloved' : 'bare'} ${makePlural(body_part(HAND, game))} (no weapon)`;
             const item = { key: object?.invlet ?? '-', text };
@@ -1990,6 +1994,13 @@ export async function lookHere(
         if (trap?.tseen) features.push(withIndefiniteArticle(trapName(trap.ttyp)));
         if (features.length) await plineWithContinuation(`There is ${features.join(' and ')} here.`);
     }
+    // Native check_for_puzzling_nonmerge follows nobj from the pile top,
+    // so it also sees older floor objects on other squares.
+    const first = level.objects[x]?.[y]?.[0];
+    const floorChain = level.objects.flat(2).filter(object => object !== null && object !== undefined)
+        .sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
+    const start = first ? floorChain.indexOf(first) : -1;
+    const withCorpseGenders = checkForPuzzlingNonmerge(start < 0 ? [] : floorChain.slice(start)) > 0;
     const underwater = !!(game.underwater || game.u.uinwater);
     let featureName = dungeonFeatureAt(x, y);
     if (featureName === 'pool of water' && underwater) featureName = null;
@@ -2023,7 +2034,7 @@ export async function lookHere(
             await plineWithContinuation(`You ${blind ? 'feel' : 'see'} no objects here.`);
         return { died: false, tookTime: blind };
     }
-    const { died } = await showFloorPile(objects, pickedSome, feature, { objectCount });
+    const { died } = await showFloorPile(objects, pickedSome, feature, { objectCount, withCorpseGenders });
     return { died, tookTime: blind };
 }
 
@@ -3063,6 +3074,40 @@ async function rerollFallbackPrompt() {
     }
 }
 
+// C invent.c:check_for_puzzling_nonmerge(): mark letters whose corpse
+// species matches another letter but whose gender differs.
+export function checkForPuzzlingNonmerge(objects: readonly GameObject[]): number {
+    const species = Array.from({ length: 53 }, () => 0);
+    const genders = Array.from({ length: 53 }, () => 0);
+    const letters = Array.from({ length: 53 }, () => false);
+    game._puzzlingLetters = letters;
+    let found = false;
+    for (const object of objects) {
+        if (object.otyp !== CORPSE || object.corpsenm === undefined
+            || object.corpsenm < 0 || object.corpsenm >= MONSTER_NAME.length) continue;
+        const letter = object.invlet ?? '';
+        const index = /^[A-Z]$/.test(letter) ? letter.charCodeAt(0) - 65
+            : /^[a-z]$/.test(letter) ? letter.charCodeAt(0) - 97 + 26 : 53;
+        if (index >= 53) continue;
+        species[index] = object.corpsenm;
+        genders[index] = object.spe & CORPSTAT_MALE ? CORPSTAT_MALE : CORPSTAT_FEMALE;
+        found = true;
+    }
+    let count = 0;
+    if (found) {
+        for (let i = 0; i < 52; i++) {
+            for (let k = i + 1; k < 52; k++) {
+                if (species[i] === species[k] && genders[i] !== genders[k]) {
+                    count++;
+                    letters[i] = letters[k] = true;
+                }
+            }
+        }
+        if (count) game._puzzlingCriteria = 411;
+    }
+    return count;
+}
+
 // Part of C invent.c:display_pickinv(): sortloot() grouping into class
 // sections under sortpack.
 async function inventorySections(
@@ -3079,6 +3124,7 @@ async function inventorySectionsInOrder(
     items: readonly GameObject[], includeGold = true,
     letters: string | null = null,
 ): Promise<InventorySection[]> {
+    const withCorpseGenders = checkForPuzzlingNonmerge(game.inventory) > 0;
     const grouped = new Map<string | null, InventoryMenuItem[]>();
     for (const item of items) {
         if (!includeGold && item.oclass === COIN_CLASS) continue;
@@ -3097,6 +3143,7 @@ async function inventorySectionsInOrder(
         section.push({
             ...(item.invlet == null ? {} : { key: item.invlet }),
             text: await inventoryItemDescription(item, {
+                withCorpseGenders,
                 primaryHandDetail: inventoryPrimaryHandDetail(item),
             }),
         });
@@ -3253,7 +3300,7 @@ function configuredPileLimit(): number {
 // Part of C invent.c:look_here(): the object part — objectCount at or
 // above pile_limit summarizes the pile.
 export async function showFloorPile(
-    objects: readonly GameObject[], pickedSome = false, featureDescription = '', { objectCount = 0 } = {},
+    objects: readonly GameObject[], pickedSome = false, featureDescription = '', { objectCount = 0, withCorpseGenders = false } = {},
 ) {
     const first = objects[0];
     if (!first) return { died: false };
@@ -3312,11 +3359,11 @@ export async function showFloorPile(
     for (const object of objects) {
         observeObjectForNaming(object);
         if (willFeelPetrifyingCorpse(object)) {
-            descriptions.push(`${await floorObjectDescription(object)}...`);
+            descriptions.push(`${await objectDescription(object, { withCorpseGenders })}...`);
             touchedCorpse = object;
             break;
         }
-        descriptions.push(await pricedFloorObjectDescription(object));
+        descriptions.push(await objectDescription(object, { withPrice: true, withCorpseGenders }));
     }
     if (game._pending_message) {
         await displayMessageWindow();

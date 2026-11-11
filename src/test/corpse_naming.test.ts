@@ -1,10 +1,11 @@
+import { addInventoryObject } from './support/game-objects.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { CORPSTAT_FEMALE, CORPSTAT_MALE, G_GONE } from '../js/const.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState, pushKeys } from '../js/input.js';
-import { inventoryItemDescription } from '../js/invent.js';
+import { inventoryItemDescription, selectInventoryObject } from '../js/invent.js';
 import {mksobj, set_corpsenm, addObjectToContainer, placeCreatedObject} from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, ICE_BOX, STATUE } from '../js/object_data.js';
@@ -148,3 +149,24 @@ void test('unique and personally named corpses preserve their definite and posse
     set_corpsenm(body, MONSTER_NAME.indexOf('Medusa'));
     assert.equal(food_xname(body, { definite: true }), "Medusa's corpse");
 });
+
+for (const secondGender of [CORPSTAT_MALE, CORPSTAT_FEMALE]) {
+    void test(`inventory explains unmerged corpses only when their genders differ (${secondGender})`, async () => {
+        const species = MONSTER_NAME.indexOf('newt');
+        await addInventoryObject(CORPSE, { corpsenm: species, spe: CORPSTAT_MALE, invlet: 'a', age: 1 });
+        await addInventoryObject(CORPSE, { corpsenm: species, spe: secondGender, invlet: 'b', age: 50 });
+        const input = resetInputState();
+        let menu = '';
+        input.beforeRead = () => {
+            menu = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            input.feed('\x1b');
+        };
+
+        await selectInventoryObject();
+
+        if (secondGender === CORPSTAT_FEMALE) {
+            assert.match(menu, /male newt corpse/);
+            assert.match(menu, /female newt corpse/);
+        } else assert.doesNotMatch(menu, /male newt/);
+    });
+}

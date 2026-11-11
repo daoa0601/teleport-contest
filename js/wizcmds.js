@@ -17,7 +17,7 @@ import { paranoidQuery, yn_function } from './cmd.js';
 import { promptDirection } from './cmd.js';
 import { visibleCommandKey } from './hacklib.js';
 import { setMulti, makemapPrepost } from './cmd.js';
-import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, inventorySortMode, objectClassHeading, sortObjects, } from './invent.js';
+import { checkForPuzzlingNonmerge, inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, inventorySortMode, objectClassHeading, sortObjects, } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
 import { makeWish } from './zap.js';
@@ -449,11 +449,11 @@ export async function wizMap() {
     await bot();
 }
 // Part of C wizcmds.c:wiz_identify(): enable identification overrides while describing inventory.
-async function wizardIdentifyDescription(item, primaryHandDetail) {
+async function wizardIdentifyDescription(item, primaryHandDetail, withCorpseGenders) {
     const override = game.iflags.override_ID;
     game.iflags.override_ID = true;
     try {
-        return await inventoryItemDescription(item, { primaryHandDetail });
+        return await inventoryItemDescription(item, { primaryHandDetail, withCorpseGenders });
     }
     finally {
         if (override === undefined)
@@ -488,6 +488,7 @@ export async function wizIdentify() {
         else
             game.iflags.override_ID = override;
     }
+    const withCorpseGenders = checkForPuzzlingNonmerge(game.inventory) > 0;
     const unidentified = ordered.filter(objectNeedsFullIdentification);
     if (!unidentified.length) {
         await showTextMenuOverlay([
@@ -525,7 +526,7 @@ export async function wizIdentify() {
             tty_add_menu(window, {
                 identifier: item, selector: inventoryCommandLetter(item),
                 group: OBJECT_CLASS_SYMBOLS[item.oclass] ?? '',
-                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
+                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item), withCorpseGenders),
             });
         }
         tty_end_menu(window);
