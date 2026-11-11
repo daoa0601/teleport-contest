@@ -163,6 +163,7 @@ void test('overdue floor callback catches up arithmetically without prose',
         const glob = placeCreatedObject(
             await mksobj(GLOB_OF_BROWN_PUDDING, true, false), 12, 10,
         );
+        glob.oeaten = 12;
         const first = shrinkTimer(glob);
         game.moves = first.deadline + 26;
         const event = await runClaimedGlobTimer(
@@ -175,6 +176,7 @@ void test('overdue floor callback catches up arithmetically without prose',
         assert.equal(event.delay, 23);
         assert.equal(event.message, null);
         assert.equal(glob.owt, 18);
+        assert.equal(glob.oeaten, 11);
         assert.equal(shrinkTimer(glob).deadline, game.moves + 23);
     });
 

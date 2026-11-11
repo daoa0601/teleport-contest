@@ -130,6 +130,7 @@ void test('overdue floor callback catches up arithmetically without prose', asyn
     await freshGlobState(10);
     requireFixtureGame(game);
     const glob = placeCreatedObject(await mksobj(GLOB_OF_BROWN_PUDDING, true, false), 12, 10);
+    glob.oeaten = 12;
     const first = shrinkTimer(glob);
     game.moves = first.deadline + 26;
     const event = await runClaimedGlobTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
@@ -140,6 +141,7 @@ void test('overdue floor callback catches up arithmetically without prose', asyn
     assert.equal(event.delay, 23);
     assert.equal(event.message, null);
     assert.equal(glob.owt, 18);
+    assert.equal(glob.oeaten, 11);
     assert.equal(shrinkTimer(glob).deadline, game.moves + 23);
 });
 void test('inventory threshold prose precedes reschedule and retains live mass', async () => {

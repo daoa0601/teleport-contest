@@ -2118,7 +2118,14 @@ export async function runClaimedGlobTimer(claimed, state = game, currentTurn = s
                 gone: true, message: null,
             };
         }
+        const oldWeight = glob.owt;
         glob.owt -= delta;
+        if (oldWeight && glob.oeaten) {
+            const percentReduction = 100 - Math.trunc(glob.owt * 100 / oldWeight);
+            const nutritionReduction = Math.trunc((percentReduction * glob.oeaten + 50) / 100);
+            if (nutritionReduction <= glob.oeaten)
+                glob.oeaten -= nutritionReduction;
+        }
         if (container)
             containerWeight(container, state);
         scheduleNextGlobAttempt(glob, state, currentTurn, delay);
