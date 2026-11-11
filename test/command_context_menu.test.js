@@ -756,4 +756,14 @@ void test('the here menu offers Jump', async () => {
         await finish(engine);
     }
 });
+void test('the here menu offers View attributes', async () => {
+    const engine = await startMenuGame();
+    try {
+        await type(engine, '#herecmdmenu\n');
+        assert.match(screen(), /View attributes/);
+    }
+    finally {
+        await finish(engine);
+    }
+});
 //# sourceMappingURL=command_context_menu.test.js.map

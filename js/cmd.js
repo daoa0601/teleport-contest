@@ -1047,6 +1047,7 @@ function contextMenuCommand(selection) {
         case 'pray':
         case 'engrave':
         case 'jump':
+        case 'attributes':
         case 'inventory':
         case 'cast':
         case 'throw': return selection.action;
@@ -1132,6 +1133,7 @@ function contextMenuResponses(selection) {
         case 'pray':
         case 'engrave':
         case 'jump':
+        case 'attributes':
         case 'pickup':
         case 'search':
         case 'sit':
@@ -1245,6 +1247,7 @@ async function selfEntries(add, x, y) {
     add('look', 'Look at what is here');
     add('pray', 'Pray here');
     add('engrave', 'Engrave here');
+    add('attributes', 'View attributes');
     if (game.spells.length)
         add('cast', 'Cast a spell');
     const trap = trapAt(game, x, y);
