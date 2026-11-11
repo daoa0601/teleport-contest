@@ -62,7 +62,7 @@ import {
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
 import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval,
-    pricedInventoryLine } from './invent.js';
+    pricedInventoryLine, oOn } from './invent.js';
 import {
     simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming,
     simpleObjectNameWithArticle, objectDescription, paymentObjectDescription,
@@ -1289,11 +1289,6 @@ function clearUnpaidObject(keeper: Shopkeeper | null, object: GameObject): void 
 function onBillOf(object: GameObject, keeper: Shopkeeper | null): boolean {
     return !!keeper && (keeper.eshk.bill || []).some(
         entry => entry.bo_id === object.o_id);
-}
-
-// C shk.c:o_on(). The object with this o_id in one linked list.
-function oOn(oId: number, list: readonly GameObject[]): GameObject | null {
-    return list.find(object => object.o_id === oId) ?? null;
 }
 
 // C shk.c:find_oid(): the object-list search by o_id.  C walks invent,

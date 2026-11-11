@@ -1,7 +1,7 @@
 // invent.js — the invent.c owner: inventory admission (addinv/freeinv/
 // assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
 // views, look_here()/dolook(), doorganize/#adjust, and stack merging,
-// delallobj() and g_at().
+// delallobj(), g_at(), wearing_armor(), and o_on().
 // C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
 // look_here(), doorganize(), dolook(), delallobj(), g_at().
 import {
@@ -94,7 +94,7 @@ import {
 } from './mondata.js';
 import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
 import { panic } from './end.js';
-import { armorSimpleName, armorSlotFor } from './do_wear.js';
+import { armorSimpleName, armorSlotFor, takeoffSlotObject } from './do_wear.js';
 import {
     currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill,
     stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer,
@@ -1677,6 +1677,22 @@ function unpaidObjects(objects: readonly GameObject[]): GameObject[] {
 // C invent.c:count_unpaid(). The recursive count of unpaid objects.
 function countUnpaid(list: readonly GameObject[]): number {
     return unpaidObjects(list).length;
+}
+
+// C invent.c:wearing_armor(). Any occupied armor slot counts.
+export function wearingArmor(state: GameState = game): boolean {
+    return (['uarm', 'uarmc', 'uarmf', 'uarmg', 'uarmh', 'uarms', 'uarmu'] as const)
+        .some(slot => takeoffSlotObject(slot, state));
+}
+
+// C invent.c:o_on(). Search an object list and its container contents by o_id.
+export function oOn(oId: number, list: readonly GameObject[]): GameObject | null {
+    for (const object of list) {
+        if (object.o_id === oId) return object;
+        const contained = oOn(oId, object.contents ?? []);
+        if (contained) return contained;
+    }
+    return null;
 }
 
 // C invent.c:display_pickinv(): the getobj inventory menu, including the

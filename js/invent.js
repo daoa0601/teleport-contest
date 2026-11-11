@@ -1,7 +1,7 @@
 // invent.js — the invent.c owner: inventory admission (addinv/freeinv/
 // assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
 // views, look_here()/dolook(), doorganize/#adjust, and stack merging,
-// delallobj() and g_at().
+// delallobj(), g_at(), wearing_armor(), and o_on().
 // C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
 // look_here(), doorganize(), dolook(), delallobj(), g_at().
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
@@ -54,7 +54,7 @@ import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion, t
 import { heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem, } from './mondata.js';
 import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
 import { panic } from './end.js';
-import { armorSimpleName, armorSlotFor } from './do_wear.js';
+import { armorSimpleName, armorSlotFor, takeoffSlotObject } from './do_wear.js';
 import { currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill, stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer, doinvbill, } from './shk.js';
 import { attachFigurineTimer, endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { objectShedsLight } from './light.js';
@@ -1502,6 +1502,22 @@ function unpaidObjects(objects) {
 // C invent.c:count_unpaid(). The recursive count of unpaid objects.
 function countUnpaid(list) {
     return unpaidObjects(list).length;
+}
+// C invent.c:wearing_armor(). Any occupied armor slot counts.
+export function wearingArmor(state = game) {
+    return ['uarm', 'uarmc', 'uarmf', 'uarmg', 'uarmh', 'uarms', 'uarmu']
+        .some(slot => takeoffSlotObject(slot, state));
+}
+// C invent.c:o_on(). Search an object list and its container contents by o_id.
+export function oOn(oId, list) {
+    for (const object of list) {
+        if (object.o_id === oId)
+            return object;
+        const contained = oOn(oId, object.contents ?? []);
+        if (contained)
+            return contained;
+    }
+    return null;
 }
 // C invent.c:display_pickinv(): the getobj inventory menu, including the
 // "Not carrying anything" shortcut and the hands entry when allowed.
