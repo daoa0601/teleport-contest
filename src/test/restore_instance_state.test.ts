@@ -201,7 +201,7 @@ void test('restore forgets an alignment cached before a zero-time level change',
     assert.deepEqual(selected, expected);
 });
 
-void test('the first version query after restore affects a later coin flip as in a new process', async () => {
+void test('a version query after restore leaves the later coin flip unchanged', async () => {
     await freshObjectRoom();
     dismissMessages();
     await addInventoryObject(GOLD_PIECE, { quan: 50 });
@@ -212,14 +212,14 @@ void test('the first version query after restore affects a later coin flip as in
     assert.equal(await restoreGame(game.plname, storage), true);
     const purse = game.inventory.find(object => object.otyp === GOLD_PIECE);
     assert.ok(purse);
-    // C's first version lookup loads nhlib.lua, whose setup shares the gameplay RNG.
+    // get_lua_version() reads constants without starting a Lua interpreter.
     initRng(1n);
     pushKeys('  ');
 
     await doextversion();
     await flipCoin(purse);
 
-    assert.equal(game._pending_message, 'You flip a gold piece.  It comes up tails.');
+    assert.equal(game._pending_message, 'You flip a gold piece.  It comes up heads.');
 });
 
 void test('restored map symbols use the current process symbol set', async () => {

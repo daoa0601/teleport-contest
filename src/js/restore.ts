@@ -738,7 +738,6 @@ function resetRestoredInstanceState(): void {
     delete game._rndmonstAlignment;
     delete game._rndmonstAlignmentMove;
     delete game._monsterGenerationOrder;
-    delete game._runtimeVersionInfoInitialized;
     delete game.shownSymbols;
 
     // A panic save can interrupt helplessness. Native multi, its completion

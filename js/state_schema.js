@@ -65,7 +65,6 @@ const transientFields = {
     _restoredBones: true,
     _rndmonstAlignment: true,
     _rndmonstAlignmentMove: true,
-    _runtimeVersionInfoInitialized: true,
     _specialLevelPrototype: true,
     _startingEffectsApplied: true,
     _tutorialDeclined: true,

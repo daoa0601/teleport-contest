@@ -5,7 +5,6 @@
 // Keep this separate from version.js: const.js imports that build-metadata
 // leaf, while this interactive command depends on display and window layers.
 import { game } from './gstate.js';
-import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import { pline } from './pline.js';
 import { cInteger } from './option_values.js';
@@ -34,7 +33,7 @@ const VERSION_PAGE_1 = [
     '    "nosound".',
     '',
     "NetHack 5.0.* uses the 'Lua' interpreter to process some data:",
-    '    Lua 5.4.8  Copyright (C) 1994-2025 Lua.org, PUC-Rio',
+    '    Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio',
     '--More--',
 ];
 const VERSION_PAGE_2 = [
@@ -60,14 +59,6 @@ export async function doversion() {
 }
 // C version.c:doextversion(): show the version and license text pages.
 export async function doextversion() {
-    // version.c substitutes :LUAVERSION:/:LUACOPYRIGHT: lazily. The first
-    // get_lua_version() opens a Lua state and loads nhlib; later calls reuse
-    // the resulting strings.
-    if (!game._runtimeVersionInfoInitialized) {
-        rn2(3);
-        rn2(2);
-        game._runtimeVersionInfoInitialized = true;
-    }
     await showTextPages([
         { lines: VERSION_PAGE_1, cursor: [8, 23] },
         { lines: VERSION_PAGE_2, cursor: [8, 23] },
