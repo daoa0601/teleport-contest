@@ -699,3 +699,18 @@ void test('the here menu offers Access memories', async () => {
         assert.match(screen(), /Access memories/);
     } finally { await finish(engine); }
 });
+
+void test('Access memories follows the current Ctrl-P binding', async () => {
+    const engine = await startMenuGame('BINDINGS=^P:inventory\n');
+    try {
+        game.inventory = [];
+        await addInventoryObject(APPLE, { invlet: 'z' });
+        const moves = game.moves;
+
+        await type(engine, '#herecmdmenu\n');
+        await choose(engine, 'Access memories');
+
+        assert.match(screen(), /z - .*apple/);
+        assert.equal(game.moves, moves);
+    } finally { await finish(engine); }
+});

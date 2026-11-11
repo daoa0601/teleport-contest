@@ -931,7 +931,11 @@ function enqueueContextMenu(selection) {
         game._clicklookTarget = { x: selection.x, y: selection.y };
     if (selection.action === 'remove-saddle')
         cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
-    cmdq_add_ec(CQ_CANNED, commandByName(contextMenuCommand(selection)).handler);
+    const command = contextMenuCommand(selection);
+    if (typeof command === 'number')
+        cmdq_add_key(CQ_CANNED, command);
+    else
+        cmdq_add_ec(CQ_CANNED, commandByName(command).handler);
     contextMenuResponses(selection);
 }
 // C cmd.c:doclicklook() retains the clicked location for later commands.
@@ -952,8 +956,11 @@ async function domouseaction() {
 function mouseAction(click) {
     requirePlayingGame(game);
     let dx = click.x - game.u.ux, dy = click.y - game.u.uy;
-    const queue = (name) => {
-        cmdq_add_ec(CQ_CANNED, commandByName(name).handler);
+    const queue = (command) => {
+        if (typeof command === 'number')
+            cmdq_add_key(CQ_CANNED, command);
+        else
+            cmdq_add_ec(CQ_CANNED, commandByName(command).handler);
     };
     if (game.flags.travel !== false) {
         if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
@@ -1022,6 +1029,7 @@ function contextMenuCommand(selection) {
         case 'dismount': return 'ride';
         case 'look-at': return 'clicklook';
         case 'drop': return 'droptype';
+        case 'prevmsg': return '\x10'.charCodeAt(0); // Ctrl-P follows its current binding.
         case 'travel': return 'retravel';
         case 'open':
         case 'kick':
@@ -1048,7 +1056,6 @@ function contextMenuCommand(selection) {
         case 'engrave':
         case 'jump':
         case 'attributes':
-        case 'prevmsg':
         case 'inventory':
         case 'cast':
         case 'throw': return selection.action;

@@ -905,7 +905,9 @@ function enqueueContextMenu(selection: ContextMenuSelection | null): void {
     // act_on_act() sets this before dotherecmdmenu() clears a mouse target.
     if (selection.action === 'look-at') game._clicklookTarget = { x: selection.x, y: selection.y };
     if (selection.action === 'remove-saddle') cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
-    cmdq_add_ec(CQ_CANNED, commandByName(contextMenuCommand(selection)).handler);
+    const command = contextMenuCommand(selection);
+    if (typeof command === 'number') cmdq_add_key(CQ_CANNED, command);
+    else cmdq_add_ec(CQ_CANNED, commandByName(command).handler);
     contextMenuResponses(selection);
 }
 
@@ -927,8 +929,9 @@ async function domouseaction(): Promise<void> {
 function mouseAction(click: Position): void {
     requirePlayingGame(game);
     let dx = click.x - game.u.ux, dy = click.y - game.u.uy;
-    const queue = (name: string) => {
-        cmdq_add_ec(CQ_CANNED, commandByName(name).handler);
+    const queue = (command: string | number) => {
+        if (typeof command === 'number') cmdq_add_key(CQ_CANNED, command);
+        else cmdq_add_ec(CQ_CANNED, commandByName(command).handler);
     };
     if (game.flags.travel !== false) {
         if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
@@ -970,7 +973,7 @@ function mouseAction(click: Position): void {
 
 // Part of C cmd.c:act_on_act(): the MCMD-action-to-command mapping half;
 // the queued-answer half is contextMenuResponses() below.
-function contextMenuCommand(selection: ContextMenuSelection): string {
+function contextMenuCommand(selection: ContextMenuSelection): string | number {
     switch (selection.action) {
     case 'move': case 'attack': {
         const dx = Math.sign(selection.x - game.u.ux), dy = Math.sign(selection.y - game.u.uy);
@@ -985,6 +988,7 @@ function contextMenuCommand(selection: ContextMenuSelection): string {
     case 'dismount': return 'ride';
     case 'look-at': return 'clicklook';
     case 'drop': return 'droptype';
+    case 'prevmsg': return '\x10'.charCodeAt(0); // Ctrl-P follows its current binding.
     case 'travel': return 'retravel';
     case 'open': case 'kick': case 'close': case 'search': case 'showtrap':
     case 'untrap': case 'ride': case 'chat': case 'name': case 'quaff': case 'dip':
@@ -994,7 +998,6 @@ function contextMenuCommand(selection: ContextMenuSelection): string {
     case 'engrave':
     case 'jump':
     case 'attributes':
-    case 'prevmsg':
     case 'inventory': case 'cast': case 'throw': return selection.action;
     }
 }
