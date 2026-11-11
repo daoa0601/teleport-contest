@@ -168,7 +168,7 @@ void test('known spells add casting after looking here', async () => {
     try {
         forceLearnSpell(SPE_FORCE_BOLT);
         await type(engine, '#herecmdmenu\n');
-        assert.match(screen(), /f - Cast a spell/);
+        assert.match(screen(), /Look at what is here[\s\S]*Cast a spell/);
         await choose(engine, 'Cast a spell');
         assert.match(screen(), /cast|spell/);
     } finally { await finish(engine); }
@@ -656,5 +656,13 @@ void test('the here-menu drop action opens the multiple-item chooser', async () 
         await type(engine, '#herecmdmenu\n');
         await choose(engine, 'Drop items');
         assert.match(screen(), /Drop what type of items\?/);
+    } finally { await finish(engine); }
+});
+
+void test('the here menu offers Pray here', async () => {
+    const engine = await startMenuGame();
+    try {
+        await type(engine, '#herecmdmenu\n');
+        assert.match(screen(), /Pray here/);
     } finally { await finish(engine); }
 });

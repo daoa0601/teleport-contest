@@ -1044,6 +1044,7 @@ function contextMenuCommand(selection) {
         case 'wait':
         case 'look':
         case 'offer':
+        case 'pray':
         case 'inventory':
         case 'cast':
         case 'throw': return selection.action;
@@ -1126,6 +1127,7 @@ function contextMenuResponses(selection) {
         case 'look-at':
         case 'loot':
         case 'move':
+        case 'pray':
         case 'pickup':
         case 'search':
         case 'sit':
@@ -1237,6 +1239,7 @@ async function selfEntries(add, x, y) {
     add('wait', 'Rest one turn');
     add('search', 'Search around you');
     add('look', 'Look at what is here');
+    add('pray', 'Pray here');
     if (game.spells.length)
         add('cast', 'Cast a spell');
     const trap = trapAt(game, x, y);
