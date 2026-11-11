@@ -287,7 +287,7 @@ async function pushBoulders(sx: number, sy: number, dx: number, dy: number): Pro
 
         const target = level.at(rx, ry);
         const diagonalDoor = dx && dy && target?.typ === DOOR
-            && (Is_rogue_level(game.u.uz) || !!(target.doormask & ~(D_NODOOR | D_BROKEN)));
+            && !doorlessDoor(target);
         if (!isok(rx, ry) || !target || IS_OBSTRUCTED(target.typ)
             || target.typ === IRONBARS || diagonalDoor || objectAt(rx, ry, BOULDER, game)) {
             await cannotPushMessage(boulder, sx, sy);
@@ -428,11 +428,17 @@ async function monsterBlocksBoulder(boulder: GameObject, monster: Monster, sx: n
     }
 }
 
+// C hack.c:rock_disappear_msg(). The farewell when a pushed boulder
+// leaves by teleport trap.
+async function rockDisappearMsg(boulder: GameObject): Promise<void> {
+    const who = game.u.usteed
+        ? monsterName(game.u.usteed, { article: 'your', capitalized: true }) : 'You';
+    await plineWithContinuation(`${who} ${game.u.usteed ? 'pushes' : 'push'} the ${objectCombatName(boulder)} and suddenly it disappears!`);
+}
+
 // Part of C hack.c:moverock_core(): the trap branches — a pushed boulder
 // can trigger a land mine, plug or fill a pit, fall through a hole,
 // teleport away, or launch a rolling-boulder trap.
-// Also C hack.c:rock_disappear_msg(): the "suddenly it disappears!"
-// farewell when a boulder leaves by teleport trap is inlined here.
 async function pushIntoTrap(boulder: GameObject, trap: Trap, sx: number, sy: number, rx: number, ry: number, dx: number, dy: number, costly: boolean): Promise<'handled' | 'push' | 'ignored'> {
     requirePlayingGame(game);
     if (trap.ttyp === LANDMINE && rn2(10)) {
@@ -484,9 +490,7 @@ async function pushIntoTrap(boulder: GameObject, trap: Trap, sx: number, sy: num
     if (trap.ttyp === TELEP_TRAP || trap.ttyp === LEVEL_TELEP) {
         const newDepth = trap.ttyp === LEVEL_TELEP ? randomTeleportDepth(game) : null;
         if (newDepth === depth(game.u.uz, game.dungeons)) return 'push';
-        const who = game.u.usteed
-            ? monsterName(game.u.usteed, { article: 'your', capitalized: true }) : 'You';
-        await plineWithContinuation(`${who} ${game.u.usteed ? 'pushes' : 'push'} the ${objectCombatName(boulder)} and suddenly it disappears!`);
+        await rockDisappearMsg(boulder);
         boulder.corpsenm = 0;
         if (newDepth === null) await relocateObjectRandomly(boulder);
         else {
@@ -3374,6 +3378,11 @@ function petBadRock(monster: Monster, state: PlayingGameState, x: number, y: num
     return !tunnels && !passesWalls;
 }
 
+// C hack.c:u_maybe_impaired(). Stunned, or confused one time in five.
+function uMaybeImpaired(stunned: boolean, confused: boolean): boolean {
+    return stunned || (confused && rn2(5) === 0);
+}
+
 // C hack.c:domove_core() owns the movement transaction.
 // C hack.c:carrying_too_much(): an overloaded or exhausted hero collapses
 // before any destination handling.
@@ -3475,10 +3484,10 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
     if (await airTurbulenceStopsHero()) return true;
     checkSlipperyIce();
     // C hack.c:impaired_movement() always checks Confusion before deriving
-    // the destination.  A nonzero rn2(5) keeps the requested direction; on
-    // impairment, confdir(TRUE) chooses cardinals first and retries only an
-    // out-of-bounds square or rock this body cannot traverse.
-    if (stunned || (confused && rn2(5) === 0)) {
+    // the destination.  On impairment (u_maybe_impaired()), confdir(TRUE)
+    // chooses cardinals first and retries only an out-of-bounds square or
+    // rock this body cannot traverse.
+    if (uMaybeImpaired(stunned, confused)) {
         let found = false;
         for (let tries = 0; tries <= 50; tries++) {
             confusePromptDirection(u, true);
