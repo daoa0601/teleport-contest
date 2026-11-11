@@ -1777,7 +1777,7 @@ function tether_glyph(x: number, y: number): DisplayGlyph {
 export type TemporaryGlyphStyle = 'beam' | 'all' | 'tether' | 'flash' | 'always';
 
 export class TemporaryMapEffect {
-    private readonly positions: Position[] = [];
+    private readonly positions: (Position & { shown: boolean })[] = [];
 
     constructor(private readonly style: TemporaryGlyphStyle, private glyph: DisplayGlyph) {}
 
@@ -1808,36 +1808,52 @@ export class TemporaryMapEffect {
             if (this.positions.length >= COLNO * 2) return false;
             if (this.style === 'tether') {
                 const previous = this.positions.at(-1);
-                if (previous) await this.paint(previous.x, previous.y,
-                    tether_glyph(previous.x, previous.y));
+                let suppressShow = false;
+                if (previous) {
+                    previous.shown = cansee(previous.x, previous.y);
+                    if (previous.shown) await this.paint(previous.x, previous.y,
+                        tether_glyph(previous.x, previous.y));
+                    else suppressShow = true;
+                }
+                const shown = cansee(x, y);
+                this.positions.push({ x, y, shown });
+                if (!shown) suppressShow = true;
+                if (!suppressShow) await this.paint(x, y, this.glyph);
+                return !suppressShow;
             }
         } else {
             await this.clear();
             if (this.style === 'flash' && !cansee(x, y)) return false;
         }
-        this.positions.push({ x, y });
+        this.positions.push({ x, y, shown: true });
         await this.paint(x, y, this.glyph);
         return true;
     }
 
     // A returning tether restores its far end before advancing the weapon.
-    async retract(): Promise<boolean> {
+    async retract(): Promise<'shown' | 'hidden' | false> {
         if (this.style !== 'tether' || this.positions.length < 2) return false;
         const end = this.positions.pop();
         const previous = this.positions.at(-1);
         if (!end || !previous) throw new Error('A returning tether needs two saved positions');
-        await newsym(end.x, end.y);
+        if (end.shown) await newsym(end.x, end.y);
+        if (!cansee(previous.x, previous.y)) return 'hidden';
+        previous.shown = true;
         await this.paint(previous.x, previous.y, this.glyph);
-        return true;
+        return 'shown';
     }
 
     // DISP_END, with C's BACKTRACK option for a returning tether.
     async end(backtrack = false): Promise<void> {
         try {
             if (backtrack) {
-                while (await this.retract()) {
-                    await flush_screen(0);
-                    await game.animationFrame?.();
+                for (;;) {
+                    const step = await this.retract();
+                    if (!step) break;
+                    if (step === 'shown') {
+                        await flush_screen(0);
+                        await game.animationFrame?.();
+                    }
                 }
             }
         } finally {
@@ -1849,7 +1865,9 @@ export class TemporaryMapEffect {
     // including repeated coordinates with their independent hallucinated
     // map projection.
     async clear(): Promise<void> {
-        for (const position of this.positions) await newsym(position.x, position.y);
+        for (const position of this.positions)
+            if (this.style === 'beam' || this.style === 'all' || position.shown)
+                await newsym(position.x, position.y);
         this.positions.length = 0;
     }
 

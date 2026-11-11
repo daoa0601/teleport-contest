@@ -124,7 +124,7 @@ for (const { x, y, glyph } of [
         await flight.clear();
     });
 }
-void test('a tether remains drawn outside current sight while an ordinary missile stays hidden', async () => {
+void test('a tether and an ordinary missile both remain hidden outside current sight', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
     await redrawMap();
@@ -138,8 +138,8 @@ void test('a tether remains drawn outside current sight while an ordinary missil
     const tether = monsterProjectileDisplay(object, game, { tethered: true });
     await tether.show({ x: 11, y: 10 });
     await tether.show({ x: 12, y: 10 });
-    assert.equal(screenCell(11, 10).ch, '-');
-    assert.equal(screenCell(12, 10).ch, ')');
+    assert.notEqual(screenCell(11, 10).ch, '-');
+    assert.notEqual(screenCell(12, 10).ch, ')');
     await tether.clear();
     await flush_screen(1);
     assert.notEqual(screenCell(11, 10).ch, '-');

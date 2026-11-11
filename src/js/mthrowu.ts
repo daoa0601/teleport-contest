@@ -573,8 +573,10 @@ export function monsterProjectileDisplay(object: GameObject, state: PlayingGameS
         },
         async backtrack(): Promise<void> {
             // DISP_END/BACKTRACK moves inward before the first return frame.
-            while (await effect.retract()) {
-                await flushFrame();
+            for (;;) {
+                const step = await effect.retract();
+                if (!step) break;
+                if (step === 'shown') await flushFrame();
             }
             await clear();
         },

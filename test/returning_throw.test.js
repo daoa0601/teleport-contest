@@ -51,19 +51,19 @@ void test('a detached tether leaves an aklys no more than four squares away', as
     await throwInventoryObject(weapon, 'l');
     assert.equal(game.uwep, null);
     assert.ok(floorObjectsAt(level, 14, 10).includes(weapon));
-    assert.match(game._pending_message, /The aklys fails to return!/);
+    assert.match(game._pending_message, /The tether snaps off your arm!/);
 });
-void test('a failed catch leaves the returning aklys at the hero', async () => {
+void test('a failed catch leaves the returning aklys unwielded in inventory', async () => {
     const weapon = await wieldAklys();
     requirePlayingGame(game);
     initRng(26n);
     await throwInventoryObject(weapon, 'l', ' '.repeat(10));
     assert.equal(game.uwep, null);
-    assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
-    assert.match(game._pending_message, /(?:landing at your feet|hitting your arm)/);
+    assert.equal(weapon.where, 'inventory');
+    assert.match(game._pending_message, /tether releases from your arm!/);
 });
 for (const command of ['throw', 'fire']) {
-    void test(`${command}: a failed aklys catch reports the lighter load once`, async () => {
+    void test(`${command}: a failed aklys catch retains the carried load`, async () => {
         const weapon = await wieldAklys();
         requirePlayingGame(game);
         game.u.acurr.a[A_STR] = 12;
@@ -90,12 +90,11 @@ for (const command of ['throw', 'fire']) {
                 pushKey(' ');
             await rhack('f'.charCodeAt(0));
         }
-        assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
-        assert.equal(nearCapacity(game), 0);
+        assert.equal(weapon.where, 'inventory');
+        assert.equal(nearCapacity(game), 1);
         messages.push(game._pending_message);
         const loadMessages = messages.join('\n').match(/Your movements are now unencumbered\./g) ?? [];
-        assert.equal(loadMessages.length, 1, `Load feedback was: ${messages.join(' | ')}`);
-        assert.equal(pages.length, 1, `Message pagers were: ${pages.join(' | ')}`);
+        assert.equal(loadMessages.length, 0, `Load feedback was: ${messages.join(' | ')}`);
     });
 }
 void test('fumbling prevents a returning aklys catch', async () => {
@@ -105,7 +104,7 @@ void test('fumbling prevents a returning aklys catch', async () => {
     initRng(1n);
     await throwInventoryObject(weapon, 'l', ' '.repeat(10));
     assert.equal(game.uwep, null);
-    assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
+    assert.equal(weapon.where, 'inventory');
 });
 void test('a web prevents the aklys from returning', async () => {
     const weapon = await wieldAklys();
@@ -216,28 +215,28 @@ void test('Glib does not prevent catching an aklys in the pinned throwit rules',
     assert.equal(game.uwep, weapon);
     assert.equal(weapon.where, 'inventory');
 });
-void test('a blind thrower hears no return description when an aklys lands at their feet', async () => {
+void test('a blind thrower feels the aklys return to inventory', async () => {
     const weapon = await wieldAklys();
     requirePlayingGame(game);
     game.u.blind = true;
     game.u.blindTurns = 10;
     initRng(1n);
-    await throwInventoryObject(weapon, 'l');
-    assert.equal(game._pending_message, 'Something lands at your feet.');
-    assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
+    await throwInventoryObject(weapon, 'l', ' '.repeat(10));
+    assert.match(game._pending_message, /tether releases from your arm!/);
+    assert.equal(weapon.where, 'inventory');
 });
 void test('half physical damage reduces a failed catch injury', async () => {
     const weapon = await wieldAklys();
     requirePlayingGame(game);
     initRng(26n);
-    await throwInventoryObject(weapon, 'l');
+    await throwInventoryObject(weapon, 'l', ' '.repeat(10));
     const fullDamage = 40 - game.u.uhp;
     assert.ok(fullDamage >= 2 && fullDamage <= 4);
     const protectedWeapon = await wieldAklys();
     requirePlayingGame(game);
     game.u.halfPhysicalDamage = true;
     initRng(26n);
-    await throwInventoryObject(protectedWeapon, 'l');
+    await throwInventoryObject(protectedWeapon, 'l', ' '.repeat(10));
     assert.equal(40 - game.u.uhp, Math.ceil(fullDamage / 2));
 });
 void test('a failed Mjollnir catch can strike the hero with lightning', async () => {

@@ -2746,9 +2746,11 @@ export async function finishReturningThrow({
     state, object, impact, impaired, twoWeapons, oldSlot, tetherDisplay,
 }: ReturningThrowOptions): Promise<boolean> {
     requirePlayingGame(state);
+    const tethered = !!tetherDisplay?.tethered;
     if (rn2(100) === 0) {
         await tetherDisplay?.clear();
-        await plineWithContinuation(`${definiteObjectAction(object, 'fail', state)} to return!`);
+        await plineWithContinuation(tethered ? `The tether snaps off your ${body_part(ARM, state)}!`
+            : `${definiteObjectAction(object, 'fail', state)} to return!`);
         return false;
     }
     if (tetherDisplay) await tetherDisplay.backtrack();
@@ -2766,18 +2768,30 @@ export async function finishReturningThrow({
     }
 
     let damage = rn2(2);
+    if (tethered) {
+        object = await addInventoryItemBefore(object, oldSlot);
+        await encumber_msg(state);
+        if ((object.owornmask ?? 0) & W_QUIVER) await setQuiverObject(null, state);
+        if (cansee(impact.x, impact.y)) await newsym(impact.x, impact.y);
+    }
     if (damage === 0) {
         const position = propertyIsActive('levitation', state) ? 'beneath' : 'at';
         const feet = makePlural(body_part(FOOT, state));
-        await plineWithContinuation(heroIsBlind(state)
-            ? `Something lands ${position} your ${feet}.`
-            : `${definiteObjectAction(object, 'return', state)} back to you, landing ${position} your ${feet}.`);
+        await plineWithContinuation(tethered
+            ? heroIsBlind(state)
+                ? `Your tethered weapon snaps back and is left dangling from your ${body_part(ARM, state)}.`
+                : `${definiteObjectAction(object, 'return', state)} is left dangling from your .`
+            : heroIsBlind(state)
+                ? `Something lands ${position} your ${feet}.`
+                : `${definiteObjectAction(object, 'return', state)} back to you, landing ${position} your ${feet}.`);
     } else {
         damage += rnd(3);
         const arm = body_part(ARM, state);
-        await plineWithContinuation(heroIsBlind(state)
-            ? `${definiteObjectAction(object, 'hit', state)} your ${arm}!`
-            : `${definiteObjectAction(object, 'fly', state)} back toward you, hitting your ${arm}!`);
+        await plineWithContinuation(tethered
+            ? `Your tethered ${heroIsBlind(state) ? 'weapon returns and hits' : definiteObjectAction(object, 'hit', state)} your ${arm}!`
+            : heroIsBlind(state)
+                ? `${definiteObjectAction(object, 'hit', state)} your ${arm}!`
+                : `${definiteObjectAction(object, 'fly', state)} back toward you, hitting your ${arm}!`);
         if (object.oartifact) {
             const hit = await applyArtifactHit(object, 'hero', damage, {
                 state, publish: plineWithContinuation, random: rn2, rollOne: rnd, dieRoll: 0,
@@ -2789,6 +2803,10 @@ export async function finishReturningThrow({
             killerObjectName(object, state), { state, killerFormat: KILLED_BY })) return true;
     }
 
+    if (tethered) {
+        await plineWithContinuation(`The ${possessiveName(simpleObjectName(object, state))} tether releases from your ${body_part(ARM, state)}!`);
+        return true;
+    }
     if (state.u.uswallow) {
         const engulfer = state.u.ustuck;
         if (!engulfer) throw new Error('A swallowed returning weapon needs an engulfer.');
