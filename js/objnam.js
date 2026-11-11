@@ -1752,6 +1752,7 @@ const alternateSpellings = [
     ['grey dragon scales', objects.GRAY_DRAGON_SCALES],
     ['iron ball', objects.HEAVY_IRON_BALL], ['lantern', objects.BRASS_LANTERN],
     ['mattock', objects.DWARVISH_MATTOCK],
+    ['amulet of flight', objectType('amulet of flying')],
     ['amulet of poison resistance', objectType('amulet versus poison')],
     ['amulet of protection', objects.AMULET_OF_GUARDING],
     ['amulet of telepathy', objectType('amulet of ESP')],
