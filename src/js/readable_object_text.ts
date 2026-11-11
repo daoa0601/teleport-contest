@@ -1,4 +1,4 @@
-// Readable inscriptions from pinned NetHack src/read.c.
+// Readable inscriptions from NetHack src/read.c.
 // Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985.
 // Copyright (c) Robert Patrick Rankin, 2012. See the NetHack license.
 
@@ -73,6 +73,7 @@ export const SHIRT_MESSAGES: readonly string[] = [
     "It is easier to curse the darkness than to light a candle",
     "rock--paper--scissors--lizard--Spock!",
     "/Valar morghulis/ -- /Valar dohaeris/",
+    "Asidonhopo once said: the namesake of my enemy is my enemy",
 ];
 
 export const APRON_MESSAGES: readonly string[] = [
