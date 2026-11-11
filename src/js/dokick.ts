@@ -852,7 +852,8 @@ function speciesGone(species: number): boolean {
 async function kickTree(x: number, y: number, location: MapLocation, responses: TerrainKickResponses): Promise<void> {
     const bee = MONSTER_NAME.indexOf('killer bee');
     if (rn2(3) !== 0) {
-        if (rn2(6) === 0 && !speciesGone(bee)) await publishHeardMessage('a low buzzing.', plineWithContinuation);
+        if (rn2(6) === 0 && !speciesGone(bee) && !((location.looted ?? 0) & TREE_SWARM))
+            await publishHeardMessage('a low buzzing.', plineWithContinuation);
         await responses.ouch(x, y);
         return;
     }

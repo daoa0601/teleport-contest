@@ -818,7 +818,7 @@ function speciesGone(species) {
 async function kickTree(x, y, location, responses) {
     const bee = MONSTER_NAME.indexOf('killer bee');
     if (rn2(3) !== 0) {
-        if (rn2(6) === 0 && !speciesGone(bee))
+        if (rn2(6) === 0 && !speciesGone(bee) && !((location.looted ?? 0) & TREE_SWARM))
             await publishHeardMessage('a low buzzing.', plineWithContinuation);
         await responses.ouch(x, y);
         return;

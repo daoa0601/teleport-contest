@@ -172,3 +172,19 @@ for (const terrain of [IRONBARS, STAIRS]) {
         assert.equal(game._lastPlineMessage, 'Ouch!  That hurts!');
     });
 }
+
+void test('a tree whose bees already swarmed never warns of buzzing', async () => {
+    for (let seed = 1n; seed <= 30n; seed++) {
+        const level = freshPlayableRoom({ seed, hero: { uhp: 100, uhpmax: 100 } });
+        const tree = level.requireAt(11, 10);
+        tree.typ = TREE;
+        tree.looted = TREE_SWARM | TREE_LOOTED;
+        const messages: string[] = [];
+        resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+
+        await kickDirection('l', ' '.repeat(20));
+
+        messages.push(game._pending_message);
+        assert.ok(messages.every(message => !message.includes('low buzzing')), `Empty tree buzzed for seed ${seed}`);
+    }
+});
