@@ -603,8 +603,8 @@ export class StatusHighlights {
         field.rule = null;
         field.expires = 0;
     }
-    // C botl.c:hilite_reset_needed(): a temporary highlight expires once its
-    // time has passed and the hero is not stalled in a multi-turn action.
+    // Port only: re-arm temporary highlights and collect whether any expired
+    // (C does this inside eval_and_notify_windowport()'s field sweep).
     evaluateNextUnhilite(state) {
         this.moves = state.moves;
         let update = !!state.context.botl;
@@ -619,6 +619,13 @@ export class StatusHighlights {
                 update = true;
         }
         return update;
+    }
+    // C botl.c:hilite_reset_needed(). A temporary highlight expires once
+    // its time has passed and the hero is not stalled in a multi-turn
+    // action.
+    hiliteResetNeeded(previous, state) {
+        return !!previous?.expires && !state.multi
+            && previous.expires < (this.moves ?? state.moves);
     }
     // C botl.c:evaluate_and_notify_windowport(): the whole-field sweep; both
     // buffers swap first, and a changed gold encoding forces update_all from
@@ -702,9 +709,8 @@ export class StatusHighlights {
             if (change === 1 && field === BL_XP && previous)
                 change = compare(previous.raw, current.raw);
         }
-        const expired = !!previous?.expires && !state.multi && previous.expires < (this.moves ?? state.moves);
-        // C hilite_reset_needed(): a temporary highlight whose time passed.
-        // botl.c:1584 re-sends a field only for gu.update_all, a value or
+        const expired = this.hiliteResetNeeded(previous, state);
+        // C botl.c:1584 re-sends a field only for gu.update_all, a value or
         // percentage change, or a temporary-hilite expiry. A rule list that
         // changed on its own never re-sends anything: the tty keeps the
         // buffered color of a removed rule until one of those rounds runs

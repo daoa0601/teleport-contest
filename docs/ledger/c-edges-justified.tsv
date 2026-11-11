@@ -2366,3 +2366,6 @@ more	topl_putsym	inlined	topl_putsym()'s hard column wrap is toplineRows(splitWo
 make_gas_cloud	add_region	inlined	make_gas_cloud() fuses create_region()/add_rect_to_reg()/add_region() activation (region.ts makeGasCloud)
 expire_gas_cloud	inside_region	inlined	expire_gas_cloud() walks the region's cell array directly; inside_region()'s port is regionContains() (region.ts)
 inside_gas_cloud	wake_nearto	inlined	inside_gas_cloud()'s wake_nearto is the injected wake callback of wakeNearGas(); mon.ts wakeMonstersNearWithMessages is wake_nearto()'s port (region.ts)
+timebot	bot	inlined	timebot()'s non-windowport bot() arm is the tty-only old status display the port does not model (botl.ts)
+timebot	stat_update_time	included as present via timebot()'s windowport arm, which updates BL_TIME inline (botl.ts)
+bot_via_windowport	unconscious	inlined	trap.c unconscious() is heroIsUnconscious() at botl.ts:425, under the condition-hilite evaluation of bot()'s windowport update
