@@ -2354,3 +2354,5 @@ display_pickinv	identify_pack	inlined	the identify_pack(0) call of display_picki
 display_inventory	display_pickinv	inlined	display_inventory()'s port hands the queued class choice to the shared inventory window flow; display_pickinv()'s port is selectInventoryObject() (invent.ts)
 dotypeinv	tally_BUCX	inlined	tally_BUCX()'s beatitude tallies are the statuses Set and picked filter in typeInventory()/traditionalIdentifyChoices() (invent.ts)
 learn_unseen_invent	update_inventory	n/a	the pinned TTY build's update_inventory() has no persistent inventory window after learn_unseen_invent() (invent.ts)
+clonewiz	makemon	inlined	clonewiz()'s clone is created by the mcastu owner that resumes the interrupted cast (wizard.ts)
+nasty	msummon	inlined	nasty()'s Inhell msummon branch returns a deferral the wizard and mcastu callers await (wizard.ts summonNastyMonsters, mcastu.ts)

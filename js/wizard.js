@@ -10,7 +10,7 @@ import { makemon, setMonsterMalign, unmakeNastySubstitute } from './makemon.js';
 import { monsterAlignmentType, priestIsInOwnTemple } from './priest.js';
 import { BOLT_LIM, In_endgame, Is_astralevel, Is_rogue_level, MAGIC_PORTAL, M_AP_MONSTER, MM_NOMSG, MM_NOWAIT, RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR, STRAT_PLAYER, STRAT_WAITFORU, STRAT_WAITMASK } from './const.js';
 import { isok } from './cmd.js';
-import { msummon } from './minion.js';
+import { msummon, monsterCensus } from './minion.js';
 import { rndcurse } from './sit.js';
 import { dungeonBuildsUp, insideWizardTower } from './dungeon.js';
 import { monsterIsHelpless, is_minion } from './mondata.js';
@@ -309,10 +309,19 @@ export function chooseCovetousStrategy(monster, state) {
     monster.mstrategy = ((monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG)) | flags;
     return strategy;
 }
+// C wizard.c:on_ground(). The first floor object in fobj order that
+// matches the want.
+function onGround(matches, state) {
+    return state.level.objects.flatMap(column => (column ?? []).flatMap(pile => pile ?? []))
+        .filter(matches).sort((a, b) => (b._fobjOrder ?? 0) - (a._fobjOrder ?? 0))[0];
+}
+// C wizard.c:other_mon_has_arti(). The first carrier other than the
+// seeker that holds the want; it does not search past an excluded carrier.
+function otherMonHasArti(monster, matches, state) {
+    return [...state.level.monsters].reverse().find(candidate => candidate !== monster && (candidate.minvent ?? []).some(matches));
+}
 // C wizard.c:target_on()
 // Also C wizard.c:mon_has_arti(): inlined here for the seeking monster.
-// Also C wizard.c:on_ground(): inlined here for floor objects.
-// Also C wizard.c:other_mon_has_arti(): inlined here for other carriers.
 function findCovetousTarget(monster, mask, state) {
     // C wizard.c:target_on() checks the requested wants mask directly.
     if (!(questMonsterFlags3(monster.mnum, state) & mask))
@@ -321,13 +330,10 @@ function findCovetousTarget(monster, mask, state) {
     if (!(monster.minvent ?? []).some(matches)) {
         if (heroHasTarget(mask, state))
             return { kind: 'hero', position: { x: state.u.ux, y: state.u.uy }, mask };
-        const floor = state.level.objects.flatMap(column => (column ?? []).flatMap(pile => pile ?? []))
-            .filter(matches).sort((a, b) => (b._fobjOrder ?? 0) - (a._fobjOrder ?? 0))[0];
+        const floor = onGround(matches, state);
         if (floor)
             return { kind: 'floor', position: { x: floor.ox, y: floor.oy }, mask, object: floor };
-        // other_mon_has_arti() considers the first fmon carrier before the
-        // Amulet exception; it does not search past an excluded carrier.
-        const carrier = [...state.level.monsters].reverse().find(candidate => candidate !== monster && (candidate.minvent ?? []).some(matches));
+        const carrier = otherMonHasArti(monster, matches, state);
         if (carrier && (mask !== WANTS_AMULET || !carrier.iswiz && !priestIsInOwnTemple(carrier, state)))
             return { kind: 'monster', position: { x: carrier.mx, y: carrier.my }, mask };
     }
@@ -572,6 +578,12 @@ const NASTY_SHAPE_DEMOTIONS = [
 const NASTY_BIG_TO_LITTLE = new Map(NASTY_SHAPE_DEMOTIONS.map(([large, small]) => [
     monsterIndexByName(large), monsterIndexByName(small),
 ]));
+// C wizard.c:big_to_little(). The nasty table's demoted species for a
+// genocided, out-of-place, or over-difficult one; species outside the
+// table stay.
+function bigToLittle(mndx) {
+    return NASTY_BIG_TO_LITTLE.get(mndx) ?? mndx;
+}
 // C wizard.c:pick_nasty()
 export function pickNastyShape(difficultyCap) {
     let result = pickNastyCandidate();
@@ -585,8 +597,7 @@ export function pickNastyShape(difficultyCap) {
         || (difficultyCap > 0
             && (MONSTER_DIFFICULTY[result] ?? 0) >= difficultyCap)
         || !!((MONSTER_GENO[result] ?? 0) & outOfPlaceMask);
-    const alternate = shouldDemote
-        ? (NASTY_BIG_TO_LITTLE.get(result) ?? result) : result;
+    const alternate = shouldDemote ? bigToLittle(result) : result;
     if (alternate !== result && !speciesWasGenocided(alternate, game)) {
         const name = MONSTER_NAME[alternate] ?? '';
         if (!name.startsWith('baby ')
@@ -598,11 +609,7 @@ export function pickNastyShape(difficultyCap) {
 }
 const S_DEMON_WIZ = 56;
 const S_ANGEL_WIZ = 27;
-// Part of C minion.c:monster_census(): count all living monsters, excluding parked guards.
-function nastyMonsterCensus() {
-    return game.level?.monsters.filter(monster => !monster.dead && monster.mhp > 0
-        && !(monster.isgd && monster.mx === 0)).length ?? 0;
-}
+// minion.c:monster_census() is minion.ts monsterCensus().
 // C wizard.c:nasty()
 // Uses wizard.c:pick_nasty() above for mcastu.c:mcast_summon_mons().
 // A monster-cast summon deliberately chooses an explicit high-difficulty
@@ -611,7 +618,7 @@ function nastyMonsterCensus() {
 // actors retain the normal constructor's messages and display updates.
 export async function summonNastyMonsters(summoner) {
     const created = [];
-    const census = nastyMonsterCensus();
+    const census = monsterCensus();
     const flags = summoner ? MM_NOMSG : 0;
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags.hellish;
     // wizard.c:nasty() occasionally delegates to demon.c:msummon().  The
@@ -693,7 +700,7 @@ export async function summonNastyMonsters(summoner) {
             }
         }
     }
-    return { count: created.length ? nastyMonsterCensus() - census : 0, created };
+    return { count: created.length ? monsterCensus() - census : 0, created };
 }
 // Part of C wizard.c:pick_nasty(): draw a species from the nasty-monster table.
 function pickNastyCandidate() {
