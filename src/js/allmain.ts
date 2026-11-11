@@ -1,3 +1,4 @@
+import { updateRestoredFloorShopOwnership } from './restore.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
 import { rcfileOnlyThisOption } from './cfgfiles.js';
@@ -416,6 +417,10 @@ export async function restoregamePreamble() {
             await restoreMonsterShape(monster, game);
             if (game.program_state.gameover) return;
         }
+        game.level_status.shkready = true;
+        updateRestoredFloorShopOwnership();
+        game.level_status.loading = false;
+        game.level_status.ready = true;
         game.program_state.in_getlev = false;
         await finishInUseInventory(false);
         // C dorecover() rebuilds vision, then expires timers while map and

@@ -1,3 +1,6 @@
+import { updateRestoredFloorShopOwnership } from '../js/restore.js';
+import { DAGGER } from '../js/object_data.js';
+import { floorObject } from './support/game-objects.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -51,4 +54,16 @@ void test('the keeper home square is free and an absent keeper cannot own costly
     assert.equal(shopkeeperInOwnShop(west.shopkeeper), false);
     assert.equal(costlySpot(8, 10), null);
     assert.equal(costlySpot(14, 10)?.resident, east.shopkeeper);
+});
+
+void test('restored owned objects keep their exemption until shop residency is ready', async () => {
+    await freshObjectRoom();
+    game.level_status.shkready = false;
+    const dagger = await floorObject(DAGGER, 10, 10, { initialize: false, no_charge: true });
+    assert.equal(dagger.no_charge, true, 'Loading must not clear ownership against incomplete shops');
+
+    game.level_status.shkready = true;
+    updateRestoredFloorShopOwnership();
+
+    assert.equal(dagger.no_charge, false, 'An object outside all restored shops has no exemption');
 });

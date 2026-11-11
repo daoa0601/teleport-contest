@@ -1014,11 +1014,18 @@ function linkFloorObject(object, x, y, state) {
     pile.splice(index, 0, object);
     if (object.otyp === BOULDER && !pileTopWasBoulder && state === game)
         block_point(x, y);
-    if (state.program_state.beyond_savefile_load && object.no_charge && !costlySpot(x, y, state)
-        && !costlyAdjacent(findObjectOwner(object, x, y, state), x, y, state))
-        object.no_charge = false;
+    updateFloorObjectShopOwnership(object, state);
     updateCorpseIceTimer(object, x, y, isIceAt(x, y, state), state);
     return object;
+}
+// Part of C mkobj.c:place_object(): ownership checks wait for shop residency.
+// Restored maps already retain their piles, so find_lev_obj() uses this step
+// without relinking the saved object graph.
+export function updateFloorObjectShopOwnership(object, state = game) {
+    const { ox: x, oy: y } = object;
+    if (state.level_status.shkready && object.no_charge && !costlySpot(x, y, state)
+        && !costlyAdjacent(findObjectOwner(object, x, y, state), x, y, state))
+        object.no_charge = false;
 }
 // Part of C zap.c:bhitpile(), muse.c:fhito_loc(): the shared floor-pile
 // walk.

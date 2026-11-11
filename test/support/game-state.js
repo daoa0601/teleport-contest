@@ -56,6 +56,7 @@ export function freshGame({ datetime = DEFAULT_TEST_DATETIME, level = new GameMa
     const state = resetGame();
     state.datetime = datetime;
     state.level = level;
+    state.level_status = { making: false, loading: false, shkready: true, ready: true };
     state.u = u;
     state.urole = typeof role === 'string' ? roleData : role;
     state.urace = race;

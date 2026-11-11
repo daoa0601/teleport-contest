@@ -69,6 +69,7 @@ const transientFields = {
     _unweapon: true,
     in_mk_themerooms: true,
     in_mklev: true,
+    level_status: true,
     made_branch: true,
     nethackrc: true,
     nethackOptions: true,

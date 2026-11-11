@@ -1,3 +1,4 @@
+import { level_status_init } from './gstate.js';
 // mklev.js — regular level generation.
 // C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
 // generate_stairs, fill_ordinary_room, mineralize, level_finalize_topology.
@@ -171,7 +172,10 @@ export async function mklev() {
         return;
     g.in_mklev = true;
     await makelevel();
+    g.level_status.shkready = true;
     await currentLuaLifecycle().runCallbacks(g, 'level_enter');
+    g.level_status.making = false;
+    g.level_status.ready = true;
     await level_finalize_topology();
     g.in_mklev = false;
     // C pairs mklev() with vision_reset() (allmain.c) before anything can
@@ -256,6 +260,8 @@ function clear_level_structures() {
 // post_level_generate theme call plus whole-level wallification).
 async function makelevel() {
     const g = game;
+    level_status_init(g);
+    g.level_status.making = true;
     oinit();
     clear_level_structures();
     const level = requireGameLevel();
@@ -602,6 +608,7 @@ async function makelevel() {
     for (const croom of level.rooms.slice(0, level.nroom))
         if (isRoom(croom))
             await fill_special_room(croom);
+    g.level_status.shkready = true;
     if (themedRooms) {
         await callLuaThemerooms('post_level_generate');
         // A loaded theme interpreter wallifies the complete level, including

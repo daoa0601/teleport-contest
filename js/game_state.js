@@ -7,6 +7,7 @@ export function createGameState() {
     return {
         u: createHeroState(), urole: null, urace: null, initAlignment: null,
         context: { move: 0 }, program_state: {}, flags: {}, iflags: {},
+        level_status: { making: false, loading: false, shkready: false, ready: false },
         // C decl.c g_init_h starts hero_seq at 1<<3: the first hero action
         // of the opening turn is sequence 8, never 0, so eshk breakage
         // tracking refreshes seq_peaceful on the very first break.

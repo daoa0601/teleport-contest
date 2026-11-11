@@ -1,3 +1,5 @@
+import { level_status_init } from './gstate.js';
+import { updateRestoredFloorShopOwnership } from './restore.js';
 // do.js — the do.c owner: drop commands and floor landings, sink rings,
 // level-arrival strays, stair travel, goto_level and its deferred
 // scheduling, wait/wipe, and wounded legs.
@@ -1865,6 +1867,8 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         ? Math.min(reached, destinationDepth.dlevel)
         : Math.max(reached, destinationDepth.dlevel);
     if (cached) {
+        level_status_init();
+        game.level_status.loading = true;
         game.program_state.in_getlev = true;
         try {
             game.level = cached.level;
@@ -1896,6 +1900,8 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
                 if (elapsed > 0 && elapsed > rnd(10))
                     await hideMonsterOnRestore(monster, game);
             }
+            game.level_status.shkready = true;
+            updateRestoredFloorShopOwnership();
             await restoreLevelRegions(game, game.moves - cached.savedAt);
             // getlev() redraws saved bubbles before goto_level() moves them.
             restore_waterlevel();
@@ -1904,6 +1910,8 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             // newest-first save order and ahead of the hero's carried
             // lights that never left the list.
             restoreLevelLightSources(game);
+            game.level_status.loading = false;
+            game.level_status.ready = true;
         }
         finally {
             game.program_state.in_getlev = false;

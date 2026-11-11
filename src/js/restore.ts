@@ -1,3 +1,5 @@
+import { level_status_init } from './gstate.js';
+import { updateFloorObjectShopOwnership } from './mkobj.js';
 // restore.js — C restore.c in one module: every whole-function restore.c
 // port, ordered by its C definition. The synchronous dorecover() flow
 // (restoreGame() with the restgamestate() refusal dialogue) stays in save.ts
@@ -365,6 +367,14 @@ export function validSavedMonsterTraits(value: unknown, context: SavedEntityCont
     return validateSavedEntity(value, 'savedMonster', context, fields);
 }
 
+// C restore.c:find_lev_obj(): saved TS maps retain floor chains and coordinates.
+// Shop flags must still be reconciled after restored keepers take residency.
+export function updateRestoredFloorShopOwnership(state: GameState = game): void {
+    for (const column of state.level?.objects ?? [])
+        for (const pile of column ?? [])
+            for (const object of pile ?? []) updateFloorObjectShopOwnership(object, state);
+}
+
 // C restore.c:rest_stairs(), getlev() and restdamage().
 // Native restoration prepends each saved stair to the new chain.
 export function restoreLevelChains(level: GameMap, stairs: Stairway | null): Stairway | null {
@@ -625,6 +635,8 @@ export async function restoreGame(
         restorePersistentState(game, snapshot.state);
         if (birthday !== undefined) game.ubirthday = birthday;
         resetRestoredInstanceState();
+        level_status_init();
+        game.level_status.loading = true;
         resetErinys(game.u.ualign?.abuse ?? 0);
         resolveDungeonIdentities(game);
         // C restnames() reloads objects[].oc_prob as saved; those gem

@@ -1,3 +1,5 @@
+import { level_status_init } from './gstate.js';
+import { updateRestoredFloorShopOwnership } from './restore.js';
 // bones.ts — bones.c in one module, ordered by the C lifecycle:
 // no_bones_level()/can_make_bones() admission, the savebones() death flow
 // (drop_upon_death(), give_to_nearby_mon()), its monster fixups
@@ -480,6 +482,9 @@ export async function restoreBonesMonsters(level, state) {
         await restoreMonsterShape(monster, state);
         await hideMonsterOnRestore(monster, state);
     }
+    state.level_status.shkready = true;
+    if (state.level === level)
+        updateRestoredFloorShopOwnership(state);
     for (const monster of monsters) {
         sanitizeMonsterName(monster);
         if (monster.mhpmax !== DEFUNCT_MONSTER)
@@ -998,6 +1003,8 @@ export async function getbones() {
     restoreMonsterWormHeads(payload.level);
     restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
+    level_status_init();
+    game.level_status.loading = true;
     game.level = payload.level;
     shiftBonesDestinations(payload, location, location.dlevel);
     game.stairs = restoreLevelChains(game.level, payload.stairs || null);
@@ -1015,6 +1022,8 @@ export async function getbones() {
     restoreLevelTimers(game);
     await restoreBonesMonsters(game.level, game);
     repairBonesConnections(game.level, location);
+    game.level_status.loading = false;
+    game.level_status.ready = true;
     resetBonesObjects(game.level, 'restore');
     await fixShopDamage(game);
     // Failed loads still reference the level being left; sanitize loaded bones only.

@@ -47,4 +47,8 @@ export function requireInitializedGame(state = game) {
     requirePlayingGame(state);
     return state;
 }
+// C decl.c:level_status_init(): current level readiness is process-local.
+export function level_status_init(state = game) {
+    state.level_status = { making: false, loading: false, shkready: false, ready: false };
+}
 //# sourceMappingURL=gstate.js.map
