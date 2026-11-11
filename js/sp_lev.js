@@ -1878,8 +1878,15 @@ export async function lspo_object(context, parentContainer, parentMonster, invok
         ? MONSTER_CLASS_SYMBOLS.indexOf(corpseMonster) : null;
     if (speciesObject && corpseMonster?.length === 1 && (corpseMonsterClass == null || corpseMonsterClass < 1))
         throw new Error(`unknown Lua monster class ${corpseMonster}`);
+    // lspo_object() resolves the montype name against the male and female
+    // spellings too, and the gender the spelling implies is recorded in the
+    // statue/corpse gender overloads.
+    const montypeMatch = speciesObject && corpseMonster && corpseMonster.length > 1 && !noSpecies
+        ? find_montype(corpseMonster) : null;
+    const montypeGender = montypeMatch?.female === false ? CORPSTAT_MALE
+        : montypeMatch?.female === true ? CORPSTAT_FEMALE : 0;
     if (objectType === STATUE || objectType === CORPSE) {
-        options.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
+        options.spe = montypeGender | (options.historic ? CORPSTAT_HISTORIC : 0)
             | (options.male ? CORPSTAT_MALE : 0) | (options.female ? CORPSTAT_FEMALE : 0);
     }
     else if (objectType === EGG) {
@@ -1894,8 +1901,7 @@ export async function lspo_object(context, parentContainer, parentMonster, invok
         objectClass: options.class
             ? objectClassForSymbol(options.class) : null,
         objectType,
-        monsterType: speciesObject && corpseMonster && corpseMonster.length > 1 && !noSpecies
-            ? find_montype(corpseMonster).type : null,
+        monsterType: montypeMatch?.type ?? null,
         monsterClass: corpseMonsterClass,
     };
     // lspo_object() resolves montype before create_object() chooses a
