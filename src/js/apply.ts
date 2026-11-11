@@ -740,13 +740,12 @@ export function releaseAllMonsterLeashes(state: GameState = game): number {
     return attachedLeashes.length;
 }
 
-// C apply.c:number_leashed(): how many monsters the hero keeps leashed.
+// C apply.c:number_leashed(): count attached leashes in the hero's inventory.
 function numberLeashed(state: GameState): number {
-    return (state.level?.monsters || []).filter(monster => monster.mleashed).length;
+    return (state.inventory || []).filter(object => object.otyp === LEASH && object.leashmon).length;
 }
 
-// C apply.c:use_leash(): prompt for the adjacent creature; the two-pet
-// cap counts C apply.c:number_leashed()'s attached leashes inline.
+// C apply.c:use_leash(): apply or remove a leash from an adjacent creature.
 export async function useLeash(leash: GameObject): Promise<boolean> {
     const hero = game.u;
     if (hero.uswallow) {
