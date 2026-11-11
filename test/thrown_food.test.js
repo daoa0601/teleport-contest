@@ -40,7 +40,7 @@ void test('throwing a treat tames a domestic dog and consumes the projectile wit
     assert.equal(dog.mhp, hp);
     assert.equal(food.where, 'gone');
     assert.ok((dog.meating ?? 0) > 0);
-    assert.match(await message(), /devours an uncursed tripe ration\./);
+    assert.match(await message(), /The little dog devours an uncursed tripe ration\./);
 });
 void test('unsuitable food pacifies a cat and lands without provoking a hostile wakeup', async () => {
     // Verbose is the option default (optlist.h): tmiss names the visible cat.

@@ -1,3 +1,4 @@
+import { rayMissMessage } from '../js/zap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MFAST } from '../js/const.js';
@@ -26,4 +27,15 @@ void test('zapping speed at a named monster identifies the target in its feedbac
     assert.equal(game._pending_message, 'Fido is suddenly moving faster.');
     assert.equal(wand.spe, 1);
     assert.equal(game.context.move, 1);
+});
+
+void test('a visible missed pet is named as yours', async () => {
+    await freshObjectRoom();
+    game.flags.verbose = true;
+    const pet = await createMonsterAt('little dog', 11, 10);
+    pet.mtame = 5;
+
+    const message = rayMissMessage('bolt of fire', pet, { x: 11, y: 10 });
+
+    assert.equal(message, 'The bolt of fire misses your little dog.');
 });

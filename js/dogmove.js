@@ -223,7 +223,8 @@ async function describePetMeal(monster, meal, state) {
     const food = await inventoryItemDescription(meal.object);
     if (seesPet) {
         const subject = monsterName(monster, {
-            state, article: 'your', capitalized: true, suppressIt: true,
+            state, article: meal.devour && !tunnels(monster.mnum) ? 'the' : 'your',
+            capitalized: true, suppressIt: true,
         });
         if (tunnels(monster.mnum))
             await plineWithContinuation(`${subject} digs in.`);

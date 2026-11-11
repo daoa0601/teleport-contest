@@ -3214,7 +3214,7 @@ export function rayHitMessage(effect, monster, { x, y, damage = 0, ending, state
 // C zap.c:miss().
 export function rayMissMessage(effect, monster, { x, y, state = game }) {
     const named = state.flags.verbose && (cansee(x, y) || canSpotMonster(monster));
-    const target = named ? monsterName(monster, { state }) : 'it';
+    const target = named ? monsterName(monster, { state, article: monster.mtame ? 'your' : 'the', suppressIt: !!monster.mtame }) : 'it';
     return `${capitalizedDefiniteName(effect, state)} ${verbForSubject(effect, 'miss')} ${target}.`;
 }
 // C zap.c:skiprange().
