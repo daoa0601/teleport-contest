@@ -1449,16 +1449,20 @@ export async function applyAreaScrollEffect(source: GameObject, {
     }
 }
 
-// C read.c:seffect_amnesia().
 // C read.c:forget().
-async function amnesiaEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectResult> {
+async function forget(allSpells: boolean, state: PlayingGameState): Promise<void> {
     if (heroIsPunished(state)) state.u.bc_felt = 0;
-    if (!source.blessed) loseHeroSpellMemory({ state });
-    await drainHeroWeaponSkills(rnd(source.blessed ? 3 : 5), state);
+    if (allSpells) loseHeroSpellMemory({ state });
+    await drainHeroWeaponSkills(rnd(allSpells ? 5 : 3), state);
     for (const monster of state.level.monsters) {
         if (monster !== state.u.usteed && monster !== state.u.ustuck) monster.meverseen = 0;
     }
     for (const monster of state._migratingMonsters || []) monster.meverseen = 0;
+}
+
+// C read.c:seffect_amnesia().
+async function amnesiaEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectResult> {
+    await forget(!source.blessed, state);
     if (heroIsHallucinating(state)) await pline('Your mind releases itself from mundane concerns.');
     else if (/^maud/i.test(state.plname || ''))
         await pline('As your mind turns inward on itself, you forget everything else.');
