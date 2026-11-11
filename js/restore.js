@@ -414,10 +414,14 @@ export function restoreMonsterWormHeads(level) {
             monster.wormHead = { x: monster.mx, y: monster.my };
     }
 }
-// C restore.c:restmonchn() guard cleanup and getlev() terrain-flag scan.
-export function restoreMonsterTerrainState(monster, state = game) {
+// C restore.c:restmonchn(): restore the post-5.0.0 parked bit on old guards.
+function restoreParkedGuardState(monster) {
     if (monster.isgd && !monster.mx && !((monster.mstate ?? 0) & (MON_PARKED | MON_MIGRATING)))
-        monster.mstate = (monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK;
+        monster.mstate = ((monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK) | MON_PARKED;
+}
+// C restore.c:getlev(): restore the resident terrain-fallout flags.
+export function restoreMonsterTerrainState(monster, state = game) {
+    restoreParkedGuardState(monster);
     const effects = (monster.mstate ?? 0) & TERRAIN_FALLOUT_MASK;
     if (effects)
         state._pendingTerrainEffects = (state._pendingTerrainEffects ?? 0) | effects;
@@ -490,8 +494,10 @@ function restoreLevelMonsters(level, moves) {
     if (!validMonsterWormBodies(level))
         throw new Error('Invalid saved worm bodies');
     restoreMonsterWormHeads(level);
-    for (const monster of level.monsters)
+    for (const monster of level.monsters) {
+        restoreParkedGuardState(monster);
         restoreMonsterInventoryOwnership(monster);
+    }
 }
 // Part of C restore.c:dorecover(): monster restore across levels,
 // migrations, and the steed.
@@ -503,11 +509,13 @@ function restoreSavedMonsters(state) {
         restoreObjectPetHistory(cached.billObjects ?? [], 0);
     }
     for (const monster of state._migratingMonsters || []) {
+        restoreParkedGuardState(monster);
         restoreMonsterPetHistory(monster, 0);
         restoreObjectPetHistory(monster.minvent || monster.inventory || [], 0);
         restoreMonsterInventoryOwnership(monster);
     }
     if (state.u.usteed) {
+        restoreParkedGuardState(state.u.usteed);
         restoreMonsterPetHistory(state.u.usteed, 0);
         restoreMonsterInventoryOwnership(state.u.usteed);
     }

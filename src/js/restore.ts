@@ -467,10 +467,15 @@ export function restoreMonsterWormHeads(level: WormRestoreLevel): void {
     }
 }
 
-// C restore.c:restmonchn() guard cleanup and getlev() terrain-flag scan.
-export function restoreMonsterTerrainState(monster: Monster, state: GameState = game): void {
+// C restore.c:restmonchn(): restore the post-5.0.0 parked bit on old guards.
+function restoreParkedGuardState(monster: Monster): void {
     if (monster.isgd && !monster.mx && !((monster.mstate ?? 0) & (MON_PARKED | MON_MIGRATING)))
-        monster.mstate = (monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK;
+        monster.mstate = ((monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK) | MON_PARKED;
+}
+
+// C restore.c:getlev(): restore the resident terrain-fallout flags.
+export function restoreMonsterTerrainState(monster: Monster, state: GameState = game): void {
+    restoreParkedGuardState(monster);
     const effects = (monster.mstate ?? 0) & TERRAIN_FALLOUT_MASK;
     if (effects) state._pendingTerrainEffects = (state._pendingTerrainEffects ?? 0) | effects;
 }
@@ -539,7 +544,10 @@ function restoreLevelMonsters(level: GameMap, moves: number): void {
     restoreEngravings(level, moves);
     if (!validMonsterWormBodies(level)) throw new Error('Invalid saved worm bodies');
     restoreMonsterWormHeads(level);
-    for (const monster of level.monsters) restoreMonsterInventoryOwnership(monster);
+    for (const monster of level.monsters) {
+        restoreParkedGuardState(monster);
+        restoreMonsterInventoryOwnership(monster);
+    }
 }
 
 // Part of C restore.c:dorecover(): monster restore across levels,
@@ -551,11 +559,13 @@ function restoreSavedMonsters(state: PersistentState): void {
         restoreObjectPetHistory(cached.billObjects ?? [], 0);
     }
     for (const monster of state._migratingMonsters || []) {
+        restoreParkedGuardState(monster);
         restoreMonsterPetHistory(monster, 0);
         restoreObjectPetHistory(monster.minvent || monster.inventory || [], 0);
         restoreMonsterInventoryOwnership(monster);
     }
     if (state.u.usteed) {
+        restoreParkedGuardState(state.u.usteed);
         restoreMonsterPetHistory(state.u.usteed, 0);
         restoreMonsterInventoryOwnership(state.u.usteed);
     }

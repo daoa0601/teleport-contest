@@ -1,3 +1,4 @@
+import { monsterIsParked } from './mondata.js';
 // Object light and burn timers.
 import { SCROLL_CLASS } from './objclass.js';
 import { monsterHasMapPosition } from './steed.js';
@@ -318,7 +319,7 @@ export async function cleanupTransientLight(state = game) {
         await vision_recalc(0);
     let changed = false;
     for (const monster of state.level.monsters) {
-        if (monster.dead || monster.mhp <= 0 || !monster.mtemplit)
+        if (monster.dead || monster.mhp <= 0 || monsterIsParked(monster) || !monster.mtemplit)
             continue;
         monster.mtemplit = 0;
         changed = true;

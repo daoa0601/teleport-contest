@@ -1,3 +1,4 @@
+import { monsterIsParked } from './mondata.js';
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 // The symbols.c symbol-set tables and the get_othersym() boulder lookup
@@ -2162,7 +2163,7 @@ export async function see_monsters({ beforeGlow = null }: RedrawOptions = {}) {
     // makemon() links new actors at fmon's head; the live level array retains
     // creation order, so source traversal is its reverse (same as scheduler).
     for (const monster of Array.from(game.level?.monsters || []).reverse()) {
-        if (monster.dead || monster.mhp <= 0
+        if (monster.dead || monster.mhp <= 0 || monsterIsParked(monster)
             || ((monster.mstate ?? 0) & MON_STILL_ARRIVING)) continue;
         await newsym(monster.mx, monster.my);
         if (monster.wormno) await redrawMonsterWormSegments(monster);

@@ -2215,3 +2215,8 @@ export function heroWouldPetrifyFromFlesh(mnum: number | undefined, state: GameS
 export function isHeroDefender(defender: Hero | Monster, state: GameState): defender is Hero {
     return defender === state.u;
 }
+
+// C monst.h:PARKEDMONSTER(): vault guards stay on the level chain at x=0.
+export function monsterIsParked(monster: Pick<Monster, 'isgd' | 'mx'>): boolean {
+    return !!monster.isgd && monster.mx === 0;
+}

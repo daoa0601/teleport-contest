@@ -1,3 +1,5 @@
+import { MON_PARKED } from './const.js';
+import { monsterIsParked } from './mondata.js';
 import { MON_OFF_MAP_BITS } from './const.js';
 import { mon_offmap } from './const.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
@@ -989,7 +991,7 @@ export async function strikeSteed({
 export async function placeMonsterOnMap(monster: Monster, x: number, y: number, state = game): Promise<void> {
     const levelName = describeLevel(0, state);
     const monsterState = (monster.mstate ?? MON_FLOOR).toString(16);
-    if (!isok(x, y) && (x !== 0 || y !== 0 || !monster.isgd)) {
+    if (!isok(x, y) && !((monster.mstate ?? 0) & MON_PARKED) && !monsterIsParked(monster)) {
         const name = placementMonsterName(monster, true, state);
         await impossible(`trying to place ${name} at <${x},${y}>`
             + ` mstate:${monsterState} on ${levelName}`, { state });
