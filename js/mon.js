@@ -4916,16 +4916,18 @@ export function maybeSetTerrainEffects(monster, oldSpecies, state = game) {
         && !isLavaAt(monster.mx, monster.my, state) && location?.typ !== FOUNTAIN)
         return false;
     let changed = false;
-    if (!monsterIsFlyer(monster.mnum)) {
-        changed = oldSpecies === null ||
-            ((monsterIsFlyer(oldSpecies) !== monsterIsFlyer(monster.mnum)
-                || monsterIsFloater(oldSpecies) !== monsterIsFloater(monster.mnum))
-                && !heroKeepsSteedAboveLiquid(monster, state, false));
+    const steedAbove = heroKeepsSteedAboveLiquid(monster, state, false);
+    const aboveWater = (monsterIsFlyer(monster.mnum) || monsterIsFloater(monster.mnum)) && !steedAbove;
+    const wasAboveWater = oldSpecies !== null
+        && (monsterIsFlyer(oldSpecies) || monsterIsFloater(oldSpecies)) && !steedAbove;
+    if (!aboveWater) {
+        changed = oldSpecies === null || aboveWater !== wasAboveWater;
         state._pendingTerrainEffects = (state._pendingTerrainEffects ?? 0) | NONFLYER_VS_LIQUID;
         monster.mstate = (monster.mstate ?? 0) | NONFLYER_VS_LIQUID;
     }
     if (!cant_drown(monster.mnum)) {
-        changed = oldSpecies === null || cant_drown(oldSpecies) !== cant_drown(monster.mnum);
+        if (!changed)
+            changed = oldSpecies === null || cant_drown(oldSpecies) !== cant_drown(monster.mnum);
         state._pendingTerrainEffects = (state._pendingTerrainEffects ?? 0) | CANDROWN_VS_LIQUID;
         monster.mstate = (monster.mstate ?? 0) | CANDROWN_VS_LIQUID;
     }
