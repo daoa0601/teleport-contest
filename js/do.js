@@ -1615,6 +1615,10 @@ export async function doup() {
 // the level's engravings (savelev's checkpointed half), and the non-level
 // state that savestateinlock() writes goes through the normal save path.
 export async function saveCurrentState() {
+    // do.c:save_currentstate(): nothing to checkpoint before the game
+    // state is worth saving.
+    if (!game.program_state.something_worth_saving)
+        return;
     if (game.flags.checkpoint ?? true)
         rewindEngravingsForSave(game.level);
 }

@@ -912,7 +912,9 @@ async function initializeNewGame() {
     // maintenance pass.  Compatibility paths historically hid this by
     // skipping the generic maintenance block altogether.
 
-    if (g.flags.checkpoint ?? true) rewindEngravingsForSave(g.level);
+    // allmain.c:838's INSURANCE save_currentstate() now returns early:
+    // nothing is checkpointed before anything is worth saving, so the
+    // first engraving rewind happens at the first level arrival instead.
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
     await welcome(true);
