@@ -950,8 +950,6 @@ function restoreBonesClock(level, savedAt) {
         timer.deadline += adjustment;
     for (const damage of level.damagelist ?? [])
         damage.when += adjustment;
-    if (level.flags.stasis_until !== undefined)
-        level.flags.stasis_until += adjustment;
 }
 // C bones.c:getbones()
 // With restore.c:getlev(ghostly) for loading the level.

@@ -2093,10 +2093,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             cached.stairs = restoreLevelChains(cached.level, cached.stairs);
             game.stairs = cached.stairs;
             game._activeSpecialLevel = cached.activeSpecialLevel || null;
-            // save_adjust_levelflags()/rest_adjust_levelflags() preserve the
-            // remaining stasis duration while its level is stored off-map.
-            if (cached.level.flags.stasis_until !== undefined)
-                cached.level.flags.stasis_until += game.moves - cached.savedAt;
             restoreLevelTimers(game);
             // C getlev() (do.c:1711) restores each resident before
             // separately arriving monsters.  Births append in the port,

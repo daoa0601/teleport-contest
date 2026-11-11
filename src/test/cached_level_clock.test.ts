@@ -17,7 +17,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';
 
 for (const saveWhileAway of [false, true]) {
-    void test(`stasis keeps its remaining turns while the level is cached${saveWhileAway ? ' across a save' : ''}`, async () => {
+    void test(`stasis expires while the level is cached${saveWhileAway ? ' across a save' : ''}`, async () => {
         const { source } = freshConnectedLevels();
         requirePlayingGame(game);
         game.flags.verbose = false;
@@ -32,11 +32,7 @@ for (const saveWhileAway of [false, true]) {
 
         await gotoLevel({ dlevel: 1 }, { arrival: 'stairs' });
 
-        assert.equal(heroTeleportRestricted(), true, 'Cached stasis must still block teleportation');
-        game.moves += 5;
-        assert.equal(heroTeleportRestricted(), true, 'The final stasis turn remains blocked');
-        game.moves++;
-        assert.equal(heroTeleportRestricted(), false, 'Stasis ends after its remaining turns');
+        assert.equal(heroTeleportRestricted(), false, 'Time on another level exhausts stasis');
     });
 }
 

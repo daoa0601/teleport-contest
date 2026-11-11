@@ -1012,7 +1012,6 @@ function restoreBonesClock(level: GameMap, savedAt: number): void {
     eachTopLevelBonesObject(level, restoreObjectClock);
     for (const timer of level.levelTimers) timer.deadline += adjustment;
     for (const damage of level.damagelist ?? []) damage.when += adjustment;
-    if (level.flags.stasis_until !== undefined) level.flags.stasis_until += adjustment;
 }
 
 // C bones.c:getbones()
