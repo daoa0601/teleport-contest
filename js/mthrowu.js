@@ -527,11 +527,7 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
                 await state.animationFrame?.();
         },
         async backtrack() {
-            // DISP_END/BACKTRACK moves inward before the first return frame.
-            while (await effect.retract()) {
-                await flushFrame();
-            }
-            await clear();
+            await effect.end(true, flushFrame);
         },
         clear,
     };

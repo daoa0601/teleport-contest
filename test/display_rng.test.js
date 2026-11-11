@@ -14,7 +14,7 @@ import { landFloorObject } from '../js/do.js';
 import { placeCreatedObject } from '../js/mkobj.js';
 import { CHEST, POT_WATER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { finishHeroThrownObjectLanding } from '../js/thrown_object.js';
+import { finishHeroThrow } from '../js/dothrow.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -50,7 +50,7 @@ void test('a thrown potion flashes its hallucinated appearance before breaking',
     initRng(31n);
     const flashes = [];
     game.animationFrame = async () => { flashes.push(glyphAt(13, 10)?.glyph); };
-    await finishHeroThrownObjectLanding({
+    await finishHeroThrow({
         object: potion, x: 13, y: 10, publish: () => { },
     });
     assert.equal(potion.where, 'gone');

@@ -152,10 +152,10 @@ src/js/dig.ts	buryObject	rn1	"[""50"", ""20""]"	constant
 src/js/dig.ts	scheduleBuriedRot	rnd	"[""250""]"	constant
 src/js/dothrow.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
 src/js/dothrow.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
-src/js/dothrow.ts	finishReturningThrow	rn2	"[""100""]"	constant
-src/js/dothrow.ts	finishReturningThrow	rn2	"[""100""]"	constant
-src/js/dothrow.ts	finishReturningThrow	rn2	"[""2""]"	constant
-src/js/dothrow.ts	finishReturningThrow	rnd	"[""3""]"	constant
+src/js/dothrow.ts	finishHeroThrow	rn2	"[""100""]"	constant
+src/js/dothrow.ts	finishHeroThrow	rn2	"[""100""]"	constant
+src/js/dothrow.ts	finishHeroThrow	rn2	"[""2""]"	constant
+src/js/dothrow.ts	finishHeroThrow	rnd	"[""3""]"	constant
 src/js/dothrow.ts	resolveGenericSwallowedThrow	rnd	"[""20""]"	constant
 src/js/dothrow.ts	resolveSwallowedFoodThrow	rnd	"[""20""]"	constant
 src/js/dothrow.ts	resolveSwallowedPotionThrow	rnd	"[""20""]"	constant
