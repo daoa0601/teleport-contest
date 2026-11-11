@@ -1,3 +1,4 @@
+import { SCR_IDENTIFY, SPE_IDENTIFY } from '../js/object_data.js';
 import { WAND_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -14,6 +15,11 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const [request, type] of [
     ['speed boots', SPEED_BOOTS],
+    ['scroll of identification', SCR_IDENTIFY],
+    ['spellbook of identification', SPE_IDENTIFY],
+    ['ring of constitution', OBJECT_NAMES.indexOf('gain constitution')],
+    ['ring of strength', OBJECT_NAMES.indexOf('gain strength')],
+    ['ring of damage', OBJECT_NAMES.indexOf('increase damage')],
     ['gauntlets of giant strength', GAUNTLETS_OF_POWER],
     ['dwarven mattock', DWARVISH_MATTOCK],
     ['scroll of recharging', OBJECT_NAMES.indexOf('charging')],
