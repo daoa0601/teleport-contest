@@ -18,10 +18,10 @@ import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './m
 import { ensureMinionData } from './minion.js';
 import { monsterAtPosition, putSaddleOnMonster } from './steed.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
-import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, IS_POOL, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, MATCH_WALL, MAX_TYPE, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GENOD, G_GONE, LEVEL_TIMER_KIND, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM, is_hole, is_pit } from './const.js';
+import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, IS_POOL, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, INVALID_TYPE, MAP_Y_LIM, MATCH_WALL, MAX_TYPE, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_NEUTRAL, AM_CHAOTIC, AM_MASK, AM_SPLEV_CO, AM_SPLEV_NONCO, AM_SPLEV_RANDOM, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GENOD, G_GONE, LEVEL_TIMER_KIND, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
-import { l_register_des, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, MONSTER_CLASS_SYMBOLS, TRAP_TYPES } from './lua/des.js';
+import { l_register_des, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, MONSTER_CLASS_SYMBOLS, TRAP_TYPES, get_table_int_or_random } from './lua/des.js';
 import { LuaTable, objectToLuaTable, luaTableToArray, luaCheckString } from './lua/runtime.js';
 import { currentLuaLifecycle, startTimerAt } from './lua/lifecycle.js';
 import { discardMonsterInventory } from './mkobj.js';
@@ -52,7 +52,6 @@ import { beginObjectBurn, scheduleLevelTimer, stopLevelTimer } from './timeout.j
 import { monsterEmitsLight, vision_reset } from './vision.js';
 import { new_light_source } from './light.js';
 import { SpecialSelection } from './selvar.js';
-import { specialSelectionMatch } from './lua/nhlsel.js';
 import { mapCharacterType } from './lua/lifecycle.js';
 import { CANDELABRUM_OF_INVOCATION, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD, S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom, makecorridors, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, topologize } from './mklev.js';
 import { stairway_add } from './stairs.js';
@@ -76,6 +75,60 @@ export function match_maptyps(expected, actual) {
         return false;
     if (expected < MAX_TYPE && expected !== actual)
         return false;
+    return true;
+}
+export function mapfrag_fromstr(str) {
+    const data = (str.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
+    const rows = data.split('\n');
+    if (rows.at(-1) === '')
+        rows.pop();
+    if (rows.length > MAP_Y_LIM + 1)
+        return null;
+    return { data, wid: Math.max(0, ...rows.map(row => row.length)), hei: rows.length };
+}
+// C sp_lev.c:mapfrag_canmatch(). The fragment must have odd height and width.
+export function mapfrag_canmatch(mf) {
+    return mf.wid % 2 !== 0 && mf.hei % 2 !== 0;
+}
+// C sp_lev.c:mapfrag_get(). The terrain character at a fragment position;
+// the original buffer is indexed with a fixed row stride.
+export function mapfrag_get(mf, x, y) {
+    return mapCharacterType(mf.data[y * (mf.wid + 1) + x]) ?? INVALID_TYPE;
+}
+// C sp_lev.c:mapfrag_free(). Drop the holder's fragment; the holder
+// pattern mirrors C's struct mapfragment ** out-parameter.
+export function mapfrag_free(holder) {
+    holder.fragment = null;
+}
+// C sp_lev.c:mapfrag_error(). Null when the fragment can match; the
+// fragment is dropped and the reason returned otherwise. A null fragment
+// from mapfrag_fromstr() is the generic mapfragment error.
+export function mapfrag_error(holder) {
+    const mf = holder.fragment;
+    if (mf === null)
+        return 'mapfragment error';
+    if (!mapfrag_canmatch(mf)) {
+        mapfrag_free(holder);
+        return 'mapfragment needs to have odd height and width';
+    }
+    // TYP_CANNOT_MATCH(typ): MAX_TYPE or INVALID_TYPE.
+    const center = mapfrag_get(mf, Math.trunc(mf.wid / 2), Math.trunc(mf.hei / 2));
+    if (center === MAX_TYPE || center === INVALID_TYPE) {
+        mapfrag_free(holder);
+        return 'mapfragment center must be valid terrain';
+    }
+    return null;
+}
+// C sp_lev.c:mapfrag_match(). Does the fragment match the level at x,y?
+export function mapfrag_match(mf, x, y) {
+    for (let rx = -Math.trunc(mf.wid / 2); rx <= Math.trunc(mf.wid / 2); rx++)
+        for (let ry = -Math.trunc(mf.hei / 2); ry <= Math.trunc(mf.hei / 2); ry++) {
+            const mapc = mapfrag_get(mf, rx + Math.trunc(mf.wid / 2), ry + Math.trunc(mf.hei / 2));
+            const levc = isok(x + rx, y + ry)
+                ? game.level?.at?.(x + rx, y + ry)?.typ : STONE;
+            if (!match_maptyps(mapc, levc ?? STONE))
+                return false;
+        }
     return true;
 }
 // C sp_lev.c:random_wdir().
@@ -292,27 +345,27 @@ function pm_to_humidity(mndx) {
         humidity |= HOT;
     return humidity;
 }
+// C sp_lev.c:sel_set_wall_property(). Flag one qualifying square; solid
+// rock counts, so a later des.wallify() cannot turn it into a boundary
+// wall without losing the property established by des.non_diggable().
+function sel_set_wall_property(loc, prop) {
+    if (IS_STWALL(loc.typ) || loc.typ === TREE || loc.typ === IRONBARS)
+        loc.wall_info |= prop;
+}
 // C sp_lev.c:set_wall_property(): flag the rectangle's walls, trees and
-// iron bars — sel_set_wall_property()'s per-point test is the condition
-// below. lspo_non_diggable() reaches this whole-map form.
+// iron bars. lspo_non_diggable() reaches this whole-map form.
 export function set_wall_property(context = null) {
     const level = requireGameLevel();
     const xstart = context?.xstart ?? 0;
     const ystart = context?.ystart ?? 0;
     const width = context?.width ?? COLNO;
     const height = context?.height ?? ROWNO;
-    for (let dx = 0; dx < width; dx++) {
+    for (let dx = 0; dx < width; dx++)
         for (let dy = 0; dy < height; dy++) {
             const loc = level.at(xstart + dx, ystart + dy);
-            // sp_lev.c:sel_set_wall_property() marks solid rock too.  A later
-            // des.wallify() can turn that rock into a boundary wall without
-            // losing the property established by des.non_diggable().
-            if (loc && (IS_STWALL(loc.typ) || loc.typ === TREE
-                || loc.typ === IRONBARS)) {
-                loc.wall_info |= W_NONDIGGABLE;
-            }
+            if (loc)
+                sel_set_wall_property(loc, W_NONDIGGABLE);
         }
-    }
 }
 // C sp_lev.c:lspo_non_diggable(): the selection form flags the selected
 // walls and trees directly.
@@ -324,9 +377,8 @@ export function lspo_non_diggable(selection) {
     const level = requireGameLevel();
     selection.forEachXMajor((x, y) => {
         const loc = level.at(x, y);
-        if (loc && (IS_STWALL(loc.typ) || loc.typ === TREE
-            || loc.typ === IRONBARS))
-            loc.wall_info |= W_NONDIGGABLE;
+        if (loc)
+            sel_set_wall_property(loc, W_NONDIGGABLE);
     });
 }
 // C sp_lev.c:sel_set_door(): make the square a door (secret if asked),
@@ -1322,26 +1374,45 @@ export async function lspo_replace_terrain(context, value) {
     selection ??= new SpecialSelection().negate();
     const fromType = mapCharacterType(options.fromterrain ?? '');
     const toType = mapCharacterType(options.toterrain ?? '');
-    const fragment = fromType === undefined && options.mapfragment != null
-        ? specialSelectionMatch(String(options.mapfragment)) : null;
-    if ((!fragment && fromType === undefined) || toType === undefined)
+    const holder = { fragment: null };
+    if (fromType === undefined && options.mapfragment != null) {
+        holder.fragment = mapfrag_fromstr(String(options.mapfragment));
+        const error = mapfrag_error(holder);
+        if (error !== null)
+            throw new NethackLuaError(error);
+    }
+    const mf = holder.fragment;
+    if ((!mf && fromType === undefined) || toType === undefined)
         throw new Error('unknown Lua replacement terrain');
     const chance = options.chance ?? 100;
     const lit = options.lit ?? -2;
     selection.forEachXMajor((x, y) => {
         const loc = level.at(x, y);
-        const matches = fragment
-            ? fragment.has(x, y)
+        const matches = mf
+            ? mapfrag_match(mf, x, y)
             : loc && fromType !== undefined && match_maptyps(fromType, loc.typ);
         if (!matches || rn2(100) >= chance)
             return;
         setLevelTerrainLit(x, y, toType, lit);
     });
+    mapfrag_free(holder);
+}
+// C sp_lev.c:sel_set_feature(). Furniture placement refuses a square that
+// already holds furniture.
+function sel_set_feature(cell, typ) {
+    if (!IS_FURNITURE(cell.typ))
+        cell.typ = typ;
+}
+// C sp_lev.c:l_table_getset_feature_flag(). Set or clear one furniture
+// flag; an absent field leaves the flag alone.
+function l_table_getset_feature_flag(cell, value, flag) {
+    if (value === undefined)
+        return;
+    const current = cell.looted ?? cell.flags;
+    cell.flags = cell.looted = value ? current | flag : current & ~flag;
 }
 // C sp_lev.c:lspo_feature(): furniture at a dry random spot or an
-// author-chosen square; sel_set_feature() refuses existing furniture, and
-// l_table_getset_feature_flag()'s zero/one/random flag handling is the
-// loop below.
+// author-chosen square.
 export async function lspo_feature(context, value, x, y) {
     const fields = value instanceof LuaTable ? tableOptions(value) : {};
     const options = {
@@ -1362,30 +1433,26 @@ export async function lspo_feature(context, value, x, y) {
     if (!isok(location.x, location.y))
         return;
     const cell = level.requireAt(location.x, location.y);
-    if (!IS_FURNITURE(cell.typ))
-        cell.typ = featureType;
+    sel_set_feature(cell, featureType);
     if (cell.typ !== featureType)
         return;
-    let flags = [];
     switch (featureType) {
         case FOUNTAIN:
-            flags = [[options.looted, F_LOOTED], [options.warned, F_WARNED]];
+            l_table_getset_feature_flag(cell, options.looted, F_LOOTED);
+            l_table_getset_feature_flag(cell, options.warned, F_WARNED);
             break;
         case SINK:
-            flags = [[options.pudding, S_LPUDDING], [options.dishwasher, S_LDWASHER], [options.ring, S_LRING]];
+            l_table_getset_feature_flag(cell, options.pudding, S_LPUDDING);
+            l_table_getset_feature_flag(cell, options.dishwasher, S_LDWASHER);
+            l_table_getset_feature_flag(cell, options.ring, S_LRING);
             break;
         case THRONE:
-            flags = [[options.looted, T_LOOTED]];
+            l_table_getset_feature_flag(cell, options.looted, T_LOOTED);
             break;
         case TREE:
-            flags = [[options.looted, TREE_LOOTED], [options.swarm, TREE_SWARM]];
+            l_table_getset_feature_flag(cell, options.looted, TREE_LOOTED);
+            l_table_getset_feature_flag(cell, options.swarm, TREE_SWARM);
             break;
-    }
-    for (const [value, flag] of flags) {
-        if (value === undefined)
-            continue;
-        const current = cell.looted ?? cell.flags;
-        cell.flags = cell.looted = value ? current | flag : current & ~flag;
     }
 }
 // C sp_lev.c:noncoalignment().
@@ -1413,25 +1480,32 @@ function noncoalignedSpecialAmask() {
         return AM_LAWFUL;
     return (noncoalignment() + 2) & 0xff;
 }
+// C sp_lev.c:get_table_align(). The alignment field's mask: a fixed
+// alignment, a coalignment placeholder, or random.
+function get_table_align(align = 'random') {
+    const gtaligns = {
+        noalign: AM_NONE,
+        law: AM_LAWFUL,
+        neutral: AM_NEUTRAL,
+        chaos: AM_CHAOTIC,
+        coaligned: AM_SPLEV_CO,
+        noncoaligned: AM_SPLEV_NONCO,
+        random: AM_SPLEV_RANDOM,
+    };
+    const spAmask = gtaligns[String(align).toLowerCase()];
+    if (spAmask === undefined)
+        throw new Error(`unsupported Lua alignment ${align}`);
+    return spAmask;
+}
 // C sp_lev.c:sp_amask_to_amask(). Resolve coaligned, noncoaligned and random masks.
-// Also C sp_lev.c:get_table_align(): inlined here (the alignment name
-// resolves to a mask in one step).
-function sp_amask_to_amask(value = 'random') {
-    if (value === 'coaligned')
+function sp_amask_to_amask(spAmask) {
+    if (spAmask === AM_SPLEV_CO)
         return Align2amask(game.u?.ualignbase?.[1] ?? game.u?.ualign?.type ?? A_NEUTRAL);
-    if (value === 'noncoaligned')
+    if (spAmask === AM_SPLEV_NONCO)
         return noncoalignedSpecialAmask();
-    if (value === 'random')
+    if (spAmask === AM_SPLEV_RANDOM)
         return Align2amask(inducedAlignment(80));
-    if (value === 'noalign')
-        return AM_NONE;
-    if (value === 'law')
-        return Align2amask(A_LAWFUL);
-    if (value === 'neutral')
-        return Align2amask(A_NEUTRAL);
-    if (value === 'chaos')
-        return Align2amask(A_CHAOTIC);
-    throw new Error(`unsupported Lua alignment ${value}`);
+    return spAmask & AM_MASK;
 }
 // C sp_lev.c:lspo_altar(). The shared table reader supplies the altar descriptor.
 export async function lspo_altar(context, value) {
@@ -1450,9 +1524,10 @@ async function create_altar(context, options) {
         return;
     if (!setLevelTerrainType(point.x, point.y, ALTAR))
         return;
-    // sp_amask_to_amask() resolves the whole mask (including the
-    // re-evaluated noncoalignment ternary) before the altar stores it.
-    const amask = sp_amask_to_amask(options.align);
+    // lspo_altar() resolves the alignment field before create_altar()
+    // stores it: sp_amask_to_amask() resolves the whole mask (including
+    // the re-evaluated noncoalignment ternary).
+    const amask = sp_amask_to_amask(get_table_align(options.align));
     const alignment = Amask2align(amask);
     altar.flags = amask;
     const altarType = options.type ?? 'altar';
@@ -1507,11 +1582,10 @@ function get_table_roomtype_opt(name = 'ordinary') {
         throw new Error(`unsupported Lua room type ${name}`);
     return roomType;
 }
-// C sp_lev.c:l_push_mkroom_table(): the room table passed to a contents
-// callback; get_mkroom_name()'s reverse lookup is the names map below.
-// Also C sp_lev.c:l_push_wid_hei_table(): inlined here (the width/height
-// entries of the room table).
-export function l_push_mkroom_table(room) {
+// C sp_lev.c:get_mkroom_name(). The room type's name in room_types[].
+// C calls impossible() for a type outside the table; the rtype values the
+// game creates are all listed, so the branch is unreachable here.
+function get_mkroom_name(rtype) {
     const names = new Map([
         [OROOM, 'ordinary'], [THEMEROOM, 'themed'], [COURT, 'throne'],
         [SWAMP, 'swamp'], [VAULT, 'vault'], [BEEHIVE, 'beehive'],
@@ -1524,8 +1598,14 @@ export function l_push_mkroom_table(room) {
         'food shop', 'ring shop', 'wand shop', 'tool shop', 'book shop',
         'health food shop', 'candle shop',
     ];
-    const type = room.rtype >= SHOPBASE
-        ? shopNames[room.rtype - SHOPBASE] : names.get(room.rtype);
+    return rtype >= SHOPBASE
+        ? shopNames[rtype - SHOPBASE] ?? 'unknown' : names.get(rtype) ?? 'unknown';
+}
+// C sp_lev.c:l_push_mkroom_table(): the room table passed to a contents
+// callback.
+// Also C sp_lev.c:l_push_wid_hei_table(): inlined here (the width/height
+// entries of the room table).
+export function l_push_mkroom_table(room) {
     return objectToLuaTable({
         width: room.hx - room.lx + 1,
         height: room.hy - room.ly + 1,
@@ -1533,8 +1613,14 @@ export function l_push_mkroom_table(room) {
         lit: !!room.rlit,
         irregular: !!room.irregular,
         needjoining: !!room.needjoining,
-        type: type ?? 'ordinary',
+        type: get_mkroom_name(room.rtype),
     });
+}
+// C sp_lev.c:get_table_coords_or_region(). The x1..y2 fields, or the
+// region array when all four coordinates are absent.
+function get_table_coords_or_region(options) {
+    const coords = [options.x1 ?? -1, options.y1 ?? -1, options.x2 ?? -1, options.y2 ?? -1];
+    return coords.some(value => value !== -1) ? coords : options.region ?? coords;
 }
 // C sp_lev.c:lspo_region(). Light a selection, or create a rectangular/irregular room and its contents.
 // Also C sp_lev.c:sel_set_lit(): inlined here (the selection lighting
@@ -1551,9 +1637,7 @@ export async function lspo_region(scope, context, state, value, lighting = 'unli
         return null;
     }
     const options = tableOptions(value, 'integer', true);
-    const explicit = [options.x1 ?? -1, options.y1 ?? -1, options.x2 ?? -1, options.y2 ?? -1];
-    const [x1, y1, x2, y2] = explicit.some(value => value !== -1)
-        ? explicit : options.region ?? explicit;
+    const [x1, y1, x2, y2] = get_table_coords_or_region(options);
     if (typeof x1 !== 'number' || typeof y1 !== 'number'
         || typeof x2 !== 'number' || typeof y2 !== 'number'
         || ![x1, y1, x2, y2].every(Number.isInteger))
@@ -1616,16 +1700,20 @@ export async function lspo_region(scope, context, state, value, lighting = 'unli
         await state.callValueAsync(options.contents, [l_push_mkroom_table(room)]);
     }
     finally {
-        scope.context = parent;
+        update_croom(scope, parent);
     }
     add_doors_to_room(room);
     return room;
 }
+// C sp_lev.c:update_croom(). Restore the coder's room context to the
+// enclosing room; the port models tmproomlist[] with the async scope
+// chain, so the parent is the popped room below the top.
+function update_croom(scope, parent) {
+    scope.context = parent;
+}
 // C sp_lev.c:lspo_room(). Read room placement, build it, then run its nested contents.
 // Also C sp_lev.c:spo_endroom(): inlined here (the finally pops the room
-// scope).
-// Also C sp_lev.c:update_croom(): inlined here (the same restore of the
-// parent room context).
+// scope through update_croom()).
 export async function lspo_room(scope, active, state, value) {
     const options = tableOptions(value, 'integer');
     if (scope.roomFailed)
@@ -1661,7 +1749,7 @@ export async function lspo_room(scope, active, state, value) {
                 await state.callValueAsync(options.contents, [l_push_mkroom_table(room)]);
             }
             finally {
-                scope.context = parent;
+                update_croom(scope, parent);
             }
         }
         add_doors_to_room(room);
@@ -1669,7 +1757,7 @@ export async function lspo_room(scope, active, state, value) {
     else if (active.prototype === 'themerms') {
         scope.roomFailed = true;
     }
-    scope.context = parent;
+    update_croom(scope, parent);
     return room;
 }
 // C sp_lev.c:l_create_stairway(). Both Lua bindings share placement and trap clearance.
@@ -1906,7 +1994,7 @@ export async function lspo_object(context, parentContainer, parentMonster, invok
         if (corpseSpecies === null)
             throw new Error('Unknown montype');
     }
-    const quantity = objectOptions.quantity ?? 1;
+    const quantity = get_table_int_or_random(objectOptions.quantity, 'quantity', -1);
     const count = objectOptions.objectType !== null && !objectMerge(objectOptions.objectType)
         ? Math.max(1, quantity) : 1;
     let object = null;
@@ -1917,9 +2005,20 @@ export async function lspo_object(context, parentContainer, parentMonster, invok
         await invokeContents(objectOptions.contents, object);
     return object;
 }
+// C sp_lev.c:get_table_buc(). The buc field's curse-state code: 0 random,
+// 1 blessed, 2 uncursed, 3 cursed, 4 not-cursed, 5 not-uncursed,
+// 6 not-blessed.
+function get_table_buc(buc) {
+    const bucs = {
+        random: 0, blessed: 1, uncursed: 2, cursed: 3,
+        'not-cursed': 4, 'not-uncursed': 5, 'not-blessed': 6,
+    };
+    const curseState = bucs[String(buc ?? 'random').toLowerCase()];
+    if (curseState === undefined)
+        throw new Error(`unsupported Lua buc ${buc}`);
+    return curseState;
+}
 // C sp_lev.c:create_object(). Create one object and apply its level-description attributes.
-// Also C sp_lev.c:get_table_buc(): inlined here (the buc name switches
-// directly instead of decoding to a curse-state code).
 async function create_object(context, options, corpseSpecies, parentContainer, parentMonster) {
     const { point, objectClass, objectType } = options;
     const allowArtifacts = !options.name;
@@ -1966,31 +2065,36 @@ async function create_object(context, options, corpseSpecies, parentContainer, p
     }
     if (!object)
         return null;
-    if (options.spe !== undefined && Number.isInteger(options.spe))
-        object.spe = options.spe;
-    if (options.buc === 'blessed') {
-        blessObjectState(object);
-    }
-    else if (options.buc === 'uncursed') {
-        unblessObjectState(object);
-        uncurseObjectState(object);
-    }
-    else if (options.buc === 'cursed') {
-        curseObjectState(object);
-    }
-    else if (options.buc === 'not-cursed') {
-        uncurseObjectState(object);
-    }
-    else if (options.buc === 'not-uncursed') {
-        if (!object.blessed && !object.cursed && !rn2(1)) {
-            if (!rn2(2))
-                curseObjectState(object);
-            else
-                blessObjectState(object);
-        }
-    }
-    else if (options.buc === 'not-blessed') {
-        unblessObjectState(object);
+    const spe = get_table_int_or_random(options.spe, 'spe', -127);
+    if (spe !== -127) /* That means NOT RANDOM! */
+        object.spe = spe;
+    switch (get_table_buc(options.buc)) {
+        case 1: /* blessed */
+            blessObjectState(object);
+            break;
+        case 2: /* uncursed */
+            unblessObjectState(object);
+            uncurseObjectState(object);
+            break;
+        case 3: /* cursed */
+            curseObjectState(object);
+            break;
+        case 4: /* not cursed */
+            uncurseObjectState(object);
+            break;
+        case 5: /* not uncursed */
+            if (!object.blessed && !object.cursed && !rn2(1)) {
+                if (!rn2(2))
+                    curseObjectState(object);
+                else
+                    blessObjectState(object);
+            }
+            break;
+        case 6: /* not blessed */
+            unblessObjectState(object);
+            break;
+        default: /* random */
+            break; /* keep what mkobj gave us */
     }
     if (corpseSpecies !== null)
         set_corpsenm(object, corpseSpecies);
@@ -2108,11 +2212,21 @@ export function get_table_xy_or_coord(options) {
     const y = options.y ?? -1;
     return x === -1 && y === -1 ? get_coord(options.coord) : { x, y };
 }
+// C sp_lev.c:get_table_monclass(). The class field's monster class symbol.
+// C returns the character itself and create_monster() panics on an unknown
+// one; the port resolves the symbol here and rejects it at the boundary.
+function get_table_monclass(options) {
+    const monsterClass = options.class
+        ? MONSTER_CLASS_SYMBOLS.indexOf(options.class) : null;
+    if (options.class && (monsterClass == null || monsterClass < 1))
+        throw new Error(`unknown Lua monster class ${options.class}`);
+    return monsterClass;
+}
+// C sp_lev.c:get_table_montype(). The id field through find_montype().
+function get_table_montype(options) {
+    return options.id ? find_montype(options.id) : null;
+}
 // C sp_lev.c:lspo_monster(). Parse the request, create the monster, then run its custom inventory.
-// Also C sp_lev.c:get_table_monclass(): inlined here (the single-character
-// class string).
-// Also C sp_lev.c:get_table_montype(): inlined here (the id field through
-// find_montype()).
 // Also C sp_lev.c:spo_end_moninvent(): inlined here (m_dowear after the
 // inventory callback closes).
 export async function lspo_monster(context, state, inventories, id, x, y) {
@@ -2124,11 +2238,8 @@ export async function lspo_monster(context, state, inventories, id, x, y) {
         else
             options.id = id;
     }
-    const monsterClass = options.class
-        ? MONSTER_CLASS_SYMBOLS.indexOf(options.class) : null;
-    if (options.class && (monsterClass == null || monsterClass < 1))
-        throw new Error(`unknown Lua monster class ${options.class}`);
-    const namedMonster = options.id ? find_montype(options.id) : null;
+    const monsterClass = get_table_monclass(options);
+    const namedMonster = get_table_montype(options);
     let appearance = null;
     if (typeof options.appear_as === 'string') {
         const separator = options.appear_as.indexOf(':');
@@ -2190,15 +2301,15 @@ export async function create_monster(context, options) {
         mmflags |= MM_IGNOREWATER;
     if (options.countbirth === false)
         mmflags |= MM_NOCOUNTBIRTH;
-    const explicitAlignment = options.align != null
-        && options.align !== 'random';
+    const spAmask = get_table_align(options.align);
     // Named requests resolve sex before the alignment and species draws.
     const requestedFemale = monsterType !== null && options.nameFemale === null
         && !(is_male(monsterType) || monsterIsFemale(monsterType)) ? !!rn2(2) : null;
-    if (!explicitAlignment)
-        inducedAlignment(80);
-    const alignment = explicitAlignment ? Amask2align(sp_amask_to_amask(options.align)) : null;
-    if (explicitAlignment)
+    // sp_amask_to_amask() runs for every alignment: the random branch's
+    // induced_align(80) draw happens even though its mask is discarded.
+    const amask = sp_amask_to_amask(spAmask);
+    const alignment = spAmask !== AM_SPLEV_RANDOM ? Amask2align(amask) : null;
+    if (alignment !== null)
         mmflags = MM_ADJACENTOK | MM_EMIN | MM_NOMSG;
     let species = monsterType;
     if (species !== null) {
@@ -2389,25 +2500,33 @@ export async function create_monster(context, options) {
     }
     return monster ?? null;
 }
+// C sp_lev.c:get_traptype_byname(). The named trap type. C's table lookup
+// yields NO_TRAP for an unknown name; the Lua boundary reports it instead.
+function get_traptype_byname(trapname) {
+    const trapType = TRAP_TYPES.get(trapname);
+    if (trapType === undefined)
+        throw new Error(`unknown Lua trap ${trapname}`);
+    return trapType;
+}
+// C sp_lev.c:get_table_traptype_opt(). The type field of the table form;
+// an absent or "random" type is a random trap (NO_TRAP).
+function get_table_traptype_opt(options) {
+    if (options.type == null || options.type === 'random')
+        return NO_TRAP;
+    return get_traptype_byname(String(options.type));
+}
 // C sp_lev.c:lspo_trap(): trap type, placement and construction options.
-// Also C sp_lev.c:get_traptype_byname(): inlined here (the TRAP_TYPES
-// lookup with the unknown-name error).
-// Also C sp_lev.c:get_table_traptype_opt(): inlined here (the type field of
-// the table form).
 export async function lspo_trap(context, type, x, y) {
     const options = type instanceof LuaTable
         ? tableOptions(type) : type == null ? {} : { type: String(type) };
-    const name = options.type === 'random' ? null : options.type;
-    const trapType = name == null ? null : TRAP_TYPES.get(String(name)) ?? null;
-    if (name != null && trapType == null)
-        throw new Error(`unknown Lua trap ${name}`);
+    const trapType = get_table_traptype_opt(options);
     const coordinate = get_table_xy_or_coord(options) ?? get_coord(luaArgument(x), luaArgument(y));
     const construction = {
         seen: !!options.seen,
         victim: options.victim !== false,
         spiderOnWeb: options.spider_on_web !== false,
     };
-    const trap = await create_trap(context, trapType ?? NO_TRAP, construction, coordinate);
+    const trap = await create_trap(context, trapType, construction, coordinate);
     const teleportDestination = options.teledest ? get_table_xy_or_coord({ coord: options.teledest }) : null;
     if (trap && teleportDestination) {
         trap.teledest = {
@@ -2642,17 +2761,15 @@ export async function putGeneratedMonsterInventoryInStatue(monster, statue) {
     }
     statue.owt = objectWeight(statue);
 }
-// C sp_lev.c:set_wallprop_in_selection(): apply a wall property to every
-// selected square — sel_set_wall_property()'s test is inlined. Also the
-// body of lspo_non_passwall(), which negates an absent selection to cover
-// the whole map.
+// C sp_lev.c:set_wallprop_in_selection(): apply sel_set_wall_property()
+// to every selected square. Also the body of lspo_non_passwall(), which
+// negates an absent selection to cover the whole map.
 export function set_wallprop_in_selection(selection, property) {
     const level = requireGameLevel();
     selection.forEachXMajor((x, y) => {
         const loc = level.at(x, y);
-        if (loc && (IS_STWALL(loc.typ) || loc.typ === TREE
-            || loc.typ === IRONBARS))
-            loc.wall_info |= property;
+        if (loc)
+            sel_set_wall_property(loc, property);
     });
 }
 // C sp_lev.c:lspo_wall_property(): the property rectangle, defaulting to
@@ -3609,13 +3726,18 @@ function get_room_loc(coordinate, room) {
 export function lspo_non_passwall(selection) {
     set_wallprop_in_selection(selection ?? new SpecialSelection().negate(), W_NONPASSWALL);
 }
+// C sp_lev.c:reset_xystart_size(). The whole-level rectangle: xstart 1
+// (column 0 is off limits), ystart 0, and the playable extents.
+export function reset_xystart_size() {
+    return {
+        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
+    };
+}
 // C sp_lev.c:sp_level_coder_init(). Create the per-level room, inventory, and map state.
 // Also C sp_lev.c:create_des_coder(): the lazy coder allocation; every Lua
 // session builds its coder state directly here.
 function sp_level_coder_init() {
-    const wholeLevel = {
-        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
-    };
+    const wholeLevel = reset_xystart_size();
     let active = null;
     const roomScope = { context: wholeLevel, roomFailed: false };
     let luaState = null;

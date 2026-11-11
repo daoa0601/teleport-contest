@@ -2324,3 +2324,4 @@ launch_obj	tmp_at	inlined	launch uses its own projectile glyph replay; no Transi
 trapeffect_hole	trapeffect_level_telep	inlined	the dispatch's hero arm is triggerLevelTeleportTrap() (level_tele_trap) and its monster arm mlevel_tele_trap(); no separate dispatch port (trap.ts)
 trapeffect_magic_portal	trapeffect_level_telep	inlined	same split of the dispatch's two arms (trap.ts monsterTrapEffect)
 trapeffect_selector	trapeffect_level_telep	inlined	same split of the dispatch's two arms (trap.ts monsterTrapEffect)
+create_des_coder	sp_level_coder_init	n/a	the des coder is the per-Lua-state session created up front in sp_level_coder_init() itself; no lazy gc.coder allocation point exists (sp_lev.ts)

@@ -19,11 +19,11 @@ import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { LuaArgumentError, NethackLuaError } from './errors.js';
 import { ANY_LOC, get_location_coord } from '../sp_lev.js';
-import { mapCharacterType } from './lifecycle.js';
 import { game } from '../gstate.js';
 import { isok } from '../cmd.js';
-import { match_maptyps, set_floodfillchk_match_under } from '../sp_lev.js';
-import { COLNO, INVALID_TYPE, MAP_Y_LIM, MAX_TYPE, ROWNO, STONE } from '../const.js';
+import { mapfrag_error, mapfrag_free, mapfrag_fromstr, mapfrag_match, set_floodfillchk_match_under } from '../sp_lev.js';
+import { COLNO, ROWNO } from '../const.js';
+import type { MapFragment } from '../sp_lev.js';
 import { isRoom } from '../map_types.js';
 import type { Coordinate, Selection, SelectionArea, SelectionBounds } from '../selvar.js';
 import type { LuaHostObject, LuaMetatable, LuaValue } from './runtime.js';
@@ -203,48 +203,24 @@ export function specialSelectionFloodFill(context: SelectionArea, x: number, y: 
     );
 }
 
-// C nhlsel.c:l_selection_match(): the map fragment match. The fragment
-// parse and mapfrag_error()'s odd-dimension and valid-center checks are
-// inlined above; mapfrag_free() has no port (no owned buffer).
+// C nhlsel.c:l_selection_match(): the map fragment match, through the
+// mapfrag_* family from sp_lev.c exactly as C calls it.
 export function specialSelectionMatch(fragment: string) {
-    const data = (fragment.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
-    const rows = data.split('\n');
-    if (rows.at(-1) === '') rows.pop();
-    if (rows.length > MAP_Y_LIM + 1) throw new NethackLuaError('mapfragment error');
-    const width = Math.max(0, ...rows.map(row => row.length));
-    if (!(width % 2) || !(rows.length % 2))
-        throw new NethackLuaError('mapfragment needs to have odd height and width');
-    const xRadius = Math.trunc(width / 2);
-    const yRadius = Math.trunc(rows.length / 2);
-    // mapfrag_get() indexes the original buffer with a fixed row stride.
-    const terrainAt = (x: number, y: number) =>
-        mapCharacterType(data[y * (width + 1) + x]) ?? INVALID_TYPE;
-    const center = terrainAt(xRadius, yRadius);
-    if (center === INVALID_TYPE || center === MAX_TYPE)
-        throw new NethackLuaError('mapfragment center must be valid terrain');
+    const holder: { fragment: MapFragment | null } = { fragment: mapfrag_fromstr(fragment) };
+    const error = mapfrag_error(holder);
+    if (error !== null) throw new NethackLuaError(error);
+    const mf = holder.fragment;
 
     const selection = selection_new();
-    for (let y = 0; y <= ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            let matched = true;
-            for (let offsetX = -xRadius;
-                offsetX <= xRadius && matched; offsetX++) {
-                for (let offsetY = -yRadius;
-                    offsetY <= yRadius; offsetY++) {
-                    const expected = terrainAt(offsetX + xRadius, offsetY + yRadius);
-                    const actual = isok(x + offsetX, y + offsetY)
-                        ? game.level?.at?.(x + offsetX, y + offsetY)?.typ
-                        : STONE;
-                    if (!match_maptyps(expected, actual ?? STONE)) {
-                        matched = false;
-                        break;
-                    }
-                }
-            }
-            selection_setpoint(x, y, selection, matched ? 1 : 0);
-        }
+    if (mf) {
+        for (let y = 0; y <= ROWNO; y++)
+            for (let x = 1; x < COLNO; x++)
+                selection_setpoint(x, y, selection, mapfrag_match(mf, x, y) ? 1 : 0);
     }
+    /* unless the (0, 1) coordinate is a match, this would wind up with
+       a selection with lx=COLNO, hx=0, etc, so fix the boundaries */
     selection_recalc_bounds(selection);
+    mapfrag_free(holder);
     return new SpecialSelection(selection);
 }
 

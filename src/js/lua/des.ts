@@ -247,12 +247,24 @@ export const TRAP_TYPES = new Map([
     ['vibrating square', VIBRATING_SQUARE],
 ]);
 
+// C sp_lev.c:get_table_int_or_random(). The field must be an integer or
+// the string "random"; both "random" and an absent field resolve to the
+// caller's sentinel rndval (spe -127, quantity -1), which consumers treat
+// exactly like C's "random".
+export function get_table_int_or_random(
+    entry: LuaValue | undefined,
+    name: string,
+    rndval: number,
+): number {
+    if (entry == null) return rndval;
+    if (typeof entry === 'string' && entry.toLowerCase() === 'random') return rndval;
+    if (typeof entry !== 'number' || !Number.isInteger(entry))
+        throw new TypeError(`des.${name} must be an integer or "random"`);
+    return entry;
+}
+
 // Port only: shared validation for des.* tables at the Lua boundary;
 // each binding owns its defaults and feature creation.
-// Also C sp_lev.c:get_table_coords_or_region(): inlined here (x1..y2
-// with the region fallback).
-// Also C sp_lev.c:get_table_int_or_random(): inlined here (spe and
-// quantity accept "random").
 export function tableOptions(
     value: LuaValue | undefined,
     lighting: 'terrain' | 'integer' | 'boolean' = 'terrain',
@@ -281,8 +293,14 @@ export function tableOptions(
     ] as const) {
         const entry = value.get(key);
         if (entry == null) continue;
-        if ((key === 'spe' || key === 'quantity') && typeof entry === 'string'
-            && entry.toLowerCase() === 'random') continue;
+        if (key === 'spe' || key === 'quantity') {
+            // get_table_int_or_random()'s sentinel also marks an explicit
+            // -127/-1, which C's consumers treat like "random".
+            const sentinel = key === 'spe' ? -127 : -1;
+            const parsed = get_table_int_or_random(entry, key, sentinel);
+            if (parsed !== sentinel) options[key] = parsed;
+            continue;
+        }
         if (typeof entry !== 'number' || !Number.isInteger(entry))
             throw new TypeError(`des.${key} must be an integer`);
         options[key] = entry;
