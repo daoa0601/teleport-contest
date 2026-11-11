@@ -533,6 +533,10 @@ export function deityName(alignment, state = game) {
     const key = alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
     return state.urole?.gods?.[key] || 'your god';
 }
+// C pray.c:u_gname(). The hero's own god's name.
+export function uGname(state = game) {
+    return deityName(state.u.ualign?.type ?? 0, state);
+}
 // pray.c hallu_gods[]: the hallucination pantheon.
 const HALLUCINATED_GODS = [
     'the Flying Spaghetti Monster', 'Eris', 'the Martians', 'Xom',

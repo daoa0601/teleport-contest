@@ -1000,6 +1000,11 @@ export function carryingStoningCorpse(state: GameState = game): GameObject | und
     return state.inventory.find(object => object.otyp === CORPSE && touchPetrifies(object.corpsenm));
 }
 
+// C invent.c:carrying(). Is an object of this type in the inventory?
+export function carrying(type: number, state: GameState = game): boolean {
+    return state.inventory.some(object => object.otyp === type);
+}
+
 // C invent.c:currency().
 export function currency(amount: number, {
     state = game, random = rn2,

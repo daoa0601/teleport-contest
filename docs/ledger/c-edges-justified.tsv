@@ -2333,3 +2333,5 @@ dotakeoff	armor_or_accessory_off	inlined	dotakeoff()/doremring()/ia_dotakeoff()/
 ia_dotakeoff	dotakeoff	inlined	ia_dotakeoff() is the itemAction flag of removeWornItem()'s getobj suggestion (do_wear.ts)
 Armor_gone	setnotworn	inlined	the merged clearHeroArmor() clears slots through setworn(null, mask); setnotworn() is equivalent for single-slot armor (do_wear.ts)
 Ring_off_or_gone	setnotworn	inlined	clearHeroAccessory() uses setworn(null, mask) for both the gone and voluntary ring paths (do_wear.ts)
+background_enlightenment	enlght_line	inlined	background rows are direct template strings in backgroundEnlightenmentLines(); enlght_line()'s assembly is enlghtLine()/contractEnlightenment() (insight.ts)
+item_resistance_message	u_adtyp_resistance_obj	inlined	u_adtyp_resistance_obj()'s port is the INVENTORY_DAMAGE-keyed protectionChance() (zap.ts, fire/cold/electric); item_resistance_message() reads extrinsicPropertyMask() for all five damage types (insight.ts)

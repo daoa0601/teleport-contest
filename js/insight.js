@@ -27,7 +27,7 @@ import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_pro
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, ordinalSuffix, upstart } from './hacklib.js';
-import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, SPECIAL_PM } from './monster_data.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings, heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying, heroMonsterForm, heroPassesWalls, body_part, mbodypart, heroSpecies } from './polyself.js';
 import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';
@@ -41,9 +41,9 @@ import { findMonsterArmorClass } from './worn.js';
 import { monsterHiddenConditions } from './pager.js';
 import { invWeight, nearCapacity, heroGoldAmount } from './hack.js';
 import { stopDisclosure, ynQuestion } from './end.js';
-import { canPraySafely, deityName } from './pray.js';
+import { canPraySafely, deityName, uGname } from './pray.js';
 import { magic_negation } from './mhitu.js';
-import { confersLuck, currency } from './invent.js';
+import { carrying, confersLuck, currency } from './invent.js';
 import { temp_resist } from './eat.js';
 import { itemResistanceCause } from './zap.js';
 import { ATTRIBUTE_DISPLAY_ORDER, currentAttribute, extrinsicPropertyMask, fromWhat, heroHasNoEyes, intrinsicPropertyMask, maximumAttribute, veryFast } from './attrib.js';
@@ -52,7 +52,7 @@ import { recorderLocalHour } from './calendar.js';
 import { costlySpot } from './shk.js';
 import { hiddenGold } from './vault.js';
 import { newExperienceThreshold } from './exper.js';
-import { rankOf, roleSwitch } from './botl.js';
+import { rankOf, rankToLevel, roleSwitch } from './botl.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsPetrifying } from './stoning.js';
@@ -109,7 +109,7 @@ export function backgroundEnlightenmentLines(final = 0) {
             : !u.uconduct.gnostic && game.moves > 1000 ? 'nominally ' : '';
     const opponents = [1, 0, -1].filter(value => value !== alignment)
         .map(value => `${deityName(value)} (${alignmentName(value)})`);
-    lines.push(`  You ${final ? 'were' : 'are'} ${alignmentName(alignment)}, ${modifier}on a mission for ${deityName(alignment)}`, `  who ${final ? 'was' : 'is'} opposed by ${opponents.join(' and ')}.`);
+    lines.push(`  You ${final ? 'were' : 'are'} ${alignmentName(alignment)}, ${modifier}on a mission for ${uGname()}`, `  who ${final ? 'was' : 'is'} opposed by ${opponents.join(' and ')}.`);
     if (temporary)
         lines.push(`  You ${final ? 'were' : 'are'} actually ${alignmentName(current)}.`);
     if (changedGender || converted)
@@ -623,7 +623,7 @@ export function attributeEnlightenmentLines(final = 0) {
     const wizard = !!game.flags.debug;
     const underwater = !!u.uinwater;
     const lines = ['', ` ${final ? 'Final ' : ''}Attributes:`];
-    const message = (subject, present, past, what, suffix = '') => lines.push(contractEnlightenment(`  ${subject}${final ? past : present}${what}${suffix}.`));
+    const message = (subject, present, past, what, suffix = '') => enlghtLine(` ${subject}`, final ? past : present, what, suffix, lines);
     const are = (what, property, blocked = false) => message('You ', 'are ', 'were ', what, property ? fromWhat(property, game, blocked) : '');
     const have = (what, property) => message('You ', 'have ', 'had ', what, property ? fromWhat(property) : '');
     const can = (what, property) => message('You ', 'can ', 'could ', what, property ? fromWhat(property) : '');
@@ -810,7 +810,7 @@ export function attributeEnlightenmentLines(final = 0) {
         are(protection);
     for (const [property, kind] of [['halfPhysicalDamage', 'physical'], ['halfSpellDamage', 'spell']])
         if (active(property))
-            message('You ', 'take', 'took', ` ${final || wizard ? 'half' : 'reduced'} ${kind} damage`, fromWhat(property));
+            enlghtHalfdmg(property, kind, final, lines);
     const eyewear = game.ublindf || u.ublindf;
     if (eyewear?.otyp === TOWEL && (eyewear.spe ?? 0) > 0)
         message('You ', 'take', 'took', ' reduced poison gas damage');
@@ -871,7 +871,7 @@ export function attributeEnlightenmentLines(final = 0) {
         have(u.moreluck > 0 ? 'extra luck' : 'reduced luck');
     const stones = game.inventory.filter(object => confersLuck(object));
     const stoneLuck = stones.reduce((sum, object) => sum + (object.cursed ? -object.quan : object.quan), 0);
-    if (stones.some(object => object.otyp === LUCKSTONE) || stoneLuck) {
+    if (carrying(LUCKSTONE) || stoneLuck) {
         const blessedLuck = stones.reduce((sum, object) => sum + (object.cursed ? -object.quan : object.blessed ? object.quan : 0), 0);
         if (blessedLuck <= 0)
             message('Bad luck ', 'does', 'did', ' not time out for you');
@@ -879,7 +879,7 @@ export function attributeEnlightenmentLines(final = 0) {
             message('Good luck ', 'does', 'did', ' not time out for you');
     }
     if (u.ugangr)
-        message(deityName(u.ualign?.type ?? 0), ' is', ' was', ` ${u.ugangr > 6 ? 'extremely ' : u.ugangr > 3 ? 'very ' : ''}angry with you${wizard ? ` (${u.ugangr})` : ''}`);
+        message(uGname(), ' is', ' was', ` ${u.ugangr > 6 ? 'extremely ' : u.ugangr > 3 ? 'very ' : ''}angry with you${wizard ? ` (${u.ugangr})` : ''}`);
     else if (!final)
         can(`${canPraySafely() ? '' : 'not '}safely pray${wizard ? ` (${u.ublesscnt ?? 0})` : ''}`);
     const mortality = u.umortality ?? 0;
@@ -890,6 +890,11 @@ export function attributeEnlightenmentLines(final = 0) {
     else if (final)
         lines.push('  You survived.');
     return lines;
+}
+// C insight.c:enlght_halfdmg(). The half physical/spell damage row: "half"
+// for the final report or in wizard mode, "reduced" otherwise.
+function enlghtHalfdmg(property, kind, final, lines) {
+    enlghtLine(' You ', final ? 'took' : 'take', ` ${(final || game.flags.debug) ? 'half' : 'reduced'} ${kind} damage`, fromWhat(property), lines);
 }
 // Part of C insight.c:attributes_enlightenment(): who the warning sense
 // covers, from the warntype mask.
@@ -920,7 +925,9 @@ function itemResistanceLines(property, damage, final) {
     if (!extrinsic && !partial)
         return [];
     const cause = game.flags.debug ? itemResistanceCause(property) : '';
-    return [`  Your items ${final ? 'were' : 'are'}${partial ? ' somewhat' : ''} protected from ${damage}${cause}.`];
+    const lines = [];
+    enlghtLine(' Your items ', final ? 'were ' : 'are ', `${partial ? 'somewhat ' : ''}protected from ${damage}`, cause, lines);
+    return lines;
 }
 // C insight.c:enlght_combatinc(): the size word for a to-hit, damage, or
 // defense modifier; defense shrinks by a third to stretch the ranges, and
@@ -934,6 +941,12 @@ export function combatIncrement(kind, amount, final) {
 // C insight.c:N_times(): "once" vs "twice" vs "N times".
 function times(count) {
     return count === 1 ? 'once' : count === 2 ? 'twice' : count === 3 ? 'thrice' : `${count} times`;
+}
+// C insight.c:enlght_line(). Assemble one enlightenment row, run the
+// contraction pass, and append it to the window's line list (enlght_out()
+// is this array).
+function enlghtLine(start, middle, end, ps, lines) {
+    lines.push(contractEnlightenment(` ${start}${middle}${end}${ps}.`));
 }
 // C insight.c:enlght_line(): the contraction pass of the sentence builder
 // ("are not" becomes "aren't" and friends).
@@ -1356,12 +1369,13 @@ const ACHIEVEMENT_LOG_FLAGS = new Map([
 function achievementLogText(achievement, state) {
     const index = Math.abs(achievement);
     if (index >= ACH_RNK1 && index <= ACH_RNK8) {
-        // rank_of(rank_to_xlev(...)): the title for the rank's lowest level;
-        // a negated achievement records that the hero was female.
-        const title = state.urole?.title?.[index - ACH_RNK1 + 1];
-        if (!title)
+        const role = state.urole;
+        const title = role?.title?.[index - ACH_RNK1 + 1];
+        if (!role || !title)
             return null;
-        const name = (achievement < 0 && title.f) || title.m;
+        // rank_of(rank_to_xlev(rank)): the title for the rank's lowest
+        // level; a negated achievement records that the hero was female.
+        const name = rankOf(rankToLevel(index - ACH_RNK1 + 1), SPECIAL_PM + 1 + role.mnum, achievement < 0, game);
         return `attained the rank of ${name} (level ${state.u.ulevel})`;
     }
     if (index === ACH_SOKO_PRIZE || index === ACH_MINE_PRIZE) {
@@ -1437,11 +1451,8 @@ export function isSpoilerGameLogEvent(entry) {
     return ((entry.flags ?? 0) & LL_SPOILER) !== 0;
 }
 // C insight.c:do_gamelog()
-// Also C insight.c:show_gamelog(): the live chronicle projection is inlined here.
 // Chronicle projects events recorded by their owning mechanics; it does not
 // infer history from the command transcript or current aggregate counters.
-// Spoiler-flagged lines (insight.c:spoilerevent) stay hidden outside wizard
-// mode; if every entry is one, the window still shows " none".
 export async function doChronicle() {
     const events = gameLogEvents(game);
     if (!events.length) {
@@ -1449,6 +1460,12 @@ export async function doChronicle() {
         game.context.move = 0;
         return;
     }
+    await showGamelog(events);
+}
+// C insight.c:show_gamelog(). The chronicle window: turn-numbered lines,
+// with spoiler-flagged lines hidden outside wizard mode; if every entry is
+// one, the window still shows " none".
+async function showGamelog(events) {
     const visible = game.flags.debug
         ? events : events.filter(event => !isSpoilerGameLogEvent(event));
     const lines = ['Logged events:'];
@@ -1708,6 +1725,15 @@ function goneSpecies(includeExtinct = true) {
             ? [{ mnum, genocided, extinctOnly }] : [];
     });
 }
+// C insight.c:num_genocides(). The genocided species count; uniques are
+// never listed, so they are not counted here either.
+function numGenocides(gone) {
+    return gone.filter(species => species.genocided).length;
+}
+// C insight.c:num_extinct(). Species that became extinct without genocide.
+function numExtinct(gone) {
+    return gone.filter(species => species.extinctOnly).length;
+}
 // Part of C insight.c:list_genocided(): the species rows with class
 // headers, counts and the counting-order fallback.
 function genocidedLines(gone, genocided, extinct, { ask, dumping = false }) {
@@ -1765,8 +1791,8 @@ export async function listGenocided(defquery = 'y', ask = false) {
                 ? ['No species were genocided or became extinct.'] : [];
         return;
     }
-    const genocided = gone.filter(species => species.genocided).length;
-    const extinct = gone.filter(species => species.extinctOnly).length;
+    const genocided = numGenocides(gone);
+    const extinct = numExtinct(gone);
     if (dumping)
         return genocidedLines(gone, genocided, extinct, { ask: false, dumping })
             .map(line => typeof line === 'string' ? line : line.text);

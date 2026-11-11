@@ -255,6 +255,11 @@ export function experienceRankIndex(level: number) {
     return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
 }
 
+// C botl.c:rank_to_xlev(). The low end of each rank's level range.
+export function rankToLevel(rank: number) {
+    return rank < 1 ? 1 : rank < 2 ? 3 : rank < 8 ? rank * 4 - 2 : 30;
+}
+
 // C include/you.h:Role_switch (gu.urole.mnum): the hero's role as a player
 // monster species number. C's roles store the PM_ species index directly;
 // this port's roles store a 0-based mnum, so the species number is

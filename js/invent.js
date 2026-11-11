@@ -802,6 +802,10 @@ export function goldAt(x, y, state) {
 export function carryingStoningCorpse(state = game) {
     return state.inventory.find(object => object.otyp === CORPSE && touchPetrifies(object.corpsenm));
 }
+// C invent.c:carrying(). Is an object of this type in the inventory?
+export function carrying(type, state = game) {
+    return state.inventory.some(object => object.otyp === type);
+}
 // C invent.c:currency().
 export function currency(amount, { state = game, random = rn2, } = {}) {
     const name = heroIsHallucinating(state) ? CURRENCIES[random(CURRENCIES.length)] : 'zorkmid';
