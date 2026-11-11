@@ -1,3 +1,4 @@
+import { restoreMonsterTerrainState } from './restore.js';
 import { mon_offmap } from './const.js';
 import { level_status_init } from './gstate.js';
 import { updateRestoredFloorShopOwnership } from './restore.js';
@@ -552,6 +553,7 @@ export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, sta
             monster.mhpmax = DEFUNCT_MONSTER;
     }
     for (const monster of monsters) {
+        restoreMonsterTerrainState(monster, state);
         setShopResidency(monster, false, state);
         monster.movement = 0;
         if (monster.mundetected && monsterHidesUnder(monster.mnum))

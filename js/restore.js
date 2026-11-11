@@ -1,3 +1,4 @@
+import { TERRAIN_FALLOUT_MASK, MON_MIGRATING, MON_PARKED } from './const.js';
 import { level_status_init } from './gstate.js';
 import { updateFloorObjectShopOwnership } from './mkobj.js';
 // restore.js — C restore.c in one module: every whole-function restore.c
@@ -412,6 +413,14 @@ export function restoreMonsterWormHeads(level) {
         if (monster.wormno)
             monster.wormHead = { x: monster.mx, y: monster.my };
     }
+}
+// C restore.c:restmonchn() guard cleanup and getlev() terrain-flag scan.
+export function restoreMonsterTerrainState(monster, state = game) {
+    if (monster.isgd && !monster.mx && !((monster.mstate ?? 0) & (MON_PARKED | MON_MIGRATING)))
+        monster.mstate = (monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK;
+    const effects = (monster.mstate ?? 0) & TERRAIN_FALLOUT_MASK;
+    if (effects)
+        state._pendingTerrainEffects = (state._pendingTerrainEffects ?? 0) | effects;
 }
 // Part of C restore.c:getlev(): the hides_under()+mundetected hideunder()
 // recheck after place_monster(), re-run before catch-up and shape changes.

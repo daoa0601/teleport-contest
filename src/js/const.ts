@@ -1476,6 +1476,10 @@ export const MON_ENDGAME_MIGR = 0x40;
 export const MON_OBLITERATE = 0x80;
 export const MON_STILL_ARRIVING = 0x100;
 export const MON_PARKED = 0x200;
+// C hack.h:enum mon_terrain_effects and monst.h:TERRAIN_FALLOUT_MASK.
+export const NONFLYER_VS_LIQUID = 0x10000000;
+export const CANDROWN_VS_LIQUID = 0x20000000;
+export const TERRAIN_FALLOUT_MASK = 0x70000000;
 export const MON_OFF_MAP_BITS = MON_OFFMAP | MON_DETACH | MON_LIMBO | MON_MIGRATING
     | MON_ENDGAME_FREE | MON_ENDGAME_MIGR | MON_BUBBLEMOVE | MON_PARKED;
 // C monst.h:mon_offmap(): arrival and other bookkeeping bits do not remove a monster.

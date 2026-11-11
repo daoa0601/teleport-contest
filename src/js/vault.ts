@@ -1,3 +1,4 @@
+import { TERRAIN_FALLOUT_MASK } from './const.js';
 // vault.js — Vault residence, guard lifecycle, escort, and exit accounting.
 // C refs: vault.c — clear_fcorr(), blackout(), parkguard(), grddead(),
 // in_fcorridor(), findgd(), uleftvault(), find_guard_dest(), gd_move(),
@@ -449,8 +450,10 @@ export async function parkVaultGuard(guard: Monster, state: GameState = game) {
         removeMonsterFromMapAt(x, y, state);
         await newsym(x, y);
     }
-    if (monsterAtPosition(requireGameLevel(state), 0, 0, state) !== guard)
+    if (monsterAtPosition(requireGameLevel(state), 0, 0, state) !== guard) {
+        guard.mstate = (guard.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK;
         await placeMonsterOnMap(guard, 0, 0, state);
+    }
     guard._egd.ogx = guard._egd.ogy = 0;
 }
 

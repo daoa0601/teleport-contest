@@ -1,3 +1,4 @@
+import { NONFLYER_VS_LIQUID, CANDROWN_VS_LIQUID, TERRAIN_FALLOUT_MASK } from './const.js';
 import { mon_offmap } from './const.js';
 // Monster body and terrain rules: scheduling and movement allocation,
 // monster death (mondead(), xkilled(), monstone(), vamprises()), corpse
@@ -2495,7 +2496,7 @@ export async function mnearto(monster, x, y, state, { moveOther = false, flags =
             // C mon_leaving_level() keeps a worm's body nodes for the nested
             // relocation and redraws the vacated square.
             await detachMonsterFromLevel(othermon, state, { stayLinked: true });
-            othermon.mstate = (othermon.mstate ?? 0) | MON_OFFMAP;
+            othermon.mstate = ((othermon.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK) | MON_OFFMAP;
         }
     }
     let newx = x;
@@ -2557,6 +2558,7 @@ export async function removeMonsterFromGame(monster) {
     }
     if (monster.wormno)
         await removeMonsterWormBody(monster);
+    monster.mstate = (monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK;
     monster.dead = true;
     if (game.u.usteed === monster)
         await dismountHero(DISMOUNT_GENERIC);
@@ -3244,6 +3246,7 @@ export async function detachDeadMonster(monster, state, random, publish, rollOne
     }
     if (monster.wormno)
         await removeMonsterWormBody(monster);
+    monster.mstate = (monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK;
     monster.dead = true;
     if (state.u.usteed === monster) {
         const result = await dismountHero(DISMOUNT_GENERIC, {
@@ -4007,7 +4010,7 @@ export async function dealWithMonsterOvercrowding(monster, state = game) {
     const victim = overcrowdingVictim(monster, state);
     if (victim) {
         const x = victim.mx, y = victim.my;
-        victim.mstate = (victim.mstate ?? 0) | MON_OBLITERATE;
+        victim.mstate = ((victim.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK) | MON_OBLITERATE;
         await removeMonsterFromGame(victim);
         await relocateMonsterTo(monster, x, y, { state, flags: RLOC_NONE });
     }
@@ -4883,6 +4886,7 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
             droppedClothing: clothing.dropped, destroyedClothing: clothing.destroyed,
             selfTouch, message,
         };
+    maybeSetTerrainEffects(monster, oldMnum, state);
     checkMonsterGearNextTurn(monster);
     const droppedBoulders = selfTouch.survived
         ? await dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publish) : [];
@@ -4903,6 +4907,46 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
         selfTouch,
         message,
     };
+}
+// C mon.c:maybe_set_terrain_effects(): defer liquid reactions until the
+// monster-moving phase when a new body no longer avoids its terrain.
+export function maybeSetTerrainEffects(monster, oldSpecies, state = game) {
+    const location = state.level?.at(monster.mx, monster.my);
+    if (!isPoolAt(monster.mx, monster.my, state) && !Is_waterlevel(state.u.uz, state)
+        && !isLavaAt(monster.mx, monster.my, state) && location?.typ !== FOUNTAIN)
+        return false;
+    let changed = false;
+    if (!monsterIsFlyer(monster.mnum)) {
+        changed = oldSpecies === null ||
+            ((monsterIsFlyer(oldSpecies) !== monsterIsFlyer(monster.mnum)
+                || monsterIsFloater(oldSpecies) !== monsterIsFloater(monster.mnum))
+                && !heroKeepsSteedAboveLiquid(monster, state, false));
+        state._pendingTerrainEffects = (state._pendingTerrainEffects ?? 0) | NONFLYER_VS_LIQUID;
+        monster.mstate = (monster.mstate ?? 0) | NONFLYER_VS_LIQUID;
+    }
+    if (!cant_drown(monster.mnum)) {
+        changed = oldSpecies === null || cant_drown(oldSpecies) !== cant_drown(monster.mnum);
+        state._pendingTerrainEffects = (state._pendingTerrainEffects ?? 0) | CANDROWN_VS_LIQUID;
+        monster.mstate = (monster.mstate ?? 0) | CANDROWN_VS_LIQUID;
+    }
+    return changed;
+}
+// C mon.c:terrain_effects(): process flagged monsters in fmon order,
+// including monsters which have no movement credit, then clear their flags.
+export async function terrainEffects(state = game) {
+    const level = requireGameLevel(state);
+    for (const monster of monstersInFmonOrder(level.monsters)) {
+        if (!((monster.mstate ?? 0) & TERRAIN_FALLOUT_MASK))
+            continue;
+        if (monster.mhp > 0 && ((monster.mstate ?? 0) & (NONFLYER_VS_LIQUID | CANDROWN_VS_LIQUID))) {
+            await resolveMonsterLiquid(monster, state, {
+                announce: plineWithContinuation, finishDeath: finishMonsterLiquidDeath,
+            });
+        }
+        monster.mstate = (monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK;
+        if (state.program_state.gameover)
+            return;
+    }
 }
 // Part of C mon.c:newcham(): the mon_moving tail, where the changed form
 // gets a fresh chance to locate the hero and then tests fear in its new

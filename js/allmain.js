@@ -1,3 +1,4 @@
+import { restoreMonsterTerrainState } from './restore.js';
 import { updateRestoredFloorShopOwnership } from './restore.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
@@ -10,7 +11,7 @@ import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCo
 import { getLine } from './windows.js';
 import { doStorms } from './timeout.js';
 import { rewindEngravingsForSave, engravingAt, wipeEngravingAt, readEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, runMonsterAction, } from './mon.js';
+import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, monsterDistressEvents, monstersInFmonOrder, moveMonsters, terrainEffects, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages, finishHeroLiquidMonsterDeath, finishHeroMonsterKill, runMonsterAction, } from './mon.js';
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
@@ -264,6 +265,7 @@ export async function restoregamePreamble() {
     game.vision_full_recalc = 0;
     try {
         for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
+            restoreMonsterTerrainState(monster, game);
             await restoreMonsterCover(monster, game);
             await restoreMonsterShape(monster, game);
             if (game.program_state.gameover)
@@ -794,7 +796,22 @@ export async function runMoveloopCore() {
         // C checks burden before monsters move after every timed action.
         // Hunger can lower Strength without changing inventory.
         await encumber_msg(g);
+        let checkTerrain = true;
         for (;;) {
+            if (checkTerrain && g._pendingTerrainEffects) {
+                const previousMonsterMoving = g.context.mon_moving;
+                g.context.mon_moving = true;
+                try {
+                    await terrainEffects(g);
+                    g._pendingTerrainEffects = 0;
+                }
+                finally {
+                    g.context.mon_moving = previousMonsterMoving;
+                }
+                if (g.program_state.gameover)
+                    return;
+            }
+            checkTerrain = false;
             const somebodyCanMove = await moveMonsters();
             if (g.program_state?.gameover)
                 return;
@@ -1021,6 +1038,7 @@ export async function runMoveloopCore() {
                 // to act; acknowledge that relief before monsters act again.
                 if (g.u.umovement < NORMAL_SPEED)
                     await encumber_msg(g);
+                checkTerrain = true;
             }
             // C allmain.c's do/while exits as soon as the hero can act;
             // no monster attack may spend the hero's movement ration.

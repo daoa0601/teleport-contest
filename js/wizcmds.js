@@ -1,3 +1,4 @@
+import { TERRAIN_FALLOUT_MASK } from './const.js';
 // Wizard-mode commands.
 // C refs: wizcmds.c wiz_wish()/wiz_polyself()/wiz_genesis()/wiz_detect()/
 // wiz_kill()/wiz_telekinesis()/wiz_where()/wiz_level_tele()/wiz_level_change()/
@@ -373,7 +374,7 @@ export async function makemapRemoveMons() {
         game._migratingMonsters = (game._migratingMonsters ?? [])
             .filter(candidate => candidate !== monster);
         monster.mstate = ((monster.mstate ?? 0) | MON_OFFMAP)
-            & ~(MON_MIGRATING | MON_LIMBO | MON_ENDGAME_MIGR);
+            & ~(MON_MIGRATING | MON_LIMBO | MON_ENDGAME_MIGR | TERRAIN_FALLOUT_MASK);
         requireGameLevel().monsters.push(monster);
         await makemapUnmakemon(monster);
         if (game.program_state.gameover)

@@ -384,6 +384,7 @@ export interface GameState {
     _travelTarget?: Position | null;
     _stethoscopeSeq?: number;
     _lastInvNr?: number;
+    _pendingTerrainEffects?: number;
     _puzzlingCriteria?: number;
     _puzzlingLetters?: boolean[];
     _encumbranceLevel?: number;

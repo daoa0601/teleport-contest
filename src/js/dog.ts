@@ -1,3 +1,4 @@
+import { TERRAIN_FALLOUT_MASK } from './const.js';
 import { mon_offmap } from './const.js';
 // Tame monster state.
 // C refs: dog.c makedog(), tamedog(), newedog(), initedog(), pet_type(),
@@ -757,6 +758,7 @@ export async function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
     }
 
     await prepareMonsterDeparture(monster, state);
+    monster.mstate = (monster.mstate ?? 0) & ~TERRAIN_FALLOUT_MASK;
     await detachMonsterFromLevel(monster, state);
     if (confused) monster.mconf = 1;
     monster.migrating = true;
@@ -884,7 +886,7 @@ export async function monsterArrive(monster: Monster, when: MonsterArrivalPhase,
     if (index >= 0) queue.splice(index, 1);
 
     monster.mstate = ((monster.mstate ?? 0) | MON_STILL_ARRIVING)
-        & ~(MON_MIGRATING | MON_LIMBO);
+        & ~(MON_MIGRATING | MON_LIMBO | TERRAIN_FALLOUT_MASK);
     monster.migrating = false;
     level.monsters.push(monster);
     setShopResidency(monster, false, state);

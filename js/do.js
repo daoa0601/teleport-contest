@@ -1,3 +1,4 @@
+import { restoreMonsterTerrainState } from './restore.js';
 import { level_status_init } from './gstate.js';
 import { updateRestoredFloorShopOwnership } from './restore.js';
 // do.js — the do.c owner: drop commands and floor landings, sink rings,
@@ -78,6 +79,7 @@ import { maybeResetPick } from './lock.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { runDueTimers, restoreLevelTimers, objectTimers, scheduleObjectTimer, burnAwayHeroSlime } from './timeout.js';
 import { restoreLevelChains, restoreMonsterCover, restoreMonsterWormHeads } from './restore.js';
+import { maybeSetTerrainEffects } from './mon.js';
 import { hideMonsterOnRestore } from './mon.js';
 import { restoreLevelPetHistory, restoreObjectPetHistory } from './restore.js';
 import { restoreLevelLightSources } from './light.js';
@@ -1886,6 +1888,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             restoreObjectPetHistory(cached.billObjects ?? [], elapsed);
             restoreMonsterWormHeads(cached.level);
             for (const monster of cached.level.monsters.slice().reverse()) {
+                restoreMonsterTerrainState(monster, game);
                 setShopResidency(monster, false, game);
                 await restoreMonsterCover(monster, game);
                 if (elapsed > 0)
@@ -2683,6 +2686,8 @@ export async function reviveCorpseImmediately(corpse, state = game, { announce =
         if (message)
             event.messages.push(message);
     }
+    if (event.kind === 'revived' && event.originalWhere === 'floor')
+        maybeSetTerrainEffects(event.monster, null, state);
     await finishBuriedRevival(event, state);
     return event;
 }
