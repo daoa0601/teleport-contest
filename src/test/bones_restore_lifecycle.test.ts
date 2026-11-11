@@ -6,6 +6,7 @@ import { BURN, DOOR, D_NODOOR, HWALL, SHOP_WALL_COST } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/do.js';
+import { heroTeleportRestricted } from '../js/teleport.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { init_objects } from '../js/o_init.js';
@@ -182,3 +183,22 @@ void test('accepting bones counts the encounter while declining them leaves the 
     }
 });
 
+
+void test('bones stasis lasts only for the interval remaining at the old hero death', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    game.moves = 100;
+    requireGameLevel().flags.stasis_until = 150;
+    assert.equal(saveBonesLevel(), true);
+    bonesRoom(storage);
+    game.moves = 20;
+    resetInputState().feed('yn');
+
+    await mklev();
+
+    assert.equal(game._restoredBones, true);
+    game.moves = 69;
+    assert.equal(heroTeleportRestricted(), true);
+    game.moves = 71;
+    assert.equal(heroTeleportRestricted(), false);
+});

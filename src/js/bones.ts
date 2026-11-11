@@ -1005,10 +1005,9 @@ function restoreBonesFloorOrder(level: GameMap): void {
 // clock.
 function restoreBonesClock(level: GameMap, savedAt: number): void {
     const adjustment = game.moves - savedAt;
-    // C restore.c:rest_adjust_levelflags()/bones_time_adjust(): the saved
-    // flag is relative to the old hero clock before the bones adjustment.
-    const stasisOffset = (level.flags.stasis_until ?? 0) - savedAt;
-    level.flags.stasis_until = game.moves + Math.max(stasisOffset - savedAt, 0);
+    // C restore.c:rest_adjust_levelflags()/bones_time_adjust(): preserve
+    // the remaining interval on the new hero clock.
+    level.flags.stasis_until = (level.flags.stasis_until ?? 0) + adjustment;
     restoreLevelPetHistory(level, adjustment);
     const restoreObjectClock = (object: GameObject, frozen = false): void => {
         if (!frozen && !object.ageRelative && !ageStoresFuel(object))
