@@ -2394,3 +2394,5 @@ doengrave	doengrave_sfx_item	included as present via the stylus-effects stage of
 dokick	maybe_kick_monster	inlined
 offer_real_amulet	a_gname	included as present via the altar-alignment deityName() read offerAmulet() uses (pray.ts)
 dopray	can_pray	included as present via prayerOutcome()/worstPrayerTrouble(); can_pray(FALSE)'s port is canPraySafely() (pray.ts)
+teleok	in_out_region	included as present via updateHeroRegions() (region.ts), called by heroTeleportDestinationOk() (teleport.ts:527)
+scrolltele	make_blinded	n/a	scrolltele()'s guarded make_blinded(0) only clears an already-zero blindness timeout; the port omits the no-op (teleport.ts)

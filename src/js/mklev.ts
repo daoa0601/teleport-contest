@@ -71,7 +71,7 @@ import { beginObjectBurn } from './timeout.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition, enexto, enexto_gpflags } from './teleport.js';
 import { isIceAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
-import { addToContainer, beginLuaThemerooms, callLuaThemerooms, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, load_special, medusaPetrifiable, putGeneratedMonsterInventoryInStatue, themerooms_generate } from './sp_lev.js';
+import { addToContainer, beginLuaThemerooms, callLuaThemerooms, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, load_special, medusaPetrifiable, putGeneratedMonsterInventoryInStatue, reset_xystart_size, themerooms_generate } from './sp_lev.js';
 import type { MutableNumber, SpecialTrapOptions } from './sp_lev.js';
 import { finishHeroLiquidMonsterDeath, finishMonsterLiquidDeath, purgeDeadMonsters, removeMonsterFromGame, resolveMonsterLiquid, revealMonsterAppearance, sendMonsterToLimbo } from './mon.js';
 import type { HeroLiquidMonsterDeathOutcome, MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
@@ -654,9 +654,13 @@ async function makelevel(): Promise<void> {
 
     if (themedRooms) {
         await callLuaThemerooms('post_level_generate');
-        // A loaded theme interpreter wallifies the complete level, including
-        // walls placed inside rooms by terrain callbacks such as "Pillars".
-        wallification(1, 0, COLNO - 1, ROWNO - 1);
+        // reset_xystart_size() restores the whole-level rectangle the
+        // interpreter's rooms narrowed; a loaded theme interpreter
+        // wallifies the complete level, including walls placed inside
+        // rooms by terrain callbacks such as "Pillars".
+        const wholeLevel = reset_xystart_size();
+        wallification(wholeLevel.xstart, wholeLevel.ystart,
+            wholeLevel.xstart + wholeLevel.width - 1, wholeLevel.ystart + wholeLevel.height - 1);
     }
 }
 
@@ -1743,19 +1747,20 @@ function invocationRings(x: number, y: number): Position[][] {
     return rings;
 }
 
+// C mklev.c:mkinvk_check_wall(). Is this square a wall or iron bars?
+function mkinvkCheckWall(location: { typ: number } | null | undefined): boolean {
+    return !!location && (IS_STWALL(location.typ) || location.typ === IRONBARS);
+}
+
 // C mklev.c:mkinvokearea().
-// Also C mklev.c:mkinvk_check_wall(): inlined here (the wall probe that
-// decides the crumbling-walls message).
 export async function makeInvocationArea({ state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
     const level = requireGameLevel(state);
     const rings = invocationRings(state.u.ux, state.u.uy);
     await plineWithContinuation('The floor shakes violently under you!');
-    if (rings.flat().some(({ x, y }) => {
-        const location = level.at(x, y);
-        return location && (IS_STWALL(location.typ) || location.typ === IRONBARS);
-    })) await plineWithContinuation('The walls around you begin to bend and crumble!');
+    if (rings.flat().some(({ x, y }) => mkinvkCheckWall(level.at(x, y))))
+        await plineWithContinuation('The walls around you begin to bend and crumble!');
     await flushPendingTopline();
     if (state.u.utrap) {
         if (state.u.utraptype === TT_BURIEDBALL) await buriedBallToPunishment();
