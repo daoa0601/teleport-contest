@@ -2335,3 +2335,8 @@ genl_player_setup	randgend	inlined	randgend() fallback draw is CharacterSelectio
 genl_player_setup	randrace	inlined	randrace() fallback draw is CharacterSelection.fallbackCandidates with the rn2(n*100)/100 scaling (role.ts)
 genl_player_setup	randrole	inlined	randrole(FALSE) fallback draw is CharacterSelection.fallbackCandidates over nativeRoleChoices (role.ts)
 randrole_filtered	randrole	inlined	unfiltered tail is fallbackCandidates('role') over nativeRoleChoices, rn2(13) (role.ts)
+reset_commands	bind_key_fn	inlined	installMovement's add(key, extFuncTabFromFunc(handler)) is bind_key_fn's whole body; reset_commands is its only C caller (command_bindings.ts)
+makemap_prepost	dobjsfree	n/a	the port frees deleted objects eagerly; C's go.objs_deleted deferred-deletion queue has no counterpart (cmd.ts)
+getdir	yn_function	inlined	promptDirection threads the 'direction' input state and the trailing prompt space through tty_yn_function's resp-NULL fast path; the shared yn_function port reads 'other' state and appends its own space (cmd.ts)
+show_menu_controls	get_menu_cmd_key	inlined	menuKey() on CommandBindings is the alias-aware key lookup; command_bindings.ts owns cmd.c and cannot host the options.c citation (option_editors.ts)
+show_menu_controls	wc2_supported	n/a	window-capability query; the tty port has no capability layer and always supports the menu shift keys (option_editors.ts)

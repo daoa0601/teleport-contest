@@ -1347,6 +1347,20 @@ export function recordAchievement(
     return true;
 }
 
+// C insight.c:remove_achievement(): discard a recorded achievement,
+// keeping the order of the rest; returns whether it was present.
+export function remove_achievement(
+    state: AchievementState | null | undefined, achidx: number,
+): boolean {
+    if (!state?.u || !Number.isInteger(achidx) || !achidx) return false;
+    const achieved = achievementEntries(state);
+    const index = achieved.findIndex(entry => Math.abs(entry) === Math.abs(achidx));
+    if (index < 0) return false;
+    achieved.splice(index, 1);
+    state.u.uachieved = achieved;
+    return true;
+}
+
 // C insight.c:achieve_rank(): a rank index to achievement number, negated
 // when female so the chronicle reports gender-specific ranks.
 export function rankAchievement(rank: number, female = false): number {

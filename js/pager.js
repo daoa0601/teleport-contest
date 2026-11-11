@@ -22,6 +22,7 @@ import { promptYesNo } from './query.js';
 import { selectMapPosition, coordinateDescription } from './getpos.js';
 import { displayPagerText, expandTabs, showTextWindow } from './wintty.js';
 import { getLine, decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, } from './windows.js';
+import { showMenuControls } from './option_editors.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { monsterAtPosition } from './steed.js';
 import { altarmaskAt } from './pray.js';
@@ -1361,23 +1362,7 @@ export function setOptionsCommand() {
 }
 // C pager.c:domenucontrols().
 export async function menuControlsHelp() {
-    const key = (command) => visibleCommandKey(game.commandBindings.menuKey(command));
-    const wholeAndPage = (label, whole, page) => `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;
-    const goTo = (key, name) => wholeAndPage('', key, name);
-    await displayPagerText([
-        'Menu control keys:', '',
-        '           Whole  Current', '            Menu   Page',
-        wholeAndPage('Select', key('.'), key(',')), wholeAndPage('Invert', key('@'), key('~')),
-        wholeAndPage('Deselect', key('-'), key('\\')), '',
-        wholeAndPage('Go to', key('>'), 'Next page'), goTo(key('<'), 'Previous page'),
-        goTo(key('^'), 'First page'), goTo(key('|'), 'Last page'), '',
-        wholeAndPage('Search', key(':'), 'Exter a target string and invert all matching entries'), '',
-        '   Other   Return   Accept current choice(s) and dismiss menu',
-        '           Enter    Same as Return',
-        '           Space    If not on last page, advance one page;',
-        '                    when on last page, treat like Return',
-        '           Escape   Cancel menu without making any choice(s)',
-    ]);
+    await displayPagerText(showMenuControls(false));
 }
 // Part of C pager.c:self_lookat(): the swallowed subset — swallowing has
 // already dismounted the hero, revealed them, and released any trap.
