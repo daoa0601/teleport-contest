@@ -2093,8 +2093,8 @@ src/js/pray.ts	offerToAnotherGod	rnd	"[""hero.ualign.record""]"	guarded
 src/js/pray.ts	offerToAnotherGod	rnd	"[""hero.ualign.record""]"	guarded
 src/js/pray.ts	offerToAnotherGod	rnl	"[""hero.ulevel""]"	invariant
 src/js/pray.ts	offerToAnotherGod	rnl	"[""hero.ulevel""]"	invariant
-src/js/read.ts	amnesiaEffect	rn2	"[""2""]"	constant
-src/js/read.ts	amnesiaEffect	rnd	"[""source.blessed ? 3 : 5""]"	constant
+src/js/read.ts	forget	rn2	"[""2""]"	constant
+src/js/read.ts	forget	rnd	"[""allSpells ? 5 : 3""]"	constant
 src/js/read.ts	fireEffect	rn1	"[""3"", ""3""]"	constant
 src/js/read.ts	destroyArmor	rn1	"[""10"", ""10""]"	constant
 src/js/read.ts	destroyArmor	rn2	"[""cursed.length""]"	guarded
