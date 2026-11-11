@@ -148,6 +148,7 @@ export const FUMBLE_BOOTS = 171;
 export const LEVITATION_BOOTS = 172;
 export const RIN_PROTECTION = 178;
 export const RIN_REGENERATION = 179;
+export const RIN_STEALTH = 181;
 export const RIN_LEVITATION = 183;
 export const RIN_HUNGER = 184;
 export const RIN_AGGRAVATE_MONSTER = 185;

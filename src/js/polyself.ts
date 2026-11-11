@@ -1408,7 +1408,7 @@ async function renewHumanForm(sexChangeAllowed = true) {
         return { transformed: true, newman: true, oldLevel, newLevel, died: true };
     if (newLevel !== oldLevel)
         recordGameLogEvent(`became experience level ${newLevel} as a new ${formName}`, { flags: LL_MINORAC });
-    else recordRenewedHumanGender(oldGender);
+    else livelogNewform(true, oldGender);
     if (heroIsSliming(game)) {
         await plineWithContinuation('Your body transforms, but there is still slime on you.');
         resetHeroSlimingCountdown(game);
@@ -1444,7 +1444,7 @@ async function unsuccessfulPolymorph() {
 }
 
 // C polyself.c:livelog_newform()
-function recordRenewedHumanGender(oldGender: number): void {
+export function livelogNewform(viaPoly: boolean, oldGender: number): void {
     requirePlayingGame(game);
     const newGender = heroPolyGender(game);
     if (Upolyd(game.u) || oldGender === newGender) return;
@@ -1461,7 +1461,9 @@ function recordRenewedHumanGender(oldGender: number): void {
     const description = oldRole !== newRole ? newRole
         : oldRank !== newRank ? newRank
             : `${game.flags.female ? 'female' : 'male'} ${newRank}`;
-    recordGameLogEvent(`polymorphed into ${withIndefiniteArticle(description)}`, { flags: LL_MINORAC });
+    recordGameLogEvent(
+        `${viaPoly ? 'polymorphed' : 'transformed'} into ${withIndefiniteArticle(description)}`,
+        { flags: LL_MINORAC });
 }
 
 // Part of C polyself.c:polyself(), rehumanize(): delete the old body's
