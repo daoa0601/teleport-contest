@@ -733,7 +733,7 @@ src/js/do.ts	gotoLevel	rn2	"[""diff + 2""]"	unproved
 src/js/do.ts	gotoLevel	rn2	"[""odds""]"	guarded
 src/js/do.ts	gotoLevel	rnd	"[""diff""]"	unproved
 src/js/do.ts	resolveHeroArrivalCollision	rn2	"[""2""]"	constant
-src/js/do.ts	gotoLevel	rnd	"[""10""]"	constant
+src/js/restore.ts	restoreLevelResidents	rnd	"[""10""]"	constant
 src/js/do.ts	familiarLevelMsg	rn2	"[""4""]"	constant
 src/js/levitation_commands.ts	refreshLevitationArtifactCooldowns	rnz	"[""100""]"	constant
 src/js/potion.ts	applyLevitationPotion	rn1	"[""140"", ""10""]"	constant
