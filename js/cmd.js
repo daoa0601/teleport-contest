@@ -1021,6 +1021,7 @@ function contextMenuCommand(selection) {
         case 'remove-saddle': return 'loot';
         case 'dismount': return 'ride';
         case 'look-at': return 'clicklook';
+        case 'drop': return 'droptype';
         case 'travel': return 'retravel';
         case 'open':
         case 'kick':
@@ -1040,7 +1041,6 @@ function contextMenuCommand(selection) {
         case 'loot':
         case 'tip':
         case 'eat':
-        case 'drop':
         case 'wait':
         case 'look':
         case 'offer':

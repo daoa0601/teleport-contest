@@ -648,3 +648,13 @@ void test('therecmdmenu autocompletes from its extended-command prefix', async (
         assert.match(screen(), /In what direction/);
     } finally { await finish(engine); }
 });
+
+void test('the here-menu drop action opens the multiple-item chooser', async () => {
+    const engine = await startMenuGame();
+    try {
+        game.flags.menu_style = 2;
+        await type(engine, '#herecmdmenu\n');
+        await choose(engine, 'Drop items');
+        assert.match(screen(), /Drop what type of items\?/);
+    } finally { await finish(engine); }
+});

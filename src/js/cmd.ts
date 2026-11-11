@@ -984,11 +984,12 @@ function contextMenuCommand(selection: ContextMenuSelection): string {
     case 'remove-saddle': return 'loot';
     case 'dismount': return 'ride';
     case 'look-at': return 'clicklook';
+    case 'drop': return 'droptype';
     case 'travel': return 'retravel';
     case 'open': case 'kick': case 'close': case 'search': case 'showtrap':
     case 'untrap': case 'ride': case 'chat': case 'name': case 'quaff': case 'dip':
     case 'sit': case 'up': case 'down': case 'pickup': case 'loot': case 'tip':
-    case 'eat': case 'drop': case 'wait': case 'look': case 'offer':
+    case 'eat': case 'wait': case 'look': case 'offer':
     case 'inventory': case 'cast': case 'throw': return selection.action;
     }
 }
