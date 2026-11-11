@@ -19,9 +19,8 @@ import { artifactByName } from './artifact.js';
 import type { GameObject } from './object_types.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { QUEST_LUA_SOURCE } from './quest_data.js';
 import type { ActiveSpecialLevel } from './map_types.js';
-import { LuaTable } from './lua/runtime.js';
+import { LuaTable, type LuaState } from './lua/runtime.js';
 import { flushPendingTopline, putMessageHistory } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { showTextMenuOverlay } from './windows.js';
@@ -37,59 +36,54 @@ export interface QuestText {
     synopsis: string | null;
 }
 
-// C questpgr.c:com_pager_core()
-// Also C questpgr.c:skip_pager(): wizard-kit suppression is inlined here
-// Each attempted section opens its own Lua state,
-// including nhlib's alignment shuffle, before resolving a fallback or choice.
-async function prepareSection(section: string, messageId: string, state: GameState): Promise<QuestText | null> {
-    if (state.program_state.wizkit_wishing) return null;
-    const lua = currentLuaLifecycle().createSpecialState(state);
-    try {
-        lua.execute(QUEST_LUA_SOURCE, 'quest.lua');
-        const quest = lua.getGlobal('questtext');
-        if (!(quest instanceof LuaTable)) throw new Error('quest.lua has no questtext table');
-        const messages = quest.get(section);
-        if (!(messages instanceof LuaTable)) return null;
-        let entry = messages.get(messageId);
-        if (!(entry instanceof LuaTable)) {
-            const fallbacks = quest.get('msg_fallbacks');
-            const fallback = fallbacks instanceof LuaTable ? fallbacks.get(messageId) : null;
-            if (typeof fallback === 'string') entry = messages.get(fallback);
-        }
-        if (!(entry instanceof LuaTable)) return null;
-        let text = entry.get('text');
-        if (typeof text !== 'string') {
-            const count = entry.length();
-            if (count < 2) throw new Error(`Quest message ${section}.${messageId} has no text or choices`);
-            text = entry.get(rn2(count) + 1);
-        }
-        if (typeof text !== 'string') throw new Error(`Quest message ${section}.${messageId} is not text`);
-        const how = entry.get('output');
-        const output = how === 'menu' ? 'menu'
-            : how === 'text' || how === 'window' ? 'text'
-                : how === 'pline' ? 'pline'
-                    : text.includes('\n') || text.length >= 255 ? 'text' : 'pline';
-        const summary = entry.get('synopsis');
-        const synopsis = typeof summary === 'string' ? summary
-            : output === 'text' && (how === null || how === 'default')
-                ? `[${text.slice(0, 253).replaceAll('\n', ' ')}]` : null;
-        const lines = text.split('\n');
-        if (text.endsWith('\n')) lines.pop();
-        return {
-            lines: lines.map(line => convertQuestLine(line, state)), output, raw: text,
-            synopsis: synopsis === null ? null : convertQuestLine(synopsis, state),
-        };
-    } finally {
-        await lua.destroy();
-    }
-}
-
 // Part of C questpgr.c:qt_pager(), com_pager(): resolves the role or
 // common section text.
+// Also C questpgr.c:skip_pager(): wizard-kit suppression is inlined here
 export async function prepareQuestText(messageId: string, state: GameState = game, common = false): Promise<QuestText | null> {
-    if (common) return prepareSection('common', messageId, state);
-    return await prepareSection(state.urole?.filecode ?? '', messageId, state)
-        ?? await prepareSection('common', messageId, state);
+    if (state.program_state.wizkit_wishing) return null;
+    const readSection = (section: string) => currentLuaLifecycle().withQuestState(
+        state, lua => prepareSection(lua, section, messageId, state),
+    );
+    if (common) return readSection('common');
+    return await readSection(state.urole?.filecode ?? '')
+        ?? await readSection('common');
+}
+
+// C questpgr.c:com_pager_core(): read the message from an acquired quest state.
+function prepareSection(lua: LuaState, section: string, messageId: string, state: GameState): QuestText | null {
+    const quest = lua.getGlobal('questtext');
+    if (!(quest instanceof LuaTable)) throw new Error('quest.lua has no questtext table');
+    const messages = quest.get(section);
+    if (!(messages instanceof LuaTable)) return null;
+    let entry = messages.get(messageId);
+    if (!(entry instanceof LuaTable)) {
+        const fallbacks = quest.get('msg_fallbacks');
+        const fallback = fallbacks instanceof LuaTable ? fallbacks.get(messageId) : null;
+        if (typeof fallback === 'string') entry = messages.get(fallback);
+    }
+    if (!(entry instanceof LuaTable)) return null;
+    let text = entry.get('text');
+    if (typeof text !== 'string') {
+        const count = entry.length();
+        if (count < 2) throw new Error(`Quest message ${section}.${messageId} has no text or choices`);
+        text = entry.get(rn2(count) + 1);
+    }
+    if (typeof text !== 'string') throw new Error(`Quest message ${section}.${messageId} is not text`);
+    const how = entry.get('output');
+    const output = how === 'menu' ? 'menu'
+        : how === 'text' || how === 'window' ? 'text'
+            : how === 'pline' ? 'pline'
+                : text.includes('\n') || text.length >= 255 ? 'text' : 'pline';
+    const summary = entry.get('synopsis');
+    const synopsis = typeof summary === 'string' ? summary
+        : output === 'text' && (how === null || how === 'default')
+            ? `[${text.slice(0, 253).replaceAll('\n', ' ')}]` : null;
+    const lines = text.split('\n');
+    if (text.endsWith('\n')) lines.pop();
+    return {
+        lines: lines.map(line => convertQuestLine(line, state)), output, raw: text,
+        synopsis: synopsis === null ? null : convertQuestLine(synopsis, state),
+    };
 }
 
 // Part of C questpgr.c:com_pager_core(): the prepared-text delivery adapter.

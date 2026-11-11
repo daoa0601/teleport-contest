@@ -6,10 +6,25 @@ import { gameLogEvents } from '../js/pline.js';
 import { saveGame } from '../js/save.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { prepareQuestText } from '../js/questpgr.js';
 function visibleRows(engine) {
     assert.ok(engine.display);
     return engine.display.grid.map(row => row.map(cell => cell.ch).join('').trimEnd());
 }
+void test('acknowledging the legacy introduction reaches welcome and leaves quest text available', async () => {
+    const engine = await runSegment({
+        seed: 123,
+        datetime: '20260801120000',
+        nethackrc: 'OPTIONS=name:Reader,role:Wizard,race:human,gender:male,align:neutral,legacy,!tutorial,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    assert.match(visibleRows(engine).join('\n'), /You, a newly trained Evoker, have been heralded/);
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.match(visibleRows(engine).join('\n'), /Hello Reader, welcome to NetHack!/);
+    assert.equal(engine.state.moves, 1);
+    assert.ok(await prepareQuestText('quest_portal', engine.state));
+});
 async function startWithLongWelcome({ tutorial = false, explore = false, datetime = '20260801120000', } = {}) {
     return runSegment({
         seed: 29371,
