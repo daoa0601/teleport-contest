@@ -60,7 +60,7 @@ import {
     monsterPassesWalls, resistConflict,
 } from './mondata.js';
 import { hiddenGold } from './vault.js';
-import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
+import { canSeeMonster, canSenseMonster, consumeHallucinatedMenuObjectGlyph, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
 import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval,
     pricedInventoryLine } from './invent.js';
 import {
@@ -3714,7 +3714,13 @@ async function chooseBilledItems(billed: ShopBillItem[], multiple: boolean): Pro
 // C shk.c:menu_pick_pay_items(): the bill menu with its used-up and unpaid
 // headings and the "Pay for which items?" picker.
 async function paymentMenu(billed: ShopBillItem[]): Promise<ShopBillItem[]> {
-    for (const item of billed) observeObjectForNaming(item.object);
+    for (const item of billed) {
+        observeObjectForNaming(item.object);
+        // shk.c:menu_pick_pay_items(): each row attaches obj_to_glyph()
+        // menu metadata, which consumes a display-RNG draw while
+        // hallucinating even though tty shows no glyph column.
+        consumeHallucinatedMenuObjectGlyph(item.object);
+    }
     const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
     const used = billed.filter(item => item.kind === 'used');
     const intact = billed.filter(item => item.kind !== 'used');

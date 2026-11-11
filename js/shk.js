@@ -22,7 +22,7 @@ import { possessiveName, distmin, dist2, pointsOnline, upstart } from './hacklib
 import { depth, sameDungeonLevel } from './dungeon.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls, resistConflict, } from './mondata.js';
 import { hiddenGold } from './vault.js';
-import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
+import { canSeeMonster, canSenseMonster, consumeHallucinatedMenuObjectGlyph, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
 import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval, pricedInventoryLine } from './invent.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle, objectDescription, paymentObjectDescription, } from './objnam.js';
 import { rn2, rnd } from './rng.js';
@@ -3608,8 +3608,13 @@ async function chooseBilledItems(billed, multiple) {
 // C shk.c:menu_pick_pay_items(): the bill menu with its used-up and unpaid
 // headings and the "Pay for which items?" picker.
 async function paymentMenu(billed) {
-    for (const item of billed)
+    for (const item of billed) {
         observeObjectForNaming(item.object);
+        // shk.c:menu_pick_pay_items(): each row attaches obj_to_glyph()
+        // menu metadata, which consumes a display-RNG draw while
+        // hallucinating even though tty shows no glyph column.
+        consumeHallucinatedMenuObjectGlyph(item.object);
+    }
     const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
     const used = billed.filter(item => item.kind === 'used');
     const intact = billed.filter(item => item.kind !== 'used');
