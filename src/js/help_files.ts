@@ -712,7 +712,7 @@ export const HELP_FILES: ReadonlyMap<string, readonly string[]> = new Map([
         "has helped make that possible and mostly painless.",
         "",
         "People that contributed to the Windows port of NetHack 5.0 since the",
-        "development of NetHack 5.0 begain over eleven years ago, included",
+        "development of NetHack 5.0 began over eleven years ago, included",
         "Michael Allison, David Cohrs, Bart House, Pasi Kallinen, Alex Kompel,",
         "Dion Nicolaas, Derek S. Ray and Yitzhak Sapir.",
         "",
