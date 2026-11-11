@@ -600,26 +600,23 @@ async function wandEngraveEffects(wand, setup, oep, oetype, frosted, state) {
         case WAN_DEATH:
             // can't tell sleep from death - Eric Backus
             return blind ? '' : `The bugs on the ${surface} stop moving!`;
-        case WAN_COLD: {
-            // An existing burned engraving is frozen out as well.
+        case WAN_COLD:
+        case WAN_CANCELLATION:
+        case WAN_MAKE_INVISIBLE: {
             let post = '';
-            if (!blind)
-                post = 'A few ice cubes drop from the wand.';
-            if (oep && oep.engr_type === BURN) {
+            if (wand.otyp === WAN_COLD) {
+                if (!blind)
+                    post = 'A few ice cubes drop from the wand.';
+                if (!oep || oep.engr_type !== BURN)
+                    return post;
+            }
+            if (oep && oep.engr_type !== HEADSTONE) {
                 if (!blind)
                     await pline(`The engraving on the ${surface} vanishes!`);
                 setup.dengr = true;
             }
             return post;
         }
-        case WAN_CANCELLATION:
-        case WAN_MAKE_INVISIBLE:
-            if (oep && oep.engr_type !== HEADSTONE) {
-                if (!blind)
-                    await pline(`The engraving on the ${surface} vanishes!`);
-                setup.dengr = true;
-            }
-            return '';
         case WAN_TELEPORTATION:
             if (oep && oep.engr_type !== HEADSTONE) {
                 if (!blind)

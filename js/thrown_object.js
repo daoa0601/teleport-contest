@@ -1,41 +1,36 @@
-import { stack_object } from './invent.js';
-import { cant_drown } from './mondata.js';
 // Objects thrown by the hero.
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
-import { COIN_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
+import { cant_drown } from './mondata.js';
+import { COIN_CLASS, GEM_CLASS } from './objclass.js';
 import { objectClassForType, objectSkill, BOULDER, HEAVY_IRON_BALL, ROCK, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
-import { A_STR, BOLT_LIM, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit } from './const.js';
+import { A_STR, BOLT_LIM, IRONBARS, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, ZAP_POS, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
 import { monsterName } from './do_name.js';
 import { artifactById } from './artifact.js';
-import { heroMoveBlockedBetween, impactDisturbsZombies } from './hack.js';
-import { snuffCandle } from './apply.js';
-import { dropBall } from './ball.js';
-import { containerImpactDamage, shipObject } from './dokick.js';
+import { heroMoveBlockedBetween } from './hack.js';
+import { shipObject } from './dokick.js';
 import { currentAttribute, currentStrength } from './attrib.js';
 import { canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym, show_glyph_cell, transientObjectGlyph, unmapObject, TemporaryMapEffect, } from './display.js';
 import { plineWithContinuation, publishHeardMessage } from './pline.js';
-import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { costlySpot, shopkeeperCatch } from './shk.js';
 import { finishInventoryRemoval } from './invent.js';
-import { cleanupTransientLight, objectShedsLight, showTransientLight } from './light.js';
-import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
+import { cleanupTransientLight, showTransientLight } from './light.js';
+import { removeWornHeroItem } from './steal.js';
 import { distantObjectName, objectName, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import { isPick, isLauncherAmmunition, launcherMatchesAmmo } from './object_properties.js';
 import { MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { breakObjectAtLocation, objectBreaksOnImpact, settleThrownShopObject } from './dothrow.js';
-import { splitObjectStack, objectWeight, placeObject } from './mkobj.js';
-import { objectIsVulnerableToErosion, trapAt } from './trap.js';
+import { splitObjectStack } from './mkobj.js';
+import { trapAt } from './trap.js';
 import { closedDoor } from './monmove.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { rn2 } from './rng.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
-import { objectNoLongerHeld, applyFloorEffects } from './do.js';
+import { heroIsBlind } from './senses.js';
+import { isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { cansee } from './vision.js';
 import { rockSkipRange } from './zap.js';
 // Part of C zap.c:bhit(): m_at(x, y) plus the DEADMONSTER test C's callers
@@ -125,94 +120,6 @@ export function prepareHeroThrownTarget(monster, random = rn2) {
         monster.mcanmove = 1;
         monster.mfrozen = 0;
     }
-}
-// Part of C dothrow.c:throwit(): the landing sound, before
-// flooreffects() can consume the object.  Shared by thrown and fired
-// objects.
-export async function announceThrownObjectLiquidImpact(object, x, y, { state = game, publish = plineWithContinuation, } = {}) {
-    if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater
-        && (isPoolAt(x, y, state)
-            || isLavaAt(x, y, state) && !objectIsVulnerableToErosion(object, 'burn', state))) {
-        await publish(objectWeight(object) > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
-    }
-}
-// Part of C dothrow.c:throwit(): resolve floor impact, shop interception and final placement.
-export async function finishHeroThrownObjectLanding({ state = game, object, x, y, contactedMonster = null, publish = plineWithContinuation, random = rn2, }) {
-    requireLiveGame(state);
-    const attachedBall = state.uball || state.u?.uball;
-    const landingSquare = requireGameLevel(state).at(x, y);
-    if (!landingSquare)
-        throw new RangeError(`A thrown object cannot land outside the level at (${x}, ${y}).`);
-    const breaksOnImpact = !IS_SOFT(landingSquare.typ) && objectBreaksOnImpact(object, random);
-    if (breaksOnImpact || object.oclass === VENOM_CLASS) {
-        const impact = new TemporaryMapEffect('flash', transientObjectGlyph(object));
-        await impact.start();
-        try {
-            await impact.tmp_at(x, y);
-            await state.animationFrame?.();
-        }
-        finally {
-            await impact.clear();
-        }
-        const { destroyed } = await breakObjectAtLocation(object, {
-            x, y, fromInventory: true, inView: cansee(x, y),
-            state, publish, random,
-        });
-        if (state.program_state?.gameover || destroyed)
-            return null;
-    }
-    // throwit() announces liquid impact before floor effects can consume the object.
-    await announceThrownObjectLiquidImpact(object, x, y, { state, publish });
-    const floorEffect = await applyFloorEffects(object, x, y, {
-        state,
-        publish,
-        random,
-    });
-    if (state.program_state?.gameover)
-        return null;
-    if (floorEffect.finished)
-        return floorEffect.object;
-    // C dothrow.c:1808: the explicit release after flooreffects, before
-    // keeper/pick interception. The later placeObject release is also in
-    // the source; both run, exactly like C.
-    await objectNoLongerHeld(object, state);
-    if (contactedMonster?.isshk && isPick(object)) {
-        if (cansee(x, y)) {
-            await publish(`${monsterName(contactedMonster, { state, capitalized: true })} snatches up the ${objectName(object, state)}.`);
-        }
-        await settleThrownShopObject(object, x, y, state, publish);
-        await addObjectToMonsterInventory(contactedMonster, object, state);
-        return null;
-    }
-    await snuffCandle(object, state, publish);
-    if (!contactedMonster && await shipObject(object, x, y, {
-        state: requireInitializedGame(state), publish, random,
-    })) {
-        return null;
-    }
-    await placeObject(object, x, y, state);
-    const placedSquare = requireGameLevel(state).at(x, y);
-    if (!placedSquare)
-        throw new RangeError(`A placed object is outside the level at (${x}, ${y}).`);
-    if (!IS_SOFT(placedSquare.typ)) {
-        await containerImpactDamage(object, state.u.ux, state.u.uy, {
-            state, publish, random,
-        });
-        impactDisturbsZombies(object, true, state);
-    }
-    if (object !== attachedBall)
-        await settleThrownShopObject(object, x, y, state, publish);
-    const landed = await stack_object(object, state);
-    if (object === attachedBall) {
-        await dropBall(x, y, { state, publish });
-        if (state.program_state?.gameover)
-            return null;
-    }
-    if (cansee(x, y))
-        await newsym(x, y);
-    if (objectShedsLight(landed ?? object))
-        state.vision_full_recalc = 1;
-    return landed;
 }
 // Part of C zap.c:bhit(): trace a thrown or kicked physical projectile and its display.
 async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, startY, kicked = false, publish = plineWithContinuation, random = rn2, display, }) {

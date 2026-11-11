@@ -1745,25 +1745,25 @@ export class TemporaryMapEffect {
         await this.paint(x, y, this.glyph);
         return true;
     }
-    // A returning tether restores its far end before advancing the weapon.
-    async retract() {
-        if (this.style !== 'tether' || this.positions.length < 2)
-            return false;
-        const end = this.positions.pop();
-        const previous = this.positions.at(-1);
-        if (!end || !previous)
-            throw new Error('A returning tether needs two saved positions');
-        await newsym(end.x, end.y);
-        await this.paint(previous.x, previous.y, this.glyph);
-        return true;
-    }
-    // DISP_END, with C's BACKTRACK option for a returning tether.
-    async end(backtrack = false) {
+    // C display.c:tmp_at(): DISP_END, including the complete BACKTRACK loop.
+    // A projectile caller can supply its frame boundary to retain its topline
+    // and cursor while the display owner restores and advances the tether.
+    async end(backtrack = false, frame) {
         try {
-            if (backtrack) {
-                while (await this.retract()) {
-                    await flush_screen(0);
-                    await game.animationFrame?.();
+            if (backtrack && this.style === 'tether') {
+                while (this.positions.length > 1) {
+                    const end = this.positions.pop();
+                    const previous = this.positions.at(-1);
+                    if (!end || !previous)
+                        throw new Error('A returning tether needs two saved positions');
+                    await newsym(end.x, end.y);
+                    await this.paint(previous.x, previous.y, this.glyph);
+                    if (frame)
+                        await frame();
+                    else {
+                        await flush_screen(0);
+                        await game.animationFrame?.();
+                    }
                 }
             }
         }
