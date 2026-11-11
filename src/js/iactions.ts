@@ -1,3 +1,5 @@
+import { monsterName } from './do_name.js';
+import { panic } from './end.js';
 // iactions.js — the iactions.c owner: the inventory window's per-item
 // action menu (itemactions()) and the chosen action's command queueing
 // (itemactions_pushkeys(), whose cmdq_add_*() calls come from cmd.ts).
@@ -76,7 +78,7 @@ async function showItemActionMenu(item: GameObject) {
     const repairGold = item.oclass === COIN_CLASS && await checkInventoryGold('item-action');
     return showChoiceWindow({
         title: `Do what with ${definiteName(objectCombatName(item))}?`,
-        entries: itemActionEntries(item, game, repairGold),
+        entries: await itemActionEntries(item, game, repairGold),
     });
 }
 
@@ -96,7 +98,7 @@ export async function inventoryActionForObject(item: GameObject): Promise<Invent
 // using a typed slot name instead of an intermediate numeric mask.
 // Also C worn.c:wearmask_to_obj(): inlined here as the occupied-slot read
 // that supplies the wear action's already-wearing label.
-function itemActionEntries(item: GameObject, state: GameState, repairGold: boolean) {
+async function itemActionEntries(item: GameObject, state: GameState, repairGold: boolean) {
     const itemName = simpleObjectName(item, state);
     const entries: { key: InventoryActionKey; text: string }[] = [];
     const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
@@ -110,7 +112,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
         const noun = item.oclass === WEAPON_CLASS || isWeaponTool(item) ? 'weapon' : 'item';
         entries.push({ key: '-', text: `${verb} '-' to ${action} ${plural ? `these ${noun}s` : `this ${noun}`}` });
     }
-    const apply = itemApplyText(item, state);
+    const apply = await itemApplyText(item, state);
     if (apply) entries.push({ key: 'a', text: apply });
     if (item.oclass !== COIN_CLASS && item.dknown && !item.oartifact && item.otyp !== SPE_NOVEL) {
         const named = !!(item.oextra?.oname || item.oname);
@@ -225,7 +227,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
 }
 
 // Part of C iactions.c:itemactions(): the 'a' apply-row classification.
-function itemApplyText(item: GameObject, state: GameState): string | null {
+async function itemApplyText(item: GameObject, state: GameState): Promise<string | null> {
     const light = item.lamplit ? 'Extinguish' : 'Light';
     if (item.oclass === COIN_CLASS) return 'Flip a coin';
     if (item.otyp === CREAM_PIE) return 'Hit yourself with this cream pie';
@@ -237,7 +239,12 @@ function itemApplyText(item: GameObject, state: GameState): string | null {
     case CAN_OF_GREASE: return 'Use the can to grease an item';
     case LOCK_PICK: case CREDIT_CARD: case SKELETON_KEY: return 'Use this tool to pick a lock';
     case TINNING_KIT: return 'Use this kit to tin a corpse';
-    case LEASH: return 'Tie a pet to this leash';
+    case LEASH: {
+        if (!item.leashmon) return 'Attach this leash to a pet';
+        const pet = state.level?.monsters.find(monster => monster.m_id === item.leashmon);
+        if (!pet) return panic("Can't find leash's monster", { state });
+        return `Detach this leash from ${monsterName(pet, { state, augmentIt: true })}`;
+    }
     case SADDLE: return 'Place this saddle on a pet';
     case MAGIC_WHISTLE: case TIN_WHISTLE: return 'Blow this whistle';
     case EUCALYPTUS_LEAF: return 'Use this leaf as a whistle';
