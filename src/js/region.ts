@@ -277,26 +277,30 @@ export function updateHeroRegions(state: GameState = game,
         region.heroInside = regionContains(region, x, y);
 }
 
+// C region.c:mon_in_region(). Membership test against the id list.
+function monInRegion(region: GasCloud, mId: number): boolean {
+    return region.monsterIds.includes(mId);
+}
+
+// C region.c:add_mon_to_reg(). Join the list once; the id array grows in
+// MONST_INC steps and removals never shrink it.
+function addMonToReg(region: GasCloud, mId: number): void {
+    if ((region.maxMonst ?? region.monsterIds.length) <= region.monsterIds.length)
+        region.maxMonst = (region.maxMonst ?? region.monsterIds.length) + MONST_INC;
+    region.monsterIds.push(mId);
+}
+
 // C region.c:update_monster_region()
 // Membership changes at the movement boundary (m_in_out_region());
 // swapping with the hero does not cross this boundary.
-// C region.c:mon_in_region(): membership test against the id list.
-// C region.c:add_mon_to_reg(): join the list once; C's impossible()
-// duplicate report is the index test.
 export function updateMonsterRegions(monster: Monster, state: GameState = game,
     position: Position = { x: monster.mx, y: monster.my }): void {
     for (const region of requireGameLevel(state).regions) {
-        const index = region.monsterIds.indexOf(monster.m_id);
         if (regionContains(region, position.x, position.y)) {
-            // C region.c:174-184 add_mon_to_reg(): the id array grows in
-            // MONST_INC steps and removals never shrink it.
-            if (index < 0) {
-                if ((region.maxMonst ?? region.monsterIds.length) <= region.monsterIds.length)
-                    region.maxMonst = (region.maxMonst ?? region.monsterIds.length) + MONST_INC;
-                region.monsterIds.push(monster.m_id);
-            }
-        } else if (index >= 0) {
-            removeRegionMonster(region, index);
+            if (!monInRegion(region, monster.m_id)) addMonToReg(region, monster.m_id);
+        } else {
+            const index = region.monsterIds.indexOf(monster.m_id);
+            if (index >= 0) removeRegionMonster(region, index);
         }
     }
 }

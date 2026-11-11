@@ -81,4 +81,19 @@ for (const hallucinationTurns of [0, 20]) {
         assert.match(game._pending_message, /You and your invisible ki-rin are noisy\./);
     });
 }
+void test('a stealth ring on a non-flying steed neither grants nor reports stealth', async () => {
+    await freshObjectRoom();
+    const ring = await addInventoryObject(RIN_STEALTH, { typeKnown: false });
+    await wearHeroAccessory(ring, 'uright');
+    assert.equal(game.u.stealth, true);
+    const steed = await createSaddledSteed('horse');
+    game.u.usteed = steed;
+    const input = resetInputState();
+    input.feed(' ');
+    await removeHeroAccessory(ring);
+    // Riding a non-flying steed blocks stealth (C BStealth), so
+    // toggle_stealth() prints nothing on removal and the wear line stays.
+    assert.equal(game.u.stealth, false);
+    assert.equal(game._pending_message, 'You move very quietly.');
+});
 //# sourceMappingURL=stealth_ring.test.js.map

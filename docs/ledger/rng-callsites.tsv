@@ -1870,8 +1870,8 @@ src/js/eat.ts	rottenfood	rnd	"[""10""]"	constant
 src/js/eat.ts	fprefx	rnd	"[""100""]"	constant
 src/js/eat.ts	fprefx	rn1	"[""currentFoodMeal(state).reqtime"", ""14""]"	unproved
 src/js/eat.ts	fprefx	rn2	"[""2""]"	constant
-src/js/detect.ts	detectedTrapDisguise	rn2	"[""20""]"	constant
-src/js/detect.ts	detectedTrapDisguise	rn2	"[""20""]"	constant
+src/js/detect.ts	trappedChestAt	rn2	"[""20""]"	constant
+src/js/detect.ts	trappedDoorAt	rn2	"[""20""]"	constant
 src/js/dig.ts	applyPickAxeDirection	rnd	"[""2""]"	constant
 src/js/dig.ts	attackWithTool	rn2	"[""6""]"	constant
 src/js/dig.ts	attackWithTool	rn2	"[""7""]"	constant

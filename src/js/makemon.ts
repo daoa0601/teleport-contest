@@ -355,9 +355,19 @@ function rndmonstAlignment(): number | null {
         : game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.alignment ?? null;
 }
 
+// C makemon.c:temperature_shift(). Gehennom begins hot in mklev.c and cold
+// special levels can override that inherited flag; a resistant species
+// gains three difficulty units of weight.
+function temperatureShift(mndx: number): number {
+    const temperature = game.level?.flags?.temperature || 0;
+    const preferredResistance = temperature > 0 ? 0x01
+        : temperature < 0 ? 0x02 : 0; // MR_FIRE / MR_COLD
+    return preferredResistance
+        && (requireMonsterData(MONSTER_RESISTS, mndx) & preferredResistance) ? 3 : 0;
+}
+
 // Part of C makemon.c:rndmonst_adj(): the weighted reservoir sampling loop.
 // Also C makemon.c:uncommon(): inlined here.
-// Also C makemon.c:temperature_shift(): inlined here.
 function rndmonstReservoir(minAdjustment = 0, maxAdjustment = 0): number | null {
     const zlevel = level_difficulty();
     const heroLevel = game.u?.ulevel || 1;
@@ -392,15 +402,7 @@ function rndmonstReservoir(minAdjustment = 0, maxAdjustment = 0): number | null 
             weight += Math.trunc((20 - Math.abs(monsterAlign)) / 4);
         else if (levelAlign === A_CHAOTIC)
             weight += Math.trunc((20 - monsterAlign) / 8);
-        // makemon.c:temperature_shift().  Gehennom begins hot in
-        // mklev.c and cold special levels can override that inherited flag.
-        const temperature = game.level?.flags?.temperature || 0;
-        const preferredResistance = temperature > 0 ? 0x01
-            : temperature < 0 ? 0x02 : 0; // MR_FIRE / MR_COLD
-        if (preferredResistance
-            && (requireMonsterData(MONSTER_RESISTS, mndx) & preferredResistance)) {
-            weight += 3;
-        }
+        weight += temperatureShift(mndx);
         if (weight > 0) {
             totalWeight += weight;
             if (rn2(totalWeight) < weight) selected = mndx;

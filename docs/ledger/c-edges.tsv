@@ -13,6 +13,8 @@ Amulet_on	change_sex
 Amulet_on	discover_object
 Amulet_on	find_ac
 Amulet_on	float_vs_flight
+Amulet_on	livelog_newform
+Amulet_on	make_slimed
 Amulet_on	newsym
 Amulet_on	on_msg
 Amulet_on	poly_gender
@@ -20,6 +22,7 @@ Amulet_on	region_danger
 Amulet_on	rnd
 Amulet_on	setworn
 Armor_gone	artifact_light
+Armor_gone	dragon_armor_handling
 Armor_off	artifact_light
 Armor_off	dragon_armor_handling
 Armor_off	setworn
@@ -47,6 +50,7 @@ CapitalMon	init_CapMons
 Cloak_off	discover_object
 Cloak_off	newsym
 Cloak_off	setworn
+Cloak_off	toggle_displacement
 Cloak_off	toggle_stealth
 Cloak_on	discover_object
 Cloak_on	newsym
@@ -97,6 +101,7 @@ Ring_off_or_gone	restartcham
 Ring_off_or_gone	see_monsters
 Ring_off_or_gone	set_mimic_blocking
 Ring_off_or_gone	setworn
+Ring_off_or_gone	toggle_stealth
 Shield_off	setworn
 Shirt_off	setworn
 Sting_effects	glow_color
@@ -242,13 +247,16 @@ attrcurse	see_monsters
 attrcurse	set_mimic_blocking
 attributes_enlightenment	N_times
 attributes_enlightenment	can_pray
+attributes_enlightenment	carrying
 attributes_enlightenment	enlght_combatinc
+attributes_enlightenment	enlght_halfdmg
 attributes_enlightenment	enlght_line
 attributes_enlightenment	from_what
 attributes_enlightenment	item_resistance_message
 attributes_enlightenment	piousness
 attributes_enlightenment	stone_luck
 attributes_enlightenment	temp_resist
+attributes_enlightenment	u_gname
 attributes_enlightenment	walking_on_water
 auto_describe	flush_screen
 auto_describe	is_valid_travelpt
@@ -289,6 +297,7 @@ background_enlightenment	midnight
 background_enlightenment	newuexp
 background_enlightenment	night
 background_enlightenment	rank_of
+background_enlightenment	u_gname
 bad_location	occupied
 bagotricks	discover_object
 bagotricks	makemon
@@ -383,6 +392,7 @@ bounce_dir	rn2
 bounded_increase	rn2
 bounded_increase	rnd
 bp_to_obj	find_oid
+bp_to_obj	o_on
 break_armor	Armor_gone
 break_armor	Blindf_off
 break_armor	Cloak_off
@@ -408,6 +418,7 @@ buried_ball_to_punishment	del_engr_at
 buried_ball_to_punishment	newsym
 buried_ball_to_punishment	punish
 buried_ball_to_punishment	reset_utrap
+burn_away_slime	make_slimed
 burn_floor_objects	ignite_items
 burn_floor_objects	rn2
 burn_floor_objects	weight
@@ -548,6 +559,7 @@ chwepon	hcolor
 chwepon	rn2
 chwepon	strange_feeling
 chwepon	weight
+ckunpaid	count_unpaid
 classify_terrain	db_under_typ
 clear_bypasses	clear_bypass
 clear_conjoined_pits	isok
@@ -565,6 +577,8 @@ clear_no_charge_obj	get_obj_location
 clear_no_charge_obj	isok
 clear_no_charge_pets	clear_no_charge
 clear_stale_map	unmap_object
+clear_unpaid	clear_unpaid_obj
+clear_unpaid_obj	clear_unpaid
 click_to_cmd	cmdq_add_ec
 climb_pit	fill_pit
 climb_pit	m_easy_escape_pit
@@ -599,6 +613,7 @@ com_pager_core	convert_line
 com_pager_core	rn2
 compare_blstats	sgn
 confdir	rn2
+confdir	u_maybe_impaired
 confused_book	rn2
 conjoined_pits	isok
 conjoined_pits	sgn
@@ -768,6 +783,7 @@ create_trap	mktrap
 create_trap	pick_vibrasquare_location
 currency	rn2
 curs_on_u	flush_screen
+cursed	fingers_or_gloves
 cursed_book	aggravate
 cursed_book	erode_obj
 cursed_book	losehp
@@ -1067,6 +1083,7 @@ do_class_genocide	done
 do_class_genocide	kill_genocided_monsters
 do_class_genocide	list_genocided
 do_class_genocide	name_to_monclass
+do_class_genocide	num_genocides
 do_class_genocide	polyself
 do_class_genocide	rehumanize
 do_class_genocide	udeadinside
@@ -1098,11 +1115,13 @@ do_entity	is_db_wall
 do_entity	is_lava
 do_entity	is_pool
 do_entity	spoteffects
+do_gamelog	show_gamelog
 do_genocide	adjalign
 do_genocide	done
 do_genocide	kill_genocided_monsters
 do_genocide	list_genocided
 do_genocide	makemon
+do_genocide	num_genocides
 do_genocide	polyself
 do_genocide	rehumanize
 do_genocide	rn2
@@ -1331,7 +1350,9 @@ docrt_flags	under_ground
 docrt_flags	under_water
 docrt_flags	vision_recalc
 doddoremarm	menu_remarm
+doddoremarm	set_occupation
 doddoremarm	take_off
+doddoremarm	wearing_armor
 doddrop	menu_drop
 doddrop	sellobj_state
 dodip	can_reach_floor
@@ -1509,6 +1530,7 @@ dokick	isok
 dokick	kick_door
 dokick	kick_monster
 dokick	kick_nondoor
+dokick	kick_object
 dokick	kick_ouch
 dokick	kick_steed
 dokick	map_invisible
@@ -1888,6 +1910,7 @@ dotwoweapon	acurr
 dotwoweapon	can_twoweapon
 dotwoweapon	rnd
 dotwoweapon	set_twoweap
+dotypeinv	count_unpaid
 dotypeinv	doinvbill
 dotypeinv	dounpaid
 dotypeinv	yn_function
@@ -2177,6 +2200,7 @@ escape_from_sticky_mon	rn2
 escape_from_sticky_mon	set_ustuck
 eval_notify_windowport_field	compare_blstats
 eval_notify_windowport_field	get_hilite
+eval_notify_windowport_field	hilite_reset_needed
 eval_offering	adjalign
 eval_offering	adjattrib
 evaluate_and_notify_windowport	eval_notify_windowport_field
@@ -2299,6 +2323,7 @@ find_friends	distmin
 find_friends	isok
 find_guard_dest	in_fcorridor
 find_guard_dest	tele
+find_oid	o_on
 find_okay_roompos	bydoor
 find_okay_roompos	occupied
 find_poleable_mon	get_valid_polearm_position
@@ -2624,7 +2649,9 @@ getobj	reassign
 getobj	yn_function
 getpos_help	cmd_from_func
 getpos_help	getpos_help_keyxhelp
+getpos_refresh	getpos_sethilite
 getpos_sethilite	getpos_getvalids_selection
+getpos_toggle_hilite_state	getpos_sethilite
 getprice	corpsenm_price_adj
 getspell	cmdq_pop
 getspell	dospellmenu
@@ -2879,6 +2906,7 @@ impact_drop	shop_keeper
 impaired_movement	confdir
 impaired_movement	isok
 impaired_movement	nomul
+impaired_movement	u_maybe_impaired
 improvised_notes	rn2
 improvised_notes	rnd
 in_container	bot
@@ -3055,6 +3083,7 @@ iswall	isok
 iswall_or_stone	isok
 iswall_or_stone	iswall
 item_on_ice	is_ice
+item_resistance_message	enlght_line
 item_resistance_message	item_what
 itemactions_pushkeys	cmdq_add_ec
 itemactions_pushkeys	cmdq_add_key
@@ -3184,6 +3213,7 @@ l_obj_placeobj	newsym
 l_obj_timer_has	l_obj_check
 l_obj_timer_peek	l_obj_check
 l_obj_timer_start	l_obj_check
+l_push_mkroom_table	get_mkroom_name
 l_selection_and	l_selection_push_new
 l_selection_and	selection_getpoint
 l_selection_and	selection_setpoint
@@ -3203,6 +3233,8 @@ l_selection_grow	selection_do_grow
 l_selection_iterate	selection_getbounds
 l_selection_iterate	selection_getpoint
 l_selection_line	selection_do_line
+l_selection_match	mapfrag_error
+l_selection_match	mapfrag_free
 l_selection_match	selection_setpoint
 l_selection_new	l_selection_push_new
 l_selection_not	l_selection_clone
@@ -3328,6 +3360,8 @@ liquid_flow	pooleffects
 liquid_flow	trapname
 liquid_flow	unearth_objs
 liquid_flow	water_damage_chain
+list_genocided	num_extinct
+list_genocided	num_genocides
 list_genocided	num_gone
 list_genocided	set_vanq_order
 list_genocided	yn_function
@@ -3436,7 +3470,9 @@ losexp	done
 losexp	minuhpmax
 losexp	newuexp
 losexp	rehumanize
+losexp	setuhpmax
 lspo_altar	create_altar
+lspo_altar	get_table_align
 lspo_altar	get_table_xy_or_coord
 lspo_corridor	create_corridor
 lspo_door	create_door
@@ -3452,6 +3488,8 @@ lspo_engraving	engr_at
 lspo_engraving	get_table_xy_or_coord
 lspo_exclusion	get_table_region
 lspo_feature	get_table_xy_or_coord
+lspo_feature	l_table_getset_feature_flag
+lspo_feature	sel_set_feature
 lspo_finalize_level	count_level_features
 lspo_finalize_level	ensure_way_out
 lspo_finalize_level	flip_level_rnd
@@ -3485,17 +3523,23 @@ lspo_mazewalk	walkfrom
 lspo_mineralize	mineralize
 lspo_monster	create_monster
 lspo_monster	find_montype
+lspo_monster	get_table_align
+lspo_monster	get_table_monclass
+lspo_monster	get_table_montype
 lspo_monster	get_table_xy_or_coord
 lspo_monster	rn2
 lspo_non_passwall	set_wallprop_in_selection
 lspo_object	create_object
 lspo_object	find_objtype
+lspo_object	get_table_buc
+lspo_object	get_table_int_or_random
 lspo_object	get_table_xy_or_coord
 lspo_object	mkclass
 lspo_region	add_doors_to_room
 lspo_region	add_room
 lspo_region	flood_fill_rm
 lspo_region	get_location
+lspo_region	get_table_coords_or_region
 lspo_region	get_table_roomtype_opt
 lspo_region	l_push_mkroom_table
 lspo_region	light_region
@@ -3503,8 +3547,11 @@ lspo_region	litstate_rnd
 lspo_region	selection_do_grow
 lspo_region	selection_iterate
 lspo_region	topologize
+lspo_region	update_croom
 lspo_replace_terrain	get_location
 lspo_replace_terrain	get_table_region
+lspo_replace_terrain	mapfrag_error
+lspo_replace_terrain	mapfrag_free
 lspo_replace_terrain	rn2
 lspo_replace_terrain	selection_getbounds
 lspo_replace_terrain	selection_getpoint
@@ -3516,6 +3563,7 @@ lspo_room	build_room
 lspo_room	get_table_roomtype_opt
 lspo_room	get_table_xy_or_coord
 lspo_room	l_push_mkroom_table
+lspo_room	update_croom
 lspo_stair	l_create_stairway
 lspo_teleport_region	l_get_lregion
 lspo_teleport_region	levregion_add
@@ -3524,7 +3572,9 @@ lspo_terrain	isok
 lspo_terrain	sel_set_ter
 lspo_terrain	selection_iterate
 lspo_trap	create_trap
+lspo_trap	get_table_traptype_opt
 lspo_trap	get_table_xy_or_coord
+lspo_trap	get_traptype_byname
 lspo_wall_property	get_location
 lspo_wallify	wallify_map
 lvlfill_solid	set_levltyp_lit
@@ -3616,6 +3666,8 @@ make_hallucinated	see_objects
 make_hallucinated	see_traps
 make_hallucinated	swallowed
 make_hallucinated	unconscious
+make_happy_shoppers	kops_gone
+make_happy_shoppers	pacify_guards
 make_itemized_bill	bp_to_obj
 make_niches	makeniche
 make_niches	rn2
@@ -3716,6 +3768,7 @@ makeroguerooms	rn2
 makeroguerooms	rnd
 makeroguerooms	roguecorr
 makerooms	create_room
+makerooms	reset_xystart_size
 makerooms	rn2
 makerooms	rnd_rect
 maketrap	add_damage
@@ -3758,6 +3811,7 @@ map_redisplay	docrt
 map_redisplay	reconstrain_map
 map_redisplay	under_ground
 map_redisplay	under_water
+mapfrag_error	mapfrag_free
 mapseen_temple	find_mapseen
 mattackm	distmin
 mattackm	explmm
@@ -3809,10 +3863,12 @@ maybe_smudge_engr	rnd
 maybe_smudge_engr	wipe_engr_at
 maybe_spin_web	add_damage
 maybe_spin_web	count_traps
+maybe_spin_web	count_webbing_walls
 maybe_spin_web	d
 maybe_spin_web	in_rooms
 maybe_spin_web	maketrap
 maybe_spin_web	rn2
+maybe_spin_web	soko_allow_web
 maybe_spin_web	t_at
 maybe_unhide_at	can_hide_under_obj
 maybe_unhide_at	is_pool
@@ -4039,6 +4095,7 @@ mkgrave	weight
 mkinvk_check_wall	isok
 mkinvokearea	buried_ball_to_punishment
 mkinvokearea	flush_screen
+mkinvokearea	mkinvk_check_wall
 mkinvokearea	mkinvpos
 mkinvokearea	mkstairs
 mkinvokearea	newsym
@@ -4147,6 +4204,7 @@ monster_detect	strange_feeling
 monster_detect	unconstrain_map
 monster_nearby	isok
 monstinroom	in_rooms
+more_experienced	exp_percent_changing
 morehungry	newuhs
 morgue_mon_sound	mon_in_room
 morgue_mon_sound	rn2
@@ -4270,6 +4328,7 @@ moveloop_core	warnreveal
 moveloop_core	you_were
 moveloop_preamble	change_luck
 moveloop_preamble	encumber_msg
+moveloop_preamble	friday_13th
 moveloop_preamble	initrack
 moveloop_preamble	phase_of_the_moon
 moveloop_preamble	pickup
@@ -4291,6 +4350,7 @@ moverock_core	closed_door
 moverock_core	costly_spot
 moverock_core	could_move_onto_boulder
 moverock_core	disturb_buried_zombies
+moverock_core	doorless_door
 moverock_core	dopush
 moverock_core	feel_location
 moverock_core	fill_pit
@@ -4305,6 +4365,7 @@ moverock_core	nomul
 moverock_core	random_teleport_level
 moverock_core	revive_nasty
 moverock_core	rn2
+moverock_core	rock_disappear_msg
 moverock_core	shop_keeper
 moverock_core	sobj_at
 moverock_core	sokoban_guilt
@@ -4357,6 +4418,7 @@ namefloorobj	rn2_on_display_rng
 namefloorobj	roguename
 nameshk	rn2
 nasty	makemon
+nasty	monster_census
 nasty	pick_nasty
 nasty	rn2
 nasty	rnd
@@ -4443,6 +4505,7 @@ nextoid	next_ident
 nexttodoor	isok
 nh_timeout	acurr
 nh_timeout	adjattrib
+nh_timeout	carrying
 nh_timeout	choke_dialogue
 nh_timeout	deferred_decor
 nh_timeout	eating_dangerous_corpse
@@ -4480,6 +4543,7 @@ nh_timeout	slime_dialogue
 nh_timeout	slimed_to_death
 nh_timeout	slip_or_trip
 nh_timeout	spoteffects
+nh_timeout	stone_luck
 nh_timeout	stoned_dialogue
 nh_timeout	stop_occupation
 nh_timeout	stuck_in_wall
@@ -4513,6 +4577,7 @@ obj_typename	Japanese_item_name
 object_detect	browse_map
 object_detect	clear_stale_map
 object_detect	cls
+object_detect	findgold
 object_detect	glyph_at
 object_detect	map_redisplay
 object_detect	newsym
@@ -4839,6 +4904,7 @@ pick_lock	simple_typename
 pick_lock	untrap
 pick_lock	update_mapseen_for
 pick_lock	yn_function
+pick_nasty	big_to_little
 pick_nasty	rn2
 pick_race	ok_race
 pick_race	rn2
@@ -5249,6 +5315,8 @@ recalc_block_point	unblock_point
 recalc_mapseen	shop_keeper
 recalc_mapseen	update_lastseentyp
 recalc_wt	weight
+record_achievement	rank_of
+record_achievement	rank_to_xlev
 redist_attr	rn2
 redist_attr	uasmon_maxStr
 redotoplin	more
@@ -5406,6 +5474,7 @@ rhack	cmdq_shift
 rhack	domove
 rhack	parse
 rhack	reset_cmd_vars
+rhack	set_occupation
 rider_corpse_revival	exercise
 rigid_role_checks	pick_role
 rigid_role_checks	randrole_filtered
@@ -5451,6 +5520,7 @@ rndmonst_adj	align_shift
 rndmonst_adj	level_difficulty
 rndmonst_adj	qt_montype
 rndmonst_adj	rn2
+rndmonst_adj	temperature_shift
 rndmonst_adj	wrong_elem_type
 rndorcname	rn2
 rndtrap	rnd
@@ -5724,6 +5794,7 @@ set_uinwater	switch_terrain
 set_ulycn	set_uasmon
 set_utrap	float_vs_flight
 set_wall	check_pos
+set_wall_property	sel_set_wall_property
 set_wall_state	xy_set_wall_state
 set_wallprop_in_selection	selection_iterate
 set_wear	Armor_on
@@ -5738,6 +5809,8 @@ setnotworn	set_artifact_intrinsic
 setnotworn	set_twoweap
 setopt_cmd	cmd_from_func
 setpaid	clear_no_charge
+setpaid	clear_unpaid
+setpaid	clear_unpaid_obj
 setup_algnmenu	ok_align
 setup_algnmenu	ok_race
 setup_algnmenu	ok_role
@@ -5879,6 +5952,8 @@ sortloot_cmp	invletter_value
 sortloot_cmp	loot_xname
 sp_amask_to_amask	induced_align
 sp_amask_to_amask	noncoalignment
+sp_level_coder_init	reset_xystart_size
+sp_level_coder_init	update_croom
 spec_ability	get_artifact
 spec_applies	rn2
 spec_m2	get_artifact
@@ -5940,8 +6015,10 @@ splev_initlev	makeroguerooms
 splev_initlev	mkmap
 splev_initlev	rn2
 split_rects	intersect
+spo_endroom	update_croom
 spot_checks	obj_ice_effects
 spot_checks	spot_stop_timers
+spot_time_left	spot_time_expires
 spoteffects	ceiling
 spoteffects	check_special_room
 spoteffects	d
@@ -6104,8 +6181,12 @@ switch_terrain	classify_terrain
 switch_terrain	float_up
 switch_terrain	float_vs_flight
 t_missile	weight
+take_off	do_takeoff
+take_off	set_occupation
 target_on	inhistemple
 target_on	mon_has_arti
+target_on	on_ground
+target_on	other_mon_has_arti
 target_on	which_arti
 target_on	you_have
 tele_jump_ok	isok
@@ -6166,6 +6247,7 @@ test_move	worm_cross
 tether_glyph	sgn
 tether_glyph	zapdir_to_glyph
 theft_petrifies	instapetrify
+themerooms_post_level_generate	reset_xystart_size
 themerooms_post_level_generate	wallification
 there_cmd_menu	act_on_act
 there_cmd_menu	cmdq_add_ec
@@ -7002,6 +7084,7 @@ wizterrainwish	switch_terrain
 wizterrainwish	t_at
 wizterrainwish	trapname
 wizterrainwish	water_damage_chain
+wornarm_destroyed	Armor_off
 wornarm_destroyed	Cloak_off
 wornarm_destroyed	Helmet_off
 wornarm_destroyed	cancel_don

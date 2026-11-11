@@ -1665,9 +1665,28 @@ async function runCovetousHarassTactics(monster, state, random, calls) {
     }
     await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
 }
+// C monmove.c:soko_allow_web(). In unsolved Sokoban, a web spinner must
+// see the up stairs.
+function sokoAllowWeb(monster, state) {
+    if (!state.level.flags.sokoban_rules)
+        return true;
+    let stairs = state.stairs;
+    while (stairs && !stairs.up)
+        stairs = stairs.next;
+    return !!stairs && clearPath(monster.mx, monster.my, stairs.sx, stairs.sy);
+}
+// C monmove.c:count_webbing_walls(). The cardinal wall anchors that can
+// hold a web; diagonal rock must not inflate the creation probability.
+function countWebbingWalls(monster, state) {
+    const webbingAnchors = [
+        [monster.mx, monster.my - 1],
+        [monster.mx + 1, monster.my],
+        [monster.mx, monster.my + 1],
+        [monster.mx - 1, monster.my],
+    ];
+    return webbingAnchors.reduce((count, [x, y]) => count + Number(holdsUpMonsterWeb(x, y, state)), 0);
+}
 // C monmove.c:maybe_spin_web(). Webmakers spin in place, walls permitting.
-// Also C monmove.c:soko_allow_web(): inlined here.
-// Also C monmove.c:count_webbing_walls(): inlined here.
 async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls) {
     if (![94, 96].includes(monster?.mnum) ||
         monster.mcanmove === 0 ||
@@ -1675,25 +1694,9 @@ async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, c
         monster.mspec_used ||
         trapAt(state, monster.mx, monster.my))
         return null;
-    // C monmove.c:soko_allow_web(): in unsolved Sokoban, only when the
-    // spinner sees the up stairs.
-    if (state.level.flags.sokoban_rules) {
-        let stairs = state.stairs;
-        while (stairs && !stairs.up)
-            stairs = stairs.next;
-        if (!stairs || !clearPath(monster.mx, monster.my, stairs.sx, stairs.sy))
-            return null;
-    }
-    // count_webbing_walls() deliberately checks only the four cardinal
-    // anchors.  Diagonal rock can visually surround a spider without being
-    // able to hold a web, and must not inflate the creation probability.
-    const webbingAnchors = [
-        [monster.mx, monster.my - 1],
-        [monster.mx + 1, monster.my],
-        [monster.mx, monster.my + 1],
-        [monster.mx - 1, monster.my],
-    ];
-    const webbingWalls = webbingAnchors.reduce((count, [x, y]) => count + Number(holdsUpMonsterWeb(x, y, state)), 0);
+    if (!sokoAllowWeb(monster, state))
+        return null;
+    const webbingWalls = countWebbingWalls(monster, state);
     // C trap.c:count_traps(WEB).
     const existingWebs = count_traps(WEB, state);
     const probability = (monster.mnum === 96 ? 15 : 5) * (webbingWalls + 1) - 3 * existingWebs;

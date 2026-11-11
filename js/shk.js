@@ -23,7 +23,7 @@ import { depth, sameDungeonLevel } from './dungeon.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls, resistConflict, } from './mondata.js';
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
-import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval, pricedInventoryLine } from './invent.js';
+import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval, pricedInventoryLine, oOn } from './invent.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle, objectDescription, paymentObjectDescription, } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
@@ -31,7 +31,7 @@ import { heroGoldObject, detachHeroGold } from './sit.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
-import { angerWatchGuards, removeMonsterFromGame, mnearto, moveMonsterNextToHero } from './mon.js';
+import { angerWatchGuards, removeMonsterFromGame, mnearto, moveMonsterNextToHero, pacifyGuards } from './mon.js';
 import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_NSIZ, ROOMOFFSET, SHOPBASE, Upolyd, MGIVENNAME, LL_ACHIEVE, G_GONE, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL, MENU_TRADITIONAL, MIGR_APPROX_XY, IS_DOOR, SVALL, SDOOR, IS_STWALL, IS_TREE, IS_ROOM, BOLT_LIM, RLOC_NOMSG, RLOC_MSG, D_CLOSED, ZAP_POS, LANDMINE, BEAR_TRAP, HOLE, PIT, SPIKED_PIT, IS_WALL, TT_PIT, W_SWAPWEP, W_QUIVER, ACH_SHOP, ARM, HEAD, HAND } from './const.js';
 import { isok, commandResultCancelled, setMulti } from './cmd.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';
@@ -1196,10 +1196,16 @@ export async function moneyToMonster(monster, amount, state = game) {
     return amount;
 }
 // ------------------------------------------------------------- add_damage()
+// C shk.c:clear_unpaid(): the per-list walk clearing each object's
+// unpaid bit.
+function clearUnpaid(keeper, list) {
+    for (const object of list)
+        clearUnpaidObject(keeper, object);
+}
 // C shk.c:clear_unpaid_obj()
 function clearUnpaidObject(keeper, object) {
-    for (const content of object.contents || [])
-        clearUnpaidObject(keeper, content);
+    if (object.contents?.length)
+        clearUnpaid(keeper, object.contents);
     if (onBillOf(object, keeper))
         object.unpaid = false;
 }
@@ -1208,11 +1214,11 @@ function onBillOf(object, keeper) {
     return !!keeper && (keeper.eshk.bill || []).some(entry => entry.bo_id === object.o_id);
 }
 // C shk.c:find_oid(): the object-list search by o_id.  C walks invent,
-// fobj, the buried list, migrating objects, then every monster inventory;
-// callers pass that search domain as the port's timer graph
+// fobj, the buried list, migrating objects, then every monster inventory
+// with o_on(); callers pass that search domain as the port's timer graph
 // (objectsInTimerGraph()), walked once.
 function findObjectId(oId, objects) {
-    return objects.find(object => object.o_id === oId) ?? null;
+    return oOn(oId, objects);
 }
 // C shk.c:bp_to_obj(): a bill entry's object by o_id — a used-up entry
 // sits on gb.billobjs, the rest on any list find_oid() walks.
@@ -1253,34 +1259,21 @@ function clearNoChargeObject(keeper, object, state) {
 // C shk.c:setpaid()
 // Either you paid or left the shop or the shopkeeper died.  All pending
 // transactions are settled.
-// Also C shk.c:clear_unpaid(): walks each object list and clears the
-// unpaid bit per object; the loops below inline it with clearUnpaidObject().
 export function setPaidShopkeeper(keeper, state = game) {
     requireLiveGame(state);
-    for (const object of state.inventory || [])
-        clearUnpaidObject(keeper, object);
-    for (const column of state.level?.objects || []) {
-        for (const pile of column || []) {
-            for (const object of pile || [])
-                clearUnpaidObject(keeper, object);
-        }
-    }
-    for (const object of state.level?.buriedObjects || [])
-        clearUnpaidObject(keeper, object);
+    clearUnpaid(keeper, state.inventory || []);
+    clearUnpaid(keeper, floorObjectList(state));
+    clearUnpaid(keeper, state.level?.buriedObjects ?? []);
     // C gt.thrownobj.
     if (state._thrownObject)
         clearUnpaidObject(keeper, state._thrownObject);
     if (state._kickedObject)
         clearUnpaidObject(keeper, state._kickedObject);
-    for (const monster of state.level?.monsters || []) {
-        for (const object of monster.minvent || [])
-            clearUnpaidObject(keeper, object);
-    }
+    for (const monster of state.level?.monsters || [])
+        clearUnpaid(keeper, monster.minvent || []);
     // C gm.migrating_mons.
-    for (const monster of state._migratingMonsters || []) {
-        for (const object of monster.minvent || [])
-            clearUnpaidObject(keeper, object);
-    }
+    for (const monster of state._migratingMonsters || [])
+        clearUnpaid(keeper, monster.minvent || []);
     // Clear no_charge for everything in this keeper's shop.
     clearNoCharge(keeper, floorObjectList(state), state);
     clearNoCharge(keeper, state.level?.buriedObjects ?? [], state);
@@ -1401,30 +1394,31 @@ export async function makeShopkeeperHappy(monster, { state = game, silentKops = 
     }
     await makeShoppersHappy({ state, silentKops });
 }
-// C shk.c:make_happy_shoppers()/kops_gone(), mon.c:pacify_guards(); its
-// iter_mons callback mon.c:pacify_guard() is the watch loop below, and the
-// angry-keeper test is mon.c:angry_shk_exists() inlined.
-export async function makeShoppersHappy({ state = game, silentKops = false } = {}) {
-    requireShopGame(state);
-    if (state.level.monsters.some(monster => monster.isshk && !monster.dead
-        && monster.mhp > 0 && !monster.mpeaceful))
-        return;
+// C shk.c:kops_gone(). Every Keystone Kop leaves disappointed; visible
+// ones are counted for the message.
+async function kopsGone(silent, state) {
     const kopSymbol = MONSTER_SYMBOL[MONSTER_NAME.indexOf('Keystone Kop')];
     let visibleKops = 0;
-    for (const monster of [...state.level.monsters].reverse()) {
+    for (const monster of [...(state.level?.monsters ?? [])].reverse()) {
         if (monster.dead || monster.mhp <= 0 || MONSTER_SYMBOL[monster.mnum] !== kopSymbol)
             continue;
         if (canSpotMonster(monster))
             visibleKops++;
         await removeMonsterFromGame(monster);
     }
-    if (visibleKops && !silentKops) {
+    if (visibleKops && !silent) {
         await plineWithContinuation(`The Kop${visibleKops === 1 ? '' : 's'} (disappointed) vanish${visibleKops === 1 ? 'es' : ''} into thin air.`);
     }
-    for (const monster of state.level.monsters) {
-        if (['watchman', 'watch captain'].includes(MONSTER_NAME[monster.mnum] ?? ''))
-            monster.mpeaceful = 1;
-    }
+}
+// C shk.c:make_happy_shoppers(); the angry-keeper test is mon.c
+// angry_shk_exists() inlined.
+export async function makeShoppersHappy({ state = game, silentKops = false } = {}) {
+    requireShopGame(state);
+    if (state.level.monsters.some(monster => monster.isshk && !monster.dead
+        && monster.mhp > 0 && !monster.mpeaceful))
+        return;
+    await kopsGone(silentKops, state);
+    pacifyGuards(state);
 }
 // C shk.c:hot_pursuit()
 // The shared anger transaction for unpaid debts.

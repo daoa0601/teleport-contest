@@ -455,6 +455,11 @@ export async function removeWornHeroItem(object: GameObject, state: GameState = 
     }
 }
 
+// C steal.c:findgold(). The gold pile in an object chain.
+export function findgold(objects: readonly GameObject[]): GameObject | null {
+    return objects.find(object => object.otyp === GOLD_PIECE) ?? null;
+}
+
 // C steal.c:stealgold() and somegold(); called from uhitm.c:mhitm_ad_sgld()'s
 // hero branch.
 export async function stealHeroGold(
@@ -462,8 +467,8 @@ export async function stealHeroGold(
     random: typeof rn2, rollOne: typeof rnd,
 ): Promise<void> {
     if (monster.mcan || MONSTER_SYMBOL[heroSpecies(state)] === MONSTER_SYMBOL[monster.mnum]) return;
-    const purse = state.inventory.find(object => object.otyp === GOLD_PIECE);
-    const floor = state.level.objects[state.u.ux]?.[state.u.uy]?.find(object => object.otyp === GOLD_PIECE);
+    const purse = findgold(state.inventory);
+    const floor = findgold(state.level.objects[state.u.ux]?.[state.u.uy] ?? []);
     if (floor && (!purse || floor.quan > purse.quan || random(5) === 0)) {
         unlinkObject(floor, state);
         await linkObjectToMonsterInventory(monster, floor, { state });

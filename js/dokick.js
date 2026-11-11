@@ -1214,15 +1214,21 @@ function kickRange(object, state, dx, dy, martial, rollOne) {
         range = 1;
     return { range, slide };
 }
-// C dokick.c:really_kick_object().
-// Also C dokick.c:kick_object(): inlined here as the top-of-pile selection
-// and the object name used if the kick hurts the hero.
-export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 0, dy = state.u?.dy ?? 0, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
+// C dokick.c:kick_object(). The top-of-pile object a kick reaches, with
+// the boulder/ball/chain refusals.
+function kickObject(x, y, state) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object)
-        return false;
+        return null;
     if (object.otyp === BOULDER || object === state.uball || object === state.u.uball
         || object === state.uchain || object === state.u.uchain)
+        return null;
+    return object;
+}
+// C dokick.c:really_kick_object().
+export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 0, dy = state.u?.dy ?? 0, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
+    const object = kickObject(x, y, state);
+    if (!object)
         return false;
     const trap = trapAt(state, x, y);
     const passesWalls = state.u.passesWalls;

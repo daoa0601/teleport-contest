@@ -1884,6 +1884,12 @@ export function isWatch(monster: Monster): boolean {
     return WATCH_NAMES.has(MONSTER_NAME[monster?.mnum] || '');
 }
 
+// C mon.c:pacify_guards(). Watch members stop hunting the hero.
+export function pacifyGuards(state: GameState = game): void {
+    for (const monster of state.level?.monsters ?? [])
+        if (isWatch(monster)) monster.mpeaceful = 1;
+}
+
 // Part of C mon.c:peacefuls_respond(): the humanoid gasp and exclamation.
 function maybeHumanoidGasp(observer: Monster) {
     requirePlayingGame(game);

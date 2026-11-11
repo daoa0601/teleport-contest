@@ -60,6 +60,7 @@ import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { MONSTER_CLASS_SYMBOLS, monsterDigests, monsterHidesUnder, monsterIsHider, resistsBlnd } from './mondata.js';
 import { expelHero } from './mhitu.js';
+import { findgold } from './steal.js';
 import { body_part, heroPolyGender } from './polyself.js';
 
 type DetectionTrap = Pick<Trap, 'ttyp' | 'tx' | 'ty'>;
@@ -353,7 +354,7 @@ export async function detectGold(source: GameObject | null, { state = game }: De
         }
         for (const monster of monsters) {
             const carried = monsterObjects(monster);
-            if (monster.mnum === GOLD_GOLEM || carried.some(object => object.otyp === GOLD_PIECE)) {
+            if (monster.mnum === GOLD_GOLEM || !!findgold(carried)) {
                 await showObjectAt(detectedCoins(), monster.mx, monster.my, shown);
             } else {
                 const found = carried.map(object => goldIn(object, blessed, state)).find(Boolean);
@@ -544,7 +545,7 @@ function misleadingMimic(monster: Monster, source: GameObject | null, objectClas
 // Part of C detect.c:gold_detect(): the findgold()/gold-golem monster test.
 function monsterGold(monster: Monster, objectClass: number) {
     return (!objectClass || objectClass === COIN_CLASS)
-        && monsterObjects(monster).some(object => object.otyp === GOLD_PIECE);
+        && !!findgold(monsterObjects(monster));
 }
 
 // C detect.c:monster_detect().

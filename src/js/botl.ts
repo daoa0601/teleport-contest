@@ -255,6 +255,11 @@ export function experienceRankIndex(level: number) {
     return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
 }
 
+// C botl.c:rank_to_xlev(). The low end of each rank's level range.
+export function rankToLevel(rank: number) {
+    return rank < 1 ? 1 : rank < 2 ? 3 : rank < 8 ? rank * 4 - 2 : 30;
+}
+
 // C include/you.h:Role_switch (gu.urole.mnum): the hero's role as a player
 // monster species number. C's roles store the PM_ species index directly;
 // this port's roles store a 0-based mnum, so the species number is
@@ -664,8 +669,7 @@ export class StatusHighlights {
         field.expires = 0;
     }
 
-// C botl.c:hilite_reset_needed(): a temporary highlight expires once its
-// time has passed and the hero is not stalled in a multi-turn action.
+    // Re-arm changed fields and check pending expirations for the next status update.
     evaluateNextUnhilite(state: GameState): boolean {
         this.moves = state.moves;
         let update = !!state.context.botl;
@@ -675,9 +679,22 @@ export class StatusHighlights {
                     ? state.moves + (state.iflags.hiliteDelta ?? 0) : 0;
                 field.changed = false;
                 update = true;
-            } else if (!state.multi && field.expires > 0 && field.expires < state.moves) update = true;
+            }
+            if (update) continue;
+            if (field.expires > 0 && this.hiliteResetNeeded(field, state, field.expires + 1)
+                && field.expires < state.moves) update = true;
         }
         return update;
+    }
+
+    // C botl.c:hilite_reset_needed(). A temporary highlight expires once
+    // its time has passed and the hero is not stalled in a multi-turn
+    // action.
+    hiliteResetNeeded(
+        previous: FieldHistory | undefined, state: GameState, time = this.moves ?? state.moves,
+    ): boolean {
+        return previous?.rule?.behavior === BL_TH_UPDOWN && !!previous.expires && !state.multi
+            && previous.expires < time;
     }
 
 // C botl.c:evaluate_and_notify_windowport(): the whole-field sweep; both
@@ -710,7 +727,7 @@ export class StatusHighlights {
         this.updateField(state, BL_TIME, numberValue(state.moves));
     }
 
-    // botl.c exp_percent_changing(): hidden points can change the level's rule.
+    // C botl.c:exp_percent_changing(): hidden points can change the level's rule.
     experiencePercentChanging(state: GameState): boolean {
         if (state.context.botl) return false;
         const rules = state.iflags.statusThresholds?.[BL_XP] ?? [];
@@ -761,9 +778,8 @@ export class StatusHighlights {
             change = compare(previousPercent, percent);
             if (change === 1 && field === BL_XP && previous) change = compare(previous.raw, current.raw);
         }
-        const expired = !!previous?.expires && !state.multi && previous.expires < (this.moves ?? state.moves);
-        // C hilite_reset_needed(): a temporary highlight whose time passed.
-        // botl.c:1584 re-sends a field only for gu.update_all, a value or
+        const expired = this.hiliteResetNeeded(previous, state);
+        // C botl.c:1584 re-sends a field only for gu.update_all, a value or
         // percentage change, or a temporary-hilite expiry. A rule list that
         // changed on its own never re-sends anything: the tty keeps the
         // buffered color of a removed rule until one of those rounds runs

@@ -19,16 +19,16 @@ import {
     MEAT_RING, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION,
     CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING,
     GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION,
-    RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
+    RIN_PROTECTION, RIN_STEALTH, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
     SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION,
     WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP,
     objectClassForType, objectPropertyName, a_ac, OBJ_NAME,
     AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AKLYS, TOWEL, BLINDFOLD, BATTLE_AXE, OBJECT_NAMES,
 } from './object_data.js';
 import { game, requireLiveGame } from './gstate.js';
-import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery, cmdq_pop, commandResultFailed } from './cmd.js';
+import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery, cmdq_pop, commandResultFailed, setOccupation } from './cmd.js';
 import type { ArmorCompletion } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects, finishHeroHelplessness } from './hack.js';
 import { stopHeroOccupation } from './allmain.js';
@@ -45,13 +45,13 @@ import {
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt,  isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
 
 import type { GameState } from './game_state.js';
-import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part, floatVsFlight } from './polyself.js';
+import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part, floatVsFlight, livelogNewform } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { recordObjectKnowledge } from './u_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName, suitSimpleName, cloakSimpleName, helmSimpleName, glovesSimpleName, bootsSimpleName, shieldSimpleName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
-import { chooseInventoryObject, compactInventoryLetters, bucCategory } from './invent.js';
+import { chooseInventoryObject, compactInventoryLetters, bucCategory, wearingArmor } from './invent.js';
 import type { InventoryClassification } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
@@ -93,8 +93,7 @@ import {
     monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, heroResistsStoning, touchPetrifies, heroCanBeStrangled,
 } from './mondata.js';
 import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';
-import { experienceRankIndex } from './botl.js';
-import { clearHeroSliming, heroIsSliming } from './potion.js';
+import { setHeroSlimingTimeout, heroIsSliming } from './potion.js';
 import { heroIsInDangerousRegion } from './region.js';
 
 import { canLetGo } from './do.js';
@@ -589,6 +588,11 @@ export function takeoffSlotObject(slot: TakeoffSlot, state: GameState = game): G
     return state[slot] || state.u[slot] || null;
 }
 
+// Armor slots used by the takeoff menu and its delay calculation.
+const WORN_ARMOR_SLOTS: readonly TakeoffSlot[] = [
+    'uarmc', 'uarmh', 'uarm', 'uarmu', 'uarms', 'uarmg', 'uarmf',
+];
+
 // C do_wear.c:reset_remarm().
 export function resetBulkTakeoff(state: GameState = game): void {
     delete state.context.takeoff;
@@ -636,19 +640,19 @@ export function isBeingDonned(object: GameObject, state: GameState = game): bool
 }
 
 // C do_wear.c:doddoremarm(): the #takeoffall command — resume an
-// interrupted disrobing, refuse when nothing is worn, then collect the
-// selection and start the occupation.
-// set_occupation() is the _occupation assignment below; wearing_armor()
-// is the TAKEOFF_ORDER scan that decides "not wearing anything".
+// interrupted disrobing, refuse when nothing is worn (wearing_armor()
+// completes the slot scan), then collect the selection and start the
+// occupation (set_occupation()).
 export async function takeOffAll(): Promise<void> {
     game.context.move = 0;
     const progress = game.context.takeoff;
     if (progress && (progress.current || progress.pending.length)) {
         await plineWithContinuation(`You continue ${progress.text}.`);
-        game._occupation = { key: 'takeoff', text: progress.text };
+        setOccupation({ key: 'takeoff', text: progress.text }, game);
         return;
     }
-    if (!TAKEOFF_ORDER.some(slot => takeoffSlotObject(slot))) {
+    if (!wearingArmor() && !TAKEOFF_ORDER.some(slot =>
+        !WORN_ARMOR_SLOTS.includes(slot) && takeoffSlotObject(slot))) {
         await plineWithContinuation('You are not wearing anything.');
         return;
     }
@@ -696,7 +700,7 @@ export async function continueBulkTakeoff(state: GameState = game): Promise<bool
     }
     progress.current = slot;
     progress.delay = Math.max(0, removalDelay(slot, state) - 1);
-    state._occupation = { key: 'takeoff', text: progress.text };
+    setOccupation({ key: 'takeoff', text: progress.text }, state);
     return true;
 }
 
@@ -704,7 +708,7 @@ export async function continueBulkTakeoff(state: GameState = game): Promise<bool
 // suit additions.
 function removalDelay(slot: TakeoffSlot, state: GameState): number {
     const object = takeoffSlotObject(slot, state);
-    const armor = ['uarm', 'uarmc', 'uarmh', 'uarmg', 'uarms', 'uarmu', 'uarmf'].includes(slot);
+    const armor = WORN_ARMOR_SLOTS.includes(slot);
     let delay = armor && object ? objectDelay(object.otyp) : 1;
     const cloak = takeoffSlotObject('uarmc', state);
     const suit = takeoffSlotObject('uarm', state);
@@ -714,7 +718,8 @@ function removalDelay(slot: TakeoffSlot, state: GameState): number {
     return delay;
 }
 
-// Part of C do_wear.c:take_off(): removing one selected slot.
+// C do_wear.c:do_takeoff(). Remove the one selected piece; cursed() has
+// already filtered welded and cursed items in canSelectOff().
 async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<void> {
     const object = takeoffSlotObject(slot, state);
     if (!object) return;
@@ -860,16 +865,14 @@ function checkWeldedWeapon(object: GameObject | null, state: GameState = game): 
 }
 
 // C do_wear.c:cursed(): a welded weapon or cursed worn item refuses to
-// come off, with the slippery-fingers variant, and reveals its BUC.
-// fingers_or_gloves() is the pluralized finger name in the slippery
-// refusal.
+// come off, with the slippery fingers_or_gloves() variant, and reveals
+// its BUC.
 async function unremovableCurse(object: GameObject, slot: TakeoffSlot, state: GameState): Promise<boolean> {
     if (!(slot === 'uwep' ? checkWeldedWeapon(object, state) : object.cursed)) return false;
     const slippery = !!state.u.glib || (state.u.glibTurns ?? 0) > 0;
     const gloves = takeoffSlotObject('uarmg', state);
     if (slippery && object.bknown && (gloves ? slot === 'uwep' : ['uwep', 'uleft', 'uright'].includes(slot))) {
-        const fingers = gloves ? armorSimpleName(gloves, state) : makePlural(body_part(FINGER, state));
-        await plineWithContinuation(`Despite your slippery ${fingers}, you can't.`);
+        await plineWithContinuation(`Despite your slippery ${fingersOrGloves(true, state)}, you can't.`);
     } else {
         const plural = slot === 'uarmf' || slot === 'uarmg' || object.otyp === LENSES || object.quan > 1;
         await plineWithContinuation(`You can't.  ${plural ? 'They are' : 'It is'} cursed.`);
@@ -1373,6 +1376,7 @@ export async function wearHeroArmor(
 export async function removeHeroArmor(object: GameObject, state: GameState = game, options: ArmorRemovalOptions = {}) {
     const slot = armorSlotFor(object.otyp);
     if (!slot || takeoffSlotObject(slot, state) !== object) return false;
+    if (slot === 'uarm') return await removeHeroSuit(object, state, options);
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
@@ -1407,12 +1411,8 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
             learnObjectType(object.otyp, state);
             await plineWithContinuation(formatFeltMessage(`yourself slow down${state.u.fast ? ' a bit' : ''}.`, state));
         }
-        // Armor_off() clears cancelled_don before dragon handling, so an
-        // interrupted blue suit still reports its speed loss.
-        if (dragonArmorColor(object) === 'blue' && !state.u.veryFast)
-            await plineWithContinuation('You slow down.');
         if (!cancelledDon && (object.otyp === ELVEN_CLOAK || object.otyp === ELVEN_BOOTS))
-            await toggleArmorStealth(object, false, state);
+            await toggleStealth(object, false, state);
     }
     if (losingGloves) {
         if (object.otyp === GAUNTLETS_OF_POWER) learnObjectType(object.otyp, state);
@@ -1422,10 +1422,6 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
         if (state.u.glib) setSlipperyHands(0, state);
         await losePetrificationProtection(object, state, !state.context.mon_moving && !object.in_use);
         if (state.program_state?.gameover) return removed;
-    }
-    if (removed && dragonArmorColor(object) === 'yellow') {
-        await losePetrificationProtection(object, state, options.voluntary ?? true);
-        if (state.program_state.gameover) return removed;
     }
     // C Boots_off(): identify before spoteffects(), which can kill the hero.
     if (removed && object.otyp === WATER_WALKING_BOOTS
@@ -1449,17 +1445,29 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     return removed;
 }
 
-// Part of C do_wear.c:Cloak_off(): the toggle_displacement() loss message.
-// toggle_displacement() runs after the cloak's source is removed.
+// C do_wear.c:Armor_off(). Voluntary suit removal and dragon-armor effects.
+async function removeHeroSuit(object: GameObject, state: GameState, options: ArmorRemovalOptions): Promise<boolean> {
+    const pending = pendingArmorAction(state);
+    const cancelledDon = options.cancelledDon
+        ?? (pending?.kind === 'wear' && pending.object === object);
+    if (pending?.object === object) cancelDonning(state);
+    const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
+    if (removed && dragonArmorColor(object) === 'blue' && !state.u.veryFast)
+        await plineWithContinuation('You slow down.');
+    if (removed && dragonArmorColor(object) === 'yellow')
+        await losePetrificationProtection(object, state, options.voluntary ?? true);
+    return removed;
+}
+
+// Part of C do_wear.c:Cloak_off(): toggle_displacement() runs after the
+// cloak's source is removed; another active displacement source or a timed
+// one suppresses the notice.
 async function announceDisplacementLoss(object: GameObject, state: GameState = game): Promise<void> {
     if (object.otyp !== CLOAK_OF_DISPLACEMENT) return;
     const hero = state.u;
     if (propertyIsActive('displaced', state)
-        || hero.displacedIntrinsic || hero.intrinsicDisplacement
-        || hero.displacementBlocked || hero.displacedBlocked) return;
-    if (!canObserveDisplacement(state)) return;
-    learnObjectType(object.otyp, state);
-    await plineWithContinuation(formatFeltMessage('that monsters no longer have difficulty pinpointing your location.', state));
+        || hero.displacedIntrinsic || hero.intrinsicDisplacement) return;
+    await announceDisplacementChange(false, state, object);
 }
 
 // C do_wear.c:wielding_corpse()
@@ -1824,14 +1832,15 @@ function armorHasOtherPropertySource(property: PropertyName, object: GameObject,
 }
 
 // C do_wear.c:toggle_stealth(): feedback and discovery when stealth is
-// gained or lost by wearing or removing elven items; riding suppresses it
-// unless hero or steed flies.
-// RIN_STEALTH discovery uses learnring(); elven items use makeknown() as
-// learnObjectType().
-async function toggleArmorStealth(object: GameObject, on: boolean, state: GameState): Promise<void> {
+// gained or lost by wearing or removing elven items or the stealth ring;
+// riding suppresses it unless hero or steed flies.
+async function toggleStealth(object: GameObject, on: boolean, state: GameState): Promise<void> {
     if (armorHasOtherPropertySource('stealth', object, state) || propertyIsBlocked('stealth', state)
         || state.u.usteed && !propertyIsActive('flying', state) && !propertyIsActive('levitation', state)) return;
-    learnObjectType(object.otyp, state);
+    if (object.otyp === RIN_STEALTH)
+        learnRing(object, true, state);
+    else /* discover elven cloak or elven boots */
+        learnObjectType(object.otyp, state);
     if (on) {
         const message = object.otyp === ELVEN_BOOTS
             ? propertyIsActive('levitation', state) || propertyIsActive('flying', state)
@@ -1877,18 +1886,15 @@ export async function advanceDisplacementTimeout(state: GameState = game): Promi
     if (!heroIsDisplaced(state)) await announceDisplacementChange(false, state);
 }
 
-// C do_wear.c:toggle_displacement(): the message test — see self, or
-// sense monsters via telepathy or monster detection.
-async function announceDisplacementChange(on: boolean, state: GameState): Promise<void> {
+// C do_wear.c:toggle_displacement(): the notice test — see self, or sense
+// monsters via telepathy or monster detection. A worn cloak making the
+// change is discovered when the message is shown.
+async function announceDisplacementChange(
+    on: boolean, state: GameState, object: GameObject | null = null,
+): Promise<void> {
     const hero = state.u;
-    const blind = heroIsBlind(state);
-    const unseen = heroIsInvisible(state) && !propertyIsActive('seeInvisible', state);
-    const seesSelf = !blind && !hero.uswallow && !unseen;
-    const sensesMonsters = hasWornProperty('telepathy', state)
-        || (hero.unblind_telepat_range ?? -1) >= 0
-        || blind && propertyIsActive('telepathy', state)
-        || (hero.monsterDetectionTurns ?? 0) > 0;
-    if (hero.displacementBlocked || hero.displacedBlocked || !(seesSelf || sensesMonsters)) return;
+    if (hero.displacementBlocked || hero.displacedBlocked || !canObserveDisplacement(state)) return;
+    if (object) learnObjectType(object.otyp, state);
     await plineWithContinuation(formatFeltMessage(`that monsters${on ? '' : ' no longer'} have difficulty pinpointing your location.`, state));
 }
 
@@ -1900,7 +1906,7 @@ async function applyCloakOnEffects(
     object: GameObject, state: GameState, initialDon: boolean,
 ): Promise<string[]> {
     if (object.otyp === ELVEN_CLOAK) {
-        if (!initialDon) await toggleArmorStealth(object, true, state);
+        if (!initialDon) await toggleStealth(object, true, state);
         return [];
     }
     if (object.otyp === CLOAK_OF_DISPLACEMENT) {
@@ -2021,7 +2027,7 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
     if (object.otyp === FUMBLE_BOOTS) return fumblingWearTimer(object, state);
 
     if (object.otyp === ELVEN_BOOTS) {
-        if (!initialDon) await toggleArmorStealth(object, true, state);
+        if (!initialDon) await toggleStealth(object, true, state);
         return [];
     }
     if (armorSlotFor(object.otyp) === 'uarmc') {
@@ -2127,10 +2133,9 @@ export async function applyStartingArmorEffects(state: GameState = game) {
     }
 }
 
-// C do_wear.c:Armor_off() removes both the ordinary dragon resistance and
-// the color-specific extra property after the suit leaves W_ARM.
-// C do_wear.c:dragon_armor_handling() runs through the same removal for
-// Armor_gone().
+// C do_wear.c:dragon_armor_handling(): the removal arm, which Armor_off()
+// and Armor_gone() both run after the suit leaves W_ARM — the ordinary
+// resistance plus the color-specific extra property.
 export async function removeArmorProperties(
     object: GameObject, state: GameState = game,
     { embeddedSkin = false }: { embeddedSkin?: boolean } = {},
@@ -2231,11 +2236,12 @@ export function armorSimpleName(
 }
 
 // C do_wear.c:fingers_or_gloves().
-// Plural "fingers" or optionally "gloves".
-export function fingersOrGloves(checkGloves: boolean): string {
-    return (checkGloves && game.uarmg)
-        ? armorSimpleName(game.uarmg) /* "gloves" or "gauntlets" */
-        : makePlural(body_part(FINGER)); /* "fingers" */
+// Plural "fingers" or the worn "gloves"/"gauntlets".
+export function fingersOrGloves(checkGloves: boolean, state: GameState = game): string {
+    const gloves = takeoffSlotObject('uarmg', state);
+    return checkGloves && gloves
+        ? armorSimpleName(gloves, state)
+        : makePlural(body_part(FINGER, state)); /* "fingers" */
 }
 
 // C do_wear.c:off_msg().
@@ -2452,8 +2458,10 @@ async function applyAmuletOnEffects(
         // the blocked mask still holds its pre-wear value.  It also covers
         // the disp.botl = TRUE of the new-flight branch.
         floatVsFlight(state);
-    // C potion.c:make_slimed(0): wearing unchanging cures sliming silently.
-    if (object.otyp === AMULET_OF_UNCHANGING && heroIsSliming(state)) clearHeroSliming(state);
+    // C potion.c:make_slimed(0, NULL): wearing unchanging cures sliming
+    // silently.
+    if (object.otyp === AMULET_OF_UNCHANGING && heroIsSliming(state))
+        await setHeroSlimingTimeout(0, { state });
     else if (object.otyp === AMULET_OF_RESTFUL_SLEEP) {
         const timeout = rnd(98) + 2;
         const previous = propertyTimeout('sleepy', state);
@@ -2490,22 +2498,9 @@ async function changeSexFromAmulet(object: GameObject, state: GameState): Promis
         state.context.botl = true;
         await plineWithContinuation(`You are suddenly very ${state.flags.female ? 'feminine' : 'masculine'}!`);
     } else await plineWithContinuation("You don't feel like yourself.");
-    if (changed && !Upolyd(state.u)) {
-        const role = state.urole;
-        const level = state.u.ulevel;
-        if (!role || level === undefined)
-            throw new Error('Amulet transformation requires the hero role and experience level');
-        const rankIndex = experienceRankIndex(level);
-        const rank = role.title[rankIndex];
-        if (!rank) throw new Error(`Role ${role.key} has no title for rank ${rankIndex}`);
-        const before = original === 1 ? 'f' : 'm';
-        const after = state.flags.female ? 'f' : 'm';
-        const title = role.name[before] !== role.name[after] ? role.name[after]
-            : rank[before] !== rank[after] ? rank[after]
-                : `${state.flags.female ? 'female' : 'male'} ${rank[after]}`;
-        recordGameLogEvent(`transformed into ${withIndefiniteArticle(title)}`, { state, flags: LL_MINORAC });
-        // C polyself.c:livelog_newform(): the transformed-into chronicle line.
-    }
+    // C polyself.c:livelog_newform(): the transformed-into chronicle line;
+    // its own Upolyd/gender test covers the "changed" guard.
+    livelogNewform(false, original);
     await plineWithContinuation('The amulet disintegrates!');
     if (!changed && object.dknown) await tryCallObjectType(object, state);
     await consumeInventoryItem(object, state);
@@ -2514,8 +2509,6 @@ async function changeSexFromAmulet(object: GameObject, state: GameState): Promis
 // C do_wear.c:Ring_off_or_gone(): the ring removal switch — stealth,
 // warning, see invisible, invisibility, levitation, attribute rings, and
 // protection-from-shape-changers, with off_msg() timing left to callers.
-// The stealth branch composes toggle_stealth()'s noisy message inline
-// rather than calling the armor-side helper.
 export async function removeHeroAccessory(
     object: GameObject, state: GameState = game,
 ): Promise<PropertyName | null> {
@@ -2525,7 +2518,6 @@ export async function removeHeroAccessory(
     if (objectProperty === 'levitation' || objectProperty === 'protectionFromShapeChangers')
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
-    const wasStealthy = propertyIsActive('stealth', state);
     const property = await clearHeroAccessory(object, state);
     if (property === 'warning') await see_monsters();
     if (property === 'seeInvisible') {
@@ -2541,15 +2533,7 @@ export async function removeHeroAccessory(
         await plineWithContinuation(`Your body seems to unfade${propertyIsActive('seeInvisible', state) ? ' completely' : '..'}.`);
         learnRing(object, true, state);
     }
-    if (property === 'stealth' && wasStealthy && !propertyIsActive('stealth', state)) {
-        learnRing(object, true, state);
-        const steed = state.u.usteed;
-        await plineWithContinuation(steed
-            ? `You and ${monsterName(steed, {
-                state, article: 'your', suppressSaddle: true, suppressHallucination: true,
-            })} are noisy.`
-            : 'You sure are noisy.');
-    }
+    if (property === 'stealth') await toggleStealth(object, false, state);
     if (property === 'protectionFromShapeChangers'
         && !propertyIsActive('protectionFromShapeChangers', state))
         await restartMonsterShapechanging(state);
