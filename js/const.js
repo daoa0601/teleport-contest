@@ -30,7 +30,7 @@ export function SIZE(arr) { return arr.length; }
 // Version (patchlevel.h)
 export const VERSION_MAJOR = 5;
 export const VERSION_MINOR = 0;
-export const PATCHLEVEL = 0;
+export const PATCHLEVEL = 1;
 export const VERSION_STRING = `NetHack ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL} Teleport #${COMMIT_NUMBER}`;
 export const TELEPORT_BANNER_C = `         Version ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}-134 Teleport JS (experiment ${COMMIT_NUMBER}) ${TELEPORT_BUILD_DATE}.`;
 // Reference-build struct sizes (bytes) reported by the #stats wizard
@@ -461,9 +461,8 @@ export const BUILD_DATE = "Sun May  3 01:27:17 2026";
 export const BUILD_TIME = (1777786037);
 // date.c:populate_nomakedefs() pins the recorder's runtime build banner.
 // NH_DEVEL_STATUS != RELEASED (patchlevel.h): mdlib_version_string() appends
-// "-EDITLEVEL" and bannerc_string() now spells the NH_STATUS_POSTRELEASE
-// subbuf (" post-release") instead of the " Work-in-progress" fallback.
-export const COPYRIGHT_BANNER_C = "         Version 5.0.0-0 MacOS post-release, built May  2 2026 12:00:00.";
+// "-EDITLEVEL" and bannerc_string() uses the " Work-in-progress" fallback.
+export const COPYRIGHT_BANNER_C = "         Version 5.0.1-0 MacOS Work-in-progress, built May  2 2026 12:00:00.";
 // AUTO-IMPORT-BEGIN: CONST_ALL_HEADERS
 // Auto-imported header constants (pre-symbol pass)
 // Source dir: nethack-c/upstream/include
@@ -681,7 +680,7 @@ export const NH_STATUS_RELEASED = 0;
 export const NH_STATUS_WIP = 1;
 export const NH_STATUS_BETA = 2;
 export const NH_STATUS_POSTRELEASE = 3;
-export const NH_DEVEL_STATUS = NH_STATUS_POSTRELEASE;
+export const NH_DEVEL_STATUS = NH_STATUS_WIP;
 export const COPYRIGHT_BANNER_A = "NetHack, Copyright 1985-2026";
 export const COPYRIGHT_BANNER_B = "         By Stichting Mathematisch Centrum and M. Stephenson.";
 export const COPYRIGHT_BANNER_D = "         See license for details.";

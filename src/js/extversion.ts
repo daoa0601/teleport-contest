@@ -10,8 +10,8 @@ import { showTextPages } from './windows.js';
 import { pline } from './pline.js';
 import { cInteger } from './option_values.js';
 
-// mdlib.c:version_id_string() with NH_DEVEL_STATUS == NH_STATUS_POSTRELEASE.
-export const NATIVE_VERSION = 'MacOS NetHack Version 5.0.0-0 post-release - last build May  2 2026 12:00:00.';
+// mdlib.c:version_id_string() with NH_DEVEL_STATUS == NH_STATUS_WIP.
+export const NATIVE_VERSION = 'MacOS NetHack Version 5.0.1-0 Work-in-progress - last build May  2 2026 12:00:00.';
 
 const VERSION_PAGE_1 = [
     NATIVE_VERSION,
@@ -26,8 +26,8 @@ const VERSION_PAGE_1 = [
     '    clipping, shell command, traditional status display, status via',
     '    windowport with highlighting, suspend command, terminal info library,',
     '    system configuration at run-time, show stack trace on error, launch',
-    '    browser to report issues, save and bones files accepted from version',
-    '    5.0.0 only, and basic NetHack features.',
+    '    browser to report issues, save and bones files accepted from versions',
+    '    5.0.0 through 5.0.1, and basic NetHack features.',
     '',
     'Supported windowing system:',
     '    "tty" (traditional text with optional line-drawing).',
@@ -79,7 +79,7 @@ export async function doextversion() {
 export function statusVersion(info = 1): string {
     const name = (info & 2) !== 0;
     const number = (info & 1) !== 0 || !name;
-    return [name ? 'nethack' : '', number ? '5.0.0' : ''].filter(text => text.length > 0).join(' ');
+    return [name ? 'nethack' : '', number ? '5.0.1' : ''].filter(text => text.length > 0).join(' ');
 }
 
 // C version.c:get_feature_notice_ver()
@@ -96,6 +96,6 @@ export function featureAlertVersion(value: string): { version: string; future: b
     if (!encoded) return null;
     return {
         version: `${encoded >> 24n}.${encoded >> 16n & 255n}.${encoded >> 8n & 255n}`,
-        future: encoded > 5n << 24n,
+        future: encoded > (5n << 24n | 1n << 8n),
     };
 }

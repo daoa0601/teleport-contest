@@ -10,15 +10,15 @@ void test('the optional native version is right justified before the unused last
     applyNethackrc('OPTIONS=showvers,versinfo:1');
     await bot();
     const row = requireScreenRow(23).map(cell => cell.ch).join('');
-    assert.equal(row.slice(74), '5.0.0 ');
+    assert.equal(row.slice(74), '5.0.1 ');
 });
 void test('versinfo can show the game name and number together', async () => {
     await freshObjectRoom({ hero: { uhs: 1 } });
     applyNethackrc('OPTIONS=showvers,versinfo:3');
     await bot();
-    assert.ok(requireScreenRow(23).map(cell => cell.ch).join('').endsWith('nethack 5.0.0 '));
+    assert.ok(requireScreenRow(23).map(cell => cell.ch).join('').endsWith('nethack 5.0.1 '));
     game.flags.showvers = false;
     await bot();
-    assert.doesNotMatch(requireScreenRow(23).map(cell => cell.ch).join(''), /5\.0\.0/);
+    assert.doesNotMatch(requireScreenRow(23).map(cell => cell.ch).join(''), /5\.0\.1/);
 });
 //# sourceMappingURL=status_version_field.test.js.map

@@ -10,14 +10,14 @@ for (const { stage, nameOption, prompt } of [
     { stage: 'name entry', nameOption: '', prompt: /Who are you\?/ },
     { stage: 'character selection', nameOption: 'name:Picker,', prompt: /Shall I pick/ },
 ]) {
-    void test(`${stage} displays the recorder's pinned build version`, async () => {
+    void test(`${stage} displays the upstream build version`, async () => {
         const engine = await runSegment({ seed: 25, datetime: '20000110090000',
             nethackrc: `OPTIONS=${nameOption}!legacy,!tutorial,pettype:none`,
             moves: '', storage: memoryStorage() });
         try {
             const text = screenText(capturedScreen(engine));
             assert.match(text, prompt);
-            assert.match(text, /Version 5\.0\.0-0 MacOS post-release, built May  2 2026 12:00:00\./);
+            assert.match(text, /Version 5\.0\.1-0 MacOS Work-in-progress, built May  2 2026 12:00:00\./);
         } finally {
             await engine.lua.destroy();
         }
