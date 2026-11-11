@@ -1819,7 +1819,7 @@ export class TemporaryMapEffect {
                 this.positions.push({ x, y, shown });
                 if (!shown) suppressShow = true;
                 if (!suppressShow) await this.paint(x, y, this.glyph);
-                return !suppressShow;
+                return true;
             }
         } else {
             await this.clear();

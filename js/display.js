@@ -1746,7 +1746,7 @@ export class TemporaryMapEffect {
                     suppressShow = true;
                 if (!suppressShow)
                     await this.paint(x, y, this.glyph);
-                return !suppressShow;
+                return true;
             }
         }
         else {
