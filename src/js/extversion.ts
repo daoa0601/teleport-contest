@@ -10,8 +10,17 @@ import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import { pline } from './pline.js';
 import { cInteger } from './option_values.js';
+import {
+    NATIVE_BUILD_DATE, NATIVE_PORT_ID, NATIVE_VERSION_NUMBER,
+    NH_DEVEL_STATUS, NH_STATUS_RELEASED, NH_STATUS_WIP, NH_STATUS_BETA,
+    VERSION_MAJOR, VERSION_MINOR, PATCHLEVEL,
+} from './const.js';
 
-export const NATIVE_VERSION = 'MacOS NetHack Version 5.0.0 - last build May  2 2026 12:00:00.';
+// mdlib.c version_id_string(): include the development status and build date.
+export const NATIVE_VERSION = `${NATIVE_PORT_ID} NetHack Version ${NATIVE_VERSION_NUMBER}`
+    + (NH_DEVEL_STATUS === NH_STATUS_RELEASED ? '' : NH_DEVEL_STATUS === NH_STATUS_BETA ? ' Beta'
+        : NH_DEVEL_STATUS === NH_STATUS_WIP ? ' Work-in-progress' : ' post-release')
+    + ` - last build ${NATIVE_BUILD_DATE}.`;
 
 const VERSION_PAGE_1 = [
     NATIVE_VERSION,
@@ -27,7 +36,7 @@ const VERSION_PAGE_1 = [
     '    windowport with highlighting, suspend command, terminal info library,',
     '    system configuration at run-time, show stack trace on error, launch',
     '    browser to report issues, save and bones files accepted from version',
-    '    5.0.0 only, and basic NetHack features.',
+    `    ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL} only, and basic NetHack features.`,
     '',
     'Supported windowing system:',
     '    "tty" (traditional text with optional line-drawing).',
@@ -88,7 +97,7 @@ export async function doextversion() {
 export function statusVersion(info = 1): string {
     const name = (info & 2) !== 0;
     const number = (info & 1) !== 0 || !name;
-    return [name ? 'nethack' : '', number ? '5.0.0' : ''].filter(text => text.length > 0).join(' ');
+    return [name ? 'nethack' : '', number ? NATIVE_VERSION_NUMBER : ''].filter(text => text.length > 0).join(' ');
 }
 
 // C version.c:get_feature_notice_ver()
@@ -105,6 +114,7 @@ export function featureAlertVersion(value: string): { version: string; future: b
     if (!encoded) return null;
     return {
         version: `${encoded >> 24n}.${encoded >> 16n & 255n}.${encoded >> 8n & 255n}`,
-        future: encoded > 5n << 24n,
+        future: encoded > (BigInt(VERSION_MAJOR) << 24n
+            | BigInt(VERSION_MINOR) << 16n | BigInt(PATCHLEVEL) << 8n),
     };
 }

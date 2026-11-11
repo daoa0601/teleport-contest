@@ -10,6 +10,7 @@ import { statusConditionOptions, condMenu } from './botl.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import {
     MENU_ITEMFLAGS_SELECTED, PICK_ONE,
+    NH_DEVEL_STATUS, NH_STATUS_RELEASED,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE,
@@ -144,7 +145,8 @@ async function editLocationFilter(): Promise<void> {
 // C options.c:handler_versinfo(): the version-information flags menu.
 async function editVersionInfo(): Promise<void> {
     const previous = game.flags.versinfo ?? 1;
-    const choices = [ ['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, '(not applicable)'] ] as const;
+    const branch = NH_DEVEL_STATUS === NH_STATUS_RELEASED ? '(not applicable)' : '(not available)';
+    const choices = [ ['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, branch] ] as const;
     const selected = await showMultiSelectWindow({
         title: 'Select version information flags:', omitHeadings: true,
         sections: [{ items: choices.map(([key, bit, text]) => ({ key, value: bit,

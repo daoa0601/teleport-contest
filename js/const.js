@@ -31,6 +31,18 @@ export function SIZE(arr) { return arr.length; }
 export const VERSION_MAJOR = 5;
 export const VERSION_MINOR = 0;
 export const PATCHLEVEL = 0;
+export const EDITLEVEL = 0;
+export const NH_STATUS_RELEASED = 0;
+export const NH_STATUS_WIP = 1;
+export const NH_STATUS_BETA = 2;
+export const NH_STATUS_POSTRELEASE = 3;
+export const NH_DEVEL_STATUS = NH_STATUS_RELEASED;
+// mdlib.c mdlib_version_string(): development builds include the edit level.
+export const NATIVE_VERSION_NUMBER = `${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}`
+    + (NH_DEVEL_STATUS === NH_STATUS_RELEASED ? '' : `-${EDITLEVEL}`);
+// date.c populate_nomakedefs(): the recorder fixes these build inputs.
+export const NATIVE_BUILD_DATE = 'May  2 2026 12:00:00';
+export const NATIVE_PORT_ID = 'MacOS';
 export const VERSION_STRING = `NetHack ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL} Teleport #${COMMIT_NUMBER}`;
 export const TELEPORT_BANNER_C = `         Version ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}-134 Teleport JS (experiment ${COMMIT_NUMBER}) ${TELEPORT_BUILD_DATE}.`;
 // Reference-build struct sizes (bytes) reported by the #stats wizard
@@ -459,8 +471,11 @@ export const TUTORIAL = 8;
 export const BUILD_DATE = "Sun May  3 01:27:17 2026";
 // C date.h:BUILD_TIME()
 export const BUILD_TIME = (1777786037);
-// date.c:populate_nomakedefs() pins the recorder's runtime build banner.
-export const COPYRIGHT_BANNER_C = "         Version 5.0.0 MacOS, built May  2 2026 12:00:00.";
+// mdlib.c bannerc_string(): post-release banners still say Work-in-progress.
+export const COPYRIGHT_BANNER_C = `         Version ${NATIVE_VERSION_NUMBER} ${NATIVE_PORT_ID}`
+    + (NH_DEVEL_STATUS === NH_STATUS_RELEASED ? ''
+        : NH_DEVEL_STATUS === NH_STATUS_BETA ? ' Beta' : ' Work-in-progress')
+    + `, built ${NATIVE_BUILD_DATE}.`;
 // AUTO-IMPORT-BEGIN: CONST_ALL_HEADERS
 // Auto-imported header constants (pre-symbol pass)
 // Source dir: nethack-c/upstream/include
@@ -673,12 +688,6 @@ export const MAXVALWIDTH = 80;
 export const NH_BASIC_COLOR = 0x1000000;
 export const NH_ALTPALETTE = 0x2000000;
 // ===== patchlevel.h =====
-export const EDITLEVEL = 0;
-export const NH_STATUS_RELEASED = 0;
-export const NH_STATUS_WIP = 1;
-export const NH_STATUS_BETA = 2;
-export const NH_STATUS_POSTRELEASE = 3;
-export const NH_DEVEL_STATUS = NH_STATUS_RELEASED;
 export const COPYRIGHT_BANNER_A = "NetHack, Copyright 1985-2026";
 export const COPYRIGHT_BANNER_B = "         By Stichting Mathematisch Centrum and M. Stephenson.";
 export const COPYRIGHT_BANNER_D = "         See license for details.";

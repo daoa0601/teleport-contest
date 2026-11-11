@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { TestContext } from 'node:test';
 
-import { CLOUD, CORR, DB_DIR, DB_WEST, DBWALL, DRAWBRIDGE_UP, D_CLOSED,
+import { CLOUD, CORR, CORPSTAT_GENDER, CORPSTAT_MALE, DB_DIR, DB_WEST, DBWALL, DRAWBRIDGE_UP, D_CLOSED,
     FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL, PANICLOG,
     ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED,
     TREE_LOOTED, TREE_SWARM, VWALL, W_NONPASSWALL } from '../js/const.js';
@@ -622,6 +622,24 @@ void test('Lua species-bearing objects accept native empty tokens and egg owners
     assert.equal(level.objects[12]?.[5]?.[0]?.spe, 1, 'an egg laid by the hero retains that ownership');
     assert.equal(level.objects[13]?.[5]?.[0]?.spe, 0, 'figurines reserve spe rather than accepting an enchantment');
     assert.equal(level.objects[14]?.[5]?.length, 1);
+});
+
+void test('Lua statue species accept neutral, male and female names independently of gender flags', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.object({ id = "statue", montype = "dwarf leader", male = true, x = 0, y = 0 })
+        des.object({ id = "statue", montype = "DWARF LORD", male = true, x = 1, y = 0 })
+        des.object({ id = "statue", montype = "dwarf lady", male = true, x = 2, y = 0 })
+    `);
+
+    const level = requireGameLevel();
+    for (const x of [10, 11, 12]) {
+        const statue = level.objects[x]?.[5]?.[0];
+        assert.ok(statue, `Expected a statue at ${x},5`);
+        assert.equal(statue.corpsenm, MONSTER_NAME.indexOf('dwarf leader'));
+        assert.equal((statue.spe ?? 0) & CORPSTAT_GENDER, CORPSTAT_MALE);
+    }
 });
 
 void test('a named Lua novel retains the requested title when read', async t => {
