@@ -485,7 +485,7 @@ export function l_register_des(
 }
 
 // C sp_lev.c:get_table_region(). Read the four-entry region or exclusion array.
-function get_table_region(table: LuaTable, key: 'region' | 'exclude'): LuaRegion | null {
+export function get_table_region(table: LuaTable, key: 'region' | 'exclude'): LuaRegion | null {
     const entry = table.get(key);
     if (entry == null) return null;
     const coordinates = luaArgument(entry);

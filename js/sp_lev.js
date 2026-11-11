@@ -21,7 +21,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RES
 import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, IS_POOL, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, INVALID_TYPE, MAP_Y_LIM, MATCH_WALL, MAX_TYPE, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_NEUTRAL, AM_CHAOTIC, AM_MASK, AM_SPLEV_CO, AM_SPLEV_NONCO, AM_SPLEV_RANDOM, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GENOD, G_GONE, LEVEL_TIMER_KIND, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
-import { l_register_des, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, MONSTER_CLASS_SYMBOLS, TRAP_TYPES, get_table_int_or_random } from './lua/des.js';
+import { l_register_des, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, MONSTER_CLASS_SYMBOLS, TRAP_TYPES, get_table_int_or_random, get_table_region } from './lua/des.js';
 import { LuaTable, objectToLuaTable, luaTableToArray, luaCheckString } from './lua/runtime.js';
 import { currentLuaLifecycle, startTimerAt } from './lua/lifecycle.js';
 import { discardMonsterInventory } from './mkobj.js';
@@ -51,7 +51,7 @@ import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoo
 import { beginObjectBurn, scheduleLevelTimer, stopLevelTimer } from './timeout.js';
 import { monsterEmitsLight, vision_reset } from './vision.js';
 import { new_light_source } from './light.js';
-import { SpecialSelection } from './selvar.js';
+import { SpecialSelection, selection_new } from './selvar.js';
 import { mapCharacterType } from './lua/lifecycle.js';
 import { CANDELABRUM_OF_INVOCATION, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD, S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom, makecorridors, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, topologize } from './mklev.js';
 import { stairway_add } from './stairs.js';
@@ -1366,12 +1366,12 @@ export async function lspo_replace_terrain(context, value) {
     if (rectangle && rectangle.some(value => value !== -1)) {
         const start = await get_location(context, { x: rectangle[0], y: rectangle[1] }, ANY_LOC);
         const end = await get_location(context, { x: rectangle[2], y: rectangle[3] }, ANY_LOC);
-        selection = new SpecialSelection();
+        selection = new SpecialSelection(selection_new());
         for (let x = Math.max(1, start.x); x <= Math.min(COLNO - 1, end.x); x++)
             for (let y = Math.max(0, start.y); y <= Math.min(ROWNO - 1, end.y); y++)
                 selection.add(x, y);
     }
-    selection ??= new SpecialSelection().negate();
+    selection ??= new SpecialSelection(selection_new()).negate();
     const fromType = mapCharacterType(options.fromterrain ?? '');
     const toType = mapCharacterType(options.toterrain ?? '');
     const holder = { fragment: null };
@@ -1399,7 +1399,10 @@ export async function lspo_replace_terrain(context, value) {
 }
 // C sp_lev.c:sel_set_feature(). Furniture placement refuses a square that
 // already holds furniture.
-function sel_set_feature(cell, typ) {
+function sel_set_feature(x, y, typ) {
+    if (!isok(x, y))
+        return;
+    const cell = requireGameLevel().requireAt(x, y);
     if (!IS_FURNITURE(cell.typ))
         cell.typ = typ;
 }
@@ -1408,8 +1411,9 @@ function sel_set_feature(cell, typ) {
 function l_table_getset_feature_flag(cell, value, flag) {
     if (value === undefined)
         return;
+    const enabled = value === -1 ? rn2(2) : value;
     const current = cell.looted ?? cell.flags;
-    cell.flags = cell.looted = value ? current | flag : current & ~flag;
+    cell.flags = cell.looted = enabled ? current | flag : current & ~flag;
 }
 // C sp_lev.c:lspo_feature(): furniture at a dry random spot or an
 // author-chosen square.
@@ -1432,8 +1436,8 @@ export async function lspo_feature(context, value, x, y) {
     const location = await get_location_coord(context, point, random ? DRY : ANY_LOC);
     if (!isok(location.x, location.y))
         return;
+    sel_set_feature(location.x, location.y, featureType);
     const cell = level.requireAt(location.x, location.y);
-    sel_set_feature(cell, featureType);
     if (cell.typ !== featureType)
         return;
     switch (featureType) {
@@ -1616,9 +1620,16 @@ export function l_push_mkroom_table(room) {
 }
 // C sp_lev.c:get_table_coords_or_region(). The x1..y2 fields, or the
 // region array when all four coordinates are absent.
-function get_table_coords_or_region(options) {
+function get_table_coords_or_region(options, value) {
     const coords = [options.x1 ?? -1, options.y1 ?? -1, options.x2 ?? -1, options.y2 ?? -1];
-    return coords.some(value => value !== -1) ? coords : options.region ?? coords;
+    if (coords.some(value => value !== -1))
+        return coords;
+    if (!(value instanceof LuaTable))
+        throw new TypeError('des.region expects a table');
+    const region = get_table_region(value, 'region');
+    if (!region)
+        throw new TypeError('des.region requires a region array');
+    return region;
 }
 // C sp_lev.c:lspo_region(). Light a selection, or create a rectangular/irregular room and its contents.
 // Also C sp_lev.c:sel_set_lit(): inlined here (the selection lighting
@@ -1635,7 +1646,7 @@ export async function lspo_region(scope, context, state, value, lighting = 'unli
         return null;
     }
     const options = tableOptions(value, 'integer', true);
-    const [x1, y1, x2, y2] = get_table_coords_or_region(options);
+    const [x1, y1, x2, y2] = get_table_coords_or_region(options, value);
     if (typeof x1 !== 'number' || typeof y1 !== 'number'
         || typeof x2 !== 'number' || typeof y2 !== 'number'
         || ![x1, y1, x2, y2].every(Number.isInteger))

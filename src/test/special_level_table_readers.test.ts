@@ -96,6 +96,17 @@ for (const align of ['Law', 'constructor', '__proto__', 'unknown']) {
     });
 }
 
+void test('a region table requires a region array when explicit corners are absent', async t => {
+    const lua = await roomBindings(t);
+    await lua.executeAsync('des.map({ x = 10, y = 6, map = "...." })');
+    const level = requireGameLevel();
+
+    await assert.rejects(lua.executeAsync('des.region({ type = "ordinary", lit = 0 })'), /region/);
+
+    assert.equal(level.nroom, 0);
+    assert.equal(level.requireAt(10, 6).lit, false);
+});
+
 void test('feature flag fields set the furniture flags of the placed feature', async t => {
     const room = await buildRoom(t, `
         des.feature({ type = "fountain", looted = true, warned = false, x = 2, y = 1 })

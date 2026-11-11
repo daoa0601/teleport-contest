@@ -274,7 +274,7 @@ export function l_register_des(operations, wrapSelection) {
     return bindings;
 }
 // C sp_lev.c:get_table_region(). Read the four-entry region or exclusion array.
-function get_table_region(table, key) {
+export function get_table_region(table, key) {
     const entry = table.get(key);
     if (entry == null)
         return null;
