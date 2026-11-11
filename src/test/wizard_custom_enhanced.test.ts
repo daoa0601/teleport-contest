@@ -30,8 +30,9 @@ for (const { set, mainWall } of [
         assert.ok(rowFor(rows, 'G_vwall_main').includes(`U+${mainWall}`));
         assert.match(rowFor(rows, 'G_vwall_mines'), /'\\124' 07 00000be7e00 U\+2502/);
         assert.match(rowFor(rows, 'G_fire_zap_vbeam'), /U\+2502/);
-        assert.match(rowFor(rows, 'G_swallow_giant_ant_top_center'), /U\+2594/);
-        assert.match(rowFor(rows, 'G_swallow_human_werejackal_middle_left'), /U\+258f/);
+        assert.match(rowFor(rows, 'G_swallow_fog_cloud_top_center'), /U\+2594/);
+        assert.equal(rows.some(row => row.includes('G_swallow_giant_ant_')), false);
+        assert.match(rowFor(rows, 'G_swallow_purple_worm_middle_left'), /U\+258f/);
         assert.match(rowFor(rows, 'G_fiery_expl_mr'), /U\+2595/);
         assert.match(rowFor(rows, 'G_web'), /U\+00a4 <194> <164>/);
         assert.match(rowFor(rows, 'G_altar_other'), /'\\095' 13 00000000000 U\+03a9/);

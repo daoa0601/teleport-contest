@@ -1,6 +1,8 @@
 // glyphs.js — the glyph customization expansion.  C ref: glyphs.c
 // glyph_to_cmap(), wizcustom_glyphids(), parse_id(), apply_customizations()
 // over dat/symbols.
+import { monsterHasAttackType } from './mondata.js';
+import { AT_ENGL } from './monster_attack_types.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -141,6 +143,7 @@ function applyCustomizations(glyphs, glyph, unicode, color) {
 }
 // Part of C glyphs.c:wizcustom_glyphids(): the cmap glyph entries
 // (walls, altars, zaps, swallows, explosions).
+// Part of C glyphs.c:compose_glyph_name(): enumerate the named cmap variants.
 function cmapGlyphs(symbol, name) {
     if (symbol >= CmapSymbol.vwall && symbol <= CmapSymbol.trwall) {
         const index = symbol - CmapSymbol.vwall;
@@ -167,7 +170,9 @@ function cmapGlyphs(symbol, name) {
         const position = SWALLOW_NAMES[index];
         if (!position)
             throw new Error(`Unknown swallow position ${index}`);
-        return MONSTER_NAME.map((name, mnum) => {
+        return MONSTER_NAME.flatMap((name, mnum) => {
+            if (!monsterHasAttackType(mnum, AT_ENGL))
+                return [];
             const color = MONSTER_COLOR[mnum];
             if (color === undefined)
                 throw new Error(`Missing monster color ${mnum}`);
