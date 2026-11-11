@@ -4573,6 +4573,8 @@ export async function normalizeMonsterShape(monster, state = game, publish = pli
         changed = !!change;
         if (change?.heroDied || state.program_state.gameover)
             return { changed, heroDied: true };
+        if (monster.mhp <= 0)
+            return { changed, heroDied: false };
         monster.cham = NON_PM;
         if (cancelled)
             monster.mcan = 1;
@@ -4880,12 +4882,12 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
     const selfTouch = await monsterSelfTouchAfterPolymorph(monster, {
         finishDeath, creditHero, publish, state,
     });
-    if (selfTouch.heroDied)
+    if (selfTouch.heroDied || monster.mhp <= 0)
         return {
-            oldMnum, newMnum: targetMnum, heroDied: true,
+            oldMnum, newMnum: targetMnum, heroDied: selfTouch.heroDied ?? false,
             leashReleased, leashReleaseVisible, droppedWeapon,
             droppedClothing: clothing.dropped, destroyedClothing: clothing.destroyed,
-            selfTouch, message,
+            droppedBoulders: [], selfTouch, message,
         };
     maybeSetTerrainEffects(monster, oldMnum, state);
     checkMonsterGearNextTurn(monster);
