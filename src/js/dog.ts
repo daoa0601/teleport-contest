@@ -1,3 +1,4 @@
+import { mon_offmap } from './const.js';
 // Tame monster state.
 // C refs: dog.c makedog(), tamedog(), newedog(), initedog(), pet_type(),
 // pick_familiar_pm(), make_familiar(), abuse_dog(), and dogfood().
@@ -9,7 +10,7 @@ import {
     NO_MINVENT, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS,
     MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM,
     MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU,
-    MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING,
+    MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING,
     NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, EYE, LL_CONDUCT,
     G_GENOD, MAX_EGG_HATCH_TIME,
 } from './const.js';
@@ -788,7 +789,7 @@ export async function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
 // C dog.c:set_mon_lastmove().
 export function updateMonsterLastMove(state: GameState = game): void {
     for (const monster of state.level?.monsters || []) {
-        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        if (monster.mhp <= 0 || mon_offmap(monster)) continue;
         monster.mlstmv = state.moves;
     }
 }

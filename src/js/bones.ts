@@ -1,3 +1,4 @@
+import { mon_offmap } from './const.js';
 import { level_status_init } from './gstate.js';
 import { updateRestoredFloorShopOwnership } from './restore.js';
 // bones.ts — bones.c in one module, ordered by the C lifecycle:
@@ -401,7 +402,7 @@ const MS_NEMESIS = 37;
 export async function prepareBonesMonstersForSave(): Promise<void> {
     const level = requireGameLevel();
     for (const monster of [...level.monsters].reverse()) {
-        if (monster.mhp < 1 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        if (monster.mhp < 1 || mon_offmap(monster)) continue;
         const sound = MONSTER_SOUND[monster.mnum];
         if (monster.iswiz || monster.mnum === PM_MEDUSA
             || sound === MS_LEADER || sound === MS_NEMESIS

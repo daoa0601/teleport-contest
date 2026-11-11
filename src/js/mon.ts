@@ -1,3 +1,4 @@
+import { mon_offmap } from './const.js';
 // Monster body and terrain rules: scheduling and movement allocation,
 // monster death (mondead(), xkilled(), monstone(), vamprises()), corpse
 // and zombie species, waking, hiding, and shapechanging.
@@ -712,7 +713,7 @@ export function schedulable(monster: Monster) {
     return (
         monster &&
         (monster.mhp ?? 1) > 0 &&
-        (monster.mstate ?? MON_FLOOR) === MON_FLOOR &&
+        !mon_offmap(monster) &&
         monster.mx !== 0
     );
 }
@@ -1713,7 +1714,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             continue;
         }
         if ((actor.mhp ?? 1) <= 0 || actor.mx === 0
-            || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR) {
+            || mon_offmap(actor)) {
             actor.movement = 0;
             continue;
         }
@@ -1774,7 +1775,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         // judged by dochugw(FALSE) inside rloc_to_core() (teleport.ts).
         if (!attackReturnedDeath && movement.postMoveStatus !== MMOVE_DIED
             && (monster.mhp ?? 1) > 0
-            && (monster.mstate ?? MON_FLOOR) === MON_FLOOR
+            && !mon_offmap(monster)
             && !(monster.isgd && !monster.mx))
             await interruptOccupationForMonster(monster, game, sightingBefore);
         if (!movement?.moved) continue;
@@ -5301,7 +5302,7 @@ export async function restoreNaturalMonsterShapes(
 ): Promise<void> {
     requireLiveGame(state);
     for (const monster of [...(state.level?.monsters ?? [])].reverse()) {
-        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        if (monster.mhp <= 0 || mon_offmap(monster)) continue;
         await normalizeMonsterShape(monster, state, publish);
         if (state.program_state.gameover) return;
     }
@@ -5364,7 +5365,7 @@ export async function normalizeMonsterShape(
 export async function restartMonsterShapechanging(state: GameState = game): Promise<void> {
     requireLiveGame(state);
     for (const monster of [...(state.level?.monsters ?? [])].reverse()) {
-        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        if (monster.mhp <= 0 || mon_offmap(monster)) continue;
         if (!monster.mcan)
             monster.cham = naturalShapechanger(monster.mnum) ? monster.mnum : NON_PM;
         if (MONSTER_SYMBOL[monster.mnum] === 13 && monster.msleeping) { // S_MIMIC
@@ -5381,7 +5382,7 @@ export function livingResidents(state: PlayingGameState): Monster[] {
     // C get_iter_mons() tests mstate, not square occupancy: a mounted steed
     // remains on fmon with MON_FLOOR even though the hero shares its square.
     return [...state.level.monsters].reverse().filter(monster =>
-        !monster.dead && monster.mhp > 0 && (monster.mstate ?? MON_FLOOR) === MON_FLOOR);
+        !monster.dead && monster.mhp > 0 && !mon_offmap(monster));
 }
 
 // C mon.c:mpickgold()

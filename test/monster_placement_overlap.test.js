@@ -1,3 +1,4 @@
+import { MON_ENDGAME_FREE, MON_ENDGAME_MIGR, MON_OBLITERATE, MON_STILL_ARRIVING } from '../js/const.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -77,4 +78,14 @@ void test('overwriting a worm segment changes map occupancy without removing the
     assert.equal(monsterAtPosition(level, x, y), null);
     assert.equal(monsterAtPosition(level, worm.mx, worm.my), worm);
 });
+for (const retained of [MON_OBLITERATE, MON_STILL_ARRIVING]) {
+    void test(`placing an arriving monster clears departure flags and retains state ${retained}`, async () => {
+        const level = await freshObjectRoom();
+        const monster = await createMonsterAt('goblin', 12, 10);
+        monster.mstate = retained | MON_ENDGAME_FREE | MON_ENDGAME_MIGR;
+        await placeMonsterOnMap(monster, 14, 10);
+        assert.equal(monsterAtPosition(level, 14, 10), monster);
+        assert.equal(monster.mstate, retained);
+    });
+}
 //# sourceMappingURL=monster_placement_overlap.test.js.map

@@ -1,3 +1,5 @@
+import { MON_OFF_MAP_BITS } from './const.js';
+import { mon_offmap } from './const.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
@@ -979,7 +981,7 @@ export async function strikeSteed({
 
 // ---------------------------------------------------------------------------
 // C steed.c:place_monster(). Map placement and list membership are separate:
-// callers own the level/migration list, and placement resets every mstate bit.
+// callers own the level/migration list, and placement clears the off-map bits and preserves other state.
 // ---------------------------------------------------------------------------
 
 // C steed.c:place_monster()
@@ -1019,7 +1021,7 @@ export function placeMonsterAt(monster: MonsterPosition, x: number, y: number, s
     if (other && other !== monster) clearMonsterMapSquare(other, x, y);
     monster.mx = x;
     monster.my = y;
-    monster.mstate = MON_FLOOR;
+    monster.mstate = (monster.mstate ?? MON_FLOOR) & ~MON_OFF_MAP_BITS;
     monster.headOnMap = true;
 }
 
@@ -1078,7 +1080,7 @@ export function monsterHasMapPosition(
         _monsterEngulf?: GameState['_monsterEngulf'] } = game,
 ): boolean {
     if (!monster || monster === state.u?.usteed
-        || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) return false;
+        || mon_offmap(monster)) return false;
     const engulf = state._monsterEngulf;
     return !engulf || monster !== (engulf.defenderExposed ? engulf.attacker : engulf.defender);
 }

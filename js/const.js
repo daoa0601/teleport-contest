@@ -1381,6 +1381,12 @@ export const MON_ENDGAME_FREE = 0x20;
 export const MON_ENDGAME_MIGR = 0x40;
 export const MON_OBLITERATE = 0x80;
 export const MON_STILL_ARRIVING = 0x100;
+export const MON_OFF_MAP_BITS = MON_OFFMAP | MON_DETACH | MON_LIMBO | MON_MIGRATING
+    | MON_ENDGAME_FREE | MON_ENDGAME_MIGR | MON_BUBBLEMOVE;
+// C monst.h:mon_offmap(): arrival and other bookkeeping bits do not remove a monster.
+export function mon_offmap(monster) {
+    return ((monster.mstate ?? MON_FLOOR) & MON_OFF_MAP_BITS) !== 0;
+}
 export const M_AP_TYPMASK = 0x7;
 export const M_AP_F_DKNOWN = 0x8;
 export const MAX_NUM_WORMS = 32;

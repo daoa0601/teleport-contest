@@ -1,3 +1,4 @@
+import { mon_offmap } from './const.js';
 // Monster body and terrain rules: scheduling and movement allocation,
 // monster death (mondead(), xkilled(), monstone(), vamprises()), corpse
 // and zombie species, waking, hiding, and shapechanging.
@@ -552,7 +553,7 @@ export function monstersInFmonOrder(monsters = []) {
 export function schedulable(monster) {
     return (monster &&
         (monster.mhp ?? 1) > 0 &&
-        (monster.mstate ?? MON_FLOOR) === MON_FLOOR &&
+        !mon_offmap(monster) &&
         monster.mx !== 0);
 }
 // C ref: mon.c mcalcdistress()/m_calcdistress(). JS appends monsters while C
@@ -1460,7 +1461,7 @@ async function executeMonsterTurns() {
             continue;
         }
         if ((actor.mhp ?? 1) <= 0 || actor.mx === 0
-            || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR) {
+            || mon_offmap(actor)) {
             actor.movement = 0;
             continue;
         }
@@ -1529,7 +1530,7 @@ async function executeMonsterTurns() {
         // judged by dochugw(FALSE) inside rloc_to_core() (teleport.ts).
         if (!attackReturnedDeath && movement.postMoveStatus !== MMOVE_DIED
             && (monster.mhp ?? 1) > 0
-            && (monster.mstate ?? MON_FLOOR) === MON_FLOOR
+            && !mon_offmap(monster)
             && !(monster.isgd && !monster.mx))
             await interruptOccupationForMonster(monster, game, sightingBefore);
         if (!movement?.moved)
@@ -4537,7 +4538,7 @@ async function selectControlledForm(monster, baseMnum, state) {
 export async function restoreNaturalMonsterShapes(state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
     for (const monster of [...(state.level?.monsters ?? [])].reverse()) {
-        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
+        if (monster.mhp <= 0 || mon_offmap(monster))
             continue;
         await normalizeMonsterShape(monster, state, publish);
         if (state.program_state.gameover)
@@ -4598,7 +4599,7 @@ export async function normalizeMonsterShape(monster, state = game, publish = pli
 export async function restartMonsterShapechanging(state = game) {
     requireLiveGame(state);
     for (const monster of [...(state.level?.monsters ?? [])].reverse()) {
-        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
+        if (monster.mhp <= 0 || mon_offmap(monster))
             continue;
         if (!monster.mcan)
             monster.cham = naturalShapechanger(monster.mnum) ? monster.mnum : NON_PM;
@@ -4614,7 +4615,7 @@ export async function restartMonsterShapechanging(state = game) {
 export function livingResidents(state) {
     // C get_iter_mons() tests mstate, not square occupancy: a mounted steed
     // remains on fmon with MON_FLOOR even though the hero shares its square.
-    return [...state.level.monsters].reverse().filter(monster => !monster.dead && monster.mhp > 0 && (monster.mstate ?? MON_FLOOR) === MON_FLOOR);
+    return [...state.level.monsters].reverse().filter(monster => !monster.dead && monster.mhp > 0 && !mon_offmap(monster));
 }
 // C mon.c:mpickgold()
 // A guard picks up the gold stack it stands on.  C's flags.verbose pline

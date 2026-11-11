@@ -1,3 +1,4 @@
+import { mon_offmap } from './const.js';
 // fountain.c owner: fountain and sink drinking, dipping, drying, warnings,
 // water effects, and the sink terrain.  Folded from fountain_effects/
 // fountain_sword/sink_dipping/sink_drinking/sink_terrain/dip_water
@@ -10,7 +11,7 @@ import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactPrope
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHeroStrengthAndHp } from './attrib.js';
 import {
     A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, ENL_GAMEINPROGRESS, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE,
-    MAGICENLIGHTENMENT, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING,
+    MAGICENLIGHTENMENT, MM_NOMSG, M_SEEN_FIRE, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING,
     ARM, HAND, FACE, HEAD, LL_ARTIFACT, TT_INFLOOR, TT_LAVA,
 } from './const.js';
 import { monsterHasMapPosition } from './steed.js';
@@ -127,7 +128,7 @@ export async function dryFountainAt(x: number, y: number, {
 async function warnAboutFountain(state: GameState, publish: MessagePublisher): Promise<void> {
     const watch = [...requireGameLevel(state).monsters].reverse().find(monster =>
         !monster.dead && monster.mhp > 0 && monster.mpeaceful
-        && (monster.mstate ?? MON_FLOOR) === MON_FLOOR
+        && !mon_offmap(monster)
         && (monster.mnum === PM_WATCHMAN || monster.mnum === PM_WATCH_CAPTAIN)
         && couldsee(monster.mx, monster.my));
     if (!watch) {
