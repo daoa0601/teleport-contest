@@ -809,8 +809,10 @@ export async function monsterArrive(monster, when, state) {
     await restoreMonsterShape(monster, state);
     if (state.program_state.gameover)
         return false;
-    if (monster === state.u?.usteed)
+    if (monster === state.u?.usteed) {
+        monster.mstate = (monster.mstate ?? 0) & ~MON_STILL_ARRIVING;
         return true;
+    }
     if (when === MON_ARRIVE_WITH_YOU) {
         // An accompanying monster usually lands beside the hero and
         // sometimes on the hero's own square (which then displaces the hero).
