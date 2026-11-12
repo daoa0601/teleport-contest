@@ -4,7 +4,7 @@ import test from 'node:test';
 import { BURN, G_GENOD, LEAVESTATUE, NO_MINVENT } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { mklev } from '../js/mklev.js';
 import { createBonesFromDeath, saveBonesLevel } from '../js/bones.js';
@@ -90,7 +90,7 @@ void test('saving bones dismounts the dead hero and moves the living steed aside
     dyingHero();
     requirePlayingGame(game);
     const pony = await createMonsterAt('pony', 10, 10, NO_MINVENT);
-    placeMonsterAt(pony, 10, 10);
+    await placeMonsterOnMap(pony, 10, 10);
     game.u.usteed = pony;
 
     assert.equal(await createBonesFromDeath('killed by a kobold', async () => 'y'), true);

@@ -14,7 +14,7 @@ import { ddoinv, inventoryItemDescription } from '../js/invent.js';
 import { mksobj } from '../js/mkobj.js';
 import { pickUpMonsterFloorObject } from '../js/mon.js';
 import { addObjectToMonsterInventory, dropMonsterObject } from '../js/steal.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { addInventoryItem } from '../js/invent.js';
 import { makeWish } from '../js/zap.js';
 import { initRng } from '../js/rng.js';
@@ -66,7 +66,7 @@ async function pickupArtifact({ name = 'The Mitre of Holiness', shop = false, ve
         game.u.hallucinationTurns = 20;
     initRng(1n);
     if (shop) {
-        placeMonsterAt(monster, 14, 10);
+        await placeMonsterOnMap(monster, 14, 10);
         // Admit the native one-in-25 shop pickup; this case checks artifact
         // discovery at that boundary, not the chance of going shopping.
         assert.equal(await pickUpMonsterFloorObject(monster, game, () => 0), true);

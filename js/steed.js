@@ -914,8 +914,11 @@ export async function strikeSteed({ state = game, random = rn2, roll = rnd, anno
 // C steed.c:place_monster(). Map placement and list membership are separate:
 // callers own the level/migration list, and placement resets every mstate bit.
 // ---------------------------------------------------------------------------
-// C steed.c:place_monster()
-// C place_monster() diagnoses invalid placements before changing the map.
+// C steed.c:place_monster(). The single map-placement owner: the bounds,
+// steed and defunct-monster diagnostics, then the commit that writes the
+// coordinates, resolves a replaced occupant, and clears every mstate bit.
+// The vault guard path (vault.c parkguard()) reaches the <0,0> special case
+// through this owner, exactly like C.
 export async function placeMonsterOnMap(monster, x, y, state = game) {
     const levelName = describeLevel(0, state);
     const monsterState = (monster.mstate ?? MON_FLOOR).toString(16);
@@ -939,13 +942,8 @@ export async function placeMonsterOnMap(monster, x, y, state = game) {
         await impossible(`placing ${name} over ${otherName} at <${x},${y}>,`
             + ` mstates:${otherState} ${monsterState} on ${levelName}?`, { state });
     }
-    placeMonsterAt(monster, x, y, state);
-}
-// Part of C steed.c:place_monster(): commit coordinates, occupancy and floor state.
-// Commit a map-slot assignment. The monster chain retains an overwritten
-// occupant, but moving the new occupant away must leave an empty square.
-export function placeMonsterAt(monster, x, y, state = game) {
-    const other = state.level && monsterAtPosition(state.level, x, y, state);
+    // The commit: C writes mx/my, the square's monster slot, and MON_FLOOR;
+    // the port's derived occupancy clears a replaced occupant's square.
     if (other && other !== monster)
         clearMonsterMapSquare(other, x, y);
     monster.mx = x;

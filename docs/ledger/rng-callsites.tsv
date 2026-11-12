@@ -156,9 +156,6 @@ src/js/dothrow.ts	finishHeroThrow	rn2	"[""100""]"	constant
 src/js/dothrow.ts	finishHeroThrow	rn2	"[""100""]"	constant
 src/js/dothrow.ts	finishHeroThrow	rn2	"[""2""]"	constant
 src/js/dothrow.ts	finishHeroThrow	rnd	"[""3""]"	constant
-src/js/dothrow.ts	resolveGenericSwallowedThrow	rnd	"[""20""]"	constant
-src/js/dothrow.ts	resolveSwallowedFoodThrow	rnd	"[""20""]"	constant
-src/js/dothrow.ts	resolveSwallowedPotionThrow	rnd	"[""20""]"	constant
 src/js/dothrow.ts	offerUnicornGem	rn2	"[""3""]"	constant
 src/js/dothrow.ts	offerUnicornGem	rn2	"[""7""]"	constant
 src/js/dothrow.ts	releaseCameraDemon	random	"[""3""]"	constant
@@ -441,8 +438,6 @@ src/js/mkobj.ts	scheduleNextGlobAttempt	rn2	"[""5""]"	constant
 src/js/dokick.ts	finishMercenaryCatch	rn2	"[""3""]"	constant
 src/js/dokick.ts	finishMercenaryCatch	rn2	"[""5""]"	constant
 src/js/dokick.ts	resolveGoldMonsterContact	rn2	"[""4""]"	constant
-src/js/dothrow.ts	resolveQuiveredGoldMonsterContact	rn2	"[""3""]"	constant
-src/js/dothrow.ts	resolveQuiveredGoldMonsterContact	rnd	"[""20""]"	constant
 src/js/apply.ts	damageHero	rn2	"[""10""]"	constant
 src/js/apply.ts	useGrapplingHook	rn2	"[""2""]"	constant
 src/js/apply.ts	useGrapplingHook	rn2	"[""4""]"	constant
@@ -580,7 +575,7 @@ src/js/hack.ts	settlePetHeroDisplacement	rn2	"[""4""]"	constant
 src/js/hero_potion_hit.ts	applyDirectHeroPotion	rollDice	"[""potion.cursed ? 2 : 1"", ""potion.blessed ? 4 : 8""]"	constant
 src/js/hero_potion_hit.ts	hitHeroWithThrownPotion	rollOne	"[""2""]"	constant
 src/js/dothrow.ts	hitMonsterWithRangedObject	rollOne	"[""20""]"	constant
-src/js/dothrow.ts	missRangedObject	rn2	"[""3""]"	constant
+src/js/dothrow.ts	missRangedObject	random	"[""3""]"	constant
 src/js/artifact.ts	retouchHeroObject	rnd	"[""10""]"	constant
 src/js/artifact.ts	retouchHeroObject	rnd	"[""10""]"	constant
 src/js/zap.ts	elementalSelfZap	d	"[""12"", ""6""]"	constant
@@ -1387,8 +1382,8 @@ src/js/uhitm.ts	mhitmAdDrli	random	"[""3""]"	constant
 src/js/uhitm.ts	mhitmAdDrli	rollDice	"[""2"", ""6""]"	constant
 src/js/uhitm.ts	mhitmAdAcid	random	"[""30""]"	constant
 src/js/uhitm.ts	mhitmAdAcid	random	"[""6""]"	constant
-src/js/mhitm.ts	resolveMonsterCombatExplosion	rollDice	"[""(MONSTER_LEVEL[attacker.mnum] ?? 0) + 1"", ""sides""]"	unproved
-src/js/mhitm.ts	resolveMonsterCombatExplosion	rollDice	"[""dice"", ""sides""]"	unproved
+src/js/explode.ts	monsterExplodes	rollDice	"[""(MONSTER_LEVEL[monster.mnum] ?? 0) + 1"", ""sides""]"	invariant
+src/js/explode.ts	monsterExplodes	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/mhitm.ts	resolveMonsterCombatGaze	random	"[""2""]"	constant
 src/js/uhitm.ts	applyMonsterCombatBlindness	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
 src/js/uhitm.ts	mhitmAdPlys	random	"[""3""]"	constant
@@ -1632,7 +1627,6 @@ src/js/mhitu.ts	seductionOutcome	random	"[""5""]"	constant
 src/js/mhitu.ts	seductionOutcome	rollOne	"[""100""]"	constant
 src/js/mhitu.ts	seductionOutcome	rollOne	"[""5""]"	constant
 src/js/mhitu.ts	seductionOutcome	rollOne	"[""hero.halfPhysicalDamage ? 5 : 10""]"	constant
-src/js/mhitu.ts	resolveMonsterSelfExplosion	d	"[""(MONSTER_LEVEL[monster.mnum] ?? 0) + 1"", ""sides""]"	unproved
 src/js/mhitu.ts	resolveMonsterSelfExplosion	d	"[""dice"", ""sides""]"	unproved
 src/js/mhitu.ts	resolveMonsterSelfExplosion	d	"[""dice"", ""sides""]"	unproved
 src/js/mhitu.ts	resolveMonsterSelfExplosion	rnd	"[""damage""]"	unproved
@@ -1975,10 +1969,7 @@ src/js/potion.ts	releaseDjinni	rn2	"[""4""]"	constant
 src/js/potion.ts	releaseDjinni	rn2	"[""5""]"	constant
 src/js/potion.ts	releaseDjinni	rnd	"[""4""]"	constant
 src/js/potion.ts	releasePotionOccupant	rn2	"[""13 + 2 * (state.mvitals?.[species]?.born ?? 0)""]"	unproved
-src/js/dothrow.ts	resolveMapPotionThrow	rn2	"[""3""]"	constant
 src/js/dothrow.ts	resolveMapPotionThrow	rn2	"[""6""]"	constant
-src/js/dothrow.ts	resolveMapPotionThrow	rnd	"[""20""]"	constant
-src/js/dothrow.ts	resolveMapPotionThrow	rnd	"[""25""]"	constant
 src/js/pray.ts	altarWrath	rn2	"[""20""]"	constant
 src/js/pray.ts	altarWrath	rn2	"[""4""]"	constant
 src/js/pray.ts	altarWrath	rn2	"[""luck + 6""]"	guarded

@@ -7,7 +7,7 @@ import {placeCreatedObject} from '../js/mkobj.js';
 import { maybeUnhideAt } from '../js/mon.js';
 import { CHEST } from '../js/object_data.js';
 import { MM_IGNOREWATER, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObjectsAt } from './support/level-state.js';
 import {
@@ -22,7 +22,7 @@ const S_EEL = MONSTER_SYMBOL[MONSTER_NAME.indexOf('giant eel')];
 
 async function hiddenMonsterAt(mnum: number, x: number, y: number, { trapped = false } = {}) {
     const monster = await createMonsterAt(mnum, x + 1, y, MM_IGNOREWATER | MM_NOGRP | NO_MINVENT);
-    placeMonsterAt(monster, x, y);
+    await placeMonsterOnMap(monster, x, y);
     monster.mundetected = 1;
     monster.mtrapped = trapped ? 1 : 0;
     monster.mhp = 10;

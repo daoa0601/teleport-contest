@@ -8,7 +8,7 @@ import { game } from '../js/gstate.js';
 import { cls } from '../js/display.js';
 import { addInventoryItem } from '../js/invent.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { CHEST, CRYSKNIFE, DAGGER, GOLD_PIECE, LARGE_BOX, OBJECT_NAMES, SACK, WORM_TOOTH, WAN_DIGGING, } from '../js/object_data.js';
 import { unlinkObject, addCreatedObjectToContainer, addObjectToContainer, chargeAlteredUnpaidObject } from '../js/mkobj.js';
 import { addShopObjectToBill, billedPickupQuote, getCostOfShopItem, splitObjectBill, } from '../js/shk.js';
@@ -304,9 +304,9 @@ void test('equal-price items from different keepers cannot merge', async (t) => 
     await addShopObjectToBill(first, game, { ininv: false, silent: true });
     // An absent keeper leaves an outstanding bill; a tended-shop exit
     // would instead convert the first purchase to a robbery.
-    placeMonsterAt(shopkeeper, 5, 5);
+    await placeMonsterOnMap(shopkeeper, 5, 5);
     await moveHeroTo(30);
-    placeMonsterAt(shopkeeper, 12, 10);
+    await placeMonsterOnMap(shopkeeper, 12, 10);
     const second = await floorObject(DAGGER, 30, 10, { dknown: true });
     await addShopObjectToBill(second, game, { ininv: false, silent: true });
     assert.equal(first.unpaid, true);
@@ -402,9 +402,9 @@ void test('altering a billed stack keeps its unit charge and riles earlier bille
     const { shopkeeper: other } = await createStaffedShop({
         left: 27, right: 33, top: 9, bottom: 11, keeperX: 32, keeperY: 10,
     });
-    placeMonsterAt(shopkeeper, 5, 5);
+    await placeMonsterOnMap(shopkeeper, 5, 5);
     await moveHeroTo(30);
-    placeMonsterAt(shopkeeper, 12, 10);
+    await placeMonsterOnMap(shopkeeper, 12, 10);
     const stock = await floorObject(DAGGER, 30, 10);
     await addShopObjectToBill(stock, game, { silent: true });
     const otherEntry = other.eshk.bill[0];
@@ -412,9 +412,9 @@ void test('altering a billed stack keeps its unit charge and riles earlier bille
     const otherPrice = otherEntry.price;
     other.mpeaceful = 0;
     game.level.monsters = [other, shopkeeper];
-    placeMonsterAt(other, 5, 5);
+    await placeMonsterOnMap(other, 5, 5);
     await moveHeroTo(10);
-    placeMonsterAt(other, 32, 10);
+    await placeMonsterOnMap(other, 32, 10);
     const charge = await chargeAlteredUnpaidObject(stack, 'disenchant');
     assert.ok(charge && typeof charge === 'object');
     assert.ok(charge.entry && charge.object);

@@ -4,7 +4,7 @@ import { RUST_TRAP, W_ARMH } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { monsterName } from '../js/do_name.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { HELMET } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { mintrap } from '../js/trap.js';
@@ -42,10 +42,10 @@ for (const hallucinating of [false, true]) {
 void test('a monster stepping onto an unseen rust trap is drawn there before the gush', async () => {
     const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { x: 12, y: 10 });
     trap.tseen = false;
-    placeMonsterAt(monster, 13, 10);
+    await placeMonsterOnMap(monster, 13, 10);
     await newsym(12, 10);
     await newsym(13, 10);
-    placeMonsterAt(monster, 12, 10);
+    await placeMonsterOnMap(monster, 12, 10);
     await newsym(13, 10);
     const cell = () => requireGameDisplay().grid[10 + 1]?.[12 - 1]?.ch;
     assert.notEqual(cell(), 'H');

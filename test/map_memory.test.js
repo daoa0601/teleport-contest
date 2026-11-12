@@ -9,7 +9,7 @@ import { CmapSymbol, cmapToGlyph } from '../js/glyph_numbers.js';
 import { recordMappedOverviewState } from '../js/dungeon.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { saveGame } from '../js/save.js';
 import { restoreGame } from '../js/restore.js';
@@ -95,7 +95,7 @@ for (const { name, terrain, litGlyph, darkGlyph } of [
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).ch, '2');
         assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(litGlyph), `Warning must preserve the remembered lit ${name}`);
-        placeMonsterAt(xorn, 13, 10);
+        await placeMonsterOnMap(xorn, 13, 10);
         await newsym(11, 10);
         assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(darkGlyph), `the unoccupied ${name} must darken outside sight`);
     });

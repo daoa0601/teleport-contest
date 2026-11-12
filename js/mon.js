@@ -81,7 +81,7 @@ import { getLine } from './windows.js';
 import { coordinateDescription } from './getpos.js';
 import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
-import { createPhysicalMonsterExplosion } from './explode.js';
+import { monsterExplodes } from './explode.js';
 import { stopHeroOccupation } from './allmain.js';
 import { resolveMonsterGaze, expelHero, } from './mhitu.js';
 import { monsterCanBeLeashed, releaseMonsterLeash } from './apply.js';
@@ -2602,7 +2602,9 @@ export function monsterDeathSwallower(state = game) {
         return swallower;
     return swallower && monsterCanEngulf(swallower) ? swallower : null;
 }
-// Part of C mon.c:corpse_chance(): rolling the death explosion.
+// Part of C mon.c:corpse_chance(): rolling the death explosion. The roll
+// is corpse_chance()'s own; the contained (swallowed) branch uses its value,
+// while the map branch discards it because mon_explodes() rolls again.
 export function rollMonsterDeathExplosion(monster, { state = game, rollDice = d, } = {}) {
     const attack = (MONSTER_ATTACKS[monster.mnum] || [])
         .find(candidate => candidate[0] === AT_BOOM);
@@ -2610,18 +2612,17 @@ export function rollMonsterDeathExplosion(monster, { state = game, rollDice = d,
         return null;
     const swallower = monsterDeathSwallower(state);
     const damage = rollAttackDamage(monster, attack, rollDice);
-    // A map explosion rolls again in mon_explodes(); a contained one uses
-    // corpse_chance()'s first roll and never visits the map blast owner.
-    return { swallower, damage: swallower
-            ? damage : rollAttackDamage(monster, attack, rollDice) };
+    return { swallower, attack, damage };
 }
-// Part of C mon.c:corpse_chance(): the swallowed explosion branch.
-export async function resolveMonsterDeathExplosion(monster, x, y, explosion, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, heroCaused = !state.context.mon_moving, } = {}) {
-    const { swallower, damage } = explosion;
+// Part of C mon.c:corpse_chance(): the swallowed explosion branch, and the
+// handoff to explode.c:mon_explodes() for the map blast.
+export async function resolveMonsterDeathExplosion(monster, explosion, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, heroCaused = !state.context.mon_moving, } = {}) {
+    const { swallower, attack, damage } = explosion;
     if (!swallower) {
-        return createPhysicalMonsterExplosion(monster, x, y, damage, {
-            state, publish, random, heroCaused,
+        const blast = await monsterExplodes(monster, attack, {
+            state, publish, random, rollDice, heroCaused,
         });
+        return { heroDied: blast.heroDied };
     }
     if ('kind' in swallower) {
         await publish(`There is an explosion in your ${body_part(STOMACH, state)}!`);
@@ -2744,7 +2745,7 @@ export async function resolveMonsterCorpseChance(monster, { state = game, random
     if (death.explosion) {
         if (state === game)
             await newsym(monster.mx, monster.my);
-        const explosion = await resolveMonsterDeathExplosion(monster, monster.mx, monster.my, death.explosion, { state, publish, random, rollDice });
+        const explosion = await resolveMonsterDeathExplosion(monster, death.explosion, { state, publish, random, rollDice });
         if (explosion.heroDied)
             return { leavesRemains: false, heroDied: true };
     }
@@ -3633,7 +3634,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     }
     if (deathExplosion !== null) {
         await newsym(x, y);
-        const explosion = await resolveMonsterDeathExplosion(monster, x, y, deathExplosion, {
+        const explosion = await resolveMonsterDeathExplosion(monster, deathExplosion, {
             state: game,
             heroCaused: !game.context.mon_moving,
         });

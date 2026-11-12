@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { consumeInventoryItem } from '../js/invent.js';
 import { gotoLevel } from '../js/do.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { APPLE, FOOD_RATION } from '../js/object_data.js';
 import { saveGame } from '../js/save.js';
 import { restoreGame } from '../js/restore.js';
@@ -24,7 +24,7 @@ for (const saveWhileAway of [false, true]) {
         await consumeInventoryItem(ration);
         assert.equal((await itemizedShopBill(first.shopkeeper))[0]?.kind, 'used');
         // An absent keeper cannot settle the old debt as a robbery on exit.
-        placeMonsterAt(first.shopkeeper, 16, 10);
+        await placeMonsterOnMap(first.shopkeeper, 16, 10);
         await gotoLevel({ dlevel: 2 }, { arrival: 'stairs' });
         const second = await createStaffedShop({ keeperX: 13, keeperY: 10 });
         const apple = await addInventoryObject(APPLE, { unpaid: true });

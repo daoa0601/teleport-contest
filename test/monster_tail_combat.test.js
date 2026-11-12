@@ -6,7 +6,7 @@ import { initializePet } from '../js/dog.js';
 import { placeCreatedObject } from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { placeMonsterAt, monsterAtPosition } from '../js/steed.js';
+import { placeMonsterOnMap, monsterAtPosition } from '../js/steed.js';
 import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -29,7 +29,7 @@ async function createWormWithTail(head, tail) {
         }
     }
     await removeMonsterWormBody(worm);
-    placeMonsterAt(worm, worm.mx, worm.my);
+    await placeMonsterOnMap(worm, worm.mx, worm.my);
     await initializeMonsterWormBody(worm, { segmentCount: 1 });
     for (const [location, type] of surroundings)
         location.typ = type;

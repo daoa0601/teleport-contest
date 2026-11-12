@@ -10,7 +10,7 @@ import { resolveMonsterCombatDamage, resolveMonsterCombatEngulf } from '../js/mh
 import { MONSTER_ATTACKS, MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import { changeMonsterForm } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -30,7 +30,7 @@ async function digestionRoom(species, { minion = false } = {}) {
     assert.ok(attacker);
     if (minion) {
         await changeMonsterForm(attacker, MONSTER_NAME.indexOf('purple worm'), game);
-        placeMonsterAt(attacker, 11, 10);
+        await placeMonsterOnMap(attacker, 11, 10);
     }
     const defender = await createMonsterAt(species, 12, 10, BIRTH_FLAGS);
     attacker.mhp = attacker.mhpmax = 100;

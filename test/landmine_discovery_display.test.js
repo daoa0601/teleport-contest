@@ -4,7 +4,7 @@ import test from 'node:test';
 import { LANDMINE } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { requireScreenCell } from './support/screen.js';
 for (const detonates of [false, true]) {
@@ -13,11 +13,11 @@ for (const detonates of [false, true]) {
             monster: { species: 'red dragon', hitPoints: 1000 }, trap: { tseen: false },
         });
         requirePlayingGame(game);
-        placeMonsterAt(monster, 12, 10);
+        await placeMonsterOnMap(monster, 12, 10);
         await newsym(11, 10);
         await newsym(12, 10);
         await flush_screen(1);
-        placeMonsterAt(monster, 11, 10);
+        await placeMonsterOnMap(monster, 11, 10);
         await newsym(12, 10);
         const shown = [];
         const random = (limit) => limit === 3 ? (detonates ? 0 : 1) : limit - 1;
@@ -41,10 +41,10 @@ void test('a grounded monster is drawn before announcing its land mine explosion
         monster: { hitPoints: 1000 }, trap: { tseen: false },
     });
     requirePlayingGame(game);
-    placeMonsterAt(monster, 12, 10);
+    await placeMonsterOnMap(monster, 12, 10);
     await newsym(11, 10);
     await flush_screen(1);
-    placeMonsterAt(monster, 11, 10);
+    await placeMonsterOnMap(monster, 11, 10);
     let shownAtExplosion;
     const random = (limit) => limit - 1;
     await mintrap(monster, game, {

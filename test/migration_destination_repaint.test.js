@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { flush_screen, map_object, newsym, see_monsters, see_objects, see_traps } from '../js/display.js';
 import { monsterName } from '../js/do_name.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { detachMonsterFromLevel } from '../js/mon.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
@@ -57,7 +57,7 @@ void test('a monster a level teleport trap sends off the level is not repainted 
     // The move itself spends no display draw; the trap's message and
     // seetrap()'s newsym of the occupied square follow it (teleport.c
     // mlevel_tele_trap).
-    placeMonsterAt(standing, TRAP.x, TRAP.y, game);
+    await placeMonsterOnMap(standing, TRAP.x, TRAP.y, game);
     await monsterName(standing, { state: game });
     await newsym(TRAP.x, TRAP.y);
     await detachMonsterFromLevel(standing);

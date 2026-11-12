@@ -23,7 +23,7 @@ import { isMissileObject, isWeaponTool } from './object_properties.js';
 import { mhitm_adtyping, isHeroDeferredContactDamageType, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, mhitm_knockback, passiveDamage, erodeArmor, } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject } from './artifact.js';
-import { createElementalMonsterExplosion } from './explode.js';
+import { monsterExplodes } from './explode.js';
 import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitMon, setPropertyTimeout } from './potion.js';
 import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
@@ -3612,17 +3612,11 @@ export async function resolveMonsterSelfExplosion(monster, attack, { foundHero, 
             case AD_FIRE:
             case AD_COLD:
             case AD_ELEC: {
-                const blastDamage = dice ? d(dice, sides)
-                    : sides ? d((MONSTER_LEVEL[monster.mnum] ?? 0) + 1, sides) : 0;
-                if (monster.mhp > 0) {
-                    const death = await removeExploder(monster, state, publish);
-                    if (death.heroDied)
-                        return { mask: M_ATTK_AGR_DIED, heroDied: true };
-                }
-                // Recovery can change the source's form. Fatal identity stays real,
-                // while the area owner draws fresh hallucinated names for its targets.
-                const killer = `${possessiveName(monsterTypeName(monster.mnum, !!monster.female))} explosion`;
-                const blast = await createElementalMonsterExplosion(monster.mx, monster.my, damageType, blastDamage, killer, { state, publish, ...(die ? { die } : {}) });
+                // C explmu(): mon_explodes() kills the source before the blast;
+                // lifesaving leaves it alive without a second kill here.
+                const blast = await monsterExplodes(monster, attack, {
+                    state, publish, ...(die ? { die } : {}),
+                });
                 if (blast.heroDied)
                     return { mask: M_ATTK_AGR_DIED, heroDied: true };
                 if (monster.mhp > 0)

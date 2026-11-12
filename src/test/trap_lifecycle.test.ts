@@ -12,7 +12,7 @@ import { back_to_glyph } from '../js/display.js';
 import { CLR_BLUE, NO_COLOR } from '../js/terminal.js';
 import { gameLogEvents } from '../js/pline.js';
 import { pushKey } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -201,7 +201,7 @@ void test('removing a floor trap beneath a worm segment releases the trapped wor
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 14, 10);
     await removeMonsterWormBody(worm);
-    placeMonsterAt(worm, worm.mx, worm.my);
+    await placeMonsterOnMap(worm, worm.mx, worm.my);
     await initializeMonsterWormBody(worm, { segmentCount: 1 });
     assert.ok(worm.wormSegments != null, 'Expected worm.wormSegments to be initialized');
     const segment = worm.wormSegments[0];

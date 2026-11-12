@@ -14,7 +14,7 @@ import { resetInputState } from '../js/input.js';
 import { resolveMonsterDoorPassage, shiftMonsterForDoor, monsterCanFog, monsterCanOoze } from '../js/monmove.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import {
     AMULET_OF_LIFE_SAVING, CREDIT_CARD, DAGGER, LOCK_PICK, MACE, ROCK, SACK, SKELETON_KEY,
@@ -248,10 +248,10 @@ void test('a visible vampire shifts at its previous square before entering the c
     requirePlayingGame(game);
     const dagger = await knownObject(DAGGER);
     await addObjectToMonsterInventory(monster, dagger);
-    placeMonsterAt(monster, 11, 10);
+    await placeMonsterOnMap(monster, 11, 10);
     const wasSeen = canSeeMonster(monster), wasSpotted = canSpotMonster(monster);
     assert.equal(wasSeen, true);
-    placeMonsterAt(monster, 12, 10);
+    await placeMonsterOnMap(monster, 12, 10);
     const shifting = shiftMonsterForDoor(monster, game, {
         previousPosition: { x: 11, y: 10 }, wasSeen, wasSpotted,
     });

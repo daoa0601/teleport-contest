@@ -7,7 +7,7 @@ import { canSeeMonster, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 
 import { initRng } from '../js/rng.js';
 import { cansee, vision_recalc } from '../js/vision.js';
@@ -24,7 +24,7 @@ void test('a land mine reveals its infrared-visible victim before paging the exp
     await vision_recalc(0);
     const giant = await createMonsterAt('giant', 12, 10, MM_NOGRP | NO_MINVENT);
     giant.mhp = giant.mhpmax = 100;
-    placeMonsterAt(giant, 14, 10);
+    await placeMonsterOnMap(giant, 14, 10);
     await newsym(12, 10);
     addTrap(level, LANDMINE, 14, 10);
     assert.equal(cansee(14, 10), false);

@@ -6,7 +6,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { ROCK } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
@@ -23,7 +23,7 @@ for (const [type, name] of [[ARROW_TRAP, 'arrow'], [DART_TRAP, 'dart'], [ROCKTRA
         await newsym(11, 10);
         await flush_screen(1);
         const trap = addTrap(level, type, 11, 10, { tseen: false });
-        placeMonsterAt(kitten, 11, 10);
+        await placeMonsterOnMap(kitten, 11, 10);
         await newsym(12, 10);
         await plineWithContinuation('You hear something moving nearby in the darkness.');
         const input = resetInputState();

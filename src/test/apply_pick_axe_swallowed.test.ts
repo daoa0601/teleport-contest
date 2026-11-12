@@ -6,7 +6,7 @@ import test from 'node:test';
 // uhitm.c:797-799 suppresses the second two-weapon swing.
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { BULLWHIP, PICK_AXE } from '../js/object_data.js';
 import { W_SWAPWEP, W_WEP } from '../js/const.js';
 import { setTwoWeaponCombat } from '../js/wield.js';
@@ -29,7 +29,7 @@ async function engulfedTwoWeaponHero() {
     game.uswapwep = game.u.uswapwep = whip;
     setTwoWeaponCombat(true, game);
     const vortex = await createMonsterAt('dust vortex', 11, 10);
-    placeMonsterAt(vortex, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(vortex, game.u.ux, game.u.uy);
     vortex.mhp = vortex.mhpmax = 500;
     game.u.uswallow = game.uswallow = 1;
     game.u.ustuck = vortex;

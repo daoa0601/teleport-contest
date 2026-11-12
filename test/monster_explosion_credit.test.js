@@ -1,8 +1,8 @@
 import { SCROLL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { EXPL_FIERY, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { createElementalMonsterExplosion, explode } from '../js/explode.js';
+import { EXPL_FIERY, EXPL_FROSTY, MM_ANGRY, MM_NOGRP, MON_EXPLODE, NO_MINVENT } from '../js/const.js';
+import { explode } from '../js/explode.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_COLD } from '../js/monster_attack_types.js';
@@ -43,7 +43,7 @@ void test('an elemental monster explosion during the hero turn gives the hero ki
     const victim = await createMonsterAt('jackal', 15, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     victim.mhp = 1;
     installPagerInput(resetInputState(), { expected: /caught|killed|kill|Boom/, limit: 8 });
-    await createElementalMonsterExplosion(14, 10, AD_COLD, 8, "freezing sphere's explosion");
+    await explode(14, 10, -(AD_COLD - 1 + 20), 8, MON_EXPLODE, EXPL_FROSTY, { killer: "freezing sphere's explosion" });
     assert.ok(victim.mhp <= 0, 'The cold explosion killed the neighboring jackal.');
     assert.equal(game.u.uconduct.killer, 1);
 });

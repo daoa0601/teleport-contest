@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { finishSpecialRoamer, monsterAlignmentType } from '../js/priest.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { AMULET_OF_YENDOR, DAGGER, FOOD_RATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
@@ -228,7 +228,7 @@ void test('a non-steed guardian on the hero square stays put even under Conflict
     const level = await freshObjectRoom({ hero: { ulevel: 30 } });
     const state = requireInitializedGame();
     const angel = await guardian();
-    placeMonsterAt(angel, state.u.ux, state.u.uy);
+    await placeMonsterOnMap(angel, state.u.ux, state.u.uy);
     assert.notEqual(state.u.usteed, angel);
     grantIntrinsicProperty('conflict', 'outside');
     initRng(1n);

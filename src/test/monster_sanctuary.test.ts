@@ -10,7 +10,7 @@ import { pushKeys } from '../js/input.js';
 import { mklev } from '../js/mklev.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { mfndpos } from '../js/mon.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 
 import { vision_recalc, vision_reset } from '../js/vision.js';
@@ -134,7 +134,7 @@ void test('sanctuary blocks entry from outside but does not block a melee destin
     const location = game.level.requireAt(x - 1, y);
     location.typ = ROOM;
     location.roomno = NO_ROOM;
-    placeMonsterAt(monster, x - 1, y);
+    await placeMonsterOnMap(monster, x - 1, y);
     const canEnter = async () => {
         requirePlayingGame(game);
         return (await mfndpos(monster, game)).some(square => square.x === x && square.y === y);

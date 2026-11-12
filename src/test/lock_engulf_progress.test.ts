@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { continuePicking, pickLock } from '../js/lock.js';
 
 import { AD_DGST, AT_ENGL } from '../js/monster_attack_types.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { CREDIT_CARD } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -35,7 +35,7 @@ void test('engulfing discards lock progress even after the hero is expelled', as
     initRng(1n);
     assert.equal(await continuePicking(attempt), true);
 
-    placeMonsterAt(monster, 10, 10);
+    await placeMonsterOnMap(monster, 10, 10);
     game.u.ustuck = monster;
     const capture = await gulpmu(monster, {
         kind: 'hero-attack', attackType: AT_ENGL, hit: true, effect: 'engulf',

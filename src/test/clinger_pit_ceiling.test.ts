@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { mintrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { createSpecialLevel } from './support/topology.js';
 
@@ -20,7 +20,7 @@ for (const onAstral of [false, true]) {
         game.earth_level = createSpecialLevel({ dnum: 1, dlevel: 5 });
         game.u.uz = { dnum: 1, dlevel: onAstral ? 1 : 5 };
         monster.mundetected = false;
-        placeMonsterAt(monster, 12, 10);
+        await placeMonsterOnMap(monster, 12, 10);
         // mintrap() now publishes inside the move; acknowledge its pagers.
         pushKeys(' '.repeat(30));
 

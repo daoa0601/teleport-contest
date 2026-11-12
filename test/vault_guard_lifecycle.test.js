@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import { unpunishHero } from '../js/read.js';
 import { saveGame } from '../js/save.js';
 import { restoreGame } from '../js/restore.js';
@@ -120,7 +120,7 @@ void test('environmental death still rolls for remains but cannot place them at 
 void test('the same corpse chance leaves remains when a guard is clear of its corridor', async () => {
     const { level, guard } = await guardCorridor({ blocked: false });
     requirePlayingGame(game);
-    placeMonsterAt(guard, 14, 10);
+    await placeMonsterOnMap(guard, 14, 10);
     const death = await finishEnvironmentalMonsterDeath(guard, game, {
         random: () => 0,
     });

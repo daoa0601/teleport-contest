@@ -13,7 +13,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/topl.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import { advanceMonsterWormBody } from '../js/worm.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, OBJECT_NAMES, TWO_HANDED_SWORD,
@@ -351,7 +351,7 @@ void test('flashing a nearby worm tail does not blind the head outside the broke
     requirePlayingGame(game);
     const object = await wand(WAN_LIGHT, 1);
     const worm = await bystander('long worm', 11, 10, 500, MM_NOTAIL);
-    placeMonsterAt(worm, 12, 10);
+    await placeMonsterOnMap(worm, 12, 10);
     await advanceMonsterWormBody(worm);
     assert.ok(worm.wormSegments !== undefined && worm.wormSegments !== null, 'Expected worm.wormSegments to be initialized');
     assert.ok(worm.wormSegments.some(segment => segment.x === 11 && segment.y === 10));

@@ -17,7 +17,7 @@ import { gulpmu } from '../js/mhitu.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL, AD_DGST } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import {
     AMULET_OF_LIFE_SAVING, POT_HEALING, SCR_BLANK_PAPER, WAN_DEATH,
     WAN_FIRE, WAN_LIGHT, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING,
@@ -157,7 +157,7 @@ void test('a fire blast from inside an engulfer cannot burn the floor or a bysta
     sleeper.msleeping = 1;
     const paper = await floorObject(SCR_BLANK_PAPER, 10, 10, { quantity: 20 });
     const oldX = swallower.mx, oldY = swallower.my;
-    placeMonsterAt(swallower, 10, 10);
+    await placeMonsterOnMap(swallower, 10, 10);
     game.u.ustuck = swallower;
     await gulpmu(swallower, { kind: 'hero-attack', attackType: AT_ENGL, hit: true, effect: 'engulf', damageType: AD_DGST, engulfOldX: oldX, engulfOldY: oldY, engulfDamage: 0 });
 

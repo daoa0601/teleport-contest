@@ -2,9 +2,9 @@ import { monsterAtPosition } from '../js/steed.js';
 import { assertWormBody } from './support/worms.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
+import { EXPL_FIERY, MM_ANGRY, MM_NOTAIL, MON_EXPLODE, NO_MINVENT } from '../js/const.js';
 import { canSpotMonster, feel_location, glyphAt, newsym } from '../js/display.js';
-import { createElementalMonsterExplosion } from '../js/explode.js';
+import { explode } from '../js/explode.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { AD_FIRE } from '../js/monster_attack_types.js';
@@ -59,7 +59,7 @@ void test('a blast killing a visible worm tail names the worm even with its head
     // hero with the kill whenever context.mon_moving is clear.
     game.context.mon_moving = true;
     try {
-        await createElementalMonsterExplosion(tail.x + 1, tail.y, AD_FIRE, 20, "flaming sphere's explosion", {
+        await explode(tail.x + 1, tail.y, -(AD_FIRE - 1 + 20), 20, MON_EXPLODE, EXPL_FIERY, {
             publish: (message) => messages.push(message),
         });
     }

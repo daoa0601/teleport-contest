@@ -7,7 +7,7 @@ import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { find_offensive } from '../js/muse.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { CORPSE, DUNCE_CAP, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HELMET, LARGE_BOX, LEATHER_ARMOR, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_PARALYSIS, POT_SLEEPING, ROCK, SCR_EARTH, SCR_FIRE, SCR_SCARE_MONSTER, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
@@ -316,7 +316,7 @@ void test('an unsolid wraith uses earth nearby, but not while blind or at a dist
     monster.mcansee = 0;
     assert.equal(select(), null);
     monster.mcansee = 1;
-    placeMonsterAt(monster, 13, 10);
+    await placeMonsterOnMap(monster, 13, 10);
     assert.equal(select(), null);
 });
 void test('earth scrolls work on the Earth plane but not other endgame planes or Rogue', async () => {

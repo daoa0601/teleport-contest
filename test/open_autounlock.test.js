@@ -4,7 +4,7 @@ import { DOOR, D_CLOSED, D_LOCKED, TT_PIT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { artifactByName, discoverArtifact } from '../js/artifact.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CREDIT_CARD } from '../js/object_data.js';
@@ -102,7 +102,7 @@ void test('an unseen xorn on the door does not prevent autounlock', async () => 
 void test('the Oracle credit-card refusal shares the message line with the locked door', async () => {
     const level = await freshObjectRoom();
     const oracle = await createMonsterAt('Oracle', 12, 10);
-    placeMonsterAt(oracle, 11, 10);
+    await placeMonsterOnMap(oracle, 11, 10);
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;

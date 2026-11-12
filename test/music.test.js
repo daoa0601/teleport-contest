@@ -7,7 +7,7 @@ import { pushKeys } from '../js/input.js';
 import { MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { mksobj } from '../js/mkobj.js';
 import { monsterIsScaredAt } from '../js/monmove.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { playInstrument } from '../js/music.js';
 import { initRng } from '../js/rng.js';
 import { BUGLE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, WOODEN_HARP, } from '../js/object_data.js';
@@ -108,7 +108,7 @@ for (const inOwnShop of [true, false]) {
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ left: 12, keeperX: 12 });
         if (!inOwnShop)
-            placeMonsterAt(shopkeeper, 11, 10);
+            await placeMonsterOnMap(shopkeeper, 11, 10);
         shopkeeper.msleeping = 1;
         const drum = await instrument(LEATHER_DRUM);
         initRng(1n);

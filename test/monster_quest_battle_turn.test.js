@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -36,7 +36,7 @@ void test('a quest nemesis sharing the hero square counts as close combat', asyn
     // makemon() shies away from the hero square, so take the position
     // directly the way an engulfing captor ends up on it.
     const nemesis = await createMonsterAt('Cyclops', 10, 10, MM_ANGRY | NO_MINVENT);
-    placeMonsterAt(nemesis, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(nemesis, game.u.ux, game.u.uy);
     nemesis.msleeping = 0;
     nemesis.mstrategy = STRAT_WAITFORU;
     nemesis.movement = 12;
