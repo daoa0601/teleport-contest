@@ -224,6 +224,12 @@ import {
 
     LL_WISH,
 
+    INVORDER_SORT,
+
+    INCLUDE_HERO,
+
+    PICK_NONE,
+
 } from './const.js';
 import { isok } from './cmd.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
@@ -266,8 +272,8 @@ import { removeWornHeroItem } from './steal.js';
 import { rechargeRing, unpunishHero } from './read.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
-import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval, displayBuriedInventory, probedContentsTitle, engulfedHeroMenuSection } from './invent.js';
+import { consumeInventoryItem, inventoryItemDescription, delobj } from './invent.js';
+import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval, displayBuriedInventory, probedContentsTitle } from './invent.js';
 import { cleanupTransientLight, showTransientLight } from './light.js';
 import { lightRoom } from './read.js';
 import { buryFloorObjectsAt, formatDraftMessage, zapDigWithObject } from './dig.js';
@@ -330,8 +336,6 @@ import { hasCarriedProperty, hasIntrinsicProperty, hasTimedProperty, hasWornProp
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2, AD_DRLI } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
-import { showInventoryWindow } from './windows.js';
-import type { InventorySection } from './windows.js';
 import { useUpFloorObject } from './invent.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -387,7 +391,7 @@ import { namelessMonsterName } from './do_name.js';
 import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance } from './do_wear.js';
 import { finishMonsterEating } from './dogmove.js';
 import { attachEggHatchTimer } from './timeout.js';
-import { encumber_msg } from './pickup.js';
+import { encumber_msg, queryObjlist } from './pickup.js';
 import { loseHeroExperience } from './exper.js';
 import { requireGameLevel } from './gstate.js';
 import { applyHeroLocationEffects, nomul } from './hack.js';
@@ -1605,39 +1609,15 @@ export async function probeMonster(monster: Monster, {
     // with the engulfer's fake hero row (pickup.c:1146-1164).
     const name = monsterName(monster, { state, capitalized: true, article: 'your', suppressIt: true });
     const engulfer = state.u.uswallow && state.u.ustuck === monster ? monster : null;
-    await showProbedObjectInventory(inventory, `${possessiveName(name)} possessions:`,
-        { state, engulfer });
-}
-
-// Part of C pickup.c:query_objlist(): display a probed inventory with class headings and optional engulfed-hero row.
-// C query_objlist: PICK_NONE still gives each object a menu identifier,
-// so tty assigns letters. INVORDER_SORT adds headings even for one item.
-// An engulfer's list closes with the INCLUDE_HERO fake hero
-// row (pickup.c:1146-1164).
-export async function showProbedObjectInventory(objects: readonly GameObject[], title: string, {
-    state = game, groupByClass = true, engulfer = null,
-}: { state?: GameState; groupByClass?: boolean; engulfer?: Monster | null } = {}): Promise<void> {
-    const sorted = sortObjects(objects, { mode: lootSortMode({ state }), state });
-    const sections: InventorySection<GameObject>[] = [];
-    const classes = groupByClass ? inventoryClassOrder(state) : [null];
-    let first = true;
-    for (const oclass of classes) {
-        const members = oclass === null ? sorted
-            : sorted.filter(object => (object.oclass || objectClassForType(object.otyp)) === oclass);
-        if (!members.length) continue;
-        const items = [];
-        for (const object of members) {
-            consumeHallucinatedMenuObjectGlyph(object);
-            items.push({
-                ...(first && objectClassForType(object.otyp) === COIN_CLASS ? { key: '$' } : {}),
-                text: await inventoryItemDescription(object), value: object,
-            });
-            first = false;
-        }
-        sections.push({ heading: oclass === null ? null : objectClassHeading(oclass), items });
-    }
-    if (engulfer) sections.push(engulfedHeroMenuSection(engulfer));
-    await showInventoryWindow(sections, { title });
+    await queryObjlist(`${possessiveName(name)} possessions:`, inventory, {
+        qflags: INVORDER_SORT | (engulfer ? INCLUDE_HERO : 0),
+        how: PICK_NONE,
+        allow: () => true,
+        describe: (object: GameObject) => inventoryItemDescription(object),
+        state,
+        engulfer,
+        observeRows: false,
+    });
 }
 
 // C zap.c:get_obj_location().
@@ -2893,7 +2873,16 @@ export async function probeObject(object: GameObject, { state = game }: { state?
             object.cknown = false;
         } else {
             for (const content of object.contents) observeObject(content, state);
-            await showProbedObjectInventory(object.contents, `Contents of ${await probedContentsTitle(object, state)}:`, { state });
+            // display_cinventory() passes INVORDER_SORT with allow_all().
+            await queryObjlist(`Contents of ${await probedContentsTitle(object, state)}:`,
+                object.contents, {
+                    qflags: INVORDER_SORT,
+                    how: PICK_NONE,
+                    allow: () => true,
+                    describe: (content: GameObject) => inventoryItemDescription(content),
+                    state,
+                    observeRows: false,
+                });
         }
         learned = true;
     } else if (object.otyp === TIN) {

@@ -93,7 +93,7 @@ import { restoreLevelRegions, resetRegionMonsterIds } from './region.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency, shopkeeperInOwnShop } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { addFruit } from './message_types.js';
-import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously, set_corpsenm } from './mkobj.js';
+import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously, set_corpsenm, fobjChain } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt, Invocation_lev } from './dungeon.js';
 import { bonesLevelId, bonesStorageKey, deleteBonesLevel, openBonesFile } from './novel_tribute.js';
@@ -594,17 +594,10 @@ function eachTopLevelBonesObject(level: GameMap, visit: (object: GameObject) => 
         for (const object of monster.minvent || monster.inventory || [])
             visit(object);
     }
-    for (const object of bonesFloorObjects(level)) visit(object);
+    for (const object of fobjChain(level)) visit(object);
     for (const object of level?.buriedObjects || []) visit(object);
 }
 
-// Port only: flatten the floor grid into C's fobj chain order.
-function bonesFloorObjects(level: GameMap): GameObject[] {
-    const objects: GameObject[] = [];
-    for (const column of level.objects)
-        for (const pile of column ?? []) objects.push(...(pile ?? []));
-    return objects.sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
-}
 
 // Part of C bones.c:savebones(), bones.c:getbones(): the recursive
 // contents walk over every saved or restored chain.
@@ -766,7 +759,7 @@ function resetBonesObjects(level: GameMap, mode: 'save' | 'restore'): void {
         monster.minvent = monster.inventory = inventory;
         monster.hasInventory = inventory.length > 0;
     }
-    const retained = new Set(resetobjs(bonesFloorObjects(level), restore));
+    const retained = new Set(resetobjs(fobjChain(level), restore));
     for (const column of level.objects) {
         if (!column) continue;
         for (let y = 0; y < column.length; y++)
@@ -958,7 +951,7 @@ async function renewBonesIdentities(level: GameMap, fruits: readonly Fruit[]): P
         for (const object of monster.minvent || monster.inventory || [])
             await renewObject(object);
     }
-    for (const object of bonesFloorObjects(level)) await renewObject(object);
+    for (const object of fobjChain(level)) await renewObject(object);
     for (const object of level?.buriedObjects || []) await renewObject(object);
 
     for (const monster of level?.monsters || []) {

@@ -41,7 +41,7 @@ import { delobj } from './invent.js';
 import { gotoLevel } from './do.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { On_ladder, On_stairs, stairwayAt } from './stairs.js';
-import { addBuriedObject, createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
+import { addBuriedObject, createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously, floorPileAt } from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
@@ -720,10 +720,6 @@ function boulderAt(x: number, y: number, state: GameState): GameObject | null {
         object => object.otyp === BOULDER) || null;
 }
 
-// Part of C dig.c:digactualhole(): the level.objects[x][y] pile accesses.
-function pileAt(x: number, y: number, state: GameState): GameObject[] {
-    return state.level?.objects?.[x]?.[y] || [];
-}
 
 
 // Part of C dig.c:digactualhole(): the Levitation || Flying test.
@@ -1040,11 +1036,11 @@ export async function digActualHole(
     }
     const shopdoor = IS_DOOR(oldTyp)
         && roomsAt(state.level, x, y, SHOPBASE).length > 0;
-    const oldTopObject = pileAt(x, y, state)[0] ?? null;
+    const oldTopObject = floorPileAt(x, y, state)[0] ?? null;
 
     const trap = await maketrap(x, y, ttyp);
     if (!trap) return;
-    const newObjects = pileAt(x, y, state);
+    const newObjects = floorPileAt(x, y, state);
     trap.madeby_u = herosFault;
     trap.tseen = 0;
     if (cansee(x, y)) await seeTrap(trap, state);
@@ -1229,7 +1225,7 @@ export async function liquidFlow(
             fillMessage.replace('%s', liquidName(typ, state)));
     }
     // handle object damage before hero damage; affects potential bones
-    const pile = pileAt(x, y, state);
+    const pile = floorPileAt(x, y, state);
     if (pile.length) {
         if (typ === LAVAPOOL) {
             await fireDamageChain(pile, {

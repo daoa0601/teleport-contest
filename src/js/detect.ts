@@ -35,6 +35,7 @@ import { displayMessageWindow, flushPendingTopline } from './topl.js';
 import { formatFeltMessage, formatSeenMessage, pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import { A_INT, M_AP_FURNITURE, TER_FULL, TREE, BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TOE, FOOT, NOSE } from './const.js';
 import { isok, ynSingleKey } from './cmd.js';
+import { fobjChain } from './mkobj.js';
 import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
 import { definiteName, objectCombatName, verbForSubject, withIndefiniteArticle, makePlural } from './objnam.js';
 import { makeBlinded, makeConfused, makeHallucinated, strangeFeelingMessage } from './potion.js';
@@ -1784,10 +1785,9 @@ function atHero(x: number, y: number, state: PlayingGameState): boolean { return
 function floorTraps(state: PlayingGameState) { return [...(state.level.traps || [])].reverse(); }
 
 // Part of C detect.c:gold_detect(), food_detect(), object_detect(): the
-// fobj walk, newest first.
+// fobj walk, newest first, through the shared floor-chain iterator.
 function floorObjects(state: PlayingGameState) {
-    return state.level.objects.flatMap(column => column?.flatMap(pile => pile || []) || [])
-        .sort((a, b) => (b._fobjOrder || 0) - (a._fobjOrder || 0));
+    return fobjChain(state.level);
 }
 
 // Part of C detect.c:gold_detect(), monster_detect(), food_detect(): the

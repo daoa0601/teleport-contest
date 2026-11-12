@@ -36,7 +36,7 @@ import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_
 import { isok, commandResultCancelled, setMulti } from './cmd.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { dropObjectAtHero } from './do.js';
-import { splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent, nextObjectId, objectWeight, quantity, placeObject, remove_object, billDummyObject, } from './mkobj.js';
+import { splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent, nextObjectId, objectWeight, quantity, placeObject, remove_object, billDummyObject, floorPileAt, } from './mkobj.js';
 import { recordAchievement } from './insight.js';
 import { getObjectLocation } from './zap.js';
 import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
@@ -1138,10 +1138,6 @@ export const REPAIR_DELAY = 5;
 const ANGRY_TEXTS = ['quite upset', 'ticked off', 'furious'];
 // C rm.h:m_at() via steed.ts:monsterAtPosition(): the occupant of a
 // square (the occupancy model is documented there).
-// C display.h:vobj_at(): the object pile at a square.
-function objectsAt(state, x, y) {
-    return state.level?.objects?.[x]?.[y] || [];
-}
 // Part of C shk.c:muteshk(): the msound read.
 function monsterSound(monster) {
     return MONSTER_SOUND[monster?.mnum] ?? 0;
@@ -1871,7 +1867,7 @@ function litterGetpos(x, y, keeper, state) {
     const location = state.level.at(x, y);
     if (!location)
         throw new Error(`Shop repair square (${x}, ${y}) is outside the level.`);
-    if (objectsAt(state, x, y).length > 0
+    if (floorPileAt(x, y, state).length > 0
         && !IS_ROOM(location.typ)) {
         for (let i = 0; i < 9; i++) {
             const ix = x + horiz(i);
@@ -1904,7 +1900,7 @@ async function litterScatter(litter, x, y, keeper, state) {
         await placeBallAndChain(state);
     }
     for (;;) {
-        const object = objectsAt(state, x, y)[0];
+        const object = floorPileAt(x, y, state)[0];
         if (!object)
             break;
         // Don't mess with boulders: merge them into the wall.

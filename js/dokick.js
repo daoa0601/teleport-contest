@@ -26,7 +26,7 @@ import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, req
 import { flyKickedObject } from './thrown_object.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
-import { addToMigration, mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, objectQuantity, quantity, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
+import { addToMigration, mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, objectQuantity, quantity, placeCreatedObject, placeObject, remove_object, isContainer, floorPileAt } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { convertSecretDoor, findTrap } from './detect.js';
 import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
@@ -1528,16 +1528,12 @@ function squareIsVisible(state, x, y) {
         return cansee(x, y);
     return !state.viz_array || !!((state.viz_array[y]?.[x] ?? 0) & 0x2);
 }
-// Part of C dokick.c:impact_drop(): the level.objects[x][y] pile access.
-function pileAt(state, x, y) {
-    return state.level?.objects?.[x]?.[y] || [];
-}
 // Part of C dokick.c:impact_drop(): the pile scan for the chain and the
 // object count.
 function pileImpact(state, object, x, y) {
     let count = 0;
     let chainThere = false;
-    for (const candidate of pileAt(state, x, y)) {
+    for (const candidate of floorPileAt(x, y, state)) {
         if (candidate === state.uchain || candidate === state.u?.uchain) {
             chainThere = true;
         }
@@ -1591,7 +1587,7 @@ export async function impactDrop(missile, x, y, { state = requireInitializedGame
         gate.arrival = MIGR_WITH_HERO;
         gate.destination = { ...gate.destination, dlevel: destinationLevel };
     }
-    const pile = [...pileAt(state, x, y)];
+    const pile = [...floorPileAt(x, y, state)];
     const shop = costlySpot(x, y, state);
     const owner = shop?.resident;
     const debit = owner?.eshk.debit ?? 0;

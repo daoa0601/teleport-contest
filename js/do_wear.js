@@ -18,7 +18,7 @@ import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery, cmdq_pop, 
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects, finishHeroHelplessness } from './hack.js';
 import { stopHeroOccupation } from './allmain.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
-import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Is_waterlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, CMDQ_KEY, TIMEOUT, } from './const.js';
+import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Is_waterlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD, LL_MINORAC, CMDQ_KEY, TIMEOUT, USE_INVLET, INVORDER_SORT, PICK_ANY, } from './const.js';
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt, isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable, greatestErosion } from './object_properties.js';
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part, floatVsFlight, livelogNewform } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
@@ -50,7 +50,7 @@ import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { changeHeroAlignment, currentAttribute, attributeIsAtLimit, exerciseAttribute, changeHeroLuck } from './attrib.js';
-import { encumber_msg, heroIsSafeFromFatalCorpse, ST_CORPSE, ST_PETRIFIES } from './pickup.js';
+import { encumber_msg, heroIsSafeFromFatalCorpse, queryObjlist, ST_CORPSE, ST_PETRIFIES } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName, objectMonsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty } from './properties.js';
@@ -847,31 +847,19 @@ export async function selectBulkTakeoff(selectOff) {
             await plineWithContinuation('There is nothing else you can remove or unwield.');
         return;
     }
-    const sorted = sortObjects(worn, { mode: inventorySortMode() });
-    const sections = [];
-    for (const oclass of inventoryClassOrder()) {
-        const objects = sorted.filter(object => object.oclass === oclass);
-        if (!objects.length)
-            continue;
-        const items = [];
-        for (const object of objects) {
-            observeObjectForNaming(object);
-            consumeHallucinatedMenuObjectGlyph(object);
-            items.push({
-                key: object.invlet ?? '#',
-                groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] ?? '',
-                text: await objectDescription(object, { withPrice: true }),
-                value: object,
-            });
-        }
-        sections.push({ heading: objectClassHeading(oclass), items });
-    }
+    // menu_remarm() passes SIGNAL_NOMENU | USE_INVLET | INVORDER_SORT with
+    // is_worn_by_type(); the worn filter and categories are the caller's
+    // worn list above.
     const underlay = snapshotMenuUnderlay();
-    const selected = await showMultiSelectWindow({
-        title: 'What do you want to take off?', sections, returnCounts: true,
+    const selected = await queryObjlist('What do you want to take off?', worn, {
+        qflags: USE_INVLET | INVORDER_SORT,
+        how: PICK_ANY,
+        allow: () => true,
+        describe: (object) => objectDescription(object, { withPrice: true }),
+        groupAccelerators: true,
     });
     restoreMap(underlay);
-    for (const selection of selected)
+    for (const selection of selected ?? [])
         await selectOff(selection.value);
 }
 // Part of C do_wear.c:menu_remarm(): the worn (W_TAKEOFF) inventory.

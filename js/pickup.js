@@ -1,4 +1,5 @@
 // C pickup.c: command pickup, automatic pickup, floor inspection,
+// query_objlist() (the shared object-list menu owner).
 import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
 import { objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
@@ -10,15 +11,15 @@ import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription, makePlural, withIndefiniteArticle, wishedObjectPresentation, ownedObjectAction, definiteObjectAction, ownedObjectQuestion, corpseName, killerObjectName, } from './objnam.js';
 import { autokey, autoUnlockFlags, pickLock, isForceableWeapon, changeBoxLockByMagic } from './lock.js';
-import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND, MM_ADJACENTOK, MM_NOMSG, NO_MINVENT, FOOT } from './const.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, bucCategory, } from './invent.js';
+import { AUTOSELECT_SINGLE, CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, FEEL_COCKATRICE, INCLUDE_HERO, INVORDER_SORT, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ANY, PICK_NONE, PICK_ONE, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SIGNAL_ESCAPE, SORTLOOT_INVLET, SORTLOOT_PETRIFY, USE_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND, MM_ADJACENTOK, MM_NOMSG, NO_MINVENT, FOOT } from './const.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, engulfedHeroMenuSection, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, bucCategory, } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero, landObjectOnAltar } from './do.js';
-import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm } from './mkobj.js';
+import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm, fobjChain, floorPileAt } from './mkobj.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, newsym_force, canSpotMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { getLine, showMultiSelectWindow, showDisclosureOverlay, showChoiceWindow } from './windows.js';
+import { getLine, showMultiSelectWindow, showInventoryWindow, showDisclosureOverlay, showChoiceWindow } from './windows.js';
 import { snapshotMenuUnderlay, restoreMenuUnderlay, showTextWindow } from './wintty.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNoQuit, promptChoice } from './query.js';
@@ -266,71 +267,144 @@ async function pickUpTraditionally(source, count) {
         await newsym_force(source.x, source.y);
     return { attempted };
 }
-// C pickup.c:query_objlist() for the pickup menu; its n_or_more() filter
-// (count >= reference) is the quantity filter below.
-async function choosePickupObjects(source, objects, count, { autoSelect = true, feelCockatrice = !count, groupByClass = game.flags.sortpack !== false } = {}) {
-    const eligible = count
-        ? objects.filter(object => objectQuantity(object) >= count) : objects;
-    if (!eligible.length)
+export async function queryObjlist(qstr, olist, options) {
+    const { qflags, how, allow, describe, state = game, engulfer = null, extraClasses = [], groupAccelerators = false, observeRows = true, counts = how === PICK_ANY, pageLocalKeys = false, headerLine = null, } = options;
+    if ((qflags & INCLUDE_HERO) !== 0 && how !== PICK_NONE)
+        throw new TypeError('INCLUDE_HERO is only reached with a displayed inventory');
+    const allowed = olist.filter(allow);
+    // the engulfer's worn singleton loses the autoselect shortcut.
+    // pickup.c:1069-1070: nothing to pick means no window at all, unless
+    // the engulfer's fake hero row still has something to show.
+    if (!allowed.length && !((qflags & INCLUDE_HERO) !== 0 && engulfer))
         return [];
-    const onlyObject = eligible[0];
-    if (autoSelect && eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
-        return [{ value: onlyObject, count: count || objectQuantity(onlyObject) }];
-    const ordered = orderedPickupObjects(eligible);
+    if ((qflags & AUTOSELECT_SINGLE) !== 0 && allowed.length === 1
+        && !(engulfer && olist[0]?.owornmask)) {
+        const only = allowed[0];
+        if (only)
+            return [{ value: only, count: objectQuantity(only) }];
+    }
+    // pickup.c:1079-1086: sortloot() over the chain with the allow filter;
+    // FEEL_COCKATRICE also keeps petrifying corpses that the filter drops.
+    const sorted = sortObjects(olist, {
+        mode: lootSortMode({ inventoryLetters: (qflags & USE_INVLET) !== 0, state })
+            | ((qflags & FEEL_COCKATRICE) !== 0 ? SORTLOOT_PETRIFY : 0),
+        state,
+        filter: allow,
+    });
+    const classOf = (object) => object.oclass || objectClassForType(object.otyp);
+    // pickup.c:1102-1143: one pass per inv_order class under INVORDER_SORT,
+    // otherwise a single unheaded pass in sorted order.
+    const classes = (qflags & INVORDER_SORT) !== 0
+        ? [...inventoryClassOrder(state), ...extraClasses]
+        : [null];
     const sections = [];
-    let letterCode = 'a'.charCodeAt(0);
-    let firstItem = true;
-    const headings = groupByClass ? pickupClassOrder() : [null];
-    for (const heading of headings) {
-        const items = heading === null ? ordered
-            : ordered.filter(object => pickupObjectClass(object) === heading);
-        if (!items.length)
+    let nextLetter = 0;
+    let firstRow = true;
+    for (const oclass of classes) {
+        const members = oclass === null ? sorted
+            : sorted.filter(object => classOf(object) === oclass);
+        if (!members.length)
             continue;
-        const menuItems = [];
-        for (const object of items) {
-            // query_objlist() names preceding entries before reverting to look_here().
-            if (feelCockatrice && willFeelPetrifyingCorpse(object)) {
-                if (source.monster)
+        const items = [];
+        for (const object of members) {
+            // pickup.c:1111-1117: feel a petrifying corpse before the menu
+            // reverts to look_here().
+            if ((qflags & FEEL_COCKATRICE) !== 0 && object.otyp === CORPSE
+                && willFeelPetrifyingCorpse(object)) {
+                if (engulfer)
                     await lookHere(0);
                 else
                     await dolook();
                 return [];
             }
-            const isFirstGold = firstItem && object.otyp === GOLD_PIECE;
-            firstItem = false;
+            // pickup.c:1134-1135: the first displayed row keeps the C '$'
+            // selector when it is gold; USE_INVLET rows keep their letter;
+            // a multi-select without USE_INVLET gets sequential letters,
+            // and a page-local menu leaves them to the tty layer.
+            const firstGold = firstRow && classOf(object) === COIN_CLASS;
+            firstRow = false;
+            const key = (qflags & USE_INVLET) !== 0 ? object.invlet ?? '#'
+                : firstGold ? '$'
+                    : how !== PICK_NONE && !pageLocalKeys
+                        ? String.fromCharCode(97 + nextLetter++) : undefined;
+            if (observeRows)
+                observeObjectForNaming(object, { state });
+            // pickup.c:1131: obj_to_glyph() consumes the display RNG per
+            // row while hallucinating, before doname_with_price().
             consumeHallucinatedMenuObjectGlyph(object);
-            observeObjectForNaming(object);
-            menuItems.push({
-                key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
-                groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
-                text: await pricedFloorObjectDescription(object),
+            items.push({
+                ...(key === undefined ? {} : { key }),
+                ...(groupAccelerators
+                    ? { groupAccelerator: OBJECT_CLASS_SYMBOLS[classOf(object)] || '' } : {}),
+                text: await describe(object),
                 value: object,
             });
         }
-        sections.push({ heading, items: menuItems });
+        sections.push({ heading: oclass === null ? null : objectClassHeading(oclass), items });
     }
-    // C query_objlist() shows the menu without flushing: pending glyph
-    // buffer updates (e.g. the moveloop boundary's hallucination redraws)
-    // stay invisible until the next real flush_screen().
+    // pickup.c:1146-1164: the INCLUDE_HERO fake hero row closes the list.
+    const heroSection = (qflags & INCLUDE_HERO) !== 0 && engulfer
+        ? engulfedHeroMenuSection(engulfer) : null;
+    if (how === PICK_NONE) {
+        await showInventoryWindow(heroSection ? [...sections, heroSection] : sections, { title: qstr });
+        return [];
+    }
     const menu = {
-        title: count ? `Pick ${count} of what?` : 'Pick up what?',
-        sections,
-        omitHeadings: !groupByClass,
+        title: qstr ?? '', sections,
+        omitHeadings: (qflags & INVORDER_SORT) === 0,
+        introLines: headerLine === null ? [] : [headerLine],
+        // The adapter flag only relaxes its own selector requirement
+        // (windows.ts); this owner leaves a row without a selector only
+        // for a page-local menu, so keyed rows are unaffected.
+        pageLocalKeys: true,
+        pickOne: how === PICK_ONE,
+        returnCounts: true,
     };
-    const selected = count
-        ? (await showMultiSelectWindow({ ...menu, pickOne: true })).map(value => ({ value, count }))
-        : await showMultiSelectWindow({ ...menu, returnCounts: true });
-    const allowed = [];
+    // pickup.c:1166-1168: end_menu(qstr) and select_menu(how).  An escaped
+    // menu signals -2 under SIGNAL_ESCAPE.
+    if ((qflags & SIGNAL_ESCAPE) !== 0) {
+        const escaped = await showMultiSelectWindow({ ...menu, signalEscape: true });
+        return escaped;
+    }
+    const selected = await showMultiSelectWindow({ ...menu, signalEscape: false });
+    // pickup.c:1185-1188: the engulfer's worn objects leave the pick list
+    // with a complaint instead.
+    if (!engulfer)
+        return selected;
+    const picks = [];
     for (const selection of selected) {
-        if (source.monster && selection.value.owornmask) {
-            observeObjectForNaming(selection.value);
-            const name = ownedSimpleObjectName(selection.value, game, { capitalized: false });
+        if (selection.value.owornmask) {
+            observeObjectForNaming(selection.value, { state });
+            const name = ownedSimpleObjectName(selection.value, state, { capitalized: false });
             await plineWithContinuation(`You can't pick ${name} up.`);
         }
         else
-            allowed.push(selection);
+            picks.push(selection);
     }
-    return allowed;
+    return picks;
+}
+// Part of C pickup.c:pickup(): its query_objlist() calls — the count filter
+// is n_or_more(), the plain menu's all_but_uchain() filter is the caller's
+// uchain-free pile — with pickup()'s count override for the counted menu.
+async function choosePickupObjects(source, objects, count, { autoSelect = true, feelCockatrice = !count, groupByClass = game.flags.sortpack !== false } = {}) {
+    const qflags = (autoSelect ? AUTOSELECT_SINGLE : 0)
+        | (groupByClass ? INVORDER_SORT : 0)
+        | (feelCockatrice ? FEEL_COCKATRICE : 0);
+    const selected = await queryObjlist(count ? `Pick ${count} of what?` : 'Pick up what?', objects, {
+        qflags,
+        how: count ? PICK_ONE : PICK_ANY,
+        allow: count ? (object) => objectQuantity(object) >= count : () => true,
+        // query_objlist() names each row with doname_with_price().
+        describe: pricedFloorObjectDescription,
+        engulfer: source.monster,
+        extraClasses: [VENOM_CLASS, RANDOM_CLASS],
+        groupAccelerators: true,
+        counts: !count,
+    });
+    if (!selected)
+        return [];
+    // pickup.c:770-772: a counted query's picks all use that count.
+    return count ? selected.map(pick => ({ value: pick.value, count })) : selected;
 }
 // C pickup.c:pickup_object(): remote tools lift the original floor stack.
 export async function pickupFloorObject(object, count, telekinesis = false) {
@@ -501,7 +575,7 @@ export function pickupSourceAtHero() {
     }
     return {
         x, y, monster: null,
-        objects: game.level?.objects?.[x]?.[y] || [],
+        objects: x === undefined || y === undefined ? [] : floorPileAt(x, y),
     };
 }
 // C pickup.c:all_but_uchain().
@@ -1711,9 +1785,7 @@ export async function reverseLoot() {
 // Part of C pickup.c:reverse_loot(): the throne room's royal coffer.
 function royalCoffers() {
     const { ux: x, uy: y } = game.u;
-    const chests = requireGameLevel().objects.flatMap(column => column?.flatMap(pile => pile ?? []) ?? [])
-        .filter(object => object.otyp === CHEST)
-        .sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
+    const chests = fobjChain(requireGameLevel()).filter(object => object.otyp === CHEST);
     const royal = chests.find(object => object.spe === 2);
     if (royal)
         return royal;
@@ -1890,50 +1962,22 @@ export async function chooseObjectCategories(title, objects) {
     }
     return { matchers, autoSelect, ...(picked ? { justPickedCount: Math.max(0, picked.count) } : {}) };
 }
-// Part of C pickup.c:query_objlist(): the menu sections and their rows.
-async function selectionSections(objects, useInventoryLetters) {
-    const ordered = sortObjects(objects, {
-        mode: lootSortMode({ inventoryLetters: useInventoryLetters }),
-    });
-    for (const object of ordered)
-        observeObjectForNaming(object);
-    let nextLetter = 0;
-    const groups = game.flags.sortpack === false ? [{ name: null, members: ordered }]
-        : objectsByClass(ordered);
-    const sections = [];
-    for (const group of groups) {
-        const items = [];
-        for (const object of group.members) {
-            // pickup.c:query_objlist() draws obj_to_glyph() for every menu
-            // item before naming it, which consumes a display-RNG draw per
-            // item while hallucinating.
-            consumeHallucinatedMenuObjectGlyph(object);
-            items.push({
-                key: object.otyp === GOLD_PIECE ? '$'
-                    : useInventoryLetters && object.invlet
-                        ? object.invlet
-                        : String.fromCharCode(97 + nextLetter++),
-                // pickup.c:query_objlist() names menu entries with
-                // doname_with_price(), so shop goods inside a floor
-                // container are quoted "for sale".
-                text: await lootObjectDescription(object, inventoryPrimaryHandDetail(object), true),
-                value: object,
-            });
-        }
-        sections.push({ heading: group.name, items });
-    }
-    return sections;
-}
-// Part of C pickup.c:query_objlist(): the counted object menu.
+// Part of C pickup.c:menu_loot(): its query_objlist() call over the
+// container or the inventory.  USE_INVLET follows the put-in side; C gates
+// it on flags.invlet_constant, which the port's letters keep off that
+// gate.  The class loop follows sortpack, as the earlier port grouped.
 async function chooseObjects(title, objects, useInventoryLetters) {
-    if (!objects.length)
-        return [];
-    return showMultiSelectWindow({
-        title,
-        sections: await selectionSections(objects, useInventoryLetters),
-        omitHeadings: game.flags.sortpack === false,
-        returnCounts: true,
+    const selected = await queryObjlist(title, objects, {
+        qflags: (useInventoryLetters ? USE_INVLET : 0)
+            | (game.flags.sortpack !== false ? INVORDER_SORT : 0),
+        how: PICK_ANY,
+        allow: () => true,
+        // query_objlist() names menu entries with doname_with_price(), so
+        // shop goods inside a floor container are quoted "for sale".
+        describe: (object) => lootObjectDescription(object, inventoryPrimaryHandDetail(object), true),
+        extraClasses: [VENOM_CLASS, RANDOM_CLASS],
     });
+    return selected ?? [];
 }
 // C pickup.c:mbag_explodes(): does a bag-of-holding nest explode?
 export function magicBagExplodes(object, depth = 0) {

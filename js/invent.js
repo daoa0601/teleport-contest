@@ -1,7 +1,8 @@
 // invent.js — the invent.c owner: inventory admission (addinv/freeinv/
 // assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
 // views, look_here()/dolook(), doorganize/#adjust, and stack merging,
-// delallobj(), g_at(), wearing_armor(), and o_on().
+// delallobj(), g_at(), wearing_armor(), and o_on(), plus
+// display_pickinv()'s wizid branch (the wizard Debug Identify menu).
 // C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
 // look_here(), doorganize(), dolook(), delallobj(), g_at().
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
@@ -15,19 +16,19 @@ import { hideUnhideMessageTypes } from './message_types.js';
 import { inventoryActionForObject, itemReadingText } from './iactions.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, objectNeedsFullIdentification, observeObjectForNaming, simpleObjectName, singularObjectName, erosionMatters, objectUsesCharges, } from './objnam.js';
-import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, placeObject, objectWeight, isContainer, announceGlobMerge, } from './mkobj.js';
-import { ATTRIBUTE_DISPLAY_ORDER, setMoreLuck } from './attrib.js';
+import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, placeObject, objectWeight, isContainer, announceGlobMerge, floorPileAt, } from './mkobj.js';
+import { ATTRIBUTE_DISPLAY_ORDER, exerciseAttribute, setMoreLuck } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, transientMonsterGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './topl.js';
-import { showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin } from './wintty.js';
+import { showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './wintty.js';
 import { pline, plineWithContinuation, impossible } from './pline.js';
-import { getLine, showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
+import { getLine, addMenuHeading, showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import { nhgetch } from './input.js';
 import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, getCount, GC_SAVEHIST, GC_ECHOFIRST, GC_CONDHIST, ynSingleKey, yn_function } from './cmd.js';
-import { recorderSort, ingSuffix, possessiveName } from './hacklib.js';
+import { recorderSort, ingSuffix, possessiveName, visibleCommandKey } from './hacklib.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
-import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME, HAND, FINGER, STOMACH } from './const.js';
+import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, A_WIS, BY_NEXTHERE, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, INCLUDE_HERO, INVORDER_SORT, Is_airlevel, Is_waterlevel, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE, SIGNAL_ESCAPE, USE_INVLET, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME, HAND, FINGER, STOMACH } from './const.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { levelPrizeKind } from './level_prize.js';
 import { recordLiteracy } from './literacy.js';
@@ -48,7 +49,7 @@ import { surfaceName } from './dungeon.js';
 import { stairwayDescription } from './stairs.js';
 import { deityName } from './pray.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
-import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';
+import { forceDescribeDecor, pickupBurden, encumber_msg, queryObjlist } from './pickup.js';
 import { visibleRegionAt } from './region.js';
 import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion, trapAt } from './trap.js';
 import { heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem, } from './mondata.js';
@@ -68,7 +69,7 @@ import { NO_COLOR } from './terminal.js';
 import { maybeUnhideAt, hideHeroUnder, isReviver, } from './mon.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
-import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';
+import { objectResistsDestruction } from './zap.js';
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 const PM_LICHEN = 158;
 const DAGGER_TYPES = new Set([DAGGER, ELVEN_DAGGER, ORCISH_DAGGER]);
@@ -1757,28 +1758,22 @@ async function typeInventory() {
         await pline(`You have no ${before}objects${after}.`);
         return null;
     }
-    const sorted = sortObjects(candidates, { mode: lootSortMode({ inventoryLetters: game.flags.fixinv !== false }) });
-    const order = [...inventoryClassOrder(), VENOM_CLASS];
-    const sections = [];
-    for (const oclass of order) {
-        const objects = sorted.filter(object => object.oclass === oclass);
-        if (!objects.length)
-            continue;
-        const items = [];
-        for (const object of objects) {
-            observeObjectForNaming(object);
-            consumeHallucinatedMenuObjectGlyph(object);
-            items.push({ ...(game.flags.fixinv !== false ? { key: object.invlet ?? '#' }
-                    : object === sorted[0] && object.oclass === COIN_CLASS ? { key: '$' } : {}),
-                groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '', value: object,
-                text: await inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }) });
-        }
-        sections.push({ heading: objectClassHeading(oclass), items });
-    }
-    const selected = await showMultiSelectWindow({ title: '',
-        introLines: status ? [`Items ${(before || after).trim()}:`] : [],
-        sections, pageLocalKeys: true, pickOne: true });
-    const object = selected[0];
+    // dotypeinv() passes (invlet_constant ? USE_INVLET : 0) |
+    // INVORDER_SORT | INCLUDE_VENOM with this_type_only() as the allow
+    // filter, which the caller's candidates already carry.
+    const useInvlet = game.flags.fixinv !== false;
+    const selected = await queryObjlist('', candidates, {
+        qflags: (useInvlet ? USE_INVLET : 0) | INVORDER_SORT,
+        how: PICK_ONE,
+        allow: () => true,
+        describe: (object) => inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }),
+        extraClasses: [VENOM_CLASS],
+        groupAccelerators: true,
+        pageLocalKeys: !useInvlet,
+        counts: false,
+        headerLine: status ? `Items ${(before || after).trim()}:` : null,
+    });
+    const object = (selected ?? [])[0]?.value;
     return object ? inventoryActionForObject(object) : null;
 }
 // C invent.c:dfeature_at(): name the dungeon feature on a square, if any.
@@ -1895,7 +1890,7 @@ export async function lookHere(objectCount = 0, { pickedSome = false, skipFeatur
         }
     }
     const feature = hideFeature ? '' : dungeonFeatureSentence(featureName);
-    const objects = isLavaAt(x, y) || (isPoolAt(x, y) && !underwater) ? [] : level.objects[x]?.[y] ?? [];
+    const objects = isLavaAt(x, y) || (isPoolAt(x, y) && !underwater) ? [] : floorPileAt(x, y);
     if (!objects.length) {
         if (feature)
             await plineWithContinuation(feature);
@@ -2463,27 +2458,17 @@ async function displayMonsterInventory(monster, objects, location, blind) {
     // supplies another title, so the perceived owner still changes.
     monsterName(monster, { article: 'your', suppressIt: true, capitalized: true,
         suppressSaddle: !!MGIVENNAME(monster) });
-    const ordered = sortObjects(objects, { mode: lootSortMode() });
-    const sections = [];
-    let first = true;
-    for (const oclass of [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS]) {
-        const objects = ordered.filter(object => object.oclass === oclass);
-        if (!objects.length)
-            continue;
-        const items = [];
-        for (const object of objects) {
-            observeObjectForNaming(object);
-            consumeHallucinatedMenuObjectGlyph(object);
-            const firstGold = first && object.otyp === GOLD_PIECE;
-            first = false;
-            items.push({ ...(firstGold ? { key: '$' } : {}),
-                text: await inventoryItemDescription(object), value: object });
-        }
-        sections.push({ heading: objectClassHeading(oclass), items });
-    }
-    sections.push(engulfedHeroMenuSection(monster));
-    await showInventoryWindow(sections, { title: blind ? 'You feel:'
-            : `Contents of ${location}:` });
+    // display_minventory() wraps its query_objlist() in iflags.suppress_price,
+    // so its rows carry no shop prices.
+    await queryObjlist(blind ? 'You feel:' : `Contents of ${location}:`, objects, {
+        qflags: INVORDER_SORT | INCLUDE_HERO,
+        how: PICK_NONE,
+        allow: () => true,
+        describe: (object) => inventoryItemDescription(object),
+        engulfer: monster,
+        extraClasses: [VENOM_CLASS, RANDOM_CLASS],
+        groupAccelerators: false,
+    });
 }
 // C invent.c:cinv_doname(): the probing contents menu names the box with
 // "trapped" inserted before its lock state even though doname() already
@@ -2504,7 +2489,7 @@ export async function probedContentsTitle(object, state) {
 // Also C invent.c:only_here(): inlined as the buried-objects filter by
 // (x, y) below.
 export async function displayBuriedInventory(x, y, state) {
-    const pile = state.level.objects[x]?.[y] || [];
+    const pile = floorPileAt(x, y, state);
     let underwhat = 'here', count = 0;
     if ((isPoolAt(x, y, state) || isLavaAt(x, y, state)) && !(state.underwater || state.u.uinwater) && pile.length) {
         const liquid = displayLiquidName(isPoolAt(x, y, state) ? 'water' : 'lava', state);
@@ -2518,15 +2503,32 @@ export async function displayBuriedInventory(x, y, state) {
             underwhat = plural || pair_of(object) ? 'under them' : 'beneath it';
         }
         else {
-            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, { state, groupByClass: false });
+            // display_binventory() passes BY_NEXTHERE with allow_all(): the
+            // square's whole pile, without class headings.
+            await queryObjlist(`Things that are under the ${liquid} here:`, pile, {
+                qflags: BY_NEXTHERE,
+                how: PICK_NONE,
+                allow: () => true,
+                describe: (object) => inventoryItemDescription(object),
+                state,
+                observeRows: false,
+            });
             underwhat = 'beneath them';
         }
     }
+    // C's only_here() filter keeps the buried chain's objects at (x, y).
     const buried = (state.level.buriedObjects || []).filter(object => object.ox === x && object.oy === y);
     for (const object of buried)
         observeObject(object, state);
     if (buried.length)
-        await showProbedObjectInventory(buried, `Things that are buried ${underwhat}:`, { state });
+        await queryObjlist(`Things that are buried ${underwhat}:`, buried, {
+            qflags: INVORDER_SORT,
+            how: PICK_NONE,
+            allow: () => true,
+            describe: (object) => inventoryItemDescription(object),
+            state,
+            observeRows: false,
+        });
     return count + buried.length;
 }
 // Part of C objnam.c:obj_typename(): the class-qualified type name ("potion
@@ -2878,21 +2880,19 @@ function matchesIdentificationCategories(object, categories) {
 async function identificationMenu(candidates, first) {
     await flushPendingTopline();
     clearMessageWindow();
-    const sections = (await inventorySections(candidates, false)).map(section => ({
-        ...section,
-        items: section.items.map(item => {
-            if (item.key === undefined)
-                throw new Error('Identification item has no inventory letter');
-            const object = candidates.find(candidate => candidate.invlet === item.key);
-            if (!object)
-                throw new Error(`No inventory object for identification letter ${item.key}`);
-            return { ...item, key: item.key, value: object };
-        }),
-    }));
-    return await showMultiSelectWindow({
-        title: `What would you like to identify ${first ? 'first' : 'next'}?`,
-        sections, signalEscape: true,
+    // menu_identify() passes SIGNAL_NOMENU | SIGNAL_ESCAPE | USE_INVLET |
+    // INVORDER_SORT with not_fully_identified(); gold stays out of the
+    // identification menu (include_gold FALSE below), and the port's
+    // display_pickinv grouping follows sortpack where C always groups.
+    const selected = await queryObjlist(`What would you like to identify ${first ? 'first' : 'next'}?`, candidates, {
+        qflags: USE_INVLET | SIGNAL_ESCAPE
+            | (game.flags.sortpack !== false ? INVORDER_SORT : 0),
+        how: PICK_ANY,
+        allow: (object) => object.oclass !== COIN_CLASS,
+        describe: (object) => inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }),
+        counts: false,
     });
+    return selected ? selected.map(pick => pick.value) : null;
 }
 // Part of C invent.c:xprname(): the BUC adjective.
 export function bucAdjectiveForName(item) {
@@ -2942,6 +2942,113 @@ async function rerollFallbackPrompt() {
         if ([27, 32, 10, 13].includes(key))
             return false;
     }
+}
+// Part of C wizcmds.c:wiz_identify() naming under override_ID.
+async function wizardIdentifyDescription(item, primaryHandDetail) {
+    const override = game.iflags.override_ID;
+    game.iflags.override_ID = true;
+    try {
+        return await inventoryItemDescription(item, { primaryHandDetail });
+    }
+    finally {
+        if (override === undefined)
+            delete game.iflags.override_ID;
+        else
+            game.iflags.override_ID = override;
+    }
+}
+// Part of C invent.c:display_pickinv(): the wizid branch — the wizard-mode
+// Debug Identify menu under iflags.override_ID.  Fully identified
+// inventories still open a short PICK_NONE menu; the command does not
+// collapse into a topline message.
+export async function displayPickinvWizardIdentify() {
+    if (!game.inventory.length) {
+        await pline('Not carrying anything.');
+        game.context.move = 0;
+        return;
+    }
+    if (game.flags.fixinv === false)
+        reassignInventoryLetters();
+    // display_pickinv() sorts the whole inventory before omitting fully
+    // identified objects. Wizard naming also applies during the sort, so
+    // alphabetization uses the names the menu reveals without discovering them.
+    const override = game.iflags.override_ID;
+    game.iflags.override_ID = true;
+    let ordered;
+    try {
+        ordered = sortObjects(game.inventory, { mode: inventorySortMode() });
+    }
+    finally {
+        if (override === undefined)
+            delete game.iflags.override_ID;
+        else
+            game.iflags.override_ID = override;
+    }
+    const unidentified = ordered.filter(objectNeedsFullIdentification);
+    if (!unidentified.length) {
+        await showTextMenuOverlay([
+            'Debug Identify',
+            '(all items are permanently identified already)',
+        ]);
+        game.context.move = 0;
+        return;
+    }
+    const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
+    const window = tty_create_nhwindow(NHW_MENU);
+    let selected;
+    try {
+        await tty_start_menu(window);
+        tty_add_menu(window, {
+            identifier: null,
+            text: `Debug Identify -- unidentified or partially identified item${unidentified.length === 1 ? '' : 's'}`,
+        });
+        tty_add_menu(window, {
+            identifier: 'all', selector: '_', group: String.fromCharCode(allKey),
+            itemflags: MENU_ITEMFLAGS_SKIPINVERT,
+            text: `select ${unidentified.length === 1
+                ? 'it' : 'any or all of them'} to permanently identify${unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
+        });
+        let previousClass = null;
+        for (const item of unidentified) {
+            if (game.flags.sortpack !== false && item.oclass !== previousClass)
+                addMenuHeading(window, objectClassHeading(item.oclass));
+            previousClass = item.oclass;
+            observeObjectForNaming(item);
+            // display_pickinv() derives each row's obj_to_glyph() menu
+            // metadata from the display RNG before doname(), which shifts
+            // the hallucination stream one draw per listed row.
+            consumeHallucinatedMenuObjectGlyph(item);
+            tty_add_menu(window, {
+                identifier: item, selector: inventoryCommandLetter(item),
+                group: OBJECT_CLASS_SYMBOLS[item.oclass] ?? '',
+                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
+            });
+        }
+        tty_end_menu(window);
+        const result = await tty_select_menu(window, PICK_ANY);
+        selected = result.selections.map(selection => selection.identifier);
+    }
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
+    if (selected.includes('all')) {
+        await identifyPack(0);
+        game.context.move = 0;
+        return;
+    }
+    for (const item of selected) {
+        if (item === 'all')
+            continue;
+        const learnedType = !objectTypeKnown(item);
+        fullyIdentifyObject(item);
+        if (learnedType)
+            await exerciseAttribute(A_WIS, true);
+        observeObjectForNaming(item);
+        await plineWithContinuation(`${item.invlet} - ${await inventoryItemDescription(item, {
+            primaryHandDetail: inventoryPrimaryHandDetail(item),
+        })}.`);
+    }
+    game.context.move = 0;
 }
 // Part of C invent.c:display_pickinv(): sortloot() grouping into class
 // sections under sortpack.

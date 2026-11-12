@@ -81,7 +81,7 @@ import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { dropObjectAtHero } from './do.js';
 import {
     splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent,
-    nextObjectId, objectWeight, quantity, placeObject, remove_object, billDummyObject,
+    nextObjectId, objectWeight, quantity, placeObject, remove_object, billDummyObject, floorPileAt,
 } from './mkobj.js';
 import { recordAchievement } from './insight.js';
 import { getObjectLocation } from './zap.js';
@@ -1208,10 +1208,6 @@ const ANGRY_TEXTS = ['quite upset', 'ticked off', 'furious'];
 // C rm.h:m_at() via steed.ts:monsterAtPosition(): the occupant of a
 // square (the occupancy model is documented there).
 
-// C display.h:vobj_at(): the object pile at a square.
-function objectsAt(state: GameState, x: number, y: number): GameObject[] {
-    return state.level?.objects?.[x]?.[y] || [];
-}
 
 // Part of C shk.c:muteshk(): the msound read.
 function monsterSound(monster: Monster): number {
@@ -1997,7 +1993,7 @@ function litterGetpos(
     let count = 0;
     const location = state.level.at(x, y);
     if (!location) throw new Error(`Shop repair square (${x}, ${y}) is outside the level.`);
-    if (objectsAt(state, x, y).length > 0
+    if (floorPileAt(x, y, state).length > 0
         && !IS_ROOM(location.typ)) {
         for (let i = 0; i < 9; i++) {
             const ix = x + horiz(i);
@@ -2033,7 +2029,7 @@ async function litterScatter(
     }
 
     for (;;) {
-        const object = objectsAt(state, x, y)[0];
+        const object = floorPileAt(x, y, state)[0];
         if (!object) break;
         // Don't mess with boulders: merge them into the wall.
         if (object.otyp === BOULDER || object.otyp === ROCK) {

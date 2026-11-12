@@ -30,6 +30,7 @@ import type { Position } from './map_types.js';
 import type { DueObjectTimer } from './timeout.js';
 import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
+import type { GameMap } from './game.js';
 import { SHOPBASE } from './const.js';
 import type { ObjectDefinition } from './object_data.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -1141,6 +1142,25 @@ export async function sweepFloorPile(
         }
         current = next;
     }
+}
+
+// C mkobj.c:place_object(): the level-wide fobj (nobj) walk.
+// Port only: place_object() links every new floor object at the head of
+// fobj, so the native `for (obj = fobj; obj; obj = obj->nobj)` walks the
+// level newest first; _fobjOrder records that order.  Ties keep the
+// column-major storage order, matching the previous per-caller sorts.
+export function fobjChain(level: GameMap): GameObject[] {
+    return level.objects
+        .flatMap(column => column?.flatMap(pile => pile ?? []) ?? [])
+        .sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
+}
+
+// C display.h:vobj_at(), mkobj.c:place_object(): the per-square object
+// pile (the nexthere chain from level.objects[x][y]).
+// Port only: one iterator over a square's pile in place_object()'s link
+// order, newest at the pile top except beneath boulders.
+export function floorPileAt(x: number, y: number, state: GameState = game): GameObject[] {
+    return state.level?.objects?.[x]?.[y] || [];
 }
 
 // C mkobj.c:remove_object():
