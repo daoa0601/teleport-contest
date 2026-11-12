@@ -7,7 +7,7 @@
 // getlev().
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { saveKey } from './save.js';
-import { bonesFloorObjects, eachObjectInBonesGraph, eachTopLevelBonesObject, sanitizeMonsterName, shiftBonesDestinations, } from './bones.js';
+import { eachObjectInBonesGraph, eachTopLevelBonesObject, sanitizeMonsterName, shiftBonesDestinations, } from './bones.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
 import { requireInitializedHero } from './hero_types.js';
 import { rollQuestFigureGenders } from './role.js';
@@ -47,7 +47,7 @@ import { validSavedLightSourcePosition } from './light_validation.js';
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string, validateSavedEntity, } from './saved_validation.js';
 import { isSavedRecord } from './saved_graph.js';
 import { ageStoresFuel } from './pickup.js';
-import { nextIdent } from './mkobj.js';
+import { fobjChain, nextIdent } from './mkobj.js';
 import { addFruit } from './message_types.js';
 import { peaceMinded, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
 import { pacifyShopkeeper, setShopResidency } from './shk.js';
@@ -506,7 +506,7 @@ async function renewBonesIdentities(level, fruits) {
         for (const object of monster.minvent || monster.inventory || [])
             await renewObject(object);
     }
-    for (const object of bonesFloorObjects(level))
+    for (const object of fobjChain(level))
         await renewObject(object);
     for (const object of level?.buriedObjects || [])
         await renewObject(object);

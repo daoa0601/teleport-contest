@@ -1028,6 +1028,23 @@ export async function sweepFloorPile(x, y, state, visit) {
         current = next;
     }
 }
+// C mkobj.c:place_object(): the level-wide fobj (nobj) walk.
+// Port only: place_object() links every new floor object at the head of
+// fobj, so the native `for (obj = fobj; obj; obj = obj->nobj)` walks the
+// level newest first; _fobjOrder records that order.  Ties keep the
+// column-major storage order, matching the previous per-caller sorts.
+export function fobjChain(level) {
+    return level.objects
+        .flatMap(column => column?.flatMap(pile => pile ?? []) ?? [])
+        .sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
+}
+// C display.h:vobj_at(), mkobj.c:place_object(): the per-square object
+// pile (the nexthere chain from level.objects[x][y]).
+// Port only: one iterator over a square's pile in place_object()'s link
+// order, newest at the pile top except beneath boulders.
+export function floorPileAt(x, y, state = game) {
+    return state.level?.objects?.[x]?.[y] || [];
+}
 // C mkobj.c:remove_object():
 export function remove_object(object, state = game) {
     if (!object || !state.level)

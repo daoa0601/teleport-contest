@@ -29,7 +29,7 @@ import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResist
 import { currency, delobj, stack_object } from './invent.js';
 import { isok } from './cmd.js';
 import { applyFloorEffects } from './do.js';
-import { unlinkObject, placeObject, splitObjectStack } from './mkobj.js';
+import { unlinkObject, placeObject, splitObjectStack, floorPileAt } from './mkobj.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { applyMonsterBlindness } from './blinding_attack.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
@@ -504,10 +504,6 @@ const DIRECTIONS = [
     { dx: 0, dy: 1 },
     { dx: -1, dy: 1 },
 ];
-// Part of C explode.c:scatter(): the floor pile read.
-function floorPile(state, x, y) {
-    return state.level?.objects?.[x]?.[y] || [];
-}
 // Part of C explode.c:scatter(): the obj_extract_self removal.
 function removeFloorObject(object, state) {
     unlinkObject(object, state);
@@ -774,7 +770,7 @@ async function fractureObject(object, x, y, state, options) {
     await placeObject(object, x, y, state);
     if (boulder) {
         // Native scatter() processes all remaining boulders before the debris.
-        const nextBoulder = floorPile(state, x, y).find(candidate => candidate.otyp === BOULDER);
+        const nextBoulder = floorPileAt(x, y, state).find(candidate => candidate.otyp === BOULDER);
         if (nextBoulder) {
             unlinkObject(nextBoulder, state);
             await placeObject(nextBoulder, x, y, state);
@@ -856,7 +852,7 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
     const loanBefore = shop?.eshk.loan ?? 0;
     let lostGoods = false;
     const nodes = [];
-    const pile = floorPile(state, x, y);
+    const pile = floorPileAt(x, y, state);
     while (onlyObject || pile.length) {
         const candidate = onlyObject || pile[0];
         const chain = state.uchain || state.u.uchain;

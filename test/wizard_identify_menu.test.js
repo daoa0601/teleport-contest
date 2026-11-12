@@ -55,6 +55,29 @@ void test('wizard identify selects an object class without identifying other cla
     assert.equal(objectNeedsFullIdentification(scroll), true, 'other object classes stay unidentified');
     assert.equal(game.context.move, 0);
 });
+void test('wizard identify names an unseen potion by its unknown noun while hallucinating', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    // Hallucination keeps fully_identify_obj() from setting dknown, and
+    // display_pickinv() clears iflags.override_ID before the identify
+    // notices (invent.c:3391), so the notice names the unseen potion
+    // "a potion" rather than revealing "potion of healing".
+    game.u.hallucinationTurns = 20;
+    const potion = await addInventoryObject(POT_HEALING, {
+        invlet: 'a', known: false, bknown: false, dknown: false, typeKnown: false, observed: false,
+    });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /potion/, limit: 4 });
+    await runExtendedCommand('wizidentify', 'a\n');
+    const said = [...game._messageHistory, game._pending_message].join(' | ');
+    assert.ok(said.includes('a - an uncursed potion.'), `the notice names the unseen noun: ${said}`);
+    assert.ok(!said.includes('potion of healing'), `the notice must not reveal the type: ${said}`);
+    // not_fully_identified() also requires dknown (objnam.c), which
+    // observe_object() leaves clear while hallucinating: the potion
+    // legitimately reappears in the next wizard identify menu.
+    assert.equal(objectNeedsFullIdentification(potion), true);
+    assert.equal(game.context.move, 0);
+});
 void test('wizard identify uses the configured class heading style', async () => {
     await freshObjectRoom({ flags: { debug: true } });
     await addInventoryObject(POT_HEALING, { known: false, bknown: false });

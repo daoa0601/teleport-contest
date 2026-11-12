@@ -3,7 +3,7 @@
 // wiz_kill()/wiz_telekinesis()/wiz_where()/wiz_level_tele()/wiz_level_change()/
 // wiz_map()/wiz_identify()/wiz_show_nhuuid()/wiz_show_stats().
 
-import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_sokoban, IN_SIGHT, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_ANY, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, SIZEOF_CEMETERY, SIZEOF_DAMAGE, SIZEOF_EBONES, SIZEOF_EDOG, SIZEOF_EGD, SIZEOF_EMIN, SIZEOF_EPRI, SIZEOF_ESHK, SIZEOF_KINFO, SIZEOF_MEXTRA, SIZEOF_MONST, SIZEOF_OBJ, SIZEOF_OEXTRA, SIZEOF_TRAP, SIZEOF_WSEG, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
+import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_sokoban, IN_SIGHT, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, SIZEOF_CEMETERY, SIZEOF_DAMAGE, SIZEOF_EBONES, SIZEOF_EDOG, SIZEOF_EGD, SIZEOF_EMIN, SIZEOF_EPRI, SIZEOF_ESHK, SIZEOF_KINFO, SIZEOF_MEXTRA, SIZEOF_MONST, SIZEOF_OBJ, SIZEOF_OEXTRA, SIZEOF_TRAP, SIZEOF_WSEG, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -11,12 +11,12 @@ import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { DungeonBranch, DungeonLocation, SpecialLevelDescriptor } from './dungeon_types.js';
-import { getLine, ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showTextMenuOverlay, showMultiSelectWindow } from './windows.js';
+import { getLine, ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu,
     tty_start_menu, showTextWindow } from './wintty.js';
 import type { TtyMenuWindow } from './wintty.js';
-import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible } from './display.js';
+import { canSpotMonster, docrt, map_engraving, map_trap, unmap_invisible, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible } from './display.js';
 import { customizedGlyphs } from './glyphs.js';
 import type { CustomizedGlyph } from './glyphs.js';
 import { bot } from './botl.js';
@@ -26,10 +26,7 @@ import { paranoidQuery, yn_function } from './cmd.js';
 import { promptDirection } from './cmd.js';
 import { visibleCommandKey } from './hacklib.js';
 import { setMulti, makemapPrepost } from './cmd.js';
-import {
-    inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription,
-    inventoryPrimaryHandDetail, inventorySortMode, objectClassHeading, sortObjects,
-} from './invent.js';
+import { displayPickinvWizardIdentify } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
 import { makeWish } from './zap.js';
@@ -48,7 +45,6 @@ import { hurtleHero, hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival, levelTeleport } from './teleport.js';
 import { gotoLevel, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
-import { exerciseAttribute } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip, checkSpecialRoom } from './hack.js';
 import { Is_botlevel, depth, dungeonDepth, overviewStats, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot, In_quest, In_mines, In_V_tower, Invocation_lev } from './dungeon.js';
@@ -58,9 +54,6 @@ import { engrStats } from './engrave.js';
 import { timerStats } from './timeout.js';
 import { regionStats } from './region.js';
 import type { GameMap } from './game.js';
-import { objectTypeKnown } from './o_init.js';
-import { reassignInventoryLetters } from './invent.js';
-import { objectNeedsFullIdentification, observeObjectForNaming } from './objnam.js';
 import { setPaidShopkeeper } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC } from './diagnostics.js';
 import { panic } from './end.js';
@@ -453,107 +446,18 @@ export async function wizMap() {
     await bot();
 }
 
-// Part of C wizcmds.c:wiz_identify(): enable identification overrides while describing inventory.
-async function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string | null): Promise<string> {
-    const override = game.iflags.override_ID;
-    game.iflags.override_ID = true;
-    try {
-        return await inventoryItemDescription(item, { primaryHandDetail });
-    } finally {
-        if (override === undefined) delete game.iflags.override_ID;
-        else game.iflags.override_ID = override;
-    }
-}
-
-// C wizcmds.c:wiz_identify() delegates to display_inventory() with
-// iflags.override_ID set.  Fully identified inventories still open a short
-// PICK_NONE menu; the command does not collapse into a topline message.
+// C wizcmds.c:wiz_identify(): display_inventory() with iflags.override_ID
+// set to the command key.  invent.c:display_pickinv() owns the menu; a
+// fully identified inventory still opens a short PICK_NONE menu there.
 export async function wizIdentify(): Promise<void> {
-    if (!game.inventory.length) {
-        await pline('Not carrying anything.');
-        game.context.move = 0;
-        return;
-    }
-    if (game.flags.fixinv === false) reassignInventoryLetters();
-    // display_pickinv() sorts the whole inventory before omitting fully
-    // identified objects. Wizard naming also applies during the sort, so
-    // alphabetization uses the names the menu reveals without discovering them.
     const override = game.iflags.override_ID;
     game.iflags.override_ID = true;
-    let ordered: GameObject[];
     try {
-        ordered = sortObjects(game.inventory, { mode: inventorySortMode() });
+        await displayPickinvWizardIdentify();
     } finally {
         if (override === undefined) delete game.iflags.override_ID;
         else game.iflags.override_ID = override;
     }
-    const unidentified = ordered.filter(objectNeedsFullIdentification);
-    if (!unidentified.length) {
-        await showTextMenuOverlay([
-            'Debug Identify',
-            '(all items are permanently identified already)',
-        ]);
-        game.context.move = 0;
-        return;
-    }
-
-    const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
-    const window = tty_create_nhwindow<GameObject | 'all'>(NHW_MENU);
-    let selected: (GameObject | 'all')[];
-    try {
-        await tty_start_menu(window);
-        tty_add_menu(window, {
-            identifier: null,
-            text: `Debug Identify -- unidentified or partially identified item${
-                unidentified.length === 1 ? '' : 's'}`,
-        });
-        tty_add_menu(window, {
-            identifier: 'all', selector: '_', group: String.fromCharCode(allKey),
-            itemflags: MENU_ITEMFLAGS_SKIPINVERT,
-            text: `select ${unidentified.length === 1
-                ? 'it' : 'any or all of them'} to permanently identify${
-                unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
-        });
-        let previousClass: number | null = null;
-        for (const item of unidentified) {
-            if (game.flags.sortpack !== false && item.oclass !== previousClass)
-                addMenuHeading(window, objectClassHeading(item.oclass));
-            previousClass = item.oclass;
-            observeObjectForNaming(item);
-            // C invent.c:display_pickinv() derives each row's obj_to_glyph()
-            // menu metadata from the display RNG before doname(), which
-            // shifts the hallucination stream one draw per listed row.
-            consumeHallucinatedMenuObjectGlyph(item);
-            tty_add_menu(window, {
-                identifier: item, selector: inventoryCommandLetter(item),
-                group: OBJECT_CLASS_SYMBOLS[item.oclass] ?? '',
-                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
-            });
-        }
-        tty_end_menu(window);
-        const result = await tty_select_menu(window, PICK_ANY);
-        selected = result.selections.map(selection => selection.identifier);
-    } finally {
-        await tty_destroy_nhwindow(window);
-    }
-    if (selected.includes('all')) {
-        await identifyPack(0);
-        game.context.move = 0;
-        return;
-    }
-    for (const item of selected) {
-        if (item === 'all') continue;
-        const learnedType = !objectTypeKnown(item);
-        fullyIdentifyObject(item);
-        if (learnedType) await exerciseAttribute(A_WIS, true);
-        observeObjectForNaming(item);
-        await plineWithContinuation(
-            `${item.invlet} - ${await inventoryItemDescription(item, {
-                primaryHandDetail: inventoryPrimaryHandDetail(item),
-            })}.`,
-        );
-    }
-    game.context.move = 0;
 }
 
 // C wizcmds.c:wiz_flip_level(): transpose a live map without taking a turn.

@@ -14,7 +14,7 @@ import { msummon, monsterCensus } from './minion.js';
 import { rndcurse } from './sit.js';
 import { dungeonBuildsUp, insideWizardTower } from './dungeon.js';
 import { monsterIsHelpless, is_minion, monsterYoungerForm } from './mondata.js';
-import { mksobj, linkObjectToMonsterInventory, remove_object } from './mkobj.js';
+import { mksobj, linkObjectToMonsterInventory, remove_object, fobjChain } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { recordRandom } from './monster_action_types.js';
 import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterClassSymbol } from './monster_data.js';
@@ -312,8 +312,7 @@ export function chooseCovetousStrategy(monster, state) {
 // C wizard.c:on_ground(). The first floor object in fobj order that
 // matches the want.
 function onGround(matches, state) {
-    return state.level.objects.flatMap(column => (column ?? []).flatMap(pile => pile ?? []))
-        .filter(matches).sort((a, b) => (b._fobjOrder ?? 0) - (a._fobjOrder ?? 0))[0];
+    return fobjChain(state.level).find(matches);
 }
 // C wizard.c:other_mon_has_arti(). The first carrier other than the
 // seeker that holds the want; it does not search past an excluded carrier.

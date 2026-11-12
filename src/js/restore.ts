@@ -9,7 +9,7 @@
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { saveKey } from './save.js';
 import {
-    bonesFloorObjects, eachObjectInBonesGraph, eachTopLevelBonesObject, sanitizeMonsterName,
+    eachObjectInBonesGraph, eachTopLevelBonesObject, sanitizeMonsterName,
     shiftBonesDestinations,
 } from './bones.js';
 import type { RestoreStorage } from './save.js';
@@ -71,7 +71,7 @@ import type { CachedLevelState, Position, Stairway } from './map_types.js';
 
 import type { BonesPayload } from './bones_validation.js';
 import { ageStoresFuel } from './pickup.js';
-import { nextIdent } from './mkobj.js';
+import { fobjChain, nextIdent } from './mkobj.js';
 import { addFruit } from './message_types.js';
 import { peaceMinded, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
 import { pacifyShopkeeper, setShopResidency } from './shk.js';
@@ -551,7 +551,7 @@ async function renewBonesIdentities(level: GameMap, fruits: readonly Fruit[]): P
         for (const object of monster.minvent || monster.inventory || [])
             await renewObject(object);
     }
-    for (const object of bonesFloorObjects(level)) await renewObject(object);
+    for (const object of fobjChain(level)) await renewObject(object);
     for (const object of level?.buriedObjects || []) await renewObject(object);
 
     for (const monster of level?.monsters || []) {

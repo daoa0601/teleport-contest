@@ -41,7 +41,7 @@ import type { MessagePublisher } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
 import { AD_POLY } from './monster_attack_types.js';
-import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH, I_SPECIAL, TIMEOUT, W_ARTI, W_ART, CORR, Luck, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
+import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, INVORDER_SORT, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, PICK_ANY, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, USE_INVLET, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH, I_SPECIAL, TIMEOUT, W_ARTI, W_ART, CORR, Luck, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
 import { gulp_blnd_check } from './mhitu.js';
@@ -79,7 +79,7 @@ import {
 import { heroHasCarriedArtifactFlag } from './artifact.js';
 import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { chooseObjectCategories, autopickupAtHero } from './pickup.js';
+import { chooseObjectCategories, autopickupAtHero, queryObjlist } from './pickup.js';
 import {
     selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription,
     consumeInventoryItem, delobj, sortObjects, chooseInventoryObject, finishInventoryRemoval,
@@ -91,7 +91,7 @@ import { promptYesNo } from './query.js';
 import { tty_yn_function } from './topl.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { getLine, showMultiSelectWindow } from './windows.js';
-import type { MultiSelectSection } from './windows.js';
+import type { CountedSelection, MultiSelectSection } from './windows.js';
 import { isBimanualObject, isPick } from './object_properties.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { heroCanReachFloor, engravingAt, make_grave, rewindEngravingsForSave } from './engrave.js';
@@ -1453,30 +1453,21 @@ async function dropCategories() {
     return await chooseObjectCategories('Drop what type of items?', game.inventory);
 }
 
-// Part of C do.c:menu_drop(): the query_objlist() inventory pick.
-async function chooseDroppedObjects(objects: readonly GameObject[]) {
-    if (!objects.length) return [];
-    const sorted = sortObjects(objects, { mode: lootSortMode({ inventoryLetters: true }) });
-    // menu_drop() passes INVORDER_SORT even when sortpack is disabled.
-    const sections: MultiSelectSection<GameObject>[] = [];
-    for (const oclass of [...inventoryClassOrder(), VENOM_CLASS]) {
-        const members = sorted.filter(object => object.oclass === oclass);
-        if (!members.length) continue;
-        const items = [];
-        for (const object of members) {
-            observeObjectForNaming(object);
-            consumeHallucinatedMenuObjectGlyph(object);
-            items.push({ key: object.invlet ?? '#', value: object,
-                groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '',
-                text: await objectDescription(object, { withPrice: true }) });
-        }
-        sections.push({ heading: objectClassHeading(oclass), items });
-    }
-    // As in dropCategories(), the window's dismissal owns the screen state;
-    // a pre-menu snapshot would repaint rows C leaves cleared.
-    return await showMultiSelectWindow({
-        title: 'What would you like to drop?', sections, returnCounts: true,
+// Part of C do.c:menu_drop(): its query_objlist() inventory pick.
+// menu_drop() passes USE_INVLET | INVORDER_SORT | INCLUDE_VENOM, keeping
+// the class loop even when sortpack is disabled.  As in dropCategories(),
+// the window's dismissal owns the screen state; a pre-menu snapshot would
+// repaint rows C leaves cleared.
+async function chooseDroppedObjects(objects: readonly GameObject[]): Promise<CountedSelection<GameObject>[]> {
+    const selected = await queryObjlist('What would you like to drop?', objects, {
+        qflags: USE_INVLET | INVORDER_SORT,
+        how: PICK_ANY,
+        allow: () => true,
+        describe: (object: GameObject) => objectDescription(object, { withPrice: true }),
+        extraClasses: [VENOM_CLASS],
+        groupAccelerators: true,
     });
+    return selected ?? [];
 }
 
 // Part of C do.c:menu_drop(): the bypass-rescan drop loop.

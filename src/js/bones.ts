@@ -85,7 +85,7 @@ import {
 import { endObjectBurn } from './timeout.js';
 import { fixShopDamage, shopkeeperInOwnShop } from './shk.js';
 import { forgetEngravings, makeEngravingAt, sanitizeEngravings } from './engrave.js';
-import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, placeObjectSynchronously, set_corpsenm } from './mkobj.js';
+import { addObjectToContainer, curseObjectState, fobjChain, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, placeObjectSynchronously, set_corpsenm } from './mkobj.js';
 import { specialLevelAt, Invocation_lev } from './dungeon.js';
 import { bonesLevelId, bonesStorageKey, deleteBonesLevel, openBonesFile } from './novel_tribute.js';
 import { BOOMERANG, BOW, CORPSE, ELVEN_BOW, ICE_BOX, MUMMY_WRAPPING, ORCISH_BOW, SLIME_MOLD, STATUE, YUMI, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, EGG, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, TIN, WAX_CANDLE, objectUsesKnown } from './object_data.js';
@@ -532,16 +532,8 @@ export function eachTopLevelBonesObject(level: GameMap, visit: (object: GameObje
         for (const object of monster.minvent || monster.inventory || [])
             visit(object);
     }
-    for (const object of bonesFloorObjects(level)) visit(object);
+    for (const object of fobjChain(level)) visit(object);
     for (const object of level?.buriedObjects || []) visit(object);
-}
-
-// Port only: flatten the floor grid into C's fobj chain order.
-export function bonesFloorObjects(level: GameMap): GameObject[] {
-    const objects: GameObject[] = [];
-    for (const column of level.objects)
-        for (const pile of column ?? []) objects.push(...(pile ?? []));
-    return objects.sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
 }
 
 // Part of C bones.c:savebones(), bones.c:getbones(): the recursive
@@ -704,7 +696,7 @@ function resetBonesObjects(level: GameMap, mode: 'save' | 'restore'): void {
         monster.minvent = monster.inventory = inventory;
         monster.hasInventory = inventory.length > 0;
     }
-    const retained = new Set(resetobjs(bonesFloorObjects(level), restore));
+    const retained = new Set(resetobjs(fobjChain(level), restore));
     for (const column of level.objects) {
         if (!column) continue;
         for (let y = 0; y < column.length; y++)
