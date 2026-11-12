@@ -5,7 +5,7 @@ import { DISMOUNT_BONES, DISMOUNT_GENERIC, DISMOUNT_KNOCKED, DISMOUNT_POLY } fro
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 import { dismountHero, doride } from '../js/steed.js';
 import { teleds, relocateMonsterTo } from '../js/teleport.js';
@@ -86,7 +86,7 @@ async function hallucinatingDismountRoom() {
         hero: { hallucinationTurns: 20 },
     });
     const steed = await createSaddledSteed('pony', { x: 9, y: 10 });
-    placeMonsterAt(steed, 10, 10);
+    await placeMonsterOnMap(steed, 10, 10);
     return steed;
 }
 

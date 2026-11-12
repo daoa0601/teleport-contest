@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { ANTI_MAGIC, BEAR_TRAP, D_NODOOR, DOOR, FIRE_TRAP, LAVAPOOL, MM_ANGRY, NO_MINVENT, PIT, ROOM, RUST_TRAP, SLP_GAS_TRAP, STONE, TELEP_TRAP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js';
 import { createPoisonGasCloud, createSteamCloud } from '../js/region.js';
 import { placeCreatedObject } from '../js/mkobj.js';
@@ -135,7 +135,7 @@ void test('a long worm body blocks crossing between its head and the next segmen
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 12, 11, MM_ANGRY | NO_MINVENT);
     await removeMonsterWormBody(worm);
-    placeMonsterAt(worm, worm.mx, worm.my);
+    await placeMonsterOnMap(worm, worm.mx, worm.my);
     for (let x = 11; x <= 13; x++) {
         for (let y = 10; y <= 12; y++)
             level.requireAt(x, y).typ = STONE;

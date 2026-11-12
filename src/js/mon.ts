@@ -161,7 +161,7 @@ import { getLine } from './windows.js';
 import { coordinateDescription } from './getpos.js';
 import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
-import { createPhysicalMonsterExplosion } from './explode.js';
+import { monsterExplodes } from './explode.js';
 import { stopHeroOccupation } from './allmain.js';
 import { resolveMonsterGaze,
     expelHero,
@@ -2946,6 +2946,7 @@ export function monsterDeathSwallower(state: GameState = game) {
 
 export interface MonsterDeathExplosion {
     swallower: Monster | { kind: 'hero' } | null;
+    attack: MonsterAttack;
     damage: number;
 }
 
@@ -2957,7 +2958,9 @@ export interface MonsterExplosionOptions {
     heroCaused?: boolean;
 }
 
-// Part of C mon.c:corpse_chance(): rolling the death explosion.
+// Part of C mon.c:corpse_chance(): rolling the death explosion. The roll
+// is corpse_chance()'s own; the contained (swallowed) branch uses its value,
+// while the map branch discards it because mon_explodes() rolls again.
 export function rollMonsterDeathExplosion(monster: Monster, {
     state = game, rollDice = d,
 }: Pick<MonsterExplosionOptions, 'state' | 'rollDice'> = {}): MonsterDeathExplosion | null {
@@ -2967,22 +2970,21 @@ export function rollMonsterDeathExplosion(monster: Monster, {
 
     const swallower = monsterDeathSwallower(state);
     const damage = rollAttackDamage(monster, attack, rollDice);
-    // A map explosion rolls again in mon_explodes(); a contained one uses
-    // corpse_chance()'s first roll and never visits the map blast owner.
-    return { swallower, damage: swallower
-        ? damage : rollAttackDamage(monster, attack, rollDice) };
+    return { swallower, attack, damage };
 }
 
-// Part of C mon.c:corpse_chance(): the swallowed explosion branch.
-export async function resolveMonsterDeathExplosion(monster: Monster, x: number, y: number, explosion: MonsterDeathExplosion, {
+// Part of C mon.c:corpse_chance(): the swallowed explosion branch, and the
+// handoff to explode.c:mon_explodes() for the map blast.
+export async function resolveMonsterDeathExplosion(monster: Monster, explosion: MonsterDeathExplosion, {
     state = game, publish = plineWithContinuation, random = rn2,
     rollDice = d, heroCaused = !state.context.mon_moving,
 }: MonsterExplosionOptions = {}): Promise<{ heroDied: boolean }> {
-    const { swallower, damage } = explosion;
+    const { swallower, attack, damage } = explosion;
     if (!swallower) {
-        return createPhysicalMonsterExplosion(monster, x, y, damage, {
-            state, publish, random, heroCaused,
+        const blast = await monsterExplodes(monster, attack, {
+            state, publish, random, rollDice, heroCaused,
         });
+        return { heroDied: blast.heroDied };
     }
     if ('kind' in swallower) {
         await publish(`There is an explosion in your ${body_part(STOMACH, state)}!`);
@@ -3178,7 +3180,7 @@ export async function resolveMonsterCorpseChance(monster: Monster, {
         await publish(monsterBodyCrumblesMessage(monster, state));
     if (death.explosion) {
         if (state === game) await newsym(monster.mx, monster.my);
-        const explosion = await resolveMonsterDeathExplosion(monster, monster.mx, monster.my,
+        const explosion = await resolveMonsterDeathExplosion(monster,
             death.explosion, { state, publish, random, rollDice });
         if (explosion.heroDied) return { leavesRemains: false, heroDied: true };
     }
@@ -4357,7 +4359,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     if (deathExplosion !== null) {
         await newsym(x, y);
         const explosion = await resolveMonsterDeathExplosion(
-            monster, x, y, deathExplosion, {
+            monster, deathExplosion, {
                 state: game,
                 heroCaused: !game.context.mon_moving,
             },

@@ -4,7 +4,7 @@ import { COLNO, LAVAPOOL, ROOM, ROWNO, STONE, W_NONPASSWALL } from '../js/const.
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { gotoLevel } from '../js/do.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -14,7 +14,7 @@ void test('a flying monster blocking level arrival can move onto the adjacent la
     const ghost = await createMonsterAt('ghost', 13, 10);
     source.monsters.splice(source.monsters.indexOf(ghost), 1);
     destination.monsters.push(ghost);
-    placeMonsterAt(ghost, 12, 10);
+    await placeMonsterOnMap(ghost, 12, 10);
     for (let x = 1; x < COLNO; x++)
         for (let y = 0; y < ROWNO; y++) {
             if (x === 12 && y === 10)
@@ -37,7 +37,7 @@ void test('moving the hero aside on level arrival resets the old position to the
     const dog = await createMonsterAt('little dog', 13, 10);
     source.monsters.splice(source.monsters.indexOf(dog), 1);
     destination.monsters.push(dog);
-    placeMonsterAt(dog, 12, 10);
+    await placeMonsterOnMap(dog, 12, 10);
     initRng(4n);
     pushKeys(' '.repeat(10));
     await gotoLevel({ dnum: 0, dlevel: 2 }, { arrival: 'stairs' });

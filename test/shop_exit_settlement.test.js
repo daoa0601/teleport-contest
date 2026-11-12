@@ -7,7 +7,7 @@ import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { DAGGER, GOLD_PIECE } from '../js/object_data.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from '../js/shk.js';
 import { vision_recalc } from '../js/vision.js';
@@ -40,7 +40,7 @@ void test('an outside creditor takes only the debt as real coins, then wakes and
     shopkeeper.mcanmove = 0;
     shopkeeper.minvis = 1;
     shopkeeper.perminvis = 1;
-    placeMonsterAt(shopkeeper, 16, 10);
+    await placeMonsterOnMap(shopkeeper, 16, 10);
     game.u.ux = 20;
     game.u.ushops = [];
     game.program_state.gameover = true;
@@ -128,7 +128,7 @@ void test('a resident has priority over a creditor and every keeper settles with
     const westGoldBefore = keeperGold(west.shopkeeper);
     const eastGoldBefore = keeperGold(east.shopkeeper);
     // Keep the keeper away from the drop square so no nearby monster catches it.
-    placeMonsterAt(west.shopkeeper, 14, 12);
+    await placeMonsterOnMap(west.shopkeeper, 14, 12);
     east.shopkeeper.eshk.robbed = 500;
     east.shopkeeper.eshk.debit = 27;
     east.shopkeeper.eshk.credit = 9;
@@ -153,7 +153,7 @@ void test('a shared-wall creditor is preferred and later room membership cannot 
     const west = await createStaffedShop();
     const east = await createStaffedShop({ left: 18, right: 24, keeperX: 21 });
     const dagger = await addInventoryObject(DAGGER);
-    placeMonsterAt(east.shopkeeper, 24, 12);
+    await placeMonsterOnMap(east.shopkeeper, 24, 12);
     game.level.monsters = [west.shopkeeper, east.shopkeeper];
     game.u.ushops = [west.roomno, east.roomno];
     const heroCell = game.level.at(game.u.ux, game.u.uy);
@@ -175,7 +175,7 @@ for (const debt of [0, 50]) {
         const angry = await createStaffedShop({ left: 18, right: 24, keeperX: 21 });
         const creditor = await createStaffedShop({ left: 28, right: 34, keeperX: 31 });
         const dagger = await addInventoryObject(DAGGER);
-        placeMonsterAt(angry.shopkeeper, 24, 12);
+        await placeMonsterOnMap(angry.shopkeeper, 24, 12);
         setHeroGoldAmount(game, 100);
         const angryGoldBefore = keeperGold(angry.shopkeeper);
         const creditorGoldBefore = keeperGold(creditor.shopkeeper);
@@ -212,7 +212,7 @@ for (const outcome of ['died', 'ascended', 'quit']) {
         east.shopkeeper.msleeping = 1;
         east.shopkeeper.minvis = 1;
         east.shopkeeper.perminvis = 1;
-        placeMonsterAt(east.shopkeeper, 15, 10);
+        await placeMonsterOnMap(east.shopkeeper, 15, 10);
         await addInventoryObject(DAGGER);
         game.u.ushops = [west.roomno];
         game.program_state.gameover = true;

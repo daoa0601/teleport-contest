@@ -14,7 +14,7 @@ import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { performPetRangedAttack } from '../js/dogmove.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
     | NO_MINVENT;
@@ -52,7 +52,15 @@ void test('a rider in normal form can use a red dragon mount breath', async () =
     requirePlayingGame(game);
     const steed = await redDragon();
     game.u.usteed = steed;
-    placeMonsterAt(steed, game.u.ux, game.u.uy);
+    // dismount_steed() is the native path that places the current steed
+    // back onto the map; place_monster() only admits it while dismounting.
+    game._steedDismounting = true;
+    try {
+        await placeMonsterOnMap(steed, game.u.ux, game.u.uy);
+    }
+    finally {
+        game._steedDismounting = false;
+    }
     const target = await breathTarget();
     target.mpeaceful = 1;
     assert.ok(steed.edog);
@@ -71,7 +79,14 @@ void test('a mounted dragon with no target snarls and spends the turn', async ()
     freshPlayableRoom({ right: 20, role: 'knight', seed: 46003n });
     requirePlayingGame(game);
     game.u.usteed = await redDragon();
-    placeMonsterAt(game.u.usteed, game.u.ux, game.u.uy);
+    // dismount_steed() is the native path that places the steed on the map.
+    game._steedDismounting = true;
+    try {
+        await placeMonsterOnMap(game.u.usteed, game.u.ux, game.u.uy);
+    }
+    finally {
+        game._steedDismounting = false;
+    }
     await runMonsterAbilityCommand();
     assert.equal(game.context.move, 1);
     assert.match(game._pending_message, /red dragon snarls/i);

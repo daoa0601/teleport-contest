@@ -6,7 +6,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { vision_recalc } from '../js/vision.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -60,7 +60,7 @@ void test('a land mine flooding a square in view shows a moved light before the 
     const cell = () => requireGameDisplay(game).grid[13 + 1]?.[15 - 1]?.ch;
     assert.equal(cell(), ' ');
     // The vortex has just moved; its new light waits for the next sight refresh.
-    placeMonsterAt(vortex, 14, 12);
+    await placeMonsterOnMap(vortex, 14, 12);
     await explodeLandMine(mine, game, { random: limit => limit - 1, publish: () => { } });
     await plineWithContinuation('You hear a distant explosion.');
     assert.equal(level.requireAt(12, 10).typ, MOAT);

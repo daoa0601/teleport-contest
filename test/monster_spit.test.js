@@ -8,7 +8,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeDeaf } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import { AT_SPIT } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { resolveMonsterCombatSpit, resolveMonsterSpitAtHero } from '../js/mthrowu.js';
@@ -291,7 +291,7 @@ void test('a cobra completes venom retaliation against a pet', async () => {
     await equipMonsterObject(target, await knownObject(DAGGER, { quan: 5 }), W_WEP);
     // Seven squares makes the venom launch automatic. A thrown dagger can
     // reach that distance without a launcher's shorter pet missile limit.
-    placeMonsterAt(target, 16, 10);
+    await placeMonsterOnMap(target, 16, 10);
     source.mhp = source.mhpmax = 100;
     const action = await performPetRangedAttack(target, game, {
         random: limit => limit === 4 ? 1 : rn2(limit),

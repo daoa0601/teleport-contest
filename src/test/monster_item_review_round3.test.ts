@@ -8,7 +8,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { BOULDER, SCR_TELEPORTATION, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/potion.js';
@@ -141,7 +141,7 @@ void test('a swallowing steam vortex envelops the hero before its move resumes f
     const level = await freshObjectRoom({ heroX: 10, heroY: 10, context: { mon_moving: true } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('steam vortex', 10, 10, MM_ANGRY | NO_MINVENT);
-    placeMonsterAt(monster, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(monster, game.u.ux, game.u.uy);
     monster.mflee = 1;
     monster.mfleetim = 20;
     game.u.uswallow = 1;

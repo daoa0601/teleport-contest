@@ -36,7 +36,6 @@ import {
 
     MONSTER_SIZE,
 
-    MONSTER_SYMBOL,
 
     MONSTER_NAME,
 
@@ -74,7 +73,7 @@ import {
 } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster, snuffCandle } from './apply.js';
 import { snapshotMenuUnderlay } from './wintty.js';
-import { captureThrownObjectFlight, detachThrownUnit, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget , heroDirectGoldThrowRange } from './thrown_object.js';
+import { captureThrownObjectFlight, detachThrownUnit, flyHeroThrownObject, heroThrowTrajectory, heroDirectGoldThrowRange } from './thrown_object.js';
 import type { ProjectileFlight } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster , angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult, FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './mon.js';
@@ -934,29 +933,20 @@ export async function resolveMapPotionThrow({
         }
 
         if (flight.contact) {
-            prepareHeroThrownTarget(flight.contact);
-            rnd(20); // thitmonst() computes this before the potion class test
-            if (currentAttribute(A_DEX, state) > rnd(25)) {
-                const impact = await hitMonsterWithThrownPotion({
-                    state,
-                    monster: flight.contact,
-                    potion: thrown,
-                    wakeMonster,
-                    wakeNearby,
-                    finishKill,
-                    publish,
-                });
-                if (impact?.heroDied) return true;
+            // C throwit() → throwit_mon_hit() → thitmonst(): the d20, the
+            // Dexterity admission, and the potionhit() arm live in the one
+            // thitmonst() owner, together with the food and miss tails.
+            const contact = await hitMonsterWithThrownObject(flight.contact, thrown, {
+                state,
+                ...(wakeMonster ? { wakeMonster } : {}),
+                ...(wakeNearby ? { wakeNearby } : {}),
+                ...(finishKill ? { finishMonsterKill: finishKill } : {}),
+                publish,
+            });
+            if (contact.heroDied) return true;
+            if (contact.consumed) {
                 state.context.move = 1;
                 return true;
-            }
-
-            const food = await offerThrownFood(flight.contact, thrown, state);
-            if (food?.heroDied || food?.handled) return true;
-            if (!food) {
-                await reportHeroThrownMiss(flight.contact, thrown, { state, publish });
-                if (rn2(3) === 0 && (await wakeMonster?.(flight.contact))?.heroDied)
-                    return true;
             }
         }
 
@@ -1322,6 +1312,10 @@ export interface RangedObjectHitOptions {
     publish?: MessagePublisher;
     random?: typeof rn2;
     rollOne?: typeof rnd;
+    // C dothrow.c:thitmonst()'s potionhit() arm and its tmiss()/wakeup()
+    // tails; the swallowed throw and quivered-gold callers supply them.
+    wakeMonster?: PotionWakeMonster | null;
+    wakeNearby?: PotionWakeNearby | null;
 }
 
 export type RangedObjectHitResult = { heroDied: true } | {
@@ -1459,13 +1453,14 @@ function rangedObjectUsesWeaponHit(object: GameObject) {
 async function missRangedObject(
     monster: Monster, object: GameObject, state: PlayingGameState,
     target: Position, applied: boolean, volley: HeroProjectileVolley | undefined,
-    publish: MessagePublisher, random: typeof rn2,
+    publish: MessagePublisher, random: typeof rn2, wakeMonster: PotionWakeMonster | null,
 ): Promise<RangedObjectHitResult> {
     await reportHeroThrownMiss(monster, object, {
         state, target, publish, ...(volley ? { volley } : {}),
     });
+    const wake: PotionWakeMonster = wakeMonster ?? wakeAttackedMonster;
     if (random(3) === 0) {
-        if ((await wakeAttackedMonster(monster)).heroDied) return { heroDied: true };
+        if ((await wake(monster))?.heroDied) return { heroDied: true };
     }
     if (applied && (await wakeAttackedMonster(monster)).heroDied) return { heroDied: true };
     return { hit: false, consumed: false };
@@ -1478,22 +1473,26 @@ function isHeroThrownEggPieOrVenom(object: GameObject | null | undefined): boole
     return !!object && EGG_PIE_AND_VENOM_TYPES.has(object.otyp);
 }
 
-// C dothrow.c:thitmonst(). The object may be thrown (throwit_mon_hit()),
-// kicked (dokick.c kick()), or applied at range (apply.c use_pole()); the
-// hmode selects the arm. Returned consumed=true means the caller must not
-// place the object again. gem_accept() [offerUnicornGem] and omon_adj()
-// [rangedTargetHitBonus] are separate C functions; the special_obj_hits_leader()
-// macro's quest-leader handoff, the egg/pie/venom Dexterity admission, and
-// the befriend_with_obj() taming arm are inlined at their C positions below.
+// C dothrow.c:thitmonst(). One owner in the native statement order: the
+// to-hit threshold, the unicorn-gem and quest-leader catches, the d20, and
+// the class arms (weapon, heavy ball, boulder, egg/pie/venom, potion,
+// taming food, the guaranteed-hit vanish while swallowed, and the final
+// tmiss). The object may be thrown (throwit_mon_hit()), kicked (dokick.c
+// kick()), or applied at range (apply.c use_pole()); the hmode selects the
+// arm. Returned consumed=true means the caller must not place the object
+// again. gem_accept() [offerUnicornGem], omon_adj() [rangedTargetHitBonus],
+// tmiss() [reportHeroThrownMiss], potionhit() [hitMonsterWithSupportedPotion]
+// and tamedog()/befriend_with_obj() [offerThrownFood] are separate C
+// functions; the macro and admission arms are inlined at their C positions.
 async function hitMonsterWithRangedObject(
     monster: Monster, object: GameObject, state: PlayingGameState, mode: RangedAttackMode, {
         guaranteedHit = false, finishKillWithObject = null, finishMonsterKill = null,
-        checkCaitiff = true, target = { x: monster.mx, y: monster.my }, volley,
+        target = { x: monster.mx, y: monster.my }, volley,
         publish = plineWithContinuation, random = rn2, rollOne = rnd,
+        wakeMonster = null, wakeNearby = null,
     }: Omit<RangedObjectHitOptions, 'state'> = {},
 ): Promise<RangedObjectHitResult> {
     const applied = mode === 'applied';
-    if (applied && checkCaitiff) await applyCaitiffPenalty(monster, state);
     let threshold = baseRangedHitThreshold(monster, object, state, random);
     if (guaranteedHit) threshold += 1000;
     const gift = await offerUnicornGem(monster, object, state);
@@ -1572,15 +1571,66 @@ async function hitMonsterWithRangedObject(
         });
         if (hit.heroDied) return { heroDied: true };
         return { hit: true, consumed: true };
+    } else if (SUPPORTED_MONSTER_POTION_TYPES.has(object.otyp)
+        && (guaranteedHit || currentAttribute(A_DEX, state) > rollOne(25))) {
+        // C dothrow.c:2262-2265: potionhit() resolves the impact and uses
+        // the bottle up. The port gates on the implemented potion types
+        // before the Dexterity admission, so an unsupported bottle falls
+        // through to the food and miss arms without C's rnd(25) draw.
+        const impact = await hitMonsterWithSupportedPotion({
+            state, monster, potion: object, publish,
+            ...(wakeMonster ? { wakeMonster } : {}),
+            ...(wakeNearby ? { wakeNearby } : {}),
+            ...(finishMonsterKill ? { finishKill: finishMonsterKill } : {}),
+            resolveVapor: true,
+            // A swallowed throw bursts inside the engulfer at distance 0;
+            // a map throw throws from the hero's square.
+            ...(guaranteedHit ? {} : { distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my) }),
+        });
+        if (impact?.heroDied) return { heroDied: true };
+        return { hit: true, consumed: true };
     } else {
         const food = await offerThrownFood(monster, object, state);
         if (food?.heroDied) return food;
         if (food) return { hit: food.handled, consumed: food.handled };
-        return missRangedObject(monster, object, state, target, applied, volley, publish, random);
+        if (guaranteedHit) {
+            // C dothrow.c:2276-2298: swallowed and not edible — the object
+            // vanishes into the engulfer's entrails or currents; a cockatrice
+            // corpse can petrify an animal engulfer and free the hero first.
+            const wake = await wakeMonster?.(monster);
+            if (wake?.heroDied) return { heroDied: true };
+            if (object.otyp === CORPSE && object.corpsenm !== undefined
+                && touchPetrifies(object.corpsenm) && monsterIsAnimal(monster)) {
+                const stone = await petrifyMonsterImmediately(monster, {
+                    creditHero: true,
+                    finishDeath: (target, death = {}) => finishHeroMonsterKillOutcome(
+                        target, target.mx, target.my, {
+                            ...death, showKillMessage: false, recordConduct: false,
+                        },
+                    ),
+                });
+                if (stone.heroDied) return { heroDied: true };
+                // Native deletes the freed corpse after the expulsion, so it
+                // cannot be recovered from the statue or beneath it.
+                if (!state.u.uswallow) {
+                    await delobj(object, state);
+                    return { hit: true, consumed: true };
+                }
+            }
+            const trail = monsterDigests(monster) ? ' entrails'
+                : monsterIsWhirly(monster) ? ' currents' : '';
+            const name = monsterName(monster, { state });
+            // C dothrow.c:2298 prints Tobjnam(obj, "vanish"); xname() of a
+            // corpse is just "corpse", without the species.
+            await publish(`${definiteObjectAction(object, 'vanish', state)} into ${
+                trail ? possessiveName(name) : name}${trail}.`);
+            return { hit: false, consumed: false };
+        }
+        return missRangedObject(monster, object, state, target, applied, volley, publish, random, wakeMonster);
     }
 
     if (threshold < dieRoll)
-        return missRangedObject(monster, object, state, target, applied, volley, publish, random);
+        return missRangedObject(monster, object, state, target, applied, volley, publish, random, wakeMonster);
 
     if (applied) state.u.uconduct.weaphit = (state.u.uconduct.weaphit ?? 0) + 1;
     // Ball and boulder attempts exercise Strength above. Unlike weapon hits,
@@ -1647,13 +1697,16 @@ export async function offerThrownFood(
 export type ThrownFoodContact = { heroDied: true }
     | { heroDied: false; handled: boolean };
 
-// Part of C dothrow.c:thitmonst(): the applied (use_pole()) arm.
+// Part of C dothrow.c:thitmonst(): the applied (use_pole()) arm. C's
+// use_pole()/use_grapple() callers run check_caitiff() before thitmonst(),
+// so the wrapper owns the honor check here.
 export async function hitMonsterWithAppliedWeapon(
     monster: Monster, weapon: GameObject,
     { state = game, checkCaitiff = true, target }: Pick<RangedObjectHitOptions, 'state' | 'checkCaitiff' | 'target'> = {},
 ): Promise<RangedObjectHitResult> {
     requirePlayingGame(state);
-    return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { checkCaitiff, ...(target ? { target } : {}) });
+    if (checkCaitiff) await applyCaitiffPenalty(monster, state);
+    return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { ...(target ? { target } : {}) });
 }
 
 // Part of C dothrow.c:thitmonst(): the kicked (dokick.c kick()) arm.
@@ -2970,8 +3023,6 @@ interface SwallowedPotionThrowOptions extends GenericSwallowedThrowOptions {
     finishKill: (monster: Monster, death?: HeroMonsterKillOptions) => Promise<HeroMonsterKillOutcome>;
 }
 
-const PM_AIR_ELEMENTAL = 154;
-
 
 // C dothrow.c:swallowit(). The engulfer picks the object up (steal.c
 // mpickobj() clears gt.thrownobj); a thrown chained ball only ends the
@@ -3177,19 +3228,14 @@ export async function resolveSwallowedPotionThrow({
         await applyThrowSlip({ state, object: thrown });
         await applyLowStaminaThrow({ state, object: thrown });
 
-        rnd(20);
-        const impact = await hitMonsterWithSupportedPotion({
+        const contact = await hitMonsterWithThrownObject(engulfer, thrown, {
             state,
-            monster: engulfer,
-            potion: thrown,
+            guaranteedHit: true,
+            ...(finishKill ? { finishMonsterKill: finishKill } : {}),
             wakeMonster,
             wakeNearby,
-            finishKill,
-            heroCaused: true,
-            resolveVapor: true,
-            distance: 0,
         });
-        if (impact?.heroDied) return true;
+        if (contact.heroDied) return true;
         state.context.move = 1;
         return true;
     } finally {
@@ -3212,57 +3258,29 @@ export async function resolveSwallowedFoodThrow({
         await applyThrowSlip({ state, object: thrown });
         await applyLowStaminaThrow({ state, object: thrown });
         const impactX = engulfer.mx, impactY = engulfer.my;
-        prepareHeroThrownTarget(engulfer);
-        rnd(20);
-        const offer = await offerThrownFood(engulfer, thrown, state);
-        if (offer?.heroDied) return true;
-        if (offer?.handled) {
-            state.context.move = 1;
-            return true;
-        }
-        if (!offer) {
-            const wake = await wakeMonster(engulfer);
-            if (wake.heroDied) return true;
-            if (thrown.otyp === CORPSE && thrown.corpsenm !== undefined
-                && touchPetrifies(thrown.corpsenm) && monsterIsAnimal(engulfer)) {
-                const stone = await petrifyMonsterImmediately(engulfer, {
-                    creditHero: true,
-                    finishDeath: (target, death = {}) => finishHeroMonsterKillOutcome(
-                        target, target.mx, target.my, {
-                            ...death, showKillMessage: false, recordConduct: false,
-                        },
-                    ),
+        // thitmonst()'s food and guaranteed-vanish arms (dothrow.c:2267-2298)
+        // run inside the shared owner; the tail below is throwit()'s
+        // swallowit() or the expelled hero's floor placement.
+        const contact = await hitMonsterWithThrownObject(engulfer, thrown, {
+            state,
+            guaranteedHit: true,
+            wakeMonster,
+        });
+        if (contact.heroDied) return true;
+        if (!contact.consumed) {
+            if (state.u.uswallow) {
+                const currentEngulfer = state.u.ustuck;
+                if (!currentEngulfer) throw new Error('A swallowed hero must have an engulfing monster.');
+                await swallowit(currentEngulfer, thrown, state, false);
+            } else {
+                // Taming can expel the hero and move the monster away from the
+                // original impact cell. A rejected meal lands at that old cell.
+                await finishHeroThrow({
+                    state, object: thrown, x: impactX, y: impactY,
+                    contactedMonster: monsterAtPosition(requireGameLevel(state), impactX, impactY),
                 });
-                if (stone.heroDied) return true;
-                // The thrown corpse is still free while the statue is made.
-                // Native deletes it after expulsion, so it cannot be recovered
-                // from the statue or from the square beneath it.
-                if (!state.u.uswallow) {
-                    await delobj(thrown, state);
-                    state.context.move = 1;
-                    return true;
-                }
+                if (state.program_state.gameover) return true;
             }
-            const trail = monsterDigests(engulfer) ? ' entrails'
-                : monsterIsWhirly(engulfer) ? ' currents' : '';
-            const name = monsterName(engulfer, { state });
-            // C dothrow.c:2298 prints Tobjnam(obj, "vanish"); xname() of a
-            // corpse is just "corpse", without the species.
-            await plineWithContinuation(
-                `${definiteObjectAction(thrown, 'vanish', state)} into ${trail ? possessiveName(name) : name}${trail}.`);
-        }
-        if (state.u.uswallow) {
-            const currentEngulfer = state.u.ustuck;
-            if (!currentEngulfer) throw new Error('A swallowed hero must have an engulfing monster.');
-            await swallowit(currentEngulfer, thrown, state, false);
-        } else {
-            // Taming can expel the hero and move the monster away from the
-            // original impact cell. A rejected meal lands at that old cell.
-            await finishHeroThrow({
-                state, object: thrown, x: impactX, y: impactY,
-                contactedMonster: monsterAtPosition(requireGameLevel(state), impactX, impactY),
-            });
-            if (state.program_state.gameover) return true;
         }
         state.context.move = 1;
         return true;
@@ -3297,20 +3315,13 @@ export async function resolveGenericSwallowedThrow({
         // throwit_mon_hit() runs snuff_candle() before thitmonst() consumes
         // its d20 targeting roll (dothrow.c:1490-1492, 2152).
         await snuffCandle(thrown, state);
-        rnd(20);
-        const wake = await wakeMonster(engulfer);
-        if (wake.heroDied) return true;
-        const targetName = monsterName(engulfer, { state });
-        const whirly = MONSTER_SYMBOL[engulfer.mnum] === 22
-            || engulfer.mnum === PM_AIR_ELEMENTAL;
-        const trail = monsterDigests(engulfer)
-            ? ' entrails' : whirly ? ' currents' : '';
-        const destination = trail
-            ? `${possessiveName(targetName)}${trail}` : targetName;
-        await plineWithContinuation(
-            `${definiteObjectAction(thrown, 'vanish', state)} into ${destination}.`,
-        );
-        await swallowit(engulfer, thrown, state, false);
+        const contact = await hitMonsterWithThrownObject(engulfer, thrown, {
+            state,
+            guaranteedHit: true,
+            wakeMonster,
+        });
+        if (contact.heroDied) return true;
+        if (!contact.consumed) await swallowit(engulfer, thrown, state, false);
         state.context.move = 1;
         return true;
     } finally {
@@ -3536,7 +3547,7 @@ async function returnThrowToInventory(
 // ---------------------------------------------------------------------------
 
 export interface GoldContactCallbacks {
-    wakeMonster?: ((monster: Monster) => unknown) | null;
+    wakeMonster?: PotionWakeMonster | null;
     angerMonster?: ((monster: Monster) => unknown) | null;
 }
 
@@ -3572,36 +3583,25 @@ async function settleGoldOnFloor(
     return survivor;
 }
 
-// Part of C dothrow.c:throw_gold(): the purse's monster contact (food
-// catch, swallowed, miss).
+// Part of C dothrow.c:throw_gold(): the quivered coin's monster contact.
+// Quivered coins go through throwit() → throwit_mon_hit() → thitmonst();
+// coins skip the damaging classes, but a metal-eating pet can still catch
+// one as food, a swallowed engulfer swallows it, and a map target tmiss()es.
 async function resolveQuiveredGoldMonsterContact({
     state, monster, gold, swallowed = false, wakeMonster = null,
 }: GoldContactOptions & { swallowed?: boolean }): Promise<boolean> {
-    // dothrow.c:omon_adj() can thaw a mobile species before thitmonst()
-    // consumes its ordinary d20 targeting roll. Coins skip the damaging
-    // classes, but a metal-eating pet can still catch one as food.
-    prepareHeroThrownTarget(monster);
-    rnd(20);
-    const food = await offerThrownFood(monster, gold, state);
-    if (food?.heroDied) return true;
-    if (food) return food.handled;
-
+    const contact = await hitMonsterWithThrownObject(monster, gold, {
+        state,
+        ...(swallowed ? { guaranteedHit: true } : {}),
+        ...(wakeMonster ? { wakeMonster } : {}),
+    });
+    if (contact.heroDied) return true;
+    if (contact.consumed) return true;
     if (swallowed) {
-        // thitmonst()'s guaranteed-hit arm names the engulfer's entrails or
-        // currents (dothrow.c:2276-2298) before swallowit()'s mpickobj().
-        await wakeMonster?.(monster);
-        const name = monsterName(monster, { state });
-        const trail = monsterDigests(monster) ? ' entrails'
-            : monsterIsWhirly(monster) ? ' currents' : '';
-        const destination = trail
-            ? `${possessiveName(name)}${trail}` : name;
-        await pline(`The gold piece vanishes into ${destination}.`);
+        // throwit()'s swallowit() hands the surviving coin to the engulfer.
         await addObjectToMonsterInventory(monster, gold, state);
         return true;
     }
-
-    await reportHeroThrownMiss(monster, gold, { state });
-    if (rn2(3) === 0) await wakeMonster?.(monster);
     return false;
 }
 

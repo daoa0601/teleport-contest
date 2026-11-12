@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mkstairs } from '../js/mklev.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { BOULDER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -64,7 +64,7 @@ void test('wounded Juiblex swallowing the hero on its retreat stairs keeps its e
     requirePlayingGame(game);
     await mkstairs(10, 10, true, null);
     const juiblex = await createMonsterAt('Juiblex', 10, 10, NO_MINVENT);
-    placeMonsterAt(juiblex, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(juiblex, game.u.ux, game.u.uy);
     juiblex.m_id = 2;
     juiblex.mhpmax = 90;
     juiblex.mhp = 50;
@@ -95,7 +95,7 @@ void test('Juiblex returns to its pre-expulsion square when blocked stairs leave
     await mkstairs(40, 10, true, null, true);
     await floorObject(BOULDER, 40, 10);
     const juiblex = await createMonsterAt('Juiblex', 10, 10, NO_MINVENT);
-    placeMonsterAt(juiblex, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(juiblex, game.u.ux, game.u.uy);
     juiblex.m_id = 2;
     juiblex.mhpmax = 90;
     juiblex.mhp = 50;

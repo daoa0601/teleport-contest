@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { cls } from '../js/display.js';
 import { pushKey } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { setHeroGoldAmount } from '../js/sit.js';
 import { unlinkObject, addObjectToContainer } from '../js/mkobj.js';
 import { buryObject } from '../js/dig.js';
@@ -37,7 +37,7 @@ async function billStock(shop, type = POT_HEALING) {
         .filter(keeper => keeper !== null && keeper !== undefined)
         .map(keeper => ({ keeper, x: keeper.mx, y: keeper.my }));
     for (const { keeper } of absentKeepers)
-        placeMonsterAt(keeper, 7, 6);
+        await placeMonsterOnMap(keeper, 7, 6);
     game.u.ux0 = game.u.ux;
     game.u.uy0 = game.u.uy;
     game.u.ux = shop.room.lx + 1;
@@ -51,7 +51,7 @@ async function billStock(shop, type = POT_HEALING) {
     }
     finally {
         for (const { keeper, x, y } of absentKeepers)
-            placeMonsterAt(keeper, x, y);
+            await placeMonsterOnMap(keeper, x, y);
     }
     const object = await floorObject(type, game.u.ux, game.u.uy);
     await addShopObjectToBill(object, game, { ininv: false, silent: true });

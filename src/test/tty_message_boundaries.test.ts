@@ -10,7 +10,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { installPagerInput } from './support/pager-input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -54,7 +54,7 @@ void test('engulf entry clears the acknowledged announcement before drawing the 
     assert.ok(attack, 'The purple worm must have an engulf attack');
     const oldX = monster.mx;
     const oldY = monster.my;
-    placeMonsterAt(monster, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(monster, game.u.ux, game.u.uy);
     game.u.ustuck = monster;
     await plineWithContinuation('You hit the purple worm.');
     const input = resetInputState();

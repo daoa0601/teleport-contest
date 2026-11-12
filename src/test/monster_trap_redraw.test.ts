@@ -6,7 +6,7 @@ import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_MAGM } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/mon.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE } from '../js/object_data.js';
@@ -26,7 +26,7 @@ for (const [type, name] of [[ARROW_TRAP, 'arrow'], [DART_TRAP, 'dart'], [ROCKTRA
             const trap = addTrap(level, type, 11, 10, { once: true, tseen: true });
             await newsym(11, 10);
             assert.equal(glyphAt(11, 10)?.kind, 'trap');
-            placeMonsterAt(monster, 11, 10);
+            await placeMonsterOnMap(monster, 11, 10);
 
             await mintrap(monster, game, { random: () => 0, publish: async () => {} });
 
@@ -44,7 +44,7 @@ void test('anti-magic damage redraws a surviving monster over a known trap', asy
     addTrap(level, ANTI_MAGIC, 11, 10, { tseen: true });
     await newsym(11, 10);
     assert.equal(glyphAt(11, 10)?.kind, 'trap');
-    placeMonsterAt(monster, 11, 10);
+    await placeMonsterOnMap(monster, 11, 10);
 
     await mintrap(monster, game, { rollOne: () => 4, publish: async () => {} });
 

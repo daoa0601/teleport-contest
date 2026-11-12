@@ -5,7 +5,7 @@ import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import { clearMonsterWormFromMap, initializeMonsterWormBody, removeMonsterWormBody, } from '../js/worm.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -102,7 +102,7 @@ void test('placing a discarded worm head does not restore its discarded tail', a
     const { worm, squares } = await placedWorm(3);
     requirePlayingGame(game);
     await removeMonsterWormBody(worm);
-    placeMonsterAt(worm, worm.mx, worm.my);
+    await placeMonsterOnMap(worm, worm.mx, worm.my);
     await newsym(worm.mx, worm.my);
     assert.equal(monsterAtPosition(game.level, worm.mx, worm.my), worm);
     assert.equal(glyphAt(worm.mx, worm.my)?.kind, 'monster');

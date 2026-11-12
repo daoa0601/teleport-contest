@@ -9,7 +9,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/sit.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, GOLD_PIECE, LEASH } from '../js/object_data.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { unpaidObjectCost } from '../js/shk.js';
@@ -38,7 +38,7 @@ async function deathShop({ debug = false, bones = false, outside = false } = {})
     const { shopkeeper } = await createStaffedShop({ keeperX: 11, keeperY: 10 });
     shopkeeper.eshk.shknam = '+SettlementControl';
     // Repossession uses the shop's entrance, not the keeper's current square.
-    placeMonsterAt(shopkeeper, 14, 12);
+    await placeMonsterOnMap(shopkeeper, 14, 12);
     shopkeeper.eshk.debit = 37;
     const setupInput = resetInputState();
     installPagerInput(setupInput, { expected: /dagger|zorkmid|sale|pick/i, limit: 4 });

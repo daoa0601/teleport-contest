@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMINE, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/explode.js';
 import { floorObject } from './support/game-objects.js';
@@ -26,7 +26,7 @@ for (const observer of [false, true]) {
         assert.equal(trap.ttyp, PIT);
         await mintrap(monster, game, { random: () => 0, publish: () => { } });
         assert.equal(monster.mtrapped, 0);
-        placeMonsterAt(monster, 12, 10);
+        await placeMonsterOnMap(monster, 12, 10);
         const walker = bystander ?? monster;
         walker.mux = game.u.ux;
         walker.muy = game.u.uy;

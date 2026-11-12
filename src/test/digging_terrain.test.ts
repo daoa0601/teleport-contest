@@ -13,7 +13,7 @@ import {
 } from '../js/dig.js';
 import { spotChecks } from '../js/hack.js';
 import { game } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER, CLUB, CORPSE, GOLD_PIECE, LEASH } from '../js/object_data.js';
 import { fireDamageObject } from '../js/trap.js';
@@ -308,7 +308,7 @@ void test('a magical trap explodes inside the engulfer only', async () => {
     requireFixtureGame(game);
     game.u.uhp = game.u.uhpmax = 1000;
     const engulfer = await createMonsterAt('purple worm', 11, 10);
-    placeMonsterAt(engulfer, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(engulfer, game.u.ux, game.u.uy);
     engulfer.mhp = engulfer.mhpmax = 1000;
     const bystander = await createMonsterAt('giant ant', 9, 10);
     bystander.mhp = bystander.mhpmax = 1000;

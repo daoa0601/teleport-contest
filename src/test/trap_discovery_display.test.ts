@@ -8,7 +8,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { addTrap } from './support/level-state.js';
@@ -29,11 +29,11 @@ for (const [type, name, species, glyph, beforeMessage] of [
             monster: { species, hitPoints: 100 }, trap: { tseen: false },
         });
         requirePlayingGame(game);
-        placeMonsterAt(monster, 12, 10);
+        await placeMonsterOnMap(monster, 12, 10);
         await newsym(11, 10);
         await newsym(12, 10);
         await flush_screen(1);
-        placeMonsterAt(monster, 11, 10);
+        await placeMonsterOnMap(monster, 11, 10);
         await newsym(12, 10);
         const shown: string[] = [];
         const publish = async () => {

@@ -35,7 +35,7 @@ import { vision_recalc } from '../js/vision.js';
 import { makedog } from '../js/dog.js';
 import { saveGame } from '../js/save.js';
 import { restoreGame } from '../js/restore.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import { gulpmu } from '../js/mhitu.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
@@ -505,7 +505,7 @@ void test('a photograph from inside a monster records the stomach instead of fla
         engulfOldY: holder.my,
         engulfDamage: 0,
     };
-    placeMonsterAt(holder, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(holder, game.u.ux, game.u.uy);
     assert.equal((await gulpmu(holder, attack)).hit, true);
     await flushPendingTopline();
     const object = await camera();
@@ -705,7 +705,7 @@ void test('cleaning grime inside a dust vortex immediately exposes the eyes agai
         engulfOldY: holder.my,
         engulfDamage: 0,
     };
-    placeMonsterAt(holder, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(holder, game.u.ux, game.u.uy);
     assert.equal((await gulpmu(holder, attack)).hit, true);
     await flushPendingTopline();
     game.u.ucreamed = 6;

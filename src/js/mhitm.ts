@@ -49,7 +49,7 @@ import { findMonsterArmorClass } from './worn.js';
 import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
 import { splitMon } from './potion.js';
-import { createElementalMonsterExplosion } from './explode.js';
+import { monsterExplodes } from './explode.js';
 import { cansee } from './vision.js';
 import {
     applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled,
@@ -1046,26 +1046,14 @@ export async function resolveMonsterCombatExplosion(
     }
 
     if (damageType === AD_FIRE || damageType === AD_COLD || damageType === AD_ELEC) {
-        const damage = dice ? rollDice(dice, sides)
-            : sides ? rollDice((MONSTER_LEVEL[attacker.mnum] ?? 0) + 1, sides) : 0;
-        if (attacker.mhp > 0) {
-            const death = await finishEnvironmentalMonsterDeath(attacker, state, {
-                noCorpse: true, publish, random, rollDice,
-            });
-            if (death.heroDied)
-                return { mask: M_ATTK_AGR_DIED, heroDied: true, damage };
-        }
-        // Death recovery may change the source's form before the blast.
-        const killer = `${possessiveName(monsterTypeName(attacker.mnum, !!attacker.female))} explosion`;
-        const blast = await createElementalMonsterExplosion(
-            attacker.mx, attacker.my, damageType, damage, killer, { state, publish, random },
-        );
-        // explmm keeps AGR_DIED even when life saving leaves the source alive.
+        // C explmm(): mon_explodes() kills the attacker before the blast;
+        // AGR_DIED stays set even when life saving leaves the source alive.
+        const blast = await monsterExplodes(attacker, attack, { state, publish, random, rollDice });
         const mask = M_ATTK_AGR_DIED | (defender.mhp <= 0 ? M_ATTK_DEF_DIED : 0);
-        if (blast.heroDied) return { mask, heroDied: true, damage };
+        if (blast.heroDied) return { mask, heroDied: true, damage: blast.damage };
         if (attacker.mtame)
             await publish('You have a melancholy feeling for a moment, then it passes.');
-        return { mask, heroDied: false, damage };
+        return { mask, heroDied: false, damage: blast.damage };
     }
 
     const outcome = await resolveDamage(attacker, defender, attack);

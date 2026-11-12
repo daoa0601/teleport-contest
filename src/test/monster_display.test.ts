@@ -11,7 +11,7 @@ import { flush_screen, map_invisible, newsym, show_glyph_cell } from '../js/disp
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { nameToMonster } from '../js/mondata.js';
 import { setMonsterSpecies } from '../js/mondata.js';
 import { changeHeroSex } from '../js/polyself.js';
@@ -37,7 +37,7 @@ void test('Warning replaces invisible memory, so a departing monster leaves the 
     await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '2');
-    placeMonsterAt(xorn, 13, 10);
+    await placeMonsterOnMap(xorn, 13, 10);
     await newsym(11, 10);
     await flush_screen(1);
 
@@ -55,7 +55,7 @@ void test('telepathy replaces invisible memory on an unseen monster square', asy
     await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, 'o');
-    placeMonsterAt(goblin, 13, 10);
+    await placeMonsterOnMap(goblin, 13, 10);
     await newsym(11, 10);
     await flush_screen(1);
 
@@ -113,7 +113,7 @@ void test('acknowledging a death message preserves the map until its pending gly
     await newsym(11, 10);
     await flush_screen(1);
     await plineWithContinuation('The goblin dies.');
-    placeMonsterAt(goblin, 13, 10);
+    await placeMonsterOnMap(goblin, 13, 10);
     await newsym(11, 10);
     input.beforeRead = () => {
         assert.equal(requireScreenCell(10, 11).ch, 'o');
@@ -581,7 +581,7 @@ for (const { name, typ, mask, ch, color } of [
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).ch, 'B');
 
-        placeMonsterAt(bat, 12, 10);
+        await placeMonsterOnMap(bat, 12, 10);
         await newsym(11, 10);
         await flush_screen(1);
 

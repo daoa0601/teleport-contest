@@ -11,7 +11,7 @@ import { gameLogEvents } from '../js/pline.js';
 import { rollHeroJoust, resolveHeroJoust, tryHeroPuddingSplit } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/steed.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, POT_ACID } from '../js/object_data.js';
 import { objectMaterial } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
@@ -338,7 +338,7 @@ void test('a mounted lance attack can joust while the same unmounted command can
             await runExtendedCommand('ride', 'j');
             assert.equal(game.u.usteed, pony);
             // Mounting moves the hero onto the pony's square.
-            placeMonsterAt(monster, game.u.ux + 1, game.u.uy);
+            await placeMonsterOnMap(monster, game.u.ux + 1, game.u.uy);
         }
         const input = resetInputState();
         installPagerInput(input, { expected: /goblin|pony|lance/, limit: 8 });

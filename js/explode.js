@@ -14,8 +14,8 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { nomul, roomsAt } from './hack.js';
 import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster, finishHeroMonsterKill, } from './mon.js';
-import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
+import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPC2, AD_SPEL, AT_ENGL, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
+import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME } from './monster_data.js';
 import { monsterName, randomDisplayMonsterName, monsterTypeName, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import { monsterAtPosition } from './steed.js';
@@ -980,14 +980,6 @@ export function createFireExplosion(x, y, damage, { state = game, heroCaused = !
     // Pyrolisk eggs use the native generic object class, with a fire spell type.
     return explode(x, y, -11, damage, RANDOM_CLASS, EXPL_FIERY, { state, heroCaused, publish, random });
 }
-// Part of C explode.c:mon_explodes(): the elemental branch
-// (type = -((adtyp - 1) + 20), style from adtyp_to_expltype()).
-export async function createElementalMonsterExplosion(x, y, damageType, damage, killer, options = {}) {
-    const style = await explosionStyleForDamage(damageType, options.state ?? game);
-    return explode(x, y, -(damageType - 1 + 20), damage, MON_EXPLODE, style, {
-        ...options, killer,
-    });
-}
 // C explode.c:adtyp_to_expltype().
 async function explosionStyleForDamage(damageType, state) {
     const style = explosionStyles.get(damageType);
@@ -996,10 +988,40 @@ async function explosionStyleForDamage(damageType, state) {
     await impossible(`adtyp_to_expltype: bad explosion type ${damageType}`, { state });
     return EXPL_FIERY;
 }
-// C explode.c:mon_explodes(). Kill credit and the map blast for a
-// monster whose death explodes.
-export function createPhysicalMonsterExplosion(sourceMonster, x, y, damage, options = {}) {
-    const killer = `${possessiveName(monsterTypeName(sourceMonster.mnum, !!sourceMonster.female))} explosion`;
-    return explode(x, y, PHYS_EXPL_TYPE, damage, MON_EXPLODE, EXPL_NOXIOUS, { ...options, killer });
+export async function monsterExplodes(monster, attack, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, die, heroCaused, } = {}) {
+    requirePlayingGame(state);
+    const [, damageType, dice, sides] = attack;
+    const damage = dice > 0 ? rollDice(dice, sides)
+        : sides > 0 ? rollDice((MONSTER_LEVEL[monster.mnum] ?? 0) + 1, sides)
+            : 0;
+    // The -1, +20, *-1 math sets up a 'monster breath' analogue type for
+    // explode(); AD_PHYS (the gas spore) uses the physical explosion type.
+    let type;
+    if (damageType === AD_PHYS) {
+        type = PHYS_EXPL_TYPE;
+    }
+    else if (damageType >= AD_MAGM && damageType <= AD_SPC2) {
+        type = -((damageType - 1) + 20);
+    }
+    else {
+        await impossible(`unknown type for mon_explode ${damageType}`, { state });
+        return { heroDied: false, exploded: false, damage };
+    }
+    /* Kill it now so it won't appear to be caught in its own explosion. */
+    if (monster.mhp > 0) {
+        const death = await finishEnvironmentalMonsterDeath(monster, state, {
+            noCorpse: true, publish, random, rollDice,
+        });
+        if (death.heroDied)
+            return { heroDied: true, exploded: true, damage };
+    }
+    // This might end up killing you, too; explode() also reports the killer.
+    const killer = `${possessiveName(monsterTypeName(monster.mnum, !!monster.female))} explosion`;
+    const blast = await explode(monster.mx, monster.my, type, damage, MON_EXPLODE, await explosionStyleForDamage(damageType, state), {
+        state, publish, random, ...(die ? { die } : {}),
+        ...(heroCaused === undefined ? {} : { heroCaused }),
+        killer,
+    });
+    return { heroDied: !!blast.heroDied, exploded: true, damage };
 }
 //# sourceMappingURL=explode.js.map

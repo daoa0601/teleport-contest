@@ -12,7 +12,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterWouldConsumeItem } from '../js/monmove.js';
 import { searchMonsterItems } from '../js/monmove.js';
 import type { MonsterApproach } from '../js/monmove.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { placeMonsterWormTailRandomly } from '../js/worm.js';
 import { BOULDER, CORPSE, DAGGER, FOOD_RATION, GOLD_PIECE, ROCK, SCR_SCARE_MONSTER, TRIPE_RATION } from '../js/object_data.js';
 import { initRng, rn2 } from '../js/rng.js';
@@ -234,7 +234,7 @@ void test('search ignores ordinary rocks and protects both unclaimed level prize
 
 void test('shop stock is excluded while an explicitly uncharged floor object remains eligible', async () => {
     const { monster, search } = await searchRoom();
-    placeMonsterAt(monster, 6, 10);
+    await placeMonsterOnMap(monster, 6, 10);
     await createStaffedShop({ left: 8, right: 14, top: 8, bottom: 12, keeperX: 14, keeperY: 12 });
     const dagger = await floorObject(DAGGER, 10, 10);
     assert.deepEqual(search().goal, { x: 20, y: 10 });

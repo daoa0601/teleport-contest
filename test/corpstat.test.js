@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mkobj.js';
 import { make_corpse, finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { petrifyMonsterImmediately } from '../js/trap.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, STATUE } from '../js/object_data.js';
 import { relocateObjectRandomly } from '../js/teleport.js';
@@ -44,7 +44,10 @@ void test('a parked guard leaves one corpse on the level, not at its parking coo
     requirePlayingGame(game);
     const guard = await createMonsterAt('guard', 12, 10);
     guard.mhp = 0;
-    placeMonsterAt(guard, 0, 0);
+    // parkguard() only parks real vault guards: place_monster() accepts a
+    // defunct monster at <0,0> when isgd is set.
+    guard.isgd = 1;
+    await placeMonsterOnMap(guard, 0, 0);
     const corpse = await make_corpse(guard);
     assert.ok(corpse, 'the parked guard leaves a corpse');
     assert.equal(corpse.corpsenm, guard.mnum);

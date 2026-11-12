@@ -13,7 +13,7 @@ import { applyWandEffect } from '../js/zap.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { races } from '../js/role.js';
 import { TIN_OPENER, WAN_PROBING } from '../js/object_data.js';
-import { placeMonsterAt } from '../js/steed.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
@@ -24,7 +24,7 @@ void test('probing an engulfer adds the hero row and places the menu at the tty 
     const input = freshTurnRoom({ role: 'archeologist', race: gnome });
     game.plname = 'wizard';
     const jelly = await createMonsterAt('ochre jelly', 12, 10);
-    placeMonsterAt(jelly, game.u.ux, game.u.uy);
+    await placeMonsterOnMap(jelly, game.u.ux, game.u.uy);
     jelly.minvent = [await knownObject(TIN_OPENER, { initialize: false })];
     game.u.uswallow = game.uswallow = 1;
     game.u.ustuck = jelly;
