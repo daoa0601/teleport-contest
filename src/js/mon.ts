@@ -13,7 +13,10 @@ import {
     RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE,
     UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS,
 } from './object_data.js';
-import type { Monster, PetData, ShopkeeperData, MonsterVital, MonsterPopulationState } from './monster_types.js';
+import type {
+    Monster, PetData, ShopkeeperData, MonsterVital, MonsterPopulationState, SavedMonsterTraits,
+    PriestData, VaultGuardData,
+} from './monster_types.js';
 import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -53,7 +56,7 @@ import {
     ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR,
     IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG,
     RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE,
-    W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE,
+    W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, TAINT_AGE, mon_offmap, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE,
     IN_SIGHT, MMOVE_DIED, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO,
     PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN,
     ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE,
@@ -712,7 +715,7 @@ export function schedulable(monster: Monster) {
     return (
         monster &&
         (monster.mhp ?? 1) > 0 &&
-        (monster.mstate ?? MON_FLOOR) === MON_FLOOR &&
+        !mon_offmap(monster) &&
         monster.mx !== 0
     );
 }
@@ -1712,7 +1715,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             continue;
         }
         if ((actor.mhp ?? 1) <= 0 || actor.mx === 0
-            || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
+            || mon_offmap(actor))
             continue;
         await runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
         if (actor.movement === undefined)
@@ -1771,7 +1774,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         // judged by dochugw(FALSE) inside rloc_to_core() (teleport.ts).
         if (!attackReturnedDeath && movement.postMoveStatus !== MMOVE_DIED
             && (monster.mhp ?? 1) > 0
-            && (monster.mstate ?? MON_FLOOR) === MON_FLOOR
+            && !mon_offmap(monster)
             && !(monster.isgd && !monster.mx))
             await interruptOccupationForMonster(monster, game, sightingBefore);
         if (!movement?.moved) continue;
@@ -1806,17 +1809,80 @@ export async function moveMonsters() {
     }
 }
 
-// C mon.c:copy_mextra() deep-copies pet and shopkeeper history when monster
-// traits are saved with a corpse or restored from one.
-export function copyPetData(value: PetData): PetData {
+// C mon.c:copy_mextra(). Copy each extension record; the port also keeps
+// direct aliases for pet, priest, minion, shopkeeper, and vault-guard data.
+export function copy_mextra(target: SavedMonsterTraits, source: SavedMonsterTraits): void {
+    if (source.mextra) {
+        const extra = target.mextra ?? {};
+        target.mextra = extra;
+        if (source.mextra.mgivenname !== undefined)
+            extra.mgivenname = source.mextra.mgivenname;
+        if (source.mextra.epri) extra.epri = copyPriestData(source.mextra.epri);
+        if (source.mextra.eshk) extra.eshk = copyShopkeeperData(source.mextra.eshk);
+        if (source.mextra.emin) extra.emin = { ...source.mextra.emin };
+        if (source.mextra.edog) extra.edog = copyPetData(source.mextra.edog);
+        if (source.mextra.ebones) {
+            extra.ebones = {
+                ...source.mextra.ebones,
+                oldalign: { ...source.mextra.ebones.oldalign },
+            };
+        }
+        if (source.mextra.mcorpsenm !== undefined)
+            extra.mcorpsenm = source.mextra.mcorpsenm;
+    }
+    // The port also stores role records directly on the monster.
+    if (source._egd) target._egd = copyVaultGuardData(source._egd);
+    if (source.epri) {
+        const copied = target.mextra?.epri;
+        target.epri = copied && source.epri === source.mextra?.epri
+            ? copied : copyPriestData(source.epri);
+    }
+    if (source.eshk) {
+        const copied = target.mextra?.eshk;
+        target.eshk = copied && source.eshk === source.mextra?.eshk
+            ? copied : copyShopkeeperData(source.eshk);
+    }
+    if (source.emin) {
+        const copied = target.mextra?.emin;
+        target.emin = copied && source.emin === source.mextra?.emin
+            ? copied : { ...source.emin };
+    }
+    if (source.edog) {
+        const copied = target.mextra?.edog;
+        target.edog = copied && source.edog === source.mextra?.edog
+            ? copied : copyPetData(source.edog);
+    }
+}
+
+// Part of C mon.c:copy_mextra(): the pet's embedded goal is a value.
+function copyPetData(value: PetData): PetData {
     return { ...value, ogoal: { ...value.ogoal } };
 }
 
-// Part of C mon.c:copy_mextra(): the shopkeeper bill copy.
-export function copyShopkeeperData(value: ShopkeeperData): ShopkeeperData {
-    const copy = { ...value };
+// Part of C mon.c:copy_mextra(): the shopkeeper's embedded bill is a value.
+function copyShopkeeperData(value: ShopkeeperData): ShopkeeperData {
+    const copy = {
+        ...value,
+        shoplevel: { ...value.shoplevel },
+        shd: { ...value.shd },
+        shk: { ...value.shk },
+    };
     if (value.bill) copy.bill = value.bill.map(item => ({ ...item }));
     return copy;
+}
+
+// Part of C mon.c:copy_mextra(): priest coordinates and level are values.
+function copyPriestData(value: PriestData): PriestData {
+    return { ...value, shrpos: { ...value.shrpos }, shrlevel: { ...value.shrlevel } };
+}
+
+// Part of C mon.c:copy_mextra(): the vault is level-owned; corridor cells are values.
+function copyVaultGuardData(value: VaultGuardData): VaultGuardData {
+    return {
+        ...value,
+        gdlevel: { ...value.gdlevel },
+        fakecorr: value.fakecorr.map(cell => ({ ...cell })),
+    };
 }
 
 // C mon.c:KEEPTRAITS(). Corpses keep their monster's traits when it was a
@@ -1843,6 +1909,7 @@ export function corpseKeepsMonsterTraits(
 const MS_CUSS = 34;
 const MS_HUMANOID = 25;
 const MS_GUARDIAN = 38;
+const MS_LEADER = 36;
 const MS_PRIEST = 41;
 
 const HUMANOID_GASP_SOUNDS = new Set([
@@ -2834,7 +2901,7 @@ export async function removeMonsterFromGame(monster: Monster | null | undefined)
         return { removed: false, dropped: [], discarded: [] };
     }
 
-    const gameWasOver = game.program_state.gameover;
+    const gameWasOver = !!game.program_state.gameover;
     const x = monster.mx, y = monster.my;
     monster.mhp = 0;
     if (monster.isgd && !await prepareVaultGuardDeath(monster))
@@ -2842,22 +2909,9 @@ export async function removeMonsterFromGame(monster: Monster | null | undefined)
     await releaseHeroFromMonster(monster);
     const dropped = await dropSpecialMonsterObjects(monster);
     const discarded = await discardMonsterInventory(monster, false);
-    if (monster.mleashed) await releaseMonsterLeash(monster, false);
-    if (x > 0 && monsterEmitsLight(monster.mnum)) game.vision_full_recalc = 1;
-    await detachMonsterFromLevel(monster);
-    // End-game settlement starts removals after gameover is already set.
-    // Only a new death during this removal interrupts the remaining cleanup.
-    if (!gameWasOver && game.program_state.gameover)
-        return { removed: true, dropped, discarded, x, y };
-    if (monster.iswiz) wizardDeadOrGone();
-    armorThiefGone(monster);
-    if (monster.isshk) {
-        if (!hasShopkeeperData(monster)) throw new Error('shopkeeper lacks shop history');
-        finishShopkeeperDeparture(monster);
-    }
-    if (monster.wormno) await removeMonsterWormBody(monster);
-    monster.dead = true;
-    if (game.u.usteed === monster) await dismountHero(DISMOUNT_GENERIC);
+    await m_detach(monster, game, {
+        dueToDeath: false, emittedLight: monsterEmitsLight(monster.mnum), gameWasOver,
+    });
     return { removed: true, dropped, discarded, x, y };
 }
 
@@ -3288,7 +3342,7 @@ export async function make_corpse(
     );
     corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
     if (corpseForm !== monster.mnum)
-        corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
+        corpse.age = (corpse.age ?? state.moves ?? 1) - (TAINT_AGE + 1);
     if (buried && corpseForm === monster.mnum) {
         const result = await buryObject(corpse, state);
         if (result.outcome === 'absorbed') return null;
@@ -3701,10 +3755,7 @@ export function restoreMonsterInventoryOwnership(monster: Monster): void {
     }
 }
 
-// C mon.c:m_detach(): unlink the dying monster from leash, light, worm
-// body, shop and quest bookkeeping before the level forgets it.
-// Native mondead() after recovery has failed. Kill credit and remains belong
-// to the caller; map, inventory, and population cleanup share this owner.
+// Part of C mon.c:mondead(): death bookkeeping. Kill credit and remains belong to callers.
 export async function detachDeadMonster(
     monster: Monster, state: GameState, random: (limit: number) => number,
     publish: MessagePublisher, rollOne: (sides: number) => number = rnd,
@@ -3721,17 +3772,41 @@ export async function detachDeadMonster(
     await returnDeadKop(monster, state, rollOne);
     logDeadMonster(monster, state);
     if (state === game) await unmap_invisible(x, y, false);
+    return m_detach(monster, state, { dueToDeath: true, emittedLight, random, publish });
+}
+
+// C mon.c:m_detach(): shared departure cleanup. emittedLight describes the
+// form saved by mondead(): "mptr = mtmp->data; /* save this for m_detach() */".
+async function m_detach(
+    monster: Monster, state: GameState, {
+        dueToDeath, emittedLight, gameWasOver = false,
+        random = rn2, publish = plineWithContinuation,
+    }: {
+        dueToDeath: boolean;
+        emittedLight: boolean;
+        gameWasOver?: boolean;
+        random?: (limit: number) => number;
+        publish?: MessagePublisher;
+    },
+): Promise<boolean> {
+    const { mx: x, my: y } = monster;
     if (monster.mleashed) await releaseMonsterLeash(monster, false, { state });
-    // m_detach removes the light of the form which died, before its true
-    // species and empty map square are projected by mon_leaving_level.
-    monster.lightRemoved = true;
+    if (dueToDeath) monster.lightRemoved = true;
     if (x > 0 && emittedLight) state.vision_full_recalc = 1;
-    await detachMonsterFromLevel(monster, state, { dueToDeath: true });
-    if (state.program_state.gameover) return true;
+    await detachMonsterFromLevel(monster, state, { dueToDeath });
+    // End-game settlement can remove living monsters after gameover was set.
+    if (state.program_state.gameover && (dueToDeath || !gameWasOver)) return true;
     if (monster.iswiz) wizardDeadOrGone(state, random);
-    await markQuestNemesisDead(monster, state, x, y);
-    await releaseMonsterInventory(monster, state, { publish, random });
-    if (state.program_state.gameover) return true;
+    if (dueToDeath) {
+        await markQuestNemesisDead(monster, state, x, y);
+        // C mon.c:2775-2776: "if (mtmp->data->msound == MS_LEADER)"
+        // "leaddead();". The shared updater also handles mondead()'s
+        // leader identity flag, so the repeated update leaves it unchanged.
+        if (questMonsterSound(monster.mnum, state) === MS_LEADER)
+            markQuestLeaderDead(monster, state);
+        await releaseMonsterInventory(monster, state, { publish, random });
+        if (state.program_state.gameover) return true;
+    }
     armorThiefGone(monster, state);
     if (monster.isshk) {
         if (!hasShopkeeperData(monster)) throw new Error('shopkeeper lacks shop history');
@@ -5272,7 +5347,7 @@ export async function restoreNaturalMonsterShapes(
 ): Promise<void> {
     requireLiveGame(state);
     for (const monster of [...(state.level?.monsters ?? [])].reverse()) {
-        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        if (monster.mhp <= 0 || mon_offmap(monster)) continue;
         await normalizeMonsterShape(monster, state, publish);
         if (state.program_state.gameover) return;
     }
@@ -5335,7 +5410,7 @@ export async function normalizeMonsterShape(
 export async function restartMonsterShapechanging(state: GameState = game): Promise<void> {
     requireLiveGame(state);
     for (const monster of [...(state.level?.monsters ?? [])].reverse()) {
-        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        if (monster.mhp <= 0 || mon_offmap(monster)) continue;
         if (!monster.mcan)
             monster.cham = naturalShapechanger(monster.mnum) ? monster.mnum : NON_PM;
         if (MONSTER_SYMBOL[monster.mnum] === 13 && monster.msleeping) { // S_MIMIC
@@ -5352,7 +5427,7 @@ export function livingResidents(state: PlayingGameState): Monster[] {
     // C get_iter_mons() tests mstate, not square occupancy: a mounted steed
     // remains on fmon with MON_FLOOR even though the hero shares its square.
     return [...state.level.monsters].reverse().filter(monster =>
-        !monster.dead && monster.mhp > 0 && (monster.mstate ?? MON_FLOOR) === MON_FLOOR);
+        !monster.dead && monster.mhp > 0 && !mon_offmap(monster));
 }
 
 // C mon.c:mpickgold()

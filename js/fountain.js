@@ -7,7 +7,7 @@ import { distmin } from './hacklib.js';
 import { fingersOrGloves } from './do_wear.js';
 import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactProperties } from './artifact.js';
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHeroStrengthAndHp } from './attrib.js';
-import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, ENL_GAMEINPROGRESS, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MAGICENLIGHTENMENT, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING, ARM, HAND, FACE, HEAD, LL_ARTIFACT, TT_INFLOOR, TT_LAVA, } from './const.js';
+import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, ENL_GAMEINPROGRESS, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MAGICENLIGHTENMENT, MM_NOMSG, M_SEEN_FIRE, mon_offmap, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING, ARM, HAND, FACE, HEAD, LL_ARTIFACT, TT_INFLOOR, TT_LAVA, } from './const.js';
 import { monsterHasMapPosition } from './steed.js';
 import { canSpotMonster, glyphAt, newsym } from './display.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
@@ -101,7 +101,7 @@ export async function dryFountainAt(x, y, { causedByHero = true, random = rn2, s
 // C fountain.c:watchman_warn_fountain().
 async function warnAboutFountain(state, publish) {
     const watch = [...requireGameLevel(state).monsters].reverse().find(monster => !monster.dead && monster.mhp > 0 && monster.mpeaceful
-        && (monster.mstate ?? MON_FLOOR) === MON_FLOOR
+        && !mon_offmap(monster)
         && (monster.mnum === PM_WATCHMAN || monster.mnum === PM_WATCH_CAPTAIN)
         && couldsee(monster.mx, monster.my));
     if (!watch) {

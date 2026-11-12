@@ -23,4 +23,18 @@ void test('saving a high-level troll preserves an already viable HP maximum', as
     const corpse = await mkcorpstat(CORPSE, troll, null, 12, 10, 0);
     assert.equal(corpse.oextra?.omonst?.mhpmax, 10);
 });
+void test('saving a corpse preserves its bones alignment when the original history changes', async () => {
+    await freshObjectRoom();
+    const troll = await createMonsterAt('troll', 12, 10);
+    const history = {
+        parentmid: troll.m_id, role: 0, race: 0,
+        oldalign: { type: 0, record: 4 },
+        deathlevel: 7, luck: 0, mnum: troll.mnum,
+        female: false, demigod: false, crowned: false,
+    };
+    troll.mextra = { ...troll.mextra, ebones: history };
+    const corpse = await mkcorpstat(CORPSE, troll, null, 12, 10, 0);
+    history.oldalign.record = -2;
+    assert.equal(corpse.oextra?.omonst?.mextra?.ebones?.oldalign.record, 4, 'the corpse must retain the alignment recorded when its traits were saved');
+});
 //# sourceMappingURL=mkobj_traits.test.js.map

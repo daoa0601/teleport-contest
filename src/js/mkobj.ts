@@ -1,4 +1,4 @@
-// Object creation and species-dependent initialization.
+// Object creation, saved monster traits, and species-dependent initialization.
 // C ref: mkobj.c.
 
 import {
@@ -25,7 +25,7 @@ import {
     oc_nutrition,
     objectPropertyName,
 } from './object_data.js';
-import type { GameObject, ObjectTimer, ObjectTimerKind } from './object_types.js';
+import type { GameObject, ObjectExtra, ObjectTimer, ObjectTimerKind } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { DueObjectTimer } from './timeout.js';
 import type { Monster, SavedMonsterTraits } from './monster_types.js';
@@ -39,7 +39,7 @@ import { stopHeroOccupation } from './allmain.js';
 import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { objectIsVulnerableToErosion } from './trap.js';
-import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse,
+import { eggSpeciesIsDead, hatchableEggSpecies, copy_mextra, maybeUnhideAt, undeadToCorpse,
     isReviver, zombieForm,
 } from './mon.js';
 import { carryObjEffects } from './invent.js';
@@ -73,6 +73,8 @@ import {
     MON_DETACH,
 
     MON_FLOOR,
+
+    TAINT_AGE,
 
     ROT_AGE,
 
@@ -765,7 +767,7 @@ export function startCorpseTimeout(body: GameObject | null | undefined, { zombif
         kind = OBJECT_TIMER_KIND.REVIVE_MON;
         delay = riderRevivalTime(body);
     } else if (MONSTER_SYMBOL[species] === 46) { // S_TROLL
-        for (let turn = 2; turn <= 50; turn++) {
+        for (let turn = 2; turn <= TAINT_AGE; turn++) {
             if (rn2(TROLL_REVIVE_CHANCE)) continue;
             kind = OBJECT_TIMER_KIND.REVIVE_MON;
             delay = turn;
@@ -935,18 +937,8 @@ export function saveMonsterTraits(monster: Monster | null | undefined): SavedMon
     saved.mhpmax = Math.max(saved.mhpmax ?? 1, (MONSTER_LEVEL[monster.mnum] ?? 0) + 1);
     saved.mhp = Math.max(0, Math.min(saved.mhp ?? 0, saved.mhpmax));
     saved.mstate = (saved.mstate ?? MON_FLOOR) & ~MON_DETACH;
-    if (monster.edog) saved.edog = copyPetData(monster.edog);
-    if (monster.mextra) {
-        saved.mextra = { ...monster.mextra };
-        if (monster.mextra.edog) saved.mextra.edog = copyPetData(monster.mextra.edog);
-        if (monster.mextra.emin) saved.mextra.emin = { ...monster.mextra.emin };
-        if (monster.mextra.epri) saved.mextra.epri = { ...monster.mextra.epri };
-        if (monster.mextra.eshk)
-            saved.mextra.eshk = copyShopkeeperData(monster.mextra.eshk);
-    }
-    if (monster.eshk) saved.eshk = copyShopkeeperData(monster.eshk);
-    if (monster.emin) saved.emin = { ...monster.emin };
-    if (monster.epri) saved.epri = { ...monster.epri };
+    if (monster.mextra) saved.mextra = {};
+    copy_mextra(saved, monster);
     return saved;
 }
 
@@ -1420,7 +1412,7 @@ export async function billDummyObject(object: GameObject, state: GameState = gam
     const dummy: GameObject = {
         ...object,
         contents: [],
-        oextra: object.oextra ? structuredClone(object.oextra) : null,
+        oextra: object.oextra ? copyObjectExtra(object.oextra) : null,
         where: 'free',
         unpaid: false,
         owornmask: 0,
@@ -1840,9 +1832,22 @@ function setQuantity(object: GameObject, count: number): void {
     object.owt = objectWeight(object);
 }
 
+// C mkobj.c:copy_oextra(): the caller clears the copied monster-id link.
+function copyObjectExtra(source: ObjectExtra): ObjectExtra {
+    const copy = { ...source };
+    if (source.omonst) copy.omonst = copySavedMonsterTraits(source.omonst);
+    return copy;
+}
+
+// C mkobj.c:get_mtraits(): the copy used by montraits() owns its extensions.
+export function copySavedMonsterTraits(source: SavedMonsterTraits): SavedMonsterTraits {
+    const { mextra, edog, emin, epri, eshk, _egd, ...traits } = source;
+    const copy = structuredClone(traits);
+    copy_mextra(copy, source);
+    return copy;
+}
+
 // C mkobj.c:splitobj(): split one stack into two.
-// Also C mkobj.c:copy_oextra(): inlined here (the split keeps the parent's
-// extensions minus the m-id association).
 export function splitObjectStack(
     object: GameObject | null | undefined, count: number,
     state: GameState = game, objectId: number | null = null,
@@ -1868,7 +1873,7 @@ export function splitObjectStack(
         lua_ref_cnt: 0,
     };
     if (object.oextra) {
-        split.oextra = structuredClone(object.oextra);
+        split.oextra = copyObjectExtra(object.oextra);
         delete split.oextra.omid;
     }
     split.o_id = objectId ?? nextObjectId(object, split, state);

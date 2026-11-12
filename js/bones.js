@@ -9,7 +9,7 @@
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
 import { FOOD_CLASS } from './objclass.js';
-import { BUFSZ, COLNO, CORPSTAT_INIT, DELPHI, DISMOUNT_BONES, G_NOCORPSE, GRAVE, HEADSTONE, HOLE, Is_oracle_level, LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, MON_FLOOR, NON_PM, NO_MINVENT, OBJECT_TIMER_KIND, PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, STONE, TRICKED, Upolyd, } from './const.js';
+import { BUFSZ, COLNO, CORPSTAT_INIT, DELPHI, DISMOUNT_BONES, G_NOCORPSE, GRAVE, HEADSTONE, HOLE, Is_oracle_level, LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, mon_offmap, NON_PM, NO_MINVENT, OBJECT_TIMER_KIND, PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, STONE, TRICKED, Upolyd, } from './const.js';
 import { GameMap } from './game.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation, impossible } from './pline.js';
@@ -312,7 +312,7 @@ const MS_NEMESIS = 37;
 export async function prepareBonesMonstersForSave() {
     const level = requireGameLevel();
     for (const monster of [...level.monsters].reverse()) {
-        if (monster.mhp < 1 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
+        if (monster.mhp < 1 || mon_offmap(monster))
             continue;
         const sound = MONSTER_SOUND[monster.mnum];
         if (monster.iswiz || monster.mnum === PM_MEDUSA

@@ -47,7 +47,7 @@ import { MONSTER_ALIGNMENT, MONSTER_SYMBOL } from './monster_data.js';
 import { isok } from './cmd.js';
 import {
     AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, ismnum, MAGIC_PORTAL, M_AP_FURNITURE,
-    M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM,
+    M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, mon_offmap, NON_PM,
     CQ_CANNED, CQ_REPEAT, DEFUNCT_MONSTER, M_AP_NOTHING, PL_NSIZ, Upolyd,
 } from './const.js';
 import { GRAPPLING_HOOK, ICE_BOX, PICK_AXE, SLIME_MOLD } from './object_data.js';
@@ -705,7 +705,7 @@ export function validMonsterWormBodies(level: unknown): level is WormRestoreLeve
         const segments: unknown[] = monster.wormSegments;
         for (const point of segments) {
             if (!savedWormPoint(point)
-                || !(point.x === 0 && (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
+                || !(point.x === 0 && mon_offmap(monster))
                     && !isok(point.x, point.y)) return false;
         }
         slots.add(monster.wormno);

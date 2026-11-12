@@ -134,6 +134,21 @@ void test('a named corpse revives with a fresh identity and its saved name and h
     assert.equal(event.monster.mhpmax, troll.mhpmax);
     assert.equal(event.monster.mhp, troll.mhpmax);
 });
+void test('reviving one corpse keeps the remaining corpse\'s saved minion allegiance independent', async () => {
+    await freshState();
+    const troll = await createMonsterAt(PM_TROLL, 12, 10);
+    troll.isminion = true;
+    troll.emin = { min_align: 0, renegade: false };
+    troll.mextra = { ...troll.mextra, emin: troll.emin };
+    const corpses = await mkcorpstat(CORPSE, troll, null, 12, 10, 0);
+    corpses.quan = corpses.quantity = 2;
+    const event = await reviveCorpseByMagic(corpses, game, { byHero: false });
+    assert.ok(event?.monster?.emin, 'the revived monster must retain its minion history');
+    event.monster.emin.renegade = true;
+    assert.equal(corpses.quan, 1);
+    assert.equal(corpses.where, 'floor');
+    assert.equal(corpses.oextra?.omonst?.emin?.renegade, false, 'the remaining corpse must retain the allegiance recorded at death');
+});
 void test('a pet killed by the hero does not revive tame', async () => {
     await freshState();
     requirePlayingGame(game);
