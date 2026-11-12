@@ -1018,7 +1018,7 @@ export async function monsterExplodes(monster, attack, { state = game, publish =
     // This might end up killing you, too; explode() also reports the killer.
     const killer = `${possessiveName(monsterTypeName(monster.mnum, !!monster.female))} explosion`;
     const blast = await explode(monster.mx, monster.my, type, damage, MON_EXPLODE, await explosionStyleForDamage(damageType, state), {
-        state, publish, ...(die ? { die } : {}),
+        state, publish, random, ...(die ? { die } : {}),
         ...(heroCaused === undefined ? {} : { heroCaused }),
         killer,
     });

@@ -117,6 +117,27 @@ void test('a life-saved elemental sphere stays alive while its combat result end
     assert.ok(messages.some(message => message.includes('melancholy feeling')));
 });
 
+void test('the caller random decides a resistant defender takes the halved blast damage', async () => {
+    // C explode.c:534-538: resist() halves the blast damage (dam + 1) / 2;
+    // mon_explodes() must pass the caller's random into explode().
+    const { attacker, defender, attack } = await combatants('freezing sphere', 'gray unicorn');
+    requirePlayingGame(game);
+    const blastDraws: number[] = [];
+    const messages: string[] = [];
+
+    const result = await resolveMonsterCombatExplosion(attacker, defender, attack, {
+        visible: true, rollDice: () => 12,
+        random: range => { blastDraws.push(range); return 1; },
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.equal(result.damage, 12);
+    assert.ok(blastDraws.some(range => range >= 90),
+        'the blast resistance roll draws through the caller random');
+    assert.equal(defender.mhp, 94, 'resisted damage is halved from 12 to 6');
+    assert.ok(messages.some(message => message.includes('resists the')));
+});
+
 void test('a yellow light blinds its defender without HP damage and clears its waiting strategy', async () => {
     const { attacker, defender, attack } = await combatants('yellow light');
     defender.mstrategy = STRAT_WAITFORU | 1;

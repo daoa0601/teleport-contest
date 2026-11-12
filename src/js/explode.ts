@@ -1140,7 +1140,7 @@ export async function monsterExplodes(
     const killer = `${possessiveName(monsterTypeName(monster.mnum, !!monster.female))} explosion`;
     const blast = await explode(monster.mx, monster.my, type, damage, MON_EXPLODE,
         await explosionStyleForDamage(damageType, state), {
-            state, publish, ...(die ? { die } : {}),
+            state, publish, random, ...(die ? { die } : {}),
             ...(heroCaused === undefined ? {} : { heroCaused }),
             killer,
         });
