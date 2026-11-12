@@ -47,6 +47,8 @@ jobs:
           key: static-gaps-${{ env.NETHACK_SHA }}-${{ hashFiles('src/scripts/static-gaps.mts', 'src/scripts/lib/c-sources.mts', 'src/scripts/lib/gap-edges.mts', 'src/scripts/lib/gap-args.mts') }}
       - run: npm ci --ignore-scripts
       - run: npm run compile
+      - name: Generated-table drift check
+        run: node scripts/generate-native.mjs --check
       - name: Message ledger check
         run: |
           node scripts/static-gaps.mjs messages --check-ledger docs/ledger/c-messages.tsv | tee static-messages.txt

@@ -123,24 +123,21 @@ def luck_partitions(front):
     """Exhaustively split the rnl luck sum into magnitude intervals.
 
     Both luck fields are signed chars, so u.uluck + u.moreluck lies in
-    [-256, 254]; the 17 intervals |sum| in [0,15], [16,31], ..., {256} cover
-    every value exactly once. Narrowing the magnitude keeps the
-    luck-dependent rn2(37 + abs(adjustment)) divisor within a 16-value window
-    (and, for x <= 15, the (abs(sum) + 1) / 3 adjustment within six values),
-    so every obligation is decided quickly and deterministically, where the
-    fully symbolic query coupled both symbolic divisors and z3 proved or gave
-    up on it depending on the seed and process memory layout. One magnitude
-    per partition (257 partitions) is also deterministic but costs 168 s and
-    timed out the CI job; width-16 intervals prove the whole claim in under
-    20 s for every seed tried.
+    [-256, 254]; the intervals |sum| in [0,7], [8,15], ..., {256} cover
+    every value. These eight-value windows limit the symbolic divisor in
+    rn2(37 + abs(adjustment)). For x <= 15, the (abs(sum) + 1) / 3 adjustment
+    spans at most four values. Wider windows let the two symbolic divisors
+    make output equality time out for some solver seeds and process layouts,
+    including the former [128,143] partition on Linux. Single-magnitude
+    partitions also worked but made the CI job too slow.
     """
-    return [(f'luck sum magnitude {lo}-{min(lo + 15, 256)}',
-             lambda s, _lo=lo, _hi=min(lo + 15, 256):
+    return [(f'luck sum magnitude {lo}-{min(lo + 7, 256)}',
+             lambda s, _lo=lo, _hi=min(lo + 7, 256):
                  [z3.Or(z3.And(s['u.uluck'] + s['u.moreluck'] >= _lo,
                                s['u.uluck'] + s['u.moreluck'] <= _hi),
                         z3.And(s['u.uluck'] + s['u.moreluck'] >= -_hi,
                                s['u.uluck'] + s['u.moreluck'] <= -_lo))])
-            for lo in range(0, 257, 16)]
+            for lo in range(0, 257, 8)]
 
 
 LUCK = [('u.uluck', SCHAR, 'game.u.uluck'), ('u.moreluck', SCHAR, 'game.u.moreluck')]

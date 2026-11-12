@@ -5,9 +5,11 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { parseGeneratorArguments, resolveGeneratorSource } from './lib/generator-source.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const upstream = readFileSync(join(root, 'nethack-c/upstream/src/shknam.c'), 'utf8');
+const sourceTree = resolveGeneratorSource(parseGeneratorArguments(process.argv.slice(2)).source);
+const upstream = readFileSync(join(sourceTree, 'src', 'shknam.c'), 'utf8');
 const start = upstream.indexOf('static const char *const shkliquors[]');
 const table = upstream.indexOf('const struct shclass shtypes[]');
 const end = upstream.indexOf('\n};', table);
@@ -115,7 +117,7 @@ try {
     const binary = join(temporary, 'project-shops');
     execFileSync(process.env.CC || 'cc', [
         '-x', 'c', '-', '-o', binary,
-        `-I${join(root, 'nethack-c/upstream/include')}`,
+        `-I${join(sourceTree, 'include')}`,
     ], { input: source, encoding: 'utf8' });
     const shops = shopProjection(JSON.parse(execFileSync(binary, [], { encoding: 'utf8' })));
     for (const [index, shop] of shops.entries()) {
