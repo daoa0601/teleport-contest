@@ -10,6 +10,7 @@
     "generate:monster-attacks": "node scripts/generate-monster-attack-types.mjs",
     "generate:monster-growth": "node scripts/generate-monster-growth-data.mjs",
     "generate:lua-assets": "node scripts/generate-lua-assets.mjs",
+    "generate:native": "node scripts/generate-native.mjs",
     "play": "npm run dev --",
     "dev": "node scripts/watch.mjs dev",
     "build": "vp build",
@@ -32,7 +33,10 @@
     "pregenerate:monster-growth": "npm run compile",
     "postgenerate:monster-growth": "npm run compile",
     "pregenerate:lua-assets": "npm run compile",
-    "postgenerate:lua-assets": "npm run compile"
+    "postgenerate:lua-assets": "npm run compile",
+
+    "pregenerate:native": "npm run compile",
+    "postgenerate:native": "npm run compile"
   },
   "engines": {
     "node": "^22.23.4 || ^24.22.1 || >=26.12.1"

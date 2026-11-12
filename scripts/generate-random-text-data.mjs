@@ -4,20 +4,22 @@
 // filesystem dependency from the JavaScript port.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { parseGeneratorArguments, resolveGeneratorSource } from './lib/generator-source.mjs';
 const root = fileURLToPath(new URL('..', import.meta.url));
-function sourceLines(relativePath) {
-    const text = readFileSync(`${root}/${relativePath}`, 'utf8').replace(/\r\n/g, '\n');
+const datDirectory = `${resolveGeneratorSource(parseGeneratorArguments(process.argv.slice(2)).source)}/dat`;
+function sourceLines(name) {
+    const text = readFileSync(`${datDirectory}/${name}`, 'utf8').replace(/\r\n/g, '\n');
     const lines = text.split('\n');
     if (lines.at(-1) === '')
         lines.pop();
     return lines;
 }
-const trueRumors = sourceLines('nethack-c/upstream/dat/rumors.tru');
-const falseRumors = sourceLines('nethack-c/upstream/dat/rumors.fal');
-const engravings = sourceLines('nethack-c/upstream/dat/engrave.txt')
+const trueRumors = sourceLines('rumors.tru');
+const falseRumors = sourceLines('rumors.fal');
+const engravings = sourceLines('engrave.txt')
     .filter(line => line && !line.startsWith('#') && !line.startsWith('^'));
 engravings.unshift('No matter where you go, there you are.');
-const epitaphs = sourceLines('nethack-c/upstream/dat/epitaph.txt')
+const epitaphs = sourceLines('epitaph.txt')
     .filter(line => line && !line.startsWith('#'));
 // makedefs guarantees a non-empty compiled file by prepending this fallback.
 // It is part of the selectable padded text region, unlike the header record.
@@ -28,7 +30,7 @@ epitaphs.unshift('No matter where I went, here I am.');
 // its newline (MD_PAD_BOGONS is 20 including that newline).  Preserve the
 // unencrypted lines and layout size so get_rnd_line() can be reproduced in a
 // browser without loading NetHack's compiled data file.
-const bogusMonsters = sourceLines('nethack-c/upstream/dat/bogusmon.txt')
+const bogusMonsters = sourceLines('bogusmon.txt')
     .filter(line => line && !line.startsWith('#'));
 bogusMonsters.unshift('grue');
 const bogusMonsterFileSize = bogusMonsters.reduce((size, line) => size + Math.max(19, line.length) + 1, 0);

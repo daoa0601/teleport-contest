@@ -5,9 +5,10 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { parseGeneratorArguments, resolveGeneratorSource } from './lib/generator-source.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const sourceRoot = process.env.NETHACK_SOURCE || join(root, 'nethack-c/upstream');
+const sourceRoot = resolveGeneratorSource(parseGeneratorArguments(process.argv.slice(2)).source);
 const upstream = readFileSync(join(sourceRoot, 'src/cmd.c'), 'utf8');
 const header = readFileSync(join(sourceRoot, 'include/func_tab.h'), 'utf8');
 const movementHeader = readFileSync(join(sourceRoot, 'include/hack.h'), 'utf8');
