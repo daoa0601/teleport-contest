@@ -98,22 +98,21 @@ void test('a life-saved elemental sphere stays alive while its combat result end
     assert.equal(defender.mhp, 88);
     assert.ok(messages.some(message => message.includes('melancholy feeling')));
 });
-void test('the caller random decides a resistant defender takes the halved blast damage', async () => {
-    // C explode.c:534-538: resist() halves the blast damage (dam + 1) / 2;
-    // mon_explodes() must pass the caller's random into explode().
+void test('the caller random decides whether a magic-resistant defender takes halved blast damage', async () => {
+    // C explode.c:534-538: resist() halves the blast damage to (dam + 1) / 2;
+    // mon_explodes() must pass the caller's random into explode(), so the
+    // caller's roll — not the global stream — decides the unicorn's outcome.
     const { attacker, defender, attack } = await combatants('freezing sphere', 'gray unicorn');
     requirePlayingGame(game);
-    const blastDraws = [];
     const messages = [];
     const result = await resolveMonsterCombatExplosion(attacker, defender, attack, {
-        visible: true, rollDice: () => 12,
-        random: range => { blastDraws.push(range); return 1; },
+        // 95 loses to a gray unicorn's 70 magic resistance: full damage.
+        visible: true, rollDice: () => 12, random: () => 95,
         publish: async (message) => { messages.push(message); },
     });
     assert.equal(result.damage, 12);
-    assert.ok(blastDraws.some(range => range >= 90), 'the blast resistance roll draws through the caller random');
-    assert.equal(defender.mhp, 94, 'resisted damage is halved from 12 to 6');
-    assert.ok(messages.some(message => message.includes('resists the')));
+    assert.equal(defender.mhp, 88, 'the failed resistance roll keeps the full 12 damage');
+    assert.equal(messages.some(message => message.includes('resists the')), false);
 });
 void test('a yellow light blinds its defender without HP damage and clears its waiting strategy', async () => {
     const { attacker, defender, attack } = await combatants('yellow light');
