@@ -3182,6 +3182,11 @@ export async function displayPickinvWizardIdentify(): Promise<void> {
     } finally {
         await tty_destroy_nhwindow(window);
     }
+    // display_pickinv() clears the override before identifying the
+    // selections (invent.c:3391): the identification notices and any
+    // identify_pack() run name objects by what the hero really knows —
+    // an unseen potion stays "a potion" — not by the wizard override.
+    game.iflags.override_ID = false;
     if (selected.includes('all')) {
         await identifyPack(0);
         game.context.move = 0;
