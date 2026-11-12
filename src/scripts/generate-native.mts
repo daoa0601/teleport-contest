@@ -11,7 +11,7 @@
 // CI can hold the committed tables to their sources.
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseGeneratorArguments, resolveGeneratorSource } from './lib/generator-source.mjs';
@@ -55,6 +55,15 @@ const outputs = [
     'src/js/random_text_data.ts',
     'src/js/shknam.ts',
 ] as const;
+const outputPaths: ReadonlySet<string> = new Set(outputs);
+
+// Emitted JavaScript counterparts of the outputs: the mid-run
+// `npm run compile` refreshes them when a generated source changes, and
+// --check restores the whole watched set so a check run leaves the tree
+// byte-identical instead of overwriting runtime files it cannot undo.
+const emittedCounterparts = outputs
+    .filter(path => path.startsWith('src/'))
+    .map(path => `${path.slice('src/'.length, -'.ts'.length)}.js`);
 
 interface Snapshot {
     readonly path: string;
@@ -90,27 +99,58 @@ function lineDelta(before: string, after: string): string {
     return ` (+${added}/-${removed} lines)`;
 }
 
-const snapshots: Snapshot[] = outputs.map(path => ({ path, content: readOutput(path) }));
+const snapshots: Snapshot[] = [...outputs, ...emittedCounterparts]
+    .map(path => ({ path, content: readOutput(path) }));
 process.stderr.write(`C sources: ${sourceTree}\n`);
 
-const artifactProjection = generators[generators.length - 1];
-for (const generator of generators) {
-    // The artifact projection resolves object constants through the emitted
-    // object_data.js, so refresh the build when this pass changed it.
-    if (generator === artifactProjection) {
-        const objectData = snapshots.find(snapshot => snapshot.path === 'src/js/object_data.ts');
-        if (objectData !== undefined && objectData.content !== null
-            && objectData.content !== readOutput('src/js/object_data.ts')) {
-            process.stderr.write('object_data.ts changed; recompiling for the artifact projection\n');
-            run('npm', ['run', 'compile']);
+// Restore every watched file to its pre-run bytes; --check calls this on
+// both drift and failure so a check run never leaves overwrites behind.
+function restoreWatchedFiles(): string[] {
+    const restored: string[] = [];
+    for (const snapshot of snapshots) {
+        const after = readOutput(snapshot.path);
+        if (after === snapshot.content) continue;
+        if (snapshot.content === null) {
+            if (after !== null) {
+                rmSync(join(root, snapshot.path));
+                restored.push(`${snapshot.path} (removed)`);
+            }
+            continue;
         }
+        writeFileSync(join(root, snapshot.path), snapshot.content);
+        restored.push(snapshot.path);
     }
-    process.stderr.write(`${generator}\n`);
-    run(process.execPath, [join(root, generator), '--source', sourceTree]);
+    return restored;
+}
+
+const artifactProjection = generators[generators.length - 1];
+try {
+    for (const generator of generators) {
+        // The artifact projection resolves object constants through the emitted
+        // object_data.js, so refresh the build when this pass changed it.
+        if (generator === artifactProjection) {
+            const objectData = snapshots.find(snapshot => snapshot.path === 'src/js/object_data.ts');
+            if (objectData !== undefined && objectData.content !== null
+                && objectData.content !== readOutput('src/js/object_data.ts')) {
+                process.stderr.write('object_data.ts changed; recompiling for the artifact projection\n');
+                run('npm', ['run', 'compile']);
+            }
+        }
+        process.stderr.write(`${generator}\n`);
+        run(process.execPath, [join(root, generator), '--source', sourceTree]);
+    }
+} catch (error) {
+    if (check) {
+        const restored = restoreWatchedFiles();
+        if (restored.length)
+            process.stderr.write(`--check: generator failed; restored ${restored.join(', ')}\n`);
+    }
+    throw error;
 }
 
 const drifted: string[] = [];
 for (const snapshot of snapshots) {
+    if (!outputPaths.has(snapshot.path)) continue; // emitted JS follows the sources
     const after = readOutput(snapshot.path);
     if (after === snapshot.content) continue;
     const delta = snapshot.content === null
@@ -122,12 +162,10 @@ for (const snapshot of snapshots) {
 if (!drifted.length) {
     process.stderr.write('All generated outputs are unchanged.\n');
 } else if (check) {
-    for (const snapshot of snapshots) {
-        if (!drifted.includes(snapshot.path) || snapshot.content === null) continue;
-        writeFileSync(join(root, snapshot.path), snapshot.content);
-    }
+    const restored = restoreWatchedFiles();
+    const emitted = restored.filter(path => path.endsWith('.js'));
     process.stderr.write(`--check: ${drifted.length} output(s) drifted from the C tree and were restored: `
-        + `${drifted.join(', ')}\n`);
+        + `${drifted.join(', ')}${emitted.length ? ` (plus emitted counterparts: ${emitted.join(', ')})` : ''}\n`);
     process.exitCode = 1;
 } else {
     process.stderr.write(`${drifted.length} output(s) changed; run \`npm run compile\` before committing.\n`);
